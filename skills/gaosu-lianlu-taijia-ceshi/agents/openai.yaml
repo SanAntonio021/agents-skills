@@ -1,0 +1,4 @@
+interface:
+  display_name: "高速链路台架测试"
+  short_description: "执行 AWG、示波器和 DUT 的台架测试流程"
+  default_prompt: "Use $gaosu-lianlu-taijia-ceshi to run or debug a bench test with clear OFF/ON pairing, timeout handling, and safe shutdown."

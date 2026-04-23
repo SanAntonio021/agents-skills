@@ -7,7 +7,7 @@ description: 把 `vendor/writing-plans` 接到当前本地 Codex 环境中，用
 
 ## 作用
 
-这份 skill 以 [../../vendor/writing-plans/SKILL.md](../../vendor/writing-plans/SKILL.md) 为上游基线，但只保留当前本地环境真正需要的实施计划纪律。
+这份 skill 以 `writing-plans` 为上游基线，但只保留当前本地环境真正需要的实施计划纪律。
 
 目标不是照搬上游，而是把“如何把已确认方案拆成可执行计划”这件事落到当前 Codex、Windows 和本地同步技能目录里。
 
@@ -19,12 +19,12 @@ description: 把 `vendor/writing-plans` 接到当前本地 Codex 环境中，用
 - 下一步需要把工作拆成可执行的实施计划
 - 任务明显是多步编码工作，而不是一句 TODO 就够
 
-如果还在澄清需求，优先回到 [../../vendor/brainstorming/SKILL.md](../../vendor/brainstorming/SKILL.md) 或其他前置澄清技能。
+如果还在澄清需求，优先回到 `brainstorming` 或其他前置澄清技能。
 
 ## 流程
 
 1. 先读上游基线：
-   [../../vendor/writing-plans/SKILL.md](../../vendor/writing-plans/SKILL.md)
+   `writing-plans`
 2. 进入前先补齐最小输入：
    - 已确认的目标、范围和非目标
    - 目标仓库或工作目录
@@ -57,8 +57,8 @@ description: 把 `vendor/writing-plans` 接到当前本地 Codex 环境中，用
 
 ## 相关技能
 
-- 上游基线：[../../vendor/writing-plans/SKILL.md](../../vendor/writing-plans/SKILL.md)
-- 前置澄清：[../../vendor/brainstorming/SKILL.md](../../vendor/brainstorming/SKILL.md)
+- 上游基线：`writing-plans`
+- 前置澄清：`brainstorming`
 - 本地 Codex CLI：[../codex-cli-local/SKILL.md](../codex-cli-local/SKILL.md)
 - 本地子对话分流：[../ziduihua-diaodu/SKILL.md](../ziduihua-diaodu/SKILL.md)
 - 完工前核验：[../superpowers-verification-before-completion/SKILL.md](../superpowers-verification-before-completion/SKILL.md)

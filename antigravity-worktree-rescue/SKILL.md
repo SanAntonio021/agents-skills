@@ -59,7 +59,7 @@ description: "排查 Antigravity 在 Git worktree 目录里的兼容问题，并
 
 ## 边界
 
-- 不把通用 Git worktree 教程写进这里；通用用法交给 [../../vendor/git-advanced-workflows/SKILL.md](../../vendor/git-advanced-workflows/SKILL.md)。
+- 不把通用 Git worktree 教程写进这里；通用用法交给 `git-advanced-workflows`。
 - 不把一次路径猜错当成产品根因。
 - 不默认修改主仓库 Git 配置。
 - 不在未检查未提交修改前直接删除 worktree。
@@ -67,7 +67,7 @@ description: "排查 Antigravity 在 Git worktree 目录里的兼容问题，并
 
 ## 相关技能
 
-- 通用 Git worktree：[../../vendor/git-advanced-workflows/SKILL.md](../../vendor/git-advanced-workflows/SKILL.md)
+- 通用 Git worktree：`git-advanced-workflows`
 - 系统化调试：[../superpowers-systematic-debugging/SKILL.md](../superpowers-systematic-debugging/SKILL.md)
 - Windows 命令复用：[../command-pattern-memory/SKILL.md](../command-pattern-memory/SKILL.md)
 - Windows 命令护栏：[../zhongduan-zhixing-hulan/SKILL.md](../zhongduan-zhixing-hulan/SKILL.md)

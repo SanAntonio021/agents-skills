@@ -19,8 +19,8 @@ description: 把 `vendor/PatentWriterAgent` 的专利申请写作方法接到当
 ## 流程
 
 1. 先读上游基线：
-   - [../../vendor/PatentWriterAgent/README.md](../../vendor/PatentWriterAgent/README.md)
-   - [../../vendor/PatentWriterAgent/PATENT_SKILL.md](../../vendor/PatentWriterAgent/PATENT_SKILL.md)
+   - `PatentWriterAgent`
+   - `PatentWriterAgent`
 2. 再判断用户目标：
    - 根据技术交底材料起草专利申请草稿
    - 按上游方法拆开某个写作步骤
@@ -59,8 +59,8 @@ description: 把 `vendor/PatentWriterAgent` 的专利申请写作方法接到当
 
 ## 相关文件
 
-- 上游说明：[../../vendor/PatentWriterAgent/README.md](../../vendor/PatentWriterAgent/README.md)
-- 上游写作 skill：[../../vendor/PatentWriterAgent/PATENT_SKILL.md](../../vendor/PatentWriterAgent/PATENT_SKILL.md)
+- 上游说明：`PatentWriterAgent`
+- 上游写作 skill：`PatentWriterAgent`
 
 ## 维护
 

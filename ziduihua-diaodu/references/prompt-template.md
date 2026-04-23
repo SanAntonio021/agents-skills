@@ -1,6 +1,6 @@
 # 本地 Codex 子对话 Prompt 模板
 
-本模板用于把主对话中的支线问题分流给另一个本地 Codex 对话。结构按 [openai.md](../../../../prompt_guidelines/openai.md) 收口为 `Context / Task / Constraints / Output`，并固定主对子对话之间的回传契约。
+本模板用于把主对话中的支线问题分流给另一个本地 Codex 对话。结构按 `<agents-root>\prompt_guidelines\openai.md` 收口为 `Context / Task / Constraints / Output`，并固定主对子对话之间的回传契约。
 
 ## 子对话 Prompt 模板
 

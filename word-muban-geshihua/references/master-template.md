@@ -1,11 +1,10 @@
-# Tongyong-Moren Template
+# Tongyong-Moren Template Profile
 
-- Asset: `assets/master-default-template.docx`
-- Extracted profile: `assets/master-default-template.style-profile.json`
+- Public asset: `assets/master-default-template.style-profile.json`
 - Human-readable report: `references/master-default-template-profile.md`
 - Builder: `scripts/build_master_template.py`
 
-This template is the long-term default preset for the skill under the canonical name `tongyong-moren`.
+This profile is the long-term default preset for the skill under the canonical name `tongyong-moren`. If you need a concrete `.docx` template locally, regenerate it with `scripts/build_master_template.py`.
 
 Design sources:
 

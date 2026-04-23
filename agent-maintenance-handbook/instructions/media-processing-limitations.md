@@ -44,7 +44,7 @@
 
 例如后续可转入：
 
-- [huiyi-jiyao](D:/BaiduSyncdisk/.agents/skills/custom/huiyi-jiyao/SKILL.md)
+- `huiyi-jiyao`
 - 其他文本摘要或整理流程
 
 ### B. 先确认本地工具链

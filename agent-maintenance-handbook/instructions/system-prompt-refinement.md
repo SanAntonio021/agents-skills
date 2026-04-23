@@ -19,7 +19,7 @@
 - 临时老师意见或一次性偏好
 - 本应进入独立 skill 的业务流程
 
-这里也不单独充当具体 prompt 模板写法手册。涉及本地 system prompt 或其他具体 prompt 模板的结构化写法时，默认参考 [../../../../prompt_guidelines/openai.md](../../../../prompt_guidelines/openai.md)。
+这里也不单独充当具体 prompt 模板写法手册。涉及本地 system prompt 或其他具体 prompt 模板的结构化写法时，默认参考 `<agents-root>\prompt_guidelines\openai.md`。
 
 ## Core Principles
 
@@ -33,8 +33,8 @@
 
 在决定“该把规则写到哪里”时，按这个顺序判断：
 
-- 跨工作区、跨新对话都要生效的机器级路由与维护约定：优先写入 `C:\Users\SanAn\.codex\AGENTS.md`，必要时再同步到 [AGENTS.md](D:/BaiduSyncdisk/.agents/AGENTS.md)
-- 当前 synced 技能仓库内部的路由、目录模型、维护约定：写入 [AGENTS.md](D:/BaiduSyncdisk/.agents/AGENTS.md) 或 [skills/CONVENTIONS.md](D:/BaiduSyncdisk/.agents/skills/CONVENTIONS.md)
+- 跨工作区、跨新对话都要生效的机器级路由与维护约定：优先写入 `%USERPROFILE%\.codex\AGENTS.md`，必要时再同步到 `AGENTS.md`
+- 当前同步 skill 仓内部的路由、目录模型、维护约定：写入 `AGENTS.md` 或相应约定说明文档
 - 可复用任务流程：写入对应 `custom` skill
 - 仅用于维护智能体本身的方法：写入 `agent-maintenance-handbook/instructions/`
 - 单项目限定规则：写入项目目录
@@ -55,7 +55,7 @@
 当任务已经进入“写或改具体 prompt 模板”这一步时，按以下分工处理：
 
 - 本文件负责判断这条内容应不应该进入底层规则，以及应写在哪一层。
-- 具体 prompt 模板的结构化写法，默认参考 [../../../../prompt_guidelines/openai.md](../../../../prompt_guidelines/openai.md)。
+- 具体 prompt 模板的结构化写法，默认参考 `<agents-root>\prompt_guidelines\openai.md`。
 - 优先落实其中与当前任务直接相关的 `Context / Task / Constraints / Output`、作用域纪律、约束精确化和缓存布局原则。
 - 不把 `openai.md` 里的整套通用写法原样抄回全局规则；这里只保留经过本地验证后仍需长期复用的维护规则。
 

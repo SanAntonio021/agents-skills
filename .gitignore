@@ -1,0 +1,10 @@
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Generated temp artifacts
+word-muban-geshihua/tmp/
+
+# OS
+Thumbs.db
+.DS_Store

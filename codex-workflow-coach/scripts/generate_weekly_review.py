@@ -298,7 +298,7 @@ def top_cwds(summaries: list[SessionSummary]) -> list[tuple[str, int]]:
 def output_path(args: argparse.Namespace, end_date: datetime) -> Path:
     if args.output is not None:
         return args.output
-    repo_root = Path("D:/BaiduSyncdisk/.agents/reports/codex-workflow-coach")
+    repo_root = Path("<agents-root>/reports/codex-workflow-coach")
     return repo_root / f"{end_date.date().isoformat()}.md"
 
 

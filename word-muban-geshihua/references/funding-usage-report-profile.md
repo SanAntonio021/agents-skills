@@ -1,6 +1,6 @@
 # Word Template Profile
 
-- Template: `D:\BaiduSyncdisk\申报书本子\三节点无人平台\结题\验收模版\01-单位自评估\2.审查文件-技术\3. 经费使用情况报告.docx`
+- Template source: public repo ships the style profile only; original sample document omitted.
 - Generated: `2026-03-11T01:51:02.017151+00:00`
 - Styles captured: `24`
 

@@ -8,10 +8,10 @@
 
 当前有效目录模型是：
 
-- `D:\BaiduSyncdisk\.agents\skills\custom`
-- `D:\BaiduSyncdisk\.agents\skills\vendor`
-- `D:\BaiduSyncdisk\.agents\skills\archive`
-- `D:\BaiduSyncdisk\.agents\skills\docs`
+- `<agents-root>\skills\custom`
+- `<agents-root>\skills\vendor`
+- `<agents-root>\skills\archive`
+- `<agents-root>\skills\docs`
 
 含义分别是：
 
@@ -53,7 +53,7 @@
 
 ## Root Hygiene
 
-`D:\BaiduSyncdisk\.agents\skills` 根目录应尽量只保留：
+`<agents-root>\skills` 根目录应尽量只保留：
 
 - `README.md`
 - `CONVENTIONS.md`

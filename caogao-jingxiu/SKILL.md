@@ -57,7 +57,7 @@ description: 在不改 `citation keys` 的前提下精修已批准的 `output/DR
 ## 脚本
 
 ```powershell
-python "D:\BaiduSyncdisk\.agents\skills\custom\caogao-jingxiu\scripts\run.py" --workspace "<workspace>"
+python "<agents-root>\caogao-jingxiu\scripts\run.py" --workspace "<workspace>"
 ```
 
 常用参数：

@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+import tempfile
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -76,6 +77,7 @@ STYLE_TYPE_MAP = {
     3: "table",
     4: "list",
 }
+STYLE_TYPE_IDS = {value: key for key, value in STYLE_TYPE_MAP.items()}
 
 BUILTIN_STYLE_IDS = {
     "normal": -1,
@@ -118,6 +120,51 @@ PAGE_SETUP_FIELDS = [
     "OddAndEvenPagesHeaderFooter",
     "SectionStart",
 ]
+
+PROFILE_PAGE_SETUP_FIELDS = (
+    ("PageWidth", "page_width_pt", False),
+    ("PageHeight", "page_height_pt", False),
+    ("TopMargin", "top_margin_pt", False),
+    ("BottomMargin", "bottom_margin_pt", False),
+    ("LeftMargin", "left_margin_pt", False),
+    ("RightMargin", "right_margin_pt", False),
+    ("HeaderDistance", "header_distance_pt", False),
+    ("FooterDistance", "footer_distance_pt", False),
+    ("Gutter", "gutter_pt", False),
+    ("Orientation", "orientation", False),
+    ("MirrorMargins", "mirror_margins", True),
+    ("DifferentFirstPageHeaderFooter", "different_first_page", True),
+    ("OddAndEvenPagesHeaderFooter", "odd_even_headers", True),
+    ("SectionStart", "section_start", False),
+)
+
+PROFILE_FONT_FIELDS = (
+    ("Name", "name", False),
+    ("NameAscii", "name_ascii", False),
+    ("NameFarEast", "name_far_east", False),
+    ("Size", "size_pt", False),
+    ("Bold", "bold", True),
+    ("Italic", "italic", True),
+    ("Underline", "underline", False),
+    ("AllCaps", "all_caps", True),
+    ("SmallCaps", "small_caps", True),
+)
+
+PROFILE_PARAGRAPH_FIELDS = (
+    ("Alignment", "alignment", False),
+    ("LeftIndent", "left_indent_pt", False),
+    ("RightIndent", "right_indent_pt", False),
+    ("FirstLineIndent", "first_line_indent_pt", False),
+    ("SpaceBefore", "space_before_pt", False),
+    ("SpaceAfter", "space_after_pt", False),
+    ("LineSpacingRule", "line_spacing_rule", False),
+    ("LineSpacing", "line_spacing_pt", False),
+    ("KeepTogether", "keep_together", True),
+    ("KeepWithNext", "keep_with_next", True),
+    ("PageBreakBefore", "page_break_before", True),
+    ("WidowControl", "widow_control", True),
+    ("OutlineLevel", "outline_level", False),
+)
 
 SPECIAL_BODY_SKIP_TOKENS = (
     "toc",
@@ -592,6 +639,109 @@ def open_document(app: Any, path: Path, read_only: bool) -> Any:
     )
 
 
+def profile_word_bool(value: Any) -> int | None:
+    if value is True:
+        return -1
+    if value is False:
+        return 0
+    return None
+
+
+def set_word_attr(obj: Any, attr: str, value: Any, *, is_bool: bool = False) -> bool:
+    if value is None:
+        return False
+    if is_bool:
+        value = profile_word_bool(value)
+        if value is None:
+            return False
+    try:
+        setattr(obj, attr, value)
+    except Exception:
+        return False
+    return True
+
+
+def ensure_profile_style(doc: Any, entry: dict[str, Any]) -> Any | None:
+    style_name_value = clean_text(entry.get("name"))
+    if not style_name_value:
+        return None
+    style = resolve_style(doc, style_name_value)
+    if style is not None:
+        return style
+    style_type = STYLE_TYPE_IDS.get(entry.get("type"), 1)
+    try:
+        return doc.Styles.Add(style_name_value, style_type)
+    except Exception:
+        return resolve_style(doc, style_name_value)
+
+
+def apply_profile_style(doc: Any, entry: dict[str, Any]) -> None:
+    style = ensure_profile_style(doc, entry)
+    if style is None:
+        return
+
+    base_style = clean_text(entry.get("base_style"))
+    if base_style:
+        set_word_attr(style, "BaseStyle", base_style)
+
+    next_style = clean_text(entry.get("next_style"))
+    if next_style:
+        set_word_attr(style, "NextParagraphStyle", next_style)
+
+    font = entry.get("font") or {}
+    for attr, key, is_bool in PROFILE_FONT_FIELDS:
+        set_word_attr(style.Font, attr, font.get(key), is_bool=is_bool)
+
+    if entry.get("type") == "paragraph":
+        paragraph = entry.get("paragraph") or {}
+        for attr, key, is_bool in PROFILE_PARAGRAPH_FIELDS:
+            set_word_attr(style.ParagraphFormat, attr, paragraph.get(key), is_bool=is_bool)
+
+
+def apply_profile_page_setup(doc: Any, profile: dict[str, Any]) -> int:
+    page_setup_payload = (profile.get("document") or {}).get("page_setup") or {}
+    page_setup = doc.Sections(1).PageSetup
+    applied = 0
+    for attr, key, is_bool in PROFILE_PAGE_SETUP_FIELDS:
+        if set_word_attr(page_setup, attr, page_setup_payload.get(key), is_bool=is_bool):
+            applied += 1
+    return applied
+
+
+def load_profile(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def materialize_template_from_profile(app: Any, profile: dict[str, Any], label: str) -> Path:
+    tmp_dir = SKILL_ROOT / "tmp"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        prefix=f"{label}-",
+        suffix=".docx",
+        dir=tmp_dir,
+        delete=False,
+    ) as handle:
+        temp_path = Path(handle.name)
+    if temp_path.exists():
+        temp_path.unlink()
+
+    doc = app.Documents.Add()
+    try:
+        apply_profile_page_setup(doc, profile)
+        for entry in profile.get("styles") or []:
+            ensure_profile_style(doc, entry)
+        for entry in profile.get("styles") or []:
+            apply_profile_style(doc, entry)
+        doc.SaveAs2(
+            FileName=str(temp_path),
+            FileFormat=getattr(constants, "wdFormatXMLDocument", 12),
+            AddToRecentFiles=False,
+        )
+    finally:
+        doc.Close(False)
+    return temp_path
+
+
 def paragraph_text(paragraph: Any) -> str:
     raw = safe_get(paragraph.Range, "Text", "") or ""
     return raw.replace("\r", "").replace("\x07", "").strip()
@@ -917,23 +1067,52 @@ def load_or_extract_profile(
         if auto_profile_path.exists():
             profile_path = auto_profile_path
     if profile_path:
-        return json.loads(profile_path.read_text(encoding="utf-8"))
+        return load_profile(profile_path)
     return build_profile(template_doc, template_path, include_all_styles=False)
 
 
 def apply_command(args: argparse.Namespace) -> int:
-    template_path = resolve_template_path(args.template, args.preset)
     input_path = args.input.resolve()
     output_path = (
         args.output or input_path.with_name(f"{input_path.stem}.formatted.docx")
     ).resolve()
     profile_path = args.profile.resolve() if args.profile else None
+    template_path: Path | None = None
+    synthesized_template_path: Path | None = None
+
+    if args.template is not None:
+        template_path = resolve_template_path(args.template, None)
+    else:
+        preset_name = canonical_preset_name(args.preset or DEFAULT_PRESET)
+        if preset_name not in PRESET_PATHS:
+            raise SystemExit(
+                f"Unknown preset: {preset_name}. Canonical presets: {', '.join(PRESET_PATHS)}."
+            )
+        preset_paths = PRESET_PATHS[preset_name]
+        candidate_template = preset_paths["template"].resolve()
+        if candidate_template.exists():
+            template_path = candidate_template
+        elif profile_path is None and preset_paths["profile"].exists():
+            profile_path = preset_paths["profile"].resolve()
 
     with word_application() as app:
-        template_doc = open_document(app, template_path, read_only=True)
         target_doc = open_document(app, input_path, read_only=False)
+        template_doc = None
         try:
-            profile = load_or_extract_profile(template_doc, template_path, profile_path)
+            if template_path is None:
+                if profile_path is None:
+                    raise SystemExit(
+                        "Template not found for the selected preset, and no style profile is available. "
+                        "Pass --template explicitly or provide --profile."
+                    )
+                profile = load_profile(profile_path)
+                label = canonical_preset_name(args.preset or DEFAULT_PRESET)
+                synthesized_template_path = materialize_template_from_profile(app, profile, label)
+                template_path = synthesized_template_path
+                template_doc = open_document(app, template_path, read_only=True)
+            else:
+                template_doc = open_document(app, template_path, read_only=True)
+                profile = load_or_extract_profile(template_doc, template_path, profile_path)
             target_doc.CopyStylesFromTemplate(str(template_path))
             page_stats = apply_page_setup(template_doc, target_doc, args.page_scope)
             style_map = build_apply_style_map(
@@ -953,7 +1132,10 @@ def apply_command(args: argparse.Namespace) -> int:
             try:
                 target_doc.Close(False)
             finally:
-                template_doc.Close(False)
+                if template_doc is not None:
+                    template_doc.Close(False)
+                if synthesized_template_path and synthesized_template_path.exists():
+                    synthesized_template_path.unlink()
 
     print(f"Formatted document written: {output_path}")
     print(

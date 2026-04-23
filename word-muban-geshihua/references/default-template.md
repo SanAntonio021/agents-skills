@@ -1,8 +1,6 @@
-# Jishu-Zongjie Template Asset
+# Jishu-Zongjie Template Profile
 
-- Source file: `D:\BaiduSyncdisk\申报书本子\三节点无人平台\结题\验收模版\02-验收评价\2.审查文件-技术\2. 技术总结报告.doc`
-- Converted skill asset: `assets/default-template.docx`
-- Extracted profile: `assets/default-template.style-profile.json`
+- Public asset: `assets/default-template.style-profile.json`
 - Human-readable report: `references/default-template-profile.md`
 
-Use this template when the user explicitly wants the original `jishu-zongjie` formatting profile and its `GF报告...` custom styles, rather than the synthesized `tongyong-moren` preset.
+The public repo ships the extracted style profile only; the original sample document is intentionally omitted. Use this preset when the user explicitly wants the original `jishu-zongjie` formatting profile and its `GF报告...` custom styles, rather than the synthesized `tongyong-moren` preset.

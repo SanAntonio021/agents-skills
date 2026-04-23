@@ -7,7 +7,7 @@ description: 为当前 Codex 本地环境启用、配置和维护跨会话长期
 
 ## 作用
 
-这份 skill 承接 [../../vendor/long-term-memory/SKILL.md](../../vendor/long-term-memory/SKILL.md)，但把可变运行态从同步技能目录里分离出来，避免把记忆数据写回 `skills/`。
+这份 skill 承接 `long-term-memory`，但把可变运行态从同步技能目录里分离出来，避免把记忆数据写回 `skills/`。
 
 默认运行目录：
 
@@ -20,7 +20,7 @@ description: 为当前 Codex 本地环境启用、配置和维护跨会话长期
 ## 流程
 
 1. 先读上游基线和本地运行布局说明：
-   - [../../vendor/long-term-memory/SKILL.md](../../vendor/long-term-memory/SKILL.md)
+   - `long-term-memory`
    - [references/runtime-layout.md](references/runtime-layout.md)
 2. 首次启用、补齐运行态或上游更新后，先运行：
    [scripts/ensure_runtime.ps1](scripts/ensure_runtime.ps1)
@@ -59,7 +59,7 @@ description: 为当前 Codex 本地环境启用、配置和维护跨会话长期
 
 ## 相关文件
 
-- 上游基线：[../../vendor/long-term-memory/SKILL.md](../../vendor/long-term-memory/SKILL.md)
+- 上游基线：`long-term-memory`
 - 运行布局：[references/runtime-layout.md](references/runtime-layout.md)
 - 运行态初始化：[scripts/ensure_runtime.ps1](scripts/ensure_runtime.ps1)
 - 统一调用入口：[scripts/invoke_runtime_python.ps1](scripts/invoke_runtime_python.ps1)

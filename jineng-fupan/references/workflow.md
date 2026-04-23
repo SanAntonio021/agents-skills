@@ -2,20 +2,20 @@
 
 ## Inputs
 
-- 项目根目录：`D:/BaiduSyncdisk`
-- 报告目录：`D:/BaiduSyncdisk/.agents/reports/skill-improver`
+- 项目根目录：`<projects-root>`
+- 报告目录：`<agents-root>/reports/skill-improver`
 - 本周日期：`YYYY-MM-DD`
-- transcript 根目录：默认 `C:/Users/SanAn/.codex`
+- transcript 根目录：默认 `%USERPROFILE%/.codex`
 
 ## Discovery Rules
 
 1. 按给定日期计算“本周”窗口，默认取该日期所在周的周一到当天。
-2. 从 `C:/Users/SanAn/.codex/sessions/<YYYY>/<MM>/<DD>/` 读取本周每天新建的 `.jsonl`。
-3. 额外检查 `C:/Users/SanAn/.codex/archived_sessions/*.jsonl`，只保留 `session_meta.timestamp` 落在本周窗口内的记录。
+2. 从 `%USERPROFILE%/.codex/sessions/<YYYY>/<MM>/<DD>/` 读取本周每天新建的 `.jsonl`。
+3. 额外检查 `%USERPROFILE%/.codex/archived_sessions/*.jsonl`，只保留 `session_meta.timestamp` 落在本周窗口内的记录。
 4. 每个候选 session 必须满足：
    - 首行是 `session_meta`
-   - `session_meta.cwd` 能映射回 `D:/BaiduSyncdisk` 下某个项目
-   - 如果 `cwd` 位于 `.codex/worktrees/*/<repo-name>`，则优先归一回 `D:/BaiduSyncdisk/<repo-name>`
+- `session_meta.cwd` 能映射回 `<projects-root>` 下某个项目
+- 如果 `cwd` 位于 `.codex/worktrees/*/<repo-name>`，则优先归一回 `<projects-root>/<repo-name>`
 5. 候选最小单位是 `project_root + session_path`，不是 thread 标题，也不是人工摘要。
 
 ## Index Rules
@@ -114,7 +114,7 @@
 分析完成后执行：
 
 ```powershell
-python scripts/retro_scan.py finalize --reports-root D:/BaiduSyncdisk/.agents/reports/skill-improver --date <YYYY-MM-DD>
+python scripts/retro_scan.py finalize --reports-root <agents-root>/reports/skill-improver --date <YYYY-MM-DD>
 ```
 
 作用：

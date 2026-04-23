@@ -1,5 +1,5 @@
 {
-  "template": "D:\\BaiduSyncdisk\\.agents\\skills\\custom\\word-muban-geshihua\\assets\\default-template.docx",
+  "template": "<profile-only-template>/default-template.docx",
   "generated_at_utc": "2026-03-11T01:18:54.493251+00:00",
   "document": {
     "page_setup": {

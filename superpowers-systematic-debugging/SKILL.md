@@ -1,13 +1,13 @@
 ---
 name: superpowers-systematic-debugging
-description: 把 `upstreams/superpowers` 里的 `systematic-debugging` 接到当前本地 Codex 环境中。Use when 用户明确要 Superpowers 风格的系统化排障，或排错已经变得反复试错、证据薄弱、假设过多；prefer this over 临时拍脑袋试错 for 复杂故障，但不自动进入简单一次性修复。
+description: 以 Superpowers 的 `systematic-debugging` 为基线，接到当前本地 Codex 环境中。Use when 用户明确要 Superpowers 风格的系统化排障，或排错已经变得反复试错、证据薄弱、假设过多；prefer this over 临时拍脑袋试错 for 复杂故障，但不自动进入简单一次性修复。
 ---
 
 # Superpowers 系统化调试
 
 ## 作用
 
-这份 skill 以 `upstreams/superpowers` 里的 `systematic-debugging` 为基线，但只保留适合当前本地工作流的显式排障入口。
+这份 skill 以 Superpowers 的 `systematic-debugging` 为基线，但只保留适合当前本地工作流的显式排障入口。
 
 ## 进入条件
 
@@ -20,7 +20,7 @@ description: 把 `upstreams/superpowers` 里的 `systematic-debugging` 接到当
 ## 流程
 
 1. 先读上游基线：
-   [../../../upstreams/superpowers/skills/systematic-debugging/SKILL.md](../../../upstreams/superpowers/skills/systematic-debugging/SKILL.md)
+   `systematic-debugging`
 2. 进入后先补齐最小事实：
    - 观察到的现象
    - 当前可用的复现方式
@@ -44,7 +44,7 @@ description: 把 `upstreams/superpowers` 里的 `systematic-debugging` 接到当
 
 ## 相关技能
 
-- 上游基线：[../../../upstreams/superpowers/skills/systematic-debugging/SKILL.md](../../../upstreams/superpowers/skills/systematic-debugging/SKILL.md)
+- 上游基线：`systematic-debugging`
 - Windows 命令复用：[../command-pattern-memory/SKILL.md](../command-pattern-memory/SKILL.md)
 - Windows 命令护栏：[../zhongduan-zhixing-hulan/SKILL.md](../zhongduan-zhixing-hulan/SKILL.md)
 

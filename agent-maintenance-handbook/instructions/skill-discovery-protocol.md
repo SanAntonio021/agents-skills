@@ -8,17 +8,16 @@
 
 当任务可能命中 skill 时，按以下顺序找：
 
-1. `skills/custom/<skill>/SKILL.md`
-2. `skills/vendor/<skill>/SKILL.md`
-3. legacy 根目录 `<skill>/SKILL.md`
-4. system skills under `C:\Users\SanAn\.codex\skills\.system`
+1. 当前客户端已安装的同步 skills：`%USERPROFILE%\.claude\skills\<skill>\SKILL.md` 或 `%USERPROFILE%\.codex\skills\<skill>\SKILL.md`
+2. 维护仓源码根目录下的 `<skill>/SKILL.md`（只在直接维护 skill 仓时）
+3. system skills under `%USERPROFILE%\.codex\skills\.system`
 
 默认不把这些位置当作活跃 skill 源：
 
-- `skills/archive/`
-- `skills/docs/`
-- `skills/` 根目录散落 `.md`
-- `D:\BaiduSyncdisk\.agents\upstreams\`
+- `archive/`
+- `docs/`
+- 仅用于说明的散落 `.md`
+- 用户本地自管的 repo mirrors（例如 `<agents-root>\upstreams\`）
 
 ## Core Routing Rules
 
@@ -30,36 +29,35 @@
 
 ## Priority Rules
 
-- `custom` > `vendor` > `system`
-- `custom` 是本地收口和编排层
-- `vendor` 保留上游内容，不默认改写
+- `synced skills` > `system`
+- 维护仓根目录与已安装副本视为同一套同步 skills
 - `archive` 默认不参与路由
-- `repo mirror` 不参与优先级竞争；它只作为 `custom` wrapper 的显式上游
+- `repo mirror` 不参与优先级竞争；它只作为显式上游
 
 ## Wrapper Rule
 
-如果出现“官方/下载 skill + 自建增强层”：
+如果出现“官方基座 + 本地接入层”：
 
 - 保留两层
-- `vendor` 负责基础能力
-- `custom` 负责本地策略、复核、路由或边界收口
+- 基座负责基础能力
+- 本地接入层负责本机策略、复核、路由或边界收口
 
 不要默认把两者合并成一个 skill。
 
 ## Repo Mirrors
 
-- `D:\BaiduSyncdisk\.agents\upstreams\` 用于零暴露上游整仓镜像。
+- 用户本地可维护 `<agents-root>\upstreams\` 这类零暴露上游整仓镜像。
 - 即使镜像内部包含 `SKILL.md`，也不直接参与 discovery。
-- 只允许 `custom` wrapper 或 [repo-mirror-maintainer](D:/BaiduSyncdisk/.agents/skills/custom/repo-mirror-maintainer/SKILL.md) 显式读取其中内容。
-- repo mirror 的登记入口是 [upstreams/repo-mirrors.toml](D:/BaiduSyncdisk/.agents/upstreams/repo-mirrors.toml)，不要把它混进 `skills/vendor/`。
+- 只允许接入层 skill 或 `repo-mirror-maintainer` 显式读取其中内容。
+- repo mirror 的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstreams\repo-mirrors.toml`，不要把它混进当前同步 skill 仓。
 
 ## When Not To Run Discovery
 
 以下情况不要先跑 `find-skills-local` 或市场检索：
 
 - 普通业务任务
-- 已有明确命中的 `custom` skill
-- 已有 `vendor` skill 足够覆盖任务
+- 已有明确命中的同步 skill
+- 已有现成 skill 足够覆盖任务
 - 用户没有要求找新 skill、装新 skill、比较 skill
 
 ## When To Run Discovery
@@ -72,20 +70,20 @@
 
 此时的顺序是：
 
-1. 先看本地已同步的 `custom` / `vendor`
-2. 不够时再用 [find-skills-local](D:/BaiduSyncdisk/.agents/skills/custom/find-skills-local/SKILL.md)
-3. `find-skills-local` 内部再包装 [find-skills](D:/BaiduSyncdisk/.agents/skills/vendor/find-skills/SKILL.md)
+1. 先看本地已安装或已同步的 skill
+2. 不够时再用 `find-skills-local`
+3. `find-skills-local` 内部再包装 `find-skills`
 
 ## Explicit-Only Skills
 
 这些 skill 默认不要自动接管普通任务：
 
-- [agent-maintenance-handbook](D:/BaiduSyncdisk/.agents/skills/custom/agent-maintenance-handbook/SKILL.md)
-- [zixun-pipan-zhibi](D:/BaiduSyncdisk/.agents/skills/custom/zixun-pipan-zhibi/SKILL.md)
+- `agent-maintenance-handbook`
+- `zixun-pipan-zhibi`
 
 只有用户点名或出现明确触发信号时才进入。
 
 ## Maintenance
 
 - 如果目录结构、优先级或 wrapper 规则变化，优先更新本文件。
-- 如果实际路由已稳定写入 [AGENTS.md](D:/BaiduSyncdisk/.agents/AGENTS.md) 或 [skills/CONVENTIONS.md](D:/BaiduSyncdisk/.agents/skills/CONVENTIONS.md)，本文件保持从属解释，不重复发明新规则。
+- 如果实际路由已稳定写入 `AGENTS.md` 或约定说明文档，本文件保持从属解释，不重复发明新规则。

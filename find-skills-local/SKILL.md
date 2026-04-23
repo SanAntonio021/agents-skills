@@ -12,5 +12,5 @@ description: 为当前本地技能树提供 skill 查找、比较、安装与低
 ## 本地补充
 
 1. 查找前先列出 `%USERPROFILE%\.claude\skills\` 和 `%USERPROFILE%\.codex\skills\`，确认是否已通过 cc-switch 安装过同名或同类 skill，避免重复安装。
-2. 新装的 skill 如果是自建需求，直接在 `SanAntonio021/agents-skills` 仓库新增目录；不要装到全局 market 源。
+2. 新装的 skill 如果是自建需求，直接在当前 cc-switch 管理的自建 skill 仓里新增目录；不要装到全局 market 源。
 3. 低置信度场景（routing confidence 不够）优先先查现有 skill 再建议新装。

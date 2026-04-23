@@ -1,6 +1,6 @@
 # Word Template Profile
 
-- Template: `D:\BaiduSyncdisk\.agents\skills\custom\word-muban-geshihua\assets\default-template.docx`
+- Template source: public repo ships the style profile only; original sample document omitted.
 - Generated: `2026-03-11T01:18:54.493251+00:00`
 - Styles captured: `35`
 

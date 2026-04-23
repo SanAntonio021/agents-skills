@@ -2,8 +2,8 @@
 
 ## Directory Roles
 
-- Immutable upstream: `D:\BaiduSyncdisk\.agents\skills\vendor\long-term-memory`
-- Local wrapper: `D:\BaiduSyncdisk\.agents\skills\custom\codex-long-term-memory`
+- Immutable upstream: `<agents-root>\skills\vendor\long-term-memory`
+- Local wrapper: `<agents-root>\codex-long-term-memory`
 - Runtime state root:
   - Preferred: `%CODEX_HOME%\state\long-term-memory`
   - Fallback: `%USERPROFILE%\.codex\state\long-term-memory`
@@ -41,19 +41,19 @@ It must preserve existing runtime data and secrets.
 ## Example Commands
 
 ```powershell
-powershell -File "D:\BaiduSyncdisk\.agents\skills\custom\codex-long-term-memory\scripts\ensure_runtime.ps1"
+powershell -File "<agents-root>\codex-long-term-memory\scripts\ensure_runtime.ps1"
 ```
 
 ```powershell
-powershell -File "D:\BaiduSyncdisk\.agents\skills\custom\codex-long-term-memory\scripts\ensure_runtime.ps1" -Json
+powershell -File "<agents-root>\codex-long-term-memory\scripts\ensure_runtime.ps1" -Json
 ```
 
 ```powershell
-powershell -File "D:\BaiduSyncdisk\.agents\skills\custom\codex-long-term-memory\scripts\ensure_runtime.ps1" -RefreshStatic
+powershell -File "<agents-root>\codex-long-term-memory\scripts\ensure_runtime.ps1" -RefreshStatic
 ```
 
 ```powershell
-powershell -File "D:\BaiduSyncdisk\.agents\skills\custom\codex-long-term-memory\scripts\invoke_runtime_python.ps1" scripts\load_context.py --mode all
+powershell -File "<agents-root>\codex-long-term-memory\scripts\invoke_runtime_python.ps1" scripts\load_context.py --mode all
 ```
 
 ## Windows Encoding Note

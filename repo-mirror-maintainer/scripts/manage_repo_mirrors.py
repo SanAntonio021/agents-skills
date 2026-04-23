@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
         sub = subparsers.add_parser(name)
         sub.add_argument(
             "--registry",
-            default="D:/BaiduSyncdisk/.agents/upstreams/repo-mirrors.toml",
+            default="<agents-root>/upstreams/repo-mirrors.toml",
             help="Path to repo-mirror registry TOML.",
         )
         sub.add_argument("--id", action="append", dest="ids", help="Mirror id to target. May be repeated.")

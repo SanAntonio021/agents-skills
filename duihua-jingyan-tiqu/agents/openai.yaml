@@ -1,4 +1,0 @@
-interface:
-  display_name: "对话经验整理"
-  short_description: "从当前对话提炼经验，判断去向；正式改完后安全推送并提醒刷新"
-  default_prompt: "Use $duihua-jingyan-tiqu to extract reusable lessons from this conversation, check local and public skill overlap, decide whether those lessons belong in the current project, should modify an existing skill, or should become a new skill, and return only a review draft until the user approves. If the skill was then formally created or modified, finish by safely pushing only the relevant changes when conditions allow and remind the user to click cc-switch's check-for-updates button manually."

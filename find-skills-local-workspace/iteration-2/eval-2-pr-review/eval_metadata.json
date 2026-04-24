@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "pr-review",
+  "prompt": "我想给 Codex 找一个做 PR review 的 skill，但我不确定本地有没有类似的。先帮我看本地，再看市场，最后告诉我是直接用现成的，还是更适合改我自己的 skill。",
+  "assertions": []
+}

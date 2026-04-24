@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "writing-upstream",
+  "prompt": "帮我找一个现成 skill，让 AI 检查并改写技术文档里的中英混杂、黑话和逻辑模糊。我会用 cc-switch 管理，不要直接安装，只给我上游 GitHub 仓库和来源页面。",
+  "assertions": []
+}

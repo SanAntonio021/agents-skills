@@ -3,14 +3,14 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "把 AGENTS.md、CLAUDE.md、GEMINI.md 和上游规则对一下，删掉纯重复内容，只保留本地覆盖和本地特例。",
-      "expected_output": "先区分重复项、本地覆盖项和本地特例，再给出修改建议或直接完成规则收口。",
+      "prompt": "把 AGENTS.md、CLAUDE.md、GEMINI.md 和上游规则对一下，删掉纯重复内容，只保留本地差异和只在本地成立的规则。",
+      "expected_output": "先区分重复项、本地差异项和只在本地成立的规则，再给出修改建议或直接完成规则精简。",
       "files": []
     },
     {
       "id": 2,
       "prompt": "我们刚聊出一条经验：改全局规则前要先查重。这条应该写进 AGENTS.md，还是写进某个 skill？请按本地维护规则判断落点。",
-      "expected_output": "判断这条经验该落在全局规则、现有 skill 还是只算一次性经验，并说明理由。",
+      "expected_output": "判断这条经验该落在全局规则、现有技能还是只算一次性经验，并说明理由。",
       "files": []
     },
     {

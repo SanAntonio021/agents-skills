@@ -1,6 +1,6 @@
 ---
 name: word-muban-geshihua
-description: 用用户提供的 Word 模板、本机默认格式或仓内内置 style profile，把目标 `.docx` 统一成可交付版式。Use when 用户提供模板文档、要求沿用既有标题和正文格式、要求按 `Normal.dotm` 成稿，或源文件是 Markdown 但最终要落到 Word 版式；prefer this over 通用导出技能 when 关键目标是 Word 端样式落地；defer 预设治理、默认模板变更和 `Normal.dotm` 安装到 `word-template-governance`。
+description: 用用户提供的 Word 模板、本机默认格式或仓内内置 style profile，把目标 `.docx` 统一成可交付版式。Use when 用户提供模板文档、要求沿用既有标题和正文格式、要求按 `Normal.dotm` 成稿，或源文件是 Markdown 但最终要落到 Word 版式；prefer this over 通用导出技能 when 关键目标是 Word 端样式落地。
 ---
 
 # Word 模板格式化
@@ -34,7 +34,7 @@ description: 用用户提供的 Word 模板、本机默认格式或仓内内置 
 4. 用户若明确点名某个预设，就直接用该预设；公开仓默认只带该预设的 style profile，需要时会临时合成模板；不要把旧英文别名当主名称展示。
 5. 用户若要查看样式清单、保存可复用规则或核对模板结构，先执行提取流程。
 6. 用户若只关心交付文档，直接执行应用流程，默认输出到新文件，不覆盖原文档。
-7. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，切到 [../word-template-governance/SKILL.md](../word-template-governance/SKILL.md)。
+7. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，仍在这里处理，但优先使用现有脚本，不再拆独立治理 skill。
 
 ## 常用命令
 
@@ -124,10 +124,9 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 
 ## 边界
 
-- 不负责修改预设政策、默认模板政策或治理规则。
-- 不负责把样例文档升级成正式预设。
-- 不负责安装或替换全局 `Normal.dotm`。
-- 这些维护任务交给 [../word-template-governance/SKILL.md](../word-template-governance/SKILL.md)。
+- 不把一次性的样例文档直接升级成正式预设。
+- 不在没有验证的情况下改默认预设或替换全局 `Normal.dotm`。
+- 低频治理动作也优先走现有脚本，不额外拆新的治理入口。
 
 ## 相关文件
 
@@ -140,10 +139,9 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 - 主预设说明：[references/master-template.md](references/master-template.md)
 - 技术总结预设说明：[references/default-template.md](references/default-template.md)
 - 企业申报预设说明：[references/qiye-shenbao-template.md](references/qiye-shenbao-template.md)
-- 预设治理入口：[../word-template-governance/SKILL.md](../word-template-governance/SKILL.md)
 
 ## 维护
 
-- 以后如果默认预设变更，先改治理文档和脚本默认值，再回到这里同步说明。
+- 以后如果默认预设变更，直接在这里和相关脚本里同步说明。
 - 新增预设时，优先补充现有脚本和引用说明，不要在正文里堆过多一次性示例。
 - 如果同类需求持续稳定出现，再补新的触发词或命令示例，不要把这份 skill 写成 Word 大全。

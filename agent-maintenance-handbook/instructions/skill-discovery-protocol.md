@@ -85,10 +85,11 @@
 - 即使镜像内部包含 `SKILL.md`，也不直接参与技能查找。
 - 只允许接入层技能显式读取其中内容。
 - 上游镜像的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstreams\repo-mirrors.toml`，不要把它混进当前同步技能仓。
+- 如果要检查或同步这类镜像，使用 [../scripts/manage_repo_mirrors.py](../scripts/manage_repo_mirrors.py)。
 
 ## 什么时候不要先去找新技能
 
-以下情况不要先跑 `find-skills-local` 或市场检索：
+以下情况不要先跑技能检索或市场检索：
 
 - 普通业务任务
 - 已有明确命中的同步技能
@@ -106,8 +107,8 @@
 此时的顺序是：
 
 1. 先看本地已安装或已同步的技能
-2. 不够时再用 `find-skills-local`
-3. `find-skills-local` 内部再包装 `find-skills`
+2. 不够时再用官方 `find-skills`
+3. 如果还需要结合本地源码仓、同步目录或当前机器环境，再做本地判断
 
 ## 哪些技能默认不要自动接管
 

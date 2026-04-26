@@ -21,7 +21,7 @@
 - 临时老师意见或一次性偏好
 - 本应进入独立技能的业务流程
 
-这份说明也不是具体模板写法手册。碰到本地系统提示词或其他具体提示词模板的写法问题，默认参考 `<agents-root>\prompt_guidelines\openai.md`。
+这份说明也不是具体模板写法手册。碰到本地系统提示词或其他具体提示词模板的写法问题，默认参考 `<agents-root>\prompt_guidelines\openai.md`。如果任务已经明确是网页端、无终端和无文件系统环境，再看 [web-system-prompt-guidelines.md](web-system-prompt-guidelines.md)。
 
 ## 基本原则
 
@@ -58,6 +58,7 @@
 
 - 本文件负责判断这条内容该不该进入底层规则，以及该写在哪一层。
 - 具体提示词模板的结构化写法，默认参考 `<agents-root>\prompt_guidelines\openai.md`。
+- 如果目标环境是网页端无工具模型，再补看 [web-system-prompt-guidelines.md](web-system-prompt-guidelines.md)。
 - 优先落实其中与当前任务直接相关的 `Context / Task / Constraints / Output`、作用域纪律、约束精确化和缓存布局原则。
 - 不把 `openai.md` 里的整套通用写法原样抄回全局规则；这里只保留经过本地验证后仍需长期复用的维护规则。
 

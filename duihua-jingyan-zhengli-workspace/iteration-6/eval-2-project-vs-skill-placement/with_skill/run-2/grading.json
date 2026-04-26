@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+      "passed": true,
+      "evidence": "??????????????????"
+    },
+    {
+      "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+      "passed": true,
+      "evidence": "???????????"
+    },
+    {
+      "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+      "passed": true,
+      "evidence": "??????????????"
+    },
+    {
+      "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+      "passed": true,
+      "evidence": "?????????????????"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": 0,
+    "total_steps": 0,
+    "errors_encountered": 0,
+    "output_chars": 1886,
+    "transcript_chars": 1826
+  },
+  "timing": {
+    "executor_duration_seconds": 0.0,
+    "grader_duration_seconds": 0.0,
+    "total_duration_seconds": 0.0
+  },
+  "claims": [],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "??????????????"
+  }
+}

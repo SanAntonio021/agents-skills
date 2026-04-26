@@ -1,4 +1,14 @@
-version: "1"
-display_name: "论文下载"
-short_description: "按题目、DOI、作者主页和合法来源下载论文 PDF"
-default_prompt: "Use $lunwen-xiazai to download paper PDFs from title lists, DOI links, author pages, publisher sites, and other legal sources, and update a simple local paper index when needed."
+interface:
+  display_name: "论文下载"
+  short_description: "优先用 MCP 下载正式版论文并维护索引"
+  default_prompt: "Use $lunwen-xiazai to download paper PDFs with paper-search-mcp first, prefer official published versions, mark temporary preprints, and update download_list.md plus paper_index.md."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "paper-search-mcp"
+      description: "Search academic metadata and download open-access PDFs before falling back to browser-based retrieval."
+      transport: "stdio"
+
+policy:
+  allow_implicit_invocation: true

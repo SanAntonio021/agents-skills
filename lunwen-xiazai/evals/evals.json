@@ -1,0 +1,20 @@
+{
+  "skill_name": "lunwen-xiazai",
+  "evals": [
+    {
+      "id": "research-results-to-download-list",
+      "prompt": "research-lookup 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理成下载清单，并开始下载能下载的 PDF。",
+      "expected_output": "先从当前对话里的零散论文线索整理 download_list.md，再用 paper-search-mcp 补元数据和版本线索，最后下载 PDF 并更新 paper_index.md。"
+    },
+    {
+      "id": "published-version-first-preprint-temporary",
+      "prompt": "这篇论文已经正式发表了，但现在正式版 PDF 似乎拿不到，arXiv 上有预印本。先帮我把能拿到的版本下载下来。",
+      "expected_output": "优先确认正式发表信息；正式版暂时拿不到时允许下载预印本，但必须在文件名、download_list.md 和 paper_index.md 中标为 temporary_preprint。"
+    },
+    {
+      "id": "search-before-download",
+      "prompt": "帮我找一下近几年太赫兹 MIMO 通信系统硬件实现方向有哪些重要论文。",
+      "expected_output": "判断用户还处在找论文和筛论文阶段，先转向 research-lookup；只有论文线索明确后才进入下载。"
+    }
+  ]
+}

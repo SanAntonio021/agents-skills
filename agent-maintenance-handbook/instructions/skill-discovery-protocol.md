@@ -34,6 +34,39 @@
 - `archive` 默认不参与路由
 - `repo mirror` 不参与优先级竞争；它只作为显式上游
 
+## Source vs Runtime vs Historical Copies
+
+当同一个名字在多个位置都出现时，先分清它们分别是什么。
+
+### 源文件目录
+
+真正应该优先修改的地方：
+
+- `<agents-root>\agents-skills-src\<skill>\`
+
+### 运行时副本
+
+表示当前客户端可能正在读什么，但不一定是你应该长期手改的地方：
+
+- `C:\Users\SanAn\.cc-switch\skills\`
+- `%USERPROFILE%\.claude\skills\`
+- `%USERPROFILE%\.codex\skills\`
+
+### 历史残留目录
+
+只当背景信息，不当当前主入口：
+
+- `archive/`
+- `docs/`
+- 其他只用于说明或过渡的残留目录
+
+汇报时要分开说清两件事：
+
+- 当前实际在读哪一份
+- 后面推荐修改哪一份
+
+不要把“当前读取来源”和“推荐修改目标”混写成同一个东西。
+
 ## Wrapper Rule
 
 如果出现“官方基座 + 本地接入层”：

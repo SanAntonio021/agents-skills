@@ -74,10 +74,15 @@ def collect_prose_paths(text: str) -> list[str]:
 
 def resolve_vendor_refs(skills_root: Path) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     vendor_root = (skills_root / "vendor").resolve()
+    custom_root = skills_root / "custom"
+
+    if not vendor_root.exists() or not custom_root.exists():
+        return [], []
+
     wrapper_refs: list[dict[str, str]] = []
     missing_refs: list[dict[str, str]] = []
 
-    for skill_md in sorted((skills_root / "custom").glob("*/SKILL.md")):
+    for skill_md in sorted(custom_root.glob("*/SKILL.md")):
         text = skill_md.read_text(encoding="utf-8")
         for target in collect_prose_paths(text):
             resolved = (skill_md.parent / target).resolve(strict=False) if not Path(target).is_absolute() else Path(target)
@@ -91,10 +96,7 @@ def resolve_vendor_refs(skills_root: Path) -> tuple[list[dict[str, str]], list[d
 
             looks_like_skill_entry = (
                 resolved.is_dir()
-                or (
-                    resolved.suffix.lower() == ".md"
-                    and "skill" in resolved.name.lower()
-                )
+                or (resolved.suffix.lower() == ".md" and "skill" in resolved.name.lower())
             )
             if not looks_like_skill_entry:
                 continue
@@ -279,9 +281,11 @@ def main() -> int:
     output_root = Path(args.output_root).resolve()
     manifests_root = hygiene_reports_root / "manifests"
 
-    repo_root = skills_root.parent
-    market_script = repo_root / "skills" / "custom" / "market-skill-updater" / "scripts" / "manage_market_skills.ps1"
-    hygiene_script = repo_root / "skills" / "custom" / "skill-hygiene-audit" / "scripts" / "audit_skill_tree.py"
+    script_dir = Path(__file__).resolve().parent
+    skill_root = script_dir.parent
+    repo_root = skill_root.parent
+    market_script = script_dir / "manage_market_skills.ps1"
+    hygiene_script = script_dir / "audit_skill_tree.py"
 
     market_result = run_command(
         [

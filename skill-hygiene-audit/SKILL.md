@@ -43,14 +43,15 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 3. 再读取本轮产物：
    - `manifests/<date>/summary.json`
    - `weekly/<date>.md`
-4. 汇报时先给出：
+4. 如果还要补充“市场安装 skill 的清单、残留目录或全局安装情况”，再按需调用补充脚本，不要把这一步默认混进每次审计。
+5. 汇报时先给出：
    - 当前活跃 skill
    - 真重复候选
    - 名字漂移
    - 路径漂移
    - 空壳或损坏项
-5. 优先看 `blockers`、`建议动作` 和 `路径漂移`，再决定是否把具体修补工作交给 `skill-creator`。
-6. 如果报告把 `custom + vendor` 判成本地补充关系，就保留两层，不把它误当成重复副本。
+6. 优先看 `blockers`、`建议动作` 和 `路径漂移`，再决定是否把具体修补工作交给 `skill-creator`。
+7. 如果报告把 `custom + vendor` 判成本地补充关系，就保留两层，不把它误当成重复副本。
 
 ## 结果类型
 
@@ -76,6 +77,8 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - [references/finding-severity.md](references/finding-severity.md)
 - [references/report-template.md](references/report-template.md)
 - [references/skill-hygiene.md](references/skill-hygiene.md)
+- [scripts/manage_market_skills.ps1](scripts/manage_market_skills.ps1)
+- [scripts/run_codex_skill_ecosystem_audit.py](scripts/run_codex_skill_ecosystem_audit.py)
 
 ## 边界
 
@@ -86,6 +89,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `boundary overlap` 默认只聚焦至少一侧属于本地活跃层的 pair；纯 `vendor <-> vendor` 相似度通常不作为本轮修补对象。
 - 不自动跑市场搜索，也不替代 [../agent-maintenance-handbook/SKILL.md](../agent-maintenance-handbook/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
+- 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
 
 ## 输出
 

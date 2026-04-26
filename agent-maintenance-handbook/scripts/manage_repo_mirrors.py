@@ -313,18 +313,11 @@ def sync_one(mirror: MirrorConfig) -> dict[str, Any]:
                 "status": "sync_failed",
                 "error": fetch["output"] or "git fetch failed.",
             }
-
         checkout = run_local_git(mirror, ["checkout", mirror.branch])
         if checkout["exit_code"] != 0:
             checkout = run_local_git(
                 mirror,
-                [
-                    "checkout",
-                    "-b",
-                    mirror.branch,
-                    "--track",
-                    f"origin/{mirror.branch}",
-                ],
+                ["checkout", "-b", mirror.branch, "--track", f"origin/{mirror.branch}"],
             )
             if checkout["exit_code"] != 0:
                 return {
@@ -332,7 +325,6 @@ def sync_one(mirror: MirrorConfig) -> dict[str, Any]:
                     "status": "sync_failed",
                     "error": checkout["output"] or f"Failed to checkout branch {mirror.branch}.",
                 }
-
         pull = run_local_git(mirror, ["pull", "--ff-only", "origin", mirror.branch], allow_remote_fallback=True)
         if pull["exit_code"] != 0:
             return {
@@ -343,11 +335,7 @@ def sync_one(mirror: MirrorConfig) -> dict[str, Any]:
         action = "synced"
 
     after = check_one(mirror)
-    changed_tracked_skills, tracked_change_note = summarize_tracked_changes(
-        mirror,
-        before_head,
-        after["local_head"],
-    )
+    changed_tracked_skills, tracked_change_note = summarize_tracked_changes(mirror, before_head, after["local_head"])
     if action == "synced" and before_head == after["local_head"]:
         action = "already_up_to_date"
 

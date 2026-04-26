@@ -200,7 +200,7 @@
 优先复用通用技能，不为单项目临时造 skill：
 
 - 需要深搜底座时，优先调用 `tooluniverse-literature-deep-research` 或 `deep-research`。
-- 需要桥接、批判、反证时，优先调用 `zixun-pipan-zhibi`。
+- 需要桥接、批判、反证时，优先直接做结构化批判，不再切独立模式 skill。
 - 需要正式学术写作时，转交 `proposal-sci-collab` 或更具体的写作 skill。
 
 项目特化信息应作为输入包、临时文档或首帧上下文注入，而不是固化进本 skill。

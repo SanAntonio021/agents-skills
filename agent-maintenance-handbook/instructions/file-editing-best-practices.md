@@ -1,17 +1,17 @@
-# File Editing Best Practices
+# 文件修改注意事项
 
-## Purpose
+## 这份说明管什么
 
-统一当前环境下的文本文件修改方式，减少编码问题、误改范围和工具错配。
+这份说明只管当前环境里怎么改文本文件，重点是少出编码问题、少改错范围、少用错工具。
 
-## Default Editing Path
+## 默认怎么改
 
 1. 先定位目标文件和实际内容。
 2. 手工文本修改默认使用 `apply_patch`。
 3. 重命名、移动、批量检查、格式化、验证这类动作使用 `shell_command`。
 4. 修改后立刻复读或校验，确认结果与预期一致。
 
-## Current Tooling Baseline
+## 当前环境优先用什么
 
 当前这套环境里，优先使用：
 
@@ -28,7 +28,7 @@
 
 这些不再是当前维护基线。
 
-## Windows / PowerShell Rules
+## Windows 和 PowerShell 注意事项
 
 - 默认按 PowerShell 语法写命令
 - 路径尽量使用绝对路径
@@ -36,7 +36,7 @@
 - 修改前先确认目标文件真实存在
 - 多步 PowerShell 逻辑如果开始变脆，就写短 `.ps1` 再执行
 
-## Encoding Rules
+## 编码怎么处理
 
 处理中文 Markdown 或文本时，默认按 UTF-8 管理。
 
@@ -58,29 +58,29 @@ Get-Content -Raw -Encoding UTF8 "<path>"
 4. 如果必须脚本化读写，优先用 `[System.IO.File]` 并显式指定 UTF-8。
 5. 写回后立即再读一遍，不靠想当然判断是否修好。
 
-## Scope Control
+## 改动范围怎么控制
 
 - 只改用户要求的文件和与之直接相关的最小范围
 - 不顺手清理无关文件
 - 不回滚用户已有改动
 - 不使用 `git reset --hard`、`git checkout --` 这类破坏性命令
 
-## Tool Boundary
+## 工具怎么分工
 
 - 简单文件读写不要为此启用 Python
 - 小规模文本编辑不要用 shell 重定向硬写整文件
 - 需要稳定批处理时，优先短脚本或现成 `scripts/`
 
-## Verification
+## 改完后至少检查什么
 
 每次编辑后至少做一项验证：
 
 - 重新读取关键片段
 - 搜索旧字符串是否已消失
 - 搜索新标题、链接或字段是否已出现
-- 运行相关帮助命令、校验脚本或最小 smoke check
+- 运行相关帮助命令、校验脚本或最小检查
 
-## When Rule Files Drift Out Of Sync
+## 规则文件没同步上时怎么查
 
 如果你发现两个位置的规则文件不一致，先按这个顺序查：
 
@@ -101,7 +101,7 @@ Get-Content -Raw -Encoding UTF8 "<path>"
 - 这不是自动同步
 - 以后源文件再改，这个副本不会自己跟着变
 
-## Maintenance
+## 维护时注意
 
 - 如果当前工具栈变化，先更新本文件，再更新其他维护文档。
 - 本文件只写通用编辑基线，不写单项目特例。

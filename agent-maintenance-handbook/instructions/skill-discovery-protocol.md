@@ -1,42 +1,44 @@
-# Skill Discovery Protocol
+# 技能查找顺序
 
-## Purpose
+## 这份说明管什么
 
-规范当前机器上的 skill 路由顺序，避免无谓深搜、错误优先级和重复加载。
+这份说明只管一件事：当前机器上找技能时，先看哪里，后看哪里，避免找错地方、顺序混乱，或者把同一套内容反复读几遍。
 
-## Default Source Order
+## 默认先去哪找
 
-当任务可能命中 skill 时，按以下顺序找：
+当任务可能要用到技能时，按下面的顺序找：
 
-1. 当前客户端已安装的同步 skills：`%USERPROFILE%\.claude\skills\<skill>\SKILL.md` 或 `%USERPROFILE%\.codex\skills\<skill>\SKILL.md`
-2. 维护仓源码根目录下的 `<skill>/SKILL.md`（只在直接维护 skill 仓时）
-3. system skills under `%USERPROFILE%\.codex\skills\.system`
+1. 当前客户端已经同步好的技能：`%USERPROFILE%\.claude\skills\<skill>\SKILL.md` 或 `%USERPROFILE%\.codex\skills\<skill>\SKILL.md`
+2. 维护仓源码根目录下的 `<skill>/SKILL.md`（只在直接维护技能仓时）
+3. `%USERPROFILE%\.codex\skills\.system` 下面的系统技能
 
-默认不把这些位置当作活跃 skill 源：
+## 默认不把哪些地方当主入口
+
+下面这些地方，默认不当活跃技能来源：
 
 - `archive/`
 - `docs/`
 - 仅用于说明的散落 `.md`
-- 用户本地自管的 repo mirrors（例如 `<agents-root>\upstreams\`）
+- 用户自己维护的上游整仓镜像（例如 `<agents-root>\upstreams\`）
 
-## Core Routing Rules
+## 基本查找规则
 
-1. 先判断是否真的有 skill 适用。
-2. 若用户点名 skill，先按名称在 synced root 中定位。
-3. 若任务明显匹配某个 skill，即使用户没点名，也应读取该 `SKILL.md`。
-4. 只读取最小必要 skill，不整树扫描。
-5. 若一个 skill 需要 `references/` 或相邻 skill，再按需继续读取。
+1. 先判断是否真的有技能适用。
+2. 如果用户点名某个技能，先按名字在当前已同步目录里找。
+3. 如果任务明显适合某个技能，即使用户没点名，也应读取对应 `SKILL.md`。
+4. 只读这次真正需要的最小范围，不要整棵目录乱扫。
+5. 如果一个技能还需要 `references/` 或相邻技能，再按需继续读取。
 
-## Priority Rules
+## 优先顺序
 
-- `synced skills` > `system`
-- 维护仓根目录与已安装副本视为同一套同步 skills
+- 当前已同步的技能 > 系统技能
+- 维护仓根目录与已安装副本，视为同一套同步技能
 - `archive` 默认不参与路由
-- `repo mirror` 不参与优先级竞争；它只作为显式上游
+- 上游整仓镜像不参与优先级竞争；它只作为显式上游来源
 
-## Source vs Runtime vs Historical Copies
+## 分清源文件、当前副本和旧目录
 
-当同一个名字在多个位置都出现时，先分清它们分别是什么。
+当同一个名字在多个位置都出现时，先分清它们各自是什么。
 
 ### 源文件目录
 
@@ -44,7 +46,7 @@
 
 - `<agents-root>\agents-skills-src\<skill>\`
 
-### 运行时副本
+### 当前副本
 
 表示当前客户端可能正在读什么，但不一定是你应该长期手改的地方：
 
@@ -52,7 +54,7 @@
 - `%USERPROFILE%\.claude\skills\`
 - `%USERPROFILE%\.codex\skills\`
 
-### 历史残留目录
+### 旧目录
 
 只当背景信息，不当当前主入口：
 
@@ -67,7 +69,7 @@
 
 不要把“当前读取来源”和“推荐修改目标”混写成同一个东西。
 
-## Wrapper Rule
+## 什么时候保留两层
 
 如果出现“官方基座 + 本地接入层”：
 
@@ -75,48 +77,47 @@
 - 基座负责基础能力
 - 本地接入层负责本机策略、复核、路由或边界收口
 
-不要默认把两者合并成一个 skill。
+不要默认把两者合并成一个技能。
 
-## Repo Mirrors
+## 上游整仓镜像怎么处理
 
 - 用户本地可维护 `<agents-root>\upstreams\` 这类零暴露上游整仓镜像。
-- 即使镜像内部包含 `SKILL.md`，也不直接参与 discovery。
-- 只允许接入层 skill 或 `repo-mirror-maintainer` 显式读取其中内容。
-- repo mirror 的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstreams\repo-mirrors.toml`，不要把它混进当前同步 skill 仓。
+- 即使镜像内部包含 `SKILL.md`，也不直接参与技能查找。
+- 只允许接入层技能显式读取其中内容。
+- 上游镜像的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstreams\repo-mirrors.toml`，不要把它混进当前同步技能仓。
 
-## When Not To Run Discovery
+## 什么时候不要先去找新技能
 
 以下情况不要先跑 `find-skills-local` 或市场检索：
 
 - 普通业务任务
-- 已有明确命中的同步 skill
-- 已有现成 skill 足够覆盖任务
-- 用户没有要求找新 skill、装新 skill、比较 skill
+- 已有明确命中的同步技能
+- 已有现成技能足够覆盖任务
+- 用户没有要求找新技能、装新技能、比较技能
 
-## When To Run Discovery
+## 什么时候才开始找新技能
 
-只有在以下情况才触发 skill 发现：
+只有在以下情况才触发技能查找：
 
-- 用户明确要求找 skill / 装 skill / 比较 skill
-- 本地现有 synced skills 明显不够
-- 需要核验某个候选 skill 是否权威或是否值得装
+- 用户明确要求找技能 / 装技能 / 比较技能
+- 本地现有已同步技能明显不够
+- 需要核验某个候选技能是否权威，或是否值得安装
 
 此时的顺序是：
 
-1. 先看本地已安装或已同步的 skill
+1. 先看本地已安装或已同步的技能
 2. 不够时再用 `find-skills-local`
 3. `find-skills-local` 内部再包装 `find-skills`
 
-## Explicit-Only Skills
+## 哪些技能默认不要自动接管
 
-这些 skill 默认不要自动接管普通任务：
+这些技能默认不要自动接管普通任务：
 
 - `agent-maintenance-handbook`
-- `zixun-pipan-zhibi`
 
 只有用户点名或出现明确触发信号时才进入。
 
-## Maintenance
+## 维护时注意
 
-- 如果目录结构、优先级或 wrapper 规则变化，优先更新本文件。
+- 如果目录结构、优先级或接入层规则变化，优先更新本文件。
 - 如果实际路由已稳定写入 `AGENTS.md` 或约定说明文档，本文件保持从属解释，不重复发明新规则。

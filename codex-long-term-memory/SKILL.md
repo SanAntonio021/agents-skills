@@ -68,7 +68,7 @@ description: 为当前 Codex 本地环境启用、配置和维护跨会话长期
 
 - Windows 命令复用：[../command-pattern-memory/SKILL.md](../command-pattern-memory/SKILL.md)
 - Windows 命令护栏：[../zhongduan-zhixing-hulan/SKILL.md](../zhongduan-zhixing-hulan/SKILL.md)
-- 本地 skill 维护：[../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)
+- 本地 skill 维护：`skill-creator`
 
 ## 维护
 

@@ -59,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File "<agents-root>\market-skill-updater\scr
 ## 什么时候不要用
 
 - 用户真正要找新 skill，改用 [../find-skills-local/SKILL.md](../find-skills-local/SKILL.md)
-- 用户真正要改自己写的 skill，改用 [../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)
+- 用户真正要改自己写的 skill，改用 `skill-creator`
 - 用户要做生态周检，改用 `codex-skill-ecosystem-audit`
 
 ## 边界
@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File "<agents-root>\market-skill-updater\scr
 ## 相关技能
 
 - 市场发现与复核：[../find-skills-local/SKILL.md](../find-skills-local/SKILL.md)
-- 本地自建 skill 维护：[../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)
+- 本地自建 skill 维护：`skill-creator`
 - 自建 skill 运行复盘：[../jineng-fupan/SKILL.md](../jineng-fupan/SKILL.md)
 - 系统安装基线：[`skill-installer`](%USERPROFILE%/.codex/skills/.system/skill-installer/SKILL.md)
 

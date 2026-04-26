@@ -70,7 +70,7 @@ python scripts/retro_scan.py mark-action --reports-root <agents-root>/reports/sk
 ## 相关技能
 
 - Codex 工作流教练：[../codex-workflow-coach/SKILL.md](../codex-workflow-coach/SKILL.md)
-- 本地 skill 维护：[../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)
+- 本地 skill 维护：`skill-creator`
 
 ## 维护
 

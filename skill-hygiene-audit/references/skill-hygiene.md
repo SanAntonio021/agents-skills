@@ -2,79 +2,72 @@
 
 ## Purpose
 
-维护 synced skill 目录的整洁、单一真源和可路由性，避免重复副本、路径漂移和职责混乱。
+维护本地 skill 环境的一致性，避免把“源码目录”“同步目录”“运行时入口”混成一层，最后查不清到底哪里出了问题。
 
-## Current Layout
+## Layers to separate
 
-当前有效目录模型是：
+在这台机器上，排查 skill 问题时默认先分四层：
 
-- `<agents-root>\skills\custom`
-- `<agents-root>\skills\vendor`
-- `<agents-root>\skills\archive`
-- `<agents-root>\skills\docs`
+- `C:\Users\SanAn\.codex\skills`
+  运行时入口。这里面有什么，才算当前真的加载了什么。
+- `C:\Users\SanAn\.cc-switch\skills`
+  同步目录。这里更新了，不代表运行时一定已经生效。
+- `C:\Users\SanAn\.cc-switch\cc-switch.db`
+  cc-switch 的记录层。面板显示名和目录名要一起看。
+- `D:\BaiduSyncdisk\.agents\agents-skills-src`
+  源码目录。以后该改哪份，看这里；但不要把它当成当前已加载列表。
 
-含义分别是：
+## What counts as loaded
 
-- `custom`：用户自建、当前活跃
-- `vendor`：下载或官方来源，保留上游
-- `archive`：停用、备份、迁移保留
-- `docs`：说明、审计、迁移记录，不参与 skill 路由
+- 只有运行时入口里的 skill，才算当前已加载。
+- 源码目录和同步目录都只是背景信息，不能直接拿来报“当前冲突”。
+- cc-switch 面板里显示的名字，不等于磁盘目录名。
+- 同步下来了但没启用时，`C:\Users\SanAn\.codex\skills` 里可能根本没有对应入口。
 
-## Hygiene Rules
+## Main finding types
 
-1. 活跃 skill 只放在 `custom/` 或 `vendor/`。
-2. 根目录不再新增活跃 skill 文件夹。
-3. `docs/` 只放文档，不放可路由 skill。
-4. `archive/` 默认不参与路由，不把归档误当活跃来源。
-5. `vendor` 只归类，不默认改内容；本地收口放在 `custom`。
+- `真冲突`
+  两个或多个当前活跃 skill 的 `SKILL.md` 里，`name:` 一样或归一化后一样。
+- `名字漂移`
+  目录名、数据库里的 `directory`、数据库里的显示名，和 `SKILL.md` 里的 `name:` 对不上。
+- `路径漂移`
+  文本里的本地路径或相对引用已经失效。
+- `结构问题`
+  skill 放在不该放的位置，或工作区快照、文档目录混进活跃树。
+- `空壳/破损项`
+  缺 `SKILL.md`、frontmatter 为空、正文为空。
 
-## Duplicate Handling
+## Check order
 
-发现重复 skill 时，按这个顺序处理：
+默认按这个顺序查：
 
-1. 先判断是否真重复，还是“vendor 基座 + custom 包装层”。
-2. 如果只是包装关系，保留两层，不合并。
-3. 如果是同一 skill 的多份活跃副本，只保留一个真源。
-4. 被淘汰的副本优先归档，不静默删除历史痕迹。
+1. 先看 `C:\Users\SanAn\.codex\skills`
+2. 再看 `C:\Users\SanAn\.cc-switch\skills`
+3. 再看 `C:\Users\SanAn\.cc-switch\cc-switch.db`
+4. 最后再看 `D:\BaiduSyncdisk\.agents\agents-skills-src` 和 GitHub 远端
 
-## Naming Rules
+如果用户问的是“为什么现在没生效”，不要一上来就看 GitHub。
 
-- 自建 skill 使用语义化 kebab-case
-- 不用 `_name`、`final2`、日期堆叠名这类维护性差的名字
-- `vendor` 名称尽量跟随上游
-- skill 名称描述功能，不描述来源
+## Common mistakes
 
-## Routing Hygiene
+- 把源码目录当成当前已加载 skill 列表
+- 把 cc-switch 面板显示名当成磁盘目录名
+- 看到同步目录更新了，就以为运行时已经生效
+- 把“名字不一致”直接说成“运行时冲突”
+- 没先看运行时入口，就开始猜 GitHub 没更新
 
-- 默认优先级是 `custom > vendor > system`
-- 普通任务不要先跑 skill 深搜
-- 只有现有 synced skills 不够时，才进入 `find-skills-local`
-- `agent-maintenance-handbook` 和 `zixun-pipan-zhibi` 默认只在显式触发时进入
+## Reporting
 
-## Root Hygiene
+汇报时优先按这个顺序说：
 
-`<agents-root>\skills` 根目录应尽量只保留：
-
-- `README.md`
-- `CONVENTIONS.md`
-- `custom/`
-- `vendor/`
-- `archive/`
-- `docs/`
-
-其余散落文档优先下沉到 `docs/`。
-
-## Maintenance Triggers
-
-出现以下情况时，应做一次 hygiene 复核：
-
-- 新增或下载了多份 skill
-- 移动、重命名、归档了 skill
-- 目录根部又出现散落文件或活跃 skill
-- 某个 skill 的职责开始与相邻 skill 明显重叠
-- 发现旧路径引用、空壳目录或遗留副本
+- 当前活跃 skill
+- 真冲突
+- 名字漂移
+- 路径漂移
+- 空壳或破损项
+- 建议动作
 
 ## Maintenance
 
-- 本文件只定义目录卫生和归类卫生，不定义单个 skill 的业务规则。
-- 若目录模型变化，优先更新本文件和 `CONVENTIONS.md`，不要靠零碎补丁维持。
+- 本文件只定义“怎么排查 skill 层级和同步链路”，不定义单个 skill 的业务规则。
+- 如果路径、同步方式或启用链路变了，先更新这份文件和脚本，再改 `SKILL.md`。

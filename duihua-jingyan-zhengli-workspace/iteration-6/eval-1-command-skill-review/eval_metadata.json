@@ -1,0 +1,14 @@
+﻿{
+    "eval_id":  1,
+    "eval_name":  "command-skill-review",
+    "prompt":  "帮我把这轮对话整理一下。我们刚才一直在修 PowerShell 路径、引号和 UTF-8 编码判断，这些经验看起来更像该写进现有的命令类 skill。先别改文件，先告诉我这次更适合怎么处理，并给我一个审查稿。",
+    "assertions":  [
+                       "输出明确给出四个结论之一，而不是只泛泛讨论。",
+                       "输出说明本地有没有类似 skill。",
+                       "输出说明外面有没有类似 skill。",
+                       "输出把这次结果处理为修改现有 skill，而不是直接新建。",
+                       "如果建议修改现有 skill，输出把 `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` 源码目录当成推荐修改目标，而不是 `C:\\Users\\SanAn\\.cc-switch\\skills\\...` 同步产物。",
+                       "输出给出至少两条修改现有 skill 的建议。",
+                       "输出包含能交给 skill-creator 的审查稿核心字段。"
+                   ]
+}

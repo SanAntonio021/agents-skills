@@ -1,0 +1,63 @@
+{
+  "expectations": [
+    {
+      "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+      "passed": true,
+      "evidence": "???????? skill???????????? skill?"
+    },
+    {
+      "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+      "passed": true,
+      "evidence": "???????????"
+    },
+    {
+      "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+      "passed": true,
+      "evidence": "????????????? skill?"
+    },
+    {
+      "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+      "passed": true,
+      "evidence": "?????????"
+    },
+    {
+      "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+      "passed": true,
+      "evidence": "?????????????????"
+    },
+    {
+      "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+      "passed": true,
+      "evidence": "??????????????? skill??"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": 0,
+    "total_steps": 0,
+    "errors_encountered": 0,
+    "output_chars": 1690,
+    "transcript_chars": 1815
+  },
+  "timing": {
+    "executor_duration_seconds": 0.0,
+    "grader_duration_seconds": 0.0,
+    "total_duration_seconds": 0.0
+  },
+  "claims": [],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "??????????????"
+  }
+}

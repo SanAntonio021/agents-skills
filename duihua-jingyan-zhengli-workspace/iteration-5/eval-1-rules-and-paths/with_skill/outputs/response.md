@@ -1,2 +1,0 @@
-我已经看了 `D:\BaiduSyncdisk\.agents\AGENTS.md`、`D:\BaiduSyncdisk\.agents\agents-skills-src\duihua-jingyan-zhengli\SKILL.md`，也对照了 OpenAI 官方的 `AGENTS.md` 和 skills 文档。  
-我现在的默认理解是：你这次不是要我立刻改 `D:\BaiduSyncdisk\.agents\agents-skills-src\duihua-jingyan-zhengli\SKILL.md`，而是先想彻底搞清楚 `AGENTS.md / CLAUDE.md / GEMINI.md`，以及 `C:\Users\SanAn\.cc-switch\skills`、`C:\Users\SanAn\.codex\skills`、`D:\BaiduSyncdisk\.agents\agents-skills-src` 这几处各自是什么、哪个才是当前实际生效入口、以后该改哪一处，避免改错地方。这个理解对不对？

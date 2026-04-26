@@ -1,6 +1,0 @@
-[
-  "With-skill runs pass all 23 expectations; old_skill misses 11 of 23, so the new skill is materially more complete on this eval set.",
-  "Eval 4 is the strongest discriminator because only the new skill covers post-edit closure and skill-creator compliance audit.",
-  "Time metrics are unavailable in this round, so wall-clock comparisons are not meaningful.",
-  "Token figures are output-size proxies from grading artifacts, not true model token telemetry."
-]

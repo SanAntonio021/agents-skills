@@ -1,4 +1,0 @@
-interface:
-  display_name: "对话经验提取"
-  short_description: "从当前对话提炼经验并判断是否值得做成 skill"
-  default_prompt: "Use $duihua-jingyan-tiqu to extract reusable lessons from this chat, check local and external overlap, and decide whether to create, extend, or skip a skill."

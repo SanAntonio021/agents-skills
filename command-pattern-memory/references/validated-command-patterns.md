@@ -16,6 +16,7 @@ Read only the nearest matching reference instead of loading the whole library.
 - Batch CSV text repair with UTF-8 BOM preservation: read [csv-rewrite-utf8.md](csv-rewrite-utf8.md)
 - Search, traversal, and text matching: read [search-and-traversal.md](search-and-traversal.md)
 - Archive extraction and native file operations: read [archive-and-file-ops.md](archive-and-file-ops.md)
+- Rule file sync checks, symlink repair, and temporary copy sync on Windows: read [rule-file-sync-and-symlink.md](rule-file-sync-and-symlink.md)
 - Tool discovery and preflight checks: read [tool-discovery.md](tool-discovery.md)
 - GitHub repo subtree download via Contents API when clone-based install fails: read [github-contents-api-download.md](github-contents-api-download.md)
 - Word COM `gen_py` cache recovery for `pywin32`: read [word-com-genpy-recovery.md](word-com-genpy-recovery.md)

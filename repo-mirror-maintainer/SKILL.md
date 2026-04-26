@@ -55,7 +55,7 @@ python <agents-root>\repo-mirror-maintainer\scripts\manage_repo_mirrors.py sync 
 
 ## 相关技能
 
-- 本地 skill 维护：[../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)
+- 本地 skill 维护：`skill-creator`
 - 市场 skill 更新：[../market-skill-updater/SKILL.md](../market-skill-updater/SKILL.md)
 - 维护规则总览：[../agent-maintenance-handbook/SKILL.md](../agent-maintenance-handbook/SKILL.md)
 

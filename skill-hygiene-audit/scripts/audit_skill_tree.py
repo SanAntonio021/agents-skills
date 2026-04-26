@@ -9,9 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
 
-RESERVED_ROOT_DIRS = {"archive", "custom", "docs", "vendor"}
-ACTIVE_SCOPES = {"custom", "vendor", "root"}
+
+SEGMENTED_ROOT_DIRS = {"archive", "custom", "docs", "vendor"}
+SYSTEM_CONTAINER_DIRS = {".system", "codex-primary-runtime"}
+RESERVED_ROOT_DIRS = SEGMENTED_ROOT_DIRS | SYSTEM_CONTAINER_DIRS
+ACTIVE_SCOPES = {"custom", "vendor", "root_flat", "root_legacy", "system", "runtime_bundle"}
 BODY_DUPLICATE_THRESHOLD = 0.82
 OVERLAP_THRESHOLD = 0.65
 DESCRIPTION_COMPARE_MAX = 1200
@@ -35,6 +39,7 @@ FENCED_CODE_BLOCK_PATTERN = re.compile(r"```.*?```", re.DOTALL)
 ABSOLUTE_PATH_PATTERN = re.compile(
     r"(?<![A-Za-z])(?P<path>(?:[A-Za-z]:[\\/]|[A-Za-z]:/)[^`<>\r\n\t )\]]+)"
 )
+SKIP_WALK_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv"}
 
 
 @dataclass(frozen=True)
@@ -72,7 +77,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def split_frontmatter(text: str) -> tuple[dict[str, str], str, bool]:
+def split_frontmatter(text: str) -> tuple[dict[str, Any], str, bool]:
     if not text.startswith("---"):
         return {}, text, False
 
@@ -89,12 +94,17 @@ def split_frontmatter(text: str) -> tuple[dict[str, str], str, bool]:
     if closing_index is None:
         return {}, text, False
 
-    frontmatter: dict[str, str] = {}
-    for raw_line in lines[1:closing_index]:
-        if ":" not in raw_line:
-            continue
-        key, value = raw_line.split(":", 1)
-        frontmatter[key.strip()] = value.strip()
+    raw_frontmatter = "\n".join(lines[1:closing_index])
+    try:
+        loaded = yaml.safe_load(raw_frontmatter) or {}
+        frontmatter = loaded if isinstance(loaded, dict) else {}
+    except yaml.YAMLError:
+        frontmatter = {}
+        for raw_line in lines[1:closing_index]:
+            if ":" not in raw_line:
+                continue
+            key, value = raw_line.split(":", 1)
+            frontmatter[key.strip()] = value.strip()
 
     body = "\n".join(lines[closing_index + 1 :]).strip()
     return frontmatter, body, True
@@ -109,6 +119,19 @@ def normalize_text(value: str) -> str:
     no_links = LOCAL_LINK_PATTERN.sub(lambda match: f" {match.group(1)} ", no_code)
     lowered = no_links.lower()
     return re.sub(r"[^a-z0-9\u4e00-\u9fff]+", " ", lowered).strip()
+
+
+def detect_layout_mode(root: Path) -> str:
+    if any((root / name).is_dir() for name in SEGMENTED_ROOT_DIRS):
+        return "segmented"
+    return "flat"
+
+
+def safe_resolve(path: Path) -> Path:
+    try:
+        return path.resolve()
+    except OSError:
+        return path
 
 
 def tokenize_text(value: str, limit: int) -> frozenset[str]:
@@ -161,6 +184,23 @@ def extract_local_targets(text: str) -> tuple[str, ...]:
     return tuple(found)
 
 
+def walk_tree(root: Path) -> list[tuple[Path, list[str], list[str]]]:
+    walked: list[tuple[Path, list[str], list[str]]] = []
+    seen: set[Path] = set()
+
+    for current_root, dirnames, filenames in os.walk(root, followlinks=True):
+        current_path = Path(current_root)
+        resolved = safe_resolve(current_path)
+        if resolved in seen:
+            dirnames[:] = []
+            continue
+        seen.add(resolved)
+        dirnames[:] = [name for name in dirnames if name not in SKIP_WALK_DIRS]
+        walked.append((current_path, list(dirnames), list(filenames)))
+
+    return walked
+
+
 def discover_vendor_bundles(root: Path) -> set[str]:
     vendor_root = root / "vendor"
     bundles: set[str] = set()
@@ -178,29 +218,44 @@ def discover_vendor_bundles(root: Path) -> set[str]:
     return bundles
 
 
-def classify_scope(root: Path, skill_dir: Path, vendor_bundles: set[str]) -> str:
+def classify_scope(root: Path, skill_dir: Path, vendor_bundles: set[str], layout_mode: str) -> str:
     relative = skill_dir.relative_to(root)
     parts = relative.parts
     if not parts:
-        return "root"
+        return "root_flat"
 
     head = parts[0].lower()
-    if head == "custom":
-        return "custom" if len(parts) == 2 else "nested"
-    if head == "vendor":
-        if len(parts) == 2:
-            return "vendor"
-        if len(parts) == 3 and parts[1].lower() in vendor_bundles:
-            return "vendor"
-        return "nested"
+    if layout_mode == "segmented":
+        if head == "custom":
+            return "custom" if len(parts) == 2 else "nested"
+        if head == "vendor":
+            if len(parts) == 2:
+                return "vendor"
+            if len(parts) == 3 and parts[1].lower() in vendor_bundles:
+                return "vendor"
+            return "nested"
+        if head == "archive":
+            return "archive" if len(parts) == 2 else "archive_nested"
+        if head == "docs":
+            return "docs"
+        if head == ".system":
+            return "system" if len(parts) == 2 else "nested"
+        if head == "codex-primary-runtime":
+            return "runtime_bundle" if len(parts) == 2 else "nested"
+        return "root_legacy" if len(parts) == 1 else "nested"
+
     if head == "archive":
-        return "archive" if len(parts) == 2 else "archive_nested"
+        return "archive" if len(parts) == 1 else "archive_nested"
     if head == "docs":
         return "docs"
-    return "root" if len(parts) == 1 else "nested"
+    if head == ".system":
+        return "system" if len(parts) == 2 else "nested"
+    if head == "codex-primary-runtime":
+        return "runtime_bundle" if len(parts) == 2 else "nested"
+    return "root_flat" if len(parts) == 1 else "nested"
 
 
-def load_skill_record(root: Path, skill_md: Path, vendor_bundles: set[str]) -> SkillRecord:
+def load_skill_record(root: Path, skill_md: Path, vendor_bundles: set[str], layout_mode: str) -> SkillRecord:
     text = skill_md.read_text(encoding="utf-8")
     frontmatter, body, has_frontmatter = split_frontmatter(text)
     name = frontmatter.get("name", skill_md.parent.name).strip()
@@ -210,10 +265,10 @@ def load_skill_record(root: Path, skill_md: Path, vendor_bundles: set[str]) -> S
     body_is_empty = not body.strip()
     frontmatter_is_empty = has_frontmatter and not any(value.strip() for value in frontmatter.values())
     return SkillRecord(
-        path=skill_md.parent.resolve(),
-        skill_md=skill_md.resolve(),
-        scope=classify_scope(root, skill_md.parent.resolve(), vendor_bundles),
-        relative_path=skill_md.parent.resolve().relative_to(root.resolve()).as_posix(),
+        path=skill_md.parent,
+        skill_md=skill_md,
+        scope=classify_scope(root, skill_md.parent, vendor_bundles, layout_mode),
+        relative_path=skill_md.parent.relative_to(root).as_posix(),
         name=name,
         normalized_name=normalize_name(name or skill_md.parent.name),
         description=description,
@@ -231,16 +286,17 @@ def load_skill_record(root: Path, skill_md: Path, vendor_bundles: set[str]) -> S
 
 def discover_skill_records(root: Path) -> list[SkillRecord]:
     vendor_bundles = discover_vendor_bundles(root)
+    layout_mode = detect_layout_mode(root)
     skill_paths: list[Path] = []
-    for current_root, _, filenames in os.walk(root, followlinks=False):
+    for current_root, _, filenames in walk_tree(root):
         if "SKILL.md" in filenames:
             skill_paths.append(Path(current_root) / "SKILL.md")
-    records = [load_skill_record(root, path, vendor_bundles) for path in skill_paths]
+    records = [load_skill_record(root, path, vendor_bundles, layout_mode) for path in skill_paths]
     return sorted(records, key=lambda item: item.relative_path)
 
 
 def tree_contains_skill_md(path: Path) -> bool:
-    for _, _, filenames in os.walk(path, followlinks=False):
+    for _, _, filenames in walk_tree(path):
         if "SKILL.md" in filenames:
             return True
     return False
@@ -267,20 +323,20 @@ def is_nonstandard_skill_entry(path: Path) -> bool:
 def resolve_target(base_dir: Path, raw_target: str) -> Path:
     cleaned = strip_anchor(raw_target)
     if re.match(r"^[A-Za-z]:[\\/]", cleaned) or re.match(r"^[A-Za-z]:/", cleaned):
-        return Path(cleaned).resolve()
-    return (base_dir / cleaned).resolve()
+        return safe_resolve(Path(cleaned))
+    return safe_resolve(base_dir / cleaned)
 
 
 def scan_directory_hygiene(root: Path, records: list[SkillRecord]) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     for record in records:
-        if record.scope == "root":
+        if record.scope == "root_legacy":
             findings.append(
                 {
                     "kind": "root_level_active_skill",
                     "path": str(record.path),
                     "relative_path": record.relative_path,
-                    "reason": "根目录存在活跃或迁移遗留 skill。",
+                    "reason": "分层目录模式下，根目录不应直接放活跃 skill。",
                     "suggested_action": "人工复核",
                     "blocking": True,
                 }
@@ -302,7 +358,7 @@ def scan_directory_hygiene(root: Path, records: list[SkillRecord]) -> list[dict[
                     "kind": "nested_skill_layout",
                     "path": str(record.path),
                     "relative_path": record.relative_path,
-                    "reason": "活跃 skill 不应嵌套在更深层级。",
+                    "reason": "skill 目录嵌套过深，或工作区快照混进了活跃树。",
                     "suggested_action": "人工复核",
                     "blocking": True,
                 }
@@ -365,7 +421,8 @@ def scan_broken_items(
     known_vendor_variants: set[str],
 ) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
-    active_bases = [root / "custom", root / "vendor"]
+    layout_mode = detect_layout_mode(root)
+    active_bases = [root / "custom", root / "vendor"] if layout_mode == "segmented" else []
     seen_paths = {record.path for record in records}
 
     for base in active_bases:
@@ -390,6 +447,28 @@ def scan_broken_items(
                         "blocking": True,
                     }
                 )
+
+    if layout_mode == "flat":
+        for container_name in SYSTEM_CONTAINER_DIRS:
+            container = root / container_name
+            if not container.is_dir():
+                continue
+            for child in sorted(container.iterdir(), key=lambda item: item.name.lower()):
+                if not child.is_dir() or child.name.startswith(".") or child.name.startswith("__"):
+                    continue
+                if child in seen_paths:
+                    continue
+                if looks_skillish(child):
+                    findings.append(
+                        {
+                            "kind": "container_missing_skill_md",
+                            "path": str(child),
+                            "relative_path": child.relative_to(root).as_posix(),
+                            "reason": "系统容器下的目录像 skill，但缺少直接可解析的 `SKILL.md`。",
+                            "suggested_action": "人工复核",
+                            "blocking": True,
+                        }
+                    )
 
     for child in sorted(root.iterdir(), key=lambda item: item.name.lower()):
         if not child.is_dir():
@@ -443,6 +522,31 @@ def scan_broken_items(
     return sorted(unique.values(), key=lambda item: (item["kind"], item["relative_path"]))
 
 
+def scan_name_drift(records: list[SkillRecord]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    for record in records:
+        if not record.is_active or record.scope == "runtime_bundle":
+            continue
+        folder_name = record.path.name
+        if normalize_name(folder_name) == record.normalized_name:
+            continue
+        findings.append(
+            {
+                "skill": record.relative_path,
+                "folder_name": folder_name,
+                "declared_name": record.name,
+                "reason": "目录名和 `SKILL.md` 里的 `name:` 对不上。",
+                "suggested_action": "人工复核",
+            }
+        )
+
+    unique = {
+        (item["skill"], item["folder_name"], item["declared_name"]): item
+        for item in findings
+    }
+    return sorted(unique.values(), key=lambda item: item["skill"])
+
+
 def references_other_skill(custom_skill: SkillRecord, vendor_skill: SkillRecord) -> bool:
     custom_text = f"{custom_skill.description}\n{custom_skill.body}".lower()
     vendor_tokens = {
@@ -454,9 +558,15 @@ def references_other_skill(custom_skill: SkillRecord, vendor_skill: SkillRecord)
     if any(token and token in custom_text for token in vendor_tokens):
         return True
 
+    vendor_candidates = {
+        vendor_skill.skill_md,
+        vendor_skill.path,
+        safe_resolve(vendor_skill.skill_md),
+        safe_resolve(vendor_skill.path),
+    }
     for target in custom_skill.local_targets:
         resolved = resolve_target(custom_skill.path, target)
-        if resolved == vendor_skill.skill_md or resolved == vendor_skill.path:
+        if resolved in vendor_candidates:
             return True
     return False
 
@@ -565,6 +675,7 @@ def build_counts(
     records: list[SkillRecord],
     directory_hygiene: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
+    name_drift: list[dict[str, Any]],
     overlaps: list[dict[str, Any]],
     path_drift: list[dict[str, Any]],
     broken_items: list[dict[str, Any]],
@@ -576,6 +687,7 @@ def build_counts(
         "total_discovered_skill_dirs": len(records),
         "directory_hygiene": len(directory_hygiene),
         "duplicate_candidates": len(duplicates),
+        "name_drift": len(name_drift),
         "overlap_candidates": len(overlaps),
         "path_drift": len(path_drift),
         "broken_items": len(broken_items),
@@ -587,6 +699,7 @@ def build_counts(
 def build_suggested_actions(
     directory_hygiene: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
+    name_drift: list[dict[str, Any]],
     overlaps: list[dict[str, Any]],
     path_drift: list[dict[str, Any]],
     broken_items: list[dict[str, Any]],
@@ -605,6 +718,14 @@ def build_suggested_actions(
             {
                 "label": item["suggested_action"],
                 "subject": f"{item['left']} <-> {item['right']}",
+                "reason": item["reason"],
+            }
+        )
+    for item in name_drift:
+        actions.append(
+            {
+                "label": item["suggested_action"],
+                "subject": item["skill"],
                 "reason": item["reason"],
             }
         )
@@ -630,6 +751,7 @@ def build_suggested_actions(
 def build_no_action_notes(
     directory_hygiene: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
+    name_drift: list[dict[str, Any]],
     overlaps: list[dict[str, Any]],
     path_drift: list[dict[str, Any]],
     broken_items: list[dict[str, Any]],
@@ -648,9 +770,11 @@ def build_no_action_notes(
             f"[保留] {item['relative_path']}: {wrappers} 显式引用了非标准上游入口 {entry_files}。"
         )
     if not directory_hygiene:
-        notes.append("目录卫生：未发现根目录遗留活跃 skill、`docs/` 误放 skill 或异常嵌套。")
+        notes.append("目录卫生：未发现异常嵌套、`docs/` 误放 skill 或分层不一致。")
     if not duplicates:
         notes.append("重复候选：未发现满足重复阈值的活跃 skill 对。")
+    if not name_drift:
+        notes.append("名字漂移：未发现目录名和 `name:` 对不上的活跃 skill。")
     if not overlaps:
         notes.append("边界交叉候选：未发现满足交叉阈值的活跃 skill 对。")
     if not path_drift:
@@ -675,6 +799,13 @@ def render_duplicates(items: list[dict[str, Any]]) -> list[str]:
     return [
         f"- `{item['left']}` <-> `{item['right']}`: {item['reason']} "
         f"(body={item['body_score']:.2f}, desc={item['description_score']:.2f}) 建议：`{item['suggested_action']}`"
+        for item in items
+    ]
+
+
+def render_name_drift(items: list[dict[str, Any]]) -> list[str]:
+    return [
+        f"- `{item['skill']}`: 目录名是 `{item['folder_name']}`，`name:` 是 `{item['declared_name']}`。"
         for item in items
     ]
 
@@ -716,6 +847,7 @@ def render_summary_counts(counts: dict[str, int]) -> list[str]:
         f"- 阻塞项：`{counts['blocking_items']}`",
         f"- 目录卫生：`{counts['directory_hygiene']}`",
         f"- 重复候选：`{counts['duplicate_candidates']}`",
+        f"- 名字漂移：`{counts['name_drift']}`",
         f"- 边界交叉候选：`{counts['overlap_candidates']}`",
         f"- 路径漂移：`{counts['path_drift']}`",
         f"- 空壳/破损项：`{counts['broken_items']}`",
@@ -723,13 +855,24 @@ def render_summary_counts(counts: dict[str, int]) -> list[str]:
     ]
 
 
+def render_active_skills(records: list[SkillRecord]) -> list[str]:
+    return [
+        f"- `{record.relative_path}` -> `name: {record.name}` (`{record.scope}`)"
+        for record in records
+        if record.is_active
+    ]
+
+
 def render_weekly_report(
     date_str: str,
     root: Path,
     reports_root: Path,
+    layout_mode: str,
+    records: list[SkillRecord],
     counts: dict[str, int],
     directory_hygiene: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
+    name_drift: list[dict[str, Any]],
     overlaps: list[dict[str, Any]],
     path_drift: list[dict[str, Any]],
     broken_items: list[dict[str, Any]],
@@ -739,10 +882,24 @@ def render_weekly_report(
     scope_lines = [
         f"- 扫描根目录：`{root}`",
         f"- 报告目录：`{reports_root}`",
-        "- 活跃来源：`custom/`、`vendor/`、迁移期根目录 skill",
-        "- `archive/` 只作辅助判断，不参与活跃路由",
-        "- `docs/` 不参与 skill 路由，但会检查是否误放 `SKILL.md`",
+        f"- 目录模型：`{layout_mode}`",
     ]
+    if layout_mode == "segmented":
+        scope_lines.extend(
+            [
+                "- 活跃来源：`custom/`、`vendor/` 和少量迁移遗留的根目录 skill",
+                "- `archive/` 只作辅助判断，不参与活跃路由",
+                "- `docs/` 不参与 skill 路由，但会检查是否误放 `SKILL.md`",
+            ]
+        )
+    else:
+        scope_lines.extend(
+            [
+                "- 顶层含 `SKILL.md` 的目录视为活跃 skill",
+                "- `.system/` 和 `codex-primary-runtime/` 视为系统容器",
+                "- 如果要判断“当前真的加载了什么”，优先拿运行时入口做扫描",
+            ]
+        )
     blocking_items = directory_hygiene + broken_items
     return f"""# Skill Hygiene Audit
 
@@ -756,13 +913,21 @@ def render_weekly_report(
 
 {render_list(render_summary_counts(counts))}
 
+## 当前活跃 skill
+
+{render_list(render_active_skills(records))}
+
 ## 阻塞项
 
 {render_list(render_directory_hygiene(blocking_items))}
 
-## 重复候选
+## 真重复候选
 
 {render_list(render_duplicates(duplicates))}
+
+## 名字漂移
+
+{render_list(render_name_drift(name_drift))}
 
 ## 边界交叉候选
 
@@ -803,6 +968,7 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
     root = root.resolve()
     reports_root = reports_root.resolve()
     reports_root.mkdir(parents=True, exist_ok=True)
+    layout_mode = detect_layout_mode(root)
     vendor_bundles = discover_vendor_bundles(root)
     records = discover_skill_records(root)
     vendor_entry_variants = discover_vendor_entry_variants(root, records)
@@ -811,11 +977,13 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
     directory_hygiene = scan_directory_hygiene(root, records)
     broken_items = scan_broken_items(root, records, vendor_bundles, known_vendor_variants)
     duplicates, overlaps, wrapper_exclusions = compare_active_pairs(records)
+    name_drift = scan_name_drift(records)
     path_drift = scan_path_drift(records)
     counts = build_counts(
         records,
         directory_hygiene,
         duplicates,
+        name_drift,
         overlaps,
         path_drift,
         broken_items,
@@ -824,6 +992,7 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
     suggested_actions = build_suggested_actions(
         directory_hygiene,
         duplicates,
+        name_drift,
         overlaps,
         path_drift,
         broken_items,
@@ -831,6 +1000,7 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
     no_action_notes = build_no_action_notes(
         directory_hygiene,
         duplicates,
+        name_drift,
         overlaps,
         path_drift,
         broken_items,
@@ -843,6 +1013,7 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
         "date": date_str,
         "root": str(root),
         "reports_root": str(reports_root),
+        "layout_mode": layout_mode,
         "counts": counts,
         "active_skills": [
             {
@@ -858,6 +1029,7 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
         "findings": {
             "directory_hygiene": directory_hygiene,
             "duplicate_candidates": duplicates,
+            "name_drift": name_drift,
             "overlap_candidates": overlaps,
             "path_drift": path_drift,
             "broken_items": broken_items,
@@ -874,9 +1046,12 @@ def scan(root: Path, reports_root: Path, date_str: str) -> dict[str, Path]:
         date_str,
         root,
         reports_root,
+        layout_mode,
+        records,
         counts,
         directory_hygiene,
         duplicates,
+        name_drift,
         overlaps,
         path_drift,
         broken_items,

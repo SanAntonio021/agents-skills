@@ -45,7 +45,7 @@ description: 维护当前本地智能体的底层规则、system prompt、skill 
 
 - 不作为普通业务 skill 使用。
 - 不直接承担网页端 prompt 设计，网页端场景改用 [../web-prompt-engineering/SKILL.md](../web-prompt-engineering/SKILL.md)。
-- 不直接替代本地 skill 创建与改写流程，相关工作改用 [../skill-creator-local/SKILL.md](../skill-creator-local/SKILL.md)。
+- 不直接替代本地 skill 创建与改写流程，相关工作改用 `skill-creator`。
 - 不把一次性项目经验、临时偏好或普通输出习惯写进这里。
 - 当已有独立 `custom` skill 能处理任务时，这里只保留治理与索引角色。
 

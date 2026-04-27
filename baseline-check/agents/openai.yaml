@@ -1,0 +1,4 @@
+interface:
+  display_name: "基线调研"
+  short_description: "按阶段推进项目基线研究和证据链补齐"
+  default_prompt: "Use $baseline-check to start, continue, or audit staged baseline research in the current project directory."

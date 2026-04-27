@@ -1,0 +1,4 @@
+interface:
+  display_name: "停稿审查"
+  short_description: "按 A/B/C 分级审查现有文稿并判断是否继续修改"
+  default_prompt: "Use $paper-review to review this draft with A/B/C severity, distinguish must-fix issues from style preferences, and decide whether further revision is still necessary."

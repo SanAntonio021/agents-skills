@@ -1,0 +1,1248 @@
+{
+  "metadata": {
+    "skill_name": "chat-notes",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-26T08:01:50Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 1734,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": false,
+          "evidence": "?????????????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "??????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 2338,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": false,
+          "evidence": "?????????????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "??????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 2307,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": false,
+          "evidence": "?????????????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "??????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 844,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1347,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1660,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2379,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2477,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2274,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 716,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": false,
+          "evidence": "???????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "???????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 1322,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": false,
+          "evidence": "???????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "???????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 1484,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": false,
+          "evidence": "???????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "???????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 3404,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "?????????description???????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 2518,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "?????????description???????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 1766,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff0c\u800c\u4e0d\u662f\u53ea\u6cdb\u6cdb\u8ba8\u8bba\u3002",
+          "passed": true,
+          "evidence": "?????????????? skill??"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5916\u9762\u6709\u6ca1\u6709\u7c7b\u4f3c skill\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u628a\u8fd9\u6b21\u7ed3\u679c\u5904\u7406\u4e3a\u4fee\u6539\u73b0\u6709 skill\uff0c\u800c\u4e0d\u662f\u76f4\u63a5\u65b0\u5efa\u3002",
+          "passed": true,
+          "evidence": "????????? skill????????"
+        },
+        {
+          "text": "\u5982\u679c\u5efa\u8bae\u4fee\u6539\u73b0\u6709 skill\uff0c\u8f93\u51fa\u628a `D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\...` \u6e90\u7801\u76ee\u5f55\u5f53\u6210\u63a8\u8350\u4fee\u6539\u76ee\u6807\uff0c\u800c\u4e0d\u662f `C:\\Users\\SanAn\\.cc-switch\\skills\\...` \u540c\u6b65\u4ea7\u7269\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7ed9\u51fa\u81f3\u5c11\u4e24\u6761\u4fee\u6539\u73b0\u6709 skill \u7684\u5efa\u8bae\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u80fd\u4ea4\u7ed9 skill-creator \u7684\u5ba1\u67e5\u7a3f\u6838\u5fc3\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "?????????description???????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1713,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1886,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 698,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u533a\u5206\u53ea\u5bf9\u5f53\u524d\u9879\u76ee\u6709\u7528\u7684\u7ecf\u9a8c\u548c\u8de8\u9879\u76ee\u4e5f\u6210\u7acb\u7684\u7ecf\u9a8c\u3002",
+          "passed": true,
+          "evidence": "??????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u76f4\u63a5\u5f00\u59cb\u4fee\u6539\u6587\u4ef6\u6216\u8fdb\u5165\u6b63\u5f0f\u521b\u5efa\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u91cc\u540c\u65f6\u89e3\u91ca\u4e86\u9879\u76ee\u76f8\u5173\u6027\u548c\u901a\u7528\u6027\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2425,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2464,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 1690,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u5148\u8bf4\u660e\u672c\u5730\u7c7b\u4f3c skill \u60c5\u51b5\uff0c\u518d\u8bf4\u660e\u516c\u5f00\u751f\u6001\u91cc\u7684\u76f8\u8fd1 skill \u60c5\u51b5\u3002",
+          "passed": true,
+          "evidence": "???????? skill???????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\u3002",
+          "passed": true,
+          "evidence": "???????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u7406\u7531\u80fd\u89e3\u91ca\u4e3a\u4ec0\u4e48\u662f\u65b0\u5efa\u3001\u4fee\u6539\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u6216\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "????????????? skill?"
+        },
+        {
+          "text": "\u8f93\u51fa\u6ca1\u6709\u8df3\u8fc7\u672c\u5730\u68c0\u67e5\u76f4\u63a5\u53ea\u8c08\u5916\u9762\u3002",
+          "passed": true,
+          "evidence": "?????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u628a `skill-creator-local`\u3001`find-skills-local` \u8fd9\u7c7b\u5386\u53f2\u6216\u76f8\u90bb\u5165\u53e3\u5f53\u6210\u5f53\u524d\u4e3b\u7ed3\u8bba\u91cc\u7684\u63a8\u8350\u76ee\u6807\u3002",
+          "passed": true,
+          "evidence": "?????????????????"
+        },
+        {
+          "text": "\u5728\u8fd9\u4e2a\u63d0\u793a\u91cc\uff0c\u5982\u679c\u672c\u5730\u5df2\u6709\u9ad8\u91cd\u5408 skill \u8986\u76d6\u4e3b\u6d41\u7a0b\uff0c\u8f93\u51fa\u4f18\u5148\u7ed9\u51fa `\u4fee\u6539\u73b0\u6709 skill`\uff0c\u800c\u4e0d\u662f\u9000\u56de `\u8fd9\u6b21\u4e0d\u6539`\u3002",
+          "passed": true,
+          "evidence": "??????????????? skill??"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 879,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": true,
+          "evidence": "???? skill-creator ??????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "?????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 1213,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": true,
+          "evidence": "???? skill-creator ??????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "?????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 3,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 1039,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4f1a\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u540e\u7684\u6536\u5c3e\u6d41\u7a0b\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u5ba1\u67e5\u7a3f\u3002",
+          "passed": true,
+          "evidence": "??????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5148\u6309\u5f53\u524d skill-creator \u8bf4\u660e\u8fd9\u6b21\u7ed3\u679c\u7b26\u4e0d\u7b26\u5408\u89c4\u8303\uff1b\u5982\u679c\u8fd8\u4e0d\u7b26\u5408\uff0c\u8f93\u51fa\u4f1a\u5148\u8865\u7f3a\u5185\u5bb9\u5e76\u518d\u68c0\u67e5\u4e00\u904d\uff0c\u800c\u4e0d\u662f\u53ea\u505c\u5728\u8bf4\u660e\u5dee\u8ddd\u3002",
+          "passed": true,
+          "evidence": "???? skill-creator ??????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u627e\u5bf9\u771f\u6b63\u627f\u8f7d\u6539\u52a8\u7684\u4ed3\u5e93\uff0c\u800c\u4e0d\u662f\u53ea\u770b\u5916\u9762\u7684\u603b\u76ee\u5f55\u3002",
+          "passed": true,
+          "evidence": "?????????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5148\u68c0\u67e5 git \u5206\u652f\u3001remote \u548c\u5de5\u4f5c\u533a\u72b6\u6001\u3002",
+          "passed": true,
+          "evidence": "????remote ?????????"
+        },
+        {
+          "text": "\u5982\u679c\u7528\u6237\u5df2\u7ecf\u660e\u786e\u540c\u610f\u540c\u4e00\u4ed3\u5e93\u91cc\u7684\u8fd9\u6279\u6539\u52a8\u4e00\u8d77\u63a8\uff0c\u8f93\u51fa\u4e0d\u4f1a\u518d\u628a\u5b83\u4eec\u6321\u6210\u65e0\u5173\u6539\u52a8\u3002",
+          "passed": true,
+          "evidence": "????????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4f1a\u5199\u660e\u5b9e\u9645\u51c6\u5907\u63d0\u4ea4\u6216\u63a8\u9001\u7684\u662f\u54ea\u4e2a\u4ed3\u5e93\u3002",
+          "passed": true,
+          "evidence": "???????????????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u5728 push \u6210\u529f\u6216\u8ba1\u5212 push \u540e\uff0c\u660e\u786e\u63d0\u9192\u7528\u6237\u53bb cc-switch \u624b\u52a8\u70b9\u4e00\u6b21\u201c\u68c0\u67e5\u66f4\u65b0\u201d\u3002",
+          "passed": true,
+          "evidence": "??????? cc-switch ????????"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u5c1d\u8bd5\u81ea\u52a8\u70b9\u51fb cc-switch GUI\u3002",
+          "passed": true,
+          "evidence": "???????? GUI?"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.933,
+        "stddev": 0.0703,
+        "min": 0.8571,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 1740.1667,
+        "stddev": 615.5763,
+        "min": 716,
+        "max": 2477
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 1807.9167,
+        "stddev": 793.9352,
+        "min": 698,
+        "max": 3404
+      }
+    },
+    "delta": {
+      "pass_rate": "-0.07",
+      "time_seconds": "+0.0",
+      "tokens": "-68"
+    }
+  },
+  "notes": []
+}

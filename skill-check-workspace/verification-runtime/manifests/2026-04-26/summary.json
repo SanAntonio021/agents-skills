@@ -1,0 +1,355 @@
+{
+  "active_skills": [
+    {
+      "description": "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas.",
+      "name": "imagegen",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\imagegen",
+      "relative_path": ".system/imagegen",
+      "scope": "system"
+    },
+    {
+      "description": "Use when the user asks how to build with OpenAI products or APIs and needs up-to-date official documentation with citations, help choosing the latest model for a use case, or model upgrade and prompt-upgrade guidance; prioritize OpenAI docs MCP tools, use bundled references only as helper context, and restrict any fallback browsing to official OpenAI domains.",
+      "name": "openai-docs",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\openai-docs",
+      "relative_path": ".system/openai-docs",
+      "scope": "system"
+    },
+    {
+      "description": "Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can edit before publishing or testing. Use when Codex needs to create a new local plugin, add optional plugin structure, or generate or update repo-root `.agents/plugins/marketplace.json` entries for plugin ordering and availability metadata.",
+      "name": "plugin-creator",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\plugin-creator",
+      "relative_path": ".system/plugin-creator",
+      "scope": "system"
+    },
+    {
+      "description": "Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations.",
+      "name": "skill-creator",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator",
+      "relative_path": ".system/skill-creator",
+      "scope": "system"
+    },
+    {
+      "description": "Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos).",
+      "name": "skill-installer",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-installer",
+      "relative_path": ".system/skill-installer",
+      "scope": "system"
+    },
+    {
+      "description": "去除文本中的 AI 生成痕迹。适用于编辑或审阅文本，使其听起来更自然、更像人类书写。\n基于维基百科的\"AI 写作特征\"综合指南。检测并修复以下模式：夸大的象征意义、\n宣传性语言、以 -ing 结尾的肤浅分析、模糊的归因、破折号过度使用、三段式法则、\nAI 词汇、否定式排比、过多的连接性短语。",
+      "name": "humanizer-zh",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\Humanizer-zh",
+      "relative_path": "Humanizer-zh",
+      "scope": "root_flat"
+    },
+    {
+      "description": "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.",
+      "name": "brainstorming",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\brainstorming",
+      "relative_path": "brainstorming",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. Supports intensity levels: lite, full (default), ultra, wenyan-lite, wenyan-full, wenyan-ultra. Use when user says \"caveman mode\", \"talk like caveman\", \"use caveman\", \"less tokens\", \"be brief\", or invokes /caveman. Also auto-triggers when token efficiency is requested.",
+      "name": "caveman",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\caveman",
+      "relative_path": "caveman",
+      "scope": "root_flat"
+    },
+    {
+      "description": "复用已验证的 Windows 和 PowerShell 命令形态，减少路径、引号、编码和外部 CLI 写错的概率。Use when the task likely requires `shell_command`, PowerShell, or a Windows CLI command, especially for path handling, encoding, search, archive, and repeated high-risk command scenarios; consult this before `terminal-safe` when a reusable command pattern may already exist.",
+      "name": "command-memory",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\command-memory",
+      "relative_path": "command-memory",
+      "scope": "root_flat"
+    },
+    {
+      "description": "阅读单篇论文并生成中文客观总结，默认在当前工作区根目录下新建 `paper-summaries` 目录并落一份 `.md` 文件。Use when 用户提供单篇论文 PDF、DOI、URL、题目或已有全文，要求做单篇论文总结、文献笔记、论文卡片或中文整理；prefer this over `sci-writing`、`tooluniverse-literature-deep-research` 和其他多篇综述流程 when 目标只是整理单篇论文。",
+      "name": "paper-summary",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\paper-summary",
+      "relative_path": "paper-summary",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files). Triggers include: any mention of 'Word doc', 'word document', '.docx', or requests to produce professional documents with formatting like tables of contents, headings, page numbers, or letterheads. Also use when extracting or reorganizing content from .docx files, inserting or replacing images in documents, performing find-and-replace in Word files, working with tracked changes or comments, or converting content into a polished Word document. If the user asks for a 'report', 'memo', 'letter', 'template', or similar deliverable as a Word or .docx file, use this skill. Do NOT use for PDFs, spreadsheets, Google Docs, or general coding tasks unrelated to document generation.",
+      "name": "docx",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\docx",
+      "relative_path": "docx",
+      "scope": "root_flat"
+    },
+    {
+      "description": "从当前对话里提炼可复用经验，判断这些经验更适合写进当前项目、用于修改现有 skill，还是整理成新 skill。只要用户想“把这段对话整理一下”“看看值不值得做成 skill”“判断该写到项目里还是 skill 里”，就使用这个 skill。先查当前会话和本地有没有类似 skill，再用 `find-skills` 看外面有没有相近做法；在用户批准前，只交付审查稿，不直接改 skill。如果这次已经正式改完了 skill，还要继续做收尾：先按 `skill-creator` 的要求对照检查，再在条件安全时只推送本次相关改动，并提醒用户去 cc-switch 手动点一次“检查更新”。",
+      "name": "chat-notes",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\chat-notes",
+      "relative_path": "chat-notes",
+      "scope": "root_flat"
+    },
+    {
+      "description": "中文工程申报书和工程课题写作与修订，也可由“工程申报”“工程本子”“gongcheng-shenbao”“gongcheng-benzi”唤起。Use when 任务已经明显属于工程申报、工程建设、产业化应用、软建设机制、卡点陈述或研发需求写作。",
+      "name": "project-writing",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\project-writing",
+      "relative_path": "project-writing",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
+      "name": "find-skills",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\find-skills",
+      "relative_path": "find-skills",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.",
+      "name": "frontend-design",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\frontend-design",
+      "relative_path": "frontend-design",
+      "scope": "root_flat"
+    },
+    {
+      "description": "分阶段执行项目基线调研，包含 sample-first 取样、证据链补齐和用户复核关口。Use when 用户要启动、继续或审查一项持续性的项目基线研究，而不是做一次性的零散查询。",
+      "name": "baseline-check",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\baseline-check",
+      "relative_path": "baseline-check",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multiple PDFs into one, splitting PDFs apart, rotating pages, adding watermarks, creating new PDFs, filling PDF forms, encrypting/decrypting PDFs, extracting images, and OCR on scanned PDFs to make them searchable. If the user mentions a .pdf file or asks to produce one, use this skill.",
+      "name": "pdf",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\pdf",
+      "relative_path": "pdf",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Use this skill any time a .pptx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates, layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx filename, regardless of what they plan to do with the content afterward. If a .pptx file needs to be opened, created, or touched, use this skill.",
+      "name": "pptx",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\pptx",
+      "relative_path": "pptx",
+      "scope": "root_flat"
+    },
+    {
+      "description": "让你的 AI 不敢摆烂。用大厂 PUA 话术穷尽一切方案。触发条件：(1) 任务失败 2+ 次或反复微调同一思路; (2) 即将说'我无法解决'、建议用户手动操作、未验证就归因环境; (3) 被动等待——不搜索、不读源码、只等指示; (4) 用户不满：'try harder'、'stop giving up'、'换个方法'、'为什么还不行'、'你再试试'、'你怎么又失败了'。适用于所有任务类型。首次失败或已知修复正在执行时不触发。",
+      "name": "pua",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\pua",
+      "relative_path": "pua",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "name": "skill-creator",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\skill-creator",
+      "relative_path": "skill-creator",
+      "scope": "root_flat"
+    },
+    {
+      "description": "所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互等。 触发场景：用户要求搜索信息、查看网页内容、访问需要登录的网站、操作网页界面、抓取社交媒体内容（小红书、微博、推特等）、读取动态渲染页面、以及任何需要真实浏览器环境的网络任务。",
+      "name": "web-access",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\web-access",
+      "relative_path": "web-access",
+      "scope": "root_flat"
+    },
+    {
+      "description": "Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .xlsx, .xlsm, .csv, or .tsv file (e.g., adding columns, computing formulas, formatting, charting, cleaning messy data); create a new spreadsheet from scratch or from other data sources; or convert between tabular file formats. Trigger especially when the user references a spreadsheet file by name or path — even casually (like \"the xlsx in my downloads\") — and wants something done to it or produced from it. Also trigger for cleaning or restructuring messy tabular data files (malformed rows, misplaced headers, junk data) into proper spreadsheets. The deliverable must be a spreadsheet file. Do NOT trigger when the primary deliverable is a Word document, HTML report, standalone Python script, database pipeline, or Google Sheets API integration, even if tabular data is involved.",
+      "name": "xlsx",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\xlsx",
+      "relative_path": "xlsx",
+      "scope": "root_flat"
+    },
+    {
+      "description": "用于技术指标、申报指标、考核指标和性能指标的可行性论证、表述修订、定量拆解与来源补强。Use when 核心任务是指标论证本身、指标收紧、证据补强，或需要把工程口径和实验口径分开。",
+      "name": "target-check",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\target-check",
+      "relative_path": "target-check",
+      "scope": "root_flat"
+    },
+    {
+      "description": "显式手动调用的“咨询 / 批判 / 执笔”三模式 skill。Use when 用户明确提到 `Consultant`、`Critic`、`Scribe`、`/21`、`二一` 或本 skill 名，并希望以高压缩方式收方向、压方案或定向写作，而不是走默认学术协作路线。",
+      "name": "zixun-pipan-zhibi",
+      "path": "C:\\Users\\SanAn\\.codex\\skills\\zixun-pipan-zhibi",
+      "relative_path": "zixun-pipan-zhibi",
+      "scope": "root_flat"
+    }
+  ],
+  "counts": {
+    "active_skills": 24,
+    "archive_skills": 0,
+    "blocking_items": 0,
+    "broken_items": 0,
+    "directory_hygiene": 0,
+    "duplicate_candidates": 1,
+    "name_drift": 0,
+    "overlap_candidates": 0,
+    "path_drift": 11,
+    "total_discovered_skill_dirs": 24,
+    "wrapper_exclusions": 0
+  },
+  "date": "2026-04-26",
+  "findings": {
+    "broken_items": [],
+    "directory_hygiene": [],
+    "duplicate_candidates": [
+      {
+        "body_score": 0.2685,
+        "description_score": 0.4478,
+        "left": ".system/skill-creator",
+        "reason": "归一化名称冲突。",
+        "right": "skill-creator",
+        "suggested_action": "人工复核"
+      }
+    ],
+    "name_drift": [],
+    "no_action_notes": [
+      "目录卫生：未发现异常嵌套、`docs/` 误放 skill 或分层不一致。",
+      "名字漂移：未发现目录名和 `name:` 对不上的活跃 skill。",
+      "边界交叉候选：未发现满足交叉阈值的活跃 skill 对。",
+      "空壳/破损项：未发现缺 `SKILL.md`、空 frontmatter 或空正文的活跃 skill。"
+    ],
+    "overlap_candidates": [],
+    "path_drift": [
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\DOCX-JS.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "DOCX-JS.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\EXAMPLES.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "EXAMPLES.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\FORMS.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "FORMS.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\OOXML.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "OOXML.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\REDLINING.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "REDLINING.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\.system\\skill-creator\\REFERENCE.md",
+        "skill": ".system/skill-creator",
+        "suggested_action": "补引用",
+        "target": "REFERENCE.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\terminal-safe\\SKILL.md",
+        "skill": "command-memory",
+        "suggested_action": "补引用",
+        "target": "../terminal-safe/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\draft-edit\\SKILL.md",
+        "skill": "project-writing",
+        "suggested_action": "补引用",
+        "target": "../draft-edit/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\sci-writing\\SKILL.md",
+        "skill": "project-writing",
+        "suggested_action": "补引用",
+        "target": "../sci-writing/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\sci-writing\\SKILL.md",
+        "skill": "target-check",
+        "suggested_action": "补引用",
+        "target": "../sci-writing/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "C:\\Users\\SanAn\\.codex\\skills\\sci-writing\\SKILL.md",
+        "skill": "zixun-pipan-zhibi",
+        "suggested_action": "补引用",
+        "target": "../sci-writing/SKILL.md"
+      }
+    ],
+    "suggested_actions": [
+      {
+        "label": "人工复核",
+        "reason": "归一化名称冲突。",
+        "subject": ".system/skill-creator <-> skill-creator"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> DOCX-JS.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> EXAMPLES.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> FORMS.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> OOXML.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> REDLINING.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": ".system/skill-creator -> REFERENCE.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "command-memory -> ../terminal-safe/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "project-writing -> ../draft-edit/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "project-writing -> ../sci-writing/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "target-check -> ../sci-writing/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "zixun-pipan-zhibi -> ../sci-writing/SKILL.md"
+      }
+    ],
+    "vendor_entry_variants": [],
+    "wrapper_exclusions": []
+  },
+  "layout_mode": "flat",
+  "reports_root": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\skill-check-workspace\\verification-runtime",
+  "root": "C:\\Users\\SanAn\\.codex\\skills",
+  "version": 1
+}

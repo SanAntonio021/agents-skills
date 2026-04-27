@@ -1,4 +1,0 @@
-interface:
-  display_name: "Word 模板格式化"
-  short_description: "按模板、预设或默认格式统一 Word 文档版式"
-  default_prompt: "Use $word-muban-geshihua to extract formatting rules from a Word template, apply them to a target DOCX, or export Markdown to Word and then land the final style in Word."

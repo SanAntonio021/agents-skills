@@ -1,0 +1,14 @@
+interface:
+  display_name: "论文下载"
+  short_description: "优先用 MCP 下载正式版论文并维护索引"
+  default_prompt: "Use $paper-download to download paper PDFs with paper-search-mcp first, prefer official published versions, mark temporary preprints, and update download_list.md plus paper_index.md."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "paper-search-mcp"
+      description: "Search academic metadata and download open-access PDFs before falling back to browser-based retrieval."
+      transport: "stdio"
+
+policy:
+  allow_implicit_invocation: true

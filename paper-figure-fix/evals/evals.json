@@ -1,0 +1,25 @@
+{
+  "skill_name": "paper-figure-fix",
+  "evals": [
+    {
+      "id": "review-existing-ieee-figure",
+      "prompt": "这张图是准备放进 IEEE 论文里的 Fig. 3，你帮我审一下是不是像论文图，哪些地方必须改。",
+      "expected_output": "先判断图件类型和目标尺寸，再按 IEEE 图件清单输出总体结论、必须改、建议改、可保留和导出建议；不要只给泛泛美化意见。"
+    },
+    {
+      "id": "redraw-data-plot-from-csv",
+      "prompt": "我有一组 BER 随 SNR 变化的数据，想重画成 IEEE 单栏论文图，并导出 PDF 和 PNG。",
+      "expected_output": "要求读取原始数据，使用 IEEE 单栏尺寸和 Matplotlib 样式，保留重画脚本，导出 PDF/PNG，并说明坐标轴、单位、图例和黑白可读性。"
+    },
+    {
+      "id": "system-diagram-technical-review",
+      "prompt": "这是太赫兹通信实验平台框图，帮我看是否适合放在 IEEE Transactions 论文里。",
+      "expected_output": "按 system_diagram 审查，优先检查技术链路、模块命名、信号流、频率/带宽/测量点标注和可编辑源文件，不建议用自由生成式图片替代。"
+    },
+    {
+      "id": "bitmap-without-raw-data",
+      "prompt": "我只有这张 PNG 截图，能不能帮我重画成 IEEE 风格的数据图？",
+      "expected_output": "先说明没有原始数据不能保证数据精确；除非用户接受 approximate_redraw，否则只做风格审查和重画所需数据清单。"
+    }
+  ]
+}

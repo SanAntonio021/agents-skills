@@ -67,7 +67,6 @@ description: 为当前 Codex 本地环境启用、配置和维护跨会话长期
 ## 相关技能
 
 - Windows 命令复用：[../command-memory/SKILL.md](../command-memory/SKILL.md)
-- Windows 命令护栏：[../terminal-safe/SKILL.md](../terminal-safe/SKILL.md)
 - 本地 skill 维护：`skill-creator`
 
 ## 维护

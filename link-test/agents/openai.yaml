@@ -1,4 +1,4 @@
 interface:
   display_name: "高速链路台架测试"
-  short_description: "执行 AWG、示波器和 DUT 的台架测试流程"
-  default_prompt: "Use $link-test to run or debug a bench test with clear OFF/ON pairing, timeout handling, and safe shutdown."
+  short_description: "执行台架测试、生成报告并补录链路台账"
+  default_prompt: "Use $link-test to run, debug, summarize, or log a bench test with clear OFF/ON pairing, timeout handling, reporting, ledger updates, and safe shutdown."

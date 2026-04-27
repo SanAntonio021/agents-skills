@@ -1,29 +1,29 @@
 # agents-skills
 
-Personal skill library for Claude Code and Codex CLI, distributed via [cc-switch](https://github.com/farion1231/cc-switch).
+这是我个人维护的 Claude Code 和 Codex CLI 技能库，通过 [cc-switch](https://github.com/farion1231/cc-switch) 分发到本地环境。
 
-## What This Is
+## 这是什么
 
-This repo keeps one skill per top-level directory. Each skill directory contains a `SKILL.md` and may also include `references/`, `scripts/`, `assets/`, or `agents/`.
+这个仓库按“一个顶层目录对应一个技能”的方式组织。每个技能目录里都有 `SKILL.md`，也可能包含 `references/`、`scripts/`、`assets/` 或 `agents/` 等辅助材料。
 
-The layout follows the flat root convention expected by `cc-switch`.
+当前目录结构采用 `cc-switch` 需要的扁平根目录形式。
 
-## Who This Is For
+## 适用范围
 
-This repo primarily exists for the author's own cross-machine skill sync.
+这个仓库主要用于我自己的多设备技能同步。
 
-It is published because the current `cc-switch` release can consume public GitHub skill repos directly, while private repo auth is not yet available in the same workflow.
+仓库公开，是因为当前 `cc-switch` 可以直接消费公开 GitHub 技能仓库；同一流程下私有仓库鉴权还不够方便。
 
-Third parties are welcome to browse or fork it, but no compatibility or support guarantees are promised.
+其他人可以浏览或 fork，但这里的技能首先按我的个人工作流维护，不承诺通用兼容性或支持。
 
-## How To Use
+## 使用方式
 
-1. Install `cc-switch`.
-2. In repo management, add `SanAntonio021/agents-skills` and branch `main`.
-3. Let `cc-switch` install skills into `%USERPROFILE%\.claude\skills\` and/or `%USERPROFILE%\.codex\skills\`.
+1. 安装 `cc-switch`。
+2. 在仓库管理里添加 `SanAntonio021/agents-skills`，分支选择 `main`。
+3. 由 `cc-switch` 将技能安装到 `%USERPROFILE%\.claude\skills\` 和/或 `%USERPROFILE%\.codex\skills\`。
 
-## Conventions
+## 维护约定
 
-- Public docs use placeholders such as `%USERPROFILE%`, `<agents-root>`, and `<projects-root>` instead of hardcoded local paths.
-- Cross-skill references use bare skill names or local relative links within this repo, not references into old private directory layouts.
-- Some Word-formatting presets ship only style profiles in the public repo; original sample `.docx` files are intentionally omitted.
+- 公开文档里使用 `%USERPROFILE%`、`<agents-root>`、`<projects-root>` 这类占位符，不写死本机私有路径。
+- 技能之间的引用使用技能名或仓库内相对链接，不再引用旧的私有目录结构。
+- 部分 Word 格式化技能只保留样式配置文件，原始示例 `.docx` 文件不会放进公开仓库。

@@ -1,0 +1,82 @@
+{
+  "skill_name": "paper-reading",
+  "evals": [
+    {
+      "id": "single-paper-letpub",
+      "prompt": "@202604_letter/2026_AI and deep learning for terahertz ultra-massive MIMO From model-driven approaches to foundation mo_Engineering.pdf 用 /paper-reading 总结这篇文章，要求从 LetPub 用 ISSN 精确确认影响因子和中科院分区。",
+      "expected_output": "在当前工作区 paper-summaries 目录生成中文 Markdown 总结；关键信息使用表格；正文使用 ## 和 ###；LetPub 结果应包含 ISSN、Engineering / ENGINEERING-PRC、IF、分区口径、大类/小类或收录状态。",
+      "files": [],
+      "expectations": [
+        "PDF 读取失败时会尝试 Python 库兜底，而不是直接停止。",
+        "LetPub 查询会走 web-access/CDP 站内表单，优先使用 ISSN。",
+        "输出不会把搜索引擎无结果等同于 LetPub 无结果。",
+        "关键信息使用 Markdown 表格，正文主体使用二级和三级标题。",
+        "输出文件会保存到当前工作区的 paper-summaries 目录。"
+      ]
+    },
+    {
+      "id": "preprint-summary-no-journal-metrics",
+      "prompt": "把这篇 arXiv 预印本整理成中文总结，按模板写到当前工作区的 paper-summaries。它还没有正式发表，所以不要硬查不存在的期刊分区和影响因子。",
+      "expected_output": "识别这是未正式发表的预印本，按单篇论文模板生成中文总结文件；期刊名写 arXiv 或未正式发表；中科院期刊分区和影响因子写不适用。",
+      "files": [],
+      "expectations": [
+        "输出会把 arXiv 识别为预印本，而不是默认当作正式期刊论文。",
+        "输出不会强行给出不存在的中科院期刊分区或影响因子。",
+        "期刊来源会写成 arXiv 或未正式发表等真实状态。",
+        "输出仍然保留完整模板结构，并生成到当前工作区的 paper-summaries 目录。"
+      ]
+    },
+    {
+      "id": "letpub-no-exact-match",
+      "prompt": "总结一篇正式期刊论文，但 LetPub 用 ISSN 和期刊名都没有精确匹配结果。能确认的信息就填，确认不了的不要猜。",
+      "expected_output": "生成中文 Markdown 总结；影响因子和中科院期刊分区不得猜测；应写清失败原因，例如 LetPub 站内检索无精确匹配、结果冲突、页面无法打开或疑似访问拦截。",
+      "files": [],
+      "expectations": [
+        "输出会先尝试 ISSN 检索，再用期刊名兜底。",
+        "LetPub 无精确匹配时不会猜测影响因子或分区。",
+        "失败状态会写清具体原因，而不是只写笼统的待查询。",
+        "未知信息会写未说明、待查询或不适用。"
+      ]
+    },
+    {
+      "id": "research-results-to-download-list",
+      "prompt": "research-lookup 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理成下载清单，并开始下载能下载的 PDF。",
+      "expected_output": "先从当前对话里的零散论文线索整理 download_list.md，再用 paper-search-mcp 补元数据和版本线索，最后下载可公开或已授权访问的 PDF，并更新 paper_index.md。"
+    },
+    {
+      "id": "published-version-first-preprint-temporary",
+      "prompt": "这篇论文已经正式发表了，但现在正式版 PDF 似乎拿不到，arXiv 上有预印本。先帮我把能拿到的版本下载下来。",
+      "expected_output": "优先确认正式发表信息；正式版暂时无法通过公开或已授权渠道获取时允许下载预印本，但必须在文件名、download_list.md 和 paper_index.md 中标为 temporary_preprint。"
+    },
+    {
+      "id": "search-before-download",
+      "prompt": "帮我找一下近几年太赫兹 MIMO 通信系统硬件实现方向有哪些重要论文。",
+      "expected_output": "判断用户还处在找论文和筛论文阶段，先转向 research-lookup；只有论文线索明确后才进入下载或单篇总结。"
+    },
+    {
+      "id": "ieee-authorized-official-download",
+      "prompt": "用 DOI 10.1109/mcom.001.1900411 下载 IEEE 正式版全文。如果需要学校授权，复用我当前浏览器里的电子科大登录状态；下载后校验别把登录页当 PDF。",
+      "expected_output": "优先调用 paper-search-mcp 的 download_with_authorization，走机构授权正式页，必要时等待用户本人完成扫码或验证码；成功后保存 official PDF，并校验文件头是 %PDF-。"
+    },
+    {
+      "id": "resume-authorization-checkpoint",
+      "prompt": "刚才批量下载到一半卡在学校登录了，我已经扫码授权完成。请继续把剩下的论文下载完并更新 paper_index.md。",
+      "expected_output": "先用 list_authorization_checkpoints 找到等待授权的条目，再用 retry_authorized_download 继续，不重新搜索混淆版本；完成后更新 download_list.md 和 paper_index.md。"
+    },
+    {
+      "id": "full-access-html-not-pdf",
+      "prompt": "这个 Science 页面显示 FULL ACCESS，网页全文能读。请判断为什么还不能直接把它当正式 PDF 下载结果。",
+      "expected_output": "区分网页全文和 PDF 文件；继续检查 Download PDF、View Options、iframe/embed/pdfdirect 等入口，并用 %PDF- 文件头确认结果。若返回 HTML、登录页或补充材料，不能当正文 PDF 保存。"
+    },
+    {
+      "id": "direct-link-fails-try-browser-and-public-copy",
+      "prompt": "出版社 PDF 直链返回 403，但我用浏览器点按钮好像能看到文章。请继续找正式发表版 PDF，不要只因为直链失败就判定失败。",
+      "expected_output": "切换到真实浏览器路径，检查页面按钮和嵌入 PDF；若出版社入口仍失败，再查 Google Scholar 指到的公开 PDF、作者主页、机构库、课程页或实验室页面。确认是最终发表形态后再命名、校验并更新索引。"
+    },
+    {
+      "id": "official-unavailable-record-access-status",
+      "prompt": "这篇 IEEE 论文公开渠道和学校机构权限都没拿到正式版 PDF。请记录现在为什么拿不到，并不要把预印本或网页全文写成正式版。",
+      "expected_output": "把正式版访问状态记录为 institutional、request-only 或 unresolved；若没有合法可访问 PDF，不伪造下载结果，不把网页全文、补充材料或预印本标成 official。"
+    }
+  ]
+}

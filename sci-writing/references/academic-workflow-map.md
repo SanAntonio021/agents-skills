@@ -12,12 +12,12 @@
 |---|---|---|
 | 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `brainstorming` 或 `baseline-check` |
 | 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-check` |
-| 文献下载 | 下载论文、补 PDF、整理索引 | `paper-download` |
+| 文献下载与单篇总结 | 下载论文、补 PDF、整理索引、整理单篇文献笔记 | `paper-reading` |
 | 指标论证 | 这个指标站不站得住、口径怎么写 | `target-check` |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度 | `sci-paper-edit` |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
-| 局部精修 | 这一段怎么收口、老师批注怎么补 | `draft-edit` |
+| 局部精修 | 这一段怎么收口、老师批注怎么补 | `sci-paper-edit` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `word-template` / `docx` |
 
 若一句话同时命中多个阶段，优先选最阻塞阶段。通常顺序是：事实和证据未定先调研，指标不清先论证，已有稿件先审查，再进入精修。
@@ -35,7 +35,7 @@
 |---|---|---|
 | `academic-pipeline` | 阶段门控、完整性检查、审稿-修改-复审闭环 | `sci-writing` 做路由；必要时分发到下游 |
 | `deep-research` | Socratic 问题澄清、source verification、gap analysis | `baseline-check` |
-| `academic-paper` | 先大纲再成文、引用/图表一致性、修改回应 | `sci-paper-edit`、`draft-edit` |
+| `academic-paper` | 先大纲再成文、引用/图表一致性、修改回应 | `sci-paper-edit` |
 | `academic-paper-reviewer` | 多视角审稿、Devil's Advocate、re-review | `paper-review` |
 
 ### 不直接照搬
@@ -57,8 +57,8 @@
 |---|---|---|
 | `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
 | `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | `target-check`、`simulation-log` |
-| `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`sci-paper-edit` |
-| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-download`、`baseline-check` |
+| `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-reading`、`sci-paper-edit` |
+| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-reading`、`baseline-check` |
 | `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `sci-paper-edit` |
 | `research-grants` | significance / innovation / feasibility 框架 | `project-writing`，需改成国内工程申报口径 |
 | `matlab`、`matplotlib`、`statistical-analysis` | 实验数据处理、绘图、统计报告模板 | 暂存，等有太赫兹实验数据处理 skill 时再用 |

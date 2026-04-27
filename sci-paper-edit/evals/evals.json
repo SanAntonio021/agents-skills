@@ -42,6 +42,12 @@
       "prompt": "这篇英文稿还没确定投哪个期刊，你先帮我做投稿前终稿精修吧。",
       "expected_output": "先提醒可做一次选刊判断；说明选刊必须联网核验期刊官网、scope 和近期文章，不能凭印象推荐。若用户仍选择先精修，则明确这是通用 SCI/IEEE 精修，不声称符合具体期刊要求。",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "output/DRAFT.md 已经定稿了，请做提交前最后一轮精修：去模板腔、压缩重复、统一术语，但不要新增 citation keys，也不要把引用移出原来的小节。",
+      "expected_output": "按已批准初稿收口流程处理 output/DRAFT.md；保留原有 citation keys 和小节内引用锚点，必要时生成 citation_anchors.prepolish.jsonl，并只做语言、术语和冗余收口。",
+      "files": []
     }
   ]
 }

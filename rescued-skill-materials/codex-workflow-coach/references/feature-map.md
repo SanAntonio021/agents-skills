@@ -13,7 +13,7 @@
 | 上一轮已经做了一半，现在只是继续 | `codex exec resume --last` | 比重新描述需求更省认知负担 | 特别适合补测试、补收尾、补说明 |
 | 任务会反复出现，而且判断标准相对稳定 | 建议 Codex app automation | 把重复解释变成周期任务 | 默认输出 `.md` 供用户确认，不要直接替用户做高影响修改 |
 | 想做零额外负担的对话复盘 | 读取 `%USERPROFILE%\.codex\sessions` 和 `archived_sessions` | 这是被动 transcript 来源，不要求用户手写 session note | 优先读 thread 名、用户消息和工具失败 |
-| Windows / PowerShell / CLI 命令易因路径、编码或 quoting 出错 | 转 [../command-pattern-memory/SKILL.md](../command-pattern-memory/SKILL.md) | 先复用已经验证过的命令形态，比现场重写更稳 | 命令高风险时优先走这层 |
+| Windows / PowerShell / CLI 命令易因路径、编码或 quoting 出错 | 转 [../command-memory/SKILL.md](../command-memory/SKILL.md) | 先复用已经验证过的命令形态，比现场重写更稳 | 命令高风险时优先走这层 |
 | 想看跨周、跨项目的重复问题 | 转 [../jineng-fupan/SKILL.md](../jineng-fupan/SKILL.md) | 它更适合基于 `runs/` 和报告做二层归纳 | 不要在当前 skill 里硬做重型复盘 |
 
 ## Weekly Review Heuristics

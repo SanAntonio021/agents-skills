@@ -1,0 +1,321 @@
+{
+  "active_skills": [
+    {
+      "description": "维护当前本地智能体的底层规则、system prompt、skill 治理和长期维护约定。Use when the user explicitly asks to modify local agent rules, the local system prompt, the skill layout, or maintenance governance; do not use this for ordinary business tasks.",
+      "name": "agent-rules",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\agent-rules",
+      "relative_path": "agent-rules",
+      "scope": "root_flat"
+    },
+    {
+      "description": "在不改 `citation keys` 的前提下精修已批准的 `output/DRAFT.md`。Use when 已经有一版可交付初稿，当前步骤明确是提交前语言打磨、导出前抛光或审稿前收口；prefer this over 通用改写或写作总路由 when 任务类型、结构和证据边界已经确定，只剩模板腔、重复、衔接和术语统一问题。",
+      "name": "draft-edit",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\draft-edit",
+      "relative_path": "draft-edit",
+      "scope": "root_flat"
+    },
+    {
+      "description": "在台架测试后生成中文 Markdown 报告，并把链路、器件和测试记录补入现有台账与配置文档。Use when 用户要汇总测试结果、生成中文测试报告、合并多轮结果，或在测试后补台账。",
+      "name": "test-report-log",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\test-report-log",
+      "relative_path": "test-report-log",
+      "scope": "root_flat"
+    },
+    {
+      "description": "为当前 Codex 本地环境启用、配置和维护跨会话长期记忆，并把运行时状态与同步 skill 文件隔离。Use when 用户希望助手跨会话记住偏好、背景、决定或重要事实，尤其是希望默认开启记忆时；prefer this over 直接套用 `vendor/long-term-memory`，因为这里已经处理了本地目录、初始化和运行边界。",
+      "name": "codex-memory",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\codex-memory",
+      "relative_path": "codex-memory",
+      "scope": "root_flat"
+    },
+    {
+      "description": "面向 Codex 本地环境做 skill 生态周检与市场更新审计。Use when 用户要运行 `.codex/automations/skill`、用 Codex 本地规则替代旧的 Claude 风格 `skills-updater` 语义，或要汇总 `npx skills` 安装、`<agents-root>\\skills` 同步目录、本地补充关系和本周变更；prefer this over `market-skill-updater` when 目标是整套周报，而不是单独检查某个市场 skill。",
+      "name": "codex-skill-ecosystem-audit",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\codex-skill-ecosystem-audit",
+      "relative_path": "codex-skill-ecosystem-audit",
+      "scope": "root_flat"
+    },
+    {
+      "description": "根据当前任务、已暴露的使用习惯和本地可见证据，给出少量高收益的 Codex 工作流建议，并在需要时生成周度复盘。Use when the user asks how to use Codex more effectively, whether to stay in the current chat or switch to `codex exec/review/resume`, or wants a recurring Codex workflow review; prefer this over `codex-cli-local` when the goal is workflow advice rather than direct CLI execution.",
+      "name": "codex-workflow-coach",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\codex-workflow-coach",
+      "relative_path": "codex-workflow-coach",
+      "scope": "root_flat"
+    },
+    {
+      "description": "复用已验证的 Windows 和 PowerShell 命令形态，减少路径、引号、编码和外部 CLI 写错的概率。Use when the task likely requires `shell_command`, PowerShell, or a Windows CLI command, especially for path handling, encoding, search, archive, and repeated high-risk command scenarios; consult this before `terminal-safe` when a reusable command pattern may already exist.",
+      "name": "command-memory",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\command-memory",
+      "relative_path": "command-memory",
+      "scope": "root_flat"
+    },
+    {
+      "description": "阅读单篇英文论文并生成中文客观总结，默认在当前工作区根目录下新建 `paper-summaries` 目录并落一份 `.md` 文件。Use when 用户提供单篇论文 PDF、DOI、URL、题目或已有全文，要求做单篇论文总结、文献笔记、论文卡片或中文整理；prefer this over `sci-writing`、`tooluniverse-literature-deep-research` 和其他多篇综述流程 when 目标只是整理单篇论文。",
+      "name": "paper-summary",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\paper-summary",
+      "relative_path": "paper-summary",
+      "scope": "root_flat"
+    },
+    {
+      "description": "将 Markdown-rich 文本安全导出到 Excel、Word 表格或纯文本介质。Use when 用户要把 Markdown 内容清洗成目标介质可直接承载的文本；如果最终要求是继承现有 Word 模板、`Normal.dotm` 或自动 Word 端样式，优先转到 `word-template`。",
+      "name": "daochu-geshi-zhengli",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\daochu-geshi-zhengli",
+      "relative_path": "daochu-geshi-zhengli",
+      "scope": "root_flat"
+    },
+    {
+      "description": "从当前对话里提炼可复用经验，判断这些经验更适合写进当前项目、用于修改现有 skill，还是整理成新 skill。只要用户想“把这段对话整理一下”“看看值不值得做成 skill”“判断该写到项目里还是 skill 里”，就使用这个 skill。先查当前会话和本地有没有类似 skill，再用 `find-skills` 看外面有没有相近做法；在用户批准前，只交付审查稿，不直接改 skill。如果这次已经正式改完了 skill，还要继续做收尾：先按 `skill-creator` 的要求对照检查，再在条件安全时只推送本次相关改动，并提醒用户去 cc-switch 手动点一次“检查更新”。",
+      "name": "chat-notes",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\chat-notes",
+      "relative_path": "chat-notes",
+      "scope": "root_flat"
+    },
+    {
+      "description": "中文工程申报书和工程课题写作与修订，也可由“工程申报”“工程本子”“gongcheng-shenbao”“gongcheng-benzi”唤起。Use when 任务已经明显属于工程申报、工程建设、产业化应用、软建设机制、卡点陈述或研发需求写作。",
+      "name": "project-writing",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\project-writing",
+      "relative_path": "project-writing",
+      "scope": "root_flat"
+    },
+    {
+      "description": "在改代码、跑仿真、做实验或调参迭代时，同步维护一份 Markdown 主记录，并把命令、参数、关键结果、图表和下一步一起落盘。Use when the user wants Codex to 边做边记, 新建或续写实验记录、仿真日志、labbook 或 run report, or keep one running record active through the current thread; prefer this over `codex-workflow-coach` when the goal is execution-time recording, and over `jineng-fupan` when the goal is a single task log rather than a later retrospective.",
+      "name": "simulation-log",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\simulation-log",
+      "relative_path": "simulation-log",
+      "scope": "root_flat"
+    },
+    {
+      "description": "为当前本地技能树提供技能查找、比较、安装和复核规则。只要用户提到“找技能”“有没有现成 skill”“比较几个 skill”“上游仓库”“GitHub”“skills.sh”“cc-switch”“不要安装只给仓库”“本地有没有类似 skill”“该装市场 skill 还是改自建 skill”，都应优先使用；当结果必须适配本地 cc-switch 管理环境，而不是只看全局市场时，也优先用这份技能而不是 `find-skills`。",
+      "name": "find-skills-local",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\find-skills-local",
+      "relative_path": "find-skills-local",
+      "scope": "root_flat"
+    },
+    {
+      "description": "面向高速链路台架的 AWG、示波器和 DUT 测试执行工作流，覆盖 `SMOKE/FULL`、`AWG OFF/ON` 配对、单次与重复测试、超时分级和收尾保护。Use when 用户要运行、续跑或排查台架测试，例如“先跑 smoke”“测一轮功率加解调”“做 AWG OFF/ON 配对”或“按当前链路重跑”。",
+      "name": "link-test",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\link-test",
+      "relative_path": "link-test",
+      "scope": "root_flat"
+    },
+    {
+      "description": "处理会议转写并生成结构化纪要、行动项和定稿。Use when 用户提供会议 transcript、逐字稿或会议记录，要求整理会议纪要、提炼行动项，或把分片转写合并成一份可分享记录；不要在加载这份 skill 前先给泛化摘要。",
+      "name": "meeting-notes",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\meeting-notes",
+      "relative_path": "meeting-notes",
+      "scope": "root_flat"
+    },
+    {
+      "description": "围绕本周新增的 Codex 本地对话 transcript 做跨项目技能复盘编排。Use when 用户要扫描 `%USERPROFILE%/.codex/sessions` 里的周内新对话、按项目归类、维护复盘索引、生成项目周报，或提炼跨项目可复用观察。",
+      "name": "jineng-fupan",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\jineng-fupan",
+      "relative_path": "jineng-fupan",
+      "scope": "root_flat"
+    },
+    {
+      "description": "分阶段执行项目基线调研，包含 sample-first 取样、证据链补齐和用户复核关口。Use when 用户要启动、继续或审查一项持续性的项目基线研究，而不是做一次性的零散查询。",
+      "name": "baseline-check",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\baseline-check",
+      "relative_path": "baseline-check",
+      "scope": "root_flat"
+    },
+    {
+      "description": "管理 LeCroy 示波器前面板 Pre-processing 相关控制项，覆盖 `Interpolation`、`Averaging`、`Enhance Resolution` 和 `Optimize` 模式，并区分可验证路径与高风险假指令。Use when 用户要修改或确认这些前面板预处理项，例如“切到 linear”“确认 averaging”“看 pulse/flatness”或“检查 sinx/x”。",
+      "name": "lecroy-data",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\lecroy-data",
+      "relative_path": "lecroy-data",
+      "scope": "root_flat"
+    },
+    {
+      "description": "按题目、DOI、作者主页、出版社页面或论文列表下载论文 PDF，并把结果落盘和记索引。Use when 用户要下载单篇或批量论文、从作者主页和 DOI 找全文、补齐公开副本，或在必要时配合浏览器和机构登录完成合法访问；prefer 公开和合法来源 first。",
+      "name": "paper-download",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\paper-download",
+      "relative_path": "paper-download",
+      "scope": "root_flat"
+    },
+    {
+      "description": "检查、修复并更新通过 `npx skills` 安装到当前工作区的市场或社区 skill。Use when the user wants to audit installed market skills, run a safe pre-update check, repair residual global directories, or upgrade workspace-managed skills without mixing them with local `custom/vendor` skills; prefer this over `find-skills-local` when the goal is维护已安装 skill rather than发现新 skill.",
+      "name": "market-skill-updater",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\market-skill-updater",
+      "relative_path": "market-skill-updater",
+      "scope": "root_flat"
+    },
+    {
+      "description": "每周核验 `prompt_guidelines` 下 Anthropic、Google、OpenAI 的官方 prompt 与 agent guidance，必要时更新三份参考文档，并只把真正影响 AI 运行时行为的长期原则同步到 `AGENTS.md`、`GEMINI.md`、`CLAUDE.md`。Use when the user asks to run the weekly prompt-rules review, maintain global prompt rules, or create and report the related Codex automation; use official sources only.",
+      "name": "prompt-rules-weekly",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\prompt-rules-weekly",
+      "relative_path": "prompt-rules-weekly",
+      "scope": "root_flat"
+    },
+    {
+      "description": "作为申报书与论文文章类任务的默认写作总路由，先判断任务类型和当前步骤，再把任务分流到最小必要的下游 skill。Use when 用户自然表达为写申报书、准备申报材料、写文章、准备论文、摘要、综述或投稿材料，且当前任务还没有被更具体的 custom skill 明确覆盖；明显属于工程建设类申报时优先转给 `project-writing`，若目标是按严重程度审查现有文稿或判断是否继续修改，转给 `paper-review`。",
+      "name": "sci-writing",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\sci-writing",
+      "relative_path": "sci-writing",
+      "scope": "root_flat"
+    },
+    {
+      "description": "把人物事迹、采访、照片、视频和参考片改写成 1 到 3 分钟人物短片脚本。Use when 用户要人物短片、微视频、视频脚本、旁白稿、分镜草案，或要按现有素材重构叙事；prefer this skill when 重点是素材驱动的成片脚本，而不是普通人物报道或单纯文字润色。",
+      "name": "renwu-duanpian-jiaoben-xiezuo",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\renwu-duanpian-jiaoben-xiezuo",
+      "relative_path": "renwu-duanpian-jiaoben-xiezuo",
+      "scope": "root_flat"
+    },
+    {
+      "description": "检查或同步用户自己登记的上游仓库镜像。Use when 用户要检查 `Superpowers` 这类 tracked upstream 是否有更新、初始化或同步某个登记镜像，或查看本地补充层与 git 上游之间的漂移；prefer this over `market-skill-updater` when 来源是仓库镜像而不是市场安装 skill.",
+      "name": "repo-mirror-maintainer",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\repo-mirror-maintainer",
+      "relative_path": "repo-mirror-maintainer",
+      "scope": "root_flat"
+    },
+    {
+      "description": "审计本地 skill 树的结构卫生、重复候选、名字漂移、路径漂移和加载来源。Use when 用户要确认当前到底加载了哪些 skill、查同名冲突、查目录名和 `name:` 对不上、分清 GitHub 源码、cc-switch 同步目录和 Codex 运行时目录，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。",
+      "name": "skill-check",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\skill-check",
+      "relative_path": "skill-check",
+      "scope": "root_flat"
+    },
+    {
+      "description": "对现有文稿做 A/B/C 分级审查，并判断是否还应继续修改还是默认停稿。Use when 用户要按严重程度审稿、判断还有没有必要继续润色、只看实质问题，或在专利和申报写作里先审再决定是否继续改写；prefer this over 起草或润色技能 when 目标是审查闸口，而不是直接改稿。",
+      "name": "paper-review",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\paper-review",
+      "relative_path": "paper-review",
+      "scope": "root_flat"
+    },
+    {
+      "description": "把本地 agent 规则改写成网页端无工具环境可执行的提示词。Use when the target is ChatGPT Web, Gemini Web, AI Studio, or another browser AI environment without local file or terminal tools; defer to `agent-rules` for local system prompt maintenance.",
+      "name": "web-prompt-engineering",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\web-prompt-engineering",
+      "relative_path": "web-prompt-engineering",
+      "scope": "root_flat"
+    },
+    {
+      "description": "用用户提供的 Word 模板、本机默认格式或仓内内置 style profile，把目标 `.docx` 统一成可交付版式。Use when 用户提供模板文档、要求沿用既有标题和正文格式、要求按 `Normal.dotm` 成稿，或源文件是 Markdown 但最终要落到 Word 版式；prefer this over 通用导出技能 when 关键目标是 Word 端样式落地；defer 预设治理、默认模板变更和 `Normal.dotm` 安装到 `word-template-governance`。",
+      "name": "word-template",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\word-template",
+      "relative_path": "word-template",
+      "scope": "root_flat"
+    },
+    {
+      "description": "维护 `word-template` 背后的预设体系和默认模板规则。Use when 任务是重建或校验 `tongyong-moren`、评估样例是否应升级为预设、调整当前默认预设，或安装和刷新 Word 全局 `Normal.dotm`；defer 普通文档格式统一到 `word-template`。",
+      "name": "word-template-governance",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\word-template-governance",
+      "relative_path": "word-template-governance",
+      "scope": "root_flat"
+    },
+    {
+      "description": "用于技术指标、申报指标、考核指标和性能指标的可行性论证、表述修订、定量拆解与来源补强。Use when 核心任务是指标论证本身、指标收紧、证据补强，或需要把工程口径和实验口径分开。",
+      "name": "target-check",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\target-check",
+      "relative_path": "target-check",
+      "scope": "root_flat"
+    },
+    {
+      "description": "为 Codex 提供 Windows 终端执行护栏，减少路径引号、shell 混用和命令构造错误。Use when running PowerShell commands or Windows CLI tools, especially when the command touches file paths, external executables, conversion tools, or archive operations.",
+      "name": "terminal-safe",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\terminal-safe",
+      "relative_path": "terminal-safe",
+      "scope": "root_flat"
+    },
+    {
+      "description": "为本地 Codex 子对话生成分流 prompt 和固定回传契约。Use when 用户明确要求把支线问题分流到另一个本地 Codex 对话、创建子线程，或给另一个本地 Codex 聊天窗口写 handoff prompt；prefer this over `codex` when 目标是 prompt 交接，而不是直接启动新 CLI 进程。",
+      "name": "ziduihua-diaodu",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\ziduihua-diaodu",
+      "relative_path": "ziduihua-diaodu",
+      "scope": "root_flat"
+    },
+    {
+      "description": "显式手动调用的“咨询 / 批判 / 执笔”三模式 skill。Use when 用户明确提到 `Consultant`、`Critic`、`Scribe`、`/21`、`二一` 或本 skill 名，并希望以高压缩方式收方向、压方案或定向写作，而不是走默认学术协作路线。",
+      "name": "zixun-pipan-zhibi",
+      "path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\zixun-pipan-zhibi",
+      "relative_path": "zixun-pipan-zhibi",
+      "scope": "root_flat"
+    }
+  ],
+  "counts": {
+    "active_skills": 34,
+    "archive_skills": 0,
+    "blocking_items": 0,
+    "broken_items": 0,
+    "directory_hygiene": 0,
+    "duplicate_candidates": 0,
+    "name_drift": 0,
+    "overlap_candidates": 0,
+    "path_drift": 4,
+    "total_discovered_skill_dirs": 34,
+    "wrapper_exclusions": 0
+  },
+  "date": "2026-04-26",
+  "findings": {
+    "broken_items": [],
+    "directory_hygiene": [],
+    "duplicate_candidates": [],
+    "name_drift": [],
+    "no_action_notes": [
+      "目录卫生：未发现异常嵌套、`docs/` 误放 skill 或分层不一致。",
+      "重复候选：未发现满足重复阈值的活跃 skill 对。",
+      "名字漂移：未发现目录名和 `name:` 对不上的活跃 skill。",
+      "边界交叉候选：未发现满足交叉阈值的活跃 skill 对。",
+      "空壳/破损项：未发现缺 `SKILL.md`、空 frontmatter 或空正文的活跃 skill。"
+    ],
+    "overlap_candidates": [],
+    "path_drift": [
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\codex-cli-local\\SKILL.md",
+        "skill": "codex-workflow-coach",
+        "suggested_action": "补引用",
+        "target": "../codex-cli-local/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\duihua-jingyan-tiqu\\SKILL.md",
+        "skill": "codex-workflow-coach",
+        "suggested_action": "补引用",
+        "target": "../duihua-jingyan-tiqu/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\market-skill-updater\\%USERPROFILE%\\.codex\\skills\\.system\\skill-installer\\SKILL.md",
+        "skill": "market-skill-updater",
+        "suggested_action": "补引用",
+        "target": "%USERPROFILE%/.codex/skills/.system/skill-installer/SKILL.md"
+      },
+      {
+        "reason": "本地引用目标不存在。",
+        "resolved_path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\codex-cli-local\\SKILL.md",
+        "skill": "ziduihua-diaodu",
+        "suggested_action": "补引用",
+        "target": "../codex-cli-local/SKILL.md"
+      }
+    ],
+    "suggested_actions": [
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "codex-workflow-coach -> ../codex-cli-local/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "codex-workflow-coach -> ../duihua-jingyan-tiqu/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "market-skill-updater -> %USERPROFILE%/.codex/skills/.system/skill-installer/SKILL.md"
+      },
+      {
+        "label": "补引用",
+        "reason": "本地引用目标不存在。",
+        "subject": "ziduihua-diaodu -> ../codex-cli-local/SKILL.md"
+      }
+    ],
+    "vendor_entry_variants": [],
+    "wrapper_exclusions": []
+  },
+  "layout_mode": "flat",
+  "reports_root": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\skill-check-workspace\\verification-source",
+  "root": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src",
+  "version": 1
+}

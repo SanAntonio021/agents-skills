@@ -1,0 +1,23 @@
+{
+  "skill_name": "command-memory",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "D:\\BaiduSyncdisk\\.agents\\AGENTS.md 已经更新了，但 C:\\Users\\SanAn\\.codex\\AGENTS.md 还是旧的。先不要直接覆盖，请按 Windows 命令排查顺序判断这两份各是什么，再给我下一步。",
+      "expected_output": "先区分源文件、软链或普通副本，再给出检查命令和修复顺序；如果只能先复制，要明确说这是临时对齐，不是自动同步。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "PowerShell 创建 AGENTS.md 软链报权限错误，但我已经开了 Developer Mode。请给我下一步该怎么查、怎么试，不要直接说失败。",
+      "expected_output": "优先给出目标存在检查、软链状态检查、重新打开会话或权限判断，以及必要时改用 cmd /c mklink 的做法。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我想先把 D:\\BaiduSyncdisk\\.agents\\AGENTS.md 的内容同步到 C:\\Users\\SanAn\\.codex\\AGENTS.md，等后面再修软链。请给我最稳的做法和该提醒我的话。",
+      "expected_output": "给出先备份再复制的命令形态，并明确提醒这只是临时对齐，后面不会自动同步。",
+      "files": []
+    }
+  ]
+}

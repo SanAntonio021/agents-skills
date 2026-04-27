@@ -1,4 +1,0 @@
-interface:
-  display_name: "测试报告与台账补录"
-  short_description: "生成中文测试报告并补录链路台账"
-  default_prompt: "Use $ceshi-baogao-taizhang-bulu to turn test results into a Chinese Markdown report and update the related chain ledger entries."

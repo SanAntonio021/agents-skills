@@ -2,7 +2,7 @@
 
 本协议专用于**无物理文件系统和终端访问权限**的网页版大语言模型（如 Gemini Web、ChatGPT Web）的 System Prompt 设计与注入。
 
-> **与本地 IDE Agent 的区别**：本地 Agent 拥有 `view_file`、`run_command` 等物理探针工具，其约束精炼参见 [../../agent-maintenance-handbook/instructions/system-prompt-refinement.md](../../agent-maintenance-handbook/instructions/system-prompt-refinement.md)。本文件仅覆盖云端无工具环境。
+> **与本地 IDE Agent 的区别**：本地 Agent 拥有 `view_file`、`run_command` 等物理探针工具，其约束精炼参见 [../../agent-rules/instructions/system-prompt-refinement.md](../../agent-rules/instructions/system-prompt-refinement.md)。本文件仅覆盖云端无工具环境。
 
 ## 1. 身份路由降维法 (Persona Fusion)
 

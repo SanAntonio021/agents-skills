@@ -1,0 +1,20 @@
+{
+  "skill_name": "sci-writing",
+  "evals": [
+    {
+      "id": "route-complex-paper-workflow",
+      "prompt": "我现在有一篇太赫兹通信系统论文的中文草稿，还有一些实验图和参考文献，但不知道下一步应该先调研、先改英文，还是先审一遍。你帮我判断当前该走哪一步。",
+      "expected_output": "先判断当前阶段，不一次带上所有相关 skill；如果事实、证据或图文关系未定，先路由到 baseline-check 或 paper-review；若草稿和事实边界已清楚，再路由到 sci-paper-edit。"
+    },
+    {
+      "id": "route-engineering-proposal-metric",
+      "prompt": "工程申报书里老师要求把 100Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
+      "expected_output": "判断核心阻塞是指标口径和可行性，先路由到 target-check；指标站稳后再回到 project-writing 改正文。"
+    },
+    {
+      "id": "upstream-absorption-map",
+      "prompt": "我想把 Imbad 和 K-Dense 的学术写作流程吸收到本地技能里，是不是一次把 jixian、tinggao、SCI 精修和指标论证都改了？",
+      "expected_output": "先读取 academic-workflow-map.md，建议只改最相关的一处；说明 Imbad 主要吸流程门控，K-Dense 主要吸局部检查清单，不批量改多个下游 skill。"
+    }
+  ]
+}

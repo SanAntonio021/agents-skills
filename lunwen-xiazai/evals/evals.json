@@ -15,6 +15,16 @@
       "id": "search-before-download",
       "prompt": "帮我找一下近几年太赫兹 MIMO 通信系统硬件实现方向有哪些重要论文。",
       "expected_output": "判断用户还处在找论文和筛论文阶段，先转向 research-lookup；只有论文线索明确后才进入下载。"
+    },
+    {
+      "id": "ieee-authorized-official-download",
+      "prompt": "用 DOI 10.1109/mcom.001.1900411 下载 IEEE 正式版全文。如果需要学校授权，复用我当前浏览器里的电子科大登录状态；下载后校验别把登录页当 PDF。",
+      "expected_output": "优先调用 paper-search-mcp 的 download_with_authorization，走机构授权正式页，必要时等待用户本人完成扫码或验证码；成功后保存 official PDF，并校验文件头是 %PDF-。"
+    },
+    {
+      "id": "resume-authorization-checkpoint",
+      "prompt": "刚才批量下载到一半卡在学校登录了，我已经扫码授权完成。请继续把剩下的论文下载完并更新 paper_index.md。",
+      "expected_output": "先用 list_authorization_checkpoints 找到等待授权的条目，再用 retry_authorized_download 继续，不重新搜索混淆版本；完成后更新 download_list.md 和 paper_index.md。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Publisher Download Playbook
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 ## 用途
 
@@ -29,12 +29,22 @@
 
 `文章详情页 -> Institutional Sign In -> Access Through <institution> -> stamp/stamp.jsp -> PDF`
 
+使用 `paper-search-mcp` 时优先路径：
+
+`DOI/文章详情页 -> download_with_authorization -> 机构 WAYF -> 已登录浏览器会话 -> stamp/stamp.jsp -> iframe 中的 stampPDF/getPDF.jsp`
+
 ### 经验
 
 - 若文章详情页还显示 `You do not have access to this PDF`，说明学校权限还没真正挂上。
 - `Access provided by <institution>` 是是否真正接通权限的高价值信号。
 - 对受限条目，命令行直抓 `stampPDF/getPDF.jsp` 常被风控或返回包装页；浏览器内下载更稳。
 - `IEEE Access` 虽然是开放获取，也优先通过文章页确认官方 PDF 链接后再下载。
+- 若本机日常浏览器已经有学校登录态，优先复用该浏览器会话；MCP 单独启动的新浏览器资料目录可能没有账号、Cookie 和机构登录状态。
+- 对 IEEE，`stamp/stamp.jsp` 常是外层 HTML wrapper；真正 PDF 往往在页面里的 `iframe`、`embed` 或 `object`，例如 `stampPDF/getPDF.jsp?...`。保存时必须抓内层 PDF，并用 `%PDF-` 文件头确认。
+- 如果页面显示 `Access provided by: University of Electronic Science and Tech of China`，说明电子科大机构权限已经接通，可以继续点 `PDF` 或让 MCP 抓内层 PDF。
+- 已验证的电子科大 Shibboleth/CARSI entityId 是 `https://idp-lib.uestc.edu.cn/idp/shibboleth`。这是机构入口配置，不是账号密码。
+- 登录页出现扫码、验证码、账号密码或二次确认时，只让用户本人完成这一步；不要替用户输入凭据，也不要绕过权限。
+- 授权中断时保留 MCP checkpoint，用户完成授权后用 `retry_authorized_download` 继续，不要重新搜索导致下载到错误版本。
 
 ## ScienceDirect / Elsevier
 

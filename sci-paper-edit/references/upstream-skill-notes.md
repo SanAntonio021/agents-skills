@@ -49,9 +49,7 @@
 - 不把科研全流程能力引入一次局部润色。
 - 不让生物、化学、医学等领域模板污染通信硬件论文写法。
 
-## 本地 draft-edit
-
-路径：[../../draft-edit/SKILL.md](../../draft-edit/SKILL.md)
+## 本地已批准初稿收口
 
 必须继承：
 
@@ -63,5 +61,5 @@
 
 本 skill 与它的关系：
 
-- `draft-edit` 继续负责一般初稿精修。
-- `sci-paper-edit` 负责已有 SCI/IEEE 论文稿件的英文化、精修和投稿前整理。
+- 已批准初稿收口已经并入 `sci-paper-edit`。
+- `sci-paper-edit` 统一负责已有 SCI/IEEE 论文稿件的英文化、引用安全精修和投稿前整理。

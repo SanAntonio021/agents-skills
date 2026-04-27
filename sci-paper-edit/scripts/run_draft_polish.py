@@ -111,9 +111,9 @@ def main() -> int:
             lines = [json.dumps(header, ensure_ascii=False)] + [json.dumps(r, ensure_ascii=False) for r in records]
             atomic_write_text(baseline_path, "\n".join(lines).rstrip() + "\n")
 
-    issues = check_unit_outputs(skill="draft-edit", workspace=workspace, outputs=[out_rel])
+    issues = check_unit_outputs(skill="sci-paper-edit", workspace=workspace, outputs=[out_rel])
     if issues:
-        write_quality_report(workspace=workspace, unit_id=unit_id, skill="draft-edit", issues=issues)
+        write_quality_report(workspace=workspace, unit_id=unit_id, skill="sci-paper-edit", issues=issues)
         return 2
     return 0
 

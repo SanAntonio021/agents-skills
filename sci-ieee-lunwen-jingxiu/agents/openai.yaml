@@ -1,0 +1,4 @@
+interface:
+  display_name: "SCI/IEEE 论文精修"
+  short_description: "精修 SCI/IEEE 论文草稿并整理合作者版本"
+  default_prompt: "Use $sci-ieee-lunwen-jingxiu to revise this SCI/IEEE manuscript draft, keep facts and numbers unchanged, list only key pending confirmations, and prepare a concise coauthor-ready version when files are involved."

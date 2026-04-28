@@ -498,7 +498,7 @@ def scan_broken_items(
                     "kind": "empty_frontmatter",
                     "path": str(record.skill_md),
                     "relative_path": f"{record.relative_path}/SKILL.md",
-                    "reason": "`SKILL.md` frontmatter 为空，无法稳定路由。",
+                    "reason": "`SKILL.md` 文件开头配置为空，无法稳定路由。",
                     "suggested_action": "人工复核",
                     "blocking": True,
                 }
@@ -770,17 +770,17 @@ def build_no_action_notes(
             f"[保留] {item['relative_path']}: {wrappers} 显式引用了非标准上游入口 {entry_files}。"
         )
     if not directory_hygiene:
-        notes.append("目录卫生：未发现异常嵌套、`docs/` 误放 skill 或分层不一致。")
+        notes.append("目录结构问题：未发现异常嵌套、`docs/` 误放 skill 或分层不一致。")
     if not duplicates:
-        notes.append("重复候选：未发现满足重复阈值的活跃 skill 对。")
+        notes.append("真的重复技能：未发现满足重复阈值的当前可用技能组合。")
     if not name_drift:
-        notes.append("名字漂移：未发现目录名和 `name:` 对不上的活跃 skill。")
+        notes.append("名字不一致：未发现目录名和 `name:` 对不上的当前可用技能。")
     if not overlaps:
-        notes.append("边界交叉候选：未发现满足交叉阈值的活跃 skill 对。")
+        notes.append("职责相近但不该直接合并：未发现满足相似阈值的当前可用技能组合。")
     if not path_drift:
-        notes.append("路径漂移：未发现失效的本地绝对路径或相对引用。")
+        notes.append("链接或路径失效：未发现失效的本地绝对路径或相对引用。")
     if not broken_items:
-        notes.append("空壳/破损项：未发现缺 `SKILL.md`、空 frontmatter 或空正文的活跃 skill。")
+        notes.append("空技能或坏技能：未发现缺 `SKILL.md`、空文件开头配置或空正文的当前可用技能。")
     return notes
 
 
@@ -841,17 +841,17 @@ def render_actions(items: list[dict[str, str]]) -> list[str]:
 
 def render_summary_counts(counts: dict[str, int]) -> list[str]:
     return [
-        f"- 活跃 skill：`{counts['active_skills']}`",
-        f"- 归档 skill：`{counts['archive_skills']}`",
+        f"- 当前实际会用到的技能：`{counts['active_skills']}`",
+        f"- 归档技能：`{counts['archive_skills']}`",
         f"- 发现的 `SKILL.md` 目录：`{counts['total_discovered_skill_dirs']}`",
-        f"- 阻塞项：`{counts['blocking_items']}`",
-        f"- 目录卫生：`{counts['directory_hygiene']}`",
-        f"- 重复候选：`{counts['duplicate_candidates']}`",
-        f"- 名字漂移：`{counts['name_drift']}`",
-        f"- 边界交叉候选：`{counts['overlap_candidates']}`",
-        f"- 路径漂移：`{counts['path_drift']}`",
-        f"- 空壳/破损项：`{counts['broken_items']}`",
-        f"- wrapper 排除：`{counts['wrapper_exclusions']}`",
+        f"- 严重问题：`{counts['blocking_items']}`",
+        f"- 目录结构问题：`{counts['directory_hygiene']}`",
+        f"- 真的重复技能：`{counts['duplicate_candidates']}`",
+        f"- 名字不一致：`{counts['name_drift']}`",
+        f"- 职责相近但不该直接合并：`{counts['overlap_candidates']}`",
+        f"- 链接或路径失效：`{counts['path_drift']}`",
+        f"- 空技能或坏技能：`{counts['broken_items']}`",
+        f"- 本地补充关系，不算重复：`{counts['wrapper_exclusions']}`",
     ]
 
 
@@ -887,7 +887,7 @@ def render_weekly_report(
     if layout_mode == "segmented":
         scope_lines.extend(
             [
-                "- 活跃来源：`custom/`、`vendor/` 和少量迁移遗留的根目录 skill",
+                "- 当前会用到的来源：`custom/`、`vendor/` 和少量迁移遗留的根目录 skill",
                 "- `archive/` 只作辅助判断，不参与活跃路由",
                 "- `docs/` 不参与 skill 路由，但会检查是否误放 `SKILL.md`",
             ]
@@ -897,7 +897,7 @@ def render_weekly_report(
             [
                 "- 顶层含 `SKILL.md` 的目录视为活跃 skill",
                 "- `.system/` 和 `codex-primary-runtime/` 视为系统容器",
-                "- 如果要判断“当前真的加载了什么”，优先拿运行时入口做扫描",
+                "- 如果要判断“当前真的加载了什么”，优先扫描 Codex 实际读取的技能目录",
             ]
         )
     blocking_items = directory_hygiene + broken_items
@@ -913,31 +913,31 @@ def render_weekly_report(
 
 {render_list(render_summary_counts(counts))}
 
-## 当前活跃 skill
+## 当前实际会用到的技能
 
 {render_list(render_active_skills(records))}
 
-## 阻塞项
+## 严重问题
 
 {render_list(render_directory_hygiene(blocking_items))}
 
-## 真重复候选
+## 真的重复技能
 
 {render_list(render_duplicates(duplicates))}
 
-## 名字漂移
+## 名字不一致
 
 {render_list(render_name_drift(name_drift))}
 
-## 边界交叉候选
+## 职责相近但不该直接合并
 
 {render_list(render_overlaps(overlaps))}
 
-## 路径漂移
+## 链接或路径失效
 
 {render_list(render_path_drift(path_drift))}
 
-## 空壳/破损项
+## 空技能或坏技能
 
 {render_list(render_broken(broken_items))}
 

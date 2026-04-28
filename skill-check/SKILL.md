@@ -1,13 +1,13 @@
 ---
 name: skill-check
-description: 审计本地 skill 树的结构卫生、重复候选、名字漂移、路径漂移和加载来源。Use when 用户要确认当前到底加载了哪些 skill、查同名冲突、查目录名和 `name:` 对不上、分清 GitHub 源码、cc-switch 同步目录和 Codex 运行时目录，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
+description: 审计本地 skill 树，检查活跃来源、目录结构、重复/合并候选、名字漂移、路径漂移和空壳损坏项。Use when 用户要确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、cc-switch 同步目录和 Codex 运行时目录，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
 ---
 
 # Skill 卫生审计
 
 ## 作用
 
-这份 skill 用来把本地 skill 环境查清楚，尤其是下面几类问题：
+这份 skill 用来查清本地 skill 环境，重点看这些问题：
 
 - 当前活跃 skill 列表
 - 结构卫生问题
@@ -26,7 +26,7 @@ description: 审计本地 skill 树的结构卫生、重复候选、名字漂移
 - 同步目录：`C:\Users\SanAn\.cc-switch\skills`
 - 源码目录：`D:\BaiduSyncdisk\.agents\agents-skills-src`
 
-如果用户问“现在到底加载了什么”，先看运行时入口；不要直接把源码目录当成当前已加载。
+用户问“现在到底加载了什么”时，先看运行时入口；不要把源码目录当成当前已加载列表。
 
 ## 流程
 
@@ -34,7 +34,7 @@ description: 审计本地 skill 树的结构卫生、重复候选、名字漂移
    - 查“当前真的加载了哪些 skill”时，优先看运行时入口。
    - 查“面板里更新了，为什么没生效”时，再看同步目录和 `cc-switch.db`。
    - 查“以后该改哪一份”时，最后再回到源码目录。
-2. 对目标根目录运行审计脚本：
+2. 扫描目标根目录：
 
 ```powershell
 python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <reports-root> --date <YYYY-MM-DD>
@@ -43,7 +43,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 3. 再读取本轮产物：
    - `manifests/<date>/summary.json`
    - `weekly/<date>.md`
-4. 如果还要补充“市场安装 skill 的清单、残留目录或全局安装情况”，再按需调用补充脚本，不要把这一步默认混进每次审计。
+4. 如果还要查市场安装清单、残留目录或全局安装情况，再调用补充脚本；不要把这一步默认塞进每次审计。
 5. 汇报时先给出：
    - 当前活跃 skill
    - 真重复候选
@@ -66,7 +66,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `本地补充关系排除`
   指 `custom` 对 `vendor` 的本地补充、本地路由或接入层，这类不计入重复。
 - `边界重叠候选`
-  指描述和正文相似，但更像职责没收紧，而不是同一份 skill。
+  指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `路径漂移`
   指绝对路径、相对链接、Related Skills 链接或工作流引用失效。
 - `空壳或损坏项`
@@ -78,13 +78,13 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 
 只有目标、输入、输出产物、执行方式和触发场景都高度重合，才标为 `合并候选`。
 
-如果只是同属一个大主题，但产物或执行方式不同，优先标为 `边界重叠候选` 或 `保留`。例如：
+如果只是同属一个大主题，但产物或执行方式不同，标为 `边界重叠候选` 或 `保留`。例如：
 
 - 论文文本精修和论文图件重画都属于论文工作，但一个处理文本，一个处理图件，不应直接合并。
 - 台架测试和实验记录都属于实验工作，但一个执行测试，一个同步记录，不应直接合并。
 - 指标论证和工程申报都可能服务同一项目，但一个判断指标是否站得住，一个写申报正文，不应直接合并。
 
-`合并候选` 只用于真正减少重复且不会明显伤害触发准确性的情况。
+`合并候选` 只用于两件事明显重复、合并后又不会伤害触发准确性的情况。
 
 详细分级和报告模板见：
 
@@ -100,7 +100,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - 不把源码目录直接当成“当前已加载 skill 列表”。
 - 不把 cc-switch 面板显示名直接当成磁盘目录名。
 - `archive/` 只作为辅助判断来源，不当作活跃 skill 来源。
-- `boundary overlap` 默认只聚焦至少一侧属于本地活跃层的 pair；纯 `vendor <-> vendor` 相似度通常不作为本轮修补对象。
+- `边界重叠` 默认只看至少一侧属于本地活跃层的组合；纯 `vendor <-> vendor` 相似通常不作为本轮修补对象。
 - 不自动跑市场搜索，也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。

@@ -17,6 +17,16 @@
       "expected_output": "按 system_diagram 审查，优先检查技术链路、模块命名、信号流、频率/带宽/测量点标注和可编辑源文件，不建议用自由生成式图片替代。"
     },
     {
+      "id": "rf-coupler-port-layout",
+      "prompt": "我想画 Fig. 4a 里的四端口双向耦合器：Port 1 接 THz source，Port 3 接 Chern isolator，Port 4 接 monitoring chain，Port 2 外接 50-ohm matched load。实物照片里端口是上下左右布置，监测端引线还偏离中心。你帮我判断怎么画更像 IEEE 论文图。",
+      "expected_output": "先建议查找 2-4 张近 5 年内 IEEE Transactions/Letters 或同领域顶刊中已发表的相似系统图，记录论文、DOI、图号/图注和可借鉴点，并优先保存到项目 sources/ 目录；不要按作者姓名推断英语母语，而用期刊层级、同行评审和图件成熟度判断参考质量。随后区分实物端口编号和功能端口名称，建议保持实物方位和偏心引出线；把 Port 2 画成 isolated/terminated port 并在器件外接匹配负载；避免把外部负载画成内部电阻或把负载支路画成主输出通路；如果用户已有自绘 PPT/SVG 草图，优先校准端口逻辑、论文符号和局部矢量元件，不强行把 agent 生成的整张图当最终稿。"
+    },
+    {
+      "id": "published-reference-before-redraw",
+      "prompt": "帮我重画这个耦合器系统示意图，不要凭感觉画。先找 IEEE 期刊里已经发表过的类似图作为参考，再告诉我该怎么画。",
+      "expected_output": "先列出 2-4 张近 5 年内同类已发表参考图，优先 IEEE Transactions/Letters 或同领域顶刊；每条包含论文、DOI、图号/图注和可借鉴点，必要时保存到 sources/。明确这些图只用于版式、端口标注、线型、箭头强弱和信息密度参考，不直接照抄；不能按作者姓名、机构或国籍推断英语母语。若只能找到更早的经典图，要降级说明。随后再给具体画法。"
+    },
+    {
       "id": "bitmap-without-raw-data",
       "prompt": "我只有这张 PNG 截图，能不能帮我重画成 IEEE 风格的数据图？",
       "expected_output": "先说明没有原始数据不能保证数据精确；除非用户接受 approximate_redraw，否则只做风格审查和重画所需数据清单。"

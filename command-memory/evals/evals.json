@@ -18,6 +18,12 @@
       "prompt": "我想先把 D:\\BaiduSyncdisk\\.agents\\AGENTS.md 的内容同步到 C:\\Users\\SanAn\\.codex\\AGENTS.md，等后面再修软链。请给我最稳的做法和该提醒我的话。",
       "expected_output": "给出先备份再复制的命令形态，并明确提醒这只是临时对齐，后面不会自动同步。",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "我生成了一个 PPTX，想用 PowerPoint COM 自动打开、导出 PNG 预览并关闭。我的桌面上可能已经开着另一个没保存的 PPT。请给我最稳的 Windows 操作思路。",
+      "expected_output": "先建议用 zip/XML 等文件级检查替代 COM；若必须用 COM，应先检查现有 PowerPoint 进程和打开文档，只处理本次生成文件，关闭自己打开的 presentation，不在可能连接到既有实例时调用 Quit，并提醒可能影响未保存文件。",
+      "files": []
     }
   ]
 }

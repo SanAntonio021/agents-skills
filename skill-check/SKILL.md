@@ -3,7 +3,7 @@ name: skill-check
 description: 检查本地技能目录，确认 Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能。Use when 用户要确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、cc-switch 同步出来的目录和 Codex 实际读取的技能目录，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
 ---
 
-# Skill 卫生审计
+# Skill 目录检查
 
 ## 作用
 
@@ -13,10 +13,26 @@ description: 检查本地技能目录，确认 Codex 实际读取哪些技能，
 - 目录结构问题
 - 真的重复技能
 - 名字不一致
-- 本地补充关系，不算重复
 - 职责相近但不该直接合并
 - 链接或路径失效
 - 空技能或坏技能
+
+## 本地目录方案
+
+这台机器现在不再按旧的分层目录分类。
+
+源文件目录采用一层平铺的方式：
+
+```text
+D:\BaiduSyncdisk\.agents\agents-skills-src\<skill-name>\SKILL.md
+```
+
+判断规则很简单：
+
+- 顶层目录里有 `SKILL.md`，就算一个源技能。
+- 顶层目录里没有 `SKILL.md`，不算技能。
+- `*-workspace`、`rescued-skill-materials` 这类目录只当作工作材料或历史材料，不算当前技能。
+- 目录名必须和 `SKILL.md` 里的 `name:` 一致。
 
 ## 先分清三类目录
 
@@ -46,25 +62,23 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 4. 如果还要查市场安装清单、残留目录或全局安装情况，再调用补充脚本；不要把这一步默认塞进每次审计。
 5. 汇报时先给出：
    - 当前实际会用到的技能
+   - 目录结构问题
    - 真的重复技能
    - 名字不一致
    - 链接或路径失效
    - 空技能或坏技能
 6. 优先看严重问题、建议动作和链接失效，再决定是否把具体修补工作交给 `skill-creator`。
-7. 如果报告显示“自建技能 + 外部技能”只是本地补充关系，就保留两层，不把它误当成重复副本。
 
 ## 结果类型
 
 - `当前实际会用到的技能`
   指本次扫描目录里，实际会参与当前路由或加载判断的技能。
 - `目录结构问题`
-  指目录层级不对、`docs/` 里误放 skill、工作区快照混进活跃树等问题。
+  指技能放在不该放的位置，或工作区、历史材料、说明材料里混入了 `SKILL.md`。
 - `真的重复技能`
   指当前会用到的技能里，`name:` 归一化后冲突，或 `SKILL.md` 正文高度相似且职责也重合。
 - `名字不一致`
   指目录名、数据库里的 `directory`、数据库里的显示名，和 `SKILL.md` 里的 `name:` 对不上。
-- `本地补充关系，不算重复`
-  指 `custom` 对 `vendor` 的本地补充、本地路由或接入层，这类不计入重复。
 - `职责相近但不该直接合并`
   指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `链接或路径失效`
@@ -99,8 +113,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - 只读审计，不自动移动、归档、删除或改写任何 `SKILL.md`。
 - 不把源文件目录直接当成“当前已加载技能列表”。
 - 不把 cc-switch 面板显示名直接当成磁盘目录名。
-- `archive/` 只作为辅助判断来源，不当作活跃 skill 来源。
-- `职责相近但不该直接合并` 默认只看至少一侧属于本地活跃层的组合；两个外部技能之间的相似通常不作为本轮修补对象。
+- 不再按旧的分层目录判断技能来源；如果发现旧目录，只当作需要人工复核的历史残留。
 - 不自动跑市场搜索，也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
@@ -116,6 +129,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 
 - 扫描范围
 - 当前实际会用到的技能
+- 目录结构问题
 - 真的重复技能
 - 名字不一致
 - 链接或路径失效
@@ -134,5 +148,5 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 ## 维护
 
 - 如果路径、同步方式或启用链路变化，先更新 [references/skill-hygiene.md](references/skill-hygiene.md) 和脚本，再同步这里。
-- 如果本地补充层写法变化，优先回查脚本里的识别规则和关键字，不先膨胀正文。
+- 如果本地目录方案变化，先改脚本和参考文件，再同步这里。
 - 如果以后接 automation，优先复用现有 CLI 入口，不把调度信息写进 `SKILL.md`。

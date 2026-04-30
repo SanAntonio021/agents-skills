@@ -12,6 +12,11 @@
       "expected_output": "要求读取原始数据，使用 IEEE 单栏尺寸和 Matplotlib 样式，保留重画脚本，导出 PDF/PNG，并说明坐标轴、单位、图例和黑白可读性。"
     },
     {
+      "id": "data-plot-visual-encoding-priority",
+      "prompt": "我有 6 条 BER 曲线、2 条阈值线和一块置信区间，想画成 IEEE 单栏图。配色和线型应该怎么定？",
+      "expected_output": "先按数据角色分层，而不是直接套固定色表；主曲线用色盲友好的离散色，并用线型、marker 或直接标注冗余区分；阈值线用细灰虚线或点划线，弱于主数据；置信区间用主线同色浅色透明填充或灰阶填充；检查灰度、色盲和最终单栏尺寸可读性。"
+    },
+    {
       "id": "system-diagram-technical-review",
       "prompt": "这是太赫兹通信实验平台框图，帮我看是否适合放在 IEEE Transactions 论文里。",
       "expected_output": "按 system_diagram 审查，优先检查技术链路、模块命名、信号流、频率/带宽/测量点标注和可编辑源文件，不建议用自由生成式图片替代。"

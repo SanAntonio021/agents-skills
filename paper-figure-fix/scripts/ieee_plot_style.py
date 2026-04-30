@@ -12,16 +12,28 @@ import matplotlib.pyplot as plt
 IEEE_SINGLE_COLUMN_IN = 3.5
 IEEE_DOUBLE_COLUMN_IN = 7.16
 
-OKABE_ITO = [
+FIGURE_PRIORITY_COLORS = {
+    "primary": "#0072B2",  # blue
+    "secondary": "#D55E00",  # vermillion
+    "tertiary": "#009E73",  # bluish green
+    "quaternary": "#CC79A7",  # reddish purple
+    "category_extra_1": "#56B4E9",  # sky blue
+    "category_extra_2": "#E69F00",  # orange
+    "reference": "#4C4C4C",  # dark gray
+    "threshold": "#8A8A8A",  # medium gray
+    "grid": "#D9D9D9",  # light gray
+}
+
+DEFAULT_CATEGORY_COLORS = [
     "#0072B2",  # blue
     "#D55E00",  # vermillion
     "#009E73",  # bluish green
     "#CC79A7",  # reddish purple
-    "#E69F00",  # orange
     "#56B4E9",  # sky blue
-    "#F0E442",  # yellow
-    "#000000",  # black
+    "#E69F00",  # orange
 ]
+
+OKABE_ITO = DEFAULT_CATEGORY_COLORS
 
 
 def ieee_figure_size(width: str = "single", height_ratio: float = 0.72) -> tuple[float, float]:
@@ -66,7 +78,7 @@ def use_ieee_style(
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "svg.fonttype": "none",
-            "axes.prop_cycle": mpl.cycler(color=OKABE_ITO),
+            "axes.prop_cycle": mpl.cycler(color=DEFAULT_CATEGORY_COLORS),
         }
     )
 
@@ -111,7 +123,7 @@ def apply_axis_cleanup(ax, keep_grid: bool = False) -> None:
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     if keep_grid:
-        ax.grid(True, color="#D9D9D9", linewidth=0.4, alpha=0.7)
+        ax.grid(True, color=FIGURE_PRIORITY_COLORS["grid"], linewidth=0.4, alpha=0.7)
     else:
         ax.grid(False)
 

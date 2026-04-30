@@ -9,6 +9,7 @@
 3. 同一篇论文中，相同优先级或相同物理变量保持同一颜色、线型和 marker。
 4. 颜色必须配合线型、marker、灰度或直接标注；不能只靠颜色区分。
 5. 如果一张图里有多条同等重要曲线，不要强行排成一级、二级、三级；改用无序类别色表，并在全文保持类别映射一致。
+6. 用 Python/Matplotlib 重画时，`scripts/ieee_plot_style.py` 中的 `FIGURE_PRIORITY_COLORS` 和 `OKABE_ITO` 应与本表保持一致。
 
 ## 默认优先级色表
 

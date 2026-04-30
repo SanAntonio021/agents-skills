@@ -12,7 +12,8 @@
 |---|---|---|
 | 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `brainstorming` 或 `baseline-check` |
 | 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-check` |
-| 文献下载与单篇总结 | 下载论文、补 PDF、整理索引、整理单篇文献笔记 | `paper-reading` |
+| 文献下载 | 下载论文、补 PDF、维护 `paper_index.md` 论文索引 | `paper-download` |
+| 单篇论文总结 | 读已有 PDF、整理单篇文献笔记、提取术语和关键信息 | `paper-summary` |
 | 指标论证 | 这个指标站不站得住、口径怎么写 | `target-check` |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度 | `sci-paper-edit` |
@@ -57,8 +58,8 @@
 |---|---|---|
 | `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
 | `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | `target-check`、`simulation-log` |
-| `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-reading`、`sci-paper-edit` |
-| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-reading`、`baseline-check` |
+| `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`sci-paper-edit` |
+| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-download`、`baseline-check` |
 | `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `sci-paper-edit` |
 | `research-grants` | significance / innovation / feasibility 框架 | `project-writing`，需改成国内工程申报口径 |
 | `matlab`、`matplotlib`、`statistical-analysis` | 实验数据处理、绘图、统计报告模板 | 暂存，等有太赫兹实验数据处理 skill 时再用 |

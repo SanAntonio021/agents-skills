@@ -1,0 +1,25 @@
+{
+  "skill_name": "paper-download",
+  "evals": [
+    {
+      "id": "research-results-to-paper-index",
+      "prompt": "research-lookup 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理进 paper_index.md，并开始下载能下载的 PDF。",
+      "expected_output": "先从当前对话里的零散论文线索整理 paper_index.md，再用 paper-search-mcp 补元数据和版本线索，最后下载可公开或已授权访问的 PDF，并继续更新 paper_index.md。"
+    },
+    {
+      "id": "published-version-first-preprint-temporary",
+      "prompt": "这篇论文已经正式发表了，但现在正式版 PDF 似乎拿不到，arXiv 上有预印本。先帮我把能拿到的版本下载下来。",
+      "expected_output": "优先确认正式发表信息；正式版暂时无法通过公开或已授权渠道获取时允许下载预印本，但必须在文件名和 paper_index.md 中标为 temporary_preprint。"
+    },
+    {
+      "id": "ieee-authorized-official-download",
+      "prompt": "用 DOI 10.1109/mcom.001.1900411 下载 IEEE 正式版全文。如果需要学校授权，复用我当前浏览器里的电子科大登录状态；下载后校验别把登录页当 PDF。",
+      "expected_output": "优先调用 paper-search-mcp 的 download_with_authorization，走机构授权正式页，必要时等待用户本人完成扫码或验证码；成功后保存 official PDF，并校验文件头是 %PDF-。"
+    },
+    {
+      "id": "full-access-html-not-pdf",
+      "prompt": "这个 Science 页面显示 FULL ACCESS，网页全文能读。请判断为什么还不能直接把它当正式 PDF 下载结果。",
+      "expected_output": "区分网页全文和 PDF 文件；继续检查 Download PDF、View Options、iframe/embed/pdfdirect 等入口，并用 %PDF- 文件头确认结果。若返回 HTML、登录页或补充材料，不能当正文 PDF 保存。"
+    }
+  ]
+}

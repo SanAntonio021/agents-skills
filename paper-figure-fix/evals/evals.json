@@ -14,7 +14,7 @@
     {
       "id": "data-plot-visual-encoding-priority",
       "prompt": "我有 6 条 BER 曲线、2 条阈值线和一块置信区间，想画成 IEEE 单栏图。配色和线型应该怎么定？",
-      "expected_output": "先按通用优先级表把数据分成主曲线、阈值线和置信区间，而不是直接套某篇文章的固定色表；主曲线应有最高识别优先级，并使用本篇论文的一级强调色；一级强调色可从项目色表或色盲友好候选色中选择，具体颜色不跨论文固定，但同一篇论文内相同优先级应一致；同时用线型、marker 或直接标注冗余区分；阈值线用细灰虚线或点划线，弱于主数据；置信区间用主线同色浅色透明填充或灰阶填充；检查灰度、色盲和最终单栏尺寸可读性。"
+      "expected_output": "先按通用优先级表把数据分成主曲线、阈值线和置信区间，并读取 references/data-plot-color-priority.md 建立当前论文的 figure color map；主曲线使用一级强调色，例如默认 blue #0072B2，二级强调可用 vermillion #D55E00，三级强调可用 bluish green #009E73，参考/基线用 dark gray #4C4C4C，阈值/规范线用 medium gray #8A8A8A；具体颜色不跨论文固定，但同一篇论文内相同优先级应一致；同时用线型、marker 或直接标注冗余区分；置信区间用主线同色浅色透明填充；检查灰度、色盲和最终单栏尺寸可读性。"
     },
     {
       "id": "system-diagram-technical-review",

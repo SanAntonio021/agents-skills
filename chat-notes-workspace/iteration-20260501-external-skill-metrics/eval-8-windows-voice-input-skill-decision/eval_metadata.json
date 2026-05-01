@@ -1,0 +1,17 @@
+{
+    "eval_id":  8,
+    "eval_name":  "eval-8-windows-voice-input-skill-decision",
+    "prompt":  "我这轮主要是在排查 Windows 上闪电说配火山引擎豆包 ASR：API 重启后会不会丢、火山 2.0 资源 ID、用户词典路径、Token 不能泄露。帮我用 chat-notes 判断这些经验该不该整理成新 skill。先别改文件，只给审查稿。",
+    "assertions":  [
+                       "输出明确给出四个结论之一：整理成新 skill、修改现有 skill、写在当前项目里、这次不改。",
+                       "输出说明本地有没有类似 skill，并解释差异。",
+                       "输出实际搜索或说明外部类似 skill 的来源。",
+                       "外部 skill 候选使用表格呈现。",
+                       "外部 skill 表格包含 `skill`、`来源`、`链接`、`GitHub stars`、`下载/安装指标`、`匹配度`、`结论` 这些字段。",
+                       "外部 skill 的来源不能只写“外部”，要写 Skills CLI、skills.sh、GitHub、SkillsMP 或其他具体来源。",
+                       "下载/安装指标优先写周下载量；没有周下载量时，明确标成总安装量或总下载量。",
+                       "查不到 stars、周下载量或安装量时，输出写 `未查到` 或 `未提供`，不编造数字。",
+                       "输出解释外部 ASR/语音转文字 skill 与当前 Windows 闪电说配置排障经验的差异。",
+                       "输出保持审查稿阶段，不直接改文件、不移动文件、不提交。"
+                   ]
+}

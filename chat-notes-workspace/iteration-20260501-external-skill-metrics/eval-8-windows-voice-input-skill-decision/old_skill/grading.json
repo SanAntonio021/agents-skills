@@ -1,0 +1,76 @@
+{
+    "expectations":  [
+                         {
+                             "text":  "输出明确给出四个结论之一：整理成新 skill、修改现有 skill、写在当前项目里、这次不改。",
+                             "passed":  true,
+                             "evidence":  "输出满足该检查项；见 outputs/output.md。"
+                         },
+                         {
+                             "text":  "输出说明本地有没有类似 skill，并解释差异。",
+                             "passed":  true,
+                             "evidence":  "输出满足该检查项；见 outputs/output.md。"
+                         },
+                         {
+                             "text":  "输出实际搜索或说明外部类似 skill 的来源。",
+                             "passed":  false,
+                             "evidence":  "旧版输出明确写了“这次没有做外部查询”。"
+                         },
+                         {
+                             "text":  "外部 skill 候选使用表格呈现。",
+                             "passed":  false,
+                             "evidence":  "没有外部候选表。"
+                         },
+                         {
+                             "text":  "外部 skill 表格包含 `skill`、`来源`、`链接`、`GitHub stars`、`下载/安装指标`、`匹配度`、`结论` 这些字段。",
+                             "passed":  false,
+                             "evidence":  "没有外部候选表，因此缺少规定字段。"
+                         },
+                         {
+                             "text":  "外部 skill 的来源不能只写“外部”，要写 Skills CLI、skills.sh、GitHub、SkillsMP 或其他具体来源。",
+                             "passed":  false,
+                             "evidence":  "没有列出具体外部来源。"
+                         },
+                         {
+                             "text":  "下载/安装指标优先写周下载量；没有周下载量时，明确标成总安装量或总下载量。",
+                             "passed":  false,
+                             "evidence":  "没有列出周下载量、总安装量或总下载量。"
+                         },
+                         {
+                             "text":  "查不到 stars、周下载量或安装量时，输出写 `未查到` 或 `未提供`，不编造数字。",
+                             "passed":  false,
+                             "evidence":  "没有外部候选指标，因此也没有对查不到的指标使用“未查到/未提供”。"
+                         },
+                         {
+                             "text":  "输出解释外部 ASR/语音转文字 skill 与当前 Windows 闪电说配置排障经验的差异。",
+                             "passed":  false,
+                             "evidence":  "只笼统提到外部通用语音转文字 skill，没有结合具体外部候选解释差异。"
+                         },
+                         {
+                             "text":  "输出保持审查稿阶段，不直接改文件、不移动文件、不提交。",
+                             "passed":  true,
+                             "evidence":  "输出满足该检查项；见 outputs/output.md。"
+                         }
+                     ],
+    "summary":  {
+                    "passed":  3,
+                    "failed":  7,
+                    "total":  10,
+                    "pass_rate":  0.3
+                },
+    "execution_metrics":  {
+                              "total_tool_calls":  0,
+                              "output_chars":  1735,
+                              "errors_encountered":  0
+                          },
+    "timing":  {
+                   "total_tokens":  null,
+                   "duration_ms":  null,
+                   "total_duration_seconds":  0,
+                   "note":  "wait_agent notification in this environment did not expose token or duration fields."
+               },
+    "user_notes_summary":  {
+                               "notes":  [
+
+                                         ]
+                           }
+}

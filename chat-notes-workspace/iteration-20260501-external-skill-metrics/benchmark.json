@@ -1,0 +1,336 @@
+{
+  "metadata": {
+    "skill_name": "chat-notes",
+    "skill_path": "D:\\BaiduSyncdisk\\.agents\\agents-skills-src\\chat-notes",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-01T06:05:03Z",
+    "evals_run": [
+      6,
+      8
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 6,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 3570,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4e0d\u4f1a\u53cd\u95ee\u7528\u6237\u8981\u9009\u62e9\u54ea\u4e00\u79cd\u529f\u80fd\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u9ed8\u8ba4\u8fdb\u5165\u5ba1\u67e5\u7a3f\u9636\u6bb5\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u8bf4\u660e\u8fd9\u4e00\u9636\u6bb5\u4e0d\u6539\u6587\u4ef6\u3001\u4e0d\u6e05\u573a\u3001\u4e0d\u63d0\u4ea4\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u672c\u5730\u7c7b\u4f3c skill \u7684\u5bf9\u6bd4\u7ed3\u679c\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u5916\u90e8\u7c7b\u4f3c skill \u7684\u5bf9\u6bd4\u7ed3\u679c\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u5bf9\u6bd4\u7ed3\u679c\u5305\u542b\u6765\u6e90\u3001\u94fe\u63a5\u3001GitHub stars\u3001\u4e0b\u8f7d\u6216\u5b89\u88c5\u6307\u6807\u3001\u5339\u914d\u5ea6\u548c\u7ed3\u8bba\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5982\u679c\u5916\u90e8 skill \u7684 stars \u6216\u4e0b\u8f7d\u6307\u6807\u67e5\u4e0d\u5230\uff0c\u8f93\u51fa\u4f7f\u7528 `\u672a\u67e5\u5230` \u6216 `\u672a\u63d0\u4f9b`\uff0c\u800c\u4e0d\u662f\u7f16\u9020\u6570\u5b57\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5efa\u8bae\u5199\u5230\u54ea\u91cc\u3001\u51c6\u5907\u6539\u54ea\u4e9b\u6587\u4ef6\u548c\u4e0d\u6539\u54ea\u4e9b\u6587\u4ef6\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bed\u8a00\u76f4\u767d\uff0c\u907f\u514d\u8ba9\u7528\u6237\u96be\u61c2\u7684\u62bd\u8c61\u8bcd\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u4f1a\u76f4\u63a5\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u6216\u63a8\u9001\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 8,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 4781,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff1a\u6574\u7406\u6210\u65b0 skill\u3001\u4fee\u6539\u73b0\u6709 skill\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u3001\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\uff0c\u5e76\u89e3\u91ca\u5dee\u5f02\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5b9e\u9645\u641c\u7d22\u6216\u8bf4\u660e\u5916\u90e8\u7c7b\u4f3c skill \u7684\u6765\u6e90\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u5019\u9009\u4f7f\u7528\u8868\u683c\u5448\u73b0\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u8868\u683c\u5305\u542b `skill`\u3001`\u6765\u6e90`\u3001`\u94fe\u63a5`\u3001`GitHub stars`\u3001`\u4e0b\u8f7d/\u5b89\u88c5\u6307\u6807`\u3001`\u5339\u914d\u5ea6`\u3001`\u7ed3\u8bba` \u8fd9\u4e9b\u5b57\u6bb5\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u7684\u6765\u6e90\u4e0d\u80fd\u53ea\u5199\u201c\u5916\u90e8\u201d\uff0c\u8981\u5199 Skills CLI\u3001skills.sh\u3001GitHub\u3001SkillsMP \u6216\u5176\u4ed6\u5177\u4f53\u6765\u6e90\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u4e0b\u8f7d/\u5b89\u88c5\u6307\u6807\u4f18\u5148\u5199\u5468\u4e0b\u8f7d\u91cf\uff1b\u6ca1\u6709\u5468\u4e0b\u8f7d\u91cf\u65f6\uff0c\u660e\u786e\u6807\u6210\u603b\u5b89\u88c5\u91cf\u6216\u603b\u4e0b\u8f7d\u91cf\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u67e5\u4e0d\u5230 stars\u3001\u5468\u4e0b\u8f7d\u91cf\u6216\u5b89\u88c5\u91cf\u65f6\uff0c\u8f93\u51fa\u5199 `\u672a\u67e5\u5230` \u6216 `\u672a\u63d0\u4f9b`\uff0c\u4e0d\u7f16\u9020\u6570\u5b57\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u89e3\u91ca\u5916\u90e8 ASR/\u8bed\u97f3\u8f6c\u6587\u5b57 skill \u4e0e\u5f53\u524d Windows \u95ea\u7535\u8bf4\u914d\u7f6e\u6392\u969c\u7ecf\u9a8c\u7684\u5dee\u5f02\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u4fdd\u6301\u5ba1\u67e5\u7a3f\u9636\u6bb5\uff0c\u4e0d\u76f4\u63a5\u6539\u6587\u4ef6\u3001\u4e0d\u79fb\u52a8\u6587\u4ef6\u3001\u4e0d\u63d0\u4ea4\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 2773,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u4e0d\u4f1a\u53cd\u95ee\u7528\u6237\u8981\u9009\u62e9\u54ea\u4e00\u79cd\u529f\u80fd\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u9ed8\u8ba4\u8fdb\u5165\u5ba1\u67e5\u7a3f\u9636\u6bb5\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u8bf4\u660e\u8fd9\u4e00\u9636\u6bb5\u4e0d\u6539\u6587\u4ef6\u3001\u4e0d\u6e05\u573a\u3001\u4e0d\u63d0\u4ea4\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u672c\u5730\u7c7b\u4f3c skill \u7684\u5bf9\u6bd4\u7ed3\u679c\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5305\u542b\u5916\u90e8\u7c7b\u4f3c skill \u7684\u5bf9\u6bd4\u7ed3\u679c\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u5bf9\u6bd4\u7ed3\u679c\u5305\u542b\u6765\u6e90\u3001\u94fe\u63a5\u3001GitHub stars\u3001\u4e0b\u8f7d\u6216\u5b89\u88c5\u6307\u6807\u3001\u5339\u914d\u5ea6\u548c\u7ed3\u8bba\u3002",
+          "passed": false,
+          "evidence": "\u65e7\u7248\u8f93\u51fa\u5217\u4e3e\u4e86\u5916\u90e8\u5019\u9009\uff0c\u4f46\u6ca1\u6709\u6309\u65b0\u7248\u8981\u6c42\u5b8c\u6574\u5448\u73b0 \u6765\u6e90/\u94fe\u63a5/GitHub stars/\u4e0b\u8f7d\u6216\u5b89\u88c5\u6307\u6807/\u5339\u914d\u5ea6/\u7ed3\u8bba \u8fd9\u4e9b\u5b57\u6bb5\u3002"
+        },
+        {
+          "text": "\u5982\u679c\u5916\u90e8 skill \u7684 stars \u6216\u4e0b\u8f7d\u6307\u6807\u67e5\u4e0d\u5230\uff0c\u8f93\u51fa\u4f7f\u7528 `\u672a\u67e5\u5230` \u6216 `\u672a\u63d0\u4f9b`\uff0c\u800c\u4e0d\u662f\u7f16\u9020\u6570\u5b57\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u5efa\u8bae\u5199\u5230\u54ea\u91cc\u3001\u51c6\u5907\u6539\u54ea\u4e9b\u6587\u4ef6\u548c\u4e0d\u6539\u54ea\u4e9b\u6587\u4ef6\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bed\u8a00\u76f4\u767d\uff0c\u907f\u514d\u8ba9\u7528\u6237\u96be\u61c2\u7684\u62bd\u8c61\u8bcd\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u4e0d\u4f1a\u76f4\u63a5\u8fdb\u5165\u6b63\u5f0f\u4fee\u6539\u6216\u63a8\u9001\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 8,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3,
+        "passed": 3,
+        "failed": 7,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 1735,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u660e\u786e\u7ed9\u51fa\u56db\u4e2a\u7ed3\u8bba\u4e4b\u4e00\uff1a\u6574\u7406\u6210\u65b0 skill\u3001\u4fee\u6539\u73b0\u6709 skill\u3001\u5199\u5728\u5f53\u524d\u9879\u76ee\u91cc\u3001\u8fd9\u6b21\u4e0d\u6539\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u8bf4\u660e\u672c\u5730\u6709\u6ca1\u6709\u7c7b\u4f3c skill\uff0c\u5e76\u89e3\u91ca\u5dee\u5f02\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u5b9e\u9645\u641c\u7d22\u6216\u8bf4\u660e\u5916\u90e8\u7c7b\u4f3c skill \u7684\u6765\u6e90\u3002",
+          "passed": false,
+          "evidence": "\u65e7\u7248\u8f93\u51fa\u660e\u786e\u5199\u4e86\u201c\u8fd9\u6b21\u6ca1\u6709\u505a\u5916\u90e8\u67e5\u8be2\u201d\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u5019\u9009\u4f7f\u7528\u8868\u683c\u5448\u73b0\u3002",
+          "passed": false,
+          "evidence": "\u6ca1\u6709\u5916\u90e8\u5019\u9009\u8868\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u8868\u683c\u5305\u542b `skill`\u3001`\u6765\u6e90`\u3001`\u94fe\u63a5`\u3001`GitHub stars`\u3001`\u4e0b\u8f7d/\u5b89\u88c5\u6307\u6807`\u3001`\u5339\u914d\u5ea6`\u3001`\u7ed3\u8bba` \u8fd9\u4e9b\u5b57\u6bb5\u3002",
+          "passed": false,
+          "evidence": "\u6ca1\u6709\u5916\u90e8\u5019\u9009\u8868\uff0c\u56e0\u6b64\u7f3a\u5c11\u89c4\u5b9a\u5b57\u6bb5\u3002"
+        },
+        {
+          "text": "\u5916\u90e8 skill \u7684\u6765\u6e90\u4e0d\u80fd\u53ea\u5199\u201c\u5916\u90e8\u201d\uff0c\u8981\u5199 Skills CLI\u3001skills.sh\u3001GitHub\u3001SkillsMP \u6216\u5176\u4ed6\u5177\u4f53\u6765\u6e90\u3002",
+          "passed": false,
+          "evidence": "\u6ca1\u6709\u5217\u51fa\u5177\u4f53\u5916\u90e8\u6765\u6e90\u3002"
+        },
+        {
+          "text": "\u4e0b\u8f7d/\u5b89\u88c5\u6307\u6807\u4f18\u5148\u5199\u5468\u4e0b\u8f7d\u91cf\uff1b\u6ca1\u6709\u5468\u4e0b\u8f7d\u91cf\u65f6\uff0c\u660e\u786e\u6807\u6210\u603b\u5b89\u88c5\u91cf\u6216\u603b\u4e0b\u8f7d\u91cf\u3002",
+          "passed": false,
+          "evidence": "\u6ca1\u6709\u5217\u51fa\u5468\u4e0b\u8f7d\u91cf\u3001\u603b\u5b89\u88c5\u91cf\u6216\u603b\u4e0b\u8f7d\u91cf\u3002"
+        },
+        {
+          "text": "\u67e5\u4e0d\u5230 stars\u3001\u5468\u4e0b\u8f7d\u91cf\u6216\u5b89\u88c5\u91cf\u65f6\uff0c\u8f93\u51fa\u5199 `\u672a\u67e5\u5230` \u6216 `\u672a\u63d0\u4f9b`\uff0c\u4e0d\u7f16\u9020\u6570\u5b57\u3002",
+          "passed": false,
+          "evidence": "\u6ca1\u6709\u5916\u90e8\u5019\u9009\u6307\u6807\uff0c\u56e0\u6b64\u4e5f\u6ca1\u6709\u5bf9\u67e5\u4e0d\u5230\u7684\u6307\u6807\u4f7f\u7528\u201c\u672a\u67e5\u5230/\u672a\u63d0\u4f9b\u201d\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u89e3\u91ca\u5916\u90e8 ASR/\u8bed\u97f3\u8f6c\u6587\u5b57 skill \u4e0e\u5f53\u524d Windows \u95ea\u7535\u8bf4\u914d\u7f6e\u6392\u969c\u7ecf\u9a8c\u7684\u5dee\u5f02\u3002",
+          "passed": false,
+          "evidence": "\u53ea\u7b3c\u7edf\u63d0\u5230\u5916\u90e8\u901a\u7528\u8bed\u97f3\u8f6c\u6587\u5b57 skill\uff0c\u6ca1\u6709\u7ed3\u5408\u5177\u4f53\u5916\u90e8\u5019\u9009\u89e3\u91ca\u5dee\u5f02\u3002"
+        },
+        {
+          "text": "\u8f93\u51fa\u4fdd\u6301\u5ba1\u67e5\u7a3f\u9636\u6bb5\uff0c\u4e0d\u76f4\u63a5\u6539\u6587\u4ef6\u3001\u4e0d\u79fb\u52a8\u6587\u4ef6\u3001\u4e0d\u63d0\u4ea4\u3002",
+          "passed": true,
+          "evidence": "\u8f93\u51fa\u6ee1\u8db3\u8be5\u68c0\u67e5\u9879\uff1b\u89c1 outputs/output.md\u3002"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "new_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "tokens": {
+        "mean": 4175.5,
+        "stddev": 856.3063,
+        "min": 3570,
+        "max": 4781
+      }
+    },
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.6,
+        "stddev": 0.4243,
+        "min": 0.3,
+        "max": 0.9
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "tokens": {
+        "mean": 2254.0,
+        "stddev": 733.9768,
+        "min": 1735,
+        "max": 2773
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.40",
+      "time_seconds": "+0.0",
+      "tokens": "+1922"
+    }
+  },
+  "notes": []
+}

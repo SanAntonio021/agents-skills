@@ -15,7 +15,7 @@
 
 | 状态 | 中文术语 | 推荐英文 | 可接受变体 | 不推荐写法 | 适用领域 | 来源 | 用户审阅 | 最后更新 | 备注 |
 |---|---|---|---|---|---|---|---|---|---|
-| 待审 |  |  |  |  |  |  | 否 |  |  |
+| 已确认 | 杂散分量 | spurious component | spur; spurious component(s) | 杂散信号 | THz communication; RF/microwave spectrum analysis | https://www.analog.com/en/resources/app-notes/an-835.html; https://www.rohde-schwarz.com/us/applications/interaction-of-intermodulation-products-between-dut-and-spectrum-analyzer-application-note_56280-29700.html; D:\BaiduSyncdisk\Paper\202604_IEEE_isolator | 是 | 2026-05-01 | 用户确认中文正文优先使用“杂散分量”；“三阶互调杂散分量”“1.999 GHz 杂散分量”等属于基于该词的具体组合表达，不单独入库。 |
 
 ## 字段说明
 

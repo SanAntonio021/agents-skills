@@ -84,9 +84,9 @@ def main() -> int:
 
     draft_path = workspace / out_rel
 
-    # Citation anchoring baseline: capture *only* after merge is complete.
+    # Citation anchor baseline: capture only after merge is complete.
     # This prevents freezing an incomplete draft (e.g., `TODO: MISSING ...`) as the baseline.
-    baseline_rel = "output/citation_anchors.prepolish.jsonl"
+    baseline_rel = "output/citation_anchors.before_refine.jsonl"
     baseline_path = workspace / baseline_rel
     if draft_path.exists() and draft_path.stat().st_size > 0 and not baseline_path.exists():
         draft = draft_path.read_text(encoding="utf-8", errors="ignore")

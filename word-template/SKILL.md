@@ -34,7 +34,8 @@ description: 用用户提供的 Word 模板、本机默认格式或仓内内置 
 4. 用户若明确点名某个预设，就直接用该预设；公开仓默认只带该预设的 style profile，需要时会临时合成模板；不要把旧英文别名当主名称展示。
 5. 用户若要查看样式清单、保存可复用规则或核对模板结构，先执行提取流程。
 6. 用户若只关心交付文档，直接执行应用流程，默认输出到新文件，不覆盖原文档。
-7. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，仍在这里处理，但优先使用现有脚本，不再拆独立治理 skill。
+7. 用户给已有 `.docx` 要求“按这个里面的格式”时，只把它当版式参考，不把它的正文内容当来源；输出到带 `_formatted_like_...` 之类后缀的新文件。
+8. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，仍在这里处理，但优先使用现有脚本，不再拆独立治理 skill。
 
 ## 常用命令
 
@@ -110,6 +111,16 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
   -TemplatePath C:\path\custom-template.docx
 ```
 
+### 用已有 Word 作为格式参考
+
+如果源内容是 Markdown，而参考文档是 `.docx`：
+
+1. 先把参考 `.docx` 只作为 `--reference-doc` 或样式来源，源正文仍以 Markdown 为准。
+2. 源 Markdown 含 TIFF 等 Word/Pandoc 不稳定支持的图片时，临时生成 PNG 副本和临时 Markdown；不要为了导出改动源 Markdown。
+3. 导出后检查页面大小、页边距、正文样式和标题样式是否继承参考文档。
+4. 检查 `.docx` 压缩包结构：`word/document.xml` 存在，正文文本非空，图片数量符合预期，`document.xml.rels` 里没有缺失的 media 目标。
+5. 如果 `--reference-doc` 带入了未被正文引用的旧图片，清理未引用的 `word/media/*` 和 stale relationships，再重新验证。
+
 ## 规则
 
 - 重点是“复制版式规则”，不是复制模板原文内容。
@@ -121,6 +132,7 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 - 展示给用户时，内置预设用拼音名；旧英文名只作为兼容别名存在，不作为主说法。
 - 默认预设受治理规则控制，不要擅自把 `tongyong-moren` 当作所有场景的默认值。
 - 公开仓只分发 style profile 和脚本，不分发原始样例 `.docx`。
+- 用参考 `.docx` 迁移格式时，交付前至少验证页面设置、正文文本、图片嵌入和 media 关系；不要只凭转换命令成功判断完成。
 
 ## 边界
 

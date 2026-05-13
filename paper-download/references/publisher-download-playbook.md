@@ -1,6 +1,6 @@
 # Publisher Download Playbook
 
-更新时间：2026-04-27
+更新时间：2026-05-13
 
 ## 用途
 
@@ -23,6 +23,13 @@
    - `<!doc` 或其他 HTML 开头：包装页、验证码页或错误页
 8. 文件明显偏小但扩展名是 `.pdf` 时，优先怀疑不是正文。
 
+## 机构授权边界
+
+- 若浏览器已经有学校或机构登录态，可以点击不涉及凭据输入的确认按钮，例如 `Institutional Login`、`China CARSI`、`Access through <institution>`、`Continue`、`View PDF`。
+- 不能替用户输入密码、扫码、验证码、短信/邮箱确认，也不能购买、申请全文、批准敏感账号绑定或绕过权限。
+- 如果工具新开的浏览器没有登录态，不要直接判定失败；先改用已登录浏览器会话，或让用户在这个浏览器里完成一次授权。
+- 授权成功后仍要验证文件头。机构网页能打开，不等于命令行直抓的文件就是真 PDF。
+
 ## IEEE Xplore
 
 ### 推荐路径
@@ -43,6 +50,7 @@
 - 对 IEEE，`stamp/stamp.jsp` 常是外层 HTML wrapper；真正 PDF 往往在页面里的 `iframe`、`embed` 或 `object`，例如 `stampPDF/getPDF.jsp?...`。保存时必须抓内层 PDF，并用 `%PDF-` 文件头确认。
 - 如果页面显示 `Access provided by: University of Electronic Science and Tech of China`，说明电子科大机构权限已经接通，可以继续点 `PDF` 或让 MCP 抓内层 PDF。
 - 已验证的电子科大 Shibboleth/CARSI entityId 是 `https://idp-lib.uestc.edu.cn/idp/shibboleth`。这是机构入口配置，不是账号密码。
+- 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
 - 登录页出现扫码、验证码、账号密码或二次确认时，只让用户本人完成这一步；不要替用户输入凭据，也不要绕过权限。
 - 授权中断时保留 MCP checkpoint，用户完成授权后用 `retry_authorized_download` 继续，不要重新搜索导致下载到错误版本。
 
@@ -56,6 +64,7 @@
 
 - 文章页验证码和 PDF 端点验证可能是两道不同风控。
 - 文章页出现学校名称且 `View PDF` 可点时，说明机构访问已经接通。
+- 如果页面显示 `University of Electronic Science and Technology of China`、`Full text access` 或 `View PDF`，优先走浏览器授权下载。命令行直接抓 PDF 端点可能因为缺少浏览器 Cookie 而中断或返回网页。
 - `Ctrl+S`、页面另存或命令行直接抓 `pdfft`，有时会落成 HTML 包装页而不是真 PDF。
 - 对 Elsevier，优先使用浏览器内 PDF 工具栏下载。
 - ScienceDirect 官方文件常默认命名成 `1-s2.0-...-main.pdf`，下载后要立即重命名。
@@ -75,8 +84,10 @@
 
 ### 经验
 
+- 对电子科大，常见路径是 `China CARSI Member Access -> Access through 电子科技大学 -> Continue -> directpdfaccess`。
 - 若页面写着 `Please wait... Your PDF will open shortly` 且明确出现
   `Brought to you by <institution>`，说明学校授权已经成功。
+- 授权成功后出现 `directpdfaccess` URL，是可以保存正式 PDF 的高价值信号。
 - 某些条目授权成功后，浏览器会先出现 `.crdownload`，需要等待其转正。
 - 对 Optica 受限条目，优先浏览器保存，不优先走命令行抓取。
 

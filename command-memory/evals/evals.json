@@ -30,6 +30,12 @@
       "prompt": "帮我在当前仓库里搜一下 command-memory 这个词出现在哪里，只需要读结果，不要改文件。",
       "expected_output": "不应加载 command-memory；这是普通只读搜索，直接用 rg 或等价搜索命令即可。",
       "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "我要在 PowerShell 里一次备份 4 个已知绝对路径文件，其中路径很长。上次写 Join-Path 加逗号时报了 Cannot convert System.Object[]。请给我稳的命令骨架。",
+      "expected_output": "应提醒不要把逗号直接接在 Join-Path 参数后；推荐显式绝对路径数组或逐项 Join-Path，在循环里先 Test-Path -LiteralPath，再 Copy-Item -LiteralPath 到带时间戳的 .bak 文件。",
+      "files": []
     }
   ]
 }

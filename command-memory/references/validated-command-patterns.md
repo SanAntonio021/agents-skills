@@ -1,28 +1,27 @@
 # Validated Command Patterns
 
-## Purpose
+这个索引只给高风险 Windows 命令急救用。普通只读命令不要读这里。
 
-This index routes high-risk Windows command scenarios to the smallest relevant pattern file.
-Read only the nearest matching reference instead of loading the whole library.
+## 快速路由
 
-## Routing
+| 场景 | 读取 |
+| --- | --- |
+| 外部 CLI、绝对路径、下载、用户级安装、PATH/env 持久化 | [cli-paths.md](cli-paths.md) |
+| PowerShell 调 Python，中文路径、here-string、UTF-8 乱码 | [python-utf8.md](python-utf8.md) |
+| 中文 Markdown / UTF-8 文本读取 | [markdown-read-utf8.md](markdown-read-utf8.md) |
+| 搜索、遍历、文本匹配失败 | [search-and-traversal.md](search-and-traversal.md) |
+| 压缩、解压、复制、移动、删除 | [archive-and-file-ops.md](archive-and-file-ops.md) |
+| 规则文件同步、软链、临时复制对齐 | [rule-file-sync-and-symlink.md](rule-file-sync-and-symlink.md) |
+| MATLAB batch / desktop / logfile / status file | [matlab-batch-logfile.md](matlab-batch-logfile.md) |
+| Office COM、PowerPoint/Word/Excel 自动化 | [office-com.md](office-com.md) |
+| Word COM `gen_py` cache | [word-com-genpy-recovery.md](word-com-genpy-recovery.md) |
+| Codex 桌面侧边栏本地状态恢复 | [codex-sidebar-recovery.md](codex-sidebar-recovery.md) |
+| GitHub Contents API 下载子目录 | [github-contents-api-download.md](github-contents-api-download.md) |
+| 工具发现、preflight 命令 | [tool-discovery.md](tool-discovery.md) |
+| 失败后成功，需要沉淀 | [recovery-capture-checklist.md](recovery-capture-checklist.md) |
 
-- Path quoting and absolute Windows CLI invocation: read [cli-paths.md](cli-paths.md)
-- PowerShell-native HTTP download to an exact local file: read [cli-paths.md](cli-paths.md)
-- MATLAB batch script execution with reliable logging: read [matlab-batch-logfile.md](matlab-batch-logfile.md)
-- MATLAB desktop script execution with logfile, child-process tracking, and status-file completion: read [matlab-batch-logfile.md](matlab-batch-logfile.md)
-- PowerShell `python -c` and UTF-8 environment setup: read [python-utf8.md](python-utf8.md)
-- Reading Chinese Markdown or other UTF-8 text in PowerShell: read [markdown-read-utf8.md](markdown-read-utf8.md)
-- Batch CSV text repair with UTF-8 BOM preservation: read [csv-rewrite-utf8.md](csv-rewrite-utf8.md)
-- Search, traversal, and text matching: read [search-and-traversal.md](search-and-traversal.md)
-- Archive extraction and native file operations: read [archive-and-file-ops.md](archive-and-file-ops.md)
-- Rule file sync checks, symlink repair, and temporary copy sync on Windows: read [rule-file-sync-and-symlink.md](rule-file-sync-and-symlink.md)
-- Tool discovery and preflight checks: read [tool-discovery.md](tool-discovery.md)
-- GitHub repo subtree download via Contents API when clone-based install fails: read [github-contents-api-download.md](github-contents-api-download.md)
-- Word COM `gen_py` cache recovery for `pywin32`: read [word-com-genpy-recovery.md](word-com-genpy-recovery.md)
-- Codex desktop sidebar/workspace recovery after local UI state corruption: read [codex-sidebar-recovery.md](codex-sidebar-recovery.md)
-- Minimal recovery capture after a fail-then-fix success: read [recovery-capture-checklist.md](recovery-capture-checklist.md)
+## 规则
 
-## Update Path
-
-If a command shape succeeds and is worth keeping, update the nearest scenario file instead of appending logs here.
+- 每次最多读一个最接近的 reference。
+- 如果只是普通命令失败，先用常识修正；不要为小问题加载整库。
+- 新模式只写进具体场景文件，不追加到本索引。

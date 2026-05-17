@@ -1,0 +1,23 @@
+{
+  "skill_name": "clash-verge-chain-proxy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我在 Clash Verge Rev 里重新导入了良心云订阅，之前配置的 Flower 前置 + Nov 落地好像没了。帮我判断该查哪些文件，怎么恢复。",
+      "expected_output": "应先读取 profiles.yaml 定位当前 profile 和增强文件绑定；说明重导入会换 UID；建议重新写入当前 profile 绑定的 proxies/groups/script/rules 增强文件；不要直接改 clash-verge.yaml；提醒备份和隐藏敏感信息。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我想让 AI 网站和所有 claude.exe 流量走 Flower 前置再到 Nov，其他国外流量走良心云前置再到 Nov，国内规则不变。Clash Verge 里应该怎么配？",
+      "expected_output": "应建议两条同落地不同 dialer-proxy 的链式代理、两个手动前置选择组、AI 组放在规则前面、PROCESS-NAME claude.exe 和核心 AI 域名规则、普通主组默认走良心云链。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我已经改完增强配置了，但 Clash Verge 日志里还在走旧 NovProxy。你怎么确认到底有没有生效？",
+      "expected_output": "应检查 clash-verge.yaml 和 clash-verge-check.yaml 是否重生成，运行 verge-mihomo.exe -t 校验，查看 logs/service/service_latest.log 中 using <group>[<proxy>]，必要时重启 Clash Verge GUI，而不是只看 UI。",
+      "files": []
+    }
+  ]
+}

@@ -46,7 +46,7 @@
     {
       "id": 8,
       "prompt": "output/DRAFT.md 已经定稿了，请做提交前最后一轮精修：去掉模板化套话、压缩重复、统一术语，citation keys 和引用小节保持原位。",
-      "expected_output": "按已批准初稿收口流程处理 output/DRAFT.md；保留原有 citation keys 和小节内引用锚点，必要时生成 citation_anchors.before_refine.jsonl，并只做语言、术语和冗余收口。",
+      "expected_output": "按终稿精修流程处理 output/DRAFT.md；保留原有 citation keys 和小节内引用位置，只做语言、术语和冗余精修。",
       "files": []
     }
   ]

@@ -15,6 +15,21 @@
       "id": "letpub-no-exact-match",
       "prompt": "总结一篇正式期刊论文，但 LetPub 用 ISSN 和期刊名都没有精确匹配结果。能确认的信息就填，确认不了的不要猜。",
       "expected_output": "生成中文 Markdown 总结；影响因子和中科院期刊分区不得猜测；应写清失败原因，例如 LetPub 站内检索无精确匹配、结果冲突、页面无法打开或疑似访问拦截。"
+    },
+    {
+      "id": "figures-tables-no-debug-pages",
+      "prompt": "把这篇 IEEE/JLT 论文总结成中文 Markdown，要求保留关键图和关键表。图片已经由 extract_paper_images.py 抽到了 images/<paper>/figures 和 debug_pages。",
+      "expected_output": "正文只能引用 figures/ 下置信度达标的 Fig./Table 图片；不得引用 debug_pages/ 或 embedded_candidates/；关键表也要放入正文。若 Table II 或某些 Fig. 置信度低，应写成需复核并说明原因，不能静默跳过。"
+    },
+    {
+      "id": "supplementary-extended-data-summary",
+      "prompt": "总结一篇 Nature 正式论文。主 PDF 之外还有 Supplementary Information、Extended Data Table 和 Supplementary Fig.，这些附件和主结论有关。",
+      "expected_output": "总结中应有“补充材料与扩展数据”部分，纳入支撑主结论的 Supplementary/Extended Data 图表和关键信息；如果附件无法获取，要写明未纳入原因。正文图表编号保持 Supplementary Fig. / Extended Data Table，不重排编号。"
+    },
+    {
+      "id": "figure-sequence-audit",
+      "prompt": "总结论文时，manifest.json 里有 Fig. 1、Fig. 2、Fig. 7，也有 skipped 和 sequence_audit。请写图表信息。",
+      "expected_output": "图表信息不能直接从 Fig. 2 跳到 Fig. 7 而不解释；应检查 skipped 和 sequence_audit，说明 Fig. 3-6 是低置信、未找到、非关键图，还是需要补抽。"
     }
   ]
 }

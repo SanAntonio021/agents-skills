@@ -79,6 +79,24 @@ class Caption:
     text: str
 
 
+@dataclass
+class PageLayout:
+    kind: str
+    left_column: fitz.Rect
+    right_column: fitz.Rect
+    full_page: fitz.Rect
+
+
+@dataclass
+class CropResult:
+    bbox: fitz.Rect | None
+    regions: list[fitz.Rect]
+    confidence: float
+    source_type: str
+    warnings: list[str]
+    page_layout: str
+
+
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -198,6 +216,23 @@ def union_rects(rects: Iterable[fitz.Rect]) -> fitz.Rect | None:
             continue
         result = fitz.Rect(rect) if result is None else result | rect
     return result
+
+
+def dedupe_regions(regions: list[fitz.Rect]) -> list[fitz.Rect]:
+    deduped: list[fitz.Rect] = []
+    for rect in sorted(regions, key=lambda item: (float(item.y0), float(item.x0))):
+        duplicate = False
+        for existing in deduped:
+            inter = max(0.0, min(float(rect.x1), float(existing.x1)) - max(float(rect.x0), float(existing.x0))) * max(
+                0.0, min(float(rect.y1), float(existing.y1)) - max(float(rect.y0), float(existing.y0))
+            )
+            smaller = max(1.0, min(rect_area(rect), rect_area(existing)))
+            if inter / smaller > 0.85:
+                duplicate = True
+                break
+        if not duplicate:
+            deduped.append(rect)
+    return deduped
 
 
 def figure_filename(figure_id: str, index: int) -> str:
@@ -354,6 +389,42 @@ def get_table_rule_rects(page: fitz.Page) -> list[fitz.Rect]:
     return rects
 
 
+def page_layout(page: fitz.Page) -> PageLayout:
+    """Classify the current page enough to choose crop rules."""
+    page_rect = page.rect
+    page_width = max(1.0, float(page_rect.width))
+    mid = page_rect.x0 + page_width / 2.0
+    gutter = page_width * 0.035
+    margin = page_width * 0.035
+    left_column = fitz.Rect(page_rect.x0 + margin, page_rect.y0, mid - gutter, page_rect.y1)
+    right_column = fitz.Rect(mid + gutter, page_rect.y0, page_rect.x1 - margin, page_rect.y1)
+
+    text_blocks = [
+        block["bbox"]
+        for block in extract_text_blocks(page)
+        if len(block["text"]) >= 20 and block["bbox"].height >= 8
+    ]
+    if len(text_blocks) < 3:
+        return PageLayout("mixed-full-width", left_column, right_column, fitz.Rect(page_rect))
+
+    centers = [((float(rect.x0) + float(rect.x1)) / 2.0 - float(page_rect.x0)) / page_width for rect in text_blocks]
+    left_count = sum(center < 0.45 for center in centers)
+    right_count = sum(center > 0.55 for center in centers)
+    avg_width = sum(float(rect.width) / page_width for rect in text_blocks) / len(text_blocks)
+    span = max(float(rect.x1) for rect in text_blocks) - min(float(rect.x0) for rect in text_blocks)
+    span_ratio = span / page_width
+
+    if left_count >= 2 and right_count >= 2 and avg_width < 0.45 and span_ratio > 0.7:
+        kind = "two-column"
+    elif span_ratio > 0.85 and avg_width > 0.55:
+        kind = "single-column"
+    elif left_count and right_count:
+        kind = "mixed-full-width"
+    else:
+        kind = "single-column"
+    return PageLayout(kind, left_column, right_column, fitz.Rect(page_rect))
+
+
 def column_bounds(caption_rect: fitz.Rect, page_rect: fitz.Rect) -> tuple[float, float]:
     page_width = float(page_rect.width)
     if caption_rect.width > page_width * 0.55:
@@ -396,6 +467,181 @@ def same_column_candidate(
     if center_x > float(column_rect.x1) + tolerance:
         return False
     return True
+
+
+def rect_column_key(rect: fitz.Rect, layout: PageLayout) -> str:
+    center_x = (float(rect.x0) + float(rect.x1)) / 2.0
+    page_mid = (float(layout.full_page.x0) + float(layout.full_page.x1)) / 2.0
+    return "left" if center_x < page_mid else "right"
+
+
+def caption_column_rect(caption_rect: fitz.Rect, layout: PageLayout) -> fitz.Rect:
+    if is_full_width_caption(caption_rect, layout.full_page) or layout.kind == "single-column":
+        return fitz.Rect(layout.full_page)
+    return layout.left_column if rect_column_key(caption_rect, layout) == "left" else layout.right_column
+
+
+def table_block_text_rects(
+    page: fitz.Page,
+    table_rect: fitz.Rect,
+    caption_rect: fitz.Rect,
+) -> list[fitz.Rect]:
+    rects: list[fitz.Rect] = []
+    expanded = expand_rect(table_rect, page.rect, 6.0)
+    for block in extract_text_blocks(page):
+        rect = block["bbox"]
+        text = block["text"]
+        if rect == caption_rect or CAPTION_RE.match(text):
+            continue
+        if not intersects_x(rect, expanded, min_overlap=0.05):
+            continue
+        vertical_overlap = max(0.0, min(float(rect.y1), float(expanded.y1)) - max(float(rect.y0), float(expanded.y0)))
+        near_vertical = vertical_overlap > 0 or abs(float(rect.y0) - float(expanded.y1)) <= 5
+        if near_vertical and (len(text) <= 140 or rect.height <= 28):
+            rects.append(rect)
+    return rects
+
+
+def cluster_table_rules(rules: list[fitz.Rect]) -> list[list[fitz.Rect]]:
+    clusters: list[list[fitz.Rect]] = []
+    for rect in sorted(rules, key=lambda item: (float(item.y0), float(item.x0))):
+        placed = False
+        for cluster in clusters:
+            union = union_rects(cluster)
+            if union is None:
+                continue
+            same_band = float(rect.y0) <= float(union.y1) + 20.0 and float(rect.y1) >= float(union.y0) - 20.0
+            same_column = intersects_x(rect, union, min_overlap=0.02)
+            if same_band and same_column:
+                cluster.append(rect)
+                placed = True
+                break
+        if not placed:
+            clusters.append([rect])
+    return clusters
+
+
+def nearest_graphic_cluster(
+    rects: list[fitz.Rect],
+    caption_rect: fitz.Rect,
+    position: str,
+) -> list[fitz.Rect]:
+    """Keep nearby but separate objects from being swallowed into one figure."""
+    if len(rects) <= 1:
+        return rects
+    clusters: list[list[fitz.Rect]] = []
+    for rect in sorted(rects, key=lambda item: (float(item.y0), float(item.x0))):
+        placed = False
+        for cluster in clusters:
+            union = union_rects(cluster)
+            if union is None:
+                continue
+            vertical_gap = max(0.0, max(float(rect.y0), float(union.y0)) - min(float(rect.y1), float(union.y1)))
+            vertical_overlap = min(float(rect.y1), float(union.y1)) - max(float(rect.y0), float(union.y0))
+            if vertical_overlap > -8.0 or vertical_gap <= 10.0:
+                cluster.append(rect)
+                placed = True
+                break
+        if not placed:
+            clusters.append([rect])
+    if len(clusters) <= 1:
+        return rects
+
+    def distance(cluster: list[fitz.Rect]) -> float:
+        union = union_rects(cluster)
+        if union is None:
+            return 1e9
+        if position == "above":
+            return abs(float(caption_rect.y0) - float(union.y1))
+        return abs(float(union.y0) - float(caption_rect.y1))
+
+    return min(clusters, key=distance)
+
+
+def infer_table_regions(
+    page: fitz.Page,
+    caption: Caption,
+    layout: PageLayout,
+    max_vertical_gap: float,
+    include_caption: bool,
+) -> tuple[list[fitz.Rect], list[str]]:
+    """Find one or more table body blocks while preserving original page split."""
+    page_rect = page.rect
+    caption_rect = caption.bbox
+    warnings: list[str] = []
+    next_caption_y0 = min(
+        (
+            float(block["bbox"].y0)
+            for block in extract_text_blocks(page)
+            if block["bbox"].y0 > caption_rect.y1 + 1.0 and CAPTION_RE.match(block["text"])
+        ),
+        default=float(page_rect.y1),
+    )
+
+    rules: list[fitz.Rect] = []
+    for rect in get_table_rule_rects(page):
+        below_caption = (
+            rect.y0 >= caption_rect.y1 - 5.0
+            and rect.y0 <= min(float(page_rect.y1), float(caption_rect.y1) + max_vertical_gap * 1.8)
+            and rect.y0 < next_caption_y0 - 2.0
+        )
+        top_of_other_column = (
+            layout.kind in ("two-column", "mixed-full-width")
+            and float(caption_rect.y0) >= float(page_rect.y0) + float(page_rect.height) * 0.55
+            and rect_column_key(rect, layout) != rect_column_key(caption_rect, layout)
+            and float(rect.y0) <= float(page_rect.y0) + float(page_rect.height) * 0.2
+        )
+        if below_caption or top_of_other_column:
+            rules.append(rect)
+    clusters = cluster_table_rules(rules)
+    regions: list[fitz.Rect] = []
+    caption_column = rect_column_key(caption_rect, layout)
+    page_width = max(1.0, float(page_rect.width))
+
+    for cluster in clusters:
+        rule_union = union_rects(cluster)
+        if rule_union is None or rect_area(rule_union) <= rect_area(caption_rect) * 0.4:
+            continue
+        gap_from_caption = float(rule_union.y0) - float(caption_rect.y1)
+        overlaps_caption = float(rule_union.y0) <= float(caption_rect.y1) + 24 and float(rule_union.y1) >= float(caption_rect.y1) + 8
+        same_column = rect_column_key(rule_union, layout) == caption_column
+        continuation_other_column = (
+            layout.kind in ("two-column", "mixed-full-width")
+            and rect_column_key(rule_union, layout) != caption_column
+            and float(rule_union.y0) <= float(page_rect.y0) + float(page_rect.height) * 0.2
+            and float(caption_rect.y0) >= float(page_rect.y0) + float(page_rect.height) * 0.55
+        )
+        near_caption_column = same_column and (-12.0 <= gap_from_caption <= max_vertical_gap * 1.25 or overlaps_caption)
+        full_width_table = float(rule_union.width) > page_width * 0.62 and is_full_width_caption(caption_rect, page_rect)
+        if not (near_caption_column or continuation_other_column or full_width_table):
+            continue
+
+        rects = [rule_union] + table_block_text_rects(page, rule_union, caption_rect)
+        if include_caption and (near_caption_column or full_width_table):
+            rects.append(caption_rect)
+        region = union_rects(rects)
+        if region is None:
+            continue
+        region = expand_rect(region, page_rect, CROP_MARGIN_PT)
+        if near_caption_column or full_width_table:
+            region.y0 = min(float(region.y0), float(caption_rect.y0) - 2.0) if include_caption else max(float(region.y0), float(caption_rect.y1) + 1.0)
+        region.y1 = min(float(region.y1), next_caption_y0 - 1.0, float(rule_union.y1) + TABLE_EXTRA_BOTTOM_PT)
+        region = safe_rect(region, page_rect)
+        if rect_area(region) > 100:
+            regions.append(region)
+
+    regions = dedupe_regions(regions)
+    if len(regions) > 1:
+        regions.sort(
+            key=lambda rect: (
+                rect_column_key(rect, layout) != caption_column,
+                float(rect.y0),
+                float(rect.x0),
+            )
+        )
+    if len(regions) > 1:
+        warnings.append("Split table detected; original table blocks saved as separate files.")
+    return regions, warnings
 
 
 def trim_excluded_caption_and_body(
@@ -462,15 +708,28 @@ def infer_figure_bbox(
     caption: Caption,
     max_vertical_gap: float = 260.0,
     include_caption: bool = False,
-) -> tuple[fitz.Rect | None, float, str, list[str]]:
+) -> CropResult:
     page_rect = page.rect
     caption_rect = caption.bbox
-    col_x0, col_x1 = column_bounds(caption_rect, page_rect)
-    column_rect = fitz.Rect(col_x0, page_rect.y0, col_x1, page_rect.y1)
+    layout = page_layout(page)
+    column_rect = caption_column_rect(caption_rect, layout)
     full_width_caption = is_full_width_caption(caption_rect, page_rect)
     prefer_below = is_table_label(caption.figure_id)
+    warnings: list[str] = []
     if prefer_below:
-        column_rect = fitz.Rect(page_rect)
+        table_regions, table_warnings = infer_table_regions(page, caption, layout, max_vertical_gap, include_caption=True)
+        warnings.extend(table_warnings)
+        if table_regions:
+            table_union = union_rects(table_regions)
+            confidence = 0.88 if len(table_regions) == 1 else 0.8
+            return CropResult(
+                table_union,
+                table_regions,
+                confidence,
+                "table-regions" if len(table_regions) > 1 else "table-bbox-crop",
+                warnings,
+                layout.kind,
+            )
         full_width_caption = True
 
     graphic_items = get_image_rects(page) + get_drawing_rects(page)
@@ -515,6 +774,7 @@ def infer_figure_bbox(
     else:
         candidate_graphics = above_graphics or below_graphics
         candidate_position = "above" if above_graphics else "below"
+        candidate_graphics = nearest_graphic_cluster(candidate_graphics, caption_rect, candidate_position)
 
     if prefer_below:
         all_table_rule_rects = sorted(
@@ -619,6 +879,7 @@ def infer_figure_bbox(
             )
             if rect_area(clipped) > 8:
                 column_band_graphics.append(clipped)
+        column_band_graphics = nearest_graphic_cluster(column_band_graphics, caption_rect, "above")
         column_band_union = union_rects(column_band_graphics)
         current_union = union_rects(candidate_graphics)
         page_height = max(1.0, float(page_rect.height))
@@ -636,16 +897,15 @@ def infer_figure_bbox(
             candidate_position = "above"
             promoted_column_band = True
 
-    warnings: list[str] = []
     graphics_union = union_rects(candidate_graphics)
     if graphics_union is None:
         warnings.append("No nearby graphic object found around caption.")
         fallback = fallback_text_band_bbox(page, caption, column_rect)
         if fallback is None:
-            return None, 0.25, "debug-page", warnings
+            return CropResult(None, [], 0.25, "debug-page", warnings, layout.kind)
         crop_rect = fallback | caption_rect if include_caption else fallback
         crop_rect = expand_rect(crop_rect, page_rect, CROP_MARGIN_PT)
-        return crop_rect, 0.48, "bbox-crop-low-confidence", warnings
+        return CropResult(crop_rect, [crop_rect], 0.48, "bbox-crop-low-confidence", warnings, layout.kind)
 
     # Add figure labels/text near the graphic union, but avoid unrelated body text.
     text_rects: list[fitz.Rect] = []
@@ -695,7 +955,7 @@ def infer_figure_bbox(
                 rects.append(rect)
     crop_rect = union_rects(rects)
     if crop_rect is None:
-        return None, 0.25, "debug-page", ["Could not form crop bbox."]
+        return CropResult(None, [], 0.25, "debug-page", ["Could not form crop bbox."], layout.kind)
 
     crop_rect = expand_rect(crop_rect, page_rect, CROP_MARGIN_PT)
     if promoted_full_band:
@@ -719,6 +979,10 @@ def infer_figure_bbox(
             crop_rect.y0 -= FIGURE_EXTRA_TOP_PT
         crop_rect.y1 += FIGURE_EXTRA_BOTTOM_PT
         crop_rect = safe_rect(crop_rect, page_rect)
+        if not full_width_caption and not promoted_full_band:
+            crop_rect.x0 = max(float(crop_rect.x0), float(column_rect.x0) - CROP_MARGIN_PT)
+            crop_rect.x1 = min(float(crop_rect.x1), float(column_rect.x1) + CROP_MARGIN_PT)
+            crop_rect = safe_rect(crop_rect, page_rect)
         crop_rect = trim_excluded_caption_and_body(
             page, crop_rect, caption_rect, column_rect, candidate_position
         )
@@ -731,7 +995,7 @@ def infer_figure_bbox(
     if crop_rect.height > page_rect.height * 0.65 and not promoted_full_band:
         confidence -= 0.1
         warnings.append("Crop is tall; possible multi-object or paragraph bleed.")
-    return crop_rect, max(0.0, min(0.95, confidence)), "bbox-crop", warnings
+    return CropResult(crop_rect, [crop_rect], max(0.0, min(0.95, confidence)), "bbox-crop", warnings, layout.kind)
 
 
 def fallback_text_band_bbox(
@@ -768,6 +1032,13 @@ def save_region(page: fitz.Page, bbox: fitz.Rect, path: Path, render_dpi: int) -
     width, height = pix.width, pix.height
     pix = None
     return width, height, image_bytes
+
+
+def region_filename(base_filename: str, part_index: int, total_parts: int) -> str:
+    if total_parts <= 1:
+        return base_filename
+    path = Path(base_filename)
+    return f"{path.stem}_part{part_index}{path.suffix}"
 
 
 def save_debug_page(page: fitz.Page, path: Path, render_dpi: int) -> dict[str, Any]:
@@ -864,6 +1135,9 @@ def local_html_figures(html_file: Path, base_url: str | None, out_dir: Path) -> 
             "caption": caption_text,
             "source_type": "html-image",
             "source_url": resolved_src,
+            "files": [],
+            "regions": [],
+            "split": False,
             "confidence": confidence_label(0.9 if caption_match_id else 0.65),
             "confidence_score": 0.9 if caption_match_id else 0.65,
             "warning": "" if caption_match_id else "HTML figure has no parseable Fig./Table caption.",
@@ -879,6 +1153,8 @@ def local_html_figures(html_file: Path, base_url: str | None, out_dir: Path) -> 
                 entry.update(
                     {
                         "file": f"figures/{filename}",
+                        "files": [f"figures/{filename}"],
+                        "regions": [],
                         "bytes": len(data),
                         "sha256": sha256_bytes(data),
                     }
@@ -931,6 +1207,9 @@ def embedded_candidates(
             candidates.append(
                 {
                     "file": f"embedded_candidates/{filename}",
+                    "files": [f"embedded_candidates/{filename}"],
+                    "regions": [],
+                    "split": False,
                     "page": page_index + 1,
                     "source_type": "embedded-candidate",
                     "width": width,
@@ -989,19 +1268,20 @@ def extract_figures(
         seen_files: set[str] = set()
         for idx, caption in enumerate(captions, start=1):
             page = doc.load_page(caption.page_index)
-            bbox, confidence, source_type, warnings = infer_figure_bbox(page, caption)
+            crop = infer_figure_bbox(page, caption)
             page_number = caption.page_index + 1
-            if bbox is None or confidence < confidence_threshold:
+            if crop.bbox is None or not crop.regions or crop.confidence < confidence_threshold:
                 skipped.append(
                     {
                         "figure_id": caption.figure_id,
                         "caption": caption.caption,
                         "page": page_number,
                         "caption_bbox": rect_to_list(caption.bbox),
-                        "source_type": source_type,
-                        "confidence": confidence_label(confidence),
-                        "confidence_score": round(confidence, 3),
-                        "warning": "; ".join(warnings) or "Low-confidence figure; review manually.",
+                        "source_type": crop.source_type,
+                        "confidence": confidence_label(crop.confidence),
+                        "confidence_score": round(crop.confidence, 3),
+                        "page_layout": crop.page_layout,
+                        "warning": "; ".join(crop.warnings) or "Low-confidence figure; review manually.",
                     }
                 )
                 if write_debug_pages or mode == "page-render":
@@ -1012,31 +1292,64 @@ def extract_figures(
                         debug_pages.append(info)
                 continue
 
-            filename = figure_filename(caption.figure_id, idx)
-            if filename in seen_files:
-                filename = f"{Path(filename).stem}_{idx:03d}.png"
-            seen_files.add(filename)
-            out_path = figures_dir / filename
-            width, height, image_bytes = save_region(page, bbox, out_path, render_dpi)
-            warning = "; ".join(warnings)
-            if confidence < 0.75:
+            base_filename = figure_filename(caption.figure_id, idx)
+            total_parts = len(crop.regions)
+            files: list[str] = []
+            regions: list[dict[str, Any]] = []
+            total_bytes = 0
+            region_hashes: list[str] = []
+            first_width = 0
+            first_height = 0
+            for part_index, region in enumerate(crop.regions, start=1):
+                filename = region_filename(base_filename, part_index, total_parts)
+                if filename in seen_files:
+                    filename = f"{Path(filename).stem}_{idx:03d}{Path(filename).suffix}"
+                seen_files.add(filename)
+                out_path = figures_dir / filename
+                width, height, image_bytes = save_region(page, region, out_path, render_dpi)
+                digest = sha256_bytes(image_bytes)
+                if part_index == 1:
+                    first_width = width
+                    first_height = height
+                file_path = f"figures/{filename}"
+                files.append(file_path)
+                region_hashes.append(digest)
+                total_bytes += out_path.stat().st_size
+                regions.append(
+                    {
+                        "file": file_path,
+                        "bbox": rect_to_list(region),
+                        "page": page_number,
+                        "width": width,
+                        "height": height,
+                        "bytes": out_path.stat().st_size,
+                        "sha256": digest,
+                    }
+                )
+
+            warning = "; ".join(crop.warnings)
+            if crop.confidence < 0.75:
                 warning = normalize_space(f"{warning}; verify crop manually")
             pdf_figures.append(
                 {
-                    "file": f"figures/{filename}",
+                    "file": files[0],
+                    "files": files,
                     "figure_id": caption.figure_id,
                     "caption": caption.caption,
                     "page": page_number,
-                    "bbox": rect_to_list(bbox),
+                    "bbox": rect_to_list(crop.bbox),
+                    "regions": regions,
                     "caption_bbox": rect_to_list(caption.bbox),
-                    "source_type": source_type,
-                    "confidence": confidence_label(confidence),
-                    "confidence_score": round(confidence, 3),
+                    "source_type": crop.source_type,
+                    "confidence": confidence_label(crop.confidence),
+                    "confidence_score": round(crop.confidence, 3),
+                    "page_layout": crop.page_layout,
+                    "split": len(files) > 1,
                     "warning": warning,
-                    "width": width,
-                    "height": height,
-                    "bytes": out_path.stat().st_size,
-                    "sha256": sha256_bytes(image_bytes),
+                    "width": first_width,
+                    "height": first_height,
+                    "bytes": total_bytes,
+                    "sha256": sha256_bytes("".join(region_hashes).encode("ascii")),
                     "render_dpi": render_dpi,
                 }
             )
@@ -1065,13 +1378,13 @@ def extract_figures(
     figures = html_figures + pdf_figures
     sequence_items = figures + skipped
     result = {
-        "schema_version": 2,
+        "schema_version": 3,
         "pdf": str(pdf_path),
         "out_dir": str(out_dir),
         "mode": mode,
         "page_count": doc.page_count,
         "figure_count": len([f for f in figures if f.get("file")]),
-        "image_count": len([f for f in figures if f.get("file")]),
+        "image_count": sum(len(f.get("files") or ([f["file"]] if f.get("file") else [])) for f in figures),
         "figures": figures,
         "images": figures,
         "skipped": skipped,

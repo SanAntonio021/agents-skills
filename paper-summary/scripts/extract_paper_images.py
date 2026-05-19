@@ -502,6 +502,67 @@ def table_block_text_rects(
     return rects
 
 
+def is_rotated_table_caption(caption_rect: fitz.Rect, page_rect: fitz.Rect) -> bool:
+    page_width = max(1.0, float(page_rect.width))
+    page_height = max(1.0, float(page_rect.height))
+    return (
+        float(caption_rect.width) <= max(18.0, page_width * 0.12)
+        and float(caption_rect.height) >= max(120.0, page_height * 0.3)
+        and float(caption_rect.height) >= float(caption_rect.width) * 6.0
+    )
+
+
+def infer_rotated_table_regions(
+    page: fitz.Page,
+    caption: Caption,
+    include_caption: bool,
+) -> tuple[list[fitz.Rect], list[str]]:
+    """Fallback for sideways tables whose caption runs vertically along the page edge."""
+    page_rect = page.rect
+    caption_rect = caption.bbox
+
+    body_rects: list[fitz.Rect] = []
+    for block in extract_text_blocks(page):
+        rect = block["bbox"]
+        text = block["text"]
+        if rect == caption_rect or CAPTION_RE.match(text):
+            continue
+        if float(rect.y0) < float(page_rect.y0) + 35.0:
+            continue
+        if float(rect.y1) > float(page_rect.y1) - 35.0:
+            continue
+        if float(rect.x1) <= float(caption_rect.x1) + 2.0:
+            continue
+        body_rects.append(rect)
+
+    body_union = union_rects(body_rects)
+    if body_union is None:
+        return [], []
+
+    region_parts: list[fitz.Rect] = [body_union] + table_block_text_rects(page, body_union, caption_rect)
+    expanded_body = expand_rect(body_union, page_rect, 8.0)
+    for rect in get_table_rule_rects(page):
+        if float(rect.y0) < float(page_rect.y0) + 35.0:
+            continue
+        if float(rect.y1) > float(page_rect.y1) - 30.0:
+            continue
+        if intersects_x(rect, expanded_body, min_overlap=0.01) or intersects_x(rect, caption_rect, min_overlap=0.01):
+            region_parts.append(rect)
+    if include_caption:
+        region_parts.append(caption_rect)
+
+    region = union_rects(region_parts)
+    if region is None:
+        return [], []
+    region = expand_rect(region, page_rect, CROP_MARGIN_PT)
+    region = safe_rect(region, page_rect)
+    if float(region.height) < max(80.0, float(page_rect.height) * 0.12):
+        return [], []
+    if float(region.width) < max(120.0, float(page_rect.width) * 0.2):
+        return [], []
+    return [region], []
+
+
 def cluster_table_rules(rules: list[fitz.Rect]) -> list[list[fitz.Rect]]:
     clusters: list[list[fitz.Rect]] = []
     for rect in sorted(rules, key=lambda item: (float(item.y0), float(item.x0))):
@@ -569,6 +630,7 @@ def infer_table_regions(
     page_rect = page.rect
     caption_rect = caption.bbox
     warnings: list[str] = []
+    rotated_caption = is_rotated_table_caption(caption_rect, page_rect)
     next_caption_y0 = min(
         (
             float(block["bbox"].y0)
@@ -631,6 +693,30 @@ def infer_table_regions(
             regions.append(region)
 
     regions = dedupe_regions(regions)
+    if rotated_caption:
+        region_union = union_rects(regions)
+        needs_rotated_fallback = (
+            region_union is None
+            or float(region_union.height) < max(80.0, float(page_rect.height) * 0.12)
+            or float(region_union.width) < max(120.0, float(page_rect.width) * 0.2)
+        )
+        if needs_rotated_fallback:
+            rotated_regions, rotated_warnings = infer_rotated_table_regions(page, caption, include_caption)
+            if rotated_regions:
+                rotated_regions = dedupe_regions(rotated_regions)
+                if len(rotated_regions) > 1:
+                    rotated_regions.sort(
+                        key=lambda rect: (
+                            rect_column_key(rect, layout) != caption_column,
+                            float(rect.y0),
+                            float(rect.x0),
+                        )
+                    )
+                if len(rotated_regions) > 1:
+                    rotated_warnings.append(
+                        "Split table detected; original table blocks saved as separate files."
+                    )
+                return rotated_regions, warnings + rotated_warnings
     if len(regions) > 1:
         regions.sort(
             key=lambda rect: (

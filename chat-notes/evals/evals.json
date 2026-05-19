@@ -75,7 +75,7 @@
     {
       "id": 6,
       "prompt": "[$chat-notes](C:\\Users\\SanAn\\.cc-switch\\skills\\chat-notes\\SKILL.md)",
-      "expected_output": "只点名 chat-notes 时，默认回看当前对话，先做分流判断：如果经验可能做成 skill，对比本地和外部类似 skill 并输出完整审查稿；如果不值得做 skill，直接输出简短审查稿。不改文件、不移动文件、不提交。审查稿应先说明建议写到哪里、准备改哪些文件、不改哪些文件和理由，并在交付前用 humanizer-zh 的要求润色成直白中文。",
+      "expected_output": "只点名 chat-notes 时，默认回看当前对话，先做分流判断：如果经验可能做成 skill，对比本地和外部类似 skill 并输出完整审查稿；如果不值得做 skill，直接输出简短审查稿。不改文件、不移动文件、不提交。审查稿应先说明建议写到哪里、准备改哪些文件、不改哪些文件和理由，语言直白易懂。",
       "files": [],
       "expectations": [
         "输出不会反问用户要选择哪一种功能。",

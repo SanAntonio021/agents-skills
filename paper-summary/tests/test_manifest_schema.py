@@ -36,7 +36,7 @@ def irmmw_manifest():
 
 
 def test_schema_version(irmmw_manifest):
-    assert irmmw_manifest["schema_version"] == 2
+    assert irmmw_manifest["schema_version"] == 3
 
 
 def test_confidence_is_string(irmmw_manifest):
@@ -68,3 +68,14 @@ def test_filenames_no_zero_padding(irmmw_manifest):
 def test_all_figures_in_figures_dir(irmmw_manifest):
     for fig in irmmw_manifest["figures"]:
         assert fig["file"].startswith("figures/")
+
+
+def test_files_and_regions_present(irmmw_manifest):
+    for fig in irmmw_manifest["figures"]:
+        assert fig["files"]
+        assert fig["file"] == fig["files"][0]
+        assert fig["regions"]
+        assert len(fig["regions"]) == len(fig["files"])
+        for region in fig["regions"]:
+            assert region["file"].startswith("figures/")
+            assert isinstance(region["bbox"], list)

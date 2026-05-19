@@ -289,10 +289,6 @@ def find_captions(doc: fitz.Document) -> list[Caption]:
         page = doc.load_page(page_index)
         for block in extract_text_blocks(page):
             text = block["text"]
-            if len(text) > MAX_CAPTION_CHARS:
-                continue
-            if len(text) > 200 and block["bbox"].height > MAX_DENSE_CAPTION_HEIGHT_PT:
-                continue
             match = CAPTION_RE.match(text)
             if not match:
                 continue
@@ -312,6 +308,12 @@ def find_captions(doc: fitz.Document) -> list[Caption]:
                     "plots ",
                     "compares ",
                 )
+            ):
+                continue
+            if (
+                len(text) > MAX_CAPTION_CHARS
+                and block["bbox"].height > MAX_DENSE_CAPTION_HEIGHT_PT
+                and not caption
             ):
                 continue
             bbox = block["bbox"]

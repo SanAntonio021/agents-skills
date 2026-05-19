@@ -244,3 +244,11 @@ Git 状态：
 - 上游参考源码只放在 `D:\BaiduSyncdisk\.agents\upstream-skill-sources\`。
 - 本地自建和改造 skill 的源码位置按全局规则"路径与防改错"执行。
 - 当判断标准、输出模板、清场规则或目录标准变化时，优先更新这里。
+
+### 外部参考来源（2026-05-19 改进）
+
+以下外部 skill 在本次改进中被参考，只吸收了可解释的工作方法，未吸收遥测、自动提交等机制：
+
+- **具体经验信号清单** ← `blader/Claudeception`（https://github.com/blader/Claudeception）：从中借鉴了用具体信号（文档查不到的解决方法、多次试错的集成步骤等）辅助分流判断的做法
+- **踩坑记录字段** ← `accidentalrebel/claude-skill-session-retrospective`（https://github.com/accidentalrebel/claude-skill-session-retrospective）：从中借鉴了在输出中显式记录错误、原因和避免方法的做法
+- **git diff 扫描步骤** ← `KKKKhazix/khazix-skills@neat-freak`（https://github.com/KKKKhazix/khazix-skills）：从中借鉴了用 git diff/status 自动检测哪些文档需要同步的做法

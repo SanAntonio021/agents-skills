@@ -30,6 +30,7 @@ def col_2023_manifest():
             save_embedded=False,
             html_file=None,
             html_base_url=None,
+            html_url="https://www.researching.cn/articles/OJ680ef0f2001f0419",
         )
         yield json.loads((Path(tmpdir) / "manifest.json").read_text(encoding="utf-8"))
 
@@ -48,9 +49,9 @@ def test_table_1_stays_in_left_column(col_2023_manifest):
 
 def test_fig_1_excludes_caption_and_top_body(col_2023_manifest):
     fig = by_id(col_2023_manifest, "Fig. 1")
-    assert fig["bbox"][0] > 280
-    assert fig["bbox"][1] > 100
-    assert fig["bbox"][3] <= fig["caption_bbox"][1]
+    assert fig["source_type"] == "official-figure"
+    assert "researching.cn/richHtml/" in fig["source_url"]
+    assert fig["height"] > 500
 
 
 def test_table_2_detects_split_blocks(col_2023_manifest):
@@ -67,4 +68,16 @@ def test_table_2_detects_split_blocks(col_2023_manifest):
 def test_fig_2_is_present(col_2023_manifest):
     fig = by_id(col_2023_manifest, "Fig. 2")
     assert fig["file"].startswith("figures/fig_2")
-    assert fig["confidence"] == "high"
+    assert fig["source_type"] == "official-figure"
+
+
+def test_fig_2_uses_official_researching_image(col_2023_manifest):
+    fig = by_id(col_2023_manifest, "Fig. 2")
+    assert "researching.cn/richHtml/" in fig["source_url"]
+    assert fig["width"] > 900
+
+
+def test_fig_4_uses_official_researching_image(col_2023_manifest):
+    fig = by_id(col_2023_manifest, "Fig. 4")
+    assert fig["source_type"] == "official-figure"
+    assert "researching.cn/richHtml/" in fig["source_url"]

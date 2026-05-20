@@ -1,4 +1,5 @@
 import json
+import hashlib
 import tempfile
 from pathlib import Path
 
@@ -51,13 +52,16 @@ def test_official_html_figure_overrides_pdf_crop():
             html_base_url=None,
         )
         manifest = json.loads((root / "out" / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["schema_version"] == 4
-    fig1 = next(item for item in manifest["figures"] if item["figure_id"] == "Fig. 1")
-    assert fig1["source_type"] == "official-figure"
-    assert fig1["file"] == "figures/fig_1.png"
-    duplicate = next(item for item in manifest["skipped"] if item.get("figure_id") == "Fig. 1")
-    assert duplicate["is_duplicate"] is True
-    assert duplicate["source_type"] != "official-figure"
+        assert manifest["schema_version"] == 4
+        fig1 = next(item for item in manifest["figures"] if item["figure_id"] == "Fig. 1")
+        assert fig1["source_type"] == "official-figure"
+        assert fig1["file"] == "figures/fig_1.png"
+        saved_path = root / "out" / fig1["file"]
+        assert hashlib.sha256(saved_path.read_bytes()).hexdigest() == fig1["sha256"]
+        duplicate = next(item for item in manifest["skipped"] if item.get("figure_id") == "Fig. 1")
+        assert duplicate["is_duplicate"] is True
+        assert duplicate["source_type"] != "official-figure"
+        assert duplicate["file"].startswith("audit_crops/pdf_crop_fig_1")
 
 
 def test_official_html_table_is_saved_as_markdown():

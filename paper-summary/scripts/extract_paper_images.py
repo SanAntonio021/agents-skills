@@ -37,6 +37,11 @@ except ImportError:  # pragma: no cover - optional for PDF-only extraction
     BeautifulSoup = None
 
 try:
+    from PIL import Image
+except ImportError:  # pragma: no cover - optional metadata helper
+    Image = None
+
+try:
     import fitz  # PyMuPDF
 except ImportError as exc:  # pragma: no cover - exercised by CLI environment
     raise SystemExit(
@@ -70,7 +75,7 @@ USER_AGENT = (
 IMAGE_EXT_RE = re.compile(r"\.(?:png|jpe?g|webp|gif)(?:[?#].*)?$", re.I)
 OFFICIAL_IMAGE_HINT_RE = re.compile(
     r"(media\.springernature\.com|static\.cambridge\.org|pub\.mdpi-res\.com|"
-    r"/article_deploy/html/images/|/MediaObjects/|_fig\d+|[-_]g\d{3})",
+    r"researching\.cn/richHtml/|/article_deploy/html/images/|/MediaObjects/|_fig\d+|[-_]g\d{3}|img_\d{3})",
     re.I,
 )
 CROP_MARGIN_PT = 10.0
@@ -174,6 +179,58 @@ def mdpi_static_candidates(article_url: str | None) -> tuple[str, list[str]]:
     article_token = f"{int(volume):02d}-{int(article):05d}"
     base = f"https://pub.mdpi-res.com/{journal}/{journal}-{article_token}/article_deploy/html/images"
     urls = [f"{base}/{journal}-{article_token}-g{idx:03d}.png" for idx in range(1, 31)]
+    return base, urls
+
+
+def researching_static_candidates(article_url: str | None) -> tuple[str, list[str]]:
+    """Return Researching.cn richHtml figure URLs inferred from article metadata."""
+    if not article_url:
+        return "", []
+    match = re.search(r"(?:www\.)?researching\.cn/articles/OJ[^/?#]+", article_url, re.I)
+    if not match:
+        return "", []
+
+    article_host_path = re.sub(r"^www\.", "", match.group(0), flags=re.I)
+    jina_url = f"https://r.jina.ai/http://{article_host_path}/figureandtable"
+    try:
+        markdown_bytes, _, _ = fetch_url(jina_url)
+        markdown = markdown_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        return "", []
+
+    urls: list[str] = []
+    seen: set[str] = set()
+    for url in re.findall(r"https?://(?:www\.)?researching\.cn/richHtml/[^)\s]+/img_\d{3}\.jpg", markdown, re.I):
+        if url in seen:
+            continue
+        seen.add(url)
+        urls.append(url)
+    if urls:
+        base_url = re.sub(r"/img_\d{3}\.jpg$", "", urls[0], flags=re.I)
+        max_seen = max(
+            int(match.group(1))
+            for url in urls
+            for match in [re.search(r"img_(\d{3})\.jpg$", url, re.I)]
+            if match
+        )
+        consecutive_failures = 0
+        for idx in range(max_seen + 1, 31):
+            candidate = f"{base_url}/img_{idx:03d}.jpg"
+            try:
+                data, content_type, _ = fetch_url(candidate, referer=article_url)
+            except Exception:
+                consecutive_failures += 1
+            else:
+                if content_type.lower().startswith("image/") and len(data) >= 1024:
+                    if candidate not in seen:
+                        seen.add(candidate)
+                        urls.append(candidate)
+                    consecutive_failures = 0
+                else:
+                    consecutive_failures += 1
+            if consecutive_failures >= 3:
+                break
+    base = re.sub(r"/img_\d{3}\.jpg$", "", urls[0], flags=re.I) if urls else ""
     return base, urls
 
 
@@ -1004,6 +1061,7 @@ def infer_figure_bbox(
         current_height = float(current_union.height) if current_union else 0.0
         if (
             full_band_union is not None
+            and layout.kind != "two-column"
             and caption_rect.y0 > page_rect.y0 + page_height * 0.45
             and float(full_band_union.width) > page_width * 0.6
             and float(full_band_union.height) > page_height * 0.25
@@ -1102,6 +1160,16 @@ def infer_figure_bbox(
             continue
         if not intersects_x(rect, expanded_graphics, min_overlap=0.05):
             continue
+        if (
+            candidate_position == "above"
+            and not promoted_full_band
+            and float(rect.y0) < float(graphics_union.y0) - 2.0
+            and float(rect.y1) <= float(graphics_union.y0) + 36.0
+        ):
+            # A table immediately above the target figure can overlap the
+            # expanded graphic bbox. Keep the crop anchored to graphic objects,
+            # not unrelated short table cells.
+            continue
         vertical_overlap = max(0.0, min(rect.y1, expanded_graphics.y1) - max(rect.y0, expanded_graphics.y0))
         near_vertical = (
             vertical_overlap > 0
@@ -1148,6 +1216,9 @@ def infer_figure_bbox(
             crop_rect.y0 -= FIGURE_EXTRA_TOP_PT
         crop_rect.y1 += FIGURE_EXTRA_BOTTOM_PT
         crop_rect = safe_rect(crop_rect, page_rect)
+        if candidate_position == "above" and not promoted_full_band:
+            crop_rect.y0 = max(float(crop_rect.y0), float(graphics_union.y0) - 6.0)
+            crop_rect = safe_rect(crop_rect, page_rect)
         if not full_width_caption and not promoted_full_band:
             crop_rect.x0 = max(float(crop_rect.x0), float(column_rect.x0) - CROP_MARGIN_PT)
             crop_rect.x1 = min(float(crop_rect.x1), float(column_rect.x1) + CROP_MARGIN_PT)
@@ -1366,11 +1437,33 @@ def save_official_image(source_url: str, figure_id: str, index: int, figures_dir
         data, content_type, final_url = fetch_url(source_url, referer=referer)
         if len(data) < 1024:
             raise ValueError(f"Downloaded image is too small: {source_url}")
+        if data.startswith(b"RIFF") and b"WEBP" in data[:16]:
+            suffix = ".webp"
+            filename = f"{Path(figure_filename(figure_id, index)).stem}{suffix}"
+            dst = figures_dir / filename
         dst.write_bytes(data)
+    width = 0
+    height = 0
+    if Image is not None:
+        try:
+            with Image.open(dst) as image:
+                width, height = image.size
+        except Exception:
+            pass
+    if not width or not height:
+        try:
+            pix = fitz.Pixmap(str(dst))
+            width = int(pix.width)
+            height = int(pix.height)
+            pix = None
+        except Exception:
+            pass
     return {
         "file": f"figures/{filename}",
         "files": [f"figures/{filename}"],
         "bytes": dst.stat().st_size,
+        "width": width,
+        "height": height,
         "sha256": sha256_bytes(data),
         "source_url": final_url,
         "content_type": content_type,
@@ -1429,6 +1522,36 @@ def official_html_figures(
     try:
         text, detected_base_url, read_warning = read_html_source(html_file, html_url)
     except Exception:
+        researching_base, researching_urls = researching_static_candidates(html_url)
+        if researching_urls:
+            figures_dir = out_dir / "figures"
+            figures_dir.mkdir(parents=True, exist_ok=True)
+            figures: list[dict[str, Any]] = []
+            warnings: list[dict[str, Any]] = []
+            for idx, source_url in enumerate(researching_urls, start=1):
+                figure_id = f"Fig. {idx}"
+                entry: dict[str, Any] = {
+                    "figure_id": figure_id,
+                    "caption": "",
+                    "source_type": "official-figure",
+                    "source_url": source_url,
+                    "files": [],
+                    "regions": [],
+                    "split": False,
+                    "confidence": "medium",
+                    "confidence_score": 0.7,
+                    "warning": "Researching.cn article HTML was blocked; figure inferred from figure/table richHtml static pattern. Verify numbering against article.",
+                }
+                if download_images:
+                    try:
+                        image_info = save_official_image(source_url, figure_id, idx, figures_dir, html_url)
+                        entry.update(image_info)
+                    except Exception:
+                        continue
+                figures.append(entry)
+            if figures:
+                return figures, warnings, researching_base, "Researching.cn article HTML blocked; used richHtml static image fallback."
+
         mdpi_base, mdpi_urls = mdpi_static_candidates(html_url)
         if not mdpi_urls:
             raise
@@ -1519,6 +1642,42 @@ def official_html_figures(
                     }
                 )
         figures.append(entry)
+
+    if not figures and html_url and "researching.cn/articles/" in html_url:
+        researching_base, researching_urls = researching_static_candidates(html_url)
+        for idx, source_url in enumerate(researching_urls, start=1):
+            figure_id = f"Fig. {idx}"
+            entry = {
+                "figure_id": figure_id,
+                "caption": "",
+                "source_type": "official-figure",
+                "source_url": source_url,
+                "files": [],
+                "regions": [],
+                "split": False,
+                "confidence": "medium",
+                "confidence_score": 0.7,
+                "warning": "Researching.cn article HTML did not expose figure nodes; figure inferred from figure/table richHtml static pattern. Verify numbering against article.",
+            }
+            if download_images:
+                try:
+                    image_info = save_official_image(source_url, figure_id, idx, figures_dir, resolved_base)
+                    entry.update(image_info)
+                except Exception as exc:
+                    entry["warning"] = normalize_space(f"{entry['warning']}; official image download failed: {exc}")
+                    warnings.append(
+                        {
+                            "figure_id": figure_id,
+                            "source_url": source_url,
+                            "warning": str(exc),
+                        }
+                    )
+            figures.append(entry)
+        if figures:
+            resolved_base = researching_base or resolved_base
+            read_warning = normalize_space(
+                f"{read_warning or ''}; Researching.cn HTML used richHtml static image fallback."
+            )
 
     tables: list[dict[str, Any]] = []
     for idx, table in enumerate(soup.find_all("table"), start=1):
@@ -1651,6 +1810,7 @@ def extract_figures(
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = out_dir / "figures"
+    audit_dir = out_dir / "audit_crops"
     debug_dir = out_dir / "debug_pages"
     figures_dir.mkdir(parents=True, exist_ok=True)
     if write_debug_pages or mode == "page-render":
@@ -1696,11 +1856,17 @@ def extract_figures(
         pdf_figures.extend(candidates)
     else:
         captions = find_captions(doc)
-        seen_files: set[str] = set()
+        seen_files: set[str] = {
+            Path(file).name
+            for item in official_figures
+            for file in item.get("files", [])
+            if file
+        }
         for idx, caption in enumerate(captions, start=1):
             page = doc.load_page(caption.page_index)
             crop = infer_figure_bbox(page, caption)
             page_number = caption.page_index + 1
+            is_official_duplicate = caption.figure_id.lower() in official_ids
             if crop.bbox is None or not crop.regions or crop.confidence < confidence_threshold:
                 skipped.append(
                     {
@@ -1733,16 +1899,23 @@ def extract_figures(
             first_height = 0
             for part_index, region in enumerate(crop.regions, start=1):
                 filename = region_filename(base_filename, part_index, total_parts)
+                target_dir = figures_dir
+                file_prefix = "figures"
+                if is_official_duplicate:
+                    filename = f"pdf_crop_{filename}"
+                    target_dir = audit_dir
+                    file_prefix = "audit_crops"
+                    target_dir.mkdir(parents=True, exist_ok=True)
                 if filename in seen_files:
                     filename = f"{Path(filename).stem}_{idx:03d}{Path(filename).suffix}"
                 seen_files.add(filename)
-                out_path = figures_dir / filename
+                out_path = target_dir / filename
                 width, height, image_bytes = save_region(page, region, out_path, render_dpi)
                 digest = sha256_bytes(image_bytes)
                 if part_index == 1:
                     first_width = width
                     first_height = height
-                file_path = f"figures/{filename}"
+                file_path = f"{file_prefix}/{filename}"
                 files.append(file_path)
                 region_hashes.append(digest)
                 total_bytes += out_path.stat().st_size
@@ -1782,7 +1955,7 @@ def extract_figures(
                 "sha256": sha256_bytes("".join(region_hashes).encode("ascii")),
                 "render_dpi": render_dpi,
             }
-            if caption.figure_id.lower() in official_ids:
+            if is_official_duplicate:
                 entry["is_duplicate"] = True
                 entry["duplicate_of"] = caption.figure_id
                 entry["warning"] = normalize_space(

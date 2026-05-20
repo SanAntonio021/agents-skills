@@ -16,10 +16,20 @@
 | 单篇论文总结 | 读已有 PDF、整理单篇文献笔记、提取术语和关键信息 | `paper-summary` |
 | 指标论证 | 这个指标站不站得住、口径怎么写 | `target-check` |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
-| SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度 | `sci-paper-edit` |
+| SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `sci-paper-edit` |
+| 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `sciwrite` |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
+| 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `scientific-critical-thinking` |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `sci-paper-edit` |
+| 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-fix` |
+| 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | `Humanizer-zh` |
+| 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `word-template` / `docx` |
+
+**sci-paper-edit 和 sciwrite 怎么分：**
+- "润色这段 SCI 论文英文"或"帮我改英文还要校准术语" → `sci-paper-edit`（涉及内容）
+- "这段英文太冗余，帮我精简句子" → `sciwrite`（只管句子质量）
+- "这段英文太冗余，而且术语也要校准" → `sci-paper-edit`（内容 + 句子同时有问题，优先大粒度）
 
 若一句话同时命中多个阶段，优先选最阻塞阶段。通常顺序是：事实和证据未定先调研，指标不清先论证，已有稿件先审查，再进入精修。
 
@@ -78,6 +88,19 @@
 4. 直接复制或深度改写时，保留来源和许可证说明。
 5. 如果只是未来可能有用，记录在这份地图里，不马上改下游。
 
+## 外部 skill 参考（暂不安装，留作扩展参考）
+
+更新时间：2026-05-20
+
+以下外部 skill 在市场搜索中值得关注，不是现在要用，是以后想扩展时知道去哪里找。
+
+| 外部来源 | 值得关注的内容 | 适合补充本地哪一块 |
+|----------|---------------|-------------------|
+| Imbad0202/academic-research-skills | 4 个 skill 的写-审全链路，12-agent 写作 + 7-agent 审稿 | paper-review 的多视角审稿、sci-paper-edit 的修改回应 |
+| claesbackman/AI-research-feedback | 6-agent 期刊定向审稿 + grant review | paper-review 的期刊定向评审、未来的基金申请 skill |
+| wanshuiyin grant-proposal | 9 个国际基金机构（NSF/NIH/NSFC/ERC 等）、3 种语言的基金申请 | 未来独立的 grant-writing skill |
+| kgraph57/paper-writer-skill | 10 阶段全流程写稿，18 项 AI 写作痕迹清除模式 | Humanizer-zh 的英文版扩展 |
+
 ## 推荐节奏
 
 第一步只维护本文件和 `sci-writing` 的路由规则。
@@ -88,3 +111,5 @@
 - 审稿不够狠：改 `paper-review`
 - 英文论文精修不够稳：改 `sci-paper-edit`
 - 指标/实验解释不清：改 `target-check` 或 `simulation-log`
+- 纯英文句子不够干净：改 `sciwrite`
+- 实验设计/证据评估不够深：改 `scientific-critical-thinking`

@@ -36,7 +36,7 @@ def irmmw_manifest():
 
 
 def test_schema_version(irmmw_manifest):
-    assert irmmw_manifest["schema_version"] == 3
+    assert irmmw_manifest["schema_version"] == 4
 
 
 def test_confidence_is_string(irmmw_manifest):

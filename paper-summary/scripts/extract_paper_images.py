@@ -24,6 +24,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
+
+try:
+    import pandas as pd
+except ImportError:  # pragma: no cover - optional dependency in some environments
+    pd = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:  # pragma: no cover - optional for PDF-only extraction
+    BeautifulSoup = None
 
 try:
     import fitz  # PyMuPDF
@@ -52,6 +63,16 @@ HTML_CAPTION_RE = re.compile(
     r"<figcaption\b[^>]*>(?P<caption>.*?)</figcaption>", re.I | re.S
 )
 
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
+)
+IMAGE_EXT_RE = re.compile(r"\.(?:png|jpe?g|webp|gif)(?:[?#].*)?$", re.I)
+OFFICIAL_IMAGE_HINT_RE = re.compile(
+    r"(media\.springernature\.com|static\.cambridge\.org|pub\.mdpi-res\.com|"
+    r"/article_deploy/html/images/|/MediaObjects/|_fig\d+|[-_]g\d{3})",
+    re.I,
+)
 CROP_MARGIN_PT = 10.0
 FIGURE_EXTRA_LEFT_PT = 18.0
 FIGURE_EXTRA_TOP_PT = 8.0
@@ -108,6 +129,66 @@ def normalize_space(value: str) -> str:
 def clean_html_text(value: str) -> str:
     value = re.sub(r"<[^>]+>", " ", value)
     return normalize_space(html.unescape(value))
+
+
+def fetch_url(url: str, referer: str | None = None, timeout: int = 30) -> tuple[bytes, str, str]:
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8",
+    }
+    if referer:
+        headers["Referer"] = referer
+    request = Request(url, headers=headers)
+    with urlopen(request, timeout=timeout) as response:
+        return response.read(), response.headers.get("content-type", ""), response.geturl()
+
+
+def read_html_source(html_file: Path | None, html_url: str | None) -> tuple[str, str | None, str | None]:
+    if html_file:
+        if not html_file.exists():
+            raise FileNotFoundError(f"HTML file not found: {html_file}")
+        text = html_file.read_text(encoding="utf-8", errors="replace")
+        return text, html_file.resolve().as_uri(), None
+    if html_url:
+        data, content_type, final_url = fetch_url(html_url)
+        if not content_type.lower().startswith(("text/html", "application/xhtml")):
+            raise ValueError(f"HTML URL did not return HTML: {html_url} ({content_type})")
+        return data.decode("utf-8", errors="replace"), final_url, None
+    return "", None, None
+
+
+def mdpi_static_candidates(article_url: str | None) -> tuple[str, list[str]]:
+    if not article_url:
+        return "", []
+    match = re.search(r"mdpi\.com/(\d{4}-\d{4})/(\d+)/(\d+)/(\d+)", article_url)
+    if not match:
+        return "", []
+    issn, volume, issue, article = match.groups()
+    journal_by_issn = {
+        "2079-9292": "electronics",
+        "2304-6732": "photonics",
+    }
+    journal = journal_by_issn.get(issn)
+    if not journal:
+        return "", []
+    article_token = f"{int(volume):02d}-{int(article):05d}"
+    base = f"https://pub.mdpi-res.com/{journal}/{journal}-{article_token}/article_deploy/html/images"
+    urls = [f"{base}/{journal}-{article_token}-g{idx:03d}.png" for idx in range(1, 31)]
+    return base, urls
+
+
+def figure_id_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
+    figure_id = str(item.get("figure_id") or "")
+    group_order = {
+        "Fig.": 0,
+        "Table": 1,
+        "Extended Data Fig.": 2,
+        "Extended Data Table": 3,
+        "Supplementary Fig.": 4,
+        "Supplementary Table": 5,
+        "Source Data Fig.": 6,
+    }.get(label_group(figure_id), 99)
+    return (group_order, label_number_value(figure_id) or 9999, figure_id.lower())
 
 
 def roman_to_int(value: str) -> int | None:
@@ -1190,65 +1271,298 @@ def sequence_audit(captions: list[Caption], saved_or_skipped: list[dict[str, Any
     return audit
 
 
-def local_html_figures(html_file: Path, base_url: str | None, out_dir: Path) -> list[dict[str, Any]]:
-    """Parse a local HTML file for figure metadata.
+def source_to_download_url(src: str, base_url: str | None) -> str:
+    resolved = urljoin(base_url or "", html.unescape(src.strip()))
+    if not resolved:
+        return resolved
+    if "media.springernature.com/lw685/" in resolved:
+        resolved = resolved.replace("media.springernature.com/lw685/", "media.springernature.com/full/")
+    if "media.springernature.com/" in resolved:
+        resolved = re.sub(r"\?as=webp$", "", resolved)
+    if "www.mdpi.com/" in resolved and "/article_deploy/html/images/" in resolved:
+        resolved = resolved.replace("https://www.mdpi.com/", "https://pub.mdpi-res.com/")
+        resolved = resolved.replace("http://www.mdpi.com/", "https://pub.mdpi-res.com/")
+    return resolved
 
-    Remote image URLs are recorded but not downloaded. Network fetching should be
-    handled by the calling agent through the configured web workflow.
-    """
-    if not html_file.exists():
-        raise FileNotFoundError(f"HTML file not found: {html_file}")
-    text = html_file.read_text(encoding="utf-8", errors="replace")
-    figures: list[dict[str, Any]] = []
-    copied_dir = out_dir / "figures"
-    copied_dir.mkdir(parents=True, exist_ok=True)
-    for idx, match in enumerate(HTML_FIGURE_RE.finditer(text), start=1):
-        body = match.group("body")
-        img_match = HTML_IMG_RE.search(body)
-        if not img_match:
-            continue
-        raw_src = html.unescape(img_match.group("src"))
-        caption_match = HTML_CAPTION_RE.search(body)
-        caption_text = clean_html_text(caption_match.group("caption")) if caption_match else ""
-        caption_match_id = CAPTION_RE.match(caption_text)
-        figure_id = (
-            normalize_figure_id(caption_match_id.group("label"))
-            if caption_match_id
-            else f"Fig. {idx}"
+
+def best_img_src(img: Any, base_url: str | None) -> str | None:
+    candidates: list[str] = []
+    for attr in ("data-full", "data-src", "data-original", "src"):
+        value = img.get(attr)
+        if value:
+            candidates.append(str(value))
+    srcset = img.get("srcset")
+    if srcset:
+        for part in str(srcset).split(","):
+            value = part.strip().split(" ")[0]
+            if value:
+                candidates.append(value)
+    resolved: list[str] = []
+    for candidate in candidates:
+        url = source_to_download_url(candidate, base_url)
+        if url and IMAGE_EXT_RE.search(url):
+            resolved.append(url)
+    if not resolved:
+        return None
+    resolved.sort(
+        key=lambda url: (
+            0 if OFFICIAL_IMAGE_HINT_RE.search(url) else 1,
+            1 if re.search(r"(?:[-_]550|w215h120|thumb|thumbnail)", url, re.I) else 0,
+            len(url),
         )
-        resolved_src = urljoin(base_url or html_file.resolve().as_uri(), raw_src)
-        parsed = urlparse(resolved_src)
+    )
+    return resolved[0]
+
+
+def caption_from_node(node: Any) -> str:
+    selectors = [
+        "figcaption",
+        ".c-article-section__figure-caption",
+        ".html-caption",
+        ".caption",
+        ".figcaption",
+        "caption",
+    ]
+    for selector in selectors:
+        found = node.select_one(selector)
+        if found:
+            text = normalize_space(found.get_text(" ", strip=True))
+            if text:
+                return text
+    return normalize_space(node.get_text(" ", strip=True))
+
+
+def caption_id_and_text(caption_text: str, fallback_id: str) -> tuple[str, str, bool]:
+    match = CAPTION_RE.match(caption_text)
+    if not match:
+        return fallback_id, caption_text, False
+    figure_id = normalize_figure_id(match.group("label"))
+    caption = normalize_space(match.group("caption"))
+    return figure_id, caption or caption_text, True
+
+
+def local_file_from_url(parsed_url: Any) -> Path:
+    if sys.platform.startswith("win") and re.match(r"^/[A-Za-z]:/", parsed_url.path):
+        return Path(parsed_url.path.lstrip("/"))
+    return Path(parsed_url.path)
+
+
+def save_official_image(source_url: str, figure_id: str, index: int, figures_dir: Path, referer: str | None) -> dict[str, Any]:
+    parsed = urlparse(source_url)
+    suffix = Path(parsed.path).suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        suffix = ".png"
+    filename = f"{Path(figure_filename(figure_id, index)).stem}{suffix}"
+    dst = figures_dir / filename
+    if parsed.scheme == "file":
+        src_path = local_file_from_url(parsed)
+        if not src_path.exists():
+            raise FileNotFoundError(f"HTML image file not found: {src_path}")
+        shutil.copy2(src_path, dst)
+        data = dst.read_bytes()
+        content_type = ""
+        final_url = source_url
+    else:
+        data, content_type, final_url = fetch_url(source_url, referer=referer)
+        if len(data) < 1024:
+            raise ValueError(f"Downloaded image is too small: {source_url}")
+        dst.write_bytes(data)
+    return {
+        "file": f"figures/{filename}",
+        "files": [f"figures/{filename}"],
+        "bytes": dst.stat().st_size,
+        "sha256": sha256_bytes(data),
+        "source_url": final_url,
+        "content_type": content_type,
+    }
+
+
+def html_table_to_markdown(table: Any) -> str:
+    rows: list[list[str]] = []
+    for tr in table.find_all("tr"):
+        cells = tr.find_all(["th", "td"])
+        if not cells:
+            continue
+        rows.append([normalize_space(cell.get_text(" ", strip=True)).replace("|", "\\|") for cell in cells])
+    if not rows:
+        return ""
+    width = max(len(row) for row in rows)
+    normalized = [row + [""] * (width - len(row)) for row in rows]
+    header = normalized[0]
+    body = normalized[1:] or [[""] * width]
+    lines = [
+        "| " + " | ".join(header) + " |",
+        "| " + " | ".join(["---"] * width) + " |",
+    ]
+    lines.extend("| " + " | ".join(row) + " |" for row in body)
+    return "\n".join(lines) + "\n"
+
+
+def save_official_table(table: Any, figure_id: str, index: int, figures_dir: Path) -> dict[str, Any]:
+    filename = f"{Path(figure_filename(figure_id, index)).stem}.md"
+    dst = figures_dir / filename
+    markdown = html_table_to_markdown(table)
+    if not markdown and pd is not None:
+        parsed_tables = pd.read_html(str(table))
+        if parsed_tables:
+            markdown = parsed_tables[0].to_markdown(index=False) + "\n"
+    if not markdown:
+        raise ValueError("HTML table has no parseable rows.")
+    dst.write_text(markdown, encoding="utf-8")
+    data = dst.read_bytes()
+    return {
+        "file": f"figures/{filename}",
+        "files": [f"figures/{filename}"],
+        "bytes": dst.stat().st_size,
+        "sha256": sha256_bytes(data),
+        "structured_table": f"figures/{filename}",
+    }
+
+
+def official_html_figures(
+    html_file: Path | None,
+    html_url: str | None,
+    base_url: str | None,
+    out_dir: Path,
+    download_images: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str | None, str | None]:
+    try:
+        text, detected_base_url, read_warning = read_html_source(html_file, html_url)
+    except Exception:
+        mdpi_base, mdpi_urls = mdpi_static_candidates(html_url)
+        if not mdpi_urls:
+            raise
+        figures_dir = out_dir / "figures"
+        figures_dir.mkdir(parents=True, exist_ok=True)
+        figures: list[dict[str, Any]] = []
+        warnings: list[dict[str, Any]] = []
+        consecutive_failures = 0
+        for idx, source_url in enumerate(mdpi_urls, start=1):
+            figure_id = f"Fig. {idx}"
+            entry: dict[str, Any] = {
+                "figure_id": figure_id,
+                "caption": "",
+                "source_type": "official-figure",
+                "source_url": source_url,
+                "files": [],
+                "regions": [],
+                "split": False,
+                "confidence": "medium",
+                "confidence_score": 0.65,
+                "warning": "MDPI article HTML was blocked; figure inferred from pub.mdpi-res.com static pattern. Verify numbering against article.",
+            }
+            if download_images:
+                try:
+                    image_info = save_official_image(source_url, figure_id, idx, figures_dir, html_url)
+                    entry.update(image_info)
+                    consecutive_failures = 0
+                except Exception:
+                    consecutive_failures += 1
+                    if figures and consecutive_failures >= 3:
+                        break
+                    continue
+            figures.append(entry)
+        return figures, warnings, mdpi_base, "MDPI article HTML blocked; used pub.mdpi-res.com static image fallback."
+    resolved_base = base_url or detected_base_url
+    if not text:
+        return [], [], resolved_base, read_warning
+    if BeautifulSoup is None:
+        raise RuntimeError("BeautifulSoup is required for official HTML extraction.")
+    soup = BeautifulSoup(text, "lxml")
+    figures_dir = out_dir / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    figures: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+
+    figure_nodes: list[Any] = []
+    for selector in ("figure", "div.html-fig_show", "div.fig", "div.figure"):
+        for node in soup.select(selector):
+            if node not in figure_nodes:
+                figure_nodes.append(node)
+
+    for idx, node in enumerate(figure_nodes, start=1):
+        img = node.find("img")
+        if not img:
+            continue
+        source_url = best_img_src(img, resolved_base)
+        if not source_url or not OFFICIAL_IMAGE_HINT_RE.search(source_url):
+            continue
+        caption_text = caption_from_node(node)
+        figure_id, caption, parsed_caption = caption_id_and_text(caption_text, f"Fig. {idx}")
+        if figure_id.lower() in seen_ids:
+            continue
+        seen_ids.add(figure_id.lower())
         entry: dict[str, Any] = {
             "figure_id": figure_id,
-            "caption": caption_text,
-            "source_type": "html-image",
-            "source_url": resolved_src,
+            "caption": caption,
+            "source_type": "official-figure",
+            "source_url": source_url,
             "files": [],
             "regions": [],
             "split": False,
-            "confidence": confidence_label(0.9 if caption_match_id else 0.65),
-            "confidence_score": 0.9 if caption_match_id else 0.65,
-            "warning": "" if caption_match_id else "HTML figure has no parseable Fig./Table caption.",
+            "confidence": confidence_label(0.95 if parsed_caption else 0.65),
+            "confidence_score": 0.95 if parsed_caption else 0.65,
+            "warning": "" if parsed_caption else "Official HTML figure has no parseable Fig./Table caption.",
         }
-        if parsed.scheme == "file":
-            src_path = Path(parsed.path)
-            if src_path.exists() and src_path.is_file():
-                suffix = src_path.suffix.lower() if src_path.suffix else ".png"
-                filename = f"{Path(figure_filename(figure_id, idx)).stem}{suffix}"
-                dst = copied_dir / filename
-                shutil.copy2(src_path, dst)
-                data = dst.read_bytes()
-                entry.update(
+        if download_images:
+            try:
+                image_info = save_official_image(source_url, figure_id, idx, figures_dir, resolved_base)
+                entry.update(image_info)
+            except Exception as exc:
+                entry["warning"] = normalize_space(f"{entry['warning']}; official image download failed: {exc}")
+                warnings.append(
                     {
-                        "file": f"figures/{filename}",
-                        "files": [f"figures/{filename}"],
-                        "regions": [],
-                        "bytes": len(data),
-                        "sha256": sha256_bytes(data),
+                        "figure_id": figure_id,
+                        "source_url": source_url,
+                        "warning": str(exc),
                     }
                 )
         figures.append(entry)
-    return figures
+
+    tables: list[dict[str, Any]] = []
+    for idx, table in enumerate(soup.find_all("table"), start=1):
+        caption_text = ""
+        caption_node = table.find("caption")
+        if caption_node:
+            caption_text = normalize_space(caption_node.get_text(" ", strip=True))
+        if not caption_text:
+            previous = table.find_previous(["figcaption", "div", "p"])
+            if previous:
+                previous_text = normalize_space(previous.get_text(" ", strip=True))
+                if CAPTION_RE.match(previous_text):
+                    caption_text = previous_text
+        figure_id, caption, parsed_caption = caption_id_and_text(caption_text, f"Table {idx}")
+        if figure_id.lower() in seen_ids:
+            continue
+        seen_ids.add(figure_id.lower())
+        entry = {
+            "figure_id": figure_id,
+            "caption": caption,
+            "source_type": "official-html-table",
+            "source_url": resolved_base,
+            "files": [],
+            "regions": [],
+            "split": False,
+            "confidence": confidence_label(0.92 if parsed_caption else 0.65),
+            "confidence_score": 0.92 if parsed_caption else 0.65,
+            "warning": "" if parsed_caption else "Official HTML table has no parseable Table caption.",
+        }
+        try:
+            table_info = save_official_table(table, figure_id, idx, figures_dir)
+            entry.update(table_info)
+        except Exception as exc:
+            entry["warning"] = normalize_space(f"{entry['warning']}; official table extraction failed: {exc}")
+            warnings.append(
+                {
+                    "figure_id": figure_id,
+                    "source_url": resolved_base,
+                    "warning": str(exc),
+                }
+            )
+        tables.append(entry)
+
+    return sorted(figures + tables, key=figure_id_sort_key), warnings, resolved_base, read_warning
 
 
 def embedded_candidates(
@@ -1331,6 +1645,9 @@ def extract_figures(
     save_embedded: bool,
     html_file: Path | None,
     html_base_url: str | None,
+    html_url: str | None = None,
+    prefer_official: bool = True,
+    download_official: bool = True,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = out_dir / "figures"
@@ -1340,13 +1657,39 @@ def extract_figures(
         debug_dir.mkdir(parents=True, exist_ok=True)
 
     doc = fitz.open(pdf_path)
-    html_figures: list[dict[str, Any]] = []
-    if html_file:
-        html_figures = local_html_figures(html_file, html_base_url, out_dir)
+    official_figures: list[dict[str, Any]] = []
+    official_warnings: list[dict[str, Any]] = []
+    official_base_url: str | None = None
+    official_read_warning: str | None = None
+    if html_file or html_url:
+        try:
+            official_figures, official_warnings, official_base_url, official_read_warning = official_html_figures(
+                html_file=html_file,
+                html_url=html_url,
+                base_url=html_base_url,
+                out_dir=out_dir,
+                download_images=download_official,
+            )
+        except Exception as exc:
+            official_read_warning = f"Official HTML extraction failed; PDF crop fallback used: {exc}"
+            official_warnings.append(
+                {
+                    "source_url": html_url,
+                    "html_file": str(html_file) if html_file else None,
+                    "warning": str(exc),
+                }
+            )
+        if official_read_warning:
+            official_warnings.append({"warning": official_read_warning})
 
     pdf_figures: list[dict[str, Any]] = []
     debug_pages: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
+    official_ids = {
+        str(item.get("figure_id", "")).lower()
+        for item in official_figures
+        if item.get("file") and prefer_official
+    }
 
     if mode == "embedded":
         candidates = embedded_candidates(doc, out_dir, min_bytes, min_width, min_height)
@@ -1418,29 +1761,36 @@ def extract_figures(
             warning = "; ".join(crop.warnings)
             if crop.confidence < 0.75:
                 warning = normalize_space(f"{warning}; verify crop manually")
-            pdf_figures.append(
-                {
-                    "file": files[0],
-                    "files": files,
-                    "figure_id": caption.figure_id,
-                    "caption": caption.caption,
-                    "page": page_number,
-                    "bbox": rect_to_list(crop.bbox),
-                    "regions": regions,
-                    "caption_bbox": rect_to_list(caption.bbox),
-                    "source_type": crop.source_type,
-                    "confidence": confidence_label(crop.confidence),
-                    "confidence_score": round(crop.confidence, 3),
-                    "page_layout": crop.page_layout,
-                    "split": len(files) > 1,
-                    "warning": warning,
-                    "width": first_width,
-                    "height": first_height,
-                    "bytes": total_bytes,
-                    "sha256": sha256_bytes("".join(region_hashes).encode("ascii")),
-                    "render_dpi": render_dpi,
-                }
-            )
+            entry = {
+                "file": files[0],
+                "files": files,
+                "figure_id": caption.figure_id,
+                "caption": caption.caption,
+                "page": page_number,
+                "bbox": rect_to_list(crop.bbox),
+                "regions": regions,
+                "caption_bbox": rect_to_list(caption.bbox),
+                "source_type": crop.source_type,
+                "confidence": confidence_label(crop.confidence),
+                "confidence_score": round(crop.confidence, 3),
+                "page_layout": crop.page_layout,
+                "split": len(files) > 1,
+                "warning": warning,
+                "width": first_width,
+                "height": first_height,
+                "bytes": total_bytes,
+                "sha256": sha256_bytes("".join(region_hashes).encode("ascii")),
+                "render_dpi": render_dpi,
+            }
+            if caption.figure_id.lower() in official_ids:
+                entry["is_duplicate"] = True
+                entry["duplicate_of"] = caption.figure_id
+                entry["warning"] = normalize_space(
+                    f"{warning}; duplicate PDF crop retained for audit because official source is available"
+                )
+                skipped.append(entry)
+            else:
+                pdf_figures.append(entry)
 
         if save_embedded:
             embedded = embedded_candidates(doc, out_dir, min_bytes, min_width, min_height)
@@ -1462,14 +1812,23 @@ def extract_figures(
     if mode == "embedded":
         embedded = []
 
-    # Prefer HTML figures when supplied; PDF figures still remain for fallback/audit.
-    figures = html_figures + pdf_figures
+    figures = sorted(official_figures + pdf_figures, key=figure_id_sort_key)
     sequence_items = figures + skipped
     result = {
-        "schema_version": 3,
+        "schema_version": 4,
         "pdf": str(pdf_path),
         "out_dir": str(out_dir),
         "mode": mode,
+        "official_source": {
+            "enabled": bool(html_file or html_url),
+            "prefer_official": prefer_official,
+            "download_official": download_official,
+            "html_file": str(html_file) if html_file else None,
+            "html_url": html_url,
+            "base_url": official_base_url or html_base_url,
+            "warning": official_read_warning,
+            "warning_count": len(official_warnings),
+        },
         "page_count": doc.page_count,
         "figure_count": len([f for f in figures if f.get("file")]),
         "image_count": sum(len(f.get("files") or ([f["file"]] if f.get("file") else [])) for f in figures),
@@ -1479,12 +1838,14 @@ def extract_figures(
         "sequence_audit": sequence_audit(captions if mode != "embedded" else [], sequence_items),
         "debug_pages": debug_pages,
         "embedded_candidates": embedded,
+        "official_warnings": official_warnings,
         "policy": {
             "high": "可进入正文，仍需快速目检",
             "medium": "人工目检通过后可进入正文",
             "low": "不进入正文，仅用于排查",
             "debug_pages_should_reference": False,
             "confidence_threshold": confidence_threshold,
+            "official_source_priority": "Use official HTML figures/tables before PDF crops when available.",
         },
     }
     doc.close()
@@ -1530,11 +1891,25 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--html-file",
         type=Path,
-        help="Optional local HTML file from an official/arXiv page to parse figure URLs/captions.",
+        help="Optional local official article HTML file to parse and download figures/tables from.",
+    )
+    parser.add_argument(
+        "--html-url",
+        help="Optional official article HTML URL to fetch before falling back to PDF crops.",
     )
     parser.add_argument(
         "--html-base-url",
         help="Base URL used to resolve relative paths in --html-file.",
+    )
+    parser.add_argument(
+        "--no-prefer-official",
+        action="store_true",
+        help="Keep PDF crops in manifest even when an official HTML figure/table has the same ID.",
+    )
+    parser.add_argument(
+        "--no-download-official",
+        action="store_true",
+        help="Record official HTML figure/table URLs but do not download/copy assets.",
     )
     return parser.parse_args(argv)
 
@@ -1565,6 +1940,9 @@ def main(argv: list[str]) -> int:
             save_embedded=args.save_embedded_candidates,
             html_file=args.html_file.resolve() if args.html_file else None,
             html_base_url=args.html_base_url,
+            html_url=args.html_url,
+            prefer_official=not args.no_prefer_official,
+            download_official=not args.no_download_official,
         )
     except Exception as exc:
         print(f"extract_paper_images failed: {exc}", file=sys.stderr)

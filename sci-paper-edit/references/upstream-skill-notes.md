@@ -7,22 +7,19 @@
 链接：https://github.com/labarba/sciwrite
 许可：CC BY 4.0
 
-可借鉴：
+**当前状态（2026-05-20 更新）：** sciwrite 已 fork 到本地 `agents-skills-src/sciwrite/`，作为独立的英文句子质量审查 skill。
 
-- 面向 scientific/engineering manuscript 的语言精修定位。
-- 保持科学内容，只改善表达、清晰度、术语一致性和数字/引用完整性。
-- 五项语言检查：删空话和重复句，改顺主语和动词，拆开太绕的长句，固定术语，核对数字、单位和引用。
+**分工：**
+- `sci-paper-edit` 管内容层面的精修：术语校准、引用检查、IEEE 结构、中文改英文、图注、终稿整理。内置的 5 项语言质量复查（已吸收到 `manuscript-refinement-checklist.md`）是精修流程中的一个步骤，服务于完整流程。
+- `sciwrite` 是独立的纯英文句子质量审查工具：Sainani 五轮检查法（删废话→改被动→理句子结构→统一用词→核对数字引用）。用户单独想做句子级检查时用。
 
-已吸收：
+**已吸收到 sci-paper-edit 的内容保留不动：**
+- `SKILL.md` 主流程中的五项语言质量复查步骤。
+- `references/manuscript-refinement-checklist.md` 中融合的具体检查项。
 
-- `SKILL.md` 主流程已加入五项语言质量复查。
-- `references/manuscript-refinement-checklist.md` 已融合具体检查项。
-
-作为参考来源的原因：
-
-- 仓库规模小，当前 GitHub 页面显示提交数少、仍有 open issues，维护强度有限。
-- 它更适合作为语言质量检查框架；IEEE 风格、通信硬件论文图文对应和本地术语库流程仍由本地规则承担。
-- 因此只吸收可复用检查项并保留来源说明。
+**原始背景：**
+- 仓库规模小，维护不活跃，核心内容是基于 Sainani 课程的静态方法论提炼。
+- IEEE 风格、通信硬件论文图文对应和本地术语库流程仍由 sci-paper-edit 本地规则承担。
 
 ## ailabs-393/research-paper-writer
 

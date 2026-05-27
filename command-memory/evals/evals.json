@@ -36,6 +36,24 @@
       "prompt": "我要在 PowerShell 里一次备份 4 个已知绝对路径文件，其中路径很长。上次写 Join-Path 加逗号时报了 Cannot convert System.Object[]。请给我稳的命令骨架。",
       "expected_output": "应提醒不要把逗号直接接在 Join-Path 参数后；推荐显式绝对路径数组或逐项 Join-Path，在循环里先 Test-Path -LiteralPath，再 Copy-Item -LiteralPath 到带时间戳的 .bak 文件。",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "我的 MATLAB R2023b on Windows 跑出来的 figure，title 和 xlabel 的中文都是方框。我已经写了 set(0, 'DefaultAxesFontName', 'Microsoft YaHei')，为什么还是方框？",
+      "expected_output": "应指出 'Microsoft YaHei'（不带 UI 后缀）在 R2023b on Windows 的 listfonts 看不到，set 后会静默回退到默认西文字体；推荐改用 'Microsoft YaHei UI'，并在写入前用 any(strcmpi(listfonts, '<候选>')) 验证字体真实可用；备选 'Microsoft JhengHei' / 'SimHei'。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "我想用 matlab -batch 跑一个脚本，但脚本顶部有 listdlg 让用户选模式，batch headless 模式下没法点击。怎么自动跑到指定模式而不改源码？",
+      "expected_output": "应推荐 env var bypass：脚本里加 mode_override = getenv('<NAME>') 检查，非空时跳过 listdlg 用 env var 的值；batch 调用前 setenv('<NAME>','SIM') 之类；不要临时改源码注释掉 listdlg；不要从 base workspace 注入变量（script 顶部 clear variables 会清掉）；提醒跑完后 setenv('<NAME>','') 清场避免污染下次手动跑。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "我刚用 Claude Code 的 Write 工具创建了一个 verify_xxx.m，现在跑 matlab -batch verify_xxx 报'文本字符无效 / 不可见字符或非 ASCII 字符'。但在 MATLAB 桌面打开这个文件没问题。怎么回事？",
+      "expected_output": "应判断是 UTF-8 BOM 的问题（编辑器写出的 .m 文件头三字节 EF BB BF 让 MATLAB R2023b -batch 解析失败）；推荐用 Format-Hex 验证；最稳的修复是改用 inline batch 表达式 matlab -batch \"<expr>\" 完全绕过 .m 文件；必须写 .m 时用编辑器明确存 UTF-8 无 BOM 或 PowerShell 用 [IO.File]::WriteAllText 配 UTF8Encoding(false) 写。",
+      "files": []
     }
   ]
 }

@@ -59,3 +59,15 @@
 - avoid: Passing the complex desktop expression through `-ArgumentList @('-logfile', '<LOG_PATH>', '-r', '<MATLAB_EXPRESSION>')` because `Start-Process` can mis-handle the expression; assuming `matlab.exe` itself is the long-lived worker rather than the short-lived launcher; treating PowerShell as the root cause when the real issue is MATLAB batch-mode exit instability
 - success_signal: The script writes `<STATUS_JSON>` with `status = SUCCESS` or `status = FAILED`, the logfile is non-empty, and any spawned `MATLAB.exe` child either exits on its own or can be safely closed after the status file is written
 - capture_rule: Prefer this shape for unattended hardware point-runs when desktop MATLAB is measurably more stable than `-batch`, and keep the status-file contract minimal so the launcher can restart from the next point
+
+### Pattern: matlab-script-bom-batch-failure
+- scenario: 用编辑器（Claude Code Write 工具、VS Code 默认、PowerShell `Out-File` / `Set-Content` 默认）写出的 .m 文件带 UTF-8 BOM，`matlab -batch <script_name>` 跑时报"无效字符 / 文本字符串无效 / 不可见字符或非 ASCII 字符"
+- use_when: 刚 Write 出一个 .m 文件，立即 `matlab -batch` 跑就报字符相关错误，但桌面 MATLAB 打开同一文件没事；典型场景是临时 verification / driver 脚本
+- shell: PowerShell + MATLAB
+- validated_shape: 改用 inline batch 表达式不写临时 .m：`matlab -batch "<INLINE_EXPRESSION>"`；非要写 .m 时用编辑器明确存 UTF-8 无 BOM（VS Code 右下角切 "UTF-8 without BOM"），或 PowerShell 用 `[IO.File]::WriteAllText('<PATH>', '<CONTENT>', [Text.UTF8Encoding]::new($false))`
+- substitute_only: `<INLINE_EXPRESSION>`, `<PATH>`, `<CONTENT>`
+- preflight: 用 `Format-Hex '<PATH>' | Select-Object -First 1` 检查头三字节是否为 `EF BB BF`；如果是说明有 BOM
+- env: none
+- avoid: 假定编辑器默认输出无 BOM（PowerShell Windows 5.1 的 `Out-File` 默认 UTF-16 LE 加 BOM；很多编辑器默认 UTF-8 加 BOM）；用 `>` 重定向写 .m（PowerShell 同上）；以为 MATLAB 会自动忽略 BOM
+- success_signal: `matlab -batch` 不再报字符错误，正常执行脚本主体
+- capture_rule: 一次性测试脚本优先用 inline batch（不写 .m 文件就完全避开 BOM 问题）；必须写 .m 时在写入后立即用 `Format-Hex` 验证前三字节

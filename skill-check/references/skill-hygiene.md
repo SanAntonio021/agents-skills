@@ -63,6 +63,27 @@ D:\BaiduSyncdisk\.agents\agents-skills-src\<skill-name>\SKILL.md
 
 如果用户问的是“为什么现在没生效”，不要一上来就看 GitHub。
 
+## CC Switch SSOT 报错
+
+当 CC Switch 安装 skill 时弹出 `Skill 不存在于 SSOT: <skill-name>`，不要先判断 GitHub 仓库坏了。常见原因是面板仓库索引和本地 SSOT 记录不同步，尤其是远端默认分支已切到 `main`，但 `skills.repo_branch` 里还残留 `master`。
+
+先只读确认：
+
+1. 查 `C:\Users\SanAn\.cc-switch\cc-switch.db`。
+2. 对照 `skill_repos.branch` 和远端默认分支。
+3. 对照 `skills.name`、`skills.directory`、`skills.repo_owner`、`skills.repo_name`、`skills.repo_branch`。
+4. 如果界面出现重复卡片，区分正常目录和 `*-workspace\iteration-*` 这类临时目录。
+
+如果确认是本地 SSOT 分支残留，安全处理顺序是：
+
+1. 备份 `cc-switch.db` 和 `settings.json`。
+2. 关闭 `cc-switch.exe`。
+3. 只做最小数据库修复，例如把对应 `skills.repo_branch` 从旧分支改成当前真实分支，并同步修正 `readme_url`。
+4. 重启 CC Switch。
+5. 复查 `skills` 表和日志，确认没有新的 `Skill 不存在于 SSOT`。
+
+实证案例：`SanAntonio021/agents-skills` 远端默认分支为 `main`，但 `chat-notes` 和 `paper-summary` 在 `skills` 表里残留 `master`；修正为 `main` 后，`chat-notes` 安装恢复正常。
+
 ## 常见错误
 
 - 把源文件目录当成当前已加载 skill 列表
@@ -70,6 +91,7 @@ D:\BaiduSyncdisk\.agents\agents-skills-src\<skill-name>\SKILL.md
 - 看到 cc-switch 同步出来的目录更新了，就以为 Codex 已经会用
 - 把“名字不一致”直接说成“运行时冲突”
 - 没先看 Codex 实际读取的技能目录，就开始猜 GitHub 没更新
+- 看到 CC Switch 面板能搜到 skill，就忽略 `cc-switch.db` 里旧分支或旧目录残留
 
 ## 汇报顺序
 

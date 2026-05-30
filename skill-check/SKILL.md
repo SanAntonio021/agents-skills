@@ -1,6 +1,6 @@
 ---
 name: skill-check
-description: 检查本地技能目录，确认 Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能，以及源码已改但 cc-switch/Codex 运行时目录还没同步的问题。Use when 用户要确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、cc-switch 同步出来的目录和 Codex 实际读取的技能目录、确认“已经改了为什么没生效”，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
+description: 检查本地技能目录，确认 Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能，以及源码已改但 cc-switch/Codex 运行时目录还没同步的问题。Use when 用户要确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、cc-switch 同步出来的目录和 Codex 实际读取的技能目录、排查 CC Switch 安装报 `Skill 不存在于 SSOT`、确认“已经改了为什么没生效”，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
 ---
 
 # Skill 目录检查
@@ -50,6 +50,7 @@ D:\BaiduSyncdisk\.agents\agents-skills-src\<skill-name>\SKILL.md
 1. 先判断用户到底想查哪一层：
    - 查“当前真的加载了哪些 skill”时，优先看 Codex 实际读取的技能目录。
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
+   - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
    - 查“源码已经改了 / Claude 改完了 / 为什么 Codex 还是旧行为”时，同时比较源码、cc-switch 目录和 Codex 运行时目录的 `SKILL.md` hash 或关键行。
    - 查“以后该改哪一份”时，最后再回到源文件目录。
 2. 扫描目标根目录：

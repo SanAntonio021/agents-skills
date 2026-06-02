@@ -60,6 +60,12 @@
       "prompt": "Claude 更新后从开始菜单启动弹窗'另一程序正在使用此文件'，重启电脑能好但我不想重启。PowerShell 里该怎么排查和启动？",
       "expected_output": "应加载 windows-appx-packaged-app-lock reference；先用 Get-AppxPackage 找当前 Claude InstallLocation，不写死版本号；查 Microsoft-Windows-AppModel-Runtime/Admin 里的 0x80070020；检查 CoworkVMService / cowork-svc.exe；不要删除 AppData\\Roaming\\Claude；已验证绕过是 Stop-Service CoworkVMService、停 cowork-svc/Claude 残留进程后直接 Start-Process 当前包内 app\\Claude.exe，而不是从开始菜单 AppX shell 启动。",
       "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "刚才为了修 Claude 更新后的 0x80070020，我停过 RuntimeBroker 和 ApplicationFrameHost。现在点 Chrome、开始菜单里的其它应用都没反应。别让我重启，下一步怎么恢复？",
+      "expected_output": "应判断可能是用户态 shell / AppX 启动链路被误伤；先直接启动 Chrome.exe 验证应用本体是否可运行；如果本体可运行，重启 StartMenuExperienceHost、ShellExperienceHost、SearchHost、ApplicationFrameHost、RuntimeBroker 和 explorer.exe；同时说明这些进程不应作为 Claude AppX 锁修复的默认清理目标。",
+      "files": []
     }
   ]
 }

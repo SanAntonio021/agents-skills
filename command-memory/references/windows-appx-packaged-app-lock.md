@@ -108,7 +108,56 @@ Get-Process -Name "Claude" -ErrorAction SilentlyContinue |
 - 不要删除 `C:\Users\<USER>\AppData\Roaming\<APP>`，这是用户配置和登录状态。
 - 不要写死 WindowsApps 版本目录，例如 `Claude_1.9659.4.0_...`；每次更新版本号会变。
 - 不要把 `sc.exe config <service> start= disabled` 当默认修复；打包服务可能是应用功能需要的服务，禁用会引入新问题。
+- 不要默认杀 `RuntimeBroker`、`ApplicationFrameHost`、`StartMenuExperienceHost`、`ShellExperienceHost`、`SearchHost` 或 `explorer.exe`。这些是用户态 shell / AppX 启动链路，误杀后可能导致开始菜单、任务栏、桌面快捷方式或其它应用点击启动失效。
 - 不要用 `git reset`、删除 WindowsApps 目录、修改 `AppxManifest.xml` 这类扩大破坏面的做法。
+
+## 如果误伤后其它应用点不开
+
+如果为了排查 AppX 锁而停止过 shell 相关进程，随后 Chrome 等其它应用从开始菜单、任务栏或桌面点击不启动，先恢复用户态 shell，不要立刻重启整台机器。
+
+先确认应用本体能否直接启动。以 Chrome 为例：
+
+```powershell
+$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+if (Test-Path -LiteralPath $chrome) {
+  Start-Process -FilePath $chrome -ArgumentList "--new-window","about:blank"
+}
+```
+
+如果直接启动可行，问题多半在 shell / 快捷方式激活链路。重启这些用户态组件：
+
+```powershell
+Get-Process -Name `
+  "StartMenuExperienceHost",`
+  "ShellExperienceHost",`
+  "SearchHost",`
+  "ApplicationFrameHost",`
+  "RuntimeBroker" `
+  -ErrorAction SilentlyContinue |
+  Stop-Process -Force
+
+Start-Sleep -Seconds 1
+
+Get-Process -Name "explorer" -ErrorAction SilentlyContinue |
+  Stop-Process -Force
+
+Start-Sleep -Seconds 2
+Start-Process explorer.exe
+```
+
+验证：
+
+```powershell
+Get-Process -Name `
+  "explorer",`
+  "StartMenuExperienceHost",`
+  "ShellExperienceHost",`
+  "SearchHost",`
+  "RuntimeBroker",`
+  "ApplicationFrameHost" `
+  -ErrorAction SilentlyContinue |
+  Select-Object Id, ProcessName, Path
+```
 
 ## 如果直接启动也失败
 

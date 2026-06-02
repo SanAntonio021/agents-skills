@@ -12,6 +12,7 @@
 | 搜索、遍历、文本匹配失败 | [search-and-traversal.md](search-and-traversal.md) |
 | 压缩、解压、复制、移动、删除 | [archive-and-file-ops.md](archive-and-file-ops.md) |
 | 规则文件同步、软链、临时复制对齐 | [rule-file-sync-and-symlink.md](rule-file-sync-and-symlink.md) |
+| WindowsApps / AppX packaged app 启动锁、`0x80070020` | [windows-appx-packaged-app-lock.md](windows-appx-packaged-app-lock.md) |
 | MATLAB batch / desktop / logfile / status file | [matlab-batch-logfile.md](matlab-batch-logfile.md) |
 | Office COM、PowerPoint/Word/Excel 自动化 | [office-com.md](office-com.md) |
 | Word COM `gen_py` cache | [word-com-genpy-recovery.md](word-com-genpy-recovery.md) |

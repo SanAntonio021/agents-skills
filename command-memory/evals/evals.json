@@ -54,6 +54,12 @@
       "prompt": "我刚用 Claude Code 的 Write 工具创建了一个 verify_xxx.m，现在跑 matlab -batch verify_xxx 报'文本字符无效 / 不可见字符或非 ASCII 字符'。但在 MATLAB 桌面打开这个文件没问题。怎么回事？",
       "expected_output": "应判断是 UTF-8 BOM 的问题（编辑器写出的 .m 文件头三字节 EF BB BF 让 MATLAB R2023b -batch 解析失败）；推荐用 Format-Hex 验证；最稳的修复是改用 inline batch 表达式 matlab -batch \"<expr>\" 完全绕过 .m 文件；必须写 .m 时用编辑器明确存 UTF-8 无 BOM 或 PowerShell 用 [IO.File]::WriteAllText 配 UTF8Encoding(false) 写。",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Claude 更新后从开始菜单启动弹窗'另一程序正在使用此文件'，重启电脑能好但我不想重启。PowerShell 里该怎么排查和启动？",
+      "expected_output": "应加载 windows-appx-packaged-app-lock reference；先用 Get-AppxPackage 找当前 Claude InstallLocation，不写死版本号；查 Microsoft-Windows-AppModel-Runtime/Admin 里的 0x80070020；检查 CoworkVMService / cowork-svc.exe；不要删除 AppData\\Roaming\\Claude；已验证绕过是 Stop-Service CoworkVMService、停 cowork-svc/Claude 残留进程后直接 Start-Process 当前包内 app\\Claude.exe，而不是从开始菜单 AppX shell 启动。",
+      "files": []
     }
   ]
 }

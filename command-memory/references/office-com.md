@@ -21,6 +21,14 @@
 - COM 只打开目标 PPTX。
 - 结束时关闭自己打开的 Presentation；不要关闭整个 PowerPoint 应用，除非确认本次创建的是独立实例且没有其他文档。
 
+## PPTX 文件级编辑
+
+- 用户可能正在打开 PPT 时，优先用 `python-pptx` / OpenXML 生成新副本，不碰 PowerPoint 进程。
+- 不直接覆盖用户手工精修版；先保存到临时文件或新版本文件，确认后再替换目标副本。
+- 删除幻灯片后，检查 PPTX 包内是否残留不在 `presentation.xml` 页序里的 `ppt/slides/slide*.xml`、对应 `.rels` 和 `notesSlides`。孤立页不会显示，但会污染后续文本检查和版本判断。
+- 如果覆盖保存同一个 `.pptx` 出现 zip 重复条目警告，停止继续基于该文件叠改；从干净输入重建，或解包清理后重新打包。
+- 清理孤立页时同时检查 `[Content_Types].xml` 和 `ppt/_rels/presentation.xml.rels`，避免留下失效关系。
+
 ## Word 特例
 
 如果 Word COM 报 `gen_py` / `pywin32` cache 问题，转读 [word-com-genpy-recovery.md](word-com-genpy-recovery.md)。

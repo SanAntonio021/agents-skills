@@ -40,6 +40,11 @@
       "id": "bitmap-without-raw-data",
       "prompt": "我只有这张 PNG 截图，能不能帮我重画成 IEEE 风格的数据图？",
       "expected_output": "先说明没有原始数据不能保证数据精确；除非用户接受 approximate_redraw，否则只做风格审查和重画所需数据清单。"
+    },
+    {
+      "id": "google-earth-link-map-composite-figure",
+      "prompt": "我要用 Google Earth Pro 给外场实验链路画论文图：起点、终点、350 m 实测距离和 1 km 计划链路都要说明。左侧地图要放进 IEEE 双栏 composite figure 里。我不知道应该在 Google Earth 里直接标注，还是导出后在 PPT 里标注，也不知道怎么导出才不糊。你先告诉我怎么做。",
+      "expected_output": "应先建议 Google Earth Pro 负责 placemark/path/ruler 测距和 File > Save > Save Image 高分辨率干净底图导出，TX/RX、距离线、箭头、子图编号和论文文字优先在 PPT/AI/Inkscape/SVG 中做矢量标注；提醒保留 Google attribution；区分 measured link 与 planned/prospective link；如果用户只是问流程，不应擅自操作或导出 PPT 文件，继续动文件前要确认源文件、目标页和允许生成新副本。"
     }
   ]
 }

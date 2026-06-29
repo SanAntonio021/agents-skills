@@ -45,13 +45,14 @@
     {
       "id": 4,
       "prompt": "这个调研项目目录太乱了，docs、records、output 下面都有文件，还有 项目说明.md、论文索引.md、最终报告.docx。帮我收尾整理一下，之后我希望根目录能扁平一点。",
-      "expected_output": "识别这是非代码项目整理，默认维护 README.md 和 AGENTS/CLAUDE 规则入口；把长期文件扁平化命名为 doc-*、record-*、output-*；清楚有用的文件重命名，混乱或重复文件提炼后归档；旧目录内容搬平后记录清理清单。",
+      "expected_output": "识别这是非代码项目整理，默认维护 README.md 和 AGENTS.md；已有 CLAUDE.md 时要保护并同步，但没有明确 Claude 使用场景时不主动新建；把长期文件扁平化命名为 doc-*、record-*、output-*；清楚有用的文件重命名，混乱或重复文件提炼后归档；旧目录内容搬平后记录清理清单。",
       "files": [],
       "expectations": [
         "输出把非代码项目按扁平化标准处理，而不是强制继续使用 docs/records/output 目录。",
         "输出维护 `README.md` 作为总入口。",
         "输出保护并同步 `AGENTS.md` 和 `CLAUDE.md`，不会因为当前是 Codex 就归档 `CLAUDE.md`。",
         "如果项目会同时用 Codex 和 Claude，输出会同时检查并同步 `AGENTS.md` 和 `CLAUDE.md`，不会只更新其中一个。",
+        "如果项目里没有 `CLAUDE.md`，且用户没有说会用 Claude，输出不会主动建议新建 `CLAUDE.md`。",
         "输出把成文说明命名为 `doc-*`，台账索引命名为 `record-*`，交付物命名为 `output-*`。",
         "输出说明判断旧文档类型时先看文件名和前 80 行，需要提炼时才阅读全文。",
         "输出将旧入口、重复文件或混乱文件移动到 `archive/cleanup-YYYYMMDD/`。"

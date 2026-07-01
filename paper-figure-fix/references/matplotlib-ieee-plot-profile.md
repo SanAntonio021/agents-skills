@@ -27,6 +27,13 @@ IEEE 常用起点：
 
 这些是工作基线，最终仍以目标期刊模板为准。
 
+单栏独立数据图可先按下面顺序定基线：
+
+1. 先看当前论文或项目是否已有统一字体和版式。
+2. 若用户未指定，默认字体可用 `Times New Roman`。
+3. 单栏图文字通常从 `8 pt` 起步；若图较稀疏，可再放宽到 `9-10 pt`。
+4. 若子图需要后期拼版，先固定真实宽度，再调 `axes_box`、`labelpad` 和 legend 位置；不要靠额外白边把图片“撑到”目标宽度。
+
 示例：如果一张双栏图需要在同一行放 3 张数据子图，并给子图之间留总间距，则可以得到约 `2.30 in` 的单张子图宽度。但这个数值只属于该图组，不是三联图通用标准。
 
 ## exact-size 导出
@@ -38,6 +45,8 @@ fig.savefig(path, dpi=600, bbox_inches=None, pad_inches=0.0)
 ```
 
 `bbox_inches="tight"` 会根据可见元素重新裁剪外框。它适合单图预览或普通投稿图，但不适合需要保持固定宽度的拼版子图。
+
+如果一组并列子图的纵轴标题长度不同，不要只复制同一组 `label_coords` 数值。最终应以可见边界对齐为准，必要时分别微调纵轴标题位置，再检查导出的像素边界或最终拼版效果。
 
 `scripts/ieee_plot_style.py` 中的建议用法：
 
@@ -82,6 +91,7 @@ save_exact_size_figure(fig, "figure_panel", formats=("pdf", "png"))
 | color_map | 每种数据角色对应颜色 |
 | axis_range_ticks | `xlim`、`ylim`、major/minor ticks |
 | axis_spacing | `labelpad`、tick pad、tick direction |
+| visual_alignment | 并列子图左/右可见边界是否一致，是否单独调整过 `yaxis.set_label_coords(...)` |
 | legend | `loc`、`bbox_to_anchor`、字体、列数、handle 参数 |
 | grid | major/minor grid 颜色、线宽、透明度和线型 |
 | export | 格式、dpi、fonttype、是否 exact-size |

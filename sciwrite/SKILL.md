@@ -1,13 +1,10 @@
 ---
 name: sciwrite
 description: >
-  英文句子质量审查。用户说"帮我检查英文句子""删废话""改被动语态""句子太长了""精简表达"
-  "这段英文太啰嗦""太冗余""句子质量""check my English writing""improve clarity"
-  "clean up the prose""tighten the writing""reduce wordiness"时触发。
-  按 Sainani《科学写作》方法论做 5 轮检查：删废话→改被动→理句子结构→统一用词→核对数字和引用。
-  只管英文句子质量，不管内容对不对、术语准不准、格式合不合 IEEE 规范。
-  不管的事：中文改英文、术语校准、IEEE 结构/图注检查 → 找 sci-paper-edit；
-  判断稿子该不该继续改 → 找 paper-review；去掉 AI 写作痕迹 → 找 Humanizer-zh。
+  英文句子质量审查（Sainani 五轮检查法）。用户说"检查英文句子""删废话""改被动语态"
+  "精简表达""太啰嗦""check my English writing""improve clarity""tighten the writing"时触发。
+  只管英文句子质量；中文改英文、术语校准、IEEE 格式检查找 sci-paper-edit，
+  停稿判断找 paper-review，去 AI 写作痕迹找 Humanizer-zh。
 ---
 
 # 英文句子质量审查（Sainani 五轮检查法）

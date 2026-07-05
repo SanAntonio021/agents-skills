@@ -1,6 +1,6 @@
 ---
 name: chat-notes
-description: 从当前对话里提炼可复用经验，判断这些经验更适合写进当前项目、用于修改现有 skill，还是整理成新 skill；用户只点名 `chat-notes` 时，默认先回看当前对话、判断经验是否值得做成 skill，只有可能做 skill 时才对比本地和外部类似 skill，最后只输出审查稿，不改文件、不清场、不提交；用户同意审查稿后，再正式修改、收尾整理、提交推送。适用于对话结束前清理中间文件、归档旧材料、统一 README/AGENTS/CLAUDE 入口、判断 skill 经验去向，以及正式改完 skill 后按 skill-creator 对照检查、提交推送并提醒 cc-switch 检查更新。
+description: 从当前对话提炼可复用经验，判断该写进当前项目、改现有 skill 还是建新 skill。Use when 用户说整理对话经验、复盘本次对话、判断经验去向、对话收尾清理中间文件、归档旧材料、统一 README/AGENTS/CLAUDE 入口，或改完 skill 后要做对照检查、提交推送并提醒 cc-switch 检查更新。默认只输出审查稿，经用户同意后才改文件、清场和提交。
 ---
 
 # 对话经验整理

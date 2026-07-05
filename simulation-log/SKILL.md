@@ -1,6 +1,6 @@
 ---
 name: simulation-log
-description: 在改代码、跑仿真、做实验或调参迭代时，同步维护一份 Markdown 主记录，并把命令、参数、关键结果、图表和下一步一起落盘。Use when the user wants Codex to 边做边记, 新建或续写实验记录、仿真日志、labbook 或 run report, or keep one running record active through the current thread, especially when the goal is execution-time recording rather than事后补回忆录。
+description: 在改代码、跑仿真、做实验或调参迭代时，同步维护一份 Markdown 主记录，把命令、参数、关键结果、图表和下一步一起落盘。Use when 用户要求边做边记、新建或续写实验记录、仿真日志、labbook 或 run report，或要在当前会话里持续更新同一份主记录；目标是执行期记录，不是事后补回忆录。
 ---
 
 # 仿真实验记录

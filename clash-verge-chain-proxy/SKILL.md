@@ -1,5 +1,6 @@
 ---
 name: clash-verge-chain-proxy
+disable-model-invocation: true
 description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI

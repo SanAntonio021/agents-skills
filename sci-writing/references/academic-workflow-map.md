@@ -25,6 +25,7 @@
 | 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | `Humanizer-zh` |
 | 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `word-template` / `docx` |
+| LaTeX 转换与投稿工程 | 转 LaTeX、IEEEtran、套期刊模板、BibTeX、编译报错、投稿打包 | `latex-paper` |
 
 **sci-paper-edit 和 sciwrite 怎么分：**
 - "润色这段 SCI 论文英文"或"帮我改英文还要校准术语" → `sci-paper-edit`（涉及内容）

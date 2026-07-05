@@ -1,0 +1,44 @@
+{
+  "skill_name": "latex-paper",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我有一篇写好的论文初稿 D:\\Papers\\thz-link\\draft.md，图都在 figures 目录里是 paper-figure-fix 导出的 PDF。目标投 IEEE Transactions on Terahertz Science and Technology，帮我把它变成能编译的 LaTeX 投稿工程。",
+      "expected_output": "先确认用 IEEEtran（Transactions 系）模板并优先使用 sci-paper-edit 的本地模板缓存；新建独立 paper-tex 工程目录，模板 cls/bst 随工程；用 pandoc 或手工映射转换正文，公式图表全部加 label，引用改 cite；从 md 引用生成 refs.bib；跑通编译并按残留清单检查；内容层面的疑问列清单而不是自行改写。",
+      "files": [],
+      "expectations": [
+        "输出选择 IEEEtran 模板并说明优先使用本地模板缓存而不是重新下载。",
+        "输出新建独立的 LaTeX 工程目录，模板文件随工程走。",
+        "输出把公式、图、表转成带 \\label 的标准环境，引用用 \\cite/\\ref。",
+        "输出建立 refs.bib 并说明 DOI 反查或 paper_index.md 核对来源。",
+        "输出包含编译验证步骤和通过标准（零 error、引用类警告清零）。",
+        "输出对 Unicode 残留、中文标点等做了转换后检查。",
+        "输出不改写科学内容；内容疑问以清单形式列出或转给 sci-paper-edit。"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "latexmk 编译我的 main.tex 报了一堆 Citation undefined 和一个 Missing $ inserted，帮我查。",
+      "expected_output": "按编译排错对照表处理：Citation undefined 先核对 bib key 拼写和完整编译链（pdflatex→bibtex→pdflatex×2）；Missing $ 定位报错行，检查裸下划线、上标或希腊字母是否没进数学环境；修完重新编译确认警告清零。",
+      "files": [],
+      "expectations": [
+        "输出对 Citation undefined 检查 bib key 和完整编译链两种原因。",
+        "输出对 Missing $ 定位到具体行并检查未转义的 _ ^ 或希腊字母。",
+        "输出修复后重新编译并以引用类警告清零为通过标准。"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "论文接收了，编辑要求上传 final files。帮我把这个 LaTeX 工程打包成投稿系统要的样子。",
+      "expected_output": "按投稿打包清单执行：去注释、确认 bbl/bib 要求、cls/bst 随包、figures 与引用一一对应无多余文件、检查 PDF 字体内嵌（IEEE PDF eXpress 要求）、投稿版与自留版分开。",
+      "files": [],
+      "expectations": [
+        "输出去掉 tex 里的大段注释和废弃旧稿。",
+        "输出确认投稿系统要 bbl 还是 bib。",
+        "输出核对 figures 目录与 tex 引用一一对应。",
+        "输出包含字体内嵌检查（PDF eXpress）。",
+        "输出把投稿版和自留版分开。"
+      ]
+    }
+  ]
+}

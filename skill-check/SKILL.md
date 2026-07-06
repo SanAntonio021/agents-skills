@@ -17,6 +17,8 @@ description: 检查本地技能目录，确认 Codex 实际读取哪些技能，
 - 源码和运行时目录没有同步
 - 链接或路径失效
 - 空技能或坏技能
+- 触发分层是否合理（该点名的没降级、不该降级的被降级）
+- cc-switch 未启用副本、双侧启用不对齐
 
 ## 本地目录方案
 
@@ -91,6 +93,16 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `空技能或坏技能`
   指缺 `SKILL.md`、文件开头配置为空、正文为空，或关键结构损坏。
 
+## 触发分层判断
+
+审计每个技能时问一句：**用户实际怎么调用它**。
+
+- 用户只点名调用（`/技能名`）→ 建议加 `disable-model-invocation: true`，description 移出常驻上下文。
+- 用户靠描述任务自动触发 → 保持默认，**不管它看起来多低频**。2026-07-06 实证：agent-rules 和 skill-check 看似点名场景，实际用户靠描述触发，降级会直接失效。
+- 判断依据只能来自用户的真实使用习惯，不能从技能主题倒推；拿不准时问用户，不要默认降级。
+
+cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑，见 [references/skill-hygiene.md](references/skill-hygiene.md)。
+
 ## 合并候选判断
 
 判断两个 skill 是否该合并时，不只看主题是否相近。
@@ -149,6 +161,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `补引用`
 - `归档候选`
 - `合并候选`
+- `降级点名`
 - `人工复核`
 
 ## 维护

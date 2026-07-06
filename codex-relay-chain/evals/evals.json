@@ -1,0 +1,23 @@
+{
+  "skill_name": "codex-relay-chain",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我用 CC Switch 把 Codex provider 切到 aijws 以后，CodexCont 还能不能正常跑？帮我检查 8787/15721、本地 Codex 配置和 Responses SSE。",
+      "expected_output": "应按 Codex -> CodexCont -> CC Switch -> 当前 provider 的顺序检查监听端口、Codex base_url、CodexCont upstream、当前 provider 和真实 stream=true /v1/responses SSE，并用 reasoning、encrypted_content、reasoning_tokens、proxy_rounds 作为通过信号。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "切到 aijws 后测试返回 Invalid API key，但网页余额充足。你帮我判断是 CodexCont 挂了还是 CC Switch 配置问题。",
+      "expected_output": "应先判断 401 多半不是 CodexCont 本体故障，而是 provider key 或 CC Switch live backup 覆盖；应检查 providers、proxy_live_backup 和 .codex/config.toml，不打印完整 key。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "CodexCont 装好了，怎么判断它有没有正常运行？不要只说看进程，帮我给可验证标准。",
+      "expected_output": "应给出可验证标准：8787/15721 监听、Codex base_url 指向 8787、CodexCont upstream 指向 15721、hook.log 有 hooked/already hooked、codexcont.out.log 有 POST /v1/responses 200 OK，并用 Responses SSE 字段确认。",
+      "files": []
+    }
+  ]
+}

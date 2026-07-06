@@ -1,7 +1,8 @@
----
-name: codex-memory
-description: 为当前 Codex 本地环境启用、配置和维护跨会话长期记忆，并把运行时状态与同步 skill 文件隔离。Use when 用户希望助手跨会话记住偏好、背景、决定或重要事实，尤其是希望默认开启记忆时；prefer this over 直接套用 `vendor/long-term-memory`，因为这里已经处理了本地目录、初始化和运行边界。
----
+# Codex 长期记忆（已停用 skill 的留档，2026-07-06）
+
+> 原 codex-memory skill 的 SKILL.md 正文。该 skill 从未安装启用，因 Codex 原生记忆已覆盖需求，于 2026-07-06 停用归档。以下为原始内容留作参考。
+>
+> 原 description：为当前 Codex 本地环境启用、配置和维护跨会话长期记忆，并把运行时状态与同步 skill 文件隔离。
 
 # Codex 长期记忆
 

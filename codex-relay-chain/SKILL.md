@@ -1,5 +1,6 @@
 ---
 name: codex-relay-chain
+disable-model-invocation: true
 description: >
   Windows 上维护 Codex 的多层中转链路。遇到 CodexCont、CC Switch/Cockpit、
   中转站切换、aijws/CodeRelay/聪明 AI 这类 OpenAI 兼容接口、Codex 配置被切回去、

@@ -86,11 +86,12 @@ D:\BaiduSyncdisk\.agents\agents-skills-src\<skill-name>\SKILL.md
 
 ## cc-switch 已知行为与坑（2026-07-06 实证）
 
-审计时把这三条当固定检查项：
+审计时把这四条当固定检查项：
 
-1. **本地导入会产生未启用副本**。cc-switch 的本地技能导入会把 `%USERPROFILE%\.agents\skills\` 这类目录的实体整体复制进 `C:\Users\SanAn\.cc-switch\skills\`，导入后不建运行时链接、不启用。实证：2026-07-05 22:09 一次导入复制了 24 个 lark 实体（含已裁剪的 5 个开发者向和孤儿 lark-note）。审计时对比 `.cc-switch\skills\` 与各运行时目录，找出"存在但未链接"的副本；处理走 cc-switch GUI 卸载，不要直接删目录（会与 `cc-switch.db` 失配）。
+1. **本地导入会产生未启用副本**。cc-switch 的本地技能导入会把 `%USERPROFILE%\.agents\skills\` 这类目录的实体整体复制进 `C:\Users\SanAn\.cc-switch\skills\`，导入后不建运行时链接、不启用。实证：2026-07-05 22:09 一次导入复制了 24 个 lark 实体（含已裁剪的 5 个开发者向和孤儿 lark-note）。审计时对比 `.cc-switch\skills\` 与各运行时目录，找出"存在但未链接"的副本；普通清理优先走 cc-switch GUI 卸载，不要只删目录（会与 `cc-switch.db` 失配）。
 2. **安装时按 app 单独勾选启用，可能只启用单侧**。实证：latex-paper 2026-07-06 安装时只勾了 Claude，`.claude\skills\` 有链接、`.codex\skills\` 没有。审计时必须同时核对 `C:\Users\SanAn\.claude\skills` 和 `C:\Users\SanAn\.codex\skills` 两侧链接是否对齐，不能只查 Codex 一侧。
 3. **技能更新没有自动拉取**。`settings.json` 无技能自动更新选项（截至 2026-07-06 版本，`skillSyncMethod: symlink`），源码 push 后每台设备都要手动点一次"检查更新"。"源码已改但没生效"的第一排查项就是这个。
+4. **Lark 技能以 `lark-cli skills` 为主来源**。飞书文档、云盘、日历等 Lark 操作最终调用 `lark-cli`，cc-switch 保存的 `lark-*` 只是另一份技能说明副本。用户明确要让 Lark 技能只走 `lark-cli` 时，清理顺序是：先备份 `C:\Users\SanAn\.cc-switch\cc-switch.db` 和 `settings.json`；再从 `skills` 表删除 `lark-*` 记录，并从 `skill_repos` 删除 `larksuite/cli`；再删除 `C:\Users\SanAn\.cc-switch\skills\lark-*` 目录和运行时目录里指向它们的软链接；最后验证 `PRAGMA integrity_check = ok`、cc-switch 与运行时目录里 `lark-* = 0`、`lark-cli skills list` 和 `lark-cli skills read lark-doc` 仍正常。不要删除 `%USERPROFILE%\.agents\skills\lark-*` 或 `lark-cli` 本体。
 
 日志位置：`C:\Users\SanAn\.cc-switch\logs\cc-switch.log`（含安装/更新/导入记录，可按日期定位操作）。
 

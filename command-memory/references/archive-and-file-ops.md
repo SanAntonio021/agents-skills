@@ -22,3 +22,13 @@
 - avoid: Writing `@((Join-Path $base "a"), (Join-Path $base "b"))` carelessly as `Join-Path $base "a", ...`; the comma can bind to `-ChildPath` and produce `Cannot convert 'System.Object[]' to the type 'System.String' required by parameter 'ChildPath'`.
 - success_signal: Each source file is checked with `Test-Path -LiteralPath` and copied with `Copy-Item -LiteralPath` without `Join-Path` parameter binding errors.
 - capture_rule: Use explicit string arrays for already-known absolute paths. If paths must be composed from a base directory, assign each `Join-Path` call to its own array item with parentheses, or use `foreach` over child names and call `Join-Path` inside the loop.
+
+### Pattern: windows-dir-rename-lock-diagnosis
+- scenario: Rename-Item / Move-Item on a directory fails with "Access to the path is denied" and retrying does not help.
+- use_when: A directory rename or move is blocked and no file inside is obviously open.
+- shell: PowerShell
+- validated_shape: `& "<HANDLE64_PATH>" -accepteula -nobanner "<LOCKED_DIR>"` (run elevated via `Start-Process powershell -Verb RunAs -Wait -ArgumentList "... | Out-File <TMP_OUT>"` and read the output file; non-elevated handle64 misses other users' handles and can report "No matching handles found" falsely)
+- preflight: `Test-Path "<HANDLE64_PATH>"`; download once from https://live.sysinternals.com/handle64.exe into `$env:TEMP` if missing.
+- known_lockers: (1) VS Code file-watcher utility process (`Code.exe`, NodeService) holds the project dir and its `.git` for any window that has a file from that repo open — closing the tab/window releases it; killing the utility process is useless because it re-acquires instantly while a window still references the repo. (2) Zotero Better BibTeX auto-export recreates a renamed target directory on next export — fix the path in prefs.js (key is URL-encoded, value uses double backslashes, Zotero must be closed). (3) Cloud-sync clients (Nutstore/OneDrive) briefly lock dirs during scans — wait for idle or restart the client.
+- success_signal: handle64 names the locking PID; after closing the real holder the rename succeeds on first retry.
+- capture_rule: Add newly confirmed locker types here with their release action; do not record one-off project paths.

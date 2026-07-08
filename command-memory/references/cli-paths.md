@@ -22,6 +22,12 @@
 - preflight: `Test-Path "<SCRIPT_PATH>"`; `Test-Path "<WORKDIR>"`。
 - avoid: 失败后继续直接 `& "<SCRIPT_PATH>"`。
 
+### Pattern: dotnet-io-absolute-path
+- use_when: PowerShell 里调用 .NET 文件 API（`[IO.File]::ReadAllText/WriteAllText/ReadAllBytes` 等）做读写或批量替换。
+- shape: `$f = Join-Path "<ABS_ROOT>" "<REL_PATH>"; [IO.File]::WriteAllText($f, $text, (New-Object Text.UTF8Encoding($hasBom)))`
+- preflight: 每个传给 .NET API 的路径都必须是绝对路径；批量循环先 `Test-Path` 抽查第一个。
+- avoid: 先 `Set-Location` 再给 .NET API 传相对路径——**.NET 只认进程启动目录，不认 PowerShell 的当前位置**，相对路径会静默读写到错误目录（实测事故：批量替换写进了另一个仓库，靠 git checkout 恢复）。
+
 ## 下载和网页导出
 
 ### Pattern: invoke-webrequest-download

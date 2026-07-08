@@ -39,7 +39,7 @@
     },
     {
       "id": 4,
-      "prompt": "帮我判断 paper-figure-fix 和 sci-paper-edit 要不要合并。它们都服务论文，但一个偏重画图、审图、图件尺寸和线宽，另一个偏论文文本精修、引用、图注和结论强度。请给出分类和建议动作。",
+      "prompt": "帮我判断 paper-figure-review 和 ieee-manuscript-edit 要不要合并。它们都服务论文，但一个偏重画图、审图、图件尺寸和线宽，另一个偏论文文本精修、引用、图注和结论强度。请给出分类和建议动作。",
       "expected_output": "判断二者只是大主题相近，输出产物和执行方式不同；应标为职责相近但不该直接合并，或标为保留，而不是合并候选，并说明图件处理和文本精修分开更利于触发准确性。",
       "files": [],
       "expectations": [
@@ -63,7 +63,7 @@
     },
     {
       "id": 6,
-      "prompt": "Claude 说已经把 `sci-writing` 改好了，源码仓库也提交了，但 Codex 里还是旧行为。请帮我确认是不是运行时目录没同步，不要直接改 `.cc-switch` 或 `.codex`。",
+      "prompt": "Claude 说已经把 `writing-router` 改好了，源码仓库也提交了，但 Codex 里还是旧行为。请帮我确认是不是运行时目录没同步，不要直接改 `.cc-switch` 或 `.codex`。",
       "expected_output": "同时比较 `agents-skills-src`、`.cc-switch\\skills` 和 `.codex\\skills` 里的对应 `SKILL.md` hash 或关键行；如果源码更新但运行时目录仍旧，明确结论为源码已修、当前 Codex 仍未加载新版本，并提醒用户通过 cc-switch 检查更新。",
       "files": [],
       "expectations": [

@@ -191,7 +191,7 @@ LetPub 失败状态要写清楚原因，例如：
 
 - PDF 下载、正式版判断、下载索引维护：用 `paper-download`。
 - 多篇文献综述、代表作筛选：先用 `research-lookup`。
-- 投稿文章、引言综述、申报书材料：转 `sci-writing` 或 `project-writing`。
+- 投稿文章、引言综述、申报书材料：转 `writing-router` 或 `project-writing`。
 - 批判性评审、同行评议意见、审稿式打分：转 `paper-review`。
 
 ## 会用到的工具
@@ -200,7 +200,7 @@ LetPub 失败状态要写清楚原因，例如：
 - LetPub 和网页访问：`web-access`
 - PDF 后处理：`pdf`
 - 图表提取：`scripts/extract_paper_images.py`
-- 学术写作总控：`sci-writing`
+- 学术写作总控：`writing-router`
 - 文稿审查：`paper-review`
 
 ## 以后怎么维护

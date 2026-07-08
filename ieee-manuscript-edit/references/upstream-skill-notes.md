@@ -7,7 +7,7 @@
 链接：https://github.com/labarba/sentence-polish
 许可：CC BY 4.0
 
-**当前状态（2026-05-20 更新）：** sentence-polish 已 fork 到本地 `agents-skills-src/sentence-polish/`，作为独立的英文句子质量审查 skill。
+**当前状态（2026-05-20 更新）：** sentence-polish 已 fork 到本地 `skills/sentence-polish/`，作为独立的英文句子质量审查 skill。
 
 **分工：**
 - `ieee-manuscript-edit` 管内容层面的精修：术语校准、引用检查、IEEE 结构、中文改英文、图注、终稿整理。内置的 5 项语言质量复查（已吸收到 `manuscript-refinement-checklist.md`）是精修流程中的一个步骤，服务于完整流程。

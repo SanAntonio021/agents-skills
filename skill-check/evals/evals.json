@@ -8,7 +8,7 @@
       "files": [],
       "expectations": [
         "输出明确把 `C:\\Users\\SanAn\\.codex\\skills` 当成 Codex 实际读取的技能目录。",
-        "输出不会把 `D:\\Workspace\\04-agents\\agents-skills-src` 直接当成当前已加载技能列表。",
+        "输出不会把 `D:\\Workspace\\04-agents\\skills` 直接当成当前已加载技能列表。",
         "如果存在同名冲突，输出会按 `SKILL.md` 的 `name:` 来指出。",
         "输出会把“当前加载冲突”和“源文件目录里也有同名目录”分开说。"
       ]
@@ -51,7 +51,7 @@
     },
     {
       "id": 5,
-      "prompt": "检查 `D:\\Workspace\\04-agents\\agents-skills-src` 里的技能。这个目录现在是一层平铺的结构：顶层目录有 `SKILL.md` 才算技能，`*-workspace` 和 `rescued-skill-materials` 不算当前技能。请按这个方案输出结果。",
+      "prompt": "检查 `D:\\Workspace\\04-agents\\skills` 里的技能。这个目录现在是一层平铺的结构：顶层目录有 `SKILL.md` 才算技能，`*-workspace` 和 `rescued-skill-materials` 不算当前技能。请按这个方案输出结果。",
       "expected_output": "只把顶层含 `SKILL.md` 的目录算作源技能；明确排除工作材料和历史材料；不再按旧的分层目录给技能分类。",
       "files": [],
       "expectations": [
@@ -64,7 +64,7 @@
     {
       "id": 6,
       "prompt": "Claude 说已经把 `writing-router` 改好了，源码仓库也提交了，但 Codex 里还是旧行为。请帮我确认是不是运行时目录没同步，不要直接改 `.cc-switch` 或 `.codex`。",
-      "expected_output": "同时比较 `agents-skills-src`、`.cc-switch\\skills` 和 `.codex\\skills` 里的对应 `SKILL.md` hash 或关键行；如果源码更新但运行时目录仍旧，明确结论为源码已修、当前 Codex 仍未加载新版本，并提醒用户通过 cc-switch 检查更新。",
+      "expected_output": "同时比较 `skills`、`.cc-switch\\skills` 和 `.codex\\skills` 里的对应 `SKILL.md` hash 或关键行；如果源码更新但运行时目录仍旧，明确结论为源码已修、当前 Codex 仍未加载新版本，并提醒用户通过 cc-switch 检查更新。",
       "files": [],
       "expectations": [
         "输出会同时检查源码目录、cc-switch 同步目录和 Codex 运行时目录。",

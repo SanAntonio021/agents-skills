@@ -68,5 +68,5 @@ disable-model-invocation: true
 
 ## 维护
 
-- 上游参考源码只放在 `<agents-root>\upstream-skill-sources\`；外部参考来源见 `references/external-sources.md`。
+- 上游参考源码只放在 `<agents-root>\upstream\`；外部参考来源见 `references/external-sources.md`。
 - 判断标准、输出模板、清场规则或目录标准变化时，优先更新本 skill 及对应 references。

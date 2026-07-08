@@ -11,7 +11,7 @@
         "输出说明本地有没有类似 skill。",
         "输出说明外面有没有类似 skill。",
         "输出把这次结果处理为修改现有 skill，而不是直接新建。",
-        "如果建议修改现有 skill，输出把 `D:\\Workspace\\04-agents\\agents-skills-src\\...` 源码目录当成推荐修改目标，而不是 `C:\\Users\\SanAn\\.cc-switch\\skills\\...` 同步产物。",
+        "如果建议修改现有 skill，输出把 `D:\\Workspace\\04-agents\\skills\\...` 源码目录当成推荐修改目标，而不是 `C:\\Users\\SanAn\\.cc-switch\\skills\\...` 同步产物。",
         "输出给出至少两条修改现有 skill 的建议。",
         "输出包含能交给 skill-creator 的审查稿核心字段。"
       ]

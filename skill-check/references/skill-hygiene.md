@@ -9,7 +9,7 @@
 当前本地源文件目录用一层平铺的方式存放技能：
 
 ```text
-D:\Workspace\04-agents\agents-skills-src\<skill-name>\SKILL.md
+D:\Workspace\04-agents\skills\<skill-name>\SKILL.md
 ```
 
 判断规则：
@@ -29,7 +29,7 @@ D:\Workspace\04-agents\agents-skills-src\<skill-name>\SKILL.md
   cc-switch 同步出来的目录。这里更新了，不代表 Codex 已经会用。
 - `C:\Users\SanAn\.cc-switch\cc-switch.db`
   cc-switch 的记录层。面板显示名和目录名要一起看。
-- `D:\Workspace\04-agents\agents-skills-src`
+- `D:\Workspace\04-agents\skills`
   真正应该修改的源文件目录。以后该改哪份，看这里；但不要把它当成当前已加载列表。
 
 ## 什么算当前已加载
@@ -59,7 +59,7 @@ D:\Workspace\04-agents\agents-skills-src\<skill-name>\SKILL.md
 1. 先看 `C:\Users\SanAn\.codex\skills`
 2. 再看 `C:\Users\SanAn\.cc-switch\skills`
 3. 再看 `C:\Users\SanAn\.cc-switch\cc-switch.db`
-4. 最后再看 `D:\Workspace\04-agents\agents-skills-src` 和 GitHub 远端
+4. 最后再看 `D:\Workspace\04-agents\skills` 和 GitHub 远端
 
 如果用户问的是“为什么现在没生效”，不要一上来就看 GitHub。
 

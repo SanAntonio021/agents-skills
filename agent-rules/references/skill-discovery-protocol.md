@@ -44,7 +44,7 @@
 
 真正应该优先修改的地方：
 
-- `<agents-root>\agents-skills-src\<skill>\`
+- `<agents-root>\skills\<skill>\`
 
 ### 当前副本
 

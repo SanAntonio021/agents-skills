@@ -21,7 +21,7 @@
     },
     {
       "id": 4,
-      "prompt": "D:\\BaiduSyncdisk\\.agents\\AGENTS.md 已经更新了，但 C:\\Users\\SanAn\\.codex\\AGENTS.md 还是旧的。请先判断这两份分别是什么，再给出修复建议。",
+      "prompt": "D:\\Workspace\\04-agents\\AGENTS.md 已经更新了，但 C:\\Users\\SanAn\\.codex\\AGENTS.md 还是旧的。请先判断这两份分别是什么，再给出修复建议。",
       "expected_output": "先区分源文件、软链或普通副本，再判断应该修软链、临时复制同步，还是只修源文件，并明确说明理由。",
       "files": []
     }

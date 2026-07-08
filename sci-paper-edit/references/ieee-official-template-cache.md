@@ -7,7 +7,7 @@
 技能源码内位置：
 
 ```text
-D:\BaiduSyncdisk\.agents\agents-skills-src\sci-paper-edit\assets\ieee-official-templates
+D:\Workspace\04-agents\agents-skills-src\sci-paper-edit\assets\ieee-official-templates
 ```
 
 通用写法：

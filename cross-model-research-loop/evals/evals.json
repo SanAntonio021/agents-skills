@@ -1,0 +1,42 @@
+{
+  "skill": "cross-model-research-loop",
+  "updated": "2026-07-07",
+  "cases": [
+    {
+      "id": "trigger-supervise-codex",
+      "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督它，出问题你把关",
+      "expect": "触发本 skill；按适配器 A 用 codex exec 后台下发里程碑任务，说明评审门流程",
+      "type": "should-trigger"
+    },
+    {
+      "id": "trigger-exec-pitfall",
+      "prompt": "codex exec 跑完退出码 0，但它说建好的结果目录根本不存在",
+      "expect": "触发本 skill；按 cli-adapters 检查 sandbox_mode 是否 read-only 被拦写入，按 review-gates 第一层核验产出存在性",
+      "type": "should-trigger"
+    },
+    {
+      "id": "trigger-resume-fail",
+      "prompt": "我想用 codex exec resume 续接桌面版开的那个会话，报 does not start with session metadata",
+      "expect": "触发本 skill；说明 Desktop 与 CLI 会话不互通，改为新开 exec 会话并在任务指令里携带上下文",
+      "type": "should-trigger"
+    },
+    {
+      "id": "trigger-mirror",
+      "prompt": "我现在在 Codex 里干活，能不能反过来让 Claude 当执行者跑任务",
+      "expect": "触发本 skill；给适配器 B 的 claude -p 调用方式，强调异族红线仍满足",
+      "type": "should-trigger"
+    },
+    {
+      "id": "no-trigger-aris-executor",
+      "prompt": "帮我用 experiment-plan 给这个课题设计实验计划",
+      "expect": "不触发本 skill；这是执行者侧 ARIS skill 的职责",
+      "type": "should-not-trigger"
+    },
+    {
+      "id": "no-trigger-plain-review",
+      "prompt": "帮我审一下这篇论文初稿的英文表达",
+      "expect": "不触发本 skill；走论文润色类 skill",
+      "type": "should-not-trigger"
+    }
+  ]
+}

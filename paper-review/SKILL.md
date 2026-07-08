@@ -70,10 +70,10 @@ C 类：风格偏好
 
 ## 相关技能
 
-- 学术协作总控：[../sci-writing/SKILL.md](../sci-writing/SKILL.md)
+- 学术协作总控：[../writing-router/SKILL.md](../writing-router/SKILL.md)
 - 工程申报写作：[../project-writing/SKILL.md](../project-writing/SKILL.md)
-- SCI/IEEE 论文精修与初稿收口：[../sci-paper-edit/SKILL.md](../sci-paper-edit/SKILL.md)
-- 指标论证：[../target-check/SKILL.md](../target-check/SKILL.md)
+- SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
+- 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
 
 ## 相关文件
 
@@ -83,4 +83,4 @@ C 类：风格偏好
 ## 维护
 
 - 这份 skill 只沉淀通用审查口径和停稿规则，不沉淀单项目事实或一次性结论。
-- 如果它和 `sci-paper-edit`、`sci-writing` 等 skill 出现边界漂移，优先先改 `description` 和触发测试，再考虑扩正文。
+- 如果它和 `ieee-manuscript-edit`、`writing-router` 等 skill 出现边界漂移，优先先改 `description` 和触发测试，再考虑扩正文。

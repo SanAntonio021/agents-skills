@@ -3,8 +3,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "我有一篇写好的论文初稿 D:\\Papers\\thz-link\\draft.md，图都在 figures 目录里是 paper-figure-fix 导出的 PDF。目标投 IEEE Transactions on Terahertz Science and Technology，帮我把它变成能编译的 LaTeX 投稿工程。",
-      "expected_output": "先确认用 IEEEtran（Transactions 系）模板并优先使用 sci-paper-edit 的本地模板缓存；新建独立 paper-tex 工程目录，模板 cls/bst 随工程；用 pandoc 或手工映射转换正文，公式图表全部加 label，引用改 cite；从 md 引用生成 refs.bib；跑通编译并按残留清单检查；内容层面的疑问列清单而不是自行改写。",
+      "prompt": "我有一篇写好的论文初稿 D:\\Papers\\thz-link\\draft.md，图都在 figures 目录里是 paper-figure-review 导出的 PDF。目标投 IEEE Transactions on Terahertz Science and Technology，帮我把它变成能编译的 LaTeX 投稿工程。",
+      "expected_output": "先确认用 IEEEtran（Transactions 系）模板并优先使用 ieee-manuscript-edit 的本地模板缓存；新建独立 paper-tex 工程目录，模板 cls/bst 随工程；用 pandoc 或手工映射转换正文，公式图表全部加 label，引用改 cite；从 md 引用生成 refs.bib；跑通编译并按残留清单检查；内容层面的疑问列清单而不是自行改写。",
       "files": [],
       "expectations": [
         "输出选择 IEEEtran 模板并说明优先使用本地模板缓存而不是重新下载。",
@@ -13,7 +13,7 @@
         "输出建立 refs.bib 并说明 DOI 反查或 paper_index.md 核对来源。",
         "输出包含编译验证步骤和通过标准（零 error、引用类警告清零）。",
         "输出对 Unicode 残留、中文标点等做了转换后检查。",
-        "输出不改写科学内容；内容疑问以清单形式列出或转给 sci-paper-edit。"
+        "输出不改写科学内容；内容疑问以清单形式列出或转给 ieee-manuscript-edit。"
       ]
     },
     {

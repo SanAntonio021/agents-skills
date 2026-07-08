@@ -4,14 +4,14 @@
     "query": "这份文稿我已经反复改了四轮。请不要直接替我润色，先按 A 类必须修改、B 类建议优化、C 类风格偏好分类审查。如果没有新增 A 类问题，请明确告诉我是否建议停稿。",
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
-    "expected_not_primary_skill": "sci-paper-edit",
+    "expected_not_primary_skill": "ieee-manuscript-edit",
     "reason": "用户明确要求先分类审查并判断是否停稿，目标是 review gating 而不是直接抛光。"
   },
   {
     "id": "should-not-trigger-direct-polish",
     "query": "这是一份已经定结构的初稿，你直接帮我去模板腔、压缩重复句、统一术语，不用做长篇审查，也不要判断是否停稿，直接给我润色后的版本。",
     "should_trigger": false,
-    "expected_primary_skill": "sci-paper-edit",
+    "expected_primary_skill": "ieee-manuscript-edit",
     "expected_not_primary_skill": "paper-review",
     "reason": "用户明确要求直接精修现有草稿，并排除了停稿判断和分级审查。"
   },
@@ -52,7 +52,7 @@
     "query": "请使用已有 skill 审查这份专利交底书和独立权利要求草稿，按必须修改、建议优化、风格偏好分类。先不要直接改稿，先告诉我现在还应不应该继续改。",
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
-    "expected_not_primary_skill": "sci-writing",
+    "expected_not_primary_skill": "writing-router",
     "reason": "对象是已有专利草稿，目标是按严重程度做 review gating 和停稿判断，而不是总控讨论、起草或直接润色。"
   }
 ]

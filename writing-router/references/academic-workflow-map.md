@@ -37,7 +37,7 @@
 ## Imbad0202/academic-research-skills
 
 本地镜像：
-`D:\Workspace\04-agents\upstream\Imbad0202-academic-research-skills`
+`D:\BaiduSyncdisk\04-agents\upstream\Imbad0202-academic-research-skills`
 
 适合作为轻量学术流程样板。
 
@@ -59,7 +59,7 @@
 ## K-Dense-AI/scientific-agent-skills
 
 本地镜像：
-`D:\Workspace\04-agents\upstream\K-Dense-AI-scientific-agent-skills`
+`D:\BaiduSyncdisk\04-agents\upstream\K-Dense-AI-scientific-agent-skills`
 
 这是综合科学技能库，范围很大。默认只挑和太赫兹通信、工程硬件、科研写作、申报论证接近的部分。
 

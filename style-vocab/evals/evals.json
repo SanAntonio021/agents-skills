@@ -1,0 +1,35 @@
+{
+  "skill_name": "style-vocab",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "以后交付文稿里别写“赋能”，写“用于”或者“支持”。帮我收录。",
+      "expected_output": "判断为通用文风词；读取 vocab-full.md 和 vocab-core.md；查重后写入或更新词条；如进入核心表，保持核心表格式和数量限制。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "以后把“太赫兹近场”统一写成 terahertz near-field，帮我记住。",
+      "expected_output": "判断为专业术语，不写入 style-vocab；转 ieee-manuscript-edit 的 sci-terminology-bank 流程，并提示需要适用领域和来源。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "帮我按词表检查这段英文：The platform leverages a balanced portfolio strategy. The paper leverages a 115 GHz carrier to demonstrate link stability.",
+      "expected_output": "识别第一句 leverage 属于金融/投资语境例外，保留；第二句属于论文普通动词，建议改为 uses 或 builds on。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "检查这个 LaTeX 片段：\\cite{delve2024_thz} shows prior work. We delve into the measured EVM trend in Section~\\ref{sec:evm}.",
+      "expected_output": "跳过 citation key 中的 delve；检查正文中的 delve，并建议改为 examine 或 analyze；保留 LaTeX 命令和引用结构。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "核心表已经有 30 个词了。现在我想把“生态”也加进核心表。",
+      "expected_output": "不直接追加导致核心表超限；先提示核心表已满，要求用户选择移出一个低频项，或只写入 vocab-full.md。",
+      "files": []
+    }
+  ]
+}

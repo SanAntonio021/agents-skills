@@ -22,6 +22,7 @@
 | 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
+| 用词表维护/交付前扫词 | 别用这个词、这个词太 AI、收录用词、检查用词 | `style-vocab` |
 | 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | `Humanizer-zh` |
 | 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `word-template` / `docx` |
@@ -113,4 +114,5 @@
 - 英文论文精修不够稳：改 `ieee-manuscript-edit`
 - 指标/实验解释不清：改 `target-feasibility` 或 `lab-notebook`
 - 纯英文句子不够干净：改 `sentence-polish`
+- 用户自维护词级偏好不够稳：改 `style-vocab`
 - 实验设计/证据评估不够深：改 `rigor-check`

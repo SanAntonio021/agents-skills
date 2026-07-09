@@ -7,7 +7,7 @@
 技能源码内位置：
 
 ```text
-D:\BaiduSyncdisk\04-agents\skills\ieee-manuscript-edit\assets\ieee-official-templates
+D:\BaiduSyncdisk\.agents\skills\ieee-manuscript-edit\assets\ieee-official-templates
 ```
 
 通用写法：

@@ -27,7 +27,7 @@ description: 检查本地技能目录，确认 Codex 实际读取哪些技能，
 源文件目录采用一层平铺的方式：
 
 ```text
-D:\Workspace\04-agents\skills\<skill-name>\SKILL.md
+D:\BaiduSyncdisk\04-agents\skills\<skill-name>\SKILL.md
 ```
 
 判断规则很简单：
@@ -43,7 +43,7 @@ D:\Workspace\04-agents\skills\<skill-name>\SKILL.md
 
 - Codex 实际读取的技能目录：`C:\Users\SanAn\.codex\skills`
 - cc-switch 同步出来的目录：`C:\Users\SanAn\.cc-switch\skills`
-- 真正应该修改的源文件目录：`D:\Workspace\04-agents\skills`
+- 真正应该修改的源文件目录：`D:\BaiduSyncdisk\04-agents\skills`
 
 用户问“现在到底加载了什么”时，先看 Codex 实际读取的技能目录；不要把源文件目录当成当前已加载列表。
 
@@ -87,7 +87,7 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `职责相近但不该直接合并`
   指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `源码和运行时目录没有同步`
-  指 `D:\Workspace\04-agents\skills\<skill-name>\SKILL.md` 已经更新，但 `C:\Users\SanAn\.cc-switch\skills\<skill-name>\SKILL.md` 或 `C:\Users\SanAn\.codex\skills\<skill-name>\SKILL.md` 仍是旧版本。遇到这种情况，结论写成“源码已修，当前 Codex 仍未加载新版本”，并提醒用户通过 cc-switch 检查更新，不要直接改 `.cc-switch` 或 `.codex`。
+  指 `D:\BaiduSyncdisk\04-agents\skills\<skill-name>\SKILL.md` 已经更新，但 `C:\Users\SanAn\.cc-switch\skills\<skill-name>\SKILL.md` 或 `C:\Users\SanAn\.codex\skills\<skill-name>\SKILL.md` 仍是旧版本。遇到这种情况，结论写成“源码已修，当前 Codex 仍未加载新版本”，并提醒用户通过 cc-switch 检查更新，不要直接改 `.cc-switch` 或 `.codex`。
 - `链接或路径失效`
   指绝对路径、相对链接、Related Skills 链接或工作流引用失效。
 - `空技能或坏技能`

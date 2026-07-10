@@ -66,6 +66,12 @@
       "prompt": "刚才为了修 Claude 更新后的 0x80070020，我停过 RuntimeBroker 和 ApplicationFrameHost。现在点 Chrome、开始菜单里的其它应用都没反应。别让我重启，下一步怎么恢复？",
       "expected_output": "应判断可能是用户态 shell / AppX 启动链路被误伤；先直接启动 Chrome.exe 验证应用本体是否可运行；如果本体可运行，重启 StartMenuExperienceHost、ShellExperienceHost、SearchHost、ApplicationFrameHost、RuntimeBroker 和 explorer.exe；同时说明这些进程不应作为 Claude AppX 锁修复的默认清理目标。",
       "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "我要删 D:\\old-dir，报\"另一个程序正在使用此文件\"。Get-Process 的命令行里看不到任何进程和这个目录有关；杀了几个可疑进程后目录删掉了，可几秒钟后它又自己出现了，里面只有空的 .git 骨架。下一步怎么彻底删掉？",
+      "expected_output": "应加载 directory-move-locked reference；识别\"目录删后重生\"是宿主应用（Codex/Claude Desktop）重拉 MCP 子进程并在旧 cwd 重建目录的症状，先关宿主整棵进程树再删；找占用进程用 PEB 全进程 cwd 扫描（Add-Type 定义和扫描必须同一条命令发出，Path/CommandLine 反映不了工作目录）；提权进程读不到时改用管理员权限 handle64。",
+      "files": []
     }
   ]
 }

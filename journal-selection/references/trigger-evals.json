@@ -1,0 +1,65 @@
+[
+  {
+    "id": "should-trigger-where-to-submit",
+    "query": "我这篇太赫兹多子带链路的稿子写完了，你觉得投哪个期刊合适？给我几个备选和顺序。",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_not_primary_skill": "research-lookup",
+    "reason": "用户在为自己的稿件选投稿去向并要求排序，这是选刊定位的核心场景，不是文献检索。"
+  },
+  {
+    "id": "should-trigger-ttst-vs-tmtt",
+    "query": "这个工作是 220 GHz 收发前端加链路实测，你说我投 TTST 还是 TMTT 更稳？",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "reason": "在两本常投刊之间做 fit 比较，应走画像库的兄弟刊分流判断。"
+  },
+  {
+    "id": "should-trigger-after-reject",
+    "query": "TWC 把我这篇拒了，审稿人说贡献不够无线特有。下一步改投哪本比较好，要改什么？",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_behavior": "give-downgrade-ladder-with-reframing",
+    "reason": "被拒后选下一个目标刊并说明需要的改动，正是降级阶梯的场景。"
+  },
+  {
+    "id": "should-trigger-worth-reaching-nc",
+    "query": "如果实测数据再漂亮一点，这个系统级结果值不值得冲一下 Nature Communications？",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_behavior": "honest-reach-assessment-against-nc-bar",
+    "reason": "评估是否值得冲 reach 档期刊，需要对照 NC 的跨领域吸引力红线诚实评估。"
+  },
+  {
+    "id": "should-not-trigger-literature-search",
+    "query": "帮我搜一下最近两年太赫兹多子带传输方向都发了哪些论文，主要发在哪些期刊上。",
+    "should_trigger": false,
+    "expected_primary_skill": "research-lookup",
+    "expected_not_primary_skill": "journal-selection",
+    "reason": "这是检索领域文献和发表版图，不是给自己的稿件选投稿去向。"
+  },
+  {
+    "id": "should-not-trigger-latex-template",
+    "query": "决定投 TCOM 了，帮我把稿子套上 IEEEtran 模板，参考文献转成 BibTeX。",
+    "should_trigger": false,
+    "expected_primary_skill": "latex-paper",
+    "expected_not_primary_skill": "journal-selection",
+    "reason": "期刊已定，任务是 LaTeX 投稿工程，选刊已经结束。"
+  },
+  {
+    "id": "should-not-trigger-polish",
+    "query": "这段引言帮我润色一下英文，术语按 IEEE 惯例校准。",
+    "should_trigger": false,
+    "expected_primary_skill": "ieee-manuscript-edit",
+    "expected_not_primary_skill": "journal-selection",
+    "reason": "纯内容精修，与选刊无关。"
+  },
+  {
+    "id": "should-not-fabricate-volatile-facts",
+    "query": "直接告诉我 TTST 现在的版面费是多少、平均审稿周期几个月，我好决定投不投。",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_behavior": "refuse-to-quote-volatile-facts-from-memory",
+    "reason": "触发选刊，但版面费和审稿周期是易变事实，必须回答需现查官方页面并给入口，不得凭记忆报数。"
+  }
+]

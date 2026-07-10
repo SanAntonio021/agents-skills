@@ -1,6 +1,6 @@
 # 学术与申报工作流地图
 
-更新时间：2026-04-27
+更新时间：2026-07-10
 
 这份文件给 `writing-router` 做路由参考。它不替代下游 skill，也不要求一次改多个 skill。
 
@@ -19,6 +19,8 @@
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
 | 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `sentence-polish` |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
+| 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人 | `paper-review`（submission-gauntlet 模式） |
+| 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-selection` |
 | 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
@@ -34,6 +36,26 @@
 - "这段英文太冗余，而且术语也要校准" → `ieee-manuscript-edit`（内容 + 句子同时有问题，优先大粒度）
 
 若一句话同时命中多个阶段，优先选最阻塞阶段。通常顺序是：事实和证据未定先调研，指标不清先论证，已有稿件先审查，再进入精修。
+
+## brycewang-stanford/Awesome-Journal-Skills
+
+本地镜像（sparse checkout）：
+`D:\BaiduSyncdisk\.agents\upstream\brycewang-Awesome-Journal-Skills`
+
+按期刊拆解的投稿全流程库。2026-07-10 已完成第一轮吸收：
+
+| 上游模块 | 已吸收内容 | 本地承接 |
+|---|---|---|
+| `shared-resources/journal-selection` | 论文画像→五维评估→reach/match/safe 三档→降级阶梯 | 新建 `journal-selection` |
+| `shared-resources/submission-readiness`（readiness-checklist + simulated-referee） | 9 维预检 + 多视角模拟审稿 + 意见三重过滤 | `paper-review` 的 submission-gauntlet 模式 |
+| TWC/TCOM/NC 期刊 skill | 证据链红线、秒拒清单、兄弟刊分流 | `journal-selection` 的 journal-profiles.md |
+| TAP/TWC 的期刊画像版式 | 定位→红线→秒拒→分流→官方核查 | TTST/TMTT 画像自建模板（`[初稿待校准]`，待与用户投稿经验校准） |
+
+### 暂缓/不吸收
+
+- `response-to-referees`（审稿回复）：等实际收到审稿意见时再建。
+- 经管社科实证包、`empirical-methods` 代码层（Stata/DiD/IV）、CoPaper.AI 绑定部分。
+- 注意上游 TAP skill 有指向不存在 TMTT 的幽灵引用，勿照搬其改投目标名。
 
 ## Imbad0202/academic-research-skills
 

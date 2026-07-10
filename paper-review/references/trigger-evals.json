@@ -54,5 +54,29 @@
     "expected_primary_skill": "paper-review",
     "expected_not_primary_skill": "writing-router",
     "reason": "对象是已有专利草稿，目标是按严重程度做 review gating 和停稿判断，而不是总控讨论、起草或直接润色。"
+  },
+  {
+    "id": "should-trigger-submission-gauntlet",
+    "query": "这篇准备投 TWC 了，投出去之前帮我过一遍投稿检查，再模拟几个审稿人挑挑毛病，看看最可能死在哪。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "run-submission-gauntlet-precheck-then-simulated-referees",
+    "reason": "投稿前把关请求：先跑 9 维预检再跑多视角模拟审稿，属于 submission-gauntlet 模式而非日常停稿审查。"
+  },
+  {
+    "id": "should-trigger-anticipate-referee-attacks",
+    "query": "你帮我预判一下，审稿人拿到这篇最先会攻击哪两三个点，每个点我该准备什么回应。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "referee-anticipation-with-triple-filter",
+    "reason": "预判审稿质疑是投稿前把关的第 9 维和模拟审稿的核心输出，意见需过真实/具体/可操作三重过滤。"
+  },
+  {
+    "id": "should-not-trigger-journal-choice",
+    "query": "稿子还没定投哪，你先帮我看看这个工作投 TTST 合适还是 TCOM 合适。",
+    "should_trigger": false,
+    "expected_primary_skill": "journal-selection",
+    "expected_not_primary_skill": "paper-review",
+    "reason": "期刊未定时是选刊定位问题；投稿前把关以目标刊已定为前提。"
   }
 ]

@@ -18,6 +18,12 @@
       "prompt": "CodexCont 装好了，怎么判断它有没有正常运行？不要只说看进程，帮我给可验证标准。",
       "expected_output": "应给出可验证标准：8787/15721 监听、Codex base_url 指向 8787、CodexCont upstream 指向 15721、hook.log 有 hooked/already hooked、codexcont.out.log 有 POST /v1/responses 200 OK，并用 Responses SSE 字段确认。",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "帮我把 Codex 改成直连中转站，先别走本地那条链路，我改了 base_url 但保存后又变回 127.0.0.1，改不掉。",
+      "expected_output": "应同时排查两类独立根因：(a) 外部 watcher 脚本/计划任务持续改写 config.toml（含孤儿进程，不只查计划任务）；(b) cc-switch 自身 proxy_config 表的 proxy_enabled/enabled 本地代理接管开关。应提醒只关一个不够；应说明 DB 和磁盘 config.toml 要同步改，只改一处会被覆盖；应提醒改完要隔 30~60 秒复查多次而非改完看一眼就下结论；应检查 proxy_live_backup 是否会在异常恢复时把旧配置写回；应告知代价（失去推理截断修复、失去 GUI 切换能力）。",
+      "files": []
     }
   ]
 }

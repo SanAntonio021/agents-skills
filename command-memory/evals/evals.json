@@ -72,6 +72,12 @@
       "prompt": "我要删 D:\\old-dir，报\"另一个程序正在使用此文件\"。Get-Process 的命令行里看不到任何进程和这个目录有关；杀了几个可疑进程后目录删掉了，可几秒钟后它又自己出现了，里面只有空的 .git 骨架。下一步怎么彻底删掉？",
       "expected_output": "应加载 directory-move-locked reference；识别\"目录删后重生\"是宿主应用（Codex/Claude Desktop）重拉 MCP 子进程并在旧 cwd 重建目录的症状，先关宿主整棵进程树再删；找占用进程用 PEB 全进程 cwd 扫描（Add-Type 定义和扫描必须同一条命令发出，Path/CommandLine 反映不了工作目录）；提权进程读不到时改用管理员权限 handle64。",
       "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "怪事：我这个仓库昨天明明提交到很新了，今天 git log 显示最新提交是三天前的，git push 报 non-fast-forward 说本地 behind。目录里还多了好几个带\"冲突文件\"字样的副本，连上周删掉改名的旧文件夹都原样回来了。仓库在百度网盘同步目录里。怎么回事，怎么恢复？",
+      "expected_output": "应加载 git-on-windows reference 的坑 3；识别为云同步客户端用云端旧快照回滚仓库（含 .git）的回滚四联征；恢复顺序：先杀同步客户端止血 → git fetch 确认远端完整（远端是唯一可靠基准，本地 reflog 也被覆盖不可信）→ 抢救冲突副本中未推送内容 → git reset --hard origin/<branch> → 冲突副本和复活目录归档不直删 → 必须把双向同步改成单向备份或把仓库移出同步范围，否则必复发。",
+      "files": []
     }
   ]
 }

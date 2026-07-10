@@ -2,12 +2,13 @@
 
 ## 这份说明管什么
 
-在 Windows（git bash / MSYS2）上跑 git 时，有两类坑会让命令莫名失败：
+在 Windows（git bash / MSYS2）上跑 git 时，有三类坑会让命令莫名失败：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
+3. **同步客户端用云端旧快照回滚整个仓库**：双向同步的云盘把几天前的 `.git` 和工作区覆盖回来，提交历史倒退、已删目录复活。
 
-这两类都不是 git 本身的错，是 Windows 环境的命令形态问题，换形态即可绕过。
+这三类都不是 git 本身的错，是 Windows 环境问题，按对应 pattern 处理。
 
 ## 坑 1：MSYS 把 `REF:path` 里的 `/` `:` 转坏
 
@@ -99,3 +100,39 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 ## 为什么不直接修工作区
 
 被同步软件锁的文件，你没法稳定地 unlink / checkout；CRLF 噪声会让几十个文件显示 `modified`、反复挡路。对象层操作（cat-file / merge-tree / commit-tree / update-ref）只读写 `.git/objects` 和 ref，绕开整个工作区，是这种环境下最稳的路子。前提：每一步都先验证（rev-parse 出 hash、ls-tree 抽查、cat-file 查冲突标记），再推进。
+
+## 坑 3：同步客户端用云端旧快照回滚整个仓库
+
+双向同步的云盘（百度网盘"同步空间"、OneDrive、Dropbox、坚果云）把云端滞后的旧快照当"新状态"下发，整个仓库——包括 `.git`——被覆盖回几天前。这不是锁文件那种"挡路"，是数据被静默改写，比坑 2 致命。
+
+### Pattern: git-recover-from-cloud-sync-rollback
+- scenario: 云同步客户端把仓库（含 `.git`）回滚成云端旧快照，需要识别症状并恢复到真实最新状态
+- use_when: 出现"回滚四联征"中任意两条：
+  1. 提交历史倒退——`git log` 的 HEAD 落后于记忆/远端，`git push` 报 non-fast-forward，说本地 "behind its remote counterpart"（明明刚提交过）
+  2. 出现冲突副本文件——中文客户端形如 `<名字>_冲突文件_<用户>_<时间戳>.<ext>`，英文客户端形如 `<name> (conflicted copy).<ext>`
+  3. 早已删除/改名的旧目录整棵复活（内容是旧布局）
+  4. `.git/objects/` 里出现同步临时文件（`*.baiduyun.uploading.cfg`、`*.tmp.driveupload`）——`git fsck` 报 `bad sha1 file` / `garbage`，本身无害但证明同步客户端在写 `.git` 内部
+- shell: bash + PowerShell
+- validated_shape:
+  ```bash
+  # 0. 止血：先杀同步客户端，防止恢复过程中再次被覆盖
+  #    PowerShell: Get-Process | Where-Object { $_.ProcessName -match '<SYNC_CLIENT_PATTERN>' } | Stop-Process -Force
+  # 1. 确认远端是完整基准（分叉点 + 远端领先的提交都认识 = 远端完整）
+  git fetch origin
+  git log --oneline -5 origin/<BRANCH>
+  git merge-base HEAD origin/<BRANCH>
+  # 2. 抢救：reset 前把未推送的本地新内容（冲突副本里可能有）另存
+  # 3. 恢复到远端最新
+  git reset --hard origin/<BRANCH>
+  # 4. 残留清理：冲突副本、复活的旧目录移入归档区（不直接删），
+  #    移动被 Permission denied 挡住时按 directory-move-locked.md 扫进程 cwd
+  # 5. 根因必须消除：把同步模式改成单向备份，或把仓库移出同步范围；
+  #    否则客户端重启后必然复发
+  ```
+- substitute_only: `<BRANCH>`, `<SYNC_CLIENT_PATTERN>`（如 `baidu`、`onedrive`、`dropbox`、`nutstore`）
+- preflight: 恢复基准必须是**远端**（GitHub 等），不能用本地 reflog——`.git` 整个被旧快照覆盖时 reflog 也是旧的；远端若也不完整，先从冲突副本和归档抢内容再说
+- env: none
+- avoid: 先修工作区文件再管 `.git`（历史不对，改了也会乱）；直接删冲突副本（里面可能有未推送的独有内容，先 diff 再归档）；恢复后不改同步模式（100% 复发）；把 `.git` 留在任何双向同步目录里
+- success_signal: `git log` 回到最新提交、`git status` 干净、`git push` 正常 fast-forward；再无新冲突副本生成
+- capture_rule: 2026-07-10 百度网盘实战沉淀（回滚 18 个提交，reset --hard origin/main 全量恢复）。新确认的同步客户端症状形态（临时文件后缀、冲突副本命名）补进四联征清单
+

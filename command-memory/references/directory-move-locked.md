@@ -5,9 +5,10 @@
 ```
 mv: cannot remove 'D:/path': Device or resource busy
 Remove-Item: 另一个程序正在使用此文件，进程无法访问
+Rename-Item: The process cannot access the file because it is being used by another process.
 ```
 
-## 本次迁移实战 (2026-07-08/09)
+## 本次迁移实战 (2026-07-08/09/10)
 
 | 场景 | 根因 | 解决 |
 |---|---|---|
@@ -17,6 +18,7 @@ Remove-Item: 另一个程序正在使用此文件，进程无法访问
 | PowerPoint 锁 `申报书本子/` | Office 进程未退出 | `taskkill /F /IM POWERPNT.EXE` |
 | 删 junction 失败 | 当前 shell cwd 在 junction | `cd /` 后再删 |
 | 删掉的目录几秒后重生 | 宿主应用（Codex Desktop）重拉 MCP 子进程，继承旧 cwd 并重建目录 | 关宿主整棵进程树再删 |
+| `Rename-Item BaiduSyncdisk/04-agents` 失败 | Codex Desktop 子进程（`node_repl.exe`、`node.exe`、`cmd.exe`）cwd 仍在旧目录 | 用全进程 cwd 扫描定位，只杀精确命中的子进程后重试；不必先杀 `codex.exe` 主进程 |
 
 ## 排查顺序
 
@@ -101,6 +103,7 @@ Get-Process | ForEach-Object {
 - 偏移量只适用于 64 位 Windows（PEB+0x20 → ProcessParameters，ProcessParameters+0x38 → CurrentDirectory）。
 - 提权/系统进程 OpenProcess 失败返回 null 属正常；扫描无命中但目录仍锁 → 锁在提权进程或非 cwd 的目录句柄上，改用管理员权限 handle64（见 `archive-and-file-ops.md` 的 windows-dir-rename-lock-diagnosis）。
 - 2026-07-09 实战：常规方法全部无果后，此法一次定位 11 个 cwd 停在已迁走目录里的 cmd/node/node_repl 进程。
+- 2026-07-10 实战：`handle64` 精确目录查询无结果或长时间不返回，但 cwd 扫描一次定位 10 个 Codex Desktop 子进程；`Stop-Process -Id <PID> -Force` 精确停止后，`Rename-Item -LiteralPath <OLD_DIR> -NewName <NEW_NAME>` 立即成功。
 
 ## Junction 删除专用
 ```cmd

@@ -78,6 +78,12 @@
       "prompt": "怪事：我这个仓库昨天明明提交到很新了，今天 git log 显示最新提交是三天前的，git push 报 non-fast-forward 说本地 behind。目录里还多了好几个带\"冲突文件\"字样的副本，连上周删掉改名的旧文件夹都原样回来了。仓库在百度网盘同步目录里。怎么回事，怎么恢复？",
       "expected_output": "应加载 git-on-windows reference 的坑 3；识别为云同步客户端用云端旧快照回滚仓库（含 .git）的回滚四联征；恢复顺序：先杀同步客户端止血 → git fetch 确认远端完整（远端是唯一可靠基准，本地 reflog 也被覆盖不可信）→ 抢救冲突副本中未推送内容 → git reset --hard origin/<branch> → 冲突副本和复活目录归档不直删 → 必须把双向同步改成单向备份或把仓库移出同步范围，否则必复发。",
       "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "我把 ExampleApp 从 C:\\Program Files\\ExampleApp 重装到了 D:\\Program Files\\ExampleApp。现在进程、开始菜单、自启动和新版卸载项都指向 D 盘 2.3.0；C 盘只剩两个已确认的旧 DLL，WOW6432Node 里还残留一个 2.2.0 卸载项。我已经同意清理，但精确执行 Remove-Item 报 Access to the path is denied。下一步怎么做才不会误删新版或用户配置？",
+      "expected_output": "应加载 archive-and-file-ops reference；区分 Program Files/HKLM 的 ACL/UAC 权限与进程锁；先精确解析目标路径、白名单检查残留文件，并核对当前进程、版本、快捷方式、自启动以及新旧卸载项；普通删除确认因权限失败后，生成并检查短小的本地 PowerShell 脚本，在脚本内重复校验，再通过 Start-Process -Verb RunAs 触发 UAC；执行后从原会话复查旧目录和旧注册项消失、新版和用户数据仍完整；不要先 takeown/icacls，不要盲目递归删除，也不要删除 AppData。",
+      "files": []
     }
   ]
 }

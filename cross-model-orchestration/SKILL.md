@@ -140,7 +140,8 @@ node "<helperPath>"
 session job，不能在新 session 中假定可续接。
 
 - `通过`：进入执行；
-- `需修改`：Claude 只修订计划，再用 `--resume --wait` 交给同一 Codex thread 复核；
+- `需修改`：Claude 只修订计划，先用记录的 `helperPath` 和 thread ID 核对 resume
+  candidate，再用 `--resume --wait` 交给同一 Codex thread 复核；
 - `实质分歧`：停止执行，向用户提交分歧报告。
 
 如果同一异议重复出现且双方都没有新证据，不继续空转，按实质分歧处理。
@@ -150,8 +151,10 @@ session job，不能在新 session 中假定可续接。
 每次续接前，运行下列检查，其中 `<thread-id>` 是首次记录值：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs" "<thread-id>"
+node "<helperPath>" "<thread-id>"
 ```
+
+`helperPath` 必须沿用首次复核前记录的正斜杠绝对路径，不重新扫描或展开环境变量。
 
 只有 `ok: true` 才能调用同一 `codex:codex-rescue` subagent，使用
 `--resume --wait --write`。候选 ID 不同、候选缺失或检查失败时，按

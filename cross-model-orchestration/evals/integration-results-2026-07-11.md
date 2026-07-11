@@ -31,12 +31,13 @@
 - A second clean canary reached `codex:codex-rescue` but the legacy exact companion rule ending in `task:*` did not match a command with a multiline task argument. Claude emitted `CODEX_FAILURE_REPORT`, paused, and did not take over.
 - The exact wildcard form `Bash(node "<companionPath>" task *)` passed a direct-agent canary. Codex thread `019f50c9-f49e-7002-91c8-2792b256e31b` returned `PERMISSION_CANARY_OK` without file access.
 - A clean full-workflow retest used the synced Skill and passed helper resolution, but the long PLAN_REVIEW task contained literal newlines; Claude Code denied the otherwise exact `task *` rule. Claude paused with a failure report and did not take over. The workflow now serializes plan review, execution, and revision prompts as one-line XML/semicolon arguments with no literal CR/LF.
+- The final clean read-only canary completed Claude planning, Codex plan review, a same-thread revised plan review, Codex execution, and independent Claude verification. All Codex turns used thread `019f50dd-6033-7e82-a30c-9dec77a0a390`; resume candidate checks matched before every continuation; fixture hashes stayed unchanged.
+- The first one-line XML task exposed Git Bash path conversion for XML closing tags and `C:/` text inside the task argument. The Windows transport now uses one-line `field=value;` text and relative or backslash paths inside task arguments.
 
 ## Deferred Until Runtime Sync
 
 - Full write, Claude verification, and Codex revision loop on a disposable fixture.
 - Git and non-Git full workflow comparison.
 - Authentication failure, timeout, and real disagreement injection.
-- Successful new-session global trigger through helper, Codex plan review, read-only execution, and Claude verification after the Windows path fix.
 
 These tests remain rollout gates. Do not use the workflow for real write tasks until the read-only post-sync canary passes.

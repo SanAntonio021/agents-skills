@@ -6,12 +6,11 @@ description: >
   Codex；适用于代码和非代码任务，包括文档、仿真、目录审计和 Skill 维护。
   Claude 负责规划与验收，Codex 先复核计划再执行，验收失败后续接返工，
   实质分歧交用户裁决。纯聊天、简单解释和单条只读命令不触发。
-compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, and exact user-level Bash permissions for the Plugin companion and this Skill helper.
+compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, exact user-level Bash permissions for the Plugin companion and this Skill helper, and read access to this Skill directory.
 allowed-tools:
   - Read
   - Glob
   - Grep
-  - Bash(node:*)
   - AskUserQuestion
   - Agent
 ---
@@ -62,9 +61,12 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ## 前置检查
 
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令和本 Skill
-   helper。Skill frontmatter 的 `allowed-tools` 不会传给 `codex:codex-rescue`
-   subagent，不能替代用户级权限；不得用全局 `Bash(node:*)` 代替精确规则。
+2. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
+   helper，以及本 Skill 目录的只读访问。Windows 需要同时兼容 helper 的正斜杠和
+   反斜杠绝对路径。Skill frontmatter 的 `allowed-tools` 不会传给
+   `codex:codex-rescue` subagent，不能替代用户级权限；不得用全局
+   `Bash(node:*)` 代替精确规则。Claude Code 2.1.207 对带多行 task 参数使用
+   `Bash(node "<companionPath>" task *)`，不要只写旧式 `task:*`。
 3. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
 4. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
    `--resume` 目标的任务。
@@ -96,11 +98,18 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 `--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
 runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
 
-调用 Agent 前先运行：
+调用 Agent 前使用 Skill 加载消息已经给出的 `Base directory for this skill`，不要
+扫描 `.claude/skills` 父目录。把该目录下的 helper 拼成绝对路径并统一成正斜杠，
+然后只用 Bash 运行一条直接命令：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs" --companion-path
+node "<helperPath>" --companion-path
 ```
+
+必须把 `<helperPath>` 替换为已解析的正斜杠绝对路径；不得把占位符、环境变量或
+`${CLAUDE_SKILL_DIR}` 原样交给 shell。不得改用 PowerShell，不得先读取
+`settings.json`，也不得把路径查询和 helper 调用拼成复合命令。helper 调用被权限
+拒绝时，直接按调用失败暂停。
 
 把返回的 `companionPath` 原样注入 Agent prompt。Plugin 更新后路径会变化；若新路径
 不在用户级权限中，按调用失败暂停，先更新精确权限，不扩大成 `Bash(node:*)`。
@@ -119,8 +128,10 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs" --companion-path
 首次复核完成后，运行：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs"
+node "<helperPath>"
 ```
+
+仍使用前面记录的同一个正斜杠绝对 `helperPath`，不重新探测或改换命令形式。
 
 记录输出的 `candidateThreadId`。找不到候选 thread 时按 Codex 调用失败暂停。
 该候选只在同一个仍存活的 Claude session 内有效；session 结束后 Plugin 会清理

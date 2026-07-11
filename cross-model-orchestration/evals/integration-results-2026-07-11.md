@@ -6,7 +6,7 @@
 - Plugin: `codex@openai-codex` 1.0.6, enabled
 - Codex CLI: 0.144.1, authenticated
 - Official stop-time review gate: disabled
-- Persistent Claude permissions: exact current Plugin companion `task` prefix and exact Skill helper path
+- Persistent Claude permissions: exact current Plugin companion `task` prefix, exact Skill helper path, and exact read access to the Skill directories
 
 ## Passed
 
@@ -23,11 +23,19 @@
 - The versioned exact companion `task` permission passed a direct agent canary; broad `Bash(node:*)` is not required.
 - No Plugin jobs were left running after the tests.
 
+## Post-Sync Findings
+
+- CC Switch installed the Skill and enabled both Claude and Codex; source, CC Switch, Claude, and Codex runtime hashes match.
+- A clean new Claude session automatically loaded the global Skill and read `workflow-contract.md` without falling back to a project copy.
+- The first clean post-sync canary stopped before Codex because Claude expanded the helper to a Windows backslash path while the exact permission only matched the forward-slash form. Fixture hashes stayed unchanged. The Skill now requires a resolved forward-slash helper path and forbids PowerShell/settings fallbacks; both exact Windows path forms are covered by user permissions before retest.
+- A second clean canary reached `codex:codex-rescue` but the legacy exact companion rule ending in `task:*` did not match a command with a multiline task argument. Claude emitted `CODEX_FAILURE_REPORT`, paused, and did not take over.
+- The exact wildcard form `Bash(node "<companionPath>" task *)` passed a direct-agent canary. Codex thread `019f50c9-f49e-7002-91c8-2792b256e31b` returned `PERMISSION_CANARY_OK` without file access.
+
 ## Deferred Until Runtime Sync
 
 - Full write, Claude verification, and Codex revision loop on a disposable fixture.
 - Git and non-Git full workflow comparison.
 - Authentication failure, timeout, and real disagreement injection.
-- New-session global trigger check after cc-switch installs the Skill and Claude Code restarts.
+- Successful new-session global trigger through helper, Codex plan review, read-only execution, and Claude verification after the Windows path fix.
 
 These tests remain rollout gates. Do not use the workflow for real write tasks until the read-only post-sync canary passes.

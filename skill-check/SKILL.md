@@ -1,6 +1,6 @@
 ---
 name: skill-check
-description: 检查本地技能目录，确认 Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能，以及源码已改但 cc-switch/Codex 运行时目录还没同步的问题。Use when 用户要确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、cc-switch 同步出来的目录和 Codex 实际读取的技能目录、排查 CC Switch 安装报 `Skill 不存在于 SSOT`、确认“已经改了为什么没生效”，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
+description: 检查本地技能目录，确认 Claude/Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能，以及源码已改但 cc-switch/运行时目录还没同步的问题。Use when 用户要确认当前加载了哪些 skill、查同名冲突（含 Codex 内置 .system 技能与 cc-switch 版重名）、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、lark 实体层、cc-switch 同步目录和 Claude/Codex 实际读取的技能目录、排查 CC Switch 安装报 `Skill 不存在于 SSOT`、确认“已经改了为什么没生效”，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
 ---
 
 # Skill 目录检查
@@ -37,15 +37,20 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 - `*-workspace`、`rescued-skill-materials` 这类目录只当作工作材料或历史材料，不算当前技能。
 - 目录名必须和 `SKILL.md` 里的 `name:` 一致。
 
-## 先分清三类目录
+## 先分清六层目录（2026-07-11 审计实测）
 
-在这台机器上，排查技能问题时先分清这三类目录：
+在这台机器上，排查技能问题时先分清这六层：
 
-- Codex 实际读取的技能目录：`C:\Users\SanAn\.codex\skills`
-- cc-switch 同步出来的目录：`C:\Users\SanAn\.cc-switch\skills`
-- 真正应该修改的源文件目录：`D:\BaiduSyncdisk\.agents\skills`
+1. 自建源码：`D:\BaiduSyncdisk\.agents\skills`（独立 git 仓库 agents-skills，真正该改的地方）
+2. lark 实体层：`C:\Users\SanAn\.agents\skills`（lark-cli 从飞书 well-known 源安装，`.skill-lock.json` 记账；新版 codex-cli 直接读取这一层）
+3. cc-switch 分发：`C:\Users\SanAn\.cc-switch\skills`（自建技能的同步产物 + 第三方技能的安装体）
+4. Claude 运行时：`C:\Users\SanAn\.claude\skills`（symlink→cc-switch，lark 技能是 junction→实体层）
+5. Codex 运行时：`C:\Users\SanAn\.codex\skills`（symlink→cc-switch）＋ `.system\` 内置技能（skill-creator/skill-installer 等，带 `.codex-system-skills.marker`，与 cc-switch 版可能重名双入口）
+6. Codex plugins bundled 技能层：`C:\Users\SanAn\.codex\plugins\cache\...`（插件自带技能，如 bundled pdf）
 
-用户问“现在到底加载了什么”时，先看 Codex 实际读取的技能目录；不要把源文件目录当成当前已加载列表。
+用户问“现在到底加载了什么”时，看对应工具的运行时层：Claude 看第 4 层，Codex 看第 5＋6 层再叠加第 2 层（直读）；不要把源文件目录当成当前已加载列表。
+
+停用某个技能用 `~\.codex\config.toml` 的 `[[skills.config]]`（`name`/`path` + `enabled = false`）。注意：config.toml 是 cc-switch 按 DB 快照渲染的产物，直接改会在 provider 切换时被冲回，持久化要进 cc-switch 的配置快照。
 
 ## 流程
 

@@ -6,6 +6,7 @@
 
 - 简单 Python 一行：用 UTF-8 环境变量。
 - 多行代码或大量中文字符串：写成 UTF-8 `.py` 脚本，再由 PowerShell 调用。
+- 内容含反斜杠序列（LaTeX 命令、正则、路径字面量）：不走 inline / heredoc，直接写脚本文件，写后验证关键标记。
 - 中文文件名/路径：优先让 PowerShell 找到路径，再用参数或环境变量传给 Python。
 - 中文 worksheet/header：能用索引就用索引，别把中文表头塞进 PowerShell here-string。
 
@@ -30,6 +31,13 @@
 - Python: `import os; from pathlib import Path; p = Path(os.environ['TARGET_FILE'])`
 - preflight: 确认筛选结果非空且唯一；必要时先打印候选。
 - avoid: 用中文文件名直接拼进 Python 字符串。
+
+### Pattern: backslash-content-via-script-file
+- use_when: 要用 Python 写入或替换含反斜杠序列的文本（LaTeX 命令、正则、Windows 路径字面量），尤其混有中文时；或 bash heredoc / `python -c` 已出现 `SyntaxWarning: invalid escape` 乃至内容静默损坏。
+- failure_class: 多层转义（工具调用层→shell→heredoc→Python 字符串）各吃一层反斜杠：`\times` 中的 `\t` 被解析成 TAB 写进文件（渲染成 `2imes2`），`\m` 报 invalid escape 却继续跑——命令成功、内容已坏，属静默损坏。
+- shape: 用编辑器落地 UTF-8 `.py` 脚本再 `python -X utf8 <SCRIPT>.py`；脚本内反斜杠用 `chr(92)`、制表符判断用 `chr(9)` 拼接，彻底避开字符串转义；写后立刻计数验证关键标记。
+- success_signal: 写入后 grep/count 确认标记数量符合预期（如 `\times` 恢复 N 处、TAB 残留 0）。
+- avoid: 把含 `\` 的多行文本塞进 bash heredoc 或 `python -c`；跑通了不验证内容。
 
 ### Pattern: chinese-excel-by-index
 - use_when: workbook、sheet、header 含中文，inline Python 读取或编辑失败。

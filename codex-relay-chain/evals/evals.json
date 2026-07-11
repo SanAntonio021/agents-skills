@@ -24,6 +24,18 @@
       "prompt": "帮我把 Codex 改成直连中转站，先别走本地那条链路，我改了 base_url 但保存后又变回 127.0.0.1，改不掉。",
       "expected_output": "应同时排查两类独立根因：(a) 外部 watcher 脚本/计划任务持续改写 config.toml（含孤儿进程，不只查计划任务）；(b) cc-switch 自身 proxy_config 表的 proxy_enabled/enabled 本地代理接管开关。应提醒只关一个不够；应说明 DB 和磁盘 config.toml 要同步改，只改一处会被覆盖；应提醒改完要隔 30~60 秒复查多次而非改完看一眼就下结论；应检查 proxy_live_backup 是否会在异常恢复时把旧配置写回；应告知代价（失去推理截断修复、失去 GUI 切换能力）。",
       "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "CC Switch 里的聪明 AI 能选，但一点启用 Codex 就 504。数据库里这个 provider 的地址看起来是 127.0.0.1:8787/v1，帮我查清楚并修好。",
+      "expected_output": "应从 providers.settings_config 的 JSON 和内嵌 config TOML 中解析目标 provider 的真实 base_url，不假设存在独立 base_url 列；识别 8787 -> 15721 -> 8787 的代理回环；修复前备份数据库，只恢复有证据支持的远端地址并保留 API key；切换后核对 currentProviderCodex、providers.is_current 和 Codex 仍指向 8787。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "切到一个 Codex 中转站后本地 /v1/responses 返回 503。不要只看端口，帮我判断是本地代理坏了还是中转站上游断了；如果上游坏了别把 Codex 留在不可用状态。",
+      "expected_output": "应使用同一最小 Responses 请求分别测试 8787 完整链路和 provider 远端直连，不输出完整 key 或 SSE body；两边同为 503 才判断上游故障，远端正常而本地失败则继续排查 CodexCont/CC Switch；上游故障时切回最后一个通过完整 SSE 验证的 provider，并再次核对 currentProviderCodex、is_current、Codex base_url 和完整 SSE 字段。",
+      "files": []
     }
   ]
 }

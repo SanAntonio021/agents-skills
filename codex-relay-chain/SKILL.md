@@ -5,8 +5,9 @@ description: >
   Windows 上维护 Codex 的多层中转链路。遇到 CodexCont、CC Switch/Cockpit、
   中转站切换、aijws/CodeRelay/聪明 AI 这类 OpenAI 兼容接口、Codex 配置被切回去、
   API key 被旧值覆盖、127.0.0.1:8787/15721 本地代理、Responses SSE 兼容性验证、
-  reasoning/encrypted_content/reasoning_tokens 丢失、用户要求改直连/跳过本地代理/
-  停用监视链路且 base_url 改了又被自动改回本地端口时，优先使用本技能。
+  provider 地址误指本地端口形成回环、上游 503 归因、reasoning/encrypted_content/
+  reasoning_tokens 丢失、用户要求改直连/跳过本地代理/停用监视链路且 base_url
+  改了又被自动改回本地端口时，优先使用本技能。
 ---
 
 # Codex 中转链维护
@@ -137,6 +138,25 @@ mode = "passthrough"
   "config": "model_provider = ..."
 }
 ```
+
+#### 切换前检查目标 provider 地址
+
+新版 CC Switch 不一定有独立的 `providers.base_url` 列。真实地址可能位于
+`providers.settings_config` 的 JSON 内，再嵌套在 `config` TOML 字符串中。用 JSON 和
+TOML 解析器读取，不要假设列名，也不要用字符串拼接读取 API key。
+
+切换目标 provider 前确认它的远端 `base_url`：
+
+- 远端 provider 不应指向 `http://127.0.0.1:8787/v1` 或 `http://127.0.0.1:15721/v1`。
+- 如果目标 provider 指向 `8787`，链路会变成 `8787 -> 15721 -> 8787`，最终超时或返回 502/504。
+- 修复前备份 `cc-switch.db`；只恢复该 provider 的远端地址，保留原 API key。
+- 远端地址必须来自历史配置、备份或 provider 官方信息，不凭名称猜测。
+
+切换完成后同时核对：
+
+- `%USERPROFILE%\.cc-switch\settings.json` 的 `currentProviderCodex`。
+- `providers.is_current`。
+- 两者都指向目标 provider，且目标 provider 的远端地址没有被 watcher 改成本地端口。
 
 ### 5. 处理 key 被旧值覆盖
 
@@ -278,6 +298,24 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
 - `encrypted_content` 缺失：中转或代理可能过滤了 reasoning 加密内容。
 - `proxy_rounds` 缺失：请求可能没经过 CodexCont，或 CodexCont 没正常处理。
 
+### 上游 503 的归因
+
+本地链路返回 `503 Service temporarily unavailable` 时，不要立刻判断钩子或 CC Switch
+损坏。用同一模型、同一最小 Responses 请求做两次探测：
+
+1. 通过 `http://127.0.0.1:8787/v1/responses` 测完整本地链路。
+2. 绕过 `8787/15721`，直接请求目标 provider 的远端 `/v1/responses`。
+
+两次请求都不输出完整 API key，也不回显完整 SSE body。判断规则：
+
+- 本地链路和远端直连都返回同一 `503`：上游 provider 故障。
+- 远端直连正常、本地链路失败：继续查 CodexCont、CC Switch 转发或 live backup。
+- 本地链路正常、字段缺失：继续按 SSE 字段兼容性检查，不把它归为可用。
+
+目标 provider 故障时，切回最后一个通过完整 SSE 验证的 provider。切回后再次核对
+`currentProviderCodex`、`is_current`、Codex `base_url = "http://127.0.0.1:8787/v1"`，
+并重跑完整 SSE 验证，避免把 Codex 留在不可用状态。
+
 ## 输出给用户
 
 给用户只报关键判断：
@@ -304,6 +342,8 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
 ## 常见坑
 
 - 页面表格里的 `sk-xxx...xxxx` 是遮罩 key，不是真实 key。
+- provider 的远端地址可能嵌在 `settings_config.config` TOML 中，不要先假设数据库存在 `base_url` 列。
+- 远端 provider 指向 `8787/15721` 会形成本地代理回环；先修地址再切换。
 - CC Switch 运行中退出可能写回旧内存状态；必要时修 live backup。
 - `settings.json` 的 `currentProviderCodex` 和 `providers.is_current` 都要和目标 provider 对上。
 - CodexCont 的 auth mode 是 `passthrough` 时，Codex 当前 token 仍会被传给 CC Switch。

@@ -3,9 +3,9 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "检查 D:\\BaiduSyncdisk\\.agents\\skills 里的全部 Skill，判断是否重复、冲突或可以合并，并形成可执行的审计报告。",
+      "prompt": "把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计报告。",
       "expected_output": "Claude 先制定审计范围、分类标准和验收标准；Codex 只读复核计划后执行扫描；Claude 核验报告证据，问题退回 Codex。",
-      "files": [],
+      "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
         "输出明确区分 Claude 的规划验收角色与 Codex 的复核执行角色。",
         "Codex 在执行前先进行只读计划复核。",
@@ -15,9 +15,9 @@
     },
     {
       "id": 2,
-      "prompt": "把项目里的技术说明 Markdown 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
+      "prompt": "把随附的 technical-note.md 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
       "expected_output": "触发跨模型编排；Claude 制定改写和链接验收标准，Codex 复核后修改文件，Claude 只读检查文本与链接。",
-      "files": [],
+      "files": ["evals/fixtures/technical-note.md", "evals/fixtures/reference.md"],
       "expectations": [
         "任务被识别为需要 Codex 的非代码多步骤任务。",
         "计划包含事实保真、受众、结构和链接检查标准。",
@@ -27,9 +27,9 @@
     },
     {
       "id": 3,
-      "prompt": "检查这批仿真输出是否满足项目里的验收指标，重新运行必要的分析命令，并整理结论和异常点。",
+      "prompt": "根据随附的 acceptance-criteria.md 检查 simulation-results.csv 是否满足验收指标，运行必要的分析命令，并整理结论和异常点。",
       "expected_output": "触发跨模型编排；必要时同时加载仿真专业 Skill；Codex 执行分析，Claude 按指标核验结果。",
-      "files": [],
+      "files": ["evals/fixtures/acceptance-criteria.md", "evals/fixtures/simulation-results.csv"],
       "expectations": [
         "Claude 先确认指标、数据范围和验收方法。",
         "Codex 先检查计划再运行分析。",

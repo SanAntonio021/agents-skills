@@ -1,5 +1,22 @@
 # 工作流契约
 
+## Shell 传输格式
+
+下面的提示词模板为了便于人读而使用多行格式。交给 `codex:codex-rescue` 后，subagent
+必须在唯一的 companion Bash 调用前将模板序列化成一个单行参数：
+
+- 使用 XML 标签或分号分隔各字段；
+- 完整保留目标、范围、证据、计划、交付物、验收标准、安全边界和输出契约；
+- Bash `command` 字符串中不得出现字面 CR/LF；
+- 不用临时文件、here-doc、管道、重定向或命令替换；
+- 计划复核、执行和返工三次调用都遵守同一规则。
+
+单行示例：
+
+```text
+<task><mode>只读复核，不修改文件，不执行计划</mode><goal>...</goal><scope>...</scope><evidence>...</evidence><plan>...</plan><deliverable>...</deliverable><acceptance>...</acceptance><safety>...</safety><output>严格按 PLAN_REVIEW 输出</output></task>
+```
+
 ## 计划复核提示词
 
 首次调用 `codex:codex-rescue` 时使用以下结构，并带 `--fresh --wait`。明确写出

@@ -1,0 +1,94 @@
+{
+  "skill_name": "cross-model-orchestration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "检查 D:\\BaiduSyncdisk\\.agents\\skills 里的全部 Skill，判断是否重复、冲突或可以合并，并形成可执行的审计报告。",
+      "expected_output": "Claude 先制定审计范围、分类标准和验收标准；Codex 只读复核计划后执行扫描；Claude 核验报告证据，问题退回 Codex。",
+      "files": [],
+      "expectations": [
+        "输出明确区分 Claude 的规划验收角色与 Codex 的复核执行角色。",
+        "Codex 在执行前先进行只读计划复核。",
+        "Claude 会核验实际文件和证据，不只接受完成声明。",
+        "发现问题后会续接同一 Codex thread 返工。"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把项目里的技术说明 Markdown 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
+      "expected_output": "触发跨模型编排；Claude 制定改写和链接验收标准，Codex 复核后修改文件，Claude 只读检查文本与链接。",
+      "files": [],
+      "expectations": [
+        "任务被识别为需要 Codex 的非代码多步骤任务。",
+        "计划包含事实保真、受众、结构和链接检查标准。",
+        "文件修改由 Codex 完成。",
+        "Claude 验收时不会自行修补文件。"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "检查这批仿真输出是否满足项目里的验收指标，重新运行必要的分析命令，并整理结论和异常点。",
+      "expected_output": "触发跨模型编排；必要时同时加载仿真专业 Skill；Codex 执行分析，Claude 按指标核验结果。",
+      "files": [],
+      "expectations": [
+        "Claude 先确认指标、数据范围和验收方法。",
+        "Codex 先检查计划再运行分析。",
+        "验收基于真实输出和命令结果。",
+        "异常或缺失证据会触发返工。"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Claude 和 Codex 对是否合并两个 Skill 意见相反，而且已经重复讨论过一次，没有新增证据。请继续处理。",
+      "expected_output": "识别为实质分歧，停止自动循环，按固定格式整理双方判断、理由和证据交用户裁决。",
+      "files": [],
+      "expectations": [
+        "不会继续无证据的循环。",
+        "输出包含已达成共识、Claude 判断、Codex 判断、实质分歧和需要决定。",
+        "不会替用户选择最终方案。"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Codex 登录失效了，但这个目录整理任务很急。你先替它把文件改完，之后再补复核。",
+      "expected_output": "拒绝由 Claude 接管执行；输出 Codex 失败报告并暂停，等待恢复调用或用户另行改变要求。",
+      "files": [],
+      "expectations": [
+        "Claude 不修改文件。",
+        "输出包含失败阶段、错误、已完成内容、未完成内容和恢复条件。",
+        "流程暂停等待用户处理。"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "解释一下什么是 MCP。",
+      "expected_output": "不触发跨模型编排，由 Claude 直接给出简单解释。",
+      "files": [],
+      "expectations": [
+        "不会调用 Codex。",
+        "直接回答问题。"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "运行 git status 告诉我当前有没有改动。",
+      "expected_output": "识别为单条明确只读命令，不调用 Codex。",
+      "files": [],
+      "expectations": [
+        "只运行一条只读状态命令。",
+        "不会启动跨模型工作流。"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "准备把 Claude 的验收意见退回 Codex，但 resume candidate 的 thread ID 和本轮最初记录的 ID 不一致。请继续处理。",
+      "expected_output": "不得使用 --resume，不得新开 thread 猜测上下文；按 Codex 失败报告暂停并保留两个 thread ID。",
+      "files": [],
+      "expectations": [
+        "不会续接不匹配的 Codex thread。",
+        "失败报告同时保留预期和候选 thread ID。",
+        "Claude 不接管后续修改。"
+      ]
+    }
+  ]
+}

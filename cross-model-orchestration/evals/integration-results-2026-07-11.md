@@ -33,10 +33,11 @@
 - A clean full-workflow retest used the synced Skill and passed helper resolution, but the long PLAN_REVIEW task contained literal newlines; Claude Code denied the otherwise exact `task *` rule. Claude paused with a failure report and did not take over. The workflow now serializes plan review, execution, and revision prompts as one-line XML/semicolon arguments with no literal CR/LF.
 - The final clean read-only canary completed Claude planning, Codex plan review, a same-thread revised plan review, Codex execution, and independent Claude verification. All Codex turns used thread `019f50dd-6033-7e82-a30c-9dec77a0a390`; resume candidate checks matched before every continuation; fixture hashes stayed unchanged.
 - The first one-line XML task exposed Git Bash path conversion for XML closing tags and `C:/` text inside the task argument. The Windows transport now uses one-line `field=value;` text and relative or backslash paths inside task arguments.
+- The first write canary proved that Plugin 1.0.6 cannot reliably upgrade a live broker thread from `read-only` to `workspace-write` on resume. Two same-thread turns included `--write`, but Codex turn context remained `read-only` and rejected `apply_patch`; both fixture hashes and the directory membership stayed unchanged. The workflow now creates the initial plan-review thread with `--fresh --wait --write`, keeps review behavior read-only by instruction, and requires Claude to compare Git state or file manifests/hashes before and after review.
 
 ## Deferred Until Runtime Sync
 
-- Full write, Claude verification, and Codex revision loop on a disposable fixture.
+- Full write, Claude verification, and Codex revision loop on a disposable fixture after retesting the initial-thread sandbox fix.
 - Git and non-Git full workflow comparison.
 - Authentication failure, timeout, and real disagreement injection.
 

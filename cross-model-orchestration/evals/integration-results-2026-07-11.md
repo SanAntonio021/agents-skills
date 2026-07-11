@@ -30,6 +30,7 @@
 - The first clean post-sync canary stopped before Codex because Claude expanded the helper to a Windows backslash path while the exact permission only matched the forward-slash form. Fixture hashes stayed unchanged. The Skill now requires a resolved forward-slash helper path and forbids PowerShell/settings fallbacks; both exact Windows path forms are covered by user permissions before retest.
 - A second clean canary reached `codex:codex-rescue` but the legacy exact companion rule ending in `task:*` did not match a command with a multiline task argument. Claude emitted `CODEX_FAILURE_REPORT`, paused, and did not take over.
 - The exact wildcard form `Bash(node "<companionPath>" task *)` passed a direct-agent canary. Codex thread `019f50c9-f49e-7002-91c8-2792b256e31b` returned `PERMISSION_CANARY_OK` without file access.
+- A clean full-workflow retest used the synced Skill and passed helper resolution, but the long PLAN_REVIEW task contained literal newlines; Claude Code denied the otherwise exact `task *` rule. Claude paused with a failure report and did not take over. The workflow now serializes plan review, execution, and revision prompts as one-line XML/semicolon arguments with no literal CR/LF.
 
 ## Deferred Until Runtime Sync
 

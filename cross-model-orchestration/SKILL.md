@@ -91,9 +91,16 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ### 2. Codex 复核计划
 
 使用 `Agent` 工具调用 `subagent_type: "codex:codex-rescue"`。默认把整个 Agent
-调用设为后台运行，并在请求中使用 `--fresh --wait`，让 companion 在该 Agent 内
+调用设为后台运行，并在请求中使用 `--fresh --wait --write`，让 companion 在该 Agent 内
 等待 Codex 完成；Claude 收到 Agent 完成通知后才继续。明确要求只读计划复核、
 禁止修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
+
+Plugin 1.0.6 不能把一个仍在 broker 中的只读 thread 在续接时可靠升级为
+`workspace-write`；即使后续传入 `--write`，实际 turn 仍可能保持只读。为兼顾同一
+thread 与后续执行，首次创建 thread 时就使用 `--write`。这只代表运行时具备写入
+能力，计划复核行为仍必须只读。Claude 在调用前记录复核范围内的 Git 状态，或在
+非 Git 目录记录文件清单与关键文件 hash；复核返回后重新核对。发现任何计划外改动
+时停止，不接受该复核结果，也不由 Claude 回滚或继续执行。
 
 `--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
 runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
@@ -129,7 +136,8 @@ node "<helperPath>" --companion-path
 如果 subagent 内的 `Bash(node:*)` 被权限规则拒绝，按 Codex 调用失败暂停。Claude
 不得在主会话直接运行 companion，也不得改用其他方式绕过 subagent。
 
-首次复核完成后，运行：
+首次复核完成后，先核对复核前后的 Git 状态或文件清单与 hash，确认 Codex 没有
+修改文件，再运行：
 
 ```bash
 node "<helperPath>"
@@ -140,6 +148,10 @@ node "<helperPath>"
 记录输出的 `candidateThreadId`。找不到候选 thread 时按 Codex 调用失败暂停。
 该候选只在同一个仍存活的 Claude session 内有效；session 结束后 Plugin 会清理
 session job，不能在新 session 中假定可续接。
+
+任何 Codex turn 报告认证、权限、sandbox、timeout、额度或 runtime 失败时，立即
+输出 `CODEX_FAILURE_REPORT` 并暂停。不得先重试，不得把失败包装成计划问题，不得
+改用新 thread 或其他执行方式绕过，也不得让 Claude 接管。
 
 - `通过`：进入执行；
 - `需修改`：Claude 只修订计划，先用记录的 `helperPath` 和 thread ID 核对 resume
@@ -192,6 +204,9 @@ Claude 必须独立核验：
 - 所有验收标准通过；或
 - 出现实质分歧；或
 - Codex 调用失败、超时、额度耗尽或无法可靠续接。
+
+上述失败条件不是验收不通过，不能进入自动返工。只有 Codex 已成功执行、Claude
+检查实际产出后发现未满足验收标准，才进入返工循环。
 
 ### 6. 完成或停止
 

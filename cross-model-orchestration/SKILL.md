@@ -6,7 +6,7 @@ description: >
   Codex；适用于代码和非代码任务，包括文档、仿真、目录审计和 Skill 维护。
   Claude 负责规划与验收，Codex 先复核计划再执行，验收失败后续接返工，
   实质分歧交用户裁决。纯聊天、简单解释和单条只读命令不触发。
-compatibility: Requires Claude Code plugin codex@openai-codex and an authenticated Codex CLI.
+compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, and user-level Bash(node:*) permission.
 allowed-tools:
   - Read
   - Glob
@@ -62,11 +62,13 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ## 前置检查
 
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
-3. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
+2. 确认 Claude 用户级权限包含 `Bash(node:*)`。Skill frontmatter 的
+   `allowed-tools` 不会传给 `codex:codex-rescue` subagent，不能替代该权限。
+3. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
+4. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
    `--resume` 目标的任务。
-4. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
-5. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
+5. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
+6. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
 
 ## 工作流
 
@@ -90,11 +92,17 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 等待 Codex 完成；Claude 收到 Agent 完成通知后才继续。明确要求只读计划复核、
 禁止修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
 
+`--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
+runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
+
 每次 Agent prompt 都要重申：subagent 只能进行一次直接的
-`node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task ...` 调用；不得先运行
+`node "<CLAUDE_PLUGIN_ROOT 的绝对路径>/scripts/codex-companion.mjs" task ...` 调用。
+必须先使用 subagent 已知的 Plugin 根目录解析绝对路径，实际命令里不得保留 `$`、
+`${CLAUDE_PLUGIN_ROOT}` 或其他环境变量引用。不得先运行
 `--help`，不得创建临时文件，不得使用管道、重定向、here-doc、命令替换、`cd` 或
-复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。如果任务文本无法作为
-单个参数安全传入，则返回失败，不重试、不改用其他命令。
+复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。该 Bash tool call 必须
+设置至少 `600000` ms 的 timeout，并保持前台等待，不得设置 `run_in_background`。
+如果任务文本无法作为单个参数安全传入，则返回失败，不重试、不改用其他命令。
 
 如果 subagent 内的 `Bash(node:*)` 被权限规则拒绝，按 Codex 调用失败暂停。Claude
 不得在主会话直接运行 companion，也不得改用其他方式绕过 subagent。
@@ -106,6 +114,8 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs"
 ```
 
 记录输出的 `candidateThreadId`。找不到候选 thread 时按 Codex 调用失败暂停。
+该候选只在同一个仍存活的 Claude session 内有效；session 结束后 Plugin 会清理
+session job，不能在新 session 中假定可续接。
 
 - `通过`：进入执行；
 - `需修改`：Claude 只修订计划，再用 `--resume --wait` 交给同一 Codex thread 复核；
@@ -129,7 +139,8 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs" "<thread-id>"
 
 默认将整个 `Agent` 调用置于 Claude Code 后台；只有确认能很快完成的调用才放在
 前台。仍让 companion 以前台方式完成该 Codex turn，等待 Agent 完成通知后再验收。
-不要另开新的 Codex thread，也不要在等待时启动另一条 Codex 工作链。
+不要另开新的 Codex thread，也不要在等待时启动另一条 Codex 工作链。等待期间
+不得创建 Cron、automation、提醒或定时任务，只依赖 Agent 完成通知。
 
 ### 4. Claude 验收
 

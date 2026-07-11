@@ -10,7 +10,8 @@ function fail(message, detail = null, status = 1) {
   process.exit(status);
 }
 
-const expectedThreadId = process.argv[2] || null;
+const mode = process.argv[2] || null;
+const expectedThreadId = mode === "--companion-path" ? null : mode;
 const registryPath = path.join(os.homedir(), ".claude", "plugins", "installed_plugins.json");
 
 if (!fs.existsSync(registryPath)) {
@@ -35,6 +36,15 @@ if (!fs.existsSync(companion)) {
   fail("Codex companion script not found.", companion);
 }
 
+if (mode === "--companion-path") {
+  console.log(JSON.stringify({
+    ok: true,
+    companionPath: companion.replaceAll("\\", "/"),
+    pluginVersion: install.version ?? null
+  }, null, 2));
+  process.exit(0);
+}
+
 const child = spawnSync(
   process.execPath,
   [companion, "task-resume-candidate", "--json", "--cwd", process.cwd()],
@@ -53,12 +63,18 @@ try {
 }
 
 const candidateThreadId = payload.candidate?.threadId ?? null;
+const sessionId = payload.sessionId ?? null;
+if (!sessionId) {
+  fail("Claude session ID is unavailable; refusing a workspace-wide resume candidate.");
+}
+
 const matches = Boolean(candidateThreadId) &&
   (expectedThreadId === null || candidateThreadId === expectedThreadId);
 
 const result = {
   ok: matches,
   available: Boolean(payload.available),
+  sessionId,
   expectedThreadId,
   candidateThreadId,
   candidateJobId: payload.candidate?.id ?? null,
@@ -74,4 +90,3 @@ if (!matches) {
 
 console.log(JSON.stringify(result, null, 2));
 process.exit(matches ? 0 : 2);
-

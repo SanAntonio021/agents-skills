@@ -1,11 +1,11 @@
 {
   "skill": "cross-model-research-loop",
-  "updated": "2026-07-07",
+  "updated": "2026-07-11",
   "cases": [
     {
       "id": "trigger-supervise-codex",
       "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督它，出问题你把关",
-      "expect": "触发本 skill；按适配器 A 用 codex exec 后台下发里程碑任务，说明评审门流程",
+      "expect": "触发本 skill，并在 Claude Code 中叠加 cross-model-orchestration；通过官方 codex:codex-rescue 下发里程碑任务，说明评审门流程。只有无 Plugin 的独立无头环境才用适配器 A",
       "type": "should-trigger"
     },
     {

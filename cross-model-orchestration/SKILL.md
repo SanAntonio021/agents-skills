@@ -120,9 +120,11 @@ node "<helperPath>" --companion-path
 `--help`，不得创建临时文件，不得使用管道、重定向、here-doc、命令替换、`cd` 或
 复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。该 Bash tool call 必须
 设置至少 `600000` ms 的 timeout，并保持前台等待，不得设置 `run_in_background`。
-把参考文件中的多行任务模板序列化成单行 XML 或分号文本，完整保留所有字段；实际
-Bash `command` 字符串不得含字面 CR/LF。任务文本仍作为一个参数传入。如果无法在
-不丢信息的前提下安全序列化，则返回失败，不重试、不改用其他命令。
+把参考文件中的多行任务模板序列化成单行“字段名=值；”文本，完整保留所有字段；
+实际 Bash `command` 字符串不得含字面 CR/LF。Windows 的任务参数内部不得使用 XML
+结束标签或 `C:/` 绝对路径；优先使用相对当前 Codex cwd 的路径，必须写绝对路径时
+使用反斜杠。任务文本仍作为一个参数传入。如果无法在不丢信息的前提下安全序列化，
+则返回失败，不重试、不改用其他命令。
 
 如果 subagent 内的 `Bash(node:*)` 被权限规则拒绝，按 Codex 调用失败暂停。Claude
 不得在主会话直接运行 companion，也不得改用其他方式绕过 subagent。

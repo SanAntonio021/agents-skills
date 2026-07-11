@@ -1,11 +1,9 @@
 ---
 name: cross-model-orchestration
 description: >
-  Claude Code 与 Codex 的全局跨模型编排。凡任务需要检查本地材料、制定计划、
-  调研、写作、修改文件、运行命令或多步执行时都必须使用，即使用户没有点名
-  Codex；适用于代码和非代码任务，包括文档、仿真、目录审计和 Skill 维护。
-  Claude 负责规划与验收，Codex 先复核计划再执行，验收失败后续接返工，
-  实质分歧交用户裁决。纯聊天、简单解释和单条只读命令不触发。
+  Claude Code 与 Codex 的全局跨模型编排。凡任务需要检查或合并本地材料、制定计划、
+  调研、比较、写作、修改文件、运行命令或多步执行时都必须使用，即使用户没有点名
+  Codex。纯聊天、不依赖材料的简单解释和一条明确只读命令不触发。
 compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, exact user-level Bash permissions for the Plugin companion and this Skill helper, and read access to this Skill directory.
 allowed-tools:
   - Read
@@ -90,17 +88,20 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 
 ### 2. Codex 复核计划
 
-使用 `Agent` 工具调用 `subagent_type: "codex:codex-rescue"`。默认把整个 Agent
-调用设为后台运行，并在请求中使用 `--fresh --wait --write`，让 companion 在该 Agent 内
-等待 Codex 完成；Claude 收到 Agent 完成通知后才继续。明确要求只读计划复核、
-禁止修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
+使用 `Agent` 工具调用 `subagent_type: "codex:codex-rescue"`。整个 Agent 调用必须前台
+等待，并在请求中使用 `--fresh --wait --write`，让 companion 在该 Agent 内等待 Codex
+完成。每个阶段最多发起一次 Agent 调用；Agent 未返回时，只能等待原调用，禁止再次
+运行 helper、核对 resume candidate 或发起第二个 Agent。明确要求只读计划复核、禁止
+修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
 
 Plugin 1.0.6 不能把一个仍在 broker 中的只读 thread 在续接时可靠升级为
 `workspace-write`；即使后续传入 `--write`，实际 turn 仍可能保持只读。为兼顾同一
 thread 与后续执行，首次创建 thread 时就使用 `--write`。这只代表运行时具备写入
-能力，计划复核行为仍必须只读。Claude 在调用前记录复核范围内的 Git 状态，或在
-非 Git 目录记录文件清单与关键文件 hash；复核返回后重新核对。发现任何计划外改动
-时停止，不接受该复核结果，也不由 Claude 回滚或继续执行。
+能力，计划复核行为仍必须只读。Claude 在调用前为复核范围内每个普通文件记录相对
+路径、字节数和 SHA256；Git 项目还要记录 Git 状态，但不能用状态代替内容快照。
+内容快照排除 `.git` 内部元数据，Git 与非 Git 目录使用同一标准。复核返回后逐项
+比较文件集合和内容快照。无法建立完整快照时不启动复核；发现任何变化时停止，不接受
+该复核结果，也不由 Claude 回滚或继续执行。
 
 `--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
 runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
@@ -136,8 +137,8 @@ node "<helperPath>" --companion-path
 如果 subagent 内的 `Bash(node:*)` 被权限规则拒绝，按 Codex 调用失败暂停。Claude
 不得在主会话直接运行 companion，也不得改用其他方式绕过 subagent。
 
-首次复核完成后，先核对复核前后的 Git 状态或文件清单与 hash，确认 Codex 没有
-修改文件，再运行：
+首次复核完成后，先核对复核前后的文件集合、字节数和 SHA256；Git 项目同时核对
+Git 状态。确认 Codex 没有修改文件，再运行：
 
 ```bash
 node "<helperPath>"
@@ -176,10 +177,10 @@ node "<helperPath>" "<thread-id>"
 
 任务指令包含最终计划、验收标准、允许修改的范围和高风险停止条件。
 
-默认将整个 `Agent` 调用置于 Claude Code 后台；只有确认能很快完成的调用才放在
-前台。仍让 companion 以前台方式完成该 Codex turn，等待 Agent 完成通知后再验收。
-不要另开新的 Codex thread，也不要在等待时启动另一条 Codex 工作链。等待期间
-不得创建 Cron、automation、提醒或定时任务，只依赖 Agent 完成通知。
+整个 `Agent` 调用与 companion 都以前台方式完成该 Codex turn。每个执行或返工阶段
+最多发起一次 Agent 调用；没有拿到该调用的最终结果前，不得重复核对 candidate、重发
+Agent、另开 Codex thread 或启动另一条 Codex 工作链。等待期间不得创建 Cron、
+automation、提醒或定时任务。
 
 ### 4. Claude 验收
 
@@ -214,6 +215,8 @@ Claude 必须独立核验：
 
 出现分歧时，使用 `DISAGREEMENT_REPORT`。Codex 不可用时，使用
 `CODEX_FAILURE_REPORT`，暂停等待用户处理。不得改由 Claude 接管执行。
+分歧报告只整理双方已有判断、理由、证据、争议点和选项影响；不得推荐或代选方案，
+也不得新增双方尚未评估的折中方案。用户裁决后再继续。
 
 ## 安全边界
 

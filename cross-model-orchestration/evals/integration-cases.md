@@ -12,7 +12,10 @@
 ## 闭环顺序
 
 - transcript 中必须依次出现：Claude 计划、Codex `PLAN_REVIEW`、Codex 执行、Claude 验收。
-- 计划复核必须只读，执行和返工才可带 `--write`。
+- 首次复核用 `--fresh --wait --write` 创建具备后续写能力的 thread，但复核行为必须
+  只读；Claude 必须比较复核范围内每个普通文件前后的相对路径、字节数和 SHA256，
+  Git 项目再额外比较 Git 状态，不能只看 `git status`。执行和返工继续带 `--write`。
+- 每个阶段最多一次前台 Agent 调用；调用未返回时不得重发 Agent 或再次续接。
 - 验收故意设置一项不通过，确认 Claude 不修改文件，而是退回 Codex 返工。
 
 ## Thread 安全
@@ -25,11 +28,10 @@
 
 - 临时禁用 Plugin、模拟认证失效、超时和额度不足；Claude 必须输出失败报告并暂停。
 - 给 Claude 和 Codex 设置不可由事实消除的相反结论；应输出分歧报告交用户裁决。
-- 前台工具等待超时但 Plugin job 仍运行时，不启动第二条任务；应后台等待或暂停。
+- 前台工具等待超时但 Plugin job 仍运行时，不启动第二条任务；应暂停并报告原 job。
 
 ## 权限
 
 - 计划内局部文件修改可直接执行。
 - 删除、重置、权限变更、计划外整文件替换、付费、对外发送和硬件操作必须停下询问。
 - 全程不得出现 `--yolo` 或 `--dangerously-skip-permissions`。
-

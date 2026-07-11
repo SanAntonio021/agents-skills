@@ -33,12 +33,29 @@
 - A clean full-workflow retest used the synced Skill and passed helper resolution, but the long PLAN_REVIEW task contained literal newlines; Claude Code denied the otherwise exact `task *` rule. Claude paused with a failure report and did not take over. The workflow now serializes plan review, execution, and revision prompts as one-line XML/semicolon arguments with no literal CR/LF.
 - The final clean read-only canary completed Claude planning, Codex plan review, a same-thread revised plan review, Codex execution, and independent Claude verification. All Codex turns used thread `019f50dd-6033-7e82-a30c-9dec77a0a390`; resume candidate checks matched before every continuation; fixture hashes stayed unchanged.
 - The first one-line XML task exposed Git Bash path conversion for XML closing tags and `C:/` text inside the task argument. The Windows transport now uses one-line `field=value;` text and relative or backslash paths inside task arguments.
-- The first write canary proved that Plugin 1.0.6 cannot reliably upgrade a live broker thread from `read-only` to `workspace-write` on resume. Two same-thread turns included `--write`, but Codex turn context remained `read-only` and rejected `apply_patch`; both fixture hashes and the directory membership stayed unchanged. The workflow now creates the initial plan-review thread with `--fresh --wait --write`, keeps review behavior read-only by instruction, and requires Claude to compare Git state or file manifests/hashes before and after review.
+- The first write canary proved that Plugin 1.0.6 cannot reliably upgrade a live broker thread from `read-only` to `workspace-write` on resume. Two same-thread turns included `--write`, but Codex turn context remained `read-only` and rejected `apply_patch`; both fixture hashes and the directory membership stayed unchanged. The workflow now creates the initial plan-review thread with `--fresh --wait --write`, keeps review behavior read-only by instruction, and requires a content-level manifest (relative path, byte count, and SHA256 for every ordinary file in scope) before and after review; Git status is additional evidence, not the content check.
+- The post-fix write canary confirmed that the initial plan-review turn was created with `workspace-write` while remaining behaviorally read-only. `PLAN_REVIEW` returned `通过`; `acceptance.md` and `artifact.txt` retained their original hashes.
+- The first execution turn then failed before writing with `windows sandbox failed: helper_unknown_error: setup refresh had errors`. Claude did not edit either controlled file. `artifact.txt` remained `STATUS=ORIGINAL\n` (16 bytes, SHA256 `8E7618F8191E0F370F9E9D0CA6784353CB486C2AB1546CD5CAC4CECFE38295ED`) and `acceptance.md` remained SHA256 `8672BABB1A329F3EBCF167C85679DBCDCB50FEA2453C24A1F86557C7DCEDD408`.
+- That canary also exposed a Claude-side concurrency defect: the same execution phase launched two background Agent calls before the first completed, and the second call received `Task ... is still running`. The job belonged to the same canary and later completed; it was not an unrelated external task. The workflow now requires one foreground Agent call per phase and forbids re-running the helper, candidate check, or Agent while that call is pending.
+- Failure handling remained fail-closed: no retry after the sandbox result, no new Codex thread, and no Claude takeover. The full write/revision loop was not reached.
 
-## Deferred Until Runtime Sync
+## Quality and Contract Evals
 
-- Full write, Claude verification, and Codex revision loop on a disposable fixture after retesting the initial-thread sandbox fix.
-- Git and non-Git full workflow comparison.
-- Authentication failure, timeout, and real disagreement injection.
+- The Skill description was evaluated with 20 realistic trigger/non-trigger queries, three runs each, using an isolated `CLAUDE_CONFIG_DIR` and no Codex Plugin. The previous description passed 18/20 query labels: substantive-task invocation was 21/30 (70%) and exemption false positives were 0/30.
+- A shorter description that leads with the routing rule passed all 20/20 query labels across 60 runs: substantive-task invocation was 30/30 (100%) and exemption false positives were 0/30. No evaluation `claude.exe` processes remained after completion.
+- The no-Skill baseline has 0/30 substantive-task invocations and 0/30 exemption false positives. This is only a routing reference because an absent candidate cannot be invoked; it does not compare task-output quality.
+- `skill-creator` benchmark data and a static review viewer were generated under the implementation workspace. The viewer includes final routing results, the no-Skill reference, the previous description, and failure/disagreement contract outputs.
+- An isolated `CODEX_HOME` produced the real precondition result `codex login status` exit code 1 with `Not logged in`. Claude then emitted a complete `CODEX_FAILURE_REPORT`, paused, did not retry, and did not take over.
+- Timeout and thread-mismatch contract cases emitted complete failure reports with the provided job/thread IDs and paused without retry or takeover. The timeout case used an injected error report, not a live 600-second wait.
+- The substantive-disagreement contract case initially added a recommendation after the required report. The contract now forbids recommending, selecting, or inventing compromise options; the rerun produced only the two existing choices and their effects, then paused for user judgment.
+- In both a Git repository and a non-Git directory, the helper resolved the same Plugin 1.0.6 companion path. With no live Claude session ID it exited nonzero and refused a workspace-wide resume candidate.
+- CC Switch was stopped before the persistent permission repair, the database was backed up, and only the current Claude provider's `permissions.allow` was updated. After restart, all 8/8 Claude providers and the rendered `settings.json` contain exactly one `Skill(cross-model-orchestration)` entry; `PRAGMA integrity_check` is `ok`, and `codex@openai-codex` remains enabled.
 
-These tests remain rollout gates. Do not use the workflow for real write tasks until the read-only post-sync canary passes.
+## Remaining Rollout Gates
+
+- Full write, Claude verification, and same-thread Codex revision loop after the Windows sandbox failure is resolved and the user authorizes a new canary.
+- Git and non-Git full write workflow comparison; helper-only checks passed.
+- A live 600-second timeout injection; the report contract passed.
+- A live Plugin task with isolated unauthenticated Codex state; the real login precondition and report contract passed separately.
+
+These tests remain rollout gates. Do not use the workflow for real write tasks until the disposable full write/revision canary passes.

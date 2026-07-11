@@ -6,7 +6,7 @@ description: >
   Codex；适用于代码和非代码任务，包括文档、仿真、目录审计和 Skill 维护。
   Claude 负责规划与验收，Codex 先复核计划再执行，验收失败后续接返工，
   实质分歧交用户裁决。纯聊天、简单解释和单条只读命令不触发。
-compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, and user-level Bash(node:*) permission.
+compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, and exact user-level Bash permissions for the Plugin companion and this Skill helper.
 allowed-tools:
   - Read
   - Glob
@@ -62,8 +62,9 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ## 前置检查
 
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. 确认 Claude 用户级权限包含 `Bash(node:*)`。Skill frontmatter 的
-   `allowed-tools` 不会传给 `codex:codex-rescue` subagent，不能替代该权限。
+2. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令和本 Skill
+   helper。Skill frontmatter 的 `allowed-tools` 不会传给 `codex:codex-rescue`
+   subagent，不能替代用户级权限；不得用全局 `Bash(node:*)` 代替精确规则。
 3. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
 4. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
    `--resume` 目标的任务。
@@ -95,9 +96,17 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 `--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
 runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
 
+调用 Agent 前先运行：
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/check-resume-candidate.mjs" --companion-path
+```
+
+把返回的 `companionPath` 原样注入 Agent prompt。Plugin 更新后路径会变化；若新路径
+不在用户级权限中，按调用失败暂停，先更新精确权限，不扩大成 `Bash(node:*)`。
+
 每次 Agent prompt 都要重申：subagent 只能进行一次直接的
-`node "<CLAUDE_PLUGIN_ROOT 的绝对路径>/scripts/codex-companion.mjs" task ...` 调用。
-必须先使用 subagent 已知的 Plugin 根目录解析绝对路径，实际命令里不得保留 `$`、
+`node "<Claude 注入的 companionPath>" task ...` 调用。实际命令里不得保留 `$`、
 `${CLAUDE_PLUGIN_ROOT}` 或其他环境变量引用。不得先运行
 `--help`，不得创建临时文件，不得使用管道、重定向、here-doc、命令替换、`cd` 或
 复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。该 Bash tool call 必须

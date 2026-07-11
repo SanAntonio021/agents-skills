@@ -1,0 +1,22 @@
+[
+  {"query":"检查 D:\\BaiduSyncdisk\\.agents\\skills 下所有技能，找出重复、冲突、坏链接和可合并项，先给检查方案再执行。","should_trigger":true},
+  {"query":"我有一批太赫兹链路仿真结果，请读项目指标，跑必要分析并给出能否验收的结论。","should_trigger":true},
+  {"query":"把这个目录的 README 和三份说明文档统一成非程序员能看懂的版本，链接也要逐个验证。","should_trigger":true},
+  {"query":"调研现有 Claude Code 调 Codex 的方案，核实官方资料和源码，最后给安装建议。","should_trigger":true},
+  {"query":"请修改这个 Word 证明材料，保留模板格式，核对附件证据，完成后重新渲染检查。","should_trigger":true},
+  {"query":"帮我把项目里散落的实验记录整理成一份主日志，并检查命令、参数和结果是否对得上。","should_trigger":true},
+  {"query":"比较两个技术方案的成本、风险和实验条件，读取本地材料后给我推荐。","should_trigger":true},
+  {"query":"这个脚本跑出来的数据不对，查根因、修复并补验证。","should_trigger":true},
+  {"query":"检查整个项目有没有过时路径、重复规则和互相矛盾的说明，直接修好低风险问题。","should_trigger":true},
+  {"query":"把最近的会议记录和任务台账合并，检查行动项有没有遗漏或冲突。","should_trigger":true},
+  {"query":"解释一下什么是 sandbox mode。","should_trigger":false},
+  {"query":"现在几点？","should_trigger":false},
+  {"query":"运行 git status，把输出告诉我。","should_trigger":false},
+  {"query":"运行 Get-Date，只告诉我输出。","should_trigger":false},
+  {"query":"Codex 的中文怎么读？","should_trigger":false},
+  {"query":"用一句话解释 BER。","should_trigger":false},
+  {"query":"列出当前目录名称，不需要分析。","should_trigger":false},
+  {"query":"运行 Get-Location，只告诉我当前路径。","should_trigger":false},
+  {"query":"这条 PowerShell 命令是什么意思：Get-Date","should_trigger":false},
+  {"query":"你好，今天状态怎么样？","should_trigger":false}
+]

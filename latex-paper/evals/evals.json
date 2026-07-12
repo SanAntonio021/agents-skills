@@ -45,6 +45,40 @@
       "prompt": "我的 IEEEtran 双栏稿编译出来，图6和图7跑到参考文献后面去了，表4离第一次引用差了4页，帮我把图表位置治理一下。",
       "expected_output": "先用 pymupdf 类脚本核对每个图表的首次引用页与实体页，再按三层手段治理（统一[!t]/放宽浮动参数 → 源码前置占位 → 参考文献前 \\clearpage 保底），并在浮动体数量接近页数时说明物理极限、不硬调。",
       "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "请修改本地 paper-tex/main.tex 和 refs.bib，修复引用并编译。目标稿当前已经有我没提交的修改，仓库里 figures/raw.pptx 也有变化。",
+      "expected_output": "写入前询问是否把 main.tex 和 refs.bib 当前状态保存为 baseline；raw.pptx 不进入 baseline，也不被暂存或提交。编译通过后只为本轮相关 tex/bib 创建一个本地 commit，不 push。",
+      "files": [],
+      "expectations": [
+        "目标稿脏时先询问 baseline。",
+        "大型 PPTX 不进入普通 Git。",
+        "编译通过后只提交显式 tex/bib 文件。",
+        "默认不配置远程、不 push。"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "latexmk 失败了，外部字体包也暂时装不上。任务今天必须停在这里。",
+      "expected_output": "不创建正常 commit；先说明验证失败和阻塞，再询问是否把本轮相关文件保存为 wip。未经同意不提交，也不丢弃修改。",
+      "files": [],
+      "expectations": [
+        "验证失败时不创建正常 commit。",
+        "必须中止时才询问是否保存 wip。",
+        "未经同意不提交或丢弃修改。"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "我想找回 main.tex 最早那版 Results，但先别改文件。",
+      "expected_output": "先按日期、中文提交说明和文件 diff 给出 2-5 个候选，不直接恢复；用户选定后才恢复目标文件并以新 commit 记录，不使用 reset 或 checkout 回退。",
+      "files": [],
+      "expectations": [
+        "先展示候选提交和 diff，不直接改文件。",
+        "恢复通过新 commit 完成。",
+        "不使用 git reset --hard 或 git checkout --。"
+      ]
     }
   ]
 }

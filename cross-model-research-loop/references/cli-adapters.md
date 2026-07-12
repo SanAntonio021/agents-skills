@@ -23,6 +23,7 @@ EOF
 1. `--skip-git-repo-check`：目标目录不是受信任 git 仓库时必加，否则退出码 1 报 "Not inside a trusted directory"。
 2. `-c sandbox_mode="workspace-write"`：**codex exec 默认 read-only**，执行者建目录/写文件会被 "rejected: blocked by policy" 拦下且任务看似正常退出。凡任务要产出文件必加此参数。
 3. heredoc 用 `<<'EOF'`（单引号），防止任务文本里的 `$`、反引号被 shell 展开。
+3a. 反爬站点的事实核验任务（查官网、核对官方名称等），在任务书里指明走 `web-access` 技能的 CDP 通道——执行者经用户真实浏览器实访，能过 403 反爬；监督者侧的 WebFetch/无头抓取会被同一站点挡住，此时监督者旁证改用搜索引擎快照（2026-07-11 验证：厂商官网 403 挡 WebFetch，CDP 实访正常）。
 4. 用后台进程和日志轮询管理；不要与 Claude Code Plugin 的 job 管理混用。
 5. **会话不互通**：Codex Desktop 创建的会话无法用 CLI `codex exec resume <id>` 续接（版本/格式不兼容，报 "does not start with session metadata"）；CLI 创建的会话在 Desktop app 里不可见。跨入口续接的正确做法：新开 exec 会话，把上下文（文件路径 + 评审意见）写进任务指令——文件系统是共享的，会话不必共享。
 6. 会话记录落盘位置：`~\.codex\sessions\<yyyy>\<MM>\<dd>\rollout-*.jsonl`，可解析出执行过程用于排查；终端里 `codex resume` 可列出并进入 CLI 会话。

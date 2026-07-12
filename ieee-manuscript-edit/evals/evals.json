@@ -54,6 +54,40 @@
       "prompt": "我这段论文正文AI味太重了，'是……而非……''需要说明的是'到处都是，帮我去一去AI腔，但是数字和结论一个都不能动。",
       "expected_output": "按学术模式边界清理：改写否定对比句式为正面陈述、删金句式总结、防御性表述改中性事实陈述；保留全部数值/术语/LaTeX命令，结论力度不减；不注入个性化或第一人称表达。",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "请直接修改本地 main.tex 的 Results 小节。仓库里 notes.md 和另一个实验脚本有未提交改动，但和这次无关。改完请编译确认。",
+      "expected_output": "修改前记录状态并只锁定 main.tex 及本轮必要依赖；验证和编译通过后创建一个本地 commit，格式为“文稿：Results｜<修改目的>”；不得暂存、提交或取消暂存 notes.md 和无关脚本，不 push。",
+      "files": [],
+      "expectations": [
+        "只处理显式相关文件，不使用 git add .、git add -A 或 git commit -am。",
+        "编译验证通过后每轮只创建一个本地 commit。",
+        "commit 使用中文可检索格式。",
+        "不执行 git push。"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "刚才那轮已经改完并提交了，这版可以，作为投稿候选。",
+      "expected_output": "不给文件制造空改动或空 commit；在最近的相关 commit 上创建 annotated milestone tag，名称使用 milestone/YYYYMMDD-HHmmss-投稿候选，annotation 记录文件或章节和用户确认语义；若同秒重名则追加序号。",
+      "files": [],
+      "expectations": [
+        "识别用户明确的里程碑语义。",
+        "创建 annotated tag，不创建空 commit。",
+        "tag 指向最近的相关 commit。",
+        "不 push tag。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "只审查 main.tex 的摘要有没有术语和结论强度问题，先不要修改。",
+      "expected_output": "执行只读审查，不询问 Git，不创建 baseline、commit 或 tag。",
+      "files": [],
+      "expectations": [
+        "只读任务不触发版本保护。",
+        "不修改文件或 Git 状态。"
+      ]
     }
   ]
 }

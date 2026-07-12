@@ -15,6 +15,62 @@
       "id": "upstream-absorption-map",
       "prompt": "我想把 Imbad 和 K-Dense 的学术写作流程吸收到本地技能里，是不是一次把 jixian、tinggao、SCI 精修和指标论证都改了？",
       "expected_output": "先读取 academic-workflow-map.md，建议只改最相关的一处；说明 Imbad 主要吸流程门控，K-Dense 主要吸局部检查清单，不批量改多个下游 skill。"
+    },
+    {
+      "id": "local-md-write-triggers-version-protection",
+      "prompt": "请直接修改工作区里的 paper/draft.md，把第二节结构收紧并保存。这个项目还没有 Git。",
+      "expected_output": "路由到对应写作 skill 后，在首次写入前显示准确项目根目录，询问是否执行 git init -b main 并保存目标稿 baseline；明确只做本地版本记录、不配置远程、不 push。",
+      "files": [],
+      "expectations": [
+        "实际写入本地 md 时触发共享版本保护规则。",
+        "初始化前询问一次并显示准确项目路径。",
+        "初始化许可和 baseline 许可合并为一个问题。",
+        "明确不配置远程、不 push。"
+      ]
+    },
+    {
+      "id": "chat-only-rewrite-bypasses-version-protection",
+      "prompt": "只在聊天里把这句话改得更像论文，不要写入任何文件：The system has very good performance.",
+      "expected_output": "直接给出聊天内改写；不询问 Git，不创建 baseline、commit 或 tag。",
+      "files": [],
+      "expectations": [
+        "聊天内改句不触发版本保护。",
+        "不执行任何 Git 写操作。"
+      ]
+    },
+    {
+      "id": "block-overbroad-workspace-root",
+      "prompt": "当前工作区根目录是 D:\\BaiduSyncdisk\\Paper，里面有很多论文项目。请修改其中 2026-iqmimo-115g\\main.tex；这里还没有 Git。",
+      "expected_output": "拒绝在 D:\\BaiduSyncdisk\\Paper 初始化仓库，显示该准确路径并要求把工作区切到具体论文项目；不能自行猜测一个更深根目录后初始化。",
+      "files": [],
+      "expectations": [
+        "识别并拦截过大公共目录。",
+        "不在公共目录执行 git init。",
+        "要求改为具体项目工作区。"
+      ]
+    },
+    {
+      "id": "block-existing-overbroad-git-root",
+      "prompt": "我打开的是 D:\\BaiduSyncdisk\\Paper\\2026-iqmimo-115g，但 git rev-parse 返回的仓库根目录是 D:\\BaiduSyncdisk\\Paper。请继续修改 main.tex。",
+      "expected_output": "识别这是被误初始化的公共父仓库并停止，不沿用该仓库，也不自动创建嵌套仓库；显示准确父仓库路径，提示用户先处理公共父仓库。",
+      "files": [],
+      "expectations": [
+        "现有 Git 根同样经过公共目录拦截。",
+        "不沿用被误初始化的公共父仓库。",
+        "不自动创建嵌套 Git 仓库。"
+      ]
+    },
+    {
+      "id": "find-old-version-before-restore",
+      "prompt": "我想找回 draft.md 的旧版本，可能是上个月改结构前那版。先帮我按日期和提交说明找候选，不要直接改文件。",
+      "expected_output": "先按文件历史列出 2-5 个最相关候选，给出日期、中文提交说明、涉及文件和摘要 diff；等待用户选定后再恢复。恢复必须创建新 commit，不使用 git reset --hard 或 git checkout --。",
+      "files": [],
+      "expectations": [
+        "旧版本请求触发共享版本保护规则。",
+        "先给候选，不直接回退。",
+        "恢复通过新 commit 完成。",
+        "不使用破坏性 reset 或 checkout。"
+      ]
     }
   ]
 }

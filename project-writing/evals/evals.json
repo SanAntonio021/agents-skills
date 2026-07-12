@@ -1,0 +1,39 @@
+{
+  "skill_name": "project-writing",
+  "evals": [
+    {
+      "id": "init-git-before-local-md-edit",
+      "prompt": "D:\\BaiduSyncdisk\\申报书本子\\四川经信6G创新发展\\draft.md 还没有 Git。请直接把建设内容第三节改写并保存到文件。",
+      "expected_output": "首次写入前显示准确项目根目录并询问是否初始化本地 Git，同时说明将保存目标稿 baseline；不得在 D:\\BaiduSyncdisk 或 D:\\BaiduSyncdisk\\申报书本子公共目录初始化；获准后才执行 git init -b main，只做本地版本记录。",
+      "files": [],
+      "expectations": [
+        "实际写入本地 md 前触发版本保护。",
+        "问题中同时说明准确项目路径、baseline 范围、本地-only 和不上传。",
+        "拒绝在云盘根目录或申报书公共目录初始化仓库。",
+        "未经用户许可不初始化 Git。"
+      ]
+    },
+    {
+      "id": "dirty-target-baseline-and-unrelated-isolation",
+      "prompt": "项目已经是 Git 仓库。proposal.md 有我刚改但没提交的内容，budget.xlsx 也改了并已经暂存。请继续修改 proposal.md 的应用场景部分。",
+      "expected_output": "修改 proposal.md 前询问是否把它当前状态保存为 baseline；不得暂存、提交或取消暂存 budget.xlsx。获准保存 baseline 后完成本轮修改和验证，只提交 proposal.md 等显式相关文件。",
+      "files": [],
+      "expectations": [
+        "发现目标稿已有未提交修改时先询问 baseline。",
+        "不要求清理、不取消暂存、不提交无关 budget.xlsx。",
+        "禁止 git add .、git add -A 和 git commit -am。",
+        "本轮验证通过后只创建一个相关本地 commit。"
+      ]
+    },
+    {
+      "id": "read-only-review-does-not-trigger-git",
+      "prompt": "先只审查 proposal.md 的结构和卡点表述，列问题，不要改文件。",
+      "expected_output": "按工程申报口径给出只读审查结果，不询问 Git、不初始化仓库、不创建 baseline 或 commit。",
+      "files": [],
+      "expectations": [
+        "只读任务不触发 Git 版本保护。",
+        "不修改本地文件。"
+      ]
+    }
+  ]
+}

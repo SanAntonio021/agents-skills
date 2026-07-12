@@ -84,6 +84,12 @@
       "prompt": "我把 ExampleApp 从 C:\\Program Files\\ExampleApp 重装到了 D:\\Program Files\\ExampleApp。现在进程、开始菜单、自启动和新版卸载项都指向 D 盘 2.3.0；C 盘只剩两个已确认的旧 DLL，WOW6432Node 里还残留一个 2.2.0 卸载项。我已经同意清理，但精确执行 Remove-Item 报 Access to the path is denied。下一步怎么做才不会误删新版或用户配置？",
       "expected_output": "应加载 archive-and-file-ops reference；区分 Program Files/HKLM 的 ACL/UAC 权限与进程锁；先精确解析目标路径、白名单检查残留文件，并核对当前进程、版本、快捷方式、自启动以及新旧卸载项；普通删除确认因权限失败后，生成并检查短小的本地 PowerShell 脚本，在脚本内重复校验，再通过 Start-Process -Verb RunAs 触发 UAC；执行后从原会话复查旧目录和旧注册项消失、新版和用户数据仍完整；不要先 takeown/icacls，不要盲目递归删除，也不要删除 AppData。",
       "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "Claude Code 让 Codex CLI 0.144.1 写文件时失败：windows sandbox failed: helper_unknown_error: setup refresh had errors。codex doctor 却显示 ok。日志里还有 write ACE grant failed on D:\\tmp: SetNamedSecurityInfoW failed: 5。是不是要把 Windows Sandbox 功能打开，或者直接用 --yolo？",
+      "expected_output": "应加载 codex-windows-sandbox reference；区分 Codex 原生 elevated / unelevated 实现与 Windows Sandbox 虚拟机功能；指出在 CLI 0.144.1 本次实测中 doctor 的 sandbox.helpers 只确认配置可读、未做真实 workspace-write ACL refresh，并要求其他版本查看实际检查项；检查 turn_context 的 :slash_tmp/:tmpdir 和当天 sandbox 日志；优先在 [sandbox_workspace_write] 设置 exclude_slash_tmp = true，保留用户 TMPDIR，再用可丢弃目录做无临时覆盖的 workspace-write 写入探针并核对 errors=[]；禁止 --yolo、递归 takeown/icacls 和盲目启用 Windows Sandbox。",
+      "files": []
     }
   ]
 }

@@ -38,6 +38,9 @@
 - The first execution turn then failed before writing with `windows sandbox failed: helper_unknown_error: setup refresh had errors`. Claude did not edit either controlled file. `artifact.txt` remained `STATUS=ORIGINAL\n` (16 bytes, SHA256 `8E7618F8191E0F370F9E9D0CA6784353CB486C2AB1546CD5CAC4CECFE38295ED`) and `acceptance.md` remained SHA256 `8672BABB1A329F3EBCF167C85679DBCDCB50FEA2453C24A1F86557C7DCEDD408`.
 - That canary also exposed a Claude-side concurrency defect: the same execution phase launched two background Agent calls before the first completed, and the second call received `Task ... is still running`. The job belonged to the same canary and later completed; it was not an unrelated external task. The workflow now requires one foreground Agent call per phase and forbids re-running the helper, candidate check, or Agent while that call is pending.
 - Failure handling remained fail-closed: no retry after the sandbox result, no new Codex thread, and no Claude takeover. The full write/revision loop was not reached.
+- The sandbox failure was traced to the default `:slash_tmp` write root in `workspace-write`. On Windows it resolved to `C:\tmp` or `D:\tmp`; both directories were owned by `BUILTIN\Administrators`, so the non-elevated refresh could not add the sandbox ACL and returned `SetNamedSecurityInfoW failed: 5`. The Windows Sandbox optional VM feature was unrelated.
+- Global Codex config now sets `[sandbox_workspace_write] exclude_slash_tmp = true`. The per-user temporary directory remains available. A direct `workspace-write` probe without command-line overrides wrote successfully, and the sandbox log showed only `errors=[]` refreshes with no `C:\tmp` grant attempt.
+- The complete Claude-Codex write canary then passed in a clean Claude Code session. Plan review, DRAFT execution, Claude rejection, and FINAL rework all used Codex thread `019f545a-294b-7b63-871f-de01fb8a3ff8`, with exactly one foreground Agent call per phase. Final `artifact.txt` was 13 bytes, SHA256 `EE2E48FA71FCD8FC6B7366FDA323C01D8DA7A604ED9D964708019EA7BBFDE7DE`; `acceptance.md` stayed at SHA256 `8672BABB1A329F3EBCF167C85679DBCDCB50FEA2453C24A1F86557C7DCEDD408`.
 
 ## Quality and Contract Evals
 
@@ -53,9 +56,8 @@
 
 ## Remaining Rollout Gates
 
-- Full write, Claude verification, and same-thread Codex revision loop after the Windows sandbox failure is resolved and the user authorizes a new canary.
-- Git and non-Git full write workflow comparison; helper-only checks passed.
+- Git-repository full write workflow comparison; the non-Git full write/revision canary passed.
 - A live 600-second timeout injection; the report contract passed.
 - A live Plugin task with isolated unauthenticated Codex state; the real login precondition and report contract passed separately.
 
-These tests remain rollout gates. Do not use the workflow for real write tasks until the disposable full write/revision canary passes.
+The core disposable write/revision rollout gate is cleared. The remaining items are resilience coverage and do not block supervised use on ordinary tasks.

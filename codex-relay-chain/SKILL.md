@@ -5,7 +5,8 @@ description: >
   Windows 上维护 Codex 的多层中转链路。遇到 CodexCont、CC Switch/Cockpit、
   中转站切换、aijws/CodeRelay/聪明 AI 这类 OpenAI 兼容接口、Codex 配置被切回去、
   API key 被旧值覆盖、127.0.0.1:8787/15721 本地代理、Responses SSE 兼容性验证、
-  provider 地址误指本地端口形成回环、上游 503 归因、reasoning/encrypted_content/
+  provider 地址误指本地端口形成回环、上游 502/503/524 归因、三层链路对照、
+  reasoning/encrypted_content/
   reasoning_tokens 丢失、用户要求改直连/跳过本地代理/停用监视链路且 base_url
   改了又被自动改回本地端口时，优先使用本技能。
 ---
@@ -311,7 +312,7 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
 
 - **15721 起不来**：最常见原因是 `proxy_config.proxy_enabled` 仍为 0。可能是之前改直连时留下的残留（2026-07-13 实例），或 CC Switch 重启时从旧备份恢复了状态。再查一遍 DB 确认值为 1。
 - **CodexCont 启动后立即退出**：查 `%USERPROFILE%\.codexcont\logs\codexcont.err.log` 尾部。常见：venv 依赖缺失（重装 `pip install -r requirements.txt`）或端口被占用。
-- **Codex 更新后链路自动断开**：Codex 自动更新可能杀死 CodexCont 进程，且如果 `proxy_enabled=0`，CC Switch 重启也不会恢复 15721。解决：确保 `proxy_enabled=1` 持久写入 DB，并考虑给 `CodexCont Chain` 计划任务增加周期触发（而非仅登录触发）。
+- **Codex 更新后链路自动断开**：不要仅凭更新时间和 CodexCont 消失时间就认定存在因果。先保存 Windows 更新事件、CodexCont/CC Switch 的进程启动/退出时间、端口 PID 和日志尾部；只有找到明确的终止或异常退出证据才归因。`proxy_enabled=0` 是独立问题：它会让 CC Switch 重启后不启动 15721，但不能据此证明是 Codex 更新写入。优先使用会话启动、恢复和提交消息前的健康检查做自愈，不把“登录触发的计划任务”当作进程级监视器。
 
 ## Responses SSE 验证
 
@@ -339,10 +340,11 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
     "effort": "high"
   },
   "stream": true,
-  "store": false,
-  "max_output_tokens": 512
+  "store": false
 }
 ```
+
+除非目标 provider 已单独验证，否则最小健康探测不要加入 `max_output_tokens`；部分中转会直接返回不支持参数的 `400`。
 
 合格信号：
 
@@ -362,19 +364,33 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
 - `encrypted_content` 缺失：中转或代理可能过滤了 reasoning 加密内容。
 - `proxy_rounds` 缺失：请求可能没经过 CodexCont，或 CodexCont 没正常处理。
 
-### 上游 503 的归因
+### 上游 502/503/524 的归因
 
-本地链路返回 `503 Service temporarily unavailable` 时，不要立刻判断钩子或 CC Switch
-损坏。用同一模型、同一最小 Responses 请求做两次探测：
+本地返回 `502`、`503` 或 `524` 时，不要先把错误归因给 CodexCont 或 CC Switch。
+先区分“本机进程不可用”和“本地代理转发了远端错误”：
 
-1. 通过 `http://127.0.0.1:8787/v1/responses` 测完整本地链路。
-2. 绕过 `8787/15721`，直接请求目标 provider 的远端 `/v1/responses`。
+1. 测试前后记录 `8787`、`15721` 的监听 PID、进程启动时间，以及 Codex 和 CodexCont 的固定 URL。
+2. 从当前 provider 的结构化配置解析真实远端 `base_url`，不要从 provider 名称猜地址。
+3. 用同一模型、同一 list-form input、`stream=true`、`store=false` 的最小请求，交替测试三层：
+   - `http://127.0.0.1:8787/v1/responses`：完整本地链路；
+   - `http://127.0.0.1:15721/v1/responses`：绕过 CodexCont；
+   - 当前 provider 的远端 `/v1/responses`：绕过两个本地代理。
+4. 间歇性问题建议交替执行 3 轮。每次只报告 HTTP 状态、耗时、`Content-Type`、`Server`、
+   `cf-ray` 是否存在、`cf-error-type`/`cf-error-origin` 是否存在和最短错误类型，不输出完整 key 或 SSE body。
 
-两次请求都不输出完整 API key，也不回显完整 SSE body。判断规则：
+如果 CC Switch 已开启自动故障转移，同时读取 `proxy_config.auto_failover_enabled`、
+`providers.in_failover_queue` 和 `proxy_request_logs`，记录每次本地请求实际使用的 provider；
+否则备用 provider 可能把主 provider 的故障隐藏掉。诊断期间不要为了“证明故障”临时改写故障转移状态。
 
-- 本地链路和远端直连都返回同一 `503`：上游 provider 故障。
-- 远端直连正常、本地链路失败：继续查 CodexCont、CC Switch 转发或 live backup。
-- 本地链路正常、字段缺失：继续按 SSE 字段兼容性检查，不把它归为可用。
+判断规则：
+
+- `8787` 或 `15721` 未监听、连接被拒绝：本机服务故障。此时还没有到达远端，不能写成上游 `502/524`。
+- 本地和远端直连返回同一 `503`：上游 provider 故障。
+- 远端直连返回 `524`，响应是 Cloudflare 错误页且耗时接近默认 `120` 秒：远端源站响应超时；可参考 [Cloudflare Error 524](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/)。
+- 远端直连出现 `524`，而本地 `8787`/`15721` 返回 `200`：上游存在间歇性故障，本地转发路径在该次测试中可用；不能因为一次本地成功就否定远端超时。
+- CC Switch 日志写明“上游 HTTP 502/524”，同时记录远端 URL 和 HTML 错误页：优先判定为远端错误被转发。本轮远端直连未复现时，只写“高度疑似”，不要写成已完全证实。
+- 远端直连正常、本地链路失败：继续查 CodexCont、CC Switch 转发、live backup、回环地址和本机代理配置。
+- 本地链路返回 `200` 但 SSE 字段缺失：继续按 Responses 兼容性检查，不把它归为可用。
 
 目标 provider 故障时，切回最后一个通过完整 SSE 验证的 provider。切回后再次核对
 `currentProviderCodex`、`is_current`、Codex `base_url = "http://127.0.0.1:8787/v1"`，

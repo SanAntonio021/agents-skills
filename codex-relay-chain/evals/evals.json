@@ -36,6 +36,18 @@
       "prompt": "切到一个 Codex 中转站后本地 /v1/responses 返回 503。不要只看端口，帮我判断是本地代理坏了还是中转站上游断了；如果上游坏了别把 Codex 留在不可用状态。",
       "expected_output": "应使用同一最小 Responses 请求分别测试 8787 完整链路和 provider 远端直连，不输出完整 key 或 SSE body；两边同为 503 才判断上游故障，远端正常而本地失败则继续排查 CodexCont/CC Switch；上游故障时切回最后一个通过完整 SSE 验证的 provider，并再次核对 currentProviderCodex、is_current、Codex base_url 和完整 SSE 字段。",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "本地 Codex 偶尔报 524，但过一会儿又能正常对话。请用证据判断是 8787、15721 还是远端 provider，并注意 CC Switch 可能启用了自动故障转移。",
+      "expected_output": "应记录测试前后 8787/15721 的 PID，使用同一最小 stream=true 请求交替测试 8787、15721 和远端 provider；读取 auto_failover_enabled、in_failover_queue 和 proxy_request_logs 识别实际 provider；看到 Cloudflare HTML、Server=cloudflare、接近 120 秒的 524 时，应判断为远端源站间歇性超时，而不是把它归因于本地配置；本地 200 不足以否定远端偶发 524。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Codex 更新后 15721 没有监听，另一次对话却出现了 Cloudflare 502/524。请分开判断 CC Switch 进程退出和上游错误，不要把两件事混成一个根因。",
+      "expected_output": "应把 15721 无监听/连接被拒绝归为本机服务可用性问题，把 CC Switch 日志中的上游 HTTP 502/524 和远端 HTML 错误页归为远端错误转发；不能仅凭更新时间证明 Codex 更新杀死了独立 CodexCont，也不能仅凭 proxy_enabled=0 证明该字段由更新写入；应分别给出证据边界和置信度。",
+      "files": []
     }
   ]
 }

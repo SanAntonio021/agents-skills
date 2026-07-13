@@ -249,6 +249,70 @@ Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -W
 - 失去 CodexCont 的推理截断自动修复（`reasoning_tokens == 518*n-2` 场景），长推理任务理论上有恢复截断的风险。
 - 失去 cc-switch GUI 的切换/管理能力：以后在 GUI 里点这个 provider 的"切换"，大概率会把 (b) 重新打开、把 `base_url` 写回本地端口。之后要改 key 或模型，只能手动改 DB+文件，或者明确告知用户这个后果并重新走一遍本节。
 
+### 8. 重建链路 / 从直连恢复代理
+
+用户明确要求从直连切回本地代理链路时用本节。目标：恢复 `Codex → CodexCont(8787) → CC Switch(15721) → 远端` 的完整链路。
+
+#### 前置条件
+
+- CC Switch 进程正在运行（如果没有，先启动 `cc-switch.exe`）。
+- CodexCont 目录完好：`%USERPROFILE%\.codexcont\CodexCont\.venv\Scripts\python.exe` 存在。
+
+#### 落地顺序
+
+1. 备份 DB：
+   ```powershell
+   $ts = Get-Date -Format "yyyyMMdd_HHmmss"
+   Copy-Item "$env:USERPROFILE\.cc-switch\cc-switch.db" "$env:USERPROFILE\.cc-switch\cc-switch.db.bak_$ts"
+   ```
+
+2. 开启 CC Switch 代理——修改 `proxy_config` 表：
+   ```python
+   import sqlite3, os
+   db = os.path.expanduser(r"~\.cc-switch\cc-switch.db")
+   conn = sqlite3.connect(db)
+   conn.execute("UPDATE proxy_config SET proxy_enabled=1 WHERE app_type='codex'")
+   conn.commit()
+   conn.close()
+   ```
+
+3. 重启 CC Switch 让代理在 15721 生效：
+   ```powershell
+   Get-Process cc-switch -ErrorAction SilentlyContinue | Stop-Process -Force
+   Start-Sleep -Seconds 2
+   Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -WindowStyle Hidden
+   Start-Sleep -Seconds 5
+   ```
+
+4. 确认 15721 已监听：
+   ```powershell
+   Get-NetTCPConnection -State Listen -LocalPort 15721 -ErrorAction SilentlyContinue
+   ```
+   如果没有，检查 CC Switch 启动日志或 DB 是否被覆盖。
+
+5. 启动 CodexCont 链路：
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codexcont\Start-CodexContChain.ps1"
+   ```
+   合格信号：输出 `codexcont_listening: true`、`ccswitch_proxy_listening: true`、`watcher_running: true`。
+
+6. 确认 8787 监听：
+   ```powershell
+   Get-NetTCPConnection -State Listen -LocalPort 8787 -ErrorAction SilentlyContinue
+   ```
+
+7. 确认 `config.toml` 已被 hook 改为 8787：
+   ```powershell
+   Select-String -Path "$env:USERPROFILE\.codex\config.toml" -Pattern "base_url"
+   ```
+   预期：`base_url = "http://127.0.0.1:8787/v1"`。
+
+#### 常见卡点
+
+- **15721 起不来**：最常见原因是 `proxy_config.proxy_enabled` 仍为 0。可能是之前改直连时留下的残留（2026-07-13 实例），或 CC Switch 重启时从旧备份恢复了状态。再查一遍 DB 确认值为 1。
+- **CodexCont 启动后立即退出**：查 `%USERPROFILE%\.codexcont\logs\codexcont.err.log` 尾部。常见：venv 依赖缺失（重装 `pip install -r requirements.txt`）或端口被占用。
+- **Codex 更新后链路自动断开**：Codex 自动更新可能杀死 CodexCont 进程，且如果 `proxy_enabled=0`，CC Switch 重启也不会恢复 15721。解决：确保 `proxy_enabled=1` 持久写入 DB，并考虑给 `CodexCont Chain` 计划任务增加周期触发（而非仅登录触发）。
+
 ## Responses SSE 验证
 
 不要用 `/v1/models` 判断 Codex 是否可用。它只能初筛，不能证明 Responses 流和 reasoning 字段可用。

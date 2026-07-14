@@ -77,7 +77,7 @@
 - `portal_tasks`：页面任务、当前状态和完成证据，与生命周期阶段分开。
 - `blockers`：冲突、缺件、权限或待用户确认事项；解决后保留历史并标记 closed。
 - `authors`：`profile_id`、顺序、具体稿件角色和角色核验状态。
-- `files`：路径、提交文件名、用途、字节数、SHA256、提交阶段和上传状态。
+- `files`：路径、提交文件名、用途、字节数、SHA256、提交阶段和上传状态。可选 `provenance` 保存 `built_at`、`inputs`（每项含 `path`、可选 `size_bytes`、`sha256`）、`freshness_checked_at` 和 `freshness_status`（`verified`、`stale` 或 `unknown`）；没有 `inputs` 时只能使用 `unknown`，新版本追加记录，不覆盖已提交条目。
 - `declarations`：页面字段、选择、状态、来源和确认时间。
 - `official_sources`：URL、访问日期、关键要求摘要和适用范围。
 - `confirmation_gates`：必须单独确认的事项及当前状态。

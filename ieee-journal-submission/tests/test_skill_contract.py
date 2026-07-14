@@ -89,6 +89,22 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("`main document LaTeX source`", tmtt)
         self.assertIn("不是已确认的强制项", tmtt)
 
+    def test_submission_artifact_freshness_gate_is_documented(self):
+        safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
+        lifecycle = (ROOT / "references" / "lifecycle.md").read_text(encoding="utf-8")
+        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
+        rex = (ROOT / "references" / "research-exchange.md").read_text(encoding="utf-8")
+
+        self.assertIn("提交文件新鲜度检查", self.skill_text)
+        self.assertIn("输入在上传文件生成后发生变化", safety)
+        self.assertIn("不可变基线", safety)
+        self.assertIn("不静默替换", safety)
+        self.assertIn("只能记录为 `unknown`", safety)
+        self.assertIn("`provenance`", contracts)
+        self.assertIn("提交确认后的原子更新", lifecycle)
+        self.assertIn("明确显示 `Under Review`", lifecycle)
+        self.assertIn("最后一次文件上传重新生成或复核", rex)
+
 
 if __name__ == "__main__":
     unittest.main()

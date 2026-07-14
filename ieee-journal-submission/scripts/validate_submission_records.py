@@ -70,6 +70,7 @@ PROJECT_ROLE_KEYS = {
 
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 ORCID_RE = re.compile(r"^(?:https://orcid\.org/)?\d{4}-\d{4}-\d{4}-[\dX]{4}$")
+FRESHNESS_STATUSES = {"verified", "stale", "unknown"}
 
 
 def load_json(path: Path) -> Any:
@@ -183,6 +184,47 @@ def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[l
         checksum = file_item.get("sha256")
         if checksum is not None and not SHA256_RE.fullmatch(str(checksum)):
             errors.append(f"state.files[{index}].sha256 must be 64 hexadecimal characters")
+
+        provenance = file_item.get("provenance")
+        if provenance is None:
+            continue
+        if not isinstance(provenance, dict):
+            errors.append(f"state.files[{index}].provenance must be an object")
+            continue
+        freshness_status = provenance.get("freshness_status")
+        if freshness_status is not None and freshness_status not in FRESHNESS_STATUSES:
+            errors.append(
+                f"state.files[{index}].provenance.freshness_status must be one of "
+                + ", ".join(sorted(FRESHNESS_STATUSES))
+            )
+        inputs = provenance.get("inputs")
+        if inputs is None:
+            if freshness_status is not None and freshness_status != "unknown":
+                errors.append(
+                    f"state.files[{index}].provenance.freshness_status must be 'unknown' without inputs"
+                )
+            continue
+        if not isinstance(inputs, list):
+            errors.append(f"state.files[{index}].provenance.inputs must be a list")
+            continue
+        if not inputs and freshness_status is not None and freshness_status != "unknown":
+            errors.append(
+                f"state.files[{index}].provenance.freshness_status must be 'unknown' without inputs"
+            )
+        for input_index, input_item in enumerate(inputs):
+            path = f"state.files[{index}].provenance.inputs[{input_index}]"
+            if not isinstance(input_item, dict):
+                errors.append(f"{path} must be an object")
+                continue
+            if not input_item.get("path"):
+                errors.append(f"{path}.path is required")
+            input_checksum = input_item.get("sha256")
+            if not isinstance(input_checksum, str) or not SHA256_RE.fullmatch(input_checksum):
+                errors.append(f"{path}.sha256 must be 64 hexadecimal characters")
+            if "size_bytes" in input_item and (
+                type(input_item["size_bytes"]) is not int or input_item["size_bytes"] < 0
+            ):
+                errors.append(f"{path}.size_bytes must be a non-negative integer")
 
     for index, source in enumerate(data.get("official_sources", [])):
         if not isinstance(source, dict):

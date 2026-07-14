@@ -72,6 +72,47 @@ class ValidationTests(unittest.TestCase):
         errors, _ = MODULE.validate_state(state)
         self.assertTrue(any("withdrawal_transfer" in error for error in errors))
 
+    def test_invalid_provenance_input_is_rejected(self):
+        state = make_state("initial_submission", "Research Exchange")
+        state["files"] = [{
+            "path": "main_submission.pdf",
+            "sha256": "A" * 64,
+            "provenance": {
+                "built_at": "2026-07-14",
+                "inputs": [{"path": "main.tex", "size_bytes": 10, "sha256": "BAD"}],
+                "freshness_status": "verified",
+            },
+        }]
+        errors, _ = MODULE.validate_state(state)
+        self.assertTrue(any("provenance.inputs[0].sha256" in error for error in errors))
+
+    def test_valid_provenance_input_is_accepted(self):
+        state = make_state("initial_submission", "Research Exchange")
+        state["files"] = [{
+            "path": "main_submission.pdf",
+            "sha256": "A" * 64,
+            "provenance": {
+                "built_at": "2026-07-14",
+                "inputs": [{"path": "main.tex", "size_bytes": 10, "sha256": "B" * 64}],
+                "freshness_checked_at": "2026-07-14",
+                "freshness_status": "verified",
+            },
+        }]
+        errors, _ = MODULE.validate_state(state)
+        self.assertEqual(errors, [])
+
+    def test_provenance_without_input_snapshot_requires_unknown(self):
+        for status in ("verified", "stale"):
+            with self.subTest(status=status):
+                state = make_state("initial_submission", "Research Exchange")
+                state["files"] = [{
+                    "path": "main_submission.pdf",
+                    "sha256": "A" * 64,
+                    "provenance": {"freshness_status": status},
+                }]
+                errors, _ = MODULE.validate_state(state)
+                self.assertTrue(any("without inputs" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

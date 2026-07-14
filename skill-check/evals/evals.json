@@ -72,6 +72,18 @@
         "如果源码新但运行时旧，输出会明确说“源码已修，当前 Codex 仍未加载新版本”。",
         "输出会提醒用户通过 cc-switch 检查更新，不会建议直接修改 `.cc-switch` 或 `.codex`。"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "CC Switch 里技能显示已安装，但点击启动/同步时报 `Skill 不存在于 SSOT`。请检查数据库记录和 SSOT 下的 `<directory>\\SKILL.md`，判断是分支问题还是残留记录，并给出批量清理前的安全顺序。",
+      "expected_output": "先区分 repo 分支不一致和 SSOT 文件缺失；如果是残留记录，应列出所有受影响技能，要求确认范围，建议备份数据库、短事务清理并复查 integrity_check，不直接改 Codex 运行时目录。",
+      "files": [],
+      "expectations": [
+        "输出会核对 `settings.json` 的 SSOT 根目录和 `skills.directory` 对应的 `SKILL.md`。",
+        "输出会把缺失 SSOT 文件识别为数据库残留记录，而不是直接判断 GitHub 仓库不存在。",
+        "输出会建议批量清理前先备份、确认范围并保留 `skill_repos`。",
+        "输出会建议短事务和 `PRAGMA integrity_check`，并避免直接改 `.codex`。"
+      ]
     }
   ]
 }

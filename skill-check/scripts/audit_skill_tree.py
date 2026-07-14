@@ -135,7 +135,7 @@ def parse_simple_frontmatter(raw: str) -> dict[str, Any]:
         value = value.strip()
         if not key:
             continue
-        if value in {"|", ">"}:
+        if value in {"", "|", ">"}:
             current_key = key
             current_lines = []
         else:

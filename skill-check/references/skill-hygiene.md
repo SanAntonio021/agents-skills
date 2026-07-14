@@ -95,6 +95,18 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 日志位置：`C:\Users\SanAn\.cc-switch\logs\cc-switch.log`（含安装/更新/导入记录，可按日期定位操作）。
 
+## SSOT 记录残留与批量清理
+
+如果面板显示技能“已安装”，但点击启动/同步时报 `Skill 不存在于 SSOT`，先把它和分支问题分开：
+
+1. 根据 `settings.json` 的 `skillStorageLocation` 确定 SSOT 根目录。
+2. 对每条 `skills` 记录检查 `<SSOT 根目录>/<directory>/SKILL.md`。
+3. 目录或 `SKILL.md` 缺失时，这是数据库残留记录；不是 Codex 配置问题，也不能只看面板显示名判断已安装。
+4. 批量处理前先列出所有残留目录并让用户确认范围。只清理确认过的 `skills` 行，保留 `skill_repos`，不要直接删除运行时目录。
+5. CC Switch 无法关闭时，可用 SQLite 在线备份接口生成一致备份；随后用 `BEGIN IMMEDIATE` 执行短事务删除，提交后检查 `PRAGMA integrity_check`，再复查 SSOT 和 Codex 运行时目录。
+
+本 skill 仍只做只读审计；以上是用户明确批准后供维护者执行的最小修复顺序。
+
 ## 常见错误
 
 - 把源文件目录当成当前已加载 skill 列表

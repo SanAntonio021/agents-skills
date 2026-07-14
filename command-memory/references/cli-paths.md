@@ -16,6 +16,12 @@
 - preflight: `Test-Path "<CMD_WRAPPER_PATH>"`; 检查每个输入路径和日志父目录。
 - avoid: 再套一层 `cmd /c`; 把后续读取日志命令拼进同一条。
 
+### Pattern: npx-cmd-when-ps1-blocked
+- use_when: PowerShell 调用 `npx` 时命中 `npx.ps1` 的 execution policy 限制。
+- shape: `& (Get-Command npx.cmd).Source <FLAGS> <ARGS>`
+- preflight: `Get-Command npx.cmd`; 确认目标命令只是查询或已获用户授权的安装动作。
+- avoid: 原样重试 `npx`、修改系统 execution policy，或为了调用 `npx` 直接绕过整台机器的安全策略。
+
 ### Pattern: bypass-local-ps1-policy
 - use_when: 本地 `.ps1` 因 execution policy 报 `running scripts is disabled on this system`。
 - shape: `Start-Process -FilePath "powershell.exe" -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File','<SCRIPT_PATH>',<SCRIPT_ARGS>) -WorkingDirectory "<WORKDIR>" -WindowStyle Hidden -PassThru`

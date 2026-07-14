@@ -90,6 +90,12 @@
       "prompt": "Claude Code 让 Codex CLI 0.144.1 写文件时失败：windows sandbox failed: helper_unknown_error: setup refresh had errors。codex doctor 却显示 ok。日志里还有 write ACE grant failed on D:\\tmp: SetNamedSecurityInfoW failed: 5。是不是要把 Windows Sandbox 功能打开，或者直接用 --yolo？",
       "expected_output": "应加载 codex-windows-sandbox reference；区分 Codex 原生 elevated / unelevated 实现与 Windows Sandbox 虚拟机功能；指出在 CLI 0.144.1 本次实测中 doctor 的 sandbox.helpers 只确认配置可读、未做真实 workspace-write ACL refresh，并要求其他版本查看实际检查项；检查 turn_context 的 :slash_tmp/:tmpdir 和当天 sandbox 日志；优先在 [sandbox_workspace_write] 设置 exclude_slash_tmp = true，保留用户 TMPDIR，再用可丢弃目录做无临时覆盖的 workspace-write 写入探针并核对 errors=[]；禁止 --yolo、递归 takeown/icacls 和盲目启用 Windows Sandbox。",
       "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "PowerShell 里运行 `npx skills find` 报 `npx.ps1 cannot be loaded because running scripts is disabled`。请给出不改系统 execution policy 的下一步。",
+      "expected_output": "应建议先确认 `npx.cmd` 存在，再通过 `npx.cmd` 包装器调用，并避免原样重试 `npx` 或修改系统 execution policy。",
+      "files": []
     }
   ]
 }

@@ -33,6 +33,11 @@ T-MTT 实例中出现过以下页面或功能：
 - Research Exchange 平台联络人只能选择一位。它不等于稿件正文中只能有一位 corresponding author；两者分开记录。
 - CRediT 只在期刊启用时出现；出现后按页面规则为每位作者分配角色。
 - Additional Information 由期刊配置。某次没有 recommended reviewers 字段，不代表其他稿件也没有。
+- 如果当前稿件没有 `Recommended Reviewers` 字段，记录为 `not_present`，不要据此推断所有稿件都不要求推荐审稿人。除非当前页面或目标期刊明确要求，也不要把自行准备的名单塞进 Cover Letter。
+
+### Qualifications 动态字段
+
+`Article Type / Qualifications` 中的资格问题属于期刊配置的动态字段。T-MTT 本次流程曾出现“已识别 3-5 篇相关 T-MTT 论文”一类问题；处理时保存完整题目、帮助文字和当前选项，不把它自动解释为必须引用固定数量的论文。只有在用户确认实际相关论文和页面含义后，才勾选并记录证据。
 
 ## 文件上传
 

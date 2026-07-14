@@ -27,6 +27,8 @@
 - `orcid`；
 - `verification.status`、`source`、`verified_at`。
 
+`salutation` 是投稿页面显示的称谓，`academic_title` 是作者的实际职称。两者都按当前可靠来源和页面选项填写；不能仅为了表示尊重，把非教授作者填写为 `Prof.`。页面选项、作者实际职称或来源不清时保留 `pending`，不要猜填。
+
 字段可写成 `{value, status, source, verified_at}`。状态使用：
 
 - `verified`：有当前可靠来源；

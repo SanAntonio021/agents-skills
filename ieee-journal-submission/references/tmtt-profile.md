@@ -23,6 +23,8 @@
 4. 不把本次 source 要求推广到下一篇 T-MTT 稿件；
 5. 必要时向编辑部询问，不猜测。
 
+本次 `Article Type / Qualifications` 页面还出现过“已识别 3-5 篇相关 T-MTT 论文”一类资格问题。公开 `Information for Authors` 页面未见该字段，因此它只作为当前页面的动态要求记录。下一次遇到时，先保存完整字段原文和帮助文字，再核对用户实际识别的论文；不能把它自行扩展成固定引用数量或其他投稿硬性规则。
+
 ## 同行评审与返修
 
 - 当前指南说明 T-MTT 采用 single-anonymous peer review。

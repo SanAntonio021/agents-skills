@@ -52,6 +52,32 @@
         "输出一次只问一个当前最阻塞的问题；字段原文缺失时先索取字段原文，下一轮再问实际共享状态。",
         "输出把声明选择作为单独确认事项。"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "T-MTT 的 Research Exchange 页面问我是否已经识别 3-5 篇相关论文，但没有 Recommended Reviewers 字段；Cover Letter 还限制 500 words。请告诉我怎么处理。",
+      "expected_output": "把 3-5 篇论文识别为当前页面的动态资格问题，先核对完整题目和帮助文字；没有 Recommended Reviewers 字段时记录 not_present，不自行把名单放进 Cover Letter；500 words 作为上限，不为凑字数扩写；每个最终选择单独确认。",
+      "files": [],
+      "expectations": [
+        "输出要求读取 3-5 篇相关论文资格项的完整题目和帮助文字。",
+        "输出不把该资格项擅自解释成固定引用数量。",
+        "输出把 Recommended Reviewers 缺失记录为 not_present。",
+        "输出不在没有官方要求时把推荐名单放进 Cover Letter。",
+        "输出把 500 words 解释为上限而不是填满目标。"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "T-MTT 官网说初投稿只交小于 1 MB 的 PDF、不接受 ZIP，但 Research Exchange 上传页又要求 main document LaTeX source，还显示 Graphical Abstract。到底按哪个做？",
+      "expected_output": "并列记录公开指南与当前上传页面的冲突；当前字段只控制本次操作，不把 LaTeX source 要求推广到下一稿；Graphical Abstract 在公开指南中为 strongly encouraged 而非自动强制，仍以当前页面是否必填为准；不猜测字段含义。",
+      "files": [],
+      "expectations": [
+        "输出明确列出公开指南与当前页面的 LaTeX source 冲突。",
+        "输出只把当前页面要求用于本次投稿，不推广为稳定规则。",
+        "输出说明 Graphical Abstract 的公开指南措辞为 strongly encouraged。",
+        "输出根据当前页面是否必填判断本次是否必须上传。",
+        "输出不会把 Graphical Abstract 解释为全部正文图片的打包文件。"
+      ]
     }
   ]
 }

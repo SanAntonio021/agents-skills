@@ -74,6 +74,21 @@ class SkillContractTests(unittest.TestCase):
             },
         )
 
+    def test_practice_rules_from_tmtt_submission_are_documented(self):
+        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
+        materials = (ROOT / "references" / "material-templates.md").read_text(encoding="utf-8")
+        rex = (ROOT / "references" / "research-exchange.md").read_text(encoding="utf-8")
+        tmtt = (ROOT / "references" / "tmtt-profile.md").read_text(encoding="utf-8")
+
+        self.assertIn("`salutation` 是投稿页面显示的称谓", contracts)
+        self.assertIn("不能仅为了表示尊重", contracts)
+        self.assertIn("上限是最大值，不是应达到的目标", materials)
+        self.assertIn("记录为 `not_present`", rex)
+        self.assertIn("3-5 篇相关 T-MTT 论文", rex)
+        self.assertIn("公开 `Information for Authors` 页面未见该字段", tmtt)
+        self.assertIn("`main document LaTeX source`", tmtt)
+        self.assertIn("不是已确认的强制项", tmtt)
+
 
 if __name__ == "__main__":
     unittest.main()

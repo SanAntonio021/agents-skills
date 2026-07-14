@@ -5,6 +5,7 @@ __pycache__/
 # Generated temp artifacts
 word-template/tmp/
 ieee-journal-submission-workspace/
+archive/cleanup-*/
 
 # OS
 Thumbs.db

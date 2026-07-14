@@ -1,0 +1,18 @@
+{
+  "positive": [
+    "继续帮我走 IEEE 投稿流程",
+    "Research Exchange 的 Author Details 怎么填",
+    "T-MTT 收到 major revision 了",
+    "IEEE final files 要上传什么",
+    "copyright 和 Open Access 这一页怎么选",
+    "校样邮件来了，下一步怎么做",
+    "稿件已经上线 Xplore，帮我归档"
+  ],
+  "negative": [
+    {"prompt": "这篇论文投哪本 IEEE 期刊合适", "route": "journal-selection"},
+    {"prompt": "帮我润色 T-MTT 摘要", "route": "ieee-manuscript-edit"},
+    {"prompt": "投稿前模拟三个审稿人审一下", "route": "paper-review"},
+    {"prompt": "把 LaTeX source 打成可编译 zip", "route": "latex-paper"},
+    {"prompt": "这张 graphical abstract 怎么重画", "route": "paper-figure-review"}
+  ]
+}

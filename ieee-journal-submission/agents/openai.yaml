@@ -1,0 +1,4 @@
+interface:
+  display_name: "IEEE 期刊投稿助手"
+  short_description: "逐页协助 IEEE 期刊投稿全生命周期：准备、初投稿、编辑检查、审稿、返修、录用后文件、版权与费用、校样、Xplore 上线和归档。动态核对目标期刊官方规则与当前页面，一次只问一个问题，并对作者角色、声明、审稿人、最终提交、费用、版权、撤稿和转投设置单独确认。"
+  default_prompt: "Use $ieee-journal-submission to identify the current IEEE journal submission stage, verify the current journal guidance and submission page, ask one question at a time, maintain the private author/profile boundary and project submission state, and never confirm author roles, declarations, reviewers, final submission, fees, copyright, withdrawal, or transfer without explicit user approval."

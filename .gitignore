@@ -4,6 +4,7 @@ __pycache__/
 
 # Generated temp artifacts
 word-template/tmp/
+ieee-journal-submission-workspace/
 
 # OS
 Thumbs.db

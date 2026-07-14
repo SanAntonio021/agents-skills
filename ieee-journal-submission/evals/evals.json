@@ -1,0 +1,57 @@
+{
+  "skill_name": "ieee-journal-submission",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我准备第一次向 IEEE Transactions on Example Engineering 投稿，系统是 Research Exchange。我已经有主稿 PDF，但不知道接下来要准备什么。请一步一步带我做。",
+      "expected_output": "识别为 preparation/initial_submission；先核对当日官方指南和当前页面；一次只问一个问题；区分主稿、source 和其他附件；不自动最终提交。",
+      "files": [],
+      "expectations": [
+        "输出明确识别当前生命周期阶段。",
+        "输出要求核对目标期刊官方指南和当前投稿页面，而不是只给固定清单。",
+        "输出一次只问一个问题。",
+        "输出不把最终 Submit 视为可自动执行动作。",
+        "输出说明初投稿要求和录用后最终文件要求不能混用。"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "IEEE 稿件收到 Major Revision，编辑给了 30 天。三个审稿人一共 27 条意见，帮我继续走返修流程。",
+      "expected_output": "进入 decision_received/revision；先保存决定信原文并确认截止日期；建立逐条审稿意见台账；正文和 LaTeX 修改转交对应技能；返修最终提交单独确认。",
+      "files": [],
+      "expectations": [
+        "输出把 Major Revision 记录为决定类型并进入 revision。",
+        "输出要求保存决定信原文、截止日期和材料要求。",
+        "输出建立逐条审稿意见台账而不是只写概括。",
+        "输出区分投稿事务、正文精修和 LaTeX 工程职责。",
+        "输出把返修 Submit 设为单独确认动作。"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "文章已经被 IEEE 期刊接收，现在系统让我上传 final files、签 copyright，还出现了 Open Access 和费用选项。你帮我处理。",
+      "expected_output": "进入 accepted/final_files/copyright_fees；动态核对官方要求；最终生产文件、版权、OA 和费用分别确认；不替用户作财务或许可决定。",
+      "files": [],
+      "expectations": [
+        "输出区分 final files、copyright 和费用三个事项。",
+        "输出要求核对当前期刊和页面的官方规则。",
+        "输出不把初投稿 source 包直接当作生产文件。",
+        "输出要求用户单独确认 OA、费用和版权。",
+        "输出不自动同意协议或付款。"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我要投一个 IEEE 期刊，但这个系统我没见过，也不是 Research Exchange。页面现在问 Data Availability，我该选什么？",
+      "expected_output": "采用未知平台逐页识别；读取字段原文和帮助说明；核对期刊政策；解释 data availability 含义；只问一个与实际共享状态有关的问题，不猜 Yes/No。",
+      "files": [],
+      "expectations": [
+        "输出不会套用 Research Exchange 的固定页序。",
+        "输出要求读取当前字段说明和期刊官方政策。",
+        "输出不根据“提供数据更有说服力”猜选 Yes。",
+        "输出一次只问一个当前最阻塞的问题；字段原文缺失时先索取字段原文，下一轮再问实际共享状态。",
+        "输出把声明选择作为单独确认事项。"
+      ]
+    }
+  ]
+}

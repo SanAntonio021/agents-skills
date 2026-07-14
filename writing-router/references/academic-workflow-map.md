@@ -21,6 +21,7 @@
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
 | 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人 | `paper-review`（submission-gauntlet 模式） |
 | 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-selection` |
+| IEEE 期刊投稿事务 | 投稿系统、作者信息、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `ieee-journal-submission` |
 | 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |

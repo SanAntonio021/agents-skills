@@ -1,0 +1,71 @@
+{
+  "authors": {
+    "schema_version": "1.0",
+    "updated_at": "2026-07-14",
+    "privacy": {
+      "scope": "local-private",
+      "forbidden_fields": ["id_card", "phone", "student_id", "staff_id", "password", "biography"]
+    },
+    "authors": [
+      {
+        "profile_id": "author-alice-example",
+        "name_zh": {"value": "示例甲", "status": "verified"},
+        "given_name": {"value": "Alice", "status": "verified"},
+        "family_name": {"value": "Example", "status": "verified"},
+        "salutation": {"value": "Dr.", "status": "verified"},
+        "academic_title": {"value": "Researcher", "status": "verified"},
+        "affiliation": {
+          "institution": {"value": "Example University", "status": "verified"},
+          "department": {"value": "Department of Engineering", "status": "verified"},
+          "city": {"value": "Example City", "status": "verified"},
+          "province": {"value": null, "status": "pending"},
+          "postal_code": {"value": null, "status": "pending"},
+          "country_region": {"value": "Exampleland", "status": "verified"}
+        },
+        "emails": [{"value": "alice@example.edu", "priority": 1, "status": "verified"}],
+        "orcid": {"value": "0000-0001-2345-6789", "status": "verified"},
+        "verification": {"status": "verified", "source": "synthetic fixture", "verified_at": "2026-07-14"}
+      },
+      {
+        "profile_id": "author-bob-sample",
+        "name_zh": {"value": "示例乙", "status": "verified"},
+        "given_name": {"value": "Bob", "status": "verified"},
+        "family_name": {"value": "Sample", "status": "verified"},
+        "salutation": {"value": null, "status": "pending"},
+        "academic_title": {"value": null, "status": "pending"},
+        "affiliation": {
+          "institution": {"value": "Example University", "status": "verified"},
+          "department": {"value": null, "status": "pending"},
+          "city": {"value": "Example City", "status": "verified"},
+          "province": {"value": null, "status": "pending"},
+          "postal_code": {"value": null, "status": "pending"},
+          "country_region": {"value": "Exampleland", "status": "verified"}
+        },
+        "emails": [{"value": "bob@example.edu", "priority": 1, "status": "verified"}],
+        "orcid": {"value": "0000-0002-3456-789X", "status": "verified"},
+        "verification": {"status": "pending", "source": "synthetic fixture", "verified_at": "2026-07-14"}
+      }
+    ]
+  },
+  "states": [
+    {"name": "initial submission", "stage": "initial_submission", "platform": "Research Exchange"},
+    {"name": "major revision", "stage": "revision", "platform": "ScholarOne"},
+    {"name": "accepted final files", "stage": "final_files", "platform": "Research Exchange"},
+    {"name": "unknown platform", "stage": "preparation", "platform": "Unknown"}
+  ],
+  "unsafe_authors": {
+    "schema_version": "1.0",
+    "privacy": {"scope": "local-private"},
+    "authors": [
+      {
+        "profile_id": "unsafe-author",
+        "name_zh": "示例",
+        "given_name": "Unsafe",
+        "family_name": "Example",
+        "phone": "000-0000",
+        "emails": [],
+        "verification": {"status": "pending"}
+      }
+    ]
+  }
+}

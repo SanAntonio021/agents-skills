@@ -1,6 +1,6 @@
 ---
 name: paper-review
-description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修改还是默认停稿；投稿前另有把关模式（9 维预检 + 多视角模拟审稿）。Use when 用户要按严重程度审稿、判断还有没有必要继续润色、只看实质问题、在专利和申报写作里先审再决定是否继续改写，或论文投稿前要求过一遍投稿检查、预判审稿意见、模拟审稿人；prefer this over 起草或润色技能 when 目标是审查闸口，而不是直接改稿。
+description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修改还是默认停稿；投稿前另有把关模式（9 维预检 + 多视角模拟审稿）。Use when 用户要按严重程度审稿、判断有没有必要继续润色、只看实质问题、在专利和申报写作里先审再决定是否继续改写，或论文投稿前要求过一遍投稿检查、预判审稿意见、模拟审稿人；prefer this over 起草或润色技能 when 目标是审查闸口，而不是直接改稿。已经进入 IEEE 投稿系统、收到决定信、返修提交或录用后流程时，投稿事务转 `ieee-journal-submission`。
 ---
 
 # 停稿审查
@@ -77,6 +77,7 @@ C 类：风格偏好
 - SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
 - 选刊定位（投稿前把关的期刊口径来源）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
+- IEEE 投稿系统、决定信、返修提交和录用后事务：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
 
 ## 相关文件
 

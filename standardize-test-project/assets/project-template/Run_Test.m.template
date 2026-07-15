@@ -1,0 +1,49 @@
+function run = Run_Test()
+%RUN_TEST Hardware-free project entry example. Replace plan values as needed.
+
+project_root = fileparts(mfilename('fullpath'));
+addpath(genpath(fullfile(project_root, 'code')));
+
+point_index = 1:3;
+cfg = struct();
+cfg.ProjectRoot = project_root;
+cfg.RunType = 'dry_run';
+cfg.PlannedRunKind = 'scan';
+cfg.NameParts = {'Point1-3', 'step1'};
+cfg.ProjectName = '{{PROJECT_NAME}}';
+cfg.TestName = '计划检查';
+cfg.RunPurpose = 'validation';
+cfg.ExecutionMode = 'dry_run';
+cfg.EntryPoint = 'Run_Test.m';
+cfg.Safety = struct('preflight', 'not_applicable', ...
+    'initial_outputs', 'not_applicable', 'shutdown', 'not_applicable', ...
+    'shutdown_readback', 'not_applicable');
+cfg.PrimaryVariable = struct('name', '计划点序号', 'symbol', 'point_index', ...
+    'unit', '-', 'start', point_index(1), 'stop', point_index(end), 'step', 1);
+cfg.Parameters = struct('point_index', [point_index(1), point_index(end)], ...
+    'step', 1);
+cfg.Counts = struct('planned', numel(point_index));
+run = Result_Create_Run(cfg);
+
+headers = {'计划点序号', '状态', 'repeat', 'attempt', '采集时间', ...
+    '原始数据文件', '单次图片文件', '错误代码', '错误信息'};
+units = {'-', '-', '-', '-', '-', '-', '-', '-', '-'};
+Result_Summary_Initialize(run, headers, units);
+Result_Log_Stage(run, 'INFO', 'plan', ...
+    'Validated %d planned points without instrument access.', numel(point_index));
+
+options = struct('Title', 'dry-run 计划检查', 'XName', '计划点序号', ...
+    'XUnit', '-', ...
+    'PlannedCount', numel(point_index));
+Test_Project_Plot_Plan(fullfile(run.OutputDir, 'overview.png'), ...
+    point_index, options);
+
+counts = struct('planned', numel(point_index), 'executed', 0, ...
+    'succeeded', 0, 'failed', 0, 'invalid', 0);
+Result_Update_Run_Info(run, struct('counts', counts, ...
+    'safety', struct('preflight', 'not_applicable', ...
+    'initial_outputs', 'not_applicable', 'shutdown', 'not_applicable', ...
+    'shutdown_readback', 'not_applicable')));
+Result_Finalize_Run(run, 'completed', 'normal_completion', [], '');
+
+end

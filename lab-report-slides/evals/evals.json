@@ -1,0 +1,23 @@
+{
+  "skill_name": "lab-report-slides",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "生成今日汇报，只保留今天 Codex 和 Claude Code 中真正完成的实验、代码结果和下一步。先给我不超过 5 页的提纲。",
+      "expected_output": "按北京时间读取当天会话，合并子智能体，过滤 AI 套话，先输出提纲，不直接生成成品。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "生成本周组会汇报，把最近 7 天的测试结果和实验图片合并，沿用 D:\\BaiduSyncdisk\\组会 的格式。",
+      "expected_output": "读取最近 7 天，优先插入对话引用的图片，生成组会提纲并等待确认。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "把这篇论文 PDF 做成 15 页学术报告，保留公式、参考文献和论文图表。",
+      "expected_output": "不触发本技能，应转交论文到幻灯片技能。",
+      "files": []
+    }
+  ]
+}

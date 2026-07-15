@@ -1,0 +1,22 @@
+{
+  "source": "D:\\BaiduSyncdisk\\组会\\20260506.pptx",
+  "slide_size": "16:9",
+  "slide_count_sample": 7,
+  "background": "#FFFFFF",
+  "font_family": ["等线", "Microsoft YaHei", "Arial"],
+  "theme_colors": {
+    "heading": "#24364B",
+    "primary_blue": "#4472C4",
+    "secondary_blue": "#5B9BD5",
+    "muted": "#6B7280",
+    "panel": "#F3F6FA",
+    "border": "#D9E2F0"
+  },
+  "content_pattern": [
+    "总览",
+    "测试证据",
+    "原因判断",
+    "下一步"
+  ],
+  "media_pattern": "实验截图、频谱图、曲线图优先"
+}

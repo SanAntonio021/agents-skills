@@ -1,0 +1,28 @@
+# {{PROJECT_NAME}}
+
+本项目用于实验、仪器测试、参数扫描、科研仿真及其离线分析。
+
+## 从哪里开始
+
+- 人工运行：打开根目录的 `Run_Test.m` 或 `run_test.py`。
+- 查看一轮结果：先看 `overview.png`，再看 `summary.csv`。
+- 查运行配置和异常：读取同一运行目录的 `run_info.json` 与 `run_log.txt`。
+
+## 目录
+
+- `code/experiments/`：单点、扫频、扫功率等完整测试流程。
+- `code/instrument_control/`：仪器发现、连接、查询、写入与安全收尾。
+- `code/acquisition/`：数据采集。
+- `code/signal_processing/`：处理与指标计算。
+- `code/result_management/`：运行目录、命名、JSON、CSV 和日志。
+- `code/plotting/`：星座图、频谱图和扫描总览图。
+- `code/analysis/`：单运行复盘与跨运行分析代码。
+- `code/simulation/`：仿真代码。
+- `results/`：新规范下的全部运行结果。
+- `archive/`：退役代码与旧说明，不放正式结果。
+
+结果分为 `single_point`、`scan`、`dry_run`、`simulation` 和 `analysis`。一轮运行只建立一个扁平目录，不在里面建立参数点或重复次数子目录。
+
+## 当前状态
+
+项目脚手架已建立。真实仪器运行前，需要在项目规则和配置中补齐仪器角色、物理接线、允许写入的参数与安全收尾要求。

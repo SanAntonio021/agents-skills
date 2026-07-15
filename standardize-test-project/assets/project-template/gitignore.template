@@ -1,0 +1,22 @@
+# Generated run artifacts
+results/**
+
+# Local instrument or GUI state
+config/*.mat
+config/*_local.json
+config/*_local.yaml
+
+# MATLAB
+*.asv
+*.m~
+slprj/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# OS and editor state
+.DS_Store
+Thumbs.db
+.vscode/

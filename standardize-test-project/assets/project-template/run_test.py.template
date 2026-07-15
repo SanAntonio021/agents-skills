@@ -1,0 +1,90 @@
+"""Hardware-free project entry example. Replace plan values as needed."""
+
+from pathlib import Path
+import sys
+
+import numpy as np
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "result_management"))
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "plotting"))
+
+from test_project_plots import plot_plan_overview
+from test_project_results import (
+    create_run,
+    finalize_run,
+    initialize_summary,
+    log,
+    update_run_info,
+)
+
+
+def main() -> None:
+    point_index = np.array([1.0, 2.0, 3.0])
+    run = create_run(
+        PROJECT_ROOT,
+        "dry_run",
+        ["Point1-3", "step1"],
+        project_name="{{PROJECT_NAME}}",
+        test_name="计划检查",
+        purpose="validation",
+        execution_mode="dry_run",
+        planned_run_kind="scan",
+        entry_point="run_test.py",
+        primary_variable={
+            "name": "计划点序号",
+            "symbol": "point_index",
+            "unit": "-",
+            "start": 1,
+            "stop": 3,
+            "step": 1,
+        },
+        parameters={"point_start": 1, "point_stop": 3, "point_step": 1},
+        planned_count=point_index.size,
+        safety={"preflight": "not_applicable", "shutdown": "not_applicable"},
+    )
+    initialize_summary(
+        run,
+        [
+            "计划点序号",
+            "状态",
+            "repeat",
+            "attempt",
+            "采集时间",
+            "原始数据文件",
+            "单次图片文件",
+            "错误代码",
+            "错误信息",
+        ],
+        ["-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    )
+    log(run, "INFO", "plan", f"已检查 {point_index.size} 个计划点，未访问仪器")
+    plot_plan_overview(
+        run.run_dir / "overview.png",
+        point_index,
+        title="dry-run 计划检查",
+        x_name="计划点序号",
+        x_unit="-",
+        planned_observations=point_index.size,
+    )
+    counts = {
+        "planned": int(point_index.size),
+        "executed": 0,
+        "succeeded": 0,
+        "failed": 0,
+        "invalid": 0,
+    }
+    update_run_info(
+        run,
+        {
+            "counts": counts,
+            "safety": {"preflight": "not_applicable", "shutdown": "not_applicable"},
+        },
+    )
+    finalize_run(run, "completed", "normal_completion", counts=counts)
+    print(run.run_dir)
+
+
+if __name__ == "__main__":
+    main()

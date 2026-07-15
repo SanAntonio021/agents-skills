@@ -1,0 +1,86 @@
+[
+  {
+    "query": "我要新建一个 MATLAB 项目，控制温箱和示波器做温度扫描。请把人工入口、仪器控制、采集、结果目录、每个点的原始波形和总览图都规划好，以后每轮测试自动按同一格式保存。",
+    "should_trigger": true
+  },
+  {
+    "query": "D:\\Lab\\receiver_test 现在扫频、单点复测和 dry-run 全混在 output 里。帮我重构未来结果路径，但旧数据不要动；CSV 要能先看 BER/EVM/MER，再追溯原始数据。",
+    "should_trigger": true
+  },
+  {
+    "query": "写一个 Python 的 AWG 幅度扫描测试项目。每个幅度重复 5 次，失败要保留 attempt，运行结束自动出 300 dpi 汇总图，不能覆盖上次结果。",
+    "should_trigger": true
+  },
+  {
+    "query": "这个器件测试以后既有实测也有仿真。我想统一 single point、scan、simulation、dry-run 和跨批次分析的目录，并让离线复盘能找到原始 run。",
+    "should_trigger": true
+  },
+  {
+    "query": "给这个新建的光通信误码测试代码做通用项目模板，根目录只放我会点的脚本，单次结果里面不要再套子文件夹。",
+    "should_trigger": true
+  },
+  {
+    "query": "把现有星座图、频谱图、扫频图和扫功率图统一成日常可读的论文风格。每个扫描点保留单图，整轮再有 overview.png，并把保存规则接到实验代码里。",
+    "should_trigger": true
+  },
+  {
+    "query": "我准备做磁场正反向两批测量，先分别保存完整运行，之后联合比较。请设计 sources.txt、run_info.json 和不会覆盖原数据的离线分析流程。",
+    "should_trigger": true
+  },
+  {
+    "query": "给这套频谱仪自动测试增加完全不连仪器的计划检查模式，同时确保 preflight 只读查询不会被当成 dry-run。结果也要按统一目录保存。",
+    "should_trigger": true
+  },
+  {
+    "query": "以后换新项目时我不想再讨论结果放哪里。请建立可复用的实验测试脚手架，MATLAB 和 Python 都能用，带无硬件校验。",
+    "should_trigger": true
+  },
+  {
+    "query": "固定 25.0 摄氏度连续采 20 次和从 20.0 扫到 80.0 摄氏度应该怎么分目录？请直接落地到当前实验工程，并规范 repeat、attempt 和失败文件。",
+    "should_trigger": true
+  },
+  {
+    "query": "新建一个纯 Python Monte Carlo 通信仿真项目，不连接任何仪器。我要扫描 SNR 和随机种子，每轮保存原始统计、run_info.json、summary.csv 和 300 dpi overview.png，之后还能跨运行比较。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们 Web 服务的 tests 目录太乱了，帮我把 pytest unit、integration、e2e 和 fixtures 重新分层，CI 继续跑。",
+    "should_trigger": false
+  },
+  {
+    "query": "给这个 React 项目补 Jest 单元测试和 Playwright 端到端测试，覆盖登录失败和 token 过期。",
+    "should_trigger": false
+  },
+  {
+    "query": "阅读 results.csv，按客户、月份和产品做销售数据透视表，再画一个季度趋势图。这个仓库不控制仪器，也不产生实验 run。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我整理博士论文资料目录，分成文献、图、草稿和投稿版本，并写 README。",
+    "should_trigger": false
+  },
+  {
+    "query": "MATLAB 的 runtests 报错 TestFoo 找不到函数，诊断一下测试路径和 package 命名。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这 200 个历史实验结果文件迁移成新名字并删除重复文件，直接执行，不需要新的实验代码规范。",
+    "should_trigger": false
+  },
+  {
+    "query": "只审查这张已经画好的 BER 曲线是否符合 IEEE 图件要求，不修改项目目录或运行保存方式。",
+    "should_trigger": false
+  },
+  {
+    "query": "给一个普通 FastAPI 服务建立 src、tests、docs、deploy 目录，结果只返回 JSON，不涉及科研实验、仪器或仿真运行。",
+    "should_trigger": false
+  },
+  {
+    "query": "总结这篇器件测试论文的实验方法和关键指标，PDF 在下载目录。",
+    "should_trigger": false
+  },
+  {
+    "query": "我有两个现成 CSV，做一次离线统计显著性检验并解释 p 值；没有原始实验项目，也不需要建立长期运行目录。",
+    "should_trigger": false
+  }
+]

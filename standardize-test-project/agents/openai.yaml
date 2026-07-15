@@ -1,0 +1,4 @@
+interface:
+  display_name: "测试项目标准化"
+  short_description: "统一实验、仪器测试与科研仿真项目的目录、结果和绘图"
+  default_prompt: "Use $standardize-test-project to scaffold and standardize this experimental test project."

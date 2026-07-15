@@ -395,33 +395,34 @@ def recent_files(paths: Iterable[Path], start: datetime, end: datetime, include_
     return result
 
 
-def codex_session_files(root: Path, start: datetime, end: datetime) -> list[Path]:
+def session_index_ids(root: Path, start: datetime, end: datetime) -> set[str]:
+    index_ids: set[str] = set()
+    index_path = root / "session_index.jsonl"
+    if not index_path.exists():
+        return index_ids
+    try:
+        with index_path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                updated = parse_timestamp(item.get("updated_at"))
+                if updated is not None and start <= updated < end and item.get("id"):
+                    index_ids.add(str(item["id"]))
+    except OSError:
+        pass
+    return index_ids
+
+
+def codex_session_files(root: Path, start: datetime, end: datetime, include_archived: bool = True) -> list[Path]:
     """Visit only date directories and index entries that can contain recent events."""
     session_root = root / "sessions"
     if not session_root.exists():
         return []
-    target_markers = {
-        f"/{(start.date() + timedelta(days=offset)).year:04d}/{(start.date() + timedelta(days=offset)).month:02d}/{(start.date() + timedelta(days=offset)).day:02d}/"
-        for offset in range((end.date() - start.date()).days)
-    }
-    first_marker = f"/{(start.date() - timedelta(days=1)).year:04d}/{(start.date() - timedelta(days=1)).month:02d}/{(start.date() - timedelta(days=1)).day:02d}/"
-    index_ids: set[str] = set()
-    index_path = root / "session_index.jsonl"
-    if index_path.exists():
-        try:
-            with index_path.open("r", encoding="utf-8", errors="replace") as handle:
-                for line in handle:
-                    try:
-                        item = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    updated = parse_timestamp(item.get("updated_at"))
-                    if updated is not None and start <= updated < end and item.get("id"):
-                        index_ids.add(str(item["id"]))
-        except OSError:
-            pass
+    index_ids = session_index_ids(root, start, end)
     result: list[Path] = []
-    current = start.date()
+    current = start.date() - timedelta(days=1)
     last = end.date() - timedelta(days=1)
     while current <= last:
         directory = session_root / f"{current.year:04d}" / f"{current.month:02d}" / f"{current.day:02d}"
@@ -435,6 +436,17 @@ def codex_session_files(root: Path, start: datetime, end: datetime) -> list[Path
             else:
                 result.extend(entries)
         current += timedelta(days=1)
+    if include_archived:
+        archived = root / "archived_sessions"
+        if archived.exists() and index_ids:
+            try:
+                result.extend(
+                    archived / entry.name
+                    for entry in os.scandir(archived)
+                    if entry.is_file() and entry.name.endswith(".jsonl") and any(session_id in entry.name for session_id in index_ids)
+                )
+            except OSError:
+                pass
     return result
 
 
@@ -443,10 +455,7 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
     codex_root = Path(args.codex_root).expanduser()
     claude_root = Path(args.claude_root).expanduser()
     sessions: OrderedDict[str, dict[str, Any]] = OrderedDict()
-    codex_files = codex_session_files(codex_root, start, end)
-    archived = codex_root / "archived_sessions"
-    if getattr(args, "include_archived", False) and archived.exists():
-        codex_files.extend(recent_files((item for item in archived.iterdir() if item.suffix.lower() == ".jsonl"), start, end))
+    codex_files = codex_session_files(codex_root, start, end, getattr(args, "include_archived", True))
     for path in codex_files:
         parse_codex_file(path, start, end, sessions)
     projects = claude_root / "projects"
@@ -497,7 +506,7 @@ def main() -> None:
     parser.add_argument("--codex-root", default=str(Path.home() / ".codex"))
     parser.add_argument("--claude-root", default=str(Path.home() / ".claude"))
     parser.add_argument("--scan-fallback", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--include-archived", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--include-archived", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--scan-seconds", type=float, default=5.0)
     parser.add_argument("--scan-files", type=int, default=2000)
     parser.add_argument("--out", required=True, help="Output JSON path")

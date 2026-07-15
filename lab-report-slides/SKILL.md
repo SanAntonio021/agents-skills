@@ -38,9 +38,10 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 
 Default sources:
 
-- Codex: `%USERPROFILE%\.codex\sessions\**\rollout-*.jsonl`. Archived rollouts are opt-in because
-  the archive is a large flat directory on this machine; use `--include-archived` only when the
-  user explicitly asks to include archived sessions.
+- Codex: `%USERPROFILE%\.codex\sessions\**\rollout-*.jsonl` plus archived rollouts whose
+  `session_index.jsonl` entry was updated inside the selected window. The collector matches
+  archive filenames by session ID and does not stat the whole archive. Use `--no-include-archived`
+  only when the user explicitly wants to exclude archived sessions.
 - Claude Code: `%USERPROFILE%\.claude\projects\**\*.jsonl`.
 
 The collector converts event timestamps to `Asia/Shanghai`, so a session started yesterday but

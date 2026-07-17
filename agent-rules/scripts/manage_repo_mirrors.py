@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
         sub = subparsers.add_parser(name)
         sub.add_argument(
             "--registry",
-            default="<agents-root>/upstreams/repo-mirrors.toml",
+            default="<agents-root>/upstream/repo-mirrors.toml",
             help="Path to repo-mirror registry TOML.",
         )
         sub.add_argument("--id", action="append", dest="ids", help="Mirror id to target. May be repeated.")
@@ -78,7 +78,10 @@ def run_git(
 def should_retry_with_openssl(output: str) -> bool:
     lowered = output.lower()
     return "schannel" in lowered and (
-        "acquirecredentialshandle failed" in lowered or "sec_e_no_credentials" in lowered
+        "acquirecredentialshandle failed" in lowered
+        or "sec_e_no_credentials" in lowered
+        or "failed to receive handshake" in lowered
+        or "ssl/tls connection failed" in lowered
     )
 
 

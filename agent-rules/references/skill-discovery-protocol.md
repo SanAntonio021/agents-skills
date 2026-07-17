@@ -19,7 +19,7 @@
 - `archive/`
 - `docs/`
 - 仅用于说明的散落 `.md`
-- 用户自己维护的上游整仓镜像（例如 `<agents-root>\upstreams\`）
+- 用户自己维护的上游整仓镜像（例如 `<agents-root>\upstream\`）
 
 ## 基本查找规则
 
@@ -81,10 +81,10 @@
 
 ## 上游整仓镜像怎么处理
 
-- 用户本地可维护 `<agents-root>\upstreams\` 这类零暴露上游整仓镜像。
+- 用户本地可维护 `<agents-root>\upstream\` 这类零暴露上游整仓镜像。
 - 即使镜像内部包含 `SKILL.md`，也不直接参与技能查找。
 - 只允许接入层技能显式读取其中内容。
-- 上游镜像的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstreams\repo-mirrors.toml`，不要把它混进当前同步技能仓。
+- 上游镜像的登记入口应放在用户自管的 TOML，例如 `<agents-root>\upstream\repo-mirrors.toml`，不要把它混进当前同步技能仓。
 - 如果要检查或同步这类镜像，使用 [../scripts/manage_repo_mirrors.py](../scripts/manage_repo_mirrors.py)。
 
 ## 什么时候不要先去找新技能

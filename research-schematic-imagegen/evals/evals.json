@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "我要给工程申报答辩做四张统一风格的关键技术示意图，白底蓝灰色，每项技术一张。先根据当前项目记录核对技术边界，再出图，不要改申报书和PPT。",
-      "expected_output": "先建立系列视觉合同和四份技术合同；先确认一张风格基准图；最终目录恰好四张；不修改申报书或PPT。",
+      "expected_output": "先建立系列视觉合同和四份技术合同；先确认一张风格基准图；本轮交付 manifest 恰好四张；不修改申报书、PPT或任务开始前已存在的图片。",
       "files": []
     },
     {
@@ -47,6 +47,12 @@
       "id": 8,
       "prompt": "我把多个 OpenAI 兼容中转站导入了 CC Switch，里面有的支持聊天，有的支持生图。请从 CC Switch 只读找出支持图像模型的 provider；如果只有一个自动用，多个就停下来让我选，不要切换 Codex 聊天 provider，也不要输出 key。",
       "expected_output": "读取 providers 结构化配置；补齐 /v1 后探测 /models；按图像模型筛选并合并重复基址+key；唯一候选自动选择，多候选报告名称和 ID；不改 DB、不切换聊天 provider、不打印 key。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "research-schematic-imagegen/final 里任务开始前已经有两张历史定稿。这次再生成两张新图并做尺寸检查。请整理最终输出，但不要改动之前的图。",
+      "expected_output": "开始前盘点既有文件并视为用户资产；不移动、删除、重命名、覆盖或归档历史图；为本轮两张图建立 manifest，或使用任务级 final 子目录；验证只统计本轮交付，历史 PNG 只报告为 extra_files；历史文件路径、内容和元数据保持不变。",
       "files": []
     }
   ]

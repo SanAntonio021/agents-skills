@@ -33,9 +33,17 @@ compatibility: Node.js 18+ for OpenAI-compatible image API scripts; Windows Powe
 
 ## 工作流
 
-### 1. 确定图像工具
+### 1. 确定图像后端
 
-优先使用宿主原生图像工具。需要本地 OpenAI 兼容接口时，先运行：
+本 skill 的图像请求与 Codex/Claude 聊天 provider 解耦。不要为了生图切换 CC Switch 当前聊天 provider；只支持 `/images/generations` 或 `/images/edits` 的中转站不能承担聊天请求。
+
+按以下顺序选择后端：
+
+1. 用户明确指定并已配置 OpenAI 兼容图像接口时，使用本地脚本直接调用该接口。
+2. 没有可用本地接口且宿主提供原生图像工具时，使用宿主原生工具。
+3. 两者都不可用时，只输出提示词并报告原因。
+
+本地 OpenAI 兼容接口先运行：
 
 ```powershell
 node <skill-dir>/scripts/check-mode.js --json
@@ -45,10 +53,17 @@ node <skill-dir>/scripts/check-mode.js --json
 
 - `ENABLE_RESEARCH_IMAGEGEN=1` 且存在 API key 才允许本地脚本发起付费或计费请求。
 - API key 只通过当前进程环境变量传入，不写进 skill、项目文件、命令行参数或输出日志。
-- 未经用户确认，不启用备用 CLI/API，不切换 CC Switch 当前 provider。
+- 用户未明确确认前，不启用付费本地接口；不切换 CC Switch 当前 provider。
 - `/models` 只说明模型名可见，不能证明 `/images/generations` 或 `/images/edits` 可用。
 - 需要判断渠道时，以用户确认后的真实小规模生成或编辑调用为准。
 - 认证、配额、超时、运行时或渠道错误按原文简短报告，不静默换路。
+
+密钥只通过当前进程环境读取。技能会自动发现以下用户私有配置文件（按顺序，显式 `RESEARCH_IMAGE_ENV_FILE` 优先）：
+
+- `~/.config/research-schematic-imagegen/image-api.env`
+- `~/.config/research-schematic-imagegen/hangzhale.env`（兼容既有配置）
+
+配置文件不属于技能源码、项目文件或 Git 交付物。其内容只在本地进程中加载，不回显到日志。
 
 支持的环境变量：
 
@@ -58,6 +73,8 @@ node <skill-dir>/scripts/check-mode.js --json
 | `RESEARCH_IMAGE_API_KEY` | 图像接口 API key；也兼容 `OPENAI_API_KEY` |
 | `RESEARCH_IMAGE_BASE_URL` | OpenAI 兼容接口根地址；也兼容 `OPENAI_BASE_URL` |
 | `RESEARCH_IMAGE_MODEL` | 默认 `gpt-image-2`；也兼容 `OPENAI_IMAGE_MODEL` |
+| `RESEARCH_IMAGE_ENV_FILE` | 显式指定私有 env 文件；优先于自动发现路径 |
+| `RESEARCH_IMAGE_CONFIG_DIR` | 覆盖默认用户配置目录 |
 | `RESEARCH_IMAGE_OUTPUT_ROOT` | 默认输出根目录 `research-schematic-imagegen` |
 
 ### 2. 建立技术表达合同

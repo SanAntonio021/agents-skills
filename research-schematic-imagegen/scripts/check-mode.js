@@ -3,7 +3,7 @@
 import process from "node:process";
 import { apiKey, buildBaseUrl, imageApiEnabled, imageModel, loadRuntimeEnv } from "./shared.js";
 
-await loadRuntimeEnv();
+const envFile = await loadRuntimeEnv();
 
 let mode;
 let recommendation;
@@ -30,6 +30,7 @@ const result = {
   has_api_key: Boolean(apiKey()),
   base_url: buildBaseUrl(),
   model: imageModel(),
+  env_file: envFile,
   summary,
 };
 

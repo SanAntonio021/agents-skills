@@ -1,7 +1,7 @@
 ---
 name: research-schematic-imagegen
 description: 为自然科学基金、工程申报、科研汇报和答辩 PPT 设计、生成、编辑高技术密度科研示意图。用户提到科研示意图、关键技术图、机理图、技术路线图、系统框图、申报 PPT 配图、统一系列配图、英文图中文化、线条/箭头/光束局部修改、GPT Image 2 生图或改图、图中文字纠错时必须使用。只负责图件，不代写申报书正文，也不修改 PPT 文件，除非用户另行明确授权。
-compatibility: Node.js 18+ for OpenAI-compatible image API scripts; Windows PowerShell or PowerShell 7 for deterministic label correction.
+compatibility: Node.js 18+ for direct OpenAI-compatible image API scripts; Node.js 22+ for CC Switch provider discovery; Windows PowerShell or PowerShell 7 for deterministic label correction.
 ---
 
 # 科研示意图生成与编辑
@@ -40,8 +40,9 @@ compatibility: Node.js 18+ for OpenAI-compatible image API scripts; Windows Powe
 按以下顺序选择后端：
 
 1. 用户明确指定并已配置 OpenAI 兼容图像接口时，使用本地脚本直接调用该接口。
-2. 没有可用本地接口且宿主提供原生图像工具时，使用宿主原生工具。
-3. 两者都不可用时，只输出提示词并报告原因。
+2. 用户选择 `RESEARCH_IMAGE_BACKEND=ccswitch` 时，只读发现 CC Switch 中的候选并探测图像模型。
+3. 没有可用本地接口且宿主提供原生图像工具时，使用宿主原生工具。
+4. 两者都不可用时，只输出提示词并报告原因。
 
 本地 OpenAI 兼容接口先运行：
 
@@ -75,7 +76,25 @@ node <skill-dir>/scripts/check-mode.js --json
 | `RESEARCH_IMAGE_MODEL` | 默认 `gpt-image-2`；也兼容 `OPENAI_IMAGE_MODEL` |
 | `RESEARCH_IMAGE_ENV_FILE` | 显式指定私有 env 文件；优先于自动发现路径 |
 | `RESEARCH_IMAGE_CONFIG_DIR` | 覆盖默认用户配置目录 |
+| `RESEARCH_IMAGE_BACKEND` | `direct` 或 `ccswitch`；默认 `direct` |
+| `RESEARCH_IMAGE_CCSWITCH_DB` | CC Switch DB 路径；默认 `~/.cc-switch/cc-switch.db` |
+| `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID` | 指定 CC Switch provider ID；优先于自动选择 |
+| `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME` | 指定 CC Switch provider 名称；同名多条记录仍需消歧 |
 | `RESEARCH_IMAGE_OUTPUT_ROOT` | 默认输出根目录 `research-schematic-imagegen` |
+
+CC Switch 发现规则：
+
+- 只读 `providers` 表的结构化配置，不修改 CC Switch DB，不切换当前聊天 provider。
+- 解析 provider 的基址和 key 后，自动补齐 `/v1`，逐个调用 `/models`。
+- 只把返回图像模型的 provider 视为候选；相同基址与相同 key 的重复记录合并。
+- 候选唯一时自动使用；多个候选时停止并列出名称和 ID，要求通过 `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID` 或名称指定。
+- `/models` 只是候选筛选，正式使用前仍需一次真实小规模生图确认 `/images/generations`。
+
+手动查看候选：
+
+```powershell
+node <skill-dir>/scripts/discover-ccswitch-image-providers.js --json
+```
 
 ### 2. 建立技术表达合同
 

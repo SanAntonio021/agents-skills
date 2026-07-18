@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 // Adapted from ConardLi/garden-skills gpt-image-2 v1.0.4 under the MIT License.
 import process from "node:process";
-import { apiKey, buildBaseUrl, imageApiEnabled, imageModel, loadRuntimeEnv } from "./shared.js";
+import { apiKey, buildBaseUrl, imageApiEnabled, imageModel, loadRuntimeEnv, runtimeInfo } from "./shared.js";
 
-const envFile = await loadRuntimeEnv();
+let envFile = null;
+try {
+  envFile = await loadRuntimeEnv();
+} catch (error) {
+  const result = {
+    mode: "blocked",
+    recommendation: error.message.startsWith("Multiple CC Switch image providers found") ? "select-ccswitch-provider" : "image-backend-error",
+    error: error.message,
+  };
+  console.log(process.argv.includes("--json") ? JSON.stringify(result, null, 2) : Object.entries(result).map(([key, value]) => `${key}: ${value}`).join("\n"));
+  process.exit(1);
+}
 
 let mode;
 let recommendation;
@@ -31,6 +42,8 @@ const result = {
   base_url: buildBaseUrl(),
   model: imageModel(),
   env_file: envFile,
+  backend: runtimeInfo().backend,
+  provider: runtimeInfo().provider,
   summary,
 };
 

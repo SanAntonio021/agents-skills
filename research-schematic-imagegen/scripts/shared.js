@@ -9,6 +9,7 @@ export const DEFAULT_WORKING_DIR = path.join(DEFAULT_OUTPUT_ROOT, "working");
 export const DEFAULT_PROMPT_DIR = path.join(DEFAULT_OUTPUT_ROOT, "prompt");
 export const DEFAULT_MODEL = "gpt-image-2";
 export const DEFAULT_CONFIG_DIR = process.env.RESEARCH_IMAGE_CONFIG_DIR || path.join(os.homedir(), ".config", "research-schematic-imagegen");
+let runtimeState = { backend: "direct", env_file: null, provider: null };
 
 const TRUTHY = new Set(["1", "true", "yes", "on", "y"]);
 
@@ -53,12 +54,28 @@ export async function loadRuntimeEnv() {
     }
   }
 
-  if (!envFile) return null;
-  const pairs = await readEnvFile(envFile);
-  for (const [key, value] of Object.entries(pairs)) {
-    if (!process.env[key]) process.env[key] = value;
+  if (envFile) {
+    const pairs = await readEnvFile(envFile);
+    for (const [key, value] of Object.entries(pairs)) {
+      if (!process.env[key]) process.env[key] = value;
+    }
+  }
+
+  const backend = String(process.env.RESEARCH_IMAGE_BACKEND || "direct").trim().toLowerCase();
+  const wantsCcSwitch = backend === "ccswitch" || process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID || process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME;
+  if (wantsCcSwitch) {
+    if (backend !== "ccswitch" && backend !== "direct") throw new Error(`Unsupported RESEARCH_IMAGE_BACKEND: ${backend}`);
+    const { loadCcSwitchImageProvider } = await import("./ccswitch.js");
+    const result = await loadCcSwitchImageProvider();
+    runtimeState = { backend: "ccswitch", env_file: envFile, provider: result.provider };
+  } else {
+    runtimeState = { backend: "direct", env_file: envFile, provider: null };
   }
   return envFile;
+}
+
+export function runtimeInfo() {
+  return { ...runtimeState };
 }
 
 export function imageApiEnabled() {

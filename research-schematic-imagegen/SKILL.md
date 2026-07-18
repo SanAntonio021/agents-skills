@@ -8,7 +8,7 @@ compatibility: Node.js 18+ for direct OpenAI-compatible image API scripts; Node.
 
 ## 目标
 
-把已经确认的技术方案转成可用于基金、工程申报和科研汇报的高技术密度示意图。技术含义优先于画面效果，最终目录只保留用户真正应使用的版本。
+把已经确认的技术方案转成可用于基金、工程申报和科研汇报的高技术密度示意图。技术含义优先于画面效果，本轮交付清单只包含用户真正应使用的版本；不据此整理任务开始前已存在的文件。
 
 本 skill 基于 `ConardLi/garden-skills` 的 `gpt-image-2@1.0.4` MIT 核心脚本改写。来源、基准和上游维护方式见：
 
@@ -17,7 +17,7 @@ compatibility: Node.js 18+ for direct OpenAI-compatible image API scripts; Node.
 
 ## 边界
 
-- 本 skill 负责科研示意图的技术约束、视觉设计、生图、改图、中文化、检查和版本整理。
+- 本 skill 负责科研示意图的技术约束、视觉设计、生图、改图、中文化、检查和本轮生成版本的整理。
 - 不代写申报书、论文或技术报告正文。
 - 不修改 PPTX、DOCX 或其他 Office 文件，除非用户对该文件另行明确授权。
 - 用户要 IEEE 投稿数据图、可编辑矢量系统图或论文图审查时，优先使用 `paper-figure-review`。
@@ -196,6 +196,14 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 
 ### 8. 整理最终输出
 
+先读 [references/output-ownership.md](references/output-ownership.md)。科研图目录常混有历史定稿和其他课题图；目录名是 `final` 不表示当前任务拥有其中所有文件。
+
+- 写入前只读列出目标目录已有文件。任务开始前已存在的文件一律视为用户资产。
+- 未经用户明确授权，不移动、删除、重命名、覆盖或归档既有文件。
+- 可直接整理到 `working/` 的内容只限本轮生成的过程图、遮罩、诊断图和被用户否定的本轮候选。
+- “用户要求 N 张图”约束本轮交付清单，不约束一个已存在目录中的历史文件总数。
+- 发现目录中有非本轮文件时，保留原位并在检查结果中报告；需要物理隔离时，新建任务级子目录，或先征得用户同意。
+
 默认目录：
 
 ```text
@@ -206,13 +214,13 @@ research-schematic-imagegen/
 └── record.md     文件映射、技术边界、已知问题和生成路径
 ```
 
-最终检查：
+在 `record.md` 中记录本轮文件映射，并生成独立 JSON manifest 供验证脚本读取；验证只覆盖 manifest 中的图片：
 
 ```powershell
-node <skill-dir>/scripts/verify-output.js --dir <final-dir> --expected-count 4 --width 1536 --height 1024 --json
+node <skill-dir>/scripts/verify-output.js --dir <final-dir> --manifest <manifest.json> --expected-count 4 --width 1536 --height 1024 --json
 ```
 
-`final/` 必须恰好包含用户要求的数量。过程版本和被否定版本留在 `working/` 或可恢复归档区，不要和最终图并列造成选择混乱。
+`verify-output.js` 在 manifest 模式下把其他 PNG 报告为 `extra_files`，但不移动它们，也不把它们计入本轮交付数量。只有用户明确要求清理目录时，才可以在列明文件和目标路径并获得确认后执行移动。
 
 ## 上游更新检查
 

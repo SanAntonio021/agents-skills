@@ -42,6 +42,12 @@
       "prompt": "我有一个只支持 /v1/images/generations 和 /v1/images/edits 的 OpenAI 兼容中转站，配置放在用户目录的 research-schematic-imagegen env 文件里。请用它生科研示意图，但不要切换 CC Switch 的聊天 provider，也不要把 key 写进技能或项目。",
       "expected_output": "自动发现或显式读取用户私有 env 文件；先运行 check-mode 和真实小规模图像调用；确认基址、模型、生成/编辑端点；不切换聊天 provider，不打印或写入 API key；生成结果仍按 prompt/working/final/record.md 整理。",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "我把多个 OpenAI 兼容中转站导入了 CC Switch，里面有的支持聊天，有的支持生图。请从 CC Switch 只读找出支持图像模型的 provider；如果只有一个自动用，多个就停下来让我选，不要切换 Codex 聊天 provider，也不要输出 key。",
+      "expected_output": "读取 providers 结构化配置；补齐 /v1 后探测 /models；按图像模型筛选并合并重复基址+key；唯一候选自动选择，多候选报告名称和 ID；不改 DB、不切换聊天 provider、不打印 key。",
+      "files": []
     }
   ]
 }

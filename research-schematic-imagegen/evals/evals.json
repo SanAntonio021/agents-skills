@@ -36,6 +36,12 @@
       "prompt": "这张科研图里只把绿色折线改成地面天线到飞行器的直射通信光束，其他内容不要动。现代一点，但不要夸张，最后会放进PPT。",
       "expected_output": "把任务判断为范围受限的局部编辑；锁定原图其余构图并使用紧贴路径的遮罩，先给克制版本，不主动增加大气分层或整图重画；按PPT实际尺寸检查光束和端点清晰度。模型编辑若连续两次仍模糊，停止生成；用户明确授权修改PPTX时，改用PowerPoint原生矢量线和发光效果，否则给出确定性覆盖方案。",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "我有一个只支持 /v1/images/generations 和 /v1/images/edits 的 OpenAI 兼容中转站，配置放在用户目录的 research-schematic-imagegen env 文件里。请用它生科研示意图，但不要切换 CC Switch 的聊天 provider，也不要把 key 写进技能或项目。",
+      "expected_output": "自动发现或显式读取用户私有 env 文件；先运行 check-mode 和真实小规模图像调用；确认基址、模型、生成/编辑端点；不切换聊天 provider，不打印或写入 API key；生成结果仍按 prompt/working/final/record.md 整理。",
+      "files": []
     }
   ]
 }

@@ -1,12 +1,14 @@
 // Adapted from ConardLi/garden-skills gpt-image-2 v1.0.4 under the MIT License.
 import path from "node:path";
+import os from "node:os";
 import process from "node:process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 
 export const DEFAULT_OUTPUT_ROOT = process.env.RESEARCH_IMAGE_OUTPUT_ROOT || "research-schematic-imagegen";
 export const DEFAULT_WORKING_DIR = path.join(DEFAULT_OUTPUT_ROOT, "working");
 export const DEFAULT_PROMPT_DIR = path.join(DEFAULT_OUTPUT_ROOT, "prompt");
 export const DEFAULT_MODEL = "gpt-image-2";
+export const DEFAULT_CONFIG_DIR = process.env.RESEARCH_IMAGE_CONFIG_DIR || path.join(os.homedir(), ".config", "research-schematic-imagegen");
 
 const TRUTHY = new Set(["1", "true", "yes", "on", "y"]);
 
@@ -34,11 +36,29 @@ export async function readEnvFile(filePath) {
 
 export async function loadRuntimeEnv() {
   const explicitFile = process.env.RESEARCH_IMAGE_ENV_FILE;
-  if (!explicitFile) return;
-  const pairs = await readEnvFile(path.resolve(explicitFile));
+  let envFile = explicitFile ? path.resolve(explicitFile) : "";
+
+  if (!envFile) {
+    for (const candidate of [
+      path.join(DEFAULT_CONFIG_DIR, "image-api.env"),
+      path.join(DEFAULT_CONFIG_DIR, "hangzhale.env"),
+    ]) {
+      try {
+        await access(candidate);
+        envFile = candidate;
+        break;
+      } catch {
+        // Optional default config. Continue to normal environment variables if absent.
+      }
+    }
+  }
+
+  if (!envFile) return null;
+  const pairs = await readEnvFile(envFile);
   for (const [key, value] of Object.entries(pairs)) {
     if (!process.env[key]) process.env[key] = value;
   }
+  return envFile;
 }
 
 export function imageApiEnabled() {

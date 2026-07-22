@@ -2,9 +2,9 @@
 
 本文件记录外部技能的取舍原则。外部内容作为参考来源，运行时仍以本地规则为准。
 
-## labarba/sentence-polish
+## labarba/sciwrite
 
-链接：https://github.com/labarba/sentence-polish
+链接：https://github.com/labarba/sciwrite
 许可：CC BY 4.0
 
 **当前状态（2026-05-20 更新）：** sentence-polish 已 fork 到本地 `skills/sentence-polish/`，作为独立的英文句子质量审查 skill。

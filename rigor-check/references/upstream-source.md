@@ -3,7 +3,8 @@
 ## 原始来源
 
 - **仓库：** K-Dense-AI/scientific-agent-skills（GitHub）
-- **路径：** scientific-skills/rigor-check/
+- **接受基线路径：** scientific-skills/scientific-critical-thinking/
+- **当前上游路径：** skills/scientific-critical-thinking/（后续移动，未自动改写接受基线）
 - **作者：** K-Dense Inc.
 - **许可证：** MIT
 

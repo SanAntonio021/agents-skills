@@ -79,6 +79,33 @@
         "恢复通过新 commit 完成。",
         "不使用 git reset --hard 或 git checkout --。"
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "这篇论文已经按期刊 A 提交过，现在要改投期刊 B。请用期刊 B 的官方 LaTeX 模板生成独立投稿工程，保留期刊 A 的源包和原图，不改正文内容。",
+      "expected_output": "先把已提交 source 包和关键文件做 SHA256 基线，再建立独立目标期刊目录；模板适配和目标期刊图件变体只写入副本，原 figures 不覆盖；列出任何内容疑问而不自行改写；完成完整编译、引用/缺图检查、关键图页渲染和最终 PDF 哈希记录。",
+      "files": [],
+      "expectations": [
+        "输出明确使用已提交 source 包作为只读科学内容基线并记录哈希。",
+        "输出建立独立目标期刊工程，不修改原投稿目录。",
+        "输出保留原 figures，并为目标期刊图件建立独立版本目录和 manifest。",
+        "输出把模板迁移中的内容问题列清单，不自行改写正文。",
+        "输出完整编译链、引用/缺图检查、关键页面渲染和最终 SHA256 验收。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "我只授权把摘要和作者地址同步到新期刊模板。main.pdf 可能被阅读器锁定，旧的 final PDF 不能覆盖。请完成一次可审计的投稿工程构建。",
+      "expected_output": "先保存源码快照并确保 diff 只有授权元数据；摘要中的 LaTeX 公式还原为纯文本后逐字核对并计词；若输出被占用则使用本机临时目录、唯一 jobname，并在临时目录运行 BibTeX 时设置 BIBINPUTS/BSTINPUTS；生成新文件名的 PDF，保留旧 PDF，完成 pdfLaTeX→BibTeX→pdfLaTeX×2、页数、引用、图件和哈希检查。",
+      "files": [],
+      "expectations": [
+        "输出元数据字段级 diff 证据，未授权正文保持不变。",
+        "输出摘要 LaTeX 还原、逐字核对和词数结果。",
+        "输出在 PDF 被占用时采用本机临时 output-directory 和唯一、版本化 jobname，而不是关闭查看器或覆盖旧文件。",
+        "输出 BibTeX 在临时目录运行时设置 BIBINPUTS 和 BSTINPUTS，并执行 pdfLaTeX→BibTeX→pdfLaTeX×2。",
+        "输出新 PDF 文件名、旧 PDF 保留状态、页数和 SHA256。",
+        "输出无未解析引用、交叉引用、缺图，并说明非致命警告。"
+      ]
     }
   ]
 }

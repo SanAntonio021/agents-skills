@@ -12,6 +12,7 @@ from ooxml_common import (
     MAIN_NS,
     cached_value,
     formula_signature,
+    has_formula_cache,
     json_write,
     load_package,
     parse_xml,
@@ -109,6 +110,9 @@ def merge_caches(target: Path, recalculated: Path, output: Path) -> dict[str, An
                         "recalculated": recalc_formula["text"],
                     }
                 )
+                continue
+            if not has_formula_cache(recalc_cell):
+                missing.append(f"{sheet_name}!{ref}")
                 continue
             value = cached_value(recalc_cell)
             if value is None:

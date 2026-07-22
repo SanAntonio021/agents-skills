@@ -14,6 +14,7 @@ from ooxml_common import (
     cached_value,
     displayed_value,
     formula_signature,
+    has_formula_cache,
     json_write,
     load_package,
     parse_qualified_range,
@@ -108,7 +109,7 @@ def inspect_sheet(root: ET.Element, strings: list[str]) -> dict[str, Any]:
             cache = cached_value(cell)
             record["formula"] = formula
             record["cached"] = cache
-            if cell.find(qn(MAIN_NS, "v")) is not None:
+            if has_formula_cache(cell):
                 formula_cache_count += 1
             if cell.attrib.get("t") == "e" or (
                 cache is not None and cache.upper() in FORMULA_ERRORS

@@ -16,6 +16,7 @@ from libreoffice_headless import convert, find_soffice  # noqa: E402
 from merge_formula_caches import merge_caches  # noqa: E402
 from ooxml_common import (  # noqa: E402
     MAIN_NS,
+    has_formula_cache,
     load_package,
     parse_xml,
     qn,
@@ -31,7 +32,7 @@ from verify_xlsx import compare_workbooks, inspect_workbook  # noqa: E402
 
 class WorkbookToolTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.temp_dir = tempfile.TemporaryDirectory(prefix="xlsx-preserve-test-")
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="xlsx-skill-test-")
         self.root = Path(self.temp_dir.name)
         self.source = self.root / "source.xlsx"
         self._build_workbook(self.source)
@@ -115,7 +116,7 @@ class WorkbookToolTests(unittest.TestCase):
             "allow_formula_cache_changes": False,
             "expected": {
                 "formula_count": 1,
-                "formula_cache_count": 1,
+                "formula_cache_count": 0,
                 "formula_error_count": 0,
             },
         }
@@ -134,6 +135,9 @@ class WorkbookToolTests(unittest.TestCase):
     def test_formula_cache_merge(self) -> None:
         recalc = self.root / "recalculated.xlsx"
         final = self.root / "final.xlsx"
+        source_inspection = inspect_workbook(self.source)
+        self.assertEqual(source_inspection["formula_count"], 1)
+        self.assertEqual(source_inspection["formula_cache_count"], 0)
         entries, _, _ = load_package(self.source)
         part = resolve_sheet_parts(entries)["Template"]
         root = parse_xml(entries[part])
@@ -152,6 +156,40 @@ class WorkbookToolTests(unittest.TestCase):
         formula = inspected["sheets"]["Template"]["cells"]["E2"]
         self.assertEqual(formula["cached"], "3")
         self.assertEqual(inspected["formula_error_count"], 0)
+
+    def test_empty_numeric_formula_cache_is_rejected(self) -> None:
+        final = self.root / "must-not-exist-empty-cache.xlsx"
+        entries, _, _ = load_package(self.source)
+        part = resolve_sheet_parts(entries)["Template"]
+        root = parse_xml(entries[part])
+        formula_cell = worksheet_cells(root)["E2"]
+        self.assertFalse(has_formula_cache(formula_cell))
+
+        with self.assertRaises(ValueError):
+            merge_caches(self.source, self.source, final)
+        self.assertFalse(final.exists())
+
+    def test_empty_string_formula_cache_is_valid(self) -> None:
+        recalc = self.root / "recalculated-empty-string.xlsx"
+        final = self.root / "final-empty-string.xlsx"
+        entries, _, _ = load_package(self.source)
+        part = resolve_sheet_parts(entries)["Template"]
+        root = parse_xml(entries[part])
+        formula_cell = worksheet_cells(root)["E2"]
+        formula_cell.attrib["t"] = "str"
+        value = formula_cell.find(qn(MAIN_NS, "v"))
+        if value is None:
+            value = formula_cell.makeelement(qn(MAIN_NS, "v"), {})
+            formula_cell.append(value)
+        value.text = None
+        self.assertTrue(has_formula_cache(formula_cell))
+        write_package(self.source, recalc, {part: serialize_xml(root)})
+
+        report = merge_caches(self.source, recalc, final)
+        self.assertEqual(report["formula_cache_count"], 1)
+        inspected = inspect_workbook(final)
+        self.assertEqual(inspected["formula_cache_count"], 1)
+        self.assertEqual(inspected["sheets"]["Template"]["cells"]["E2"]["cached"], "")
 
     def test_formula_error_cache_is_rejected(self) -> None:
         recalc = self.root / "recalculated-error.xlsx"
@@ -233,7 +271,9 @@ class SkillStructureTests(unittest.TestCase):
     def test_required_files_exist(self) -> None:
         required = [
             "SKILL.md",
-            "references/workflow.md",
+            "references/general-workflow.md",
+            "references/formatting-and-formulas.md",
+            "references/high-fidelity-workflow.md",
             "references/patch-spec.md",
             "scripts/patch_ooxml.py",
             "scripts/libreoffice_headless.py",
@@ -245,10 +285,23 @@ class SkillStructureTests(unittest.TestCase):
         for relative in required:
             self.assertTrue((SKILL_ROOT / relative).is_file(), relative)
 
+    def test_skill_is_complete_xlsx_entry(self) -> None:
+        skill_text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("name: xlsx", skill_text)
+        self.assertIn("这是完整的表格技能", skill_text)
+        self.assertNotIn("xlsx-" + "preserve-ooxml", skill_text)
+        self.assertNotIn("不使用本 " + "skill", skill_text)
+
     def test_eval_json_is_valid(self) -> None:
         data = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
-        self.assertEqual(data["skill_name"], "xlsx-preserve-ooxml")
-        self.assertGreaterEqual(len(data["evals"]), 3)
+        self.assertEqual(data["skill_name"], "xlsx")
+        self.assertGreaterEqual(len(data["evals"]), 8)
+
+        triggers = json.loads(
+            (SKILL_ROOT / "evals" / "trigger-evals.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(len(triggers), 20)
+        self.assertEqual(sum(item["should_trigger"] for item in triggers), 10)
 
 
 if __name__ == "__main__":

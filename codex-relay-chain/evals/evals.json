@@ -48,6 +48,33 @@
       "prompt": "Codex 更新后 15721 没有监听，另一次对话却出现了 Cloudflare 502/524。请分开判断 CC Switch 进程退出和上游错误，不要把两件事混成一个根因。",
       "expected_output": "应把 15721 无监听/连接被拒绝归为本机服务可用性问题，把 CC Switch 日志中的上游 HTTP 502/524 和远端 HTML 错误页归为远端错误转发；不能仅凭更新时间证明 Codex 更新杀死了独立 CodexCont，也不能仅凭 proxy_enabled=0 证明该字段由更新写入；应分别给出证据边界和置信度。",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "CodexCont Chain 已经不需要了。帮我取消 CodexCont，但保留 CC Switch 继续管理 provider；不要删除安装文件，也不要把计划任务彻底注销。请说明执行顺序、复查时间和最终验收标准。",
+      "expected_output": "应把 relay-chain.mode 设为 ccswitch-only；禁用而非注销 CodexCont Chain 计划任务；停止现存 CodexCont 进程并保留安装文件；确认 8787 不监听、15721 监听、Codex base_url 指向 http://127.0.0.1:15721/v1；等待 30–60 秒复查不会被 hook 拉起；对 15721 做真实 stream=true /v1/responses SSE 测试。ccswitch-only 模式缺少 proxy_rounds 是预期结果，不应判失败；同时应明确用户仍可用 CC Switch 切换 provider，但失去 CodexCont 的推理截断续跑能力。",
+      "files": [],
+      "expectations": [
+        "将 relay-chain.mode 设为 ccswitch-only，而不是 disabled 或直连远端 provider",
+        "禁用而非注销 CodexCont Chain 计划任务，并停止现存 CodexCont 进程但保留安装文件",
+        "验收同时检查 8787 不监听、15721 监听、Codex base_url 指向 http://127.0.0.1:15721/v1",
+        "等待 30–60 秒后复查 CodexCont 没有被 hook 或 watcher 重新启动",
+        "对 15721/v1/responses 做真实 stream=true SSE 测试，并说明缺少 proxy_rounds 在该模式下是正常现象",
+        "说明保留 CC Switch provider 切换能力，但失去 CodexCont 推理截断续跑能力"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Codex 更新后，能力 watcher 一直重写 .codex-global-state.json，日志反复出现 FIXED 和 restart Codex required。新对话默认是否进入项目、selected-project 这两项都交给 Codex 自己管理。请定位写入循环并给出修复与验证标准。",
+      "expected_output": "应识别整份 JSON 重新序列化后与原文本比较会因属性顺序、压缩格式、结尾换行或原子替换形成写入循环；只在 hook 实际管理字段的语义值变化时写文件；不删除、不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，让 Codex App 自己管理。验证应包含 PowerShell 语法检查、连续两次 -Force 均返回 OK: no changes，以及观察 watcher 30–60 秒无重复 FIXED/WARN: restart Codex required。",
+      "files": [],
+      "expectations": [
+        "识别整份 JSON 重新序列化与原文本比较会因格式差异形成 watcher 写入循环",
+        "修复为只在 hook 管理字段的语义值实际变化时写回文件",
+        "不删除也不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，交给 Codex App 管理",
+        "验证包含 PowerShell 语法检查和连续两次 -Force 均返回 OK: no changes",
+        "观察 watcher 30–60 秒，确认日志不再重复出现 FIXED 或 WARN: restart Codex required"
+      ]
     }
   ]
 }

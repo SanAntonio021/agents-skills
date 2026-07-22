@@ -1,6 +1,6 @@
 ---
 name: latex-paper
-description: 把已有 Markdown 或 Word 论文稿转成可投稿的 IEEE LaTeX 工程，并负责 LaTeX 工程层的全部事务：模板选择与套用（IEEEtran、期刊 cls）、md 转 tex 结构映射、公式/图/表环境、BibTeX 参考文献、交叉引用、浮动体落页治理、编译排错、投稿 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨"图离引用太远""图表位置乱跳""图跑到参考文献后面"这类浮动体落页问题，或要把现有论文稿变成投稿版 LaTeX；也用于 LaTeX/Markdown 稿件修改后的里程碑确认和旧版本查找、比较或恢复。只管格式与工程：内容润色找 ieee-manuscript-edit，投稿网页与生命周期事务找 ieee-journal-submission，图件本身找 paper-figure-review，Word 版式找 word-template。
+description: 把已有 Markdown 或 Word 论文稿转成可投稿的 IEEE LaTeX 工程，并负责 LaTeX 工程层的全部事务：模板选择与套用（IEEEtran、期刊 cls）、md 转 tex 结构映射、公式/图/表环境、BibTeX 参考文献、交叉引用、浮动体落页治理、编译排错、投稿 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨"图离引用太远""图表位置乱跳""图跑到参考文献后面"这类浮动体落页问题，或要把现有论文稿变成投稿版 LaTeX；也用于 LaTeX/Markdown 稿件修改后的里程碑确认和旧版本查找、比较或恢复。只管格式与工程：内容润色找 ieee-manuscript-edit，投稿网页与生命周期事务找 ieee-journal-submission，图件本身找 paper-figure-review，Word 版式找 word-template。
 ---
 
 # Markdown 转 LaTeX 投稿工程
@@ -8,6 +8,9 @@ description: 把已有 Markdown 或 Word 论文稿转成可投稿的 IEEE LaTeX 
 ## 本地文稿版本保护
 
 实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)。后续出现明确里程碑确认或旧版本查找、比较、恢复请求时也读取。新建 LaTeX 工程先确认准确项目根目录；编译验证通过后按用户本轮修改创建一个本地 commit，不 push。只读排错和方案说明不触发。
+
+如果输入是已经投稿、已经打包或明确冻结的稿件，先读取并执行
+[references/journal-template-migration.md](references/journal-template-migration.md)。该流程把原稿当作只读科学内容基线，要求目标期刊使用独立工程、独立图件版本和独立输出文件；模板迁移中发现的内容问题只列清单，不自行改写。
 
 ## 定位
 

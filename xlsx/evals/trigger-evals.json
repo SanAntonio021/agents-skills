@@ -1,0 +1,22 @@
+[
+  {"query": "从零做一个季度销售分析 xlsx，带区域汇总、利润率公式和柱状图，公式要算出结果。", "should_trigger": true},
+  {"query": "清理 downloads 里的 CSV，按订单号去重，保留客户编号前导零，再输出 Excel。", "should_trigger": true},
+  {"query": "读取 forecast.xlsx，告诉我 2027 年现金余额为什么下降，顺着公式查到假设，不要改文件。", "should_trigger": true},
+  {"query": "在库存工作簿新增 20 行，公式、数据验证、条件格式和图表范围都跟着扩展。", "should_trigger": true},
+  {"query": "这个 xlsx 模板里有图片、批注和分页，只改 W8，别动其他内容，也不要启动 Excel。", "should_trigger": true},
+  {"query": "LibreOffice 重算后整个包都变了，能不能只把公式缓存写回原来的 xlsx？", "should_trigger": true},
+  {"query": "比较 V7 和 V8，证明只改了 4 个单元格和两行行高，calcChain、styles、drawing 都要保持。", "should_trigger": true},
+  {"query": "把复杂设备编制表展开多行，公式重算后还要逐页检查 A3 横向 PDF 没有裁切。", "should_trigger": true},
+  {"query": "只读审计 final.xlsx 的 37 个公式缓存、数据验证和打印区，不要保存它。", "should_trigger": true},
+  {"query": "这个带宏的 xlsm 只能做包级定点修补，VBA 不能丢，也不能用 Excel COM。", "should_trigger": true},
+  {"query": "帮我实时控制已经打开的 Excel，把当前选区设成黄色并立即保存。", "should_trigger": false},
+  {"query": "连接我浏览器里打开的 Excel 桌面窗口，边看边改单元格。", "should_trigger": false},
+  {"query": "把这张 Google Sheet 增加筛选视图、设置保护范围并分享给同事。", "should_trigger": false},
+  {"query": "用 Google Sheets API 每晚同步 CRM 数据到在线表格。", "should_trigger": false},
+  {"query": "把这份数据分析写成正式 Word 报告，最终只交 docx，不需要表格文件。", "should_trigger": false},
+  {"query": "用现有数字做一套 15 页答辩 PPT，图表直接放在幻灯片里，不交付 xlsx。", "should_trigger": false},
+  {"query": "做一个网页数据表，支持浏览器筛选和分页，交付 React 项目。", "should_trigger": false},
+  {"query": "设计 PostgreSQL ETL 管道，把订单数据每天清洗入库，不生成任何表格文件。", "should_trigger": false},
+  {"query": "把 PDF 里的设备参数整理成 Markdown 表格，最终只要 md 文件。", "should_trigger": false},
+  {"query": "在飞书多维表格里新增字段、视图和自动化，不需要本地工作簿。", "should_trigger": false}
+]

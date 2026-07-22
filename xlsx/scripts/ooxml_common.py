@@ -285,6 +285,15 @@ def cached_value(cell: ET.Element) -> str | None:
     return None if value is None else (value.text or "")
 
 
+def has_formula_cache(cell: ET.Element) -> bool:
+    value = cell.find(qn(MAIN_NS, "v"))
+    if value is None:
+        return False
+    if value.text not in {None, ""}:
+        return True
+    return cell.attrib.get("t") == "str"
+
+
 def displayed_value(cell: ET.Element, strings: list[str]) -> str | None:
     cell_type = cell.attrib.get("t")
     if cell_type == "inlineStr":

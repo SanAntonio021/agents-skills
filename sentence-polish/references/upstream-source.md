@@ -2,7 +2,7 @@
 
 ## 原始来源
 
-- **仓库：** labarba/sentence-polish（GitHub，原名 manuscript-writing-review）
+- **仓库：** labarba/sciwrite（GitHub；上游 skill 名为 manuscript-writing-review）
 - **作者：** Lorena A. Barba，George Washington University (GWU)
 - **许可证：** CC BY 4.0
 - **方法论基础：** Kristin Sainani《Writing in the Sciences》（Stanford/Coursera 课程），30 节课程讲座通过 NotebookLM 转写后由 Claude 整理为 skill

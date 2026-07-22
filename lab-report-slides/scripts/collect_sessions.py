@@ -41,11 +41,21 @@ SKIP_DIRS = {
     "__pycache__",
     ".codex",
     ".claude",
+    ".cc-switch",
+    ".agents",
     "dist",
     "build",
 }
+IGNORED_SCAN_ROOTS = {".agents", ".cc-switch", ".codex", ".claude"}
+IGNORED_ASSET_SEQUENCES = (
+    (".agents", "skills"),
+    (".cc-switch", "skills"),
+    (".claude", "skills"),
+    (".codex", "skills"),
+    (".codex", "plugins"),
+)
 PATH_RE = re.compile(
-    r"(?:(?:[A-Za-z]:\\|\\\\)[^\"<>|\r\n]{1,500}\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm))",
+    r"(?:(?:[A-Za-z]:\\|\\\\)[^\"<>|;\r\n]{1,500}\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm))",
     re.IGNORECASE,
 )
 POSIX_PATH_RE = re.compile(
@@ -69,6 +79,15 @@ CODEX_RESPONSE_RE = re.compile(r'"type"\s*:\s*"response_item"')
 MESSAGE_ITEM_RE = re.compile(r'"type"\s*:\s*"message"')
 CLAUDE_MESSAGE_RE = re.compile(r'"type"\s*:\s*"(?:user|assistant)"')
 ARTIFACT_HINT_RE = re.compile(r'\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm)', re.IGNORECASE)
+INJECTED_BLOCK_RE = re.compile(
+    r"<(recommended_plugins|INSTRUCTIONS|environment_context|local-command-caveat|"
+    r"command-name|command-message|command-args|local-command-stdout|ide_opened_file|"
+    r"skills_instructions|plugins_instructions|app-context|codex_delegation|oai-mem-citation)"
+    r"\b[^>]*>.*?</\1>",
+    re.IGNORECASE | re.DOTALL,
+)
+INJECTED_HEADING_RE = re.compile(r"(?im)^\s*#\s*AGENTS\.md instructions(?:\s+for\s+.*)?\s*$")
+SKILL_DUMP_RE = re.compile(r"(?im)^\s*Base directory for this skill:\s*.+$")
 
 
 def parse_timestamp(value: Any) -> datetime | None:
@@ -113,6 +132,20 @@ def redact(text: str) -> str:
     if len(result) > 4000:
         result = result[:4000].rstrip() + " [...]"
     return result
+
+
+def strip_injected_text(text: str) -> str:
+    result = INJECTED_BLOCK_RE.sub("", text)
+    skill_dump = SKILL_DUMP_RE.search(result)
+    if skill_dump:
+        result = result[: skill_dump.start()]
+    result = INJECTED_HEADING_RE.sub("", result)
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result.strip()
+
+
+def clean_event_text(text: str) -> str:
+    return redact(strip_injected_text(text))
 
 
 def text_from_content(value: Any) -> str:
@@ -179,7 +212,7 @@ def session_record(session_id: str, platform: str, source_path: Path) -> dict[st
 
 
 def add_event(record: dict[str, Any], timestamp: datetime, role: str, text: str) -> None:
-    cleaned = redact(text)
+    cleaned = clean_event_text(text)
     if not cleaned or len(cleaned) < 4:
         return
     record["events"].append(
@@ -232,7 +265,7 @@ def parse_codex_file(
                 if timestamp is None or not (start <= timestamp < end):
                     continue
                 if has_artifact:
-                    record["artifact_candidates"].extend(candidate_paths(line))
+                    record["artifact_candidates"].extend(candidate_paths(strip_injected_text(line)))
                 role = ""
                 text = ""
                 if event_type == "event_msg":
@@ -276,7 +309,7 @@ def parse_claude_file(
                 if timestamp is None or not (start <= timestamp < end):
                     continue
                 if has_artifact:
-                    record["artifact_candidates"].extend(candidate_paths(line))
+                    record["artifact_candidates"].extend(candidate_paths(strip_injected_text(line)))
                 event_type = event.get("type")
                 if event_type not in {"user", "assistant"}:
                     continue
@@ -313,7 +346,7 @@ def select_events(events: list[dict[str, str]]) -> list[dict[str, str]]:
     selected.extend(item for item in assistants if RESULT_WORDS.search(item["text"]))
     unique: dict[tuple[str, str], dict[str, str]] = {}
     for item in selected:
-        unique[(item["timestamp"], item["text"])] = item
+        unique[(item["role"], item["text"])] = item
     return sorted(unique.values(), key=lambda item: item["timestamp"])
 
 
@@ -325,6 +358,21 @@ def normalize_path(raw: str, cwd: str | None) -> Path | None:
         return path.resolve()
     except OSError:
         return path
+
+
+def path_has_sequence(path: Path, sequence: tuple[str, ...]) -> bool:
+    parts = tuple(part.casefold() for part in path.parts)
+    target = tuple(part.casefold() for part in sequence)
+    width = len(target)
+    return any(parts[index : index + width] == target for index in range(len(parts) - width + 1))
+
+
+def is_ignored_asset_path(path: Path) -> bool:
+    return any(path_has_sequence(path, sequence) for sequence in IGNORED_ASSET_SEQUENCES)
+
+
+def is_ignored_scan_root(path: Path) -> bool:
+    return path.name.casefold() in IGNORED_SCAN_ROOTS or is_ignored_asset_path(path)
 
 
 def discover_assets(
@@ -340,14 +388,26 @@ def discover_assets(
         cwd = record.get("cwd")
         for raw in record.get("artifact_candidates", []):
             path = normalize_path(raw, cwd)
-            if not path or path.suffix.lower() not in IMAGE_EXTENSIONS or not path.exists() or not path.is_file():
+            if (
+                not path
+                or is_ignored_asset_path(path)
+                or path.suffix.lower() not in IMAGE_EXTENSIONS
+                or not path.exists()
+                or not path.is_file()
+            ):
                 continue
             key = str(path)
             assets[key] = {"path": key, "source": "referenced", "project": record["project"]}
     # The fallback is intentionally opt-in after referenced assets fail. A full
     # recursive scan of a synced drive is too expensive for a daily command.
     if scan_fallback and not assets:
-        roots = {str(Path(record["cwd"]).resolve()) for record in records if record.get("cwd") and Path(record["cwd"]).is_dir()}
+        roots = {
+            str(root.resolve())
+            for record in records
+            if record.get("cwd")
+            and (root := Path(record["cwd"])).is_dir()
+            and not is_ignored_scan_root(root)
+        }
         deadline = time.monotonic() + max(0.1, scan_seconds)
         scanned_files = 0
         for root in roots:

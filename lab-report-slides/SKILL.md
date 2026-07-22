@@ -6,7 +6,8 @@ description: >
   "生成本周组会汇报", "生成组会 PPT", or asks to turn recent AI-assisted experiments,
   code, instrument tests, plots, or results into a presentation. Read local session JSONL,
   merge child-agent work into parent tasks, filter AI boilerplate, find referenced experiment
-  images, require a short outline approval, and export HTML, PDF, and image-only PPTX.
+  images, check whether the work is worth presenting to an advisor, require a short outline
+  approval, and export HTML, PDF, and image-only PPTX.
   Do not use for paper-to-slides work when the source is a paper PDF or DOI; use a paper-slide skill.
 compatibility: Requires Python 3.10+, `python-pptx`, and Microsoft Edge or Google Chrome for headless HTML rendering.
 ---
@@ -68,6 +69,11 @@ terminology. Do not turn an AI plan into a result. Keep numbers, units, instrume
 conditions, filenames, and error messages exact. When evidence is incomplete, write `未验证` or
 `待确认`; never fill the gap from general knowledge.
 
+Reconcile status before outlining. Later evidence has priority over an earlier intermediate
+finding. An explicit current statement from the user that an item is complete may override an
+earlier audit that listed open issues. Use that statement only for status; do not invent missing
+technical details. Remove resolved issues from `遇到问题` and `下一步`.
+
 Prefer this content order:
 
 1. What changed or was completed.
@@ -78,10 +84,32 @@ Prefer this content order:
 Show code only when the code itself is the research result. Otherwise report the task, method,
 and observed result rather than copying code blocks.
 
+## Report-worthiness check
+
+Before proposing an outline, decide whether the selected work is useful to the intended advisor
+or group-meeting audience. A high message count is not evidence of progress. Prefer, in order:
+
+1. Verified research results, experiment data, plots, or quantitative test findings.
+2. Completed research or project deliverables that matter to the intended advisor, with a
+   traceable file or review result.
+3. Supporting work that directly unblocked current research and has a verified outcome.
+
+Routine login fixes, AI configuration, disk cleanup, general software maintenance, and meta-skill
+work usually belong in a private work log. Routine administrative forms also stay out unless they
+represent a material project milestone for this audience. Before counting an item, ask whether the
+advisor needs it to understand current research progress. Include supporting work only when the
+user asks or when it directly affected the reported milestone. Do not pad a deck with these tasks
+to make the day look busy.
+
+If the day contains no first- or second-priority result and only routine supporting work remains,
+stop before the outline. Tell the user plainly that the available record lacks substantive
+advisor-facing progress, and ask one question: stop, or create a private work log instead.
+
 ## Outline checkpoint
 
-Before rendering, produce a short outline in the chat. The outline must contain no more than five
-slide titles and one or two evidence bullets per slide. Use these default roles as needed:
+After the report-worthiness check passes, produce a short outline in the chat. The outline must
+contain no more than five slide titles and one or two evidence bullets per slide. Use these default
+roles as needed:
 
 1. 总览
 2. 主要工作
@@ -108,6 +136,10 @@ Use the following priority:
 
 Never insert an old or unrelated image merely to fill a blank area. Keep the file path in the
 manifest so the user can trace each inserted asset.
+
+Ignore icons, logos, and other assets found under agent runtime or skill directories. They are
+interface resources, not experimental evidence, unless the user explicitly identifies one as a
+result image.
 
 ## Deck JSON and rendering
 

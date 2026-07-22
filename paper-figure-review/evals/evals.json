@@ -27,6 +27,11 @@
       "expected_output": "按 system_diagram 审查，优先检查技术链路、模块命名、信号流、频率/带宽/测量点标注和可编辑源文件，不建议用自由生成式图片替代。"
     },
     {
+      "id": "system-diagram-function-vs-implementation",
+      "prompt": "我在画一个 ISB 接收机原理图。参考论文的接收端用了 90° hybrid，但我的方案也可能用数字复数处理。为了让图简单，我能不能统一画成 90° hybrid，或者直接把 I 接到 USB、Q 接到 LSB？",
+      "expected_output": "先判断图表达功能原理还是具体实现：功能原理图使用 sideband separation 或 I/Q combining 等实现无关的功能名称，具体实现图按该文章实际使用的硬件或算法标注，不能从功能等价推断存在 90° hybrid。I/Q 是正交分量，不应仅凭标签直接对应 USB/LSB；若分离依赖联合处理，应先画联合处理，再画分离后的输出支路。"
+    },
+    {
       "id": "rf-coupler-port-layout",
       "prompt": "我想画 Fig. 4a 里的四端口双向耦合器：Port 1 接 THz source，Port 3 接 Chern isolator，Port 4 接 monitoring chain，Port 2 外接 50-ohm matched load。实物照片里端口是上下左右布置，监测端引线还偏离中心。你帮我判断怎么画更像 IEEE 论文图。",
       "expected_output": "先建议查找 2-4 张近 5 年内 IEEE Transactions/Letters 或同领域顶刊中已发表的相似系统图，记录论文、DOI、图号/图注和可借鉴点，并优先保存到项目 sources/ 目录；判断参考质量时看期刊层级、同行评审和图件成熟度，不按作者姓名推断英语母语。随后区分实物端口编号和功能端口名称，建议保持实物方位和偏心引出线；把 Port 2 画成 isolated/terminated port 并在器件外接匹配负载；避免把外部负载画成内部电阻或把负载支路画成主输出通路；如果用户已有自绘 PPT/SVG 草图，优先校准端口逻辑、论文符号和局部矢量元件，不强行把 agent 生成的整张图当最终稿。"

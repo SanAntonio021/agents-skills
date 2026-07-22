@@ -66,47 +66,11 @@
     {
       "id": "large-pptx-stays-out-of-git",
       "prompt": "这个 330 MB 的 figures.pptx 是我手工画论文系统图的主文件。你帮我把它也加进 Git，每次改一页就自动 commit 吧。",
-      "expected_output": "不把大型 PPTX 加进普通 Git，也不按每页或 Ctrl+S 自动 commit；说明 PPTX 继续由百度云单向备份，尝试另一种画法前手动使用“留档当前页”。",
+      "expected_output": "不把大型 PPTX 加进普通 Git，也不按每页或 Ctrl+S 自动 commit；PPTX 按正常保存和现有百度云单向备份处理。",
       "files": [],
       "expectations": [
         "大型 PPTX 不进入普通 Git。",
-        "不把每页编辑或普通保存映射为 commit。",
-        "改用同一 PPT 内的手动留档按钮。"
-      ]
-    },
-    {
-      "id": "ctrl-s-does-not-create-slide-version",
-      "prompt": "我在 PowerPoint 里按 Ctrl+S 保存了一次，这会不会自动留一个历史页？",
-      "expected_output": "明确 Ctrl+S 只执行 PowerPoint 普通保存，不生成历史页；只有用户准备尝试另一种方案并手动点击“留档当前页”时才创建副本。",
-      "files": [],
-      "expectations": [
-        "普通保存不创建版本。",
-        "版本创建必须由用户手动点击按钮。"
-      ]
-    },
-    {
-      "id": "archive-current-slide-button-behavior",
-      "prompt": "我点一次“留档当前页”后，加载项应该具体做什么？",
-      "expected_output": "在同一 PPT 内只复制当前页一次，把副本移到末尾并隐藏；原页位置不变且继续选中；副本记录时间、源 Slide ID 和版本序号；成功后自动保存，不弹成功说明框，不新建 PPT、不上传、不自动导出。未保存、只读或无活动页时不改文件，只给明确提示。",
-      "files": [],
-      "expectations": [
-        "一次点击只生成一个隐藏末页副本。",
-        "原页位置和当前选择保持不变。",
-        "记录时间、源 Slide ID 和版本序号。",
-        "成功后保存但不弹说明框。",
-        "未保存、只读和无活动页时不修改文件。"
-      ]
-    },
-    {
-      "id": "install-reinstall-uninstall-slide-archive-addin",
-      "prompt": "帮我安装 PowerPoint 的“留档当前页”PPAM，并验证以后所有演示文稿都能用；还要测试重装和卸载，但不要改宏安全策略。",
-      "expected_output": "先要求关闭 PowerPoint，再从技能成品安装到已确认受信任的 %APPDATA%\\Microsoft\\AddIns；注册并加载全局 PPAM，不新增受信任位置、不修改宏安全策略。依次验证首次安装、同路径重装、卸载后文件和注册消失，最后重新安装并运行集成测试。",
-      "files": [],
-      "expectations": [
-        "安装前检查 PowerPoint 已关闭，不结束用户进程。",
-        "只使用 %APPDATA%\\Microsoft\\AddIns。",
-        "不修改宏安全策略或受信任位置。",
-        "验证安装、重装、卸载并恢复最终安装状态。"
+        "不把每页编辑或普通保存映射为 commit。"
       ]
     }
   ]

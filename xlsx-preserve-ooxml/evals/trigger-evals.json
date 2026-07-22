@@ -1,0 +1,14 @@
+[
+  {"query": "这个 xlsx 模板里有图片、批注和分页，只改 W8，别动其他内容，也不要启动 Excel。", "should_trigger": true},
+  {"query": "LibreOffice 重算后整个包都变了，能不能只把公式缓存写回原来的 xlsx？", "should_trigger": true},
+  {"query": "比较 V7 和 V8，证明只改了 4 个单元格和两行行高，calcChain、styles、drawing 都要保持。", "should_trigger": true},
+  {"query": "把复杂设备编制表展开多行，公式重算后还要逐页检查 A3 横向 PDF 没有裁切。", "should_trigger": true},
+  {"query": "只读审计 final.xlsx 的 37 个公式缓存、数据验证和打印区，不要保存它。", "should_trigger": true},
+  {"query": "这个带宏的 xlsm 只能做包级定点修补，VBA 不能丢，也不能用 Excel COM。", "should_trigger": true},
+  {"query": "从零做一个季度销售分析 xlsx，带柱状图和利润率公式。", "should_trigger": false},
+  {"query": "清理 downloads 里的 CSV，去重后输出一个新的简单 Excel。", "should_trigger": false},
+  {"query": "读取工作簿 A1:D20，告诉我哪个产品销售额最高，不要改文件。", "should_trigger": false},
+  {"query": "帮我实时控制已经打开的 Excel，把选中区域设成黄色。", "should_trigger": false},
+  {"query": "把这张 Google Sheet 增加一个筛选视图并分享给同事。", "should_trigger": false},
+  {"query": "创建一个空白资产台账模板，列名我已经给了，没有现有文件。", "should_trigger": false}
+]

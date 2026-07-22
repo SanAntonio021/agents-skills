@@ -18,6 +18,12 @@
       "prompt": "我已经改完增强配置了，但 Clash Verge 日志里还在走旧 NovProxy。你怎么确认到底有没有生效？",
       "expected_output": "应检查 clash-verge.yaml 和 clash-verge-check.yaml 是否重生成，运行 verge-mihomo.exe -t 校验，查看 logs/service/service_latest.log 中 using <group>[<proxy>]，必要时重启 Clash Verge GUI，而不是只看 UI。",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Edge 里几个 Chrome 商店扩展修复后很快又显示可能已损坏。我一直开着 Clash Verge，使用规则模式、TUN 和两跳链式代理。帮我查原因，并给出能长期保留的修复和验证步骤。",
+      "expected_output": "应先用 Chromium treehash 和 Secure Preferences 区分真实文件损坏与 DISABLE_CORRUPTED 状态；读取 manifest.json 的真实 update_url，并从当前 Clash profile 和服务日志确认浏览器实际访问的更新域名及代理链；把已验证的更新域名写进当前 profile 绑定的 rules 增强文件并路由到稳定分组，不只修改生成配置，也不默认把整个浏览器按进程分流；最后检查生成配置、Mihomo 语法、服务日志，并在触发扩展更新和重启浏览器后确认扩展状态稳定且 corrupted_disable_count 不再增加。",
+      "files": []
     }
   ]
 }

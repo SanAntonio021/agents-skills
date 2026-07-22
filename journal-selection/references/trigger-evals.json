@@ -61,5 +61,21 @@
     "expected_primary_skill": "journal-selection",
     "expected_behavior": "refuse-to-quote-volatile-facts-from-memory",
     "reason": "触发选刊，但版面费和审稿周期是易变事实，必须回答需现查官方页面并给入口，不得凭记忆报数。"
+  },
+  {
+    "id": "should-disambiguate-cas-ranking-version",
+    "query": "我们学校按 2025 年中科院分区升级版执行。SCIS、TCOM、TWC 里哪些满足一区和 SCIE？请把大类、小类、JCR 分区和收录状态分开说。",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_behavior": "separate-ranking-systems-and-prioritize-institutional-rule",
+    "reason": "用户给出了学校的硬评价约束，必须区分年份、升级版、大类/小类、JCR Quartile 与 SCIE/ESCI，不得用一个排行榜代替学校口径。"
+  },
+  {
+    "id": "should-classify-scope-desk-rejection",
+    "query": "编辑说 scope rather than quality、not recommended to send for review。这是不是说明论文创新和实验不够？下一步要不要先大改内容？",
+    "should_trigger": true,
+    "expected_primary_skill": "journal-selection",
+    "expected_behavior": "classify-scope-desk-rejection-before-content-revision",
+    "reason": "这是范围型编辑初筛决定，技能应先解释决定性质并核对已提交基线，不能直接把它当成质量否定或自动要求重做实验。"
   }
 ]

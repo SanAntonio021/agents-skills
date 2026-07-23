@@ -12,7 +12,8 @@
 ## chat-notes-claudeception
 
 - 仓库：https://github.com/blader/Claudeception.git
-- 上游路径：`.`
+- 当前上游路径：`.`
+- 接受时上游路径：`.`
 - 已接受提交：`62dbb91d1183a866b5cf40079265c825b2695843`
 - 已接受版本：`3.0.0`
 - 基线类型：`exact`
@@ -45,7 +46,8 @@
 ## chat-notes-session-retrospective
 
 - 仓库：https://github.com/accidentalrebel/claude-skill-session-retrospective.git
-- 上游路径：`.`
+- 当前上游路径：`.`
+- 接受时上游路径：`.`
 - 已接受提交：`884ee05b086d107283eab18d9d0e9025527f4846`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -77,7 +79,8 @@
 ## chat-notes-neat-freak
 
 - 仓库：https://github.com/KKKKhazix/khazix-skills.git
-- 上游路径：`neat-freak`
+- 当前上游路径：`neat-freak`
+- 接受时上游路径：`neat-freak`
 - 已接受提交：`bf39594646840bc85368bb40771f3f6ec3fc7503`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -110,7 +113,8 @@
 ## chat-notes-document-release
 
 - 仓库：https://github.com/garrytan/gstack.git
-- 上游路径：`document-release`
+- 当前上游路径：`document-release`
+- 接受时上游路径：`document-release`
 - 已接受提交：`e8893a18b18e32ebd63a21f6915337868249ebe1`
 - 已接受版本：`1.0.0`
 - 基线类型：`exact`

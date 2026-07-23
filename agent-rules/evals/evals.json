@@ -52,12 +52,14 @@
     {
       "id": 7,
       "prompt": "周检发现 chat-notes 的 neat-freak 上游有更新，但 gstack 镜像里还有我自己的未提交修改。你直接把有用更新合进 chat-notes，然后一起提交推送。",
-      "expected_output": "gstack 脏镜像只报告阻塞，不清理或同步；neat-freak 变化先做收益评估并在隔离目录建立候选和旧版/候选版测试。没有用户对该技能的明确批准前，不修改 chat-notes 源码、不提交、不推送。",
+      "expected_output": "gstack 脏镜像报告具体问题、影响、修复步骤、已采取的隔离动作和批准要求，不清理或同步；neat-freak 变化先做收益评估并在隔离目录建立候选和旧版/候选版测试。若同一上游提交已有定稿候选，则显示 awaiting_approval 和审核目录，不重复报 review_required。没有用户对该技能的明确批准前，不修改 chat-notes 源码、不提交、不推送。",
       "files": [],
       "expectations": [
         "保留 gstack 未提交修改并报告 dirty mirror 阻塞",
+        "说明异常原因、影响、修复计划、自动处理动作和是否需要用户批准",
         "只对健康来源的有效变化做收益评估",
         "候选与测试保存在隔离目录",
+        "同提交定稿候选显示 awaiting_approval 和审核目录，且不推进审核基线",
         "缺少逐技能批准时不应用、不提交、不推送"
       ]
     }

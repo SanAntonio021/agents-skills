@@ -220,10 +220,87 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
 
         self.assertEqual(report["sources"][0]["status"], "mirror_blocked")
+        source_row = report["sources"][0]
+        for field in (
+            "problem",
+            "impact",
+            "repair_plan",
+            "automatic_action",
+            "approval_required",
+        ):
+            self.assertIn(field, source_row)
+        self.assertIn("未提交修改", source_row["problem"])
+        self.assertTrue(source_row["approval_required"])
+        self.assertTrue(any("git -C" in step for step in source_row["repair_plan"]))
+        markdown = (reports / "2026-07-22" / "summary.md").read_text(encoding="utf-8")
+        self.assertIn("## 异常详情与修复计划", markdown)
+        self.assertIn("问题：", markdown)
+        self.assertIn("修复步骤：", markdown)
         state = json.loads((reports / "state.json").read_text(encoding="utf-8"))
         source_state = state["sources"]["example-source"]
         self.assertEqual(source_state["last_seen_commit"], self.baseline)
         self.assertNotIn("last_reviewed_commit", source_state)
+
+    def test_diagnostics_cover_every_blocking_status(self) -> None:
+        skills, mirrors = self.load()
+        source = skills[0].sources[0]
+        mirror = mirrors["example"]
+        cases = {
+            "mirror_blocked": {
+                "mirror_status": "sync_failed",
+                "error": "Git command timed out after 20 seconds.",
+            },
+            "dirty_mirror": {
+                "mirror_details": {"actual_branch": "main", "actual_origin": mirror.repo_url},
+            },
+            "branch_mismatch": {
+                "mirror_details": {"actual_branch": "develop", "actual_origin": mirror.repo_url},
+            },
+            "origin_mismatch": {
+                "mirror_details": {"actual_branch": "main", "actual_origin": "https://example.test/wrong.git"},
+            },
+            "baseline_unavailable": {},
+            "non_fast_forward": {},
+            "diff_failed": {"error": "fatal: bad object"},
+            "upstream_removed_or_moved": {},
+            "license_review_required": {"changed": [{"change": "LICENSE", "path": "LICENSE"}]},
+        }
+        for status, extra in cases.items():
+            with self.subTest(status=status):
+                row = {
+                    "skill": "alpha",
+                    "source": source.id,
+                    "status": status,
+                    "current_commit": "b" * 40,
+                    "changed": [],
+                    **extra,
+                }
+                diagnosis = MODULE.diagnose_report_row(row, source, mirror)
+                self.assertEqual(
+                    set(diagnosis),
+                    {
+                        "problem",
+                        "impact",
+                        "repair_plan",
+                        "automatic_action",
+                        "approval_required",
+                        "approval_reason",
+                    },
+                )
+                self.assertTrue(diagnosis["problem"])
+                self.assertTrue(diagnosis["impact"])
+                self.assertGreaterEqual(len(diagnosis["repair_plan"]), 3)
+                self.assertIsInstance(diagnosis["approval_required"], bool)
+
+        for status in ("mirror_missing", "mirror_error"):
+            with self.subTest(status=status):
+                diagnosis = MODULE.diagnose_report_row(
+                    {"status": status, "changed": [], "current_commit": None},
+                    source,
+                    mirror,
+                )
+                self.assertTrue(diagnosis["problem"])
+                self.assertIsInstance(diagnosis["repair_plan"], list)
 
     def test_rejected_commit_is_not_repeated_after_unrelated_commit(self) -> None:
         skills, mirrors = self.load()
@@ -298,6 +375,44 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         removed_head = commit_all(self.mirror, "remove upstream skill")
         removed = MODULE.source_diff(self.mirror, skills[0].sources[0], removed_head)
         self.assertEqual(removed["status"], "upstream_removed_or_moved")
+
+    def test_verified_path_migration_preserves_accepted_path_and_allows_review(self) -> None:
+        run_git(
+            self.mirror,
+            "mv",
+            "skills/source-skill",
+            "skills/source-skill-renamed",
+        )
+        migration_commit = commit_all(self.mirror, "move source skill")
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            "\n".join(
+                [
+                    'upstream_path = "skills/source-skill-renamed"',
+                    'accepted_upstream_path = "skills/source-skill"',
+                    f'path_migration_commit = "{migration_commit}"',
+                    'path_migration_evidence = ["Git R100 rename with identical trees."]',
+                ]
+            ),
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(validation["status"], "ok", validation["errors"])
+        source = skills[0].sources[0]
+        self.assertEqual(source.accepted_upstream_path, "skills/source-skill")
+        self.assertEqual(source.upstream_path, "skills/source-skill-renamed")
+        self.assertEqual(source.accepted_commit, self.baseline)
+
+        diff = MODULE.source_diff(self.mirror, source, migration_commit)
+        self.assertEqual(diff["status"], "review_required")
+        renamed = [item for item in diff["changed"] if item["change"].startswith("R")]
+        self.assertTrue(renamed)
+
+        rendered = MODULE.render_skill_reference(skills[0])
+        self.assertIn("接受时上游路径", rendered)
+        self.assertIn(migration_commit, rendered)
 
     def test_prepare_review_does_not_touch_source_and_blocks_dirty_target(self) -> None:
         skills, mirrors = self.load()
@@ -402,6 +517,26 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         self.assertEqual(finalized["status"], "awaiting_approval")
         self.assertEqual(MODULE.tree_hash(self.skills / "alpha"), before)
+
+        reports = self.root / "reports"
+        weekly = MODULE.build_report(
+            skills,
+            mirrors,
+            reports,
+            "2026-07-29",
+            reports / "state.json",
+        )
+        weekly_source = weekly["sources"][0]
+        self.assertEqual(weekly_source["status"], "awaiting_approval")
+        self.assertEqual(Path(weekly_source["review_workspace"]), workspace.resolve())
+        weekly_markdown = (reports / "2026-07-29" / "summary.md").read_text(encoding="utf-8")
+        self.assertIn("## 等待逐项批准", weekly_markdown)
+        self.assertIn(str(workspace.resolve()), weekly_markdown)
+        state = json.loads((reports / "state.json").read_text(encoding="utf-8"))
+        source_state = state["sources"]["example-source"]
+        self.assertEqual(source_state["last_seen_commit"], head)
+        self.assertNotIn("last_reviewed_commit", source_state)
+        self.assertEqual(skills[0].sources[0].accepted_commit, self.baseline)
 
         test_report = workspace / "test-report.md"
         original_test_report = test_report.read_text(encoding="utf-8")

@@ -12,7 +12,8 @@
 ## ieee-manuscript-edit-sciwrite
 
 - 仓库：https://github.com/labarba/sciwrite.git
-- 上游路径：`.`
+- 当前上游路径：`.`
+- 接受时上游路径：`.`
 - 已接受提交：`8a57fa73d541bdcf7d8501db61c018cb454e9afa`
 - 已接受版本：`未提供`
 - 基线类型：`exact`

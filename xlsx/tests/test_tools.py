@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -232,6 +233,8 @@ class WorkbookToolTests(unittest.TestCase):
         self.assertEqual(comparison["unexpected"]["cells"][0]["cell"], "Template!C2")
 
     def test_libreoffice_recalc_when_available(self) -> None:
+        if os.environ.get("RUN_LIBREOFFICE_INTEGRATION") != "1":
+            self.skipTest("Set RUN_LIBREOFFICE_INTEGRATION=1 to start LibreOffice")
         try:
             soffice = find_soffice(None)
         except FileNotFoundError:

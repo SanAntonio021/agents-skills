@@ -2,44 +2,26 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import shutil
-import subprocess
 import sys
-import tempfile
-import zipfile
 from pathlib import Path
 
-from ooxml_common import json_write, sha256_file
+from ooxml_common import json_write
 
 
-DEFAULT_WINDOWS_PATHS = (
-    Path(r"C:\Program Files\LibreOffice\program\soffice.exe"),
-    Path(r"C:\Program Files (x86)\LibreOffice\program\soffice.exe"),
-)
+RUNNER_SCRIPTS = Path(__file__).resolve().parents[2] / "libreoffice-runner" / "scripts"
+if not RUNNER_SCRIPTS.is_dir():
+    raise RuntimeError(f"libreoffice-runner source is missing: {RUNNER_SCRIPTS}")
+if str(RUNNER_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(RUNNER_SCRIPTS))
+
+from libreoffice_runner import convert as _runner_convert  # noqa: E402
+from libreoffice_runner import find_soffice as _runner_find_soffice  # noqa: E402
 
 
 def find_soffice(explicit: Path | None) -> Path:
-    if explicit is not None:
-        candidate = explicit.expanduser().resolve()
-        if candidate.is_file():
-            return candidate
-        raise FileNotFoundError(candidate)
-    from_path = shutil.which("soffice") or shutil.which("soffice.exe")
-    if from_path:
-        return Path(from_path).resolve()
-    for candidate in DEFAULT_WINDOWS_PATHS:
-        if candidate.is_file():
-            return candidate.resolve()
-    raise FileNotFoundError("LibreOffice soffice executable was not found")
+    """Keep the xlsx public helper API while using the shared runner lookup."""
 
-
-def copy_exclusive(source: Path, output: Path) -> None:
-    if output.exists():
-        raise FileExistsError(f"Output already exists: {output}")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with source.open("rb") as src, output.open("xb") as dst:
-        shutil.copyfileobj(src, dst)
+    return _runner_find_soffice(explicit)
 
 
 def convert(
@@ -49,96 +31,14 @@ def convert(
     soffice: Path,
     timeout: int,
 ) -> dict[str, object]:
-    source = source.resolve()
-    output = output.resolve()
-    if not source.is_file():
-        raise FileNotFoundError(source)
-    if source == output:
-        raise ValueError("Source and output paths must differ")
-    if output.exists():
-        raise FileExistsError(f"Output already exists: {output}")
+    """Compatibility wrapper; never fall back to a direct LibreOffice subprocess."""
 
-    if mode == "recalc":
-        if source.suffix.lower() not in {".xlsx", ".xltx"}:
-            raise ValueError("Recalc mode supports .xlsx and .xltx only")
-        convert_to = "xlsx:Calc MS Excel 2007 XML"
-        expected_suffix = ".xlsx"
-    elif mode == "pdf":
-        if source.suffix.lower() not in {".xlsx", ".xlsm", ".xltx"}:
-            raise ValueError("PDF mode expects an OOXML spreadsheet")
-        convert_to = "pdf:calc_pdf_Export"
-        expected_suffix = ".pdf"
-    else:
-        raise ValueError(f"Unsupported mode: {mode}")
-
-    with tempfile.TemporaryDirectory(prefix="xlsx-preserve-lo-") as temp_name:
-        temp_root = Path(temp_name)
-        input_dir = temp_root / "input"
-        output_dir = temp_root / "output"
-        profile_dir = temp_root / "profile"
-        input_dir.mkdir()
-        output_dir.mkdir()
-        profile_dir.mkdir()
-        input_copy = input_dir / source.name
-        shutil.copy2(source, input_copy)
-        profile_uri = profile_dir.resolve().as_uri()
-        command = [
-            str(soffice),
-            "--headless",
-            "--nologo",
-            "--nodefault",
-            "--nolockcheck",
-            "--nofirststartwizard",
-            f"-env:UserInstallation={profile_uri}",
-            "--convert-to",
-            convert_to,
-            "--outdir",
-            str(output_dir),
-            str(input_copy),
-        ]
-        creation_flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-        completed = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            check=False,
-            creationflags=creation_flags,
-        )
-        candidates = sorted(output_dir.glob(f"*{expected_suffix}"))
-        if completed.returncode != 0 or len(candidates) != 1:
-            raise RuntimeError(
-                "LibreOffice conversion failed: "
-                f"exit={completed.returncode}, outputs={len(candidates)}, "
-                f"stdout={completed.stdout.strip()}, stderr={completed.stderr.strip()}"
-            )
-        generated = candidates[0]
-        if mode == "recalc":
-            if not zipfile.is_zipfile(generated):
-                raise ValueError("LibreOffice output is not a valid XLSX package")
-            with zipfile.ZipFile(generated, "r") as archive:
-                bad = archive.testzip()
-                if bad:
-                    raise ValueError(f"LibreOffice output has corrupt entry: {bad}")
-        copy_exclusive(generated, output)
-
-    return {
-        "ok": True,
-        "mode": mode,
-        "source": str(source),
-        "output": str(output),
-        "source_sha256": sha256_file(source),
-        "output_sha256": sha256_file(output),
-        "libreoffice": str(soffice),
-    }
+    return _runner_convert(mode, source, output, soffice, timeout)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run LibreOffice conversion with an isolated user profile"
+        description="Run XLSX LibreOffice operations through the shared isolated runner"
     )
     parser.add_argument("mode", choices=("recalc", "pdf"))
     parser.add_argument("source", type=Path)

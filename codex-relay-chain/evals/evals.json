@@ -22,7 +22,7 @@
     {
       "id": 4,
       "prompt": "帮我把 Codex 改成直连中转站，先别走本地那条链路，我改了 base_url 但保存后又变回 127.0.0.1，改不掉。",
-      "expected_output": "应同时排查两类独立根因：(a) 外部 watcher 脚本/计划任务持续改写 config.toml（含孤儿进程，不只查计划任务）；(b) cc-switch 自身 proxy_config 表的 proxy_enabled/enabled 本地代理接管开关。应提醒只关一个不够；应说明 DB 和磁盘 config.toml 要同步改，只改一处会被覆盖；应提醒改完要隔 30~60 秒复查多次而非改完看一眼就下结论；应检查 proxy_live_backup 是否会在异常恢复时把旧配置写回；应告知代价（失去推理截断修复、失去 GUI 切换能力）。",
+      "expected_output": "应同时排查两类独立根因：(a) 外部 watcher 脚本/计划任务持续改写 config.toml（含孤儿进程，不只查计划任务）；(b) cc-switch 自身 proxy_config 表的 proxy_enabled/enabled 本地代理接管开关。应提醒只关一个不够；应说明 DB 和磁盘 config.toml 要同步改，只改一处会被覆盖；应提醒改完至少等待 60 秒复查而非改完看一眼就下结论；应检查 proxy_live_backup 是否会在异常恢复时把旧配置写回；应告知代价（失去推理截断修复、失去 GUI 切换能力）。",
       "files": []
     },
     {
@@ -52,13 +52,13 @@
     {
       "id": 9,
       "prompt": "CodexCont Chain 已经不需要了。帮我取消 CodexCont，但保留 CC Switch 继续管理 provider；不要删除安装文件，也不要把计划任务彻底注销。请说明执行顺序、复查时间和最终验收标准。",
-      "expected_output": "应把 relay-chain.mode 设为 ccswitch-only；禁用而非注销 CodexCont Chain 计划任务；停止现存 CodexCont 进程并保留安装文件；确认 8787 不监听、15721 监听、Codex base_url 指向 http://127.0.0.1:15721/v1；等待 30–60 秒复查不会被 hook 拉起；对 15721 做真实 stream=true /v1/responses SSE 测试。ccswitch-only 模式缺少 proxy_rounds 是预期结果，不应判失败；同时应明确用户仍可用 CC Switch 切换 provider，但失去 CodexCont 的推理截断续跑能力。",
+      "expected_output": "应把 relay-chain.mode 设为 ccswitch-only；禁用而非注销 CodexCont Chain 计划任务；停止现存 CodexCont 进程并保留安装文件；确认 8787 不监听、15721 监听、Codex base_url 指向 http://127.0.0.1:15721/v1；至少等待 60 秒复查不会被 hook 拉起；对 15721 做真实 stream=true /v1/responses SSE 测试。ccswitch-only 模式缺少 proxy_rounds 是预期结果，不应判失败；同时应明确用户仍可用 CC Switch 切换 provider，但失去 CodexCont 的推理截断续跑能力。",
       "files": [],
       "expectations": [
         "将 relay-chain.mode 设为 ccswitch-only，而不是 disabled 或直连远端 provider",
         "禁用而非注销 CodexCont Chain 计划任务，并停止现存 CodexCont 进程但保留安装文件",
         "验收同时检查 8787 不监听、15721 监听、Codex base_url 指向 http://127.0.0.1:15721/v1",
-        "等待 30–60 秒后复查 CodexCont 没有被 hook 或 watcher 重新启动",
+        "至少等待 60 秒后复查 CodexCont 没有被 hook 或 watcher 重新启动",
         "对 15721/v1/responses 做真实 stream=true SSE 测试，并说明缺少 proxy_rounds 在该模式下是正常现象",
         "说明保留 CC Switch provider 切换能力，但失去 CodexCont 推理截断续跑能力"
       ]
@@ -66,14 +66,41 @@
     {
       "id": 10,
       "prompt": "Codex 更新后，能力 watcher 一直重写 .codex-global-state.json，日志反复出现 FIXED 和 restart Codex required。新对话默认是否进入项目、selected-project 这两项都交给 Codex 自己管理。请定位写入循环并给出修复与验证标准。",
-      "expected_output": "应识别整份 JSON 重新序列化后与原文本比较会因属性顺序、压缩格式、结尾换行或原子替换形成写入循环；只在 hook 实际管理字段的语义值变化时写文件；不删除、不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，让 Codex App 自己管理。验证应包含 PowerShell 语法检查、连续两次 -Force 均返回 OK: no changes，以及观察 watcher 30–60 秒无重复 FIXED/WARN: restart Codex required。",
+      "expected_output": "应识别整份 JSON 重新序列化后与原文本比较会因属性顺序、压缩格式、结尾换行或原子替换形成写入循环；只在 hook 实际管理字段的语义值变化时写文件；不删除、不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，让 Codex App 自己管理。验证应包含 PowerShell 语法检查、连续两次 -Force 均返回 OK: no changes，以及至少观察 watcher 60 秒无重复 FIXED/WARN: restart Codex required。",
       "files": [],
       "expectations": [
         "识别整份 JSON 重新序列化与原文本比较会因格式差异形成 watcher 写入循环",
         "修复为只在 hook 管理字段的语义值实际变化时写回文件",
         "不删除也不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，交给 Codex App 管理",
         "验证包含 PowerShell 语法检查和连续两次 -Force 均返回 OK: no changes",
-        "观察 watcher 30–60 秒，确认日志不再重复出现 FIXED 或 WARN: restart Codex required"
+        "至少观察 watcher 60 秒，确认日志不再重复出现 FIXED 或 WARN: restart Codex required"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "我恢复 ChatGPT OAuth 后，旧对话的错误先从 access token could not be refreshed 变成了 401 INVALID_API_KEY，错误 URL 还是聪明 AI；但 CC Switch 当前选中 JBB，新对话能正常回复。是不是应该马上把聪明 AI 的 key 换掉？",
+      "expected_output": "不应立刻改 key。应读取旧任务或 session JSONL 的失败时间和错误 URL，对照当前 config.toml、currentProviderCodex、providers.is_current 以及同一时段 CC Switch 的真实转发目标；再用聪明 AI 当前已保存 key 做最小 Responses 直连，并用新任务或 codex exec 验证当前线路。若聪明 AI key 直连 200、JBB 当前线路 200、只有旧任务报旧 URL 401，则判为旧任务认证/provider 上下文失效，不覆盖 providers、proxy_live_backup 或 config.toml。",
+      "files": [],
+      "expectations": [
+        "先比较旧任务错误 URL 与当前 provider 和同一时段代理日志，而不是仅凭 401 修改 key",
+        "用已保存 key 做最小 Responses 直连，但只输出掩码或指纹和状态",
+        "用新任务或 codex exec 验证当前线路并检查 CC Switch HTTP 200 日志",
+        "当前 key 直连正常且只有旧任务失败时，明确判为旧任务上下文失效",
+        "不修改 providers、proxy_live_backup、auth.json 或 config.toml"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "这个 Codex 旧对话反复报认证错误，但里面的历史和已完成工作都要保留。请帮我恢复继续工作，不要创建 Git 分支，也不要改项目文件。",
+      "expected_output": "在用户已授权新任务或分叉后，应使用同目录 Codex 对话分叉，而不是 Git branch 或 worktree；说明分叉只复制已完成历史，不复制正在运行的 turn；向新任务发送最后一条未完成的具体指令而不是只发“继续”；用 wait_threads 确认新任务完成且无认证错误。只有用户明确要求保留旧任务 ID 并接受中断其他任务时，才考虑完全重启 Codex Desktop。",
+      "files": [],
+      "expectations": [
+        "先确认用户已经授权创建新任务或分叉",
+        "使用 same-directory 对话分叉，并明确它不是 Git branch 或 worktree",
+        "说明只复制已完成历史，不复制活动 turn 或未完成回复",
+        "向新任务发送最后一条未完成的具体指令，不只发送“继续”",
+        "用 wait_threads 验证新任务完成且没有认证错误",
+        "重启 Codex Desktop 只在用户明确接受影响时考虑"
       ]
     }
   ]

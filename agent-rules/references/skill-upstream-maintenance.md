@@ -49,7 +49,21 @@ python <script> weekly-run `
 
 `<script>` 是 `<agents-root>/skills/agent-rules/scripts/skill_upstream_maintenance.py`。
 
-镜像单仓库总预算 20 秒，最多 4 路并行。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。脏镜像、非快进历史、许可证变化、上游路径删除或基线不可用，只报告，不生成候选。许可证始终相对 `accepted_commit` 检查，不能用已审核提交跳过。
+镜像单仓库总预算 20 秒，最多 4 路并行。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。
+
+“只报告”只表示不擅自清理镜像、改权限、改来源身份或生成不可信候选，不表示只给状态名。每个异常来源必须在 `summary.json` 和 `summary.md` 中说明：
+
+- 具体问题和原始错误
+- 对本次检查与候选更新的影响
+- 按顺序执行的修复步骤
+- 自动化已经采取的隔离动作
+- 下一步是否需要用户批准，以及批准范围
+
+脏镜像、非快进历史、许可证变化、上游路径删除或基线不可用时，不生成候选。许可证始终相对 `accepted_commit` 检查，不能用已审核提交跳过。只读诊断、网络重试和新建 zero-exposure 镜像可以直接执行；清理用户修改、强制重置、改 Windows ACL、修改 origin/branch、迁移接受基线或确认新上游路径前必须取得用户批准。
+
+上游路径移动经 Git 历史确认后，用 `upstream_path` 记录当前路径，用 `accepted_upstream_path` 保留 `accepted_commit` 当时的路径，并登记 `path_migration_commit` 和 `path_migration_evidence`。校验器必须确认接受提交是迁移提交的祖先、当前镜像包含迁移提交，且迁移前后的技能目录 tree 相同。路径确认只修正来源身份；`accepted_commit` 保持不变，迁移后真正发生的内容变化仍进入收益评估。以后本地真正吸收新提交时，同时把 `accepted_upstream_path` 更新到该接受提交对应的路径。
+
+周检还会查找既有 `review-context.json`。当 `candidate_status` 为 `awaiting_approval`，且技能、来源、`accepted_commit` 和当前上游提交完全一致时，来源状态显示为 `awaiting_approval` 并给出审核目录，不重复显示 `review_required`。这一步只恢复待批准提醒，不更新 `accepted_commit` 或 `last_reviewed_commit`；真正应用前仍执行候选时效、证据哈希和目标技能状态检查。
 
 ## 候选审核门
 

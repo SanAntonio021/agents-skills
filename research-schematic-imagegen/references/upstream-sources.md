@@ -12,7 +12,8 @@
 ## research-schematic-imagegen-conard-gpt-image-2
 
 - 仓库：https://github.com/ConardLi/garden-skills.git
-- 上游路径：`skills/gpt-image-2`
+- 当前上游路径：`skills/gpt-image-2`
+- 接受时上游路径：`skills/gpt-image-2`
 - 已接受提交：`aaf9a82f5efd73e87cc0998edc398e75bfc35901`
 - 已接受版本：`1.0.4`
 - 基线类型：`exact`

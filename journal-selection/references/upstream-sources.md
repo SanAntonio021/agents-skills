@@ -12,7 +12,8 @@
 ## journal-selection-bryce-twc
 
 - 仓库：https://github.com/brycewang-stanford/Awesome-Journal-Skills.git
-- 上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-wireless-communications`
+- 当前上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-wireless-communications`
+- 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-wireless-communications`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -45,7 +46,8 @@
 ## journal-selection-bryce-tcom
 
 - 仓库：https://github.com/brycewang-stanford/Awesome-Journal-Skills.git
-- 上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-communications`
+- 当前上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-communications`
+- 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-communications`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -78,7 +80,8 @@
 ## journal-selection-bryce-tap
 
 - 仓库：https://github.com/brycewang-stanford/Awesome-Journal-Skills.git
-- 上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-antennas-and-propagation`
+- 当前上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-antennas-and-propagation`
+- 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-antennas-and-propagation`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -111,7 +114,8 @@
 ## journal-selection-bryce-nature-communications
 
 - 仓库：https://github.com/brycewang-stanford/Awesome-Journal-Skills.git
-- 上游路径：`English-NaturalScience-Journal-Skills/skills/nature-communications`
+- 当前上游路径：`English-NaturalScience-Journal-Skills/skills/nature-communications`
+- 接受时上游路径：`English-NaturalScience-Journal-Skills/skills/nature-communications`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
 - 已接受版本：`未提供`
 - 基线类型：`exact`

@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-07-22`
-- 说明：接受基线路径是 scientific-skills/scientific-critical-thinking；当前上游已移动到 skills/scientific-critical-thinking，未将新提交当成已接受基线。
+- 最近来源登记审核：`2026-07-23`
+- 说明：已用 Git R100 记录和相同 tree 确认路径迁移；迁移后的功能变化仍需单独收益评估，未将当前提交当成已接受基线。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -12,7 +12,8 @@
 ## rigor-check-kdense-scientific-critical-thinking
 
 - 仓库：https://github.com/K-Dense-AI/scientific-agent-skills.git
-- 上游路径：`scientific-skills/scientific-critical-thinking`
+- 当前上游路径：`skills/scientific-critical-thinking`
+- 接受时上游路径：`scientific-skills/scientific-critical-thinking`
 - 已接受提交：`e143ef2f9514c97a1757fb23b67a60f5cc3bd06d`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
@@ -24,6 +25,13 @@
 - 本地来源记录说明了原始来源、原样保留文件、本地改写和明确删除项。
 - 本地证据文件：`rigor-check/references/upstream-source.md`
 - 本地证据文件：`rigor-check/SKILL.md`
+
+### 路径迁移证据
+
+- 迁移提交：`0936740e52033a6256085be5fc81e5e56d606110`
+- 迁移提交将 9 个文件全部以 R100 从旧路径移动到当前路径。
+- 迁移前后目录 tree 均为 05babbdb65d33f7683095bbbd6e37ddfce32e1c0。
+- accepted_commit 是迁移提交的祖先，迁移提交也是当前镜像 HEAD 的祖先。
 
 ### 已吸收
 

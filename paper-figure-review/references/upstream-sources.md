@@ -12,7 +12,8 @@
 ## paper-figure-review-galaxy-paper-self-review
 
 - 仓库：https://github.com/Galaxy-Dawn/claude-scholar.git
-- 上游路径：`skills/paper-self-review`
+- 当前上游路径：`skills/paper-self-review`
+- 接受时上游路径：`skills/paper-self-review`
 - 已接受提交：`2f7766fd541a723d4ddc6230b3277f948d61b093`
 - 已接受版本：`0.1.0`
 - 基线类型：`exact`

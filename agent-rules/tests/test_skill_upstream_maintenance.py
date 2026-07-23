@@ -605,6 +605,28 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertNotIn("git pull", non_fast_forward["problem"])
         self.assertIn("快进安全检查", non_fast_forward["problem"])
 
+    def test_network_timeout_diagnosis_names_target_without_assuming_vpn_failure(self) -> None:
+        skills, mirrors = self.load()
+        source = skills[0].sources[0]
+        mirror = mirrors["example"]
+        diagnosis = MODULE.diagnose_report_row(
+            {
+                "status": "mirror_blocked",
+                "mirror_status": "sync_failed",
+                "error": "TLS handshake timed out after 20 seconds.",
+                "changed": [],
+                "current_commit": self.baseline,
+            },
+            source,
+            mirror,
+        )
+
+        self.assertIn(mirror.repo_url, diagnosis["problem"])
+        repair_text = "\n".join(diagnosis["repair_plan"])
+        self.assertIn("curl.exe -I", repair_text)
+        self.assertIn("git ls-remote", repair_text)
+        self.assertIn("不能据此判断 VPN 不可用", repair_text)
+
     def test_rejected_commit_is_not_repeated_after_unrelated_commit(self) -> None:
         skills, mirrors = self.load()
         reports = self.root / "reports"
@@ -867,6 +889,10 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         weekly_markdown = (reports / "2026-07-29" / "summary.md").read_text(encoding="utf-8")
         self.assertIn("## 等待逐项批准", weekly_markdown)
         self.assertIn(str(workspace.resolve()), weekly_markdown)
+        self.assertIn("隔离可选升级草稿，不是新安装的技能", weekly_markdown)
+        self.assertIn("正式本地技能仍保持原样并可继续使用", weekly_markdown)
+        self.assertIn("只衡量本次拟议行为", weekly_markdown)
+        self.assertIn("不能证明旧技能整体失效或不可用", weekly_markdown)
         state = json.loads((reports / "state.json").read_text(encoding="utf-8"))
         source_state = state["sources"]["example-source"]
         self.assertEqual(source_state["last_seen_commit"], head)

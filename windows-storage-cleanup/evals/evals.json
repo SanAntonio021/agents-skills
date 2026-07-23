@@ -1,0 +1,41 @@
+{
+  "skill_name": "windows-storage-cleanup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我的 Windows 11 电脑 C 盘只剩 8 GB，D 盘还有 60 GB，本地装了 WizTree。请先检查哪些内容占空间，保护正在运行的 VS Code、Claude 和实验原始数据。没有我确认不要实际删除。",
+      "expected_output": "A read-only audit plan and grouped candidate review that protects active work and research data, validates WizTree exports, and asks one decision at a time before cleanup.",
+      "files": [],
+      "expectations": [
+        "The response starts with read-only evidence collection and does not execute cleanup.",
+        "Active VS Code, Claude, and original experiment data are protected.",
+        "WizTree CSV existence and parseability are checked instead of trusting only the exit code.",
+        "Candidates are grouped by source and purpose with size, risk, evidence, and proposed action."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "D 盘有两个同名 analysis_result.mat，每个 1.1 GB，一个在 Paper，一个在 Program。我还在两个仓库里改代码。百度网盘看起来也有备份。帮我判断能不能删一个。",
+      "expected_output": "A high-risk duplicate assessment that does not delete either file until hashes, repository dependencies, uncommitted work, authoritative location, and cloud semantics are verified.",
+      "files": [],
+      "expectations": [
+        "Matching names and sizes are not treated as duplicate proof.",
+        "SHA-256, path dependencies, repository state, and authoritative copy are checked.",
+        "A cloud listing alone is not treated as sufficient backup evidence.",
+        "No file is deleted before explicit approval."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我有 64 GB 内存，C 盘页面文件占空间。是不是可以直接删除 pagefile.sys，或者全挪到 D 盘？请给一个准确、前后一致的建议。",
+      "expected_output": "A system-configuration diagnosis based on live pagefile settings, usage, crash-dump mode, commit behavior, and free space, with no direct deletion and a clear reboot requirement when applicable.",
+      "files": [],
+      "expectations": [
+        "The response refuses direct deletion of pagefile.sys.",
+        "The recommendation is based on live configuration, CrashDumpEnabled, usage, RAM, commit behavior, and free space.",
+        "Minimum crash-dump requirements are separated from conservative operating headroom.",
+        "Any required restart is described as a full Windows reboot."
+      ]
+    }
+  ]
+}

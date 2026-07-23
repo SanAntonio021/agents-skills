@@ -5,7 +5,8 @@ description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
   站点分流、订阅重导入后配置丢失、节点或分组在 UI 不显示、增强文件没有生效、需要确认日志里真实走哪条链，
-  或 Edge/Chrome 扩展修复后很快又显示损坏、扩展商店更新异常时，优先使用本技能。
+  Edge/Chrome 扩展修复后很快又显示损坏、扩展商店更新异常、`external-controller-pipe`
+  命名管道查询、临时切换 selector、GitHub TLS/推送线路归因时，优先使用本技能。
 ---
 
 # Clash Verge 链式代理
@@ -37,6 +38,50 @@ description: >
 4. 读服务日志。
    - `%APPDATA%\...\logs\service\service_latest.log`
    - 看到 `using <group>[<proxy>]` 才算真实生效。
+
+## 只开放命名管道时的运行态控制
+
+`config.yaml` 可能配置 `external-controller-pipe: \\.\pipe\verge-mihomo`，而最终生成配置
+不暴露 TCP controller。此时 `9097` 没监听不代表 Mihomo API 不可用。优先用现有 `pywin32`
+的 `win32file.CreateFile` 连接命名管道；没有该依赖时用 .NET `NamedPipeClientStream`。按
+HTTP/1.1 发送请求，从 `config.yaml` 读取 `secret` 放进 `Authorization: Bearer ...`，但不要打印 secret。
+
+常用接口：
+
+- `GET /version`：确认管道 API 可用。
+- `GET /proxies`：读取 selector 的 `now`、候选 `all`，以及节点 `alive` / `history`。
+- `PUT /proxies/<URL-encoded-group>`，body 为 `{"name":"<candidate>"}`：切换运行态 selector。
+
+只为一次诊断或推送临时换线路时，不改 YAML：
+
+1. 先从失败请求对应的服务日志确认 GitHub 实际命中的 selector；无法确认时不要猜组。
+2. `GET /proxies` 保存该 selector 的原值。
+3. 从该组候选中选 `alive = true` 且近期 delay 有效的节点，不凭名称猜可用性。
+4. `PUT` 临时节点后立即再次 `GET /proxies`，确认该组 `now == candidate`；不一致就停止目标请求。
+5. 执行真实目标请求。
+6. 在 `finally` 中先 `GET /proxies`：`now` 仍等于临时候选时才 `PUT` 原值并再次 `GET` 确认；
+   已等于原值则无需写入；若已变成第三个值，说明测试期间发生并发切换，不要覆盖，明确报告。
+
+运行态切换会立即影响使用该组的流量。切换前告知用户，持续时间只覆盖必要测试，不修改订阅、
+增强文件或默认选择。
+
+### GitHub 与 Git 推送验证
+
+一次 `curl https://github.com` 返回 200 不能证明 Git 多连接稳定。按顺序验证：
+
+1. 先用失败日志确认 `git-remote-https.exe` 实际命中的 selector。
+2. `git ls-remote --heads origin`。
+3. 只有当前任务已明确授权推送且确有待推提交时，才执行真实 `git push`。纯 TLS 诊断不创建提交、
+   不推送，停在 `ls-remote` 并注明只验证了读路径。
+4. 核对服务日志里对应 `git-remote-https.exe` 是否命中预期组和节点。
+
+Git 报 Schannel 握手失败时，先按同一进程、目标和时间窗口关联服务日志。若同一请求对应远端节点
+`connect error: context deadline exceeded`，代理路径是优先嫌疑，但仍不能单凭这一条排除本机
+TLS/证书问题。在任务授权范围内改用另一个存活节点；目标允许直连时也可用 DIRECT 做 A/B。
+只有替代路径成功而原节点稳定失败时，才把故障归到原代理路径。可用一次性
+`git -c http.proxy=... -c http.version=HTTP/1.1` 测试；需要对照 TLS 后端时也只用单次
+`-c http.sslBackend=openssl -c http.sslCAInfo=<Git CA bundle>`，不要先写全局 Git 配置。
+测试或推送结束后按上面的并发保护规则恢复原 selector。
 
 ## 推荐配置形态
 
@@ -202,6 +247,7 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 ## 安全边界
 
 - 不把真实订阅 URL、节点密码、UUID、落地代理账号写进回复或 skill。
+- 不输出 Mihomo controller secret，也不把它放进进程命令行或日志。
 - 不直接改 `.cc-switch`、`.codex`、`.claude` 运行时 skill 目录；改源码目录后通过同步工具分发。
 - 不把含凭据的恢复脚本提交到公开仓库。
 - 不只改 `clash-verge.yaml` 就宣称完成持久化。
@@ -216,3 +262,4 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 - 一个落地节点如果要走两个不同前置，应该创建两个同参数、不同 `dialer-proxy` 的代理条目。
 - 进程匹配可能误伤。`PROCESS-NAME,claude.exe` 会覆盖桌面 Claude、Claude Code、VS Code 插件里的 Claude。
 - PowerShell 处理 emoji 和中文时容易受编码影响。脚本文件建议 UTF-8 with BOM；读写配置文件用 UTF-8。
+- 命名管道临时切换必须用 `finally` 恢复并复查，不能只假定 PUT 已成功。

@@ -63,6 +63,8 @@ python <script> weekly-run `
 
 上游路径移动经 Git 历史确认后，用 `upstream_path` 记录当前路径，用 `accepted_upstream_path` 保留 `accepted_commit` 当时的路径，并登记 `path_migration_commit` 和 `path_migration_evidence`。校验器必须确认接受提交是迁移提交的祖先、当前镜像包含迁移提交，且迁移前后的技能目录 tree 相同。路径确认只修正来源身份；`accepted_commit` 保持不变，迁移后真正发生的内容变化仍进入收益评估。以后本地真正吸收新提交时，同时把 `accepted_upstream_path` 更新到该接受提交对应的路径。
 
+如果上游把原有行为拆到新建的 `sections/`、`references/` 或脚本目录，必须把该目录补进 `tracked_paths`。新路径可以在 `accepted_commit` 时不存在，但必须存在于当前 HEAD；差异中按新增文件进入收益评估。这样不会因只跟踪入口 `SKILL.md` 而漏掉外置行为变化。
+
 周检还会查找既有 `review-context.json`。当 `candidate_status` 为 `awaiting_approval`，且技能、来源、`accepted_commit` 和当前上游提交完全一致时，来源状态显示为 `awaiting_approval` 并给出审核目录，不重复显示 `review_required`。这一步只恢复待批准提醒，不更新 `accepted_commit` 或 `last_reviewed_commit`；真正应用前仍执行候选时效、证据哈希和目标技能状态检查。
 
 ## 候选审核门

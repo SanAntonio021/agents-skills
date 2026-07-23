@@ -1238,6 +1238,7 @@ def diagnose_report_row(
         return {}
 
     mirror_path = str(mirror.local_path)
+    network_target = mirror.repo_url
     details = row.get("mirror_details") if isinstance(row.get("mirror_details"), dict) else {}
     detail_errors = " | ".join(
         compact_report_text(details.get(key))
@@ -1403,21 +1404,22 @@ def diagnose_report_row(
         approval_required = True
         approval_reason = "选择丢弃、保留或迁移分叉提交属于历史处理决策，需要用户批准。"
     elif effective_status == "remote_timeout":
-        problem = "镜像刷新或远端查询超过单仓库超时预算。"
+        problem = f"镜像刷新或远端查询 `{network_target}` 超过单仓库超时预算。"
         impact = "本次无法确认远端 HEAD；报告保留本地提交，但不会据此生成候选。"
         repair_plan = [
-            "保留本次错误，检查网络、代理、DNS 和远端服务状态。",
-            "在不修改镜像的前提下重试 `git ls-remote`，确认是瞬时故障还是持续不可达。",
+            f"保留本次错误并记录准确访问目标 `{network_target}`，区分 DNS、TCP、TLS 和 HTTP/Git 响应阶段。",
+            "在不修改镜像的前提下，对同一目标执行有次数上限的 `curl.exe -I` 或 `git ls-remote` 复测，确认是瞬时故障还是持续不可达。",
+            "单次 TLS 握手超时只说明该次连接没有按时完成，不能据此判断 VPN 不可用；代理、DNS、远端服务或本机 TLS 配置必须由复测证据区分。",
             "网络恢复后重跑 weekly-run；若反复超时，再评估是否需要调整单仓库超时。",
         ]
         approval_required = False
         approval_reason = "只读网络诊断和按现有配置重试不需要用户批准。"
     elif effective_status == "mirror_refresh_failed":
-        problem = "镜像管理器未能完成刷新，当前错误尚不能安全归类为权限、工作树、分支或远端身份问题。"
+        problem = f"镜像管理器未能完成对 `{network_target}` 的刷新，当前错误尚不能安全归类为权限、工作树、分支或远端身份问题。"
         impact = "该来源停留在已知本地提交，不能生成新的候选。"
         repair_plan = [
             "按原始错误定位失败阶段：clone、fetch、本地 `merge --ff-only`、网络或本地 Git 仓库检查。",
-            "只读核对镜像状态、origin、branch、HEAD 和远端可达性。",
+            f"只读核对镜像状态、origin、branch、HEAD 和准确目标 `{network_target}` 的远端可达性。",
             "优先保留原镜像并在新 zero-exposure 目录复现；修复后重跑 weekly-run。",
             "若修复需要清理、重置、改权限或改登记表，先取得用户批准。",
         ]
@@ -1754,6 +1756,10 @@ def build_report(
                         f"`{row['source']}` @ `{row['current_commit']}`" for row in group
                     ),
                     f"- 审核目录：`{markdown_report_text(workspace)}`",
+                    "- 候选性质：这是从正式本地技能复制后形成的隔离可选升级草稿，不是新安装的技能。",
+                    "- 正式技能：正式本地技能仍保持原样并可继续使用；候选不会在批准前覆盖它。",
+                    "- 对比范围：针对性对比评测只衡量本次拟议行为，不是对技能全部能力的综合评分。",
+                    "- 分数解释：旧版在这些用例上得分较低，只说明它未覆盖拟议行为，不能证明旧技能整体失效或不可用。",
                     "- 当前动作：保留已定稿候选并等待该技能的明确批准；未修改 accepted_commit 或 last_reviewed_commit。",
                     "",
                 ]

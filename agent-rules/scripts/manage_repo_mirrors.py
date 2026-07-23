@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import signal
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 from collections import Counter
@@ -29,6 +32,14 @@ class MirrorConfig:
     exposure_policy: str
     tracked_upstream_skills: tuple[str, ...]
     custom_wrappers: tuple[str, ...]
+
+
+class TrackedChangeError(RuntimeError):
+    """Raised when tracked-path change extraction is incomplete."""
+
+    def __init__(self, message: str, result: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.result = result
 
 
 def positive_timeout(value: str) -> float:
@@ -84,26 +95,39 @@ def run_git(
     # Keep existing human/JSON command representation for compatibility.
     command_text = " ".join(command)
     try:
-        completed = subprocess.run(
-            command,
-            cwd=str(cwd) if cwd else None,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout_seconds,
-        )
+        with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+            process = subprocess.Popen(
+                command,
+                cwd=str(cwd) if cwd else None,
+                stdin=subprocess.DEVNULL,
+                stdout=stdout_file,
+                stderr=stderr_file,
+                creationflags=(
+                    subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+                ),
+                start_new_session=sys.platform != "win32",
+            )
+            try:
+                exit_code = process.wait(timeout=timeout_seconds)
+                timed_out = False
+            except subprocess.TimeoutExpired:
+                terminate_process_tree(process)
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+                exit_code = TIMEOUT_EXIT_CODE
+                timed_out = True
+            stdout_file.seek(0)
+            stderr_file.seek(0)
+            stdout = stdout_file.read().decode("utf-8", errors="replace")
+            stderr = stderr_file.read().decode("utf-8", errors="replace")
     except subprocess.TimeoutExpired as exc:
-        partial_output = "\n".join(
-            part.strip()
-            for part in (_decode_timeout_output(exc.stdout), _decode_timeout_output(exc.stderr))
-            if part.strip()
-        ).strip()
-        timeout_message = f"Git command timed out after {timeout_seconds:g} seconds."
         return {
             "command": command_text,
             "exit_code": TIMEOUT_EXIT_CODE,
-            "output": "\n".join(part for part in (partial_output, timeout_message) if part),
+            "output": f"Git process tree did not terminate after timeout: {exc}",
             "timed_out": True,
             "timeout_seconds": timeout_seconds,
         }
@@ -115,22 +139,39 @@ def run_git(
             "timed_out": False,
             "timeout_seconds": timeout_seconds,
         }
-    output = "\n".join(part.strip() for part in (completed.stdout, completed.stderr) if part.strip()).strip()
+    output = "\n".join(part.strip() for part in (stdout, stderr) if part.strip()).strip()
+    if timed_out:
+        timeout_message = f"Git command timed out after {timeout_seconds:g} seconds."
+        output = "\n".join(part for part in (output, timeout_message) if part)
     return {
         "command": command_text,
-        "exit_code": completed.returncode,
+        "exit_code": exit_code,
         "output": output,
-        "timed_out": False,
+        "timed_out": timed_out,
         "timeout_seconds": timeout_seconds,
     }
 
 
-def _decode_timeout_output(value: str | bytes | None) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, bytes):
-        return value.decode("utf-8", errors="replace")
-    return value
+def terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    if sys.platform == "win32":
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            process.kill()
+        return
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        process.kill()
 
 
 def should_retry_with_openssl(output: str) -> bool:
@@ -143,27 +184,55 @@ def should_retry_with_openssl(output: str) -> bool:
     )
 
 
+def should_retry_transient_remote(output: str) -> bool:
+    lowered = output.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "tls connect error",
+            "unexpected eof",
+            "connection reset by peer",
+            "connection was reset",
+            "recv failure",
+        )
+    )
+
+
 def run_git_with_remote_fallback(
     args: list[str],
     cwd: Path | None = None,
     configs: list[tuple[str, str]] | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    allow_retries: bool = True,
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
+    active_configs = list(configs or [])
     result = run_git(
         args,
         cwd=cwd,
-        configs=configs,
+        configs=active_configs,
         timeout_seconds=remaining_timeout(deadline),
     )
-    if result["exit_code"] == 0 or not should_retry_with_openssl(result["output"]):
+    if result["exit_code"] == 0 or not allow_retries:
         return result
-    return run_git(
-        args,
-        cwd=cwd,
-        configs=[*(configs or []), ("http.sslBackend", "openssl")],
-        timeout_seconds=remaining_timeout(deadline),
-    )
+    if should_retry_with_openssl(result["output"]):
+        active_configs.append(("http.sslBackend", "openssl"))
+        result = run_git(
+            args,
+            cwd=cwd,
+            configs=active_configs,
+            timeout_seconds=remaining_timeout(deadline),
+        )
+        if result["exit_code"] == 0:
+            return result
+    if should_retry_transient_remote(result["output"]):
+        return run_git(
+            args,
+            cwd=cwd,
+            configs=active_configs,
+            timeout_seconds=remaining_timeout(deadline),
+        )
+    return result
 
 
 def remaining_timeout(deadline: float) -> float:
@@ -175,6 +244,26 @@ def safe_directory_value(path: Path) -> str:
         return path.resolve().as_posix()
     except OSError:
         return path.as_posix()
+
+
+def canonical_path_key(path: Path) -> str:
+    return safe_directory_value(path).casefold()
+
+
+def path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def find_named_ancestor(path: Path, name: str) -> Path | None:
+    resolved = path.resolve()
+    for candidate in (resolved, *resolved.parents):
+        if candidate.name.casefold() == name.casefold():
+            return candidate
+    return None
 
 
 def normalize_repo_url(value: str | None) -> str:
@@ -238,10 +327,28 @@ def load_registry(path: Path) -> list[MirrorConfig]:
     ids = [mirror.id for mirror in mirrors]
     if len(ids) != len(set(ids)):
         raise ValueError(f"{path}: duplicate mirror id")
-    local_paths = [safe_directory_value(mirror.local_path).lower() for mirror in mirrors]
+    local_paths = [canonical_path_key(mirror.local_path) for mirror in mirrors]
     if len(local_paths) != len(set(local_paths)):
         raise ValueError(f"{path}: duplicate mirror local_path")
+    git_dir_paths = [
+        canonical_path_key(mirror.git_dir_path)
+        for mirror in mirrors
+        if mirror.git_dir_path is not None
+    ]
+    if len(git_dir_paths) != len(set(git_dir_paths)):
+        raise ValueError(f"{path}: duplicate mirror git_dir_path")
     mirror_root = path.resolve().parent
+    agents_root = mirror_root.parent
+    sync_root = find_named_ancestor(path, "BaiduSyncdisk")
+    forbidden_git_dir_roots = [
+        ("source skill directory", agents_root / "skills"),
+        ("Codex skill runtime", Path.home() / ".codex" / "skills"),
+        ("Claude skill runtime", Path.home() / ".claude" / "skills"),
+        ("CC Switch skill runtime", Path.home() / ".cc-switch" / "skills"),
+        ("mirror worktree root", mirror_root),
+    ]
+    if sync_root is not None:
+        forbidden_git_dir_roots.insert(0, ("synchronized root", sync_root))
     for mirror in mirrors:
         try:
             mirror.local_path.resolve().relative_to(mirror_root)
@@ -249,6 +356,15 @@ def load_registry(path: Path) -> list[MirrorConfig]:
             raise ValueError(
                 f"{path}: zero-exposure mirror {mirror.id} must stay under {mirror_root}"
             ) from exc
+        if mirror.git_dir_path is None:
+            continue
+        if not mirror.git_dir_path.is_absolute():
+            raise ValueError(f"{path}: mirror {mirror.id} git_dir_path must be absolute")
+        for root_name, root in forbidden_git_dir_roots:
+            if path_is_within(mirror.git_dir_path, root):
+                raise ValueError(
+                    f"{path}: mirror {mirror.id} git_dir_path must stay outside {root_name} {root}"
+                )
     return mirrors
 
 
@@ -274,6 +390,8 @@ def get_local_repo_state(
         "local_branch": None,
         "local_dirty": None,
         "local_origin": None,
+        "actual_git_dir_path": None,
+        "git_dir_matches_registry": None,
         "local_error": None,
     }
     if not state["local_exists"]:
@@ -288,7 +406,27 @@ def get_local_repo_state(
         state["local_error"] = probe["output"] or "Local path is not a git repository."
         return state
 
+    git_dir = run_local_git(
+        mirror,
+        ["rev-parse", "--absolute-git-dir"],
+        timeout_seconds=remaining_timeout(deadline),
+    )
+    if git_dir["exit_code"] != 0 or not git_dir["output"].strip():
+        state["local_error"] = git_dir["output"] or "Unable to resolve the local Git metadata directory."
+        return state
+
+    actual_git_dir = Path(git_dir["output"].splitlines()[0].strip())
     state["local_repo_valid"] = True
+    state["actual_git_dir_path"] = safe_directory_value(actual_git_dir)
+    if mirror.git_dir_path is not None:
+        matches_registry = canonical_path_key(actual_git_dir) == canonical_path_key(mirror.git_dir_path)
+        state["git_dir_matches_registry"] = matches_registry
+        if not matches_registry:
+            state["local_error"] = (
+                "Actual Git metadata directory does not match git_dir_path: "
+                f"expected {safe_directory_value(mirror.git_dir_path)}, "
+                f"actual {state['actual_git_dir_path']}."
+            )
     head = run_local_git(mirror, ["rev-parse", "HEAD"], timeout_seconds=remaining_timeout(deadline))
     branch = run_local_git(
         mirror,
@@ -339,9 +477,13 @@ def get_remote_head(
 
 def summarize_status(local: dict[str, Any], remote: dict[str, Any], mirror: MirrorConfig) -> str:
     if not local["local_exists"]:
+        if mirror.git_dir_path is None:
+            return "blocked_missing_git_dir"
         return "needs_init" if remote["remote_reachable"] else "check_failed"
     if not local["local_repo_valid"]:
         return "invalid_local_repo"
+    if local.get("git_dir_matches_registry") is False:
+        return "git_dir_mismatch"
     if local["local_dirty"]:
         return "dirty_mirror"
     if normalize_repo_url(local.get("local_origin")) != normalize_repo_url(mirror.repo_url):
@@ -361,7 +503,14 @@ def check_one(
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
     local = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
-    remote = get_remote_head(mirror, timeout_seconds=remaining_timeout(deadline))
+    if not local["local_exists"] and mirror.git_dir_path is None:
+        remote = {
+            "remote_reachable": None,
+            "remote_head": None,
+            "remote_error": "Remote check skipped until git_dir_path is configured.",
+        }
+    else:
+        remote = get_remote_head(mirror, timeout_seconds=remaining_timeout(deadline))
     status = summarize_status(local, remote, mirror)
     return {
         "id": mirror.id,
@@ -413,7 +562,14 @@ def summarize_tracked_changes(
             ],
             timeout_seconds=remaining_timeout(deadline),
         )
-        if diff["exit_code"] == 0 and diff["output"].strip():
+        if diff["exit_code"] != 0:
+            failure_kind = "timed out" if diff.get("timed_out") else "failed"
+            detail = diff["output"].strip() or f"exit code {diff['exit_code']}"
+            raise TrackedChangeError(
+                f"Tracked path diff {failure_kind} for {skill!r} ({tracked_path!r}): {detail}",
+                diff,
+            )
+        if diff["output"].strip():
             changed.append(skill)
     return changed, None
 
@@ -422,7 +578,17 @@ def sync_failure(
     mirror: MirrorConfig,
     local: dict[str, Any],
     error: str,
+    status: str = "sync_failed",
+    git_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    failure_details = {}
+    if git_result is not None:
+        failure_details = {
+            "failed_command": git_result.get("command"),
+            "failed_exit_code": git_result.get("exit_code"),
+            "timed_out": bool(git_result.get("timed_out", False)),
+            "timeout_seconds": git_result.get("timeout_seconds"),
+        }
     return {
         "id": mirror.id,
         "repo_url": mirror.repo_url,
@@ -433,7 +599,8 @@ def sync_failure(
         "tracked_upstream_skills": list(mirror.tracked_upstream_skills),
         "custom_wrappers": list(mirror.custom_wrappers),
         **local,
-        "status": "sync_failed",
+        **failure_details,
+        "status": status,
         "error": error,
     }
 
@@ -445,6 +612,15 @@ def sync_one(
     deadline = time.monotonic() + timeout_seconds
     before = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
     before_head = before["local_head"]
+    tracked_head: str | None = None
+
+    if before["local_exists"] and before.get("git_dir_matches_registry") is False:
+        return sync_failure(
+            mirror,
+            before,
+            before["local_error"] or "Actual Git metadata directory does not match git_dir_path.",
+            status="git_dir_mismatch",
+        )
 
     if before["local_exists"] and not before["local_repo_valid"]:
         return sync_failure(
@@ -471,6 +647,14 @@ def sync_one(
         )
 
     if not before["local_exists"]:
+        if mirror.git_dir_path is None:
+            return sync_failure(
+                mirror,
+                before,
+                "Local mirror is missing and git_dir_path is not configured; refusing to create "
+                ".git metadata inside the synchronized mirror worktree.",
+                status="blocked_missing_git_dir",
+            )
         mirror.local_path.parent.mkdir(parents=True, exist_ok=True)
         clone_command = [
             "git",
@@ -483,13 +667,18 @@ def sync_one(
             mirror.git_dir_path.parent.mkdir(parents=True, exist_ok=True)
             clone_command.extend(["--separate-git-dir", str(mirror.git_dir_path)])
         clone_command.extend([mirror.repo_url, str(mirror.local_path)])
-        clone = run_git_with_remote_fallback(clone_command, timeout_seconds=remaining_timeout(deadline))
+        clone = run_git_with_remote_fallback(
+            clone_command,
+            timeout_seconds=remaining_timeout(deadline),
+            allow_retries=False,
+        )
         if clone["exit_code"] != 0:
-            return {
-                "id": mirror.id,
-                "status": "sync_failed",
-                "error": clone["output"] or "git clone failed.",
-            }
+            return sync_failure(
+                mirror,
+                before,
+                clone["output"] or "git clone failed.",
+                git_result=clone,
+            )
         action = "initialized"
     else:
         fetch = run_local_git(
@@ -499,46 +688,79 @@ def sync_one(
             timeout_seconds=remaining_timeout(deadline),
         )
         if fetch["exit_code"] != 0:
-            return {
-                "id": mirror.id,
-                "status": "sync_failed",
-                "error": fetch["output"] or "git fetch failed.",
-            }
-        pull = run_local_git(
+            return sync_failure(
+                mirror,
+                before,
+                fetch["output"] or "git fetch failed.",
+                git_result=fetch,
+            )
+        tracking = run_local_git(
             mirror,
-            ["pull", "--ff-only", "origin", mirror.branch],
-            allow_remote_fallback=True,
+            ["rev-parse", f"refs/remotes/origin/{mirror.branch}"],
             timeout_seconds=remaining_timeout(deadline),
         )
-        if pull["exit_code"] != 0:
-            return {
-                "id": mirror.id,
-                "status": "sync_failed",
-                "error": pull["output"] or "git pull failed.",
-            }
-        action = "synced"
+        if tracking["exit_code"] != 0:
+            return sync_failure(
+                mirror,
+                before,
+                tracking["output"] or "Fetched branch cannot be resolved locally.",
+                git_result=tracking,
+            )
+        tracked_head = tracking["output"].splitlines()[0].strip()
+        if before_head == tracked_head:
+            action = "already_up_to_date"
+        else:
+            fast_forward = run_local_git(
+                mirror,
+                ["merge-base", "--is-ancestor", str(before_head), tracked_head],
+                timeout_seconds=remaining_timeout(deadline),
+            )
+            if fast_forward["exit_code"] != 0:
+                error = "Fetched branch is not a fast-forward of the local mirror."
+                if fast_forward["exit_code"] != 1 and fast_forward["output"]:
+                    error = f"Unable to verify fast-forward safety: {fast_forward['output']}"
+                return sync_failure(mirror, before, error)
+            merge = run_local_git(
+                mirror,
+                ["merge", "--ff-only", f"refs/remotes/origin/{mirror.branch}"],
+                timeout_seconds=remaining_timeout(deadline),
+            )
+            if merge["exit_code"] != 0:
+                return sync_failure(
+                    mirror,
+                    before,
+                    merge["output"] or "Local fast-forward merge failed.",
+                )
+            action = "synced"
 
     after_local = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
-    tracking = run_local_git(
-        mirror,
-        ["rev-parse", f"refs/remotes/origin/{mirror.branch}"],
-        timeout_seconds=remaining_timeout(deadline),
-    )
-    tracked_head = tracking["output"].splitlines()[0].strip() if tracking["exit_code"] == 0 else None
+    if tracked_head is None:
+        tracking = run_local_git(
+            mirror,
+            ["rev-parse", f"refs/remotes/origin/{mirror.branch}"],
+            timeout_seconds=remaining_timeout(deadline),
+        )
+        tracked_head = tracking["output"].splitlines()[0].strip() if tracking["exit_code"] == 0 else None
     if (
         not after_local["local_repo_valid"]
+        or after_local.get("git_dir_matches_registry") is False
         or after_local["local_dirty"]
         or after_local["local_branch"] != mirror.branch
         or normalize_repo_url(after_local.get("local_origin")) != normalize_repo_url(mirror.repo_url)
         or not tracked_head
         or after_local["local_head"] != tracked_head
     ):
-        return {
-            "id": mirror.id,
-            **after_local,
-            "status": "sync_failed",
-            "error": "Post-sync local mirror health check failed.",
-        }
+        post_status = (
+            "git_dir_mismatch"
+            if after_local.get("git_dir_matches_registry") is False
+            else "sync_failed"
+        )
+        return sync_failure(
+            mirror,
+            after_local,
+            after_local.get("local_error") or "Post-sync local mirror health check failed.",
+            status=post_status,
+        )
     after = {
         "id": mirror.id,
         "repo_url": mirror.repo_url,
@@ -554,15 +776,27 @@ def sync_one(
         "remote_error": None,
         "sync_recommended": False,
     }
-    changed_tracked_skills, tracked_change_note = summarize_tracked_changes(
-        mirror,
-        before_head,
-        after["local_head"],
-        timeout_seconds=remaining_timeout(deadline),
-    )
-    if action == "synced" and before_head == after["local_head"]:
-        action = "already_up_to_date"
-
+    try:
+        changed_tracked_skills, tracked_change_note = summarize_tracked_changes(
+            mirror,
+            before_head,
+            after["local_head"],
+            timeout_seconds=remaining_timeout(deadline),
+        )
+    except TrackedChangeError as exc:
+        return {
+            **after,
+            "status": "tracked_diff_failed",
+            "before_head": before_head,
+            "after_head": after["local_head"],
+            "changed_tracked_skills": [],
+            "tracked_change_note": None,
+            "failed_command": exc.result.get("command"),
+            "failed_exit_code": exc.result.get("exit_code"),
+            "timed_out": bool(exc.result.get("timed_out", False)),
+            "timeout_seconds": exc.result.get("timeout_seconds"),
+            "error": str(exc),
+        }
     return {
         **after,
         "status": action,

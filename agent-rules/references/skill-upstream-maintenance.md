@@ -11,6 +11,8 @@
 
 上游镜像保持 `zero exposure`：不进入 Codex、Claude 或 CC Switch 的技能目录，不直接覆盖本地技能。
 
+镜像配置提供 `git_dir_path` 时，该路径必须是绝对路径、跨镜像唯一，并位于同步盘和所有技能源码/运行时目录之外。`validate`、`report`、候选准备和镜像管理器复用同一套登记表安全校验，避免某个入口接受不安全路径。每次检查和同步都用 `git rev-parse --absolute-git-dir` 核对 Git 实际使用的元数据目录；声明值与实际值不一致时停止刷新并报告两条路径。旧镜像可暂时不提供该字段并继续原地使用；但镜像工作树一旦缺失，`check` 和 `sync` 都返回 `blocked_missing_git_dir`，必须先配置外置 Git 元数据路径。迁移旧镜像现有 `.git` 仍需用户批准。
+
 ## 首次来源调查
 
 1. 顶层目录有 `SKILL.md` 才算一个自建技能。
@@ -49,7 +51,11 @@ python <script> weekly-run `
 
 `<script>` 是 `<agents-root>/skills/agent-rules/scripts/skill_upstream_maintenance.py`。
 
-镜像单仓库总预算 20 秒，最多 4 路并行。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。
+镜像单仓库总预算 20 秒，最多 4 路并行。Windows 上超时会终止本次命令创建的完整 Git 子进程树，避免 `git-remote-https` 继续占用网络或让超时失效。现有镜像只执行一次远端 `fetch`，随后在本地检查并执行 `merge --ff-only`，避免 `pull` 再次联网；非快进更新仍直接阻止。现有镜像遇到明确的 Windows Schannel 兼容错误时在同一预算内切换 OpenSSL；遇到 TLS 提前关闭或连接重置时，在剩余预算内自动重试一次。新镜像的 `git clone` 不在同一路径盲目重试，避免第一次失败留下部分目录后覆盖原始错误。跟踪路径的 `git diff` 超时或失败时返回 `tracked_diff_failed`，保留前后提交和原始错误，不得静默记为“无变化”。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。
+
+登记镜像即使尚未被正式 `skill source` 引用，刷新失败也必须进入周检摘要，写明原始错误、影响和修复步骤；这类镜像单独计数，不伪造技能来源，也不改变正式来源总数。
+
+镜像管理器若在登记表加载、进程启动、JSON 输出或总超时阶段整体失败，周检必须保存顶层原始错误，把缺失的逐镜像结果标记为 `mirror_manager_failed`，并阻止这些来源形成“无更新”或新候选结论。
 
 “只报告”只表示不擅自清理镜像、改权限、改来源身份或生成不可信候选，不表示只给状态名。每个异常来源必须在 `summary.json` 和 `summary.md` 中说明：
 
@@ -71,6 +77,8 @@ python <script> weekly-run `
 
 `review_required` 只说明跟踪文件变了，不说明变化值得吸收。
 
+同一本地技能若同时有多个来源产生有益变化，批准前必须合成一个技能级候选。候选从同一正式技能快照出发，合并各来源改动，解决重叠文件、评测 ID 和规则冲突，再运行组合回归测试。`review-context.json` 用 `additional_sources` 记录其余来源的接受基线、路径身份和当前提交；定稿恢复、周检和应用前校验必须覆盖全部来源。用户只批准这个合并后的本地技能候选，不对同一技能重复批准。
+
 1. 用 `prepare-review` 创建隔离的旧版和候选版副本。
 2. 阅读上游差异，判断是否改善功能、可靠性、兼容性或输出质量。
 3. 按 `skill-creator` 运行旧版/候选版对比评测和回归测试；没有现成 `evals` 时，在隔离目录补 2 至 3 个真实用例。
@@ -87,8 +95,11 @@ python <script> prepare-review `
   --skills-root <agents-root>/skills `
   --reports-root <agents-root>/reports/skill-upstream `
   --date <YYYY-MM-DD> --skill <skill-name> --source <source-id> `
-  --expected-commit <weekly-report-commit> --json
+  --expected-commit <weekly-report-commit> `
+  --additional-source <other-source-id> <other-weekly-report-commit> --json
 ```
+
+`--additional-source` 可重复；没有其他来源时省略。命令会为每个来源重新检查接受基线、当前 HEAD、许可证和跟踪路径，并生成各自的上游差异证据。同一技能已有完整且仍有效的待批准候选时，不再创建第二个候选。
 
 只在隔离目录的 `candidate_skill/` 修改候选。完成 `benefit-assessment.md` 和 `test-report.md` 后，锁定候选补丁及审核证据：
 
@@ -102,6 +113,7 @@ python <script> finalize-review `
 ```
 
 如果旧版快照、候选、上游差异、收益判断或测试报告在定稿后变化，批准自动失效。
+定稿还会锁定完整来源范围和四个审核门；删除 `additional_sources`、清空必需证据哈希，或任一来源的 HEAD、接受基线、许可证状态发生变化，整个技能级候选一并失效，不能降级成单来源候选继续批准。
 
 ## 批准后
 

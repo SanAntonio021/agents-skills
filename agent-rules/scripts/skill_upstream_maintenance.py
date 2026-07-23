@@ -27,11 +27,18 @@ ALWAYS_IGNORED_NAMES = {
 VERSION_FILE_NAMES = {"version", "version.txt", "version.md"}
 STRUCTURED_VERSION_FILES = {"manifest.json", "package-lock.json", "package.json", "pyproject.toml"}
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+SUCCESSFUL_MIRROR_REFRESH_STATUSES = frozenset(
+    {"initialized", "synced", "already_up_to_date"}
+)
 DIAGNOSTIC_STATUSES = frozenset(
     {
         "mirror_missing",
         "mirror_error",
         "mirror_blocked",
+        "blocked_missing_git_dir",
+        "git_dir_mismatch",
+        "tracked_diff_failed",
         "dirty_mirror",
         "branch_mismatch",
         "origin_mismatch",
@@ -49,6 +56,12 @@ FINALIZED_CANDIDATE_FILES = (
     "benefit-assessment.md",
     "test-report.md",
     "upstream.diff",
+)
+REQUIRED_REVIEW_EVIDENCE = frozenset(
+    {"benefit-assessment.md", "test-report.md", "upstream.diff"}
+)
+REQUIRED_REVIEW_GATES = frozenset(
+    {"benefit_confirmed", "tests_passed", "license_ok", "risk_reviewed"}
 )
 
 
@@ -90,6 +103,7 @@ class MirrorRecord:
     branch: str
     local_path: Path
     exposure_policy: str
+    git_dir_path: Path | None = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -129,6 +143,14 @@ def parse_args() -> argparse.Namespace:
     prepare.add_argument("--skill", required=True)
     prepare.add_argument("--source", required=True)
     prepare.add_argument("--expected-commit", required=True)
+    prepare.add_argument(
+        "--additional-source",
+        action="append",
+        default=[],
+        nargs=2,
+        metavar=("SOURCE", "EXPECTED_COMMIT"),
+        help="Add another source and its expected full commit to the same skill-level candidate.",
+    )
     prepare.add_argument("--json", action="store_true")
 
     finalize = subparsers.add_parser("finalize-review", help="Validate a candidate and generate its review patch.")
@@ -164,6 +186,21 @@ def parse_args() -> argparse.Namespace:
 
 def read_toml(path: Path) -> dict[str, Any]:
     return tomllib.loads(path.read_text(encoding="utf-8"))
+
+
+def load_mirror_manager() -> Any:
+    module_name = "_skill_upstream_manage_repo_mirrors"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        return existing
+    script = Path(__file__).with_name("manage_repo_mirrors.py")
+    spec = importlib.util.spec_from_file_location(module_name, script)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot load mirror manager: {script}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def load_sources(path: Path) -> list[SkillRecord]:
@@ -213,13 +250,15 @@ def load_sources(path: Path) -> list[SkillRecord]:
 
 def load_mirrors(path: Path) -> dict[str, MirrorRecord]:
     result: dict[str, MirrorRecord] = {}
-    for item in read_toml(path).get("mirror", []):
+    manager = load_mirror_manager()
+    for item in manager.load_registry(path):
         record = MirrorRecord(
-            id=str(item["id"]),
-            repo_url=str(item["repo_url"]),
-            branch=str(item["branch"]),
-            local_path=Path(str(item["local_path"])),
-            exposure_policy=str(item.get("exposure_policy", "")),
+            id=item.id,
+            repo_url=item.repo_url,
+            branch=item.branch,
+            local_path=item.local_path,
+            exposure_policy=item.exposure_policy,
+            git_dir_path=item.git_dir_path,
         )
         if record.id in result:
             raise ValueError(f"{path}: duplicate mirror id {record.id}")
@@ -229,6 +268,13 @@ def load_mirrors(path: Path) -> dict[str, MirrorRecord]:
 
 def normalize_repo_url(value: str) -> str:
     return value.rstrip("/").removesuffix(".git").lower()
+
+
+def canonical_path_key(path: Path) -> str:
+    try:
+        return path.resolve().as_posix().casefold()
+    except OSError:
+        return path.as_posix().casefold()
 
 
 def is_safe_repo_path(value: str, allow_root: bool = False) -> bool:
@@ -782,26 +828,51 @@ def source_diff(
 
 
 def inspect_mirror(mirror: MirrorRecord) -> dict[str, Any]:
+    base_details = {
+        "local_path": str(mirror.local_path),
+        "expected_git_dir_path": str(mirror.git_dir_path) if mirror.git_dir_path else None,
+        "expected_branch": mirror.branch,
+        "expected_origin": mirror.repo_url,
+    }
     if not mirror.local_path.is_dir():
         return {
-            "status": "mirror_missing",
+            "status": "mirror_missing" if mirror.git_dir_path else "blocked_missing_git_dir",
+            "head": None,
+            "mirror_details": base_details,
+        }
+    actual_git_dir = git(mirror.local_path, ["rev-parse", "--absolute-git-dir"])
+    if actual_git_dir.returncode != 0 or not actual_git_dir.stdout.strip():
+        return {
+            "status": "mirror_error",
             "head": None,
             "mirror_details": {
-                "local_path": str(mirror.local_path),
-                "expected_branch": mirror.branch,
-                "expected_origin": mirror.repo_url,
+                **base_details,
+                "git_dir_error": actual_git_dir.stderr.strip() or actual_git_dir.stdout.strip(),
             },
         }
+    actual_git_dir_path = Path(actual_git_dir.stdout.strip())
+    git_dir_matches_registry = (
+        None
+        if mirror.git_dir_path is None
+        else canonical_path_key(actual_git_dir_path) == canonical_path_key(mirror.git_dir_path)
+    )
+    git_dir_details = {
+        **base_details,
+        "actual_git_dir_path": str(actual_git_dir_path),
+        "git_dir_matches_registry": git_dir_matches_registry,
+    }
     head = current_head(mirror.local_path)
     if not head:
         return {
             "status": "mirror_error",
             "head": None,
-            "mirror_details": {
-                "local_path": str(mirror.local_path),
-                "expected_branch": mirror.branch,
-                "expected_origin": mirror.repo_url,
-            },
+            "mirror_details": git_dir_details,
+        }
+    if git_dir_matches_registry is False:
+        return {
+            "status": "git_dir_mismatch",
+            "head": head,
+            "mirror_details": git_dir_details,
         }
     dirty = git(mirror.local_path, ["status", "--porcelain"])
     branch = git(mirror.local_path, ["branch", "--show-current"])
@@ -811,19 +882,15 @@ def inspect_mirror(mirror: MirrorRecord) -> dict[str, Any]:
             "status": "mirror_error",
             "head": head,
             "mirror_details": {
-                "local_path": str(mirror.local_path),
-                "expected_branch": mirror.branch,
-                "expected_origin": mirror.repo_url,
+                **git_dir_details,
                 "status_error": dirty.stderr.strip(),
                 "branch_error": branch.stderr.strip(),
                 "origin_error": origin.stderr.strip(),
             },
         }
     details = {
-        "local_path": str(mirror.local_path),
-        "expected_branch": mirror.branch,
+        **git_dir_details,
         "actual_branch": branch.stdout.strip(),
-        "expected_origin": mirror.repo_url,
         "actual_origin": origin.stdout.strip(),
         "dirty_entries": dirty.stdout.splitlines(),
     }
@@ -838,28 +905,87 @@ def inspect_mirror(mirror: MirrorRecord) -> dict[str, Any]:
 
 def refresh_mirrors(mirrors_registry: Path) -> dict[str, Any]:
     manager = Path(__file__).with_name("manage_repo_mirrors.py")
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-B",
-            str(manager),
-            "sync",
-            "--registry",
-            str(mirrors_registry),
-            "--json",
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=600,
-    )
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(manager),
+                "sync",
+                "--registry",
+                str(mirrors_registry),
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=600,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "status": "error",
+            "error": f"Mirror manager timed out after {exc.timeout:g} seconds.",
+            "exit_code": 124,
+            "mirrors": [],
+        }
     try:
         payload = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(completed.stderr.strip() or "Mirror manager did not return valid JSON.") from exc
+    except json.JSONDecodeError:
+        return {
+            "status": "error",
+            "error": completed.stderr.strip() or "Mirror manager did not return valid JSON.",
+            "exit_code": completed.returncode or 1,
+            "mirrors": [],
+        }
+    if not isinstance(payload, dict):
+        return {
+            "status": "error",
+            "error": "Mirror manager returned JSON with an invalid top-level type.",
+            "exit_code": completed.returncode or 1,
+            "mirrors": [],
+        }
     payload["exit_code"] = completed.returncode
     return payload
+
+
+def normalize_mirror_refresh_results(
+    refresh_payload: dict[str, Any],
+    mirrors: dict[str, MirrorRecord],
+) -> tuple[dict[str, dict[str, Any]], str | None]:
+    raw_results = refresh_payload.get("mirrors", [])
+    results: dict[str, dict[str, Any]] = {}
+    if isinstance(raw_results, list):
+        for item in raw_results:
+            if isinstance(item, dict) and isinstance(item.get("id"), str):
+                results[item["id"]] = item
+
+    manager_error = None
+    if refresh_payload.get("status") == "error" or (
+        refresh_payload.get("exit_code") not in {None, 0} and not results
+    ):
+        manager_error = compact_report_text(
+            refresh_payload.get("error") or "Mirror manager failed before returning per-mirror results."
+        )
+        for mirror_id, mirror in mirrors.items():
+            if mirror_id in results:
+                continue
+            health = inspect_mirror(mirror)
+            details = health.get("mirror_details", {})
+            results[mirror_id] = {
+                "id": mirror_id,
+                "status": "mirror_manager_failed",
+                "local_path": str(mirror.local_path),
+                "local_head": health.get("head"),
+                "local_branch": details.get("actual_branch"),
+                "local_dirty": bool(details.get("dirty_entries")) if details else None,
+                "local_origin": details.get("actual_origin"),
+                "git_dir_path": str(mirror.git_dir_path) if mirror.git_dir_path else None,
+                "actual_git_dir_path": details.get("actual_git_dir_path"),
+                "git_dir_matches_registry": details.get("git_dir_matches_registry"),
+                "error": manager_error,
+            }
+    return results, manager_error
 
 
 def compact_report_text(value: Any, limit: int = 1000) -> str:
@@ -874,6 +1000,13 @@ def mirror_result_details(result: dict[str, Any]) -> dict[str, Any]:
         "local_branch",
         "local_dirty",
         "local_origin",
+        "git_dir_path",
+        "actual_git_dir_path",
+        "git_dir_matches_registry",
+        "local_error",
+        "failed_command",
+        "failed_exit_code",
+        "timed_out",
         "remote_head",
         "remote_reachable",
         "remote_error",
@@ -882,10 +1015,150 @@ def mirror_result_details(result: dict[str, Any]) -> dict[str, Any]:
     return {key: result[key] for key in keys if key in result}
 
 
-def finalized_candidate_index(reports_root: Path) -> dict[tuple[str, str, str, str], dict[str, str]]:
-    index: dict[tuple[str, str, str, str], dict[str, str]] = {}
+def review_source_contexts(context: dict[str, Any]) -> list[dict[str, Any]]:
+    primary = {
+        key: context[key]
+        for key in (
+            "source",
+            "accepted_commit",
+            "accepted_upstream_path",
+            "upstream_path",
+            "path_migration_commit",
+            "current_upstream_commit",
+        )
+        if key in context
+    }
+    entries = [primary]
+    additional = context.get("additional_sources", [])
+    if not isinstance(additional, list):
+        raise ValueError("Review context additional_sources must be a list.")
+    entries.extend(additional)
+
+    normalized: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Each review source context must be an object.")
+        source_id = str(entry.get("source", ""))
+        if not source_id:
+            raise ValueError("Each review source context must name a source.")
+        if source_id in seen:
+            raise ValueError(f"Duplicate review source context: {source_id}")
+        seen.add(source_id)
+        normalized.append(dict(entry))
+    return normalized
+
+
+def review_scope_payload(context: dict[str, Any]) -> dict[str, Any]:
+    additional_evidence = context.get("additional_review_evidence", [])
+    if not isinstance(additional_evidence, list):
+        raise ValueError("Review context additional_review_evidence must be a list.")
+    return {
+        "skill": str(context.get("skill", "")),
+        "source_contexts": review_source_contexts(context),
+        "local_tree_hash": str(context.get("local_tree_hash", "")).lower(),
+        "additional_review_evidence": [str(value) for value in additional_evidence],
+    }
+
+
+def review_scope_hash(context: dict[str, Any]) -> str:
+    canonical = json.dumps(
+        review_scope_payload(context),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def validate_finalized_review_integrity(context: dict[str, Any], workspace: Path) -> None:
+    evidence_hashes = context.get("review_evidence_sha256")
+    if not isinstance(evidence_hashes, dict):
+        raise ValueError("Finalized review evidence hashes are missing.")
+    missing = REQUIRED_REVIEW_EVIDENCE - {str(name) for name in evidence_hashes}
+    if missing:
+        raise ValueError(f"Required review evidence hashes are missing: {sorted(missing)}")
+    for name, expected_hash in evidence_hashes.items():
+        name = str(name)
+        expected_hash = str(expected_hash).lower()
+        if not is_safe_repo_path(name) or not SHA256_PATTERN.fullmatch(expected_hash):
+            raise ValueError(f"Invalid review evidence hash: {name}")
+        evidence_path = workspace / name
+        if not evidence_path.is_file() or file_hash(evidence_path) != expected_hash:
+            raise ValueError(f"Review evidence changed after finalization: {name}")
+
+    stored_scope_hash = str(context.get("review_scope_sha256", "")).lower()
+    if not SHA256_PATTERN.fullmatch(stored_scope_hash) or review_scope_hash(context) != stored_scope_hash:
+        raise ValueError("Review source scope changed after finalization.")
+
+    candidate_hash = str(context.get("candidate_tree_hash", "")).lower()
+    old_hash = str(context.get("old_skill_tree_hash", "")).lower()
+    patch_hash = str(context.get("candidate_patch_sha256", "")).lower()
+    if (
+        not SHA256_PATTERN.fullmatch(candidate_hash)
+        or tree_hash(workspace / "candidate_skill") != candidate_hash
+        or not SHA256_PATTERN.fullmatch(old_hash)
+        or tree_hash(workspace / "old_skill") != old_hash
+        or not SHA256_PATTERN.fullmatch(patch_hash)
+        or file_hash(workspace / "candidate.patch") != patch_hash
+    ):
+        raise ValueError("Finalized candidate evidence changed after finalization.")
+
+
+def validate_review_source_contexts_current(
+    skill: SkillRecord,
+    mirrors: dict[str, MirrorRecord],
+    context: dict[str, Any],
+) -> list[dict[str, Any]]:
+    sources_by_id = {record.id: record for record in skill.sources}
+    source_contexts = review_source_contexts(context)
+    for source_context in source_contexts:
+        current_source_id = str(source_context["source"])
+        current_source = sources_by_id.get(current_source_id)
+        if not current_source:
+            raise ValueError(f"Unknown source for {skill.name}: {current_source_id}")
+        if str(source_context.get("accepted_commit", "")).lower() != current_source.accepted_commit:
+            raise ValueError(f"Accepted baseline changed for {current_source_id}.")
+        if (
+            source_context.get("accepted_upstream_path", current_source.accepted_upstream_path)
+            != current_source.accepted_upstream_path
+        ):
+            raise ValueError(f"Accepted upstream path changed for {current_source_id}.")
+        if source_context.get("upstream_path", current_source.upstream_path) != current_source.upstream_path:
+            raise ValueError(f"Current upstream path changed for {current_source_id}.")
+        if (
+            str(source_context.get("path_migration_commit", current_source.path_migration_commit)).lower()
+            != current_source.path_migration_commit
+        ):
+            raise ValueError(f"Path migration identity changed for {current_source_id}.")
+        mirror = mirrors.get(current_source.mirror_id)
+        if mirror is None:
+            raise ValueError(f"Unknown mirror for {current_source_id}: {current_source.mirror_id}")
+        health = inspect_mirror(mirror)
+        if health["status"] != "healthy":
+            raise ValueError(f"Mirror for {current_source_id} is not healthy: {health['status']}")
+        if health["head"] != str(source_context.get("current_upstream_commit", "")).lower():
+            raise ValueError(f"Upstream HEAD changed for {current_source_id}.")
+        diff_status = source_diff(mirror.local_path, current_source, health["head"])
+        if diff_status["status"] != "review_required":
+            raise ValueError(
+                f"Source {current_source_id} is no longer eligible for candidate review: "
+                f"{diff_status['status']}"
+            )
+    return source_contexts
+
+
+def finalized_candidate_index(
+    reports_root: Path,
+    skills: list[SkillRecord],
+    mirrors: dict[str, MirrorRecord],
+) -> tuple[dict[tuple[str, str, str, str], dict[str, Any]], list[dict[str, Any]]]:
+    index: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    valid_by_skill: dict[str, list[tuple[dict[str, Any], list[tuple[str, str, str, str]]]]] = {}
+    conflicts: list[dict[str, Any]] = []
+    skills_by_name = {skill.name: skill for skill in skills}
     if not reports_root.is_dir():
-        return index
+        return index, conflicts
     for context_path in reports_root.glob("*/*/*/review-context.json"):
         try:
             context = json.loads(context_path.read_text(encoding="utf-8"))
@@ -898,29 +1171,66 @@ def finalized_candidate_index(reports_root: Path) -> dict[tuple[str, str, str, s
             continue
         if any(not (workspace / name).is_file() for name in FINALIZED_CANDIDATE_FILES):
             continue
-        skill = str(context.get("skill", ""))
-        source = str(context.get("source", ""))
-        accepted = str(context.get("accepted_commit", "")).lower()
-        current = str(context.get("current_upstream_commit", "")).lower()
-        if not skill or not source or not SHA_PATTERN.fullmatch(accepted) or not SHA_PATTERN.fullmatch(current):
+        skill_name = str(context.get("skill", ""))
+        skill = skills_by_name.get(skill_name)
+        if skill is None:
+            continue
+        try:
+            validate_finalized_review_integrity(context, workspace)
+            source_contexts = validate_review_source_contexts_current(skill, mirrors, context)
+        except ValueError:
             continue
         candidate = {
             "workspace": str(workspace.resolve()),
             "finalized_at": str(context.get("finalized_at", "")),
+            "source_count": len(source_contexts),
         }
-        key = (skill, source, accepted, current)
-        previous = index.get(key)
-        if previous is None or (candidate["finalized_at"], candidate["workspace"]) > (
-            previous["finalized_at"],
-            previous["workspace"],
-        ):
-            index[key] = candidate
-    return index
+        candidate_keys = [
+            (
+                skill_name,
+                str(source_context["source"]),
+                str(source_context["accepted_commit"]).lower(),
+                str(source_context["current_upstream_commit"]).lower(),
+            )
+            for source_context in source_contexts
+        ]
+        if all(SHA_PATTERN.fullmatch(key[2]) and SHA_PATTERN.fullmatch(key[3]) for key in candidate_keys):
+            valid_by_skill.setdefault(skill_name, []).append((candidate, candidate_keys))
+
+    for skill_name, entries in valid_by_skill.items():
+        workspaces = sorted({candidate["workspace"] for candidate, _ in entries})
+        if len(workspaces) > 1:
+            conflicts.append(
+                {
+                    "skill": skill_name,
+                    "workspaces": workspaces,
+                    "problem": "同一技能存在多个独立的待批准候选，无法安全地只批准一次。",
+                    "impact": "所有候选暂不恢复为 awaiting_approval；相关来源重新进入差异评估，避免重复批准或漏审来源。",
+                    "automatic_action": "保留各隔离候选及证据，未修改技能源码、accepted_commit 或 last_reviewed_commit。",
+                    "repair_plan": [
+                        "比较各候选的上游差异和本地候选改动，确认合并范围。",
+                        "从同一正式技能快照创建一个组合候选，并用 --additional-source 纳入其余来源。",
+                        "运行组合评测、回归测试和许可证复核后，只定稿一个技能级候选。",
+                    ],
+                    "approval_required": False,
+                    "approval_reason": "合并候选和重新测试是安全的隔离操作；应用仍需用户逐技能批准。",
+                }
+            )
+            continue
+        for candidate, candidate_keys in entries:
+            for key in candidate_keys:
+                previous = index.get(key)
+                if previous is None or (candidate["finalized_at"], candidate["workspace"]) > (
+                    previous["finalized_at"],
+                    previous["workspace"],
+                ):
+                    index[key] = candidate
+    return index, conflicts
 
 
 def diagnose_report_row(
     row: dict[str, Any],
-    source: SourceRecord,
+    source: SourceRecord | None,
     mirror: MirrorRecord,
 ) -> dict[str, Any]:
     status = str(row["status"])
@@ -929,11 +1239,31 @@ def diagnose_report_row(
 
     mirror_path = str(mirror.local_path)
     details = row.get("mirror_details") if isinstance(row.get("mirror_details"), dict) else {}
-    error = compact_report_text(row.get("error"))
+    detail_errors = " | ".join(
+        compact_report_text(details.get(key))
+        for key in (
+            "local_error",
+            "git_dir_error",
+            "status_error",
+            "branch_error",
+            "origin_error",
+        )
+        if compact_report_text(details.get(key))
+    )
+    error = compact_report_text(row.get("error") or detail_errors)
     effective_status = status
     if status == "mirror_blocked":
         lowered = error.lower()
-        if details.get("local_dirty") or "uncommitted changes" in lowered:
+        mirror_status = str(row.get("mirror_status", ""))
+        if mirror_status in {
+            "blocked_missing_git_dir",
+            "git_dir_mismatch",
+            "tracked_diff_failed",
+        }:
+            effective_status = mirror_status
+        elif details.get("git_dir_matches_registry") is False:
+            effective_status = "git_dir_mismatch"
+        elif details.get("local_dirty") or "uncommitted changes" in lowered:
             effective_status = "dirty_mirror"
         elif "origin" in lowered and ("mismatch" in lowered or "does not match" in lowered):
             effective_status = "origin_mismatch"
@@ -941,21 +1271,77 @@ def diagnose_report_row(
             effective_status = "branch_mismatch"
         elif "permission denied" in lowered or "access is denied" in lowered:
             effective_status = "permission_denied"
-        elif "non-fast-forward" in lowered or "not possible to fast-forward" in lowered:
+        elif any(
+            marker in lowered
+            for marker in (
+                "non-fast-forward",
+                "not a fast-forward",
+                "not possible to fast-forward",
+            )
+        ):
             effective_status = "mirror_non_fast_forward"
         elif "timed out" in lowered or "timeout" in lowered:
             effective_status = "remote_timeout"
         else:
             effective_status = "mirror_refresh_failed"
 
-    automatic_action = (
-        "已隔离该来源并保留现有镜像与状态证据；未生成或应用候选，未修改本地技能、"
-        "accepted_commit 或 last_reviewed_commit。其他健康来源继续检查。"
-    )
+    if source is None:
+        automatic_action = (
+            "已隔离该镜像刷新失败并保留现有镜像与状态证据；未修改技能源码、来源登记、"
+            "accepted_commit 或 last_reviewed_commit。其他镜像和正式来源继续检查。"
+        )
+    else:
+        automatic_action = (
+            "已隔离该来源并保留现有镜像与状态证据；未生成或应用候选，未修改本地技能、"
+            "accepted_commit 或 last_reviewed_commit。其他健康来源继续检查。"
+        )
     actual_branch = compact_report_text(details.get("actual_branch") or details.get("local_branch")) or "未知"
     actual_origin = compact_report_text(details.get("actual_origin") or details.get("local_origin")) or "未知"
 
-    if effective_status == "dirty_mirror":
+    if effective_status == "blocked_missing_git_dir":
+        problem = (
+            f"镜像工作树 `{mirror_path}` 不存在，登记表也未配置外置 `git_dir_path`；"
+            "为避免在同步盘内重新创建 `.git`，检查和同步均已停止。"
+        )
+        impact = "没有可验证的本地镜像，无法刷新上游、比较接受基线或生成候选。"
+        repair_plan = [
+            "为该镜像选择唯一的绝对 `git_dir_path`，路径必须位于同步盘、技能源码目录和各运行时技能目录之外。",
+            "把该路径写入 repo-mirrors.toml；核对仓库 URL、分支和 zero-exposure 工作树路径。",
+            "重跑镜像 check，确认状态变为 needs_init；再运行 sync，用 `--separate-git-dir` 创建干净镜像。",
+            "验证实际 Git 目录、origin、branch、HEAD 和干净工作树后重跑 weekly-run。",
+        ]
+        approval_required = True
+        approval_reason = "新增正式镜像路径配置会改变维护登记，需要用户批准；只读核对不需要批准。"
+    elif effective_status == "git_dir_mismatch":
+        expected_git_dir = compact_report_text(
+            details.get("git_dir_path") or details.get("expected_git_dir_path")
+        ) or "未记录"
+        actual_git_dir = compact_report_text(details.get("actual_git_dir_path")) or "未知"
+        problem = (
+            f"镜像声明的 Git 元数据目录 `{expected_git_dir}` 与 Git 实际使用目录 "
+            f"`{actual_git_dir}` 不一致。"
+        )
+        impact = "zero-exposure 边界无法证明，继续刷新可能把 `.git` 留在同步盘或操作错误的对象数据库。"
+        repair_plan = [
+            f"只读运行 `git -C \"{mirror_path}\" rev-parse --absolute-git-dir`，并核对登记值和实际目录。",
+            "保留现有工作树和 Git 元数据；检查 `.git` 文件或目录、对象库完整性、origin、branch 和 HEAD。",
+            "优先在新 zero-exposure 工作树按登记的外置 Git 目录重新克隆并验证，不自动移动或删除旧 Git 元数据。",
+            "若登记值本身错误，保存来源身份和路径证据，经用户批准后修正 repo-mirrors.toml，再重跑 weekly-run。",
+        ]
+        approval_required = True
+        approval_reason = "迁移 Git 元数据或修改正式登记路径可能影响仓库历史与同步边界，需要用户批准。"
+    elif effective_status == "tracked_diff_failed":
+        problem = "镜像已刷新，但 Git 未能完整提取更新前后跟踪路径的文件差异。"
+        impact = "自动化不能证明哪些已登记上游技能发生变化，因此不会把本次结果当作无变化，也不会生成候选。"
+        repair_plan = [
+            "保留 before_head、after_head 和原始 Git 错误，确认失败是超时、对象缺失、路径问题还是仓库损坏。",
+            "用报告中的两个提交和相同 tracked path 只读重跑 `git diff --name-only`。",
+            "若对象缺失或镜像损坏，在新 zero-exposure 目录建立干净镜像并复核两个提交。",
+            "差异提取成功后重跑 weekly-run；不得把失败结果记录为 no-impact。",
+        ]
+        approval_required = False
+        approval_reason = "只读重试和新建隔离镜像不需要批准；清理旧镜像或改登记仍需另行批准。"
+    elif effective_status == "dirty_mirror":
         problem = f"上游镜像 `{mirror_path}` 含未提交修改，自动刷新为避免覆盖本地内容而停止。"
         impact = "该来源无法确认最新提交，也不能生成可信候选；同一技能的其他健康来源不受影响。"
         repair_plan = [
@@ -969,9 +1355,15 @@ def diagnose_report_row(
     elif effective_status == "branch_mismatch":
         problem = f"镜像当前分支 `{actual_branch}` 与登记分支 `{mirror.branch}` 不一致。"
         impact = "当前 HEAD 可能不是登记来源的预期历史，继续比较会把错误分支变化当成上游更新。"
+        source_identity_step = (
+            f"确认上游路径 `{source.upstream_path}` 在哪条分支持续维护，并核对接受提交 "
+            f"`{source.accepted_commit}` 的归属。"
+            if source is not None
+            else "核对该镜像登记分支与当前跟踪用途，确认是否仍需保留这条镜像登记。"
+        )
         repair_plan = [
             f"只读核对 `{mirror_path}` 的当前分支、远端分支和登记分支 `{mirror.branch}`。",
-            f"确认上游路径 `{source.upstream_path}` 在哪条分支持续维护，并核对接受提交 `{source.accepted_commit}` 的归属。",
+            source_identity_step,
             "若登记正确，在新 zero-exposure 目录克隆正确分支；若登记错误，保留证据并经用户确认后修改登记表。",
             "验证干净工作树和提交连续性后重跑 weekly-run。",
         ]
@@ -1000,7 +1392,7 @@ def diagnose_report_row(
         approval_required = True
         approval_reason = "新建隔离镜像不需批准；修改 Windows ACL 或替换 Git 元数据前需要用户批准。"
     elif effective_status == "mirror_non_fast_forward":
-        problem = "镜像本地分支与远端分支发生非快进分叉，`git pull --ff-only` 拒绝更新。"
+        problem = "镜像本地分支与 fetch 后的远端跟踪分支发生非快进分叉，本地快进安全检查拒绝合并。"
         impact = "自动化无法确定应保留哪段历史，强制 reset 可能丢失本地证据。"
         repair_plan = [
             f"只读检查 `{mirror_path}` 的 merge-base、reflog 和本地/远端提交图。",
@@ -1024,7 +1416,7 @@ def diagnose_report_row(
         problem = "镜像管理器未能完成刷新，当前错误尚不能安全归类为权限、工作树、分支或远端身份问题。"
         impact = "该来源停留在已知本地提交，不能生成新的候选。"
         repair_plan = [
-            "按原始错误定位失败阶段：clone、fetch、pull、网络或本地 Git 仓库检查。",
+            "按原始错误定位失败阶段：clone、fetch、本地 `merge --ff-only`、网络或本地 Git 仓库检查。",
             "只读核对镜像状态、origin、branch、HEAD 和远端可达性。",
             "优先保留原镜像并在新 zero-exposure 目录复现；修复后重跑 weekly-run。",
             "若修复需要清理、重置、改权限或改登记表，先取得用户批准。",
@@ -1112,6 +1504,11 @@ def diagnose_report_row(
     if status == "mirror_blocked":
         mirror_status = compact_report_text(row.get("mirror_status")) or "unknown"
         problem = f"镜像刷新被阻止（镜像管理器状态：`{mirror_status}`）。{problem}"
+    if source is None:
+        impact = (
+            "该镜像未被正式 skill source 引用，因此本次正式来源和待批准候选不受影响；"
+            "但整批镜像刷新不完整，weekly-run 必须返回非零并在摘要中保留异常。"
+        )
     if error:
         problem += f" 原始错误：{error}"
     return {
@@ -1135,9 +1532,21 @@ def build_report(
     date: str,
     state_path: Path,
     mirror_results: dict[str, dict[str, Any]] | None = None,
+    mirror_refresh_exit_code: int | None = None,
+    mirror_manager_error: str | None = None,
 ) -> dict[str, Any]:
+    if mirror_manager_error:
+        mirror_results, _ = normalize_mirror_refresh_results(
+            {
+                "status": "error",
+                "error": mirror_manager_error,
+                "exit_code": mirror_refresh_exit_code or 1,
+                "mirrors": list((mirror_results or {}).values()),
+            },
+            mirrors,
+        )
     state = read_state(state_path)
-    candidates = finalized_candidate_index(reports_root)
+    candidates, candidate_conflicts = finalized_candidate_index(reports_root, skills, mirrors)
     rows: list[dict[str, Any]] = []
     now = datetime.now(timezone.utc).isoformat()
     for skill in skills:
@@ -1145,11 +1554,7 @@ def build_report(
             mirror = mirrors[source.mirror_id]
             source_state = state["sources"].setdefault(source.id, {})
             refresh_result = mirror_results.get(source.mirror_id) if mirror_results else None
-            if refresh_result and refresh_result.get("status") not in {
-                "initialized",
-                "synced",
-                "already_up_to_date",
-            }:
+            if refresh_result and refresh_result.get("status") not in SUCCESSFUL_MIRROR_REFRESH_STATUSES:
                 row = {
                     "skill": skill.name,
                     "source": source.id,
@@ -1185,6 +1590,7 @@ def build_report(
                         "changed": [],
                         "review_workspace": candidate["workspace"],
                         "candidate_finalized_at": candidate["finalized_at"],
+                        "review_source_count": candidate["source_count"],
                         "approval_required": True,
                     }
                 elif (
@@ -1227,15 +1633,80 @@ def build_report(
                 source_state["last_seen_at"] = now
             rows.append(row)
 
+    referenced_mirror_ids = {
+        source.mirror_id
+        for skill in skills
+        for source in skill.sources
+    }
+    unreferenced_mirror_failures: list[dict[str, Any]] = []
+    if mirror_results:
+        for mirror_id, refresh_result in sorted(mirror_results.items()):
+            if (
+                mirror_id in referenced_mirror_ids
+                or refresh_result.get("status") in SUCCESSFUL_MIRROR_REFRESH_STATUSES
+            ):
+                continue
+            mirror = mirrors.get(mirror_id)
+            if mirror is None:
+                continue
+            failure = {
+                "mirror": mirror_id,
+                "status": "mirror_blocked",
+                "mirror_status": refresh_result.get("status"),
+                "current_commit": refresh_result.get("local_head") or refresh_result.get("after_head"),
+                "error": refresh_result.get("error") or refresh_result.get("remote_error"),
+                "mirror_details": mirror_result_details(refresh_result),
+            }
+            failure.update(diagnose_report_row(failure, None, mirror))
+            unreferenced_mirror_failures.append(failure)
+
     counts = dict(Counter(row["status"] for row in rows))
+    source_check_error_count = sum(
+        1
+        for row in rows
+        if row["status"] in CHECK_ERROR_STATUSES
+        and not (
+            mirror_manager_error
+            and row.get("mirror_status") == "mirror_manager_failed"
+        )
+    )
+    unreferenced_check_error_count = sum(
+        1
+        for row in unreferenced_mirror_failures
+        if not (
+            mirror_manager_error
+            and row.get("mirror_status") == "mirror_manager_failed"
+        )
+    )
+    check_error_count = (
+        source_check_error_count
+        + unreferenced_check_error_count
+        + len(candidate_conflicts)
+        + (1 if mirror_manager_error else 0)
+    )
+    awaiting_groups = {
+        (row["skill"], str(row.get("review_workspace", "")))
+        for row in rows
+        if row["status"] == "awaiting_approval"
+    }
     payload = {
         "schema_version": 1,
         "date": date,
         "generated_at": now,
         "source_count": len(rows),
+        "awaiting_approval_skill_count": len(awaiting_groups),
+        "candidate_conflict_count": len(candidate_conflicts),
+        "candidate_conflicts": candidate_conflicts,
+        "check_error_count": check_error_count,
         "counts": counts,
         "sources": rows,
+        "unreferenced_mirror_failure_count": len(unreferenced_mirror_failures),
+        "unreferenced_mirror_failures": unreferenced_mirror_failures,
     }
+    if mirror_manager_error:
+        payload["mirror_manager_error"] = mirror_manager_error
+    if mirror_refresh_exit_code is not None:
+        payload["mirror_refresh_exit_code"] = mirror_refresh_exit_code
     run_root = reports_root / date
     write_json(run_root / "summary.json", payload)
     write_json(state_path, state)
@@ -1245,9 +1716,19 @@ def build_report(
         "",
         f"- 已登记来源：{len(rows)}",
         f"- 等待收益评估：{counts.get('review_required', 0)}",
-        f"- 等待逐项批准：{counts.get('awaiting_approval', 0)}",
+        f"- 等待逐项批准（技能）：{len(awaiting_groups)}",
         f"- 许可证复核：{counts.get('license_review_required', 0)}",
-        f"- 检查异常：{sum(count for key, count in counts.items() if key in CHECK_ERROR_STATUSES)}",
+        f"- 检查异常：{check_error_count}",
+        *(
+            [f"- 镜像刷新退出码：{mirror_refresh_exit_code}"]
+            if mirror_refresh_exit_code is not None
+            else []
+        ),
+        *(
+            [f"- 镜像管理器全局错误：{markdown_report_text(mirror_manager_error)}"]
+            if mirror_manager_error
+            else []
+        ),
         "",
         "| 本地技能 | 来源 | 状态 | 当前提交 | 变更文件数 |",
         "| --- | --- | --- | --- | ---: |",
@@ -1259,21 +1740,83 @@ def build_report(
     awaiting_rows = [row for row in rows if row["status"] == "awaiting_approval"]
     if awaiting_rows:
         md.extend(["", "## 等待逐项批准", ""])
+        grouped_rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
         for row in awaiting_rows:
+            key = (row["skill"], str(row["review_workspace"]))
+            grouped_rows.setdefault(key, []).append(row)
+        for (skill_name, workspace), group in grouped_rows.items():
             md.extend(
                 [
-                    f"### `{row['skill']}` / `{row['source']}`",
+                    f"### `{skill_name}`",
                     "",
-                    f"- 上游提交：`{row['current_commit']}`",
-                    f"- 审核目录：`{markdown_report_text(row['review_workspace'])}`",
+                    "- 上游来源："
+                    + "；".join(
+                        f"`{row['source']}` @ `{row['current_commit']}`" for row in group
+                    ),
+                    f"- 审核目录：`{markdown_report_text(workspace)}`",
                     "- 当前动作：保留已定稿候选并等待该技能的明确批准；未修改 accepted_commit 或 last_reviewed_commit。",
                     "",
                 ]
             )
 
     diagnostic_rows = [row for row in rows if row["status"] in DIAGNOSTIC_STATUSES]
-    if diagnostic_rows:
+    if diagnostic_rows or unreferenced_mirror_failures or candidate_conflicts or mirror_manager_error:
         md.extend(["", "## 异常详情与修复计划", ""])
+        if mirror_manager_error:
+            md.extend(
+                [
+                    "### 镜像管理器全局异常",
+                    "",
+                    f"- 问题：镜像管理器未返回完整的逐镜像结果。原始错误：{markdown_report_text(mirror_manager_error)}",
+                    "- 影响：本次所有缺失结果的来源均被阻止，不能据本地旧镜像生成新结论或候选。",
+                    "- 已自动处理：保留顶层错误，并把缺失结果的镜像标记为 mirror_manager_failed；其他已有逐镜像结果仍单独处理。",
+                    "- 用户批准：当前安全步骤不需要。只读诊断和按原配置重试不改变技能源码或接受基线。",
+                    "",
+                    "修复步骤：",
+                    "",
+                    "1. 查看 mirror-results.json 中的顶层错误、退出码和标准错误，定位登记表加载、进程启动、JSON 解析或总超时阶段。",
+                    "2. 单独运行 manage_repo_mirrors.py check，确认能否生成逐镜像 JSON。",
+                    "3. 修复对应配置或运行环境后重跑 weekly-run；不得把缺失结果解释为无更新。",
+                    "",
+                ]
+            )
+        for row in candidate_conflicts:
+            approval = "需要" if row["approval_required"] else "当前安全步骤不需要"
+            md.extend(
+                [
+                    f"### 技能 `{row['skill']}` - 多候选冲突",
+                    "",
+                    f"- 候选目录：{'；'.join(f'`{markdown_report_text(path)}`' for path in row['workspaces'])}",
+                    f"- 问题：{markdown_report_text(row['problem'])}",
+                    f"- 影响：{markdown_report_text(row['impact'])}",
+                    f"- 已自动处理：{markdown_report_text(row['automatic_action'])}",
+                    f"- 用户批准：{approval}。{markdown_report_text(row['approval_reason'])}",
+                    "",
+                    "修复步骤：",
+                    "",
+                ]
+            )
+            for index, step in enumerate(row["repair_plan"], start=1):
+                md.append(f"{index}. {markdown_report_text(step)}")
+            md.append("")
+        for row in unreferenced_mirror_failures:
+            approval = "需要" if row["approval_required"] else "当前安全步骤不需要"
+            md.extend(
+                [
+                    f"### 镜像 `{row['mirror']}` - `{row['mirror_status']}`",
+                    "",
+                    f"- 问题：{markdown_report_text(row['problem'])}",
+                    f"- 影响：{markdown_report_text(row['impact'])}",
+                    f"- 已自动处理：{markdown_report_text(row['automatic_action'])}",
+                    f"- 用户批准：{approval}。{markdown_report_text(row['approval_reason'])}",
+                    "",
+                    "修复步骤：",
+                    "",
+                ]
+            )
+            for index, step in enumerate(row["repair_plan"], start=1):
+                md.append(f"{index}. {markdown_report_text(step)}")
+            md.append("")
         for row in diagnostic_rows:
             approval = "需要" if row["approval_required"] else "当前安全步骤不需要"
             md.extend(
@@ -1316,6 +1859,43 @@ def file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def current_awaiting_candidate_workspaces(
+    reports_root: Path,
+    skill_name: str,
+    skills: list[SkillRecord],
+    mirrors: dict[str, MirrorRecord],
+    exclude_workspace: Path | None = None,
+) -> list[Path]:
+    excluded = exclude_workspace.resolve() if exclude_workspace else None
+    workspaces: list[Path] = []
+    skill = next((record for record in skills if record.name == skill_name), None)
+    if skill is None:
+        return workspaces
+    if not reports_root.is_dir():
+        return workspaces
+    for date_root in reports_root.iterdir():
+        skill_root = date_root / skill_name
+        if not skill_root.is_dir():
+            continue
+        for context_path in skill_root.glob("*/review-context.json"):
+            workspace = context_path.parent.resolve()
+            if excluded is not None and workspace == excluded:
+                continue
+            try:
+                context = json.loads(context_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if context.get("candidate_status") != "awaiting_approval":
+                continue
+            try:
+                validate_finalized_review_integrity(context, workspace)
+                validate_review_source_contexts_current(skill, mirrors, context)
+            except ValueError:
+                continue
+            workspaces.append(workspace)
+    return sorted(workspaces)
+
+
 def prepare_review(
     skills: list[SkillRecord],
     mirrors: dict[str, MirrorRecord],
@@ -1325,13 +1905,62 @@ def prepare_review(
     skill_name: str,
     source_id: str,
     expected_commit: str,
+    additional_sources: list[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     skill = next((record for record in skills if record.name == skill_name), None)
     if not skill:
         raise ValueError(f"Unknown skill: {skill_name}")
-    source = next((record for record in skill.sources if record.id == source_id), None)
-    if not source:
-        raise ValueError(f"Unknown source for {skill_name}: {source_id}")
+    existing_candidates = current_awaiting_candidate_workspaces(
+        reports_root,
+        skill_name,
+        skills,
+        mirrors,
+    )
+    if existing_candidates:
+        return {
+            "status": "blocked_existing_skill_candidate",
+            "skill": skill_name,
+            "existing_workspaces": [str(path) for path in existing_candidates],
+        }
+    sources_by_id = {record.id: record for record in skill.sources}
+    requested_sources = [(source_id, expected_commit), *(additional_sources or [])]
+    seen_sources: set[str] = set()
+    prepared_sources: list[tuple[SourceRecord, MirrorRecord, str]] = []
+    for requested_source_id, requested_commit in requested_sources:
+        if requested_source_id in seen_sources:
+            raise ValueError(f"Duplicate prepare-review source: {requested_source_id}")
+        seen_sources.add(requested_source_id)
+        source = sources_by_id.get(requested_source_id)
+        if source is None:
+            raise ValueError(f"Unknown source for {skill_name}: {requested_source_id}")
+        mirror = mirrors[source.mirror_id]
+        health = inspect_mirror(mirror)
+        if health["status"] != "healthy":
+            return {
+                "status": f"blocked_{health['status']}",
+                "skill": skill_name,
+                "source": requested_source_id,
+            }
+        head = health["head"]
+        requested_commit = requested_commit.lower()
+        if not SHA_PATTERN.fullmatch(requested_commit) or head != requested_commit:
+            return {
+                "status": "blocked_stale_report",
+                "skill": skill_name,
+                "source": requested_source_id,
+                "expected_commit": requested_commit,
+                "current_commit": head,
+            }
+        diff_status = source_diff(mirror.local_path, source, head)
+        if diff_status["status"] != "review_required":
+            return {
+                "status": f"blocked_{diff_status['status']}",
+                "skill": skill_name,
+                "source": requested_source_id,
+                "current_commit": head,
+            }
+        prepared_sources.append((source, mirror, head))
+
     skill_root = skills_root / skill_name
     repo_root_result = git(skills_root, ["rev-parse", "--show-toplevel"])
     if repo_root_result.returncode != 0:
@@ -1340,27 +1969,6 @@ def prepare_review(
     if target_status.stdout.strip():
         return {"status": "blocked_dirty_target", "skill": skill_name, "details": target_status.stdout.splitlines()}
 
-    mirror = mirrors[source.mirror_id]
-    health = inspect_mirror(mirror)
-    if health["status"] != "healthy":
-        return {"status": f"blocked_{health['status']}", "skill": skill_name, "source": source_id}
-    head = health["head"]
-    if not SHA_PATTERN.fullmatch(expected_commit.lower()) or head != expected_commit.lower():
-        return {
-            "status": "blocked_stale_report",
-            "skill": skill_name,
-            "source": source_id,
-            "expected_commit": expected_commit.lower(),
-            "current_commit": head,
-        }
-    diff_status = source_diff(mirror.local_path, source, head)
-    if diff_status["status"] != "review_required":
-        return {
-            "status": f"blocked_{diff_status['status']}",
-            "skill": skill_name,
-            "source": source_id,
-            "current_commit": head,
-        }
     workspace = reports_root / date / skill_name / source_id
     if workspace.exists():
         return {"status": "workspace_exists", "workspace": str(workspace)}
@@ -1369,21 +1977,44 @@ def prepare_review(
     old_skill.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(skill_root, old_skill)
     shutil.copytree(skill_root, candidate_skill)
-    pathspecs = source_tracked_pathspecs(source)
-    diff = git(mirror.local_path, ["diff", "--find-renames", source.accepted_commit, head, "--", *pathspecs], timeout=60)
-    if diff.returncode != 0:
-        shutil.rmtree(workspace)
-        return {"status": "blocked_diff_failed", "skill": skill_name, "source": source_id}
-    (workspace / "upstream.diff").write_text(diff.stdout, encoding="utf-8", newline="\n")
+    additional_contexts: list[dict[str, Any]] = []
+    additional_evidence: list[str] = []
+    for index, (source, mirror, head) in enumerate(prepared_sources):
+        pathspecs = source_tracked_pathspecs(source)
+        diff = git(
+            mirror.local_path,
+            ["diff", "--find-renames", source.accepted_commit, head, "--", *pathspecs],
+            timeout=60,
+        )
+        if diff.returncode != 0:
+            shutil.rmtree(workspace)
+            return {"status": "blocked_diff_failed", "skill": skill_name, "source": source.id}
+        evidence_name = "upstream.diff" if index == 0 else f"upstream-additional-{index}.diff"
+        (workspace / evidence_name).write_text(diff.stdout, encoding="utf-8", newline="\n")
+        if index > 0:
+            additional_contexts.append(
+                {
+                    "source": source.id,
+                    "accepted_commit": source.accepted_commit,
+                    "accepted_upstream_path": source.accepted_upstream_path,
+                    "upstream_path": source.upstream_path,
+                    "path_migration_commit": source.path_migration_commit,
+                    "current_upstream_commit": head,
+                }
+            )
+            additional_evidence.append(evidence_name)
+    primary_source, _, primary_head = prepared_sources[0]
     context = {
         "schema_version": 1,
         "skill": skill_name,
         "source": source_id,
-        "accepted_commit": source.accepted_commit,
-        "accepted_upstream_path": source.accepted_upstream_path,
-        "upstream_path": source.upstream_path,
-        "path_migration_commit": source.path_migration_commit,
-        "current_upstream_commit": head,
+        "accepted_commit": primary_source.accepted_commit,
+        "accepted_upstream_path": primary_source.accepted_upstream_path,
+        "upstream_path": primary_source.upstream_path,
+        "path_migration_commit": primary_source.path_migration_commit,
+        "current_upstream_commit": primary_head,
+        "additional_sources": additional_contexts,
+        "additional_review_evidence": additional_evidence,
         "local_tree_hash": tree_hash(skill_root),
         "old_skill_tree_hash": tree_hash(old_skill),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1434,25 +2065,14 @@ def verify_review_is_current(
     skill = next((record for record in skills if record.name == skill_name), None)
     if not skill:
         raise ValueError(f"Unknown skill: {skill_name}")
-    source = next((record for record in skill.sources if record.id == source_id), None)
-    if not source:
-        raise ValueError(f"Unknown source for {skill_name}: {source_id}")
     context = load_review_context(workspace)
     if context.get("skill") != skill_name or context.get("source") != source_id:
         raise ValueError("Review context does not match the requested skill/source.")
-    if context.get("accepted_commit") != source.accepted_commit:
-        raise ValueError("Accepted baseline changed; discard and recreate the candidate.")
-    if context.get("accepted_upstream_path", source.accepted_upstream_path) != source.accepted_upstream_path:
-        raise ValueError("Accepted upstream path changed; discard and recreate the candidate.")
-    if context.get("upstream_path", source.upstream_path) != source.upstream_path:
-        raise ValueError("Current upstream path changed; discard and recreate the candidate.")
-    if context.get("path_migration_commit", source.path_migration_commit) != source.path_migration_commit:
-        raise ValueError("Path migration identity changed; discard and recreate the candidate.")
-    health = inspect_mirror(mirrors[source.mirror_id])
-    if health["status"] != "healthy":
-        raise ValueError(f"Mirror is not healthy: {health['status']}")
-    if health["head"] != context.get("current_upstream_commit"):
-        raise ValueError("Upstream HEAD changed; discard and recreate the candidate.")
+    sources_by_id = {record.id: record for record in skill.sources}
+    validate_review_source_contexts_current(skill, mirrors, context)
+    source = sources_by_id.get(source_id)
+    if source is None:
+        raise ValueError(f"Unknown source for {skill_name}: {source_id}")
     target = skills_root / skill_name
     status = git(skills_root, ["status", "--porcelain", "--", skill_name])
     if status.stdout.strip():
@@ -1474,10 +2094,27 @@ def finalize_review(
     source_id: str,
     gates: dict[str, bool],
 ) -> dict[str, Any]:
+    resolved_workspace = workspace.resolve()
+    if len(resolved_workspace.parents) < 3:
+        raise ValueError("Review workspace is not inside the expected reports hierarchy.")
+    reports_root = resolved_workspace.parents[2]
+    existing_candidates = current_awaiting_candidate_workspaces(
+        reports_root,
+        skill_name,
+        skills,
+        mirrors,
+        exclude_workspace=resolved_workspace,
+    )
+    if existing_candidates:
+        return {
+            "status": "blocked_existing_skill_candidate",
+            "skill": skill_name,
+            "existing_workspaces": [str(path) for path in existing_candidates],
+        }
     _, _, context = verify_review_is_current(
         skills, mirrors, skills_root, workspace, skill_name, source_id
     )
-    missing = sorted(name for name, passed in gates.items() if not passed)
+    missing = sorted(name for name in REQUIRED_REVIEW_GATES if gates.get(name) is not True)
     if missing:
         return {"status": "blocked_review_incomplete", "missing_gates": missing}
     assessment = workspace / "benefit-assessment.md"
@@ -1494,16 +2131,67 @@ def finalize_review(
         return {"status": "blocked_no_candidate_changes"}
     patch, patch_hash = candidate_patch(workspace, skill_name)
     (workspace / "candidate.patch").write_text(patch, encoding="utf-8", newline="\n")
+    evidence_paths = {
+        "benefit-assessment.md": assessment,
+        "test-report.md": test_report,
+        "upstream.diff": workspace / "upstream.diff",
+    }
+    additional_evidence = context.get("additional_review_evidence", [])
+    if not isinstance(additional_evidence, list):
+        raise ValueError("Review context additional_review_evidence must be a list.")
+    for value in additional_evidence:
+        name = str(value)
+        if not is_safe_repo_path(name) or name in evidence_paths:
+            raise ValueError(f"Invalid additional review evidence path: {name}")
+        path = workspace / name
+        if not path.is_file():
+            raise ValueError(f"Additional review evidence is missing: {name}")
+        evidence_paths[name] = path
+    source_contexts = review_source_contexts(context)
+    upstream_evidence_names = ["upstream.diff", *[str(value) for value in additional_evidence]]
+    if len(upstream_evidence_names) != len(source_contexts):
+        raise ValueError("Each review source must have exactly one upstream diff evidence file.")
+    skill = next(record for record in skills if record.name == skill_name)
+    sources_by_id = {record.id: record for record in skill.sources}
+    for source_context, evidence_name in zip(source_contexts, upstream_evidence_names, strict=True):
+        current_source = sources_by_id[str(source_context["source"])]
+        mirror = mirrors[current_source.mirror_id]
+        pathspecs = source_tracked_pathspecs(current_source)
+        diff = git(
+            mirror.local_path,
+            [
+                "diff",
+                "--find-renames",
+                current_source.accepted_commit,
+                str(source_context["current_upstream_commit"]),
+                "--",
+                *pathspecs,
+            ],
+            timeout=60,
+        )
+        if diff.returncode != 0:
+            return {
+                "status": "blocked_diff_failed",
+                "skill": skill_name,
+                "source": current_source.id,
+            }
+        if (workspace / evidence_name).read_text(encoding="utf-8") != diff.stdout:
+            return {
+                "status": "blocked_upstream_evidence_mismatch",
+                "skill": skill_name,
+                "source": current_source.id,
+                "evidence": evidence_name,
+            }
+    scope_hash = review_scope_hash(context)
     context.update(
         {
             "candidate_status": "awaiting_approval",
             "candidate_tree_hash": candidate_hash_value,
             "candidate_patch_sha256": patch_hash,
             "review_evidence_sha256": {
-                "benefit-assessment.md": file_hash(assessment),
-                "test-report.md": file_hash(test_report),
-                "upstream.diff": file_hash(workspace / "upstream.diff"),
+                name: file_hash(path) for name, path in evidence_paths.items()
             },
+            "review_scope_sha256": scope_hash,
             "finalized_at": datetime.now(timezone.utc).isoformat(),
             "review_gates": gates,
         }
@@ -1531,6 +2219,7 @@ def apply_review(
     )
     if context.get("candidate_status") != "awaiting_approval":
         raise ValueError("Candidate is not finalized and awaiting approval.")
+    validate_finalized_review_integrity(context, workspace)
     candidate_hash_value = tree_hash(workspace / "candidate_skill")
     if candidate_hash_value != context.get("candidate_tree_hash"):
         raise ValueError("Candidate changed after finalization.")
@@ -1541,6 +2230,8 @@ def apply_review(
     if not isinstance(expected_evidence, dict):
         raise ValueError("Finalized review evidence hashes are missing.")
     for name, expected_hash in expected_evidence.items():
+        if not is_safe_repo_path(str(name)):
+            raise ValueError(f"Invalid review evidence path: {name}")
         evidence_path = workspace / name
         if not evidence_path.is_file() or file_hash(evidence_path) != expected_hash:
             raise ValueError(f"Review evidence changed after finalization: {name}")
@@ -1668,12 +2359,13 @@ def main() -> int:
             state_path = args.state.resolve() if args.state else reports_root / "state.json"
             refresh_payload = None
             mirror_results = None
+            mirror_manager_error = None
             if args.command == "weekly-run":
                 refresh_payload = refresh_mirrors(mirrors_registry)
                 write_json(reports_root / args.date / "mirror-results.json", refresh_payload)
-                mirror_results = {
-                    result["id"]: result for result in refresh_payload.get("mirrors", [])
-                }
+                mirror_results, mirror_manager_error = normalize_mirror_refresh_results(
+                    refresh_payload, mirrors
+                )
             payload = build_report(
                 skills,
                 mirrors,
@@ -1681,9 +2373,11 @@ def main() -> int:
                 args.date,
                 state_path,
                 mirror_results=mirror_results,
+                mirror_refresh_exit_code=(
+                    refresh_payload["exit_code"] if refresh_payload is not None else None
+                ),
+                mirror_manager_error=mirror_manager_error,
             )
-            if refresh_payload is not None:
-                payload["mirror_refresh_exit_code"] = refresh_payload["exit_code"]
             emit(payload, args.json)
             return 0 if not refresh_payload or refresh_payload["exit_code"] == 0 else 2
         if args.command == "prepare-review":
@@ -1696,6 +2390,7 @@ def main() -> int:
                 args.skill,
                 args.source,
                 args.expected_commit,
+                [(values[0], values[1]) for values in args.additional_source],
             )
             emit(payload, args.json)
             return 0 if payload["status"] == "prepared" else 2

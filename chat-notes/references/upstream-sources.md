@@ -81,7 +81,7 @@
 - 仓库：https://github.com/KKKKhazix/khazix-skills.git
 - 当前上游路径：`neat-freak`
 - 接受时上游路径：`neat-freak`
-- 已接受提交：`bf39594646840bc85368bb40771f3f6ec3fc7503`
+- 已接受提交：`2b4a645cfdc894156ae347d897723562f719ce95`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
 - 许可证：`MIT`
@@ -90,12 +90,14 @@
 ### 证据
 
 - 本地来源说明明确记录借鉴 git diff/status 扫描步骤。
+- 2026-07-23 合并候选经用户逐技能批准并通过应用后复测。
 - 本地证据文件：`chat-notes/references/external-sources.md`
 - 本地证据文件：`../upstream/upstream-sources.md`
 
 ### 已吸收
 
 - 用 git diff 和 git status 判断哪些文档需要同步。
+- 清场前先完整汇报并取得报告后的再次明确批准；未核实事实保持 pending；宿主生成记忆只通过合规 correction input 修正。
 
 ### 明确不吸收
 
@@ -115,7 +117,7 @@
 - 仓库：https://github.com/garrytan/gstack.git
 - 当前上游路径：`document-release`
 - 接受时上游路径：`document-release`
-- 已接受提交：`e8893a18b18e32ebd63a21f6915337868249ebe1`
+- 已接受提交：`a3259400a366593e0c909dd9ac3e59752efd2488`
 - 已接受版本：`1.0.0`
 - 基线类型：`exact`
 - 许可证：`MIT`
@@ -124,11 +126,13 @@
 ### 证据
 
 - 旧集中来源说明记录了 document-release 的本地落点和已吸收边界。
+- 2026-07-23 合并候选经用户逐技能批准并通过应用后复测。
 - 本地证据文件：`../upstream/upstream-sources.md`
 
 ### 已吸收
 
 - 改文档前读取入口；区分事实修正与高风险改动；保护版本记录；给出修改摘要。
+- 对外接口按 Diátaxis 检查文档覆盖；ASCII/Mermaid 架构图按代码变化检查漂移并保持人工确认。
 
 ### 明确不吸收
 

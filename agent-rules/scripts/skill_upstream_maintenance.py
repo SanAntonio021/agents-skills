@@ -421,9 +421,26 @@ def validate_registry(
                             )],
                         )
                         if tracked_blob.returncode != 0:
-                            errors.append(
-                                f"{skill.name}/{source.id}: tracked path missing at accepted commit: {tracked_path}"
+                            mirror_head = current_head(mirror.local_path)
+                            current_tracked_blob = (
+                                git(
+                                    mirror.local_path,
+                                    [
+                                        "cat-file",
+                                        "-e",
+                                        git_object(
+                                            mirror_head,
+                                            source_repo_path(source, tracked_path),
+                                        ),
+                                    ],
+                                )
+                                if mirror_head
+                                else None
                             )
+                            if current_tracked_blob is None or current_tracked_blob.returncode != 0:
+                                errors.append(
+                                    f"{skill.name}/{source.id}: tracked path missing at accepted commit and current HEAD: {tracked_path}"
+                                )
                     for license_path in source.license_paths:
                         license_blob = git(
                             mirror.local_path,

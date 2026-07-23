@@ -355,6 +355,27 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         self.assertEqual(dependency_report["sources"][0]["status"], "review_required")
 
+    def test_new_behavior_path_can_be_tracked_after_accepted_baseline(self) -> None:
+        sections = self.mirror / "skills" / "source-skill" / "sections"
+        sections.mkdir()
+        (sections / "release-body.md").write_text("new behavior\n", encoding="utf-8")
+        current = commit_all(self.mirror, "extract behavior section")
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'tracked_paths = ["SKILL.md", "scripts", "references"]',
+            'tracked_paths = ["SKILL.md", "scripts", "references", "sections"]',
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(validation["status"], "ok", validation["errors"])
+        diff = MODULE.source_diff(self.mirror, skills[0].sources[0], current)
+        self.assertEqual(diff["status"], "review_required")
+        self.assertIn(
+            "skills/source-skill/sections/release-body.md",
+            [item["path"] for item in diff["changed"]],
+        )
+
     def test_license_change_and_upstream_removal_are_blocked(self) -> None:
         skills, mirrors = self.load()
         (self.mirror / "LICENSE").write_text("changed terms\n", encoding="utf-8")

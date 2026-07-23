@@ -1,0 +1,29 @@
+{
+  "skill_name": "libreoffice-runner",
+  "evals": [
+    {
+      "id": "parallel-docx-pdf",
+      "prompt": "两个 Word 文件要同时转 PDF，输出都还不存在，但之前 LibreOffice 报过 bootstrap.ini 损坏。",
+      "expected_output": "使用 runner 的 pdf 操作，说明独立 profile 和默认两任务容量，不直接运行 soffice。",
+      "files": []
+    },
+    {
+      "id": "xlsx-recalc",
+      "prompt": "把这个 XLSX 重算后另存为新文件，不能覆盖原表，也不能打开 Excel。",
+      "expected_output": "使用 runner recalc 或 xlsx 兼容包装器，输出新路径并报告公式缓存验证。",
+      "files": []
+    },
+    {
+      "id": "tracked-docx",
+      "prompt": "接受 DOCX 里的全部修订，保留一个新文件。",
+      "expected_output": "使用 runner accept-changes 的 UNO 路径，不调用第三方宏或复制第三方脚本。",
+      "files": []
+    },
+    {
+      "id": "existing-output",
+      "prompt": "把 PPTX 转成已经存在的同名 PDF。",
+      "expected_output": "停止并报告 output_exists，不覆盖，也不启动 LibreOffice。",
+      "files": []
+    }
+  ]
+}

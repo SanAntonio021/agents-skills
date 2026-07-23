@@ -64,17 +64,17 @@
 
 ## LibreOffice 和 Poppler
 
-### Pattern: windows-libreoffice-direct-profile
+### Pattern: windows-libreoffice-runner
 - use_when: Windows 上 DOCX 等 Office 文件转换失败，`soffice` 不在 PATH，或第三方 helper 尚未启动 LibreOffice 就报错。
-- shape: `$soffice='<ABS_LIBREOFFICE_PROGRAM_DIR>\soffice.com'; $profilePath='<ABS_ISOLATED_PROFILE_DIR>'; $profileUri=([Uri]$profilePath).AbsoluteUri; & $soffice ('-env:UserInstallation=' + $profileUri) --headless --convert-to pdf --outdir '<ABS_OUTPUT_DIR>' '<ABS_INPUT_FILE>'`
-- preflight: `Test-Path -LiteralPath $soffice`; 检查输入文件、输出目录和隔离 profile 父目录；确认 `$profileUri` 形如 `file:///C:/...`；转换后检查退出码和目标文件。
-- avoid: 依赖裸命令 `soffice`；把 Windows 路径直接拼成 `file://C:\...`；多个任务共用同一 profile；需要控制台诊断时绕过 `soffice.com` 去调 GUI 入口。
+- shape: `$python='C:\Python313\python.exe'; $runner='<ABS_LIBREOFFICE_RUNNER_SCRIPTS>\libreoffice_run.py'; & $python $runner pdf '<ABS_INPUT_FILE>' '<ABS_OUTPUT_FILE>' --run-timeout 120`
+- preflight: `Test-Path -LiteralPath $python`; `Test-Path -LiteralPath $runner`; 检查输入文件、输出路径不存在；读取 runner JSON 的 `ok`、`error`、`stdout`、`stderr` 和 `diagnostics`。
+- avoid: 直接运行 `soffice`、`soffice.exe` 或 `soffice.com`；手工拼 `UserInstallation` URI；多个任务共用 profile；按进程名结束 LibreOffice；绕过 runner 调用 GUI 入口。
 
 ### Pattern: detect-af-unix-helper
 - use_when: Python helper 在 Windows 上报 `AttributeError: module 'socket' has no attribute 'AF_UNIX'`，需要判断是 helper 不兼容还是 LibreOffice 安装问题。
 - shape: `& '<PYTHON_EXE>' -c "import socket; print(hasattr(socket, 'AF_UNIX'))"; rg -n "AF_UNIX|soffice" '<HELPER_SCRIPT>'`
 - preflight: 用 helper 实际使用的 Python 运行时执行检查；确认异常发生在外部进程启动前。
-- avoid: 反复重装 LibreOffice；原样重试不兼容 helper；在文档任务中直接修改第三方运行时副本。检查结果为 `False` 且 helper 无条件访问 `AF_UNIX` 时，改走 `windows-libreoffice-direct-profile`。
+- avoid: 反复重装 LibreOffice；原样重试不兼容 helper；在文档任务中直接修改第三方运行时副本。检查结果为 `False` 且 helper 无条件访问 `AF_UNIX` 时，改走 `windows-libreoffice-runner`。
 
 ### Pattern: windows-poppler-direct-exe
 - use_when: PDF 信息读取或渲染失败，PATH 中的 `pdftoppm` / `pdfinfo` 不可用，或命中了无扩展名包装器而不是真正的 Poppler 二进制文件。

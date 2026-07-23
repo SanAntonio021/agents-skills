@@ -829,10 +829,11 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         workspace = Path(prepared["workspace"])
         candidate = workspace / "candidate_skill" / "SKILL.md"
-        candidate.write_text(
-            "---\nname: alpha\ndescription: improved\n---\n\n# alpha improved\n",
-            encoding="utf-8",
+        candidate.write_bytes(
+            b"---\nname: alpha\ndescription: improved\n---\n\n# alpha improved\n"
         )
+        expected_candidate_bytes = candidate.read_bytes()
+        run_git(self.skills, "config", "core.autocrlf", "true")
         before = MODULE.tree_hash(self.skills / "alpha")
         incomplete = MODULE.finalize_review(
             skills,
@@ -948,6 +949,7 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         self.assertEqual(applied["status"], "applied_pending_retest")
         self.assertIn("alpha improved", (self.skills / "alpha" / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertEqual((self.skills / "alpha" / "SKILL.md").read_bytes(), expected_candidate_bytes)
 
     def test_multi_source_candidate_is_grouped_and_checks_every_baseline(self) -> None:
         skills, mirrors = self.load()

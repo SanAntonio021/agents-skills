@@ -2249,7 +2249,27 @@ def apply_review(
     applied = git(skills_root, ["apply", str(patch_path)], timeout=120)
     if applied.returncode != 0:
         raise RuntimeError(applied.stderr.strip() or "Candidate patch application failed.")
-    if tree_hash(skills_root / skill_name) != candidate_hash_value:
+    target_skill = skills_root / skill_name
+    if tree_hash(target_skill) != candidate_hash_value:
+        # Git filters may rewrite line endings in the Windows working tree.
+        candidate_skill = workspace / "candidate_skill"
+        target_files = {
+            path.relative_to(target_skill): path
+            for path in target_skill.rglob("*")
+            if path.is_file()
+        }
+        candidate_files = {
+            path.relative_to(candidate_skill): path
+            for path in candidate_skill.rglob("*")
+            if path.is_file()
+        }
+        if set(target_files) != set(candidate_files):
+            raise RuntimeError("Applied file set does not match the reviewed candidate.")
+        for relative_path, candidate_file in candidate_files.items():
+            target_file = target_files[relative_path]
+            if file_hash(target_file) != file_hash(candidate_file):
+                shutil.copyfile(candidate_file, target_file)
+    if tree_hash(target_skill) != candidate_hash_value:
         raise RuntimeError("Applied tree does not match the reviewed candidate.")
     context.update(
         {

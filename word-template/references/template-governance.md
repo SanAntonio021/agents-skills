@@ -33,8 +33,9 @@ Use this note when deciding whether a newly provided Word sample should become a
 ## Maintenance rules
 
 - Prefer changing `custom/word-template` rather than patching `vendor` skills.
-- Regenerate the master asset with `scripts/build_master_template.py` when changing the synthesized default.
+- After obtaining explicit permission for this operation, regenerate the master asset with `python scripts/build_master_template.py --allow-office-com` when changing the synthesized default.
 - Re-extract the profile after any template change and review `references/master-default-template-profile.md`.
-- Run `scripts/validate_master_default.py` after changing the default preset or the master builder.
+- After obtaining explicit permission for this operation, run `python scripts/validate_master_default.py --allow-office-com` after changing the default preset or the master builder.
+- Both scripts refuse to run while `WINWORD.EXE` already exists; do not connect to or close the existing instance.
 
 Legacy English aliases remain accepted for compatibility, but governance notes should use `tongyong-moren`, `jishu-zongjie`, `gongzuo-zongjie`, and `qiye-shenbao` as the canonical labels.

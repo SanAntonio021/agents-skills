@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
-from contextlib import contextmanager
 from pathlib import Path
 
-import pythoncom
-import win32com.client.gencache
-from win32com.client import constants
+import word_constants as constants
+from office_com_guard import add_office_com_argument, word_application
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -18,29 +17,6 @@ FORMATTER_SCRIPT = SKILL_ROOT / "scripts" / "word_template_formatter.py"
 TMP_DIR = SKILL_ROOT / "tmp"
 INPUT_PATH = TMP_DIR / "master-default-validation-input.docx"
 OUTPUT_PATH = TMP_DIR / "master-default-validation-output.docx"
-
-
-@contextmanager
-def word_application():
-    pythoncom.CoInitialize()
-    app = None
-    try:
-        app = win32com.client.gencache.EnsureDispatch("Word.Application")
-        app.Visible = False
-        app.DisplayAlerts = 0
-        app.ScreenUpdating = False
-        yield app
-    finally:
-        if app is not None:
-            try:
-                app.ScreenUpdating = True
-            except Exception:
-                pass
-            try:
-                app.Quit(False)
-            except Exception:
-                pass
-        pythoncom.CoUninitialize()
 
 
 def style_name(style_ref) -> str:
@@ -57,13 +33,13 @@ def add_paragraph(doc, text: str, style_ref) -> None:
     doc.Paragraphs.Last.Range.InsertParagraphAfter()
 
 
-def create_input_document() -> None:
-    TMP_DIR.mkdir(parents=True, exist_ok=True)
-    for path in (INPUT_PATH, OUTPUT_PATH):
-        if path.exists():
-            path.unlink()
+def create_input_document(allow_office_com: bool) -> None:
+    with word_application(allow_office_com=allow_office_com) as app:
+        TMP_DIR.mkdir(parents=True, exist_ok=True)
+        for path in (INPUT_PATH, OUTPUT_PATH):
+            if path.exists():
+                path.unlink()
 
-    with word_application() as app:
         doc = app.Documents.Add()
         try:
             add_paragraph(doc, "Validation Document", doc.Styles(constants.wdStyleTitle))
@@ -80,9 +56,20 @@ def create_input_document() -> None:
             doc.Close(False)
 
 
-def run_formatter() -> str:
+def run_formatter(allow_office_com: bool) -> str:
+    command = [
+        sys.executable,
+        str(FORMATTER_SCRIPT),
+        "apply",
+        "--input",
+        str(INPUT_PATH),
+        "--output",
+        str(OUTPUT_PATH),
+    ]
+    if allow_office_com:
+        command.append("--allow-office-com")
     result = subprocess.run(
-        [sys.executable, str(FORMATTER_SCRIPT), "apply", "--input", str(INPUT_PATH), "--output", str(OUTPUT_PATH)],
+        command,
         capture_output=True,
         text=True,
         check=True,
@@ -90,9 +77,9 @@ def run_formatter() -> str:
     return result.stdout.strip()
 
 
-def inspect_output() -> list[str]:
+def inspect_output(allow_office_com: bool) -> list[str]:
     lines: list[str] = []
-    with word_application() as app:
+    with word_application(allow_office_com=allow_office_com) as app:
         doc = app.Documents.Open(
             FileName=str(OUTPUT_PATH),
             ConfirmConversions=False,
@@ -129,10 +116,17 @@ def inspect_output() -> list[str]:
     return lines
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate the master Word preset.")
+    add_office_com_argument(parser)
+    return parser
+
+
 def main() -> int:
-    create_input_document()
-    print(run_formatter())
-    for line in inspect_output():
+    args = build_parser().parse_args()
+    create_input_document(args.allow_office_com)
+    print(run_formatter(args.allow_office_com))
+    for line in inspect_output(args.allow_office_com):
         print(line)
     return 0
 

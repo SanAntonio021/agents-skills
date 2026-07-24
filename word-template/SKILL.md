@@ -37,18 +37,29 @@ description: 用用户提供的 Word 模板、本机默认格式或仓内内置 
 7. 用户给已有 `.docx` 要求“按这个里面的格式”时，只把它当版式参考，不把它的正文内容当来源；输出到带 `_formatted_like_...` 之类后缀的新文件。
 8. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，仍在这里处理，但优先使用现有脚本，不再拆独立治理 skill。
 
+## Word COM 许可门禁
+
+这些脚本会启动并控制 Microsoft Word。每次执行前必须先取得用户针对本次操作的明确许可，并确认当前没有需要保护的打开文档；不能把以前的许可、全局偏好或配置文件当成本次许可。
+
+- Python 命令只有显式传入 `--allow-office-com` 才会进入 COM 初始化。
+- PowerShell 命令只有显式传入 `-AllowOfficeCom` 才会继续；包装脚本不直接创建或退出 Word，而是把实际 COM 操作转给同一 Python 守卫。
+- 即使有许可，只要检测到 `WINWORD.EXE` 已存在，脚本仍会拒绝；不得连接、保存或关闭该实例。
+- 新建实例必须初始无文档，退出时也必须 `Documents.Count == 0`。只有本任务创建并满足这两个条件的实例才允许调用 `Application.Quit()`。
+- 如果新实例出现无法解释的打开文档或清理失败，守卫拒绝退出该实例，并尽量将其显示出来供人工处理；不得用新的 `Quit()` 重试覆盖原始错误。
+- 用户未批准时，只能做不启动 Word 的文件级处理或 mock/fake COM 测试。
+
 ## 常用命令
 
 ### 提取模板规则
 
 ```powershell
-python scripts/word_template_formatter.py extract
+python scripts/word_template_formatter.py extract --allow-office-com
 ```
 
 公开仓不再附带预设 `.docx` 资产；默认提取前要先准备你自己的模板文件。若你已经在本机保留了与某个预设对应的模板，也可以显式指定预设名后再传 `--template`：
 
 ```powershell
-python scripts/word_template_formatter.py extract --preset qiye-shenbao
+python scripts/word_template_formatter.py extract --preset qiye-shenbao --allow-office-com
 ```
 
 若用户给了明确模板路径：
@@ -57,7 +68,8 @@ python scripts/word_template_formatter.py extract --preset qiye-shenbao
 python scripts/word_template_formatter.py extract `
   --template C:\path\template.docx `
   --profile C:\path\template.style-profile.json `
-  --report C:\path\template.style-profile.md
+  --report C:\path\template.style-profile.md `
+  --allow-office-com
 ```
 
 ### 把模板格式应用到目标文档
@@ -65,7 +77,8 @@ python scripts/word_template_formatter.py extract `
 ```powershell
 python scripts/word_template_formatter.py apply `
   --input C:\path\draft.docx `
-  --output C:\path\draft.formatted.docx
+  --output C:\path\draft.formatted.docx `
+  --allow-office-com
 ```
 
 公开仓默认用随仓附带的 style profile 临时生成模板，所以即使没有预设 `.docx` 资产，下面的预设模式也能直接用：
@@ -74,7 +87,8 @@ python scripts/word_template_formatter.py apply `
 python scripts/word_template_formatter.py apply `
   --preset qiye-shenbao `
   --input C:\path\draft.docx `
-  --output C:\path\draft.formatted.docx
+  --output C:\path\draft.formatted.docx `
+  --allow-office-com
 ```
 
 常用参数：
@@ -90,7 +104,8 @@ python scripts/word_template_formatter.py apply `
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
-  C:\path\draft.md
+  C:\path\draft.md `
+  -AllowOfficeCom
 ```
 
 这个流程会先把 Markdown 转成 `.docx`，再套用 Word 端格式。默认优先使用 `Normal.dotm` 或当前默认预设，而不是停在原始 `pandoc` 输出。
@@ -100,7 +115,8 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
   C:\path\draft.md `
-  -Preset qiye-shenbao
+  -Preset qiye-shenbao `
+  -AllowOfficeCom
 ```
 
 如果要指定模板文件：
@@ -108,7 +124,8 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
   C:\path\draft.md `
-  -TemplatePath C:\path\custom-template.docx
+  -TemplatePath C:\path\custom-template.docx `
+  -AllowOfficeCom
 ```
 
 ### 用已有 Word 作为格式参考
@@ -133,6 +150,8 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 - 默认预设受治理规则控制，不要擅自把 `tongyong-moren` 当作所有场景的默认值。
 - 公开仓只分发 style profile 和脚本，不分发原始样例 `.docx`。
 - 用参考 `.docx` 迁移格式时，交付前至少验证页面设置、正文文本、图片嵌入和 media 关系；不要只凭转换命令成功判断完成。
+- `--allow-office-com` 和 `-AllowOfficeCom` 只记录本次明确许可，不得自动补上或长期保存。
+- 检测到已有 Word 进程时直接停止；不要用 `GetActiveObject` 探测，不要代用户关闭 Word。
 
 ## 边界
 
@@ -144,6 +163,8 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 
 - 主脚本：[scripts/word_template_formatter.py](scripts/word_template_formatter.py)
 - Markdown 转 Word 包装脚本：[scripts/export_markdown_to_word.ps1](scripts/export_markdown_to_word.ps1)
+- Python COM 安全守卫：[scripts/office_com_guard.py](scripts/office_com_guard.py)
+- PowerShell 许可与进程预检：[scripts/OfficeComGuard.psm1](scripts/OfficeComGuard.psm1)
 - 预设构建脚本：[scripts/build_master_template.py](scripts/build_master_template.py)
 - 默认预设校验脚本：[scripts/validate_master_default.py](scripts/validate_master_default.py)
 - `Normal.dotm` 安装脚本：[scripts/install_normal_template.py](scripts/install_normal_template.py)

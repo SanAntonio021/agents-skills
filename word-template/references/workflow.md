@@ -13,13 +13,17 @@ Use this skill when the user wants Word formatting reuse, not when they want to 
 ## Suggested operating pattern
 
 1. Keep the user's template document unchanged.
-2. Write the extracted profile next to the template for auditability.
-3. Save formatted output into a new file.
-4. Open the output once in Word and spot-check:
+2. Before any Word COM call, obtain explicit permission for this operation and confirm that no Word document needs protection.
+3. Pass `--allow-office-com` or `-AllowOfficeCom` only after that confirmation. If `WINWORD.EXE` already exists, stop without connecting to or closing it.
+4. Write the extracted profile next to the template for auditability.
+5. Save formatted output into a new file.
+6. Only with separate permission to open Word, spot-check the output once:
    - title
    - Heading 1 and Heading 2
    - normal body paragraph
    - page size and margins
+
+The PowerShell wrapper does not create or quit Word directly; it delegates all Word automation, including native `.dot`, `.dotm`, and `.dotx` templates, to the Python guard. The guard uses `DispatchEx`, requires an initially empty instance, and only calls `Application.Quit()` for the instance created by the current task after `Documents.Count` returns to zero. If cleanup cannot prove that condition, it refuses to quit and preserves the primary error.
 
 ## Heuristics used by the apply command
 

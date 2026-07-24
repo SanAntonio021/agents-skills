@@ -8,20 +8,12 @@ import json
 import re
 import sys
 import tempfile
-from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-try:
-    import pythoncom
-    import win32com.client.gencache
-except ImportError as exc:  # pragma: no cover
-    raise SystemExit(
-        "pywin32 is required. Install it before using this skill."
-    ) from exc
-
-from win32com.client import constants
+import word_constants as constants
+from office_com_guard import add_office_com_argument, word_application
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEMPLATE_PATH = SKILL_ROOT / "assets" / "default-template.docx"
@@ -606,29 +598,6 @@ def profile_report(profile: dict[str, Any]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-@contextmanager
-def word_application():
-    pythoncom.CoInitialize()
-    app = None
-    try:
-        app = win32com.client.gencache.EnsureDispatch("Word.Application")
-        app.Visible = False
-        app.DisplayAlerts = 0
-        app.ScreenUpdating = False
-        yield app
-    finally:
-        if app is not None:
-            try:
-                app.ScreenUpdating = True
-            except Exception:
-                pass
-            try:
-                app.Quit(False)
-            except Exception:
-                pass
-        pythoncom.CoUninitialize()
-
-
 def open_document(app: Any, path: Path, read_only: bool) -> Any:
     return app.Documents.Open(
         FileName=str(path),
@@ -1028,7 +997,7 @@ def extract_command(args: argparse.Namespace) -> int:
     profile_path = (args.profile or default_profile_path(template_path)).resolve()
     report_path = (args.report or default_report_path(template_path)).resolve()
 
-    with word_application() as app:
+    with word_application(allow_office_com=args.allow_office_com) as app:
         template_doc = open_document(app, template_path, read_only=True)
         try:
             profile = build_profile(template_doc, template_path, args.all_styles)
@@ -1095,7 +1064,7 @@ def apply_command(args: argparse.Namespace) -> int:
         elif profile_path is None and preset_paths["profile"].exists():
             profile_path = preset_paths["profile"].resolve()
 
-    with word_application() as app:
+    with word_application(allow_office_com=args.allow_office_com) as app:
         target_doc = open_document(app, input_path, read_only=False)
         template_doc = None
         try:
@@ -1151,6 +1120,36 @@ def apply_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def existing_word_template_path(value: str) -> Path:
+    path = Path(value).expanduser().resolve()
+    if not path.exists():
+        raise argparse.ArgumentTypeError(f"Template not found: {value}")
+    if path.suffix.lower() not in {".dot", ".dotm", ".dotx"}:
+        raise argparse.ArgumentTypeError(
+            f"Native Word template must be a .dot, .dotm, or .dotx file: {value}"
+        )
+    return path
+
+
+def apply_native_template_command(args: argparse.Namespace) -> int:
+    input_path = args.input.resolve()
+    template_path = args.template.resolve()
+
+    with word_application(allow_office_com=args.allow_office_com) as app:
+        document = open_document(app, input_path, read_only=False)
+        try:
+            document.AttachedTemplate = str(template_path)
+            document.CopyStylesFromTemplate(str(template_path))
+            document.UpdateStylesOnOpen = True
+            document.UpdateStyles()
+            document.Save()
+        finally:
+            document.Close(False)
+
+    print(f"Native Word template applied: {input_path}")
+    return 0
+
+
 def existing_docx_path(value: str) -> Path:
     path = Path(value).expanduser()
     if not path.exists():
@@ -1196,6 +1195,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Capture every style instead of only used/core/custom styles.",
     )
+    add_office_com_argument(extract_parser)
     extract_parser.set_defaults(func=extract_command)
 
     apply_parser = subparsers.add_parser("apply", help="Apply template formatting.")
@@ -1242,7 +1242,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--title-style",
         help="Override the detected title style name.",
     )
+    add_office_com_argument(apply_parser)
     apply_parser.set_defaults(func=apply_command)
+
+    native_parser = subparsers.add_parser(
+        "apply-native-template",
+        help="Apply a DOT, DOTM, or DOTX template to an existing DOCX file.",
+    )
+    native_parser.add_argument("--input", required=True, type=existing_docx_path)
+    native_parser.add_argument(
+        "--template",
+        required=True,
+        type=existing_word_template_path,
+    )
+    add_office_com_argument(native_parser)
+    native_parser.set_defaults(func=apply_native_template_command)
 
     return parser
 

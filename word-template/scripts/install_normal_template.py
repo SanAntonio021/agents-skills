@@ -10,35 +10,17 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import pythoncom
-import win32com.client
-from win32com.client import constants
-
+import word_constants as constants
+from office_com_guard import add_office_com_argument, word_application
 from word_template_formatter import (
     DEFAULT_PRESET,
     PRESET_PATHS,
     apply_page_setup,
     open_document,
-    word_application,
 )
 
 
 DEFAULT_NORMAL_TEMPLATE = Path.home() / "AppData" / "Roaming" / "Microsoft" / "Templates" / "Normal.dotm"
-
-
-def running_word_instance_present() -> bool:
-    pythoncom.CoInitialize()
-    try:
-        try:
-            app = win32com.client.GetActiveObject("Word.Application")
-        except Exception:
-            return False
-        try:
-            return True if app is not None else False
-        finally:
-            app = None
-    finally:
-        pythoncom.CoUninitialize()
 
 
 def backup_normal_template(normal_template: Path) -> Path:
@@ -49,15 +31,19 @@ def backup_normal_template(normal_template: Path) -> Path:
     return backup_path
 
 
-def install_template(template_path: Path, normal_template: Path) -> Path:
-    normal_template.parent.mkdir(parents=True, exist_ok=True)
-    backup_path = backup_normal_template(normal_template)
-    temp_output = normal_template.with_name(f"{normal_template.stem}.codex-new.dotm")
-    if temp_output.exists():
-        temp_output.unlink()
-    format_macro_template = getattr(constants, "wdFormatXMLTemplateMacroEnabled", 15)
+def install_template(
+    template_path: Path,
+    normal_template: Path,
+    allow_office_com: bool,
+) -> Path:
+    with word_application(allow_office_com=allow_office_com) as app:
+        normal_template.parent.mkdir(parents=True, exist_ok=True)
+        backup_path = backup_normal_template(normal_template)
+        temp_output = normal_template.with_name(f"{normal_template.stem}.codex-new.dotm")
+        if temp_output.exists():
+            temp_output.unlink()
+        format_macro_template = getattr(constants, "wdFormatXMLTemplateMacroEnabled", 15)
 
-    with word_application() as app:
         template_doc = open_document(app, template_path, read_only=True)
         normal_doc = app.Documents.Add(Visible=False)
         try:
@@ -107,6 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_NORMAL_TEMPLATE,
         help="Path to Normal.dotm.",
     )
+    add_office_com_argument(parser)
     return parser
 
 
@@ -115,16 +102,16 @@ def main() -> int:
     template_path = args.template.expanduser().resolve()
     normal_template = args.normal_template.expanduser().resolve()
 
-    if running_word_instance_present():
-        raise SystemExit(
-            "Word is currently running. Close all Word windows before installing the global blank template."
-        )
     if not template_path.exists():
         raise SystemExit(f"Template not found: {template_path}")
     if template_path.suffix.lower() != ".docx":
         raise SystemExit(f"Template must be a .docx file: {template_path}")
 
-    backup_path = install_template(template_path, normal_template)
+    backup_path = install_template(
+        template_path,
+        normal_template,
+        args.allow_office_com,
+    )
     print(f"Installed blank-document template: {normal_template}")
     if backup_path.exists():
         print(f"Backup written: {backup_path}")

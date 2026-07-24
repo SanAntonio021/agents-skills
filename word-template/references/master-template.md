@@ -4,7 +4,7 @@
 - Human-readable report: `references/master-default-template-profile.md`
 - Builder: `scripts/build_master_template.py`
 
-This profile is the long-term default preset for the skill under the canonical name `tongyong-moren`. If you need a concrete `.docx` template locally, regenerate it with `scripts/build_master_template.py`.
+This profile is the long-term default preset for the skill under the canonical name `tongyong-moren`. If you need a concrete `.docx` template locally, first obtain explicit permission for this operation, then regenerate it with `python scripts/build_master_template.py --allow-office-com`. The script refuses to run while `WINWORD.EXE` already exists.
 
 Design sources:
 

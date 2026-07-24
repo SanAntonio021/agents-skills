@@ -10,14 +10,20 @@ param(
 
     [string]$TemplatePath,
 
+    [switch]$AllowOfficeCom,
+
     [string]$PandocPath = "$env:LOCALAPPDATA\Pandoc\pandoc.exe"
 )
 
 $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $formatterScriptPath = Join-Path $scriptRoot "word_template_formatter.py"
+$officeComGuardPath = Join-Path $scriptRoot "OfficeComGuard.psm1"
 $defaultWordTemplatePath = Join-Path $env:APPDATA "Microsoft\Templates\Normal.dotm"
 $defaultPresetName = "qiye-shenbao"
+
+Import-Module $officeComGuardPath -Force
+Assert-WordComPermission -AllowOfficeCom:$AllowOfficeCom
 
 function Resolve-PresetName {
     param([Parameter(Mandatory = $true)][string]$PresetName)
@@ -82,23 +88,30 @@ function Invoke-PandocExport {
     }
 }
 
-function Invoke-WordTemplateApply {
+function Invoke-NativeWordTemplateApply {
     param(
-        [Parameter(Mandatory = $true)]$WordApp,
+        [Parameter(Mandatory = $true)][string]$PythonPath,
         [Parameter(Mandatory = $true)][string]$DocumentPath,
-        [Parameter(Mandatory = $true)][string]$ResolvedTemplatePath
+        [Parameter(Mandatory = $true)][string]$ResolvedTemplatePath,
+        [switch]$AllowOfficeCom
     )
 
-    $doc = $WordApp.Documents.Open($DocumentPath, $false, $false)
-    try {
-        $doc.AttachedTemplate = $ResolvedTemplatePath
-        $doc.CopyStylesFromTemplate($ResolvedTemplatePath)
-        $doc.UpdateStylesOnOpen = $true
-        $doc.UpdateStyles()
-        $doc.Save()
+    $applyArgs = @(
+        $formatterScriptPath,
+        "apply-native-template",
+        "--input",
+        $DocumentPath,
+        "--template",
+        $ResolvedTemplatePath
+    )
+
+    if ($AllowOfficeCom) {
+        $applyArgs += "--allow-office-com"
     }
-    finally {
-        $doc.Close()
+
+    & $PythonPath @applyArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Native Word template apply failed for $DocumentPath"
     }
 }
 
@@ -107,7 +120,8 @@ function Invoke-DocxTemplateApply {
         [Parameter(Mandatory = $true)][string]$PythonPath,
         [Parameter(Mandatory = $true)][string]$DocumentPath,
         [string]$ResolvedTemplatePath,
-        [string]$PresetName
+        [string]$PresetName,
+        [switch]$AllowOfficeCom
     )
 
     $applyArgs = @(
@@ -127,6 +141,10 @@ function Invoke-DocxTemplateApply {
     }
     else {
         throw "A DOCX preset or template path is required."
+    }
+
+    if ($AllowOfficeCom) {
+        $applyArgs += "--allow-office-com"
     }
 
     & $PythonPath @applyArgs
@@ -168,9 +186,9 @@ elseif ($PSBoundParameters.ContainsKey("TemplatePath")) {
             $templateMode = "docx-template"
             $pythonPath = Resolve-PythonPath
         }
-        ".dotm" { $templateMode = "word-template" }
-        ".dotx" { $templateMode = "word-template" }
-        ".dot" { $templateMode = "word-template" }
+        ".dotm" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
+        ".dotx" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
+        ".dot" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
         default {
             throw "TemplatePath must be a .docx, .dotm, .dotx, or .dot file: $resolvedTemplatePath"
         }
@@ -195,55 +213,42 @@ if ($resolvedInputs.Count -gt 1 -and $OutputPath) {
     throw "OutputPath can only be used with a single Markdown input."
 }
 
-$word = $null
+foreach ($sourcePath in $resolvedInputs) {
+    if ($OutputPath) {
+        $outputPath = Resolve-OutputPath -Path $OutputPath
+    }
+    elseif ($OverwriteExisting) {
+        $outputPath = [System.IO.Path]::ChangeExtension($sourcePath, ".docx")
+    }
+    else {
+        $directory = [System.IO.Path]::GetDirectoryName($sourcePath)
+        $stem = [System.IO.Path]::GetFileNameWithoutExtension($sourcePath)
+        $outputPath = Join-Path $directory ($stem + ".formatted.docx")
+    }
 
-try {
+    Invoke-PandocExport -SourcePath $sourcePath -OutputPath $outputPath
+
     if ($templateMode -eq "word-template") {
-        $word = New-Object -ComObject Word.Application
-        $word.Visible = $false
-        $word.DisplayAlerts = 0
+        Invoke-NativeWordTemplateApply `
+            -PythonPath $pythonPath `
+            -DocumentPath $outputPath `
+            -ResolvedTemplatePath $resolvedTemplatePath `
+            -AllowOfficeCom:$AllowOfficeCom
+    }
+    else {
+        Invoke-DocxTemplateApply `
+            -PythonPath $pythonPath `
+            -DocumentPath $outputPath `
+            -ResolvedTemplatePath $resolvedTemplatePath `
+            -PresetName $Preset `
+            -AllowOfficeCom:$AllowOfficeCom
     }
 
-    foreach ($sourcePath in $resolvedInputs) {
-        if ($OutputPath) {
-            $outputPath = Resolve-OutputPath -Path $OutputPath
-        }
-        elseif ($OverwriteExisting) {
-            $outputPath = [System.IO.Path]::ChangeExtension($sourcePath, ".docx")
-        }
-        else {
-            $directory = [System.IO.Path]::GetDirectoryName($sourcePath)
-            $stem = [System.IO.Path]::GetFileNameWithoutExtension($sourcePath)
-            $outputPath = Join-Path $directory ($stem + ".formatted.docx")
-        }
-
-        Invoke-PandocExport -SourcePath $sourcePath -OutputPath $outputPath
-
-        if ($templateMode -eq "word-template") {
-            Invoke-WordTemplateApply `
-                -WordApp $word `
-                -DocumentPath $outputPath `
-                -ResolvedTemplatePath $resolvedTemplatePath
-        }
-        else {
-            Invoke-DocxTemplateApply `
-                -PythonPath $pythonPath `
-                -DocumentPath $outputPath `
-                -ResolvedTemplatePath $resolvedTemplatePath `
-                -PresetName $Preset
-        }
-
-        [PSCustomObject]@{
-            SourcePath          = $sourcePath
-            OutputPath          = $outputPath
-            AppliedMode         = $templateMode
-            AppliedPreset       = $Preset
-            AppliedTemplatePath = $resolvedTemplatePath
-        }
-    }
-}
-finally {
-    if ($null -ne $word) {
-        $word.Quit()
+    [PSCustomObject]@{
+        SourcePath          = $sourcePath
+        OutputPath          = $outputPath
+        AppliedMode         = $templateMode
+        AppliedPreset       = $Preset
+        AppliedTemplatePath = $resolvedTemplatePath
     }
 }

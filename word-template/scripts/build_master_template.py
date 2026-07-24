@@ -3,41 +3,17 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+import argparse
 from pathlib import Path
 
-import pythoncom
-import win32com.client.gencache
-from win32com.client import constants
+import word_constants as constants
+from office_com_guard import add_office_com_argument, word_application
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_TEMPLATE = SKILL_ROOT / "assets" / "master-default-template.docx"
 
 STYLE_PARAGRAPH = 1
-
-
-@contextmanager
-def word_application():
-    pythoncom.CoInitialize()
-    app = None
-    try:
-        app = win32com.client.gencache.EnsureDispatch("Word.Application")
-        app.Visible = False
-        app.DisplayAlerts = 0
-        app.ScreenUpdating = False
-        yield app
-    finally:
-        if app is not None:
-            try:
-                app.ScreenUpdating = True
-            except Exception:
-                pass
-            try:
-                app.Quit(False)
-            except Exception:
-                pass
-        pythoncom.CoUninitialize()
 
 
 def ensure_style(doc, name: str, style_type: int = STYLE_PARAGRAPH):
@@ -157,10 +133,10 @@ def configure_page_setup(doc):
     page_setup.DifferentFirstPageHeaderFooter = True
 
 
-def build_template():
-    OUTPUT_TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
-    temp_output = OUTPUT_TEMPLATE.with_name(f"{OUTPUT_TEMPLATE.stem}.tmp.docx")
-    with word_application() as app:
+def build_template(allow_office_com: bool):
+    with word_application(allow_office_com=allow_office_com) as app:
+        OUTPUT_TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
+        temp_output = OUTPUT_TEMPLATE.with_name(f"{OUTPUT_TEMPLATE.stem}.tmp.docx")
         doc = app.Documents.Add()
         try:
             configure_page_setup(doc)
@@ -392,8 +368,15 @@ def build_template():
     temp_output.replace(OUTPUT_TEMPLATE)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Build the master Word template.")
+    add_office_com_argument(parser)
+    return parser
+
+
 def main():
-    build_template()
+    args = build_parser().parse_args()
+    build_template(args.allow_office_com)
     print(OUTPUT_TEMPLATE)
 
 

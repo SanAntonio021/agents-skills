@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-07-23`
-- 说明：已用 Git R100 记录和相同 tree 确认路径迁移；迁移后的功能变化仍需单独收益评估，未将当前提交当成已接受基线。
+- 最近来源登记审核：`2026-07-25`
+- 说明：路径迁移证据已确认；2026-07-25 候选经用户逐技能批准并通过应用后复测，接受当前提交。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -13,9 +13,9 @@
 
 - 仓库：https://github.com/K-Dense-AI/scientific-agent-skills.git
 - 当前上游路径：`skills/scientific-critical-thinking`
-- 接受时上游路径：`scientific-skills/scientific-critical-thinking`
-- 已接受提交：`e143ef2f9514c97a1757fb23b67a60f5cc3bd06d`
-- 已接受版本：`未提供`
+- 接受时上游路径：`skills/scientific-critical-thinking`
+- 已接受提交：`757b63b1c09798a45c79eea542c9b55dbe04e502`
+- 已接受版本：`1.1`
 - 基线类型：`exact`
 - 许可证：`MIT`
 - 镜像登记：`k-dense-ai-scientific-agent-skills`
@@ -23,23 +23,18 @@
 ### 证据
 
 - 本地来源记录说明了原始来源、原样保留文件、本地改写和明确删除项。
+- 2026-07-25 隔离候选经用户逐技能批准并通过应用后复测。
 - 本地证据文件：`rigor-check/references/upstream-source.md`
 - 本地证据文件：`rigor-check/SKILL.md`
-
-### 路径迁移证据
-
-- 迁移提交：`0936740e52033a6256085be5fc81e5e56d606110`
-- 迁移提交将 9 个文件全部以 R100 从旧路径移动到当前路径。
-- 迁移前后目录 tree 均为 05babbdb65d33f7683095bbbd6e37ddfce32e1c0。
-- accepted_commit 是迁移提交的祖先，迁移提交也是当前镜像 HEAD 的祖先。
 
 ### 已吸收
 
 - 科学严谨性框架，以及偏倚、统计陷阱、逻辑谬误和实验设计参考。
+- RoB 2、ROBINS-I、PRISMA 2020、AMSTAR 2、CONSORT 2010 的当前用途及 THz/通信工程适用边界。
 
 ### 明确不吸收
 
-- AI 科学示意图脚本、临床医学证据等级直套和本地不存在的依赖。
+- AI 科学示意图脚本、临床医学证据等级直套、本地不存在的依赖、OpenRouter 和凭据行为。
 
 ### 跟踪范围
 

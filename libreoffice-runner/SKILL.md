@@ -40,7 +40,8 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 --keep-diagnostics-on-error
 ```
 
-输出路径已存在时 runner 会失败，不会覆盖。CLI 的 stdout 始终是 JSON；成功退出码为 `0`。
+输出路径已存在时 runner 会失败，不会覆盖。CLI 的 stdout 始终是一行 UTF-8 JSON（含行末换行，
+不受 Windows 控制台代码页影响）；`--json-out` 也写入 UTF-8 JSON。成功退出码为 `0`。
 
 ## 运行规则
 

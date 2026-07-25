@@ -41,6 +41,10 @@ pdftoppm -jpeg -r 100 output.pdf page
 ls page-*.jpg   # then Read the images
 ```
 
+On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
+conversion command above and delegates all LibreOffice launch, queue, profile, and process management
+to the public `libreoffice-runner`; do not call `soffice` directly.
+
 `pdftoppm` zero-pads page numbers to the width of the page count (`page-01.jpg`…`page-12.jpg`).
 
 ## Editing existing documents

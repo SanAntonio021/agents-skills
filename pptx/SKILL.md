@@ -25,6 +25,10 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
 | `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | LibreOffice wrapper — bare `soffice` hangs in this sandbox |
 
+On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
+conversion command above and delegates all LibreOffice launch, queue, profile, and process management
+to the public `libreoffice-runner`; do not call `soffice` directly.
+
 ## Creating with pptxgenjs — gotchas
 
 `pptxgenjs` is preinstalled — do not run `npm install` first; write the script and `require('pptxgenjs')` directly. Only if that require fails: `npm install pptxgenjs`. The model knows the API; these are the footguns:

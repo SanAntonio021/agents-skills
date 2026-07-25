@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -76,6 +77,25 @@ class CoreTests(WindowsOnlyTestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["error"], "input_not_found")
+
+    def test_cli_emits_utf8_json_when_console_encoding_is_gbk(self) -> None:
+        environment = os.environ.copy()
+        environment["PYTHONUTF8"] = "0"
+        environment["PYTHONIOENCODING"] = "gbk"
+        missing = self.root / "missing-a\u032b.docx"
+        result = subprocess.run(
+            [str(PYTHON), str(RUNNER_CLI), "pdf", str(missing), str(self.root / "out.pdf")],
+            capture_output=True,
+            env=environment,
+            timeout=10,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.count(b"\n"), 1)
+        payload = json.loads(result.stdout.decode("utf-8"))
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["error"], "input_not_found")
+        self.assertIn("\u032b", payload["message"])
 
     def test_nonzero_child_exit_keeps_command_and_diagnostics(self) -> None:
         output = self.root / "output.pdf"

@@ -47,6 +47,23 @@
       }
     ]
   },
+  "stages": [
+    "preparation",
+    "initial_submission",
+    "editorial_check",
+    "under_review",
+    "decision_received",
+    "revision",
+    "resubmission",
+    "accepted",
+    "final_files",
+    "copyright_fees",
+    "proof",
+    "published",
+    "rejected",
+    "withdrawn",
+    "transferred"
+  ],
   "states": [
     {"name": "initial submission", "stage": "initial_submission", "platform": "Research Exchange"},
     {"name": "major revision", "stage": "revision", "platform": "ScholarOne"},

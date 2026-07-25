@@ -1,6 +1,6 @@
 ---
 name: paper-review
-description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修改还是默认停稿；投稿前另有把关模式（9 维预检 + 多视角模拟审稿）。Use when 用户要按严重程度审稿、判断有没有必要继续润色、只看实质问题、在专利和申报写作里先审再决定是否继续改写，或论文投稿前要求过一遍投稿检查、预判审稿意见、模拟审稿人；prefer this over 起草或润色技能 when 目标是审查闸口，而不是直接改稿。已经进入 IEEE 投稿系统、收到决定信、返修提交或录用后流程时，投稿事务转 `ieee-journal-submission`。
+description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修改还是默认停稿；投稿前另有把关模式（9 维预检 + 多视角模拟审稿），并为最终 Submit 生成 `pre_submission_review` 审查门结果。Use when 用户要按严重程度审稿、判断有没有必要继续润色、只看实质问题、在专利和申报写作里先审再决定是否继续改写，或论文投稿前要求过一遍投稿检查、预判审稿意见、模拟审稿人，或投稿技能在最终 Submit 前请求审查门；prefer this over 起草或润色技能 when 目标是审查闸口。平台准备和生命周期事务由投稿技能处理，但任何最终 Submit 都必须先在这里得到有时间和证据的 `pass`。
 ---
 
 # 停稿审查
@@ -20,13 +20,15 @@ description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修
 1. 先确认对象是“已有文稿”，不是从零起草。
 2. 判断模式：
    - 日常审查（默认）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。
-   - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径从 `journal-selection` 画像库取。
+   - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人，或投稿技能请求 `pre_submission_review` 时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径从 `journal-selection` 画像库取。
 3. 先按独立根因聚类，再做 `A/B/C` 分类，避免同一问题重复记多次。
 4. 优先识别 `A 类`，不要把单纯措辞偏好包装成严重问题，也不要把同一根因拆成多个新 `A`。
 5. 审查结束后，明确给出：
    - `结论：继续修改`
    - 或 `结论：建议停止润色`
 6. 如果用户随后要求继续改，只优先处理 `A 类` 和必要的 `B 类`，不要被 `C 类` 带进无休止润色。
+
+投稿前把关另输出机器可记录的审查门结果：存在阻断项或必要维度无法核验时为 `blocked`；只有全部阻断项关闭后才为 `pass`。`pass` 必须同时给出 `checked_at` 和能定位到稿件、报告或官方要求的非空 `evidence`，不得输出无证据的通过结论。
 
 ## 输出结构
 
@@ -77,7 +79,8 @@ C 类：风格偏好
 - SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
 - 选刊定位（投稿前把关的期刊口径来源）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
-- IEEE 投稿系统、决定信、返修提交和录用后事务：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
+- 通用投稿系统、决定信、返修提交和录用后事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
+- 明确 IEEE 的投稿事务：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
 
 ## 相关文件
 

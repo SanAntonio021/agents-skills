@@ -1,6 +1,6 @@
 # 学术与申报工作流地图
 
-更新时间：2026-07-10
+更新时间：2026-07-26
 
 这份文件给 `writing-router` 做路由参考。它不替代下游 skill，也不要求一次改多个 skill。
 
@@ -10,7 +10,7 @@
 
 | 阶段 | 用户常见说法 | 推荐去向 |
 |---|---|---|
-| 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `brainstorming` 或 `baseline-research` |
+| 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `ask-first` 或 `baseline-research` |
 | 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-research` |
 | 文献下载 | 下载论文、补 PDF、维护 `paper_index.md` 论文索引 | `paper-download` |
 | 单篇论文总结 | 读已有 PDF、整理单篇文献笔记、提取术语和关键信息 | `paper-summary` |
@@ -19,9 +19,10 @@
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
 | 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `sentence-polish` |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
-| 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人 | `paper-review`（submission-gauntlet 模式） |
+| 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人、最终 Submit 前审查门 | `paper-review`（submission-gauntlet 模式） |
 | 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-selection` |
-| IEEE 期刊投稿事务 | 投稿系统、作者信息、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `ieee-journal-submission` |
+| 通用期刊投稿事务 | 未指定或非 IEEE 的投稿系统、作者、声明、状态、返修、录用后、版权、费用、校样和归档 | `journal-submission` |
+| IEEE 期刊投稿事务 | 明确 IEEE 的投稿系统、作者、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `ieee-journal-submission` |
 | 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
@@ -29,7 +30,7 @@
 | 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | 英文 `humanizer`；中文 `Humanizer-zh`；论文/申报书交付稿优先 `ieee-manuscript-edit` / `project-writing` |
 | 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `word-template` / `docx` |
-| LaTeX 转换与投稿工程 | 转 LaTeX、IEEEtran、套期刊模板、BibTeX、编译报错、投稿打包 | `latex-paper` |
+| LaTeX 转换与投稿工程 | 转 LaTeX、套期刊模板、BibTeX、编译报错；当前期刊或页面要求时打包 source | `latex-paper` |
 
 **ieee-manuscript-edit 和 sentence-polish 怎么分：**
 - "润色这段 SCI 论文英文"或"帮我改英文还要校准术语" → `ieee-manuscript-edit`（涉及内容）
@@ -54,7 +55,7 @@
 
 ### 暂缓/不吸收
 
-- `response-to-referees`（审稿回复）：等实际收到审稿意见时再建。
+- 审稿回复正文继续由 `ieee-manuscript-edit` 处理；投稿技能只维护决定信、意见台账、版本和返修提交。
 - 经管社科实证包、`empirical-methods` 代码层（Stata/DiD/IV）、CoPaper.AI 绑定部分。
 - 注意上游 TAP skill 有指向不存在 TMTT 的幽灵引用，勿照搬其改投目标名。
 

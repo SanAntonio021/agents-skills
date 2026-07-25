@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -29,7 +30,7 @@ VALID_STAGES = {
     "transferred",
 }
 
-REQUIRED_GATES = {
+LEGACY_REQUIRED_GATES = {
     "author_roles",
     "declarations",
     "reviewers",
@@ -38,6 +39,34 @@ REQUIRED_GATES = {
     "copyright",
     "withdrawal_transfer",
 }
+CURRENT_REQUIRED_GATES = LEGACY_REQUIRED_GATES | {"pre_submission_review"}
+REVIEW_STATUSES = {"not_run", "blocked", "pass"}
+FINAL_SUBMIT_CLOSED_STATUSES = {"confirmed", "completed", "closed", "pass"}
+INSTITUTION_MATCH_STATUSES = {"matched", "manually_entered", "not_listed"}
+FILE_REQUIRED_STRING_FIELDS = (
+    "path",
+    "submission_name",
+    "purpose",
+    "sha256",
+    "stage",
+    "upload_status",
+)
+EVIDENCE_LOCATOR_FIELDS = ("path", "url", "record_id", "reference")
+CONFIRMATION_RECORD_STRING_FIELDS = ("question", "user_choice", "applies_to")
+PORTAL_TASK_COMPLETE_STATUSES = {"completed", "verified", "viewed"}
+BLOCKER_CLOSED_STATUSES = {"closed", "resolved"}
+PROTECTED_GATE_STATUSES = {
+    "required",
+    "pending",
+    "blocked",
+    "not_applicable",
+    "not_required",
+    "confirmed",
+    "completed",
+    "closed",
+    "pass",
+}
+FINAL_SUBMIT_STATUSES = PROTECTED_GATE_STATUSES - {"not_applicable", "not_required"}
 
 FORBIDDEN_KEYS = {
     "id_card",
@@ -55,6 +84,7 @@ FORBIDDEN_KEYS = {
     "密码",
     "cookie",
     "session_token",
+    "token",
     "biography",
     "个人经历",
     "个人介绍",
@@ -95,6 +125,38 @@ def field_value(value: Any) -> Any:
     return value
 
 
+def non_empty(value: Any) -> bool:
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict)):
+        return bool(value)
+    return value is not None
+
+
+def non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def is_iso_timestamp(value: Any) -> bool:
+    if not non_empty_string(value):
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def is_iso_date(value: Any) -> bool:
+    if not non_empty_string(value):
+        return False
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
 def validate_authors(data: Any) -> tuple[list[str], list[str], set[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -103,6 +165,8 @@ def validate_authors(data: Any) -> tuple[list[str], list[str], set[str]]:
     if not isinstance(data, dict):
         return ["authors document must be a JSON object"], warnings, profile_ids
 
+    if data.get("schema_version") != "1.0":
+        warnings.append("authors.schema_version should remain '1.0'")
     if data.get("privacy", {}).get("scope") != "local-private":
         errors.append("authors.privacy.scope must be 'local-private'")
 
@@ -149,10 +213,71 @@ def validate_authors(data: Any) -> tuple[list[str], list[str], set[str]]:
             errors.append(f"{base}.orcid has invalid format")
 
         verification = author.get("verification", {})
-        if verification.get("status") in {None, "pending"}:
+        if not isinstance(verification, dict) or verification.get("status") in {None, "pending"}:
             warnings.append(f"{base} remains pending verification")
 
     return errors, warnings, profile_ids
+
+
+def has_locatable_evidence(value: Any) -> bool:
+    items = value if isinstance(value, list) else [value]
+    return any(
+        isinstance(item, dict)
+        and any(non_empty_string(item.get(field)) for field in EVIDENCE_LOCATOR_FIELDS)
+        for item in items
+    )
+
+
+def validate_final_submit_exit(
+    data: dict[str, Any], gates_by_action: dict[str, dict[str, Any]]
+) -> list[str]:
+    final_gate = gates_by_action.get("final_submit", {})
+    if final_gate.get("status") not in FINAL_SUBMIT_CLOSED_STATUSES:
+        return []
+
+    errors: list[str] = []
+    platform = data.get("platform", {})
+    match_status = platform.get("institution_match_status") if isinstance(platform, dict) else None
+    if match_status not in INSTITUTION_MATCH_STATUSES:
+        errors.append("final_submit requires a recorded institution_match_status")
+
+    tasks = data.get("portal_tasks", [])
+    if not isinstance(tasks, list):
+        errors.append("state.portal_tasks must be a list")
+    else:
+        for index, task in enumerate(tasks):
+            base = f"state.portal_tasks[{index}]"
+            if not isinstance(task, dict):
+                errors.append(f"{base} must be an object")
+                continue
+            required = task.get("required")
+            if required is not None and type(required) is not bool:
+                errors.append(f"{base}.required must be a boolean")
+                continue
+            if required is not True:
+                continue
+            if task.get("status") not in PORTAL_TASK_COMPLETE_STATUSES:
+                errors.append(f"{base} is required but not completed")
+            task_label = " ".join(
+                str(task.get(field, ""))
+                for field in ("task_type", "type", "name", "page")
+            ).lower()
+            if "proof" in task_label or "preview" in task_label:
+                if not is_iso_timestamp(task.get("viewed_at")):
+                    errors.append(f"{base}.viewed_at must record when required proof/preview was viewed")
+                if not has_locatable_evidence(task.get("evidence")):
+                    errors.append(f"{base}.evidence must locate the viewed proof/preview")
+
+    blockers = data.get("blockers", [])
+    if not isinstance(blockers, list):
+        errors.append("state.blockers must be a list")
+    else:
+        for index, blocker in enumerate(blockers):
+            status = blocker.get("status") if isinstance(blocker, dict) else None
+            if status not in BLOCKER_CLOSED_STATUSES:
+                errors.append(f"state.blockers[{index}] is not closed")
+
+    return errors
 
 
 def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[list[str], list[str]]:
@@ -162,28 +287,56 @@ def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[l
     if not isinstance(data, dict):
         return ["submission state must be a JSON object"], warnings
 
+    schema_version = data.get("schema_version")
+    if schema_version == "1.0":
+        warnings.append(
+            "submission-state schema_version 1.0 is supported for compatibility; "
+            "upgrade on the next normal update"
+        )
+    elif schema_version != "1.1":
+        errors.append(f"unsupported submission-state schema_version: {schema_version!r}")
+
     for key, path in iter_keys(data):
         if key in FORBIDDEN_KEYS:
             errors.append(f"forbidden sensitive field at {path}")
 
-    stage = data.get("lifecycle", {}).get("current_stage")
+    lifecycle = data.get("lifecycle")
+    stage = lifecycle.get("current_stage") if isinstance(lifecycle, dict) else None
     if stage not in VALID_STAGES:
         errors.append(f"invalid lifecycle.current_stage: {stage!r}")
 
-    for index, author in enumerate(data.get("authors", [])):
-        profile_id = author.get("profile_id") if isinstance(author, dict) else None
-        if not profile_id:
-            errors.append(f"state.authors[{index}].profile_id is required")
-        elif known_profiles is not None and profile_id not in known_profiles:
-            errors.append(f"unknown author profile_id in state: {profile_id}")
+    authors = data.get("authors", [])
+    if not isinstance(authors, list):
+        errors.append("state.authors must be a list")
+    else:
+        for index, author in enumerate(authors):
+            profile_id = author.get("profile_id") if isinstance(author, dict) else None
+            if not profile_id:
+                errors.append(f"state.authors[{index}].profile_id is required")
+            elif known_profiles is not None and profile_id not in known_profiles:
+                errors.append(f"unknown author profile_id in state: {profile_id}")
 
     for index, file_item in enumerate(data.get("files", [])):
         if not isinstance(file_item, dict):
             errors.append(f"state.files[{index}] must be an object")
             continue
+        if schema_version == "1.1":
+            for field in FILE_REQUIRED_STRING_FIELDS:
+                if not non_empty_string(file_item.get(field)):
+                    errors.append(
+                        f"state.files[{index}].{field} must be a non-empty string for schema 1.1"
+                    )
+            if "size_bytes" not in file_item:
+                errors.append(f"state.files[{index}].size_bytes is required for schema 1.1")
+            if file_item.get("stage") not in VALID_STAGES:
+                errors.append(f"state.files[{index}].stage must be a valid lifecycle stage")
         checksum = file_item.get("sha256")
         if checksum is not None and not SHA256_RE.fullmatch(str(checksum)):
             errors.append(f"state.files[{index}].sha256 must be 64 hexadecimal characters")
+        if "size_bytes" in file_item and (
+            type(file_item["size_bytes"]) is not int or file_item["size_bytes"] < 0
+        ):
+            errors.append(f"state.files[{index}].size_bytes must be a non-negative integer")
 
         provenance = file_item.get("provenance")
         if provenance is None:
@@ -216,8 +369,8 @@ def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[l
             if not isinstance(input_item, dict):
                 errors.append(f"{path} must be an object")
                 continue
-            if not input_item.get("path"):
-                errors.append(f"{path}.path is required")
+            if not non_empty_string(input_item.get("path")):
+                errors.append(f"{path}.path must be a non-empty string")
             input_checksum = input_item.get("sha256")
             if not isinstance(input_checksum, str) or not SHA256_RE.fullmatch(input_checksum):
                 errors.append(f"{path}.sha256 must be 64 hexadecimal characters")
@@ -226,23 +379,115 @@ def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[l
             ):
                 errors.append(f"{path}.size_bytes must be a non-negative integer")
 
+        if freshness_status == "verified":
+            if not inputs:
+                errors.append(
+                    f"state.files[{index}].provenance.verified requires a non-empty input snapshot"
+                )
+            if not is_iso_timestamp(provenance.get("freshness_checked_at")):
+                errors.append(
+                    f"state.files[{index}].provenance.freshness_checked_at must be an ISO date or datetime when verified"
+                )
+
     for index, source in enumerate(data.get("official_sources", [])):
-        if not isinstance(source, dict):
-            errors.append(f"state.official_sources[{index}] must be an object")
-            continue
-        for key in ("url", "accessed_on", "key_requirement", "applies_to"):
-            if not source.get(key):
-                errors.append(f"state.official_sources[{index}].{key} is required")
+            if not isinstance(source, dict):
+                errors.append(f"state.official_sources[{index}] must be an object")
+                continue
+            for key in ("url", "accessed_on", "key_requirement", "applies_to"):
+                if not non_empty_string(source.get(key)):
+                    errors.append(f"state.official_sources[{index}].{key} must be a non-empty string")
+            if source.get("accessed_on") is not None and not is_iso_date(source.get("accessed_on")):
+                errors.append(f"state.official_sources[{index}].accessed_on must use YYYY-MM-DD")
+
+    platform = data.get("platform", {})
+    if isinstance(platform, dict):
+        match_status = platform.get("institution_match_status")
+        if match_status is not None and match_status not in INSTITUTION_MATCH_STATUSES:
+            errors.append(
+                "platform.institution_match_status must be one of "
+                + ", ".join(sorted(INSTITUTION_MATCH_STATUSES))
+            )
+    else:
+        errors.append("state.platform must be an object")
 
     gates = data.get("confirmation_gates", [])
-    gate_actions = {
-        gate.get("action")
-        for gate in gates
-        if isinstance(gate, dict) and gate.get("action")
-    }
-    missing_gates = sorted(REQUIRED_GATES - gate_actions)
-    if missing_gates:
-        errors.append("missing confirmation gates: " + ", ".join(missing_gates))
+    if isinstance(gates, list):
+        by_action: dict[str, dict[str, Any]] = {}
+        for index, gate in enumerate(gates):
+            base = f"state.confirmation_gates[{index}]"
+            if not isinstance(gate, dict):
+                errors.append(f"{base} must be an object")
+                continue
+            action = gate.get("action")
+            if not isinstance(action, str) or not action:
+                errors.append(f"{base}.action is required")
+                continue
+            if action in by_action:
+                errors.append(f"duplicate confirmation gate: {action}")
+                continue
+            by_action[action] = gate
+
+        required = CURRENT_REQUIRED_GATES if schema_version == "1.1" else LEGACY_REQUIRED_GATES
+        missing_gates = sorted(required - set(by_action))
+        if schema_version in {"1.0", "1.1"} and missing_gates:
+            errors.append("missing confirmation gates: " + ", ".join(missing_gates))
+
+        if schema_version == "1.1":
+            for action in sorted(LEGACY_REQUIRED_GATES):
+                gate = by_action.get(action, {})
+                allowed_statuses = FINAL_SUBMIT_STATUSES if action == "final_submit" else PROTECTED_GATE_STATUSES
+                if gate and gate.get("status") not in allowed_statuses:
+                    errors.append(
+                        f"{action}.status must be one of " + ", ".join(sorted(allowed_statuses))
+                    )
+                if gate.get("status") in FINAL_SUBMIT_CLOSED_STATUSES:
+                    for field in CONFIRMATION_RECORD_STRING_FIELDS:
+                        if not non_empty_string(gate.get(field)):
+                            errors.append(
+                                f"{action}.{field} must be a non-empty string when the confirmation gate is closed"
+                            )
+                    if not is_iso_timestamp(gate.get("confirmed_at")):
+                        errors.append(
+                            f"{action}.confirmed_at must be an ISO date or datetime when the confirmation gate is closed"
+                        )
+
+        if schema_version == "1.1" and "pre_submission_review" in by_action:
+            review_gate = by_action["pre_submission_review"]
+            review_status = review_gate.get("status")
+            if review_status not in REVIEW_STATUSES:
+                errors.append(
+                    "pre_submission_review.status must be one of "
+                    + ", ".join(sorted(REVIEW_STATUSES))
+                )
+            if review_status == "pass":
+                if not is_iso_timestamp(review_gate.get("checked_at")):
+                    errors.append(
+                        "pre_submission_review.checked_at must be an ISO date or datetime when status is pass"
+                    )
+                evidence = review_gate.get("evidence")
+                if not isinstance(evidence, list) or not evidence:
+                    errors.append(
+                        "pre_submission_review.evidence must be a non-empty list when status is pass"
+                    )
+                else:
+                    for evidence_index, item in enumerate(evidence):
+                        if not isinstance(item, dict) or not any(
+                            non_empty_string(item.get(field)) for field in EVIDENCE_LOCATOR_FIELDS
+                        ):
+                            errors.append(
+                                "pre_submission_review.evidence"
+                                f"[{evidence_index}] must be a locatable object"
+                            )
+            final_gate = by_action.get("final_submit", {})
+            if (
+                final_gate.get("status") in FINAL_SUBMIT_CLOSED_STATUSES
+                and review_status != "pass"
+            ):
+                errors.append("final_submit cannot be closed before pre_submission_review passes")
+        if schema_version == "1.1":
+            errors.extend(validate_final_submit_exit(data, by_action))
+    elif schema_version in {"1.0", "1.1"}:
+        errors.append("state.confirmation_gates must be a list")
 
     next_action = data.get("next_action")
     if not isinstance(next_action, dict) or not next_action.get("action"):

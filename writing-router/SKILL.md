@@ -1,6 +1,6 @@
 ---
 name: writing-router
-description: 作为申报书与论文文章类任务的默认写作总路由，先判断任务类型、当前阶段和最小必要下游 skill，再分流执行。Use when 用户自然表达为写申报书、准备申报材料、写文章、准备论文、摘要、综述、投稿材料、审稿修改或定稿检查，且当前任务还没有被更具体的 custom skill 明确覆盖；也用于本地 `.md`/`.tex` 多轮修改后的“这版可以”“结构定了”“投稿候选”确认，以及查找、比较或恢复文稿旧版本；明显属于工程建设类申报时优先转给 `project-writing`，若目标是按严重程度审查现有文稿或判断是否继续修改，转给 `paper-review`；IEEE 期刊网页投稿、作者信息、声明、返修提交、版权费用和校样事务转给 `ieee-journal-submission`。
+description: 作为申报书与论文文章类任务的默认写作总路由，先判断任务类型、当前阶段和最小必要下游 skill，再分流执行。Use when 用户自然表达为写申报书、准备申报材料、写文章、准备论文、摘要、综述、投稿材料、审稿修改或定稿检查，且当前任务还没有被更具体的 custom skill 明确覆盖；也用于本地 `.md`/`.tex` 多轮修改后的“这版可以”“结构定了”“投稿候选”确认，以及查找、比较或恢复文稿旧版本；明显属于工程建设类申报时优先转给 `project-writing`，若目标是按严重程度审查现有文稿或判断是否继续修改，转给 `paper-review`；未指定或非 IEEE 期刊投稿事务转给 `journal-submission`，明确 IEEE 期刊投稿事务转给 `ieee-journal-submission`。
 ---
 
 # 学术与申报写作总路由
@@ -19,13 +19,14 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
   - 中文工程申报：[../project-writing/SKILL.md](../project-writing/SKILL.md)
   - SCI/IEEE 论文精修与英文化：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - 过程层：
-  - 讨论澄清与逐步确认：`brainstorming`
+  - 讨论澄清与逐步确认：[../ask-first/SKILL.md](../ask-first/SKILL.md)
   - 前期调研与样本先行：[../baseline-research/SKILL.md](../baseline-research/SKILL.md)
   - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
   - 实验设计、证据质量、论证有效性评估：[../rigor-check/SKILL.md](../rigor-check/SKILL.md)
-  - 停稿审查（判断要不要继续改）与投稿前把关（预检+模拟审稿）：[../paper-review/SKILL.md](../paper-review/SKILL.md)
+  - 停稿审查与投稿前把关（最终 Submit 前必须通过）：[../paper-review/SKILL.md](../paper-review/SKILL.md)
   - 选刊定位（投哪本、被拒后改投哪）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
-  - IEEE 期刊投稿全生命周期（系统填报、作者与声明、返修提交、录用后流程）：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
+  - 通用期刊投稿全生命周期（未指定或非 IEEE）：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
+  - IEEE 期刊投稿全生命周期（明确 IEEE）：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
   - SCI/IEEE 论文精修（中改英、术语、图注、终稿）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
   - 纯英文句子质量审查（Sainani 五轮检查）：[../sentence-polish/SKILL.md](../sentence-polish/SKILL.md)
 - 支持层：
@@ -36,12 +37,12 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
   - 去掉文字里的 AI 味：英文文本 `humanizer`，中文文本 `Humanizer-zh`；交付的论文稿优先转 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 学术模式，申报书稿优先转 [../project-writing/SKILL.md](../project-writing/SKILL.md)，不给交付正文注入个性和第一人称
   - 在线搜文献：`research-lookup`
   - Word 模板格式化：[../word-template/SKILL.md](../word-template/SKILL.md)
-  - md 转 LaTeX 与投稿工程（模板、BibTeX、编译、打包）：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)
+  - md 转 LaTeX 与投稿工程（模板、BibTeX、编译；当前期刊或页面要求时才打包 source）：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)
 
 ## 流程
 
 1. 先判断任务类型：工程申报、一般申报、论文文章，还是仅处在下载文献、指标论证、停稿审查、初稿精修、Word 格式化这些局部步骤。
-2. 再判断当前阶段：问题澄清、前期调研、结构搭建、正文写作、完整性检查、审查停稿、修改回应、复审确认、精修抛光、格式交付，还是已经进入期刊投稿事务。
+2. 再判断当前阶段：问题澄清、前期调研、结构搭建、正文写作、完整性检查、审查停稿、修改回应、复审确认、精修抛光、格式交付，还是已经进入期刊投稿事务。投稿技能可先准备文件和填写普通字段，但任何最终 Submit 请求都先转 `paper-review` 完成投稿前审查门。
 3. 如果表达还不足以区分任务类型或当前步骤，只追问一个最阻塞的问题；如果已经够清楚，直接路由，不为稳妥重复开场。
 4. 路由时默认只带一个主写作 skill；过程层和支持层 skill 只在当前步骤明显需要时再补。
 5. 一旦当前线程已经确定任务类型和当前步骤，后续默认沿用，不要求用户每轮重复声明；只有用户明确换任务或换步骤时才切换。
@@ -77,7 +78,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 - 核心任务是指标论证本身时，优先转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)。
 - 用户显式使用 `/21`、`二一` 或 `Consultant / Critic / Scribe` 这类说法时，也仍在当前任务里直接做高压缩收方向、压方案或定向写作，不再切独立模式 skill。
 - 只有润色已有 SCI/IEEE 初稿时，不接管 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)。
-- IEEE 期刊已经进入投稿系统、编辑处理、同行评审、返修提交、录用后文件、版权费用或校样阶段时，转到 [../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)；不要在写作总路由里维护投稿页面规则。
+- 未指定出版商或非 IEEE 期刊已经进入投稿系统、编辑处理、同行评审、返修提交、录用后文件、版权费用或校样阶段时，转到 [../journal-submission/SKILL.md](../journal-submission/SKILL.md)。明确 IEEE 时转到 [../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)。不要在写作总路由里维护投稿页面规则。
 - 不把“相关 skill 很多”理解成“一次全带上”；默认只补当前步骤最相关的少量 skill。
 - 不把 Imbad 或 K-Dense 的完整流程照搬成本地总流程；这里只吸收阶段判断和质量门控，具体写作、调研、审查细节留给下游 skill。
 - 任务类型已经确定后，不因为用户后续一句短话就擅自改写整个任务方向；确有歧义时，再补问一句。

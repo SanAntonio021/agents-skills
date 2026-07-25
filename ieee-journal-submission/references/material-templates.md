@@ -5,17 +5,17 @@
 ```text
 Dear Editor-in-Chief,
 
-On behalf of all authors, we submit the manuscript entitled “[TITLE]” for consideration as a [ARTICLE TYPE] in [JOURNAL].
+[SUBMISSION SENTENCE. Include "On behalf of all authors" only after the user's authority to represent all authors is separately confirmed.]
 
 [1 short paragraph: problem and scope]
 [1 short paragraph: contribution and evidence, limited to claims supported by the manuscript]
 [1 short paragraph: fit with the journal]
 
-This manuscript is original, is not under consideration elsewhere, and has been approved by all authors. [Add only declarations required and confirmed for this submission.]
+[ORIGINALITY, EXCLUSIVE-SUBMISSION, AND AUTHOR-APPROVAL DECLARATIONS. Include each statement only after separate user confirmation.]
 
 Sincerely,
-[NAME]
-[ROLE], on behalf of all authors
+[CONFIRMED SIGNATORY NAME]
+[CONFIRMED ROLE; include "on behalf of all authors" only if separately confirmed]
 ```
 
 使用目标期刊口吻。系统没有指定提交人时，可代表全体作者写 `we` / `our`；署名人和角色必须由用户确认。
@@ -24,8 +24,8 @@ Sincerely,
 
 ## 文件清单
 
-| 本地路径 | 提交文件名 | 文件类型 | 阶段 | 大小 | SHA256 | 上传状态 |
-| --- | --- | --- | --- | --- | --- | --- |
+| 本地路径 | 提交文件名 | 文件类型 | 阶段 | 大小 | SHA256 | 新鲜度 | 上传状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
 初投稿和录用后最终文件分两张清单，不能混用。
 
@@ -44,12 +44,13 @@ Sincerely,
 作者顺序：
 通信作者：
 投稿联系人：
+投稿前审查：not_run / blocked / pass；checked_at；evidence
 提交文件：
 声明选择：
 推荐 / 回避审稿人：
-Reviewer PDF 检查：
+当前页面要求的 proof / preview：
 费用 / OA / 版权：不适用、未到阶段或已单独确认
 仍待确认：
 ```
 
-展示摘要后，只问：“是否确认执行本页最终 Submit？”不得把此前的“保存”或“继续”视为同意。
+展示摘要后停在最终按钮前，请用户本人核对并亲自执行最终 Submit。不得询问用户是否授权智能体代点，也不得把此前的“保存”“继续”或其他确认视为执行授权。

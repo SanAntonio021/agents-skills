@@ -88,6 +88,18 @@
         "只读任务不触发版本保护。",
         "不修改文件或 Git 状态。"
       ]
+    },
+    {
+      "id": 13,
+      "prompt": "T-MTT 的 12 条审稿意见已经编号并确定修改位置。请只把 Response Letter 正文润色成正式英文，不处理上传。",
+      "expected_output": "由 ieee-manuscript-edit 精修逐条回复正文，保持意见编号、事实、修改位置和证据不变；返修状态、文件版本和页面上传仍由 ieee-journal-submission 负责。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "非 IEEE 期刊的稿件正文已经润色完，现在要填写 Editorial Manager 并最终提交。",
+      "expected_output": "正文精修已经完成；平台事务路由到 journal-submission。最终 Submit 前先由 paper-review 生成有时间和证据的 pre_submission_review=pass，且最终操作由用户亲自确认。",
+      "files": []
     }
   ]
 }

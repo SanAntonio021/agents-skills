@@ -1,6 +1,6 @@
 ---
 name: latex-paper
-description: 把已有 Markdown 或 Word 论文稿转成可投稿的 IEEE LaTeX 工程，并负责 LaTeX 工程层的全部事务：模板选择与套用（IEEEtran、期刊 cls）、md 转 tex 结构映射、公式/图/表环境、BibTeX 参考文献、交叉引用、浮动体落页治理、编译排错、投稿 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨"图离引用太远""图表位置乱跳""图跑到参考文献后面"这类浮动体落页问题，或要把现有论文稿变成投稿版 LaTeX；也用于 LaTeX/Markdown 稿件修改后的里程碑确认和旧版本查找、比较或恢复。只管格式与工程：内容润色找 ieee-manuscript-edit，投稿网页与生命周期事务找 ieee-journal-submission，图件本身找 paper-figure-review，Word 版式找 word-template。
+description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `ieee-journal-submission`；图件找 `paper-figure-review`，Word 版式找 `word-template`。
 ---
 
 # Markdown 转 LaTeX 投稿工程
@@ -16,13 +16,13 @@ description: 把已有 Markdown 或 Word 论文稿转成可投稿的 IEEE LaTeX 
 
 这份 skill 管"从现有稿子到能编译、能投稿的 LaTeX 工程"这一段，不动科学内容。转换中发现内容层面的疑问（术语不一致、引用缺失、结论表述问题），列成清单交给用户或转给对应技能，不要自行改写。
 
-它负责生成和验证 source 包，不负责在投稿系统选择文件类型、填写表单或点击提交；这些事务转给 `ieee-journal-submission`。
+它只在当前期刊指南或当前投稿页面明确要求时生成并验证 source 包。页面只要求 PDF 或 Word 时，不额外生成 ZIP。不负责在投稿系统选择文件类型、填写表单或点击提交；未指定或非 IEEE 投稿事务转给 `journal-submission`，明确 IEEE 转给 `ieee-journal-submission`。
 
 ## 工作流
 
 ### 1. 确认目标模板
 
-先问清或确认目标期刊。IEEE 常用模板本仓已有缓存，优先直接用，不要重新下载：
+先问清或确认目标期刊，并以该期刊当前官方模板为准。明确 IEEE 时，优先使用本仓已有缓存：
 
 - IEEE Transactions / Letters（IEEEtran.cls + bare_jrnl 样例）：`../ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/`
 - IEEE Access：`../ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/`
@@ -67,9 +67,9 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 - 通过标准：零 error；warning 里 undefined references、multiply defined labels、citation undefined 必须清零；overfull hbox 超过 10 pt 的逐条处理。
 - 常见报错对照和处理见 [references/compile-and-submission-checklist.md](references/compile-and-submission-checklist.md)。
 
-### 6. 投稿打包
+### 6. 条件性投稿打包
 
-按目标期刊投稿要求执行 [references/compile-and-submission-checklist.md](references/compile-and-submission-checklist.md) 的打包清单：去注释、图源文件与 PDF 对应、字体内嵌检查、单 zip 结构。
+只有目标期刊指南或当前页面明确要求 source 包时，才执行 [references/compile-and-submission-checklist.md](references/compile-and-submission-checklist.md) 的打包清单。页面只收 PDF 或 Word 时，本步骤记录为 `not_required`，不生成 ZIP。
 
 ## 边界
 
@@ -78,5 +78,6 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 - 图件绘制与 IEEE 图规范：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
 - Word 版式交付：[../word-template/SKILL.md](../word-template/SKILL.md)
 - 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
-- IEEE 投稿页面、文件类型确认和生命周期记录：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
+- 通用投稿页面、文件类型确认和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
+- 明确 IEEE 的投稿页面和生命周期记录：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
 - 一个请求同时涉及转换和内容修改时，先完成转换得到可编译工程，再把内容问题清单转给 ieee-manuscript-edit，不要边转边改内容。

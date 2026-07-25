@@ -55,6 +55,22 @@
     "reason": "纯内容精修，与选刊无关。"
   },
   {
+    "id": "should-not-trigger-generic-submission-portal",
+    "query": "期刊已经确定，是非 IEEE 的 Editorial Manager。帮我逐页准备作者、文件和声明。",
+    "should_trigger": false,
+    "expected_primary_skill": "journal-submission",
+    "expected_not_primary_skill": "journal-selection",
+    "reason": "选刊已经结束，当前任务是通用投稿生命周期。"
+  },
+  {
+    "id": "should-not-trigger-ieee-revision-portal",
+    "query": "T-MTT 收到 major revision，决定信和返修入口都在，继续带我提交。",
+    "should_trigger": false,
+    "expected_primary_skill": "ieee-journal-submission",
+    "expected_not_primary_skill": "journal-selection",
+    "reason": "明确 IEEE 投稿事务优先进入旧 IEEE 全生命周期入口。"
+  },
+  {
     "id": "should-not-fabricate-volatile-facts",
     "query": "直接告诉我 TTST 现在的版面费是多少、平均审稿周期几个月，我好决定投不投。",
     "should_trigger": true,

@@ -1,4 +1,4 @@
-"""Unit tests for docx/scripts/office/soffice.py adapter (14 items).
+"""Unit tests for docx/scripts/office/soffice.py adapter.
 
 These tests never start LibreOffice; run() is mocked throughout.
 """
@@ -267,6 +267,89 @@ class TestMissingConvertToFailsClosed(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn(b"unsupported_invocation", result.stderr)
         self.assertEqual(result.runner_report["error"], "unsupported_invocation")
+
+
+class TestStrictArgumentAndKwargValidation(unittest.TestCase):
+    def test_convert_to_does_not_consume_option_as_value(self):
+        with patch.object(_mod, "run") as mock_run:
+            result = run_soffice(
+                ["--convert-to", "--outdir", "input.docx"],
+                capture_output=True,
+            )
+        mock_run.assert_not_called()
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"unsupported_invocation", result.stderr)
+
+    def test_outdir_rejects_empty_value(self):
+        with patch.object(_mod, "run") as mock_run:
+            result = run_soffice(
+                ["--convert-to", "pdf", "--outdir", "", "input.docx"],
+                capture_output=True,
+            )
+        mock_run.assert_not_called()
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"unsupported_invocation", result.stderr)
+
+    def test_encoding_alone_enables_text_mode(self):
+        report = _mock_report(ok=True, stdout="converted")
+        with patch.object(_mod, "run", return_value=report):
+            result = run_soffice(
+                ["--convert-to", "pdf", "input.docx"],
+                capture_output=True,
+                encoding="utf-8",
+            )
+        self.assertIsInstance(result.stdout, str)
+        self.assertIsInstance(result.stderr, str)
+
+    def test_errors_alone_enables_text_mode(self):
+        report = _mock_report(ok=True, stdout="converted")
+        with patch.object(_mod, "run", return_value=report):
+            result = run_soffice(
+                ["--convert-to", "pdf", "input.docx"],
+                capture_output=True,
+                errors="strict",
+            )
+        self.assertIsInstance(result.stdout, str)
+        self.assertIsInstance(result.stderr, str)
+
+    def test_invalid_encoding_returns_structured_failure(self):
+        with patch.object(_mod, "run") as mock_run:
+            result = run_soffice(
+                ["--convert-to", "pdf", "input.docx"],
+                capture_output=True,
+                text=True,
+                encoding="not-a-codec",
+            )
+        mock_run.assert_not_called()
+        self.assertEqual(result.returncode, 2)
+        self.assertIsInstance(result.stderr, str)
+        self.assertIn("invalid_encoding", result.stderr)
+
+    def test_invalid_error_handler_returns_structured_failure(self):
+        with patch.object(_mod, "run") as mock_run:
+            result = run_soffice(
+                ["--convert-to", "pdf", "input.docx"],
+                capture_output=True,
+                text=True,
+                errors="not-an-error-handler",
+            )
+        mock_run.assert_not_called()
+        self.assertEqual(result.returncode, 2)
+        self.assertIsInstance(result.stderr, str)
+        self.assertIn("invalid_errors_handler", result.stderr)
+
+    def test_non_finite_timeout_fails_closed(self):
+        for timeout in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(timeout=timeout):
+                with patch.object(_mod, "run") as mock_run:
+                    result = run_soffice(
+                        ["--convert-to", "pdf", "input.docx"],
+                        capture_output=True,
+                        timeout=timeout,
+                    )
+                mock_run.assert_not_called()
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(b"invalid_timeout", result.stderr)
 
 
 if __name__ == "__main__":

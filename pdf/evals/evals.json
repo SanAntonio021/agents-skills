@@ -1,0 +1,71 @@
+{
+  "skill_name": "pdf",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a normal digital PDF with selectable text. Produce a safe full-text copy beside it without changing the original.",
+      "expected_output": "The wrapper chooses mode none, creates the four output artifacts, and preserves the input hash.",
+      "files": [],
+      "expectations": [
+        "Runs scripts/ocr_pdf.ps1 with an explicit language list.",
+        "Status reports selected_mode none.",
+        "The input PDF is not overwritten."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "This PDF is a one-page scan with simplified Chinese and English. Make it searchable and give me its complete text.",
+      "expected_output": "The wrapper chooses mode skip and returns a searchable PDF plus full text extracted from the completed PDF.",
+      "files": [],
+      "expectations": [
+        "Uses an explicit language list selected by a one-page sample; the current generated canary starts with chi_sim.",
+        "Status reports selected_mode skip.",
+        "The final text comes from pdftotext -layout, not OCRmyPDF sidecar."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Pages 1-2 are native digital text and page 3 is an image scan. Convert it to one searchable PDF without losing the original text pages.",
+      "expected_output": "The wrapper chooses mode skip and the output text contains known samples from both the original text pages and OCR page.",
+      "files": [],
+      "expectations": [
+        "Document-level mixed content uses skip rather than redo.",
+        "Output page count and geometry match input.",
+        "Full text includes digital and OCR pages."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "This page has a small visible header plus a large scanned document image. Rebuild its text layer safely.",
+      "expected_output": "The wrapper classifies the page as page_mixed and uses mode redo.",
+      "files": [],
+      "expectations": [
+        "Status reports selected_mode redo.",
+        "Input remains unchanged.",
+        "Rendered output is not blank."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "This scanned PDF already has a good searchable text layer. Extract the full text but do not OCR it again.",
+      "expected_output": "The wrapper chooses mode none and publishes a copied PDF with extracted text.",
+      "files": [],
+      "expectations": [
+        "Status reports selected_mode none.",
+        "Output PDF hash equals the input PDF hash.",
+        "No OCRmyPDF engine call is needed."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "The PDF looks like a scan, but copied text is replacement characters and mojibake. Rebuild the damaged OCR layer.",
+      "expected_output": "The wrapper identifies the damaged layer and uses mode redo, then validates the final PDF.",
+      "files": [],
+      "expectations": [
+        "Obvious replacement characters or control/private-use mappings route to redo.",
+        "Final PDF opens with PyMuPDF, Poppler, and strict pypdf.",
+        "Failure leaves no official output names."
+      ]
+    }
+  ]
+}

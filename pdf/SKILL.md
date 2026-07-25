@@ -1,11 +1,11 @@
 ---
 name: pdf
-description: Use this skill whenever the user wants to do anything with PDF files, or needs a Word/DOCX/Office document rendered to PDF for visual inspection on this Windows machine. This includes reading or extracting text/tables from PDFs (including scanned PDFs via fitz rendering), combining or merging multiple PDFs into one, splitting PDFs apart, rotating pages, adding watermarks, creating new PDFs, encrypting/decrypting PDFs, extracting images, and background Office-to-PDF conversion through LibreOffice. PDF form filling is not covered by this skill.
+description: Use this skill whenever the user wants to read, create, inspect, convert, OCR, repair, or otherwise process PDF files on this Windows machine. Trigger it for native digital PDFs, scanned or image-only PDFs, mixed PDFs, damaged or garbled text layers, searchable-PDF creation, full-text extraction, merging, splitting, rotation, watermarks, encryption, image extraction, precise field edits, reference-layout composition, and Office-to-PDF conversion. PDF form filling is not covered (upstream forms.md and scripts excluded for license reasons).
 ---
 
 # PDF Processing Guide
 
-本地维护的 PDF 处理技能，针对 Windows 环境做了适配。当前机器已安装 Poppler 24.08.0；同时保留 PyMuPDF `fitz` 作为扫描件和页面检查的 Python 兜底。
+本地维护的 PDF 处理技能，针对 Windows 环境做了适配。当前机器已安装 Poppler 24.08.0、隔离的 OCRmyPDF/PyMuPDF 环境和 Tesseract 中文/英文语言包。扫描检测、OCR 路由、全文提取和结果验证统一由 `scripts/ocr_pdf.ps1` 完成。
 
 ## Windows Toolchain
 
@@ -40,27 +40,14 @@ if (-not (Test-Path -LiteralPath $pdfinfo)) {
 
 ### Office documents to PDF
 
-LibreOffice 26.2.4.2 is installed at `C:\Program Files\LibreOffice`. On Windows, call `soffice.com` directly so console output and exit status remain available. Use an isolated user profile with a proper file URI:
+Windows 上所有 LibreOffice 无界面转换必须使用已安装的 `libreoffice-runner` skill。先读取该 skill 的 `SKILL.md` 和调用契约，再解析其 `scripts/libreoffice_run.py` 绝对路径：
 
 ```powershell
-$soffice = 'C:\Program Files\LibreOffice\program\soffice.com'
-$inputDocument = 'C:\path\input.docx'
-$outputDirectory = 'C:\path\rendered'
-$profile = Join-Path $outputDirectory ('.lo-profile-' + [guid]::NewGuid())
-
-New-Item -ItemType Directory -Path $outputDirectory,$profile -Force | Out-Null
-$profileUri = ([System.Uri](Resolve-Path -LiteralPath $profile).Path).AbsoluteUri
-
-& $soffice "-env:UserInstallation=$profileUri" `
-    --headless --nologo --nodefault --nolockcheck --nofirststartwizard `
-    --convert-to pdf --outdir $outputDirectory $inputDocument
-
-if ($LASTEXITCODE -ne 0) {
-    throw "LibreOffice conversion failed with exit code $LASTEXITCODE"
-}
+& 'C:\Python313\python.exe' $libreOfficeRunner pdf $inputDocument $outputPdf `
+    --json-out $reportJson
 ```
 
-Do not use the installed `docx/scripts/office/soffice.py` on this machine. Both available Windows Python runtimes lack `socket.AF_UNIX`, so that helper fails before LibreOffice starts. Also avoid the bundled `documents/render_docx.py` conversion path until its Windows profile-URI handling is verified; bundle 26.715.12143 concatenates `file://` with a raw Windows path and can leave LibreOffice waiting. After direct PDF conversion, rasterize with the explicit Poppler `.exe` paths above.
+Do not run `soffice`, `soffice.exe`, or `soffice.com` directly. Do not use bundled helpers that start LibreOffice themselves. The runner serializes access, gives each call an isolated profile, refuses to overwrite an existing output, and returns JSON on stdout. After conversion, rasterize with the explicit Poppler `.exe` paths above.
 
 ## Quick Start
 
@@ -240,12 +227,46 @@ For canvas-drawn text (not Paragraph objects), manually adjust font the size and
 
 ## Common Tasks
 
-### Read Scanned PDFs (Local-adapted, primary method)
+### Scanned, mixed, and damaged-text PDFs
 
-Poppler is available for command-line rasterization. PyMuPDF (`fitz`) remains the preferred Python path when page-level inspection, blank-page filtering, or a self-contained renderer is more convenient. When `page.get_text()` returns 0 characters, the PDF is a scan. Render pages to PNG and read them visually (Claude Read tool) instead of OCR:
+Do not decide that a PDF is digital or scanned from `page.get_text()` alone. A page number, watermark, header, or damaged OCR layer can produce a few characters while the body remains an image.
+
+When searchable output or reliable full-document text is needed, resolve `scripts/ocr_pdf.ps1` relative to this `SKILL.md` and use the wrapper:
+
+```powershell
+& $ocrWrapper `
+    -InputPdf 'C:\path\document.pdf' `
+    -Languages 'chi_sim' `
+    -Mode auto
+```
+
+`-Languages` is mandatory because Tesseract cannot reliably choose the document language:
+
+- English-only material: `eng`
+- Simplified Chinese or Chinese-first mixed material: start with `chi_sim`
+- Traditional Chinese or Chinese-first mixed material: start with `chi_tra`
+- Add `+eng` or combine `chi_sim+chi_tra` only after a one-page A/B test. On the generated local canary, `chi_sim` recognized Chinese materially better than `chi_sim+eng` while still recognizing the English line.
+
+Automatic routing uses page text quality and image coverage:
+
+- Native digital PDF or a sound existing OCR layer: no OCR; copy the input to a new output and extract full text.
+- Pure scan or document-level mixture of digital and image-only pages: OCRmyPDF `--mode skip`.
+- Same-page sparse text plus a large scan, or an obviously damaged text layer: OCRmyPDF `--mode redo`.
+
+Use `-Deskew` only when the user requests it or a rendered page shows clear skew. Deskew changes page pixels and requires stronger visual comparison. Override `-Mode` only when the automatic decision is known to be wrong and record why.
+
+The wrapper never overwrites the input or an existing output. It stages work in a unique directory and publishes only after SHA-256, page count, dimensions, rotation, PyMuPDF rendering, Poppler rendering, `pdfinfo`, and strict pypdf checks pass. Successful outputs are:
+
+- `<name>_ocr.pdf`
+- `<name>_ocr.txt`, extracted from the completed PDF with `pdftotext -layout`; OCRmyPDF sidecar text is not the full document
+- `<name>_ocr.log`
+- `<name>_ocr.status.json`
+
+On failure, no official output names are created. Diagnostic files remain in the reported `.pdf-ocr-run-*` directory.
+
+For visual reading or review of tables, formulas, stamps, handwriting, and complex layouts, render representative pages even after OCR. OCR preserves the page image in the PDF but plain text does not preserve table structure or formula semantics. Use Poppler or PyMuPDF:
 
 ```python
-# PYTHONIOENCODING=utf-8 for Chinese output on Windows
 import fitz, os
 
 doc = fitz.open('scanned.pdf')
@@ -253,33 +274,11 @@ out_dir = r'C:\Users\SanAn\AppData\Local\Temp\pages'
 os.makedirs(out_dir, exist_ok=True)
 
 for i in range(len(doc)):
-    pix = doc[i].get_pixmap(dpi=120)   # 120 dpi is enough for A4 text
+    pix = doc[i].get_pixmap(dpi=120)
     pix.save(os.path.join(out_dir, f'p{i+1:02d}.png'))
 ```
 
-Then filter blank pages by PNG file size before reading (< ~25KB at 120dpi is blank), and Read only the content-bearing pages. This avoids OCR entirely and preserves stamps/signatures/layout that OCR loses.
-
-### OCR Alternative (requires poppler + tesseract)
-
-Poppler is available on this machine; Tesseract is not currently installed. If OCR is explicitly required after Tesseract is installed, use:
-
-```python
-# Requires: pip install pytesseract pdf2image
-import pytesseract
-from pdf2image import convert_from_path
-
-# Convert PDF to images
-images = convert_from_path('scanned.pdf')
-
-# OCR each page
-text = ""
-for i, image in enumerate(images):
-    text += f"Page {i+1}:\n"
-    text += pytesseract.image_to_string(image)
-    text += "\n\n"
-
-print(text)
-```
+Current machine paths, pinned versions, installer hash, and language-model hashes are recorded in [references/ocr-runtime.md](references/ocr-runtime.md).
 
 ### Precise Edits to Existing PDFs
 
@@ -392,29 +391,14 @@ Use the resolved `.exe` paths from the Windows Toolchain section. For example:
 & $pdfinfo input.pdf
 ```
 
-### qpdf
-```bash
-# Merge PDFs
-qpdf --empty --pages file1.pdf file2.pdf -- merged.pdf
-
-# Split pages
-qpdf input.pdf --pages . 1-5 -- pages1-5.pdf
-qpdf input.pdf --pages . 6-10 -- pages6-10.pdf
-
-# Rotate pages
-qpdf input.pdf output.pdf --rotate=+90:1  # Rotate page 1 by 90 degrees
-
-# Remove password
-qpdf --password=mypassword --decrypt encrypted.pdf decrypted.pdf
-```
-
 ## Quick Reference
 
 | Task | Best Tool | Command/Code |
 |------|-----------|--------------|
-| Read scanned PDF | fitz + Read | Render to PNG, visual read |
+| OCR scanned/mixed PDF | `scripts/ocr_pdf.ps1` | Explicit languages, automatic `none`/`skip`/`redo`, validated outputs |
+| Review tables/formulas/stamps | PyMuPDF or Poppler + visual read | Render representative pages after OCR |
 | Render PDF pages | Poppler `pdftoppm.exe` | `& $pdftoppm -png -r 120 input.pdf page` |
-| Convert Office document to PDF | LibreOffice `soffice.com` | Direct headless command with isolated file-URI profile |
+| Convert Office document to PDF | `libreoffice-runner` skill | Use its queued `libreoffice_run.py pdf` command |
 | Merge PDFs | pypdf | `writer.add_page(page)` |
 | Split PDFs | pypdf | One page per file |
 | Extract text | pdfplumber | `page.extract_text()` |
@@ -422,8 +406,7 @@ qpdf --password=mypassword --decrypt encrypted.pdf decrypted.pdf
 | Create PDFs | reportlab | Canvas or Platypus |
 | Precise field edits | PyMuPDF + verified font resource | Classify each region; edit a copy; inspect text, pixels, residues, and typography |
 | Reference-layout composition | PyMuPDF `show_pdf_page` + `insert_pdf` | Recover slot geometry, preserve vector pages, append scans, and verify at multiple DPIs |
-| Command line merge | qpdf | `qpdf --empty --pages ...` |
 
-## Maintenance
+## Provenance
 
-本技能由用户针对本机 Windows 环境（Python 3.13 + Poppler 24.08.0 + LibreOffice 26.2.4.2）自行编写和维护。涉及的 Python 库（pypdf、pdfplumber、reportlab、PyMuPDF）均为公开开源项目，用法示例基于各自官方文档。精确编辑、参考版面拼版、多 DPI 验证等工作流为本机实践总结。
+Derived from the upstream `anthropics/skills` pdf skill (last upstream content update ~2025-10). Local adaptations: explicit Poppler 24.08.0 executable paths, queued Office-to-PDF conversion through `libreoffice-runner`, deterministic OCRmyPDF/Tesseract routing for scanned, mixed, and damaged-text PDFs, complete post-OCR text extraction, input/output hashes and multi-engine validation, scanned PDF reading via fitz render-to-PNG, precise existing-PDF edits with original-font checks, high-resolution residue checks, a user visual-acceptance gate, vector multi-source composition with reference-geometry recovery, whole-page scan attachment, multi-DPI rendered-hash verification, and Windows path conventions. Upstream Proprietary files (LICENSE.txt, forms.md, reference.md, scripts/) are not included; refer to the upstream skill if those features are needed.

@@ -62,6 +62,10 @@ python <script> weekly-run `
 
 镜像单仓库总预算 20 秒，最多 4 路并行。Windows 上超时会终止本次命令创建的完整 Git 子进程树，避免 `git-remote-https` 继续占用网络或让超时失效。现有镜像只执行一次远端 `fetch`，随后在本地检查并执行 `merge --ff-only`，避免 `pull` 再次联网；非快进更新仍直接阻止。现有镜像遇到明确的 Windows Schannel 兼容错误时在同一预算内切换 OpenSSL；遇到 TLS 提前关闭或连接重置时，在剩余预算内自动重试一次。新镜像的 `git clone` 不在同一路径盲目重试，避免第一次失败留下部分目录后覆盖原始错误。跟踪路径的 `git diff` 超时或失败时返回 `tracked_diff_failed`，保留前后提交和原始错误，不得静默记为“无变化”。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。
 
+新镜像的完整克隆连续触发仓库预算时，换用新的工作树和外置 Git 元数据路径。使用 `git clone --filter=blob:none --depth 1 --no-checkout --branch <branch> --single-branch --separate-git-dir=<git_dir_path> <repo_url> <local_path>` 初始化，再用 `git sparse-checkout` 检出 `tracked_paths` 和 `license_paths`。更新登记前，依次核对 origin、branch、HEAD、`git rev-parse --absolute-git-dir`、浅层与稀疏配置、跟踪文件和干净工作树；任何一项偏离登记值时保留现场并报告。
+
+百度网盘备份期间，镜像工作树可能短暂出现 `*.baiduyun.uploading.cfg`。当它是唯一脏项时，先等待备份完成，再复查临时文件和 `git status --porcelain`。临时文件消失且工作树恢复干净后继续周检；文件持续存在或同时出现其他改动时，按脏镜像报告并保留现场。
+
 登记镜像即使尚未被正式 `skill source` 引用，刷新失败也必须进入周检摘要，写明原始错误、影响和修复步骤；这类镜像单独计数，不伪造技能来源，也不改变正式来源总数。
 
 镜像管理器若在登记表加载、进程启动、JSON 输出或总超时阶段整体失败，周检必须保存顶层原始错误，把缺失的逐镜像结果标记为 `mirror_manager_failed`，并阻止这些来源形成“无更新”或新候选结论。

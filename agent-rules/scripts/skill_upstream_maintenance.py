@@ -2,17 +2,20 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import copy
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import tomllib
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -117,11 +120,13 @@ def parse_args() -> argparse.Namespace:
 
     validate = subparsers.add_parser("validate", help="Validate source coverage and mirror references.")
     add_common(validate)
+    validate.add_argument("--skill", help="Validate only one registered local skill and its sources.")
     validate.add_argument("--require-rendered", action="store_true")
     validate.add_argument("--json", action="store_true")
 
     render = subparsers.add_parser("render", help="Render per-skill upstream source references.")
     add_common(render)
+    render.add_argument("--skill", help="Render only one registered local skill.")
     render.add_argument("--check", action="store_true", help="Check for drift without writing files.")
     render.add_argument("--json", action="store_true")
 
@@ -173,6 +178,26 @@ def parse_args() -> argparse.Namespace:
     apply_review.add_argument("--approval-note", required=True)
     apply_review.add_argument("--json", action="store_true")
 
+    complete_review = subparsers.add_parser(
+        "complete-review",
+        help="Close an applied review after retest and advance every reviewed source baseline.",
+    )
+    add_common(complete_review)
+    complete_review.add_argument("--workspace", required=True, type=Path)
+    complete_review.add_argument("--skill", required=True)
+    complete_review.add_argument("--source", required=True)
+    complete_review.add_argument("--date", required=True, help="Review date in YYYY-MM-DD format.")
+    complete_review.add_argument("--confirm-retest-passed", action="store_true")
+    complete_review.add_argument(
+        "--accepted-version",
+        action="append",
+        default=[],
+        nargs=2,
+        metavar=("SOURCE", "VERSION"),
+        help="Set an accepted version for one reviewed source; repeat for multiple sources.",
+    )
+    complete_review.add_argument("--json", action="store_true")
+
     record = subparsers.add_parser("record-review", help="Record an explicit review disposition.")
     record.add_argument("--state", required=True, type=Path)
     record.add_argument("--source", required=True)
@@ -207,10 +232,24 @@ def load_sources(path: Path) -> list[SkillRecord]:
     raw = read_toml(path)
     if raw.get("schema_version") != 1:
         raise ValueError(f"{path}: schema_version must be 1")
+    raw_skills = raw.get("skill", [])
+    if not isinstance(raw_skills, list):
+        raise ValueError(f"{path}: skill must be an array of tables")
     records: list[SkillRecord] = []
-    for item in raw.get("skill", []):
-        sources = tuple(
-            SourceRecord(
+    for skill_index, item in enumerate(raw_skills):
+        if not isinstance(item, dict):
+            raise ValueError(f"{path}: skill[{skill_index}] must be a table")
+        raw_sources = item.get("source", [])
+        if not isinstance(raw_sources, list):
+            raise ValueError(f"{path}: skill[{skill_index}].source must be an array of tables")
+        sources_list: list[SourceRecord] = []
+        for source_index, source in enumerate(raw_sources):
+            if not isinstance(source, dict):
+                raise ValueError(
+                    f"{path}: skill[{skill_index}].source[{source_index}] must be a table"
+                )
+            sources_list.append(
+                SourceRecord(
                 id=str(source["id"]),
                 mirror_id=str(source["mirror_id"]),
                 repo_url=str(source["repo_url"]),
@@ -233,8 +272,8 @@ def load_sources(path: Path) -> list[SkillRecord]:
                 adopted=tuple(str(value) for value in source.get("adopted", [])),
                 excluded=tuple(str(value) for value in source.get("excluded", [])),
             )
-            for source in item.get("source", [])
-        )
+            )
+        sources = tuple(sources_list)
         records.append(
             SkillRecord(
                 name=str(item["name"]),
@@ -324,9 +363,14 @@ def parse_skill_name(path: Path) -> str:
     return ""
 
 
-def list_local_skills(root: Path) -> dict[str, Path]:
+def list_local_skills(root: Path, skill_name: str | None = None) -> dict[str, Path]:
     result: dict[str, Path] = {}
-    for directory in sorted(path for path in root.iterdir() if path.is_dir()):
+    if skill_name is not None:
+        requested = root / skill_name
+        directories = [requested] if requested.is_dir() else []
+    else:
+        directories = sorted(path for path in root.iterdir() if path.is_dir())
+    for directory in directories:
         skill_md = directory / "SKILL.md"
         if not skill_md.is_file():
             continue
@@ -353,23 +397,37 @@ def validate_registry(
     mirrors: dict[str, MirrorRecord],
     skills_root: Path,
     require_rendered: bool = False,
+    skill_name: str | None = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
-    local_skills = list_local_skills(skills_root)
+    coverage_gaps: list[str] = []
+    local_skills = list_local_skills(skills_root, skill_name)
     names = [record.name for record in skills]
     duplicates = sorted(name for name, count in Counter(names).items() if count > 1)
-    if duplicates:
-        errors.append(f"Duplicate skill entries: {', '.join(duplicates)}")
-    missing = sorted(set(local_skills) - set(names))
-    extra = sorted(set(names) - set(local_skills))
-    if missing:
-        errors.append(f"Skills missing from registry: {', '.join(missing)}")
-    if extra:
-        errors.append(f"Registry entries without local skill: {', '.join(extra)}")
+    if skill_name is None:
+        if duplicates:
+            errors.append(f"Duplicate skill entries: {', '.join(duplicates)}")
+        missing = sorted(set(local_skills) - set(names))
+        extra = sorted(set(names) - set(local_skills))
+        if missing:
+            coverage_gaps.append(f"Skills missing from registry: {', '.join(missing)}")
+        if extra:
+            errors.append(f"Registry entries without local skill: {', '.join(extra)}")
+        selected_skills = skills
+    else:
+        matches = [record for record in skills if record.name == skill_name]
+        missing = []
+        if not matches:
+            errors.append(f"Requested skill is not registered: {skill_name}")
+        elif len(matches) > 1:
+            errors.append(f"Duplicate skill entries: {skill_name}")
+        if skill_name not in local_skills:
+            errors.append(f"Requested local skill is missing: {skill_name}")
+        selected_skills = matches[:1]
 
     source_ids: list[str] = []
-    for skill in skills:
+    for skill in selected_skills:
         if skill.status not in ALLOWED_SKILL_STATUSES:
             errors.append(f"{skill.name}: unsupported status {skill.status}")
         if skill.status == "confirmed" and not skill.sources:
@@ -550,14 +608,24 @@ def validate_registry(
             else:
                 warnings.append(f"{skill.name}/{source.id}: mirror is not initialized")
 
-    duplicate_sources = sorted(name for name, count in Counter(source_ids).items() if count > 1)
+    if skill_name is None:
+        duplicate_sources = sorted(name for name, count in Counter(source_ids).items() if count > 1)
+    else:
+        all_source_counts = Counter(source.id for skill in skills for source in skill.sources)
+        duplicate_sources = sorted(name for name in source_ids if all_source_counts[name] > 1)
     if duplicate_sources:
         errors.append(f"Duplicate source ids: {', '.join(duplicate_sources)}")
     return {
-        "status": "ok" if not errors else "invalid",
-        "skill_count": len(skills),
-        "confirmed_skill_count": sum(skill.status == "confirmed" for skill in skills),
+        "status": "invalid" if errors else ("incomplete_coverage" if coverage_gaps else "ok"),
+        "skill_count": len(selected_skills),
+        "registered_skill_count": len(skills),
+        "local_skill_count": len(local_skills),
+        "confirmed_skill_count": sum(skill.status == "confirmed" for skill in selected_skills),
         "source_count": len(source_ids),
+        "requested_skill": skill_name,
+        "coverage_gap_count": len(missing),
+        "missing_skills": missing,
+        "coverage_gaps": coverage_gaps,
         "errors": errors,
         "warnings": warnings,
     }
@@ -647,9 +715,19 @@ def render_skill_reference(skill: SkillRecord) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def render_references(skills: list[SkillRecord], skills_root: Path, check_only: bool) -> dict[str, Any]:
+def render_references(
+    skills: list[SkillRecord],
+    skills_root: Path,
+    check_only: bool,
+    skill_name: str | None = None,
+) -> dict[str, Any]:
+    selected_skills = skills
+    if skill_name is not None:
+        selected_skills = [skill for skill in skills if skill.name == skill_name]
+        if len(selected_skills) != 1:
+            raise ValueError(f"Expected exactly one registered skill named {skill_name}.")
     changed: list[str] = []
-    for skill in skills:
+    for skill in selected_skills:
         target = skills_root / skill.name / "references" / "upstream-sources.md"
         expected = render_skill_reference(skill)
         current = target.read_text(encoding="utf-8") if target.is_file() else None
@@ -659,7 +737,12 @@ def render_references(skills: list[SkillRecord], skills_root: Path, check_only: 
         if not check_only:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(expected, encoding="utf-8", newline="\n")
-    return {"status": "drift" if changed else "up_to_date", "changed_skills": changed, "check_only": check_only}
+    return {
+        "status": "drift" if changed else "up_to_date",
+        "changed_skills": changed,
+        "check_only": check_only,
+        "requested_skill": skill_name,
+    }
 
 
 def read_state(path: Path) -> dict[str, Any]:
@@ -1015,6 +1098,28 @@ def mirror_result_details(result: dict[str, Any]) -> dict[str, Any]:
     return {key: result[key] for key in keys if key in result}
 
 
+def source_identity_payload(source: SourceRecord) -> dict[str, Any]:
+    return {
+        "id": source.id,
+        "mirror_id": source.mirror_id,
+        "repo_url": source.repo_url,
+        "upstream_path": source.upstream_path,
+        "accepted_upstream_path": source.accepted_upstream_path,
+        "path_migration_commit": source.path_migration_commit,
+        "path_migration_evidence": list(source.path_migration_evidence),
+        "accepted_commit": source.accepted_commit,
+        "accepted_version": source.accepted_version,
+        "license": source.license,
+        "baseline_kind": source.baseline_kind,
+        "tracked_paths": list(source.tracked_paths),
+        "license_paths": list(source.license_paths),
+        "evidence": list(source.evidence),
+        "evidence_files": list(source.evidence_files),
+        "adopted": list(source.adopted),
+        "excluded": list(source.excluded),
+    }
+
+
 def review_source_contexts(context: dict[str, Any]) -> list[dict[str, Any]]:
     primary = {
         key: context[key]
@@ -1025,6 +1130,7 @@ def review_source_contexts(context: dict[str, Any]) -> list[dict[str, Any]]:
             "upstream_path",
             "path_migration_commit",
             "current_upstream_commit",
+            "source_identity",
         )
         if key in context
     }
@@ -1131,6 +1237,11 @@ def validate_review_source_contexts_current(
             != current_source.path_migration_commit
         ):
             raise ValueError(f"Path migration identity changed for {current_source_id}.")
+        expected_identity = source_context.get("source_identity")
+        if not isinstance(expected_identity, dict):
+            raise ValueError(f"Finalized source identity is missing for {current_source_id}.")
+        if expected_identity != source_identity_payload(current_source):
+            raise ValueError(f"Source identity changed for {current_source_id}.")
         mirror = mirrors.get(current_source.mirror_id)
         if mirror is None:
             raise ValueError(f"Unknown mirror for {current_source_id}: {current_source.mirror_id}")
@@ -1536,6 +1647,7 @@ def build_report(
     mirror_results: dict[str, dict[str, Any]] | None = None,
     mirror_refresh_exit_code: int | None = None,
     mirror_manager_error: str | None = None,
+    preflight_validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if mirror_manager_error:
         mirror_results, _ = normalize_mirror_refresh_results(
@@ -1663,6 +1775,9 @@ def build_report(
             unreferenced_mirror_failures.append(failure)
 
     counts = dict(Counter(row["status"] for row in rows))
+    coverage_gaps = list((preflight_validation or {}).get("coverage_gaps", []))
+    missing_skills = list((preflight_validation or {}).get("missing_skills", []))
+    coverage_gap_count = int((preflight_validation or {}).get("coverage_gap_count", 0))
     source_check_error_count = sum(
         1
         for row in rows
@@ -1685,6 +1800,7 @@ def build_report(
         + unreferenced_check_error_count
         + len(candidate_conflicts)
         + (1 if mirror_manager_error else 0)
+        + coverage_gap_count
     )
     awaiting_groups = {
         (row["skill"], str(row.get("review_workspace", "")))
@@ -1700,6 +1816,10 @@ def build_report(
         "candidate_conflict_count": len(candidate_conflicts),
         "candidate_conflicts": candidate_conflicts,
         "check_error_count": check_error_count,
+        "preflight_status": (preflight_validation or {}).get("status"),
+        "registry_coverage_gap_count": coverage_gap_count,
+        "registry_coverage_gaps": coverage_gaps,
+        "registry_missing_skills": missing_skills,
         "counts": counts,
         "sources": rows,
         "unreferenced_mirror_failure_count": len(unreferenced_mirror_failures),
@@ -1720,6 +1840,7 @@ def build_report(
         f"- 等待收益评估：{counts.get('review_required', 0)}",
         f"- 等待逐项批准（技能）：{len(awaiting_groups)}",
         f"- 许可证复核：{counts.get('license_review_required', 0)}",
+        f"- 登记覆盖缺口：{coverage_gap_count}",
         f"- 检查异常：{check_error_count}",
         *(
             [f"- 镜像刷新退出码：{mirror_refresh_exit_code}"]
@@ -1766,8 +1887,35 @@ def build_report(
             )
 
     diagnostic_rows = [row for row in rows if row["status"] in DIAGNOSTIC_STATUSES]
-    if diagnostic_rows or unreferenced_mirror_failures or candidate_conflicts or mirror_manager_error:
+    if (
+        diagnostic_rows
+        or unreferenced_mirror_failures
+        or candidate_conflicts
+        or mirror_manager_error
+        or coverage_gaps
+    ):
         md.extend(["", "## 异常详情与修复计划", ""])
+        if coverage_gaps:
+            missing_text = "、".join(f"`{name}`" for name in missing_skills) or markdown_report_text(
+                "；".join(str(value) for value in coverage_gaps)
+            )
+            md.extend(
+                [
+                    "### 技能来源登记覆盖缺口",
+                    "",
+                    f"- 问题：本地技能未进入集中登记：{missing_text}。",
+                    "- 影响：本次仍检查所有已正式登记的 confirmed 来源，但未登记技能不在周检范围内，不能据此宣称全部本地技能均已覆盖。",
+                    "- 已自动处理：保存 preflight-validation.json，继续刷新镜像并生成完整 mirror-results.json 与 summary.json；未发现或登记新来源。",
+                    "- 用户批准：补登记前需要按来源身份规则复核；只读调查不需要批准，写入正式登记需用户确认相应范围。",
+                    "",
+                    "修复步骤：",
+                    "",
+                    "1. 逐个核对缺失技能是否已有 confirmed 来源证据；没有确认来源时登记为 none。",
+                    "2. 候选来源只写入 source-audit.md，不因功能相似直接确认为上游。",
+                    "3. 用户确认登记范围后更新 skill-sources.toml，定向 render 和 validate，再重跑 weekly-run。",
+                    "",
+                ]
+            )
         if mirror_manager_error:
             md.extend(
                 [
@@ -2006,6 +2154,7 @@ def prepare_review(
                     "upstream_path": source.upstream_path,
                     "path_migration_commit": source.path_migration_commit,
                     "current_upstream_commit": head,
+                    "source_identity": source_identity_payload(source),
                 }
             )
             additional_evidence.append(evidence_name)
@@ -2019,6 +2168,7 @@ def prepare_review(
         "upstream_path": primary_source.upstream_path,
         "path_migration_commit": primary_source.path_migration_commit,
         "current_upstream_commit": primary_head,
+        "source_identity": source_identity_payload(primary_source),
         "additional_sources": additional_contexts,
         "additional_review_evidence": additional_evidence,
         "local_tree_hash": tree_hash(skill_root),
@@ -2282,6 +2432,498 @@ def apply_review(
     return {"status": "applied_pending_retest", "workspace": str(workspace), **context}
 
 
+def toml_assignment_value(lines: list[str], key: str) -> Any:
+    matches = [line for line in lines if re.match(rf"^\s*{re.escape(key)}\s*=", line)]
+    if len(matches) != 1:
+        raise ValueError(f"Expected exactly one TOML assignment for {key}.")
+    try:
+        return tomllib.loads(matches[0])[key]
+    except (KeyError, tomllib.TOMLDecodeError) as exc:
+        raise ValueError(f"TOML assignment for {key} must fit on one line.") from exc
+
+
+def update_toml_string_field(
+    lines: list[str],
+    key: str,
+    value: str | None,
+    *,
+    insert_after: str | None = None,
+    required: bool = False,
+) -> list[str]:
+    updated = list(lines)
+    matches = [index for index, line in enumerate(updated) if re.match(rf"^\s*{re.escape(key)}\s*=", line)]
+    if len(matches) > 1:
+        raise ValueError(f"Duplicate TOML assignment for {key}.")
+    if value is None:
+        if matches:
+            start = matches[0]
+            for end in range(start + 1, len(updated) + 1):
+                try:
+                    parsed = tomllib.loads("\n".join(updated[start:end]))
+                except tomllib.TOMLDecodeError:
+                    continue
+                if set(parsed) == {key}:
+                    del updated[start:end]
+                    break
+            else:
+                raise ValueError(f"Unable to isolate TOML assignment for removal: {key}")
+        return updated
+    rendered = f"{key} = {json.dumps(value, ensure_ascii=False)}"
+    if matches:
+        updated[matches[0]] = rendered
+        return updated
+    if required:
+        raise ValueError(f"Required TOML assignment is missing: {key}")
+    insert_at = len(updated)
+    while insert_at > 0 and not updated[insert_at - 1].strip():
+        insert_at -= 1
+    if insert_after is not None:
+        after_matches = [
+            index
+            for index, line in enumerate(updated)
+            if re.match(rf"^\s*{re.escape(insert_after)}\s*=", line)
+        ]
+        if len(after_matches) == 1:
+            insert_at = after_matches[0] + 1
+    updated.insert(insert_at, rendered)
+    return updated
+
+
+def update_registry_acceptance_text(
+    text: str,
+    skill_name: str,
+    review_date: str,
+    source_updates: dict[str, dict[str, str]],
+) -> str:
+    tomllib.loads(text)
+    lines = text.splitlines()
+    skill_starts = [index for index, line in enumerate(lines) if line.strip() == "[[skill]]"]
+    matching_sections: list[tuple[int, int]] = []
+    for position, start in enumerate(skill_starts):
+        end = skill_starts[position + 1] if position + 1 < len(skill_starts) else len(lines)
+        first_source = next(
+            (index for index in range(start + 1, end) if lines[index].strip() == "[[skill.source]]"),
+            end,
+        )
+        if toml_assignment_value(lines[start + 1 : first_source], "name") == skill_name:
+            matching_sections.append((start, end))
+    if len(matching_sections) != 1:
+        raise ValueError(f"Expected exactly one registry section for skill {skill_name}.")
+
+    start, end = matching_sections[0]
+    section = lines[start:end]
+    source_starts = [
+        index for index, line in enumerate(section) if line.strip() == "[[skill.source]]"
+    ]
+    header_end = source_starts[0] if source_starts else len(section)
+    rebuilt = update_toml_string_field(
+        section[:header_end],
+        "last_review_date",
+        review_date,
+        insert_after="last_discovery_date",
+    )
+    found_sources: set[str] = set()
+    for position, source_start in enumerate(source_starts):
+        source_end = source_starts[position + 1] if position + 1 < len(source_starts) else len(section)
+        source_lines = section[source_start:source_end]
+        source_id = str(toml_assignment_value(source_lines, "id"))
+        update = source_updates.get(source_id)
+        if update is not None:
+            found_sources.add(source_id)
+            source_lines = update_toml_string_field(
+                source_lines,
+                "accepted_commit",
+                update["accepted_commit"],
+                required=True,
+            )
+            if "accepted_version" in update:
+                source_lines = update_toml_string_field(
+                    source_lines,
+                    "accepted_version",
+                    update["accepted_version"],
+                    insert_after="accepted_commit",
+                )
+            for redundant_key in (
+                "accepted_upstream_path",
+                "path_migration_commit",
+                "path_migration_evidence",
+            ):
+                source_lines = update_toml_string_field(source_lines, redundant_key, None)
+        rebuilt.extend(source_lines)
+    missing_sources = sorted(set(source_updates) - found_sources)
+    if missing_sources:
+        raise ValueError(f"Reviewed sources are missing from registry: {', '.join(missing_sources)}")
+
+    updated_lines = [*lines[:start], *rebuilt, *lines[end:]]
+    updated_text = "\n".join(updated_lines) + ("\n" if text.endswith(("\n", "\r")) else "")
+    parsed = tomllib.loads(updated_text)
+    matching = [item for item in parsed.get("skill", []) if item.get("name") == skill_name]
+    if len(matching) != 1 or matching[0].get("last_review_date") != review_date:
+        raise ValueError("Updated registry skill metadata did not round-trip through TOML.")
+    parsed_sources = {item.get("id"): item for item in matching[0].get("source", [])}
+    for source_id, update in source_updates.items():
+        parsed_source = parsed_sources.get(source_id)
+        if not isinstance(parsed_source, dict) or parsed_source.get("accepted_commit") != update["accepted_commit"]:
+            raise ValueError(f"Updated registry source did not round-trip through TOML: {source_id}")
+        if any(
+            key in parsed_source
+            for key in ("accepted_upstream_path", "path_migration_commit", "path_migration_evidence")
+        ):
+            raise ValueError(f"Redundant path migration metadata remains for {source_id}.")
+        if "accepted_version" in update and parsed_source.get("accepted_version") != update["accepted_version"]:
+            raise ValueError(f"Updated accepted version did not round-trip through TOML: {source_id}")
+    return updated_text
+
+
+def atomic_write_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def restore_file(path: Path, original: bytes | None) -> None:
+    if original is None:
+        if path.exists():
+            path.unlink()
+        return
+    atomic_write_bytes(path, original)
+
+
+def completion_transaction_path(workspace: Path) -> Path:
+    return workspace / "complete-review-transaction.json"
+
+
+def write_completion_transaction(
+    workspace: Path,
+    originals: dict[Path, bytes | None],
+) -> Path:
+    transaction_path = completion_transaction_path(workspace)
+    if transaction_path.exists():
+        raise ValueError(
+            "An unfinished complete-review transaction already exists; rerun complete-review to recover it."
+        )
+    payload = {
+        "schema_version": 1,
+        "status": "prepared",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "files": [
+            {
+                "path": str(path.resolve()),
+                "existed": original is not None,
+                "sha256": hashlib.sha256(original or b"").hexdigest(),
+                "content_base64": base64.b64encode(original or b"").decode("ascii"),
+            }
+            for path, original in originals.items()
+        ],
+    }
+    atomic_write_bytes(
+        transaction_path,
+        (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
+    )
+    return transaction_path
+
+
+def recover_completion_transaction(
+    workspace: Path,
+    allowed_paths: list[Path],
+    trigger_error: Exception | None = None,
+) -> bool:
+    transaction_path = completion_transaction_path(workspace)
+    if not transaction_path.is_file():
+        return False
+    try:
+        payload = json.loads(transaction_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Unable to read complete-review recovery journal: {exc}") from exc
+    if payload.get("schema_version") != 1 or payload.get("status") not in {"prepared", "recovery_failed"}:
+        raise RuntimeError("Complete-review recovery journal has an unsupported shape or status.")
+    raw_files = payload.get("files")
+    if not isinstance(raw_files, list):
+        raise RuntimeError("Complete-review recovery journal is missing its file snapshots.")
+    allowed = {canonical_path_key(path): path for path in allowed_paths}
+    snapshots: list[tuple[Path, bytes | None]] = []
+    seen: set[str] = set()
+    for item in raw_files:
+        if not isinstance(item, dict):
+            raise RuntimeError("Complete-review recovery journal contains an invalid snapshot.")
+        raw_path = Path(str(item.get("path", "")))
+        path_key = canonical_path_key(raw_path)
+        if path_key not in allowed or path_key in seen:
+            raise RuntimeError("Complete-review recovery journal names an unexpected or duplicate path.")
+        seen.add(path_key)
+        try:
+            content = base64.b64decode(str(item.get("content_base64", "")), validate=True)
+        except (ValueError, TypeError) as exc:
+            raise RuntimeError("Complete-review recovery journal contains invalid base64 data.") from exc
+        if hashlib.sha256(content).hexdigest() != str(item.get("sha256", "")).lower():
+            raise RuntimeError("Complete-review recovery journal snapshot hash mismatch.")
+        existed = item.get("existed")
+        if not isinstance(existed, bool):
+            raise RuntimeError("Complete-review recovery journal has an invalid existed flag.")
+        snapshots.append((allowed[path_key], content if existed else None))
+    if seen != set(allowed):
+        raise RuntimeError("Complete-review recovery journal does not cover every transaction file.")
+
+    recovery_errors: list[str] = []
+    for path, original in reversed(snapshots):
+        try:
+            restore_file(path, original)
+        except OSError as exc:
+            recovery_errors.append(f"{path}: {exc}")
+    if recovery_errors:
+        payload["status"] = "recovery_failed"
+        payload["recovery_errors"] = recovery_errors
+        payload["recovery_attempted_at"] = datetime.now(timezone.utc).isoformat()
+        if trigger_error is not None:
+            payload["trigger_error"] = {
+                "type": type(trigger_error).__name__,
+                "message": str(trigger_error),
+            }
+        try:
+            atomic_write_bytes(
+                transaction_path,
+                (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
+            )
+        except OSError:
+            pass
+        raise RuntimeError(
+            "Complete-review recovery failed; the journal was retained. " + " | ".join(recovery_errors)
+        )
+    transaction_path.unlink()
+    return True
+
+
+def complete_review(
+    skills: list[SkillRecord],
+    mirrors: dict[str, MirrorRecord],
+    registry_path: Path,
+    skills_root: Path,
+    workspace: Path,
+    skill_name: str,
+    source_id: str,
+    review_date: str,
+    retest_confirmed: bool,
+    accepted_versions: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    if not retest_confirmed:
+        raise ValueError("Refusing to complete review without --confirm-retest-passed")
+    try:
+        parsed_date = datetime.strptime(review_date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError("Review date must be a valid YYYY-MM-DD date.") from exc
+    if parsed_date.strftime("%Y-%m-%d") != review_date:
+        raise ValueError("Review date must be a valid YYYY-MM-DD date.")
+
+    reference_path = skills_root / skill_name / "references" / "upstream-sources.md"
+    context_path = workspace / "review-context.json"
+    if recover_completion_transaction(
+        workspace,
+        [registry_path, reference_path, context_path],
+    ):
+        skills = load_sources(registry_path)
+    versions = dict(accepted_versions or {})
+    skill = next((record for record in skills if record.name == skill_name), None)
+    if skill is None:
+        raise ValueError(f"Unknown skill: {skill_name}")
+    context = load_review_context(workspace)
+    if context.get("skill") != skill_name or context.get("source") != source_id:
+        raise ValueError("Review context does not match the requested skill/source.")
+    validate_finalized_review_integrity(context, workspace)
+    source_contexts = review_source_contexts(context)
+    source_context_ids = {str(item["source"]) for item in source_contexts}
+    unknown_versions = sorted(set(versions) - source_context_ids)
+    if unknown_versions:
+        raise ValueError(f"Accepted versions name sources outside this review: {', '.join(unknown_versions)}")
+
+    if context.get("candidate_status") == "completed":
+        if context.get("completed_review_date") != review_date:
+            raise ValueError("Completed review date does not match the prior completion.")
+        accepted_entries = context.get("accepted_sources", [])
+        if not isinstance(accepted_entries, list):
+            raise ValueError("Completed review acceptance evidence is missing.")
+        accepted_by_source = {
+            str(item.get("source")): item for item in accepted_entries if isinstance(item, dict)
+        }
+        if set(accepted_by_source) != source_context_ids:
+            raise ValueError("Completed review source scope does not match the finalized candidate.")
+        current_sources = {record.id: record for record in skill.sources}
+        for current_source_id, accepted_entry in accepted_by_source.items():
+            current_source = current_sources.get(current_source_id)
+            if current_source is None:
+                raise ValueError(f"Completed source is no longer registered: {current_source_id}")
+            expected_identity = accepted_entry.get("source_identity")
+            if not isinstance(expected_identity, dict):
+                raise ValueError(f"Completed source identity is missing: {current_source_id}")
+            if source_identity_payload(current_source) != expected_identity:
+                raise ValueError(f"Completed source identity drifted after completion: {current_source_id}")
+            if current_source.accepted_commit != str(accepted_entry.get("accepted_commit", "")).lower():
+                raise ValueError(f"Accepted baseline drifted after completion: {current_source_id}")
+            if current_source.accepted_upstream_path != current_source.upstream_path:
+                raise ValueError(f"Accepted path is not current after completion: {current_source_id}")
+            if current_source.path_migration_commit or current_source.path_migration_evidence:
+                raise ValueError(f"Redundant migration metadata remains after completion: {current_source_id}")
+            if current_source.accepted_version != str(accepted_entry.get("accepted_version", "")):
+                raise ValueError(f"Accepted version drifted after completion: {current_source_id}")
+            if current_source_id in versions and versions[current_source_id] != current_source.accepted_version:
+                raise ValueError(f"Accepted version does not match the prior completion: {current_source_id}")
+        if skill.last_review_date != review_date:
+            raise ValueError("Skill review date drifted after completion.")
+        if not reference_path.is_file() or reference_path.read_text(encoding="utf-8") != render_skill_reference(skill):
+            raise ValueError("Rendered upstream source reference drifted after completion.")
+        return {
+            "status": "already_completed",
+            "workspace": str(workspace),
+            "skill": skill_name,
+            "accepted_sources": accepted_entries,
+        }
+
+    if context.get("candidate_status") != "applied_pending_retest":
+        raise ValueError("Candidate is not applied and awaiting retest completion.")
+    if not str(context.get("approval_note", "")).strip():
+        raise ValueError("Applied review is missing its approval evidence.")
+    validate_review_source_contexts_current(skill, mirrors, context)
+    candidate_hash_value = str(context.get("candidate_tree_hash", "")).lower()
+    target_skill = skills_root / skill_name
+    if tree_hash(workspace / "candidate_skill") != candidate_hash_value:
+        raise ValueError("Candidate changed after application.")
+    if tree_hash(target_skill) != candidate_hash_value:
+        raise ValueError("Target skill no longer matches the applied candidate.")
+
+    source_context_by_id = {str(item["source"]): item for item in source_contexts}
+    registered_sources = {record.id: record for record in skill.sources}
+    if not source_context_ids <= set(registered_sources):
+        missing = sorted(source_context_ids - set(registered_sources))
+        raise ValueError(f"Reviewed sources are no longer registered: {', '.join(missing)}")
+
+    source_updates: dict[str, dict[str, str]] = {}
+    updated_source_records: list[SourceRecord] = []
+    for current_source in skill.sources:
+        source_context = source_context_by_id.get(current_source.id)
+        if source_context is None:
+            updated_source_records.append(current_source)
+            continue
+        accepted_commit = str(source_context.get("current_upstream_commit", "")).lower()
+        if not SHA_PATTERN.fullmatch(accepted_commit):
+            raise ValueError(f"Invalid reviewed commit for {current_source.id}.")
+        source_update = {"accepted_commit": accepted_commit}
+        accepted_version = current_source.accepted_version
+        if current_source.id in versions:
+            accepted_version = versions[current_source.id]
+            source_update["accepted_version"] = accepted_version
+        source_updates[current_source.id] = source_update
+        updated_source_records.append(
+            replace(
+                current_source,
+                accepted_commit=accepted_commit,
+                accepted_version=accepted_version,
+                accepted_upstream_path=current_source.upstream_path,
+                path_migration_commit="",
+                path_migration_evidence=(),
+            )
+        )
+
+    updated_skill = replace(
+        skill,
+        last_review_date=review_date,
+        sources=tuple(updated_source_records),
+    )
+    updated_skills = [updated_skill if record.name == skill_name else record for record in skills]
+    registry_text = registry_path.read_text(encoding="utf-8")
+    updated_registry_text = update_registry_acceptance_text(
+        registry_text,
+        skill_name,
+        review_date,
+        source_updates,
+    )
+    validation = validate_registry(
+        updated_skills,
+        mirrors,
+        skills_root,
+        skill_name=skill_name,
+    )
+    if validation["errors"] or validation["coverage_gaps"]:
+        raise ValueError(f"Completed registry would be invalid: {validation}")
+
+    accepted_entries = [
+        {
+            "source": current_source.id,
+            "accepted_commit": current_source.accepted_commit,
+            "accepted_version": current_source.accepted_version,
+            "accepted_upstream_path": current_source.accepted_upstream_path,
+            "source_identity": source_identity_payload(current_source),
+        }
+        for current_source in updated_skill.sources
+        if current_source.id in source_context_ids
+    ]
+    completed_context = dict(context)
+    completed_context.update(
+        {
+            "candidate_status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "completed_review_date": review_date,
+            "retest_confirmed": True,
+            "accepted_sources": accepted_entries,
+        }
+    )
+    context_text = json.dumps(
+        completed_context,
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    ) + "\n"
+    originals = {
+        registry_path: registry_path.read_bytes(),
+        reference_path: reference_path.read_bytes() if reference_path.is_file() else None,
+        context_path: context_path.read_bytes(),
+    }
+    transaction_path = write_completion_transaction(workspace, originals)
+    try:
+        atomic_write_bytes(registry_path, updated_registry_text.encode("utf-8"))
+        atomic_write_bytes(reference_path, render_skill_reference(updated_skill).encode("utf-8"))
+        atomic_write_bytes(context_path, context_text.encode("utf-8"))
+        reloaded_skills = load_sources(registry_path)
+        post_validation = validate_registry(
+            reloaded_skills,
+            mirrors,
+            skills_root,
+            require_rendered=True,
+            skill_name=skill_name,
+        )
+        if post_validation["status"] != "ok":
+            raise ValueError(f"Completed review failed post-write validation: {post_validation}")
+        reloaded_skill = next((record for record in reloaded_skills if record.name == skill_name), None)
+        if reloaded_skill != updated_skill:
+            raise ValueError("Completed skill or source identity did not persist exactly.")
+        stored_context = load_review_context(workspace)
+        if stored_context != completed_context:
+            raise ValueError("Completed review context did not persist exactly.")
+        transaction_path.unlink()
+    except Exception as exc:
+        recover_completion_transaction(
+            workspace,
+            [registry_path, reference_path, context_path],
+            trigger_error=exc,
+        )
+        raise
+    return {
+        "status": "completed",
+        "workspace": str(workspace),
+        "skill": skill_name,
+        "review_date": review_date,
+        "accepted_sources": accepted_entries,
+        "rendered_skill": skill_name,
+    }
+
+
 def record_review(
     path: Path,
     source: str,
@@ -2339,8 +2981,24 @@ def emit(payload: dict[str, Any], as_json: bool) -> None:
                 print(f"{key}: {payload[key]}")
         for error in payload.get("errors", []):
             print(f"error: {error}")
+        for gap in payload.get("coverage_gaps", []):
+            print(f"coverage_gap: {gap}")
         for warning in payload.get("warnings", []):
             print(f"warning: {warning}")
+
+
+def invalid_preflight_payload(error: Exception) -> dict[str, Any]:
+    return {
+        "status": "invalid",
+        "skill_count": 0,
+        "confirmed_skill_count": 0,
+        "source_count": 0,
+        "coverage_gap_count": 0,
+        "missing_skills": [],
+        "coverage_gaps": [],
+        "errors": [str(error)],
+        "warnings": [],
+    }
 
 
 def main() -> int:
@@ -2361,27 +3019,67 @@ def main() -> int:
         registry = args.registry.resolve()
         mirrors_registry = args.mirrors_registry.resolve()
         skills_root = args.skills_root.resolve()
-        skills = load_sources(registry)
-        mirrors = load_mirrors(mirrors_registry)
+        try:
+            skills = load_sources(registry)
+            mirrors = load_mirrors(mirrors_registry)
+        except (
+            AttributeError,
+            KeyError,
+            OSError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            tomllib.TOMLDecodeError,
+        ) as exc:
+            if args.command in {"report", "weekly-run"}:
+                payload = invalid_preflight_payload(exc)
+                write_json(
+                    args.reports_root.resolve() / args.date / "preflight-validation.json",
+                    payload,
+                )
+                emit(payload, args.json)
+                return 2
+            raise
 
         if args.command == "validate":
-            payload = validate_registry(skills, mirrors, skills_root, args.require_rendered)
+            payload = validate_registry(
+                skills,
+                mirrors,
+                skills_root,
+                args.require_rendered,
+                args.skill,
+            )
             emit(payload, args.json)
             return 0 if payload["status"] == "ok" else 2
         if args.command == "render":
-            validation = validate_registry(skills, mirrors, skills_root)
-            if validation["errors"]:
+            validation = validate_registry(skills, mirrors, skills_root, skill_name=args.skill)
+            if validation["errors"] or validation["coverage_gaps"]:
                 emit(validation, args.json)
                 return 2
-            payload = render_references(skills, skills_root, args.check)
+            payload = render_references(skills, skills_root, args.check, args.skill)
             emit(payload, args.json)
             return 2 if args.check and payload["changed_skills"] else 0
         if args.command in {"report", "weekly-run"}:
-            validation = validate_registry(skills, mirrors, skills_root)
+            reports_root = args.reports_root.resolve()
+            try:
+                validation = validate_registry(skills, mirrors, skills_root)
+            except (
+                AttributeError,
+                KeyError,
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                subprocess.TimeoutExpired,
+            ) as exc:
+                validation = invalid_preflight_payload(exc)
+                write_json(reports_root / args.date / "preflight-validation.json", validation)
+                emit(validation, args.json)
+                return 2
+            write_json(reports_root / args.date / "preflight-validation.json", validation)
             if validation["errors"]:
                 emit(validation, args.json)
                 return 2
-            reports_root = args.reports_root.resolve()
             state_path = args.state.resolve() if args.state else reports_root / "state.json"
             refresh_payload = None
             mirror_results = None
@@ -2403,9 +3101,11 @@ def main() -> int:
                     refresh_payload["exit_code"] if refresh_payload is not None else None
                 ),
                 mirror_manager_error=mirror_manager_error,
+                preflight_validation=validation,
             )
             emit(payload, args.json)
-            return 0 if not refresh_payload or refresh_payload["exit_code"] == 0 else 2
+            refresh_failed = bool(refresh_payload and refresh_payload["exit_code"] != 0)
+            return 2 if refresh_failed or validation["coverage_gaps"] else 0
         if args.command == "prepare-review":
             payload = prepare_review(
                 skills,
@@ -2450,8 +3150,36 @@ def main() -> int:
             )
             emit(payload, args.json)
             return 0 if payload["status"] == "applied_pending_retest" else 2
+        if args.command == "complete-review":
+            accepted_versions: dict[str, str] = {}
+            for accepted_source, accepted_version in args.accepted_version:
+                if accepted_source in accepted_versions:
+                    raise ValueError(f"Duplicate accepted version source: {accepted_source}")
+                accepted_versions[accepted_source] = accepted_version
+            payload = complete_review(
+                skills,
+                mirrors,
+                registry,
+                skills_root,
+                args.workspace.resolve(),
+                args.skill,
+                args.source,
+                args.date,
+                args.confirm_retest_passed,
+                accepted_versions,
+            )
+            emit(payload, args.json)
+            return 0 if payload["status"] in {"completed", "already_completed"} else 2
         raise ValueError(f"Unsupported command: {args.command}")
-    except (KeyError, OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as exc:
+    except (
+        AttributeError,
+        KeyError,
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        subprocess.TimeoutExpired,
+    ) as exc:
         payload = {"status": "error", "error": str(exc)}
         emit(payload, getattr(args, "json", False))
         return 2

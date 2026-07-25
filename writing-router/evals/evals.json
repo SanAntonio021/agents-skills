@@ -71,6 +71,16 @@
         "恢复通过新 commit 完成。",
         "不使用破坏性 reset 或 checkout。"
       ]
+    },
+    {
+      "id": "route-generic-versus-ieee-submission",
+      "prompt": "期刊已经选定。一个是非 IEEE 的 Editorial Manager 投稿，另一个是 T-MTT 返修，这两类事务分别该走哪个技能？",
+      "expected_output": "非 IEEE 投稿事务路由到 journal-submission；明确 IEEE/T-MTT 投稿事务优先路由到 ieee-journal-submission；不把两个入口合并，也不要求旧 IEEE 入口依赖通用技能。"
+    },
+    {
+      "id": "route-final-submit-review-gate",
+      "prompt": "ScholarOne 普通字段和文件都准备好了，现在想点最终 Submit。下一步先做什么？",
+      "expected_output": "先路由 paper-review 完成投稿前把关并生成有 checked_at 和 evidence 的 pre_submission_review=pass；此前可准备文件和普通字段，但不能进入最终提交确认。"
     }
   ]
 }

@@ -30,6 +30,31 @@ class SkillContractTests(unittest.TestCase):
         for stage in sorted(VALID_STAGES):
             self.assertIn(f"`{stage}`", self.skill_text)
 
+    def test_relative_markdown_links_resolve(self):
+        failures = []
+        pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+        for markdown in ROOT.rglob("*.md"):
+            for target in pattern.findall(markdown.read_text(encoding="utf-8")):
+                if target.startswith(("http://", "https://", "mailto:", "#")):
+                    continue
+                clean_target = target.split("#", 1)[0]
+                if clean_target and not (markdown.parent / clean_target).resolve().exists():
+                    failures.append(f"{markdown.relative_to(ROOT)} -> {target}")
+        self.assertEqual(failures, [])
+
+    def test_platform_sources_and_tenant_boundaries(self):
+        scholarone = (ROOT / "references" / "scholarone.md").read_text(encoding="utf-8")
+        editorial_manager = (ROOT / "references" / "editorial-manager.md").read_text(
+            encoding="utf-8"
+        )
+        rex = (ROOT / "references" / "research-exchange.md").read_text(encoding="utf-8")
+        self.assertIn("Silverchair", scholarone)
+        self.assertIn("Aries Systems", editorial_manager)
+        self.assertIn("尚未经过本机真实投稿页面验证", editorial_manager)
+        self.assertIn("Wiley", rex)
+        self.assertIn("IEEE", rex)
+        self.assertIn("不跨租户", rex)
+
     def test_all_confirmation_gates_are_documented(self):
         safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
         required_phrases = [
@@ -104,6 +129,31 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("提交确认后的原子更新", lifecycle)
         self.assertIn("明确显示 `Under Review`", lifecycle)
         self.assertIn("最后一次文件上传重新生成或复核", rex)
+
+    def test_review_gate_and_conditional_source_are_documented(self):
+        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
+        safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
+        template = (ROOT / "references" / "material-templates.md").read_text(encoding="utf-8")
+        self.assertIn("pre_submission_review", self.skill_text)
+        self.assertIn("可兼容读取、不原地强制升级", self.skill_text)
+        self.assertIn("checked_at", contracts)
+        self.assertIn("非空 `evidence`", contracts)
+        self.assertIn("任何情况下都不代点", self.skill_text)
+        self.assertIn("始终由用户本人亲自操作", safety)
+        self.assertNotIn("是否确认执行本页最终 Submit？", template)
+        self.assertIn("只有当前页面或目标期刊指南要求 source", self.skill_text)
+        self.assertTrue((ROOT / "references" / "tmtt-profile.md").is_file())
+        self.assertTrue((ROOT / "scripts" / "validate_submission_records.py").is_file())
+
+    def test_cover_letter_declarations_are_conditional(self):
+        template = (ROOT / "references" / "material-templates.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("only after separate user confirmation", template)
+        self.assertNotIn(
+            "This manuscript is original, is not under consideration elsewhere",
+            template,
+        )
 
 
 if __name__ == "__main__":

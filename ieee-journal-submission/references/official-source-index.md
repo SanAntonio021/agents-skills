@@ -1,6 +1,22 @@
 # 官方来源索引
 
-本索引最后核对日期为 `2026-07-14`。它是查找入口，不代表内容永久有效；实际操作前重新访问目标页面。
+本索引最后核对日期为 `2026-07-26`。它是查找入口，不代表内容永久有效；实际操作前重新访问目标页面。
+
+## ScholarOne / Silverchair
+
+| 主题 | URL | 用途 |
+| --- | --- | --- |
+| ScholarOne 作者支持 | https://support.silverchair.com/s/scholarone-manuscripts/authors | 当前作者指南入口 |
+| ScholarOne 产品页 | https://www.silverchair.com/products/scholarone-manuscripts/ | 平台可配置性 |
+| Silverchair 收购说明 | https://www.silverchair.com/products/scholarone-manuscripts/acquisition/ | 当前平台归属 |
+
+## Editorial Manager / Aries Systems
+
+| 主题 | URL | 用途 |
+| --- | --- | --- |
+| Aries Systems 关于页 | https://www.ariessys.com/about/ | 产品归属与适用边界 |
+| Submit a Manuscript | https://emhelp.editorialmanager.com/robohelp/Submit_a_Manuscript.htm | 可配置投稿步骤和 PDF 批准流程 |
+| Institution Name Normalization | https://emhelp.editorialmanager.com/robohelp/Institution_Name_Normalization.htm | 可配置机构规范化和自由文本 |
 
 ## IEEE Author Center
 
@@ -20,7 +36,9 @@
 | 正式发表 | https://journals.ieeeauthorcenter.ieee.org/when-your-article-is-published/ | Xplore 上线后事项 |
 | IEEE Publishing Portal | https://publishingportal.ieee.org/app/home | 期刊投稿入口 |
 
-## Research Exchange 官方帮助
+## Wiley Research Exchange 官方帮助
+
+以下文档直接证明 Wiley 租户行为，不自动适用于 IEEE Atypon 租户。
 
 | 主题 | URL | 用途 |
 | --- | --- | --- |
@@ -39,5 +57,5 @@
 ## 使用要求
 
 - 费用、限页、文件格式和字段是否出现属于易变事实，每次重查。
-- Research Exchange 帮助是平台通用说明；期刊可能关闭、增加或重命名字段。
+- Wiley Research Exchange 帮助只证明 Wiley 租户；IEEE Atypon 租户以当前页面和 IEEE/目标期刊官方资料为准，不跨租户推断字段。
 - 目标期刊 `Information for Authors` 不在本索引时，先定位官方页面再操作。

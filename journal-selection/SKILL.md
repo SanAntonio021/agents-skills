@@ -1,6 +1,6 @@
 ---
 name: journal-selection
-description: 为论文稿或摘要选投稿期刊，输出 reach/match/safe 三档投稿清单和被拒后的降级改投阶梯。Use when 用户问"这篇投哪""投什么期刊合适""TTST 还是 TMTT""值不值得冲 NC"，或论文被拒要选下一个目标刊，或审稿人/编辑说 not a fit 需要重新定位；也要处理学校指定的中科院分区版本、JCR 分区与 SCIE/ESCI 的区别。收到 scope desk rejection 时先判断是范围问题还是内容问题，不要自动推断稿件质量不足。Prefer this over `research-lookup` when 目标是给自己的稿件选投稿去向，而不是检索文献。选定期刊后的 LaTeX 格式与投稿工程找 `latex-paper`，内容精修找 `ieee-manuscript-edit`，投稿前把关和模拟审稿找 `paper-review`；选定 IEEE 期刊后的网页投稿和后续生命周期事务找 `ieee-journal-submission`。
+description: 为论文稿或摘要选投稿期刊，输出 reach/match/safe 三档投稿清单和被拒后的降级改投阶梯。Use when 用户问"这篇投哪""投什么期刊合适""TTST 还是 TMTT""值不值得冲 NC"，或论文被拒要选下一个目标刊，或审稿人/编辑说 not a fit 需要重新定位；也要处理学校指定的中科院分区版本、JCR 分区与 SCIE/ESCI 的区别。收到 scope desk rejection 时先判断是范围问题还是内容问题，不要自动推断稿件质量不足。Prefer this over `research-lookup` when 目标是给自己的稿件选投稿去向，而不是检索文献。选定期刊后的 LaTeX 格式与投稿工程找 `latex-paper`，内容精修找 `ieee-manuscript-edit`，投稿前审查门找 `paper-review`；期刊确定后，未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 投稿事务找 `ieee-journal-submission`。
 ---
 
 # 选刊定位
@@ -52,14 +52,15 @@ description: 为论文稿或摘要选投稿期刊，输出 reach/match/safe 三�
 - 不改内容不润色（`ieee-manuscript-edit`）。
 - 不做停稿判断、投稿预检、模拟审稿（`paper-review`）。
 - 不做文献检索（`research-lookup`）。
-- 不操作 IEEE 投稿系统，不处理作者、声明、返修提交、版权费用和校样（`ieee-journal-submission`）。
+- 不操作投稿系统，不处理作者、声明、返修提交、版权费用和校样。未指定或非 IEEE 转 `journal-submission`，明确 IEEE 转 `ieee-journal-submission`。
 
 ## 相关技能
 
 - 学术写作总路由：[../writing-router/SKILL.md](../writing-router/SKILL.md)
-- 投稿前把关与模拟审稿：[../paper-review/SKILL.md](../paper-review/SKILL.md)
+- 投稿前审查门与模拟审稿：[../paper-review/SKILL.md](../paper-review/SKILL.md)
 - SCI/IEEE 论文精修：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - LaTeX 投稿工程：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)
+- 通用期刊投稿全生命周期：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 - IEEE 期刊投稿全生命周期：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
 
 ## 相关文件

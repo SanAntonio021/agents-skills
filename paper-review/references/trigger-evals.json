@@ -64,6 +64,22 @@
     "reason": "投稿前把关请求：先跑 9 维预检再跑多视角模拟审稿，属于 submission-gauntlet 模式而非日常停稿审查。"
   },
   {
+    "id": "should-trigger-pre-submission-review-gate",
+    "query": "投稿页面普通字段已经填完。请在最终 Submit 前执行 paper-review，并给 submission-state.json 生成 pre_submission_review 审查门结果。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "write-not_run-blocked-or-evidenced-pass",
+    "reason": "最终提交前的实质审查门由 paper-review 负责；pass 必须有时间和可定位证据。"
+  },
+  {
+    "id": "should-not-trigger-portal-form-preparation",
+    "query": "先别审论文，帮我在非 IEEE 投稿系统里核对作者机构和普通字段，暂时不点 Submit。",
+    "should_trigger": false,
+    "expected_primary_skill": "journal-submission",
+    "expected_not_primary_skill": "paper-review",
+    "reason": "普通页面准备属于投稿技能，尚未请求实质审查门。"
+  },
+  {
     "id": "should-trigger-anticipate-referee-attacks",
     "query": "你帮我预判一下，审稿人拿到这篇最先会攻击哪两三个点，每个点我该准备什么回应。",
     "should_trigger": true,

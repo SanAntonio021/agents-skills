@@ -8,7 +8,7 @@
 
 ## 第一层：投稿预检（机械/结构性）
 
-逐维打分 `PASS / FLAG / FAIL / UNKNOWN`，每个 FLAG/FAIL 必须引用稿件的具体章节/图表/页码，不许凭印象打分；无法核验的维度标 `UNKNOWN`，不许假绿。
+逐维打分 `PASS / FLAG / FAIL / UNKNOWN`，每个 FLAG/FAIL 必须引用稿件的具体章节/图表/页码，不许凭印象打分；无法核验的维度标 `UNKNOWN`，不许假绿。用于最终 Submit 审查门时，关键维度的 `UNKNOWN` 与 `FAIL` 同样阻断提交。
 
 | # | 维度 | PASS 标准 |
 |---|---|---|
@@ -22,9 +22,9 @@
 | 8 | 数据与代码可复现 | 该刊政策可满足：脚本、环境、README、受限数据的披露方案 |
 | 9 | 预判审稿质疑 | 审稿人最先攻击的 2-3 个点，每个都备好一段话+一个图表的回应 |
 
-**Go/No-go**：维度 1、3、7 任一 FAIL 即 no-go（范围、证据、硬机制是经典桌面拒稿源）；其他维度 FAIL 属投前必修。
+**Go/No-go**：维度 1、3、7 任一 `FAIL` 或 `UNKNOWN` 即 no-go（范围、证据、硬机制是经典桌面拒稿源）；其他维度 `FAIL` 属投前必修。存在未关闭的投前必修项时，审查门仍为 `blocked`。
 
-输出：逐维状态（带定位引用）→ go/no-go → 按危害排序的阻塞项（各配修复去向：内容改 `ieee-manuscript-edit`，图件改 `paper-figure-review`，格式改 `latex-paper`）→ 桌面拒稿风险（低/中/高+原因）。
+输出：逐维状态（带定位引用）→ go/no-go → 按危害排序的阻塞项（各配修复去向：内容改 `ieee-manuscript-edit`，图件改 `paper-figure-review`，格式改 `latex-paper`）→ 桌面拒稿风险（低/中/高+原因）→ `pre_submission_review` 状态。状态为 `pass` 时必须写 `checked_at` 和非空 `evidence`；否则写 `blocked` 及阻断项。
 
 ## 第二层：模拟审稿（实质性）
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "通用期刊投稿助手"
+  short_description: "协助未指定或非 IEEE 期刊的完整投稿生命周期；明确 IEEE 优先用 IEEE 专用入口。"
+  default_prompt: "Use $journal-submission to identify the current journal submission stage, verify the current journal guidance and portal page, maintain schema 1.1 submission state, require an evidenced pre_submission_review pass before final submission, and leave final Submit, declarations, author order, fees, and copyright to the user."

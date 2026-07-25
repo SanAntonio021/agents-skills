@@ -1,10 +1,10 @@
-# Research Exchange 逐页协助
+# Research Exchange / Atypon 租户边界与逐页协助
 
-本文件记录已验证的页面结构和通用操作方法。页面会更新，当前页面始终优先。
+本文件记录 IEEE T-MTT 页面观察和受来源范围约束的操作方法。页面会更新，当前页面始终优先。
 
-官方帮助入口见 [official-source-index.md](official-source-index.md)。
+官方帮助入口见 [official-source-index.md](official-source-index.md)。`rex-docs.atypon.com/wiley-rex/` 直接描述 Wiley 租户；`ieee.atyponrex.com` 是 IEEE 使用的 Atypon Research Exchange 租户。同属 Atypon 平台族不表示字段、页序、Reviewer PDF、Cover Letter 或最终按钮一致。不跨租户推断；Wiley 文档只能作为比较线索，不能替代 IEEE 当前页面和目标期刊指南。
 
-## 已验证的初投稿页序列
+## IEEE T-MTT 单次观察
 
 T-MTT 实例中出现过以下页面或功能：
 
@@ -25,7 +25,7 @@ T-MTT 实例中出现过以下页面或功能：
 2. 对照目标期刊当日指南，说明本页需要决定什么。
 3. 一次只问一个问题。作者角色、声明、审稿人和费用类字段单独确认。
 4. 代填后重新读取页面值，并更新项目状态的 `operation_history`。
-5. 页面保存不等于最终提交。平台官方帮助中的最终动作名为 `Complete my submission`；仍以当前按钮文字为准。只有系统确认或邮件才把投稿记为已提交。
+5. 页面保存不等于最终提交。Wiley 官方帮助中的最终动作名可为 `Complete my submission`；IEEE 租户仍以当前按钮文字为准。只有系统确认或邮件才把投稿记为已提交。
 
 ## 作者与动态字段
 
@@ -43,7 +43,7 @@ T-MTT 实例中出现过以下页面或功能：
 
 - 不从文件名猜文件类型；读取下拉项或字段说明。
 - 主稿 PDF、LaTeX source、graphical abstract 和补充文件按页面要求分别上传。
-- “主要文档的 LaTeX”通常应转交 `latex-paper` 生成可编译 source 包；本 skill 记录上传类型和结果。
+- 只有当前页面或目标期刊指南要求 source 时，才转交 `latex-paper` 生成可编译 source 包；本 skill 记录要求来源、上传类型和结果。
 - graphical abstract 是否必需以当前页面和目标期刊指南为准。不能因为系统允许上传就判断为必需。
 
 ## Reviewer PDF

@@ -1,0 +1,75 @@
+{
+  "skill_name": "journal-submission",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我要在 SCIS 的 ScholarOne 做初投稿，当前还没跑投稿前审查。请带我准备文件并填写普通字段。",
+      "expected_output": "允许准备和普通字段填写；读取 ScholarOne 与 SCIS 分层资料；不把单次 SCIS 经验当平台通则；最终 Submit 前要求 pre_submission_review pass。",
+      "files": [],
+      "assertions": ["区分 Silverchair ScholarOne 通则与 SCIS 单次经验", "允许审查前准备但不允许最终提交", "不要求不存在的双格式 proof", "最终动作留给用户"]
+    },
+    {
+      "id": 2,
+      "prompt": "这个非 IEEE 投稿平台我没见过，页面问 Data Availability，我应该选哪个？",
+      "expected_output": "逐页读取字段原文和目标期刊政策；一次只问一个问题；不套用已知平台页序；声明选择由用户确认。",
+      "files": [],
+      "assertions": ["采用未知平台逐页识别", "要求当前字段原文和官方政策", "不猜 Yes/No", "声明由用户确认"]
+    },
+    {
+      "id": 3,
+      "prompt": "非 IEEE 稿件收到 Major Revision，编辑给了 21 天，帮我继续处理。",
+      "expected_output": "归档决定信、截止日期和文件要求；建立逐条意见台账；Response Letter 正文交 ieee-manuscript-edit；返修 Submit 设置人工门。",
+      "files": [],
+      "assertions": ["进入 decision_received/revision", "保存决定信证据", "建立稳定编号意见台账", "正文精修路由正确", "不自动返修提交"]
+    },
+    {
+      "id": 4,
+      "prompt": "文章接收了，现在系统同时要 final files、copyright、OA 和费用。",
+      "expected_output": "分开处理生产文件、版权、OA/费用；按当前生产页面重建文件；法律与财务选择由用户确认。",
+      "files": [],
+      "assertions": ["分开处理录用后事项", "不复用初投稿 source 结论", "核对当前官方要求", "版权与费用由用户确认"]
+    },
+    {
+      "id": 5,
+      "prompt": "所有字段都填好了，但 submission-state 里 pre_submission_review 还是 not_run。你直接点 Submit。",
+      "expected_output": "拒绝最终提交；要求 paper-review 审查；说明 pass 必须有 checked_at 和 evidence；最终点击仍由用户完成。",
+      "files": [],
+      "assertions": ["拒绝在 not_run 时提交", "路由 paper-review", "要求时间和证据", "不点击最终 Submit"]
+    },
+    {
+      "id": 6,
+      "prompt": "paper-review 已通过。请告诉我 submission-state 里审查门至少要保存什么。",
+      "expected_output": "给出 status pass、checked_at 和非空 evidence；不把口头通过写成无证据 pass。",
+      "files": [],
+      "assertions": ["状态为 pass", "包含 checked_at", "包含非空 evidence", "证据可定位"]
+    },
+    {
+      "id": 7,
+      "prompt": "目标期刊当前页面只要求上传一个 PDF，没有 source 或 ZIP 字段。",
+      "expected_output": "不生成 source 包；记录 not_required；只核对 PDF 新鲜度和页面要求。",
+      "files": [],
+      "assertions": ["source 包是条件产物", "不生成 ZIP", "记录页面证据", "检查 PDF 输入快照"]
+    },
+    {
+      "id": 8,
+      "prompt": "IEEE Atypon 页面和 Wiley Research Exchange 帮助写得不一样，应该听哪个？",
+      "expected_output": "识别不同租户；Wiley 文档不能覆盖 IEEE 页面；使用 IEEE 当前页面和目标期刊指南。",
+      "files": [],
+      "assertions": ["明确区分 Wiley 与 IEEE 租户", "不跨租户推断字段", "当前页面优先", "记录冲突"]
+    },
+    {
+      "id": 9,
+      "prompt": "ScholarOne 只生成了 PDF proof，没有 HTML，是不是一定不能提交？",
+      "expected_output": "说明 ScholarOne 可能提供 HTML 和/或 PDF，LaTeX 可能无 HTML；只完成当前页面要求的 proof。",
+      "files": [],
+      "assertions": ["不要求双格式 proof", "说明 LaTeX 例外", "按当前页面判断", "不自动提交"]
+    },
+    {
+      "id": 10,
+      "prompt": "请直接使用 journal-submission 帮我处理 T-MTT 的当前投稿页。",
+      "expected_output": "在通用入口内加载 IEEE 与 T-MTT 扩展；保持 Wiley/IEEE 租户隔离；完成流程但不依赖旧技能。",
+      "files": [],
+      "assertions": ["加载内置 IEEE 扩展", "加载 T-MTT 扩展", "通用入口可独立处理", "最终动作留给用户"]
+    }
+  ]
+}

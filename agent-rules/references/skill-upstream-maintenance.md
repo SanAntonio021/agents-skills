@@ -38,6 +38,10 @@ python <script> validate `
   --skills-root <agents-root>/skills --require-rendered --json
 ```
 
+全局来源登记存在覆盖缺口，但只需处理一个已登记技能时，给 `render` 和 `validate` 增加
+`--skill <skill-name>`。定向模式仍严格检查目标技能、来源、镜像、许可证和生成页；其他本地技能
+尚未登记不会阻断该目标的批准后闭环。
+
 每周用一个命令刷新镜像并生成报告：
 
 ```powershell
@@ -50,6 +54,11 @@ python <script> weekly-run `
 ```
 
 `<script>` 是 `<agents-root>/skills/agent-rules/scripts/skill_upstream_maintenance.py`。
+
+`weekly-run` 每次先写 `preflight-validation.json`。登记表或镜像表存在结构性错误时，保存预检错误并阻止镜像刷新；
+只有“本地技能尚未登记”这类覆盖缺口时，继续刷新镜像和检查全部既有 confirmed 来源，完整写出
+`mirror-results.json`、`summary.json` 和 `summary.md`，但命令返回非零。摘要必须列出未覆盖技能、影响、
+隔离动作和补登记步骤，不能把已登记来源的结果冒充为全部本地技能均已检查。
 
 镜像单仓库总预算 20 秒，最多 4 路并行。Windows 上超时会终止本次命令创建的完整 Git 子进程树，避免 `git-remote-https` 继续占用网络或让超时失效。现有镜像只执行一次远端 `fetch`，随后在本地检查并执行 `merge --ff-only`，避免 `pull` 再次联网；非快进更新仍直接阻止。现有镜像遇到明确的 Windows Schannel 兼容错误时在同一预算内切换 OpenSSL；遇到 TLS 提前关闭或连接重置时，在剩余预算内自动重试一次。新镜像的 `git clone` 不在同一路径盲目重试，避免第一次失败留下部分目录后覆盖原始错误。跟踪路径的 `git diff` 超时或失败时返回 `tracked_diff_failed`，保留前后提交和原始错误，不得静默记为“无变化”。一个镜像失败不能阻塞其他镜像；批次仍写完整 JSON，但进程返回非零，确保自动化发出异常提醒。异常按 `source` 隔离：某个来源受阻时，只阻塞该来源；同一本地技能关联的其他健康来源仍继续检查和收益评估。
 
@@ -134,9 +143,30 @@ python <script> apply-review `
 ```
 
 3. 应用后状态是 `applied_pending_retest`；重新运行完整测试。测试失败时不更新接受基线，不提交。
-4. 测试通过后才更新集中登记表的 `accepted_commit` 和 `last_review_date`，重新生成并校验单技能来源说明。
-5. 只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
-6. 推送成功后提醒用户通过 CC Switch 点击“检查更新”；不自动操作 CC Switch。
+4. 测试通过后运行 `complete-review`，一次推进该技能候选涉及的全部来源：
+
+```powershell
+python <script> complete-review `
+  --registry <agents-root>/upstream/skill-sources.toml `
+  --mirrors-registry <agents-root>/upstream/repo-mirrors.toml `
+  --skills-root <agents-root>/skills `
+  --workspace <review-workspace> --skill <skill-name> --source <source-id> `
+  --date <YYYY-MM-DD> --confirm-retest-passed `
+  --accepted-version <source-id> <version> --json
+```
+
+`--accepted-version` 可按来源重复，也可省略并保留已有版本。命令只接受
+`applied_pending_retest` 状态；先确认正式技能仍与已应用候选一致、候选证据未变、全部来源 HEAD 与接受基线仍有效，
+再通过恢复日志保护的可恢复事务更新集中登记、定向生成来源页并把上下文标为 `completed`。路径迁移已经随新基线完成时，删除冗余的
+`accepted_upstream_path`、`path_migration_commit` 和 `path_migration_evidence`；加载时仍由当前 `upstream_path`
+推导接受路径。每次写入前保存三个文件的旧快照；普通写入失败会立即恢复，进程中断则在下次重跑时先恢复。
+恢复失败时保留 `complete-review-transaction.json` 和原始错误，禁止继续推进。对同一完成状态重复运行会复核完整来源身份与生成页，只做一致性检查并返回
+`already_completed`，不重复写入。
+
+5. `complete-review` 不提交、不推送，也不修改无关脏文件。测试失败、目标技能偏离候选、来源过期或登记源范围不完整时，
+保持 `applied_pending_retest` 和旧接受基线，先修复或重新审核。
+6. 只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
+7. 推送成功后提醒用户通过 CC Switch 点击“检查更新”；不自动操作 CC Switch。
 
 ## 记录已审核提交
 

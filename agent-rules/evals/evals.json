@@ -62,6 +62,43 @@
         "同提交定稿候选显示 awaiting_approval 和审核目录，且不推进审核基线",
         "缺少逐技能批准时不应用、不提交、不推送"
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "weekly-run 预检发现新加的 pdf skill 还没写进 skill-sources.toml，但现有 rigor-check 和 chat-notes 来源都已正式确认。不要临时改脚本或补登记，继续完成本周检查。",
+      "expected_output": "把来源登记覆盖缺口与结构性错误分开；保存 preflight-validation.json，继续刷新镜像并检查全部既有 confirmed 来源，完整生成 mirror-results.json、summary.json 和 summary.md，返回非零并准确说明未覆盖范围，不把结果表述为全部技能已检查。",
+      "files": [],
+      "expectations": [
+        "未自动发现或登记 pdf 的新来源",
+        "覆盖缺口不阻断既有 confirmed 来源",
+        "完整保存预检、镜像结果和周检摘要",
+        "命令返回非零且摘要说明影响与修复步骤"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "rigor-check 候选已按我的逐技能批准应用，完整复测也通过了。请完成接受基线；当前仓库里另一个 skill 有我自己的未提交改动，不要碰。",
+      "expected_output": "只验证 rigor-check 与已应用候选一致、审核证据和全部来源仍有效；用 complete-review 通过恢复日志保护的可恢复事务更新候选涉及的所有 accepted_commit、可选版本和 last_review_date，清理已完成路径迁移的冗余元数据，定向生成 rigor-check 来源页并标记 completed；不修改无关脏文件，不自动提交或推送。",
+      "files": [],
+      "expectations": [
+        "显式要求复测通过确认并只接受 applied_pending_retest",
+        "同一技能全部来源一次完成，失败时不部分推进基线",
+        "目标技能偏离候选或来源 HEAD 变化时拒绝完成",
+        "定向 render/validate 不受无关技能覆盖缺口或脏文件阻断",
+        "不自动提交、推送或操作 CC Switch"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "全局 validate 因几个新技能尚未登记而非零，但我只需要重新生成并校验 chat-notes 的 upstream-sources.md。其他技能先保持原样。",
+      "expected_output": "使用 render 和 validate 的 --skill chat-notes 定向模式；严格验证 chat-notes 的本地目录、来源、镜像、许可证与生成页，同时忽略其他技能的登记覆盖缺口，不修改其他技能来源页。",
+      "files": [],
+      "expectations": [
+        "只渲染 chat-notes 来源页",
+        "只忽略与目标无关的覆盖缺口，不放宽目标结构校验",
+        "目标技能未登记、缺失或来源异常时仍返回非零",
+        "不借定向模式修改其他技能或正式来源身份"
+      ]
     }
   ]
 }

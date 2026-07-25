@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "skill_upstream_maintenance.py"
@@ -197,12 +200,270 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         return combined_skills, combined_mirrors, second_mirror, secondary
 
+    def run_cli(self, *args: str) -> tuple[int, dict]:
+        output = io.StringIO()
+        with patch.object(sys, "argv", [str(SCRIPT), *args]), contextlib.redirect_stdout(output):
+            exit_code = MODULE.main()
+        return exit_code, json.loads(output.getvalue())
+
+    def finalize_and_apply_candidate(
+        self,
+        skills,
+        mirrors,
+        primary_head: str,
+        additional_sources: list[tuple[str, str]] | None = None,
+    ) -> Path:
+        prepared = MODULE.prepare_review(
+            skills,
+            mirrors,
+            self.skills,
+            self.root / "reports",
+            "2026-07-25",
+            "alpha",
+            "example-source",
+            primary_head,
+            additional_sources=additional_sources,
+        )
+        self.assertEqual(prepared["status"], "prepared")
+        workspace = Path(prepared["workspace"])
+        (workspace / "candidate_skill" / "SKILL.md").write_text(
+            "---\nname: alpha\ndescription: completed candidate\n---\n\n# alpha completed\n",
+            encoding="utf-8",
+        )
+        (workspace / "benefit-assessment.md").write_text(
+            "# 收益评估\n\n状态：有可证明收益\n",
+            encoding="utf-8",
+        )
+        (workspace / "test-report.md").write_text(
+            "# 测试报告\n\n状态：通过\n",
+            encoding="utf-8",
+        )
+        finalized = MODULE.finalize_review(
+            skills,
+            mirrors,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            {
+                "benefit_confirmed": True,
+                "tests_passed": True,
+                "license_ok": True,
+                "risk_reviewed": True,
+            },
+        )
+        self.assertEqual(finalized["status"], "awaiting_approval")
+        applied = MODULE.apply_review(
+            skills,
+            mirrors,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            True,
+            "User explicitly approved alpha in this task.",
+        )
+        self.assertEqual(applied["status"], "applied_pending_retest")
+        return workspace
+
+    def add_second_source_to_registry(self, source) -> None:
+        source_block = "\n".join(
+            [
+                "[[skill.source]]",
+                f'id = "{source.id}"',
+                f'mirror_id = "{source.mirror_id}"',
+                f'repo_url = "{source.repo_url}"',
+                f'upstream_path = "{source.upstream_path}"',
+                f'accepted_commit = "{source.accepted_commit}"',
+                f'accepted_version = "{source.accepted_version}"',
+                f'license = "{source.license}"',
+                f'baseline_kind = "{source.baseline_kind}"',
+                'tracked_paths = ["SKILL.md", "scripts", "references"]',
+                'license_paths = ["LICENSE"]',
+                'evidence = ["fixture"]',
+                'evidence_files = ["alpha/SKILL.md"]',
+                'adopted = ["workflow"]',
+                'excluded = ["telemetry"]',
+                "",
+            ]
+        )
+        text = self.registry.read_text(encoding="utf-8")
+        marker = '[[skill]]\nname = "beta"'
+        self.assertIn(marker, text)
+        self.registry.write_text(text.replace(marker, f"{source_block}\n{marker}"), encoding="utf-8")
+
     def test_validate_requires_complete_skill_coverage(self) -> None:
         write_registry(self.registry, self.baseline, include_beta=False)
         skills, mirrors = self.load()
         result = MODULE.validate_registry(skills, mirrors, self.skills)
-        self.assertEqual(result["status"], "invalid")
-        self.assertIn("Skills missing from registry: beta", result["errors"])
+        self.assertEqual(result["status"], "incomplete_coverage")
+        self.assertEqual(result["errors"], [])
+        self.assertEqual(result["missing_skills"], ["beta"])
+        self.assertIn("Skills missing from registry: beta", result["coverage_gaps"])
+
+    def test_targeted_validate_and_render_ignore_unrelated_coverage_gap(self) -> None:
+        write_registry(self.registry, self.baseline, include_beta=False)
+        skills, mirrors = self.load()
+
+        global_validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(global_validation["status"], "incomplete_coverage")
+        targeted = MODULE.validate_registry(
+            skills,
+            mirrors,
+            self.skills,
+            skill_name="alpha",
+        )
+        self.assertEqual(targeted["status"], "ok", targeted)
+        validate_exit, validate_payload = self.run_cli(
+            "validate",
+            "--registry",
+            str(self.registry),
+            "--mirrors-registry",
+            str(self.mirrors),
+            "--skills-root",
+            str(self.skills),
+            "--skill",
+            "alpha",
+            "--json",
+        )
+        self.assertEqual(validate_exit, 0)
+        self.assertEqual(validate_payload["status"], "ok")
+        rendered = MODULE.render_references(
+            skills,
+            self.skills,
+            check_only=False,
+            skill_name="alpha",
+        )
+        self.assertEqual(rendered["changed_skills"], ["alpha"])
+        self.assertTrue((self.skills / "alpha" / "references" / "upstream-sources.md").is_file())
+        self.assertFalse((self.skills / "beta" / "references" / "upstream-sources.md").exists())
+        render_exit, render_payload = self.run_cli(
+            "render",
+            "--registry",
+            str(self.registry),
+            "--mirrors-registry",
+            str(self.mirrors),
+            "--skills-root",
+            str(self.skills),
+            "--skill",
+            "alpha",
+            "--check",
+            "--json",
+        )
+        self.assertEqual(render_exit, 0)
+        self.assertEqual(render_payload["status"], "up_to_date")
+
+        (self.skills / "alpha" / "SKILL.md").write_text(
+            "---\nname: wrong-name\ndescription: test\n---\n",
+            encoding="utf-8",
+        )
+        invalid_target = MODULE.validate_registry(
+            skills,
+            mirrors,
+            self.skills,
+            skill_name="alpha",
+        )
+        self.assertEqual(invalid_target["status"], "invalid")
+        self.assertTrue(any("directory/frontmatter mismatch" in item for item in invalid_target["errors"]))
+
+    def test_weekly_run_keeps_full_outputs_when_registry_coverage_is_incomplete(self) -> None:
+        write_registry(self.registry, self.baseline, include_beta=False)
+        reports = self.root / "reports"
+        refresh_payload = {
+            "status": "ok",
+            "exit_code": 0,
+            "mirrors": [
+                {
+                    "id": "example",
+                    "status": "already_up_to_date",
+                    "local_head": self.baseline,
+                }
+            ],
+        }
+        with patch.object(MODULE, "refresh_mirrors", return_value=refresh_payload):
+            exit_code, payload = self.run_cli(
+                "weekly-run",
+                "--registry",
+                str(self.registry),
+                "--mirrors-registry",
+                str(self.mirrors),
+                "--skills-root",
+                str(self.skills),
+                "--reports-root",
+                str(reports),
+                "--date",
+                "2026-07-25",
+                "--json",
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(payload["registry_coverage_gap_count"], 1)
+        self.assertEqual(payload["sources"][0]["status"], "up_to_date")
+        run_root = reports / "2026-07-25"
+        preflight = json.loads((run_root / "preflight-validation.json").read_text(encoding="utf-8"))
+        self.assertEqual(preflight["status"], "incomplete_coverage")
+        self.assertTrue((run_root / "mirror-results.json").is_file())
+        self.assertTrue((run_root / "summary.json").is_file())
+        summary_markdown = (run_root / "summary.md").read_text(encoding="utf-8")
+        self.assertIn("技能来源登记覆盖缺口", summary_markdown)
+        self.assertIn("继续刷新镜像并生成完整", summary_markdown)
+
+    def test_weekly_run_structural_error_writes_preflight_and_blocks_refresh(self) -> None:
+        text = self.registry.read_text(encoding="utf-8").replace(
+            'name = "beta"\nstatus = "none"',
+            'name = "beta"\nstatus = "confirmed"',
+        )
+        self.registry.write_text(text, encoding="utf-8")
+        reports = self.root / "reports"
+        with patch.object(MODULE, "refresh_mirrors", side_effect=AssertionError("must not refresh")):
+            exit_code, payload = self.run_cli(
+                "weekly-run",
+                "--registry",
+                str(self.registry),
+                "--mirrors-registry",
+                str(self.mirrors),
+                "--skills-root",
+                str(self.skills),
+                "--reports-root",
+                str(reports),
+                "--date",
+                "2026-07-25",
+                "--json",
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(payload["status"], "invalid")
+        self.assertTrue(any("confirmed status requires" in item for item in payload["errors"]))
+        run_root = reports / "2026-07-25"
+        self.assertTrue((run_root / "preflight-validation.json").is_file())
+        self.assertFalse((run_root / "mirror-results.json").exists())
+        self.assertFalse((run_root / "summary.json").exists())
+
+    def test_weekly_run_malformed_registry_shape_still_writes_preflight(self) -> None:
+        self.registry.write_text('schema_version = 1\nskill = ["bad"]\n', encoding="utf-8")
+        reports = self.root / "reports"
+        with patch.object(MODULE, "refresh_mirrors", side_effect=AssertionError("must not refresh")):
+            exit_code, payload = self.run_cli(
+                "weekly-run",
+                "--registry",
+                str(self.registry),
+                "--mirrors-registry",
+                str(self.mirrors),
+                "--skills-root",
+                str(self.skills),
+                "--reports-root",
+                str(reports),
+                "--date",
+                "2026-07-25",
+                "--json",
+            )
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(payload["status"], "invalid")
+        self.assertIn("skill[0] must be a table", payload["errors"][0])
+        preflight = json.loads(
+            (reports / "2026-07-25" / "preflight-validation.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(preflight, payload)
 
     def test_load_mirrors_reuses_zero_exposure_path_validation(self) -> None:
         unsafe = self.root / "unsafe-git-dir.git"
@@ -900,6 +1161,27 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertNotIn("last_reviewed_commit", source_state)
         self.assertEqual(skills[0].sources[0].accepted_commit, self.baseline)
 
+        changed_source_identity = MODULE.SourceRecord(
+            **{
+                **skills[0].sources[0].__dict__,
+                "tracked_paths": (*skills[0].sources[0].tracked_paths, "sections"),
+            }
+        )
+        changed_skill_identity = MODULE.SkillRecord(
+            **{**skills[0].__dict__, "sources": (changed_source_identity,)}
+        )
+        with self.assertRaisesRegex(ValueError, "Source identity changed"):
+            MODULE.apply_review(
+                [changed_skill_identity, *skills[1:]],
+                mirrors,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                True,
+                "User approved this skill candidate in the active task.",
+            )
+
         test_report = workspace / "test-report.md"
         original_test_report = test_report.read_text(encoding="utf-8")
         test_report.write_text(original_test_report + "tampered\n", encoding="utf-8")
@@ -950,6 +1232,385 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertEqual(applied["status"], "applied_pending_retest")
         self.assertIn("alpha improved", (self.skills / "alpha" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertEqual((self.skills / "alpha" / "SKILL.md").read_bytes(), expected_candidate_bytes)
+
+    def test_complete_review_updates_single_source_and_is_idempotent(self) -> None:
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"\naccepted_commit =',
+            'upstream_path = "skills/source-skill"\n'
+            'accepted_upstream_path = "skills/source-skill"\naccepted_commit =',
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        head = commit_all(self.mirror, "functional update")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, head)
+
+        with self.assertRaisesRegex(ValueError, "confirm-retest-passed"):
+            MODULE.complete_review(
+                skills,
+                mirrors,
+                self.registry,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                "2026-07-25",
+                False,
+            )
+
+        unrelated_content = "user-owned unrelated change\n"
+        (self.skills / "beta" / "SKILL.md").write_text(unrelated_content, encoding="utf-8")
+        completed = MODULE.complete_review(
+            skills,
+            mirrors,
+            self.registry,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            "2026-07-25",
+            True,
+            {"example-source": "2.0"},
+        )
+        self.assertEqual(completed["status"], "completed")
+        reloaded = MODULE.load_sources(self.registry)
+        alpha = next(record for record in reloaded if record.name == "alpha")
+        source = alpha.sources[0]
+        self.assertEqual(alpha.last_review_date, "2026-07-25")
+        self.assertEqual(source.accepted_commit, head)
+        self.assertEqual(source.accepted_version, "2.0")
+        self.assertEqual(source.accepted_upstream_path, source.upstream_path)
+        self.assertEqual(source.path_migration_commit, "")
+        self.assertNotIn("accepted_upstream_path =", self.registry.read_text(encoding="utf-8"))
+        rendered = (self.skills / "alpha" / "references" / "upstream-sources.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(head, rendered)
+        self.assertIn("`2.0`", rendered)
+        self.assertEqual((self.skills / "beta" / "SKILL.md").read_text(encoding="utf-8"), unrelated_content)
+        context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
+        self.assertEqual(context["candidate_status"], "completed")
+
+        repeated = MODULE.complete_review(
+            reloaded,
+            mirrors,
+            self.registry,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            "2026-07-25",
+            True,
+            {"example-source": "2.0"},
+        )
+        self.assertEqual(repeated["status"], "already_completed")
+
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'tracked_paths = ["SKILL.md", "scripts", "references"]',
+            'tracked_paths = ["SKILL.md", "scripts", "references", "new-behavior"]',
+            1,
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        drifted = MODULE.load_sources(self.registry)
+        with self.assertRaisesRegex(ValueError, "Completed source identity drifted"):
+            MODULE.complete_review(
+                drifted,
+                mirrors,
+                self.registry,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                "2026-07-25",
+                True,
+                {"example-source": "2.0"},
+            )
+
+    def test_complete_review_removes_multiline_path_migration_evidence(self) -> None:
+        run_git(self.mirror, "mv", "skills/source-skill", "skills/source-skill-renamed")
+        migration_commit = commit_all(self.mirror, "move source skill")
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            "\n".join(
+                [
+                    'upstream_path = "skills/source-skill-renamed"',
+                    'accepted_upstream_path = "skills/source-skill"',
+                    f'path_migration_commit = "{migration_commit}"',
+                    "path_migration_evidence = [",
+                    '  "Git R100 rename.",',
+                    '  "Pre- and post-migration trees are identical.",',
+                    "]",
+                ]
+            ),
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, migration_commit)
+
+        completed = MODULE.complete_review(
+            skills,
+            mirrors,
+            self.registry,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            "2026-07-25",
+            True,
+        )
+
+        self.assertEqual(completed["status"], "completed")
+        updated_text = self.registry.read_text(encoding="utf-8")
+        self.assertNotIn("accepted_upstream_path =", updated_text)
+        self.assertNotIn("path_migration_commit =", updated_text)
+        self.assertNotIn("path_migration_evidence =", updated_text)
+        source = MODULE.load_sources(self.registry)[0].sources[0]
+        self.assertEqual(source.accepted_commit, migration_commit)
+        self.assertEqual(source.accepted_upstream_path, "skills/source-skill-renamed")
+
+    def test_complete_review_rolls_back_on_write_failure(self) -> None:
+        skills, mirrors = self.load()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        head = commit_all(self.mirror, "functional update")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, head)
+        context_path = workspace / "review-context.json"
+        reference_path = self.skills / "alpha" / "references" / "upstream-sources.md"
+        originals = {
+            self.registry: self.registry.read_bytes(),
+            context_path: context_path.read_bytes(),
+            reference_path: None,
+        }
+        original_atomic_write = MODULE.atomic_write_bytes
+        failed_once = False
+
+        def fail_reference_once(path: Path, payload: bytes) -> None:
+            nonlocal failed_once
+            if path == reference_path and not failed_once:
+                failed_once = True
+                raise OSError("injected reference write failure")
+            original_atomic_write(path, payload)
+
+        with patch.object(MODULE, "atomic_write_bytes", side_effect=fail_reference_once):
+            with self.assertRaisesRegex(OSError, "injected reference write failure"):
+                MODULE.complete_review(
+                    skills,
+                    mirrors,
+                    self.registry,
+                    self.skills,
+                    workspace,
+                    "alpha",
+                    "example-source",
+                    "2026-07-25",
+                    True,
+                )
+
+        self.assertEqual(self.registry.read_bytes(), originals[self.registry])
+        self.assertEqual(context_path.read_bytes(), originals[context_path])
+        self.assertFalse(reference_path.exists())
+        self.assertFalse(MODULE.completion_transaction_path(workspace).exists())
+
+    def test_complete_review_recovers_interrupted_transaction_on_rerun(self) -> None:
+        skills, mirrors = self.load()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        head = commit_all(self.mirror, "functional update")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, head)
+        reference_path = self.skills / "alpha" / "references" / "upstream-sources.md"
+        original_registry = self.registry.read_bytes()
+        original_atomic_write = MODULE.atomic_write_bytes
+        interrupted = False
+
+        def interrupt_reference_once(path: Path, payload: bytes) -> None:
+            nonlocal interrupted
+            if path == reference_path and not interrupted:
+                interrupted = True
+                raise KeyboardInterrupt("injected process interruption")
+            original_atomic_write(path, payload)
+
+        with patch.object(MODULE, "atomic_write_bytes", side_effect=interrupt_reference_once):
+            with self.assertRaisesRegex(KeyboardInterrupt, "injected process interruption"):
+                MODULE.complete_review(
+                    skills,
+                    mirrors,
+                    self.registry,
+                    self.skills,
+                    workspace,
+                    "alpha",
+                    "example-source",
+                    "2026-07-25",
+                    True,
+                )
+
+        transaction_path = MODULE.completion_transaction_path(workspace)
+        self.assertTrue(transaction_path.is_file())
+        self.assertNotEqual(self.registry.read_bytes(), original_registry)
+        completed = MODULE.complete_review(
+            skills,
+            mirrors,
+            self.registry,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            "2026-07-25",
+            True,
+        )
+        self.assertEqual(completed["status"], "completed")
+        self.assertFalse(transaction_path.exists())
+        self.assertEqual(MODULE.load_sources(self.registry)[0].sources[0].accepted_commit, head)
+
+    def test_complete_review_retains_journal_when_rollback_fails(self) -> None:
+        skills, mirrors = self.load()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        head = commit_all(self.mirror, "functional update")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, head)
+        reference_path = self.skills / "alpha" / "references" / "upstream-sources.md"
+        original_atomic_write = MODULE.atomic_write_bytes
+        original_restore = MODULE.restore_file
+        failed_once = False
+
+        def fail_reference_once(path: Path, payload: bytes) -> None:
+            nonlocal failed_once
+            if path == reference_path and not failed_once:
+                failed_once = True
+                raise OSError("injected reference write failure")
+            original_atomic_write(path, payload)
+
+        def fail_registry_restore(path: Path, original: bytes | None) -> None:
+            if path == self.registry:
+                raise OSError("injected registry restore failure")
+            original_restore(path, original)
+
+        with (
+            patch.object(MODULE, "atomic_write_bytes", side_effect=fail_reference_once),
+            patch.object(MODULE, "restore_file", side_effect=fail_registry_restore),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "recovery failed"):
+                MODULE.complete_review(
+                    skills,
+                    mirrors,
+                    self.registry,
+                    self.skills,
+                    workspace,
+                    "alpha",
+                    "example-source",
+                    "2026-07-25",
+                    True,
+                )
+
+        transaction_path = MODULE.completion_transaction_path(workspace)
+        journal = json.loads(transaction_path.read_text(encoding="utf-8"))
+        self.assertEqual(journal["status"], "recovery_failed")
+        self.assertEqual(journal["trigger_error"]["type"], "OSError")
+        self.assertEqual(journal["trigger_error"]["message"], "injected reference write failure")
+        self.assertTrue(any(str(self.registry) in error for error in journal["recovery_errors"]))
+
+    def test_complete_review_rejects_target_drift_and_stale_upstream(self) -> None:
+        skills, mirrors = self.load()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        head = commit_all(self.mirror, "functional update")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, head)
+        target = self.skills / "alpha" / "SKILL.md"
+        applied_content = target.read_text(encoding="utf-8")
+        target.write_text(applied_content + "unexpected\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "no longer matches"):
+            MODULE.complete_review(
+                skills,
+                mirrors,
+                self.registry,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                "2026-07-25",
+                True,
+            )
+        target.write_text(applied_content, encoding="utf-8")
+
+        upstream.write_text("# source v3\n", encoding="utf-8")
+        commit_all(self.mirror, "newer upstream update")
+        with self.assertRaisesRegex(ValueError, "Upstream HEAD changed"):
+            MODULE.complete_review(
+                skills,
+                mirrors,
+                self.registry,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                "2026-07-25",
+                True,
+            )
+        self.assertEqual(MODULE.load_sources(self.registry)[0].sources[0].accepted_commit, self.baseline)
+        context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
+        self.assertEqual(context["candidate_status"], "applied_pending_retest")
+
+    def test_complete_review_updates_multi_source_scope_as_one_transaction(self) -> None:
+        skills, mirrors = self.load()
+        skills, mirrors, second_mirror, secondary = self.add_second_source(skills, mirrors)
+        registry_without_secondary = self.registry.read_text(encoding="utf-8")
+        self.add_second_source_to_registry(secondary)
+        complete_registry = self.registry.read_text(encoding="utf-8")
+
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text("# source v2\n", encoding="utf-8")
+        primary_head = commit_all(self.mirror, "functional update")
+        second_upstream = second_mirror / "skills" / "source-skill" / "SKILL.md"
+        second_upstream.write_text("# second source v2\n", encoding="utf-8")
+        second_head = commit_all(second_mirror, "second functional update")
+        workspace = self.finalize_and_apply_candidate(
+            skills,
+            mirrors,
+            primary_head,
+            additional_sources=[("second-source", second_head)],
+        )
+
+        self.registry.write_text(registry_without_secondary, encoding="utf-8")
+        before_failed_completion = self.registry.read_bytes()
+        with self.assertRaisesRegex(ValueError, "missing from registry"):
+            MODULE.complete_review(
+                skills,
+                mirrors,
+                self.registry,
+                self.skills,
+                workspace,
+                "alpha",
+                "example-source",
+                "2026-07-25",
+                True,
+            )
+        self.assertEqual(self.registry.read_bytes(), before_failed_completion)
+        self.assertEqual(MODULE.load_sources(self.registry)[0].sources[0].accepted_commit, self.baseline)
+
+        self.registry.write_text(complete_registry, encoding="utf-8")
+        completed = MODULE.complete_review(
+            skills,
+            mirrors,
+            self.registry,
+            self.skills,
+            workspace,
+            "alpha",
+            "example-source",
+            "2026-07-25",
+            True,
+            {"example-source": "2.0", "second-source": "3.0"},
+        )
+        self.assertEqual(completed["status"], "completed")
+        alpha = MODULE.load_sources(self.registry)[0]
+        accepted = {source.id: source for source in alpha.sources}
+        self.assertEqual(accepted["example-source"].accepted_commit, primary_head)
+        self.assertEqual(accepted["second-source"].accepted_commit, second_head)
+        self.assertEqual(accepted["example-source"].accepted_version, "2.0")
+        self.assertEqual(accepted["second-source"].accepted_version, "3.0")
+        context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            {item["source"] for item in context["accepted_sources"]},
+            {"example-source", "second-source"},
+        )
 
     def test_multi_source_candidate_is_grouped_and_checks_every_baseline(self) -> None:
         skills, mirrors = self.load()

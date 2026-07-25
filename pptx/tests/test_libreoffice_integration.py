@@ -1,85 +1,101 @@
-"""Integration tests for pptx skill (2 items) — require LibreOffice.
+"""Real PPTX adapter integration tests guarded by RUN_LIBREOFFICE_INTEGRATION."""
 
-Run only when RUN_LIBREOFFICE_INTEGRATION=1 is set.
-Tests stop immediately if any LibreOffice process is already running.
-"""
-import concurrent.futures
-import importlib.util
+import hashlib
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
 
+
 _SKILLS_ROOT = Path(__file__).resolve().parents[2]
 _PPTX_SCRIPTS = _SKILLS_ROOT / "pptx" / "scripts"
-_RUNNER_SCRIPTS = _SKILLS_ROOT / "libreoffice-runner" / "scripts"
-
-for _p in [str(_PPTX_SCRIPTS), str(_RUNNER_SCRIPTS)]:
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
-# Load pptx soffice module explicitly to avoid collision with docx version
-_spec = importlib.util.spec_from_file_location(
-    "pptx_soffice_integ",
-    str(_PPTX_SCRIPTS / "office" / "soffice.py"),
-)
-_pptx_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_pptx_mod)
-run_soffice = _pptx_mod.run_soffice
+_ADAPTER = _PPTX_SCRIPTS / "office" / "soffice.py"
+_THUMBNAIL = _PPTX_SCRIPTS / "thumbnail.py"
+_BOOTSTRAP = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "LibreOffice" / "program" / "bootstrap.ini"
+_DEFAULT_PROFILE = Path(os.environ["APPDATA"]) / "LibreOffice" / "4" / "user" / "registrymodifications.xcu"
 
 
-def _check_integration_deps():
+def _check_integration_deps() -> list[str]:
     missing = []
-    for pkg_name, import_name in [
-        ("psutil", "psutil"), ("python-pptx", "pptx"),
-        ("Pillow", "PIL"), ("PyPDF2", "PyPDF2"),
-    ]:
+    for package, import_name in (
+        ("psutil", "psutil"),
+        ("python-pptx", "pptx"),
+        ("Pillow", "PIL"),
+        ("PyPDF2", "PyPDF2"),
+    ):
         try:
             __import__(import_name)
         except ImportError:
-            missing.append(pkg_name)
+            missing.append(package)
+    if shutil.which("pdftoppm") is None:
+        missing.append("pdftoppm")
     return missing
 
 
-def _lo_procs():
-    """All soffice-related processes (for pre/post-test boundary checks)."""
+def _lo_snapshots() -> list[dict]:
     import psutil
-    return [p for p in psutil.process_iter(["name"])
-            if "soffice" in (p.info["name"] or "").lower()]
+
+    snapshots = []
+    for process in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            name = (process.info["name"] or "").lower()
+            if "soffice" in name:
+                snapshots.append(
+                    {
+                        "pid": process.info["pid"],
+                        "name": name,
+                        "cmdline": process.info["cmdline"] or [],
+                    }
+                )
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            continue
+    return snapshots
 
 
-def _soffice_bin_procs():
-    """Only soffice.bin processes (for peak capacity counting per plan spec)."""
-    import psutil
-    return [p for p in psutil.process_iter(["name"])
-            if (p.info["name"] or "").lower() == "soffice.bin"]
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _file_state(path: Path) -> tuple[bool, str | None]:
+    return (path.is_file(), _sha256_file(path) if path.is_file() else None)
+
+
+def _task_roots() -> set[str]:
+    return {
+        str(path.resolve())
+        for path in Path(tempfile.gettempdir()).glob("sanan-lo-*")
+        if path.is_dir()
+    }
 
 
 def _make_pptx_two_slides(path: Path) -> None:
-    """Create a 2-slide PPTX using python-pptx."""
     from pptx import Presentation
-    from pptx.util import Inches, Pt
-    prs = Presentation()
-    blank_layout = prs.slide_layouts[6]
-    for i in range(2):
-        slide = prs.slides.add_slide(blank_layout)
-        txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
-        tf = txBox.text_frame
-        tf.text = f"Slide {i + 1}"
-    prs.save(str(path))
+    from pptx.util import Inches
+
+    presentation = Presentation()
+    blank_layout = presentation.slide_layouts[6]
+    for index in range(2):
+        slide = presentation.slides.add_slide(blank_layout)
+        text_box = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+        text_box.text_frame.text = f"Slide {index + 1}"
+    presentation.save(str(path))
 
 
-def _run_one_conversion(src: Path, outdir: Path, timeout: float = 120.0):
-    """Helper to run a single PPTX->PDF conversion and return (result, elapsed)."""
-    t0 = time.monotonic()
-    result = run_soffice(
-        ["--headless", "--convert-to", "pdf:impress_pdf_Export",
-         "--outdir", str(outdir), str(src)],
-        capture_output=True, text=True, timeout=timeout,
-    )
-    return result, time.monotonic() - t0
+def _profile_args(snapshots: list[dict]) -> set[str]:
+    profiles = set()
+    for snapshot in snapshots:
+        for argument in snapshot["cmdline"]:
+            if argument.lower().startswith("-env:userinstallation="):
+                profiles.add(argument.split("=", 1)[1])
+    return profiles
 
 
 @unittest.skipUnless(
@@ -87,123 +103,173 @@ def _run_one_conversion(src: Path, outdir: Path, timeout: float = 120.0):
     "Set RUN_LIBREOFFICE_INTEGRATION=1 to run",
 )
 class TestPptxIntegration(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         missing = _check_integration_deps()
         if missing:
-            raise unittest.SkipTest(f"Missing dependencies: {missing}")
-        running = _lo_procs()
+            raise RuntimeError(f"Missing integration dependencies: {missing}")
+        running = _lo_snapshots()
         if running:
-            raise unittest.SkipTest(
-                f"LibreOffice already running ({len(running)} process(es))"
+            raise RuntimeError(
+                "LibreOffice already running before PPTX integration tests: "
+                + ", ".join(str(process["pid"]) for process in running)
             )
+        cls.bootstrap_before = _file_state(_BOOTSTRAP)
+        cls.default_profile_before = _file_state(_DEFAULT_PROFILE)
+        cls.task_roots_before = _task_roots()
 
-    def test_thumbnail_jpeg_decodable(self):
-        """2a. PPTX -> thumbnail JPEG via thumbnail.py is Pillow-decodable."""
+    @classmethod
+    def tearDownClass(cls):
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            if not _lo_snapshots() and not (_task_roots() - cls.task_roots_before):
+                break
+            time.sleep(0.1)
+
+        failures = []
+        remaining = _lo_snapshots()
+        if remaining:
+            failures.append(
+                "LibreOffice processes remain: "
+                + ", ".join(str(process["pid"]) for process in remaining)
+            )
+        new_roots = _task_roots() - cls.task_roots_before
+        if new_roots:
+            failures.append(f"New sanan-lo task roots remain: {sorted(new_roots)}")
+        if _file_state(_BOOTSTRAP) != cls.bootstrap_before:
+            failures.append("bootstrap.ini changed during integration tests")
+        if _file_state(_DEFAULT_PROFILE) != cls.default_profile_before:
+            failures.append("Default LibreOffice profile changed during integration tests")
+        if failures:
+            raise AssertionError("; ".join(failures))
+
+    def test_thumbnail_cli_creates_decodable_jpeg(self):
         from PIL import Image
-        import io
 
-        # Load pptx thumbnail script
-        thumb_path = _PPTX_SCRIPTS.parent / "scripts" / "thumbnail.py"
-        if not thumb_path.exists():
-            thumb_path = _SKILLS_ROOT / "pptx" / "scripts" / "thumbnail.py"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "deck.pptx"
+            output_prefix = Path(temp_dir) / "deck-thumbnails"
+            _make_pptx_two_slides(source)
 
-        with tempfile.TemporaryDirectory() as td:
-            src = Path(td) / "deck.pptx"
-            _make_pptx_two_slides(src)
-
-            # First convert to PDF via adapter
-            out_pdf = Path(td) / "deck.pdf"
-            result = run_soffice(
-                ["--headless", "--convert-to", "pdf:impress_pdf_Export",
-                 "--outdir", td, str(src)],
-                capture_output=True, text=True,
+            completed = subprocess.run(
+                [sys.executable, str(_THUMBNAIL), str(source), str(output_prefix)],
+                cwd=str(_SKILLS_ROOT),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=180,
+                check=False,
             )
-            self.assertEqual(result.returncode, 0,
-                             f"PDF conversion failed: {result.stderr}")
-            self.assertTrue(out_pdf.exists())
 
-            # Now use thumbnail.py to produce a JPEG
-            # thumbnail.py expects the PDF; import and call it
-            spec = importlib.util.spec_from_file_location(
-                "pptx_thumbnail", str(thumb_path)
+            self.assertEqual(
+                completed.returncode,
+                0,
+                f"thumbnail.py failed\nstdout={completed.stdout}\nstderr={completed.stderr}",
             )
-            thumb_mod = importlib.util.module_from_spec(spec)
+            grids = sorted(Path(temp_dir).glob("deck-thumbnails*.jpg"))
+            self.assertTrue(grids, "thumbnail.py created no JPEG grids")
+            for grid in grids:
+                with Image.open(grid) as image:
+                    image.verify()
+                with Image.open(grid) as image:
+                    self.assertGreater(image.width, 0)
+                    self.assertGreater(image.height, 0)
+
+    def test_three_independent_adapter_processes_use_isolated_profiles(self):
+        from PyPDF2 import PdfReader
+
+        processes = []
+        captures = []
+        profiles = set()
+        peak_soffice_bin = 0
+        timed_out = False
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            jobs = []
+            for index in range(3):
+                source = temp_path / f"deck_{index}.pptx"
+                output_dir = temp_path / f"out_{index}"
+                output_dir.mkdir()
+                _make_pptx_two_slides(source)
+                jobs.append((source, output_dir))
+
+            environment = os.environ.copy()
+            environment["PYTHONUTF8"] = "1"
+            environment["PYTHONIOENCODING"] = "utf-8"
             try:
-                spec.loader.exec_module(thumb_mod)
-                if hasattr(thumb_mod, "create_thumbnail"):
-                    thumb_bytes = thumb_mod.create_thumbnail(str(out_pdf))
-                else:
-                    # Fall back: just verify the PDF is Pillow-openable as an image indicator
-                    thumb_bytes = out_pdf.read_bytes()
-            except Exception:
-                # thumbnail.py may need pdftoppm; fall back to PDF content check
-                thumb_bytes = out_pdf.read_bytes()
+                for source, output_dir in jobs:
+                    processes.append(
+                        subprocess.Popen(
+                            [
+                                sys.executable,
+                                str(_ADAPTER),
+                                "--headless",
+                                "--convert-to",
+                                "pdf:impress_pdf_Export",
+                                "--outdir",
+                                str(output_dir),
+                                str(source),
+                            ],
+                            cwd=str(_SKILLS_ROOT),
+                            env=environment,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            encoding="utf-8",
+                        )
+                    )
 
-            # Validate: if it's a JPEG, Pillow should decode it
-            if thumb_bytes[:2] == b"\xff\xd8":
-                img = Image.open(io.BytesIO(thumb_bytes))
-                w, h = img.size
-                self.assertGreater(w, 0)
-                self.assertGreater(h, 0)
-            else:
-                # PDF bytes returned as fallback; just verify non-empty
-                self.assertGreater(len(thumb_bytes), 0)
-
-    def test_three_parallel_conversions_peak_capacity(self):
-        """2b. Three concurrent PPTX->PDF conversions all succeed; peak soffice.bin <= 2."""
-        import psutil
-
-        peak_soffice_bin = [0]
-        stop_poll = [False]
-
-        def _poll_soffice():
-            while not stop_poll[0]:
-                count = len(_soffice_bin_procs())
-                if count > peak_soffice_bin[0]:
-                    peak_soffice_bin[0] = count
-                time.sleep(0.05)
-
-        with tempfile.TemporaryDirectory() as td:
-            sources = []
-            for i in range(3):
-                src = Path(td) / f"deck_{i}.pptx"
-                _make_pptx_two_slides(src)
-                out_dir = Path(td) / f"out_{i}"
-                out_dir.mkdir()
-                sources.append((src, out_dir))
-
-            import threading
-            poll_thread = threading.Thread(target=_poll_soffice, daemon=True)
-            poll_thread.start()
-
-            try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
-                    futures = [
-                        ex.submit(_run_one_conversion, src, outd)
-                        for src, outd in sources
-                    ]
-                    results = [f.result() for f in futures]
+                self.assertEqual(len({process.pid for process in processes}), 3)
+                deadline = time.monotonic() + 300.0
+                while any(process.poll() is None for process in processes):
+                    snapshots = _lo_snapshots()
+                    peak_soffice_bin = max(
+                        peak_soffice_bin,
+                        sum(item["name"] == "soffice.bin" for item in snapshots),
+                    )
+                    profiles.update(_profile_args(snapshots))
+                    if time.monotonic() >= deadline:
+                        timed_out = True
+                        break
+                    time.sleep(0.01)
             finally:
-                stop_poll[0] = True
-                poll_thread.join(timeout=2.0)
+                for process in processes:
+                    if process.poll() is None:
+                        try:
+                            process.kill()
+                        except ProcessLookupError:
+                            pass
+                for process in processes:
+                    stdout, stderr = process.communicate(timeout=30)
+                    captures.append((process.returncode, stdout, stderr))
 
-        for res, elapsed in results:
-            self.assertEqual(res.returncode, 0,
-                             f"Parallel conversion failed: {res.stderr}")
+            self.assertFalse(timed_out, "Parallel adapter processes exceeded 300 seconds")
+            for returncode, stdout, stderr in captures:
+                self.assertEqual(
+                    returncode,
+                    0,
+                    f"Adapter process failed\nstdout={stdout}\nstderr={stderr}",
+                )
 
-        # libreoffice-runner capacity is 2; peak soffice.bin must respect it
-        self.assertLessEqual(
-            peak_soffice_bin[0], 2,
-            f"Peak soffice.bin was {peak_soffice_bin[0]}, expected <= 2",
-        )
+            self.assertGreater(peak_soffice_bin, 0, "Process monitor saw no soffice.bin")
+            self.assertLessEqual(peak_soffice_bin, 2)
+            isolated_profiles = {
+                profile
+                for profile in profiles
+                if "sanan-lo-" in profile.lower()
+                and profile.replace("\\", "/").lower().endswith("/profile")
+            }
+            self.assertEqual(
+                len(isolated_profiles),
+                3,
+                f"Expected 3 isolated UserInstallation profiles, got {sorted(profiles)}",
+            )
 
-        # All LibreOffice processes should have exited
-        time.sleep(1.0)
-        remaining = _lo_procs()
-        self.assertEqual(len(remaining), 0,
-                         f"LibreOffice still running after tests: {remaining}")
+            for source, output_dir in jobs:
+                output = output_dir / f"{source.stem}.pdf"
+                self.assertTrue(output.is_file(), f"Missing output: {output}")
+                self.assertEqual(len(PdfReader(str(output)).pages), 2)
 
 
 if __name__ == "__main__":

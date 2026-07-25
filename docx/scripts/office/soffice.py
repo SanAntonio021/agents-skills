@@ -9,6 +9,7 @@ This is a limited-compatibility adapter, NOT a full drop-in for subprocess.run()
 
 import codecs
 import json
+import math
 import os
 import subprocess
 import sys
@@ -33,6 +34,15 @@ _SUPPORTED_KWARGS = frozenset({
     "capture_output", "text", "universal_newlines",
     "encoding", "errors", "check", "timeout",
 })
+
+
+def _text_mode_requested(kwargs: dict) -> bool:
+    return (
+        bool(kwargs.get("text", False))
+        or bool(kwargs.get("universal_newlines", False))
+        or kwargs.get("encoding") is not None
+        or kwargs.get("errors") is not None
+    )
 
 
 def get_soffice_env() -> dict:
@@ -65,18 +75,18 @@ def run_soffice(args, **kwargs) -> subprocess.CompletedProcess:
                 args, "invalid_text_flags",
                 "'text' and 'universal_newlines' conflict", kwargs,
             )
-    text_mode = bool(text_flag) or bool(uni_flag)
+    text_mode = _text_mode_requested(kwargs)
 
     # Validate codec / error handler before touching runner
     if kwargs.get("encoding") is not None:
         try:
             codecs.lookup(kwargs["encoding"])
-        except LookupError as exc:
+        except (LookupError, TypeError) as exc:
             return _adapter_failure(args, "invalid_encoding", str(exc), kwargs)
     if kwargs.get("errors") is not None:
         try:
             codecs.lookup_error(kwargs["errors"])
-        except LookupError as exc:
+        except (LookupError, TypeError) as exc:
             return _adapter_failure(args, "invalid_errors_handler", str(exc), kwargs)
 
     encoding = kwargs.get("encoding") or "utf-8"
@@ -93,10 +103,10 @@ def run_soffice(args, **kwargs) -> subprocess.CompletedProcess:
                 args, "invalid_timeout",
                 f"timeout must be a positive number, got {timeout_raw!r}", kwargs,
             )
-        if run_timeout <= 0:
+        if not math.isfinite(run_timeout) or run_timeout <= 0:
             return _adapter_failure(
                 args, "invalid_timeout",
-                f"timeout must be positive, got {run_timeout}", kwargs,
+                f"timeout must be a finite positive number, got {run_timeout}", kwargs,
             )
 
     capture_output = kwargs.get("capture_output", False)
@@ -187,12 +197,16 @@ def _parse_argv(args: list) -> "tuple | str":
     convert_to = None
     seen_outdir = False
     outdir = None
+    seen_headless = False
     sources = []
 
     i = 0
     while i < len(args):
         tok = str(args[i])
         if tok == "--headless":
+            if seen_headless:
+                return "--headless appears more than once"
+            seen_headless = True
             i += 1
             continue
         if tok == "--convert-to":
@@ -203,6 +217,10 @@ def _parse_argv(args: list) -> "tuple | str":
             val = str(args[i + 1])
             if not val:
                 return "--convert-to value must not be empty"
+            if val.startswith("-"):
+                return "--convert-to requires a value, not another option"
+            if not val.split(":", 1)[0].lstrip("."):
+                return "--convert-to output extension must not be empty"
             convert_to = val
             seen_convert_to = True
             i += 2
@@ -212,7 +230,12 @@ def _parse_argv(args: list) -> "tuple | str":
                 return "--outdir appears more than once"
             if i + 1 >= len(args):
                 return "--outdir requires a value"
-            outdir = str(args[i + 1])
+            val = str(args[i + 1])
+            if not val:
+                return "--outdir value must not be empty"
+            if val.startswith("-"):
+                return "--outdir requires a value, not another option"
+            outdir = val
             seen_outdir = True
             i += 2
             continue
@@ -235,6 +258,8 @@ def _parse_argv(args: list) -> "tuple | str":
         return "source file argument is required"
     if len(sources) > 1:
         return f"only one source file is allowed, got {len(sources)}"
+    if not sources[0]:
+        return "source file argument must not be empty"
 
     return (sources[0], convert_to, outdir)
 
@@ -247,9 +272,17 @@ def _adapter_failure(
     check = kwargs.get("check", False) if kwargs else False
 
     if capture_output:
-        text_mode = bool(kwargs.get("text", False)) or bool(kwargs.get("universal_newlines", False))
+        text_mode = _text_mode_requested(kwargs)
         enc = kwargs.get("encoding") or "utf-8"
         err_h = kwargs.get("errors") or "strict"
+        try:
+            codecs.lookup(enc)
+        except (LookupError, TypeError):
+            enc = "utf-8"
+        try:
+            codecs.lookup_error(err_h)
+        except (LookupError, TypeError):
+            err_h = "strict"
         raw = json.dumps({
             "ok": False,
             "error": error,

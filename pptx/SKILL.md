@@ -1,7 +1,8 @@
 ---
 name: pptx
 description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. If a .pptx or .potx file needs to be opened, created, or touched, use this skill."
-license: Proprietary. LICENSE.txt has complete terms
+license: Local fork for personal use. Original Anthropic terms in LICENSE.txt.
+maintenance: Local Windows fork maintained at D:\BaiduSyncdisk\.agents\skills. LibreOffice calls route through libreoffice-runner. Do not replace with upstream Anthropic version.
 ---
 
 # PPTX creation, editing, and analysis

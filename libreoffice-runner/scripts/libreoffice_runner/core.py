@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import shutil
+import sys
 import tempfile
 import time
 import uuid
@@ -881,4 +882,11 @@ def _emit_json(payload: dict[str, object], json_out: Path | None) -> None:
     if json_out is not None:
         json_out.parent.mkdir(parents=True, exist_ok=True)
         json_out.write_text(serialized + "\n", encoding="utf-8", newline="\n")
-    print(serialized)
+    line = serialized + "\n"
+    stdout_buffer = getattr(sys.stdout, "buffer", None)
+    if stdout_buffer is not None:
+        stdout_buffer.write(line.encode("utf-8"))
+        stdout_buffer.flush()
+        return
+    sys.stdout.write(line)
+    sys.stdout.flush()

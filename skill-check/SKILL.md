@@ -59,7 +59,8 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
    - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
    - 如果技能条目显示“已安装”但启动/同步时报 `Skill 不存在于 SSOT`，还要核对 SSOT 下 `<directory>\SKILL.md` 是否真实存在；这通常是数据库残留记录，不要直接改 Codex 运行时目录。
-   - 查“源码已经改了 / Claude 改完了 / 为什么 Codex 还是旧行为”时，同时比较源码、cc-switch 目录和 Codex 运行时目录的 `SKILL.md` hash 或关键行。
+   - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、cc-switch 分发目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
+   - 查“CC Switch 同步后现在是否完整生效”时，按 [references/skill-hygiene.md](references/skill-hygiene.md) 的“源码到双端运行时验收”逐层检查；不能只看面板、软链接或单个 `SKILL.md`。
    - 查“以后该改哪一份”时，最后再回到源文件目录。
 2. 扫描目标根目录：
 
@@ -93,11 +94,28 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 - `职责相近但不该直接合并`
   指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `源码和运行时目录没有同步`
-  指 `D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md` 已经更新，但 `C:\Users\SanAn\.cc-switch\skills\<skill-name>\SKILL.md` 或 `C:\Users\SanAn\.codex\skills\<skill-name>\SKILL.md` 仍是旧版本。遇到这种情况，结论写成“源码已修，当前 Codex 仍未加载新版本”，并提醒用户通过 cc-switch 检查更新，不要直接改 `.cc-switch` 或 `.codex`。
+  指已提交源码已经更新，但 cc-switch 分发目录、Claude 运行时或 Codex 运行时仍是旧版本。结论要写明哪一层落后，例如“源码已修，当前 Claude/Codex 仍未加载新版本”，并提醒用户通过 cc-switch 检查更新；不要直接改 `.cc-switch`、`.claude` 或 `.codex`。
 - `链接或路径失效`
   指绝对路径、相对链接、Related Skills 链接或工作流引用失效。
 - `空技能或坏技能`
   指缺 `SKILL.md`、文件开头配置为空、正文为空，或关键结构损坏。
+
+## 源码到双端运行时验收
+
+用户要确认“同步完成”或“现在应该生效”时，不能把目录存在当成验收完成。读取
+[references/skill-hygiene.md](references/skill-hygiene.md)，依次核对：
+
+1. 源码提交与远端目标分支一致；
+2. cc-switch 数据库完整，目标技能在 Claude 和 Codex 两侧均已启用；
+3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
+4. 结构校验和相关确定性测试通过；
+5. 用合成数据在 Codex、Claude 全新只读会话分别验证路由和关键安全边界。
+
+工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
+LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。
+
+认证、余额、中转或模型服务错误若发生在技能输出前，状态只能记为“运行时验收受环境阻断”。
+环境恢复后重跑同一用例；不得把这种错误记成技能失败，也不得在未重跑时记成通过。
 
 ## 触发分层判断
 

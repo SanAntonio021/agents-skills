@@ -84,6 +84,32 @@
         "输出会建议批量清理前先备份、确认范围并保留 `skill_repos`。",
         "输出会建议短事务和 `PRAGMA integrity_check`，并避免直接改 `.codex`。"
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "我刚通过 CC Switch 同步了 `journal-submission`。D 盘源码文件的 SHA-256 和 `.codex`、`.claude` 里的文件不同，但源码工作区是 CRLF，运行时文件是 LF。请判断是否真的没同步，并给出能覆盖全部技能文件的只读验收方法。",
+      "expected_output": "不把工作区 SHA-256 差异直接判为同步失败；先枚举目标提交中的全部技能文件，再逐个比较 Git 提交 blob 与 cc-switch、Claude、Codex 副本，并同时核对数据库完整性和双侧启用状态。",
+      "files": [],
+      "expectations": [
+        "输出会明确说明 CRLF/LF 可以造成工作区 SHA-256 不同。",
+        "输出会使用 `git ls-tree` 枚举目标提交中的全部技能文件，而不是只看 `SKILL.md`。",
+        "输出会比较 `git rev-parse HEAD:<path>` 与 `git hash-object --no-filters` 得到的 blob。",
+        "输出会覆盖 cc-switch 分发目录、Claude 运行时和 Codex 运行时。",
+        "输出会核对 `PRAGMA integrity_check`、`enabled_claude` 和 `enabled_codex`。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Claude 全新会话还没输出技能判断就返回 `403 预扣费额度失败`，Codex 的同一合成用例已通过。这个技能算失败还是验收完成？中转恢复后应该怎么收尾？不要操作 CC Switch 界面。",
+      "expected_output": "把该结果标为 Claude 运行时验收受环境阻断，既不算技能失败也不算完成；中转恢复后用相同合成用例和无持久会话参数重跑，只有正确输出后才宣布双端运行时验收完成。",
+      "files": [],
+      "expectations": [
+        "输出不会把技能输出前的认证、余额或中转错误判成技能规则失败。",
+        "输出不会在 Claude 用例未重跑时宣布双端运行时验收完成。",
+        "输出会要求中转恢复后重跑相同合成用例，避免改变断言。",
+        "输出会使用 Claude 无持久会话和只读权限，并继续禁止登录、上传、发送或点击最终动作。",
+        "输出不会自动操作 CC Switch GUI。"
+      ]
     }
   ]
 }

@@ -8,146 +8,132 @@ description: >
   space advice. Trigger even when the user only asks to review candidates before deleting anything.
 ---
 
-# Windows Storage Cleanup
+# Windows 存储空间清理
 
-Treat cleanup as an evidence and approval workflow. Free-space targets are soft goals; never delete valuable
-data merely to reach a number.
+将清理工作视为以证据和批准为基础的工作流。可用空间目标只是软目标；绝不能仅为达到某个数值而删除有价值的数据。
 
-## Operating Contract
+## 操作约定
 
-1. Inspect local rules, current disk state, active processes, and available audit artifacts before proposing actions.
-2. Ask one question at a time until the protection boundaries and desired outcome are clear. Skip further questions
-   only when the user explicitly says to proceed directly.
-3. Start read-only. Do not delete, move, uninstall, stop services, or change system settings during discovery.
-4. Protect active work, source code, user history, original experiment data, and unique project archives by default.
-5. Group confirmation items by the same source and purpose. State size, reason, risk, and recovery method.
-6. Execute only approved groups. Low-risk automatic handling is allowed only when the user explicitly delegates it.
-7. Prefer official cleanup or uninstall mechanisms for system and application data. Move approved personal files to
-   the Recycle Bin instead of permanently deleting them.
-8. Stop broad cleanup when the user says the result is sufficient. Do not continue with small files after that point.
+1. 提出操作前，先检查本地规则、当前磁盘状态、活动进程和可用审计材料。
+2. 在保护边界和预期结果明确前，每次只问一个问题。只有用户明确要求直接推进时，才跳过后续提问。
+3. 从只读检查开始。发现阶段不得删除、移动、卸载、停止服务或更改系统设置。
+4. 默认保护正在进行的工作、源代码、用户历史、原始实验数据和唯一的项目归档。
+5. 按相同来源和用途归组确认项，并说明大小、理由、风险和恢复方法。
+6. 只执行已批准的组。只有用户明确委托时，才允许自动处理低风险项。
+7. 对系统和应用数据，优先使用官方清理或卸载机制。将已批准的个人文件移入 Recycle Bin，不得永久删除。
+8. 用户表示结果已经足够时，停止大范围清理。此后不要继续处理小文件。
 
-## Workflow
+## 工作流程
 
-### 1. Establish Scope
+### 1. 确定范围
 
-Confirm the drives, urgency, protected roots, active applications, and whether the user wants review only or actual
-cleanup. Separate the immediate goal from an aspirational free-space target.
+确认目标驱动器、紧迫程度、受保护根目录、活动应用，以及用户只要审查还是要实际清理。将当前目标与期望达到的可用空间目标分开。
 
-Resolve the user's actual research roots from local rules and the current filesystem. Treat paths such as these as
-protected until explicitly reviewed:
+根据本地规则和当前文件系统确定用户真实的科研根目录。在明确审查前，将以下路径视为受保护路径：
 
 - `<research-root>\Paper`
-- experiment or raw-data paths under `<research-root>\Program` and `<research-root>\ProgramFile`
-- active VS Code, Claude, Office, Docker, browser, and research-tool data
+- `<research-root>\Program` 和 `<research-root>\ProgramFile` 下的实验路径或原始数据路径
+- 活动的 VS Code、Claude、Office、Docker、浏览器和科研工具数据
 
-### 2. Collect Evidence
+### 2. 收集证据
 
-Capture current capacity and free space first. Prefer WizTree when available for hotspot discovery, then use narrow
-native queries to investigate specific candidates.
+先记录当前容量和可用空间。有 WizTree 时，优先用它发现空间热点，再用范围受限的系统原生命令调查具体候选项。
 
-When exporting from WizTree:
+从 WizTree 导出时：
 
-- Record WizTree version, scan time, drive, and export path.
-- Treat process exit code as advisory. A successful-looking exit code is not proof, and WizTree 4.31 has returned
-  exit code `1` even when an export succeeded.
-- Verify that the CSV exists, is non-empty, has the expected header, and parses before using it.
-- Avoid unrestricted recursive searches that create huge output. Start from the largest folders and narrow down.
+- 记录 WizTree 版本、扫描时间、驱动器和导出路径。
+- 进程退出码只作参考。看似成功的退出码不能构成证明；WizTree 4.31 即使成功导出，也曾返回退出码 `1`。
+- 使用 CSV 前，确认文件存在、非空、包含预期表头并且可以解析。
+- 避免产生海量输出的无边界递归搜索。从最大文件夹开始，逐步缩小范围。
 
-Read [references/windows-and-wiztree.md](references/windows-and-wiztree.md) for scan, official cleanup, Recycle Bin,
-and pagefile rules.
+有关扫描、官方清理、Recycle Bin 和页面文件的规则，读取 [references/windows-and-wiztree.md](references/windows-and-wiztree.md)。
 
-### 3. Classify Candidates
+### 3. 对候选项分类
 
-Assign every candidate to one of four classes before acting:
+采取操作前，将每个候选项归入以下四类之一：
 
-- `official-cleanup-only`: Windows components, installers, drivers, package stores, pagefiles, and virtual disks.
-- `low-risk-after-preapproval`: reproducible caches, completed crash dumps, and small uninstall remnants.
-- `confirm-as-a-group`: installers, old application versions, media, downloads, chat attachments, and duplicates.
-- `protected`: original experiment data, source repositories, unique archives, active application data, and history.
+- `official-cleanup-only`：Windows 组件、安装程序、驱动程序、软件包存储、页面文件和虚拟磁盘。
+- `low-risk-after-preapproval`：可重建缓存、已完成的崩溃转储和少量卸载残留。
+- `confirm-as-a-group`：安装包、旧应用版本、媒体文件、下载内容、聊天附件和重复项。
+- `protected`：原始实验数据、源码仓库、唯一归档、活动应用数据和历史记录。
 
-Use [references/risk-classification.md](references/risk-classification.md) for boundaries and examples.
+分类边界和示例见 [references/risk-classification.md](references/risk-classification.md)。
 
-### 4. Verify Duplicates and Backups
+### 4. 核验重复项和备份
 
-Do not treat matching names or sizes as duplicate proof. For a deletion candidate:
+不得把同名或同大小视为重复项证据。对删除候选项：
 
-1. Inspect the file type or archive contents.
-2. Locate the intended retained copy or cloud record.
-3. Compare size and SHA-256; for archives or folder copies, verify every required member.
-4. Confirm the retained copy is readable and belongs to the expected project/version.
-5. Confirm cloud behavior: backup, synchronization, and local placeholder are different semantics.
-6. Preserve a local working copy when the cloud copy is the only other copy or restoration has not been tested.
+1. 检查文件类型或归档内容。
+2. 找到准备保留的副本或云端记录。
+3. 比较大小和 SHA-256；对归档或文件夹副本，核验每个必需成员。
+4. 确认保留副本可读，并且属于预期项目和版本。
+5. 确认云端行为：备份、同步和本地占位符的含义不同。
+6. 当云端副本是唯一的其他副本，或尚未测试恢复时，保留一份本地工作副本。
 
-Read [references/backup-verification.md](references/backup-verification.md) when personal or research files are involved.
+涉及个人或科研文件时，读取 [references/backup-verification.md](references/backup-verification.md)。
 
-### 5. Present the Review List
+### 5. 展示审查清单
 
-Use this compact table:
+使用以下紧凑表格：
 
-| Group | Path or source | Size | Evidence | Risk | Proposed action |
+| 组 | 路径或来源 | 大小 | 证据 | 风险 | 建议操作 |
 | --- | --- | ---: | --- | --- | --- |
 | `<purpose>` | `<path>` | `<size>` | `<why it is safe or uncertain>` | low/medium/high | keep/recycle/official cleanup |
 
-Ask for one decision at a time when risk is medium or high. After the user delegates low-risk actions, execute only
-items whose retained copy and recovery path are already verified.
+风险为 medium 或 high 时，每次只请求一个决定。用户委托低风险操作后，也只能执行已核验保留副本和恢复路径的项目。
 
-### 6. Execute Safely
+### 6. 安全执行
 
-Immediately before each action:
+每次操作前立即复核：
 
-- Recheck path, type, size, modification time, hash when relevant, and whether the item still exists.
-- Resolve the absolute path and verify it remains under the approved root.
-- Check whether a related application or service is active.
-- Refuse path traversal, reparse-point surprises, changed hashes, missing retained copies, or changed file counts.
+- 重新检查路径、类型、大小、修改时间、适用时的哈希，以及项目是否仍然存在。
+- 解析绝对路径，确认它仍位于已批准的根目录下。
+- 检查相关应用或服务是否处于活动状态。
+- 遇到路径穿越、重解析点异常、哈希变化、保留副本缺失或文件数量变化时，拒绝执行。
 
-For personal files, use Windows Recycle Bin APIs. Do not implement permanent deletion unless the user explicitly
-requests it and the governing rules allow it. Do not empty the entire Recycle Bin without separate approval.
+对个人文件使用 Windows Recycle Bin APIs。除非用户明确要求且现行规则允许，否则不得实施永久删除。未经单独批准，不得清空整个 Recycle Bin。
 
-For applications, run the registered uninstaller first, verify uninstall records, then recycle only residual files.
-For Windows components, use Settings Storage recommendations, Disk Cleanup, or documented DISM commands.
+对应用程序，先运行已注册的卸载程序并核验卸载记录，再把剩余文件移入 Recycle Bin。对 Windows 组件，使用 Settings Storage recommendations、Disk Cleanup 或已有文档说明的 DISM 命令。
 
-Write an action manifest containing original path, action, bytes, evidence, retained copy, hash when used, timestamp,
-result, and recovery method.
+写入操作清单，包含 original path、action、bytes、evidence、retained copy、hash when used、timestamp、result 和 recovery method。
 
-### 7. Verify Outcome
+### 7. 验证结果
 
-After each approved batch:
+每个已批准批次完成后：
 
-- Confirm moved items appear in the Recycle Bin or official cleanup completed successfully.
-- Recheck free space. Recycle Bin moves do not reclaim physical space until the bin is emptied.
-- Report expected versus realized space and any skipped items.
-- Keep failures isolated; do not broaden cleanup to compensate for a failed target.
+- 确认移动的项目已出现在 Recycle Bin 中，或官方清理已成功完成。
+- 重新检查可用空间。移入 Recycle Bin 不会释放物理空间，清空后才会释放。
+- 报告预期和实际释放的空间，以及所有跳过项。
+- 隔离各项失败；不得为补偿某个失败目标而扩大清理范围。
 
-## Pagefile Questions
+## 页面文件问题
 
-Treat pagefile sizing as system configuration, not file deletion.
+将页面文件大小调整视为系统配置问题，不得视为文件删除问题。
 
-1. Read live `Win32_PageFileSetting`, `Win32_PageFileUsage`, `AutomaticManagedPagefile`, RAM, commit behavior,
-   `CrashDumpEnabled`, and free space.
-2. Separate minimum crash-dump requirements from conservative operating headroom.
-3. Do not claim a C-drive pagefile improves startup performance. Relevant reasons are crash-dump support and commit
-   limit behavior.
-4. Give one internally consistent recommendation and label machine-specific numbers as such.
-5. Never delete `pagefile.sys` directly. Apply supported settings and say clearly when a full Windows reboot is needed.
+1. 读取实时 `Win32_PageFileSetting`、`Win32_PageFileUsage`、`AutomaticManagedPagefile`、RAM、commit behavior、`CrashDumpEnabled` 和可用空间。
+2. 将崩溃转储的最低要求与保守的运行余量分开。
+3. 不得声称 C 盘页面文件能够改善启动性能。相关理由是支持崩溃转储和 commit limit behavior。
+4. 给出一项内部一致的建议，并明确标记与当前机器相关的数值。
+5. 绝不能直接删除 `pagefile.sys`。使用受支持的设置，并明确说明何时需要完整重启 Windows。
 
-## Safety Stop Conditions
+## 安全停止条件
 
-Stop and ask the user when:
+遇到以下情况时停止并询问用户：
 
-- the candidate may be original data, source code, history, or the only local project copy;
-- backup evidence is only a matching filename or cloud listing;
-- an application is active or a file is locked;
-- a system path, pagefile, VHDX, package store, or driver directory is involved;
-- the candidate changed after review;
-- the action would become permanent rather than recoverable.
+- 候选项可能是原始数据、源代码、历史记录或项目唯一的本地副本；
+- 备份证据只有同名文件或云端列表；
+- 应用处于活动状态或文件已锁定；
+- 涉及系统路径、页面文件、VHDX、软件包存储或驱动程序目录；
+- 候选项在审查后发生变化；
+- 操作将变成永久操作，而非可恢复操作。
 
-## Expected Final Report
+## 预期最终报告
 
-Report:
+报告以下内容：
 
-- space before and after, with timestamp;
-- actions completed and bytes affected;
-- items skipped and the reason;
-- Recycle Bin state and whether space is already reclaimed;
-- backup/hash evidence for personal or project data;
-- any restart or user action still required.
+- 清理前后的空间及时间戳；
+- 已完成操作和涉及的字节数；
+- 跳过项及理由；
+- Recycle Bin 状态，以及空间是否已经释放；
+- 个人或项目数据的备份/哈希证据；
+- 仍需执行的重启或用户操作。

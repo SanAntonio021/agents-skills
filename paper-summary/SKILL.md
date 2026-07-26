@@ -9,7 +9,7 @@ description: 读取已有论文 PDF 或正文，生成面向科研复用的中�
 
 只做一件事：读论文，并生成中文总结。
 
-默认输入是本地 PDF、已下载论文、论文正文节选或已经确认可读的全文。缺少 PDF 或正式全文时，先调用 `paper-download`。
+默认输入是本地 PDF、已下载论文、论文正文节选、Paperzilla 导出的 paper markdown，或已经确认可读的全文。缺少 PDF 或正式全文时，先调用 `paper-download`。
 
 ## 什么时候用
 
@@ -17,6 +17,18 @@ description: 读取已有论文 PDF 或正文，生成面向科研复用的中�
 - 用户只给 DOI、题名或出版社页，并且本地没有 PDF 时，先转 `paper-download`。
 - 用户要求“下载并总结”时，先 `paper-download`，再本技能。
 - 用户还在问“某个领域有哪些论文”“近几年代表作是什么”“帮我筛方向”时，先走 `research-lookup`。
+
+## 按需读取 reference
+
+主流程在本文件。遇到下面情况时，先读取对应 reference，再继续写总结。
+
+| 情况 | 读取文件 |
+|---|---|
+| 需要判断快速摘要、完整解析、批判性分析或技术细节提取 | `references/reading-modes.md` |
+| 论文涉及通信系统、太赫兹、MIMO、器件、实验链路、调制、DSP 或信道建模 | `references/engineering-thz-profile.md` |
+| 用户要求图表公式不要漏，或论文包含关键 Figure / Table / Equation | `references/figure-table-equation-checklist.md` |
+| 总结交付前自检 | `references/quality-control.md` |
+| 需要核对本技能吸收过哪些外部 skill 来源 | `references/upstream-sources.md` |
 
 ## 输出
 
@@ -47,23 +59,25 @@ description: 读取已有论文 PDF 或正文，生成面向科研复用的中�
 
 1. 优先从用户给出或本地保存的论文正文、首页、摘要、作者信息和图表中提取事实。用户明确说明“本地文件是原文”时，本地 PDF 是第一证据源；联网版本只用于定位附件、补足缺失元信息或辅助核验，不能用网页数值覆盖本地原文。
 2. 读取 PDF 时先用内置 PDF 读取能力。失败后用 Python 库兜底，优先尝试 `pdfplumber`、`PyPDF2`、`fitz`。Windows 控制台如果出现 GBK 编码错误，改用 UTF-8 输出，例如设置 `PYTHONIOENCODING=utf-8`。
-3. 不要一开始把全文全部塞进上下文。先提取首页、摘要、作者单位、DOI/ISSN、图表标题、结论和局限附近内容；需要补证据时再扩大范围。
-4. 基础元信息优先从论文原文提取，顺序为：题目、作者、第一作者、通讯作者、单位、期刊名、卷期页码、发表/在线发表时间、DOI、ISSN。
-5. DOI 页面或 Crossref 只能辅助校验，不能覆盖论文正文中已经明确的信息。
-6. `中科院期刊分区`、`影响因子` 不要凭记忆填写，也不要只凭搜索引擎摘要填写。
-7. 正式期刊论文要检查是否有 `Supplementary Information`、`Extended Data`、`Source Data`、`Supplementary Video` 等附件。优先从论文官网、出版社页、PDF 首页、Data availability 和 Supporting information 链接确认。附件可访问时，按 `paper-download` 下载正式文件到 `refs/` 并同步 `paper_index.md`；无法下载时，在总结中写明原因。
-8. 用户要求完整总结、指标校准或补充材料时，补充材料要形成闭环：先列出全部补充说明、补充图和补充表，再把其中的实验条件、计算方法、关键数据和限制写入 `## 补充材料与扩展数据`。不能只写“论文有补充材料”。补充材料原文长段落留在 PDF，Markdown 只保留中文提要、可核验数据和图表本体。
-9. 如果用户需要图表信息，或论文总结要保留图表，优先调用 `scripts/extract_paper_images.py` 提取图片和表格。默认命令：
+3. 先判断阅读模式：快速摘要、完整解析、批判性分析或技术细节提取。默认“总结这篇”“整理文献笔记”走完整解析；审稿式判断转 `paper-review`。
+4. 不要一开始把全文全部塞进上下文。先提取首页、摘要、作者单位、DOI/ISSN、章节标题、图表标题、公式编号、结论和局限附近内容；需要补证据时再扩大范围。
+5. 基础元信息优先从论文原文提取，顺序为：题目、作者、第一作者、通讯作者、单位、期刊名、卷期页码、发表/在线发表时间、DOI、ISSN。
+6. DOI 页面或 Crossref 只能辅助校验，不能覆盖论文正文中已经明确的信息。
+7. `中科院期刊分区`、`影响因子` 不要凭记忆填写，也不要只凭搜索引擎摘要填写。
+8. 正式期刊论文要检查是否有 `Supplementary Information`、`Extended Data`、`Source Data`、`Supplementary Video` 等附件。优先从论文官网、出版社页、PDF 首页、Data availability 和 Supporting information 链接确认。附件可访问时，按 `paper-download` 下载正式文件到 `refs/` 并同步 `paper_index.md`；无法下载时，在总结中写明原因。
+9. 用户要求完整总结、指标校准或补充材料时，补充材料要形成闭环：先列出全部补充说明、补充图和补充表，再把其中的实验条件、计算方法、关键数据和限制写入 `## 补充材料与扩展数据`。不能只写“论文有补充材料”。补充材料原文长段落留在 PDF，Markdown 只保留中文提要、可核验数据和图表本体。
+10. 如果用户需要图表信息，或论文总结要保留图表，优先调用 `scripts/extract_paper_images.py` 提取图片和表格。默认命令：
    `python scripts/extract_paper_images.py --pdf <PDF_PATH> --out <OUTPUT_IMAGE_DIR> --mode auto`
-10. 如果已经知道论文官网或出版社 HTML 页，优先把它传给脚本：`--html-url <ARTICLE_URL>`；如果已经保存成本地 HTML，用 `--html-file <HTML_PATH> --html-base-url <ARTICLE_URL>`。脚本会先尝试官方 HTML 原图和 HTML 表格，再回退到 PDF caption/bbox 裁剪。官方来源目前重点支持通用 `<figure>` / `<table>`、Nature/Springer、MDPI 静态图链、Cambridge 静态图链；抓不到官方图表时才用 PDF 裁剪。
-11. 图片提取优先级是：论文官网/出版社页/会议页等官方 HTML 原图和 HTML 表格，其次是脚本从 PDF 中按 caption 和 bbox 自动裁出的 `figures/` 图片，最后才用 `debug_pages/` 整页渲染排查。`debug_pages/` 只用于人工复核，不能自动放进 Markdown 正文。
-12. `manifest.json`（`schema_version: 4`）中每张图或表会记录 `figure_id`、`caption`、`files`、`regions`、`source_type`、`source_url`、`confidence`（`high`/`medium`/`low`）、`confidence_score`、`warning`、`is_duplicate`、`duplicate_of` 等字段。PDF 裁剪项还会记录 `page`、`bbox`、`page_layout`；官方 HTML 表格会记录 `structured_table`，文件通常是 `figures/table_1.md`。写总结时优先使用 `source_type` 为 `official-figure` 或 `official-html-table` 的条目；同一编号已有官方版本时，不再把 PDF 重复裁剪放进正文。
-13. `figures/` 里的 PNG 只保留图或表本体。裁剪区不得包含正文段落、章节标题、页眉页脚或整页留白；原始图注以 `manifest.json` 保留，供回查和匹配使用。HTML 表格优先保留成 Markdown 表格文件，而不是截图。
-14. Markdown 正文不复制原文图注题名，也不写“原文图注题名/原文表题”。图片替代文本和中文导读写 `图 1`、`表 1`、`补充图 1` 等，数字与原文一致；官方英文编号以 `manifest.json` 回查。优先按 `files` 顺序引用图片。若同一图表有多个 `files`，连续展示这些图片；图片后只写一行中文导读。
-15. 图件抽取后必须快速目检所有准备进入正文的图表，确认左/右轴标题、刻度、图例、底部横轴标题和 `(a)/(b)` 子图编号没有被裁掉。裁不出纯净图表时，先换官方来源、修 bbox 或重新提取；正文改用中文数据说明，等待干净图件补齐。
-16. 图和表都按原论文编号做一次顺序检查。正文里出现图 1、图 2 后直接跳到图 7，必须说明图 3-6 的处理原因，避免读者误判为漏抽或漏写。
-17. 表格和图片同等重要。原则上按原文编号客观纳入可用图表；只有重复图表、抽取失败、低置信度、官方来源不可用、与当前正文明显无关的补充材料，才可以跳过，并在 `manifest.json` 或正文中写清原因。不要用“核心图表/关键图表”这类主观标签替代客观编号检查。
-18. 原文长图注和表题不要丢。正文只写中文编号和导读，完整原文 caption 保存在 `manifest.json`，以后需要核对时再回查。
+11. 如果已经知道论文官网或出版社 HTML 页，优先把它传给脚本：`--html-url <ARTICLE_URL>`；如果已经保存成本地 HTML，用 `--html-file <HTML_PATH> --html-base-url <ARTICLE_URL>`。脚本会先尝试官方 HTML 原图和 HTML 表格，再回退到 PDF caption/bbox 裁剪。官方来源目前重点支持通用 `<figure>` / `<table>`、Nature/Springer、MDPI 静态图链、Cambridge 静态图链；抓不到官方图表时才用 PDF 裁剪。
+12. 图片提取优先级是：论文官网/出版社页/会议页等官方 HTML 原图和 HTML 表格，其次是脚本从 PDF 中按 caption 和 bbox 自动裁出的 `figures/` 图片，最后才用 `debug_pages/` 整页渲染排查。`debug_pages/` 只用于人工复核，不能自动放进 Markdown 正文。
+13. `manifest.json`（`schema_version: 4`）中每张图或表会记录 `figure_id`、`caption`、`files`、`regions`、`source_type`、`source_url`、`confidence`（`high`/`medium`/`low`）、`confidence_score`、`warning`、`is_duplicate`、`duplicate_of` 等字段。PDF 裁剪项还会记录 `page`、`bbox`、`page_layout`；官方 HTML 表格会记录 `structured_table`，文件通常是 `figures/table_1.md`。写总结时优先使用 `source_type` 为 `official-figure` 或 `official-html-table` 的条目；同一编号已有官方版本时，不再把 PDF 重复裁剪放进正文。
+14. `figures/` 里的 PNG 只保留图或表本体。裁剪区不得包含正文段落、章节标题、页眉页脚或整页留白；原始图注以 `manifest.json` 保留，供回查和匹配使用。HTML 表格优先保留成 Markdown 表格文件，而不是截图。
+15. Markdown 正文不复制原文图注题名，也不写“原文图注题名/原文表题”。图片替代文本和中文导读写 `图 1`、`表 1`、`补充图 1` 等，数字与原文一致；官方英文编号以 `manifest.json` 回查。优先按 `files` 顺序引用图片。若同一图表有多个 `files`，连续展示这些图片；图片后只写一行中文导读。
+16. 图件抽取后必须快速目检所有准备进入正文的图表，确认左/右轴标题、刻度、图例、底部横轴标题和 `(a)/(b)` 子图编号没有被裁掉。裁不出纯净图表时，先换官方来源、修 bbox 或重新提取；正文改用中文数据说明，等待干净图件补齐。
+17. 图和表都按原论文编号做一次顺序检查。正文里出现图 1、图 2 后直接跳到图 7，必须说明图 3-6 的处理原因，避免读者误判为漏抽或漏写。
+18. 表格和图片同等重要。原则上按原文编号客观纳入可用图表；只有重复图表、抽取失败、低置信度、官方来源不可用、与当前正文明显无关的补充材料，才可以跳过，并在 `manifest.json` 或正文中写清原因。不要用“核心图表/关键图表”这类主观标签替代客观编号检查。
+19. 原文长图注和表题不要丢。正文只写中文编号和导读，完整原文 caption 保存在 `manifest.json`，以后需要核对时再回查。
+20. 关键公式按编号检查。总结中至少写清公式用途、主要变量含义、输入量、计算过程和输出量；原文没有给编号时，用章节位置或公式附近文字定位。
 
 ## 证据优先级与指标核验
 
@@ -127,6 +141,8 @@ LetPub 失败状态要写清楚原因，例如：
 - 各节按模板注释分工写作。研究问题、研究方法、实验结果、结论与局限之间不要互相复述。
 - 关键数据优先用表格呈现，尤其是频率、距离、线速率、可达信息速率、净信息速率、净速率-距离积、调制格式、EVM、BER、SNR、带宽、器件增益、功耗、噪声系数等指标。
 - 图表信息里的图片和表格必须能在 Markdown 预览中直接查看。图片写法用 `![图 1](相对路径)`；HTML 表格若已保存为 `figures/table_1.md`，优先把表格内容嵌入正文，或在正文中给出该相对路径并摘录主要行列；PDF 表格截图才用 `![表 1](相对路径)`。优先引用 `manifest.json` 中的 `files`，例如 `images/<paper-short-name>/figures/fig_1.png`、`images/<paper-short-name>/figures/table_1.md`、`images/<paper-short-name>/figures/table_1_part1.png`；不要引用 `debug_pages/`。
+- 如果论文涉及通信系统、太赫兹、MIMO、器件、实验链路、调制、DSP 或信道建模，增加 `## 通信与太赫兹专用信息`，字段按 `references/engineering-thz-profile.md`。
+- 公式、图表和关键结论尽量给出原文定位，例如章节、页码、图号、表号、公式号或补充说明编号。
 - 如果附件或 Extended Data 含有支撑主结论的图表，单独增加 `## 补充材料与扩展数据`；不全文翻译附件。优先放：Supplementary Note 结论、Extended Data 对比表、补充实验设置、功耗/复杂度/稳定性/距离扩展等限制信息。
 - 如果 `manifest.json` 只有 `debug_pages/` 或图片置信度低于阈值，正文不要硬塞整页截图；改写为“该图需人工复核或从官网原图补齐”。
 - 样本阶段或用户要求跳过 LetPub 时，`中科院期刊分区` 和 `影响因子` 统一写 `待查询（样本阶段跳过 LetPub）`，不要空着或猜测。
@@ -138,8 +154,11 @@ LetPub 失败状态要写清楚原因，例如：
 1. 回查所有核心指标的原文位置，确认线速率、可达信息速率、净信息速率和净速率-距离积的标签与数值对应。
 2. 确认补充材料的下载状态、目录、纳入内容和未纳入原因；用户要求完整总结时，补充说明、补充图和补充表均有对应记录。
 3. 逐张目检 Markdown 引用的图片，确认它们是纯图或纯表裁剪，不含原文段落或整页截图。
-4. 扫描正文中的英文残留。允许项限于题名、作者和机构名、DOI/URL、术语表、单位、软件名和文件路径；其余正文改为中文。
-5. 检查一句话总结只陈述原文事实，未混入缩写、纠偏语气或总结者判断。
+4. 检查关键公式编号、变量含义、公式用途和原文定位。
+5. 通信/太赫兹论文按 `references/engineering-thz-profile.md` 检查专用字段是否完整。
+6. 扫描正文中的英文残留。允许项限于题名、作者和机构名、DOI/URL、术语表、单位、软件名和文件路径；其余正文改为中文。
+7. 检查一句话总结只陈述原文事实，未混入缩写、纠偏语气或总结者判断。
+8. 按 `references/quality-control.md` 做最终自检。
 
 ## 总结模板
 
@@ -194,6 +213,31 @@ LetPub 失败状态要写清楚原因，例如：
 ### 主要结果与关键数据
 
 ### 图表信息
+
+### 公式信息
+
+## 通信与太赫兹专用信息
+<!-- 论文涉及通信系统、太赫兹、MIMO、器件、实验链路、调制、DSP 或信道建模时使用；字段见 references/engineering-thz-profile.md。 -->
+
+### 系统或链路结构
+
+### 频段、带宽与传输距离
+
+### 调制格式与数据速率
+
+### BER / EVM / SNR / OSNR 等指标
+
+### 器件与实验平台
+
+### 信道、阵列或传播模型
+
+### DSP / 算法流程
+
+### 对比基准
+
+### 硬件限制
+
+### 可复现性
 
 ## 补充材料与扩展数据
 <!-- 主文确认存在且已获取补充材料时使用：先列补充说明、补充图和补充表的整体内容，再写补充实验条件、计算方法、关键数据和限制。图片只引用纯图或纯表裁剪。 -->

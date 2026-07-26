@@ -35,6 +35,21 @@
       "id": "local-source-metrics-supplementary-chinese",
       "prompt": "本地 PDF 是论文原文，网页版本可能仍是预印本。请校准一篇通信论文的 184 Gbit/s 线速率、158.7 Gbit/s 可达信息速率、153.2 Gbit/s 净信息速率和 214.2 Gbit/s·km 净速率-距离积；主文还提示有 Supplementary Information。把补充材料下载并整理进 Markdown，正文只放干净的图表裁剪，并用中文写作。",
       "expected_output": "以本地 PDF 为第一证据源，分别列出四类指标并把净速率-距离积写成净信息速率与距离的乘积；出现原文矛盾时给出来源位置、算式和采用理由。应下载并系统整理补充说明、补充图和补充表；Markdown 只引用纯图或纯表裁剪。正文、图表导读和一句话总结使用中文全称，英文缩写集中在术语表或必要元信息。"
+    },
+    {
+      "id": "thz-system-paper-full-summary",
+      "prompt": "用 /paper-summary 完整总结一篇太赫兹通信系统正式论文。论文包含 300 GHz 无线链路、16QAM、FEC、DSP 均衡、BER/EVM/SNR 指标、实验平台照片和系统框图。",
+      "expected_output": "生成中文 Markdown；除通用关键信息外，应包含“通信与太赫兹专用信息”，写清系统或链路结构、频段、带宽、传输距离、调制格式、数据速率、BER/EVM/SNR、器件与实验平台、DSP 流程、对比基准、硬件限制和可复现性；正式期刊论文需包含 LetPub 查询结果或失败原因。"
+    },
+    {
+      "id": "arxiv-preprint-technical-summary",
+      "prompt": "把一篇 arXiv 太赫兹 MIMO 预印本整理成技术总结。它没有正式期刊信息，但正文有信道模型公式、RZF 检测、仿真参数表和多张 BER 曲线。",
+      "expected_output": "生成中文 Markdown；影响因子和中科院分区写“不适用”；包含研究问题、方法、公式信息、实验或仿真设置、关键图表、局限；公式部分需说明用途、主要变量、输入量、计算过程和输出量。"
+    },
+    {
+      "id": "figure-equation-heavy-paper",
+      "prompt": "总结一篇图表和公式很多的通信论文。manifest.json 里有 12 张主文图、4 张表和 9 个带编号公式；用户要求图表公式不要漏。",
+      "expected_output": "生成中文 Markdown；读取 figure-table-equation 检查规则；列出关键 Figure/Table/Equation 并说明作用；图表编号不应无解释跳号；公式需写用途和变量含义；不得只复述摘要。"
     }
   ]
 }

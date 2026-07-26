@@ -1,0 +1,44 @@
+{
+  "skill_name": "claude-relay-chain",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我在 Claude Desktop 里手动配置第三方中转后，Cowork 能正常回复；但 VS Code 里的 Claude Code 仍然报连接错误。请帮我查，不要直接改配置，也不要让我重复提供已经能从本机检查到的信息。",
+      "expected_output": "应先区分 Desktop 3P 与独立 Claude Code/VS Code 的配置表面，运行只读脱敏审计，检查 currentProviderClaude/currentProviderClaudeDesktop、Desktop applied profile、.claude/settings.json 和扩展旧环境；不能因 Cowork 成功断言 Claude Code 成功；给出修改方案后停在明确批准门。",
+      "files": [],
+      "expectations": [
+        "明确区分 Claude Desktop 3P 与独立 Claude Code/VS Code 配置，不把两者视为同一入口",
+        "默认只读并建议运行脱敏审计，不修改配置、不重启、不发带凭据的验证请求",
+        "检查 currentProviderClaude、currentProviderClaudeDesktop、Desktop applied profile 和 .claude/settings.json",
+        "指出 VS Code 扩展进程可能保留旧环境，需要在批准修改后用新会话或重载扩展验证",
+        "修改方案包含备份、改动、重启、验证和回滚，并等待用户明确同意"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我想把 CC Switch 的 Claude 下面几个供应商全部导入 Claude Desktop。有的是 Anthropic Messages，有的是 OpenAI 兼容和 Gemini 接口，还把 opus/sonnet 映射到别的模型。请判断每个应该用直连还是模型映射，并说明 15721 应该怎么填。现在只检查和给方案，不要动数据库。",
+      "expected_output": "应读取 CC Switch 结构化字段自动判断 direct/proxy；原生 Anthropic 且 Claude 模型可直连，OpenAI/Gemini 或非 Claude 模型映射必须使用本地路由/模型映射；Desktop proxy base URL 为 http://127.0.0.1:<port>/claude-desktop；导入与启用、applied profile 分开；/v1/messages 与 /v1/models 分开验证；不读取或输出完整 key，不修改 DB。",
+      "files": [],
+      "expectations": [
+        "使用 meta.claudeDesktopMode、meta.apiFormat 和模型映射判断 direct/proxy，不靠供应商名称猜测",
+        "说明原生 Anthropic Messages 且 Claude 模型可用直连，OpenAI/Gemini 或非 Claude 模型映射使用本地路由模式",
+        "给出本地路由 Desktop base URL http://127.0.0.1:<port>/claude-desktop，而不是根地址",
+        "区分导入候选 provider、currentProviderClaudeDesktop、providers.is_current 和 Desktop appliedId",
+        "把 POST /v1/messages 与 GET /v1/models 作为独立验证项，并保持全程只读脱敏"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "CC Switch 选了模型映射模式，Claude Desktop 普通聊天能回复，但内置 Code 页面没有模型，配置页提示 Invalid: Model list。请定位原因并给修复步骤。你可以检查本机，但没经过我确认不要备份、改文件、重启或发送计费请求。",
+      "expected_output": "应识别 Messages 成功与 model discovery 失败可同时存在，检查 applied profile 是否使用 /claude-desktop namespace、/claude-desktop/v1/models 与根 /v1/models 的格式差异、显式 inferenceModels、CC Switch #4540/#4415 和当前版本；只读检查后给单一推荐方案，等待确认；批准后再备份、重启和分别验证模型列表、streaming Messages、tool use、内置 Code。",
+      "files": [],
+      "expectations": [
+        "明确普通聊天成功只证明 /v1/messages 路径，不证明 /v1/models 或内置 Code 模型发现",
+        "检查 /claude-desktop namespace、模型列表格式、inferenceModels 和当前 CC Switch/Claude Desktop 版本",
+        "引用或概括 CC Switch #4540 和 #4415 的已知问题，但重新核对当前版本而非直接套用旧结论",
+        "用户确认前不备份、不修改、不重启、不发送带凭据或可能计费的请求",
+        "批准后的验证分开覆盖模型列表、streaming Messages、tool use 和 Desktop 内置 Code 端到端"
+      ]
+    }
+  ]
+}

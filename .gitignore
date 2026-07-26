@@ -8,6 +8,10 @@ ieee-journal-submission-workspace/
 journal-submission-workspace/
 archive/cleanup-*/
 
+# Local EditaPlot runtime pointer
+editaplot/.editaplot-local.json
+/.editaplot.editaplot-setup.lock
+
 # OS
 Thumbs.db
 .DS_Store

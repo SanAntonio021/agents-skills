@@ -59,22 +59,31 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ## 前置检查
 
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. Windows 下确认 Codex 全局配置包含
+2. 本流程只能在 Claude Code CLI 会话中运行。Claude Desktop（Cowork）会话的
+   Agent 工具不注册插件子代理，`codex:codex-rescue` 不可用（2026-07-26 实测报
+   Agent type not found）。在该环境中触发时按 `CODEX_FAILURE_REPORT` 暂停，恢复
+   条件写"改在 Claude Code CLI 会话运行"；不得改用其他调用方式绕过，也不得由
+   Claude 接管。
+3. Windows 下确认 Codex 全局配置包含
    `[sandbox_workspace_write] exclude_slash_tmp = true`。保留用户 `TMPDIR`，不要把
    当前盘根目录下的 `C:\tmp` 或 `D:\tmp` 加入 workspace-write；否则 elevated
    helper 可能因无权刷新这些目录的 ACL 而报 `setup refresh had errors`。这不需要
    启用 Windows 可选的 Windows Sandbox 虚拟机功能。
-3. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
+4. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
    helper，以及本 Skill 目录的只读访问。Windows 需要同时兼容 helper 的正斜杠和
    反斜杠绝对路径。Skill frontmatter 的 `allowed-tools` 不会传给
    `codex:codex-rescue` subagent，不能替代用户级权限；不得用全局
    `Bash(node:*)` 代替精确规则。Claude Code 2.1.207 对带多行 task 参数使用
    `Bash(node "<companionPath>" task *)`，不要只写旧式 `task:*`。
-4. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
-5. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
+   本机使用 cc-switch 时，精确权限必须写入 `common_config_claude` 与全部
+   claude/claude-desktop provider 快照；`%USERPROFILE%\.claude\settings.json`
+   是按当前 provider 渲染的快照产物，只改它会在 provider 切换或重渲染时丢失
+   （2026-07-11 打通后失效的根因；2026-07-26 写入全部快照并验证渲染存活）。
+5. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
+6. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
    `--resume` 目标的任务。
-6. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
-7. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
+7. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
+8. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
 
 ## 工作流
 

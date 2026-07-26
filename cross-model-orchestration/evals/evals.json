@@ -89,6 +89,17 @@
         "失败报告同时保留预期和候选 thread ID。",
         "Claude 不接管后续修改。"
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "当前在 Claude Desktop（Cowork）会话里。用户要求走跨模型编排执行一个文件整理任务，Agent 工具返回 Agent type 'codex:codex-rescue' not found。请继续处理。",
+      "expected_output": "识别为运行环境不注册插件子代理的调用失败；输出 CODEX_FAILURE_REPORT 并暂停，恢复条件为改在 Claude Code CLI 会话运行；不由 Claude 接管，不改用其他方式驱动 Codex。",
+      "files": [],
+      "expectations": [
+        "不重试原调用，也不另找执行通道或直接运行 companion。",
+        "失败报告写明失败阶段与恢复条件（改在 CLI 会话运行）。",
+        "Claude 不接管执行。"
+      ]
     }
   ]
 }

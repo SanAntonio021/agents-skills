@@ -19,17 +19,22 @@
     {
       "id": "figures-tables-no-debug-pages",
       "prompt": "把这篇 IEEE/JLT 论文总结成中文 Markdown，要求保留关键图和关键表。图片已经由 extract_paper_images.py 抽到了 images/<paper>/figures 和 debug_pages。",
-      "expected_output": "正文只能引用 figures/ 下置信度达标的 Fig./Table 图片；不得引用 debug_pages/ 或 embedded_candidates/；关键表也要放入正文。若 Table II 或某些 Fig. 置信度低，应写成需复核并说明原因，不能静默跳过。"
+      "expected_output": "正文只能引用 figures/ 下置信度达标的图/表图片；不得引用 debug_pages/ 或 embedded_candidates/；关键表也要放入正文。若某张表或图置信度低，应写成需复核并说明原因，不能静默跳过。"
     },
     {
       "id": "supplementary-extended-data-summary",
       "prompt": "总结一篇 Nature 正式论文。主 PDF 之外还有 Supplementary Information、Extended Data Table 和 Supplementary Fig.，这些附件和主结论有关。",
-      "expected_output": "总结中应有“补充材料与扩展数据”部分，纳入支撑主结论的 Supplementary/Extended Data 图表和关键信息；如果附件无法获取，要写明未纳入原因。正文图表编号保持 Supplementary Fig. / Extended Data Table，不重排编号。"
+      "expected_output": "总结中应有“补充材料与扩展数据”部分，纳入支撑主结论的补充图表和关键信息；如果附件无法获取，要写明未纳入原因。正文显示补充图、扩展数据表等中文编号，数字与原文一致，不重排。"
     },
     {
       "id": "figure-sequence-audit",
       "prompt": "总结论文时，manifest.json 里有 Fig. 1、Fig. 2、Fig. 7，也有 skipped 和 sequence_audit。请写图表信息。",
-      "expected_output": "图表信息不能直接从 Fig. 2 跳到 Fig. 7 而不解释；应检查 skipped 和 sequence_audit，说明 Fig. 3-6 是低置信、未找到、非关键图，还是需要补抽。"
+      "expected_output": "图表信息不能直接从图 2 跳到图 7 而不解释；应检查 skipped 和 sequence_audit，说明图 3-6 是低置信、未找到、与当前正文无关，还是需要补抽。"
+    },
+    {
+      "id": "local-source-metrics-supplementary-chinese",
+      "prompt": "本地 PDF 是论文原文，网页版本可能仍是预印本。请校准一篇通信论文的 184 Gbit/s 线速率、158.7 Gbit/s 可达信息速率、153.2 Gbit/s 净信息速率和 214.2 Gbit/s·km 净速率-距离积；主文还提示有 Supplementary Information。把补充材料下载并整理进 Markdown，正文只放干净的图表裁剪，并用中文写作。",
+      "expected_output": "以本地 PDF 为第一证据源，分别列出四类指标并把净速率-距离积写成净信息速率与距离的乘积；出现原文矛盾时给出来源位置、算式和采用理由。应下载并系统整理补充说明、补充图和补充表；Markdown 只引用纯图或纯表裁剪。正文、图表导读和一句话总结使用中文全称，英文缩写集中在术语表或必要元信息。"
     }
   ]
 }

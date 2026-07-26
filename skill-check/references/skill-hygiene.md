@@ -19,25 +19,32 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 - `*-workspace`、`rescued-skill-materials` 这类目录只当作工作材料或历史材料。
 - 目录名必须和 `SKILL.md` 里的 `name:` 一致。
 
-## 要分清的目录
+## 要分清的六层
 
-在这台机器上，排查 skill 问题时默认先分四层：
+在这台机器上，排查 skill 问题时默认分清六层：
 
-- `C:\Users\SanAn\.codex\skills`
-  Codex 实际读取的技能目录。这里面有什么，才算当前真的加载了什么。
-- `C:\Users\SanAn\.cc-switch\skills`
-  cc-switch 同步出来的目录。这里更新了，不代表 Codex 已经会用。
-- `C:\Users\SanAn\.cc-switch\cc-switch.db`
-  cc-switch 的记录层。面板显示名和目录名要一起看。
-- `D:\BaiduSyncdisk\.agents\skills`
-  真正应该修改的源文件目录。以后该改哪份，看这里；但不要把它当成当前已加载列表。
+1. `D:\BaiduSyncdisk\.agents\skills`
+   自建技能源码仓库。真正应该修改和提交的地方，但不是当前已加载列表。
+2. `C:\Users\SanAn\.agents\skills`
+   Lark 技能实体层；新版 Codex CLI 还会直接读取这一层。
+3. `C:\Users\SanAn\.cc-switch\skills`
+   CC Switch 的分发层。这里更新不代表 Claude、Codex 两侧都已启用。
+4. `C:\Users\SanAn\.claude\skills`
+   Claude 运行时入口，多数自建技能链接到 CC Switch 分发层。
+5. `C:\Users\SanAn\.codex\skills`
+   Codex 运行时入口；还要区分 `.system` 内置技能。
+6. `C:\Users\SanAn\.codex\plugins\cache`
+   Codex 插件自带技能层，可能与用户技能出现同名入口。
+
+`C:\Users\SanAn\.cc-switch\cc-switch.db` 是记录层，不单独算技能目录，但必须核对
+`directory`、仓库分支和各运行时的启用状态。
 
 ## 什么算当前已加载
 
-- 只有 Codex 实际读取的技能目录里的 skill，才算当前已加载。
-- 源文件目录和 cc-switch 同步出来的目录都只是背景信息，不能直接拿来报“当前冲突”。
-- cc-switch 面板里显示的名字，不等于磁盘目录名。
-- 同步下来了但没启用时，`C:\Users\SanAn\.codex\skills` 里可能根本没有对应入口。
+- 查 Claude 时，以 `C:\Users\SanAn\.claude\skills` 的实际入口为准。
+- 查 Codex 时，同时看 `C:\Users\SanAn\.codex\skills`、`.system`、插件缓存和直读的 Lark 实体层。
+- 源码目录和 cc-switch 分发目录只是证据，不能直接拿来报“当前已加载”或“当前冲突”。
+- cc-switch 面板显示名不等于磁盘目录名；已分发但单侧未启用时，另一侧运行时可能没有入口。
 
 ## 主要问题类型
 
@@ -54,14 +61,76 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 ## 检查顺序
 
-默认按这个顺序查：
+用户问“为什么现在没生效”时，先看目标工具实际读取的运行时，再查 cc-switch 分发层和数据库，
+最后回到源码提交与远端。用户问“同步是否完整完成”时，执行下面的完整验收。
 
-1. 先看 `C:\Users\SanAn\.codex\skills`
-2. 再看 `C:\Users\SanAn\.cc-switch\skills`
-3. 再看 `C:\Users\SanAn\.cc-switch\cc-switch.db`
-4. 最后再看 `D:\BaiduSyncdisk\.agents\skills` 和 GitHub 远端
+## 源码到双端运行时验收
 
-如果用户问的是“为什么现在没生效”，不要一上来就看 GitHub。
+### 1. 源码与远端
+
+- 记录技能仓库当前分支、`HEAD` 和 `origin/<branch>`。
+- 只比较目标提交中的文件，不把其他未提交改动算进验收范围。
+- 源码尚未推送时，结论只能是“源码完成，运行时同步待完成”。
+
+### 2. CC Switch 记录与启用
+
+- 用只读方式打开 `cc-switch.db`，先运行 `PRAGMA integrity_check`。
+- 核对目标技能的 `directory`、`repo_branch`、`enabled_claude` 和 `enabled_codex`。
+- 数据库或面板显示启用不替代磁盘和行为验收。
+
+### 3. 比较全部已提交文件
+
+逐个读取 `git ls-tree -r --name-only HEAD -- <skill-name>` 的结果，并把提交 blob 与三个
+分发/运行时根目录下的对应文件比较：
+
+- `C:\Users\SanAn\.cc-switch\skills`
+- `C:\Users\SanAn\.claude\skills`
+- `C:\Users\SanAn\.codex\skills`
+
+Git blob 比较可使用：
+
+```powershell
+$expected = git -C $repo rev-parse "HEAD:$relativePath"
+$actual = git hash-object --no-filters -- $runtimeFile
+```
+
+不要只比较工作区 SHA-256。Windows 工作区可能保存为 CRLF，Git 提交和运行时副本可能是 LF；
+这会造成工作区哈希不同，但提交 blob 与运行时文件完全一致。先排除换行差异，再判断同步是否漂移。
+
+### 4. 结构和确定性测试
+
+Windows 上运行 Python 校验器前设置：
+
+```powershell
+$env:PYTHONUTF8 = '1'
+$env:PYTHONIOENCODING = 'utf-8'
+```
+
+否则 `Path.read_text()` 可能按 GBK 读取 UTF-8 `SKILL.md`，产生假失败。随后运行
+`skill-creator/scripts/quick_validate.py` 和目标技能已有的合同测试、校验器测试。
+
+### 5. Codex 与 Claude 行为验收
+
+只使用合成数据，不登录、不上传、不发送、不点击最终动作、不修改项目文件。每个场景使用全新会话：
+
+```powershell
+codex exec --ephemeral --sandbox read-only -C <trusted-root> -
+claude -p --no-session-persistence --permission-mode plan --no-chrome
+```
+
+至少验证：
+
+- 自动路由选择正确技能；
+- 用户显式点名入口时不被另一入口覆盖；
+- 旧兼容入口能独立完成自己的流程；
+- 人工确认门和禁止代点最终动作仍生效。
+
+### 6. 失败分类与完成措辞
+
+- 模型已输出但规则判断错误：运行时行为验收失败。
+- 技能输出前出现认证、余额、预扣费、中转或模型服务错误：环境阻断，既不算通过，也不算技能失败。
+- 环境恢复后必须重跑相同合成用例；成功输出后才能写“运行时验收完成”。
+- 使用中转 API 时出现 `claude.ai connectors are disabled` 提示，但技能输出成功，可记录为非阻断提示。
 
 ## CC Switch SSOT 报错
 

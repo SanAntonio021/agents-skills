@@ -22,9 +22,13 @@ rendering, exporting, and readback.
 2. Locate `editaplot.cmd` in the installed Skill directory; when working from a cloned repository,
    use the repository-root `editaplot.cmd`. Use an absolute launcher path in commands. Do not make
    beginners select a Python executable or invoke `scripts/editaplot.py` directly.
-3. Require the complete repository for first installation. Run repository-root
-   `editaplot.cmd setup`; never instruct users to copy only `skill/editaplot`, because that omits
-   the runtime. Read `references/runtime.md` for setup, discovery, and command details.
+3. This personal CC Switch distribution includes `editaplot.cmd` and a versioned
+   `.editaplot-local.json` that points to the audited local runtime. Run
+   `py -3.12 scripts/validate_local_distribution.py`, then use the installed launcher; do not run upstream
+   `setup` against `.cc-switch`, `.codex`, or `.claude`, because CC Switch owns those runtime
+   directories. If validation reports a stale or missing engine, repair the source distribution and
+   resync it through CC Switch instead of patching a runtime copy. Read `references/runtime.md` for
+   discovery, update, and command details.
 4. Reuse an existing compatible Python. If none exists, explain in Chinese that installing Python
    is a system-level change. Run `winget show` first and explain the exact publisher, source, and
    agreements. Only explicit user confirmation permits a later non-interactive installation of

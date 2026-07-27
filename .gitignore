@@ -8,8 +8,8 @@ ieee-journal-submission-workspace/
 journal-submission-workspace/
 archive/cleanup-*/
 
-# Local EditaPlot runtime pointer
-editaplot/.editaplot-local.json
+# EditaPlot setup lock remains local. The personal distribution intentionally
+# tracks editaplot/.editaplot-local.json so CC Switch receives the runtime pointer.
 /.editaplot.editaplot-setup.lock
 
 # OS

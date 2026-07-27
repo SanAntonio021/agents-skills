@@ -56,20 +56,27 @@ use an untrusted mirror. This permission applies only to Python; never install o
 
 ## Installation and diagnostics
 
-Run setup from a **complete repository**, never from a copied `skill/editaplot` folder:
+This personal distribution is installed and updated through CC Switch from
+`SanAntonio021/agents-skills`. It contains the launcher and a versioned local configuration that
+points to the audited runtime mirror. Before first use or after a CC Switch update, run:
 
 ```powershell
-.\editaplot.cmd setup
+py -3.12 .\scripts\validate_local_distribution.py
 .\editaplot.cmd --diagnose
 .\editaplot.cmd doctor
 .\editaplot.cmd doctor --repair
 ```
 
-`setup` installs or updates the Skill, writes an untracked local runtime pointer, selects a compatible
-Python, creates the project-local managed environment when required, installs only the locked audited
-dependencies, and runs doctor again. The launcher itself does not install Python; the agent follows
-the explicit-consent process above if Python is absent. Environment setup never installs or modifies
-Origin. Users do not need to launch Origin before requesting a figure.
+The validator is read-only. It confirms that `editaplot.cmd`, `.editaplot-local.json`, the stable
+runtime, dependency locks, and the managed environment agree. `doctor --repair` may update only the
+project-local managed environment under the configured runtime. The launcher itself does not install
+Python; the agent follows the explicit-consent process above if Python is absent. Environment repair
+never installs or modifies Origin. Users do not need to launch Origin before requesting a figure.
+
+Do not run upstream `setup` against `C:\Users\SanAn\.cc-switch\skills`, `.codex\skills`, or
+`.claude\skills`; doing so would bypass CC Switch ownership and create update drift. Upstream changes
+are reviewed in the stable mirror, tested there, then copied into the personal source repository and
+distributed by CC Switch. Do not package `.editaplot-venv` into the Skill repository.
 
 `--diagnose` reports launcher/Python discovery. Doctor separately reports Windows, engine, dependency,
 and local Origin Automation registration discovery. It is read-only and never launches Origin.

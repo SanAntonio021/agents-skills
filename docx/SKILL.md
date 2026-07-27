@@ -63,6 +63,14 @@ python scripts/office/validate.py out.docx --original doc.docx   # XSD checks; -
 
 Word splits text across many `<w:r>` runs (revision ids, spell-check markers), so a phrase you can see in the document often doesn't exist as a contiguous string in the XML. `merge_runs.py` merges adjacent identically-formatted runs in `word/document.xml` without changing content or rendering; it also accepts a `.docx` directly (`python scripts/merge_runs.py doc.docx -o merged.docx`).
 
+### Word-native equations (OMML)
+
+When LaTeX or plain-text formulas in a DOCX must become editable Word equations, read
+[Native Word equations](references/native-equations.md) before editing. It covers structured OMML
+conversion, known Pandoc schema repairs, multiline-equation spacing, semantic equivalence checks,
+and rendered-page inspection. Do not represent a structured fraction, matrix, piecewise function,
+or equation array as one plain `m:t` run.
+
 ### Auto-numbering existing captions
 
 When existing captions are plain text (`图1 ...`, `Figure 1 ...`) and the user wants Word automatic numbering, edit the OpenXML directly. `python-docx` and `docx-js` do not reliably convert existing caption paragraphs in place.

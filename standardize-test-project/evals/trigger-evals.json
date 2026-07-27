@@ -44,6 +44,10 @@
     "should_trigger": true
   },
   {
+    "query": "这个科研仿真项目会生成不可覆盖的阶段运行结果，并用验收冻结文件阻止后续重复执行。请规范验收前和验收后的无硬件测试：过去阶段不能读取真实项目当前状态，最终状态只能只读检查。",
+    "should_trigger": true
+  },
+  {
     "query": "我们 Web 服务的 tests 目录太乱了，帮我把 pytest unit、integration、e2e 和 fixtures 重新分层，CI 继续跑。",
     "should_trigger": false
   },

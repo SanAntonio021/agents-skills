@@ -17,7 +17,7 @@ Apply one stable contract to experimental code, run artifacts, replay, and autom
 4. Keep human-run entry scripts at project root. Put implementation under `code/` and generated runs under `results/`.
 5. Reuse the deterministic helpers in `assets/project-template/code/` instead of duplicating naming, JSON, CSV, log, and plotting logic in experiment scripts.
 6. Integrate one dry-run path before any hardware path. Short-circuit before creating or initializing hardware objects. Side-effect-free shared imports are allowed; imports with hardware side effects, connections, queries, and writes are not.
-7. Run `scripts/validate_test_project.py <project>` and the language-specific tests. Use only isolated temporary result roots during validation.
+7. Run `scripts/validate_test_project.py <project>` and the language-specific tests. Use isolated temporary result roots during validation. If the project already has acceptance freezes, publication locks, resume states, or other lifecycle state, tests for earlier or transitional stages must establish one controlled state in either a temporary project copy or explicit mocks that replace every manifest, freeze file, and run-inventory input used for stage decisions; do not infer an earlier state from the live project's current files. Keep a separate read-only test of the live final state when that state is a safety gate, and verify that it blocks before run creation or model/hardware execution.
 8. Report the resulting structure, validation evidence, unchanged-history check, and any project-specific gaps.
 
 ## Required Result Contract

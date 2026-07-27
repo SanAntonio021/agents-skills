@@ -63,6 +63,19 @@ python scripts/office/validate.py out.docx --original doc.docx   # XSD checks; -
 
 Word splits text across many `<w:r>` runs (revision ids, spell-check markers), so a phrase you can see in the document often doesn't exist as a contiguous string in the XML. `merge_runs.py` merges adjacent identically-formatted runs in `word/document.xml` without changing content or rendering; it also accepts a `.docx` directly (`python scripts/merge_runs.py doc.docx -o merged.docx`).
 
+### Auto-numbering existing captions
+
+When existing captions are plain text (`图1 ...`, `Figure 1 ...`) and the user wants Word automatic numbering, edit the OpenXML directly. `python-docx` and `docx-js` do not reliably convert existing caption paragraphs in place.
+
+- Work on a new output file; never overwrite the original.
+- Identify captions by visible text, not by "the paragraph after an image". Images and captions can share one paragraph, and a reused image relationship can appear more than once.
+- Replace only the fixed label/number prefix with a complex field: `begin` field char with `w:dirty="true"`, `instrText` containing ` SEQ 图 \* ARABIC `, `separate`, cached result text (`1`, `2`, ...), and `end`.
+- Keep the caption body as ordinary text after the field so the document is readable before field refresh.
+- Add `<w:updateFields w:val="true"/>` in `word/settings.xml` when useful, but still tell the user `Ctrl+A` + `F9` is the reliable refresh step.
+- Preserve formatting by copying the original caption run's `<w:rPr>` into the new field and text runs. Do not touch drawings, relationships, or media unless the user asked to change images.
+- If revising caption wording, extract `word/media/*`, build contact sheets, and make only conservative evidence-based fixes. Do not add claims that are not visible in the image or supplied by the user.
+- Validate with `zipfile.testzip()`, count `SEQ` instructions, count caption paragraphs, and inspect first/middle/last captions. On Windows, Word COM verification needs explicit current-task user approval and must follow the global Office-process rules.
+
 **Tracked changes:** when redlining, validate with `--author "<the name you redlined under>"` (needs `--original`) — it reports any text you changed without a `<w:ins>`/`<w:del>` around it, which is easy to do by accident and invisible in the accepted view. Wrap runs in `<w:ins>`/`<w:del>` with `w:id`, `w:author`, `w:date` attributes. Inside `<w:del>`, the text element is `<w:delText>`, not `<w:t>`. A deleted paragraph mark (`<w:pPr><w:rPr><w:del w:id=".." w:author=".." w:date=".."/></w:rPr></w:pPr>`) means "merge this paragraph into the next" — so deleting a paragraph outright is that plus a `<w:del>` around every run. The `<w:del/>` must come before the rPr's other children; their order is schema-enforced.
 
 To produce a clean copy with all tracked changes accepted: `python scripts/accept_changes.py in.docx out.docx`.

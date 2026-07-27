@@ -2,7 +2,7 @@
   "skill_name": "project-writing",
   "evals": [
     {
-      "id": "init-git-before-local-md-edit",
+      "id": 1,
       "prompt": "D:\\BaiduSyncdisk\\申报书本子\\四川经信6G创新发展\\draft.md 还没有 Git。请直接把建设内容第三节改写并保存到文件。",
       "expected_output": "首次写入前显示准确项目根目录并询问是否初始化本地 Git，同时说明将保存目标稿 baseline；不得在 D:\\BaiduSyncdisk 或 D:\\BaiduSyncdisk\\申报书本子公共目录初始化；获准后才执行 git init -b main，只做本地版本记录。",
       "files": [],
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "id": "dirty-target-baseline-and-unrelated-isolation",
+      "id": 2,
       "prompt": "项目已经是 Git 仓库。proposal.md 有我刚改但没提交的内容，budget.xlsx 也改了并已经暂存。请继续修改 proposal.md 的应用场景部分。",
       "expected_output": "修改 proposal.md 前询问是否把它当前状态保存为 baseline；不得暂存、提交或取消暂存 budget.xlsx。获准保存 baseline 后完成本轮修改和验证，只提交 proposal.md 等显式相关文件。",
       "files": [],
@@ -26,13 +26,27 @@
       ]
     },
     {
-      "id": "read-only-review-does-not-trigger-git",
+      "id": 3,
       "prompt": "先只审查 proposal.md 的结构和卡点表述，列问题，不要改文件。",
       "expected_output": "按工程申报口径给出只读审查结果，不询问 Git、不初始化仓库、不创建 baseline 或 commit。",
       "files": [],
       "expectations": [
         "只读任务不触发 Git 版本保护。",
         "不修改本地文件。"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "请精修这段工程申报书文字，只输出修改稿：‘器件、算法和系统成果通常分别解决一个环节。地面试验只能反映相应条件下的设备、跟踪或链路性能。恢复判据用于链路恢复，并使通信转入降速。’已知事实仅为三类成果各有侧重、地面试验反映三类性能、判据用于判断是否恢复、判定后降低传输速率。降低 AI 味，但不要增加技术条件或验证结论。",
+      "expected_output": "用具体主语和动作重写抽象搭配，补齐并列项的共同中心词，说明判据用于判断是否恢复、系统根据判定降低传输速率，同时不增加原文没有的技术条件或验证结论。",
+      "files": [],
+      "expectations": [
+        "逐句检查主谓、动宾、修饰关系和指代，而不只替换高风险词。",
+        "将并列项改为同类表达，例如‘设备性能、跟踪性能和链路性能’。",
+        "把‘相应条件’明确为原文已有的‘地面试验条件’，不引入新的试验场景。",
+        "用明确对象执行明确动作，删除抽象名词与动作的硬搭配。",
+        "不新增原文没有的技术结论、指标或验证证据。",
+        "修改后的句子及相邻句不存在新的搭配或指代问题。"
       ]
     }
   ]

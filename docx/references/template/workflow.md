@@ -2,7 +2,8 @@
 
 ## Intended use
 
-Use this skill when the user wants Word formatting reuse, not when they want to edit document text semantically.
+Use this workflow inside `docx` when the user wants Word formatting reuse. For semantic edits to an
+existing document, stay in the main `docx` editing workflow and preserve the original style IDs.
 
 ## Why this skill uses Word COM
 
@@ -24,6 +25,10 @@ Use this skill when the user wants Word formatting reuse, not when they want to 
    - page size and margins
 
 The PowerShell wrapper does not create or quit Word directly; it delegates all Word automation, including native `.dot`, `.dotm`, and `.dotx` templates, to the Python guard. The guard uses `DispatchEx`, requires an initially empty instance, and only calls `Application.Quit()` for the instance created by the current task after `Documents.Count` returns to zero. If cleanup cannot prove that condition, it refuses to quit and preserves the primary error.
+
+Canonical entrypoints live under `scripts/template/`. Template profiles live under
+`assets/template/`; generated profile reports and governance notes live under
+`references/template/`.
 
 ## Heuristics used by the apply command
 

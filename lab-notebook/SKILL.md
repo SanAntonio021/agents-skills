@@ -92,7 +92,7 @@ description: 在改代码、跑仿真、做实验或调参迭代时，同步维�
 
 ## 相关技能
 
-- Word 模板落地：[../word-template/SKILL.md](../word-template/SKILL.md)
+- Word 文档与模板落地：[../docx/SKILL.md](../docx/SKILL.md)
 
 ## 资源
 

@@ -10,8 +10,8 @@ import word_constants as constants
 from office_com_guard import add_office_com_argument, word_application
 
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_TEMPLATE = SKILL_ROOT / "assets" / "master-default-template.docx"
+SKILL_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_TEMPLATE = SKILL_ROOT / "assets" / "template" / "master-default-template.docx"
 
 STYLE_PARAGRAPH = 1
 

@@ -8,13 +8,14 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS_DIR = SKILL_ROOT / "scripts"
+SKILL_ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = SKILL_ROOT / "scripts" / "template"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from word_template_formatter import (  # noqa: E402
     apply_command,
     build_parser,
+    remove_temporary_file,
     require_template_style_import,
 )
 
@@ -58,6 +59,28 @@ class TemplateStyleImportGateTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertGreaterEqual(source.count('"--allow-template-style-import"'), 2)
+
+    @patch("word_template_formatter.time.sleep")
+    def test_temporary_template_cleanup_retries_word_file_lock(self, sleep_mock) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "temporary-template.docx"
+            path.write_bytes(b"fixture")
+            original_unlink = Path.unlink
+            calls = 0
+
+            def locked_once(target: Path) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    raise PermissionError("fake Word file lock")
+                original_unlink(target)
+
+            with patch.object(Path, "unlink", locked_once):
+                remove_temporary_file(path, attempts=2)
+
+            self.assertEqual(calls, 2)
+            sleep_mock.assert_called_once_with(0.25)
+            self.assertFalse(path.exists())
 
 
 if __name__ == "__main__":

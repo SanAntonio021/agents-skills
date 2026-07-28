@@ -1,6 +1,6 @@
 ---
 name: latex-paper
-description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `ieee-journal-submission`；图件找 `paper-figure-review`，Word 版式找 `word-template`。
+description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `ieee-journal-submission`；图件找 `paper-figure-review`，Word 版式找 `docx`。
 ---
 
 # Markdown 转 LaTeX 投稿工程
@@ -76,7 +76,7 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 - 内容精修（术语、图注文字、结论强度、中改英）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - 纯英文句子质量：[../sentence-polish/SKILL.md](../sentence-polish/SKILL.md)
 - 图件绘制与 IEEE 图规范：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
-- Word 版式交付：[../word-template/SKILL.md](../word-template/SKILL.md)
+- Word 版式交付：[../docx/SKILL.md](../docx/SKILL.md)
 - 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
 - 通用投稿页面、文件类型确认和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 - 明确 IEEE 的投稿页面和生命周期记录：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)

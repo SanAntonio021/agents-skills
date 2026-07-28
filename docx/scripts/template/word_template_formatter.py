@@ -8,6 +8,7 @@ import json
 import re
 import sys
 import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -15,22 +16,25 @@ from typing import Any
 import word_constants as constants
 from office_com_guard import add_office_com_argument, word_application
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TEMPLATE_PATH = SKILL_ROOT / "assets" / "default-template.docx"
-DEFAULT_PROFILE_PATH = SKILL_ROOT / "assets" / "default-template.style-profile.json"
-DEFAULT_REPORT_PATH = SKILL_ROOT / "references" / "default-template-profile.md"
-WORK_TEMPLATE_PATH = SKILL_ROOT / "assets" / "work-summary-template.docx"
-WORK_PROFILE_PATH = SKILL_ROOT / "assets" / "work-summary-template.style-profile.json"
-WORK_REPORT_PATH = SKILL_ROOT / "references" / "work-summary-template-profile.md"
-MASTER_TEMPLATE_PATH = SKILL_ROOT / "assets" / "master-default-template.docx"
-MASTER_PROFILE_PATH = SKILL_ROOT / "assets" / "master-default-template.style-profile.json"
-MASTER_REPORT_PATH = SKILL_ROOT / "references" / "master-default-template-profile.md"
-QIYE_SHENBAO_TEMPLATE_PATH = SKILL_ROOT / "assets" / "qiye-shenbao-template.docx"
+SKILL_ROOT = Path(__file__).resolve().parents[2]
+TEMPLATE_ASSETS_DIR = SKILL_ROOT / "assets" / "template"
+TEMPLATE_REFERENCES_DIR = SKILL_ROOT / "references" / "template"
+TEMPLATE_TMP_DIR = SKILL_ROOT / "tmp" / "template"
+DEFAULT_TEMPLATE_PATH = TEMPLATE_ASSETS_DIR / "default-template.docx"
+DEFAULT_PROFILE_PATH = TEMPLATE_ASSETS_DIR / "default-template.style-profile.json"
+DEFAULT_REPORT_PATH = TEMPLATE_REFERENCES_DIR / "default-template-profile.md"
+WORK_TEMPLATE_PATH = TEMPLATE_ASSETS_DIR / "work-summary-template.docx"
+WORK_PROFILE_PATH = TEMPLATE_ASSETS_DIR / "work-summary-template.style-profile.json"
+WORK_REPORT_PATH = TEMPLATE_REFERENCES_DIR / "work-summary-template-profile.md"
+MASTER_TEMPLATE_PATH = TEMPLATE_ASSETS_DIR / "master-default-template.docx"
+MASTER_PROFILE_PATH = TEMPLATE_ASSETS_DIR / "master-default-template.style-profile.json"
+MASTER_REPORT_PATH = TEMPLATE_REFERENCES_DIR / "master-default-template-profile.md"
+QIYE_SHENBAO_TEMPLATE_PATH = TEMPLATE_ASSETS_DIR / "qiye-shenbao-template.docx"
 QIYE_SHENBAO_PROFILE_PATH = (
-    SKILL_ROOT / "assets" / "qiye-shenbao-template.style-profile.json"
+    TEMPLATE_ASSETS_DIR / "qiye-shenbao-template.style-profile.json"
 )
 QIYE_SHENBAO_REPORT_PATH = (
-    SKILL_ROOT / "references" / "qiye-shenbao-template-profile.md"
+    TEMPLATE_REFERENCES_DIR / "qiye-shenbao-template-profile.md"
 )
 DEFAULT_PRESET = "qiye-shenbao"
 PRESET_PATHS = {
@@ -681,8 +685,23 @@ def load_profile(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def remove_temporary_file(path: Path, *, attempts: int = 20) -> None:
+    """Delete a Word-owned temporary file after COM shutdown releases it."""
+
+    if not path.exists():
+        return
+    for attempt in range(attempts):
+        try:
+            path.unlink()
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.25)
+
+
 def materialize_template_from_profile(app: Any, profile: dict[str, Any], label: str) -> Path:
-    tmp_dir = SKILL_ROOT / "tmp"
+    tmp_dir = TEMPLATE_TMP_DIR
     tmp_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
         prefix=f"{label}-",
@@ -973,7 +992,7 @@ def resolve_template_path(template_arg: Path | None, preset: str | None) -> Path
     if not template_path.exists():
         raise SystemExit(
             f"Template not found: {template_path}. "
-            f"Pass --template explicitly or check the preset assets under {SKILL_ROOT / 'assets'}."
+            f"Pass --template explicitly or check the preset assets under {TEMPLATE_ASSETS_DIR}."
         )
     if template_path.suffix.lower() != ".docx":
         raise SystemExit(
@@ -1076,47 +1095,56 @@ def apply_command(args: argparse.Namespace) -> int:
         elif profile_path is None and preset_paths["profile"].exists():
             profile_path = preset_paths["profile"].resolve()
 
-    with word_application(allow_office_com=args.allow_office_com) as app:
-        target_doc = open_document(app, input_path, read_only=False)
-        template_doc = None
-        try:
-            if template_path is None:
-                if profile_path is None:
-                    raise SystemExit(
-                        "Template not found for the selected preset, and no style profile is available. "
-                        "Pass --template explicitly or provide --profile."
-                    )
-                profile = load_profile(profile_path)
-                label = canonical_preset_name(args.preset or DEFAULT_PRESET)
-                synthesized_template_path = materialize_template_from_profile(app, profile, label)
-                template_path = synthesized_template_path
-                template_doc = open_document(app, template_path, read_only=True)
-            else:
-                template_doc = open_document(app, template_path, read_only=True)
-                profile = load_or_extract_profile(template_doc, template_path, profile_path)
-            target_doc.CopyStylesFromTemplate(str(template_path))
-            page_stats = apply_page_setup(template_doc, target_doc, args.page_scope)
-            style_map = build_apply_style_map(
-                target_doc,
-                profile,
-                body_style_override=args.body_style,
-                title_style_override=args.title_style,
-            )
-            style_stats = apply_styles_to_document(
-                target_doc,
-                style_map,
-                title_mode=args.title_mode,
-                clear_direct=args.clear_direct_formatting,
-            )
-            save_document(target_doc, input_path, output_path)
-        finally:
+    try:
+        with word_application(allow_office_com=args.allow_office_com) as app:
+            target_doc = open_document(app, input_path, read_only=False)
+            template_doc = None
             try:
-                target_doc.Close(False)
+                if template_path is None:
+                    if profile_path is None:
+                        raise SystemExit(
+                            "Template not found for the selected preset, and no style profile is available. "
+                            "Pass --template explicitly or provide --profile."
+                        )
+                    profile = load_profile(profile_path)
+                    label = canonical_preset_name(args.preset or DEFAULT_PRESET)
+                    synthesized_template_path = materialize_template_from_profile(app, profile, label)
+                    template_path = synthesized_template_path
+                    template_doc = open_document(app, template_path, read_only=True)
+                else:
+                    template_doc = open_document(app, template_path, read_only=True)
+                    profile = load_or_extract_profile(template_doc, template_path, profile_path)
+                target_doc.CopyStylesFromTemplate(str(template_path))
+                page_stats = apply_page_setup(template_doc, target_doc, args.page_scope)
+                style_map = build_apply_style_map(
+                    target_doc,
+                    profile,
+                    body_style_override=args.body_style,
+                    title_style_override=args.title_style,
+                )
+                style_stats = apply_styles_to_document(
+                    target_doc,
+                    style_map,
+                    title_mode=args.title_mode,
+                    clear_direct=args.clear_direct_formatting,
+                )
+                save_document(target_doc, input_path, output_path)
             finally:
-                if template_doc is not None:
-                    template_doc.Close(False)
-                if synthesized_template_path and synthesized_template_path.exists():
-                    synthesized_template_path.unlink()
+                try:
+                    target_doc.Close(False)
+                finally:
+                    if template_doc is not None:
+                        template_doc.Close(False)
+    except BaseException as exc:
+        if synthesized_template_path is not None:
+            try:
+                remove_temporary_file(synthesized_template_path)
+            except OSError as cleanup_error:
+                exc.add_note(f"Temporary template cleanup also failed: {cleanup_error}")
+        raise
+    else:
+        if synthesized_template_path is not None:
+            remove_temporary_file(synthesized_template_path)
 
     print(f"Formatted document written: {output_path}")
     print(

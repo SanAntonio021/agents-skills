@@ -2,9 +2,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$skillRoot = Split-Path -Parent $scriptRoot
-$modulePath = Join-Path $skillRoot "scripts\OfficeComGuard.psm1"
-$mainScriptPath = Join-Path $skillRoot "scripts\export_markdown_to_word.ps1"
+$skillRoot = Split-Path -Parent (Split-Path -Parent $scriptRoot)
+$modulePath = Join-Path $skillRoot "scripts\template\OfficeComGuard.psm1"
+$mainScriptPath = Join-Path $skillRoot "scripts\template\export_markdown_to_word.ps1"
 Import-Module $modulePath -Force
 
 $testsRun = 0

@@ -1,0 +1,38 @@
+{
+  "skill_name": "docx",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请在一份已有的中文申报书 DOCX 中补写两段正文并统一一个二级标题。不要整体换模板，也不要改变现有中文样式名称。你会走什么流程？",
+      "expected_output": "Use the existing-document path: preserve existing style IDs, reuse them for inserted text, avoid template style import, and verify with style_guard audit.",
+      "files": [],
+      "assertions": [
+        "Routes the task to docx existing-document editing rather than template application.",
+        "Freezes the existing style table and reuses existing style IDs for inserted paragraphs.",
+        "Uses style_guard audit and does not enable template style import."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "新建一份 Word 报告，并明确把整篇文档套用 qiye-shenbao 预设。请说明入口、命令门禁、输出和 Word 进程保护。",
+      "expected_output": "Use docx's template workflow and the bundled qiye-shenbao profile, require both template-import and current-operation COM permission, write a new output, and stop if Word is already running.",
+      "files": [],
+      "assertions": [
+        "Uses the docx template workflow and scripts/template entrypoint.",
+        "Requires both --allow-template-style-import and --allow-office-com.",
+        "Writes a new output and refuses to attach to or close an existing Word process."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "把现有 Markdown 稿导出成 Word，并按我的 Normal.dotm 落实版式。Markdown 原稿不能改，Word 当前如果已打开也不能碰。请说明流程。",
+      "expected_output": "Use docx's Markdown export wrapper with explicit current-task COM permission, preserve the Markdown source, delegate native template handling to the guarded Python path, and stop when WINWORD.EXE exists.",
+      "files": [],
+      "assertions": [
+        "Uses scripts/template/export_markdown_to_word.ps1 under the docx skill.",
+        "Treats Normal.dotm as the formatting source without modifying the Markdown input.",
+        "Requires current-task COM approval and stops if WINWORD.EXE already exists."
+      ]
+    }
+  ]
+}

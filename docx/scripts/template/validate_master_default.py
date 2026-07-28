@@ -12,9 +12,9 @@ import word_constants as constants
 from office_com_guard import add_office_com_argument, word_application
 
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
-FORMATTER_SCRIPT = SKILL_ROOT / "scripts" / "word_template_formatter.py"
-TMP_DIR = SKILL_ROOT / "tmp"
+SKILL_ROOT = Path(__file__).resolve().parents[2]
+FORMATTER_SCRIPT = Path(__file__).resolve().with_name("word_template_formatter.py")
+TMP_DIR = SKILL_ROOT / "tmp" / "template"
 INPUT_PATH = TMP_DIR / "master-default-validation-input.docx"
 OUTPUT_PATH = TMP_DIR / "master-default-validation-output.docx"
 

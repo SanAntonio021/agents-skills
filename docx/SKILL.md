@@ -10,7 +10,7 @@ A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 | Task | Approach |
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |
-| **Edit** an existing document | `unzip` → edit `word/document.xml` → `zip` (docx-js cannot open existing files) |
+| **Edit** an existing document | Freeze existing style identities, then `unzip` → edit OOXML → `zip` |
 | **Read** content | `pandoc -t markdown file.docx` |
 
 > Script paths below are relative to this skill's directory.
@@ -48,6 +48,40 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 `pdftoppm` zero-pads page numbers to the width of the page count (`page-01.jpg`…`page-12.jpg`).
 
 ## Editing existing documents
+
+### Preserve style identity by default
+
+Content editing and template replacement are different operations. For an existing DOCX content
+edit, freeze `word/styles.xml`: reuse style IDs already present in the document, including for newly
+inserted or rewritten paragraphs. Do not create a second body, heading, caption, equation, or
+reference style just to reproduce formatting. If formatting itself must change, update the existing
+style definition and authorize that exact style ID in the audit.
+
+Take a baseline copy or hash before editing, then run the strict audit after the edit:
+
+```bash
+python scripts/style_guard.py audit \
+  --baseline before.docx \
+  --candidate after.docx
+```
+
+The command exits nonzero for new or removed styles, unauthorized style-definition changes,
+paragraph style swaps, direct-formatting drift, newly orphaned styles, or new missing style
+references. An explicitly approved formatting change remains style-driven:
+
+```bash
+python scripts/style_guard.py audit \
+  --baseline before.docx \
+  --candidate after.docx \
+  --allow-style-change ExistingBodyStyleId
+```
+
+When a document already contains parallel styles and the user wants the original/template style
+names back, use `style_guard.py remap`. It moves the old style's layout onto an existing template
+identity, rewrites references, sets explicit next-paragraph styles, and deletes the old definition
+only after no references remain. Read [Style identity audit and remap](references/style-identity.md)
+before using it. This is an explicit repair path, not permission to import a complete template style
+table during ordinary content edits.
 
 Legacy `.doc` files must be converted first: `python scripts/office/soffice.py --headless --convert-to docx file.doc`.
 

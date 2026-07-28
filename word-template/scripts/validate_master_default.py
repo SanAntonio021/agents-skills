@@ -65,6 +65,7 @@ def run_formatter(allow_office_com: bool) -> str:
         str(INPUT_PATH),
         "--output",
         str(OUTPUT_PATH),
+        "--allow-template-style-import",
     ]
     if allow_office_com:
         command.append("--allow-office-com")

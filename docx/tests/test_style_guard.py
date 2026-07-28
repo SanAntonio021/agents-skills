@@ -257,33 +257,33 @@ class StyleAuditTests(unittest.TestCase):
 
 class StyleRemapTests(unittest.TestCase):
     MAPPING = {
-        "ProposalBody": "007",
+        "ProposalBody": "Normal",
         "ProposalHeading1": "1",
         "ProposalHeading2": "2",
         "ProposalHeading3": "3",
         "ProposalHeading4": "4",
-        "ProposalEquation": "004",
+        "ProposalEquation": "af0",
         "ProposalCaption": "a4",
         "ProposalReference": "001",
     }
     NAMES = {
-        "007": "00正文",
+        "Normal": "Normal",
         "1": "heading 1",
         "2": "heading 2",
         "3": "heading 3",
         "4": "heading 4",
-        "004": "00公式",
+        "af0": "公式",
         "a4": "caption",
         "001": "00正文1",
     }
     NEXT = {
-        "007": "007",
-        "1": "007",
-        "2": "007",
-        "3": "007",
-        "4": "007",
-        "004": "007",
-        "a4": "007",
+        "Normal": "Normal",
+        "1": "Normal",
+        "2": "Normal",
+        "3": "Normal",
+        "4": "Normal",
+        "af0": "Normal",
+        "a4": "Normal",
         "001": "001",
     }
 
@@ -318,19 +318,18 @@ class StyleRemapTests(unittest.TestCase):
                 }
             )
 
-        template_specifications: list[dict[str, object]] = [
-            {"id": "Normal", "name": "Normal", "default": True}
-        ]
+        template_specifications: list[dict[str, object]] = []
         for target_id, name in self.NAMES.items():
             template_specifications.append(
                 {
                     "id": target_id,
                     "name": name,
-                    "custom": target_id in {"007", "004", "001"},
+                    "default": target_id == "Normal",
+                    "custom": target_id in {"af0", "001"},
                     "quick": target_id in {"1", "2", "3", "4", "a4"},
                     "before": 777,
                     "size": 77,
-                    "based_on": "Normal",
+                    "based_on": None if target_id == "Normal" else "Normal",
                 }
             )
 
@@ -347,7 +346,7 @@ class StyleRemapTests(unittest.TestCase):
         write_docx(
             self.template,
             build_styles(template_specifications),
-            build_document([{"style": "007", "text": "template"}]),
+            build_document([{"style": "Normal", "text": "template"}]),
             media=b"template-image",
         )
 
@@ -393,6 +392,7 @@ class StyleRemapTests(unittest.TestCase):
                 target.find(f"{W}rPr/{W}sz").get(f"{W}val"),
                 str(20 + index),
             )
+        self.assertEqual(styles["Normal"].get(f"{W}default"), "1")
 
     def test_old_styles_are_deleted_only_after_all_references_move(self) -> None:
         remap_docx(

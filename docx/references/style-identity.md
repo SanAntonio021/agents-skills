@@ -27,6 +27,19 @@ Do not use `--report-only` in a delivery gate. It is for diagnosis only. If the 
 approved a formatting change, modify the existing style definition and repeat
 `--allow-style-change StyleId`. Do not authorize a newly created parallel style.
 
+## Target selection preflight
+
+Before writing a mapping, inventory all candidate paragraph styles in the named template. Record
+each style ID, OOXML `w:name`, `basedOn`, `next`, and paragraph usage count. Match the exact identity
+the user named; prefixes and similar formatting do not make styles interchangeable. In particular,
+`正文` is not `00正文`, and `公式` is not `00公式`.
+
+Word localizes built-in style names. A style displayed as `正文` in Chinese Word can be stored as
+`w:name="Normal"`; headings and captions can likewise use English OOXML names. If the requested UI
+name is not explicit in OOXML, report the built-in mapping separately or, with current-task Office
+COM permission, confirm `NameLocal` through the shared guard. Never choose a prefixed custom style
+merely because its XML name is easier to recognize.
+
 ## Explicit identity remap
 
 `remap` takes layout properties from each old style, but takes the target style ID, localized name,

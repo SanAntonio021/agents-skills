@@ -83,6 +83,12 @@ only after no references remain. Read [Style identity audit and remap](reference
 before using it. This is an explicit repair path, not permission to import a complete template style
 table during ordinary content edits.
 
+Select remap targets by exact style identity, not by similar wording or formatting. `正文` and
+`00正文` are different styles, as are `公式` and `00公式`. When the user names a style as displayed
+in Word, inventory every candidate's style ID, OOXML `w:name`, and usage first. Built-in localized
+styles can store an English OOXML name, such as Chinese Word's `正文` using `w:name="Normal"`.
+Use guarded Word COM to confirm `NameLocal` only when the user has approved COM for the current task.
+
 Legacy `.doc` files must be converted first: `python scripts/office/soffice.py --headless --convert-to docx file.doc`.
 
 ```bash

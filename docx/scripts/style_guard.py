@@ -256,6 +256,7 @@ def _build_target_style(
     target_id: str,
     mapping: dict[str, str],
     next_styles: dict[str, str],
+    format_source: str,
 ) -> etree._Element:
     old_type = old_style.get(f"{W}type")
     target_type = template_style.get(f"{W}type")
@@ -267,6 +268,27 @@ def _build_target_style(
 
     result = copy.deepcopy(template_style)
     result.set(W_STYLE_ID, target_id)
+    if format_source == "template":
+        # Linked character-style IDs often collide across independently authored DOCX files.
+        link = _relationship_child(result, "link")
+        if link is not None:
+            result.remove(link)
+        paragraph_properties = result.find(f"{W}pPr")
+        if paragraph_properties is not None:
+            numbering = paragraph_properties.find(f"{W}numPr")
+            if numbering is not None:
+                paragraph_properties.remove(numbering)
+        _rewrite_style_references(result, mapping)
+        next_id = next_styles.get(target_id)
+        if next_id is not None:
+            old_next = _relationship_child(result, "next")
+            if old_next is not None:
+                result.remove(old_next)
+            next_child = etree.Element(f"{W}next")
+            next_child.set(W_VAL, next_id)
+            _insert_style_child(result, next_child)
+        return result
+
     for child in list(result):
         if _local_name(child) in STYLE_REPLACED_NAMES:
             result.remove(child)
@@ -790,8 +812,13 @@ def remap_docx(
     output_path: Path,
     mapping: dict[str, str],
     next_styles: dict[str, str] | None = None,
+    format_source: str = "input",
 ) -> dict[str, object]:
     _validate_mapping(mapping)
+    if format_source not in {"input", "template"}:
+        raise StyleGuardError(
+            f"Unsupported format source {format_source!r}; expected 'input' or 'template'"
+        )
     next_styles = dict(next_styles or {})
     unknown_next_targets = set(next_styles) - set(mapping.values())
     if unknown_next_targets:
@@ -826,6 +853,7 @@ def remap_docx(
             target_id,
             mapping,
             next_styles,
+            format_source,
         )
 
     for old_id in mapping:
@@ -893,10 +921,11 @@ def remap_docx(
         template_style = template_styles[target_id]
         if _style_name(target_style) != _style_name(template_style):
             raise StyleGuardError(f"Template style name was not preserved: {target_id}")
-        if _layout_signature(source_styles[old_id], mapping) != _layout_signature(
-            target_style
-        ):
-            raise StyleGuardError(f"Style layout was not preserved: {old_id}={target_id}")
+        if _layout_signature(replacements[target_id]) != _layout_signature(target_style):
+            raise StyleGuardError(
+                f"Expected {format_source} layout was not preserved: "
+                f"{old_id}={target_id}"
+            )
         actual_next = _relationship_child(target_style, "next")
         actual_next_id = actual_next.get(W_VAL) if actual_next is not None else None
         expected_next_id = next_styles.get(target_id)
@@ -909,6 +938,7 @@ def remap_docx(
             "source_style": old_id,
             "name": _style_name(target_style),
             "next_style": actual_next_id,
+            "format_source": format_source,
         }
 
     invariants = _invariant_report(source, candidate)
@@ -944,6 +974,7 @@ def remap_docx(
             "sha256": _sha256(output_payload),
         },
         "mapping": mapping,
+        "format_source": format_source,
         "reference_rewrites": dict(sorted(reference_rewrites.items())),
         "target_styles": dict(sorted(target_styles.items())),
         "invariants": invariants,
@@ -1010,7 +1041,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     remap_parser = subparsers.add_parser(
-        "remap", help="Move old style formatting onto template style identities."
+        "remap", help="Remap old styles to existing template style identities."
     )
     remap_parser.add_argument("--input", required=True, type=_existing_docx)
     remap_parser.add_argument(
@@ -1025,6 +1056,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="STYLE=NEXT",
+    )
+    remap_parser.add_argument(
+        "--format-source",
+        choices=("input", "template"),
+        default="input",
+        help=(
+            "Take layout properties from the input styles (default), or keep the "
+            "template styles' layout properties."
+        ),
     )
     remap_parser.add_argument("--json-out", type=Path)
     return parser
@@ -1047,7 +1087,12 @@ def main(argv: list[str] | None = None) -> int:
         mapping = _parse_assignments(args.map, "style mapping")
         next_styles = _parse_assignments(args.next_style, "next style")
         report = remap_docx(
-            args.input, args.template, args.output, mapping, next_styles
+            args.input,
+            args.template,
+            args.output,
+            mapping,
+            next_styles,
+            args.format_source,
         )
         _write_report(report, args.json_out)
         return 0

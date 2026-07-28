@@ -47,10 +47,19 @@ def build_styles(
         if specification.get("next"):
             next_style = etree.SubElement(style, f"{W}next")
             next_style.set(f"{W}val", str(specification["next"]))
+        if specification.get("link"):
+            linked_style = etree.SubElement(style, f"{W}link")
+            linked_style.set(f"{W}val", str(specification["link"]))
         if specification.get("quick"):
             etree.SubElement(style, f"{W}qFormat")
 
         paragraph_properties = etree.SubElement(style, f"{W}pPr")
+        if specification.get("num_id") is not None:
+            numbering_properties = etree.SubElement(
+                paragraph_properties, f"{W}numPr"
+            )
+            number_id = etree.SubElement(numbering_properties, f"{W}numId")
+            number_id.set(f"{W}val", str(specification["num_id"]))
         spacing = etree.SubElement(paragraph_properties, f"{W}spacing")
         spacing.set(f"{W}before", str(specification.get("before", 0)))
         run_properties = etree.SubElement(style, f"{W}rPr")
@@ -264,7 +273,7 @@ class StyleRemapTests(unittest.TestCase):
         "ProposalHeading4": "4",
         "ProposalEquation": "af0",
         "ProposalCaption": "a4",
-        "ProposalReference": "001",
+        "ProposalReference": "13",
     }
     NAMES = {
         "Normal": "Normal",
@@ -274,7 +283,7 @@ class StyleRemapTests(unittest.TestCase):
         "4": "heading 4",
         "af0": "公式",
         "a4": "caption",
-        "001": "00正文1",
+        "13": "正文1",
     }
     NEXT = {
         "Normal": "Normal",
@@ -284,7 +293,7 @@ class StyleRemapTests(unittest.TestCase):
         "4": "Normal",
         "af0": "Normal",
         "a4": "Normal",
-        "001": "001",
+        "13": "13",
     }
 
     def setUp(self) -> None:
@@ -325,11 +334,13 @@ class StyleRemapTests(unittest.TestCase):
                     "id": target_id,
                     "name": name,
                     "default": target_id == "Normal",
-                    "custom": target_id in {"af0", "001"},
+                    "custom": target_id in {"af0", "13"},
                     "quick": target_id in {"1", "2", "3", "4", "a4"},
                     "before": 777,
                     "size": 77,
                     "based_on": None if target_id == "Normal" else "Normal",
+                    "link": "TemplateCharacterStyle",
+                    "num_id": 42 if target_id == "1" else None,
                 }
             )
 
@@ -393,6 +404,34 @@ class StyleRemapTests(unittest.TestCase):
                 str(20 + index),
             )
         self.assertEqual(styles["Normal"].get(f"{W}default"), "1")
+
+    def test_template_format_mode_keeps_template_layout(self) -> None:
+        output = self.directory / "template-layout.docx"
+        report = remap_docx(
+            self.source,
+            self.template,
+            output,
+            self.MAPPING,
+            self.NEXT,
+            format_source="template",
+        )
+
+        self.assertEqual(report["format_source"], "template")
+        self.assertTrue(report["style_audit"]["ok"])
+        package = DocxPackage.from_path(output)
+        styles_root = etree.fromstring(package.entries["word/styles.xml"])
+        styles = {
+            style.get(f"{W}styleId"): style
+            for style in styles_root.findall(f"{W}style")
+        }
+        for target_id in self.NAMES:
+            target = styles[target_id]
+            self.assertEqual(
+                target.find(f"{W}pPr/{W}spacing").get(f"{W}before"), "777"
+            )
+            self.assertEqual(target.find(f"{W}rPr/{W}sz").get(f"{W}val"), "77")
+            self.assertIsNone(target.find(f"{W}link"))
+        self.assertIsNone(styles["1"].find(f"{W}pPr/{W}numPr"))
 
     def test_old_styles_are_deleted_only_after_all_references_move(self) -> None:
         remap_docx(

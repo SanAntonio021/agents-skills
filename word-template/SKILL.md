@@ -152,6 +152,7 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 - 只有新建 Word 或用户明确要求整体换模板时，才允许导入模板样式，并必须显式传入 `--allow-template-style-import`。
 - 已有平行样式需要改回原模板中文样式时，使用 `docx/scripts/style_guard.py remap` 定点映射；不要复制整张模板样式表。
 - 定点映射前逐项核对样式 ID、OOXML 名称和 Word 显示名；`正文` 不等于 `00正文`，`公式` 不等于 `00公式`，不得按相似名称代选。
+- 用户要求采用模板实际字体、字号和段落格式时，使用 `remap --format-source template`；不得再把源文档版式写回模板样式。
 - 用户没明确说 plain conversion 时，不要把“导出 Word”理解成只做原始转换。
 - 用户明确说“我的 Word 默认格式”时，优先把 `Normal.dotm` 当作权威来源。
 - 能用 Word 内建样式时，优先沿用 `Title`、`Heading 1-9`、`Normal`、`Body Text`。

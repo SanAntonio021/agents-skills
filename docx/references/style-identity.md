@@ -58,6 +58,21 @@ python scripts/style_guard.py remap `
   --json-out C:\path\remap-report.json
 ```
 
+That default is identity-only repair: input layout remains visually unchanged. When the user wants
+the template's actual font, size, spacing, indentation, and alignment instead, add:
+
+```powershell
+  --format-source template
+```
+
+Template-format mode can change pagination. It keeps only the mapped template paragraph styles and
+removes their linked character-style relationships, because those helper IDs commonly collide with
+unrelated character styles in the input DOCX. It also removes style-level `numPr`, because numbering
+IDs are package-local; importing one without its template numbering table can create unrelated
+bullets or numbers. Paragraph-level numbering and `word/numbering.xml` remain unchanged. The mode
+does not clear run-level direct formatting; audit mapped paragraphs first and remove only verified
+conflicts, preserving intentional emphasis, subscript, superscript, and equation formatting.
+
 The output path must not exist. Mappings must be one-to-one, every old style must exist in the input,
 and every target style must exist in the template. The tool rejects chained mappings.
 

@@ -83,6 +83,13 @@ only after no references remain. Read [Style identity audit and remap](reference
 before using it. This is an explicit repair path, not permission to import a complete template style
 table during ordinary content edits.
 
+The default remap keeps input formatting. If the user wants the template's visible typography and
+accepts resulting pagination changes, pass `--format-source template`; this preserves the selected
+template styles' paragraph and run properties instead of writing the input styles' layout onto them.
+Inspect direct formatting first because it can still override either style definition. Template
+mode drops style-level numbering references, which are package-local and can otherwise resolve to an
+unrelated list in the input document; paragraph numbering and `numbering.xml` remain unchanged.
+
 Select remap targets by exact style identity, not by similar wording or formatting. `正文` and
 `00正文` are different styles, as are `公式` and `00公式`. When the user names a style as displayed
 in Word, inventory every candidate's style ID, OOXML `w:name`, and usage first. Built-in localized

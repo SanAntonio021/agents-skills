@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import subprocess
+import time
 import warnings
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -46,7 +46,6 @@ def word_process_present() -> bool:
                 "/NH",
             ],
             capture_output=True,
-            text=True,
             check=False,
             creationflags=creation_flags,
         )
@@ -60,8 +59,12 @@ def word_process_present() -> bool:
             "Unable to verify whether WINWORD.EXE is running; Word COM is refused."
         )
 
-    for row in csv.reader(result.stdout.splitlines()):
-        if row and row[0].strip().lower() == "winword.exe":
+    stdout = result.stdout or b""
+    if isinstance(stdout, str):
+        stdout = stdout.encode("utf-8", errors="replace")
+    for line in stdout.splitlines():
+        image_name = line.strip().split(b",", 1)[0].strip(b'"').lower()
+        if image_name == b"winword.exe":
             return True
     return False
 
@@ -125,7 +128,36 @@ class OwnedWordApplication:
     quit_performed: bool = False
 
 
-def quit_owned_word_application(owner: OwnedWordApplication) -> None:
+def wait_for_word_process_exit(
+    process_probe: Callable[[], bool],
+    *,
+    attempts: int = 40,
+) -> None:
+    """Wait for the task-created Word process to finish its asynchronous exit."""
+
+    for attempt in range(attempts):
+        try:
+            process_present = bool(process_probe())
+        except OfficeComSafetyError:
+            raise
+        except Exception as exc:
+            raise OfficeComSafetyError(
+                "Unable to verify that the task-created Word process exited."
+            ) from exc
+        if not process_present:
+            return
+        if attempt == attempts - 1:
+            raise OfficeComSafetyError(
+                "The task-created Word process did not exit within the safety timeout."
+            )
+        time.sleep(0.25)
+
+
+def quit_owned_word_application(
+    owner: OwnedWordApplication,
+    *,
+    process_probe: Callable[[], bool] | None = None,
+) -> None:
     """Quit only a task-created, initially empty, currently empty Word instance."""
 
     if not owner.created_by_this_task or not owner.exclusive_at_start:
@@ -152,6 +184,8 @@ def quit_owned_word_application(owner: OwnedWordApplication) -> None:
         ) from exc
     owner.quit_performed = True
     owner.created_by_this_task = False
+    if process_probe is not None:
+        wait_for_word_process_exit(process_probe)
 
 
 @contextmanager
@@ -211,7 +245,7 @@ def word_application(
                 except Exception:
                     pass
                 try:
-                    quit_owned_word_application(owner)
+                    quit_owned_word_application(owner, process_probe=process_probe)
                 except OfficeComSafetyError as cleanup_error:
                     if operation_error is None:
                         raise

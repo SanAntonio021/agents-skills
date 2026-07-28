@@ -188,9 +188,9 @@ elseif ($PSBoundParameters.ContainsKey("TemplatePath")) {
             $templateMode = "docx-template"
             $pythonPath = Resolve-PythonPath
         }
-        ".dotm" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
-        ".dotx" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
-        ".dot" { $templateMode = "word-template"; $pythonPath = Resolve-PythonPath }
+        ".dotm" { $templateMode = "native-template"; $pythonPath = Resolve-PythonPath }
+        ".dotx" { $templateMode = "native-template"; $pythonPath = Resolve-PythonPath }
+        ".dot" { $templateMode = "native-template"; $pythonPath = Resolve-PythonPath }
         default {
             throw "TemplatePath must be a .docx, .dotm, .dotx, or .dot file: $resolvedTemplatePath"
         }
@@ -230,7 +230,7 @@ foreach ($sourcePath in $resolvedInputs) {
 
     Invoke-PandocExport -SourcePath $sourcePath -OutputPath $outputPath
 
-    if ($templateMode -eq "word-template") {
+    if ($templateMode -eq "native-template") {
         Invoke-NativeWordTemplateApply `
             -PythonPath $pythonPath `
             -DocumentPath $outputPath `

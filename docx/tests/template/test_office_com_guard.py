@@ -9,8 +9,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS_DIR = SKILL_ROOT / "scripts"
+SKILL_ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = SKILL_ROOT / "scripts" / "template"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from office_com_guard import (  # noqa: E402
@@ -19,6 +19,7 @@ from office_com_guard import (  # noqa: E402
     OwnedWordApplication,
     add_office_com_argument,
     quit_owned_word_application,
+    wait_for_word_process_exit,
     word_application,
     word_process_present,
 )
@@ -143,6 +144,30 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(runtime.initialize_calls, 1)
         self.assertEqual(runtime.uninitialize_calls, 1)
 
+    @patch("office_com_guard.time.sleep")
+    def test_context_waits_for_owned_word_process_to_exit(self, sleep_mock) -> None:
+        runtime = FakeComRuntime()
+        application = FakeWordApplication()
+        probe_results = iter((False, True, False))
+
+        with word_application(
+            allow_office_com=True,
+            process_probe=lambda: next(probe_results),
+            com_runtime=runtime,
+            dispatch_ex=lambda _: application,
+        ):
+            pass
+
+        sleep_mock.assert_called_once_with(0.25)
+        self.assertEqual(application.quit_calls, [(False,)])
+
+    @patch("office_com_guard.time.sleep")
+    def test_owned_word_exit_timeout_fails_closed(self, sleep_mock) -> None:
+        with self.assertRaisesRegex(OfficeComSafetyError, "safety timeout"):
+            wait_for_word_process_exit(lambda: True, attempts=2)
+
+        sleep_mock.assert_called_once_with(0.25)
+
     def test_initial_documents_prevent_entry_and_quit(self) -> None:
         runtime = FakeComRuntime()
         application = FakeWordApplication(document_count=1)
@@ -252,13 +277,13 @@ class GuardTests(unittest.TestCase):
     def test_process_probe_parses_tasklist_without_com(self, run_mock) -> None:
         run_mock.return_value = SimpleNamespace(
             returncode=0,
-            stdout='"WINWORD.EXE","1234","Console","1","50,000 K"\n',
+            stdout=b'"WINWORD.EXE","1234","Console","1","50,000 K"\r\n',
         )
         self.assertTrue(word_process_present())
 
         run_mock.return_value = SimpleNamespace(
             returncode=0,
-            stdout="INFO: No tasks are running which match the specified criteria.\n",
+            stdout=b"\xd0\xc5\xcf\xa2: No matching tasks.\r\n",
         )
         self.assertFalse(word_process_present())
 

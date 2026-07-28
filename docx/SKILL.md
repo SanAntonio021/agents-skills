@@ -1,16 +1,19 @@
 ---
 name: docx
-description: "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files) or Word templates (.dotx files). Triggers include: any mention of 'Word doc', 'word document', '.docx', '.dotx', or requests to produce professional documents with formatting like tables of contents, headings, page numbers, or letterheads. Also use when extracting or reorganizing content from .docx or .dotx files, inserting or replacing images in documents, performing find-and-replace in Word files, working with tracked changes or comments, or converting content into a polished Word document. If the user asks for a 'report', 'memo', 'letter', 'template', or similar deliverable as a Word or .docx file, use this skill. Do NOT use for PDFs, spreadsheets, Google Docs, or general coding tasks unrelated to document generation."
+description: "Use this skill whenever the user wants to create, read, edit, repair, or format Microsoft Word documents or templates (.docx, .dotx, .dotm). Triggers include Word documents, reports, memos, letters, tracked changes, comments, equations, captions, style inheritance, Normal.dotm, reusing a reference document's Chinese styles, applying a Word template or preset, and exporting Markdown or text into a polished Word deliverable. For existing-document content edits, preserve the document's original style identities; use the template workflow only for new documents or an explicitly requested whole-document template replacement. Do NOT use for PDFs, spreadsheets, Google Docs, or coding tasks unrelated to Word deliverables."
 ---
 
 # DOCX creation, editing, and analysis
 
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
+Use `$docx` as the sole explicit Word skill entrypoint.
 
 | Task | Approach |
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |
 | **Edit** an existing document | Freeze existing style identities, then `unzip` → edit OOXML → `zip` |
+| **Repair** parallel or renamed styles | Audit and explicitly remap with `scripts/style_guard.py` |
+| **Apply** a template to a new or whole document | Use `scripts/template/word_template_formatter.py` with both safety gates |
 | **Read** content | `pandoc -t markdown file.docx` |
 
 > Script paths below are relative to this skill's directory.
@@ -46,6 +49,64 @@ conversion command above and delegates all LibreOffice launch, queue, profile, a
 to the public `libreoffice-runner`; do not call `soffice` directly.
 
 `pdftoppm` zero-pads page numbers to the width of the page count (`page-01.jpg`…`page-12.jpg`).
+
+## Reusing Word templates and presets
+
+Content editing and template replacement are separate modes. Keep an existing document's style table
+frozen during ordinary edits. Enter the template workflow only when creating a new Word document or
+when the user explicitly requests a whole-document template replacement. Read
+[Word template workflow](references/template/workflow.md) before running it; preset identities and
+governance are documented in [Template presets](references/template/template-presets.md) and
+[Template governance](references/template/template-governance.md).
+
+Accepted formatting sources are an explicit template or reference `.docx`, the user's
+`%APPDATA%\Microsoft\Templates\Normal.dotm`, a bundled style profile, or plain conversion with no
+template. Current canonical presets are `tongyong-moren`, `jishu-zongjie`, `gongzuo-zongjie`, and
+`qiye-shenbao`; legacy English aliases remain accepted. On this machine, `qiye-shenbao` is the
+governed default when the user requests a Word export but leaves the format source unspecified.
+
+Template commands are relative to this skill directory:
+
+```powershell
+# Inspect or extract a template/profile after current-task Word COM approval.
+python scripts/template/word_template_formatter.py extract `
+  --template C:\path\template.docx `
+  --profile C:\path\template.style-profile.json `
+  --report C:\path\template.style-profile.md `
+  --allow-office-com
+
+# Apply a preset only for a new document or explicit whole-document replacement.
+python scripts/template/word_template_formatter.py apply `
+  --preset qiye-shenbao `
+  --input C:\path\draft.docx `
+  --output C:\path\draft.formatted.docx `
+  --allow-template-style-import `
+  --allow-office-com
+
+# Convert Markdown, then land the result in Word formatting.
+powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_word.ps1 `
+  C:\path\draft.md `
+  -Preset qiye-shenbao `
+  -AllowOfficeCom
+
+# Use Normal.dotm only when the user explicitly requests their Word defaults.
+powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_word.ps1 `
+  C:\path\draft.md `
+  -TemplatePath "$env:APPDATA\Microsoft\Templates\Normal.dotm" `
+  -AllowOfficeCom
+```
+
+`--allow-template-style-import` is required for `apply` and `apply-native-template`; without it,
+the command must fail before starting Word. `--allow-office-com` and `-AllowOfficeCom` record only
+the user's explicit permission for the current operation. Even with permission, the guard must stop
+when `WINWORD.EXE` already exists, must never attach to that process, and may quit only the empty Word
+instance created by the current task.
+
+Treat a reference document as a formatting source, never as a content source. Preserve the user's
+input and write a new output file by default. If an existing document already contains unwanted
+parallel styles, use the exact-identity `style_guard.py remap` path below instead of importing an
+entire template style table. Do not substitute similar names: `正文`, `00正文`, `公式`, and `00公式`
+remain distinct identities.
 
 ## Editing existing documents
 

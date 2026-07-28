@@ -65,11 +65,12 @@ Word splits text across many `<w:r>` runs (revision ids, spell-check markers), s
 
 ### Word-native equations (OMML)
 
-When LaTeX or plain-text formulas in a DOCX must become editable Word equations, read
+When LaTeX or plain-text formulas in a DOCX must become editable Word equations, or existing Word
+equations show unexplained boxes or suspicious invisible spacing characters, read
 [Native Word equations](references/native-equations.md) before editing. It covers structured OMML
-conversion, known Pandoc schema repairs, multiline-equation spacing, semantic equivalence checks,
-and rendered-page inspection. Do not represent a structured fraction, matrix, piecewise function,
-or equation array as one plain `m:t` run.
+conversion, Unicode spacing diagnosis, known Pandoc schema repairs, multiline-equation spacing,
+semantic equivalence checks, and rendered-page inspection. Do not represent a structured fraction,
+matrix, piecewise function, or equation array as one plain `m:t` run.
 
 ### Auto-numbering existing captions
 

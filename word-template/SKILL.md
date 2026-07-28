@@ -28,14 +28,18 @@ description: 用用户提供的 Word 模板、本机默认格式或仓内内置 
 
 1. 先确认格式来源。
    可选来源只有四类：用户给的模板 `.docx`、`Normal.dotm`、内置预设、纯转换不套模板。
+   如果任务只是修改已有 DOCX 的内容，不进入模板套用流程；保留原文档样式 ID，并使用
+   `docx/scripts/style_guard.py audit` 验收。
 2. 再确认源材料类型。
-   如果输入和输出都是 Word，直接走模板套用流程；如果输入是 Markdown 或纯文本，先转成 `.docx`，再做 Word 端格式落地。
+   如果已有 Word 明确要整体换模板，走模板套用流程；如果只是内容修改，留在 `docx` 流程。
+   如果输入是 Markdown 或纯文本，先转成新 `.docx`，再做 Word 端格式落地。
 3. 用户若明确说“按我 Word 默认格式”“按空白文档默认样式”，且没有给别的模板，就使用 `%APPDATA%\Microsoft\Templates\Normal.dotm`。
 4. 用户若明确点名某个预设，就直接用该预设；公开仓默认只带该预设的 style profile，需要时会临时合成模板；不要把旧英文别名当主名称展示。
 5. 用户若要查看样式清单、保存可复用规则或核对模板结构，先执行提取流程。
 6. 用户若只关心交付文档，直接执行应用流程，默认输出到新文件，不覆盖原文档。
 7. 用户给已有 `.docx` 要求“按这个里面的格式”时，只把它当版式参考，不把它的正文内容当来源；输出到带 `_formatted_like_...` 之类后缀的新文件。
 8. 请求若变成“维护预设体系”“更换默认模板”“重建 `tongyong-moren`”或“安装 `Normal.dotm`”，仍在这里处理，但优先使用现有脚本，不再拆独立治理 skill。
+9. `apply` 和 `apply-native-template` 会导入模板样式。只在新建 Word，或用户明确要求整个文档换模板时使用，并显式传入 `--allow-template-style-import`。缺少该参数时必须在启动 Word 前失败。
 
 ## Word COM 许可门禁
 
@@ -78,6 +82,7 @@ python scripts/word_template_formatter.py extract `
 python scripts/word_template_formatter.py apply `
   --input C:\path\draft.docx `
   --output C:\path\draft.formatted.docx `
+  --allow-template-style-import `
   --allow-office-com
 ```
 
@@ -88,6 +93,7 @@ python scripts/word_template_formatter.py apply `
   --preset qiye-shenbao `
   --input C:\path\draft.docx `
   --output C:\path\draft.formatted.docx `
+  --allow-template-style-import `
   --allow-office-com
 ```
 
@@ -99,6 +105,7 @@ python scripts/word_template_formatter.py apply `
 - `--clear-direct-formatting`：先清理直接格式，再套用样式
 - `--body-style "Custom Body"`：指定正文样式名
 - `--page-scope first-section`：只复制第一页或首节页面设置
+- `--allow-template-style-import`：确认这是新建 Word 或用户明确要求的整体换模板；普通内容编辑禁止使用
 
 ### 先导出 Markdown，再落到 Word 模板
 
@@ -141,6 +148,9 @@ powershell -ExecutionPolicy Bypass -File scripts/export_markdown_to_word.ps1 `
 ## 规则
 
 - 重点是“复制版式规则”，不是复制模板原文内容。
+- 普通内容编辑默认冻结原文档样式表。新增或改写段落复用原样式 ID；不得调用本 skill 导入同类平行样式。
+- 只有新建 Word 或用户明确要求整体换模板时，才允许导入模板样式，并必须显式传入 `--allow-template-style-import`。
+- 已有平行样式需要改回原模板中文样式时，使用 `docx/scripts/style_guard.py remap` 定点映射；不要复制整张模板样式表。
 - 用户没明确说 plain conversion 时，不要把“导出 Word”理解成只做原始转换。
 - 用户明确说“我的 Word 默认格式”时，优先把 `Normal.dotm` 当作权威来源。
 - 能用 Word 内建样式时，优先沿用 `Title`、`Heading 1-9`、`Normal`、`Body Text`。

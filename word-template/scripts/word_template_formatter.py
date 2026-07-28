@@ -1040,7 +1040,19 @@ def load_or_extract_profile(
     return build_profile(template_doc, template_path, include_all_styles=False)
 
 
+def require_template_style_import(args: argparse.Namespace) -> None:
+    if getattr(args, "allow_template_style_import", False):
+        return
+    raise SystemExit(
+        "Template style import is disabled by default for existing DOCX files. "
+        "Use the docx style audit/remap workflow for content edits. Pass "
+        "--allow-template-style-import only for a new document or an explicitly "
+        "requested whole-document template change."
+    )
+
+
 def apply_command(args: argparse.Namespace) -> int:
+    require_template_style_import(args)
     input_path = args.input.resolve()
     output_path = (
         args.output or input_path.with_name(f"{input_path.stem}.formatted.docx")
@@ -1132,6 +1144,7 @@ def existing_word_template_path(value: str) -> Path:
 
 
 def apply_native_template_command(args: argparse.Namespace) -> int:
+    require_template_style_import(args)
     input_path = args.input.resolve()
     template_path = args.template.resolve()
 
@@ -1242,6 +1255,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--title-style",
         help="Override the detected title style name.",
     )
+    apply_parser.add_argument(
+        "--allow-template-style-import",
+        action="store_true",
+        help=(
+            "Confirm that this is a new document or an explicitly requested "
+            "whole-document template change."
+        ),
+    )
     add_office_com_argument(apply_parser)
     apply_parser.set_defaults(func=apply_command)
 
@@ -1254,6 +1275,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--template",
         required=True,
         type=existing_word_template_path,
+    )
+    native_parser.add_argument(
+        "--allow-template-style-import",
+        action="store_true",
+        help=(
+            "Confirm that this is a new document or an explicitly requested "
+            "whole-document template change."
+        ),
     )
     add_office_com_argument(native_parser)
     native_parser.set_defaults(func=apply_native_template_command)

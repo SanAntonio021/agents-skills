@@ -102,7 +102,8 @@ function Invoke-NativeWordTemplateApply {
         "--input",
         $DocumentPath,
         "--template",
-        $ResolvedTemplatePath
+        $ResolvedTemplatePath,
+        "--allow-template-style-import"
     )
 
     if ($AllowOfficeCom) {
@@ -130,7 +131,8 @@ function Invoke-DocxTemplateApply {
         "--input",
         $DocumentPath,
         "--output",
-        $DocumentPath
+        $DocumentPath,
+        "--allow-template-style-import"
     )
 
     if ($PresetName) {

@@ -70,6 +70,31 @@ Run schema validation on the generated OMML. In Pandoc-generated output, check t
 
 Do not assume every document needs every repair. Count and report the repairs actually applied.
 
+## Diagnose boxes and invisible spacing characters
+
+A square-looking mark in Word can be an unsupported glyph, a literal Unicode character inside the
+equation, or a nonprinting mark exposed by the current Word display settings. A screenshot alone
+cannot distinguish these cases. Inspect the saved OOXML and a normal rendered page before editing.
+
+For each suspicious occurrence, record the Unicode code point, containing `m:oMath` object, formula
+number or paragraph, and surrounding `m:r` / `m:t` structure. Do not bulk-delete characters such as
+`U+200B`, `U+2001`, `U+2005`, or `U+2009`: the same code point can be a redundant converter artifact
+in one formula and an intentional placeholder or mathematical spacing character in another.
+
+Remove only occurrences whose deletion preserves the formula text, OMML structure, and rendered
+meaning. Delete the smallest possible node or text fragment. Preserve spaces that separate a value
+from its unit, such as the space in `256 MHz`, and preserve structural placeholders that do not
+produce a visible defect. If the mark exists only because Word is showing formatting marks, do not
+change the document merely to hide the user-interface indicator.
+
+After cleanup:
+
+- compare per-code-point and per-formula occurrence counts before and after;
+- replay the approved deletions in memory and confirm that the result matches the output XML;
+- compare package entry sets and hashes, explaining every changed part;
+- render every modified formula page and representative pages containing retained characters;
+- check the normal reading view for boxes, clipping, changed spacing, or altered formula structure.
+
 ## Validation
 
 ### Package and schema

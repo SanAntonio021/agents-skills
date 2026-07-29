@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "mode": "merge",
+  "search_roots": [
+    "C:\\Projects",
+    "D:\\Archive"
+  ],
+  "candidate_hints": [
+    "example-project"
+  ],
+  "max_discovery_depth": 4,
+  "sources": [
+    {
+      "id": "active",
+      "path": "C:\\Projects\\example-project",
+      "role": "canonical",
+      "target_name": "example-project"
+    },
+    {
+      "id": "legacy",
+      "path": "D:\\Archive\\example-project-old",
+      "role": "legacy",
+      "target_name": "example-project-old"
+    }
+  ],
+  "target_root": "D:\\Projects\\example-project",
+  "audit_root": "D:\\ProjectOrganizerAudit\\example-project",
+  "canonical_source_id": "active",
+  "mapping_rules": [],
+  "layout_decisions": {
+    "restructure_in_scope": false,
+    "root_files": [
+      "README.md"
+    ],
+    "category_language": "en",
+    "max_general_depth": 1,
+    "deep_structure_prefixes": [
+      "code",
+      "papers",
+      "experiments",
+      "data/raw",
+      "results",
+      "migration"
+    ],
+    "independent_subprojects": [],
+    "version_policy": "preserve_all",
+    "keep_empty_directories": [],
+    "forbidden_target_paths": [],
+    "exceptions": [],
+    "approved_tree_sha256": ""
+  },
+  "active_repo_policy": "source:active",
+  "sync_roots": [
+    "D:\\CloudBackup"
+  ],
+  "external_git_root": "C:\\Users\\Example\\Documents\\GitMetadata\\ProjectOrganizer",
+  "protected_paths": [],
+  "exclude_rules": {
+    "directory_names": [
+      "node_modules",
+      "__pycache__",
+      ".cache"
+    ],
+    "relative_prefixes": [],
+    "extensions": [
+      ".tmp",
+      ".downloading"
+    ],
+    "retire_excluded": true
+  }
+}

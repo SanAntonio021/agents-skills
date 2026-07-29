@@ -6,7 +6,7 @@
   {"query":"客户工程散落在 C:\\Clients\\alpha、D:\\Closed\\beta 和 E:\\Transfer\\gamma。我想统一搬到 D:\\Clients，每个客户仍是独立项目，不能平铺混合。请先确认 target_name、Git 策略和跨盘空间，再按批准清单迁移并单独处理旧路径。","should_trigger":true},
   {"query":"三个散落的资料目录其实是一套项目。常用汇报 PPT 希望经批准放新入口根目录，其他日常材料只用简短英文一级分类，论文和迁移审计保留必要内部层级。请先只读查看材料，用 ask-first 一次确认一个目录设计选择，并给我最终目录树及 SHA256；不要先移动文件。","should_trigger":true},
   {"query":"我有四个可能相关的目录，但还没决定合并还是归组。先限制在 D:\\Work 和 E:\\Archive 内发现候选，生成文件、重复、冲突、Git 状态和 SHA256 清单，展示证据让我确认来源和模式；确认前不要自动选择或搬动。","should_trigger":true},
-  {"query":"旧电脑备份、本机工作目录和移动硬盘里都有这个项目的版本。我想最后只保留一个日常入口，同时把所有唯一文件和可恢复 Git 历史保存下来。请分阶段做盘点、目录树审批、迁移验收和旧位置退役，任何冲突都先 hold。","should_trigger":true},
+  {"query":"我在 Claude Code 里处理 C:\\Work\\Alpha-old 和 D:\\Backup\\Alpha，它们是同一项目的两个旧工作区。请先只读比较 SHA256、Git 历史并设计统一入口；可以由 Claude 和 Codex 协作，但通用编排不能替代目录树、迁移计划和退役清单的独立批准。","should_trigger":true},
   {"query":"请规划 D:\\Repos\\core 和 E:\\OldRepos\\core-legacy 两个仓库工作区的合并。文件可以按内容去重，但分支、stash、reflog 提交和未跟踪状态都要有恢复记录；先验证 Git bundle 和目标目录树，再生成带 SHA256 的执行计划。","should_trigger":true},
   {"query":"同类工程一部分在 E:\\PortableProjects，另一部分在 D:\\ActiveProjects。我想迁到 D:\\Engineering 共同父目录，每个工程保持独立。请先盘点哪些是跨盘复制、估算唯一字节和 20% 余量，确认哈希与 Git 恢复无误后再移动旧来源。","should_trigger":true},
   {"query":"D:\\Projects\\Demo 已经是单一项目，我只想整理它内部的 results 文件夹：把现有 PNG 放 figures、CSV 放 tables，并更新 README。不要查找其他项目目录，也不需要迁移或退役旧入口。","should_trigger":false},

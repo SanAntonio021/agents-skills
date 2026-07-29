@@ -7,6 +7,7 @@
       "expected_output": "进入 merge 模式，只读确认限定根目录、来源、目标和 Git 策略；生成哈希盘点与计划接口，不把同名异内容自动覆盖。",
       "files": [],
       "expectations": [
+        "Claude Code 即使加载 cross-model-orchestration，也继续叠加 project-organizer 专业流程",
         "明确使用 merge 模式并保持只读",
         "要求来源确认和计划 SHA256 批准",
         "完全重复按 SHA256 处理，同名异内容进入 hold",

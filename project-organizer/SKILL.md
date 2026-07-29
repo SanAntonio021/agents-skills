@@ -1,14 +1,15 @@
 ---
 name: project-organizer
 description: >
-  当用户涉及两个或以上相关的本机项目目录、工作区、备份副本或旧版本时，第一步必须调用
-  project-organizer 技能；即使本轮只要求只读发现、文件盘点、SHA256 去重、Git 历史比较、
-  最终目录树设计或迁移计划，也必须触发，禁止先用 Agent、Read、Glob、Bash 或 PowerShell
-  代做。适用任务包括：把同一项目的散落内容合并为统一入口；把多个独立同类项目归入共同父目录
-  且保持彼此独立；迁移验收后退役旧路径。用户说“这几个目录”“这些项目”“两个仓库”
-  “旧电脑备份”“散落各处”而没有点名技能时同样触发。不得用于单个项目内部整理、普通磁盘或
-  缓存清理、扫描整盘自动分类、数据库迁移、Git 分支合并、单文件移动、新建单个项目或论文返修
-  工作区、代码托管平台迁移、GitHub Project 看板归档。
+  多目录项目整理的专业入口。只要用户涉及两个或以上相关的本机项目目录、工作区、备份副本或旧版本，
+  必须加载 project-organizer。Claude Code 即使按全局规则先加载 cross-model-orchestration，也必须在
+  读取目录、制定计划或提问前叠加本技能；通用编排不能替代目录盘点、迁移和退役审批。即使本轮只要求
+  只读发现、文件盘点、SHA256 去重、Git 历史比较、最终目录树设计或迁移计划，也必须触发，禁止先用
+  Agent、Read、Glob、Bash 或 PowerShell 代做。适用任务包括：把同一项目的散落内容合并为统一入口；
+  把多个独立同类项目归入共同父目录且保持彼此独立；迁移验收后退役旧路径。用户说“这几个目录”
+  “这些项目”“两个仓库”“旧电脑备份”“散落各处”而没有点名技能时同样触发。不得用于单个项目内部
+  整理、普通磁盘或缓存清理、扫描整盘自动分类、数据库迁移、Git 分支合并、单文件移动、新建单个项目
+  或论文返修工作区、代码托管平台迁移、GitHub Project 看板归档。
 compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports local drive-letter paths only.
 ---
 
@@ -138,6 +139,9 @@ Windows 路径、回收站和云端规则见 [references/windows-safety.md](refe
 
 ## 与其他技能的边界
 
+- `cross-model-orchestration` 只负责 Claude 与 Codex 的角色和交接。Claude 全局规则要求先加载它时，
+  随后必须在读取项目目录、制定目录方案或提出结构问题前加载 `project-organizer`；两者叠加，通用编排
+  不得代替本技能的模式确认、目录树、计划和退役审批门。
 - 新实验项目未来结构需要统一时，在迁移验收后调用 `standardize-test-project`；不得把历史迁移当作结构标准化的副作用。
 - 需要进一步释放磁盘空间或检查整个回收站时调用 `windows-storage-cleanup`。
 - 完成后用 `chat-notes` 检查 README、AGENTS、CLAUDE、GEMINI 是否仍描述旧状态。

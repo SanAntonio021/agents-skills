@@ -1,0 +1,55 @@
+{
+  "skill_name": "project-organizer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "C:\\Work\\RadarDemo 和 D:\\OldProjects\\RadarDemo 是同一个项目，代码、文档和数据散在两边。我想合并到 D:\\Projects\\RadarDemo，只保留一个入口。先做计划，不要移动文件。",
+      "expected_output": "进入 merge 模式，只读确认限定根目录、来源、目标和 Git 策略；生成哈希盘点与计划接口，不把同名异内容自动覆盖。",
+      "files": [],
+      "expectations": [
+        "明确使用 merge 模式并保持只读",
+        "要求来源确认和计划 SHA256 批准",
+        "完全重复按 SHA256 处理，同名异内容进入 hold",
+        "不执行文件移动或删除"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我有 C:\\Clients\\alpha、D:\\Done\\beta 和 D:\\Legacy\\gamma，都是独立的射频测试项目。我想把它们搬到 D:\\RF-Projects 下面，各自保持独立 Git 仓库。",
+      "expected_output": "进入 group 模式，把三个项目映射到共同父目录下独立目标；分别保存 Git bundle，并说明同步目录外 Git 数据库要求。",
+      "files": [],
+      "expectations": [
+        "明确使用 group 模式且项目内容不混合",
+        "每个来源有独立 target_name",
+        "每个 Git 仓库分别保存和恢复测试",
+        "迁移与旧路径退役使用不同审批"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我把 D:\\CloudBackup\\ProjectX 直接搬到 C:\\Projects\\ProjectX。里面可能有百度云占位文件和 junction，空间也不多。你自己决定冲突，最后把旧目录彻底删掉。",
+      "expected_output": "拒绝直接执行；限定盘点范围，占位文件和 junction 进入 hold，计算跨盘空间，禁止自动决定冲突和清空回收站。",
+      "files": [],
+      "expectations": [
+        "不接受直接覆盖或自动冲突决策",
+        "云端占位文件和不安全重解析点进入 hold",
+        "跨盘复制需要 SHA256 和 20% 空间余量",
+        "技能不得自动清空回收站"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "C:\\Work\\ProjectMaterials、D:\\Archive\\ProjectDocs 和 D:\\Drafts\\ProjectPaper 实际属于同一个资料型项目。请整理到 D:\\Projects\\UnifiedProject。常用项目汇报 PPT 希望放根目录，其他日常材料用简短英文一级分类，论文和迁移审计可以保留必要内部层级。先给我最终目录树确认，不要移动文件。",
+      "expected_output": "进入 merge 模式并使用 ask-first 一次确认一个目录设计选择；提出脱敏浅层方案，展示可读最终目录树，并把目录树批准设为正式计划之前的独立审批门。",
+      "files": [],
+      "expectations": [
+        "使用 ask-first 一次只确认一个高影响目录设计问题",
+        "常用 PPT 可经批准放根目录，普通资料只保留一层短英文分类",
+        "论文和 migration 或 audit 记录允许必要内部层级",
+        "先展示可读目录树并取得独立 SHA256 批准，不把 mapping_rules 当作批准",
+        "目录树、映射和例外绑定 plan.sha256，验收拒绝旧套壳或额外空目录",
+        "保持只读，不移动文件"
+      ]
+    }
+  ]
+}

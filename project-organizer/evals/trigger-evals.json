@@ -1,0 +1,22 @@
+[
+  {"query":"D:\\Work\\Project-A 保存代码，D:\\Paper\\Project-A 保存论文和图件，两处实际属于同一个长期项目，而且都可能有重复文件和 Git 状态。请先只读盘点、比较 SHA256 和冲突，设计一个统一入口并展示最终目录树；目录树和迁移计划分别批准后再搬，旧路径另做退役清单。","should_trigger":true},
+  {"query":"C:\\Projects\\alpha、D:\\Archive\\beta 和 E:\\Portable\\gamma 是三个独立但同类的工程。我想把它们归到 D:\\Engineering 下面，每个项目保留自己的目录结构和 Git 历史。先检查跨盘空间、重复项和恢复包，不要把三个项目文件混在一起。","should_trigger":true},
+  {"query":"我找到 D:\\Legacy\\App、D:\\Backup\\App-old 和 E:\\LaptopCopy\\App 三个旧代码目录，不确定哪个最完整。请先生成稳定文件清单，找出完全重复和同名异内容冲突，保留各仓库 Git 历史，再给出迁移计划；没有独立退役批准前不要删除旧入口。","should_trigger":true},
+  {"query":"D:\\Lab\\RunWorkspace 和 E:\\BenchBackup\\RunWorkspace 都是同一实验项目，里面有重复原始数据、历史结果和不同 Git 提交。我需要合并到 D:\\Projects\\RunWorkspace，但必须先哈希盘点、保存两个历史恢复包、处理冲突并验收目标，不能直接覆盖或删除来源。","should_trigger":true},
+  {"query":"客户工程散落在 C:\\Clients\\alpha、D:\\Closed\\beta 和 E:\\Transfer\\gamma。我想统一搬到 D:\\Clients，每个客户仍是独立项目，不能平铺混合。请先确认 target_name、Git 策略和跨盘空间，再按批准清单迁移并单独处理旧路径。","should_trigger":true},
+  {"query":"三个散落的资料目录其实是一套项目。常用汇报 PPT 希望经批准放新入口根目录，其他日常材料只用简短英文一级分类，论文和迁移审计保留必要内部层级。请先只读查看材料，用 ask-first 一次确认一个目录设计选择，并给我最终目录树及 SHA256；不要先移动文件。","should_trigger":true},
+  {"query":"我有四个可能相关的目录，但还没决定合并还是归组。先限制在 D:\\Work 和 E:\\Archive 内发现候选，生成文件、重复、冲突、Git 状态和 SHA256 清单，展示证据让我确认来源和模式；确认前不要自动选择或搬动。","should_trigger":true},
+  {"query":"旧电脑备份、本机工作目录和移动硬盘里都有这个项目的版本。我想最后只保留一个日常入口，同时把所有唯一文件和可恢复 Git 历史保存下来。请分阶段做盘点、目录树审批、迁移验收和旧位置退役，任何冲突都先 hold。","should_trigger":true},
+  {"query":"请规划 D:\\Repos\\core 和 E:\\OldRepos\\core-legacy 两个仓库工作区的合并。文件可以按内容去重，但分支、stash、reflog 提交和未跟踪状态都要有恢复记录；先验证 Git bundle 和目标目录树，再生成带 SHA256 的执行计划。","should_trigger":true},
+  {"query":"同类工程一部分在 E:\\PortableProjects，另一部分在 D:\\ActiveProjects。我想迁到 D:\\Engineering 共同父目录，每个工程保持独立。请先盘点哪些是跨盘复制、估算唯一字节和 20% 余量，确认哈希与 Git 恢复无误后再移动旧来源。","should_trigger":true},
+  {"query":"D:\\Projects\\Demo 已经是单一项目，我只想整理它内部的 results 文件夹：把现有 PNG 放 figures、CSV 放 tables，并更新 README。不要查找其他项目目录，也不需要迁移或退役旧入口。","should_trigger":false},
+  {"query":"C 盘只剩 8 GB。请检查 Windows 临时目录、浏览器缓存和包管理器缓存，列出可安全释放的空间并等我批准清理；不要整理或合并任何项目工作区。","should_trigger":false},
+  {"query":"生产库要从 MySQL 8 迁移到 PostgreSQL 16，需要评估 schema、数据类型、停机窗口、双写和回滚方案。项目文件目录不变，这次只做数据库迁移设计。","should_trigger":false},
+  {"query":"当前 Git 仓库的 feature/layout 和 main 都修改了 README 与 src/config.ts。请比较提交、合并分支、解决冲突、跑测试并提交；不要移动仓库目录或整理多个工作区。","should_trigger":false},
+  {"query":"把 D:\\Downloads\\report.pdf 移到 D:\\Documents\\Reports，并确认目标没有同名文件。这只是一个文件的移动，不需要扫描其他目录或建立项目入口。","should_trigger":false},
+  {"query":"我要从零新建一个仪器实验项目，请在 D:\\Projects\\NewTest 下建立 code、config、data 和 results 骨架，写 README 和代理规则。没有旧项目来源需要合并。","should_trigger":false},
+  {"query":"把现有单个仓库从 GitHub 转移到 GitLab，要求保留 branches、tags、issues 导出和 CI 变量清单。工作区路径保持不变，不涉及多个目录归组。","should_trigger":false},
+  {"query":"GitHub Project 看板里有 27 个 Done 条目，请按完成日期归档并保留里程碑链接。这是远端看板维护，不处理本机项目目录。","should_trigger":false},
+  {"query":"扫描整个 D 盘并按文件扩展名自动分类所有内容，把文档、图片和压缩包移动到不同目录。我没有提供限定的项目来源，也不是在整理相关项目工作区。","should_trigger":false},
+  {"query":"这篇论文收到返修意见，需要新建 D:\\Papers\\Revision-2 工作区、复制期刊模板并整理回复信。原论文目录继续保留，本次没有多个散落来源需要合并。","should_trigger":false}
+]

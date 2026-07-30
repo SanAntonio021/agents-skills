@@ -4,7 +4,7 @@
   {"query":"我找到 D:\\Legacy\\App、D:\\Backup\\App-old 和 E:\\LaptopCopy\\App 三个旧代码目录，不确定哪个最完整。请先生成稳定文件清单，找出完全重复和同名异内容冲突，保留各仓库 Git 历史，再给出迁移计划；没有独立退役批准前不要删除旧入口。","should_trigger":true},
   {"query":"D:\\Lab\\RunWorkspace 和 E:\\BenchBackup\\RunWorkspace 都是同一实验项目，里面有重复原始数据、历史结果和不同 Git 提交。我需要合并到 D:\\Projects\\RunWorkspace，但必须先哈希盘点、保存两个历史恢复包、处理冲突并验收目标，不能直接覆盖或删除来源。","should_trigger":true},
   {"query":"客户工程散落在 C:\\Clients\\alpha、D:\\Closed\\beta 和 E:\\Transfer\\gamma。我想统一搬到 D:\\Clients，每个客户仍是独立项目，不能平铺混合。请先确认 target_name、Git 策略和跨盘空间，再按批准清单迁移并单独处理旧路径。","should_trigger":true},
-  {"query":"三个散落的资料目录其实是一套项目。常用汇报 PPT 希望经批准放新入口根目录，其他日常材料只用简短英文一级分类，论文和迁移审计保留必要内部层级。请先只读查看材料，用 ask-first 一次确认一个目录设计选择，并给我最终目录树及 SHA256；不要先移动文件。","should_trigger":true},
+  {"query":"三个散落的资料目录其实是一套项目。常用汇报 PPT 希望经批准放新入口根目录，其他日常材料只用简短英文一级分类，论文和迁移审计保留必要内部层级；这只是可选参考，不要把分类名固定成所有项目模板。请先只读查看材料，用 ask-first 一次确认一个目录设计选择，并给我最终目录树及 SHA256；不要先移动文件。","should_trigger":true},
   {"query":"我有四个可能相关的目录，但还没决定合并还是归组。先限制在 D:\\Work 和 E:\\Archive 内发现候选，生成文件、重复、冲突、Git 状态和 SHA256 清单，展示证据让我确认来源和模式；确认前不要自动选择或搬动。","should_trigger":true},
   {"query":"我在 Claude Code 里处理 C:\\Work\\Alpha-old 和 D:\\Backup\\Alpha，它们是同一项目的两个旧工作区。请先只读比较 SHA256、Git 历史并设计统一入口；可以由 Claude 和 Codex 协作，但通用编排不能替代目录树、迁移计划和退役清单的独立批准。","should_trigger":true},
   {"query":"请规划 D:\\Repos\\core 和 E:\\OldRepos\\core-legacy 两个仓库工作区的合并。文件可以按内容去重，但分支、stash、reflog 提交和未跟踪状态都要有恢复记录；先验证 Git bundle 和目标目录树，再生成带 SHA256 的执行计划。","should_trigger":true},

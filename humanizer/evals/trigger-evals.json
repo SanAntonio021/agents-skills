@@ -1,0 +1,22 @@
+[
+  {"id": "general-english-ai-tone", "category": "general", "query": "Please remove the AI-sounding wording from this English paragraph while preserving the meaning.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "explicit-humanizer", "category": "explicit", "query": "Use humanizer on this English draft.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-natural-rewrite", "category": "rewrite", "query": "Rewrite this English announcement so it sounds natural, without inventing facts.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-blog-polish", "category": "blog", "query": "Make this English blog paragraph less formulaic and keep the author's voice.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-release-note", "category": "release", "query": "Polish this English release note and remove generic AI phrasing.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-launch-copy", "category": "product-copy", "query": "Make this product launch copy sound like a person wrote it, using only the supplied product facts.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-social-post", "category": "social", "query": "Rewrite this English social post to sound less like a template.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-email-natural", "category": "email", "query": "Edit this English email so it is direct and human, not overly polished.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-document-review", "category": "document", "query": "Review this English document for AI-like wording and return the edited prose only.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "english-voice-sample", "category": "voice", "query": "Use my English writing sample to match the voice while humanizing this draft.", "should_trigger": true, "expected_route": "humanizer"},
+  {"id": "chinese-general", "category": "near-miss", "query": "去掉这段中文里的 AI 味，保持原意。", "should_trigger": false, "expected_route": "humanizer-zh"},
+  {"id": "ieee-abstract", "category": "near-miss", "query": "Rewrite this IEEE abstract in formal academic English and preserve the technical claims.", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
+  {"id": "sentence-only", "category": "near-miss", "query": "Check these three English sentences for redundancy only; do not rewrite the content.", "should_trigger": false, "expected_route": "sentence-polish"},
+  {"id": "engineering-proposal", "category": "near-miss", "query": "把工程申报书的研究内容写得更正式，按申报口径收紧。", "should_trigger": false, "expected_route": "project-writing"},
+  {"id": "english-grammar-only", "category": "near-miss", "query": "Correct the grammar in this English sentence without changing its style.", "should_trigger": false, "expected_route": "sentence-polish"},
+  {"id": "code-comments", "category": "negative", "query": "Remove AI wording from these code comments.", "should_trigger": false, "expected_route": "none"},
+  {"id": "commit-message", "category": "negative", "query": "Make this Git commit message shorter.", "should_trigger": false, "expected_route": "none"},
+  {"id": "chinese-paper-delivery", "category": "near-miss", "query": "润色这段中文论文交付稿，不要改变术语和证据强度。", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
+  {"id": "journal-selection", "category": "negative", "query": "Which journal should I submit this paper to?", "should_trigger": false, "expected_route": "journal-selection"},
+  {"id": "fact-research", "category": "negative", "query": "Find primary sources that verify these English claims.", "should_trigger": false, "expected_route": "research-lookup"}
+]

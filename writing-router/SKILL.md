@@ -34,7 +34,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
   - 单篇论文中文总结：[../paper-summary/SKILL.md](../paper-summary/SKILL.md)
   - 论文配图检查和规范化：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
   - 用词表维护与交付前用词检查：[../style-vocab/SKILL.md](../style-vocab/SKILL.md)
-  - 去掉文字里的 AI 味：英文文本 `humanizer`，中文文本 `Humanizer-zh`；交付的论文稿优先转 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 学术模式，申报书稿优先转 [../project-writing/SKILL.md](../project-writing/SKILL.md)，不给交付正文注入个性和第一人称
+  - 去掉文字里的 AI 味：英文一般文本 `humanizer`，中文一般文本 `humanizer-zh`；交付的论文稿优先转 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 学术模式，申报书稿优先转 [../project-writing/SKILL.md](../project-writing/SKILL.md)，不给交付正文注入个性和第一人称
   - 在线搜文献：`research-lookup`
   - Word 文档与模板格式化：[../docx/SKILL.md](../docx/SKILL.md)
   - md 转 LaTeX 与投稿工程（模板、BibTeX、编译；当前期刊或页面要求时才打包 source）：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)

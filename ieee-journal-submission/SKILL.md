@@ -25,7 +25,7 @@ description: IEEE 期刊投稿全生命周期助手。Use whenever 用户要准�
 1. 读取项目规则、稿件现状和 `<project-root>/outputs/submission/`。已有 `submission-state.json` 时先读它；没有时按 [../journal-submission/references/data-contracts.md](../journal-submission/references/data-contracts.md) 建立 `1.1` 记录。遇到旧 `1.0` 时，向用户明确说明它可兼容读取、不原地强制升级，并在下次正常更新项目状态时写入 `1.1`。
 2. 确认目标期刊、文章类型、当前生命周期阶段和投稿平台。信息能从当前页面、决定信或项目记录确认时，不再问用户。
 3. 联网或操作页面前加载 `web-access`。登录只使用浏览器现有会话或密码管理器；不读取、不回显、不保存明文密码。验证码和双重验证由用户完成。
-4. 读取通用 [../journal-submission/references/evidence-and-safety.md](../journal-submission/references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。ScholarOne 和 Editorial Manager 使用通用平台规则 [../journal-submission/references/platforms/scholarone.md](../journal-submission/references/platforms/scholarone.md) 与 [../journal-submission/references/platforms/editorial-manager.md](../journal-submission/references/platforms/editorial-manager.md)；IEEE Atypon Research Exchange 再读本目录的 [references/research-exchange.md](references/research-exchange.md)。目标期刊为 T-MTT 时再读 [references/tmtt-profile.md](references/tmtt-profile.md)。
+4. 读取通用 [../journal-submission/references/evidence-and-safety.md](../journal-submission/references/evidence-and-safety.md) 和 [../journal-submission/references/official-source-index.md](../journal-submission/references/official-source-index.md)。ScholarOne 和 Editorial Manager 使用通用平台规则 [../journal-submission/references/platforms/scholarone.md](../journal-submission/references/platforms/scholarone.md) 与 [../journal-submission/references/platforms/editorial-manager.md](../journal-submission/references/platforms/editorial-manager.md)；IEEE Atypon Research Exchange 再读本目录的 [references/research-exchange.md](references/research-exchange.md)。目标期刊为 T-MTT 时再读 [references/tmtt-profile.md](references/tmtt-profile.md)。
 5. 先用一句话说明当前阶段、已确认事实和下一项待确认内容，然后只问一个问题。
 
 ## 证据顺序
@@ -119,7 +119,7 @@ LaTeX source 包是条件性产物。只有当前页面或目标期刊指南要�
 
 ## 作者资料
 
-私有作者库默认位于 `<agents-root>/local-assets/ieee-journal-submission/authors.json`，格式见 [references/data-contracts.md](references/data-contracts.md)。
+私有作者库默认位于 `<agents-root>/local-assets/ieee-journal-submission/authors.json`，格式见通用 [../journal-submission/references/data-contracts.md](../journal-submission/references/data-contracts.md)。
 
 - 只保存姓名、称谓、职称、单位、部门、城市、省份、邮编、国家/地区、邮箱、ORCID、核验状态、来源和核验日期。
 - 不保存身份证号、手机号、学号、工号、密码和个人经历。

@@ -8,6 +8,25 @@
 `profile_id`，保存姓名、称谓、职称、单位、部门、城市、省份、邮编、国家/地区、按优先级排序的
 邮箱、ORCID、核验状态、来源和核验日期。
 
+作者记录至少区分：
+
+- `name_zh`、`given_name`、`family_name`；
+- `salutation`、`academic_title`；
+- `affiliation.institution`、`department`、`city`、`province`、`postal_code`、`country_region`；
+- 按 `priority` 排序的 `emails`；
+- `orcid`；
+- `verification.status`、`source`、`verified_at`。
+
+`salutation` 是投稿页面显示的称谓，`academic_title` 是作者的实际职称。两者都按当前可靠来源和页面选项填写；不能仅为了表示尊重，把非教授作者填写为 `Prof.`。页面选项、作者实际职称或来源不清时保留 `pending`，不要猜填。
+
+字段可写成 `{value, status, source, verified_at}`。状态使用：
+
+- `verified`：有当前可靠来源；
+- `user_confirmed`：用户明确提供或确认；
+- `pending`：缺失或尚未核验；
+- `conflict`：来源冲突，保留候选值；
+- `not_applicable`：该字段不适用。
+
 禁止保存具体稿件角色和敏感信息。`first_author`、`author_order`、`corresponding_author`、
 `submission_contact` 只允许出现在项目状态；身份证号、手机号、学号、工号、密码、cookie、token
 和个人经历不得保存。
@@ -60,7 +79,7 @@
 - `blocked`：存在阻断项或关键维度无法核验；
 - `pass`：通过。
 
-`pass` 必须同时保存检查时间和非空证据：
+`pass` 必须同时保存检查时间和非空 `evidence`：
 
 ```json
 {

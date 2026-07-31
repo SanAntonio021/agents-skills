@@ -1,6 +1,6 @@
 # ScholarOne Manuscripts
 
-平台归属：Silverchair。资料最后核对：`2026-07-26`。官方入口见 [official-source-index.md](official-source-index.md)。
+平台归属：Silverchair。资料最后核对：`2026-07-26`。官方入口见 [../../journal-submission/references/official-source-index.md](../../journal-submission/references/official-source-index.md)。
 
 ## 适用边界
 

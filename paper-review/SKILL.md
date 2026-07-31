@@ -28,6 +28,10 @@ description: 对现有文稿做 A/B/C 分级审查，判断是否还应继续修
    - 或 `结论：建议停止润色`
 6. 如果用户随后要求继续改，只优先处理 `A 类` 和必要的 `B 类`，不要被 `C 类` 带进无休止润色。
 
+当用户要求“无上下文读者测试”、稿件面向陌生读者，或文稿依赖大量前文背景时，可选读取
+[references/reader-test.md](references/reader-test.md)。这是审查方法，不是自动阻断项；不把
+用户材料发送到外部服务，也不把读者测试结果伪装成事实核查或投稿通过。
+
 投稿前把关另输出机器可记录的审查门结果：存在阻断项或必要维度无法核验时为 `blocked`；只有全部阻断项关闭后才为 `pass`。`pass` 必须同时给出 `checked_at` 和能定位到稿件、报告或官方要求的非空 `evidence`，不得输出无证据的通过结论。
 
 ## 输出结构
@@ -86,6 +90,7 @@ C 类：风格偏好
 
 - 停稿清单：[references/stopline-checklist.md](references/stopline-checklist.md)
 - 投稿前把关（预检+模拟审稿）：[references/submission-gauntlet.md](references/submission-gauntlet.md)
+- 无上下文读者测试（可选）：[references/reader-test.md](references/reader-test.md)
 - 触发边界测试：[references/trigger-evals.json](references/trigger-evals.json)
 
 ## 维护

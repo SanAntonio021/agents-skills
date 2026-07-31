@@ -27,7 +27,7 @@
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
 | 用词表维护/交付前扫词 | 别用这个词、这个词太 AI、收录用词、检查用词 | `style-vocab` |
-| 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | 英文 `humanizer`；中文 `Humanizer-zh`；论文/申报书交付稿优先 `ieee-manuscript-edit` / `project-writing` |
+| 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | 英文一般文本 `humanizer`；中文一般文本 `humanizer-zh`；论文/申报书交付稿优先 `ieee-manuscript-edit` / `project-writing` |
 | 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `docx` |
 | LaTeX 转换与投稿工程 | 转 LaTeX、套期刊模板、BibTeX、编译报错；当前期刊或页面要求时打包 source | `latex-paper` |
@@ -125,7 +125,7 @@
 | Imbad0202/academic-research-skills | 4 个 skill 的写-审全链路，12-agent 写作 + 7-agent 审稿 | paper-review 的多视角审稿、ieee-manuscript-edit 的修改回应 |
 | claesbackman/AI-research-feedback | 6-agent 期刊定向审稿 + grant review | paper-review 的期刊定向评审、未来的基金申请 skill |
 | wanshuiyin grant-proposal | 9 个国际基金机构（NSF/NIH/NSFC/ERC 等）、3 种语言的基金申请 | 未来独立的 grant-writing skill |
-| kgraph57/paper-writer-skill | 10 阶段全流程写稿，18 项 AI 写作痕迹清除模式 | Humanizer-zh 的英文版扩展 |
+| kgraph57/paper-writer-skill | 10 阶段全流程写稿，18 项 AI 写作痕迹清除模式 | `humanizer-zh` 的英文版扩展 |
 
 ## 推荐节奏
 

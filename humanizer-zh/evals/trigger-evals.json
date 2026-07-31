@@ -1,0 +1,22 @@
+[
+  {"id": "general-chinese-ai-tone", "category": "general", "query": "去掉这段中文里的 AI 味，保留事实和原来的语气。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "explicit-humanizer-zh", "category": "explicit", "query": "请用 humanizer-zh 改写下面这段中文。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-natural-rewrite", "category": "rewrite", "query": "把这段中文改得自然一点，不要添加材料里没有的事实。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-blog-polish", "category": "blog", "query": "这段中文博客太像机器写的，帮我收紧句子但保留作者口吻。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-release-note", "category": "release", "query": "去掉中文更新说明里的套话，保留版本号、日期和功能事实。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-product-copy", "category": "product-copy", "query": "把这段中文产品文案改得像真人写的，不要夸大功能。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-social-post", "category": "social", "query": "重写这条中文社交媒体文案，去掉模板腔。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-email-natural", "category": "email", "query": "把这封中文邮件改得直接、自然，不要加客套话。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-document-review", "category": "document", "query": "审阅这份中文文档，找出 AI 写作痕迹并给出改写稿。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "chinese-voice-boundary", "category": "voice", "query": "用我给的中文样文保持语气，改掉这段文字里的机械表达。", "should_trigger": true, "expected_route": "humanizer-zh"},
+  {"id": "english-general", "category": "near-miss", "query": "Remove the AI tone from this English paragraph.", "should_trigger": false, "expected_route": "humanizer"},
+  {"id": "ieee-chinese-paper", "category": "near-miss", "query": "把这段中文论文改成可投稿的 IEEE 英文，校准术语和证据强度。", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
+  {"id": "grant-delivery", "category": "near-miss", "query": "把工程申报书这段中文按正式申报口径重写。", "should_trigger": false, "expected_route": "project-writing"},
+  {"id": "english-sentence-only", "category": "near-miss", "query": "只检查这三句英文是否冗余，不改技术内容。", "should_trigger": false, "expected_route": "sentence-polish"},
+  {"id": "chinese-grammar-only", "category": "near-miss", "query": "只改这句话的中文语法，不要改变文风。", "should_trigger": false, "expected_route": "none"},
+  {"id": "code-comments", "category": "negative", "query": "去掉这些代码注释里的 AI 味。", "should_trigger": false, "expected_route": "none"},
+  {"id": "word-formatting", "category": "negative", "query": "把这份中文 Word 文档的目录和样式修好。", "should_trigger": false, "expected_route": "docx"},
+  {"id": "journal-selection", "category": "negative", "query": "这篇中文论文该投哪本期刊？", "should_trigger": false, "expected_route": "journal-selection"},
+  {"id": "fact-research", "category": "negative", "query": "查找并核实这段中文里的技术事实和来源。", "should_trigger": false, "expected_route": "research-lookup"},
+  {"id": "paper-review", "category": "negative", "query": "按 A/B/C 分级审查这份中文稿件，判断还要不要继续改。", "should_trigger": false, "expected_route": "paper-review"}
+]

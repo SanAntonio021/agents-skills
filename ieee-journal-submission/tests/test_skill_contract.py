@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import re
 import unittest
@@ -25,6 +26,35 @@ class SkillContractTests(unittest.TestCase):
         match = re.search(r"^name:\s*(\S+)$", self.skill_text, re.MULTILINE)
         self.assertIsNotNone(match)
         self.assertEqual(match.group(1), ROOT.name)
+
+    def test_shared_core_dependency_is_explicit(self):
+        shared = SKILLS_ROOT / "journal-submission"
+        self.assertTrue((shared / "SKILL.md").is_file())
+        self.assertIn("../journal-submission/SKILL.md", self.skill_text)
+        self.assertIn("明确的依赖错误", self.skill_text)
+        self.assertIn("../journal-submission/references/data-contracts.md", self.skill_text)
+        self.assertIn("../journal-submission/references/lifecycle.md", self.skill_text)
+
+    def test_validator_is_a_shared_core_shim(self):
+        validator = (ROOT / "scripts" / "validate_submission_records.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CANONICAL_SCRIPT", validator)
+        self.assertIn('"journal-submission"', validator)
+        self.assertIn("requires the sibling journal-submission skill", validator)
+        self.assertNotIn("def validate_state(", validator)
+
+    def test_validator_reports_missing_shared_core(self):
+        path = ROOT / "scripts" / "validate_submission_records.py"
+        spec = importlib.util.spec_from_file_location("ieee_validator_shim_test", path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        module.CANONICAL_SCRIPT = ROOT / "journal-submission-missing" / "validator.py"
+        with self.assertRaisesRegex(ImportError, "requires the sibling journal-submission skill"):
+            module._load_canonical()
 
     def test_all_lifecycle_states_are_documented(self):
         for stage in sorted(VALID_STAGES):

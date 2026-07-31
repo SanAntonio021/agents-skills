@@ -50,6 +50,12 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 
 `pdftoppm` zero-pads page numbers to the width of the page count (`page-01.jpg`…`page-12.jpg`).
 
+## Optional delivery QA
+
+Only when the task explicitly involves accessibility, privacy/redaction, or document metadata,
+read [references/delivery-qa-checklist.md](references/delivery-qa-checklist.md). It supplements the
+render-and-inspect gate above and does not replace style, OOXML, or visual validation.
+
 ## Reusing Word templates and presets
 
 Content editing and template replacement are separate modes. Keep an existing document's style table

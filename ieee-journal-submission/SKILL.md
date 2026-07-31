@@ -11,12 +11,21 @@ description: IEEE 期刊投稿全生命周期助手。Use whenever 用户要准�
 
 默认用中文解释，保留页面上的英文专业术语。一次只问一个问题。用户已明确给出的事实不要重复询问。
 
+## 通用核心依赖
+
+本入口依赖同一技能仓库中的 `journal-submission` 通用核心。生命周期、`submission-state`
+数据契约、证据和安全门、通用材料模板、平台通用规则以及校验器都以
+[../journal-submission/SKILL.md](../journal-submission/SKILL.md) 和其 references/scripts 为准。
+本目录只保留 IEEE Author Center、IEEE Xplore、版权/OA/费用、IEEE 租户页面、T-MTT
+画像和 IEEE 专属测试。加载或执行时如果找不到通用核心，必须报告明确的依赖错误并停止，
+不得静默使用旧副本继续。
+
 ## 开始前
 
-1. 读取项目规则、稿件现状和 `<project-root>/outputs/submission/`。已有 `submission-state.json` 时先读它；没有时按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录。遇到旧 `1.0` 时，向用户明确说明它可兼容读取、不原地强制升级，并在下次正常更新项目状态时写入 `1.1`。
+1. 读取项目规则、稿件现状和 `<project-root>/outputs/submission/`。已有 `submission-state.json` 时先读它；没有时按 [../journal-submission/references/data-contracts.md](../journal-submission/references/data-contracts.md) 建立 `1.1` 记录。遇到旧 `1.0` 时，向用户明确说明它可兼容读取、不原地强制升级，并在下次正常更新项目状态时写入 `1.1`。
 2. 确认目标期刊、文章类型、当前生命周期阶段和投稿平台。信息能从当前页面、决定信或项目记录确认时，不再问用户。
 3. 联网或操作页面前加载 `web-access`。登录只使用浏览器现有会话或密码管理器；不读取、不回显、不保存明文密码。验证码和双重验证由用户完成。
-4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。Research Exchange 读 [references/research-exchange.md](references/research-exchange.md)，ScholarOne 读 [references/scholarone.md](references/scholarone.md)，Editorial Manager 读 [references/editorial-manager.md](references/editorial-manager.md)。目标期刊为 T-MTT 时再读 [references/tmtt-profile.md](references/tmtt-profile.md)。
+4. 读取通用 [../journal-submission/references/evidence-and-safety.md](../journal-submission/references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。ScholarOne 和 Editorial Manager 使用通用平台规则 [../journal-submission/references/platforms/scholarone.md](../journal-submission/references/platforms/scholarone.md) 与 [../journal-submission/references/platforms/editorial-manager.md](../journal-submission/references/platforms/editorial-manager.md)；IEEE Atypon Research Exchange 再读本目录的 [references/research-exchange.md](references/research-exchange.md)。目标期刊为 T-MTT 时再读 [references/tmtt-profile.md](references/tmtt-profile.md)。
 5. 先用一句话说明当前阶段、已确认事实和下一项待确认内容，然后只问一个问题。
 
 ## 证据顺序
@@ -33,7 +42,7 @@ description: IEEE 期刊投稿全生命周期助手。Use whenever 用户要准�
 
 ## 生命周期
 
-状态、允许转移和每阶段产物见 [references/lifecycle.md](references/lifecycle.md)。标准状态：
+状态、允许转移和每阶段产物见通用 [../journal-submission/references/lifecycle.md](../journal-submission/references/lifecycle.md)。标准状态：
 
 `preparation`、`initial_submission`、`editorial_check`、`under_review`、`decision_received`、`revision`、`resubmission`、`accepted`、`final_files`、`copyright_fees`、`proof`、`published`，以及 `rejected`、`withdrawn`、`transferred`。
 
@@ -60,7 +69,7 @@ description: IEEE 期刊投稿全生命周期助手。Use whenever 用户要准�
 2. 向用户解释本页目的和风险，只问当前最关键的一项。
 3. 用户确认后才代填；填完立即回读页面值，逐页让用户确认。
 4. 任何情况下都不代点最终 `Submit`、返修 `Submit` 或同义最终动作。即使审查门已通过、用户已确认或明确要求代点，也必须停在按钮前，由用户本人亲自操作；收到系统确认页或确认邮件后再更新状态。提交前只生成最后核对摘要：稿件、作者与角色、文件、声明、审稿人、费用相关选择、当前页面要求的 proof/preview 和审查门证据。
-5. 最终核对摘要前，按 [references/evidence-and-safety.md](references/evidence-and-safety.md) 做提交文件新鲜度检查；正文、参考文献或正式图件在构建后发生变化时，原 PDF、source 包或 Reviewer PDF 的编译与目检结论立即失效。
+5. 最终核对摘要前，按 [../journal-submission/references/evidence-and-safety.md](../journal-submission/references/evidence-and-safety.md) 做提交文件新鲜度检查；正文、参考文献或正式图件在构建后发生变化时，原 PDF、source 包或 Reviewer PDF 的编译与目检结论立即失效。
 6. 页面变化时按当前页面重新识别，不强套旧步骤。按“开始前”中的平台资料路由处理。
 
 LaTeX source 包是条件性产物。只有当前页面或目标期刊指南要求 source 时，才转 `latex-paper` 生成；页面只要求 PDF 或 Word 时不额外生成 ZIP。
@@ -119,7 +128,7 @@ LaTeX source 包是条件性产物。只有当前页面或目标期刊指南要�
 
 ## 可生成材料
 
-可创建或更新 Cover Letter、阶段检查清单、文件清单、条件性 LaTeX source 打包说明、审稿意见台账、声明选择记录和投稿归档。模板见 [references/material-templates.md](references/material-templates.md)。
+可创建或更新 Cover Letter、阶段检查清单、文件清单、条件性 LaTeX source 打包说明、审稿意见台账、声明选择记录和投稿归档。通用模板见 [../journal-submission/references/material-templates.md](../journal-submission/references/material-templates.md)。
 
 生成材料前读取当前稿件和期刊要求。Cover Letter 只能使用稿件中有证据的贡献与结果，不添加宣传性结论。
 

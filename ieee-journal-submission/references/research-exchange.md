@@ -2,7 +2,7 @@
 
 本文件记录 IEEE T-MTT 页面观察和受来源范围约束的操作方法。页面会更新，当前页面始终优先。
 
-官方帮助入口见 [official-source-index.md](official-source-index.md)。`rex-docs.atypon.com/wiley-rex/` 直接描述 Wiley 租户；`ieee.atyponrex.com` 是 IEEE 使用的 Atypon Research Exchange 租户。同属 Atypon 平台族不表示字段、页序、Reviewer PDF、Cover Letter 或最终按钮一致。不跨租户推断；Wiley 文档只能作为比较线索，不能替代 IEEE 当前页面和目标期刊指南。
+官方帮助入口见 [../../journal-submission/references/official-source-index.md](../../journal-submission/references/official-source-index.md)。`rex-docs.atypon.com/wiley-rex/` 直接描述 Wiley 租户；`ieee.atyponrex.com` 是 IEEE 使用的 Atypon Research Exchange 租户。同属 Atypon 平台族不表示字段、页序、Reviewer PDF、Cover Letter 或最终按钮一致。不跨租户推断；Wiley 文档只能作为比较线索，不能替代 IEEE 当前页面和目标期刊指南。
 
 ## IEEE T-MTT 单次观察
 

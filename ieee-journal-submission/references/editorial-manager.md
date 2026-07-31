@@ -2,7 +2,7 @@
 
 平台提供方：Aries Systems。资料最后核对：`2026-07-26`。本资料基于 Aries 官方帮助，尚未经过本机真实投稿页面验证；首次实际使用必须逐页核对并补带日期记录。
 
-官方入口见 [official-source-index.md](official-source-index.md)。
+官方入口见 [../../journal-submission/references/official-source-index.md](../../journal-submission/references/official-source-index.md)。
 
 ## 已确认的官方通用结构
 

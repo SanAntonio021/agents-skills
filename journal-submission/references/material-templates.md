@@ -18,7 +18,9 @@ Sincerely,
 [CONFIRMED ROLE; include "on behalf of all authors" only if separately confirmed]
 ```
 
-署名人、角色和声明必须由用户确认。页面给出长度上限时，把它当最大值，不为凑字数扩写。
+署名人、角色和声明必须由用户确认。系统没有指定提交人时，可代表全体作者写 `we` / `our`；署名人和角色必须由用户确认。
+
+如果页面给出 500 words、字符数或其他长度上限，先记录单位和完整字段说明。上限是最大值，不是应达到的目标；Cover Letter 应保持简洁完整，不为凑字数添加空话、重复结果或未经稿件支持的宣传性表述。
 
 ## 文件清单
 

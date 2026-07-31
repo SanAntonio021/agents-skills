@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = ROOT.parent
+GENERIC_REFERENCES = SKILLS_ROOT / "journal-submission" / "references"
 VALID_STAGES = {
     "preparation", "initial_submission", "editorial_check", "under_review",
     "decision_received", "revision", "resubmission", "accepted", "final_files",
@@ -86,7 +87,7 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("不跨租户", rex)
 
     def test_all_confirmation_gates_are_documented(self):
-        safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
+        safety = (GENERIC_REFERENCES / "evidence-and-safety.md").read_text(encoding="utf-8")
         required_phrases = [
             "作者增删、顺序和通信作者",
             "伦理、利益冲突、数据、代码和重复投稿声明",
@@ -130,8 +131,8 @@ class SkillContractTests(unittest.TestCase):
         )
 
     def test_practice_rules_from_tmtt_submission_are_documented(self):
-        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
-        materials = (ROOT / "references" / "material-templates.md").read_text(encoding="utf-8")
+        contracts = (GENERIC_REFERENCES / "data-contracts.md").read_text(encoding="utf-8")
+        materials = (GENERIC_REFERENCES / "material-templates.md").read_text(encoding="utf-8")
         rex = (ROOT / "references" / "research-exchange.md").read_text(encoding="utf-8")
         tmtt = (ROOT / "references" / "tmtt-profile.md").read_text(encoding="utf-8")
 
@@ -145,9 +146,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("不是已确认的强制项", tmtt)
 
     def test_submission_artifact_freshness_gate_is_documented(self):
-        safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
-        lifecycle = (ROOT / "references" / "lifecycle.md").read_text(encoding="utf-8")
-        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
+        safety = (GENERIC_REFERENCES / "evidence-and-safety.md").read_text(encoding="utf-8")
+        lifecycle = (GENERIC_REFERENCES / "lifecycle.md").read_text(encoding="utf-8")
+        contracts = (GENERIC_REFERENCES / "data-contracts.md").read_text(encoding="utf-8")
         rex = (ROOT / "references" / "research-exchange.md").read_text(encoding="utf-8")
 
         self.assertIn("提交文件新鲜度检查", self.skill_text)
@@ -161,9 +162,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("最后一次文件上传重新生成或复核", rex)
 
     def test_review_gate_and_conditional_source_are_documented(self):
-        contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
-        safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
-        template = (ROOT / "references" / "material-templates.md").read_text(encoding="utf-8")
+        contracts = (GENERIC_REFERENCES / "data-contracts.md").read_text(encoding="utf-8")
+        safety = (GENERIC_REFERENCES / "evidence-and-safety.md").read_text(encoding="utf-8")
+        template = (GENERIC_REFERENCES / "material-templates.md").read_text(encoding="utf-8")
         self.assertIn("pre_submission_review", self.skill_text)
         self.assertIn("可兼容读取、不原地强制升级", self.skill_text)
         self.assertIn("checked_at", contracts)
@@ -176,7 +177,7 @@ class SkillContractTests(unittest.TestCase):
         self.assertTrue((ROOT / "scripts" / "validate_submission_records.py").is_file())
 
     def test_cover_letter_declarations_are_conditional(self):
-        template = (ROOT / "references" / "material-templates.md").read_text(
+        template = (GENERIC_REFERENCES / "material-templates.md").read_text(
             encoding="utf-8"
         )
         self.assertIn("only after separate user confirmation", template)

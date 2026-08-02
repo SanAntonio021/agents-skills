@@ -84,6 +84,10 @@ python <script> weekly-run `
 
 上游路径移动经 Git 历史确认后，用 `upstream_path` 记录当前路径，用 `accepted_upstream_path` 保留 `accepted_commit` 当时的路径，并登记 `path_migration_commit` 和 `path_migration_evidence`。校验器必须确认接受提交是迁移提交的祖先、当前镜像包含迁移提交，且迁移前后的技能目录 tree 相同。路径确认只修正来源身份；`accepted_commit` 保持不变，迁移后真正发生的内容变化仍进入收益评估。以后本地真正吸收新提交时，同时把 `accepted_upstream_path` 更新到该接受提交对应的路径。
 
+当一个来源需要从仓库根同时跟踪运行时、启动器和技能子目录时，`upstream_path = "."` 保留仓库根范围，并用仓库相对的 `skill_entry_path` 明确真正的 `SKILL.md`。校验、差异和候选准备必须分别使用入口路径与跟踪范围，不能假定仓库根一定存在 `SKILL.md`。未登记 `skill_entry_path` 时，仍按 `<upstream_path>/SKILL.md` 处理，保持现有来源兼容。
+
+没有许可证或书面授权、但必须保留历史吸收证据的来源，可经用户逐技能批准后登记 `update_policy = "provenance_only"`。这种来源继续记录仓库、路径、接受提交和最近观测提交，但永不生成更新候选、跳过许可证变化吸收，也不推进 `accepted_commit`。它不是许可证授权；以后只有取得一手授权并再次批准修改策略，才可恢复普通更新审核。
+
 如果上游把原有行为拆到新建的 `sections/`、`references/` 或脚本目录，必须把该目录补进 `tracked_paths`。新路径可以在 `accepted_commit` 时不存在，但必须存在于当前 HEAD；差异中按新增文件进入收益评估。这样不会因只跟踪入口 `SKILL.md` 而漏掉外置行为变化。
 
 周检还会查找既有 `review-context.json`。当 `candidate_status` 为 `awaiting_approval`，且技能、来源、`accepted_commit` 和当前上游提交完全一致时，来源状态显示为 `awaiting_approval` 并给出审核目录，不重复显示 `review_required`。这一步只恢复待批准提醒，不更新 `accepted_commit` 或 `last_reviewed_commit`；真正应用前仍执行候选时效、证据哈希和目标技能状态检查。

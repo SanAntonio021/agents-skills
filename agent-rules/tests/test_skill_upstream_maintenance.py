@@ -499,6 +499,76 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertEqual(invalid["status"], "invalid")
         self.assertTrue(any("repository-relative" in item for item in invalid["errors"]))
 
+    def test_repository_root_scope_can_use_explicit_skill_entry(self) -> None:
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            'upstream_path = "."\nskill_entry_path = "skills/source-skill/SKILL.md"',
+        ).replace(
+            'tracked_paths = ["SKILL.md", "scripts", "references"]',
+            'tracked_paths = ["skills/source-skill", "README.md"]',
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(validation["status"], "ok", validation["errors"])
+
+        entry = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        entry.write_text("# source v2\n", encoding="utf-8")
+        current = commit_all(self.mirror, "update nested entry")
+        diff = MODULE.source_diff(self.mirror, skills[0].sources[0], current)
+        self.assertEqual(diff["status"], "review_required")
+        self.assertIn(
+            "skills/source-skill/SKILL.md",
+            [item["path"] for item in diff["changed"]],
+        )
+
+    def test_provenance_only_source_skips_license_and_candidate_updates(self) -> None:
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'baseline_kind = "exact"',
+            'baseline_kind = "exact"\nupdate_policy = "provenance_only"',
+            1,
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+
+        (self.mirror / "LICENSE").write_text("changed terms\n", encoding="utf-8")
+        (self.mirror / "skills" / "source-skill" / "SKILL.md").write_text(
+            "# source v2\n", encoding="utf-8"
+        )
+        current = commit_all(self.mirror, "change provenance-only source")
+        diff = MODULE.source_diff(self.mirror, skills[0].sources[0], current)
+        self.assertEqual(diff["status"], "provenance_only")
+
+        report = MODULE.build_report(
+            skills, mirrors, self.root / "reports", "2026-07-29", self.root / "state.json"
+        )
+        self.assertEqual(report["sources"][0]["status"], "provenance_only")
+        blocked = MODULE.prepare_review(
+            skills,
+            mirrors,
+            self.skills,
+            self.root / "reports",
+            "2026-07-29",
+            "alpha",
+            "example-source",
+            current,
+        )
+        self.assertEqual(blocked["status"], "blocked_provenance_only")
+
+    def test_rejects_unsafe_skill_entry_and_unknown_update_policy(self) -> None:
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            'upstream_path = "skills/source-skill"\n'
+            'skill_entry_path = "../SKILL.md"\n'
+            'update_policy = "automatic"',
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        skills, mirrors = self.load()
+        invalid = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(invalid["status"], "invalid")
+        self.assertTrue(any("skill_entry_path" in item for item in invalid["errors"]))
+        self.assertTrue(any("unsupported update_policy" in item for item in invalid["errors"]))
+
     def test_render_is_deterministic_and_detects_drift(self) -> None:
         skills, _ = self.load()
         first = MODULE.render_references(skills, self.skills, check_only=False)

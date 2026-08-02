@@ -3,7 +3,7 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-07-26`
+- 最近来源登记审核：`2026-08-02`
 - 说明：2026-07-26 用户确认 5 个外部仓库作为单篇论文总结参考来源；本地只吸收阅读模式、图表公式检查、论文类型识别、太赫兹通信字段和 Paperzilla markdown 输入兼容。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
@@ -14,9 +14,11 @@
 - 仓库：https://github.com/huangkiki/dailypaper-skills.git
 - 当前上游路径：`skills/paper-reader`
 - 接受时上游路径：`skills/paper-reader`
-- 已接受提交：`ec6329c9ee6405f706d7a327937872ae75220774`
+- 技能入口：`skills/paper-reader/SKILL.md`
+- 已接受提交：`a79ff8be1f785aa0f1ef8b53c37ed59f2f81ce5c`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`Apache-2.0`
 - 镜像登记：`huangkiki-dailypaper-skills`
 
@@ -53,9 +55,11 @@
 - 仓库：https://github.com/lijigang/ljg-skills.git
 - 当前上游路径：`skills/ljg-paper`
 - 接受时上游路径：`skills/ljg-paper`
+- 技能入口：`skills/ljg-paper/SKILL.md`
 - 已接受提交：`0e78094f449a331d25f692d0b6518f5623fd018f`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`NOASSERTION (no LICENSE file; README has no license section)`
 - 镜像登记：`lijigang-ljg-skills`
 
@@ -89,9 +93,11 @@
 - 仓库：https://github.com/wentorai/research-plugins.git
 - 当前上游路径：`skills/literature/metadata/academic-paper-summarizer`
 - 接受时上游路径：`skills/literature/metadata/academic-paper-summarizer`
+- 技能入口：`skills/literature/metadata/academic-paper-summarizer/SKILL.md`
 - 已接受提交：`bf44b3cd617fa94c8a1b254c5d1987142ca3d631`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`wentorai-research-plugins`
 
@@ -124,9 +130,11 @@
 - 仓库：https://github.com/wentorai/research-plugins.git
 - 当前上游路径：`skills/research/paper-review/paper-reading-assistant`
 - 接受时上游路径：`skills/research/paper-review/paper-reading-assistant`
+- 技能入口：`skills/research/paper-review/paper-reading-assistant/SKILL.md`
 - 已接受提交：`bf44b3cd617fa94c8a1b254c5d1987142ca3d631`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`wentorai-research-plugins`
 
@@ -157,9 +165,11 @@
 - 仓库：https://github.com/zsyggg/paper-craft-skills.git
 - 当前上游路径：`skills/paper-analyzer`
 - 接受时上游路径：`skills/paper-analyzer`
+- 技能入口：`skills/paper-analyzer/SKILL.md`
 - 已接受提交：`3be47a2a53cc35a411c587bca5231a08de57287a`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT (README-only; no LICENSE file)`
 - 镜像登记：`zsyggg-paper-craft-skills`
 
@@ -194,9 +204,11 @@
 - 仓库：https://github.com/K-Dense-AI/scientific-agent-skills.git
 - 当前上游路径：`skills/paperzilla`
 - 接受时上游路径：`skills/paperzilla`
+- 技能入口：`skills/paperzilla/SKILL.md`
 - 已接受提交：`a1b84fb2235e3b24d4af08b0b118414ff3d95d41`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`k-dense-ai-scientific-agent-skills-paperzilla`
 

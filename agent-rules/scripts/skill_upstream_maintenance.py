@@ -74,6 +74,7 @@ class SourceRecord:
     mirror_id: str
     repo_url: str
     upstream_path: str
+    skill_entry_path: str
     accepted_upstream_path: str
     path_migration_commit: str
     path_migration_evidence: tuple[str, ...]
@@ -81,6 +82,7 @@ class SourceRecord:
     accepted_version: str
     license: str
     baseline_kind: str
+    update_policy: str
     tracked_paths: tuple[str, ...]
     license_paths: tuple[str, ...]
     evidence: tuple[str, ...]
@@ -254,6 +256,7 @@ def load_sources(path: Path) -> list[SkillRecord]:
                 mirror_id=str(source["mirror_id"]),
                 repo_url=str(source["repo_url"]),
                 upstream_path=str(source["upstream_path"]).strip("/"),
+                skill_entry_path=str(source.get("skill_entry_path", "")).strip("/"),
                 accepted_upstream_path=str(
                     source.get("accepted_upstream_path", source["upstream_path"])
                 ).strip("/"),
@@ -265,6 +268,7 @@ def load_sources(path: Path) -> list[SkillRecord]:
                 accepted_version=str(source.get("accepted_version", "")),
                 license=str(source["license"]),
                 baseline_kind=str(source.get("baseline_kind", "exact")),
+                update_policy=str(source.get("update_policy", "review")),
                 tracked_paths=tuple(str(value).strip("/") for value in source.get("tracked_paths", [])),
                 license_paths=tuple(str(value).strip("/") for value in source.get("license_paths", [])),
                 evidence=tuple(str(value) for value in source.get("evidence", [])),
@@ -339,6 +343,12 @@ def source_repo_path(
         return root
     child = child.strip("/")
     return f"{root}/{child}" if root else child
+
+
+def source_skill_entry_path(source: SourceRecord, *, accepted: bool = False) -> str:
+    if source.skill_entry_path:
+        return source.skill_entry_path
+    return source_repo_path(source, "SKILL.md", accepted=accepted)
 
 
 def source_tracked_pathspecs(source: SourceRecord) -> list[str]:
@@ -460,6 +470,14 @@ def validate_registry(
                 errors.append(
                     f"{skill.name}/{source.id}: accepted_upstream_path must be a safe repository-relative path"
                 )
+            if source.skill_entry_path and not is_safe_repo_path(source.skill_entry_path):
+                errors.append(
+                    f"{skill.name}/{source.id}: skill_entry_path must be a safe repository-relative path"
+                )
+            if source.update_policy not in {"review", "provenance_only"}:
+                errors.append(
+                    f"{skill.name}/{source.id}: unsupported update_policy {source.update_policy}"
+                )
             paths_migrated = source.accepted_upstream_path != source.upstream_path
             if paths_migrated:
                 if not SHA_PATTERN.fullmatch(source.path_migration_commit):
@@ -516,6 +534,23 @@ def validate_registry(
                     )])
                     if baseline_path.returncode != 0:
                         errors.append(f"{skill.name}/{source.id}: upstream path missing at accepted commit")
+                    accepted_entry = source_skill_entry_path(source, accepted=True)
+                    if git(
+                        mirror.local_path,
+                        ["cat-file", "-e", git_object(source.accepted_commit, accepted_entry)],
+                    ).returncode != 0:
+                        errors.append(
+                            f"{skill.name}/{source.id}: skill entry missing at accepted commit: {accepted_entry}"
+                        )
+                    mirror_head = current_head(mirror.local_path)
+                    current_entry = source_skill_entry_path(source)
+                    if mirror_head and git(
+                        mirror.local_path,
+                        ["cat-file", "-e", git_object(mirror_head, current_entry)],
+                    ).returncode != 0:
+                        errors.append(
+                            f"{skill.name}/{source.id}: skill entry missing at current HEAD: {current_entry}"
+                        )
                     for tracked_path in source.tracked_paths:
                         tracked_blob = git(
                             mirror.local_path,
@@ -667,9 +702,11 @@ def render_skill_reference(skill: SkillRecord) -> str:
                 f"- 仓库：{source.repo_url}",
                 f"- 当前上游路径：`{source.upstream_path}`",
                 f"- 接受时上游路径：`{source.accepted_upstream_path}`",
+                f"- 技能入口：`{source_skill_entry_path(source)}`",
                 f"- 已接受提交：`{source.accepted_commit}`",
                 f"- 已接受版本：`{source.accepted_version or '未提供'}`",
                 f"- 基线类型：`{source.baseline_kind}`",
+                f"- 更新策略：`{source.update_policy}`",
                 f"- 许可证：`{source.license}`",
                 f"- 镜像登记：`{source.mirror_id}`",
                 "",
@@ -847,7 +884,11 @@ def source_diff(
 ) -> dict[str, Any]:
     baseline = git(mirror, ["cat-file", "-e", f"{source.accepted_commit}^{{commit}}"])
     if baseline.returncode != 0:
-        return {"status": "baseline_unavailable", "changed": []}
+        return {
+            "status": "baseline_unavailable",
+            "changed": [],
+            "error": f"Accepted commit unavailable: {source.accepted_commit}",
+        }
     ancestor = git(mirror, ["merge-base", "--is-ancestor", source.accepted_commit, current])
     if ancestor.returncode != 0:
         return {"status": "non_fast_forward", "changed": []}
@@ -856,16 +897,29 @@ def source_diff(
     if comparison.returncode != 0:
         before = source.accepted_commit
 
-    baseline_skill_path = source_repo_path(source, "SKILL.md", accepted=True)
+    baseline_skill_path = source_skill_entry_path(source, accepted=True)
     baseline_skill = git(
         mirror,
         ["cat-file", "-e", git_object(source.accepted_commit, baseline_skill_path)],
     )
     if baseline_skill.returncode != 0:
-        return {"status": "baseline_unavailable", "changed": []}
-    current_identity = git_object(current, source_repo_path(source, "SKILL.md"))
+        return {
+            "status": "baseline_unavailable",
+            "changed": [],
+            "error": f"Skill entry missing at accepted commit: {baseline_skill_path}",
+        }
+    current_skill_path = source_skill_entry_path(source)
+    current_identity = git_object(current, current_skill_path)
     if git(mirror, ["cat-file", "-e", current_identity]).returncode != 0:
-        return {"status": "upstream_removed_or_moved", "changed": [], "comparison_base": before}
+        return {
+            "status": "upstream_removed_or_moved",
+            "changed": [],
+            "comparison_base": before,
+            "error": f"Skill entry missing at current commit: {current_skill_path}",
+        }
+
+    if source.update_policy == "provenance_only":
+        return {"status": "provenance_only", "changed": [], "comparison_base": before}
 
     license_diff = git(
         mirror,
@@ -1104,6 +1158,7 @@ def source_identity_payload(source: SourceRecord) -> dict[str, Any]:
         "mirror_id": source.mirror_id,
         "repo_url": source.repo_url,
         "upstream_path": source.upstream_path,
+        "skill_entry_path": source.skill_entry_path,
         "accepted_upstream_path": source.accepted_upstream_path,
         "path_migration_commit": source.path_migration_commit,
         "path_migration_evidence": list(source.path_migration_evidence),
@@ -1111,6 +1166,7 @@ def source_identity_payload(source: SourceRecord) -> dict[str, Any]:
         "accepted_version": source.accepted_version,
         "license": source.license,
         "baseline_kind": source.baseline_kind,
+        "update_policy": source.update_policy,
         "tracked_paths": list(source.tracked_paths),
         "license_paths": list(source.license_paths),
         "evidence": list(source.evidence),
@@ -1691,6 +1747,17 @@ def build_report(
                         "changed": [],
                         "mirror_details": health.get("mirror_details", {}),
                     }
+                elif source.update_policy == "provenance_only":
+                    row = {
+                        "skill": skill.name,
+                        "source": source.id,
+                        "status": "provenance_only",
+                        "current_commit": head,
+                        "changed": [],
+                        "impact": "该来源只保留来源证据，不参与更新候选、许可证吸收或接受基线推进。",
+                        "automatic_action": "保留登记与最近观测提交；跳过许可证变化和内容吸收。",
+                        "approval_required": False,
+                    }
                 elif head == source.accepted_commit:
                     row = {"skill": skill.name, "source": source.id, "status": "up_to_date", "current_commit": head, "changed": []}
                 elif candidate := candidates.get(
@@ -1840,6 +1907,7 @@ def build_report(
         f"- 等待收益评估：{counts.get('review_required', 0)}",
         f"- 等待逐项批准（技能）：{len(awaiting_groups)}",
         f"- 许可证复核：{counts.get('license_review_required', 0)}",
+        f"- 仅保留来源证据：{counts.get('provenance_only', 0)}",
         f"- 登记覆盖缺口：{coverage_gap_count}",
         f"- 检查异常：{check_error_count}",
         *(

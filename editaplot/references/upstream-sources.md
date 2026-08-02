@@ -14,9 +14,11 @@
 - 仓库：https://github.com/hang-jin/editaplot.git
 - 当前上游路径：`.`
 - 接受时上游路径：`.`
+- 技能入口：`skill/editaplot/SKILL.md`
 - 已接受提交：`f7151330bda7d82936941a1b9b9aab49ca230eec`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`Apache-2.0`
 - 镜像登记：`hang-jin-editaplot`
 

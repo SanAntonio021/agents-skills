@@ -67,6 +67,7 @@ HTML_IMG_RE = re.compile(r"<img\b[^>]*\bsrc=[\"'](?P<src>[^\"']+)[\"'][^>]*>", r
 HTML_CAPTION_RE = re.compile(
     r"<figcaption\b[^>]*>(?P<caption>.*?)</figcaption>", re.I | re.S
 )
+ARXIV_ID_SEGMENT_RE = re.compile(r"^\d{4}\.\d{4,5}(?:v\d+)?$", re.I)
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -1342,10 +1343,31 @@ def sequence_audit(captions: list[Caption], saved_or_skipped: list[dict[str, Any
     return audit
 
 
+def normalize_arxiv_html_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.hostname not in {"arxiv.org", "www.arxiv.org"}:
+        return url
+    segments = parsed.path.split("/")
+    if len(segments) < 3 or segments[1].lower() != "html":
+        return url
+
+    normalized: list[str] = []
+    for segment in segments:
+        if (
+            normalized
+            and segment == normalized[-1]
+            and ARXIV_ID_SEGMENT_RE.fullmatch(segment)
+        ):
+            continue
+        normalized.append(segment)
+    return parsed._replace(path="/".join(normalized)).geturl()
+
+
 def source_to_download_url(src: str, base_url: str | None) -> str:
     resolved = urljoin(base_url or "", html.unescape(src.strip()))
     if not resolved:
         return resolved
+    resolved = normalize_arxiv_html_url(resolved)
     if "media.springernature.com/lw685/" in resolved:
         resolved = resolved.replace("media.springernature.com/lw685/", "media.springernature.com/full/")
     if "media.springernature.com/" in resolved:

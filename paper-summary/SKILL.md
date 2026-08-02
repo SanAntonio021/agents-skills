@@ -68,7 +68,7 @@ description: 读取已有论文 PDF 或正文，生成面向科研复用的中�
 9. 用户要求完整总结、指标校准或补充材料时，补充材料要形成闭环：先列出全部补充说明、补充图和补充表，再把其中的实验条件、计算方法、关键数据和限制写入 `## 补充材料与扩展数据`。不能只写“论文有补充材料”。补充材料原文长段落留在 PDF，Markdown 只保留中文提要、可核验数据和图表本体。
 10. 如果用户需要图表信息，或论文总结要保留图表，优先调用 `scripts/extract_paper_images.py` 提取图片和表格。默认命令：
    `python scripts/extract_paper_images.py --pdf <PDF_PATH> --out <OUTPUT_IMAGE_DIR> --mode auto`
-11. 如果已经知道论文官网或出版社 HTML 页，优先把它传给脚本：`--html-url <ARTICLE_URL>`；如果已经保存成本地 HTML，用 `--html-file <HTML_PATH> --html-base-url <ARTICLE_URL>`。脚本会先尝试官方 HTML 原图和 HTML 表格，再回退到 PDF caption/bbox 裁剪。官方来源目前重点支持通用 `<figure>` / `<table>`、Nature/Springer、MDPI 静态图链、Cambridge 静态图链；抓不到官方图表时才用 PDF 裁剪。
+11. 如果已经知道论文官网或出版社 HTML 页，优先把它传给脚本：`--html-url <ARTICLE_URL>`；如果已经保存成本地 HTML，用 `--html-file <HTML_PATH> --html-base-url <ARTICLE_URL>`。脚本会先尝试官方 HTML 原图和 HTML 表格，再回退到 PDF caption/bbox 裁剪。官方来源目前重点支持通用 `<figure>` / `<table>`、Nature/Springer、MDPI 静态图链、Cambridge 静态图链；抓不到官方图表时才用 PDF 裁剪。arXiv 图片相对路径已含论文 ID 时，脚本会去除 URL 中连续重复的 ID，避免 404。
 12. 图片提取优先级是：论文官网/出版社页/会议页等官方 HTML 原图和 HTML 表格，其次是脚本从 PDF 中按 caption 和 bbox 自动裁出的 `figures/` 图片，最后才用 `debug_pages/` 整页渲染排查。`debug_pages/` 只用于人工复核，不能自动放进 Markdown 正文。
 13. `manifest.json`（`schema_version: 4`）中每张图或表会记录 `figure_id`、`caption`、`files`、`regions`、`source_type`、`source_url`、`confidence`（`high`/`medium`/`low`）、`confidence_score`、`warning`、`is_duplicate`、`duplicate_of` 等字段。PDF 裁剪项还会记录 `page`、`bbox`、`page_layout`；官方 HTML 表格会记录 `structured_table`，文件通常是 `figures/table_1.md`。写总结时优先使用 `source_type` 为 `official-figure` 或 `official-html-table` 的条目；同一编号已有官方版本时，不再把 PDF 重复裁剪放进正文。
 14. `figures/` 里的 PNG 只保留图或表本体。裁剪区不得包含正文段落、章节标题、页眉页脚或整页留白；原始图注以 `manifest.json` 保留，供回查和匹配使用。HTML 表格优先保留成 Markdown 表格文件，而不是截图。

@@ -4,9 +4,10 @@ disable-model-invocation: true
 description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
-  站点分流、订阅重导入后配置丢失、节点或分组在 UI 不显示、增强文件没有生效、需要确认日志里真实走哪条链，
-  Edge/Chrome 扩展修复后很快又显示损坏、扩展商店更新异常、`external-controller-pipe`
-  命名管道查询、临时切换 selector、GitHub TLS/推送线路归因时，优先使用本技能。
+  站点分流、fallback 健康探测、自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
+  增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链，Edge/Chrome 扩展修复后很快又
+  显示损坏、扩展商店更新异常、`external-controller-pipe` 命名管道查询、临时切换 selector、GitHub
+  TLS/推送线路归因时，优先使用本技能。
 ---
 
 # Clash Verge 链式代理
@@ -106,12 +107,75 @@ proxies:
     dialer-proxy: <normal front group>
 ```
 
-再建两个手动选择组：
+再建两个前置组；需要手动控制时用 `select`，需要自动健康选择时用 `fallback`：
 
 - `<Flower front group>`：放 Flower 订阅里可用的前置节点。
 - `<normal front group>`：放当前普通订阅里可用的前置节点。
 
-这样用户可以在 UI 里手动换前置，不需要重新改 YAML。
+`select` 组适合在 UI 里临时换前置；`fallback` 组适合按候选顺序自动跳过故障节点。
+
+## 双层自动故障转移
+
+当用户要求“前置节点自动选健康节点，AI 链路在两个前置之间自动切换”时，使用两层 `fallback`，不要把裸前置组直接放进 AI 组：
+
+```yaml
+proxies:
+  - name: <Nov via Flower>
+    type: socks5
+    server: <landing-host>
+    port: <landing-port>
+    username: <landing-user>
+    password: <landing-password>
+    dialer-proxy: <Flower front fallback>
+
+  - name: <Nov via normal front>
+    type: socks5
+    server: <landing-host>
+    port: <landing-port>
+    username: <landing-user>
+    password: <landing-password>
+    dialer-proxy: <normal front fallback>
+
+proxy-groups:
+  - name: <Flower front fallback>
+    type: fallback
+    url: https://www.gstatic.com/generate_204
+    interval: 30
+    timeout: 5000
+    max-failed-times: 2
+    lazy: false
+    proxies: [<Flower node 1>, <Flower node 2>]
+
+  - name: <normal front fallback>
+    type: fallback
+    url: https://www.gstatic.com/generate_204
+    interval: 30
+    timeout: 5000
+    max-failed-times: 2
+    lazy: false
+    proxies: [<normal node 1>, <normal node 2>]
+
+  - name: <AI group>
+    type: fallback
+    url: https://www.gstatic.com/generate_204
+    interval: 30
+    timeout: 5000
+    max-failed-times: 2
+    lazy: false
+    proxies:
+      - <Nov via Flower>
+      - <Nov via normal front>
+```
+
+探测配置属于 `proxy-groups`，不是单个 `proxies` 条目：
+
+- 两个内层 `fallback` 组探测各自的前置候选；`now` 会落到第一个健康候选。
+- 外层 AI `fallback` 探测两条完整链路，先检查 Flower 链路，再检查普通前置链路。
+- `fallback` 是优先级故障转移，不是测速选最快；候选顺序决定主备顺序。
+- `lazy: false` 让备用候选持续探测；不把 `DIRECT` 放进 AI 组时，双链路都失败就保持失败。
+- `url` 只验证通用 HTTPS 出口，不等价于 ChatGPT 或 Anthropic 专项可用；最终验收仍需发起目标域名请求并查日志。
+
+增强文件改完后，必须检查当前 profile 绑定的 `script`。后处理脚本可能在合并完成后用 `upsertGroup` 重建同名 AI 组，把 `fallback` 覆盖回 `select`。最终生成的 `clash-verge.yaml` 和 `clash-verge-check.yaml` 才是验收对象，不直接编辑它们作为长期修复。
 
 ## AI 分流
 
@@ -236,6 +300,14 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
   (Join-Path $base 'logs\service\service_latest.log')
 ```
 
+### 双层 `fallback` 验收
+
+1. 用 YAML 解析器确认两个前置组和 AI 组各出现一次；确认 AI 候选只有两条完整链路，且没有 `DIRECT`。
+2. 确认两条落地代理的 `dialer-proxy` 分别指向两个前置 `fallback` 组；确认三个组的 `url`、`interval`、`timeout`、`max-failed-times`、`lazy` 均在最终生成配置中。
+3. 通过 `external-controller-pipe` 查询 `/version` 和 `/proxies`，只汇总目标组的 `now`、候选 `all`、`alive`、`history`，不打印 `secret`、密码、UUID 或完整代理对象。
+4. 受控测试优先使用运行态已经标记 `alive: false` 的候选。不要为了制造故障去破坏线上节点；没有安全失败候选时，复制最小配置到临时目录，关闭 TUN、使用独立 controller 端口，在隔离配置中让一个候选失效，再确认 AI 组切换到备用完整链路。
+5. 测试结束后确认运行态 selector 没有被临时 PUT 覆盖；隔离进程、临时配置和日志清理前先展示清场预览。
+
 合格信号：
 
 - AI 域名或 `claude.exe`：`using <AI group>[<Nov via Flower>]`
@@ -252,6 +324,7 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 - 不把含凭据的恢复脚本提交到公开仓库。
 - 不只改 `clash-verge.yaml` 就宣称完成持久化。
 - 不只看 UI 显示；必须用最终 YAML 和日志验证。
+- 受控故障测试不人为破坏线上节点；隔离配置不得复用线上 controller pipe 或 TUN。
 - 不默认修改无关订阅。
 
 ## 常见坑

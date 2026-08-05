@@ -24,6 +24,24 @@
       "prompt": "Edge 里几个 Chrome 商店扩展修复后很快又显示可能已损坏。我一直开着 Clash Verge，使用规则模式、TUN 和两跳链式代理。帮我查原因，并给出能长期保留的修复和验证步骤。",
       "expected_output": "应先用 Chromium treehash 和 Secure Preferences 区分真实文件损坏与 DISABLE_CORRUPTED 状态；读取 manifest.json 的真实 update_url，并从当前 Clash profile 和服务日志确认浏览器实际访问的更新域名及代理链；把已验证的更新域名写进当前 profile 绑定的 rules 增强文件并路由到稳定分组，不只修改生成配置，也不默认把整个浏览器按进程分流；最后检查生成配置、Mihomo 语法、服务日志，并在触发扩展更新和重启浏览器后确认扩展状态稳定且 corrupted_disable_count 不再增加。",
       "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "我想让 AI 流量在 Flower 和良心云两条前置链路之间自动故障转移，同时每家前置内部也自动跳过坏节点；普通流量保持原样。应该怎样设计 Clash Verge 的分组和探测？",
+      "expected_output": "应使用两条同落地、不同 dialer-proxy 的完整代理链；两个前置组和 AI 组均使用 fallback，并配置 HTTPS url、interval、timeout、max-failed-times、lazy:false；说明内层组探测前置节点，外层 AI 组探测完整链路，AI 候选按 Flower、良心云排序且不加入 DIRECT。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "增强文件里已经把 AI 组写成 fallback 了，但重启 Clash Verge 后生成配置又变成 select，还出现 DIRECT。请判断为什么，并给出持久修复和验收方法。",
+      "expected_output": "应检查当前 profile 绑定的 script 是否在生成后用 upsertGroup 重建同名 AI 组；修复持久源文件或脚本而不是直接编辑生成 YAML；重新生成后检查两份最终配置的组唯一性、fallback 参数、候选链路、无 DIRECT、dialer-proxy，以及 verge-mihomo -t 和服务日志。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "两条链路当前都能用，我想验证 AI 自动切换，但不想人为破坏线上节点。怎样做安全的故障转移测试？",
+      "expected_output": "应先检查 /proxies 中是否已有 alive:false 候选；有则优先利用已失败候选，无则复制最小隔离配置，关闭 TUN、使用独立 controller 端口和临时目录，故意让隔离候选失败后查询 AI fallback 是否切到备用完整链路；不得输出 secret，测试后清理隔离进程和临时文件。",
+      "files": []
     }
   ]
 }

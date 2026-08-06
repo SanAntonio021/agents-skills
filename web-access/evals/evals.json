@@ -1,0 +1,34 @@
+{
+  "skill_name": "web-access",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "首次配置时同时启动 Edge 和 Chrome 的长期 CDP Proxy；之后停止 Edge 一侧不得影响 Chrome。",
+      "expected_output": "Edge 与 Chrome 各使用独立端口和一个 CDP WebSocket，check-deps --all 同时报告两个 proxy-url，任一侧停止后另一侧仍健康。",
+      "files": [],
+      "expectations": [
+        "check-deps --all 同时建立 Edge 和 Chrome 专用 Proxy",
+        "停止 Edge Proxy 后 Chrome Proxy 仍能列出 targets"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "让两个独立对话同时复用 Edge，并回归导航、截图、文件上传和 tab 清理 API。",
+      "expected_output": "两个客户端通过不同 targetId 操作，但共享一个 Proxy/CDP WebSocket；现有 HTTP API 均保持兼容。",
+      "files": [],
+      "expectations": [
+        "两个并发客户端只建立一个浏览器 CDP WebSocket，且全部 HTTP API 回归通过"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "并发启动 20 个指向同一端口的 Proxy，检查是否会留下重复后台进程。",
+      "expected_output": "端口绑定为原子竞争，最终只有一个监听和存活 Proxy；EADDRINUSE 及致命异常均会明确退出。",
+      "files": [],
+      "expectations": [
+        "20 路并发启动后只有一个 Proxy 进程存活",
+        "实现不再先探测端口后监听，并显式处理 EADDRINUSE 和致命异常"
+      ]
+    }
+  ]
+}

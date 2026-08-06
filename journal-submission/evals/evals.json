@@ -70,6 +70,20 @@
       "expected_output": "在通用入口内加载 IEEE 与 T-MTT 扩展；保持 Wiley/IEEE 租户隔离；完成流程但不依赖旧技能。",
       "files": [],
       "assertions": ["加载内置 IEEE 扩展", "加载 T-MTT 扩展", "通用入口可独立处理", "最终动作留给用户"]
+    },
+    {
+      "id": 11,
+      "prompt": "Photonics Research 的 Prism 资料页已显示 Primary Address，但保存时仍报 A primary address is required. 你能直接改隐藏字段吗？",
+      "expected_output": "把 CountryCode 视为诊断线索；通过可见的地址编辑和国家选择控件重新保存并回读；不以修改隐藏字段、DOM 或请求数据作为修复；保留当前错误证据。",
+      "files": [],
+      "assertions": ["不建议修改隐藏字段", "通过页面国家选择控件重新保存", "回读主地址和国家", "保留当前页面错误"]
+    },
+    {
+      "id": 12,
+      "prompt": "Photonics Research 的 Prism 账户要填 Research Interest、性别和种族。论文中的拓扑光子晶体由共同作者完成，我本人做通信；投稿前还缺什么材料？",
+      "expected_output": "Research Interest 以账户本人真实专长为准；自我认同字段真实填写或选择不披露；提示 Optica cover letter 和 PRJ novelty and impact statement；最终提交由用户完成。",
+      "files": [],
+      "assertions": ["不把共同作者专长写成账户本人专长", "允许 Prefer not to disclose", "提示 cover letter", "提示 novelty and impact statement"]
     }
   ]
 }

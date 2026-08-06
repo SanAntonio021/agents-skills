@@ -2,6 +2,17 @@
 
 最后核对日期：`2026-07-26`。本页是查找入口，不代表内容永久有效。操作前重新访问目标期刊指南和当前页面。
 
+## Optica Publishing Group / Prism
+
+以下链接最后核对：`2026-08-06`。账户资料、字段、页面顺序和按钮以 Prism 当前页面为准。
+
+| 主题 | URL | 用途 |
+| --- | --- | --- |
+| Prism 投稿入口 | https://prism.optica.org | 当前账户资料和稿件投稿入口 |
+| Optica Submission Checklist | https://opg.optica.org/content/author/portal/item/submission-checklist/ | cover letter、声明、资金信息、补充材料和费用的投稿前核对；Photonics Research 还需 novelty and impact statement |
+| Photonics Research About | https://opg.optica.org/content/journal/about/item/prj/ | 期刊范围和作者资源入口 |
+| Optica General Policies | https://opg.optica.org/content/author/portal/item/review-general-policies | 伦理、AI、重投及其他通用政策 |
+
 ## ScholarOne / Silverchair
 
 | 主题 | URL | 适用范围 |

@@ -17,13 +17,15 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 2. 确认目标期刊、文章类型、当前生命周期阶段和平台。信息不足时只问最阻塞的一项。
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。
-5. 明确 IEEE 请求优先交给 `ieee-journal-submission`。用户直接指定本技能时，读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
+5. 当前平台为 Optica Prism 时，读取 [references/platforms/prism-optica.md](references/platforms/prism-optica.md)；账户资料页、稿件字段和最终提交页分别以当前页面为准。
+6. 明确 IEEE 请求优先交给 `ieee-journal-submission`。用户直接指定本技能时，读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
 
 ## 参考文件路由
 
 - ScholarOne：[references/platforms/scholarone.md](references/platforms/scholarone.md)
 - Research Exchange：[references/platforms/research-exchange.md](references/platforms/research-exchange.md)
 - Editorial Manager：[references/platforms/editorial-manager.md](references/platforms/editorial-manager.md)
+- Optica Prism：[references/platforms/prism-optica.md](references/platforms/prism-optica.md)
 - IEEE 扩展：[references/publishers/ieee.md](references/publishers/ieee.md)
 - SCIS 个案：[references/journals/scis.md](references/journals/scis.md)
 - T-MTT 扩展：[references/journals/tmtt.md](references/journals/tmtt.md)

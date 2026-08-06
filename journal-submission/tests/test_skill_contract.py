@@ -71,6 +71,19 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("Aries Systems", editorial_manager)
         self.assertIn("尚未经过本机真实投稿页面验证", editorial_manager)
 
+    def test_optica_prism_route_is_documented(self):
+        prism = (ROOT / "references" / "platforms" / "prism-optica.md").read_text(
+            encoding="utf-8"
+        )
+        source_index = (ROOT / "references" / "official-source-index.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("prism-optica.md", self.skill_text)
+        self.assertIn("CountryCode", prism)
+        self.assertIn("不得通过修改隐藏字段", prism)
+        self.assertIn("prism.optica.org", source_index)
+        self.assertIn("novelty and impact statement", source_index)
+
     def test_scis_experience_is_not_platform_rule(self):
         scis = (ROOT / "references" / "journals" / "scis.md").read_text(encoding="utf-8")
         scholarone = (ROOT / "references" / "platforms" / "scholarone.md").read_text(

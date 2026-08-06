@@ -2,6 +2,7 @@
     {"id": "generic-continue", "category": "submission", "query": "目标期刊已经定了，系统也打开了，继续带我把投稿做完", "should_trigger": true, "expected_route": "journal-submission"},
     {"id": "scis-scholarone", "category": "scis_initial", "query": "我要在 SCIS 的 ScholarOne 开始初投稿，先检查这一页该填什么", "should_trigger": true, "expected_route": "journal-submission"},
     {"id": "non-ieee-editorial-manager", "category": "submission", "query": "这本非 IEEE 期刊用 Editorial Manager，帮我逐页准备投稿", "should_trigger": true, "expected_route": "journal-submission"},
+    {"id": "optica-prism-profile", "category": "submission", "query": "Photonics Research 的 Prism 资料页显示 Primary Address，但保存时仍说必填，帮我按当前页面查原因", "should_trigger": true, "expected_route": "journal-submission"},
     {"id": "unknown-platform", "category": "unknown_platform", "query": "投稿网站没见过，现在问 Data Availability，应该怎么判断", "should_trigger": true, "expected_route": "journal-submission"},
     {"id": "decision-major-revision", "category": "revision", "query": "非 IEEE 稿件收到 major revision，帮我归档决定并安排返修提交", "should_trigger": true, "expected_route": "journal-submission"},
     {"id": "resubmission-files", "category": "revision", "query": "返修稿和逐条回复都好了，投稿系统里下一步怎么上传", "should_trigger": true, "expected_route": "journal-submission"},

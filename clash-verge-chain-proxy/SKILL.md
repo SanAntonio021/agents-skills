@@ -6,8 +6,9 @@ description: >
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
   站点分流、fallback 健康探测、自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
   增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链，Edge/Chrome 扩展修复后很快又
-  显示损坏、扩展商店更新异常、`external-controller-pipe` 命名管道查询、临时切换 selector、GitHub
-  TLS/推送线路归因时，优先使用本技能。
+  显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、切网后全站证书告警、接口跃点、
+  Clash 核心受控重启、`external-controller-pipe` 命名管道查询、临时切换 selector、GitHub TLS/
+  推送线路归因时，优先使用本技能。
 ---
 
 # Clash Verge 链式代理
@@ -39,6 +40,74 @@ description: >
 4. 读服务日志。
    - `%APPDATA%\...\logs\service\service_latest.log`
    - 看到 `using <group>[<proxy>]` 才算真实生效。
+
+## Windows 双出口、手机共享与全站证书告警
+
+Windows 同时保留有线网和临时手机 USB/Wi-Fi 共享时，浏览器直连、系统代理和 Mihomo TUN
+可能走不同出口。用户说“正在用手机上网”不能证明电脑已停止使用有线网；先看实际网卡、路由和
+Clash 运行态。
+
+当开启系统代理后多个 HTTPS 网站出现 `ERR_CERT_COMMON_NAME_INVALID`，关闭代理后恢复：
+
+1. 不跳过证书告警，不导入网页提供的证书，也不先重置整套网络。
+2. 先做最小 A/B：确认手机本机访问是否正常、告警域名是否随目标网站变化、电脑关闭系统代理后
+   是否恢复。代理关闭后恢复只能把嫌疑收窄到电脑代理路径，不能单独证明代理节点恶意或失效。
+3. 只读检查系统时间、WinINET/WinHTTP 代理、Clash 本地监听端口、活动网卡的地址/网关/DNS、
+   IPv4 默认路由、`AutomaticMetric`/`InterfaceMetric`、hosts、Mihomo 配置与服务日志。
+4. `Mihomo` TUN 可能创建优先级最高的虚拟默认路由；排查外层出口时仍要单独比较物理网卡路由，
+   必要时按 Mihomo 已建立连接的本地地址判断外层连接实际绑定哪张网卡。
+5. 证书名称不匹配只证明请求到达了错误 TLS 端点。没有证书 Subject/Issuer、DNS 对照和同一时段
+   日志时，不把根因断言为 DNS 劫持、运营商拦截、校园认证页或某个代理节点。
+
+### 临时手机共享的接口跃点
+
+Windows 先选最长前缀，再在同样精确的路由中选择“路由跃点 + 接口跃点”更小者。界面中的
+“接口跃点”是路由成本，不是实际经过的路由器数量。
+
+用户只在少量时间接入手机，但要求手机接入时承担公网出口，可以只把手机共享网卡的 IPv4 接口跃点
+固定为低于有线网当前值的数；有线网保持自动跃点和连接状态。手机断开后，其默认路由消失，有线网
+自然接管。不要为此默认拔网线、禁用有线网卡或删除有线网默认网关。
+
+执行前先记录基线并取得用户对本次网络改动和短时连接切换的授权：
+
+1. 按活动网卡描述和 `InterfaceGuid` 定位手机共享设备，并断言只有一个目标；不要复用上次记录的
+   `ifIndex`，USB 网卡重连后索引可能变化。
+2. 只改已验证需要调整的地址族。当前仅有 IPv4 默认路由时，不顺手修改 IPv6。
+3. `Set-NetIPInterface` 需要管理员权限。普通调用返回“拒绝访问”后，不原样重试；说明 UAC 的
+   精确改动范围，再用一次性提权执行：
+
+```powershell
+Set-NetIPInterface -InterfaceIndex <phone-ifindex> -AddressFamily IPv4 `
+  -AutomaticMetric Disabled -InterfaceMetric <lower-metric>
+```
+
+4. 修改后同时验证活动值、持久值和路由优先级：
+
+```powershell
+Get-NetIPInterface -InterfaceIndex <phone-ifindex> -AddressFamily IPv4
+netsh interface ipv4 show interface interface="<phone-alias>" store=persistent
+Get-NetRoute -AddressFamily IPv4 -DestinationPrefix 0.0.0.0/0
+```
+
+验收应证明手机物理默认路由成本低于有线网、有线网设置未被改动，且持久存储显示自动跃点已关闭。
+若校园资源跨越有线网直连子网，还要单独核实其具体路由；不要假定提高有线网跃点仍能覆盖全部校内网段。
+
+### 受控重启 Clash 核心
+
+切换物理出口后，只有旧连接、Fake-IP/DNS 状态或实际错误仍存在，或用户明确要求时才重启核心，
+不把重启当作每次接入手机的固定步骤。重启前告知用户代理会中断数秒，并记录
+`clash_verge_service` 状态和 `verge-mihomo` PID。
+
+优先通过 Windows 服务管理器做一次受控重启，不直接 `Stop-Process` 核心，也不退出 Clash Verge GUI：
+
+```powershell
+Restart-Service -Name clash_verge_service -Force
+```
+
+该命令通常需要 UAC。完成后确认服务回到 `Running`、核心 PID 已变化，并通过命名管道
+`GET /version` 得到 `200`。同时检查系统代理开关没有被意外改变，只查看新核心启动后的日志。
+手机网络或 TUN 下单独出现 ICMP echo timeout 不等于 HTTPS 失败；最终仍用目标 HTTPS 访问和同一
+时段服务日志验收。
 
 ## 只开放命名管道时的运行态控制
 

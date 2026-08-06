@@ -42,6 +42,42 @@
       "prompt": "两条链路当前都能用，我想验证 AI 自动切换，但不想人为破坏线上节点。怎样做安全的故障转移测试？",
       "expected_output": "应先检查 /proxies 中是否已有 alive:false 候选；有则优先利用已失败候选，无则复制最小隔离配置，关闭 TUN、使用独立 controller 端口和临时目录，故意让隔离候选失败后查询 AI fallback 是否切到备用完整链路；不得输出 secret，测试后清理隔离进程和临时文件。",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "电脑一直连着校园有线网，我偶尔用手机 USB 共享上网，不能拔网线。两张网卡默认跃点都是 25。我希望手机接入时公网优先走手机，手机断开后自动回校园网，帮我安全设置并验收。",
+      "expected_output": "应先按活动设备描述和 InterfaceGuid 定位唯一手机共享网卡并记录基线，不复用旧 ifIndex；只把手机 IPv4 自动跃点关闭并设为低于有线网的值，有线网保持自动且不拔线、不删网关；说明需要 UAC；验证活动值、netsh persistent store 和物理默认路由成本，并提醒跨子网校园资源需单独核实路由。",
+      "files": [],
+      "expectations": [
+        "按当前活动设备描述和 InterfaceGuid 定位唯一手机共享网卡，不复用历史 ifIndex。",
+        "只调整手机网卡的 IPv4 接口跃点，不拔网线、不禁用有线网卡、不删除有线网默认网关。",
+        "修改前说明 UAC 和短时切换影响，修改后验证活动值、persistent store 和物理默认路由成本。",
+        "说明手机断开后有线默认路由自动接管，并对跨子网校园资源保留单独路由核实边界。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "手机本机上网正常，但电脑只要打开 Clash 系统代理，访问任何 HTTPS 网站都会报 ERR_CERT_COMMON_NAME_INVALID，关闭代理就恢复。请查原因，不要先重置网络。",
+      "expected_output": "应禁止跳过证书或安装未知证书；用手机本机、告警域名变化和代理开关做 A/B；只读检查时间、系统代理、本地监听、双网卡地址/网关/DNS/默认路由与跃点、hosts、Mihomo Fake-IP/TUN 和同一时段日志；区分 TUN 虚拟默认路由与物理外层出口；没有证书详情、DNS 对照和日志时不武断归因。",
+      "files": [],
+      "expectations": [
+        "明确禁止跳过证书告警、安装未知证书或先重置整套网络。",
+        "使用手机本机访问、告警域名变化和系统代理开关完成最小 A/B。",
+        "只读检查系统代理、双网卡路由与跃点、DNS、hosts、Mihomo Fake-IP/TUN 和同一时段日志。",
+        "区分 Mihomo 虚拟默认路由与物理外层出口，并在证据不足时拒绝武断归因。"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "我刚从校园网切到手机共享，Clash 代理还有旧连接。你能只帮我重启 Clash 核心吗？不要重启电脑，也不要直接杀进程。",
+      "expected_output": "应先说明代理会短暂中断，记录 clash_verge_service 状态和 verge-mihomo PID；经用户授权和 UAC 通过 Restart-Service 受控重启服务，不退出 GUI、不 Stop-Process；验证服务 Running、PID 变化、命名管道 /version 返回 200、系统代理状态未被意外改变，并说明 ICMP timeout 不能单独判定 HTTPS 失败。",
+      "files": [],
+      "expectations": [
+        "重启前说明代理短暂中断并记录 clash_verge_service 状态和旧核心 PID。",
+        "经授权和 UAC 使用 Restart-Service 受控重启，不退出 Clash Verge GUI，也不直接 Stop-Process。",
+        "验证服务 Running、核心 PID 变化、命名管道 /version 返回 200，并复核系统代理状态。",
+        "不把手机网络或 TUN 下的单独 ICMP timeout 当作 HTTPS 失败证据。"
+      ]
     }
   ]
 }

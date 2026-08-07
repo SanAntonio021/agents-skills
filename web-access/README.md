@@ -27,23 +27,29 @@
 
 AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏览器自动化能力。这个 Agent Skill 补上的是：**联网策略 + CDP 浏览器操作 + 站点经验积累**。兼容所有支持 SKILL.md 的 Agent（Claude Code、Cursor、Gemini CLI、Codex CLI 等）。
 
-> **本地修订 dual-proxy.1**：在上游 v2.5.3 基础上，为 Edge（默认 3456）与 Chrome（默认 3457）保留两个可同时常驻的 CDP Proxy。相同浏览器的多个对话共享连接，不再通过停止全部 Proxy 来切换浏览器。
+> **本地修订 dual-proxy.2 候选**：在上游 v2.5.3 与 dual-proxy.1 基础上，保留 Edge（默认 3456）和 Chrome（默认 3457）双长期 Proxy，并新增 task/token 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认。候选通过评测并获批前，不替换正式技能。
 
 > 推荐必读：[Web Access：一个 Skill，拉满 Agent 联网和浏览器能力](https://mp.weixin.qq.com/s/rps5YVB6TchT9npAaIWKCw) ，完整介绍了 Web-Access Skill 的开发细节与 Agent Skill 设计哲学，帮助你也能写出类似通用、高上限的 Skill
 
 ---
 
-## v2.5.2 能力
+## dual-proxy.2 能力
 
 | 能力 | 说明 |
 |------|------|
 | 联网工具自动选择 | WebSearch / WebFetch / curl / Jina / CDP，按场景自主判断，可任意组合 |
-| CDP Proxy 浏览器操作 | 直连用户日常浏览器（Chrome / Edge / Chromium 系），天然携带登录态，支持动态页面、交互操作、视频截帧 |
-| 三种点击方式 | `/click`（JS click）、`/clickAt`（CDP 真实鼠标事件）、`/setFiles`（文件上传） |
+| 双长期 CDP Proxy | Edge 与 Chrome 使用独立端口和 WebSocket；默认 Edge，切换时不停止另一浏览器 |
+| task/token 隔离 | 每个对话创建独立 task，只能看到和控制自己创建的 tab 及 popup；不列出或接管用户 tab |
+| AX snapshot/ref | 默认读取交互式可访问性树，以短 ref 定位元素；动态重绘后重新 snapshot |
+| 结构化交互 | 支持 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`，动作后回读验证 |
+| 等待与接管 | 等 selector/text/URL/load；密码、MFA、验证码和 SSO consent 交给用户完成，handoff 期间禁止页面访问 |
+| 安全确认 | 敏感信息首次输入及提交、发送、上传、付款、删除、授权、账号变更前确认 |
 | 本地浏览器书签/历史检索 | `find-url.mjs` 跨 Chrome / Edge 查询公网搜不到的目标（内部系统）或用户访问过的页面，支持关键词/时间窗/访问频度排序 |
-| 并行分治 | 多目标时分发子 Agent 并行执行；同一浏览器共享专用 Proxy，tab 级隔离 |
+| 并行分治 | 多目标可并行；同一浏览器共享 Proxy，但 task、token、tab 和 ref 互相隔离 |
 | 站点经验积累 | 按域名存储操作经验（URL 模式、平台特征、已知陷阱），跨 session 复用 |
 | 媒体提取 | 从 DOM 直取图片/视频 URL，或对视频任意时间点截帧分析 |
+
+`dual-proxy.2` 使用 `/v2` API。旧无版本操作路由返回 `410 LEGACY_API_DISABLED`；迁移见 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md)。
 
 **v2.5.2 更新：**
 - **Microsoft Edge 支持** — CDP Proxy 不再绑定 Chrome，新增 Edge 适配（及 Chromium、Chrome Canary 等 Chromium 系，通过同一套自动发现机制接入）。在 `edge://inspect/#remote-debugging` 勾选 "Allow remote debugging for this browser instance" 即可
@@ -138,54 +144,64 @@ WEB_ACCESS_CHROME_PORT=3457
 **本次使用 Chrome**（不修改默认浏览器，也不停止 Edge Proxy）：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
 ```
 
 **首次同时配置两个浏览器**：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 ```
 
-两个浏览器会分别建立一个 Proxy/CDP WebSocket。浏览器和对应 Proxy 进程保持存活时，后续对话直接复用，无需再次点击允许。
+两个浏览器会分别建立一个 Proxy/CDP WebSocket。浏览器和对应 Proxy 进程保持存活时，后续对话可复用连接；每个对话仍创建独立 task。通常无需再次点击允许。
 
 环境检查（Agent 运行时会自动完成前置检查，无需手动执行）：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
 # $CLAUDE_SKILL_DIR 是 skill 加载时自动设置的环境变量
 # 手动运行请替换为实际路径，如 ~/.claude/skills/web-access
 ```
 
 ## CDP Proxy API
 
-Proxy 通过 WebSocket 直连浏览器（兼容 `chrome://inspect` / `edge://inspect` 方式，无需命令行参数启动），提供 HTTP API：
+Proxy 通过 WebSocket 直连浏览器（兼容 `chrome://inspect` / `edge://inspect` 方式，无需命令行参数启动），只绑定 `127.0.0.1`，提供 task-scoped `/v2` HTTP API：
 
 ```bash
 # 启动/复用 Edge；Chrome 改用 --browser chrome
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
 
 # 使用 check-deps 输出的 proxy-url；Chrome 默认为 http://127.0.0.1:3457
 WEB_ACCESS_PROXY="http://127.0.0.1:3456"
 
-# 页面操作
-curl -s -X POST --data-raw 'https://example.com' "${WEB_ACCESS_PROXY}/new"  # 新建 tab（v2.5.3 起 URL 走 POST body）
-curl -s -X POST "${WEB_ACCESS_PROXY}/eval?target=ID" -d 'document.title'  # 执行 JS
-curl -s -X POST "${WEB_ACCESS_PROXY}/click?target=ID" -d 'button.submit'  # JS 点击
-curl -s -X POST "${WEB_ACCESS_PROXY}/clickAt?target=ID" -d '.upload-btn'  # 真实鼠标点击
-curl -s -X POST "${WEB_ACCESS_PROXY}/setFiles?target=ID" \
-  -d '{"selector":"input[type=file]","files":["/path/to/file.png"]}'        # 文件上传
-curl -s "${WEB_ACCESS_PROXY}/screenshot?target=ID&file=/tmp/shot.png"     # 截图
-curl -s "${WEB_ACCESS_PROXY}/scroll?target=ID&direction=bottom"           # 滚动
-curl -s "${WEB_ACCESS_PROXY}/close?target=ID"                             # 关闭 tab
-curl -s "${WEB_ACCESS_PROXY}/health"                                      # 查看状态（含 managedTabs 数量）
+# 协议与能力
+curl -s "${WEB_ACCESS_PROXY}/health"
+curl -s "${WEB_ACCESS_PROXY}/capabilities"
+
+# 创建 task，保存响应中的 taskToken；不要回显
+curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tasks" \
+  -H "Content-Type: application/json" -H "Idempotency-Key: TASK_KEY" \
+  -d '{"label":"current-user-request"}'
+
+# 创建 task 自有 tab
+curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tabs" \
+  -H "Authorization: Bearer TASK_TOKEN" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: TAB_KEY" -d '{"url":"https://example.com"}'
+
+# snapshot/ref 操作
+curl -s -H "Authorization: Bearer TASK_TOKEN" \
+  "${WEB_ACCESS_PROXY}/v2/tabs/TARGET_ID/snapshot?mode=interactive"
+curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tabs/TARGET_ID/action" \
+  -H "Authorization: Bearer TASK_TOKEN" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: ACTION_KEY" \
+  -d '{"action":"click","ref":"r4"}'
 ```
 
-Proxy 会自动追踪通过 `/new` 创建的 tab，闲置 15 分钟后自动关闭，防止 Agent 异常退出时留下孤儿 tab。可通过环境变量 `CDP_TAB_IDLE_TIMEOUT`（单位毫秒）调整超时时间。
+每个 task 只能控制自己创建的 tab 和 popup。active task 30 分钟无操作后过期；自建 tab 闲置 15 分钟后自动关闭。Proxy 重启会清空 token、归属和 ref，但保留浏览器 tab并把它们降为用户 tab。完整契约见 [`references/cdp-api.md`](references/cdp-api.md)。
 
 ## ⚠️ 使用前提醒
 
-通过浏览器自动化操作社交平台（如小红书）存在账号被平台限流或封禁的风险。**强烈建议使用小号进行操作。**
+通过浏览器自动化操作社交平台存在账号被限流或封禁的风险。敏感信息首次输入，以及最终提交、发送、发布、上传、付款、删除、授权和账号变更前必须确认；密码、MFA、验证码和 SSO consent 统一由用户接管输入。
 
 ## 使用
 

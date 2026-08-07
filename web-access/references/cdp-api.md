@@ -1,115 +1,246 @@
-# CDP Proxy API 参考
+# CDP Proxy protocol v2
 
-## 基础信息
+## 连接与通用规则
 
-- Edge 地址：`http://localhost:3456`（默认）
-- Chrome 地址：`http://localhost:3457`
-- 启动/复用 Edge：`node ~/.claude/skills/web-access/scripts/check-deps.mjs`
-- 启动/复用 Chrome：`node ~/.claude/skills/web-access/scripts/check-deps.mjs --browser chrome`
-- 同时确保两者就绪：`node ~/.claude/skills/web-access/scripts/check-deps.mjs --all`
-- 端口可通过 `WEB_ACCESS_EDGE_PORT`、`WEB_ACCESS_CHROME_PORT` 配置，且必须不同
-- 启动后持续运行，不建议主动停止；浏览器或对应 Proxy 重启后可能需要再次授权
+- Edge 默认地址：`http://127.0.0.1:3456`
+- Chrome 默认地址：`http://127.0.0.1:3457`
+- Proxy 只绑定 `127.0.0.1`，只接受匹配端口的 `127.0.0.1`/`localhost` Host。
+- 带 `Origin` 的请求被拒绝；Proxy 不返回 CORS 许可头。
+- `/health`、`/capabilities` 和创建 task 之外的 `/v2` 请求都要发送 `Authorization: Bearer <taskToken>`。
+- 所有 POST/DELETE 都要发送 `Content-Type: application/json` 和 `Idempotency-Key`。
+- token 不能进入 URL、日志、错误信息或交付文本。
 
-下列示例使用默认 Edge 端口。操作 Chrome 时将基础地址改为 `http://localhost:3457`，或使用 `check-deps` 实际输出的 `proxy-url`。
+同一个 `Idempotency-Key` 与完全相同的 method、path、query、body 组合只执行一次。相同 key 配不同请求返回 `409 IDEMPOTENCY_CONFLICT`。mutation 的 CDP 命令开始后超时返回 `504 UNKNOWN_RESULT`；同 key 可重放该结果，但不得换 key 原样重试。
 
-## API 端点
+## 协议探测
 
-### GET /health
-健康检查，返回连接状态。
-```bash
-curl -s http://localhost:3456/health
+### `GET /health`
+
+不连接浏览器即可读取进程状态。关键字段：
+
+```json
+{
+  "service": "web-access-cdp-proxy",
+  "status": "ok",
+  "protocolVersion": 2,
+  "connected": true,
+  "browser": {"id": "edge", "label": "Microsoft Edge"},
+  "activeTasks": 1,
+  "managedTabs": 2
+}
 ```
 
-### GET /targets
-列出所有已打开的页面 tab。返回数组，每项含 `targetId`、`title`、`url`。
-```bash
-curl -s http://localhost:3456/targets
+### `GET /capabilities`
+
+返回协议版本、snapshot/action/wait 能力、任务上限和明确不支持项。调用方必须确认 `protocolVersion === 2`。
+
+## Task
+
+### `POST /v2/tasks`
+
+请求 body 为 `{}` 或调用方自用的元数据对象。Proxy 当前不持久化元数据。返回：
+
+```json
+{
+  "taskId": "task_...",
+  "taskToken": "256-bit-base64url-token",
+  "state": "active"
+}
 ```
 
-### POST /new
-创建新后台 tab，自动等待页面加载完成。**URL 通过 POST body 原样传入**，无需 URL-encode、不会因 query 中含 `&` 被切分。返回 `{ targetId }`。
-```bash
-curl -s -X POST --data-raw 'https://example.com' http://localhost:3456/new
-# 含 query 的目标 URL（如带 token 的小红书笔记）也直接原样传：
-curl -s -X POST --data-raw 'https://www.xiaohongshu.com/explore/xxx?xsec_source=app_share&xsec_token=ABC&type=normal' http://localhost:3456/new
-```
-> v2.5.3 起改为 POST。旧的 `GET /new?url=...` 返回 400 + 迁移指引，详见 `migration-2.5.3.md`。
+单个 Proxy 最多同时保留 32 个非终态 task。
 
-### GET /close?target=ID
-关闭指定 tab。
-```bash
-curl -s "http://localhost:3456/close?target=TARGET_ID"
+### `GET /v2/tasks/{taskId}`
+
+返回 task 的 `state`、`tabCount` 和 `lastActivity`。只能使用同一 task 的 token。
+
+### `POST /v2/tasks/{taskId}/handoff`
+
+```json
+{"targetId":"TARGET_ID"}
 ```
 
-### POST /navigate?target=ID
-在已有 tab 中导航到新 URL，自动等待加载。**target 走 query（不带特殊字符的不透明 ID），URL 走 POST body**。
-```bash
-curl -s -X POST --data-raw 'https://example.com' "http://localhost:3456/navigate?target=ID"
-```
-> v2.5.3 起改为 POST。旧的 `GET /navigate?target=...&url=...` 返回 400 + 迁移指引，详见 `migration-2.5.3.md`。
+Proxy 先阻止新操作、取消 wait、等待在途 target 操作结束，再激活准确 tab。状态变为 `handoff` 后，所有页面读取和修改都返回 `409 TASK_IN_HANDOFF`。Agent 在 handoff 期间不得读取页面。
 
-### GET /back?target=ID
-后退一页。
-```bash
-curl -s "http://localhost:3456/back?target=ID"
-```
+如果 `Target.activateTarget` 在 CDP 命令开始后超时，请求返回 `504 UNKNOWN_RESULT`，但 task 保持 `handoff`，不会退回 `active`。这是 fail-closed 行为：不得读取或修改页面；先查看 task 状态，由用户完成接管后再 `resume`。
 
-### GET /info?target=ID
-获取页面基础信息（title、url、readyState）。
-```bash
-curl -s "http://localhost:3456/info?target=ID"
+### `POST /v2/tasks/{taskId}/resume`
+
+Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/popup 必须仍存在。响应含 `snapshotRequired: true`；所有旧 ref 都已失效。
+
+### `POST /v2/tasks/{taskId}/complete`
+
+```json
+{"keep":false}
 ```
 
-### POST /eval?target=ID
-执行 JavaScript 表达式，POST body 为 JS 代码。
-```bash
-curl -s -X POST "http://localhost:3456/eval?target=ID" -d 'document.title'
+- `keep:false`：关闭该 task 创建的 tab 和继承的 popup。
+- `keep:true`：从 Proxy 释放这些 tab，保留给用户。
+- `completed` 是终态；重复完成返回相同终态结果。
+
+`complete` 只允许在 `active` 状态调用。处于 `handoff` 时必须先 `resume`；不能用 `complete` 绕过 handoff 的页面禁读屏障。
+
+如果关闭或释放 tab 的 CDP 命令超时，task 仍进入终态 `completed`，请求返回 `504 UNKNOWN_RESULT`，同一幂等 key 重放仍返回同一结果。Proxy 会移除所有剩余归属；对应 tab 可能因晚到关闭结果而关闭，也可能作为用户 tab 保留，调用方不得假设其最终开关状态。
+
+`DELETE /v2/tasks/{taskId}` 等价于 `complete` 的 `keep:false`。
+
+状态机为 `active -> handoff -> active -> completed`，另有终态 `expired`。active 30 分钟无操作、handoff 30 分钟未恢复都会过期并把尚存 tab 释放给用户。终态幂等记录默认保留 5 分钟。
+
+## Tab
+
+### `POST /v2/tabs`
+
+```json
+{"url":"https://example.com","background":true}
 ```
 
-### POST /click?target=ID
-JS 层面点击（`el.click()`），POST body 为 CSS 选择器。自动 scrollIntoView 后点击。简单快速，覆盖大多数场景。
-```bash
-curl -s -X POST "http://localhost:3456/click?target=ID" -d 'button.submit'
+只允许 `http:`、`https:` 和 `about:` URL。返回 `{targetId,kind}`。Popup 按 `openerId` 自动继承 opener 的 task。
+
+`Target.createTarget` 超时后可能晚到。task 仍为 `active` 或 `handoff` 时，晚到 tab 继续归入原 task；task 已按默认 `keep:false` 完成时，Proxy 关闭晚到 tab。其他终态或 `keep:true` 情况不再建立归属，tab 视为用户 tab。首次返回 `UNKNOWN_RESULT` 后不得换 key 原样重试。
+
+### `GET /v2/tabs`
+
+只返回当前 task 创建的 tab 和 popup。用户已有 tab、其他 task tab 完全隐藏。
+
+### `GET /v2/tabs/{targetId}`
+
+返回当前 task tab 的 `type`、`title`、`url`、`kind`、snapshot `generation` 和待处理 `dialog`（没有时为 `null`）。猜中其他 task 或用户 targetId 仍统一返回 `404 TARGET_NOT_FOUND`。
+
+### `DELETE /v2/tabs/{targetId}`
+
+关闭当前 task 自有 tab。DELETE 仍须携带 JSON content type、空 body `{}` 和 idempotency key。
+
+### `GET /v2/tabs/{targetId}/screenshot`
+
+Query 可选 `format=png|jpeg`。响应是图片二进制；`file` query 被拒绝，保存位置由调用方决定。
+
+## AX snapshot/ref
+
+### `GET /v2/tabs/{targetId}/snapshot`
+
+Query：
+
+- `mode=interactive|all`，默认 `interactive`
+- `depth=1..50`，默认 12
+- `maxNodes=1..1000`，默认 300
+- `refresh=true` 强制重新取得 AX tree
+
+AX tree 最多缓存 60 秒，但每次 snapshot 请求都会签发新的 generation/ref。示例：
+
+```json
+{
+  "targetId": "TARGET_ID",
+  "generation": 7,
+  "mode": "interactive",
+  "depth": 12,
+  "maxNodes": 300,
+  "truncated": false,
+  "nodes": [
+    {"role":"textbox","name":"Name","value":"","ref":"r7_1_ab12cd34"},
+    {"role":"button","name":"Submit","ref":"r7_2_ef56ab78"}
+  ]
+}
 ```
 
-### POST /clickAt?target=ID
-CDP 浏览器级真实鼠标点击（`Input.dispatchMouseEvent`），POST body 为 CSS 选择器。先获取元素坐标，再模拟鼠标按下/释放。算真实用户手势，能触发文件对话框、绕过部分反自动化检测。
-```bash
-curl -s -X POST "http://localhost:3456/clickAt?target=ID" -d 'button.upload'
+ref 在 Proxy 内绑定 `taskId + targetId + generation + backendDOMNodeId`，只对最近 snapshot 有效。动作前重新解析节点并检查 attached、visible、enabled 和未遮挡。失败返回 `409 STALE_REF`，随后必须重新 snapshot。
+
+首版不支持跨域 OOPIF ref。
+
+## 结构化 action
+
+### `POST /v2/tabs/{targetId}/action`
+
+统一 body 字段名是 `action`：
+
+```json
+{"action":"click","ref":"REF"}
+{"action":"fill","ref":"REF","value":"replacement"}
+{"action":"type","ref":"REF","value":"append one key at a time"}
+{"action":"press","ref":"REF","key":"Control+A"}
+{"action":"press","key":"Enter"}
+{"action":"check","ref":"REF"}
+{"action":"uncheck","ref":"REF"}
+{"action":"select","ref":"REF","value":"one"}
+{"action":"select","ref":"REF","values":["one","two"]}
+{"action":"hover","ref":"REF"}
 ```
 
-### POST /setFiles?target=ID
-给 file input 设置本地文件路径（`DOM.setFileInputFiles`），完全绕过文件对话框。POST body 为 JSON。
-```bash
-curl -s -X POST "http://localhost:3456/setFiles?target=ID" -d '{"selector":"input[type=file]","files":["/path/to/file1.png","/path/to/file2.png"]}'
+- `fill`：focus、全选、`Input.insertText`，再回读验证。
+- `type`：逐键派发输入事件。
+- `press`：有 ref 时先 focus；没有 ref 时作用于当前焦点。
+- `check`/`uncheck`：只支持原生 checkbox/radio，并验证最终状态。
+- `select`：只支持原生 `<select>`；`values` 支持 multi-select。
+
+同一 target 同时只能有一个读写操作；冲突返回 `409 TARGET_BUSY`。
+
+## Wait 与 dialog
+
+### `POST /v2/tabs/{targetId}/wait`
+
+四类条件只能选一个：
+
+```json
+{"selector":"#ready","timeoutMs":15000}
+{"text":"Saved","timeoutMs":15000}
+{"url":"/success","timeoutMs":15000}
+{"state":"domcontentloaded","timeoutMs":15000}
+{"state":"load","timeoutMs":15000}
 ```
 
-### GET /scroll?target=ID&y=3000&direction=down
-滚动页面。`direction` 可选 `down`（默认）、`up`、`top`、`bottom`。滚动后自动等待 800ms 供懒加载触发。
-```bash
-curl -s "http://localhost:3456/scroll?target=ID&y=3000"
-curl -s "http://localhost:3456/scroll?target=ID&direction=bottom"
+默认 15 秒，最长 30 秒，250 ms 轮询。URL 条件按当前完整 URL 是否包含给定字符串判断。不支持 JS wait 或 `networkidle`。handoff、complete 和 task 过期会取消 wait；即使取消发生在首次 attach 前或条件查询结果晚到，取消仍优先并返回 `409 WAIT_CANCELLED`。
+
+target 操作结束时刷新 task 与 tab 的最后活动时间；空闲过期和 15 分钟 tab 清理从操作完成时重新计时，不从长操作开始时计时。已经进入 task 终态转换的操作仍按该转换完成。
+
+### `POST /v2/tabs/{targetId}/dialog`
+
+JavaScript dialog 默认保持待处理，不自动接受：
+
+```json
+{"action":"dismiss"}
+{"action":"accept","promptText":"Alice"}
 ```
 
-### GET /screenshot?target=ID&file=/tmp/shot.png
-截图。指定 `file` 参数保存到本地文件；不指定则返回图片二进制。可选 `format=jpeg`。
-```bash
-curl -s "http://localhost:3456/screenshot?target=ID&file=/tmp/shot.png"
-```
+不存在 dialog 时返回 `409 NO_DIALOG`。处理后当前 ref 全部失效。
 
-## /eval 使用提示
+## 鉴权兜底 API
 
-- POST body 为任意 JS 表达式，返回 `{ value }` 或 `{ error }`
-- 支持 `awaitPromise`：可以写 async 表达式
-- 返回值必须是可序列化的（字符串、数字、对象），DOM 节点不能直接返回，需要提取属性
-- 提取大量数据时用 `JSON.stringify()` 包裹，确保返回字符串
-- 根据页面实际 DOM 结构编写选择器，不要套用固定模板
+调用顺序固定为 snapshot/ref、CSS click、最后 `/eval`：
 
-## 错误处理
+| Method | Path | JSON body |
+|---|---|---|
+| POST | `/v2/tabs/{id}/navigate` | `{"url":"https://example.com"}` |
+| POST | `/v2/tabs/{id}/back` | `{}` |
+| POST | `/v2/tabs/{id}/click` | `{"selector":"button.submit"}` |
+| POST | `/v2/tabs/{id}/eval` | `{"expression":"document.title"}` |
+| POST | `/v2/tabs/{id}/scroll` | `{"direction":"bottom"}` 或 `{"y":3000}` |
+| POST | `/v2/tabs/{id}/set-files` | `{"selector":"input[type=file]","files":["C:\\\\path\\\\file.png"]}` |
 
-| 错误 | 原因 | 解决 |
-|------|------|------|
-| `Chrome 未开启远程调试端口` | Chrome 未开启远程调试 | 提示用户打开 `chrome://inspect/#remote-debugging` 并勾选 Allow |
-| `attach 失败` | targetId 无效或 tab 已关闭 | 用 `/targets` 获取最新列表 |
-| `CDP 命令超时` | 页面长时间未响应 | 重试或检查 tab 状态 |
-| `端口已被占用` | 另一个 proxy 已在运行 | 已有实例可直接复用 |
+文件上传属于最终外部写操作，调用前必须按 SKILL.md 取得用户确认。
+
+## 主要错误码
+
+| HTTP | Code | 处理 |
+|---|---|---|
+| 400 | `IDEMPOTENCY_KEY_REQUIRED` | 为 logical mutation 生成 key |
+| 401 | `UNAUTHORIZED` | token 无效、跨 Proxy 或 Proxy 已重启 |
+| 403 | `INVALID_HOST` / `ORIGIN_FORBIDDEN` | 不从网页 origin 调用 Proxy |
+| 404 | `TARGET_NOT_FOUND` | 不探测其他 task；检查自己的 tab |
+| 408 | `WAIT_TIMEOUT` | 重新判断条件或流程 |
+| 409 | `TARGET_BUSY` | 等当前 target 操作结束 |
+| 409 | `STALE_REF` | 重新 snapshot |
+| 409 | `TASK_IN_HANDOFF` | 等用户完成并 resume |
+| 409 | `TASK_TRANSITIONING` | 等当前 handoff/complete/expiry 屏障结束 |
+| 409 | `INVALID_TASK_STATE` | 按状态机恢复；handoff 先 resume |
+| 409 | `WAIT_CANCELLED` | task 已开始转换，不继续等待 |
+| 409 | `IDEMPOTENCY_CONFLICT` | 不复用不同 logical request 的 key |
+| 410 | `TASK_TERMINAL` / `TASK_EXPIRED` | 新建 task |
+| 410 | `LEGACY_API_DISABLED` | 迁移到 `/v2` |
+| 415 | `JSON_REQUIRED` | 使用 `application/json` |
+| 429 | `TASK_LIMIT_REACHED` | 完成或等待旧 task 回收 |
+| 504 | `UNKNOWN_RESULT` | 先读取状态，不得换 key 原样重试 |
+
+## 隔离边界
+
+task token 用于减少多个对话之间的误操作，不是本机安全边界。其他本地进程仍可能直接访问浏览器 CDP。Task/tab 逻辑隔离也不是独立 Profile、Cookie 或浏览器上下文隔离。
+
+Proxy 重启或 CDP 断线时，task、token、归属、session 和 ref 全部清空；浏览器 tab 不关闭，遗留 tab 降为用户 tab且不能被重新接管。首版不提供网络抓包、HAR、trace、下载管理或跨域 OOPIF ref。

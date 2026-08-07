@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-06`
-- 最近来源登记审核：`2026-08-06`
-- 说明：以上游 v2.5.3 为完整基线的本地派生版；保留 Edge/Chrome 双长期 Proxy、原子端口绑定和本地站点经验，后续更新逐次隔离审核。
+- 最近来源登记审核：`2026-08-07`
+- 说明：以上游 v2.5.3 为完整基线的本地派生版；dual-proxy.2 从四个外部技能吸收互不重叠的行为思想，代码和文字均从头实现；后续更新逐次隔离审核。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -52,5 +52,151 @@
 
 - `SKILL.md`
 - `README.md`
+
+## microsoft-playwright-cli
+
+- 仓库：https://github.com/microsoft/playwright-cli.git
+- 当前上游路径：`skills/playwright-cli`
+- 接受时上游路径：`skills/playwright-cli`
+- 技能入口：`skills/playwright-cli/SKILL.md`
+- 已接受提交：`ca196c297169a494ee5517584883eada60dc8d0e`
+- 已接受版本：`未提供`
+- 基线类型：`exact`
+- 更新策略：`review`
+- 许可证：`Apache-2.0`
+- 镜像登记：`microsoft-playwright-cli`
+
+### 证据
+
+- 2026-08-06 dual-proxy.2 调研确认该路径的 snapshot/ref 与动作语义；本地仅吸收行为思想，代码和文字从头实现。
+- 2026-08-07 候选行为评测 24/24、Mock CDP 连续三轮 39/39、一次性 Edge Profile 8/8；用户明确批准正式应用。
+- 本地证据文件：`web-access/references/browser-source-survey.md`
+- 本地证据文件：`web-access/SKILL.md`
+
+### 已吸收
+
+- snapshot/ref 生命周期、最新 generation 约束和结构化元素动作语义。
+
+### 明确不吸收
+
+- 不安装 Playwright runtime，不采用独立浏览器 Profile、trace、HAR、网络拦截或自动安装。
+
+### 跟踪范围
+
+- `SKILL.md`
+- `references`
+
+### 许可证监控
+
+- `LICENSE`
+
+## browser-use-browser-use
+
+- 仓库：https://github.com/browser-use/browser-use.git
+- 当前上游路径：`skills/browser-use`
+- 接受时上游路径：`skills/browser-use`
+- 技能入口：`skills/browser-use/SKILL.md`
+- 已接受提交：`a3e3cc5dd11dd219884532fd37d67775cd66c74d`
+- 已接受版本：`未提供`
+- 基线类型：`exact`
+- 更新策略：`review`
+- 许可证：`MIT`
+- 镜像登记：`browser-use-browser-use`
+
+### 证据
+
+- 2026-08-06 dual-proxy.2 调研确认该路径的登录门、用户接管和动作验证边界；本地仅吸收行为思想，代码和文字从头实现。
+- 2026-08-07 候选行为评测 24/24、Mock CDP 连续三轮 39/39、一次性 Edge Profile 8/8；用户明确批准正式应用。
+- 本地证据文件：`web-access/references/browser-source-survey.md`
+- 本地证据文件：`web-access/SKILL.md`
+
+### 已吸收
+
+- 登录阻挡判断、handoff、密码与 MFA 停止边界，以及动作后的结果验证。
+
+### 明确不吸收
+
+- 不采用云浏览器、远程代理、凭据 vault、验证码处理、Cookie 导出或反检测。
+
+### 跟踪范围
+
+- `SKILL.md`
+
+### 许可证监控
+
+- `LICENSE`
+
+## browser-use-remote-browser
+
+- 仓库：https://github.com/browser-use/browser-use.git
+- 当前上游路径：`skills/remote-browser`
+- 接受时上游路径：`skills/remote-browser`
+- 技能入口：`skills/remote-browser/SKILL.md`
+- 已接受提交：`a3e3cc5dd11dd219884532fd37d67775cd66c74d`
+- 已接受版本：`未提供`
+- 基线类型：`exact`
+- 更新策略：`review`
+- 许可证：`MIT`
+- 镜像登记：`browser-use-browser-use`
+
+### 证据
+
+- 2026-08-06 dual-proxy.2 调研确认该路径的 tab lock 与任务所有权思想；本地仅吸收行为思想，代码和文字从头实现。
+- 2026-08-07 候选行为评测 24/24、Mock CDP 连续三轮 39/39、一次性 Edge Profile 8/8；用户明确批准正式应用。
+- 本地证据文件：`web-access/references/browser-source-survey.md`
+- 本地证据文件：`web-access/SKILL.md`
+
+### 已吸收
+
+- tab lock、task 所有权和多对话逻辑隔离思想。
+
+### 明确不吸收
+
+- 不采用远程浏览器服务、会话托管或云端凭据。
+
+### 跟踪范围
+
+- `SKILL.md`
+
+### 许可证监控
+
+- `LICENSE`
+
+## vercel-agent-browser
+
+- 仓库：https://github.com/vercel-labs/agent-browser.git
+- 当前上游路径：`.`
+- 接受时上游路径：`.`
+- 技能入口：`skills/agent-browser/SKILL.md`
+- 已接受提交：`acbc22bdc5d4f6c5a88d97d4a4745d3c5eb0591f`
+- 已接受版本：`未提供`
+- 基线类型：`exact`
+- 更新策略：`review`
+- 许可证：`Apache-2.0`
+- 镜像登记：`vercel-labs-agent-browser`
+
+### 证据
+
+- 2026-08-06 dual-proxy.2 调研确认该入口与 core 数据中的不可信页面边界和能力握手思想；本地仅吸收行为思想，代码和文字从头实现。
+- 2026-08-07 候选行为评测 24/24、Mock CDP 连续三轮 39/39、一次性 Edge Profile 8/8；用户明确批准正式应用。
+- 本地证据文件：`web-access/references/browser-source-survey.md`
+- 本地证据文件：`web-access/SKILL.md`
+
+### 已吸收
+
+- 不可信页面内容边界、协议版本匹配和能力握手。
+
+### 明确不吸收
+
+- 不安装 agent-browser CLI，不替换现有 CDP Proxy，不采用独立浏览器 Profile。
+
+### 跟踪范围
+
+- `skills/agent-browser/SKILL.md`
+- `skill-data/core`
+
+### 许可证监控
+
+- `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。

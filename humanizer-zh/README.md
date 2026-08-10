@@ -74,7 +74,7 @@ git clone https://github.com/op7418/Humanizer-zh.git ~/.claude/skills/humanizer-
 #### 2. 在对话中使用
 
 ```
-请用 humanizer 帮我改写这段话，让它更自然：
+请用 humanizer-zh 帮我改写这段话，让它更自然：
 
 这个项目作为我们团队致力于创新的证明。此外，它展示了我们在不断演变的技术格局中的关键作用。
 ```

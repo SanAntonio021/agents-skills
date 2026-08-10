@@ -1,6 +1,6 @@
 ---
 name: ieee-manuscript-edit
-description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、中文改英文、图注/引用/术语/单位核查、去 AI 写作痕迹、投稿前文字精修、Cover Letter 和 Response Letter 正文精修、合作者文件整理。触发场景：用户说"润色""改英文""精修""投稿前文字检查""审稿回复""改图注""改摘要/引言/方法/结果""术语校准""发给合作者""核验修改建议"，或要求审查另一批审查员/合作者/模型给出的修改建议清单，或说论文稿"AI 味重""像 AI 写的""去 AI 腔"，或要求把中文技术内容改成 SCI/IEEE 英文论文。正式投稿前审查门由 `paper-review` 负责；未指定或非 IEEE 投稿事务由 `journal-submission` 负责，明确 IEEE 投稿事务由 `ieee-journal-submission` 负责。
+description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、中文改英文、图注/引用/术语/单位核查、去 AI 写作痕迹、投稿前文字精修、Cover Letter 和 Response Letter 正文精修、合作者文件整理。触发场景：用户说"润色""改英文""精修""投稿前文字检查""审稿回复""改图注""改摘要/引言/方法/结果""术语校准""发给合作者""核验修改建议"，或要求审查另一批审查员/合作者/模型给出的修改建议清单，或说论文稿"AI 味重""像 AI 写的""去 AI 腔"，或要求把中文技术内容改成 SCI/IEEE 英文论文。正式投稿前审查门由 `paper-review` 负责；未指定或非 IEEE 投稿事务由 `journal-submission` 负责，明确 IEEE 投稿事务由 `ieee-journal-submission` 负责；纯英文句子质量审查的触发词还包括"检查英文句子""删废话""改被动语态""精简表达""太啰嗦""check English sentences""remove filler""fix passive voice""tighten expression""too verbose""check my English writing""improve clarity""tighten the writing"（纯句子质量审查；`sentence-polish` 已并入本技能）。
 ---
 
 # SCI/IEEE 论文精修
@@ -50,7 +50,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 5. 涉及专业术语时，先按"术语校准与全局术语库"执行：读术语库、识别新增/冲突/待判定术语、必要时联网核验，再进入句子润色。
 6. 写作或精修论文正文时，按需读取 `D:\BaiduSyncdisk\.agents\vocab\vocab-full.md` 中 `论文` 和 `通用` 场景词条；词级偏好只用于表达，不覆盖术语库、事实边界和引用关系。
 7. 先检查实验事实、章节安排和关键结论依据。有疑点时先列待确认问题；终稿英文等事实明确后再生成。
-8. 再做五项语言质量复查：删掉空话和重复句，改顺主语和动词，拆开过长的句子，固定术语，核对数字、单位和引用。
+8. 再做五项语言质量复查：删掉空话和重复句，改顺主语和动词，拆开过长的句子，固定术语，核对数字、单位和引用。需要独立完整句子审查（full-review / section-review / targeted / interactive 模式）时，读取 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 9. 再修改正文：压缩冗余，统一术语，理顺句子，控制结论强度。
 10. 最后检查缩写首次定义（按核心规则 12 的双作用域审计）、引用位置、图表标题、单位符号和中英文版本的一致性。
 
@@ -127,6 +127,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 按任务只读取需要的参考：
 
 - 语言精修：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md)。
+- 独立完整 Sainani 五轮句子审查：读 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 - 中文改英文或分节重写：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md) 和 [references/section-by-section-review.md](references/section-by-section-review.md)。
 - 术语校准和长期复用：读 [references/sci-terminology-bank.md](references/sci-terminology-bank.md)；只把用户审过或带明确来源的术语写回。
 - 术语需要联网证据：用 `web-access` 查网页、目标期刊页面和 ScienceDirect Topics；需要定位或下载正式论文 PDF 时，调用 `paper-download`；已有本地 PDF 需要总结或术语摘录时，调用 `paper-summary`。
@@ -166,5 +167,5 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 - 如果需要最新模板、目标期刊作者指南或引用规则，先核验官方来源。
 - 如果任务主要是 Word、PDF 文件操作，按对应文件技能处理；md 转 LaTeX、套模板、BibTeX、编译和按期刊/页面要求的 source 打包转给 `latex-paper`。本技能只负责论文内容、风格和文件取舍判断。
 - Cover Letter 和 Response Letter 正文仍由本技能处理。未指定或非 IEEE 投稿系统、作者与声明、决定、返修上传、录用后、版权费用或校样事务转给 [../journal-submission/SKILL.md](../journal-submission/SKILL.md)；明确 IEEE 时转给 [../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)。任何最终 Submit 请求先转 [../paper-review/SKILL.md](../paper-review/SKILL.md) 完成审查门。
-- 如果用户只想做纯英文句子质量审查（删废话、改被动语态、精简句子结构），不涉及术语、引用、格式或内容问题，转给 `sentence-polish`。如果一个请求既有内容问题又有句子问题，不要拆给两个 skill，先在这里处理。
+- 纯英文句子质量审查现由本技能直接处理；需要独立句子审查模式时，读取 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 - 如果用户只想维护词表、收录"别用 X，用 Y"或交付前扫词，转给 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。如果用户想处理整体 AI 写作痕迹、句式和结构，转给 `Humanizer-zh`；SCI/IEEE 论文正文里的 AI 腔先按本技能的学术边界处理。

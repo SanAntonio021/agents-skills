@@ -12,11 +12,14 @@
   {"id": "english-general", "category": "near-miss", "query": "Remove the AI tone from this English paragraph.", "should_trigger": false, "expected_route": "humanizer"},
   {"id": "ieee-chinese-paper", "category": "near-miss", "query": "把这段中文论文改成可投稿的 IEEE 英文，校准术语和证据强度。", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
   {"id": "grant-delivery", "category": "near-miss", "query": "把工程申报书这段中文按正式申报口径重写。", "should_trigger": false, "expected_route": "project-writing"},
-  {"id": "english-sentence-only", "category": "near-miss", "query": "只检查这三句英文是否冗余，不改技术内容。", "should_trigger": false, "expected_route": "sentence-polish"},
+  {"id": "english-sentence-only", "category": "near-miss", "query": "只检查这三句英文是否冗余，不改技术内容。", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
   {"id": "chinese-grammar-only", "category": "near-miss", "query": "只改这句话的中文语法，不要改变文风。", "should_trigger": false, "expected_route": "none"},
   {"id": "code-comments", "category": "negative", "query": "去掉这些代码注释里的 AI 味。", "should_trigger": false, "expected_route": "none"},
   {"id": "word-formatting", "category": "negative", "query": "把这份中文 Word 文档的目录和样式修好。", "should_trigger": false, "expected_route": "docx"},
   {"id": "journal-selection", "category": "negative", "query": "这篇中文论文该投哪本期刊？", "should_trigger": false, "expected_route": "journal-selection"},
   {"id": "fact-research", "category": "negative", "query": "查找并核实这段中文里的技术事实和来源。", "should_trigger": false, "expected_route": "research-lookup"},
-  {"id": "paper-review", "category": "negative", "query": "按 A/B/C 分级审查这份中文稿件，判断还要不要继续改。", "should_trigger": false, "expected_route": "paper-review"}
+  {"id": "paper-review", "category": "negative", "query": "按 A/B/C 分级审查这份中文稿件，判断还要不要继续改。", "should_trigger": false, "expected_route": "paper-review"},
+  {"id": "simulated-generic-ai-tone", "category": "ambiguous", "query": "帮我去AI味", "should_trigger": true, "expected_route": "humanizer-zh", "note": "模拟样例，不是用户真实原话。"},
+  {"id": "simulated-mixed-chinese-primary", "category": "mixed-language", "query": "帮我去掉这段以中文为主的中英混合文字里的 AI 味，保留英文术语：这次 update 是团队持续 innovation 的关键里程碑，展示了 seamless experience。", "should_trigger": true, "expected_route": "humanizer-zh", "note": "模拟样例，不是用户真实原话。"},
+  {"id": "simulated-proposal-humanizer-collision", "category": "near-miss", "query": "帮我给这段工程申报书去 AI 味，并按正式申报口径完善技术路线和考核指标。", "should_trigger": false, "expected_route": "project-writing", "note": "模拟样例，不是用户真实原话。"}
 ]

@@ -21,7 +21,7 @@
     {"id": "tmtt-revision", "category": "ieee", "query": "T-MTT 收到 major revision，继续走返修流程", "should_trigger": false, "expected_route": "ieee-journal-submission"},
     {"id": "ieee-copyright", "category": "ieee", "query": "IEEE eCF 和 Open Access 这一页怎么处理", "should_trigger": false, "expected_route": "ieee-journal-submission"},
     {"id": "download-paper", "category": "literature", "query": "把这个 DOI 的正式论文 PDF 下载下来", "should_trigger": false, "expected_route": "paper-download"},
-    {"id": "sentence-polish", "category": "writing", "query": "只检查这三句英文是否冗余，不改技术内容", "should_trigger": false, "expected_route": "sentence-polish"},
+    {"id": "sentence-polish", "category": "writing", "query": "只检查这三句英文是否冗余，不改技术内容", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
     {"id": "scope-rejection", "category": "selection", "query": "编辑说 not a fit，下一本该改投哪里", "should_trigger": false, "expected_route": "journal-selection"},
   {"id": "manuscript-audit", "category": "pre_review", "query": "别填网页，先模拟审稿人找出会桌面拒稿的问题", "should_trigger": false, "expected_route": "paper-review"}
 ]

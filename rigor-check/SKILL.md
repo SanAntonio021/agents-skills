@@ -4,7 +4,7 @@ description: >
   评估科学论断和证据质量。用户说"实验设计有没有问题""证据够不够""论证站不站得住"
   "结论说过头没""有没有偏倚""统计方法对不对""实验条件够不够充分"时触发。
   适用于：评估实验设计、识别偏倚和混杂因素、判断证据强弱、识别逻辑谬误、
-  评审论文方法学。不管语言润色（找 ieee-manuscript-edit 或 sentence-polish）；
+  评审论文方法学。不管语言润色（找 ieee-manuscript-edit）；
   不判断稿子该不该继续改（找 paper-review）。
 license: MIT license
 ---
@@ -62,6 +62,6 @@ license: MIT license
 
 ## 这个 skill 不管的事
 
-- **不管语言润色。** 英文句子质量找 sentence-polish，内容层面精修找 ieee-manuscript-edit。
+- **不管语言润色。** 英文句子质量和内容层面精修都找 ieee-manuscript-edit。
 - **不判断稿子该不该继续改。** 那是 paper-review 的事（A/B/C 分级 + 停稿判断）。
 - **不代替专业合规审查、伦理审查或法律审查。**

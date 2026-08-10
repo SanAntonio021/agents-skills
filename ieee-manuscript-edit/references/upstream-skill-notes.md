@@ -7,11 +7,10 @@
 链接：https://github.com/labarba/sciwrite
 许可：CC BY 4.0
 
-**当前状态（2026-05-20 更新）：** sentence-polish 已 fork 到本地 `skills/sentence-polish/`，作为独立的英文句子质量审查 skill。
+**当前状态（2026-08-10 更新）：** sentence-polish 已于 2026-08-10 并入本技能。完整 Sainani 五轮审查及其四种模式和三级严重度现存于 `references/sainani-sentence-review.md`。
 
 **分工：**
-- `ieee-manuscript-edit` 管内容层面的精修：术语校准、引用检查、IEEE 结构、中文改英文、图注、终稿整理。内置的 5 项语言质量复查（已吸收到 `manuscript-refinement-checklist.md`）是精修流程中的一个步骤，服务于完整流程。
-- `sentence-polish` 是独立的纯英文句子质量审查工具：Sainani 五轮检查法（删废话→改被动→理句子结构→统一用词→核对数字引用）。用户单独想做句子级检查时用。
+- `ieee-manuscript-edit` 同时管内容层面精修和纯英文句子质量审查。内容精修走主流程；独立句子审查（full-review/section-review/targeted/interactive）读 `references/sainani-sentence-review.md`。
 
 **已吸收到 ieee-manuscript-edit 的内容保留不动：**
 - `SKILL.md` 主流程中的五项语言质量复查步骤。

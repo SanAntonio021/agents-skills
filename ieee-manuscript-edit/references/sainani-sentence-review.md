@@ -1,3 +1,31 @@
+# 英文句子质量独立审查参考（Sainani 五轮检查法）
+
+本文件是独立英文句子质量审查的完整参考，采用 Sainani 五轮检查法，由原 `sentence-polish` 技能合并而来。
+
+## 署名与许可
+
+> Original work by Lorena A. Barba (labarba/sciwrite, commit 8a57fa73d541bdcf7d8501db61c018cb454e9afa).
+> Licensed under CC BY 4.0.
+> Local adaptation by Wang Weipeng (UESTC).
+> Merged from standalone sentence-polish skill on 2026-08-10.
+
+## 审查模式
+
+| 模式 | 什么时候用 | 做什么 |
+|------|-----------|--------|
+| **full-review** | "帮我全面检查英文""full writing review" | 对整篇文档跑 5 轮检查，出结构化报告 |
+| **section-review** | "检查这段引言的英文""check the Discussion" | 对单个章节跑 5 轮检查 |
+| **targeted** | "帮我改被动语态""删废话" | 只跑对应的那一轮 |
+| **interactive** | "一段一段带我改" | 逐段展示修改前后对比和解释 |
+
+## 严重程度
+
+- **CRITICAL** — 会误导读者（数字错、术语不一致暗示了不同变量、被动语态隐藏了关键责任人）
+- **MAJOR** — 明显影响可读性（句子结构埋得太深、大量名词化、堆砌废话）
+- **MINOR** — 改了更好但不影响理解（轻微啰嗦、可选的风格优化）
+
+---
+
 # Sainani 五轮检查 — 详细对照表
 
 基于 Kristin Sainani《Writing in the Sciences》方法论。这个文件是 SKILL.md 里 5 轮检查的详细展开，包含查找表和示例。
@@ -190,3 +218,7 @@
 ### 最值得改的 5 处
 [按影响大小排序，每处说清楚改什么、为什么重要]
 ```
+
+## 适用边界
+
+本参考只规范英文句子质量；术语正确性、IEEE 格式和科学内容判断不在范围内。审查时应尊重领域惯例（例如 Methods 部分采用被动语态）和作者风格。

@@ -28,7 +28,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
   - 通用期刊投稿全生命周期（未指定或非 IEEE）：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
   - IEEE 期刊投稿全生命周期（明确 IEEE）：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
   - SCI/IEEE 论文精修（中改英、术语、图注、终稿）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-  - 纯英文句子质量审查（Sainani 五轮检查）：[../sentence-polish/SKILL.md](../sentence-polish/SKILL.md)
+  - 纯英文句子质量审查（Sainani 五轮检查，已并入）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)，独立审查细则见 [../ieee-manuscript-edit/references/sainani-sentence-review.md](../ieee-manuscript-edit/references/sainani-sentence-review.md)
 - 支持层：
   - 论文 PDF 下载与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
   - 单篇论文中文总结：[../paper-summary/SKILL.md](../paper-summary/SKILL.md)
@@ -66,9 +66,9 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 
 纯审查、只在聊天中改句、方案讨论和其他只读任务不触发。下游写作 skill 已命中时仍沿用同一规则，不能因为绕过本路由而漏掉版本保护。
 
-## ieee-manuscript-edit 和 sentence-polish 怎么区分
+## 句子精修已并入 ieee-manuscript-edit
 
-`ieee-manuscript-edit` 管内容层面的精修：术语校准、引用检查、IEEE 结构、中文改英文、图注、终稿整理。`sentence-polish` 只管纯英文句子质量：删废话、改被动、理句子结构。如果一个请求同时涉及内容和句子问题（比如"润色这段 SCI 论文"或"帮我改英文还要校准术语"），优先转 `ieee-manuscript-edit`；只有明确只管句子质量时才转 `sentence-polish`。
+`sentence-polish`（Sainani 五轮英文句子审查）已并入 `ieee-manuscript-edit`。用户说"检查英文句子""删废话""改被动语态""精简表达""太啰嗦""check English sentences""remove filler""improve clarity""tighten the writing"时，直接路由到 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)；该技能按需读取 [../ieee-manuscript-edit/references/sainani-sentence-review.md](../ieee-manuscript-edit/references/sainani-sentence-review.md) 执行独立句子审查，不再保留独立的 `sentence-polish` 技能。
 
 ## 边界
 

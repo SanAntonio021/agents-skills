@@ -11,6 +11,7 @@ allowed-tools:
   - Read
   - Glob
   - Grep
+  - Bash
   - AskUserQuestion
   - Agent
 ---
@@ -89,11 +90,14 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
    停止并要求改在覆盖目标路径的会话运行，不重试、不改用其他调用方式绕过，也不
    缩小任务范围。这属于发起环境不合规，不输出 `CODEX_FAILURE_REPORT`。
 5. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
-   helper，以及本 Skill 目录的只读访问。Windows 需要同时兼容 helper 的正斜杠和
-   反斜杠绝对路径。Skill frontmatter 的 `allowed-tools` 不会传给
-   `codex:codex-rescue` subagent，不能替代用户级权限；不得用全局
-   `Bash(node:*)` 代替精确规则。Claude Code 2.1.207 对带多行 task 参数使用
-   `Bash(node "<companionPath>" task *)`，不要只写旧式 `task:*`。
+   helper，以及本 Skill 目录的只读访问。权限规则按 shell 展开**前**的原始命令串
+   匹配，因此 Windows 规则要写成含 `$USERPROFILE` 字面量的形态，例如
+   `Bash(node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs"*)`
+   与 `Bash(node "$USERPROFILE/.claude/plugins/cache/openai-codex/*" task *)`；同时
+   保留旧的绝对路径规则以兼容尚未升级的运行时副本。Skill frontmatter 的
+   `allowed-tools` 不会传给 `codex:codex-rescue` subagent，不能替代用户级权限；
+   不得用全局 `Bash(node:*)` 代替精确规则。Claude Code 2.1.207 对带多行 task 参数
+   使用 `task *` 通配，不要只写旧式 `task:*`。
    本机使用 cc-switch 时，精确权限必须写入 `common_config_claude` 与全部
    claude/claude-desktop provider 快照；`%USERPROFILE%\.claude\settings.json`
    是按当前 provider 渲染的快照产物，只改它会在 provider 切换或重渲染时丢失
@@ -139,25 +143,33 @@ thread 与后续执行，首次创建 thread 时就使用 `--write`。这只代�
 `--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
 runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
 
-调用 Agent 前使用 Skill 加载消息已经给出的 `Base directory for this skill`，不要
-扫描 `.claude/skills` 父目录。把该目录下的 helper 拼成绝对路径并统一成正斜杠，
-然后只用 Bash 运行一条直接命令：
+调用 Agent 前不要扫描 `.claude/skills` 父目录，也不要使用 Skill 加载消息给出的
+`Base directory for this skill`——那是展开后的绝对路径，含被改写的用户名段。
+helper 路径固定，只用 Bash 运行一条直接命令：
 
 ```bash
-node "<helperPath>" --companion-path
+node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs" --companion-path
 ```
 
-必须把 `<helperPath>` 替换为已解析的正斜杠绝对路径；不得把占位符、环境变量或
-`${CLAUDE_SKILL_DIR}` 原样交给 shell。不得改用 PowerShell，不得先读取
+`$USERPROFILE` 由 shell 本地展开，必须原样写入命令，不得替换成展开后的绝对路径。
+Windows 用户目录名会在工具参数传输中被改写：写进参数的用户名段到达 node 进程时已
+变成另一个字符串，指向一个不存在的目录，因而任何含用户名的字面绝对路径都会报
+`MODULE_NOT_FOUND`（2026-08-10 实测，主会话与 subagent 两端一致；同一次调用内
+`os.homedir()` 返回真名而参数里的用户名段被改写，即判定性证据）。POSIX 宿主用
+`$HOME` 替换 `$USERPROFILE`，其余部分不变。不得改用 PowerShell，不得先读取
 `settings.json`，也不得把路径查询和 helper 调用拼成复合命令。helper 调用被权限
 拒绝时，直接按调用失败暂停。
 
-把返回的 `companionPath` 原样注入 Agent prompt。Plugin 更新后路径会变化；若新路径
-不在用户级权限中，按调用失败暂停，先更新精确权限，不扩大成 `Bash(node:*)`。
+记录返回的 `companionHomeRelative`，它是相对用户主目录的路径，不含用户名，可以安全
+穿过工具参数传输层。同时返回的 `companionPath` 是展开后的绝对路径，只用于人工阅读
+和排错，**不得注入 Agent prompt**。Plugin 更新后路径会变化；若新路径不在用户级权限
+中，按调用失败暂停，先更新精确权限，不扩大成 `Bash(node:*)`。
 
 每次 Agent prompt 都要重申：subagent 只能进行一次直接的
-`node "<Claude 注入的 companionPath>" task ...` 调用。实际命令里不得保留 `$`、
-`${CLAUDE_PLUGIN_ROOT}` 或其他环境变量引用。不得先运行
+`node "$USERPROFILE/<Claude 注入的 companionHomeRelative>" task ...` 调用，其中
+`$USERPROFILE` 原样保留由 subagent 的 shell 展开，只有 `companionHomeRelative` 部分
+由 Claude 替换成实际值。除这一个 `$USERPROFILE` 外，实际命令里不得保留其他 `$`、
+`${CLAUDE_PLUGIN_ROOT}` 或环境变量引用。不得先运行
 `--help`，不得创建临时文件，不得使用管道、重定向、here-doc、命令替换、`cd` 或
 复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。该 Bash tool call 必须
 设置至少 `600000` ms 的 timeout，并保持前台等待，不得设置 `run_in_background`。
@@ -174,10 +186,10 @@ node "<helperPath>" --companion-path
 Git 状态。确认 Codex 没有修改文件，再运行：
 
 ```bash
-node "<helperPath>"
+node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs"
 ```
 
-仍使用前面记录的同一个正斜杠绝对 `helperPath`，不重新探测或改换命令形式。
+仍保持 `$USERPROFILE` 未展开，不改换命令形式。
 
 记录输出的 `candidateThreadId`。找不到候选 thread 时按 Codex 调用失败暂停。
 该候选只在同一个仍存活的 Claude session 内有效；session 结束后 Plugin 会清理
@@ -188,7 +200,7 @@ session job，不能在新 session 中假定可续接。
 改用新 thread 或其他执行方式绕过，也不得让 Claude 接管。
 
 - `通过`：进入执行；
-- `需修改`：Claude 只修订计划，先用记录的 `helperPath` 和 thread ID 核对 resume
+- `需修改`：Claude 只修订计划，先用同一条 helper 命令和记录的 thread ID 核对 resume
   candidate，再用 `--resume --wait` 交给同一 Codex thread 复核；
 - `实质分歧`：停止执行，向用户提交分歧报告。
 
@@ -199,10 +211,10 @@ session job，不能在新 session 中假定可续接。
 每次续接前，运行下列检查，其中 `<thread-id>` 是首次记录值：
 
 ```bash
-node "<helperPath>" "<thread-id>"
+node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs" "<thread-id>"
 ```
 
-`helperPath` 必须沿用首次复核前记录的正斜杠绝对路径，不重新扫描或展开环境变量。
+helper 路径始终保持 `$USERPROFILE` 未展开，不重新扫描、不改写成绝对路径。
 
 只有 `ok: true` 才能调用同一 `codex:codex-rescue` subagent，使用
 `--resume --wait --write`。候选 ID 不同、候选缺失或检查失败时，按

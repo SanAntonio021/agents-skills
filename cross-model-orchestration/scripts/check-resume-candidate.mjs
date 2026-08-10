@@ -12,7 +12,18 @@ function fail(message, detail = null, status = 1) {
 
 const mode = process.argv[2] || null;
 const expectedThreadId = mode === "--companion-path" ? null : mode;
-const registryPath = path.join(os.homedir(), ".claude", "plugins", "installed_plugins.json");
+const home = os.homedir();
+const registryPath = path.join(home, ".claude", "plugins", "installed_plugins.json");
+
+// Windows 用户名可能在工具参数传输中被改写，字面绝对路径因此不可靠。
+// 调用方改用 shell 本地展开的 $USERPROFILE，需要一个相对 home 的后缀。
+function toHomeRelative(absolutePath) {
+  const normalized = absolutePath.replaceAll("\\", "/");
+  const normalizedHome = home.replaceAll("\\", "/").replace(/\/+$/, "");
+  return normalized.startsWith(`${normalizedHome}/`)
+    ? normalized.slice(normalizedHome.length + 1)
+    : null;
+}
 
 if (!fs.existsSync(registryPath)) {
   fail("Claude plugin registry not found.", registryPath);
@@ -37,8 +48,13 @@ if (!fs.existsSync(companion)) {
 }
 
 if (mode === "--companion-path") {
+  const companionHomeRelative = toHomeRelative(companion);
+  if (!companionHomeRelative) {
+    fail("Codex companion is not inside the user home directory.", companion);
+  }
   console.log(JSON.stringify({
     ok: true,
+    companionHomeRelative,
     companionPath: companion.replaceAll("\\", "/"),
     pluginVersion: install.version ?? null
   }, null, 2));

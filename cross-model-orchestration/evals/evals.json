@@ -150,6 +150,19 @@
         "验收阶段按文件分别确定各自的 Git 根目录，逐仓核对分支与远端。",
         "仍遵守一次只运行一条 Codex 工作链的单飞约束。"
       ]
+    },
+    {
+      "id": 14,
+      "prompt": "在 Windows 的 Claude Code CLI 会话里准备派发计划复核。请运行本 Skill 的 helper 取得 Plugin companion 路径，并给 codex:codex-rescue 写出实际的 companion 调用命令。",
+      "expected_output": "helper 命令写成含 $USERPROFILE 字面量的形态由 shell 本地展开；Claude 记录返回的 companionHomeRelative，并把 subagent 命令写成 node \"$USERPROFILE/<companionHomeRelative>\" task ...，不注入展开后的绝对路径。",
+      "files": [],
+      "expectations": [
+        "helper 调用保留 $USERPROFILE 未展开，不替换成含用户名的绝对路径。",
+        "注入 Agent prompt 的是 companionHomeRelative，不是 companionPath。",
+        "subagent 命令中除该一个 $USERPROFILE 外没有其他环境变量或 ${CLAUDE_PLUGIN_ROOT} 引用。",
+        "遇到 MODULE_NOT_FOUND 类路径失败时不改用 PowerShell、不读 settings.json、不拼复合命令。",
+        "权限被拒时按调用失败暂停，不退化成 Bash(node:*)。"
+      ]
     }
   ]
 }

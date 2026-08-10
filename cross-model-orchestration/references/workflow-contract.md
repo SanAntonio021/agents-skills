@@ -130,6 +130,10 @@ Claude 验收未通过。请只修复以下问题，不扩大范围；修复后�
 
 ## CODEX_FAILURE_REPORT
 
+本报告只用于已经通过宿主环境检查，并已尝试启动 Plugin companion 或 Agent job 后
+发生的认证、权限、sandbox、timeout、额度或 runtime 失败。启动协作任务前发现当前
+宿主不是 Claude Code CLI，不属于调用失败，不使用本报告。
+
 ```text
 # Codex 协作已暂停
 

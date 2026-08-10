@@ -555,6 +555,40 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         )
         self.assertEqual(blocked["status"], "blocked_provenance_only")
 
+    def test_provenance_only_source_allows_entry_removed_after_accepted_commit(self) -> None:
+        registry_text = self.registry.read_text(encoding="utf-8").replace(
+            'baseline_kind = "exact"',
+            'baseline_kind = "exact"\nupdate_policy = "provenance_only"',
+            1,
+        )
+        self.registry.write_text(registry_text, encoding="utf-8")
+        run_git(self.mirror, "rm", "-r", "skills/source-skill")
+        current = commit_all(self.mirror, "remove provenance-only source")
+        skills, mirrors = self.load()
+
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(validation["status"], "ok", validation["errors"])
+        self.assertTrue(
+            any("provenance-only upstream path" in item for item in validation["warnings"])
+        )
+        diff = MODULE.source_diff(self.mirror, skills[0].sources[0], current)
+        self.assertEqual(diff["status"], "provenance_only")
+        report = MODULE.build_report(
+            skills, mirrors, self.root / "reports", "2026-07-29", self.root / "state.json"
+        )
+        self.assertEqual(report["sources"][0]["status"], "provenance_only")
+        blocked = MODULE.prepare_review(
+            skills,
+            mirrors,
+            self.skills,
+            self.root / "reports",
+            "2026-07-29",
+            "alpha",
+            "example-source",
+            current,
+        )
+        self.assertEqual(blocked["status"], "blocked_provenance_only")
+
     def test_rejects_unsafe_skill_entry_and_unknown_update_policy(self) -> None:
         registry_text = self.registry.read_text(encoding="utf-8").replace(
             'upstream_path = "skills/source-skill"',
@@ -1052,6 +1086,9 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         removed_head = commit_all(self.mirror, "remove upstream skill")
         removed = MODULE.source_diff(self.mirror, skills[0].sources[0], removed_head)
         self.assertEqual(removed["status"], "upstream_removed_or_moved")
+        invalid = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(invalid["status"], "invalid")
+        self.assertTrue(any("skill entry missing at current HEAD" in item for item in invalid["errors"]))
 
     def test_verified_path_migration_preserves_accepted_path_and_allows_review(self) -> None:
         run_git(

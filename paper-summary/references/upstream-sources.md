@@ -3,7 +3,7 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-08-02`
+- 最近来源登记审核：`2026-08-09`
 - 说明：2026-07-26 用户确认 5 个外部仓库作为单篇论文总结参考来源；本地只吸收阅读模式、图表公式检查、论文类型识别、太赫兹通信字段和 Paperzilla markdown 输入兼容。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
@@ -59,7 +59,7 @@
 - 已接受提交：`0e78094f449a331d25f692d0b6518f5623fd018f`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
-- 更新策略：`review`
+- 更新策略：`provenance_only`
 - 许可证：`NOASSERTION (no LICENSE file; README has no license section)`
 - 镜像登记：`lijigang-ljg-skills`
 

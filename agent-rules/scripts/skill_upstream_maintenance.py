@@ -524,7 +524,12 @@ def validate_registry(
             if mirror.local_path.exists():
                 upstream_root = mirror.local_path if source.upstream_path == "." else mirror.local_path / source.upstream_path
                 if not upstream_root.exists():
-                    warnings.append(f"{skill.name}/{source.id}: upstream path not present in current checkout")
+                    if source.update_policy == "provenance_only":
+                        warnings.append(
+                            f"{skill.name}/{source.id}: provenance-only upstream path not present in current checkout"
+                        )
+                    else:
+                        warnings.append(f"{skill.name}/{source.id}: upstream path not present in current checkout")
                 commit = git(mirror.local_path, ["cat-file", "-e", f"{source.accepted_commit}^{{commit}}"])
                 if commit.returncode != 0:
                     warnings.append(f"{skill.name}/{source.id}: accepted commit unavailable in local mirror")
@@ -544,7 +549,7 @@ def validate_registry(
                         )
                     mirror_head = current_head(mirror.local_path)
                     current_entry = source_skill_entry_path(source)
-                    if mirror_head and git(
+                    if mirror_head and source.update_policy != "provenance_only" and git(
                         mirror.local_path,
                         ["cat-file", "-e", git_object(mirror_head, current_entry)],
                     ).returncode != 0:
@@ -908,6 +913,9 @@ def source_diff(
             "changed": [],
             "error": f"Skill entry missing at accepted commit: {baseline_skill_path}",
         }
+    if source.update_policy == "provenance_only":
+        return {"status": "provenance_only", "changed": [], "comparison_base": before}
+
     current_skill_path = source_skill_entry_path(source)
     current_identity = git_object(current, current_skill_path)
     if git(mirror, ["cat-file", "-e", current_identity]).returncode != 0:
@@ -917,9 +925,6 @@ def source_diff(
             "comparison_base": before,
             "error": f"Skill entry missing at current commit: {current_skill_path}",
         }
-
-    if source.update_policy == "provenance_only":
-        return {"status": "provenance_only", "changed": [], "comparison_base": before}
 
     license_diff = git(
         mirror,

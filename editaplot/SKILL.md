@@ -23,7 +23,7 @@ rendering, exporting, and readback.
    use the repository-root `editaplot.cmd`. Use an absolute launcher path in commands. Do not make
    beginners select a Python executable or invoke `scripts/editaplot.py` directly.
 3. This personal CC Switch distribution includes `editaplot.cmd` and a versioned
-   `.editaplot-local.json` that points to the audited local runtime. Run
+   `.editaplot-local.json` that points to an audited, commit-named local runtime snapshot. Run
    `py -3.12 scripts/validate_local_distribution.py`, then use the installed launcher; do not run upstream
    `setup` against `.cc-switch`, `.codex`, or `.claude`, because CC Switch owns those runtime
    directories. If validation reports a stale or missing engine, repair the source distribution and

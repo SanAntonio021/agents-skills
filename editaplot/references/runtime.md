@@ -58,7 +58,9 @@ use an untrusted mirror. This permission applies only to Python; never install o
 
 This personal distribution is installed and updated through CC Switch from
 `SanAntonio021/agents-skills`. It contains the launcher and a versioned local configuration that
-points to the audited runtime mirror. Before first use or after a CC Switch update, run:
+points to an audited, commit-named local runtime snapshot. Tracked runtime files are immutable and
+verified against the accepted manifest; `.editaplot-venv` remains managed local state outside that
+manifest. Before first use or after a CC Switch update, run:
 
 ```powershell
 py -3.12 .\scripts\validate_local_distribution.py
@@ -67,16 +69,18 @@ py -3.12 .\scripts\validate_local_distribution.py
 .\editaplot.cmd doctor --repair
 ```
 
-The validator is read-only. It confirms that `editaplot.cmd`, `.editaplot-local.json`, the stable
-runtime, dependency locks, and the managed environment agree. `doctor --repair` may update only the
+The validator is read-only. It confirms that `editaplot.cmd`, `.editaplot-local.json`, the accepted
+commit, runtime manifest and file hashes, dependency locks, and the managed environment agree.
+`doctor --repair` may update only the
 project-local managed environment under the configured runtime. The launcher itself does not install
 Python; the agent follows the explicit-consent process above if Python is absent. Environment repair
 never installs or modifies Origin. Users do not need to launch Origin before requesting a figure.
 
 Do not run upstream `setup` against `C:\Users\SanAn\.cc-switch\skills`, `.codex\skills`, or
 `.claude\skills`; doing so would bypass CC Switch ownership and create update drift. Upstream changes
-are reviewed in the stable mirror, tested there, then copied into the personal source repository and
-distributed by CC Switch. Do not package `.editaplot-venv` into the Skill repository.
+are reviewed in the comparison-only mirror, then exported from the accepted commit into the local
+versioned snapshot and distributed through the tracked pointer. Do not package `.editaplot-venv`
+into the Skill repository.
 
 `--diagnose` reports launcher/Python discovery. Doctor separately reports Windows, engine, dependency,
 and local Origin Automation registration discovery. It is read-only and never launches Origin.

@@ -174,7 +174,14 @@ python <script> complete-review `
 5. `complete-review` 不提交、不推送，也不修改无关脏文件。测试失败、目标技能偏离候选、来源过期或登记源范围不完整时，
 保持 `applied_pending_retest` 和旧接受基线，先修复或重新审核。
 6. 只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
-7. 推送成功后提醒用户通过 CC Switch 点击“检查更新”；不自动操作 CC Switch。
+7. Skill 推送成功后取得 40 位远端提交 SHA，调用
+   `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，只传本次提交
+   实际修改且仍存在的 Skill。该 helper 只执行一次“检查更新”和过滤后的单项“更新”，禁止“全部更新”，
+   不建 watcher 或计划任务，也不修改 CC Switch 源码、EXE、数据库、配置或运行时目录。
+8. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且提交源码、`.cc-switch`、`.claude`、`.codex`
+   四层全部目标文件集合和 SHA-256 完全一致，才算运行时生效。自动更新或验收失败时，不重复点击、不直接
+   修运行时，只能报告“源码已推送，运行时未生效”，并保留 JSON 错误码和差异证据。删除或合并 Skill
+   产生的运行时残留不走该 helper，仍需单独批准清理。
 
 ## 记录已审核提交
 

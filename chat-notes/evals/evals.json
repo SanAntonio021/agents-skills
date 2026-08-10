@@ -275,15 +275,28 @@
     {
       "id": 20,
       "prompt": "某个 skill 已按审查稿修改：`references/workflow.md` 增加了会改变执行行为的规则，`evals/evals.json` 补了测试，但 `SKILL.md` 还没有对应入口。上次类似提交在 CC Switch 点了两次“检查更新”都没更新。请按 chat-notes 完成正式修改后的收尾。",
-      "expected_output": "先把行为变化以有实际含义的入口同步到 `SKILL.md`，不能用空格、注释或无意义版本号凑更新。验证并发布后提醒用户手动检查更新；用户报告完成后，先确认日志中的目标技能更新成功记录，再比较本次提交的全部技能文件与 CC Switch、Claude、Codex 三层副本。",
+      "expected_output": "先把行为变化以有实际含义的入口同步到 `SKILL.md`，不能用空格、注释或无意义版本号凑更新。验证、提交并 push 后，取得远端 40 位 SHA，调用 ccswitch-skill-sync helper，只更新该提交实际修改的 Skill。只有提交源码与 CC Switch、Claude、Codex 四层全部文件集合和 SHA-256 一致才报生效。",
       "files": [],
       "expectations": [
         "输出会区分改变运行行为的子文件和纯 eval 或普通说明改动。",
         "输出会为行为变化补充有实际含义的 `SKILL.md` 入口。",
         "输出不会建议用空格、注释或无意义版本号制造 `SKILL.md` 改动。",
-        "输出在 push 后提醒用户手动点击 CC Switch 的“检查更新”，不自动操作 GUI。",
-        "用户报告更新完成后，输出会先检查 `cc-switch.log` 中本轮目标技能的“更新成功”记录。",
-        "输出会比较本次提交的全部技能文件与 CC Switch、Claude、Codex 三层副本，而不是只看 `SKILL.md`。"
+        "输出在 push 后调用定向 helper，并传入本次提交实际修改的精确 Skill 集合和 40 位远端 SHA。",
+        "输出不会建立 watcher 或计划任务，不会点击“全部更新”，也不会修改 CC Switch 源码、EXE、数据库或运行时目录。",
+        "输出会比较远端提交源码与 CC Switch、Claude、Codex 四层的全部技能文件，而不是只看 `SKILL.md`。"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "agent-rules 和 chat-notes 已经 commit 并 push。定向 helper 只成功更新了 chat-notes，agent-rules 的单项更新按钮一直没有出现；源码提交和远端 main 一致。请按严格模式收尾。",
+      "expected_output": "不重复点击检查更新或其他更新按钮，不改 .cc-switch、.claude、.codex 或数据库，不把部分成功写成完成。固定报告“源码已推送，运行时未生效”，附 helper 的退出码、agent-rules 四层差异和 chat-notes 已对齐事实。",
+      "files": [],
+      "expectations": [
+        "输出明确写“源码已推送，运行时未生效”。",
+        "输出不会把 chat-notes 的成功扩大成整批完成。",
+        "输出不会重复点击“检查更新”、单项“更新”或“全部更新”。",
+        "输出不会直接修改 `.cc-switch`、`.claude`、`.codex`、CC Switch 数据库或 EXE。",
+        "输出保留失败目标、退出码和四层差异证据。"
       ]
     }
   ]

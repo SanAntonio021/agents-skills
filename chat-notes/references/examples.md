@@ -55,7 +55,9 @@
 - 找对真正源码仓库
 - 检查 git 和 remote
 - 只提交本次相关改动
-- push 后提醒 cc-switch 手动检查更新
+- push 后调用 `ccswitch-skill-sync` helper，只更新该提交实际修改的 Skill
+- 只有源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256 完全一致才报生效
+- 自动更新或验收失败时只报“源码已推送，运行时未生效”，不直接改运行时
 
 ## 例子 5：分流后直接写项目记忆
 

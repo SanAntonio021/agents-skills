@@ -125,6 +125,31 @@
         "Claude 验收提交源码、CC Switch、Claude、Codex 四层全部文件集合和 SHA-256。",
         "任一目标失败时报告“源码已推送，运行时未生效”，不把部分成功写成完成。"
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "当前会话的 cwd 是 D:\\BaiduSyncdisk\\Paper\\202607_THz_freq_planning。请派发 Codex 修改 D:\\BaiduSyncdisk\\.agents\\skills\\cross-model-orchestration 并提交推送。",
+      "expected_output": "Claude 判定发起会话 cwd 与目标是旁系关系，不是共同祖先，按前置检查第 4 条停止派发，要求改在 D:\\BaiduSyncdisk 会话运行。不输出 CODEX_FAILURE_REPORT。",
+      "files": [],
+      "expectations": [
+        "在启动 Agent 或 companion 之前就发现 cwd 不覆盖目标路径。",
+        "不尝试通过设置 job 的 workspaceRoot 参数绕过命令允许列表。",
+        "不重试、不改用其他调用方式，也不把任务范围缩小到当前项目内。",
+        "明确要求改在覆盖全部目标路径的会话运行，并指出共同祖先目录。",
+        "识别为发起环境不合规，不输出 CODEX_FAILURE_REPORT。"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "当前会话的 cwd 是 D:\\BaiduSyncdisk。请派发 Codex 同时修改 .agents、.agents\\skills 和 Program\\codex-plugin-cc-sidebar 三个仓库并分别推送。",
+      "expected_output": "Claude 确认 cwd 是三个目标仓库的共同祖先，前置检查第 4 条通过，正常进入计划复核与执行。",
+      "files": [],
+      "expectations": [
+        "确认发起会话 cwd 是全部目标路径的共同祖先，放行派发。",
+        "不因该目录本身是否为 git 仓库而拒绝。",
+        "验收阶段按文件分别确定各自的 Git 根目录，逐仓核对分支与远端。",
+        "仍遵守一次只运行一条 Codex 工作链的单飞约束。"
+      ]
     }
   ]
 }

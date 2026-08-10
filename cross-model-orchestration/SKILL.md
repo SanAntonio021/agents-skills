@@ -80,7 +80,15 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
    当前盘根目录下的 `C:\tmp` 或 `D:\tmp` 加入 workspace-write；否则 elevated
    helper 可能因无权刷新这些目录的 ACL 而报 `setup refresh had errors`。这不需要
    启用 Windows 可选的 Windows Sandbox 虚拟机功能。
-4. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
+4. 确认发起会话的 cwd 是本次全部目标路径的共同祖先目录。目标为多个仓库时取它们的
+   共同祖先，该目录本身不必是 git 仓库。cwd 与目标同级的旁系跨越会被命令允许列表
+   拦截：`git add` 报 `blocked by policy`，`git -C ..`、读父目录规则文件、companion
+   探测一并 `declined`，只有 `git status` 系放行。**改 job 的 `workspaceRoot` 参数
+   无法绕过**，闸门跟启动会话的 cwd 走，不跟 job 参数走（2026-08-10 实测：已把
+   `workspaceRoot` 正确设为目标仓库且 `write=true`，`git add` 仍被拒）。不满足时
+   停止并要求改在覆盖目标路径的会话运行，不重试、不改用其他调用方式绕过，也不
+   缩小任务范围。这属于发起环境不合规，不输出 `CODEX_FAILURE_REPORT`。
+5. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
    helper，以及本 Skill 目录的只读访问。Windows 需要同时兼容 helper 的正斜杠和
    反斜杠绝对路径。Skill frontmatter 的 `allowed-tools` 不会传给
    `codex:codex-rescue` subagent，不能替代用户级权限；不得用全局
@@ -90,11 +98,11 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
    claude/claude-desktop provider 快照；`%USERPROFILE%\.claude\settings.json`
    是按当前 provider 渲染的快照产物，只改它会在 provider 切换或重渲染时丢失
    （2026-07-11 打通后失效的根因；2026-07-26 写入全部快照并验证渲染存活）。
-5. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
-6. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
+6. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
+7. 一次协作流程只运行一条 Codex 工作链；不要在同一项目里并行启动会混淆
    `--resume` 目标的任务。
-7. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
-8. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
+8. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
+9. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
 
 ## 工作流
 

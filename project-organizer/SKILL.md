@@ -74,7 +74,7 @@ Test-RetirementAcceptance.ps1
 -ApprovedRetirementSha256 <64-hex> -Recycle
 ```
 
-没有 `-Execute` 或 `-Recycle` 时只做预检。中断后只对原输出目录和未变化的计划增加 `-Resume`。
+没有 `-Execute` 或 `-Recycle` 时只做预检。终端或工具超时不等于子进程停止：先在不重启命令的情况下重复读取状态文件和 JSONL 日志，比较 `LastWriteTimeUtc`、完成动作数和日志行数；只要仍在变化就继续等待。确认相关进程已退出且连续两次观察均无变化后，才对原输出目录和未变化的计划增加 `-Resume`；不得手工补写状态或并行重跑。
 
 ## 目录和映射规则
 

@@ -137,6 +137,7 @@ function Install-ActiveGitStore {
         if (@($State.active_git).Count -eq 0) {
             if ($externalized) {
                 if ((Test-Path -LiteralPath $gitDestination) -or (Test-Path -LiteralPath (Join-Path $worktree '.git'))) { throw 'New Git destination already exists.' }
+                [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath (Split-Path -Parent $gitDestination)))
                 $raw = @(& git --no-optional-locks init ("--separate-git-dir=$gitDestination") $worktree 2>&1)
             }
             else { $raw = @(& git --no-optional-locks init $worktree 2>&1) }

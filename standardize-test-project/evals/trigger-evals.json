@@ -44,6 +44,10 @@
     "should_trigger": true
   },
   {
+    "query": "这个分阶段 Python 仪器 CLI 已有 --output 和 --resume，我想另加标准 dry-run 结果根目录，但 dry-run 不能读取旧收件箱，旧硬件流程也不能因为新增 matplotlib 依赖而启动失败。",
+    "should_trigger": true
+  },
+  {
     "query": "这个科研仿真项目会生成不可覆盖的阶段运行结果，并用验收冻结文件阻止后续重复执行。请规范验收前和验收后的无硬件测试：过去阶段不能读取真实项目当前状态，最终状态只能只读检查。",
     "should_trigger": true
   },

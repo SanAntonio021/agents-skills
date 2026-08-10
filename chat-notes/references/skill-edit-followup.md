@@ -29,6 +29,13 @@
 12. 用户报告更新完成后，在 `cc-switch.log` 确认目标技能出现本轮“更新成功”记录，再枚举本次提交的
     全部技能文件，逐一比较 CC Switch、Claude 和 Codex 三层副本；不能只比较 `SKILL.md`。
 13. 不尝试自动操作 CC Switch GUI。
+14. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
+    skill。用户点完同步后，源码目录已消失，但 `.cc-switch\skills\<name>`、`.claude\skills\<name>`、
+    `.codex\skills\<name>` 三处仍会残留旧副本，必须手动清理。顺序：先删 `.claude\skills\` 和
+    `.codex\skills\` 下的软链接（用 `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，
+    否则会顺着软链接删掉 `.cc-switch` 里的目标内容），再删 `.cc-switch\skills\<name>` 实体目录。清完用
+    `Test-Path` 四层复核该 skill 已全部消失，同时确认保留的 skill 未被误删（2026-08-10 合并 sentence-polish
+    时定型）。
 
 ## 多代理规则文件检查
 

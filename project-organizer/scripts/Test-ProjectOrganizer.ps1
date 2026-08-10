@@ -8,6 +8,7 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 $testId=[Guid]::NewGuid().ToString('N')
 $testRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-test-'+$testId)
 $externalRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-git-'+$testId)
+$missingExternalRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-git-'+[Guid]::NewGuid().ToString('N'))
 $secondVolumeRoot=if(Test-Path -LiteralPath 'D:\'){ 'D:\project-organizer-test-'+$testId }else{ '' }
 $results=New-Object Collections.Generic.List[object]
 
@@ -184,6 +185,18 @@ namespace ProjectOrganizer {
     $candidateRun=Join-Path $testRoot 'candidate-run';Invoke-WorkflowScript 'Find-ProjectCandidates.ps1' @('-Config',$discoveryConfig,'-OutputDir',$candidateRun)|Out-Null
     Assert-True (Test-Path (Join-Path $candidateRun 'candidate_evidence.json')) 'bounded_candidate_discovery_outputs_evidence'
 
+    $missingGitFixture=Join-Path $testRoot 'missing-external-git';$missingGitA=Join-Path $missingGitFixture 'a';$missingGitB=Join-Path $missingGitFixture 'b';$missingGitTarget=Join-Path $missingGitFixture 'target';$missingGitRun=Join-Path $missingGitFixture 'audit'
+    [void][IO.Directory]::CreateDirectory($missingGitA);[void][IO.Directory]::CreateDirectory($missingGitB);Write-TestFile (Join-Path $missingGitA 'a.txt') 'a';Write-TestFile (Join-Path $missingGitB 'b.txt') 'b'
+    $missingGitConfig=Join-Path $missingGitFixture 'config.json';New-TestConfig -Path $missingGitConfig -Mode merge -Sources @(
+        [pscustomobject]@{id='a';path=$missingGitA;role='canonical';target_name='a'},[pscustomobject]@{id='b';path=$missingGitB;role='legacy';target_name='b'}
+    ) -Target $missingGitTarget -Audit $missingGitRun -Policy 'new' -Canonical 'a'
+    $missingGitConfigObject=Get-Content -LiteralPath $missingGitConfig -Encoding UTF8 -Raw|ConvertFrom-Json;$missingGitConfigObject.external_git_root=$missingExternalRoot;Write-POJson -Path $missingGitConfig -Value $missingGitConfigObject
+    if((Test-Path -LiteralPath $missingExternalRoot)-or(Test-Path -LiteralPath (Join-Path $missingExternalRoot 'active'))){throw 'Missing external Git fixture must start without its root or active parent.'}
+    Invoke-WorkflowScript 'Build-ProjectInventory.ps1' @('-Config',$missingGitConfig,'-OutputDir',$missingGitRun)|Out-Null;Approve-TestLayout -Config $missingGitConfig -Run $missingGitRun|Out-Null;Invoke-WorkflowScript 'Build-OrganizationPlan.ps1' @('-Config',$missingGitConfig,'-OutputDir',$missingGitRun)|Out-Null
+    $missingGitPlan=(Get-Content -LiteralPath (Join-Path $missingGitRun 'plan.sha256') -Encoding UTF8 -Raw).Trim();Invoke-WorkflowScript 'Invoke-OrganizationPlan.ps1' @('-Config',$missingGitConfig,'-OutputDir',$missingGitRun,'-ApprovedPlanSha256',$missingGitPlan,'-Execute')|Out-Null;Invoke-WorkflowScript 'Test-OrganizationAcceptance.ps1' @('-Config',$missingGitConfig,'-OutputDir',$missingGitRun)|Out-Null
+    $missingGitState=Get-Content -LiteralPath (Join-Path $missingGitRun 'execution-state.json') -Encoding UTF8 -Raw|ConvertFrom-Json
+    Assert-True (@($missingGitState.active_git).Count -eq 1 -and $missingGitState.active_git[0].externalized -and (Test-Path -LiteralPath $missingGitState.active_git[0].git_dir)) 'new_repo_creates_missing_external_git_parent'
+
     $groupRoot=Join-Path $testRoot 'group-fixture';$g1=Join-Path $groupRoot 'project-one';$g2=Join-Path $groupRoot 'project-two';$groupTarget=Join-Path $groupRoot 'grouped';$groupRun=Join-Path $groupRoot 'audit';$remote1=Join-Path $groupRoot 'remote-one.git';$remote2=Join-Path $groupRoot 'remote-two.git'
     [void][IO.Directory]::CreateDirectory($g1);[void][IO.Directory]::CreateDirectory($g2)
     Initialize-TestGit $g1 $remote1 'one';Initialize-TestGit $g2 $remote2 'two';Write-TestFile (Join-Path $g1 'same-content.dat') 'same';Write-TestFile (Join-Path $g2 'same-content.dat') 'same';Write-TestFile (Join-Path $g2 'cache.tmp') 'cache'
@@ -317,7 +330,7 @@ namespace ProjectOrganizer {
 finally{
     if($KeepWorkspace){Write-Output "Kept test workspace: $testRoot"}
     else{
-        foreach($path in @($testRoot,$externalRoot,$secondVolumeRoot)){
+        foreach($path in @($testRoot,$externalRoot,$missingExternalRoot,$secondVolumeRoot)){
             if(-not $path){continue}
             $full=[IO.Path]::GetFullPath($path)
             if($full -notmatch 'project-organizer-(test|git)-[0-9a-f]{32}'){throw "Refusing unsafe test cleanup: $full"}

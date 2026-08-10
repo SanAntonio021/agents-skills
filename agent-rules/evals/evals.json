@@ -99,6 +99,19 @@
         "目标技能未登记、缺失或来源异常时仍返回非零",
         "不借定向模式修改其他技能或正式来源身份"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "我已经逐技能批准 chat-notes 和 agent-rules 的上游候选，complete-review 与复测都通过。现在请提交、push，并让这两个 Skill 在 CC Switch、Claude 和 Codex 中立即生效；不要更新仓库里的其他 Skill。",
+      "expected_output": "只提交并 push 已批准目标。push 成功后使用远端 40 位 SHA 调用 ccswitch-skill-sync helper，目标集合严格等于该提交实际修改的 chat-notes 和 agent-rules；只执行一次检查和两个单项更新。只有源码与三个运行时层文件集合和 SHA-256 全部一致才报生效。",
+      "files": [],
+      "expectations": [
+        "只暂存、提交并 push 已批准的 chat-notes 和 agent-rules 文件。",
+        "helper 参数中的 Skill 集合与远端提交实际修改的 Skill 集合完全一致。",
+        "不会建立 watcher 或计划任务，不会点击“全部更新”。",
+        "不会修改 CC Switch 源码、EXE、数据库、配置或运行时目录。",
+        "自动更新或四层验收失败时只报告“源码已推送，运行时未生效”，不把任务写成完成。"
+      ]
     }
   ]
 }

@@ -112,6 +112,19 @@
         "不会输出 CODEX_FAILURE_REPORT。",
         "Codex Desktop 按自身能力继续处理任务。"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "Claude 规划、Codex 执行的 skill 修改已经 commit 并 push，远端提交只改了 agent-rules 和 chat-notes。请完成运行时验收；CC Switch 当前没有打开。",
+      "expected_output": "Codex 执行 turn 使用该远端 40 位 SHA 和精确目标集合调用 ccswitch-skill-sync；helper 启动 CC Switch，只执行一次检查和两个单项更新。Claude 独立核对 JSON、远端祖先关系和四层全部文件 SHA-256，失败时严格报告未生效。",
+      "files": [],
+      "expectations": [
+        "helper 参数只包含远端提交实际修改的 agent-rules 和 chat-notes。",
+        "CC Switch 未运行时由 helper 启动，不要求用户先手动打开。",
+        "不会建立 watcher 或计划任务，不会点击“全部更新”。",
+        "Claude 验收提交源码、CC Switch、Claude、Codex 四层全部文件集合和 SHA-256。",
+        "任一目标失败时报告“源码已推送，运行时未生效”，不把部分成功写成完成。"
+      ]
     }
   ]
 }

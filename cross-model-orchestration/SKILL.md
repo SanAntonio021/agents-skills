@@ -231,10 +231,22 @@ Claude 必须独立核验：
 - 验收要求中的实际命令、测试和产物是否在当前版本上通过。
 
 如果交付包含本机自建 Skill，源码以
-`D:\BaiduSyncdisk\.agents\skills\<name>\` 为准。提交并推送后，分别核对源码、
-`.cc-switch\skills`、`.claude\skills` 和 `.codex\skills` 四层的 `SKILL.md` 与关键脚本
-SHA256。任一运行时层未对齐时，只能报告“源码已完成，当前运行时尚未生效”，并提醒
-用户通过 cc-switch 检查更新；不得直接修改运行时副本。
+`D:\BaiduSyncdisk\.agents\skills\<name>\` 为准。提交并推送后，Codex 执行者取得
+`agents-skills` 的 40 位远端提交 SHA，并在同一执行 turn 调用：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File "D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1" `
+  -Skills "<本次提交实际修改的逗号分隔 Skill 名称>" `
+  -ExpectedRemoteCommit "<40 位远端提交 SHA>"
+```
+
+目标集合必须与该提交实际修改且仍存在的 Skill 集合完全一致。helper 只执行一次“检查更新”
+和过滤后的单项“更新”，禁止“全部更新”；不建 watcher 或计划任务，不修改 CC Switch 源码、
+EXE、数据库、配置或运行时目录。Claude 验收者核对 helper 的单个 JSON、退出码、远端祖先关系，
+以及提交源码、`.cc-switch\skills`、`.claude\skills`、`.codex\skills` 四层全部目标文件集合和
+SHA-256。只有退出码 `0`、状态 `runtime_active` 且四层完全一致才算生效；任一自动更新或验收
+失败时，只能报告“源码已推送，运行时未生效”，不得直接修改运行时副本或把部分成功写成完成。
 
 验收标准明确要求真实集成测试时，Claude 必须在本轮验收中使用规定的环境开关和命令
 重新运行，并记录命令、退出状态、通过/失败/跳过数量和耗时。代码存在、旧测试日志或

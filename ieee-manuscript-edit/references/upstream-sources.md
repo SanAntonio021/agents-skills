@@ -43,3 +43,7 @@
 - `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
+
+## 合并记录
+
+2026-08-10，原 `sentence-polish` 技能已并入本技能。完整 Sainani 五轮句子质量审查及其 full-review、section-review、targeted、interactive 四种审查模式和 CRITICAL、MAJOR、MINOR 严重程度分级，已合并到 [references/sainani-sentence-review.md](sainani-sentence-review.md)。上游来源仍为 labarba/sciwrite（CC BY 4.0，commit `8a57fa73`），未新增上游条目；原 `sentence-polish` 源目录将在集中登记更新并验证通过后删除。

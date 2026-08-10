@@ -74,7 +74,7 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 ## 边界
 
 - 内容精修（术语、图注文字、结论强度、中改英）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-- 纯英文句子质量：[../sentence-polish/SKILL.md](../sentence-polish/SKILL.md)
+- 纯英文句子质量：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)（已并入 ieee-manuscript-edit）
 - 图件绘制与 IEEE 图规范：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
 - Word 版式交付：[../docx/SKILL.md](../docx/SKILL.md)
 - 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)

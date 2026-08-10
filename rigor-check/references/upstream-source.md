@@ -17,7 +17,7 @@
 4. **精简临床示例：** `scientific_method.md` 里的临床试验例子替换为通用科学方法说明，加了工程实验中因果推断的注意点。
 5. **3 个通用参考文件原样保留：** `common_biases.md`（偏倚分类学）、`statistical_pitfalls.md`（统计陷阱）、`logical_fallacies.md`（逻辑谬误）的内容对工程研究通用，没有改动。
 6. **SKILL.md 全部改写：** 用中文重写，语言用日常说法。核心 7 个能力框架保留，但描述精简，详细内容指向 references/。去掉了 `allowed-tools: Read Write Edit Bash`（本地不需要限定工具权限）。
-7. **分工说明：** 明确写了不管语言润色（→ ieee-manuscript-edit / sentence-polish）和不管停稿判断（→ paper-review）。
+7. **分工说明：** 明确写了不管语言润色（→ ieee-manuscript-edit）和不管停稿判断（→ paper-review）。
 8. **2026-07-25 方法学更新：** 吸收 RoB 2、ROBINS-I、PRISMA 2020、AMSTAR 2、CONSORT 2010 的当前用途；同步更新 `experimental_design.md` 的报告清单版本，并明确这些临床/生物医学工具不直接套用于 THz/通信工程。
 
 ## 上游更新情况

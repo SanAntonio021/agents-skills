@@ -17,7 +17,7 @@
 | 指标论证 | 这个指标站不站得住、口径怎么写 | `target-feasibility` |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
-| 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `sentence-polish` |
+| 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `ieee-manuscript-edit`（已并入） |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
 | 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人、最终 Submit 前审查门 | `paper-review`（submission-gauntlet 模式） |
 | 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-selection` |
@@ -32,9 +32,9 @@
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `docx` |
 | LaTeX 转换与投稿工程 | 转 LaTeX、套期刊模板、BibTeX、编译报错；当前期刊或页面要求时打包 source | `latex-paper` |
 
-**ieee-manuscript-edit 和 sentence-polish 怎么分：**
+**句子精修已并入 ieee-manuscript-edit：**
 - "润色这段 SCI 论文英文"或"帮我改英文还要校准术语" → `ieee-manuscript-edit`（涉及内容）
-- "这段英文太冗余，帮我精简句子" → `sentence-polish`（只管句子质量）
+- "这段英文太冗余，帮我精简句子" → `ieee-manuscript-edit`（纯句子质量时按需读取 `references/sainani-sentence-review.md`）
 - "这段英文太冗余，而且术语也要校准" → `ieee-manuscript-edit`（内容 + 句子同时有问题，优先大粒度）
 
 若一句话同时命中多个阶段，优先选最阻塞阶段。通常顺序是：事实和证据未定先调研，指标不清先论证，已有稿件先审查，再进入精修。
@@ -137,6 +137,6 @@
 - 审稿不够狠：改 `paper-review`
 - 英文论文精修不够稳：改 `ieee-manuscript-edit`
 - 指标/实验解释不清：改 `target-feasibility` 或 `lab-notebook`
-- 纯英文句子不够干净：改 `sentence-polish`
+- 纯英文句子不够干净：改 `ieee-manuscript-edit`
 - 用户自维护词级偏好不够稳：改 `style-vocab`
 - 实验设计/证据评估不够深：改 `rigor-check`

@@ -9,6 +9,14 @@
 - 输入简单解释、纯聊天和单条只读命令；不应调用 Codex。
 - 在 Git 项目和非 Git 目录各执行一次只读计划复核。
 
+## 宿主边界
+
+- 在 Codex Desktop、Codex CLI 和 Claude Desktop（Cowork）分别输入同一复杂任务；
+  本 Skill 不应自动触发，当前宿主应按自身能力继续处理，不得要求用户切换到
+  Claude Code CLI，也不得输出 `CODEX_FAILURE_REPORT`。
+- 在不兼容宿主中明确点名本 Skill；应说明需要切换到 Claude Code CLI，但不应输出
+  `CODEX_FAILURE_REPORT`，因为 Plugin companion 和 Agent job 尚未启动。
+
 ## 闭环顺序
 
 - transcript 中必须依次出现：Claude 计划、Codex `PLAN_REVIEW`、Codex 执行、Claude 验收。

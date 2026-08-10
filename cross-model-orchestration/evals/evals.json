@@ -100,6 +100,18 @@
         "失败报告写明失败阶段与恢复条件（改在 CLI 会话运行）。",
         "Claude 不接管执行。"
       ]
+    },
+    {
+      "id": 10,
+      "prompt": "当前在 Codex Desktop。请读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。用户没有要求使用 Claude-Codex 跨模型协作。",
+      "expected_output": "不触发跨模型编排；由 Codex Desktop 直接读取材料并继续规划，不要求切换到 Claude Code CLI，也不输出 CODEX_FAILURE_REPORT。",
+      "files": [],
+      "expectations": [
+        "不会因复杂任务而自动加载本 Skill。",
+        "不会要求用户切换到 Claude Code CLI。",
+        "不会输出 CODEX_FAILURE_REPORT。",
+        "Codex Desktop 按自身能力继续处理任务。"
+      ]
     }
   ]
 }

@@ -1,9 +1,11 @@
 ---
 name: cross-model-orchestration
 description: >
-  Claude Code 与 Codex 的全局跨模型编排。凡任务需要检查或合并本地材料、制定计划、
-  调研、比较、写作、修改文件、运行命令或多步执行时都必须使用，即使用户没有点名
-  Codex。纯聊天、不依赖材料的简单解释和一条明确只读命令不触发。
+  Claude Code CLI 与 Codex 的跨模型编排。仅当当前主会话是 Claude Code CLI，且任务
+  需要检查或合并本地材料、制定计划、调研、比较、写作、修改文件、运行命令或多步
+  执行时自动使用，即使用户没有点名 Codex。Codex Desktop、Codex CLI、Claude Desktop
+  （Cowork）及其他宿主不自动触发；纯聊天、不依赖材料的简单解释和一条明确只读命令
+  也不触发。
 compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, exact user-level Bash permissions for the Plugin companion and this Skill helper, and read access to this Skill directory.
 allowed-tools:
   - Read
@@ -22,7 +24,15 @@ allowed-tools:
 
 ## 何时进入
 
-以下任务进入本流程：
+先判断当前主会话：
+
+- Claude Code CLI：继续按下面的任务范围判断；
+- Codex Desktop、Codex CLI、Claude Desktop（Cowork）或其他宿主：不进入本流程，
+  由当前宿主按自身能力直接处理任务；
+- 用户在不兼容宿主中明确点名本 Skill：说明它只能在 Claude Code CLI 中运行，等待
+  用户切换；由于协作任务尚未启动，不输出 `CODEX_FAILURE_REPORT`。
+
+在 Claude Code CLI 中，以下任务进入本流程：
 
 - 需要读取或检查本地材料；
 - 需要调研、写作、修改文件或运行命令；
@@ -59,11 +69,12 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 ## 前置检查
 
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. 本流程只能在 Claude Code CLI 会话中运行。Claude Desktop（Cowork）会话的
-   Agent 工具不注册插件子代理，`codex:codex-rescue` 不可用（2026-07-26 实测报
-   Agent type not found）。在该环境中触发时按 `CODEX_FAILURE_REPORT` 暂停，恢复
-   条件写"改在 Claude Code CLI 会话运行"；不得改用其他调用方式绕过，也不得由
-   Claude 接管。
+2. 再次确认主会话是 Claude Code CLI。Claude Desktop（Cowork）会话的 Agent 工具
+   不注册插件子代理，`codex:codex-rescue` 不可用（2026-07-26 实测报 Agent type
+   not found）。如果在启动任何 Plugin companion 或 Agent job 前发现宿主不兼容，
+   退出本 Skill，返回宿主的正常处理流程；这不是 Codex 调用失败，不输出
+   `CODEX_FAILURE_REPORT`。只有用户明确要求使用本 Skill 时，才说明需要改在
+   Claude Code CLI 会话运行并等待用户切换，不改用其他调用方式绕过。
 3. Windows 下确认 Codex 全局配置包含
    `[sandbox_workspace_write] exclude_slash_tmp = true`。保留用户 `TMPDIR`，不要把
    当前盘根目录下的 `C:\tmp` 或 `D:\tmp` 加入 workspace-write；否则 elevated

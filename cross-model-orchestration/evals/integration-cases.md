@@ -43,3 +43,12 @@
 - 计划内局部文件修改可直接执行。
 - 删除、重置、权限变更、计划外整文件替换、付费、对外发送和硬件操作必须停下询问。
 - 全程不得出现 `--yolo` 或 `--dangerously-skip-permissions`。
+
+## 路径传输
+
+- helper 与 companion 命令都保留 `$USERPROFILE` 字面量交给 shell 本地展开；
+  Bash `command` 字符串里不得出现展开后的用户目录绝对路径。
+- 注入 Agent prompt 的必须是 helper 返回的 `companionHomeRelative`；
+  用 `companionPath` 拼命令应视为失败。
+- 用含用户名的字面绝对路径调用 helper，应复现 `MODULE_NOT_FOUND`，
+  用于确认工具参数传输层仍在改写用户名段。

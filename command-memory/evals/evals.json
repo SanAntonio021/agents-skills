@@ -96,6 +96,18 @@
       "prompt": "PowerShell 里运行 `npx skills find` 报 `npx.ps1 cannot be loaded because running scripts is disabled`。请给出不改系统 execution policy 的下一步。",
       "expected_output": "应建议先确认 `npx.cmd` 存在，再通过 `npx.cmd` 包装器调用，并避免原样重试 `npx` 或修改系统 execution policy。",
       "files": []
+    },
+    {
+      "id": 17,
+      "prompt": "我要读 .codex\\sessions 下最新的会话文件。我把上面对话里显示的那个 C:\\Users\\<name>\\.codex\\sessions 路径原样抄进 Read 工具，报 EPERM；换 Write 试探一下，结果它在一个我根本没见过的目录下建出了一整棵空目录树。同一条 Test-Path 我前后跑两次，返回还不一样。怎么拿到真正的路径？",
+      "expected_output": "应识别为宿主对用户目录路径做匿名化改写（真实用户名被替换、目录段被打散），照抄对话里显示的字面量必然指向不存在的路径；改用 Join-Path $env:USERPROFILE '.codex\\sessions' 让变量在本地展开，存疑时用 Get-ChildItem C:\\Users -Directory 核对真实用户名；不要继续原样重试字面量路径，也不要把已建出的假目录树当成真实存在的结构。",
+      "files": []
+    },
+    {
+      "id": 18,
+      "prompt": "我要引用 codex-companion.mjs 里 booleanOptions 那段来判断 --resume 是不是值参数。我用 find 在 .claude\\plugins\\cache 下搜到这个文件，取了第一个结果，行号是 765。这个结论能直接用吗？",
+      "expected_output": "应指出 cache 下同一插件的多个版本目录会长期并存，find/Get-ChildItem -Recurse 的第一个结果按字典序命中的可能是未加载的旧副本，行号会整体偏移；正确顺序是先读 installed_plugins.json 的 installPath 定出实际加载版本再读那一份，多份并存时先列全并逐份记录字节数或 SHA256，SHA256 相同才可一并作结论；不要 head -1，也不要拿未经核对的行号去更正别人。",
+      "files": []
     }
   ]
 }

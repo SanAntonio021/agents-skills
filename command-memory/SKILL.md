@@ -1,6 +1,6 @@
 ---
 name: command-memory
-description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、git 提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
+description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、git 提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
 ---
 
 # Windows 命令急救卡
@@ -19,6 +19,8 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - **目录移动/删除报 “Device or resource busy” / “Permission denied” / “另一个程序正在使用此文件”**（进程占用、MCP 僵尸、IDE/Office 锁文件）。
 - Codex 在 Windows 上写入时报 `windows sandbox failed`、`setup refresh had errors`、`read ACL run had errors` 或 `SetNamedSecurityInfoW failed`。
 - 需要判断或修复规则文件同步、软链、旧副本。
+- 要拼 `%USERPROFILE%` 下的绝对路径，尤其是把对话里显示过的用户目录路径交给 Edit/Write 或 .NET 文件 API，出现 `EPERM`、假目录树、同一条 `Test-Path` 前后结果不一致。
+- 要引用本机插件或运行时源码的行号和行为，而同一份东西在磁盘上可能并存多个版本副本，先得判定哪一份真正加载。
 - 需要 Office COM、MATLAB batch / desktop、用户级 CLI 安装或环境变量持久化。
 - LibreOffice / Poppler 在 Windows 上转换或渲染失败，例如 helper 报 `socket.AF_UNIX`、profile URI 异常，或 `pdftoppm` / `pdfinfo` 命中了不可用包装器。
 - 用户明确说”按上次正确方式跑””别再试错””用之前验证过的命令”。
@@ -43,7 +45,8 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 
 只读一个最相关文件：
 
-- 路径、外部 CLI、下载、用户级安装、PATH、LibreOffice / Poppler Windows 调用失败：`references/cli-paths.md`
+- 路径、外部 CLI、下载、用户级安装、PATH、LibreOffice / Poppler Windows 调用失败、`%USERPROFILE%` 路径匿名化改写、插件与运行时多版本副本定位：`references/cli-paths.md`
+- CSV 批量重写为 UTF-8 BOM 且要保住引号和内嵌逗号：`references/csv-rewrite-utf8.md`
 - Python / inline here-string / 中文路径乱码：`references/python-utf8.md`
 - 中文 Markdown 或 UTF-8 文本读取：`references/markdown-read-utf8.md`
 - 搜索、遍历、匹配：`references/search-and-traversal.md`

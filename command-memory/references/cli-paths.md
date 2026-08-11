@@ -34,6 +34,18 @@
 - preflight: 每个传给 .NET API 的路径都必须是绝对路径；批量循环先 `Test-Path` 抽查第一个。
 - avoid: 先 `Set-Location` 再给 .NET API 传相对路径——**.NET 只认进程启动目录，不认 PowerShell 的当前位置**，相对路径会静默读写到错误目录（实测事故：批量替换写进了另一个仓库，靠 git checkout 恢复）。
 
+### Pattern: userprofile-path-anonymization
+- use_when: 拼 `%USERPROFILE%` 下的绝对路径（`.claude\`、`.codex\`、`AppData\` 等），尤其是要交给 Edit/Write 或 .NET 文件 API 的路径。
+- shape: `$p = Join-Path $env:USERPROFILE '.codex\sessions'; Test-Path -LiteralPath $p`
+- preflight: 存疑时 `Get-ChildItem C:\Users -Directory` 核对真实用户名；同一条 `Test-Path` 字面量前后返回不一致，就是命中本条。
+- avoid: 照抄对话里显示的 `C:\Users\<name>\...` 字面量——**宿主会对路径做匿名化改写**（真实用户名被替换成 `User`，盘符和目录段被打散重排，见 anthropics/claude-code#57141），照抄得到的路径可能根本不存在，Edit/Write 会在假路径下建出整棵目录树或直接报 `EPERM`。非用户目录的路径（如 `D:\...`）写真实绝对路径即可，不受影响。
+
+### Pattern: installed-plugin-version-authority
+- use_when: 引用 Claude Code 插件源码的行号或行为（`.claude\plugins\cache\<repo>\<plugin>\<version>\`），判断某 flag 是值参数还是布尔、某分支是否可达。
+- shape: `$ip = Join-Path $env:USERPROFILE '.claude\plugins\installed_plugins.json'; (Get-Content -LiteralPath $ip -Raw | ConvertFrom-Json).plugins.'<plugin>@<repo>'[0].installPath`
+- preflight: 先用 `installed_plugins.json` 的 `installPath` 定版本，再读那一份；`find`/`Get-ChildItem -Recurse` 找到多份时不要 `head -1`、不要按字典序取，先列全并逐份记录字节数或 SHA256。多份 SHA256 相同时可一并作结论（升级不改行为）。
+- avoid: 假定 cache 下只有一个版本目录——**同一插件的多个版本副本会长期并存，路径里的版本号看起来都合法**，读到未加载的旧副本会得到一整套偏移的错误行号（实测：1.0.6 有 1073 行、已装的 1.0.7-sidebar.1 有 1115 行，同一处 `booleanOptions` 分别在 `:765` 和 `:807`）。拿错行号去更正别人时错误会继续传播。
+
 ## 下载和网页导出
 
 ### Pattern: invoke-webrequest-download

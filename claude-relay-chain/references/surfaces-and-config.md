@@ -50,6 +50,25 @@ HKCU\SOFTWARE\Policies\Claude
 
 审计只报告 managed policy 是否存在和字段名，不输出凭据值。
 
+### 独立 Claude Code 的 managed policy
+
+Claude Code CLI 的策略键与上面的 Desktop 键**不同**，是独立路径：
+
+```text
+HKLM\SOFTWARE\Policies\ClaudeCode    ← 机器级，优先级最高
+HKCU\SOFTWARE\Policies\ClaudeCode    ← 用户级（HKCU\SOFTWARE\Policies 受 SYSTEM ACL 保护，普通进程不可写）
+```
+
+格式：单个 `REG_SZ` 值，值名 `Settings`，数据是完整 JSON 字符串，结构与 `~/.claude/settings.json` 相同：
+
+```json
+{"permissions":{"defaultMode":"auto"}}
+```
+
+`defaultMode` 合法值：`default`（别名 `manual`）/ `acceptEdits` / `plan` / `auto` / `dontAsk` / `bypassPermissions`。
+
+**CC Switch 渲染边界**：CC Switch 全量渲染 `~/.claude/settings.json`，但实测只保留 `env` 块，其余字段（`permissions`、`enabledPlugins`、`extraKnownMarketplaces`、`$schema`、`effortLevel`、`model`）一律被裁掉。往 `common_config_claude` 加新字段不会渲染进文件。要全局持久化 Claude Code 设置，用 managed policy 键而不是直改 `settings.json`（2026-08-11 实测）。
+
 ### CC Switch 双入口
 
 CC Switch 3.18 的 DB 中是不同 `app_type`：

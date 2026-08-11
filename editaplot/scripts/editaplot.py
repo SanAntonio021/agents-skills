@@ -124,6 +124,10 @@ def build_parser() -> argparse.ArgumentParser:
     plan_parser.add_argument("--y-title")
     plan_parser.add_argument("--palette-id", help="Freeze a compatible palette from `palettes`")
     plan_parser.add_argument(
+        "--visual-style-json",
+        help="Confirmed exact XPS visual fields (colors, pt width, transparency, page, legend)",
+    )
+    plan_parser.add_argument(
         "--target-output",
         default="editable Origin figure and publication exports",
     )
@@ -257,6 +261,45 @@ def _ensure_verify_output_does_not_replace_artifact(
     )
 
 
+def _start_worker_process(
+    command: list[str],
+    *,
+    engine_root: Path,
+    environment: dict[str, str],
+    label: str,
+) -> subprocess.Popen[str]:
+    """Start a fixed local worker and normalize Windows launch failures."""
+
+    try:
+        return subprocess.Popen(  # noqa: S603 - fixed module invocation, never shell=True
+            command,
+            cwd=str(engine_root),
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except PermissionError as exc:
+        raise EditaPlotError(
+            "worker_start_permission_denied",
+            f"Windows blocked the {label} process. Allow this EditaPlot project and its selected "
+            "Python executable in the current user session, then retry; administrator, DCOM, "
+            "registry, and firewall changes are not required.",
+            os_error=type(exc).__name__,
+            errno=exc.errno,
+        ) from exc
+    except OSError as exc:
+        raise EditaPlotError(
+            "worker_start_failed",
+            f"EditaPlot could not start the {label} process. Re-run editaplot.cmd --diagnose "
+            "and check whether the selected Python path still exists.",
+            os_error=type(exc).__name__,
+            errno=exc.errno,
+        ) from exc
+
+
 def _run_render(args: argparse.Namespace) -> int:
     plan = load_json(args.plan_file)
     command, env, engine_root = build_worker_command(
@@ -275,15 +318,11 @@ def _run_render(args: argparse.Namespace) -> int:
         "origin_callability_check": "worker_connection",
     }
     print(json.dumps(start_event, ensure_ascii=False), flush=True)
-    process = subprocess.Popen(  # noqa: S603 - fixed module invocation, never shell=True
+    process = _start_worker_process(
         command,
-        cwd=str(engine_root),
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
+        engine_root=engine_root,
+        environment=env,
+        label="Origin render worker",
     )
     stdout = process.stdout
     if stdout is None:
@@ -313,15 +352,11 @@ def _run_origin_smoke(args: argparse.Namespace) -> int:
         ),
         flush=True,
     )
-    process = subprocess.Popen(  # noqa: S603 - fixed module invocation, never shell=True
+    process = _start_worker_process(
         command,
-        cwd=str(engine_root),
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
+        engine_root=engine_root,
+        environment=env,
+        label="Origin smoke worker",
     )
     stdout = process.stdout
     if stdout is None:
@@ -436,6 +471,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "plan":
             _ensure_output_does_not_replace_input(args.input_file, args.output)
             _ensure_output_does_not_replace_input(args.mapping_json, args.output)
+            _ensure_output_does_not_replace_input(args.visual_style_json, args.output)
             _ensure_output_does_not_replace_input(
                 args.semantic_confirmation_json,
                 args.output,
@@ -448,6 +484,7 @@ def main(argv: list[str] | None = None) -> int:
             ):
                 _ensure_output_does_not_replace_input(reference_input, args.output)
             mapping = load_json(args.mapping_json) if args.mapping_json else None
+            visual_style = load_json(args.visual_style_json) if args.visual_style_json else None
             semantic_confirmation = load_json(args.semantic_confirmation_json)
             reference_spec = (
                 load_json(args.reference_spec_json)
@@ -474,6 +511,7 @@ def main(argv: list[str] | None = None) -> int:
                 x_title=args.x_title,
                 y_title=args.y_title,
                 palette_id=args.palette_id,
+                visual_style=visual_style,
                 mapping=mapping,
                 semantic_confirmation=semantic_confirmation,
                 reference_image=args.reference_image,

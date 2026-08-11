@@ -174,5 +174,5 @@ CC Switch 模式：direct / proxy / unknown
 - 只写“可能是已知问题”，却没有分别核对 `#4540`、`#4415`、当前版本和本机证据。
 - 把 issue 已关闭或出现修复提交，当成当前安装版本已经修复。
 - 看到一次文本回复，就跳过 streaming、tool use 和目标表面验证。
-- 手改 `.claude\settings.json` 的模型或 effort，却忽略 CC Switch 会重新渲染该文件。
+- 手改 `.claude\settings.json` 的任何字段（模型、effort、permissions、enabledPlugins 等），却忽略 CC Switch 会全量重新渲染该文件——实测渲染后只保留 `env` 块，其余字段全部丢失。
 - 输出完整 key、完整 profile、完整 DB JSON 或把 key 放进命令行参数。

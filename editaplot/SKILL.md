@@ -1,6 +1,6 @@
 ---
 name: editaplot
-description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; and automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64. Use for beginner “drop in a file and draw it” requests; XPS, XRD, XAS, PL/TRPL, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
+description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; and automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64. Use for beginner “drop in a file and draw it” requests; XPS, XRD, XAS, PL/TRPL, DSC, NMR, FTIR/IR, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
 ---
 
 # EditaPlot
@@ -8,6 +8,23 @@ description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend pub
 Turn a scientific question and a read-only table into an auditable, editable Origin figure. Keep
 the beginner experience conversational; use the deterministic engine for inspection, planning,
 rendering, exporting, and readback.
+
+## Request only scoped Windows permissions
+
+- Read the configured versioned runtime, selected table, and optional local reference image. Read the
+  complete repository only when working from an explicitly selected clone or approved source update.
+- Write only to the configured runtime's `.editaplot-venv`, an approved source repository during a
+  separately authorized update, and the selected source file's parent folder for source-adjacent
+  deliverables. Never patch `.cc-switch`, `.codex`, or `.claude` Skill copies directly.
+- Run the local launcher, PowerShell/Python subprocesses, and an EditaPlot-owned Origin instance in
+  the same active interactive Windows user session.
+- Use network access only for repository download/update and locked dependency retrieval. Treat a
+  user-scope winget Python installation as a separate system change that still requires explicit
+  consent.
+- Do not request administrator rights, mouse control, whole-drive write access, cloud upload of
+  private inputs, or DCOM, registry, firewall, user-group, or Origin-installation changes. When
+  Controlled Folder Access, an organization policy, cloud sync, or a read-only location blocks
+  writes, request access only to the affected folder or ask for an explicit alternate output folder.
 
 ## Start with the beginner path
 
@@ -68,32 +85,60 @@ rendering, exporting, and readback.
    `template_adaptation`; keep `controlled_composition` blocked until that exact composition has
    passed the full Origin evidence gate. A reference cannot add missing evidence or change the
    confirmed scientific element list.
+   Treat style inferred from the reference as a suggestion, not as the user's instruction. Ask
+   the user to choose one of three modes: keep the verified template default; use a confirmed,
+   allow-listed approximation suggested by the reference; or provide exact custom values. For the
+   exact mode, ask separately for colors, physical line width, fill transparency, page size, and
+   legend visibility, frame, or position. An explicit user choice has precedence over a conflicting
+   reference token. Freeze each reference suggestion as `applied`,
+   `retained_template_default`, or `rejected`; never claim a request was applied unless the selected
+   template has the same verified preview/Origin route and the required Origin object readback.
 11. When color is user-selectable, run `editaplot.cmd palettes`, show
    `assets/palettes/palette-selector-public.zh-CN.png`, and recommend no more than two compatible
    `palette_id` values. Read `references/palettes.md` before freezing one.
 12. Internally freeze the confirmed choice with `editaplot.cmd plan`; never hand-edit a plan or write
-   a decision back to the source file. The render command copies this approved plan into the final
-   output folder as `render-plan.json`.
+   a decision back to the source file. For an exact XPS request, write the confirmed values to a
+   separate JSON object and pass its path with `--visual-style-json`. The supported exact fields are
+   `series_colors`, `line_width_pt`, `fill_transparency_percent`, `page_size_cm`, `legend_visible`,
+   `legend_position`, and `legend_frame`. Invalid explicit fields or values must fail fast and be
+   corrected with the user; never silently discard them or fall back to a reference/default style.
+   The render command copies this approved plan into the final output folder as `render-plan.json`.
 13. Treat Origin readiness as technical state only. Doctor performs read-only discovery of
     `Origin.Application`, `Origin.ApplicationSI`, installed candidates, Python, `originpro`, and
     `OriginExt`; it never launches Origin and `ready_for_render` never means a live connection
     succeeded. If the default launch registration is present, proceed to the real pre-render smoke
     without asking the user to open Origin or confirm it again. Keep beginner output to one to three
     plain-language sentences; leave CLSIDs, registry views, candidates, and stages in JSON.
-14. Use `launch_isolated` by default: start and own a dedicated Origin instance, perform the live
-    smoke and version handshake, then apply the template capability decision. `attach_existing` is
-    an explicit advanced mode only; never reset, overwrite, or close a user-owned project, and
-    detach instead of exiting. Report failures by technical stage and next step without speculation.
-    Never use mouse automation or provide application patches or bypass instructions.
-15. Render an allowed template route with `editaplot.cmd render <plan>`. Keep an EditaPlot-owned
-    Origin instance open after success unless the user requests otherwise. By default, let the
-    runtime create a direct sibling of the source
+14. Run `editaplot.cmd origin-smoke --output-dir <unique-smoke-directory>` with
+    `launch_isolated`: start and own a dedicated Origin instance, perform the live smoke and version
+    handshake, then apply the template capability decision. This command is mandatory after planning
+    and before formal rendering. `attach_existing` is an explicit advanced mode only; never reset,
+    overwrite, or close a user-owned project, and detach instead of exiting. Report failures by
+    technical stage and next step without speculation.
+    Never use mouse automation or provide application patches or bypass instructions. The runtime
+    must attempt to clean a partial EditaPlot-owned activation and may try one fresh isolated
+    instance for a retryable startup code only if cleanup succeeds. Cleanup failure returns
+    `origin_activation_cleanup_failed` and stops. It must then wait with `sec -poc 30` and confirm
+    `run.isOCready()` before reading the version or creating a project. Never loop, switch to
+    `ApplicationSI`, edit DCOM/registry permissions, or tell a beginner to run the whole workflow as
+    administrator. After the automatic attempt is exhausted, request approval for at most one retry
+    in the same active Windows-user context and use a fresh empty sibling smoke directory so the
+    first report remains intact. `origin_com_class_not_registered` and
+    `origin_com_activation_access_denied` stop without automatic retry. Do not force-terminate a
+    Python worker merely because it has run for a long time: it may own a hidden Origin instance.
+    Preserve diagnostics and report the last progress stage before proposing any user-controlled
+    cancellation.
+15. Only after that smoke passes, render an allowed template route with
+    `editaplot.cmd render <plan>`. Keep an EditaPlot-owned Origin instance open after success unless
+    the user requests otherwise. By default, let the runtime create a direct sibling of the source
     file named `<source_stem>_EditaPlot_YYYYMMDD_HHMMSS`; keep all formal artifacts in that folder.
     Do not redirect ordinary runs to the repository, Skill directory, current working directory, or
     a shared global output folder. Use `--output-dir` only when the user explicitly requests another
     location.
 16. Run `editaplot.cmd verify <output-directory>` against that source-adjacent folder and perform
-    human visual QA. Do not report success from a PNG alone.
+    human visual QA. If smoke or render fails, a Python preview or standalone PNG/PDF/SVG is only
+    a preview and must not be presented as completed Origin work. Formal success requires the
+    editable OPJU, PNG, PDF, TIF, object readback, and human visual QA together.
 
 Before any render, read `references/origin-safety.md`, `references/figure-contract.md`, and
 `references/verification.md`. For a new table or chart decision, read
@@ -113,8 +158,17 @@ Before any render, read `references/origin-safety.md`, `references/figure-contra
 - For GSAS/GSAS-II Rietveld data, distinguish Observed, Calculated, optional Background, supplied
   Difference, explicit Phase positions, and non-rendering control/diagnostic columns. Preserve an
   upstream Publication `Diff` exactly; never apply a second display offset.
-- For SHAP, accept only externally precomputed per-sample contributions. Never train a model,
-  invoke SHAP, infer feature importance, or silently reorder features inside the drawing workflow.
+- For XPS, keep cosmetic preferences separate from the scientific contract. A user may explicitly
+  request exact series colors, physical line widths, fill transparency, a safe page/aspect ratio,
+  and legend show/hide, borderless, or position choices. Apply only fields supported and read back
+  by the selected verified XPS renderer; otherwise retain the default or reject the field visibly.
+  Neither a user style request nor a reference image may change source values or column roles, the
+  high-to-low binding-energy axis contract, component identity, residual disposition, or the
+  verified single-region `set_fill_area(..., type=9)` / `-pfm 3` fill implementation.
+- For SHAP, accept only externally precomputed per-sample contributions. Never train a model or
+  invoke SHAP. Mean |SHAP| and optional group percentages may only summarize those supplied rows
+  with the allow-listed formulas recorded in the semantic proposal and explicitly approved; never
+  invent contributions or silently reorder features.
 - Confirm unknown units, error semantics, percentage denominators, meaningful order, dual axes,
   and any other choice that can change the claim.
 - Recommend from the scientific question and data structure, not aesthetics alone. Refuse a
@@ -126,7 +180,15 @@ Before any render, read `references/origin-safety.md`, `references/figure-contra
 - Reject decorative 3D. Require a scientifically meaningful third axis; keep a new 3D route
   experimental until Z-axis, camera, OpenGL type, source mapping, four exports, editable OPJU,
   readback, and visual QA pass.
-- Keep private data local. Do not upload it to a network service.
+- 对于已验证的 `density_ridgeline3d`，我只接受 2–6 个真实带单位条件的 mixed-wide
+  六角色表：上游提供同语义同单位的实线/虚线预计算密度，并为每组提供恰好一个 `Focal X`。
+  焦点固定为 Z=0 基线 locator；不要计算 KDE、峰值、阈值、交点或焦点。当前主机还必须先通过
+  实时 smoke 与 `OPEN_GL_3D` 能力检查，不能只凭模板已验证就跳过主机门禁。
+- Do not send selected files to any additional network service or include them in public artifacts.
+  A file explicitly provided through Codex remains subject to the user's Codex account,
+  organization, and retention policies; do not claim the Skill can override those policies.
+- Before inspecting medical data or reference images, require the user to confirm that the material
+  follows their institution's rules, is deidentified, and has been checked for burned-in text.
 - Treat `panel-plan` as a deidentification-aware layout and evidence gate, not an OCR, PHI detector,
   medical image editor, or merged editable Origin project. Preserve every verified subproject.
 
@@ -141,8 +203,13 @@ Before any render, read `references/origin-safety.md`, `references/figure-contra
   font values directly into Origin API fields; read back the resulting axis and text objects.
 - Keep each condition's color consistent across related panels. Freeze palette IDs and exact HEX
   values, allowed modes, safe category count, and accessibility constraints into the plan.
-- Do not let cosmetic preferences override semantic color contracts for XPS components, signed
-  effects, heatmaps, diagnostic lines, confusion matrices, or similar evidence.
+- Let an explicit user style request outrank a style token inferred from a reference image. Color,
+  line-width, transparency, page/aspect, and legend requests are still capability-gated and must be
+  classified as applied, retained default, or rejected before rendering.
+- Do not let a reference image or unverified cosmetic preference silently redefine semantic color
+  mappings for XPS components, signed effects, heatmaps, diagnostic lines, confusion matrices, or
+  similar evidence. An explicit replacement is allowed only through that route's independently
+  verified override with exact series mapping and readback.
 - Give every medical panel one distinct evidence role. Freeze a shared condition-to-color map before
   composing quantitative panels; require explicit semantic confirmation for a shared legend.
 - Prefer editable labels and Origin objects. A Python preview or embedded bitmap is not an Origin

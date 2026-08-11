@@ -16,7 +16,7 @@ MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
-COMMIT = "f7151330bda7d82936941a1b9b9aab49ca230eec"
+COMMIT = "ef94c133229e1e276db1745e6300b3bf91f35adb"
 SOURCE_REPO_URL = "https://github.com/hang-jin/editaplot.git"
 
 

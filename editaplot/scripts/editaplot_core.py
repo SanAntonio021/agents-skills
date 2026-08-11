@@ -67,6 +67,7 @@ VERIFIED_TEMPLATE_IDS = frozenset(
         "percent_stacked_bar",
         "pie",
         "sankey",
+        "circular_network",
         "scatter",
         "line_error",
         "trend",
@@ -87,8 +88,13 @@ VERIFIED_TEMPLATE_IDS = frozenset(
         "shap_summary",
         "grouped_box",
         "pl",
+        "dsc",
+        "nmr",
+        "ftir",
+        "xps_compare",
         "uv_vis",
         "trajectory3d",
+        "density_ridgeline3d",
     }
 )
 
@@ -315,6 +321,52 @@ _SEMANTIC_ALIASES: dict[str, tuple[str, ...]] = {
         "光致发光",
     ),
     "time": ("time", "decaytime", "时间", "衰减时间"),
+    "temperature": (
+        "temperature",
+        "sampletemperature",
+        "temp",
+        "温度",
+        "样品温度",
+    ),
+    "heat_flow": (
+        "heatflow",
+        "heatflux",
+        "dscsignal",
+        "热流",
+        "热流率",
+        "差示扫描量热",
+    ),
+    "chemical_shift": (
+        "chemicalshift",
+        "shiftppm",
+        "nmrshift",
+        "化学位移",
+    ),
+    "nmr_signal": (
+        "nmrintensity",
+        "nmrsignal",
+        "nmr",
+        "核磁强度",
+        "核磁信号",
+    ),
+    "wavenumber": (
+        "wavenumber",
+        "wave number",
+        "ramanshift",
+        "波数",
+    ),
+    "ir_signal": (
+        "transmittance",
+        "transmission",
+        "absorbance",
+        "absorption",
+        "ftir",
+        "irsignal",
+        "透过率",
+        "透射率",
+        "吸光度",
+        "红外强度",
+    ),
     "fit": ("fit", "fitted", "fitting", "拟合"),
     "photon_energy": ("photonenergy", "hnu", "hv", "光子能量"),
     "tauc": ("taucvalue", "tauc", "tauc值"),
@@ -332,6 +384,51 @@ _SEMANTIC_ALIASES: dict[str, tuple[str, ...]] = {
     "source": ("source", "from", "来源", "起点", "源"),
     "target": ("target", "to", "目标", "终点"),
     "value": ("value", "weight", "flow", "数值", "权重", "流量"),
+    "panel": (
+        "panel",
+        "period",
+        "timeperiod",
+        "stage",
+        "facet",
+        "面板",
+        "时期",
+        "时段",
+        "阶段",
+        "分面",
+    ),
+    "sign": (
+        "sign",
+        "relationsign",
+        "edgetype",
+        "effectdirection",
+        "符号",
+        "关系符号",
+        "边类型",
+        "效应方向",
+        "正负",
+    ),
+    "source_group": (
+        "sourcegroup",
+        "fromgroup",
+        "来源组",
+        "起点组",
+        "源节点组",
+    ),
+    "target_group": (
+        "targetgroup",
+        "togroup",
+        "目标组",
+        "终点组",
+        "目标节点组",
+    ),
+    "edge_label": (
+        "edgelabel",
+        "relationlabel",
+        "linklabel",
+        "边标签",
+        "关系标签",
+        "连线标签",
+    ),
     "size": (
         "size",
         "magnitude",
@@ -366,7 +463,81 @@ _SEMANTIC_ALIASES: dict[str, tuple[str, ...]] = {
     "feature": ("feature", "featurename", "variable", "predictor", "特征", "特征名", "变量", "预测因子"),
     "shap_value": ("shapvalue", "shap", "shap值", "特征贡献", "贡献值"),
     "feature_value": ("featurevalue", "rawfeaturevalue", "特征值", "原始特征值"),
+    "shap_sample_id": ("sampleid", "caseid", "patientid", "样本编号", "样本id", "病例编号"),
+    "shap_feature_order": ("featureorder", "displayorder", "特征顺序", "显示顺序", "特征排序"),
+    "shap_mean_abs": (
+        "meanabsoluteshap",
+        "meanabsshap",
+        "mean|shap|",
+        "平均绝对shap",
+        "平均绝对shap值",
+        "平均绝对贡献",
+    ),
+    "shap_feature_group": ("featuregroup", "featuredomain", "特征组", "指标类别", "特征领域"),
+    "shap_group_contribution": (
+        "groupcontribution",
+        "groupcontributionpercent",
+        "grouppercent",
+        "组贡献百分比",
+        "分组贡献",
+        "组占比",
+    ),
     "series_id": ("series", "seriesid", "sampleid", "conditionname", "系列", "样品编号", "组别"),
+    "condition_id": (
+        "conditionid",
+        "conditionname",
+        "conditionlabel",
+        "条件标识",
+        "条件编号",
+        "条件名称",
+    ),
+    "density_x": (
+        "densityx",
+        "responsescore",
+        "distributionscore",
+        "metricvalue",
+        "分布横轴",
+        "响应评分",
+        "指标值",
+    ),
+    "condition_position": (
+        "conditionposition",
+        "conditionaxis",
+        "orderedcondition",
+        "year",
+        "followuptime",
+        "timepoint",
+        "条件位置",
+        "条件轴",
+        "有序条件",
+        "年份",
+        "年度",
+        "随访时间",
+        "时间点",
+    ),
+    "density_solid": (
+        "soliddensity",
+        "solidprofiledensity",
+        "实线密度",
+        "实线轮廓密度",
+    ),
+    "density_dashed": (
+        "dasheddensity",
+        "dashedprofiledensity",
+        "虚线密度",
+        "虚线轮廓密度",
+    ),
+    "focal_x": (
+        "focalx",
+        "focalpoint",
+        "focusx",
+        "focuspoint",
+        "baselinefocus",
+        "locatorx",
+        "焦点横坐标",
+        "基线焦点",
+        "定位点",
+    ),
 }
 
 
@@ -391,6 +562,21 @@ def _semantic_tags(column: str) -> list[str]:
                 break
         if matched:
             tags.append(tag)
+    # Prefer the more specific circular-network roles over substring matches.
+    # For example, ``SourceGroup`` must not count as the required ``Source``
+    # endpoint and ``EdgeLabel`` is metadata, not a category column.
+    if "source_group" in tags:
+        tags = [tag for tag in tags if tag not in {"source", "category"}]
+    if "target_group" in tags:
+        tags = [tag for tag in tags if tag not in {"target", "category"}]
+    if "edge_label" in tags:
+        tags = [tag for tag in tags if tag != "category"]
+    if "panel" in tags:
+        tags = [tag for tag in tags if tag != "time"]
+    if "condition_id" in tags:
+        tags = [tag for tag in tags if tag not in {"series_id", "category"}]
+    if "focal_x" in tags:
+        tags = [tag for tag in tags if tag != "density_x"]
     return tags
 
 
@@ -409,6 +595,7 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
         import numpy as np
         import pandas as pd
         from origin_sciplot.data_loader import DataLoadError, load_table
+        from origin_sciplot.scientific_workflow import density_ridgeline3d_contract_issues
     except Exception as exc:  # noqa: BLE001
         raise EditaPlotError("engine_import_failed", f"Could not import the engine: {exc}") from exc
 
@@ -482,6 +669,8 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
     layouts: list[str] = []
     if {"source", "target", "value"}.issubset(tags):
         layouts.append("edge_list")
+        if "panel" in tags:
+            layouts.append("temporal_edge_list")
     if profiles and profiles[0]["kind"] == "categorical" and numeric_columns:
         layouts.append("category_wide")
         if len(numeric_columns) >= 2:
@@ -505,6 +694,14 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
         layouts.append("pl_wide")
         if "time" in tags or "fit" in tags:
             layouts.append("trpl_wide")
+    if {"temperature", "heat_flow"}.issubset(tags):
+        layouts.append("dsc_wide")
+    if "chemical_shift" in tags and len(numeric_columns) >= 2:
+        layouts.append("nmr_wide")
+    if {"wavenumber", "ir_signal"}.issubset(tags):
+        layouts.append("ftir_wide")
+    if "xps_energy" in tags and len(numeric_columns) >= 3:
+        layouts.append("xps_compare_wide")
     if {"estimate", "lower", "upper"}.issubset(tags) and categorical_columns:
         layouts.append("interval_table")
     if "size" in tags and len(numeric_columns) >= 3:
@@ -523,6 +720,43 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
         layouts.append("paired_wide")
     if {"feature", "shap_value", "feature_value"}.issubset(tags) and categorical_columns:
         layouts.append("shap_long")
+        if "shap_mean_abs" in tags:
+            layouts.append("shap_mean_abs_long")
+        if "shap_feature_group" in tags:
+            layouts.append("shap_grouped_composite_long")
+    density_required_roles = (
+        "condition_id",
+        "condition_position",
+        "density_x",
+        "density_solid",
+        "density_dashed",
+        "focal_x",
+    )
+    density_role_candidates = {
+        role: [profile for profile in profiles if role in profile["semantic_tags"]]
+        for role in density_required_roles
+    }
+    density_roles_detected = sum(bool(items) for items in density_role_candidates.values())
+    density_candidate = density_roles_detected == len(density_required_roles)
+    density_issues: list[str] = []
+    density_role_columns: dict[str, str] = {}
+    density_strict = False
+    if density_candidate:
+        layouts.append("density_ridgeline3d_candidate")
+        for role, candidates in density_role_candidates.items():
+            if len(candidates) != 1:
+                density_issues.append(f"{role}_role_not_unique")
+            else:
+                density_role_columns[role] = str(candidates[0]["name"])
+
+        if not density_issues:
+            density_issues.extend(
+                density_ridgeline3d_contract_issues(loaded.frame, density_role_columns)
+            )
+
+        density_strict = not density_issues
+        if density_strict:
+            layouts.append("density_ridgeline3d_mixed_wide")
     trajectory_x = [
         profile
         for profile in profiles
@@ -563,6 +797,9 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
         "eis": sum(tag in tags for tag in ("z_real", "z_imag", "frequency", "phase")),
         "electrochem": sum(tag in tags for tag in ("potential", "current")),
         "sankey": sum(tag in tags for tag in ("source", "target", "value")),
+        "circular_network": sum(
+            tag in tags for tag in ("panel", "source", "target", "value")
+        ),
         "error": int("error" in tags),
         "distribution": int("numeric_wide" in layouts),
         "forest": sum(tag in tags for tag in ("estimate", "lower", "upper", "reference")),
@@ -576,8 +813,12 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
         "shap": int("shap_long" in layouts),
         "grouped_box": int("grouped_box_wide" in layouts),
         "pl": sum(tag in tags for tag in ("pl_signal", "time", "fit")),
+        "dsc": sum(tag in tags for tag in ("temperature", "heat_flow")),
+        "nmr": sum(tag in tags for tag in ("chemical_shift", "nmr_signal")),
+        "ftir": sum(tag in tags for tag in ("wavenumber", "ir_signal")),
         "uv_vis": sum(tag in tags for tag in ("wavelength", "uv_signal", "tauc", "bandgap")),
         "trajectory3d": int("trajectory3d_long" in layouts),
+        "density_ridgeline3d": len(density_required_roles) if density_strict else 0,
     }
 
     return {
@@ -594,10 +835,7 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
             "profile": loaded.source_profile,
             "header_row_number": loaded.header_row_number,
             "metadata_record_count": len(loaded.metadata),
-            "metadata": [
-                {"key": key, "value": value}
-                for key, value in loaded.metadata
-            ],
+            "metadata": [{"key": key, "value": value} for key, value in loaded.metadata],
         },
         "table": {
             "row_count": len(loaded.frame),
@@ -611,6 +849,15 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
             "all_numeric_values_nonnegative": all_nonnegative,
             "first_category_unique_count": first_category_unique,
             "maximum_category_label_length": max_label_length,
+            "density_ridgeline3d_detection": {
+                "detected_role_count": density_roles_detected,
+                "required_role_count": len(density_required_roles),
+                "candidate": density_candidate,
+                "strict": density_strict,
+                "requires_confirmation": bool(density_candidate and not density_strict),
+                "role_columns": density_role_columns,
+                "issues": density_issues,
+            },
         },
         "domain_signals": domain_signals,
         "columns": profiles,
@@ -619,6 +866,16 @@ def inspect_data(path: str | Path, *, engine_home: str | Path | None = None) -> 
 
 _INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "xps": ("xps", "photoelectron", "光电子", "结合能", "分峰"),
+    "xps_compare": (
+        "xpscomparison",
+        "xpscompare",
+        "xpsmulti",
+        "multispectrumxps",
+        "xps对比",
+        "xps多谱线",
+        "多样品xps",
+        "结合能对比",
+    ),
     "xrd": ("xrd", "diffraction", "衍射", "物相"),
     "xas": ("xas", "xanes", "exafs", "absorption", "吸收谱"),
     "eis": ("eis", "impedance", "nyquist", "bode", "阻抗"),
@@ -630,6 +887,18 @@ _INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "percent_stacked_bar": ("percentstacked", "percentagecomposition", "百分比堆叠", "占比"),
     "pie": ("pie", "parttowhole", "饼图", "份额"),
     "sankey": ("sankey", "flow", "桑基", "流向"),
+    "circular_network": (
+        "circularnetwork",
+        "directednetwork",
+        "weightednetwork",
+        "temporalnetwork",
+        "multipanelnetwork",
+        "环形网络",
+        "有向网络",
+        "加权网络",
+        "时段网络",
+        "多面板网络",
+    ),
     "scatter": ("scatter", "correlation", "relationship", "散点", "相关", "关系"),
     "line_error": ("errorbar", "uncertainty", "trend", "误差", "不确定性", "趋势"),
     "trend": ("trendline", "timeseries", "progression", "折线趋势", "时间趋势", "阶段变化"),
@@ -650,13 +919,41 @@ _INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "shap_summary": (
         "shapsummary",
         "shapbeeswarm",
+        "shapcomposite",
+        "meanabsoluteshap",
         "featurecontribution",
         "shap汇总",
         "shap蜂群",
+        "shap复合图",
+        "平均绝对shap",
         "特征贡献",
     ),
     "grouped_box": ("groupedbox", "boxplot", "boxanddots", "分组箱线", "箱线图", "箱体图"),
     "pl": ("pl", "trpl", "photoluminescence", "luminescence", "光致发光", "荧光寿命", "时间分辨荧光"),
+    "dsc": (
+        "dsc",
+        "differentialscanningcalorimetry",
+        "heatflow",
+        "差示扫描量热",
+        "热流",
+    ),
+    "nmr": (
+        "nmr",
+        "nuclearmagneticresonance",
+        "chemicalshift",
+        "核磁",
+        "核磁共振",
+        "化学位移",
+    ),
+    "ftir": (
+        "ftir",
+        "infrared",
+        "irspectrum",
+        "wavenumber",
+        "红外",
+        "傅里叶红外",
+        "波数",
+    ),
     "uv_vis": (
         "uvvis",
         "uv-vis",
@@ -669,11 +966,27 @@ _INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
         "带隙",
     ),
     "trajectory3d": ("trajectory3d", "3dnyquist", "3dtrajectory", "三维nyquist", "三维阻抗", "三维轨迹"),
+    "density_ridgeline3d": (
+        "densityridgeline3d",
+        "3ddensityprofile",
+        "3ddensitycurve",
+        "baselinefocus",
+        "三维密度曲线",
+        "三维密度轮廓",
+        "基线焦点",
+        "焦点定位",
+    ),
 }
 
 
 def _intent_match(template_id: str, intent: str) -> bool:
     canonical = _canonical(intent)
+    if (
+        template_id == "xps"
+        and canonical
+        and any(_canonical(item) in canonical for item in _INTENT_KEYWORDS["xps_compare"])
+    ):
+        return False
     return bool(canonical) and any(_canonical(item) in canonical for item in _INTENT_KEYWORDS[template_id])
 
 
@@ -701,10 +1014,14 @@ def _score_candidate(
 
     domain_map = {
         "xps": "xps",
+        "xps_compare": "xps",
         "xrd": "xrd",
         "xas": "xas",
         "eis": "eis",
         "pl": "pl",
+        "dsc": "dsc",
+        "nmr": "nmr",
+        "ftir": "ftir",
         "uv_vis": "uv_vis",
     }
     if template_id in domain_map:
@@ -762,6 +1079,28 @@ def _score_candidate(
     category_count = int(table["first_category_unique_count"])
     long_label = int(table["maximum_category_label_length"])
     all_nonnegative = bool(table["all_numeric_values_nonnegative"])
+    dense_matrix_without_explicit_intent = (
+        "matrix_candidate" in layouts
+        and category_count >= 12
+        and numeric_count >= 12
+        and not any(_intent_match(item, intent) for item in category_templates)
+    )
+
+    if (
+        dense_matrix_without_explicit_intent
+        and template_id
+        in {
+            "bar",
+            "horizontal_bar",
+            "stacked_bar",
+            "percent_stacked_bar",
+            "pie",
+            "radar",
+        }
+    ):
+        score -= 0.18
+        reason_codes.append("dense_matrix_heatmap_route_preferred")
+        reasons.append("检测到高维类别矩阵；默认采用热力图，避免生成不可读的超密集柱形或雷达图。")
 
     if template_id == "bar" and "category_wide" in layouts:
         score += 0.05
@@ -797,6 +1136,10 @@ def _score_candidate(
             score += 0.12
             reason_codes.append("matrix_candidate_match")
             reasons.append("类别 × 数值系列的矩形结构适合颜色矩阵。")
+            if dense_matrix_without_explicit_intent:
+                score += 0.16
+                reason_codes.append("dense_matrix_match")
+                reasons.append("行列均达到 12 个以上，颜色矩阵比逐系列图形更清晰。")
         else:
             score -= 0.30
         if "confusion_matrix" in layouts and _intent_match("confusion_matrix", intent):
@@ -826,6 +1169,20 @@ def _score_candidate(
             reasons.append("检测到 source、target、value 边列表。")
         else:
             score -= 0.45
+        if "temporal_edge_list" in layouts:
+            score -= 0.48
+            reason_codes.append("temporal_network_route_preferred")
+            reasons.append("检测到显式 Panel/时期列；应保留面板语义，而不是合并成单个桑基图。")
+    elif template_id == "circular_network":
+        if "temporal_edge_list" in layouts and int(signals["circular_network"]) >= 4:
+            score += 0.48
+            reason_codes.append("temporal_directed_edge_list_match")
+            reasons.append(
+                "检测到 Panel、Source、Target、Weight 有向边长表，可保留时段分面、方向和全局权重尺度。"
+            )
+        else:
+            score -= 0.60
+            reason_codes.append("temporal_directed_edge_list_missing")
     elif template_id in {"scatter", "trend"}:
         if "numeric_xy" in layouts:
             score += 0.15
@@ -932,6 +1289,21 @@ def _score_candidate(
         else:
             score -= 0.60
             reason_codes.append("explicit_xyz_series_evidence_missing")
+    elif template_id == "density_ridgeline3d":
+        if "density_ridgeline3d_mixed_wide" in layouts:
+            score += 0.46
+            reason_codes.append("explicit_precomputed_dual_density_3d_match")
+            reasons.append(
+                "检测到六个唯一 mixed-wide 角色、同行的实线/虚线预计算密度、"
+                "带单位的横轴与真实条件轴，以及每组一个用户提供的基线焦点。"
+            )
+        elif "density_ridgeline3d_candidate" in layouts:
+            score -= 0.34
+            reason_codes.append("density_ridgeline3d_role_conflict_requires_confirmation")
+            reasons.append("六类表头语义已出现，但单位、角色唯一性、条件映射、密度完整性或每组焦点数目存在冲突，必须人工确认。")
+        else:
+            score -= 0.62
+            reason_codes.append("explicit_precomputed_dual_density_3d_evidence_missing")
     elif template_id == "eis" and "trajectory3d_long" in layouts:
         score -= 0.38
         reason_codes.append("trajectory3d_route_preferred")
@@ -1011,11 +1383,20 @@ def recommend_charts(
     second_score = candidates[1]["score"] if len(candidates) > 1 else 0.0
     margin = (top["score"] - second_score) if top else 0.0
     selected = candidates[: max(1, limit)]
+    density_detection = inspection["table"].get("density_ridgeline3d_detection", {})
+    density_contract_conflict = bool(density_detection.get("requires_confirmation"))
+    density_mapping_requires_confirmation = any(
+        candidate["template_id"] == "density_ridgeline3d"
+        and candidate["requires_column_confirmation"]
+        for candidate in candidates
+    )
     auto_allowed = bool(
         top
         and top["score"] >= AUTO_SCORE_THRESHOLD
         and margin >= AUTO_MARGIN_THRESHOLD
         and not top["requires_column_confirmation"]
+        and not density_contract_conflict
+        and not density_mapping_requires_confirmation
     )
     gate_reasons: list[str] = []
     if top is None:
@@ -1027,6 +1408,10 @@ def recommend_charts(
             gate_reasons.append("candidate_margin_too_small")
         if top["requires_column_confirmation"]:
             gate_reasons.append("column_confirmation_required")
+    if density_contract_conflict:
+        gate_reasons.append("density_ridgeline3d_contract_requires_confirmation")
+    if density_mapping_requires_confirmation:
+        gate_reasons.append("density_ridgeline3d_mapping_requires_confirmation")
 
     return {
         "schema_version": "1.0",
@@ -1147,13 +1532,9 @@ def _semantic_confirmation_template(proposal: Any) -> dict[str, Any]:
     return {
         "proposal_hash": proposal.proposal_hash,
         "confirmed": True,
-        "approved_derived_item_ids": [
-            item["item_id"] for item in proposal_payload["derived_items"]
-        ],
+        "approved_derived_item_ids": [item["item_id"] for item in proposal_payload["derived_items"]],
         "resolved_ambiguities": {
-            item["ambiguity_id"]: (
-                item["options"][0] if item["options"] else "<请填写确认结论>"
-            )
+            item["ambiguity_id"]: (item["options"][0] if item["options"] else "<请填写确认结论>")
             for item in proposal_payload["ambiguities"]
             if item["blocking"]
         },
@@ -1206,24 +1587,16 @@ def understand_data(
         )
 
     uncertain_items = [
-        item["item_id"]
-        for item in proposal_payload["data_items"]
-        if item["disposition"] == "uncertain"
+        item["item_id"] for item in proposal_payload["data_items"] if item["disposition"] == "uncertain"
     ]
     blocking_ambiguities = [
-        item["ambiguity_id"]
-        for item in proposal_payload["ambiguities"]
-        if item["blocking"]
+        item["ambiguity_id"] for item in proposal_payload["ambiguities"] if item["blocking"]
     ]
     can_confirm = not uncertain_items
     return {
         "schema_version": "1.0",
         "ok": True,
-        "state": (
-            "awaiting_semantic_confirmation"
-            if can_confirm
-            else "awaiting_column_meaning_correction"
-        ),
+        "state": ("awaiting_semantic_confirmation" if can_confirm else "awaiting_column_meaning_correction"),
         "source": {
             "file_name": source_path.name,
             "sha256": proposal.source_sha256,
@@ -1340,9 +1713,7 @@ def review_reference_figure(
         },
         "confirmation_gate": {
             "required": True,
-            "message_zh": (
-                "请确认这份理解只保留了图形语法和视觉风格，而且所有必要元素都已绑定到你的数据。"
-            ),
+            "message_zh": ("请确认这份理解只保留了图形语法和视觉风格，而且所有必要元素都已绑定到你的数据。"),
             "confirmation_payload_template": {
                 "reference_contract_hash": spec.contract_sha256,
                 "confirmed": True,
@@ -1457,9 +1828,7 @@ def start_session(
         profile["name"] for profile in inspection["columns"] if not profile["semantic_tags"]
     ]
     error_columns = [
-        profile["name"]
-        for profile in inspection["columns"]
-        if "error" in profile["semantic_tags"]
+        profile["name"] for profile in inspection["columns"] if "error" in profile["semantic_tags"]
     ]
 
     confirmation_questions: list[dict[str, Any]] = [
@@ -1506,26 +1875,20 @@ def start_session(
         )
 
     selected_template_id = top["template_id"] if top else None
-    all_semantic_tags = {
-        tag for profile in inspection["columns"] for tag in profile["semantic_tags"]
-    }
+    all_semantic_tags = {tag for profile in inspection["columns"] for tag in profile["semantic_tags"]}
     canonical_headers = {_canonical(profile["name"]) for profile in inspection["columns"]}
     precomputed = _PRECOMPUTED_EVIDENCE.get(selected_template_id or "")
     if selected_template_id == "xps" and (
         {"background", "envelope", "residual"} & all_semantic_tags
         or any(
-            token in header
-            for header in canonical_headers
-            for token in ("component", "peak", "组分", "分峰")
+            token in header for header in canonical_headers for token in ("component", "peak", "组分", "分峰")
         )
     ):
         precomputed = "文件中实际出现的背景、包络、峰组分或残差等结果"
     elif selected_template_id == "pl" and (
         "fit" in all_semantic_tags
         or any(
-            token in header
-            for header in canonical_headers
-            for token in ("lifetime", "tau", "寿命", "拟合")
+            token in header for header in canonical_headers for token in ("lifetime", "tau", "寿命", "拟合")
         )
     ):
         precomputed = "用户认可的拟合曲线与寿命参数"
@@ -1621,8 +1984,7 @@ def start_session(
             "helper_columns": "如绘图确有需要，只能在 Origin 工作簿内部创建 helper columns。",
             "palette": "配色暂不锁定；模板和科学目的确认后再选择或接受色盲友好默认值。",
             "origin": (
-                "数据识别阶段不调用 Origin；render 时直接测试本机 Automation 连接，"
-                "失败只报告技术错误。"
+                "数据识别阶段不调用 Origin；render 时直接测试本机 Automation 连接，失败只报告技术错误。"
             ),
             "analysis_boundary": "不推断统计检验、误差语义、拟合参数或模型输出。",
         },
@@ -1683,8 +2045,7 @@ def _confirm_semantic_proposal(
             "approved_derived_item_ids must be a JSON array of item IDs.",
         )
     if not isinstance(resolutions, dict) or not all(
-        isinstance(key, str) and isinstance(value, str)
-        for key, value in resolutions.items()
+        isinstance(key, str) and isinstance(value, str) for key, value in resolutions.items()
     ):
         raise EditaPlotError(
             "semantic_confirmation_invalid",
@@ -1713,6 +2074,7 @@ def build_plan(
     x_title: str | None = None,
     y_title: str | None = None,
     palette_id: str | None = None,
+    visual_style: dict[str, Any] | None = None,
     mapping: dict[str, Any] | None = None,
     semantic_confirmation: dict[str, Any] | None = None,
     reference_image: str | Path | None = None,
@@ -1728,8 +2090,8 @@ def build_plan(
     root = bootstrap_engine(engine_home)
     try:
         from origin_sciplot.origin_backend.template_capabilities import (
-            OriginCapability,
             get_template_capability_profile,
+            resolve_activated_optional_capabilities,
         )
         from origin_sciplot.palette_catalog import get_palette, palette_to_dict
         from origin_sciplot.scientific_workflow import (
@@ -1764,6 +2126,16 @@ def build_plan(
     )
     worker_mapping = service.worker_mapping(prepared)
     frozen_payload = prepared.payload
+    explicit_visual_tokens = dict(visual_style or {})
+    if palette_id is not None:
+        existing_palette = explicit_visual_tokens.get("palette_id")
+        if existing_palette is not None and existing_palette != palette_id:
+            raise EditaPlotError(
+                "visual_style_conflict",
+                "palette_id conflicts with visual_style.palette_id.",
+            )
+        explicit_visual_tokens["palette_id"] = palette_id
+    explicit_visual_report: dict[str, Any] | None = None
     axis_title_overrides = {
         key: value for key, value in (("x_title", x_title), ("y_title", y_title)) if value is not None
     }
@@ -1783,18 +2155,49 @@ def build_plan(
             code = getattr(exc, "code", "text_overrides_invalid")
             raise EditaPlotError(code, str(exc)) from exc
     palette_contract: dict[str, Any] = {}
-    if palette_id is not None:
-        if template_id == "xps":
-            raise EditaPlotError(
-                "palette_override_unsupported",
-                "XPS keeps its verified component-colour contract.",
+    if template_id == "xps" and explicit_visual_tokens:
+        try:
+            from origin_sciplot.xps_visual_style import apply_xps_visual_style
+
+            visual_application = apply_xps_visual_style(
+                frozen_payload,
+                explicit_visual_tokens,
+                source="explicit_user",
             )
+        except Exception as exc:  # noqa: BLE001 - normalized visual contract error
+            code = getattr(exc, "code", "xps_visual_style_invalid")
+            raise EditaPlotError(code, str(exc)) from exc
+        frozen_payload = visual_application.preparation
+        explicit_visual_report = visual_application.report
+        # Freeze and forward the adapter's canonical form (normalised HEX,
+        # numeric values and deterministic key ordering), never the raw CLI
+        # object.  The report hash is computed over this exact representation.
+        explicit_visual_tokens = dict(explicit_visual_report["requested_tokens"])
+        selected_palette = explicit_visual_tokens.get("palette_id")
+        if selected_palette is not None:
+            try:
+                palette_contract = palette_to_dict(get_palette(str(selected_palette)))
+            except (KeyError, ValueError):
+                # The style report already records a rejected palette and the
+                # retained semantic default; do not mislabel it as applied.
+                palette_contract = {}
+    elif visual_style and template_id != "xps":
+        raise EditaPlotError(
+            "visual_style_template_unsupported",
+            "Exact visual_style fields are currently implemented for XPS only; "
+            "use --palette-id for non-XPS templates.",
+            unsupported_fields=sorted(explicit_visual_tokens),
+        )
+    if palette_id is not None and template_id != "xps":
         try:
             frozen_payload = apply_scientific_palette_override(
                 frozen_payload,
                 palette_id=palette_id,
             )
             palette_contract = palette_to_dict(get_palette(palette_id))
+            # Non-XPS palettes keep using the established palette contract;
+            # do not mislabel them as an XPS exact-visual request.
+            explicit_visual_tokens = {}
         except Exception as exc:  # noqa: BLE001 - normalize engine validation errors
             code = getattr(exc, "code", "palette_invalid")
             raise EditaPlotError(code, str(exc)) from exc
@@ -1803,32 +2206,16 @@ def build_plan(
     if hasattr(plot_spec, "visual_profile"):
         display_transform = plot_spec.visual_profile
     capability_profile = get_template_capability_profile(template_id)
-    route_capabilities: set[OriginCapability] = set()
-    if plot_spec is not None:
-        if getattr(plot_spec, "aggregate_error_column", None) or any(
-            getattr(series, "error_column", None)
-            for series in getattr(plot_spec, "series", ())
-        ):
-            route_capabilities.add(OriginCapability.ERROR_BARS)
-        if getattr(plot_spec, "inset_series", ()):
-            route_capabilities.add(OriginCapability.INSET_LAYER)
-        if any(
-            getattr(plot_spec, axis_name, None) == "log10"
-            for axis_name in ("x_scale", "y_scale")
-        ):
-            route_capabilities.add(OriginCapability.LOG_AXIS)
-    invalid_route_capabilities = route_capabilities - (
-        capability_profile.required | capability_profile.optional
-    )
-    if invalid_route_capabilities:
-        invalid_names = ", ".join(
-            sorted(capability.value for capability in invalid_route_capabilities)
+    try:
+        activated_optional_capabilities = resolve_activated_optional_capabilities(
+            template_id,
+            plot_spec,
         )
+    except ValueError as exc:
         raise EditaPlotError(
             "origin_capability_profile_invalid",
-            f"The template capability profile does not allow: {invalid_names}.",
-        )
-    activated_optional_capabilities = route_capabilities & capability_profile.optional
+            str(exc),
+        ) from exc
 
     summary_facts = [list(item) for item in prepared.summary.facts]
     if plot_spec is not None and axis_title_overrides:
@@ -1854,19 +2241,10 @@ def build_plan(
     reference_renderer_ready = True
     reference_blocked_reasons: list[str] = []
     if reference_requested:
-        if (
-            reference_image is None
-            or reference_spec is None
-            or reference_confirmation is None
-        ):
+        if reference_image is None or reference_spec is None or reference_confirmation is None:
             raise EditaPlotError(
                 "reference_inputs_incomplete",
                 "Reference adaptation needs an image, a reviewed spec, and explicit confirmation.",
-            )
-        if template_id == "xps":
-            raise EditaPlotError(
-                "reference_style_xps_unsupported",
-                "XPS keeps its verified component and fill style contract.",
             )
         confirmed_reference = _confirm_reference_spec(
             reference_image,
@@ -1890,19 +2268,12 @@ def build_plan(
             raise EditaPlotError(code, str(exc)) from exc
         reference_adaptation = adaptation.to_dict()
         required_reference_capabilities = set(
-            reference_adaptation["origin_capability_gate"][
-                "additional_required_capabilities"
-            ]
+            reference_adaptation["origin_capability_gate"]["additional_required_capabilities"]
         )
         allowed_reference_capabilities = {
-            capability.value
-            for capability in (
-                capability_profile.required | capability_profile.optional
-            )
+            capability.value for capability in (capability_profile.required | capability_profile.optional)
         }
-        unavailable = sorted(
-            required_reference_capabilities - allowed_reference_capabilities
-        )
+        unavailable = sorted(required_reference_capabilities - allowed_reference_capabilities)
         if unavailable:
             raise EditaPlotError(
                 "reference_capability_unavailable",
@@ -1916,18 +2287,16 @@ def build_plan(
                 frozen_payload,
                 reference_adaptation,
                 locked_palette_id=palette_id,
+                locked_style_tokens=explicit_visual_tokens,
             )
         except Exception as exc:  # noqa: BLE001
             code = getattr(exc, "code", "reference_style_invalid")
             raise EditaPlotError(code, str(exc)) from exc
         frozen_payload = style_application.preparation
         reference_style_report = style_application.report
-        reference_renderer_ready = bool(
-            reference_style_report["execution_allowed"]
-        )
+        reference_renderer_ready = bool(reference_style_report["execution_allowed"])
         reference_blocked_reasons.extend(
-            str(item)
-            for item in reference_style_report.get("blocking_reasons", [])
+            str(item) for item in reference_style_report.get("blocking_reasons", [])
         )
     plan: dict[str, Any] = {
         "plan_version": PLAN_VERSION,
@@ -1949,6 +2318,10 @@ def build_plan(
             "target_output": target_output.strip(),
             "axis_title_overrides": axis_title_overrides,
             "palette": palette_contract,
+            "visual_style": {
+                "tokens": explicit_visual_tokens,
+                "report": explicit_visual_report,
+            },
         },
         "data_understanding": semantic_contract.to_dict(),
         "reference_adaptation": reference_adaptation,
@@ -1989,11 +2362,7 @@ def build_plan(
             and reference_renderer_ready
         ),
         "blocked_reasons": (
-            (
-                ["column_mapping_confirmation_required"]
-                if prepared.requires_confirmation
-                else []
-            )
+            (["column_mapping_confirmation_required"] if prepared.requires_confirmation else [])
             + reference_blocked_reasons
         ),
     }
@@ -2053,6 +2422,31 @@ def validate_plan(plan: dict[str, Any]) -> None:
     )
     reference_adaptation = plan.get("reference_adaptation")
     reference_style = plan.get("reference_style")
+    visual_style = plan.get("figure_contract", {}).get("visual_style")
+    if isinstance(visual_style, dict) and visual_style.get("tokens"):
+        visual_report = visual_style.get("report")
+        if not isinstance(visual_report, dict):
+            raise EditaPlotError(
+                "xps_visual_style_report_missing",
+                "The render plan has no frozen explicit XPS visual-style report.",
+            )
+        report_payload = dict(visual_report)
+        report_hash = report_payload.pop("report_hash", None)
+        expected_output_digest = (
+            reference_style.get("input_plan_digest")
+            if isinstance(reference_style, dict)
+            else plan.get("template", {}).get("plan_digest")
+        )
+        if (
+            not isinstance(report_hash, str)
+            or report_hash != _json_hash(report_payload)
+            or visual_style.get("tokens") != visual_report.get("requested_tokens")
+            or visual_report.get("output_plan_digest") != expected_output_digest
+        ):
+            raise EditaPlotError(
+                "xps_visual_style_report_mismatch",
+                "The explicit XPS visual-style report does not match the render plan.",
+            )
     if reference_adaptation is not None:
         if not isinstance(reference_adaptation, dict) or not isinstance(
             reference_style,
@@ -2067,10 +2461,8 @@ def validate_plan(plan: dict[str, Any]) -> None:
         if (
             not isinstance(reference_report_hash, str)
             or reference_report_hash != _json_hash(reference_report_payload)
-            or reference_style.get("reference_plan_hash")
-            != reference_adaptation.get("plan_hash")
-            or reference_style.get("output_plan_digest")
-            != plan.get("template", {}).get("plan_digest")
+            or reference_style.get("reference_plan_hash") != reference_adaptation.get("plan_hash")
+            or reference_style.get("output_plan_digest") != plan.get("template", {}).get("plan_digest")
         ):
             raise EditaPlotError(
                 "reference_style_report_mismatch",
@@ -2099,9 +2491,7 @@ def build_worker_command(
     close_origin: bool = False,
 ) -> tuple[list[str], dict[str, str], Path]:
     execution = plan.get("execution")
-    planned_engine_home = (
-        execution.get("engine_home") if isinstance(execution, dict) else None
-    )
+    planned_engine_home = execution.get("engine_home") if isinstance(execution, dict) else None
     root = bootstrap_engine(engine_home or planned_engine_home)
     validate_plan(plan)
     python = str(python_executable or os.environ.get("EDITAPLOT_PYTHON") or sys.executable)
@@ -2130,6 +2520,33 @@ def build_worker_command(
     palette = plan.get("figure_contract", {}).get("palette")
     if isinstance(palette, dict) and palette.get("palette_id"):
         command.extend(("--palette-id", str(palette["palette_id"])))
+    visual_style = plan.get("figure_contract", {}).get("visual_style")
+    visual_tokens: dict[str, Any] = {}
+    if isinstance(visual_style, dict) and isinstance(visual_style.get("tokens"), dict):
+        visual_tokens = dict(visual_style["tokens"])
+        visual_report = visual_style.get("report")
+        if visual_tokens:
+            if not isinstance(visual_report, dict) or not isinstance(
+                visual_report.get("report_hash"),
+                str,
+            ):
+                raise EditaPlotError(
+                    "xps_visual_style_report_missing",
+                    "The render plan has no frozen explicit XPS visual-style report.",
+                )
+            command.extend(
+                (
+                    "--visual-style-json",
+                    json.dumps(
+                        {
+                            "tokens": visual_tokens,
+                            "expected_report_hash": visual_report["report_hash"],
+                        },
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ),
+                )
+            )
     reference_adaptation = plan.get("reference_adaptation")
     reference_style = plan.get("reference_style")
     if isinstance(reference_adaptation, dict):
@@ -2150,10 +2567,10 @@ def build_worker_command(
                         "expected_report_hash": reference_style["report_hash"],
                         "locked_palette_id": (
                             str(palette["palette_id"])
-                            if isinstance(palette, dict)
-                            and palette.get("palette_id")
+                            if isinstance(palette, dict) and palette.get("palette_id")
                             else None
                         ),
+                        "locked_style_tokens": visual_tokens,
                     },
                     ensure_ascii=False,
                     separators=(",", ":"),
@@ -2189,9 +2606,7 @@ def build_origin_smoke_command(
     ]
     env = dict(os.environ)
     source_path = str(root / "src")
-    env["PYTHONPATH"] = source_path + (
-        os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else ""
-    )
+    env["PYTHONPATH"] = source_path + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     env["PYTHONIOENCODING"] = "utf-8"
     return command, env, root
 
@@ -2699,9 +3114,7 @@ def _recover_managed_environment(root: Path, actions: list[dict[str, Any]]) -> N
         for stale in reversed(stale_paths):
             os.replace(stale, env_root)
             if managed_environment_status(root)["valid"]:
-                actions.append(
-                    {"action": "restore_interrupted_environment_swap", "path": stale.name}
-                )
+                actions.append({"action": "restore_interrupted_environment_swap", "path": stale.name})
                 stale_paths.remove(stale)
                 break
             os.replace(env_root, stale)
@@ -2721,8 +3134,8 @@ def _verify_managed_dependencies(python: Path) -> dict[str, Any]:
         "import importlib.metadata as m,json;"
         f"e=json.loads({json.dumps(json.dumps(expected))});"
         "a={};"
-        "exec(\"for n,v in e.items():\\n try:a[n]=m.version(n)==v\\n except "
-        "m.PackageNotFoundError:a[n]=False\");"
+        'exec("for n,v in e.items():\\n try:a[n]=m.version(n)==v\\n except '
+        'm.PackageNotFoundError:a[n]=False");'
         "print(json.dumps(a))"
     )
     try:
@@ -2810,9 +3223,7 @@ def _repair_environment_transaction(
             }
 
     current_executable = os.path.normcase(str(Path(sys.executable).resolve()))
-    running_managed = python.is_file() and current_executable == os.path.normcase(
-        str(python.resolve())
-    )
+    running_managed = python.is_file() and current_executable == os.path.normcase(str(python.resolve()))
     if running_managed:
         raise EditaPlotError(
             "managed_environment_self_repair_requires_base_python",
@@ -2876,9 +3287,7 @@ def _repair_environment_transaction(
                 "dependency_install_timeout",
                 "Installing the audited dependencies exceeded 900 seconds.",
             ) from exc
-        actions.append(
-            {"action": "install_audited_runtime_dependencies", "returncode": completed.returncode}
-        )
+        actions.append({"action": "install_audited_runtime_dependencies", "returncode": completed.returncode})
         if completed.returncode != 0:
             raise EditaPlotError(
                 "dependency_install_failed",
@@ -3073,11 +3482,7 @@ def _discover_origin_com_registration(
     for clsid, progid_view, progid_label in clsids:
         searches = [
             (rf"CLSID\{clsid}\LocalServer32", progid_view, progid_label),
-            *[
-                (rf"CLSID\{clsid}\LocalServer32", view, label)
-                for view, label in views
-                if view != progid_view
-            ],
+            *[(rf"CLSID\{clsid}\LocalServer32", view, label) for view, label in views if view != progid_view],
             (rf"WOW6432Node\CLSID\{clsid}\LocalServer32", 0, "WOW6432Node"),
         ]
         seen_searches: set[tuple[str, int]] = set()
@@ -3214,11 +3619,7 @@ def _discover_installed_origin_candidates(winreg: Any) -> list[dict[str, Any]]:
                 if executable is None:
                     continue
                 existing = next(
-                    (
-                        item
-                        for item in candidates
-                        if _same_origin_executable(str(item["path"]), executable)
-                    ),
+                    (item for item in candidates if _same_origin_executable(str(item["path"]), executable)),
                     None,
                 )
                 if existing is not None:
@@ -3320,9 +3721,7 @@ def discover_origin_application() -> dict[str, Any]:
         "progid": launch["progid"],
         "clsid": launch["clsid"],
         "registry_view": launch["registry_view"],
-        "callability_status": (
-            "registration_detected" if launch_detected else "not_detected"
-        ),
+        "callability_status": ("registration_detected" if launch_detected else "not_detected"),
         "reason": reason,
         "registration_detected": any_detected,
         "launch_registration_detected": launch_detected,
@@ -3374,9 +3773,7 @@ def doctor(*, engine_home: str | Path | None = None) -> dict[str, Any]:
             origin_application.get("application_present", False),
         )
     )
-    attach_registration_detected = bool(
-        origin_application.get("attach_registration_detected", False)
-    )
+    attach_registration_detected = bool(origin_application.get("attach_registration_detected", False))
     checks.append(
         {
             "name": "origin_application",
@@ -3392,9 +3789,7 @@ def doctor(*, engine_home: str | Path | None = None) -> dict[str, Any]:
             ),
             "launch_registration_detected": launch_registration_detected,
             "attach_registration_detected": attach_registration_detected,
-            "live_connection_tested": bool(
-                origin_application.get("live_connection_tested", False)
-            ),
+            "live_connection_tested": bool(origin_application.get("live_connection_tested", False)),
         }
     )
     try:
@@ -3428,10 +3823,11 @@ def doctor(*, engine_home: str | Path | None = None) -> dict[str, Any]:
             }
         )
 
-    ready_analysis = python_ok and windows and engine_ok and all(
-        dependency_state[name]
-        for name in dependencies
-        if name not in {"originpro", "OriginExt"}
+    ready_analysis = (
+        python_ok
+        and windows
+        and engine_ok
+        and all(dependency_state[name] for name in dependencies if name not in {"originpro", "OriginExt"})
     )
     ready_render = (
         ready_analysis
@@ -3468,9 +3864,7 @@ def doctor(*, engine_home: str | Path | None = None) -> dict[str, Any]:
     if not dependency_state.get("OriginExt", False):
         manual_blockers.append("python_originext_package_missing")
     if ready_render:
-        summary_zh = (
-            "环境已具备绘图前提；真正的 Origin 连接会在绘图或独立 smoke test 时完成。"
-        )
+        summary_zh = "环境已具备绘图前提；真正的 Origin 连接会在绘图或独立 smoke test 时完成。"
         next_step_zh = "直接提交数据即可，EditaPlot 会自动启动一个专用 Origin 实例。"
     elif ready_analysis:
         summary_zh = "数据分析环境可用，但 Origin 绘图前提尚未全部满足。"
@@ -3570,9 +3964,10 @@ def _font_readback_audit(report: dict[str, Any]) -> dict[str, Any]:
                 if canonical == "font_code_expected" and isinstance(item, (int, float)):
                     expected_codes.append(int(round(float(item))))
                 elif isinstance(item, (int, float)) and (
-                    canonical == "font_code"
+                    canonical in {"font", "font_code"}
                     or canonical.endswith(".font")
                     or canonical.endswith(".font_code")
+                    or canonical.endswith("_font")
                     or canonical.endswith("_font_code")
                 ):
                     actual_codes[child] = int(round(float(item)))

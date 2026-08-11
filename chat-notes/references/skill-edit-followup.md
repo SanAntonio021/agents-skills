@@ -29,8 +29,9 @@
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
     Skill 不进入自动更新，继续按第 14 条处理。
 12. 当前任务立即调用
-    `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，传入精确 Skill
-    名称和 `ExpectedRemoteCommit`。该 helper 只通过 UI Automation 进入 Skills 页、执行一次“检查更新”并
+    `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，两个必填参数是
+    `-Skills`（Skill 名称数组，不是 `-SkillNames`）和 `-ExpectedRemoteCommit`（40 位 SHA），例如
+    `-Skills @("skill-a","skill-b") -ExpectedRemoteCommit "<40位SHA>"`。该 helper 只通过 UI Automation 进入 Skills 页、执行一次“检查更新”并
     逐个过滤后点击单项“更新”；禁止“全部更新”，每个目标最多点击一次。不建 watcher 或计划任务，不修改
     CC Switch 源码、EXE、数据库、配置或运行时目录。CC Switch 未运行时由 helper 启动；优先后台操作，必要时
     可短暂前台并在结束时恢复原窗口。

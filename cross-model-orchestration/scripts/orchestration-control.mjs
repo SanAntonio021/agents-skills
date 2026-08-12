@@ -264,6 +264,111 @@ function isAncestorOf(ancestor, target) {
 }
 
 // ---------------------------------------------------------------------------
+// D3 交接信封校验器
+// ---------------------------------------------------------------------------
+
+/**
+ * 从 prompt 中提取第一个 ```json … ``` 块并运行 D3 发前六项自检。
+ *
+ * 返回 { ok: true, envelope } 或 { ok: false, reason }。
+ * prompt 中没有 json fence 时视为不含信封，直接返回 { ok: true, envelope: null }。
+ */
+export function validateEnvelope(prompt) {
+  // 提取第一个 ```json ... ``` 块
+  const fenceMatch = /```json\s*([\s\S]*?)```/m.exec(prompt);
+  if (!fenceMatch) {
+    return { ok: true, envelope: null }; // 无信封，允许通过
+  }
+
+  let envelope;
+  try {
+    envelope = JSON.parse(fenceMatch[1]);
+  } catch (e) {
+    return { ok: false, reason: `交接信封 JSON 解析失败: ${e.message}` };
+  }
+
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+    return { ok: false, reason: "交接信封必须是 JSON 对象" };
+  }
+
+  // 检查 1: 顶层字段无缺失
+  const requiredKeys = ["round", "planPath", "planBytes", "planSha256",
+    "priorRounds", "priorFindings", "openItems", "constraints"];
+  for (const key of requiredKeys) {
+    if (!(key in envelope)) {
+      return { ok: false, reason: `交接信封缺少字段: ${key}` };
+    }
+  }
+
+  // 检查 2: 无空字段（openItems/priorRounds/priorFindings 允许空数组，但键必须存在且为数组）
+  for (const key of ["openItems", "priorRounds", "priorFindings"]) {
+    if (!Array.isArray(envelope[key])) {
+      return { ok: false, reason: `${key} 必须是数组（允许空数组 []）` };
+    }
+  }
+  for (const key of ["round", "planPath", "planBytes", "planSha256", "constraints"]) {
+    if (envelope[key] == null || envelope[key] === "") {
+      return { ok: false, reason: `字段 ${key} 不可为空/null` };
+    }
+  }
+
+  // 检查 3: 类型合 schema
+  if (typeof envelope.planSha256 !== "string" || !/^[0-9a-f]{64}$/.test(envelope.planSha256)) {
+    return { ok: false, reason: "planSha256 必须是 64 位小写十六进制字符串" };
+  }
+  for (const r of envelope.priorRounds) {
+    if (r.completedAt != null && !Number.isFinite(Date.parse(r.completedAt))) {
+      return { ok: false, reason: `priorRounds[].completedAt 无法被 Date.parse 接受: ${r.completedAt}` };
+    }
+  }
+
+  // 检查 4: priorRounds[].round 无重复且连续（1,2,3,...）
+  if (envelope.priorRounds.length > 0) {
+    const rounds = envelope.priorRounds.map((r) => r.round);
+    const uniqueRounds = new Set(rounds);
+    if (uniqueRounds.size !== rounds.length) {
+      return { ok: false, reason: "priorRounds[].round 有重复值" };
+    }
+    const sorted = [...rounds].sort((a, b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      if (sorted[i] !== i + 1) {
+        return { ok: false, reason: `priorRounds[].round 不连续，期望 ${i + 1}，实际 ${sorted[i]}` };
+      }
+    }
+  }
+
+  // 检查 5: priorFindings 去重后数量 == sum(priorRounds[].findingCount)
+  const expected = envelope.priorRounds.reduce((s, r) => s + (r.findingCount ?? 0), 0);
+  const deduped = new Set(envelope.priorFindings.map((f) => `${f.round}:${f.index}`));
+  if (deduped.size !== expected) {
+    return {
+      ok: false,
+      reason: `priorFindings 去重后数量 ${deduped.size} 与 expected ${expected} 不符`
+    };
+  }
+
+  // 检查 6: (round,index) 唯一且每轮 index 覆盖 1..findingCount 无空缺
+  const findingsByRound = {};
+  for (const f of envelope.priorFindings) {
+    const key = `${f.round}:${f.index}`;
+    if (findingsByRound[key]) {
+      return { ok: false, reason: `priorFindings (round=${f.round}, index=${f.index}) 重复` };
+    }
+    findingsByRound[key] = true;
+  }
+  for (const r of envelope.priorRounds) {
+    const count = r.findingCount ?? 0;
+    for (let i = 1; i <= count; i++) {
+      if (!findingsByRound[`${r.round}:${i}`]) {
+        return { ok: false, reason: `priorFindings round=${r.round} 缺少 index=${i}` };
+      }
+    }
+  }
+
+  return { ok: true, envelope };
+}
+
+// ---------------------------------------------------------------------------
 // Sub-command: launch
 // ---------------------------------------------------------------------------
 
@@ -315,6 +420,22 @@ export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, mode
     } finally {
       releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
     }
+  }
+
+  // Step 5: 发前自检（如果 prompt 含交接信封则必须全部通过）
+  const precheck = validateEnvelope(prompt);
+  if (!precheck.ok) {
+    // Clean up claim
+    try {
+      const m = acquireRegistryMutex(orchDir);
+      try {
+        const claims = loadClaims(orchDir);
+        saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
+      } finally {
+        releaseRegistryMutex(orchDir, m.ownerToken, m.ino, m.dev);
+      }
+    } catch { /* ignore cleanup errors */ }
+    throw new Error(`发前六项自检失败，已停止发包: ${precheck.reason}`);
   }
 
   // Step 5: launch (no lock held)
@@ -513,14 +634,15 @@ export function cmdActive() {
 // ---------------------------------------------------------------------------
 
 /**
- * Verify that a launched job received the intended prompt unchanged.
+ * Verify that a launched job received the intended prompt unchanged,
+ * and re-run the six-item envelope pre-flight on the recorded prompt.
  *
- * Reads request.prompt from the job JSON via companion result, hashes it,
- * and compares against --expect-sha256 and --expect-bytes.
- *
- * On mismatch, signals the caller to cancel and abort.
+ * D3 拒绝情形（不可绕过）：
+ *  1. 字节数或 SHA-256 不匹配 → 实际执行 cancel + 释放 claim + 抛错
+ *  2. request.prompt 缺失或为空 → cancel + 释放 claim + 抛错
+ *  3. 信封读回后重跑六项自检失败 → cancel + 释放 claim + 抛错
  */
-export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expectBytes }) {
+export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expectBytes, ownerToken }) {
   const args = ["status", jobId, "--json", "--cwd", cwd];
   const r = runCompanion(companionPath, args, cwd);
   if (r.error || r.status !== 0) throw new Error(`status failed: ${r.stderr || r.stdout}`);
@@ -528,21 +650,53 @@ export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expe
   const payload = JSON.parse(r.stdout);
   const job = payload.job;
   const prompt = job?.request?.prompt ?? null;
+
+  // 执行取消 + 释放 claim 的内部帮助函数
+  function cancelAndRelease(reason) {
+    // 实际执行 cancel
+    try {
+      runCompanion(companionPath, ["cancel", jobId, "--cwd", cwd], cwd);
+    } catch { /* ignore cancel errors */ }
+    // 释放 claim
+    if (ownerToken) {
+      try {
+        const orchDir = resolveOrchestrationDir();
+        const mutex = acquireRegistryMutex(orchDir);
+        try {
+          const claims = loadClaims(orchDir);
+          saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
+        } finally {
+          releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
+        }
+      } catch { /* ignore cleanup errors */ }
+    }
+    throw new Error(reason);
+  }
+
+  // 拒绝情形 2: request.prompt 缺失
   if (!prompt) {
-    return { ok: false, reason: "request.prompt is absent or empty — cannot verify what Codex received", cancel: true };
+    cancelAndRelease("request.prompt 缺失或为空 — 无法证明 Codex 收到了什么，已取消并停止");
   }
 
   const actualBytes = Buffer.byteLength(prompt, "utf8");
   const actualSha256 = createHash("sha256").update(prompt, "utf8").digest("hex");
 
+  // 拒绝情形 1: 字节数不匹配
   if (expectBytes != null && actualBytes !== Number(expectBytes)) {
-    return { ok: false, reason: `byte count mismatch: expected ${expectBytes}, got ${actualBytes}`, cancel: true };
+    cancelAndRelease(`字节数不匹配（期望 ${expectBytes}，实际 ${actualBytes}）— 传输层可能改写了 prompt，已取消并停止`);
   }
+  // 拒绝情形 1: SHA-256 不匹配
   if (expectSha256 && actualSha256 !== expectSha256.toLowerCase()) {
-    return { ok: false, reason: `SHA-256 mismatch: expected ${expectSha256}, got ${actualSha256}`, cancel: true };
+    cancelAndRelease(`SHA-256 不匹配 — 传输层可能改写了 prompt，已取消并停止`);
   }
 
-  return { ok: true, actualBytes, actualSha256 };
+  // 拒绝情形 3: 读回后重跑六项自检
+  const recheck = validateEnvelope(prompt);
+  if (!recheck.ok) {
+    cancelAndRelease(`读回后重跑六项自检失败: ${recheck.reason} — 自检有 bug，请先修 helper`);
+  }
+
+  return { ok: true, actualBytes, actualSha256, envelope: recheck.envelope };
 }
 
 // ---------------------------------------------------------------------------

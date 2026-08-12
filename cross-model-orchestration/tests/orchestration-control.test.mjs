@@ -24,7 +24,8 @@ import {
   cmdCandidate,
   cmdVerifyRequest,
   cmdRecoverLock,
-  releaseClaim
+  releaseClaim,
+  validateEnvelope
 } from "../scripts/orchestration-control.mjs";
 
 // ---------------------------------------------------------------------------
@@ -400,4 +401,119 @@ test("stale lock within grace period prevents takeover (injected clock)", () => 
   } finally {
     restore();
   }
+});
+
+// ---------------------------------------------------------------------------
+// D3 validateEnvelope tests
+// ---------------------------------------------------------------------------
+
+function makeValidEnvelope() {
+  return {
+    round: 1,
+    planPath: "C:\\plans\\task0.md",
+    planBytes: 1234,
+    planSha256: "a".repeat(64),
+    priorRounds: [],
+    priorFindings: [],
+    openItems: [],
+    constraints: { readOnly: false, verdictEnum: ["pass", "fail"], noWrite: false }
+  };
+}
+
+function wrapInFence(obj) {
+  return `Some preamble\n\`\`\`json\n${JSON.stringify(obj, null, 2)}\n\`\`\`\nSome postamble`;
+}
+
+test("validateEnvelope: prompt without json fence passes (no envelope)", () => {
+  const result = validateEnvelope("This is a prompt without any json fence block.");
+  assert.equal(result.ok, true);
+  assert.equal(result.envelope, null);
+});
+
+test("validateEnvelope: valid envelope with empty arrays passes", () => {
+  const env = makeValidEnvelope();
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, true);
+  assert.ok(result.envelope !== null);
+});
+
+test("validateEnvelope: missing required field fails", () => {
+  const env = makeValidEnvelope();
+  delete env.planSha256;
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /planSha256/);
+});
+
+test("validateEnvelope: null field fails", () => {
+  const env = makeValidEnvelope();
+  env.planPath = null;
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /planPath/);
+});
+
+test("validateEnvelope: priorFindings count mismatch fails", () => {
+  const env = makeValidEnvelope();
+  env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
+  env.priorFindings = [{ round: 1, index: 1, summary: "only one" }]; // expected 2
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /数量/);
+});
+
+test("validateEnvelope: non-consecutive round numbers fail", () => {
+  const env = makeValidEnvelope();
+  env.priorRounds = [
+    { round: 1, jobId: "j1", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" },
+    { round: 3, jobId: "j3", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" }  // gap
+  ];
+  env.priorFindings = [];
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /连续/);
+});
+
+test("validateEnvelope: duplicate round numbers fail", () => {
+  const env = makeValidEnvelope();
+  env.priorRounds = [
+    { round: 1, jobId: "j1", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" },
+    { round: 1, jobId: "j1b", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" }
+  ];
+  env.priorFindings = [];
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /重复/);
+});
+
+test("validateEnvelope: planSha256 must be 64 lowercase hex chars", () => {
+  const env = makeValidEnvelope();
+  env.planSha256 = "AAAA"; // uppercase and wrong length
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /planSha256/);
+});
+
+test("validateEnvelope: priorFindings missing an index fails", () => {
+  const env = makeValidEnvelope();
+  env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
+  env.priorFindings = [
+    { round: 1, index: 1, summary: "finding 1" }
+    // missing index 2
+  ];
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  // 检查 5 会先报数量不符，检查 6 报 index 缺失 — 只要失败即可
+  assert.match(result.reason, /数量|index/);
+});
+
+test("validateEnvelope: complete valid envelope with findings passes", () => {
+  const env = makeValidEnvelope();
+  env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
+  env.priorFindings = [
+    { round: 1, index: 1, summary: "first" },
+    { round: 1, index: 2, summary: "second" }
+  ];
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, true);
 });

@@ -9,18 +9,20 @@ description: 处理以电子表格为主要输入或输出的全部任务，包�
 
 ## OfficeCLI route
 
-常规工作簿的只读检查、文本化查看、结构查询、校验和小批量结构编辑，优先经过本 skill 内的
+常规工作簿的只读检查、文本化查看、结构查询和小批量结构编辑，优先经过本 skill 内的
 OfficeCLI bridge；这样 Codex 和 Claude 使用同一套 CLI 接口和安全边界：
 
 ```powershell
 python <skill-root>\scripts\officecli_bridge.py view input.xlsx text
 python <skill-root>\scripts\officecli_bridge.py view input.xlsx stats
-python <skill-root>\scripts\officecli_bridge.py validate input.xlsx
+python <skill-root>\scripts\verify_xlsx.py input.xlsx --json-out baseline.json
 python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx batch --input commands.json
 ```
 
 桥接器会复制到新文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
-宏签名或打印版面验收。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
+宏签名或打印版面验收，也不作为 XLSX schema 校验器：OfficeCLI `1.0.143` 会把有效的
+`styles.xml` 字体颜色节点误报为 schema 错误，bridge 因此提前拒绝 XLSX `validate`，正式校验
+统一使用 `verify_xlsx.py`。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
 差异要求时，继续使用本技能的 `openpyxl`/OOXML 工具和 `libreoffice-runner` 重算路径。
 OfficeCLI 仅声明 DOCX/PPTX 的 native 截图渲染，不能把 Excel 截图当作其原生渲染能力。XLSX
 截图默认拒绝，HTML 截图仅能显式传入 `--render html --non-fidelity-preview` 作为诊断预览，不能

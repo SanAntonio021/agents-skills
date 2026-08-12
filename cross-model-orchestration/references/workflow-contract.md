@@ -2,23 +2,25 @@
 
 ## 调用串行约束
 
-计划复核、执行和返工各阶段最多发起一次前台 `codex:codex-rescue` Agent 调用。
-Agent 或 companion 未返回最终结果时，只等待原调用；不得再次运行 helper、核对 resume
-candidate、重发 Agent 或启动其他 Codex 工作链。认证、权限、sandbox、timeout、额度或
-runtime 失败直接输出 `CODEX_FAILURE_REPORT`，不重试。
+计划复核、执行和返工各阶段最多启动一次后台 Codex 任务（`--background --fresh --write`）。
+该任务返回终态前，只允许轮询 `status`；不得再次启动任务、重发 prompt 或启动其他
+Codex 工作链。认证、权限、sandbox、timeout、额度或 runtime 失败直接输出
+`CODEX_FAILURE_REPORT`，不重试。
+
+**无定向续接**：本 Skill 中 `--resume`/`--resume-last` 一律不使用，各阶段均 `--fresh`。
+正文来源是 job JSON 的 `rendered`（完整响应体），不以 `.log` 作为兜底。
 
 ## Shell 传输格式
 
-下面的提示词模板为了便于人读而使用多行格式。交给 `codex:codex-rescue` 后，subagent
-必须在唯一的 companion Bash 调用前将模板序列化成一个单行参数：
+后台任务提示词（用于复核、执行、返工）以单行字符串传入 companion：
 
-- 使用“字段名=值；”分隔各字段；
+- 使用”字段名=值；”分隔各字段；
 - 完整保留目标、范围、证据、计划、交付物、验收标准、安全边界和输出契约；
-- Bash `command` 字符串中不得出现字面 CR/LF；
-- Windows 的任务参数内部不使用 XML 结束标签或 `C:/` 绝对路径；优先写相对当前
-  Codex cwd 的路径，必须写绝对路径时使用反斜杠；
+- 字符串中不得出现字面 CR/LF；
+- Windows 任务参数内部不使用 XML 结束标签或 `C:/` 绝对路径；优先写相对 cwd 的路径，
+  必须写绝对路径时使用反斜杠；
 - 不用临时文件、here-doc、管道、重定向或命令替换；
-- 计划复核、执行和返工三次调用都遵守同一规则。
+- 三次调用（复核、执行、返工）遵守同一规则。
 
 单行示例：
 
@@ -28,14 +30,12 @@ runtime 失败直接输出 `CODEX_FAILURE_REPORT`，不重试。
 
 ## 计划复核提示词
 
-首次调用 `codex:codex-rescue` 时使用以下结构，并带 `--fresh --wait --write`。明确写出
+启动后台任务时使用以下结构（带 `--background --fresh --write`）。明确写出
 “只读复核，不修改文件，不执行计划”。
 
-`--write` 用于让同一 thread 的后续执行阶段保持 `workspace-write`，不是授权计划
-复核修改文件。Plugin 1.0.6 对仍在 broker 中的 thread 无法可靠从 `read-only`
-升级到 `workspace-write`，所以必须在创建 thread 时确定能力。Claude 应在调用前为
-复核范围内每个普通文件记录相对路径、字节数和 SHA256，排除 `.git` 内部元数据；
-Git 项目再额外记录 Git 状态。复核后逐项比较文件集合和内容快照，不能只看
+后台任务完成后通过 `result <jobId>` 取 `rendered` 字段作为复核输出。
+Claude 应在启动前为复核范围内每个普通文件记录相对路径、字节数和 SHA256，排除
+`.git` 内部元数据；Git 项目再额外记录 Git 状态。任务完成后逐项比较，不能只看
 `git status`。只有没有任何变化时才接受 `PLAN_REVIEW`。
 
 ```text
@@ -72,7 +72,7 @@ PLAN_REVIEW
 
 ## 执行提示词
 
-计划通过后使用同一 thread，带 `--resume --wait --write`：
+计划通过后，以 `--background --fresh --write` 启动新后台任务执行：
 
 ```text
 按已通过的最终计划执行任务。你可以在授权范围内读取和修改文件、运行命令、
@@ -89,7 +89,7 @@ PLAN_REVIEW
 
 ## 返工提示词
 
-返工继续同一 thread，带 `--resume --wait --write`：
+返工以 `--background --fresh --write` 启动新任务（无定向续接，见串行约束）：
 
 ```text
 Claude 验收未通过。请只修复以下问题，不扩大范围；修复后重新运行必要验证。

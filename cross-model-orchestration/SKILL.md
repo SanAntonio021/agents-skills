@@ -106,10 +106,9 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
    （2026-07-11 打通后失效的根因；2026-07-26 写入全部快照并验证渲染存活）。
 6. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
 7. 同一 Claude session 内一次协作流程只运行一条 Codex 工作链，不在同一 session 里
-   并行启动多个 Codex 任务。跨 session 并行不禁止：helper 按 sessionId 隔离候选，
-   缺 sessionId 直接拒绝（scripts/check-resume-candidate.mjs 83-85 行），并对记录的
-   thread ID 全等比对、不符退出 2（87-88 行），不会静默接错另一条链；跨 session 的
-   真实风险是并发写同一批文件，由"计划已授权的范围"约束控制。
+   并行启动多个 Codex 后台任务。跨 session 并行不禁止，但并发写同一批文件的风险
+   由"计划已授权的范围"约束控制。后台任务完成后 `result <jobId>` 精确读取，不依赖
+   线程续接。helper 对 job ID 做精确匹配；找不到或状态非 completed 时按失败处理。
 8. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
 9. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
 
@@ -130,90 +129,53 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 
 ### 2. Codex 复核计划
 
-使用 `Agent` 工具调用 `subagent_type: "codex:codex-rescue"`。整个 Agent 调用必须前台
-等待，并在请求中使用 `--fresh --wait --write`，让 companion 在该 Agent 内等待 Codex
-完成。每个阶段最多发起一次 Agent 调用；Agent 未返回时，只能等待原调用，禁止再次
-运行 helper、核对 resume candidate 或发起第二个 Agent。明确要求只读计划复核、禁止
-修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
-
-Plugin 1.0.6 不能把一个仍在 broker 中的只读 thread 在续接时可靠升级为
-`workspace-write`；即使后续传入 `--write`，实际 turn 仍可能保持只读。为兼顾同一
-thread 与后续执行，首次创建 thread 时就使用 `--write`。这只代表运行时具备写入
-能力，计划复核行为仍必须只读。Claude 在调用前为复核范围内每个普通文件记录相对
-路径、字节数和 SHA256；Git 项目还要记录 Git 状态，但不能用状态代替内容快照。
-内容快照排除 `.git` 内部元数据，Git 与非 Git 目录使用同一标准。复核返回后逐项
-比较文件集合和内容快照。无法建立完整快照时不启动复核；发现任何变化时停止，不接受
-该复核结果，也不由 Claude 回滚或继续执行。
-
-`--fresh`、`--resume` 和 `--wait` 是交给 subagent 的控制词。subagent 按官方
-runtime 处理并从实际 task 文本中移除，不强制把 `--wait` 写进 companion 命令。
-
-调用 Agent 前不要扫描 `.claude/skills` 父目录，也不要使用 Skill 加载消息给出的
-`Base directory for this skill`——那是展开后的绝对路径，含被改写的用户名段。
-helper 路径固定，只用 Bash 运行一条直接命令：
+启动一次后台 Codex 任务（`--background --fresh --write`）专门进行计划复核。Claude 先
+在主会话通过 Bash 运行 helper 取得 companion 路径：
 
 ```bash
-node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs" --companion-path
+node “$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs” --companion-path
 ```
 
-`$USERPROFILE` 由 shell 本地展开，必须原样写入命令，不得替换成展开后的绝对路径。
-Windows 用户目录名会在工具参数传输中被改写：写进参数的用户名段到达 node 进程时已
-变成另一个字符串，指向一个不存在的目录，因而任何含用户名的字面绝对路径都会报
-`MODULE_NOT_FOUND`（2026-08-10 实测，主会话与 subagent 两端一致；同一次调用内
-`os.homedir()` 返回真名而参数里的用户名段被改写，即判定性证据）。POSIX 宿主用
-`$HOME` 替换 `$USERPROFILE`，其余部分不变。不得改用 PowerShell，不得先读取
-`settings.json`，也不得把路径查询和 helper 调用拼成复合命令。helper 调用被权限
-拒绝时，直接按调用失败暂停。
-
-记录返回的 `companionHomeRelative`，它是相对用户主目录的路径，不含用户名，可以安全
-穿过工具参数传输层。同时返回的 `companionPath` 是展开后的绝对路径，只用于人工阅读
-和排错，**不得注入 Agent prompt**。Plugin 更新后路径会变化；若新路径不在用户级权限
-中，按调用失败暂停，先更新精确权限，不扩大成 `Bash(node:*)`。
-
-每次 Agent prompt 都要重申：subagent 只能进行一次直接的
-`node "$USERPROFILE/<Claude 注入的 companionHomeRelative>" task ...` 调用，其中
-`$USERPROFILE` 原样保留由 subagent 的 shell 展开，只有 `companionHomeRelative` 部分
-由 Claude 替换成实际值。除这一个 `$USERPROFILE` 外，实际命令里不得保留其他 `$`、
-`${CLAUDE_PLUGIN_ROOT}` 或环境变量引用。不得先运行
-`--help`，不得创建临时文件，不得使用管道、重定向、here-doc、命令替换、`cd` 或
-复合 shell 命令，也不得设置 `dangerouslyDisableSandbox`。该 Bash tool call 必须
-设置至少 `600000` ms 的 timeout，并保持前台等待，不得设置 `run_in_background`。
-把参考文件中的多行任务模板序列化成单行“字段名=值；”文本，完整保留所有字段；
-实际 Bash `command` 字符串不得含字面 CR/LF。Windows 的任务参数内部不得使用 XML
-结束标签或 `C:/` 绝对路径；优先使用相对当前 Codex cwd 的路径，必须写绝对路径时
-使用反斜杠。任务文本仍作为一个参数传入。如果无法在不丢信息的前提下安全序列化，
-则返回失败，不重试、不改用其他命令。
-
-如果 subagent 内的 `Bash(node:*)` 被权限规则拒绝，按 Codex 调用失败暂停。Claude
-不得在主会话直接运行 companion，也不得改用其他方式绕过 subagent。
-
-首次复核完成后，先核对复核前后的文件集合、字节数和 SHA256；Git 项目同时核对
-Git 状态。确认 Codex 没有修改文件，再运行：
+取得 `companionHomeRelative` 后，以如下形式启动后台任务（`$USERPROFILE` 由 shell 展开）：
 
 ```bash
-node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs"
+node “$USERPROFILE/<companionHomeRelative>” task --background --fresh --write --cwd “<共同祖先目录>” “<复核提示词（单行序列化）>”
 ```
 
-仍保持 `$USERPROFILE` 未展开，不改换命令形式。
+明确要求只读计划复核、禁止修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
 
-记录输出的 `candidateThreadId`。找不到候选 thread 时按 Codex 调用失败暂停。
-该候选只在同一个仍存活的 Claude session 内有效；session 结束后 Plugin 会清理
-session job，不能在新 session 中假定可续接。
+**等待与轮询**：后台任务启动后，Claude 主会话使用 `status <jobId>` 轮询，直到状态变为
+终态（`completed`/`failed`/`cancelled`）。`result <jobId>` 取 `rendered` 字段作为
+Codex 的复核输出；**任何情况下不以 `.log` 作为正文兜底**。
 
-任何 Codex turn 报告认证、权限、sandbox、timeout、额度或 runtime 失败时，立即
-输出 `CODEX_FAILURE_REPORT` 并暂停。不得先重试，不得把失败包装成计划问题，不得
-改用新 thread 或其他执行方式绕过，也不得让 Claude 接管。
+**快照约束**：Claude 在启动后台任务前为复核范围内每个普通文件记录相对路径、字节数和
+SHA256；Git 项目还要记录 Git 状态。任务完成后逐项比较文件集合与内容快照。发现任何变化
+时停止，不接受该复核结果，也不由 Claude 回滚或继续执行。
+
+**一次一链**：同一 Claude session 内最多运行一条 Codex 工作链。后台任务返回结果前，禁止
+再次启动 helper、发起第二个后台任务或直接调用 companion。
+
+**辅助 helper**：`$USERPROFILE` 必须原样写入命令，由 shell 本地展开，不得替换成含用户名
+的绝对路径（2026-08-10 实测：路径在工具参数传输中被改写，导致 `MODULE_NOT_FOUND`）。
+POSIX 宿主用 `$HOME` 替换 `$USERPROFILE`，其余不变。
+
+Plugin 1.0.7+ 以 `--background` 模式启动，不再依赖同步前台等待。后台任务与索引写入均
+已解耦，不存在持锁死锁风险（Plugin 1.0.6 `--wait` 模式的限制已通过异步化消除）。
+
+任何 Codex 任务报告认证、权限、sandbox、timeout、额度或 runtime 失败时，立即输出
+`CODEX_FAILURE_REPORT` 并暂停。不得先重试，不得把失败包装成计划问题，不得改用新任务或
+其他执行方式绕过，也不得让 Claude 接管。
 
 - `通过`：进入执行；
-- `需修改`：Claude 只修订计划，先用同一条 helper 命令和记录的 thread ID 核对 resume
-  candidate，再用 `--resume --wait` 交给同一 Codex thread 复核；
+- `需修改`：Claude 只修订计划，以 `--fresh` 启动新后台任务进行第二轮复核（无法定向续接，
+  见前置检查第 7 条）；
 - `实质分歧`：停止执行，向用户提交分歧报告。
 
 如果同一异议重复出现且双方都没有新证据，不继续空转，按实质分歧处理。
 
 #### 2a. 独立复核变体（双盲，仅召回类审计）
 
-当任务本身是"查有没有遗漏/有无覆盖不足"的召回类审计（典型：对若干贡献点逐条做范围核
+当任务本身是”查有没有遗漏/有无覆盖不足”的召回类审计（典型：对若干贡献点逐条做范围核
 对），且用户明确要求双盲时，改用本变体：Claude 与 Codex 各自独立产出清单，互不见对方
 结论；只对两份清单的**差异项**做串行比对和取舍，不在各自的完整结论上逐条争论。调
 Codex 时，只给它任务定义本身，**剥离 Claude 自己的结论**，防止它的注意范围被
@@ -222,24 +184,14 @@ Claude 的清单框定（锚定）。召回类之外（精度类：某项结论�
 
 ### 3. Codex 执行
 
-每次续接前，运行下列检查，其中 `<thread-id>` 是首次记录值：
+计划通过后，以 `--background --fresh --write` 启动新后台任务执行。任务提示词包含最终
+计划、验收标准、允许修改的范围和高风险停止条件。Claude 主会话持续轮询 `status`，直到
+终态；`result <jobId>` 取 `rendered` 字段，不以 `.log` 作为正文兜底。
 
-```bash
-node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs" "<thread-id>"
-```
-
-helper 路径始终保持 `$USERPROFILE` 未展开，不重新扫描、不改写成绝对路径。
-
-只有 `ok: true` 才能调用同一 `codex:codex-rescue` subagent，使用
-`--resume --wait --write`。候选 ID 不同、候选缺失或检查失败时，按
-`CODEX_FAILURE_REPORT` 暂停，不猜测续接。
-
-任务指令包含最终计划、验收标准、允许修改的范围和高风险停止条件。
-
-整个 `Agent` 调用与 companion 都以前台方式完成该 Codex turn。每个执行或返工阶段
-最多发起一次 Agent 调用；没有拿到该调用的最终结果前，不得重复核对 candidate、重发
-Agent、另开 Codex thread 或启动另一条 Codex 工作链。等待期间不得创建 Cron、
-automation、提醒或定时任务。
+**无定向续接**：`--resume` / `--resume-last` 在本 Skill 中一律不使用，各阶段均 `--fresh`。
+证否依据：companion 的 `--resume` 只能绑定最近一个 session 内的 thread，跨轮次和跨
+session 不能可靠定向续接（`check-resume-candidate.mjs:87-88` 全等比对、不符退出 2）。
+正文来源是 job JSON 的 `rendered`（完整响应体），不依赖 thread 连续性。
 
 ### 4. Claude 验收
 
@@ -290,8 +242,8 @@ Codex 的完成声明都不能替代本轮真实结果。
 
 ### 5. 自动返工
 
-验收不通过时，列出具体文件、问题、证据和通过判据。先再次核对 resume candidate
-与记录的 thread ID 一致，再用 `--resume --wait --write` 退回同一 Codex thread。
+验收不通过时，列出具体文件、问题、证据和通过判据。以 `--background --fresh --write`
+启动新后台任务（无定向续接，各阶段均 `--fresh`），在提示词中包含返工说明和通过判据。
 返工后重新执行完整验收。
 
 循环持续到：

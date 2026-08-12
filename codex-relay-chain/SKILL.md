@@ -5,6 +5,7 @@ description: >
   中转站切换、aijws/CodeRelay/聪明 AI 这类 OpenAI 兼容接口、Codex 配置被切回去、
   API key 被旧值覆盖、127.0.0.1:8787/15721 本地代理、Responses SSE 兼容性验证、
   provider 地址误指本地端口形成回环、上游 502/503/524 归因、三层链路对照、
+  CC Switch provider 熔断、官网页面正常但 Codex 请求失败、健康探测与实际模型不一致、
   reasoning/encrypted_content/
   reasoning_tokens 丢失、用户要求改直连/跳过本地代理/停用监视链路且 base_url
   改了又被自动改回本地端口、只停用 CodexCont 但保留 CC Switch，或 Codex 更新后
@@ -24,6 +25,10 @@ description: >
 Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
 ```
 
+技能按最终服务对象“Codex 请求链路”命名，而不是按某个中间软件命名。CC Switch、CodexCont
+以及会改写这条链路的本地 Agent 配置都属于排查范围；通用 `AGENTS.md`、技能目录和其他 Agent
+规则维护仍由对应维护技能处理。
+
 重点不是泛讲代理原理，而是先确认当前模式，再检查对应链路：
 
 - `full`：Codex 是否固定打到 CodexCont，CodexCont 是否固定上游到 CC Switch。
@@ -40,6 +45,9 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - CC Switch/Cockpit 切 provider 后，Codex 配置被改成 `15721` 或远端 URL。
 - 上游返回 `Invalid API key`，但页面余额和 key 看起来正常。
 - 需要判断中转是否支持 Codex 需要的 Responses 流式字段。
+- CC Switch 页面显示 provider 熔断，但中转站官网、余额页或用量页看起来正常；需要区分
+  `provider + app_type` 的本地健康状态、手动可达性检查和真实 Responses API 请求。
+- 用户怀疑熔断探测使用了某个固定模型，或想把探测模型、故障阈值改成 Terra/其他模型。
 - 用户要求跳过本地链路、Codex 直连真实上游，且 `base_url` 手动改了又被自动改回本地端口。
 - 用户只想取消 CodexCont，但仍通过 CC Switch 切换中转站。
 - Codex 更新后，能力 watcher 因全局状态 JSON 的格式或 App 自管字段而反复写回。
@@ -258,6 +266,51 @@ TOML 解析器读取，不要假设列名，也不要用字符串拼接读取 AP
 - `%USERPROFILE%\.cc-switch\settings.json` 的 `currentProviderCodex`。
 - `providers.is_current`。
 - 两者都指向目标 provider，且目标 provider 的远端地址没有被 watcher 改成本地端口。
+
+#### 官网状态、健康探测和熔断状态不是同一件事
+
+CC Switch 的 provider 健康记录按 `provider_id + app_type` 保存。Codex 的 `codex` 记录、
+Claude 的 `claude` 记录和 Claude Desktop 的 `claude-desktop` 记录彼此独立；同一家中转站的
+官网、余额页或 Claude 页面正常，不能自动清除 Codex provider 的熔断。
+
+排查时把证据分成三层，避免把“网页能打开”当成“Codex 接口可用”：
+
+1. **官网/余额页**：只证明网页登录态、账户或余额页面能访问，不证明当前 API key、当前
+   `app_type` 或当前模型能完成 Responses 请求。
+2. **手动可达性检查**：`stream_check_logs` 可能只记录 `Reachable`，且 `model_used` 为空；
+   这只能说明地址或基础连接可达，不能证明具体 Codex 模型和 Responses SSE 兼容。
+3. **真实请求健康**：以 `proxy_request_logs` 和 `provider_health` 为准，对齐同一个
+   `provider_id + app_type`、实际 `request_model/model`、HTTP 状态、错误时间和熔断状态，再用
+   本技能“Responses SSE 验证”中的真实 `stream=true /v1/responses` 复核。不要为了诊断临时改写
+   自动故障转移或清空健康记录。
+
+`providers.settings_config` 保存的默认模型不一定等于失败请求实际使用的模型；旧任务上下文或
+请求级模型覆盖仍可能发送另一个模型。两者不一致时，以同一时段 `proxy_request_logs` 的
+`request_model/model` 解释该次失败，并把默认配置只作为差异线索。
+
+CC Switch 的熔断恢复通常是自动的：`HalfOpen`/半开状态表示等待下一次放行请求验证，
+不是一个可在技能里指定的固定“探测模型”。当前没有证据表明后台固定使用 Luna、Terra 或其他
+单一模型；半开尝试和后续健康记录应与实际放行请求的模型对齐。因此，不能通过把故障转移模型
+改成 Terra low 来改变熔断探测逻辑。若要判断“为什么熔断”，先读取实际日志，而不是猜探测模型。
+
+按错误类型解释熔断原因：
+
+- `404 model_not_found` 或响应明确写“模型不支持”：优先判为当前 provider/账号不支持该
+  `request_model` 的兼容性问题。它可以触发该 `provider + app_type` 的失败计数，但不等于整个
+  网站宕机；应换一个已验证模型做独立 SSE 检查，并保留原记录。
+- `429`：限流或额度策略候选；需要结合响应头、请求时间和 provider 日志判断。
+- `502/503/504/524`、连接错误或超时：真实 API、上游源站或中转服务故障候选；按本节日志和
+  “上游 502/503/524 的归因”做三层对照。
+- 页面显示 `Circuit Open`/熔断时，记录 `consecutive_failures`、`last_failure_at`、
+  `last_error`、`updated_at` 和 `circuit_failure_threshold`。2026-08-12 在本机 CC Switch 3.19.2
+  实时核到连续失败 4 次、半开成功 2 次、60 秒后进入半开；以后诊断仍以 `proxy_config` 当前值为准。
+  这些参数属于 CC Switch 的运行配置，本机 3.19.2 未发现独立的探测模型字段或界面入口。
+  除非用户明确要求改配置，不要直接写数据库。
+
+同一 provider 可能存在多条相同名称但不同 `provider_id` 的 Codex 记录。查询时必须使用日志
+里的实际 `provider_id`，不能只按页面显示名称合并；也不能把 `claude`/`claude-desktop`
+的正常记录拿来证明 `codex` 记录正常。若页面仍显示熔断但最近真实请求已经成功，先核对是否查看了
+错误的 `app_type`、旧的 provider ID 或旧时间段，再判断缓存/状态刷新问题。
 
 ### 5. 处理 key 被旧值覆盖
 

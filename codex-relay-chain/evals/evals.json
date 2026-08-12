@@ -102,6 +102,20 @@
         "用 wait_threads 验证新任务完成且没有认证错误",
         "重启 Codex Desktop 只在用户明确接受影响时考虑"
       ]
+    },
+    {
+      "id": 13,
+      "prompt": "CC Switch 里我的贾维斯显示 Codex 熔断，但我在中转站官网看到账号和网页都正常。是不是后台探测用了 Luna？能不能改成 Terra low？请查清楚该怎么判断。",
+      "expected_output": "应明确官网/余额页正常不等于 Codex 的 provider + app_type 健康；按 provider_id + app_type 读取 provider_health、proxy_request_logs 和 stream_check_logs，对齐实际 request_model/model、HTTP 状态、失败时间和熔断阈值。应说明没有证据表明存在固定 Luna/Terra 后台探测模型，HalfOpen 是自动恢复放行机制；不能通过改故障转移模型改变探测逻辑。应区分 404 model_not_found 与 429/502/503/504/524/超时，并建议用真实 stream=true /v1/responses 做模型级复核。",
+      "files": [],
+      "expectations": [
+        "区分官网/余额页、手动可达性检查和真实 Responses API 健康",
+        "按 provider_id + app_type 检查 provider_health，不能用同站点 Claude 或官网状态代替 Codex 记录",
+        "使用 proxy_request_logs 对齐实际 request_model/model、HTTP 状态、失败时间和熔断状态",
+        "说明没有固定 Luna/Terra 后台探测模型证据，HalfOpen 是自动恢复机制",
+        "区分 404 model_not_found 与 429/502/503/504/524/超时，并用真实 stream=true Responses SSE 复核",
+        "不建议直接改数据库或把 Terra low 当作可配置的探测模型"
+      ]
     }
   ]
 }

@@ -283,7 +283,7 @@ function isAncestorOf(ancestor, target) {
  */
 export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, model, effort }) {
   const orchDir = resolveOrchestrationDir();
-  const normTargets = (targetRoots || [cwd]).map(normaliseRoot);
+  const normTargets = (targetRoots && targetRoots.length > 0) ? targetRoots.map(normaliseRoot) : [normaliseRoot(cwd)];
   const startedAt = _now();
   const ownerToken = randomBytes(16).toString("hex");
 
@@ -394,12 +394,26 @@ export function cmdResult({ companionPath, cwd, jobId }) {
     throw new Error(`result failed (exit ${result.status}): ${result.stderr || result.stdout}`);
   }
   const payload = JSON.parse(result.stdout);
-  const storedJob = payload.storedJob ?? payload.job ?? {};
-  const rendered = storedJob.rendered ?? payload.job?.rendered ?? null;
+
+  // Strict structure validation per P1-9: require storedJob and job.status in terminal state.
+  if (!payload.storedJob || typeof payload.storedJob !== "object") {
+    throw new Error(`Job ${jobId}: storedJob is missing or invalid — cannot proceed.`);
+  }
+  const job = payload.job;
+  if (!job || typeof job !== "object") {
+    throw new Error(`Job ${jobId}: job metadata is missing — cannot proceed.`);
+  }
+  const status = job.status;
+  if (status !== "completed" && status !== "failed" && status !== "cancelled") {
+    throw new Error(`Job ${jobId} is not in a terminal state (status="${status}") — cannot use as authoritative response.`);
+  }
+
+  const storedJob = payload.storedJob;
+  const rendered = storedJob.rendered ?? null;
   if (!rendered) {
     throw new Error(`Job ${jobId} completed but rendered output is empty — cannot use as authoritative response.`);
   }
-  return { rendered, result: storedJob.result ?? null, job: payload.job };
+  return { rendered, result: storedJob.result ?? null, job };
 }
 
 // ---------------------------------------------------------------------------
@@ -431,7 +445,7 @@ export function cmdCandidate({ companionPath, cwd, jobId, ownerToken, targetRoot
   }
 
   // Check 2: all targetRoots are descendants of cwd
-  const normTargets = (targetRoots || []).map(normaliseRoot);
+  const normTargets = (targetRoots && targetRoots.length > 0) ? targetRoots.map(normaliseRoot) : [sessionCwd];
   for (const target of normTargets) {
     if (!isAncestorOf(sessionCwd, target)) {
       issues.push(`targetRoot "${target}" is not under cwd "${sessionCwd}"`);
@@ -455,6 +469,31 @@ export function cmdCandidate({ companionPath, cwd, jobId, ownerToken, targetRoot
   }
 
   return { ok: issues.length === 0, issues, job };
+}
+
+// ---------------------------------------------------------------------------
+// Sub-command: release
+// ---------------------------------------------------------------------------
+
+/**
+ * Manually release a registered claim by ownerToken.
+ * Used when a job completes successfully and no longer needs the workspace lock.
+ */
+export function cmdRelease({ ownerToken }) {
+  if (!ownerToken) {
+    throw new Error("release requires --owner-token.");
+  }
+  const orchDir = resolveOrchestrationDir();
+  const mutex = acquireRegistryMutex(orchDir);
+  try {
+    const claims = loadClaims(orchDir);
+    const before = claims.length;
+    const after = claims.filter((c) => c.ownerToken !== ownerToken);
+    saveClaims(orchDir, after);
+    return { ok: true, removed: before - after.length };
+  } finally {
+    releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
+  }
 }
 
 // ---------------------------------------------------------------------------

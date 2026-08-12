@@ -41,6 +41,12 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 - 手工 PowerPoint 图不进入这套 Git 提交流程；PPTX 按正常保存和现有备份方式处理。
 - 最终 PDF/PNG 仍由本 skill 的投稿导出流程生成。
 
+## PPTX 原生图件与照片替换
+
+- 以 PPTX 内的高分辨率嵌入媒体替换照片时，必须先应用 PowerPoint 的裁剪元数据：读取并执行 `a:srcRect`，或等价的 `crop_left`、`crop_top`、`crop_right`、`crop_bottom`。
+- 不得把完整原始照片直接嵌入原先裁剪后的 PDF 照片框；这会改变作者已确认的构图。
+- 以作者导出的原生 PDF 作为视觉基线，只替换照片层，保留原生矢量文字、透明度和连接线。
+
 ## IEEE 默认基线
 
 默认按 IEEE 工程类论文图件处理：

@@ -216,6 +216,12 @@ def emit_result(result: subprocess.CompletedProcess[str], replacements: dict[str
 
 
 def run_read(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> int:
+    if verb == "validate" and file_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx"}:
+        raise BridgeError(
+            "OfficeCLI XLSX schema validation is disabled because it reports valid "
+            "workbook styles as schema errors; use the xlsx skill's "
+            "scripts/verify_xlsx.py instead"
+        )
     source_hash = sha256(file_path)
     with isolated_document(exe, file_path) as (_, isolated):
         result = run_process(office_command(exe, verb, isolated, args))

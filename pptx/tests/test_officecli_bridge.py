@@ -123,6 +123,15 @@ class OfficeCliBridgeTests(unittest.TestCase):
                     bridge.run_view(Path("officecli.exe"), source, ["pdf", "--out", str(Path(temp_dir) / "out.pdf")])
             run_process.assert_not_called()
 
+    def test_xlsx_validation_is_rejected_before_officecli_call(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.xlsx"
+            source.write_bytes(b"officecli-test")
+            with patch.object(bridge, "run_process") as run_process:
+                with self.assertRaisesRegex(bridge.BridgeError, "verify_xlsx.py"):
+                    bridge.run_read(Path("officecli.exe"), "validate", source, [])
+            run_process.assert_not_called()
+
     def test_auto_render_is_prohibited(self):
         with self.assertRaisesRegex(bridge.BridgeError, "auto is prohibited"):
             bridge.resolve_render_mode("screenshot", ["screenshot", "--render", "auto"])

@@ -8,6 +8,27 @@ description: "Use this skill whenever the user wants to create, read, edit, repa
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 Use `$docx` as the sole explicit Word skill entrypoint.
 
+## OfficeCLI route
+
+For ordinary Word inspection, text extraction, element queries, validation, and small structural
+edits, route through this skill's bridge so Codex and Claude use the same pinned OfficeCLI:
+
+```powershell
+python <skill-root>\scripts\officecli_bridge.py view input.docx text
+python <skill-root>\scripts\officecli_bridge.py query input.docx 'paragraph' --compact
+python <skill-root>\scripts\officecli_bridge.py validate input.docx
+python <skill-root>\scripts\officecli_bridge.py mutate input.docx draft.docx batch --input commands.json
+```
+
+The bridge creates a new `draft.docx` copy before mutation. Use `view ... screenshot --out <new.png>`
+for the normal file-level preview; it defaults to HTML rendering. Native Word rendering requires explicit current-task
+authorization, `--render native --allow-native`, no `WINWORD.EXE` process, and an isolated copy;
+the bridge never attaches to, quits, or terminates an existing Word process.
+
+Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,
+comments, style-identity preservation, template installation, equations, and other operations
+where package-level fidelity is the acceptance criterion. OfficeCLI does not replace those gates.
+
 | Task | Approach |
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |

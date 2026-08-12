@@ -7,6 +7,25 @@ description: 处理以电子表格为主要输入或输出的全部任务，包�
 
 这是完整的表格技能，不依赖另一个通用 xlsx skill。先判断任务属于常规路线还是高保真路线，再用最小风险工具完成并验证交付。
 
+## OfficeCLI route
+
+常规工作簿的只读检查、文本化查看、结构查询、校验和小批量结构编辑，优先经过本 skill 内的
+OfficeCLI bridge；这样 Codex 和 Claude 使用同一套 CLI 接口和安全边界：
+
+```powershell
+python <skill-root>\scripts\officecli_bridge.py view input.xlsx text
+python <skill-root>\scripts\officecli_bridge.py view input.xlsx stats
+python <skill-root>\scripts\officecli_bridge.py validate input.xlsx
+python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx batch --input commands.json
+```
+
+桥接器会复制到新文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
+宏签名或打印版面验收。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
+差异要求时，继续使用本技能的 `openpyxl`/OOXML 工具和 `libreoffice-runner` 重算路径。
+如果需要 Excel 原生渲染，必须在用户明确授权、没有 `EXCEL.EXE` 进程且使用隔离副本时，
+通过 bridge 显式传入 `--render native --allow-native`；桥接器不会关闭或终止 Excel。普通截图
+和 PDF 预览不传 `--render` 时自动使用 HTML 渲染。
+
 ## 先读
 
 1. 读取项目和上级规则，确认输入、输出、覆盖限制、允许变化和 Office 边界。

@@ -1,0 +1,370 @@
+#!/usr/bin/env python3
+"""Safe local adapter for the pinned OfficeCLI binary.
+
+This file is kept byte-identical in pptx, docx, xlsx, and pdf so their runtime
+packages remain self-contained after a targeted CC Switch synchronization.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Iterable, Sequence
+
+
+DEFAULT_EXE = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.143\officecli.exe")
+OFFICE_PROCESSES = {
+    ".pptx": "POWERPNT.EXE",
+    ".potx": "POWERPNT.EXE",
+    ".docx": "WINWORD.EXE",
+    ".dotx": "WINWORD.EXE",
+    ".dotm": "WINWORD.EXE",
+    ".xlsx": "EXCEL.EXE",
+    ".xlsm": "EXCEL.EXE",
+    ".xltx": "EXCEL.EXE",
+}
+VIEW_MODES = {
+    "text",
+    "annotated",
+    "outline",
+    "stats",
+    "issues",
+    "html",
+    "svg",
+    "screenshot",
+    "pdf",
+    "forms",
+}
+
+
+class BridgeError(RuntimeError):
+    """A user-actionable bridge or safety failure."""
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest().upper()
+
+
+def resolve_exe() -> Path:
+    candidate = Path(os.environ.get("OFFICECLI_EXE", str(DEFAULT_EXE)))
+    if not candidate.is_file():
+        raise BridgeError(f"OfficeCLI binary not found: {candidate}")
+    return candidate
+
+
+def run_process(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            list(command),
+            check=False,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise BridgeError(f"Could not start OfficeCLI: {exc}") from exc
+
+
+def close_isolated_document(exe: Path, file_path: Path, *, required: bool = False) -> None:
+    """Release only the OfficeCLI resident bound to this temporary file."""
+    result = run_process([str(exe), "close", str(file_path)])
+    if required and result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip() or "unknown OfficeCLI close failure"
+        raise BridgeError(f"Could not flush isolated OfficeCLI document: {message}")
+
+
+def cleanup_workspace(path: Path) -> None:
+    """OfficeCLI may release a resident handle just after close returns on Windows."""
+    for attempt in range(20):
+        try:
+            shutil.rmtree(path)
+            return
+        except PermissionError:
+            if attempt == 19:
+                return
+            time.sleep(0.1)
+
+
+@contextmanager
+def isolated_document(exe: Path, source: Path, isolated_name: str | None = None):
+    workspace = Path(tempfile.mkdtemp(prefix="officecli-bridge-"))
+    isolated = workspace / (isolated_name or source.name)
+    shutil.copy2(source, isolated)
+    try:
+        yield workspace, isolated
+    finally:
+        close_isolated_document(exe, isolated)
+        cleanup_workspace(workspace)
+
+
+def process_exists(image_name: str) -> bool:
+    result = run_process(
+        ["tasklist", "/FI", f"IMAGENAME eq {image_name}", "/FO", "CSV", "/NH"]
+    )
+    if result.returncode != 0:
+        raise BridgeError(f"Could not inspect Office processes: {result.stderr.strip()}")
+    return any(image_name.lower() in line.lower() for line in result.stdout.splitlines())
+
+
+def relevant_process(path: Path) -> str | None:
+    return OFFICE_PROCESSES.get(path.suffix.lower())
+
+
+def require_file(path_text: str) -> Path:
+    path = Path(path_text).expanduser().resolve()
+    if not path.is_file():
+        raise BridgeError(f"Input file not found: {path}")
+    return path
+
+
+def find_option(args: Sequence[str], name: str) -> str | None:
+    for index, value in enumerate(args):
+        if value == name and index + 1 < len(args):
+            return args[index + 1]
+        if value.startswith(name + "="):
+            return value.split("=", 1)[1]
+    return None
+
+
+def normalize_short_output_option(args: Iterable[str]) -> list[str]:
+    return ["--out" if value == "-o" else value for value in args]
+
+
+def remove_flag(args: Iterable[str], flag: str) -> list[str]:
+    return [value for value in args if value != flag]
+
+
+def remove_value_option(args: Iterable[str], name: str) -> list[str]:
+    values = list(args)
+    result: list[str] = []
+    index = 0
+    while index < len(values):
+        value = values[index]
+        if value == name:
+            index += 2
+        elif value.startswith(name + "="):
+            index += 1
+        else:
+            result.append(value)
+            index += 1
+    return result
+
+
+def ensure_new_output(path_text: str) -> Path:
+    path = Path(path_text).expanduser().resolve()
+    if path.exists():
+        raise BridgeError(f"Refusing to overwrite existing output: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def office_command(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> list[str]:
+    return [str(exe), "--json", verb, str(file_path), *args]
+
+
+def emit_result(result: subprocess.CompletedProcess[str], replacements: dict[str, str] | None = None) -> int:
+    def display(text: str) -> str:
+        for old, new in (replacements or {}).items():
+            text = text.replace(old, new)
+            text = text.replace(json.dumps(old)[1:-1], json.dumps(new)[1:-1])
+        if replacements and text.strip().startswith(("{", "[")):
+            try:
+                payload = json.loads(text)
+
+                def replace_value(value):
+                    if isinstance(value, str):
+                        for old, new in replacements.items():
+                            value = value.replace(old, new)
+                        return value
+                    if isinstance(value, list):
+                        return [replace_value(item) for item in value]
+                    if isinstance(value, dict):
+                        return {key: replace_value(item) for key, item in value.items()}
+                    return value
+
+                return json.dumps(replace_value(payload), ensure_ascii=False, indent=2) + "\n"
+            except json.JSONDecodeError:
+                pass
+        return text
+
+    if result.stdout:
+        sys.stdout.write(display(result.stdout))
+    if result.stderr:
+        sys.stderr.write(display(result.stderr))
+    return result.returncode
+
+
+def run_read(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> int:
+    source_hash = sha256(file_path)
+    with isolated_document(exe, file_path) as (_, isolated):
+        result = run_process(office_command(exe, verb, isolated, args))
+        exit_code = emit_result(result)
+    if sha256(file_path) != source_hash:
+        raise BridgeError(f"Source changed during OfficeCLI {verb}: {file_path}")
+    return exit_code
+
+
+def resolve_render_mode(mode: str, args: Sequence[str]) -> tuple[list[str], bool]:
+    clean_args = remove_flag(args, "--allow-native")
+    render = find_option(clean_args, "--render")
+    if render is not None and render.lower() == "auto":
+        raise BridgeError("--render auto is prohibited; choose html or explicitly authorized native")
+    if render is None and mode in {"screenshot", "pdf"}:
+        clean_args.extend(["--render", "html"])
+        render = "html"
+    is_native = render is not None and render.lower() == "native"
+    return clean_args, is_native
+
+
+def run_view(exe: Path, file_path: Path, args: Sequence[str]) -> int:
+    args = normalize_short_output_option(args)
+    mode = args[0] if args else "text"
+    if mode not in VIEW_MODES:
+        raise BridgeError(f"Unsupported OfficeCLI view mode: {mode}")
+
+    allow_native = "--allow-native" in args
+    clean_args, is_native = resolve_render_mode(mode, args)
+    output_text = find_option(clean_args, "--out")
+    if is_native and not allow_native:
+        raise BridgeError("Native or auto rendering requires --allow-native and current-task user authorization")
+    output = ensure_new_output(output_text) if output_text else None
+    if mode in {"screenshot", "pdf"} and output is None:
+        raise BridgeError(f"OfficeCLI view {mode} requires --out <new-output-path>")
+
+    process_name = relevant_process(file_path)
+    if is_native and process_name is None:
+        raise BridgeError(f"Native rendering is unsupported for this extension: {file_path.suffix}")
+    if is_native and process_name and process_exists(process_name):
+        raise BridgeError(
+            f"Refusing native rendering while {process_name} is running; close Office and obtain current-task authorization first"
+        )
+
+    source_hash = sha256(file_path)
+    with isolated_document(exe, file_path) as (temp_dir, isolated):
+        isolated_output = None
+        if output:
+            isolated_output = temp_dir / output.name
+            clean_args = remove_value_option(clean_args, "--out")
+            clean_args.extend(["--out", str(isolated_output)])
+        result = run_process(office_command(exe, "view", isolated, clean_args))
+        replacements = {str(isolated_output): str(output)} if output and isolated_output else None
+        exit_code = emit_result(result, replacements)
+        if exit_code != 0:
+            return exit_code
+        if sha256(file_path) != source_hash:
+            raise BridgeError(f"Source changed during OfficeCLI view: {file_path}")
+        if output and isolated_output:
+            if not isolated_output.is_file():
+                raise BridgeError(f"OfficeCLI did not produce requested output: {isolated_output}")
+            shutil.copy2(isolated_output, output)
+    return 0
+
+
+def run_get_with_save(exe: Path, file_path: Path, args: Sequence[str]) -> int:
+    output_text = find_option(args, "--save")
+    if output_text is None:
+        return run_read(exe, "get", file_path, args)
+    output = ensure_new_output(output_text)
+    source_hash = sha256(file_path)
+    with isolated_document(exe, file_path) as (temp_dir, isolated):
+        isolated_output = temp_dir / output.name
+        clean_args = remove_value_option(args, "--save")
+        clean_args.extend(["--save", str(isolated_output)])
+        result = run_process(office_command(exe, "get", isolated, clean_args))
+        exit_code = emit_result(result)
+        if exit_code != 0:
+            return exit_code
+        if sha256(file_path) != source_hash:
+            raise BridgeError(f"Source changed during OfficeCLI get: {file_path}")
+        if not isolated_output.is_file():
+            raise BridgeError(f"OfficeCLI did not produce requested output: {isolated_output}")
+        shutil.copy2(isolated_output, output)
+    return 0
+
+
+def run_mutation(exe: Path, source: Path, output_text: str, verb: str, args: Sequence[str]) -> int:
+    output = ensure_new_output(output_text)
+    if output.suffix.lower() != source.suffix.lower():
+        raise BridgeError(f"Mutation output extension must match source: {source.suffix}")
+    source_hash = sha256(source)
+    with isolated_document(exe, source, output.name) as (_, isolated):
+        result = run_process(office_command(exe, verb, isolated, args))
+        exit_code = emit_result(result)
+        if sha256(source) != source_hash:
+            raise BridgeError(f"Source changed during OfficeCLI mutation: {source}")
+        if exit_code != 0:
+            return exit_code
+        close_isolated_document(exe, isolated, required=True)
+        shutil.copy2(isolated, output)
+    if sha256(source) != source_hash:
+        raise BridgeError(f"Source changed during OfficeCLI mutation: {source}")
+    return 0
+
+
+def run_status(exe: Path) -> int:
+    result = run_process([str(exe), "--version"])
+    version = result.stdout.strip() or result.stderr.strip()
+    print(json.dumps({"officecli": str(exe), "version": version, "exists": exe.is_file()}, ensure_ascii=False))
+    return result.returncode
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Safe adapter for the local OfficeCLI binary")
+    subparsers = parser.add_subparsers(dest="operation", required=True)
+    subparsers.add_parser("status")
+    view = subparsers.add_parser("view")
+    view.add_argument("file")
+    view.add_argument("args", nargs=argparse.REMAINDER)
+    for name in ("query", "get", "validate"):
+        command = subparsers.add_parser(name)
+        command.add_argument("file")
+        command.add_argument("args", nargs=argparse.REMAINDER)
+    mutate = subparsers.add_parser("mutate")
+    mutate.add_argument("source")
+    mutate.add_argument("output")
+    mutate.add_argument("verb", choices=("set", "add", "remove", "move", "swap", "batch"))
+    mutate.add_argument("args", nargs=argparse.REMAINDER)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parsed = build_parser().parse_args(argv)
+    try:
+        exe = resolve_exe()
+        if parsed.operation == "status":
+            return run_status(exe)
+        if parsed.operation == "mutate":
+            return run_mutation(
+                exe,
+                require_file(parsed.source),
+                parsed.output,
+                parsed.verb,
+                parsed.args,
+            )
+        file_path = require_file(parsed.file)
+        if parsed.operation == "view":
+            return run_view(exe, file_path, parsed.args)
+        if parsed.operation == "get":
+            return run_get_with_save(exe, file_path, parsed.args)
+        return run_read(exe, parsed.operation, file_path, parsed.args)
+    except BridgeError as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

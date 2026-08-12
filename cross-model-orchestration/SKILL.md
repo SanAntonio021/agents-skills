@@ -74,10 +74,14 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
 1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
 2. 再次确认主会话是 Claude Code CLI。Claude Desktop（Cowork）会话的 Agent 工具
    不注册插件子代理，`codex:codex-rescue` 不可用（2026-07-26 实测报 Agent type
-   not found）。如果在启动任何 Plugin companion 或 Agent job 前发现宿主不兼容，
-   退出本 Skill，返回宿主的正常处理流程；这不是 Codex 调用失败，不输出
-   `CODEX_FAILURE_REPORT`。只有用户明确要求使用本 Skill 时，才说明需要改在
-   Claude Code CLI 会话运行并等待用户切换，不改用其他调用方式绕过。
+   not found）。核验发起会话 cwd 所在目录的 `.claude/settings.json`（本任务即
+   `D:\BaiduSyncdisk\.claude\settings.json`），确认 `enabledPlugins["codex@openai-codex"]`
+   为 `true`。判据锚定 cwd，不锚定 skill 源码所在项目。该键缺失或为 `false` 按宿主不兼容
+   处理：退出本 Skill、不输出 `CODEX_FAILURE_REPORT`（协作任务尚未启动），告知用户需在该
+   项目启用插件。如果在启动任何 Plugin companion 或 Agent job 前发现宿主不兼容，退出本
+   Skill，返回宿主的正常处理流程；这不是 Codex 调用失败，不输出 `CODEX_FAILURE_REPORT`。
+   只有用户明确要求使用本 Skill 时，才说明需要改在 Claude Code CLI 会话运行并等待用户
+   切换，不改用其他调用方式绕过。
 3. Windows 下确认 Codex 全局配置包含
    `[sandbox_workspace_write] exclude_slash_tmp = true`。保留用户 `TMPDIR`，不要把
    当前盘根目录下的 `C:\tmp` 或 `D:\tmp` 加入 workspace-write；否则 elevated
@@ -109,6 +113,10 @@ Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不
    并行启动多个 Codex 后台任务。跨 session 并行不禁止，但并发写同一批文件的风险
    由"计划已授权的范围"约束控制。后台任务完成后 `result <jobId>` 精确读取，不依赖
    线程续接。helper 对 job ID 做精确匹配；找不到或状态非 completed 时按失败处理。
+   **判活判据**：helper 依据 `<state-dir>/jobs/<jobId>.json` 的 `status` 字段判定活动
+   状态，不按 sessionId 隔离（同一 workspace 的所有 Claude session 共享状态池）。
+   `queued`/`running` 即活动，`completed`/`failed`/`cancelled` 即终态（已完成或已归档）。
+   未完成时 `.log` 可能仍在增长，禁止按字节不增作为收工信号。
 8. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
 9. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
 
@@ -159,7 +167,7 @@ SHA256；Git 项目还要记录 Git 状态。任务完成后逐项比较文件�
 的绝对路径（2026-08-10 实测：路径在工具参数传输中被改写，导致 `MODULE_NOT_FOUND`）。
 POSIX 宿主用 `$HOME` 替换 `$USERPROFILE`，其余不变。
 
-Plugin 1.0.7+ 以 `--background` 模式启动，不再依赖同步前台等待。后台任务与索引写入均
+Plugin 1.0.8 以 `--background` 模式启动，不再依赖同步前台等待。后台任务与索引写入均
 已解耦，不存在持锁死锁风险（Plugin 1.0.6 `--wait` 模式的限制已通过异步化消除）。
 
 任何 Codex 任务报告认证、权限、sandbox、timeout、额度或 runtime 失败时，立即输出

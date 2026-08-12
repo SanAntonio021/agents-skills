@@ -1,8 +1,10 @@
 import hashlib
 import importlib.util
+import io
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,10 +40,88 @@ class OfficeCliBridgeTests(unittest.TestCase):
             with self.assertRaisesRegex(bridge.BridgeError, "overwrite"):
                 bridge.ensure_new_output(str(output))
 
-    def test_screenshot_defaults_to_html_without_office_auto_mode(self):
-        clean_args, is_native = bridge.resolve_render_mode("screenshot", ["screenshot"])
-        self.assertEqual(clean_args, ["screenshot", "--render", "html"])
-        self.assertFalse(is_native)
+    def test_screenshot_requires_explicit_render_mode(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            source.write_bytes(b"officecli-test")
+            with patch.object(bridge, "run_process") as run_process:
+                with self.assertRaisesRegex(bridge.BridgeError, "explicit render mode"):
+                    bridge.run_view(Path("officecli.exe"), source, ["screenshot"])
+            run_process.assert_not_called()
+
+    def test_html_screenshot_requires_non_fidelity_preview_flag(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            source.write_bytes(b"officecli-test")
+            with patch.object(bridge, "run_process") as run_process:
+                with self.assertRaisesRegex(bridge.BridgeError, "non-fidelity preview"):
+                    bridge.run_view(
+                        Path("officecli.exe"),
+                        source,
+                        ["screenshot", "--render", "html"],
+                    )
+            run_process.assert_not_called()
+
+    def test_html_screenshot_is_explicit_diagnostic_preview(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            output = Path(temp_dir) / "render.png"
+            source.write_bytes(b"officecli-test")
+
+            def fake_run(command):
+                if command[1] == "close":
+                    return subprocess.CompletedProcess(command, 0, "", "")
+                output_index = command.index("--out") + 1
+                Path(command[output_index]).write_bytes(b"non-fidelity-preview")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            stderr = io.StringIO()
+            with patch.object(bridge, "run_process", side_effect=fake_run) as run_process:
+                with redirect_stderr(stderr):
+                    self.assertEqual(
+                        bridge.run_view(
+                            Path("officecli.exe"),
+                            source,
+                            [
+                                "screenshot",
+                                "--render",
+                                "html",
+                                "--non-fidelity-preview",
+                                "--out",
+                                str(output),
+                            ],
+                        ),
+                        0,
+                    )
+
+            self.assertEqual(output.read_bytes(), b"non-fidelity-preview")
+            self.assertIn("non-fidelity diagnostic preview", stderr.getvalue())
+            view_command = next(
+                call.args[0] for call in run_process.call_args_list if call.args[0][2] == "view"
+            )
+            self.assertIn("--render", view_command)
+            self.assertIn("html", view_command)
+            self.assertNotIn("--non-fidelity-preview", view_command)
+
+    def test_html_and_svg_require_non_fidelity_preview_flag(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            source.write_bytes(b"officecli-test")
+            for mode in ("html", "svg"):
+                with self.subTest(mode=mode):
+                    with patch.object(bridge, "run_process") as run_process:
+                        with self.assertRaisesRegex(bridge.BridgeError, "non-fidelity preview"):
+                            bridge.run_view(Path("officecli.exe"), source, [mode])
+                    run_process.assert_not_called()
+
+    def test_pdf_export_is_rejected_before_officecli_call(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            source.write_bytes(b"officecli-test")
+            with patch.object(bridge, "run_process") as run_process:
+                with self.assertRaisesRegex(bridge.BridgeError, "exporter plugin"):
+                    bridge.run_view(Path("officecli.exe"), source, ["pdf", "--out", str(Path(temp_dir) / "out.pdf")])
+            run_process.assert_not_called()
 
     def test_auto_render_is_prohibited(self):
         with self.assertRaisesRegex(bridge.BridgeError, "auto is prohibited"):
@@ -74,7 +154,8 @@ class OfficeCliBridgeTests(unittest.TestCase):
     def test_native_is_rejected_when_powerpoint_is_running(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / "sample.pptx"
-            output = Path(temp_dir) / "render.png"
+            output_parent = Path(temp_dir) / "native-output"
+            output = output_parent / "render.png"
             source.write_bytes(b"officecli-test")
             with patch.object(bridge, "process_exists", return_value=True):
                 with patch.object(bridge, "run_process") as run_process:
@@ -85,13 +166,32 @@ class OfficeCliBridgeTests(unittest.TestCase):
                             ["screenshot", "--render", "native", "--allow-native", "--out", str(output)],
                         )
             run_process.assert_not_called()
+            self.assertFalse(output_parent.exists())
+
+    def test_native_xlsx_render_is_rejected_before_officecli_call(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.xlsx"
+            output = Path(temp_dir) / "render.png"
+            source.write_bytes(b"officecli-test")
+            with patch.object(bridge, "run_process") as run_process:
+                with self.assertRaisesRegex(bridge.BridgeError, "unsupported for this extension"):
+                    bridge.run_view(
+                        Path("officecli.exe"),
+                        source,
+                        ["screenshot", "--render", "native", "--allow-native", "--out", str(output)],
+                    )
+            run_process.assert_not_called()
 
     def test_screenshot_requires_new_output_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / "sample.pptx"
             source.write_bytes(b"officecli-test")
             with self.assertRaisesRegex(bridge.BridgeError, "requires --out"):
-                bridge.run_view(Path("officecli.exe"), source, ["screenshot"])
+                bridge.run_view(
+                    Path("officecli.exe"),
+                    source,
+                    ["screenshot", "--render", "html", "--non-fidelity-preview"],
+                )
 
     def test_mutation_copies_source_to_new_output(self):
         with tempfile.TemporaryDirectory() as temp_dir:

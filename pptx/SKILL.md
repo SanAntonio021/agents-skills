@@ -1,6 +1,6 @@
 ---
 name: pptx
-description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. If a .pptx or .potx file needs to be opened, created, or touched, use this skill. For OfficeCLI-backed inspection, editing, or rendering, route through the shared local OfficeCLI bridge described below."
+description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. If a .pptx or .potx file needs to be opened, created, or touched, use this skill. For OfficeCLI-backed inspection or constrained editing, route through the shared local OfficeCLI bridge described below."
 ---
 
 # PPTX creation, editing, and analysis
@@ -20,10 +20,11 @@ python <skill-root>\scripts\officecli_bridge.py mutate input.pptx draft.pptx bat
 ```
 
 The bridge copies `input.pptx` to new `draft.pptx` before mutation and never overwrites an existing
-output. Use `view ... screenshot --out <new.png>` for the normal file-level render; it defaults to
-HTML rendering. Native PowerPoint rendering is exceptional: only call
-`--render native --allow-native` after the user authorizes this Office call, after confirming no
-`POWERPNT.EXE` is running, and on an isolated copy. The bridge never quits or terminates Office.
+output. It is not a fidelity renderer: screenshots require either explicitly authorized native
+PowerPoint rendering (`--render native --allow-native`, no `POWERPNT.EXE`, isolated copy) or
+`--render html --non-fidelity-preview` for diagnostics only. HTML/SVG previews must not be used for
+final images, layout PDF, print/page QA, or publication graphics. OfficeCLI PDF export is disabled
+because the pinned installation has no exporter plugin. The bridge never quits or terminates Office.
 
 Keep the existing OOXML/pptxgenjs paths for template-sensitive work, unsupported PowerPoint
 features, and any operation where preserving package parts is the acceptance criterion. OfficeCLI
@@ -247,15 +248,11 @@ Convert the slides to images (see [Converting to Images](#converting-to-images))
 
 Convert presentations to individual slide images for visual inspection:
 
-Prefer the bridge for a deterministic file-level screenshot or PDF export:
-
-```powershell
-python <skill-root>\scripts\officecli_bridge.py view output.pptx screenshot --page 1-N --out render.png
-```
-
-If the user explicitly authorizes a native PowerPoint render and the native safety gate passes, use
-`--render native --allow-native` on an isolated copy. Otherwise use the existing LibreOffice-runner
-adapter below as the compatibility fallback.
+Do not use OfficeCLI as a visual export path. Its HTML/SVG output is available only as an explicit
+non-fidelity diagnostic preview (`--render html --non-fidelity-preview` for screenshots) and cannot
+serve as final images or visual QA. If the user explicitly authorizes a native PowerPoint render and
+the native safety gate passes, use `--render native --allow-native` on an isolated copy. Otherwise
+use the existing LibreOffice-runner adapter below as the compatibility fallback.
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.pptx

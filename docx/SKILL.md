@@ -20,9 +20,11 @@ python <skill-root>\scripts\officecli_bridge.py validate input.docx
 python <skill-root>\scripts\officecli_bridge.py mutate input.docx draft.docx batch --input commands.json
 ```
 
-The bridge creates a new `draft.docx` copy before mutation. Use `view ... screenshot --out <new.png>`
-for the normal file-level preview; it defaults to HTML rendering. Native Word rendering requires explicit current-task
-authorization, `--render native --allow-native`, no `WINWORD.EXE` process, and an isolated copy;
+The bridge creates a new `draft.docx` copy before mutation. It is not a fidelity renderer:
+screenshots require either explicitly authorized native Word rendering (`--render native --allow-native`,
+no `WINWORD.EXE`, isolated copy) or `--render html --non-fidelity-preview` for diagnostics only.
+HTML/SVG previews must not be used for final images, layout PDF, print/page QA, or publication
+graphics. OfficeCLI PDF export is disabled because the pinned installation has no exporter plugin;
 the bridge never attaches to, quits, or terminates an existing Word process.
 
 Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,

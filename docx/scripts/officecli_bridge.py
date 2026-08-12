@@ -33,6 +33,7 @@ OFFICE_PROCESSES = {
     ".xltx": "EXCEL.EXE",
 }
 NATIVE_RENDER_EXTENSIONS = {".docx", ".pptx"}
+XLSX_EXTENSIONS = {".xlsx", ".xlsm", ".xltx"}
 VIEW_MODES = {
     "text",
     "annotated",
@@ -216,7 +217,7 @@ def emit_result(result: subprocess.CompletedProcess[str], replacements: dict[str
 
 
 def run_read(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> int:
-    if verb == "validate" and file_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx"}:
+    if verb == "validate" and file_path.suffix.lower() in XLSX_EXTENSIONS:
         raise BridgeError(
             "OfficeCLI XLSX schema validation is disabled because it reports valid "
             "workbook styles as schema errors; use the xlsx skill's "

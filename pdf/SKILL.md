@@ -7,6 +7,21 @@ description: Use this skill whenever the user wants to read, create, inspect, co
 
 本地维护的 PDF 处理技能，针对 Windows 环境做了适配。当前机器已安装 Poppler 24.08.0、隔离的 OCRmyPDF/PyMuPDF 环境和 Tesseract 中文/英文语言包。扫描检测、OCR 路由、全文提取和结果验证统一由 `scripts/ocr_pdf.ps1` 完成。
 
+## Office source route
+
+当输入实际是 `.pptx`、`.docx` 或 `.xlsx`，而目标是读取、结构检查、预览或导出 PDF，先经
+本 skill 内的 OfficeCLI bridge，再进入本技能的 PDF 文本、像素和页面验收：
+
+```powershell
+python <skill-root>\scripts\officecli_bridge.py view source.pptx text
+python <skill-root>\scripts\officecli_bridge.py view source.pptx pdf --out source.pdf
+```
+
+`source.pdf` 必须是新路径；桥接器会隔离输入副本并核对源文件 SHA-256。需要 Microsoft
+Office 原生结果时，只有在用户明确授权、对应 Office 进程不存在、使用隔离副本并显式传入
+`--render native --allow-native` 后才可尝试；桥接器不会关闭 Office。纯 PDF 仍按下面的
+Poppler、PyMuPDF、pypdf 和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器。
+
 ## Windows Toolchain
 
 本机 Poppler 程序位于 `%USERPROFILE%\poppler\poppler-24.08.0\Library\bin`，包括 `pdftoppm.exe`、`pdftocairo.exe`、`pdftotext.exe` 和 `pdfinfo.exe`。
@@ -40,7 +55,9 @@ if (-not (Test-Path -LiteralPath $pdfinfo)) {
 
 ### Office documents to PDF
 
-Windows 上所有 LibreOffice 无界面转换必须使用已安装的 `libreoffice-runner` skill。先读取该 skill 的 `SKILL.md` 和调用契约，再解析其 `scripts/libreoffice_run.py` 绝对路径：
+对于 Office 源文件，优先使用上面的 OfficeCLI bridge；当 OfficeCLI 不支持所需格式、需要
+LibreOffice 兼容性转换，或用户明确要求无界面兼容路径时，Windows 上所有 LibreOffice
+转换必须使用已安装的 `libreoffice-runner` skill。先读取该 skill 的 `SKILL.md` 和调用契约，再解析其 `scripts/libreoffice_run.py` 绝对路径：
 
 ```powershell
 & 'C:\Python313\python.exe' $libreOfficeRunner pdf $inputDocument $outputPdf `

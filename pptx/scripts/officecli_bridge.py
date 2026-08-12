@@ -32,6 +32,7 @@ OFFICE_PROCESSES = {
     ".xlsm": "EXCEL.EXE",
     ".xltx": "EXCEL.EXE",
 }
+NATIVE_RENDER_EXTENSIONS = {".docx", ".pptx"}
 VIEW_MODES = {
     "text",
     "annotated",
@@ -44,6 +45,7 @@ VIEW_MODES = {
     "pdf",
     "forms",
 }
+NON_FIDELITY_VISUAL_MODES = {"html", "svg"}
 
 
 class BridgeError(RuntimeError):
@@ -164,10 +166,15 @@ def remove_value_option(args: Iterable[str], name: str) -> list[str]:
     return result
 
 
-def ensure_new_output(path_text: str) -> Path:
+def resolve_new_output(path_text: str) -> Path:
     path = Path(path_text).expanduser().resolve()
     if path.exists():
         raise BridgeError(f"Refusing to overwrite existing output: {path}")
+    return path
+
+
+def ensure_new_output(path_text: str) -> Path:
+    path = resolve_new_output(path_text)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -218,16 +225,47 @@ def run_read(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> int:
     return exit_code
 
 
-def resolve_render_mode(mode: str, args: Sequence[str]) -> tuple[list[str], bool]:
+def resolve_render_mode(mode: str, args: Sequence[str]) -> tuple[list[str], bool, bool]:
     clean_args = remove_flag(args, "--allow-native")
+    non_fidelity_preview = "--non-fidelity-preview" in clean_args
+    clean_args = remove_flag(clean_args, "--non-fidelity-preview")
+    if mode == "pdf":
+        raise BridgeError(
+            "OfficeCLI PDF export is unavailable because no exporter plugin is installed; "
+            "use the relevant native Office or libreoffice-runner route instead"
+        )
     render = find_option(clean_args, "--render")
     if render is not None and render.lower() == "auto":
         raise BridgeError("--render auto is prohibited; choose html or explicitly authorized native")
-    if render is None and mode in {"screenshot", "pdf"}:
-        clean_args.extend(["--render", "html"])
-        render = "html"
-    is_native = render is not None and render.lower() == "native"
-    return clean_args, is_native
+    if mode in NON_FIDELITY_VISUAL_MODES:
+        if not non_fidelity_preview:
+            raise BridgeError(
+                f"OfficeCLI view {mode} is a non-fidelity preview; "
+                "pass --non-fidelity-preview to use it diagnostically"
+            )
+        return clean_args, False, True
+    if mode == "screenshot":
+        if render is None:
+            raise BridgeError(
+                "OfficeCLI screenshot requires an explicit render mode: use "
+                "--render native --allow-native after current-task authorization, or "
+                "--render html --non-fidelity-preview for diagnostics"
+            )
+        render = render.lower()
+        if render not in {"html", "native"}:
+            raise BridgeError(f"Unsupported OfficeCLI screenshot render mode: {render}")
+        is_native = render == "native"
+        if is_native and non_fidelity_preview:
+            raise BridgeError("--non-fidelity-preview only applies to HTML or SVG previews")
+        if not is_native and not non_fidelity_preview:
+            raise BridgeError(
+                "OfficeCLI HTML screenshot is a non-fidelity preview; "
+                "pass --non-fidelity-preview to use it diagnostically"
+            )
+        return clean_args, is_native, not is_native
+    if non_fidelity_preview:
+        raise BridgeError("--non-fidelity-preview only applies to HTML or SVG previews")
+    return clean_args, False, False
 
 
 def run_view(exe: Path, file_path: Path, args: Sequence[str]) -> int:
@@ -237,21 +275,29 @@ def run_view(exe: Path, file_path: Path, args: Sequence[str]) -> int:
         raise BridgeError(f"Unsupported OfficeCLI view mode: {mode}")
 
     allow_native = "--allow-native" in args
-    clean_args, is_native = resolve_render_mode(mode, args)
+    clean_args, is_native, non_fidelity_preview = resolve_render_mode(mode, args)
     output_text = find_option(clean_args, "--out")
     if is_native and not allow_native:
         raise BridgeError("Native or auto rendering requires --allow-native and current-task user authorization")
-    output = ensure_new_output(output_text) if output_text else None
-    if mode in {"screenshot", "pdf"} and output is None:
+    if mode in {"screenshot", "pdf"} and output_text is None:
         raise BridgeError(f"OfficeCLI view {mode} requires --out <new-output-path>")
 
     process_name = relevant_process(file_path)
-    if is_native and process_name is None:
-        raise BridgeError(f"Native rendering is unsupported for this extension: {file_path.suffix}")
+    if is_native and file_path.suffix.lower() not in NATIVE_RENDER_EXTENSIONS:
+        raise BridgeError(f"OfficeCLI native rendering is unsupported for this extension: {file_path.suffix}")
     if is_native and process_name and process_exists(process_name):
         raise BridgeError(
             f"Refusing native rendering while {process_name} is running; close Office and obtain current-task authorization first"
         )
+    output = resolve_new_output(output_text) if output_text else None
+    if non_fidelity_preview:
+        print(
+            "Warning: OfficeCLI HTML/SVG output is a non-fidelity diagnostic preview. "
+            "Do not use it for final images, layout PDF, print/page QA, or publication graphics.",
+            file=sys.stderr,
+        )
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
 
     source_hash = sha256(file_path)
     with isolated_document(exe, file_path) as (temp_dir, isolated):

@@ -9,18 +9,19 @@ description: Use this skill whenever the user wants to read, create, inspect, co
 
 ## Office source route
 
-当输入实际是 `.pptx`、`.docx` 或 `.xlsx`，而目标是读取、结构检查、预览或导出 PDF，先经
-本 skill 内的 OfficeCLI bridge，再进入本技能的 PDF 文本、像素和页面验收：
+当输入实际是 `.pptx`、`.docx` 或 `.xlsx`，且目标是读取、结构检查或受限新副本编辑时，先经
+本 skill 内的 OfficeCLI bridge：
 
 ```powershell
 python <skill-root>\scripts\officecli_bridge.py view source.pptx text
-python <skill-root>\scripts\officecli_bridge.py view source.pptx pdf --out source.pdf
+python <skill-root>\scripts\officecli_bridge.py validate source.pptx
 ```
 
-`source.pdf` 必须是新路径；桥接器会隔离输入副本并核对源文件 SHA-256。需要 Microsoft
-Office 原生结果时，只有在用户明确授权、对应 Office 进程不存在、使用隔离副本并显式传入
+桥接器会隔离输入副本并核对源文件 SHA-256。不要通过 OfficeCLI 导出 Office-to-PDF：固定的
+OfficeCLI `1.0.143` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。需要 Microsoft
+Office 原生视觉结果时，只有在用户明确授权、对应 Office 进程不存在、使用隔离副本并显式传入
 `--render native --allow-native` 后才可尝试；桥接器不会关闭 Office。纯 PDF 仍按下面的
-Poppler、PyMuPDF、pypdf 和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器。
+Poppler、PyMuPDF、pypdf 和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器或保真渲染器。
 
 ## Windows Toolchain
 
@@ -55,9 +56,9 @@ if (-not (Test-Path -LiteralPath $pdfinfo)) {
 
 ### Office documents to PDF
 
-对于 Office 源文件，优先使用上面的 OfficeCLI bridge；当 OfficeCLI 不支持所需格式、需要
-LibreOffice 兼容性转换，或用户明确要求无界面兼容路径时，Windows 上所有 LibreOffice
-转换必须使用已安装的 `libreoffice-runner` skill。先读取该 skill 的 `SKILL.md` 和调用契约，再解析其 `scripts/libreoffice_run.py` 绝对路径：
+对于 Office 源文件，不通过 OfficeCLI 导出 PDF。需要无界面兼容转换时，Windows 上所有
+LibreOffice 转换必须使用已安装的 `libreoffice-runner` skill。先读取该 skill 的 `SKILL.md`
+和调用契约，再解析其 `scripts/libreoffice_run.py` 绝对路径：
 
 ```powershell
 & 'C:\Python313\python.exe' $libreOfficeRunner pdf $inputDocument $outputPdf `

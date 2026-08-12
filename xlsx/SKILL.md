@@ -22,9 +22,12 @@ python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx bat
 桥接器会复制到新文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
 宏签名或打印版面验收。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
 差异要求时，继续使用本技能的 `openpyxl`/OOXML 工具和 `libreoffice-runner` 重算路径。
-如果需要 Excel 原生渲染，必须在用户明确授权、没有 `EXCEL.EXE` 进程且使用隔离副本时，
-通过 bridge 显式传入 `--render native --allow-native`；桥接器不会关闭或终止 Excel。普通截图
-和 PDF 预览不传 `--render` 时自动使用 HTML 渲染。
+OfficeCLI 仅声明 DOCX/PPTX 的 native 截图渲染，不能把 Excel 截图当作其原生渲染能力。XLSX
+截图默认拒绝，HTML 截图仅能显式传入 `--render html --non-fidelity-preview` 作为诊断预览，不能
+用于正式图像、PDF 版面、打印/分页验收或论文图。需要 Excel 原生视觉结果时，必须另获本次
+Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office 路径；OfficeCLI PDF 导出因
+未安装 exporter plugin 而禁用。Office 源文件转 PDF 使用本技能的 `libreoffice-runner` 路径，
+并按兼容性结果进行视觉验收。
 
 ## 先读
 

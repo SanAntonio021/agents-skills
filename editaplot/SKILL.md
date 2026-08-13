@@ -1,6 +1,6 @@
 ---
 name: editaplot
-description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; and automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64. Use for beginner “drop in a file and draw it” requests; XPS, XRD, XAS, PL/TRPL, DSC, NMR, FTIR/IR, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
+description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64; and prepare or review user-edited Origin OPJU files. Use for beginner “drop in a file and draw it” requests; “我用 Origin 改过图了”, “审阅 OPJU”, “重新导出 OPJU”, “prepare-opju-review”, or “review-opju” requests; XPS, XRD, XAS, PL/TRPL, DSC, NMR, FTIR/IR, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
 ---
 
 # EditaPlot
@@ -145,6 +145,35 @@ Before any render, read `references/origin-safety.md`, `references/figure-contra
 `references/data-contracts.md`, `references/chart-selection.md`, and
 `references/semantic-understanding.md`. When a reference image is supplied, also read
 `references/reference-figures.md`.
+
+## Collaborate on a user-edited OPJU
+
+Use this route when the user wants to make final Origin edits personally and then asks for a
+review. V1 covers data plots and already verified Origin templates; system diagrams and mechanism
+figures remain in PPT/SVG workflows.
+
+1. Run `editaplot.cmd prepare-opju-review <result.opju>`. This creates a new sibling
+   `<source_stem>_OriginReview` workspace (or an explicitly requested new directory) containing
+   `figure_initial.opju`, `figure_edit.opju`, and `review-workspace.json`. It only copies and never
+   replaces the source, an existing workspace, or either copy. Treat `figure_initial.opju` as the
+   immutable baseline and `figure_edit.opju` as the only file the user edits and saves in Origin.
+2. Ask the user to edit and save `figure_edit.opju` directly in Origin. Do not require `v2/v3`
+   copies. Do not run the review command until the user explicitly says the file is saved and ready
+   for review.
+3. After that confirmation, run
+   `editaplot.cmd review-opju <workspace>\figure_edit.opju`. The command creates a unique
+   `review/<timestamp>/` directory, copies `figure_edit.opju` to a snapshot, and checks SHA-256
+   before and after copying and after the isolated review. A changed, locked, or baseline-tampered
+   file stops with a structured error and never opens or overwrites the user file.
+4. The worker uses the fixed runtime's `OriginSession` with `new_isolated`, opens only the snapshot
+   using `readonly=True`, enumerates every Graph Page, and exports PNG/PDF/TIF below that review
+   directory. It must never attach to or save the user's Origin project; the session may initialize
+   its own empty EditaPlot-owned instance, and it closes only that instance.
+5. Return `review-report.json` and the export paths. The report records snapshot and baseline
+   integrity, Origin version and instance ownership, Graph Page/object inventory, and export hashes.
+   Export success means only “the snapshot can be read back and viewed”; inspect PNG/TIF for
+   scientific meaning and visual quality and keep `human_visual_qa.status=pending` until inspected.
+   V1 never writes changes back into the user's OPJU.
 
 ## Keep scientific decisions with the user
 

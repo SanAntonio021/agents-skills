@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from opju_review import prepare_opju_review, review_opju
+
 from editaplot_core import (
     EditaPlotError,
     build_medical_panel_plan,
@@ -168,6 +170,26 @@ def build_parser() -> argparse.ArgumentParser:
     smoke_parser.add_argument("--keep-origin-open", action="store_true")
     _engine_option(smoke_parser)
 
+    prepare_opju_parser = subparsers.add_parser(
+        "prepare-opju-review",
+        help="Create immutable and editable copies for a manual Origin OPJU edit",
+    )
+    prepare_opju_parser.add_argument("result_opju")
+    prepare_opju_parser.add_argument(
+        "--output-dir",
+        help="New review workspace; defaults to <source_stem>_OriginReview beside the source.",
+    )
+    prepare_opju_parser.add_argument("--output", help="Write the result JSON to a new file.")
+
+    review_opju_parser = subparsers.add_parser(
+        "review-opju",
+        help="Review a saved figure_edit.opju through an isolated read-only Origin snapshot",
+    )
+    review_opju_parser.add_argument("figure_edit_opju")
+    review_opju_parser.add_argument("--python", dest="python_executable")
+    review_opju_parser.add_argument("--output", help="Write the result JSON to a new file.")
+    _engine_option(review_opju_parser)
+
     verify_parser = subparsers.add_parser("verify", help="Check required Origin run artifacts")
     verify_parser.add_argument("output_directory")
     verify_parser.add_argument("--output")
@@ -186,6 +208,25 @@ def build_parser() -> argparse.ArgumentParser:
 def _emit(payload: dict[str, Any], output: str | None = None) -> None:
     if output:
         write_json(output, payload)
+    print(json.dumps(payload, ensure_ascii=False, indent=2), flush=True)
+
+
+def _emit_new_file(payload: dict[str, Any], output: str | None = None) -> None:
+    """Emit a new command result without replacing an existing JSON file."""
+
+    if output:
+        target = Path(output).expanduser().resolve()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with target.open("x", encoding="utf-8", newline="\n") as handle:
+                json.dump(payload, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
+        except FileExistsError as exc:
+            raise EditaPlotError(
+                "output_exists",
+                "Refusing to overwrite an existing JSON output file.",
+                output_path=str(target),
+            ) from exc
     print(json.dumps(payload, ensure_ascii=False, indent=2), flush=True)
 
 
@@ -526,6 +567,22 @@ def main(argv: list[str] | None = None) -> int:
             return _run_render(args)
         elif args.command == "origin-smoke":
             return _run_origin_smoke(args)
+        elif args.command == "prepare-opju-review":
+            _ensure_output_does_not_replace_input(args.result_opju, args.output)
+            _emit_new_file(
+                prepare_opju_review(args.result_opju, output_dir=args.output_dir),
+                args.output,
+            )
+        elif args.command == "review-opju":
+            _ensure_output_does_not_replace_input(args.figure_edit_opju, args.output)
+            _emit_new_file(
+                review_opju(
+                    args.figure_edit_opju,
+                    engine_home=args.engine_home,
+                    python_executable=args.python_executable,
+                ),
+                args.output,
+            )
         elif args.command == "verify":
             _ensure_verify_output_does_not_replace_artifact(args.output_directory, args.output)
             _emit(verify_output(args.output_directory), args.output)

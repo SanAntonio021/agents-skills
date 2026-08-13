@@ -1,4 +1,4 @@
 interface:
   display_name: "EditaPlot"
-  short_description: "丢入数据，自动选图并生成可编辑 Origin 科研图"
-  default_prompt: "请使用 $editaplot 检查环境并只读分析我提供的数据，推荐合适图形；先让我确认一句科学目的，低置信度时再追加必要问题。确认后冻结方案，直接通过本机 Origin Automation 绘制并验证可编辑科研图；连接失败时只报告技术错误。"
+  short_description: "生成、准备并审阅可编辑 Origin 科研图"
+  default_prompt: "请使用 $editaplot 检查环境并只读分析我提供的数据，推荐合适图形；先让我确认一句科学目的，低置信度时再追加必要问题。确认后冻结方案，直接通过本机 Origin Automation 绘制并验证可编辑科研图；如果我说‘我用 Origin 改过图了’或‘审阅 OPJU’，请创建或读取隔离的 figure_edit.opju 快照，导出 PNG/PDF/TIF 并报告结果；连接失败时只报告技术错误。"

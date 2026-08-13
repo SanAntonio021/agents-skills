@@ -69,6 +69,24 @@
   path before adding any automatic hard timeout.
 - Never use mouse or screen-coordinate automation.
 
+## OPJU collaboration review
+
+- `prepare-opju-review` is a filesystem-only copy operation. It creates a new workspace with
+  `figure_initial.opju` (immutable baseline), `figure_edit.opju` (the user's editable copy), and
+  `review-workspace.json`; it never overwrites a source or existing workspace.
+- Run `review-opju` only after the user explicitly reports that `figure_edit.opju` has been saved
+  and is ready for review. The command hashes the baseline and editable file, copies the editable
+  file into a timestamped review directory, and rejects changes observed during or after copying.
+- The review worker must use `OriginSession(connection_mode=NEW_ISOLATED)` and
+  `originpro.open(snapshot, readonly=True, asksave=False)`. It must never attach to or save the
+  user project. The session may initialize its own empty EditaPlot-owned instance; its only
+  review-side writes are new PNG/PDF/TIF export files below the isolated review directory.
+- A worker may close only the EditaPlot-owned instance it created. It must not attach to, save,
+  reset, hide, or close the user's Origin window. V1 never writes an edited OPJU back to the user.
+- An export is evidence that the snapshot was readable and viewable, not evidence that the figure's
+  science or visual quality is correct. Keep the report's human visual QA pending until PNG/TIF
+  inspection is complete.
+
 ## Version-sensitive rendering
 
 - Treat graph defaults as version-sensitive. Origin 2025b changed page geometry, margins, text

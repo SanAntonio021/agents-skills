@@ -81,6 +81,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\audit-claude-
 
 若 Python 3 不存在，脚本仍完成文件、注册表和端口检查，但把 CC Switch DB 检查标为 `UNAVAILABLE`，不能据此猜测模式。
 
+#### 自动故障转移专项审计
+
+Claude 审计不能只读取最终的 `currentProviderClaude`，也不能把“当前 provider 没变”当成“审计期间没有发生切换”。在记录其他审计基线后立即记下 `audit_started_at`（使用本机北京时间），并同时核对以下证据：
+
+1. `proxy_config.auto_failover_enabled`：报告当前开关；字段缺失时写 `未验证`。
+2. 当前 Claude provider 的 `providers.in_failover_queue`、`provider_health` 和 `proxy_request_logs`：只读出 provider ID、`app_type`、状态/错误类别、时间和模型等脱敏字段，不输出凭据或完整请求内容。表或列不存在时记录 `UNAVAILABLE`，不得用缺失当作“没有故障”。
+3. CC Switch 日志中的 `[FO-001]`：把它作为实际发生的 provider 切换证据，记录事件时间、脱敏的源/目标 provider 和结果。
+
+按 `audit_started_at` 将 `[FO-001]` 和请求日志分成“审计前历史”和“审计窗口新增”。即使 provider 后来切回原值，只要窗口内出现过 `[FO-001]`，仍必须报告实际发生过自动切换；最终 provider 只描述当前状态，不能覆盖事件证据。若只能确认配置开关、不能确认事件，分别写清“配置状态已证实、实际切换未证实”，不要推断。
+
 ### 2. 自动判断 CC Switch 模式
 
 以 CC Switch DB 当前 `app_type = 'claude-desktop'` provider 的结构化字段为准：

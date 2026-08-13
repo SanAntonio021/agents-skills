@@ -53,6 +53,19 @@
         "明确 1M 复选框、[1m] 后缀或模型列表可见不证明真实 1M，上游 context_window 或经批准的超过 200K token 边界测试才可确认",
         "全程只读脱敏，不切换 provider、不改配置、不发送可能计费的验证请求"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "我做 Claude 中转审计时，最后看到 currentProviderClaude 还是聪明AI，但日志里审计期间似乎出现过 [FO-001]，之后又切回来了。请只读判断有没有发生自动故障转移，不要发送请求、切换供应商或改配置。",
+      "expected_output": "不能只看最终 currentProviderClaude；应以审计开始时间为边界，同时核对 proxy_config.auto_failover_enabled、providers.in_failover_queue、provider_health、proxy_request_logs 和 CC Switch 日志中的 [FO-001]。要把审计前历史与窗口内事件分开，即使切回原 provider 也报告窗口内实际发生过的切换；字段或日志不可用时明确写未验证，不输出凭据或完整日志。",
+      "files": [],
+      "expectations": [
+        "明确说明最终 currentProviderClaude 不足以证明审计期间没有自动切换",
+        "同时检查 auto_failover_enabled、in_failover_queue、provider_health、proxy_request_logs 和 [FO-001] 实际日志事件",
+        "以审计开始时间区分审计前历史与审计窗口新增事件",
+        "即使 provider 已切回原值，也报告窗口内发生过的 [FO-001] 切换",
+        "全程只读、脱敏，不发送请求、不切换 provider、不修改配置；缺失证据标为未验证"
+      ]
     }
   ]
 }

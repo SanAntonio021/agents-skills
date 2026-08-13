@@ -61,6 +61,15 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 - 子图编号：IEEE 论文中通常用 `(a)`, `(b)`, `(c)`，并和正文、图注一致
 - JPEG 不作为论文图默认格式；作者照片例外
 
+### 小型数据图网格推荐基线
+
+对没有项目级网格规范的小型 IEEE 数据图，`apply_ieee_grid()` 默认采用一套克制的双层网格：
+
+- 主网格：`#B8B8B8`，`0.35 pt`，长虚线 `(5, 3)`，`alpha=0.52`
+- 次网格：`#D6D6D6`，`0.35 pt`，点线，`alpha=0.40`
+
+主、次网格使用相同线宽，靠颜色、透明度和线型形成层次，避免背景线条压过数据。它是可复用的工作基线，不是 IEEE 强制规范；目标期刊、项目既有样式或用户明确指定的参数优先。实际导出后仍需在 plot profile 中记录最终采用的网格参数。
+
 更细的检查项见 `references/ieee-figure-review-checklist.md`。
 
 ## 单栏数据图基线
@@ -137,7 +146,7 @@ figure_id: Fig. X
 5. 用 `apply_axes_box()`、`apply_compact_axis_spacing()` 和 `apply_ieee_grid()` 统一坐标轴区域、轴题距离、刻度数字距离和网格样式。
 6. 在项目内保存 plot profile。profile 至少记录 `figsize`、`subplots_adjust`、`labelpad`、tick pad、legend anchor、线宽、字体、坐标范围、输出格式、dpi、源脚本、数据文件和输出文件。
 
-具体记录模板见 `references/matplotlib-ieee-plot-profile.md`。示例数值只能作为当前论文或当前图组的 profile，不作为 IEEE 通用默认。
+具体记录模板见 `references/matplotlib-ieee-plot-profile.md`。尺寸、间距等示例数值仍只属于当前图组；网格可先采用上面的推荐基线，再按目标期刊、项目样式或用户要求覆盖。
 
 ## 数据图视觉编码优先级
 

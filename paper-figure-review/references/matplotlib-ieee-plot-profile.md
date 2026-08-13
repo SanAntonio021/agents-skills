@@ -72,6 +72,15 @@ apply_ieee_grid(ax)
 save_exact_size_figure(fig, "figure_panel", formats=("pdf", "png"))
 ```
 
+在没有项目级网格规范时，`apply_ieee_grid()` 的推荐起点如下；它不是 IEEE 强制规范，目标期刊、项目既有样式或用户要求可以覆盖：
+
+```text
+major: #B8B8B8, 0.35 pt, long dash (5, 3), alpha=0.52
+minor: #D6D6D6, 0.35 pt, dotted, alpha=0.40
+```
+
+主、次网格采用相同线宽，使用颜色、透明度和线型形成层次。无论是否覆盖，最终值都应写入图组的 `grid` profile 字段。
+
 ## plot profile 字段
 
 每个图组至少记录这些字段：

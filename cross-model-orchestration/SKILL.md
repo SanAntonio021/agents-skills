@@ -231,11 +231,20 @@ Claude 必须独立核验：
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File "D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1" `
-  -Skills "<本次提交实际修改的逗号分隔 Skill 名称>" `
-  -ExpectedRemoteCommit "<40 位远端提交 SHA>"
+  -Skills “<本次提交实际修改的逗号分隔 Skill 名称>” `
+  -ExpectedRemoteCommit “<40 位远端提交 SHA>”
 ```
 
-目标集合必须与该提交实际修改且仍存在的 Skill 集合完全一致。helper 只执行一次“检查更新”
+**边注 1（MAX_PATH）**：skill assets 目录内文件的相对路径（相对 skill 根目录，含文件名）
+不得超过约 170 字符。同步脚本解压到临时目录时，临时前缀约 90 字符 + 相对路径合计
+不得超过 Windows MAX_PATH（260 字符）；超限时脚本以 exit 99 失败。解法：重命名超长
+文件并更新文档内所有引用。
+
+**边注 2（no-op commit）**：修复 commit 推进 HEAD 后，若某 Skill 未出现在最新 commit
+的 `changed_skills` 里，用新 SHA 传该 Skill 名会被拒（exit 10，`changed_skill_set_mismatch`）。
+解法：对该 Skill 追加 no-op 改动（如尾随换行），重新提交并推送，以最新 SHA 同步。
+
+目标集合必须与该提交实际修改且仍存在的 Skill 集合完全一致。helper 只执行一次”检查更新”
 和过滤后的单项“更新”，禁止“全部更新”；不建 watcher 或计划任务，不修改 CC Switch 源码、
 EXE、数据库、配置或运行时目录。Claude 验收者核对 helper 的单个 JSON、退出码、远端祖先关系，
 以及提交源码、`.cc-switch\skills`、`.claude\skills`、`.codex\skills` 四层全部目标文件集合和

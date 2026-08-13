@@ -438,6 +438,23 @@ export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, mode
     throw new Error(`发前六项自检失败，已停止发包: ${precheck.reason}`);
   }
 
+  // F.2: validate targetRoots are under cwd
+  const normCwd = normaliseRoot(cwd);
+  for (const target of normTargets) {
+    if (!isAncestorOf(normCwd, target)) {
+      try {
+        const m = acquireRegistryMutex(orchDir);
+        try {
+          const claims = loadClaims(orchDir);
+          saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
+        } finally {
+          releaseRegistryMutex(orchDir, m.ownerToken, m.ino, m.dev);
+        }
+      } catch { /* ignore cleanup errors */ }
+      throw new Error(`targetRoot "${target}" is not under cwd "${normCwd}" — launch aborted`);
+    }
+  }
+
   // Step 5: launch (no lock held)
   const args = ["task", "--background", "--fresh", `--cwd`, cwd];
   if (write) args.push("--write");
@@ -559,6 +576,11 @@ export function cmdCandidate({ companionPath, cwd, jobId, ownerToken, targetRoot
   const sessionCwd = normaliseRoot(cwd);
 
   const issues = [];
+
+  // Check 0: job must be completed for source validation
+  if (job.status !== "completed") {
+    issues.push(`Job ${jobId} is not completed (status="${job.status}") — source validation requires completed status`);
+  }
 
   // Check 1: workspaceRoot matches cwd
   if (jobWorkspaceRoot && jobWorkspaceRoot !== sessionCwd) {

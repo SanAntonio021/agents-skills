@@ -1,4 +1,7 @@
-# SCI Terminology Bank
+# SCI Terminology Bank (Compatibility Pointer)
+
+新增和运行时读取请使用 `D:\BaiduSyncdisk\.agents\vocab\scientific-terminology-bank.md`。
+本文件保留历史格式和已有记录，供旧调用方兼容；不要在这里追加新术语，也不要把它当作已确认规则的唯一来源。
 
 这份文件是 `ieee-manuscript-edit` 的全局术语库模板。它用于长期保存用户审过的专业术语，减少每次 SCI 润色时的重复纠结。
 

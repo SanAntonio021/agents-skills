@@ -12,8 +12,11 @@ description: 自维护中英双语风格词表：收录“以后别用 X，用 Y
 - 核心表：`D:\BaiduSyncdisk\.agents\vocab\vocab-core.md`
 - 全集表：`D:\BaiduSyncdisk\.agents\vocab\vocab-full.md`
 - 盘点候选：`D:\BaiduSyncdisk\.agents\vocab\ai-word-candidates.md`
+- 受控学习候选：`D:\BaiduSyncdisk\.agents\vocab\writing-memory-candidates.md`
+- 结构化例外：`D:\BaiduSyncdisk\.agents\vocab\writing-memory-exceptions.md`
 
-`vocab-core.md` 是生成时约束；`vocab-full.md` 是收录和交付前检查的唯一依据；`ai-word-candidates.md` 只在盘点模式读取。
+`vocab-core.md` 是生成时约束；`vocab-full.md` 是通用词级规则的唯一依据；`ai-word-candidates.md` 只在盘点模式读取。
+`writing-memory-candidates.md` 不是生成约束，只有用户确认后才可迁入正式词表。
 
 ## 适用范围
 
@@ -24,9 +27,18 @@ description: 自维护中英双语风格词表：收录“以后别用 X，用 Y
 ## 先分诊
 
 1. 用户给的是通用文风词、AI 味词、个人偏好替换词时，用本技能。
-2. 用户给的是领域概念、指标名、缩写、仪器名、论文专用术语，转 `ieee-manuscript-edit` 的 `references/sci-terminology-bank.md` 流程。
+2. 用户给的是领域概念、指标名、缩写、仪器名、论文专用术语，转 `ieee-manuscript-edit` 的活数据术语库流程。
 3. 用户要求整体去 AI 腔、改句式、改结构，按语言转 `humanizer`（英文）或 `Humanizer-zh`（中文）；论文/申报书稿件优先转对应写作技能。本技能只处理词级偏好和交付前扫词。
 4. 分不清“文风词”还是“专业术语”时，只问一句：这个词是你所有交付文稿都想避开，还是只在某个专业领域固定翻译？
+
+## 受控学习确认门
+
+从用户本轮修改差异、已确认的前后句，或外部正式论文提炼新词条/表达模式时，先问用户是否启动“学习本轮表达”。没有用户明确同意，不提炼、不联网取样、不写候选台账。每轮最多展示 3 条高价值候选。
+
+- 候选先写入 `writing-memory-candidates.md`，状态为 `候选`，不能影响当前或后续生成。
+- 用户确认后才转为 `已确认`，并把完整记录写入对应正式词表（通用词写入 `vocab-full.md`，专业术语或表达模式写入论文活数据词库）；候选台账同时填写 `迁入位置`。用户拒绝则转为 `已拒绝`，保留拒绝理由、关联推荐词和日期，后续不得静默重新出现。
+- 已确认规则与新证据冲突时转为 `冲突待审`，不得覆盖旧规则；先展示冲突再询问裁决。
+- 外部论文只允许提炼术语、标准搭配或抽象短语模式；不保存完整句子、连续长片段、图注或方法描述。
 
 ## 模式一：收录
 
@@ -78,13 +90,15 @@ description: 自维护中英双语风格词表：收录“以后别用 X，用 Y
 6. 每轮改写后复扫，最多 3 轮。
 7. 剩余命中输出短报告：`词条 | 位置 | 保留原因`。
 
+论文稿的交付前复扫必须调用 `ieee-manuscript-edit/scripts/audit_writing_memory.py`，并同时传入稿件、词表、专业术语库和结构化例外表。模型自述“已检查”不能代替脚本结果。报告必须记录输入与规则文件 SHA-256、审计器版本和上下文；`violations`、`unresolved` 或 `schema_errors` 非空时只能报告“复扫未通过”，不能声称精修完成。
+
 ## 写作技能协作
 
 - `writing-router` 负责判断是不是交付文稿任务。
 - `project-writing` 起草或精修申报书时，可读取 `vocab-full.md` 中 `申报书` 场景词条。
 - `ieee-manuscript-edit` 起草或精修论文时，可读取 `vocab-full.md` 中 `论文` 场景词条。
 - `Humanizer-zh` 管句式、结构和整体 AI 写作痕迹；本技能管用户自维护的词级偏好。
-- 用户词表优先于外部通用清单。
+- 用户明确的硬禁用优先于普通术语建议；只有已确认、作用域匹配、用户审阅为 `是` 且显式标记 `例外覆盖用户禁用=是` 的专业术语或结构化例外才能覆盖指定禁用。冲突必须列为待确认。
 
 ## 输出
 
@@ -112,3 +126,6 @@ description: 自维护中英双语风格词表：收录“以后别用 X，用 Y
 - 新增英文匹配模式能覆盖常见词形变化。
 - 检查模式不改引用原文、参考文献、代码、LaTeX 命令和 citation key。
 - 不把专业术语误收进文风词表。
+- 学习启动前有用户确认；未确认候选不影响生成。
+- 已拒绝候选保留理由，不能由同义变体绕过确认门。
+- 交付稿存在可核验的独立复扫报告；报告未通过时不标记完成。

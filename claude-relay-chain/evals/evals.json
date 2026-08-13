@@ -39,6 +39,20 @@
         "用户确认前不备份、不修改、不重启、不发送带凭据或可能计费的请求",
         "批准后的验证分开覆盖模型列表、streaming Messages、tool use 和 Desktop 内置 Code 端到端"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "我在 CC Switch 的 Claude provider 里把默认兜底模型设为 claude-opus-4-6，但 VS Code Claude Code 的 /model 里选 Default 还是想确认它究竟调用什么；页面的 Opus 角色目前写 claude-opus-5，Fable 也要保留。界面还勾了 1M。请只读排查，不切换供应商、不改配置，也不要把 Claude Desktop 混进来。",
+      "expected_output": "应限定到独立 Claude Code/VS Code 链路，区分角色实际请求模型、角色显示名与 ANTHROPIC_MODEL 默认兜底；指出 Default/opus 由 ANTHROPIC_DEFAULT_OPUS_MODEL 控制，因此当前应请求 Opus 5 而非兜底的 4.6；对照当前 provider、渲染出的 .claude/settings.json 与代理日志，报告配置漂移而非猜测；说明 Fable 是独立槽位，不能无代价充当第二个 Opus；把 1M 声明与真实 context_window/超过 200K 的经批准边界测试分开。",
+      "files": [],
+      "expectations": [
+        "只检查 app_type=claude 的 Claude Code/VS Code 链路，不把 Claude Desktop 配置作为证据",
+        "明确 ANTHROPIC_DEFAULT_OPUS_MODEL 控制 Default/opus，ANTHROPIC_MODEL 只是未指定角色时的默认兜底，不是自动故障转移",
+        "区分 *_MODEL_NAME 菜单显示名与 *_MODEL 实际请求模型，并对照当前 provider、.claude/settings.json 和代理请求日志",
+        "说明 Fable 是独立角色槽位；同时保留 Fable 与两个 Opus 变体需要单独 provider/configuration 或客户端支持的直接模型 ID",
+        "明确 1M 复选框、[1m] 后缀或模型列表可见不证明真实 1M，上游 context_window 或经批准的超过 200K token 边界测试才可确认",
+        "全程只读脱敏，不切换 provider、不改配置、不发送可能计费的验证请求"
+      ]
     }
   ]
 }

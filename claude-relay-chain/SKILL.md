@@ -45,6 +45,19 @@ Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 
 
 完整配置归属和优先级见 [references/surfaces-and-config.md](references/surfaces-and-config.md)。
 
+## Claude Code 模型角色、兜底与 1M
+
+用户问 VS Code Claude Code 的 `Default`、`opus`、供应商页面的“默认兜底模型”或 `1M` 时，先限定在 `app_type = 'claude'` 的链路；不要把 Claude Desktop 的模型路由混进判断。
+
+1. 把当前 provider 的 `settings_config.env` 中以下字段分开读取，且只报告模型 ID、是否存在凭据和安全的 endpoint，不输出完整 JSON 或密钥：
+   - 角色实际请求模型：`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_FABLE_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`。
+   - 角色显示名：对应的 `*_MODEL_NAME`。显示名只影响 `/model` 菜单呈现，不是实际请求的充分证据。
+   - 默认兜底：`ANTHROPIC_MODEL`。它用于未明确指定 Sonnet、Opus、Fable、Haiku 角色的请求；它不是自动故障转移，也不会替代一个已明确选择的角色。
+2. `model: "opus"`、`/model` 的 `Default` 或 `Opus` 走 `ANTHROPIC_DEFAULT_OPUS_MODEL`，而不是 `ANTHROPIC_MODEL`。因此，若用户把兜底设为 `claude-opus-4-6`，但 Opus 角色仍指向另一模型，Default/Opus 不会自动改为 4.6。以当前 Claude Code 的本地变更记录和实际请求日志为准，不凭界面文案猜测。
+3. CC Switch 的 Sonnet、Opus、Fable、Haiku 是独立角色槽位。不要为了保留第二个 Opus 变体而擅自占用 Fable；若用户同时要保留 Fable 和两个 Opus 变体，说明当前角色菜单没有额外槽位，建议另建明确用途的 provider/configuration，或仅在目标客户端确实支持时使用直接模型 ID。
+4. 判断有效映射时，按三个层次对照：当前 `providers.is_current` 记录、CC Switch 渲染出的 `%USERPROFILE%\.claude\settings.json`、以及本地代理日志或 `proxy_request_logs` 的 `request_model` 与实际 `model`。三者不一致是配置漂移；不能因数据库或截图其中之一正确，就声称端到端使用了该模型。
+5. `1M` 复选框、`[1m]` 模型后缀或网关接受该 ID，只表示客户端/网关接受了 1M 变体请求，不证明上游实际提供 1M 上下文。优先查返回元数据中的 `context_window`；没有该字段时，只有经用户同意且成本可接受的超过 200K token 受控边界测试才能确认。模型列表出现、请求成功，或后端静默改写为另一模型，均不能替代该验证。
+
 ## 工作流程
 
 ### 1. 运行默认只读审计

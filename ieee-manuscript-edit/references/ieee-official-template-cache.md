@@ -20,7 +20,7 @@ D:\BaiduSyncdisk\.agents\skills\ieee-manuscript-edit\assets\ieee-official-templa
 
 | 目录 | 用途 | Word | LaTeX |
 |---|---|---|---|
-| `transactions-journals-letters/` | IEEE Transactions/Journals/Letters 通用模板；IEEE Transactions on Terahertz Science and Technology 与 IEEE Transactions on Microwave Theory and Techniques 当前都指向这组模板 | `IEEE-Transactions-Word-templates-and-instructions.zip`；解压后可用 `word-extracted/Transactions-template-and-instructions-on-how-to-create-your-article-formatted (4).docx` | `IEEE-Transactions-LaTeX2e-templates-and-instructions.zip`；解压后可用 `latex-extracted/bare_jrnl_new_sample4.tex` |
+| `transactions-journals-letters/` | IEEE Transactions/Journals/Letters 通用模板；IEEE Transactions on Terahertz Science and Technology 与 IEEE Transactions on Microwave Theory and Techniques 当前都指向这组模板 | `IEEE-Transactions-Word-templates-and-instructions.zip`；解压后可用 `word-extracted/ieee-transactions-template.docx` | `IEEE-Transactions-LaTeX2e-templates-and-instructions.zip`；解压后可用 `latex-extracted/bare_jrnl_new_sample4.tex` |
 | `ieee-access/` | IEEE Access 专用模板 | `Access_Word_Template.docx` | `Access_LaTeX_template.zip`；解压后可用 `latex-extracted/ACCESS_latex_template_20240429/access.tex` |
 | `ieee-journal-of-microwaves/` | IEEE Journal of Microwaves 专用模板 | `JMW_Word_Template.docx` | `JMW_LaTex_Template.zip`；解压后可用 `latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/JMW_template.tex` |
 

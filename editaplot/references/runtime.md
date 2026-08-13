@@ -168,6 +168,8 @@ invalidates that confirmation.
 .\editaplot.cmd origin-smoke --output-dir <unique-smoke-directory>
 .\editaplot.cmd render render-plan.json
 .\editaplot.cmd verify <output-directory>
+.\editaplot.cmd prepare-opju-review <result.opju>
+.\editaplot.cmd review-opju <workspace>\figure_edit.opju
 .\editaplot.cmd panel-plan medical-panels.json --claim "The model is accurate, calibrated, and anatomically plausible" --output medical-panel-plan.json
 ```
 
@@ -323,6 +325,11 @@ the temporary filename alone cannot reveal that folder safely.
   PNG/PDF/TIF exports, validation, provenance, and readback.
 - `medical-panel-plan.json`: verified quantitative subproject hashes, attested image panels, distinct
   evidence roles, adaptive layout, shared color semantics, and blocking gates.
+- OPJU collaboration workspace: `figure_initial.opju`, user-edited `figure_edit.opju`, and
+  `review-workspace.json`. A later `review-opju` run creates a unique `review/<timestamp>/` folder
+  containing `figure_edit_snapshot.opju`, one PNG/PDF/TIF trio per Graph Page, and `review-report.json`.
+  The review report is a readback/viewability record with pending human visual QA; it is not a claim
+  that the figure's scientific expression is correct.
 
 Never hand-edit an approved plan; regenerate it so the digest and decisions remain traceable.
 `panel-plan` freezes layout only. It performs no medical image processing, automatic PHI detection,

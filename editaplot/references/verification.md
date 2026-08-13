@@ -63,3 +63,20 @@ prove that every template is available. Apply the selected template's capability
 - Check that the figure remains readable at its intended physical size.
 - Allow legend overlap only when the legend remains editable and no data meaning is lost.
 - Record visual QA as pending until a human or Codex with image inspection has reviewed an export.
+
+## OPJU review artifacts
+
+For `review-opju`, the required review bundle is scoped to one new
+`review/<timestamp>/` directory:
+
+- `figure_edit_snapshot.opju`, with a SHA-256 equal to the saved `figure_edit.opju` at snapshot
+  time and unchanged after the worker exits;
+- one PNG, PDF, and TIF for every enumerated Graph Page;
+- `review-report.json`, containing the source/workspace/baseline hashes, Origin version,
+  `connection_mode=new_isolated`, `session_ownership=editaplot`, page inventory, export hashes,
+  and a pending human visual QA record.
+
+The report must also show that `figure_initial.opju` remained byte-identical. A missing Graph Page
+is a structured `opju_no_graph_pages` failure, and a locked or changing editable file is a failure
+before results are accepted. Review export success means only “可回读并可查看”; it does not make a
+scientific or publication-quality claim.

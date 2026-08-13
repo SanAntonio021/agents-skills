@@ -170,4 +170,4 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 - 如果任务主要是 Word、PDF 文件操作，按对应文件技能处理；md 转 LaTeX、套模板、BibTeX、编译和按期刊/页面要求的 source 打包转给 `latex-paper`。本技能只负责论文内容、风格和文件取舍判断。
 - Cover Letter 和 Response Letter 正文仍由本技能处理。未指定或非 IEEE 投稿系统、作者与声明、决定、返修上传、录用后、版权费用或校样事务转给 [../journal-submission/SKILL.md](../journal-submission/SKILL.md)；明确 IEEE 时转给 [../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)。任何最终 Submit 请求先转 [../paper-review/SKILL.md](../paper-review/SKILL.md) 完成审查门。
 - 纯英文句子质量审查现由本技能直接处理；需要独立句子审查模式时，读取 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
-- 如果用户只想维护词表、收录"别用 X，用 Y"或交付前扫词，转给 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。如果用户想处理整体 AI 写作痕迹、句式和结构，转给 `Humanizer-zh`；SCI/IEEE 论文正文里的 AI 腔先按本技能的学术边界处理。
+- 如果用户只想维护词表、收录"别用 X，用 Y"或交付前扫词，转给 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。如果用户想处理整体 AI 写作痕迹、句式和结构，转给 `humanizer-zh`；SCI/IEEE 论文正文里的 AI 腔先按本技能的学术边界处理。

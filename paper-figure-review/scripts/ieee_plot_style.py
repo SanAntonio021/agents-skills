@@ -233,11 +233,15 @@ def apply_ieee_grid(
     major_color: str = "#B8B8B8",
     minor_color: str = "#D6D6D6",
     major_width: float = 0.35,
-    minor_width: float = 0.30,
-    major_alpha: float = 0.60,
-    minor_alpha: float = 0.55,
+    minor_width: float = 0.35,
+    major_alpha: float = 0.52,
+    minor_alpha: float = 0.40,
 ) -> None:
-    """Apply a restrained major/minor grid for small scientific plots."""
+    """Apply the shared equal-width major/minor grid for small plots.
+
+    The defaults are a recommended starting point, not an IEEE-mandated
+    style. Callers may override them for an existing project or venue profile.
+    """
 
     ax.set_axisbelow(True)
     ax.grid(
@@ -245,7 +249,7 @@ def apply_ieee_grid(
         which="major",
         color=major_color,
         linewidth=major_width,
-        linestyle="-",
+        linestyle=(0, (5.0, 3.0)),
         alpha=major_alpha,
     )
     ax.grid(
@@ -253,7 +257,7 @@ def apply_ieee_grid(
         which="minor",
         color=minor_color,
         linewidth=minor_width,
-        linestyle=(0, (2.0, 2.2)),
+        linestyle=":",
         alpha=minor_alpha,
     )
 

@@ -85,6 +85,16 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 
 需要记录可复现参数时，继续看 `references/matplotlib-ieee-plot-profile.md`。
 
+### SCIS 派生的紧凑单栏 profile
+
+当用户已经选定“紧凑单栏、无人为外白边、刻度紧贴坐标轴”的视觉基线时，先读 `references/scis-compact-single-column.md`，再将 `assets/scis_compact_single_column.py` 复制到项目的绘图脚本目录并按数据语义填写。
+
+- 该 profile 固定几何、字体、边框、刻度、网格、色彩角色和 exact-size 导出；图高、坐标范围、图例、标注和数据语义仍按当前图决定。
+- 先完成所有刻度、标签和图例设置，再调用模板中的 `align_y_tick_labels()` 和 `place_ylabels_clear_of_ticks()`；不要手填纵轴标题的最终横坐标。
+- `#009E73` 圆点和 `#CC79A7` 方点是两个并列数据通道的默认角色色；阈值、差值和参考线默认黑色。若当前论文已有角色色表，优先保留其语义映射。
+- 该 profile 从 SCIS proof 中观察到的紧凑几何抽象而来，不声称获得了该论文的原始绘图参数，也不替代目标期刊要求。
+- 在当前论文的 plot profile 中记录实际 `axes_box`、纵轴对齐间距、色彩映射、网格和导出设置；不要把本模板的图高或数据标签写成跨项目固定标准。
+
 ## 审查流程
 
 1. 明确目标。

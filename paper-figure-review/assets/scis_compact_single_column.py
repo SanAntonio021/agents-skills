@@ -173,6 +173,34 @@ def place_ylabels_clear_of_ticks(axes, *, pad_points: float = 1.2) -> None:
     fig.canvas.draw()
 
 
+def fit_outer_label_margins(
+    fig, ax, *, target_points: float = 3.0
+) -> tuple[float, float, float, float]:
+    """Fit a single panel so its left and bottom label margins match.
+
+    Call this after the first y-tick/y-label alignment pass, then repeat
+    ``align_y_tick_labels()`` and ``place_ylabels_clear_of_ticks()``. The
+    returned axes box belongs in the project's plot profile.
+    """
+
+    if target_points < 0:
+        raise ValueError("target_points must be non-negative")
+    if not ax.yaxis.label.get_text() or not ax.xaxis.label.get_text():
+        raise ValueError("both axis labels must be set before fitting margins")
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    target_pixels = target_points * fig.dpi / 72.0
+    ylabel_left = ax.yaxis.label.get_window_extent(renderer).x0
+    xlabel_bottom = ax.xaxis.label.get_window_extent(renderer).y0
+    axes_box = ax.get_position()
+    left = axes_box.x0 + (target_pixels - ylabel_left) / fig.bbox.width
+    bottom = axes_box.y0 + (target_pixels - xlabel_bottom) / fig.bbox.height
+    if not 0.0 < left < axes_box.x1 or not 0.0 < bottom < axes_box.y1:
+        raise ValueError("target margin would place the axes outside the canvas")
+    fig.subplots_adjust(left=left, right=axes_box.x1, bottom=bottom, top=axes_box.y1)
+    return left, axes_box.x1, bottom, axes_box.y1
+
+
 def save_exact_size_figure(
     fig,
     stem: str,

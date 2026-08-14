@@ -19,7 +19,7 @@
     {
       "id": "scis-compact-single-column-profile",
       "prompt": "我已经确认图 2--4 要用紧凑单栏风格：左侧不要大白边，纵轴数字右对齐且贴近坐标轴，CH1/CH2 用绿色圆点和紫色方点，阈值用黑色。请按以后可复用的模板重画。",
-      "expected_output": "应读取 references/scis-compact-single-column.md，并将 assets/scis_compact_single_column.py 复制到项目绘图目录使用；采用 3.50 in、Times New Roman 8 pt、0.7 pt 黑色四边框、四边向内刻度、指定的双层网格和 exact-size 600 dpi 导出；完成全部标签和图例后调用 align_y_tick_labels() 与 place_ylabels_clear_of_ticks()；在项目 plot profile 中记录实际图高、axes_box、颜色角色、纵轴间距和导出设置，不把单张图的坐标范围或标注文本固定进模板。"
+      "expected_output": "应读取 references/scis-compact-single-column.md，并将 assets/scis_compact_single_column.py 复制到项目绘图目录使用；采用 3.50 in、Times New Roman 8 pt、0.7 pt 黑色四边框、四边向内刻度、指定的双层网格和 exact-size 600 dpi 导出；完成全部标签和图例后调用 align_y_tick_labels() 与 place_ylabels_clear_of_ticks()，单面板再调用 fit_outer_label_margins(fig, ax, target_points=3.0) 后重复对齐，使左、下外白边相等；在项目 plot profile 中记录实际图高、axes_box、颜色角色、纵轴间距和导出设置，不把单张图的坐标范围或标注文本固定进模板。"
     },
     {
       "id": "data-plot-visual-encoding-priority",

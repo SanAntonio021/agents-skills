@@ -23,6 +23,7 @@
 | 阈值、差值、参考线 | 黑色；由线型、marker 或标注补充语义 |
 | 纵轴刻度 | 右边缘在显示坐标中对齐，距左 spine `1.5 pt` |
 | 纵轴标题 | 自动置于最宽可见刻度块左 `1.2 pt` |
+| 单面板外白边 | 通过 `fit_outer_label_margins(..., target_points=3.0)` 使纵轴标题左侧和横轴标题下方各为 `3 pt` |
 | 导出 | `bbox_inches=None`，`pad_inches=0.0`，PDF/SVG/PNG 按需要输出 |
 
 ## 调用顺序
@@ -31,7 +32,7 @@
 2. 用 `apply_compact_single_column_layout()` 设置轴区；只有图例或多行横轴文字确实放不下时才改 `bottom` 或 `top`。
 3. 绘制数据，再设置数据范围、major/minor ticks、轴题、图例和技术标注。
 4. 对每个轴调用 `apply_compact_single_column_axes()` 与 `apply_compact_grid()`；对纵轴标题调用 `prepare_compact_ylabel()`。
-5. 所有可见元素确定后，对整组轴调用 `align_y_tick_labels()`，再调用 `place_ylabels_clear_of_ticks()`。
+5. 所有可见元素确定后，对整组轴调用 `align_y_tick_labels()`，再调用 `place_ylabels_clear_of_ticks()`。单面板图再调用 `fit_outer_label_margins(fig, ax, target_points=3.0)`，随后重复前两次对齐，令左、下外白边同时收紧而不裁切标题。
 6. 用 `save_exact_size_figure()` 输出，并在项目内记录实际的 `figsize`、`axes_box`、色彩角色、对齐间距、网格、源数据和输出文件。
 
 ## 不应固定的内容

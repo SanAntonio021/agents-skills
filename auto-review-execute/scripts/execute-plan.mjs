@@ -27,7 +27,8 @@ import {
   launchCodexJob,
   pollCodexJob,
   readCodexResult,
-  releaseCodexClaim
+  releaseCodexClaim,
+  approvePeerSync
 } from "./orchestration-adapter.mjs";
 import { readState, setErrorState, transitionState, writeState } from "./run-state.mjs";
 import {
@@ -234,7 +235,18 @@ export function startExecution(runDir, { cwd = null, launcher = launchCodexJob }
   }));
   try {
     const executionCwd = beforeLaunch.execution.cwd;
-    const launched = launcher({ cwd: executionCwd, targetRoots: metadata.targetRoots, prompt });
+    const launched = launcher({
+      cwd: executionCwd,
+      targetRoots: metadata.targetRoots,
+      allowedPaths: metadata.allowedPaths,
+      prompt,
+      operation: "task",
+      artifactId: `auto-review-execute:${state.runId}`,
+      artifactType: "deliverable",
+      round: 1,
+      artifactPath: state.finalPlanFile,
+      acceptanceCriteria: metadata.acceptanceCriteria.map((criterion) => criterion.description)
+    });
     return transitionState(runDir, "executing", (previous) => ({
       ...previous,
       codexJob: {
@@ -271,6 +283,27 @@ export function pollExecution(runDir, {
       companionPath: state.codexJob.companionPath || undefined
     });
     if (status.status === "queued" || status.status === "running") return state;
+    if (status.status === "needs_attention") {
+      const result = resultReader({
+        cwd: state.codexJob.cwd,
+        jobId: state.codexJob.id,
+        companionPath: state.codexJob.companionPath || undefined
+      });
+      try { releaser({ ownerToken: state.codexJob.ownerToken, cwd: state.codexJob.cwd }); } catch { /* bridge owns the durable lock */ }
+      return transitionState(runDir, ["executing", "reworking"], (previous) => ({
+        ...previous,
+        state: "awaiting_user",
+        peerSync: {
+          jobId: state.codexJob.id,
+          syncStatus: status.sync_status || "awaiting_user",
+          pendingHighRisk: status.pending_high_risk || result.job?.pending_high_risk || [],
+          result: result.job || null,
+          resumeState: state.state,
+          recordedAt: nowIso()
+        },
+        codexJob: null
+      }));
+    }
     if (status.status !== "completed") return failCodexRun(runDir, state, `Codex ${state.codexJob.kind} ended with ${status.status}`, releaser);
     const result = resultReader({
       cwd: state.codexJob.cwd,
@@ -290,6 +323,29 @@ export function pollExecution(runDir, {
   } catch (error) {
     return failCodexRun(runDir, state, error.message, releaser);
   }
+}
+
+/** Synchronize an explicitly approved high-risk result without another model turn. */
+export function approveExecutionSync(runDir, approvedChangeIds, { approver = approvePeerSync } = {}) {
+  const state = readState(runDir);
+  if (state.state !== "awaiting_user" || !state.peerSync?.jobId) {
+    throw new Error(`No peer synchronization is awaiting approval in ${state.state}`);
+  }
+  const expected = (state.peerSync.pendingHighRisk || []).map((change) => change.id).sort();
+  const supplied = [...new Set(approvedChangeIds || [])].sort();
+  if (expected.length !== supplied.length || expected.some((id, index) => id !== supplied[index])) {
+    throw new Error("approvedChangeIds must exactly match pendingHighRisk IDs");
+  }
+  const synced = approver({
+    cwd: state.execution?.cwd || process.cwd(),
+    jobId: state.peerSync.jobId,
+    approvedChangeIds: supplied
+  });
+  return transitionState(runDir, "awaiting_user", (before) => ({
+    ...before,
+    state: "validating",
+    peerSync: { ...before.peerSync, approvedChangeIds: supplied, syncResult: synced, approvedAt: nowIso() }
+  }));
 }
 
 export function validateExecution(runDir, { cwd = null } = {}) {
@@ -384,7 +440,18 @@ export function launchRework(runDir, { cwd = null, launcher = launchCodexJob } =
   }));
   try {
     const executionCwd = cwd ? path.resolve(cwd) : path.resolve(preparing.execution.cwd);
-    const launched = launcher({ cwd: executionCwd, targetRoots: preparing.execution.targetRoots, prompt });
+    const launched = launcher({
+      cwd: executionCwd,
+      targetRoots: preparing.execution.targetRoots,
+      allowedPaths: preparing.execution.allowedPaths,
+      prompt,
+      operation: "task",
+      artifactId: `auto-review-execute:${preparing.runId}`,
+      artifactType: "deliverable",
+      round: 1,
+      artifactPath: preparing.finalPlanFile,
+      acceptanceCriteria: preparing.execution.acceptanceCriteria.map((criterion) => criterion.description)
+    });
     return transitionState(runDir, "reworking", (before) => ({
       ...before,
       codexJob: {

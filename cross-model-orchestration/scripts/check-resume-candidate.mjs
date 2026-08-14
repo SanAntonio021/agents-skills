@@ -1,5 +1,17 @@
 #!/usr/bin/env node
 
+// ARCHIVED BEHAVIOR REFERENCE ONLY.
+// The unified claude-codex-bridge is the sole runtime route. This file is
+// intentionally fail-closed unless an operator explicitly opts into reading
+// the retired plugin registry for historical diagnosis.
+if (process.env.CLAUDE_CODEX_LEGACY_ARCHIVE !== "1") {
+  console.log(JSON.stringify({
+    ok: false,
+    message: "Archived codex@openai-codex resume inspection is disabled; use claude-codex-bridge resume_peer with an explicit job ID."
+  }, null, 2));
+  process.exit(2);
+}
+
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

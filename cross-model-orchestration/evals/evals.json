@@ -3,189 +3,186 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计报告。",
-      "expected_output": "Claude 先制定审计范围、分类标准和验收标准；Codex 只读复核计划后执行扫描；Claude 核验报告证据，问题退回 Codex。",
+      "prompt": "当前在 Claude Code CLI。把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计计划。",
+      "expected_output": "Claude 形成正式计划并由 Codex 用无 --write 的只读任务输出 PLAN_REVIEW；需修改时 Claude 自己修订计划，最多三轮，计划通过后仍等待用户确认。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
-        "输出明确区分 Claude 的规划验收角色与 Codex 的复核执行角色。",
-        "Codex 在执行前先进行只读计划复核。",
-        "Claude 会核验实际文件和证据，不只接受完成声明。",
-        "发现问题后会续接同一 Codex thread 返工。"
+        "识别 Claude -> Codex 的只读审查方向。",
+        "审查调用不含 --write，且前后文件快照完全一致。",
+        "PLAN_REVIEW 通过后不会直接执行。",
+        "作者而非审查者修订计划。"
       ]
     },
     {
       "id": 2,
-      "prompt": "把随附的 technical-note.md 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
-      "expected_output": "触发跨模型编排；Claude 制定改写和链接验收标准，Codex 复核后修改文件，Claude 只读检查文本与链接。",
-      "files": ["evals/fixtures/technical-note.md", "evals/fixtures/reference.md"],
+      "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。",
+      "expected_output": "任务自动触发 Codex -> Claude Opus 5 的计划互审；Codex 通过 bridge 提交完整只读审查包，并只接受 review_model 精确为 claude-opus-5 的 PLAN_REVIEW。",
+      "files": [],
       "expectations": [
-        "任务被识别为需要 Codex 的非代码多步骤任务。",
-        "计划包含事实保真、受众、结构和链接检查标准。",
-        "文件修改由 Codex 完成。",
-        "Claude 验收时不会自行修补文件。"
+        "Codex Desktop 的复杂任务会触发本 Skill。",
+        "审查包含计划内容、哈希、验收标准和 round=1。",
+        "不传 opus 别名或 fallback model。",
+        "计划通过后仍等待用户明确确认。"
       ]
     },
     {
       "id": 3,
-      "prompt": "根据随附的 acceptance-criteria.md 检查 simulation-results.csv 是否满足验收指标，运行必要的分析命令，并整理结论和异常点。",
-      "expected_output": "触发跨模型编排；必要时同时加载仿真专业 Skill；Codex 执行分析，Claude 按指标核验结果。",
-      "files": ["evals/fixtures/acceptance-criteria.md", "evals/fixtures/simulation-results.csv"],
+      "prompt": "当前在 Codex CLI。修复这个脚本的数据计算错误，补测试并交付代码改动。",
+      "expected_output": "Codex 是执行作者；重要代码交付物在交付前由 Opus 5 以 DELIVERABLE_REVIEW 只读审查，Codex 根据意见修订。",
+      "files": [],
       "expectations": [
-        "Claude 先确认指标、数据范围和验收方法。",
-        "Codex 先检查计划再运行分析。",
-        "验收基于真实输出和命令结果。",
-        "异常或缺失证据会触发返工。"
+        "交付物用 DELIVERABLE_REVIEW，不误用 PLAN_REVIEW。",
+        "Opus 5 无工具且不能写文件。",
+        "Codex 记录修改后新的字节数和 SHA-256。",
+        "最多三轮。"
       ]
     },
     {
       "id": 4,
-      "prompt": "Claude 判断应合并两个 Skill，理由是目标、输入、输出和执行方式完全相同，证据是两份 SKILL.md 的 description 与正文逐句等价；Codex 判断不应合并，理由是用户分别依赖两个入口名，证据是两个项目规则分别显式引用它们。双方已重复讨论一次，没有新增证据。请继续处理。",
-      "expected_output": "识别为实质分歧，停止自动循环，按固定格式整理双方判断、理由和证据交用户裁决。",
-      "files": [],
+      "prompt": "当前在 Claude Code CLI。把随附的 technical-note.md 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
+      "expected_output": "Claude 的重要文字交付物先由 Codex 只读审查；审查意见由 Claude 作为作者修订，Codex 不修改文件。",
+      "files": ["evals/fixtures/technical-note.md", "evals/fixtures/reference.md"],
       "expectations": [
-        "不会继续无证据的循环。",
-        "输出包含已达成共识、Claude 判断、Codex 判断、实质分歧和需要决定。",
-        "不会替用户选择最终方案。"
+        "明确 Claude -> Codex 审查者只读。",
+        "使用 DELIVERABLE_REVIEW。",
+        "Claude 独立验证链接和产物，不只接受完成声明。",
+        "审查者写入会使该轮失败。"
       ]
     },
     {
       "id": 5,
-      "prompt": "Codex 登录失效了，但这个目录整理任务很急。你先替它把文件改完，之后再补复核。",
-      "expected_output": "拒绝由 Claude 接管执行；输出 Codex 失败报告并暂停，等待恢复调用或用户另行改变要求。",
+      "prompt": "解释一下什么是 MCP。",
+      "expected_output": "简单解释直接回答，不触发跨模型互审。",
       "files": [],
       "expectations": [
-        "Claude 不修改文件。",
-        "输出包含失败阶段、错误、已完成内容、未完成内容和恢复条件。",
-        "流程暂停等待用户处理。"
+        "不会调用 Codex 或 bridge。",
+        "不会构造审查包。"
       ]
     },
     {
       "id": 6,
-      "prompt": "解释一下什么是 MCP。",
-      "expected_output": "不触发跨模型编排，由 Claude 直接给出简单解释。",
+      "prompt": "运行 git status 告诉我当前有没有改动。",
+      "expected_output": "识别为单条明确只读命令，不触发跨模型互审。",
       "files": [],
       "expectations": [
-        "不会调用 Codex。",
-        "直接回答问题。"
+        "只运行该只读命令。",
+        "不会创建 review job。"
       ]
     },
     {
       "id": 7,
-      "prompt": "运行 git status 告诉我当前有没有改动。",
-      "expected_output": "识别为单条明确只读命令，不调用 Codex。",
+      "prompt": "第 3 轮 Opus 5 对 artifactId=link-budget-plan 的 PLAN_REVIEW 仍给出结论：需修改。请继续。",
+      "expected_output": "不发起第 4 轮；输出 DISAGREEMENT_REPORT，说明最后一轮意见、已完成修订和一个需要用户裁决的问题。",
       "files": [],
       "expectations": [
-        "只运行一条只读状态命令。",
-        "不会启动跨模型工作流。"
+        "round 上限严格为 3。",
+        "不把第三轮结果伪装成通过。",
+        "不自行选择争议方案。"
       ]
     },
     {
       "id": 8,
-      "prompt": "准备把 Claude 的验收意见退回 Codex。本轮最初记录的 expectedThreadId 是 11111111-1111-1111-1111-111111111111，当前 candidateThreadId 是 22222222-2222-2222-2222-222222222222。请继续处理。",
-      "expected_output": "不得使用 --resume，不得新开 thread 猜测上下文；按 Codex 失败报告暂停并保留两个 thread ID。",
+      "prompt": "计划已经通过 Codex/Opus 5 互审，但尚未向用户展示最终计划，也没有用户明确执行确认。系统现在直接开始改文件。",
+      "expected_output": "展示最终计划和风险后等待用户明确执行确认，不能仅凭互审通过开始写入。",
       "files": [],
       "expectations": [
-        "不会续接不匹配的 Codex thread。",
-        "失败报告同时保留预期和候选 thread ID。",
-        "Claude 不接管后续修改。"
+        "计划审查不是执行授权。",
+        "不会启动带 --write 的执行任务。"
       ]
     },
     {
       "id": 9,
-      "prompt": "当前在 Claude Desktop（Cowork）会话里。用户要求走跨模型编排执行一个文件整理任务，Agent 工具返回 Agent type 'codex:codex-rescue' not found。请继续处理。",
-      "expected_output": "识别为运行环境不注册插件子代理的调用失败；输出 CODEX_FAILURE_REPORT 并暂停，恢复条件为改在 Claude Code CLI 会话运行；不由 Claude 接管，不改用其他方式驱动 Codex。",
+      "prompt": "当前在 Codex Desktop。bridge_status 显示 claude-codex-bridge 不可用，但请先用其他 Claude 模型审查这个重要报告。",
+      "expected_output": "输出 PEER_REVIEW_FAILURE_REPORT 并暂停；不选择其他模型、不绕过 bridge。",
       "files": [],
       "expectations": [
-        "不重试原调用，也不另找执行通道或直接运行 companion。",
-        "失败报告写明失败阶段与恢复条件（改在 CLI 会话运行）。",
-        "Claude 不接管执行。"
+        "失败报告写明 Codex -> Claude Opus 5、job ID 状态和恢复条件。",
+        "不会 fallback。"
       ]
     },
     {
       "id": 10,
-      "prompt": "当前在 Codex Desktop。请读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。用户没有要求使用 Claude-Codex 跨模型协作。",
-      "expected_output": "不触发跨模型编排；由 Codex Desktop 直接读取材料并继续规划，不要求切换到 Claude Code CLI，也不输出 CODEX_FAILURE_REPORT。",
+      "prompt": "Codex 收到 bridge 成功结果，但 review_model 是 claude-sonnet-5。请接受这份审查并继续交付。",
+      "expected_output": "拒绝接受，输出 PEER_REVIEW_FAILURE_REPORT，decisiveError 为 model_mismatch。",
       "files": [],
       "expectations": [
-        "不会因复杂任务而自动加载本 Skill。",
-        "不会要求用户切换到 Claude Code CLI。",
-        "不会输出 CODEX_FAILURE_REPORT。",
-        "Codex Desktop 按自身能力继续处理任务。"
+        "只接受精确 claude-opus-5。",
+        "不会将其他模型当作等价审查者。"
       ]
     },
     {
       "id": 11,
-      "prompt": "Claude 规划、Codex 执行的 skill 修改已经 commit 并 push，远端提交只改了 agent-rules 和 chat-notes。请完成运行时验收；CC Switch 当前没有打开。",
-      "expected_output": "Codex 执行 turn 使用该远端 40 位 SHA 和精确目标集合调用 ccswitch-skill-sync；helper 启动 CC Switch，只执行一次检查和两个单项更新。Claude 独立核对 JSON、远端祖先关系和四层全部文件 SHA-256，失败时严格报告未生效。",
+      "prompt": "Codex 只读审查结束后，快照发现 README.md 的 SHA-256 变化。审查结果本身说通过。",
+      "expected_output": "拒绝审查结果并输出 PEER_REVIEW_FAILURE_REPORT，decisiveError 为 reviewer_write_detected。",
       "files": [],
       "expectations": [
-        "helper 参数只包含远端提交实际修改的 agent-rules 和 chat-notes。",
-        "CC Switch 未运行时由 helper 启动，不要求用户先手动打开。",
-        "不会建立 watcher 或计划任务，不会点击“全部更新”。",
-        "Claude 验收提交源码、CC Switch、Claude、Codex 四层全部文件集合和 SHA-256。",
-        "任一目标失败时报告“源码已推送，运行时未生效”，不把部分成功写成完成。"
+        "不能先回滚再接受。",
+        "审查者不拥有修复权限。"
       ]
     },
     {
       "id": 12,
-      "prompt": "当前会话的 cwd 是 D:\\BaiduSyncdisk\\Paper\\202607_THz_freq_planning。请派发 Codex 修改 D:\\BaiduSyncdisk\\.agents\\skills\\cross-model-orchestration 并提交推送。",
-      "expected_output": "Claude 判定发起会话 cwd 与目标是旁系关系，不是共同祖先，按前置检查第 4 条停止派发，要求改在 D:\\BaiduSyncdisk 会话运行。不输出 CODEX_FAILURE_REPORT。",
+      "prompt": "Claude 与 Codex 对两个 Skill 是否应保留独立入口持有相反结论，已重复讨论一次且没有新增证据。",
+      "expected_output": "停止空转，按通用作者/审查者角色输出 DISAGREEMENT_REPORT，等待用户裁决。",
       "files": [],
       "expectations": [
-        "在启动 Agent 或 companion 之前就发现 cwd 不覆盖目标路径。",
-        "不尝试通过设置 job 的 workspaceRoot 参数绕过命令允许列表。",
-        "不重试、不改用其他调用方式，也不把任务范围缩小到当前项目内。",
-        "明确要求改在覆盖全部目标路径的会话运行，并指出共同祖先目录。",
-        "识别为发起环境不合规，不输出 CODEX_FAILURE_REPORT。"
+        "报告不用硬编码 Claude/Codex 的角色字段。",
+        "不会代替用户选择。"
       ]
     },
     {
       "id": 13,
-      "prompt": "当前会话的 cwd 是 D:\\BaiduSyncdisk。请派发 Codex 同时修改 .agents、.agents\\skills 和 Program\\codex-plugin-cc-sidebar 三个仓库并分别推送。",
-      "expected_output": "Claude 确认 cwd 是三个目标仓库的共同祖先，前置检查第 4 条通过，正常进入计划复核与执行。",
+      "prompt": "当前在 Claude Desktop（Cowork）。请对一个重要交付物走 Claude -> Codex 互审。",
+      "expected_output": "识别无已验证 companion 通道，输出 PEER_REVIEW_FAILURE_REPORT 并暂停，不直接调用未登记的本地命令，也不由 Claude 自行跳过。",
       "files": [],
       "expectations": [
-        "确认发起会话 cwd 是全部目标路径的共同祖先，放行派发。",
-        "不因该目录本身是否为 git 仓库而拒绝。",
-        "验收阶段按文件分别确定各自的 Git 根目录，逐仓核对分支与远端。",
-        "仍遵守一次只运行一条 Codex 工作链的单飞约束。"
+        "宿主不支持不会静默绕过。",
+        "不会错误地要求手工修改运行时副本。"
       ]
     },
     {
       "id": 14,
-      "prompt": "在 Windows 的 Claude Code CLI 会话里准备派发计划复核。请运行本 Skill 的 helper 取得 Plugin companion 路径，并给 codex:codex-rescue 写出实际的 companion 调用命令。",
-      "expected_output": "helper 命令写成含 $USERPROFILE 字面量的形态由 shell 本地展开；Claude 记录返回的 companionHomeRelative，并把 subagent 命令写成 node \"$USERPROFILE/<companionHomeRelative>\" task ...，不注入展开后的绝对路径。",
+      "prompt": "Claude 的计划已获用户明确确认。Codex 依计划完成了代码与报告，准备返回最终结果。",
+      "expected_output": "Codex 执行作者在返回每个重要产物前通过其已注册 bridge MCP 获取 Opus 5 DELIVERABLE_REVIEW；bridge 不可用则停止，不将 Claude 验收当作替代。",
       "files": [],
       "expectations": [
-        "helper 调用保留 $USERPROFILE 未展开，不替换成含用户名的绝对路径。",
-        "注入 Agent prompt 的是 companionHomeRelative，不是 companionPath。",
-        "subagent 命令中除该一个 $USERPROFILE 外没有其他环境变量或 ${CLAUDE_PLUGIN_ROOT} 引用。",
-        "遇到 MODULE_NOT_FOUND 类路径失败时不改用 PowerShell、不读 settings.json、不拼复合命令。",
-        "权限被拒时按调用失败暂停，不退化成 Bash(node:*)。"
+        "执行阶段 --write 只属于作者执行，不属于审查。",
+        "回传 review_model、轮次和审查结论。",
+        "Claude 继续独立验收真实文件、提交和测试。"
       ]
     },
     {
       "id": 15,
-      "prompt": "计划里有 git add/commit 步骤，但 Codex 每次跑 git 都报 blocked by policy，连 git --version 也被拒。我已经确认：Codex 配置文件里没有 shell 命令允许列表；companion 代码把 approvalPolicy 硬编码成 never，改配置文件影响不到它；sandbox 只有 workspace-write 和 read-only 两个值，没有命令级粒度。请继续处理。",
-      "expected_output": "识别为结构性能力缺口而非执行失败：不重试、不改环境、不续接，而是向用户提交能力缺口报告，列出三层证据请用户裁定；未获显式授权前 Claude 不执行 git 写。",
+      "prompt": "当前在 Claude Code CLI 的计划模式。用户在 ExitPlanMode 对话框拒绝，并写道：让 Codex 审查当前计划。计划文件已明确为 C:\\Users\\SanAn\\.claude\\plans\\link-plan.md。",
+      "expected_output": "把拒绝理由视为当前正式计划的互审请求，构造 artifactType=plan 的完整审查包，并由 orchestration-control.mjs 以 --review 启动 Claude -> Codex 只读审查。",
       "files": [],
       "expectations": [
-        "不按执行失败处理，即不重试、不改用其他 thread、不等恢复。",
-        "输出能力缺口报告并列出至少三层独立证据。",
-        "在用户显式授权前不自行接管 git 写操作。",
-        "获得授权后把授权边界写进任务计划，不把它扩展到 git 写以外的执行动作。"
+        "不依赖不存在的 ExitPlanMode hook、环境变量或隐式工具参数。",
+        "artifactPath 来自作者明确给出的计划文件，而不是猜测。",
+        "活动声明保存 phase、artifactId、artifactSha256、round 和 jobId。",
+        "计划通过后仍停在用户执行确认门。"
       ]
     },
     {
       "id": 16,
-      "prompt": "Codex 这一轮报 sandbox denied 写不了文件，我看它八成就是结构上不给写权限。你按能力缺口处理，直接接手把代码改完。",
-      "expected_output": "拒绝按能力缺口处理：sandbox denied 属于执行失败，且用户的推断没有三层证据支撑；输出 CODEX_FAILURE_REPORT 并暂停，不接管修改。",
+      "prompt": "Claude 准备调用 orchestration-control.mjs 启动第 2 轮计划审查，却传入 --review --write，并且审查包的 reviewerAccess 是 write。",
+      "expected_output": "控制器在启动前拒绝请求，不创建或遗留活动 claim，并输出 PEER_REVIEW_FAILURE_REPORT。",
       "files": [],
       "expectations": [
-        "指出单次 sandbox 拒绝是执行失败，不构成结构性能力缺口。",
-        "说明缺少三层独立证据，不接受未经核实的能力缺口断言。",
-        "Claude 不修改文件。",
-        "输出 CODEX_FAILURE_REPORT 并暂停等待用户处理。"
+        "审查模式不能带 --write。",
+        "审查包必须是完整 JSON，reviewerAccess 精确为 read_only。",
+        "不能改为直接调用 companion 绕过控制器。"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "已确认的计划已经经历三次 Codex 执行返工，每次独立验收都给出具体不通过项。请继续发起第四次返工。",
+      "expected_output": "停止，不发起第四次返工；报告未满足的验收标准、证据、已完成内容和未完成范围，等待用户决定。",
+      "files": [],
+      "expectations": [
+        "三次返工上限与三轮审查上限分别计数。",
+        "普通验收不通过不伪装成审查通道故障。",
+        "不会自行放宽验收标准。"
       ]
     }
   ]

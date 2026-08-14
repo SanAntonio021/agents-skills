@@ -1,29 +1,29 @@
 {
   "skill": "cross-model-research-loop",
-  "updated": "2026-07-11",
+  "updated": "2026-08-14",
   "cases": [
     {
       "id": "trigger-supervise-codex",
       "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督它，出问题你把关",
-      "expect": "触发本 skill，并在 Claude Code 中叠加 cross-model-orchestration；通过官方 codex:codex-rescue 下发里程碑任务，说明评审门流程。只有无 Plugin 的独立无头环境才用适配器 A",
+      "expect": "触发本 skill，并叠加 cross-model-orchestration；通过统一 bridge 的 submit_peer(target=codex, operation=task) 下发里程碑，提供精确 testCommands，再用 review_repair 审查。没有 bridge 或测试权限被拒绝时失败关闭。",
       "type": "should-trigger"
     },
     {
       "id": "trigger-exec-pitfall",
       "prompt": "codex exec 跑完退出码 0，但它说建好的结果目录根本不存在",
-      "expect": "触发本 skill；按 cli-adapters 检查 sandbox_mode 是否 read-only 被拦写入，按 review-gates 第一层核验产出存在性",
+      "expect": "触发本 skill；把 SDK sandbox 记录视为请求而非外层宿主回执，并按实际文件、allowlist、manifest 和同步哈希检查写入，按 review-gates 第一层核验产出存在性",
       "type": "should-trigger"
     },
     {
       "id": "trigger-resume-fail",
       "prompt": "我想用 codex exec resume 续接桌面版开的那个会话，报 does not start with session metadata",
-      "expect": "触发本 skill；说明 Desktop 与 CLI 会话不互通，改为新开 exec 会话并在任务指令里携带上下文",
+      "expect": "触发本 skill；说明旧 Desktop/CLI 会话续接不属于统一 bridge 的可验证恢复，改为指定 job 的 resume_peer 或用户确认后创建新 artifactId",
       "type": "should-trigger"
     },
     {
       "id": "trigger-mirror",
       "prompt": "我现在在 Codex 里干活，能不能反过来让 Claude 当执行者跑任务",
-      "expect": "触发本 skill；给适配器 B 的 claude -p 调用方式，强调异族红线仍满足",
+      "expect": "触发本 skill；给统一 bridge 的 target=claude、operation=task/review_repair 调用方式，强调异族红线仍满足",
       "type": "should-trigger"
     },
     {

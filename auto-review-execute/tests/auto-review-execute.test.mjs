@@ -10,8 +10,15 @@ import { generateCodexReviewBlock, removeLeadingCodexReviewBlock, parseLeadingCo
 import { acquireGlobalRunLock, ActiveRunError, releaseGlobalRunLock } from "../scripts/lock.mjs";
 import { parsePlanMetadata, validatePlanMetadata, classifyReadOnlyVerifyCommand } from "../scripts/plan-metadata.mjs";
 import { diffSnapshots, findOutOfScopeChanges, findSymlinkViolations, takeSnapshot } from "../scripts/snapshot.mjs";
-import { initializeReviewRun, launchReview, pollReview, recordClaudeEvaluation, finalizeReview } from "../scripts/review-loop.mjs";
+import { buildReviewPrompt, initializeReviewRun, launchReview, pollReview, recordClaudeEvaluation, finalizeReview, approveReviewSync } from "../scripts/review-loop.mjs";
 import { readState } from "../scripts/run-state.mjs";
+import {
+  cancelCodexJob,
+  launchCodexJob,
+  pollCodexJob,
+  readCodexResult,
+  approvePeerSync
+} from "../scripts/orchestration-adapter.mjs";
 import {
   pollExecution,
   recordExecutionConfirmation,
@@ -80,6 +87,19 @@ test("CODEX-REVIEW is singular, leading, parseable, and removable", () => {
   assert.equal(removeLeadingCodexReviewBlock(text), "# Body\n");
 });
 
+test("review prompt requires the complete PLAN_REVIEW contract without a legacy sentinel", () => {
+  const root = tempDir();
+  const planFile = path.join(root, "plan-working.md");
+  writePlan(planFile);
+  const prompt = buildReviewPrompt(planFile, root, 1);
+  assert.match(prompt, /complete PLAN_REVIEW/);
+  assert.match(prompt, /已确认事项/);
+  assert.match(prompt, /问题与理由/);
+  assert.match(prompt, /必须修改/);
+  assert.match(prompt, /剩余风险/);
+  assert.doesNotMatch(prompt, /REVIEW_COMPLETE/);
+});
+
 test("front matter and verifyCommand validation enforce read-only criteria", () => {
   const root = tempDir();
   const metadata = parsePlanMetadata(`---\nauto-review-execute:\n  targetRoots:\n    - "${root.replaceAll("\\", "\\\\")}"\n  allowedPaths:\n    - "${root.replaceAll("\\", "\\\\")}\\src"\n  acceptanceCriteria:\n    - id: ac-1\n      description: "source exists"\n      verifyCommand: "Test-Path src/index.js"\n      expectedOutput: "True"\n---\n# Plan\n`);
@@ -141,7 +161,20 @@ test("review hook state is resumable and uses plan-working.md as planFile", () =
   assert.equal(launched.state, "reviewing");
   const evaluating = pollReview(state.runDir, {
     poller: () => ({ status: "completed" }),
-    resultReader: () => ({ rendered: "REVIEW_COMPLETE" }),
+    resultReader: () => ({
+      rendered: [
+        "PLAN_REVIEW",
+        "结论：通过",
+        "已确认事项：",
+        "- 计划完整。",
+        "问题与理由：",
+        "- 无。",
+        "必须修改：",
+        "- 无。",
+        "剩余风险：",
+        "- 无。"
+      ].join("\n")
+    }),
     releaser: () => ({ ok: true })
   });
   assert.equal(evaluating.state, "evaluating");
@@ -150,6 +183,43 @@ test("review hook state is resumable and uses plan-working.md as planFile", () =
   const finalized = finalizeReview(state.runDir);
   assert.equal(finalized.state, "done_phase1");
   assert.equal(fs.readFileSync(source, "utf8"), "# Original\n");
+  releaseGlobalRunLock(globalLock);
+});
+
+test("review polling preserves high-risk approval and never starts a replacement model turn", () => {
+  const root = tempDir();
+  const source = path.join(root, "source-plan.md");
+  writePlan(source, "# Original\n");
+  const globalLock = acquireGlobalRunLock({ runId: "run-attention", stateFile: path.join(root, "run-attention", "state.json"), root });
+  const state = initializeReviewRun({ root, runId: "run-attention", sourcePlanFile: source, globalLock });
+  const launched = launchReview(state, {
+    launcher: () => ({ jobId: "attention-job", ownerToken: null, companionPath: "bridge", promptSha256: "x", promptBytes: 1 })
+  });
+  const changeId = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  const awaiting = pollReview(state.runDir, {
+    poller: () => ({
+      status: "needs_attention",
+      sync_status: "awaiting_user",
+      pending_high_risk: [{ id: changeId, action: "delete", path: "old.md" }]
+    }),
+    resultReader: () => ({ job: { pending_high_risk: [{ id: changeId, action: "delete", path: "old.md" }] }, rendered: "review" }),
+    releaser: () => ({ ok: true })
+  });
+  assert.equal(awaiting.state, "awaiting_user");
+  assert.equal(awaiting.peerSync.pendingHighRisk[0].id, changeId);
+  assert.throws(
+    () => approveReviewSync(state.runDir, ["cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"], { approver: () => ({}) }),
+    /exactly match/
+  );
+  const approved = approveReviewSync(state.runDir, [changeId], {
+    approver: ({ jobId, approvedChangeIds }) => {
+      assert.equal(jobId, "attention-job");
+      assert.deepEqual(approvedChangeIds, [changeId]);
+      return { sync_status: "synced", sync_request_id: "sync-1" };
+    }
+  });
+  assert.equal(approved.state, "evaluating");
+  assert.equal(approved.peerSync.syncResult.sync_request_id, "sync-1");
   releaseGlobalRunLock(globalLock);
 });
 
@@ -249,4 +319,92 @@ test("execution runs within declared roots and independent validation passes", (
   assert.equal(done.validation.passed, true);
   assert.equal(confirmed.executionAuthorization.planFinalSha256, sha256File(finalFile));
   releaseGlobalRunLock(globalLock);
+});
+
+test("bridge adapter routes to Codex without plugin registry and preserves review scope", () => {
+  const root = tempDir("bridge-adapter-project-");
+  const sourceDir = path.join(root, "src");
+  fs.mkdirSync(sourceDir, { recursive: true });
+  const artifact = path.join(sourceDir, "artifact.md");
+  fs.writeFileSync(artifact, "artifact\n", "utf8");
+  const fakeHome = tempDir("bridge-adapter-home-");
+  const fakeCli = path.join(root, "fake-bridge-cli.mjs");
+  const log = path.join(root, "bridge-request.json");
+  fs.writeFileSync(
+    fakeCli,
+    [
+      "import fs from 'node:fs';",
+      "const [command, ...args] = process.argv.slice(2);",
+      "const pick = (name) => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };",
+      `const log = ${JSON.stringify(log)};`,
+      "if (command === 'submit') { const request = JSON.parse(fs.readFileSync(pick('--request-file'), 'utf8')); fs.writeFileSync(log, JSON.stringify({ command, args, request })); process.stdout.write(JSON.stringify({ ok: true, data: { job_id: '11111111-1111-4111-8111-111111111111', state: 'queued', created: true } })); }",
+      "else if (command === 'status') { process.stdout.write(JSON.stringify({ ok: true, data: { job_id: args[0], state: 'needs_attention', sync_status: 'awaiting_user', pending_high_risk: [{ id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', action: 'delete', path: 'src/old.md' }] } })); }",
+      "else if (command === 'result') { process.stdout.write(JSON.stringify({ ok: true, data: { job_id: args[0], state: 'needs_attention', pending_high_risk: [{ id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', action: 'delete', path: 'src/old.md' }] } })); }",
+      "else if (command === 'cancel') { process.stdout.write(JSON.stringify({ ok: true, data: { job_id: args[0], cancellation_requested: true } })); }",
+      "else if (command === 'approve-sync') { process.stdout.write(JSON.stringify({ ok: true, data: { job_id: args[0], sync_request_id: '22222222-2222-4222-8222-222222222222', sync_status: 'synced' } })); }",
+      "else { process.exitCode = 2; }"
+    ].join("\n"),
+    "utf8"
+  );
+  const previousCli = process.env.CLAUDE_CODEX_BRIDGE_CLI;
+  const previousRoot = process.env.CLAUDE_CODEX_BRIDGE_ROOT;
+  const previousHome = process.env.USERPROFILE;
+  try {
+    process.env.CLAUDE_CODEX_BRIDGE_CLI = fakeCli;
+    delete process.env.CLAUDE_CODEX_BRIDGE_ROOT;
+    process.env.USERPROFILE = fakeHome;
+    const launched = launchCodexJob({
+      cwd: root,
+      targetRoots: [root],
+      allowedPaths: [artifact],
+      prompt: "review and repair",
+      artifactId: "adapter-artifact",
+      artifactType: "deliverable",
+      round: 2,
+      artifactPath: artifact,
+      operation: "review_repair"
+    });
+    assert.equal(launched.jobId, "11111111-1111-4111-8111-111111111111");
+    const submitted = JSON.parse(fs.readFileSync(log, "utf8"));
+    assert.equal(submitted.command, "submit");
+    assert.deepEqual(submitted.args.slice(0, 2), ["--target", "codex"]);
+    assert.equal(submitted.request.operation, "review_repair");
+    assert.equal(submitted.request.reviewerAccess, "isolated_write");
+    assert.equal(submitted.request.artifactId, "adapter-artifact");
+    assert.equal(submitted.request.artifactType, "deliverable");
+    assert.equal(submitted.request.round, 2);
+    assert.ok(submitted.request.targetRoot);
+    assert.deepEqual(submitted.request.allowedPaths, [path.relative(submitted.request.targetRoot, artifact)]);
+    assert.equal(submitted.request.artifactBytes, fs.statSync(artifact).size);
+    assert.equal(typeof submitted.request.artifactSha256, "string");
+    assert.equal(typeof submitted.request.artifactContent, "string");
+
+    const status = pollCodexJob({ cwd: root, jobId: launched.jobId });
+    assert.equal(status.status, "needs_attention");
+    assert.equal(status.sync_status, "awaiting_user");
+    assert.equal(status.pending_high_risk[0].action, "delete");
+    const result = readCodexResult({ cwd: root, jobId: launched.jobId });
+    assert.equal(result.job.pending_high_risk[0].id, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    assert.deepEqual(cancelCodexJob({ cwd: root, jobId: launched.jobId }), {
+      job_id: launched.jobId,
+      cancellation_requested: true
+    });
+    assert.deepEqual(
+      approvePeerSync({
+        cwd: root,
+        jobId: launched.jobId,
+        approvedChangeIds: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+      }),
+      { job_id: launched.jobId, sync_request_id: "22222222-2222-4222-8222-222222222222", sync_status: "synced" }
+    );
+  } finally {
+    if (previousCli === undefined) delete process.env.CLAUDE_CODEX_BRIDGE_CLI;
+    else process.env.CLAUDE_CODEX_BRIDGE_CLI = previousCli;
+    if (previousRoot === undefined) delete process.env.CLAUDE_CODEX_BRIDGE_ROOT;
+    else process.env.CLAUDE_CODEX_BRIDGE_ROOT = previousRoot;
+    if (previousHome === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = previousHome;
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true });
+  }
 });

@@ -10,7 +10,8 @@ import {
   launchCodexJob,
   pollCodexJob,
   readCodexResult,
-  releaseCodexClaim
+  releaseCodexClaim,
+  approvePeerSync
 } from "./orchestration-adapter.mjs";
 import { createInitialState, readState, setErrorState, transitionState, writeState } from "./run-state.mjs";
 import {
@@ -46,7 +47,7 @@ function reviewSnapshotPath(runDir, round) {
 }
 
 function failureReportPath(runDir) {
-  return path.join(runDir, "CODEX_FAILURE_REPORT.md");
+  return path.join(runDir, "PEER_REVIEW_FAILURE_REPORT.md");
 }
 
 function reviewSummaryPath(runDir) {
@@ -74,7 +75,8 @@ export function buildReviewPrompt(planFile, runDir, round) {
       "Copy the final planFile bytes to codexOutput after edits.",
       "Do not modify sourcePlanFile, git state, configuration, or any file outside allowedWrites.",
       "Do not run external, hardware, network, install, git, or system-changing commands.",
-      "End with REVIEW_COMPLETE and a one-sentence summary."
+      "Return a complete PLAN_REVIEW as the final response, with the conclusion line and all four required headings: 已确认事项, 问题与理由, 必须修改, 剩余风险.",
+      "Do not append any alternate completion sentinel."
     ],
     round,
     planFile: path.resolve(planFile),
@@ -88,12 +90,17 @@ function writeFailureReport(runDir, state, message) {
   atomicWriteFile(
     failureReportPath(runDir),
     [
-      "# CODEX_FAILURE_REPORT",
+      "# PEER_REVIEW_FAILURE_REPORT",
       "",
+      "direction: Claude -> Codex",
+      "phase: plan_review",
       `runId: ${state.runId}`,
       `state: ${state.state}`,
       `round: ${state.round}`,
-      `message: ${message}`,
+      `decisiveError: ${message}`,
+      "completed: bridge request and retained local evidence only",
+      "unfinished: peer review, synchronization, or execution",
+      "recovery: inspect the report, then resubmit explicitly or approve the recorded sync IDs",
       `time: ${nowIso()}`
     ].join("\n") + "\n"
   );
@@ -145,8 +152,8 @@ export function launchReview(state, { cwd = process.cwd(), launcher = launchCode
   fs.mkdirSync(roundDir, { recursive: false });
   const prompt = buildReviewPrompt(state.planFile, state.runDir, state.round);
   // The review workspace is intentionally the run-local plan directory, never
-  // the source plan directory. orchestration-control requires target roots to
-  // be under cwd, so both point to the run directory.
+  // the source plan directory. The unified bridge receives an explicit common
+  // root and file allowlist; it never writes the source plan directly.
   const reviewCwd = path.resolve(path.dirname(state.planFile));
   transitionState(state.runDir, "ready_for_review", (before) => ({
     ...before,
@@ -166,7 +173,22 @@ export function launchReview(state, { cwd = process.cwd(), launcher = launchCode
   atomicWriteJson(reviewSnapshotPath(state.runDir, state.round), preLaunchSnapshot);
   let launch;
   try {
-    launch = launcher({ cwd: reviewCwd, targetRoots: [reviewCwd], prompt });
+    launch = launcher({
+      cwd: reviewCwd,
+      targetRoots: [reviewCwd],
+      allowedPaths: [state.planFile, reviewOutputPath(state.runDir, state.round)],
+      prompt,
+      operation: "review_repair",
+      artifactId: `auto-review-execute:${state.runId}`,
+      artifactType: "plan",
+      round: state.round,
+      artifactPath: state.planFile,
+      acceptanceCriteria: [
+        "Return a complete PLAN_REVIEW with all five required sections.",
+        "Keep all changes inside the run-local plan and review output allowlist.",
+        "Do not report pass when tests, plan integrity, or acceptance checks fail."
+      ]
+    });
   } catch (error) {
     writeFailureReport(state.runDir, readState(state.runDir), error.message);
     return setErrorState(state.runDir, error.message, { codexFailureReport: failureReportPath(state.runDir) });
@@ -246,6 +268,22 @@ export function pollReview(runDir, {
     renewPersistentLock(state);
     const status = poller({ cwd: job.cwd || cwd, jobId: job.id, companionPath: job.companionPath || undefined });
     if (status.status === "queued" || status.status === "running") return state;
+    if (status.status === "needs_attention") {
+      const result = resultReader({ cwd: job.cwd || cwd, jobId: job.id, companionPath: job.companionPath || undefined });
+      try { releaser({ ownerToken: job.ownerToken, cwd: job.cwd || cwd }); } catch { /* bridge owns the durable lock */ }
+      return transitionState(runDir, "reviewing", (before) => ({
+        ...before,
+        state: "awaiting_user",
+        codexJob: null,
+        peerSync: {
+          jobId: job.id,
+          syncStatus: status.sync_status || "awaiting_user",
+          pendingHighRisk: status.pending_high_risk || result.job?.pending_high_risk || [],
+          result: result.job || null,
+          recordedAt: nowIso()
+        }
+      }));
+    }
     if (status.status !== "completed") {
       throw new Error(`Codex review ended with ${status.status}`);
     }
@@ -262,6 +300,25 @@ export function pollReview(runDir, {
     }
     return errored;
   }
+}
+
+/** Approve only the exact high-risk IDs already recorded by the bridge. */
+export function approveReviewSync(runDir, approvedChangeIds, { approver = approvePeerSync } = {}) {
+  const state = readState(runDir);
+  if (state.state !== "awaiting_user" || !state.peerSync?.jobId) {
+    throw new Error(`No peer synchronization is awaiting approval in ${state.state}`);
+  }
+  const expected = (state.peerSync.pendingHighRisk || []).map((change) => change.id).sort();
+  const supplied = [...new Set(approvedChangeIds || [])].sort();
+  if (expected.length !== supplied.length || expected.some((id, index) => id !== supplied[index])) {
+    throw new Error("approvedChangeIds must exactly match pendingHighRisk IDs");
+  }
+  const synced = approver({ cwd: state.execution?.cwd || path.dirname(state.planFile), jobId: state.peerSync.jobId, approvedChangeIds: supplied });
+  return transitionState(runDir, "awaiting_user", (before) => ({
+    ...before,
+    state: "evaluating",
+    peerSync: { ...before.peerSync, approvedChangeIds: supplied, syncResult: synced, approvedAt: nowIso() }
+  }));
 }
 
 export function recordClaudeEvaluation(runDir, {

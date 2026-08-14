@@ -1,44 +1,68 @@
 ---
 name: cross-model-research-loop
-description: 跨模型科研自动循环：监督者模型通过无头 CLI 调度异族执行者模型跑仿真/研究任务，在里程碑评审门把关，实现"睡觉时跑研究"。Use when 用户要自动执行多轮仿真、实验计划或论文流水线，需要长期后台运行和科研里程碑评审；在 Claude Code 中作为 `cross-model-orchestration` 的科研扩展使用。也用于排查 codex exec / claude -p 无头调用问题。不负责通用任务委派，也不负责执行者侧的科研技能本身。
+description: 跨模型科研自动循环：监督者通过统一 claude-codex-bridge MCP 调度异族执行者跑仿真、实验或论文流水线，在每个里程碑用 review_repair 审查、修复和测试，实现可暂停、可追溯的后台研究循环。Use when 用户要自动执行多轮仿真、实验计划或论文流水线，需要长期后台运行和科研里程碑评审；在两端叠加 cross-model-orchestration。旧 codex@openai-codex、codex exec 和 claude -p 仅作历史排错资料，不作为运行时入口。
 ---
 
 # 跨模型科研自动循环
 
 ## 作用
 
-把研究任务拆成"监督者 + 执行者"双角色循环：执行者（便宜模型）跑仿真、写代码、出结果；监督者（贵模型）发任务、卡里程碑、做物理和逻辑评审。已在多子带 THz 仿真项目完整验证（M0-M6 七个里程碑 + 论文初稿，2026-07-06/07）。
+把科研任务拆成“监督者 + 执行者 + 里程碑验收”循环。执行者在 bridge 固定副本中跑仿真、写代码、
+产出数据和文档；监督者按 `review_repair` 检查证据、修复允许范围内的问题、运行测试并决定是否推进。
+文件系统、manifest、job ID 和验收报告是证据，不能用执行者的完成声明替代。
 
-## 角色与分工原则
+## 角色与通道
 
-1. **监督者**：发任务、收结果、评审、决定下一步。token 消耗小、判断价值高，用贵模型。
-2. **执行者**：读计划、写代码、跑实验、产出数据和文档。token 消耗大，用便宜模型。
-3. **红线：监督者与执行者必须异族模型**（Claude↔GPT/Codex 等）。同族自监督会漏掉循环验证、口径漂移这类"自己骗自己"的问题。
-4. 默认形态：**Claude 监督 + Codex 执行**（成本最优：贵模型在低 token 位置）。镜像形态（Codex 监督 + `claude -p` 执行）用于 Claude 侧额度受限时，见 references/cli-adapters.md。
+1. 监督者负责拆分里程碑、发任务、收结果、做物理和逻辑评审、决定下一步。
+2. 执行者负责在明确 `targetRoot`/`allowedPaths` 内运行任务并保存可复核产物。
+3. 监督者和执行者必须是异族模型；同族自监督不算互审。
+4. 两端都通过同一个 `claude-codex-bridge` MCP：Claude 监督时 `target=codex`，Codex 监督时
+   `target=claude`（固定 `claude-opus-5`）。不直接调用旧 companion、`codex exec`、`claude -p` 或隐藏 Hook。
 
 ## 循环流程
 
-1. 任务以里程碑（milestone）为单位下发，每个任务结尾写明"跑完停下等评审"；
-2. Claude Code 中由 `cross-model-orchestration` 通过官方 `codex:codex-rescue` 执行每个里程碑；只有独立无头环境才使用 references/cli-adapters.md 的 CLI 兜底；
-3. 收到通知后先**验证产出真实存在**（目录、文件、行数），再做内容评审——执行者说"跑完了"不算数，见过声称完成实际只跑了旧回归脚本的案例；
-4. 评审通过 → 发下一个里程碑；不通过 → 打回并附具体修订要求（指名文件、指名判据）；
-5. 三种情况停下问用户：方向性决策（选题/期刊/故事线）、高风险操作（删除/覆盖成果）、需要花钱或动硬件。
+1. 先把研究问题拆成里程碑，每个里程碑写清输入、精确 `testCommands`、输出文件、物理验收判据和“跑完停下等评审”。
+2. 用 `submit_peer(operation=task)` 提交执行任务；任务需要写入时必须给最小 allowlist 和固定工作区。
+   Claude 方向的 `testCommands` 不得含引号、变量、通配符、重定向、管道或命令串联；权限拒绝即失败。
+3. 用 `await_peer`/`peer_result` 轮询同一 job，确认目录、文件、字节数、哈希、命令退出码和结果时间戳。
+4. 用 `submit_peer(operation=review_repair, artifactType=deliverable)` 把里程碑产物交给对方模型；
+   审查者在固定副本中检查证据、直接修复允许范围内的问题并运行测试，返回含五个固定组成部分的
+   `DELIVERABLE_REVIEW`。
+5. 作者检查 bridge 同步后的主项目。普通新增/修改自动同步；删除、重命名、权限、类型变化先停在
+   `awaiting_user`，用户明确批准精确 `pending_high_risk` ID 后才调用 `approve_peer_sync`。
+   待授权期间固定副本和目标根锁继续保留，不能用重叠任务绕过。
+6. 通过才进入下一个里程碑；不通过则把具体文件、证据、判据和 allowlist 发回执行者返工。
+7. 同一确认计划最多三次“返工 -> 独立验收”；第三次仍不通过输出报告并等待用户。
 
-评审抓手清单见 references/review-gates.md——这是本 skill 的核心资产。
+## 研究专用评审门
 
-## 与 ARIS 的边界
+评审抓手清单见 `references/review-gates.md`，至少检查：
 
-执行者侧的科研工作流（`experiment-plan`、`novelty-check`、`paper-plan`、`paper-write`、`auto-review-loop` 等）属于项目内安装的 ARIS skill（仓库 `C:\Users\SanAn\aris_repo`，项目级安装见各项目 `AGENTS.md` 的 ARIS 管理块），由执行者在会话内自行调用。本 skill 只管监督者侧：调度、验证、评审、推进。ARIS 的 `auto-review-loop` 是执行者会话内的自循环审稿，与本 skill 的外部监督循环互补，不互相替代。
+- 输入材料和参数是否真实存在、版本和单位是否一致；
+- 仿真/离线/Mock/硬件结果是否明确区分，不能把 dry-run 写成硬件 PASS；
+- 物理边界、SNR、带宽、采样率、时钟、温漂、Doppler、误码和统计重复是否满足验收判据；
+- 图表、日志、随机种子、环境版本和脚本是否能复现结果；
+- 结论是否超出证据，失败结果和未完成范围是否保留。
 
-## 与通用跨模型编排的边界
+监督者不得因“结果目录存在”就认定完成，也不得让执行者扩大 allowlist 或覆盖作者新改动。
 
-- Claude Code 中的一般任务由 `cross-model-orchestration` 负责自动触发、计划复核、执行、验收、返工和分歧上报。
-- 本 skill 只在任务需要多轮科研里程碑、长时间后台执行或研究专用评审门时叠加使用。
-- 两者同时使用时，通用 skill 管角色和交接，本 skill 只增加里程碑拆分、研究评审抓手和 CLI 排错经验，不另起一套并行调度流程。
+## 长任务与恢复
 
-## 维护
+每个里程碑保存 `artifactId`、round、job ID、目标根、基线/结果 manifest、测试结果和错误原因。
+不要猜测最新线程；恢复只使用指定 job 的 `resume_peer`，或在用户裁决后创建新的 `artifactId`。
+取消、超时、MCP 不可用、模型不匹配、sandbox/权限错误和主项目漂移都输出
+`PEER_REVIEW_FAILURE_REPORT` 并暂停，不换模型、不静默降级。
 
-- 适配器命令或坑位变化（CLI 升级、参数变更）→ 更新 references/cli-adapters.md 并注日期；
-- 评审中抓到新的通用问题模式 → 追加到 references/review-gates.md，一条一个模式；
-- 本 skill 不存放任何项目专属参数（口径数值、路径），项目专属内容写进该项目的 AGENTS.md；
-- ARIS 仓库路径（当前 `C:\Users\SanAn\aris_repo`）若随工作流重构迁移，需同步更新本文件"与 ARIS 的边界"节及各项目的 reconcile。
+## 与通用编排和 ARIS 的边界
+
+- `cross-model-orchestration` 负责宿主方向、审查包、三轮状态机、计划确认门、同步和失败报告。
+- 本 Skill 只增加科研里程碑拆分、物理验收抓手和长任务恢复，不另起并行调度协议。
+- 执行者侧的 `experiment-plan`、`novelty-check`、`paper-plan`、`paper-write` 等项目 Skill 仍由
+  执行者在其固定副本中调用；本 Skill 不存放项目专属参数或路径。
+
+## 维护与验证
+
+适配器变化、SDK/CLI 版本证据和新的科研风险模式分别追加到 `references/cli-adapters.md`、
+`references/review-gates.md` 并标注日期。评测至少覆盖两方向自动触发、简单任务跳过、一次
+`review_repair` 直接修复、三轮止损、用户确认门、审批同步、取消/恢复、模型不可用和 Codex Desktop
+可见性人工检查。源码推送后按全局规则定向同步并核对四层哈希。

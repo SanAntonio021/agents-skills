@@ -21,5 +21,8 @@
   {"query":"Codex 的中文怎么读？","should_trigger":false},
   {"query":"用一句话解释 BER。","should_trigger":false},
   {"query":"列出当前目录名称，不需要分析。","should_trigger":false},
-  {"query":"这条 PowerShell 命令是什么意思：Get-Date","should_trigger":false}
+  {"query":"这条 PowerShell 命令是什么意思：Get-Date","should_trigger":false},
+  {"query":"Claude 交付物已经改完，走统一 MCP 让 Codex 在隔离副本里审查并直接修复，然后我再验收。","should_trigger":true},
+  {"query":"Opus 5 审查后列出了删除和重命名项，我已明确批准这些变更，按原 ID 同步回主项目。","should_trigger":true},
+  {"query":"只告诉我某个文件的 SHA-256，不要分析或修改。","should_trigger":false}
 ]

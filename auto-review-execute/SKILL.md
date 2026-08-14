@@ -1,91 +1,73 @@
 ---
 name: auto-review-execute
 description: >
-  在 Claude Code CLI 中把已退出 Plan Mode 的明确计划交给 Codex 进行最多三轮可写审计，
-  再由 Claude 复核、向用户展示最终计划并在用户确认后受限执行。仅当计划文件由
-  CLAUDE_PLAN_FILE 明确提供、任务需要计划审计或按确认计划执行本地改动时使用；任何
-  缺少计划路径、元数据、用户确认或运行环境不兼容的情况都停止并报告，绝不猜测计划文件。
-compatibility: Requires Windows, Node.js 24+, an authenticated codex@openai-codex Claude plugin, and the sibling cross-model-orchestration skill. No npm dependencies.
+  在 Claude Code CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
+  在固定副本中审查、修复和测试，最多三轮；Claude 复核同步结果、向用户展示最终计划，并在用户
+  明确确认后按 allowlist 执行。也用于重要交付物的 Claude to Codex review_repair。缺少明确计划
+  路径、MCP、用户确认或完整验收证据时停止，不猜测路径、不调用旧 codex@openai-codex 插件。
+compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill. Legacy orchestration scripts are offline state helpers only.
 ---
 
 # Auto Review Execute
 
 ## 目标和边界
 
-本 Skill 只在 Claude Code CLI 主会话中运行。Claude 负责调度、语义判断、最终验收和向用户提问；
-Codex 负责在明确授权的范围内审计或执行。它是 `cross-model-orchestration` 的可写计划审计变体，
-不改变后者的只读复核契约。
+本 Skill 只在 Claude Code CLI 主会话中运行。Claude 是作者和最终验收者；Codex 是 bridge 固定副本
+中的审查/修复者。它不把审查者写入主项目，也不把审查通过当成执行授权。
 
-运行根目录为 `%LOCALAPPDATA%\auto-review-execute\<runId>\`。所有审计版本都在这里：
+旧 `codex@openai-codex` companion、`orchestration-control.mjs` claim 和隐藏 Hook 不再是运行时入口。
+保留的 Node 脚本只维护本地状态、快照和用户确认哈希；模型调度必须通过同一个 MCP，或通过源码中
+明确标记的 bridge CLI 兼容适配器。
 
-```text
-<runId>/
-  plan-original.md
-  plan-working.md
-  plan-final.md
-  state.json
-  global-lock linkage and run.lock
-  round-<n>/
-  pre-execute-snapshot.json
-  execution/ or rework-attempt-<n>/
-```
-
-`plan-working.md` 是审计阶段唯一可修改的计划文件。`planFile` 永远指向它；不要把修改同步回
-原始 `CLAUDE_PLAN_FILE`，也不要另造一个工作版本。
-
-## 前置条件
-
-1. 先完成 `cross-model-orchestration` 的宿主、插件、cwd 和权限预检。
-2. 只接受 `CLAUDE_PLAN_FILE` 指向的常规非符号链接文件。环境变量不存在、路径不存在或为链接时，
-   hook 仅向 `trigger-errors.log` 记录错误并停止。绝不扫描“最新 Markdown”。
-3. 运行目录和锁根目录由 `AUTO_REVIEW_EXECUTE_HOME` 覆盖（仅测试），默认 `%LOCALAPPDATA%\auto-review-execute`。
-4. 不直接修改 `%USERPROFILE%\.claude\settings.json`。Hook 安装属于 cc-switch 权威配置的单独部署操作，
-   只有用户明确允许改配置时才按本仓库规则执行。
-
-## Hook 协议
-
-ExitPlanMode hook 调用：
+运行根目录为 `%LOCALAPPDATA%\auto-review-execute\<runId>\`：
 
 ```text
-node "D:/BaiduSyncdisk/.agents/skills/auto-review-execute/scripts/trigger-review.mjs"
+plan-original.md / plan-working.md / plan-final.md
+state.json / run.lock
+round-<n>/ (审查包、快照、结果)
+execution/ 或 rework-attempt-<n>/
 ```
 
-hook 只做以下工作：验证 `CLAUDE_PLAN_FILE`，复制为 `plan-original.md` 和 `plan-working.md`，写入
-`state.json`（`ready_for_review`），获取持久 `global.lock`，然后退出。它不启动、不轮询、不等待
-Codex。Claude 会话读取并轮询 `state.json` 继续流程。
+## 入口与计划路径
 
-过期锁接管前必须从旧 `state.json` 找到并取消活跃 Codex job；不能安全取消时拒绝接管，避免两条
-写链并发。
+只接受 `CLAUDE_PLAN_FILE` 明确指向的常规文件。环境变量不存在、路径不存在、符号链接、字节数或
+哈希无法读取时停止；不扫描“最新 Markdown”。ExitPlanMode hook 只复制计划、写入 `ready_for_review`
+状态并退出，不启动模型。
 
-## 阶段一：审计
+Claude 继续流程时，使用 `cross-model-orchestration` 的完整审查包调用：
 
-Claude 按以下命令推进。`<run-dir>` 必须来自 hook 输出的 `stateFile` 父目录。
-
-```powershell
-node scripts/review-loop.mjs status --run-dir "<run-dir>"
-node scripts/review-loop.mjs launch --run-dir "<run-dir>"
-node scripts/review-loop.mjs poll --run-dir "<run-dir>"
+```text
+submit_peer(target=codex, operation=review_repair,
+  artifactType=plan, artifactId=auto-review-execute:<runId>,
+  round=<1..3>, targetRoot=<受控共同根>, allowedPaths=<计划和本轮输出文件>)
 ```
 
-`launch` 仅授权 Codex 写 run 内的 `plan-working.md` 和本轮 `codex-output.md`。它不能写源计划、Git、
-配置或系统文件。Claude 轮询到 `evaluating` 后必须基于 `diff.json` 和审计结果做语义判断：
+轮询只能使用同一 job 的 `await_peer`/`peer_result`。bridge 的 `review_repair` 会在固定副本中一次
+完成审查、修复、测试并返回包含结论、已确认事项、问题与理由、必须修改和剩余风险的完整
+`PLAN_REVIEW`；普通变更自动同步，删除/重命名/权限/类型变化必须停在
+`awaiting_user`，由用户明确批准完整的 `pending_high_risk[].id` 集合后再调用 `approve_peer_sync`。
+授权只重新核对基线和副本哈希并同步，不重新调用 Codex；ID 不匹配、主项目漂移或副本变化都输出
+`PEER_REVIEW_FAILURE_REPORT` 并关闭本轮。
+待授权期间 bridge 保留固定副本和目标根锁；重叠任务必须停止，不能换 `artifactId` 绕过。
 
-- 同意：`evaluate --decision agree`，再 `finalize`；
-- 轻微调整：Claude 提供调整后的工作版本，`evaluate --decision minor --adjusted-plan-file ...`，再 `finalize`；
-- 重大异议：`evaluate --decision major`，最多三轮；
-- 三轮仍无法收敛：`evaluate --decision diverge`，状态进入 `diverged`，由用户裁决。
+## 审查阶段
 
-```powershell
-node scripts/review-loop.mjs evaluate --run-dir "<run-dir>" --decision agree --rationale "..."
-node scripts/review-loop.mjs finalize --run-dir "<run-dir>"
-```
+审查包必须包含 `artifactBytes`、`artifactSha256`、完整内容或明确路径、前轮 findings、验收标准和
+`reviewerAccess=isolated_write`。Claude 收到 bridge 结果后先检查主项目快照和同步状态，再作语义判断：
 
-`finalize` 先从工作版本删除唯一的 `CODEX-REVIEW` 块，再原子写入 `plan-final.md`，并确认最终文件无残留块。
+- `通过`：保存 `PLAN_REVIEW`，进入 `done_phase1`；
+- `需修改`：由 Claude 修订 `plan-working.md`，更新哈希和 `priorFindings`，最多进入下一轮；
+- `实质分歧` 或第 3 轮仍需修改：输出 `DISAGREEMENT_REPORT`，等待用户裁决。
 
-## 阶段二：确认、执行、独立验收
+格式错误、bridge 不可用、超时、Codex 越界写入、主项目漂移或同步冲突写入
+`PEER_REVIEW_FAILURE_REPORT` 并停止，不换模型、不静默降级。旧的
+`orchestration-control.mjs` 和 `check-resume-candidate.mjs` 仅在显式归档诊断标志下可运行，不能作为
+模型调度入口。
 
-Claude 先展示 `plan-final.md` 和执行摘要，明确询问是否执行。用户确认后记录确认人和当时
-`plan-final.md` 的 SHA-256：
+## 确认、执行和验收
+
+`finalize` 只生成 `plan-final.md`，不会启动执行。Claude 必须向用户展示最终计划、每轮结论、已解决
+项、剩余风险和范围；用户明确确认后才记录确认人及 `plan-final.md` SHA-256：
 
 ```powershell
 node scripts/execute-plan.mjs confirm --run-dir "<run-dir>" --confirmed-by "user"
@@ -94,69 +76,20 @@ node scripts/execute-plan.mjs poll --run-dir "<run-dir>"
 node scripts/execute-plan.mjs validate --run-dir "<run-dir>"
 ```
 
-执行前重新计算哈希；只要与确认记录不同，状态转为 `awaiting_user`，不执行。该绑定防止用户确认后
-计划被替换。
+执行作者可以在确认的 `targetRoots`/`allowedPaths` 内写入，但重要交付物返回前必须再次走
+`submit_peer(target=codex, operation=review_repair, artifactType=deliverable)`；作者检查同步后才算交付。
+验收失败最多允许三次“返工 -> 独立验收”，第三次仍失败进入 `awaiting_user`，不发第四次。
 
-`plan-final.md` 必须有严格的 YAML front matter：
-
-```markdown
----
-auto-review-execute:
-  targetRoots:
-    - "D:\\BaiduSyncdisk\\my-project"
-  allowedPaths:
-    - "D:\\BaiduSyncdisk\\my-project\\src"
-  acceptanceCriteria:
-    - id: ac-1
-      description: "入口文件存在"
-      verifyCommand: "Test-Path src/index.js"
-      expectedOutput: "True"
----
-```
-
-允许的 `verifyCommand` 只有无副作用的：`Test-Path`、`Get-Content`、`node --version`。每条命令同时要求
-退出码为 0 且输出包含 `expectedOutput`。`Test-Path` / `Get-Content` 仅能读取 `targetRoots` 内的具体路径，
-禁止通配符、管道、重定向、变量展开和命令连接符。
-
-执行前后快照记录所有目录项：新增、删除、内容或类型变更、符号链接新增/变更，以及根目录被替换。快照
-不跟随符号链接；目标根或变更集合中任何符号链接均使范围校验失败。范围外新增、删除或重命名都按失败处理。
-
-验收失败时可启动最多两次返工：
-
-```powershell
-node scripts/execute-plan.mjs rework --run-dir "<run-dir>"
-```
-
-每次返工后必须重新运行完整 `validate`。两次仍失败转 `awaiting_user`。
-
-## 状态和停止条件
-
-- `ready_for_review`：hook 已建立工作版本；
-- `reviewing`：Codex 审计任务正在运行；
-- `evaluating`：等待 Claude 判断；
-- `done_phase1`：最终计划已生成，尚未执行；
-- `awaiting_execution_confirmation`：用户确认哈希已记录；
-- `executing` / `reworking`：Codex 正在写受限项目范围；
-- `validating`：Claude 独立检查快照和命令；
-- `done`：所有独立验收通过；
-- `error`、`diverged`、`awaiting_user`：停止，保留状态和证据，不自动接管或重试。
-
-认证、权限、sandbox、超时、额度或 runtime 失败一律写 `CODEX_FAILURE_REPORT.md` 并停止。不得让 Claude
-静默改由自己执行。
+计划元数据的 `verifyCommand` 只允许无副作用的 `Test-Path`、`Get-Content` 和 `node --version`，并要求
+退出码为 0 且输出包含 `expectedOutput`。执行前后快照记录所有目录项；符号链接、范围外新增/删除/重命名
+或计划确认哈希变化均停止，不生成纯文本补丁。
 
 ## 验证与发布
-
-本技能的聚焦测试：
 
 ```powershell
 node --test tests/*.test.mjs
 ```
 
-完成源码修改后，从 `D:\BaiduSyncdisk\.agents\skills` 精确暂存 `auto-review-execute`，执行 `git commit` 和
-`git push`。推送成功后，按仓库全局规则调用：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1" -Skills "auto-review-execute" -ExpectedRemoteCommit "<40-character-remote-commit>"
-```
-
-只有该脚本返回 `runtime_active`，才可报告运行时已生效；否则只能报告“源码已推送，运行时未生效”。
+源码修改后从 `D:\BaiduSyncdisk\.agents\skills` 精确暂存 `auto-review-execute`，提交并推送。推送
+成功后按全局规则调用定向 `Invoke-CcSwitchSkillSync.ps1`，传入 Skill 名和 40 位远端提交 SHA；只有
+四层文件集合和 SHA-256 一致才报告运行时已生效，否则报告“源码已推送，运行时未生效”。

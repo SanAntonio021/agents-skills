@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * orchestration-control.mjs — Claude-Codex cross-model orchestration helper.
+ * ARCHIVED behavior reference for the retired codex@openai-codex companion.
+ * The unified claude-codex-bridge is the only runtime entry. This module is
+ * retained for deterministic state/lock tests and historical diagnosis.
  *
  * Sub-commands:
  *   launch       Start a background Codex task under the orchestration lock.
@@ -987,6 +989,11 @@ function parseCliArgs(argv) {
 }
 
 async function main() {
+  if (process.env.CLAUDE_CODEX_LEGACY_ARCHIVE !== "1") {
+    process.stderr.write("Archived companion control is disabled; use claude-codex-bridge MCP/CLI.\n");
+    process.exitCode = 2;
+    return;
+  }
   const { subcommand, opts, positionals } = parseCliArgs(process.argv);
   const cwd = opts.cwd || process.cwd();
 

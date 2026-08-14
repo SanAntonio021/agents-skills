@@ -4,11 +4,12 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code CLI。把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计计划。",
-      "expected_output": "Claude 形成正式计划并由 Codex 用无 --write 的只读任务输出 PLAN_REVIEW；需修改时 Claude 自己修订计划，最多三轮，计划通过后仍等待用户确认。",
+      "expected_output": "Claude 形成正式计划并由统一 bridge 的 target=codex、operation=review_repair 在固定副本中审查、修复和测试；需修改时 Claude 作为作者修订，最多三轮，计划通过后仍等待用户确认。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
-        "识别 Claude -> Codex 的只读审查方向。",
-        "审查调用不含 --write，且前后文件快照完全一致。",
+        "识别 Claude -> Codex 的统一 bridge 方向。",
+        "完整审查包含作者、审查者、轮次、哈希、验收标准和限制；review_repair 只写固定副本。",
+        "固定副本提供完整目标根上下文，但 allowlist 仍限制所有实际变化。",
         "PLAN_REVIEW 通过后不会直接执行。",
         "作者而非审查者修订计划。"
       ]
@@ -16,11 +17,12 @@
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。",
-      "expected_output": "任务自动触发 Codex -> Claude Opus 5 的计划互审；Codex 通过 bridge 提交完整只读审查包，并只接受 review_model 精确为 claude-opus-5 的 PLAN_REVIEW。",
+      "expected_output": "任务自动触发 Codex -> Claude Opus 5 的计划互审；Codex 通过统一 bridge 提交完整审查包，在固定副本中完成 review_repair，并只接受 review_model 精确为 claude-opus-5 的 PLAN_REVIEW。",
       "files": [],
       "expectations": [
         "Codex Desktop 的复杂任务会触发本 Skill。",
         "审查包含计划内容、哈希、验收标准和 round=1。",
+        "需要 Bash 验证时提供逐条精确且不可串联的 testCommands。",
         "不传 opus 别名或 fallback model。",
         "计划通过后仍等待用户明确确认。"
       ]
@@ -28,22 +30,23 @@
     {
       "id": 3,
       "prompt": "当前在 Codex CLI。修复这个脚本的数据计算错误，补测试并交付代码改动。",
-      "expected_output": "Codex 是执行作者；重要代码交付物在交付前由 Opus 5 以 DELIVERABLE_REVIEW 只读审查，Codex 根据意见修订。",
+      "expected_output": "Codex 是执行作者；重要代码交付物在交付前由 Opus 5 在固定副本中以 review_repair 完成 DELIVERABLE_REVIEW，Codex 检查同步结果并根据意见修订。",
       "files": [],
       "expectations": [
         "交付物用 DELIVERABLE_REVIEW，不误用 PLAN_REVIEW。",
-        "Opus 5 无工具且不能写文件。",
+        "Opus 5 不能写作者主项目；review_repair 的写入只能发生在 bridge 固定副本。",
         "Codex 记录修改后新的字节数和 SHA-256。",
+        "测试命令只通过精确 testCommands 授权，permission denial 不能被通过结论覆盖。",
         "最多三轮。"
       ]
     },
     {
       "id": 4,
       "prompt": "当前在 Claude Code CLI。把随附的 technical-note.md 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
-      "expected_output": "Claude 的重要文字交付物先由 Codex 只读审查；审查意见由 Claude 作为作者修订，Codex 不修改文件。",
+      "expected_output": "Claude 的重要文字交付物先由统一 bridge 的 Codex review_repair 在固定副本中审查、修复和测试；Claude 作为作者检查同步结果并继续修订。",
       "files": ["evals/fixtures/technical-note.md", "evals/fixtures/reference.md"],
       "expectations": [
-        "明确 Claude -> Codex 审查者只读。",
+        "明确 Claude -> Codex 使用 reviewerAccess=isolated_write，主项目仍只由 bridge 同步。",
         "使用 DELIVERABLE_REVIEW。",
         "Claude 独立验证链接和产物，不只接受完成声明。",
         "审查者写入会使该轮失败。"
@@ -112,12 +115,12 @@
     },
     {
       "id": 11,
-      "prompt": "Codex 只读审查结束后，快照发现 README.md 的 SHA-256 变化。审查结果本身说通过。",
-      "expected_output": "拒绝审查结果并输出 PEER_REVIEW_FAILURE_REPORT，decisiveError 为 reviewer_write_detected。",
+      "prompt": "Codex 的固定副本 review_repair 结束后，主项目快照发现 README.md 的 SHA-256 在审查期间变化。审查结果本身说通过。",
+      "expected_output": "拒绝同步并输出 PEER_REVIEW_FAILURE_REPORT，decisiveError 为 baseline_drift；不得覆盖作者新改动。",
       "files": [],
       "expectations": [
         "不能先回滚再接受。",
-        "审查者不拥有修复权限。"
+        "审查者只能写固定副本，不能覆盖主项目。"
       ]
     },
     {
@@ -132,11 +135,11 @@
     },
     {
       "id": 13,
-      "prompt": "当前在 Claude Desktop（Cowork）。请对一个重要交付物走 Claude -> Codex 互审。",
-      "expected_output": "识别无已验证 companion 通道，输出 PEER_REVIEW_FAILURE_REPORT 并暂停，不直接调用未登记的本地命令，也不由 Claude 自行跳过。",
+      "prompt": "当前在 Claude Desktop（Cowork），且没有已注册的 claude-codex-bridge MCP。请对一个重要交付物走 Claude -> Codex 互审。",
+      "expected_output": "识别无已验证 bridge 通道，输出 PEER_REVIEW_FAILURE_REPORT 并暂停，不直接调用未登记的本地命令，也不由 Claude 自行跳过。",
       "files": [],
       "expectations": [
-        "宿主不支持不会静默绕过。",
+        "宿主不支持或 MCP 未注册不会静默绕过。",
         "不会错误地要求手工修改运行时副本。"
       ]
     },
@@ -146,7 +149,7 @@
       "expected_output": "Codex 执行作者在返回每个重要产物前通过其已注册 bridge MCP 获取 Opus 5 DELIVERABLE_REVIEW；bridge 不可用则停止，不将 Claude 验收当作替代。",
       "files": [],
       "expectations": [
-        "执行阶段 --write 只属于作者执行，不属于审查。",
+        "执行阶段写入只属于作者执行，review_repair 的写入只发生在 bridge 固定副本。",
         "回传 review_model、轮次和审查结论。",
         "Claude 继续独立验收真实文件、提交和测试。"
       ]
@@ -154,24 +157,24 @@
     {
       "id": 15,
       "prompt": "当前在 Claude Code CLI 的计划模式。用户在 ExitPlanMode 对话框拒绝，并写道：让 Codex 审查当前计划。计划文件已明确为 C:\\Users\\SanAn\\.claude\\plans\\link-plan.md。",
-      "expected_output": "把拒绝理由视为当前正式计划的互审请求，构造 artifactType=plan 的完整审查包，并由 orchestration-control.mjs 以 --review 启动 Claude -> Codex 只读审查。",
+      "expected_output": "把拒绝理由视为当前正式计划的互审请求，构造 artifactType=plan 的完整审查包，并由统一 bridge 以 target=codex、operation=review_repair 启动固定副本审查。",
       "files": [],
       "expectations": [
         "不依赖不存在的 ExitPlanMode hook、环境变量或隐式工具参数。",
         "artifactPath 来自作者明确给出的计划文件，而不是猜测。",
-        "活动声明保存 phase、artifactId、artifactSha256、round 和 jobId。",
+        "bridge job 记录 phase、artifactId、artifactSha256、round、jobId 和同步状态。",
         "计划通过后仍停在用户执行确认门。"
       ]
     },
     {
       "id": 16,
-      "prompt": "Claude 准备调用 orchestration-control.mjs 启动第 2 轮计划审查，却传入 --review --write，并且审查包的 reviewerAccess 是 write。",
-      "expected_output": "控制器在启动前拒绝请求，不创建或遗留活动 claim，并输出 PEER_REVIEW_FAILURE_REPORT。",
+      "prompt": "Claude 准备通过统一 bridge 启动第 2 轮计划审查，却把 reviewerAccess 写成 write，并试图把允许路径扩大到计划包之外。",
+      "expected_output": "bridge 在启动前拒绝不合法的审查包或越界范围，不创建可接受的 review job，并输出 PEER_REVIEW_FAILURE_REPORT。",
       "files": [],
       "expectations": [
-        "审查模式不能带 --write。",
-        "审查包必须是完整 JSON，reviewerAccess 精确为 read_only。",
-        "不能改为直接调用 companion 绕过控制器。"
+        "审查包必须是完整 JSON，reviewerAccess 只能是 read_only 或 isolated_write。",
+        "allowedPaths 不能被审查者扩大。",
+        "不能改为直接调用旧 companion 绕过 bridge。"
       ]
     },
     {
@@ -183,6 +186,92 @@
         "三次返工上限与三轮审查上限分别计数。",
         "普通验收不通过不伪装成审查通道故障。",
         "不会自行放宽验收标准。"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "Codex 的 Opus 5 review_repair 删除了一个文件并新增了一个文件，bridge 返回 needs_attention 和 pending_high_risk。用户明确同意这些 ID。",
+      "expected_output": "先展示高风险变更，再用 approve_peer_sync 提交精确 ID 集合；同步请求重新核对基线，不重新调用模型。",
+      "files": [],
+      "expectations": [
+        "错误或不完整的 ID 集合被拒绝。",
+        "同步结果带有新的 sync_request_id。",
+        "主项目在授权前不变，授权后才按哈希验证同步。"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Claude 需要把一份重要交付物交给 Codex 审查，并希望 Codex 直接修复允许范围内的问题、运行测试后返回 DELIVERABLE_REVIEW。",
+      "expected_output": "Claude 通过同一 bridge 的 submit_peer(target=codex, operation=review_repair) 完成一次审查、修复和测试，作者检查同步后的主项目。",
+      "files": [],
+      "expectations": [
+        "不调用 codex@openai-codex、codex exec 或隐藏 Hook。",
+        "reviewerAccess 为 isolated_write，targetRoot 和 allowedPaths 明确。",
+        "DELIVERABLE_REVIEW 必须包含五个固定组成部分，格式错误、越界写入或同步冲突停止。"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "bridge 返回 Claude 请求模型为 claude-opus-5，但 system/init.model 缺失；结果正文声称审查通过。",
+      "expected_output": "拒绝结果并输出 PEER_REVIEW_FAILURE_REPORT，不能把缺失的实际模型回执当作通过。",
+      "files": [],
+      "expectations": [
+        "请求模型和实际回执模型分开记录。",
+        "不选择 fallback model。"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "同一个 artifactId 的第 3 轮 review_repair 仍返回需修改，同时主项目在审查期间发生了新改动。",
+      "expected_output": "优先输出基线漂移失败报告，不覆盖作者改动，也不发起第 4 轮；用户需要重新提交或裁决。",
+      "files": [],
+      "expectations": [
+        "三轮上限和基线漂移两个停止条件都被保留。",
+        "不生成纯文本补丁。"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "Claude -> Codex 的 review_repair job 终态显示 succeeded，但正文只有 `DELIVERABLE_REVIEW - Blocked`，并说明 OAuth 登录失效或执行策略拒绝写入。",
+      "expected_output": "bridge 将结果转为 peer_contract_error，输出 PEER_REVIEW_FAILURE_REPORT 并停止；不把模型的 blocked 声明当作成功，不同步固定副本变更，也不换模型重试。",
+      "files": [],
+      "expectations": [
+        "缺少合法结论或明确 blocked/incomplete 会在同步前失败关闭。",
+        "失败报告保留方向、job ID、请求/实际模型、决定性错误和恢复条件。",
+        "主项目不被审查副本覆盖，且不选择 fallback。"
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "Claude 只想通过 target=codex、operation=ask 问一个不需要读取项目的简短问题。请把当前项目根和 bridge job 目录都作为 cwd 方便 Codex 查资料。",
+      "expected_output": "拒绝暴露项目或 bridge 状态；Codex ask 使用专用空只读目录，只根据请求正文作答。",
+      "files": [],
+      "expectations": [
+        "ask 的 reviewerAccess 为 read_only。",
+        "cwd 不指向作者项目、daemon token 或保留 workspace。",
+        "需要项目材料时改用完整审查包和固定副本，不扩大 ask 权限。"
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "一个 review_repair 因删除文件停在 awaiting_user，固定副本和高风险 ID 仍保留。现在用新的 artifactId 对同一目标根再发一个任务。",
+      "expected_output": "新任务以 retained_workspace_conflict 失败；先处理原待授权变更，不能靠新 artifactId 绕过持久锁。",
+      "files": [],
+      "expectations": [
+        "待授权副本继续锁住重叠目标根。",
+        "不会自动删除用户材料或丢弃 pending_high_risk。",
+        "不会启动第二个模型任务。"
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "Opus 5 的 review_repair 正文写结论通过，但受保护结果里 permission_denials 显示 npm.cmd test 被拒绝，实际没有运行测试。",
+      "expected_output": "bridge 以 peer_contract_error 失败关闭，输出 PEER_REVIEW_FAILURE_REPORT，不接受通过结论，也不同步副本。作者修正精确 testCommands 或执行环境后重新提交。",
+      "files": [],
+      "expectations": [
+        "permission_denials 是独立失败证据，优先于模型自报通过。",
+        "Bash 只允许作者逐条给出的安全精确 testCommands，不扩大为任意 Bash。",
+        "失败 job 不同步主项目，也不静默降级。"
       ]
     }
   ]

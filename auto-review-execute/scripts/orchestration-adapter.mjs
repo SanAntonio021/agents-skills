@@ -4,26 +4,27 @@ import os from "node:os";
 import path from "node:path";
 
 import { sha256Text } from "./common.mjs";
-import { cmdRelease } from "../../cross-model-orchestration/scripts/orchestration-control.mjs";
 
-const SKILL_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")), "..");
-const ORCHESTRATION_CONTROL = path.resolve(
-  SKILL_ROOT,
-  "..",
-  "cross-model-orchestration",
-  "scripts",
-  "orchestration-control.mjs"
-);
-const RESUME_CANDIDATE = path.resolve(
-  SKILL_ROOT,
-  "..",
-  "cross-model-orchestration",
-  "scripts",
-  "check-resume-candidate.mjs"
-);
+function bridgeCliPath() {
+  const configured = process.env.CLAUDE_CODEX_BRIDGE_CLI;
+  const root = process.env.CLAUDE_CODEX_BRIDGE_ROOT;
+  const candidates = [
+    configured,
+    root ? path.join(root, "dist", "src", "cli", "main.js") : null,
+    "D:/BaiduSyncdisk/.agents/mcp/claude-codex-bridge/dist/src/cli/main.js"
+  ].filter(Boolean);
+  const found = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!found) {
+    throw new Error(
+      "claude-codex-bridge CLI is unavailable; register/build the unified bridge MCP or set CLAUDE_CODEX_BRIDGE_CLI"
+    );
+  }
+  return path.resolve(found);
+}
 
-function runNode(script, args, cwd) {
-  const result = spawnSync(process.execPath, [script, ...args], {
+function runBridge(args, cwd) {
+  const cli = bridgeCliPath();
+  const result = spawnSync(process.execPath, [cli, ...args], {
     cwd,
     encoding: "utf8",
     shell: false,
@@ -31,86 +32,182 @@ function runNode(script, args, cwd) {
     env: process.env
   });
   if (result.error || result.status !== 0) {
-    throw new Error(`${path.basename(script)} failed (exit ${result.status ?? -1}): ${(result.stderr || result.stdout).trim()}`);
+    throw new Error(`claude-codex-bridge failed (exit ${result.status ?? -1}): ${(result.stderr || result.stdout).trim()}`);
   }
+  let envelope;
   try {
-    return JSON.parse(result.stdout);
+    envelope = JSON.parse(result.stdout);
   } catch {
-    throw new Error(`${path.basename(script)} returned invalid JSON: ${result.stdout}`);
+    throw new Error(`claude-codex-bridge returned invalid JSON: ${result.stdout}`);
   }
+  if (!envelope.ok) {
+    const message = envelope.error?.message || envelope.error || "bridge request failed";
+    throw new Error(String(message));
+  }
+  return envelope.data;
+}
+
+function commonAncestor(paths) {
+  const absolute = paths.map((entry) => path.resolve(entry));
+  if (!absolute.length) return path.resolve(process.cwd());
+  let candidate = absolute[0];
+  for (const entry of absolute.slice(1)) {
+    while (candidate !== path.dirname(candidate) && !isInside(candidate, entry)) {
+      candidate = path.dirname(candidate);
+    }
+  }
+  return candidate;
+}
+
+function isInside(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative));
+}
+
+function bridgeScope(targetRoots, explicitAllowedPaths = null) {
+  const roots = targetRoots.map((entry) => path.resolve(entry));
+  const ancestor = commonAncestor(roots);
+  const targetRoot = ancestor;
+  const candidates = explicitAllowedPaths ? explicitAllowedPaths.map((entry) => path.resolve(entry)) : roots;
+  const allowedPaths = candidates.map((entry) => {
+    const relative = path.relative(targetRoot, entry);
+    if (relative.startsWith(`..${path.sep}`) || relative === ".." || path.isAbsolute(relative)) {
+      throw new Error(`Could not express target root inside bridge scope: ${entry}`);
+    }
+    return relative || ".";
+  });
+  return { targetRoot, allowedPaths };
+}
+
+function createRequestFile({ cwd, targetRoots, allowedPaths, prompt, operation, artifactId, artifactType, round, artifactPath, acceptanceCriteria }) {
+  const scope = bridgeScope(targetRoots, allowedPaths);
+  const request = {
+    question: prompt,
+    route: "headless",
+    operation,
+    ...(operation === "review_repair" ? { reviewerAccess: "isolated_write" } : {}),
+    targetRoot: scope.targetRoot,
+    allowedPaths: scope.allowedPaths,
+    ...(artifactId ? { artifactId } : {}),
+    ...(artifactType ? { artifactType } : {}),
+    ...(round ? { round } : {}),
+    ...(Array.isArray(acceptanceCriteria) && acceptanceCriteria.length
+      ? { acceptanceCriteria }
+      : operation === "review_repair"
+        ? { acceptanceCriteria: ["Return the complete matching review contract and keep every change within allowedPaths."] }
+        : {}),
+    ...(artifactPath && fs.existsSync(artifactPath)
+      ? {
+          artifactPath: path.resolve(artifactPath),
+          artifactBytes: fs.statSync(artifactPath).size,
+          artifactSha256: sha256Text(fs.readFileSync(artifactPath, "utf8")),
+          artifactContent: fs.readFileSync(artifactPath, "utf8")
+        }
+      : {})
+  };
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "auto-review-bridge-"));
+  const requestFile = path.join(directory, "request.json");
+  fs.writeFileSync(requestFile, JSON.stringify(request), "utf8");
+  return { requestFile, directory };
 }
 
 export function resolveCompanionPath() {
-  const result = runNode(RESUME_CANDIDATE, ["--companion-path"], process.cwd());
-  if (!result.ok || !result.companionPath) throw new Error(result.message || "Could not resolve Codex companion path");
-  return result.companionPath;
+  // Compatibility name retained for the state machine; this is the bridge CLI,
+  // never the retired codex@openai-codex companion.
+  return bridgeCliPath();
 }
 
-export function launchCodexJob({ cwd, targetRoots, prompt, companionPath = resolveCompanionPath() }) {
+export function launchCodexJob({
+  cwd,
+  targetRoots,
+  allowedPaths,
+  prompt,
+  artifactId,
+  artifactType = "deliverable",
+  round = 1,
+  artifactPath,
+  acceptanceCriteria,
+  operation = "task"
+}) {
   process.env.AUTO_REVIEW_EXECUTE = "1";
-  if (!fs.existsSync(ORCHESTRATION_CONTROL)) {
-    throw new Error(`Missing cross-model orchestration helper: ${ORCHESTRATION_CONTROL}`);
-  }
-  const args = [
-    "launch",
-    "--companion-path", companionPath,
-    "--cwd", path.resolve(cwd),
-    "--target-roots", targetRoots.map((entry) => path.resolve(entry)).join(","),
-    "--write",
-    "true",
-    prompt
-  ];
-  const result = runNode(ORCHESTRATION_CONTROL, args, cwd);
-  if (!result.ok || !result.jobId || !result.ownerToken) throw new Error("Codex launch did not return jobId and ownerToken");
-  return { ...result, companionPath, promptSha256: sha256Text(prompt), promptBytes: Buffer.byteLength(prompt, "utf8") };
-}
-
-export function pollCodexJob({ cwd, jobId, companionPath = resolveCompanionPath() }) {
-  const result = runNode(
-    ORCHESTRATION_CONTROL,
-    ["status", jobId, "--companion-path", companionPath, "--cwd", path.resolve(cwd)],
-    cwd
-  );
-  const status = result.job?.status;
-  if (!status) throw new Error(`Codex status response has no job.status for ${jobId}`);
-  return { ...result, status, companionPath };
-}
-
-export function readCodexResult({ cwd, jobId, companionPath = resolveCompanionPath() }) {
-  const result = runNode(
-    ORCHESTRATION_CONTROL,
-    ["result", jobId, "--companion-path", companionPath, "--cwd", path.resolve(cwd)],
-    cwd
-  );
-  if (!result.rendered) throw new Error(`Codex result has no rendered output for ${jobId}`);
-  return result;
-}
-
-export function cancelCodexJob({ cwd, jobId, companionPath = resolveCompanionPath() }) {
-  const result = spawnSync(process.execPath, [companionPath, "cancel", jobId, "--cwd", path.resolve(cwd)], {
+  const request = createRequestFile({
     cwd,
-    encoding: "utf8",
-    shell: false,
-    windowsHide: true,
-    env: process.env
+    targetRoots,
+    allowedPaths,
+    prompt,
+    operation,
+    artifactId,
+    artifactType,
+    round,
+    artifactPath,
+    acceptanceCriteria
   });
-  if (result.error || result.status !== 0) {
-    throw new Error(`Codex cancel failed (exit ${result.status ?? -1}): ${(result.stderr || result.stdout).trim()}`);
+  try {
+    const data = runBridge(["submit", "--target", "codex", "--request-file", request.requestFile], cwd);
+    if (!data?.job_id) throw new Error("bridge submit did not return a job_id");
+    return {
+      jobId: data.job_id,
+      ownerToken: null,
+      companionPath: bridgeCliPath(),
+      bridge: true,
+      promptSha256: sha256Text(prompt),
+      promptBytes: Buffer.byteLength(prompt, "utf8")
+    };
+  } finally {
+    fs.rmSync(request.directory, { recursive: true, force: true });
   }
-  return result.stdout.trim();
 }
 
-export function releaseCodexClaim({ ownerToken, cwd = process.cwd() }) {
-  // orchestration-control exposes cmdRelease as a module API but not as a CLI
-  // subcommand. Importing it keeps release tied to the same registry protocol.
-  return cmdRelease({ ownerToken, cwd });
+export function pollCodexJob({ cwd, jobId }) {
+  const data = runBridge(["status", jobId], cwd);
+  const state = data?.state;
+  const status = ["queued", "dispatching", "transport_delivered", "running"].includes(state)
+    ? (state === "queued" ? "queued" : "running")
+    : state === "succeeded"
+      ? "completed"
+      : state === "needs_attention"
+        ? "needs_attention"
+        : state || "failed";
+  return { ...data, job: data, status, bridge: true };
+}
+
+export function readCodexResult({ cwd, jobId }) {
+  const data = runBridge(["result", jobId], cwd);
+  if (data?.status === "pending") throw new Error(`Bridge result is still pending for ${jobId}`);
+  const job = data?.job || data;
+  if (!job) throw new Error(`Bridge result has no job for ${jobId}`);
+  return {
+    rendered: typeof job.result === "string" ? job.result : JSON.stringify(job.result ?? job),
+    job,
+    bridge: true
+  };
+}
+
+export function cancelCodexJob({ cwd, jobId }) {
+  return runBridge(["cancel", jobId], cwd);
+}
+
+export function approvePeerSync({ cwd, jobId, approvedChangeIds }) {
+  if (!Array.isArray(approvedChangeIds) || approvedChangeIds.length === 0) {
+    throw new Error("approvedChangeIds must be a non-empty exact ID list");
+  }
+  return runBridge(["approve-sync", jobId, "--change-ids", approvedChangeIds.join(",")], cwd);
+}
+
+export function releaseCodexClaim() {
+  // The bridge daemon owns its lock and releases it at job termination.
+  return { ok: true, skipped: "bridge-owned-lock" };
 }
 
 export function commandMetadata() {
   return {
-    orchestrationControl: ORCHESTRATION_CONTROL,
-    companionResolver: RESUME_CANDIDATE,
+    bridgeCli: bridgeCliPath(),
     node: process.execPath,
-    host: os.hostname()
+    host: os.hostname(),
+    runtimeDependency: "claude-codex-bridge"
   };
 }
+
+// Kept for callers that still use the old helper name. It resolves only the
+// unified bridge executable; it never consults the retired plugin registry.
+export const resolveBridgeCliPath = bridgeCliPath;

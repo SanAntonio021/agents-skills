@@ -1,4 +1,4 @@
----
+﻿---
 name: ieee-manuscript-edit
 description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、中文改英文、图注/引用/术语/单位核查、去 AI 写作痕迹、投稿前文字精修、Cover Letter 和 Response Letter 正文精修、合作者文件整理。触发场景：用户说"润色""改英文""精修""投稿前文字检查""审稿回复""改图注""改摘要/引言/方法/结果""术语校准""发给合作者""核验修改建议"，或要求审查另一批审查员/合作者/模型给出的修改建议清单，或说论文稿"AI 味重""像 AI 写的""去 AI 腔"，或要求把中文技术内容改成 SCI/IEEE 英文论文。正式投稿前审查门由 `paper-review` 负责；未指定或非 IEEE 投稿事务由 `journal-submission` 负责，明确 IEEE 投稿事务由 `ieee-journal-submission` 负责；纯英文句子质量审查的触发词还包括"检查英文句子""删废话""改被动语态""精简表达""太啰嗦""check English sentences""remove filler""fix passive voice""tighten expression""too verbose""check my English writing""improve clarity""tighten the writing"（纯句子质量审查；`sentence-polish` 已并入本技能）。
 ---
@@ -76,7 +76,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 | 冲突待审 | 术语 | term A / term B | photonics | 已审术语 vs 本次论文证据 | 是 |
 | 待判定 | 术语 | candidate term | device / system | 证据待补 | 是 |
 
-9. 用户确认后，把术语、适用领域、来源、章节功能、匹配模式和审阅状态写回活数据术语库，并在候选台账填写迁入位置；拒绝候选写入 `已拒绝` 及理由，不能删除或绕过。
+9. 用户确认后，统一调用 `style-vocab` 收录模式完成写入；展示完整 15 列记录后经用户明确确认才写入活数据术语库，并在候选台账填写迁入位置；拒绝候选写入 `已拒绝` 及理由，不能删除或绕过。
 10. 术语库保存可复用表达；临时句子、整段翻译和待核验说法留在当前稿件里处理。每轮最多展示 3 条候选。
 
 ## 终稿精修
@@ -130,7 +130,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 - 语言精修：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md)。
 - 独立完整 Sainani 五轮句子审查：读 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 - 中文改英文或分节重写：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md) 和 [references/section-by-section-review.md](references/section-by-section-review.md)。
-- 术语校准和长期复用：读 `D:\BaiduSyncdisk\.agents\vocab\scientific-terminology-bank.md` 和 [references/writing-memory-schema.md](references/writing-memory-schema.md)；技能内旧术语库只作兼容说明，只把用户审过或带明确来源的术语写回活数据表。
+- 术语校准和长期复用：读 `D:\BaiduSyncdisk\.agents\vocab\scientific-terminology-bank.md` 和 [references/writing-memory-schema.md](references/writing-memory-schema.md)；技能内旧术语库只作兼容说明，只把用户审过或带明确来源的术语通过 `style-vocab` 收录模式写入活数据表。
 - 术语需要联网证据：用 `web-access` 查网页、目标期刊页面和 ScienceDirect Topics；需要定位或下载正式论文 PDF 时，调用 `paper-download`；已有本地 PDF 需要总结或术语摘录时，调用 `paper-summary`。
 - IEEE 风格、引用、图表和模板：读 [references/ieee-structure-and-style.md](references/ieee-structure-and-style.md)。
 - IEEE 官方模板资源：读 [references/ieee-official-template-cache.md](references/ieee-official-template-cache.md)，优先复用技能内 `assets/ieee-official-templates/` 的 Word/LaTeX 模板。

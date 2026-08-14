@@ -9,8 +9,11 @@
  *   candidate    Verify that a finished job's output is trustworthy.
  *   active       Check whether any orchestration claim is currently live.
  *   verify-request  Verify that a launched job received the intended prompt.
+ *   release      Release one terminal job's orchestration claim.
  *   recover-lock Four-shape manual recovery for stuck registry/claim state.
  *
+ * Review launches are mechanically constrained by a complete read-only review
+ * envelope. Execution launches are deliberately outside that mode.
  * All subprocess calls use argv arrays + shell:false + UTF-8 encoding.
  * No $USERPROFILE literal paths — use os.homedir() or $USERPROFILE in the shell.
  */
@@ -264,25 +267,29 @@ function isAncestorOf(ancestor, target) {
 }
 
 // ---------------------------------------------------------------------------
-// D3 交接信封校验器
+// Review envelope validation
 // ---------------------------------------------------------------------------
 
 /**
- * 从 prompt 中提取第一个 ```json … ``` 块并运行 D3 发前六项自检。
+ * Extract the sole ```json ... ``` block and validate a review envelope.
  *
  * 返回 { ok: true, envelope } 或 { ok: false, reason }。
- * prompt 中没有 json fence 时视为不含信封，直接返回 { ok: true, envelope: null }。
+ * Review mode requires a complete envelope; a missing JSON fence is rejected.
  */
 export function validateEnvelope(prompt) {
-  // 提取第一个 ```json ... ``` 块
-  const fenceMatch = /```json\s*([\s\S]*?)```/m.exec(prompt);
-  if (!fenceMatch) {
-    return { ok: true, envelope: null }; // 无信封，允许通过
+  // The envelope is the only JSON fence in a review prompt. Use the last
+  // closing fence so Markdown code examples embedded inside artifactContent
+  // do not truncate the JSON before it is parsed.
+  const openAt = prompt.indexOf("```json");
+  const bodyAt = openAt === -1 ? -1 : openAt + "```json".length;
+  const closeAt = bodyAt === -1 ? -1 : prompt.lastIndexOf("```");
+  if (openAt === -1 || closeAt <= bodyAt) {
+    return { ok: false, reason: "审查包缺少 ```json 信封" };
   }
 
   let envelope;
   try {
-    envelope = JSON.parse(fenceMatch[1]);
+    envelope = JSON.parse(prompt.slice(bodyAt, closeAt).trim());
   } catch (e) {
     return { ok: false, reason: `交接信封 JSON 解析失败: ${e.message}` };
   }
@@ -291,38 +298,82 @@ export function validateEnvelope(prompt) {
     return { ok: false, reason: "交接信封必须是 JSON 对象" };
   }
 
-  // 检查 1: 顶层字段无缺失
-  const requiredKeys = ["round", "planPath", "planBytes", "planSha256",
-    "priorRounds", "priorFindings", "openItems", "constraints"];
+  // Keep this schema isomorphic with workflow-contract.md. A review that
+  // cannot be traced or lacks a read-only declaration is not launchable.
+  const requiredKeys = [
+    "artifactId", "artifactType", "author", "reviewer", "round", "maxRounds",
+    "artifactName", "artifactBytes", "artifactSha256", "artifactContent",
+    "priorRounds", "priorFindings", "openItems", "acceptanceCriteria",
+    "constraints", "reviewerAccess"
+  ];
   for (const key of requiredKeys) {
     if (!(key in envelope)) {
       return { ok: false, reason: `交接信封缺少字段: ${key}` };
     }
   }
 
-  // 检查 2: 无空字段（openItems/priorRounds/priorFindings 允许空数组，但键必须存在且为数组）
-  for (const key of ["openItems", "priorRounds", "priorFindings"]) {
+  // History and finding arrays may be empty, but must be explicit arrays.
+  for (const key of ["openItems", "priorRounds", "priorFindings", "acceptanceCriteria", "constraints"]) {
     if (!Array.isArray(envelope[key])) {
       return { ok: false, reason: `${key} 必须是数组（允许空数组 []）` };
     }
   }
-  for (const key of ["round", "planPath", "planBytes", "planSha256", "constraints"]) {
+  for (const key of [
+    "artifactId", "artifactType", "author", "reviewer", "round", "maxRounds",
+    "artifactName", "artifactBytes", "artifactSha256", "artifactContent", "reviewerAccess"
+  ]) {
     if (envelope[key] == null || envelope[key] === "") {
       return { ok: false, reason: `字段 ${key} 不可为空/null` };
     }
   }
 
-  // 检查 3: 类型合 schema
-  if (typeof envelope.planSha256 !== "string" || !/^[0-9a-f]{64}$/.test(envelope.planSha256)) {
-    return { ok: false, reason: "planSha256 必须是 64 位小写十六进制字符串" };
+  // Type, three-round, and read-only constraints.
+  if (!["plan", "deliverable"].includes(envelope.artifactType)) {
+    return { ok: false, reason: "artifactType 必须是 plan 或 deliverable" };
+  }
+  if (!Number.isInteger(envelope.round) || envelope.round < 1 || envelope.round > 3) {
+    return { ok: false, reason: "round 必须是 1、2 或 3" };
+  }
+  if (envelope.maxRounds !== 3) {
+    return { ok: false, reason: "maxRounds 必须固定为 3" };
+  }
+  if (!Number.isInteger(envelope.artifactBytes) || envelope.artifactBytes < 0) {
+    return { ok: false, reason: "artifactBytes 必须是非负整数" };
+  }
+  if (typeof envelope.artifactSha256 !== "string" || !/^[0-9a-f]{64}$/.test(envelope.artifactSha256)) {
+    return { ok: false, reason: "artifactSha256 必须是 64 位小写十六进制字符串" };
+  }
+  if (typeof envelope.artifactContent !== "string" || envelope.artifactContent.length === 0) {
+    return { ok: false, reason: "artifactContent 必须是非空字符串" };
+  }
+  if (typeof envelope.artifactName !== "string") {
+    return { ok: false, reason: "artifactName 必须是字符串" };
+  }
+  if (envelope.artifactPath != null && (typeof envelope.artifactPath !== "string" || envelope.artifactPath.length === 0)) {
+    return { ok: false, reason: "artifactPath 如提供必须是非空字符串" };
+  }
+  if (envelope.reviewerAccess !== "read_only") {
+    return { ok: false, reason: "reviewerAccess 必须是 read_only" };
+  }
+  if (envelope.acceptanceCriteria.length === 0) {
+    return { ok: false, reason: "acceptanceCriteria 至少需要一项" };
   }
   for (const r of envelope.priorRounds) {
-    if (r.completedAt != null && !Number.isFinite(Date.parse(r.completedAt))) {
+    if (!r || !Number.isInteger(r.round) || r.round < 1 || r.round > 2) {
+      return { ok: false, reason: "priorRounds[].round 必须是 1 或 2" };
+    }
+    if (typeof r.jobId !== "string" || r.jobId.length === 0 || !Number.isInteger(r.findingCount) || r.findingCount < 0) {
+      return { ok: false, reason: "priorRounds[] 必须包含非空 jobId 与非负整数 findingCount" };
+    }
+    if (!Number.isFinite(Date.parse(r.completedAt))) {
       return { ok: false, reason: `priorRounds[].completedAt 无法被 Date.parse 接受: ${r.completedAt}` };
     }
   }
 
   // 检查 4: priorRounds[].round 无重复且连续（1,2,3,...）
+  if (envelope.priorRounds.length !== envelope.round - 1) {
+    return { ok: false, reason: `priorRounds 长度必须等于 round - 1（期望 ${envelope.round - 1}）` };
+  }
   if (envelope.priorRounds.length > 0) {
     const rounds = envelope.priorRounds.map((r) => r.round);
     const uniqueRounds = new Set(rounds);
@@ -339,6 +390,12 @@ export function validateEnvelope(prompt) {
 
   // 检查 5: priorFindings 去重后数量 == sum(priorRounds[].findingCount)
   const expected = envelope.priorRounds.reduce((s, r) => s + (r.findingCount ?? 0), 0);
+  for (const finding of envelope.priorFindings) {
+    if (!finding || !Number.isInteger(finding.round) || finding.round < 1 || finding.round > 2 ||
+      !Number.isInteger(finding.index) || finding.index < 1) {
+      return { ok: false, reason: "priorFindings[] 必须包含有效 round 和 index" };
+    }
+  }
   const deduped = new Set(envelope.priorFindings.map((f) => `${f.round}:${f.index}`));
   if (deduped.size !== expected) {
     return {
@@ -386,11 +443,30 @@ export function validateEnvelope(prompt) {
  *
  * Returns JSON: { ok, jobId, ownerToken, claimIndex }
  */
-export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, model, effort }) {
+export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, model, effort, review = false }) {
   const orchDir = resolveOrchestrationDir();
   const normTargets = (targetRoots && targetRoots.length > 0) ? targetRoots.map(normaliseRoot) : [normaliseRoot(cwd)];
   const startedAt = _now();
   const ownerToken = randomBytes(16).toString("hex");
+
+  if (review && write) {
+    throw new Error("Review launch cannot use --write.");
+  }
+
+  // Validate before claiming the workspace so malformed review input cannot
+  // create a transient competing claim.
+  const precheck = review ? validateEnvelope(prompt) : { ok: true, envelope: null };
+  if (!precheck.ok) {
+    throw new Error(`审查包发前自检失败，已停止发包: ${precheck.reason}`);
+  }
+  const reviewState = review ? {
+    phase: "review",
+    artifactId: precheck.envelope.artifactId,
+    artifactType: precheck.envelope.artifactType,
+    artifactPath: precheck.envelope.artifactPath ?? null,
+    artifactSha256: precheck.envelope.artifactSha256,
+    round: precheck.envelope.round
+  } : {};
 
   // Step 1 + 2 + 3: acquire lock, check overlaps, register placeholder
   {
@@ -414,28 +490,20 @@ export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, mode
         }
       }
 
-      // Register placeholder
-      liveClaims.push({ ownerToken, sessionId: process.env.CODEX_COMPANION_SESSION_ID ?? null, jobId: null, targetRoots: normTargets, startedAt });
+      // Register placeholder. Review state survives the CLI turn in
+      // CLAUDE_PLUGIN_DATA until the job is terminal and released.
+      liveClaims.push({
+        ownerToken,
+        sessionId: process.env.CODEX_COMPANION_SESSION_ID ?? null,
+        jobId: null,
+        targetRoots: normTargets,
+        startedAt,
+        ...reviewState
+      });
       saveClaims(orchDir, liveClaims);
     } finally {
       releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
     }
-  }
-
-  // Step 5: 发前自检（如果 prompt 含交接信封则必须全部通过）
-  const precheck = validateEnvelope(prompt);
-  if (!precheck.ok) {
-    // Clean up claim
-    try {
-      const m = acquireRegistryMutex(orchDir);
-      try {
-        const claims = loadClaims(orchDir);
-        saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
-      } finally {
-        releaseRegistryMutex(orchDir, m.ownerToken, m.ino, m.dev);
-      }
-    } catch { /* ignore cleanup errors */ }
-    throw new Error(`发前六项自检失败，已停止发包: ${precheck.reason}`);
   }
 
   // F.2: validate targetRoots are under cwd
@@ -477,12 +545,29 @@ export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, mode
     throw new Error(`companion launch failed (exit ${launched.status}): ${launched.stderr || launched.stdout}`);
   }
 
+  const cleanupClaim = () => {
+    try {
+      const mutex2 = acquireRegistryMutex(orchDir);
+      try {
+        const claims = loadClaims(orchDir);
+        saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
+      } finally {
+        releaseRegistryMutex(orchDir, mutex2.ownerToken, mutex2.ino, mutex2.dev);
+      }
+    } catch { /* ignore cleanup errors */ }
+  };
+
   let jobId;
   try {
     const payload = JSON.parse(launched.stdout);
     jobId = payload.jobId;
   } catch {
+    cleanupClaim();
     throw new Error(`companion returned non-JSON: ${launched.stdout}`);
+  }
+  if (typeof jobId !== "string" || jobId.length === 0) {
+    cleanupClaim();
+    throw new Error("companion response is missing a non-empty jobId.");
   }
 
   // Step 6 + 7: bind real jobId
@@ -615,31 +700,6 @@ export function cmdCandidate({ companionPath, cwd, jobId, ownerToken, targetRoot
 }
 
 // ---------------------------------------------------------------------------
-// Sub-command: release
-// ---------------------------------------------------------------------------
-
-/**
- * Manually release a registered claim by ownerToken.
- * Used when a job completes successfully and no longer needs the workspace lock.
- */
-export function cmdRelease({ ownerToken }) {
-  if (!ownerToken) {
-    throw new Error("release requires --owner-token.");
-  }
-  const orchDir = resolveOrchestrationDir();
-  const mutex = acquireRegistryMutex(orchDir);
-  try {
-    const claims = loadClaims(orchDir);
-    const before = claims.length;
-    const after = claims.filter((c) => c.ownerToken !== ownerToken);
-    saveClaims(orchDir, after);
-    return { ok: true, removed: before - after.length };
-  } finally {
-    releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Sub-command: active
 // ---------------------------------------------------------------------------
 
@@ -657,14 +717,14 @@ export function cmdActive() {
 
 /**
  * Verify that a launched job received the intended prompt unchanged,
- * and re-run the six-item envelope pre-flight on the recorded prompt.
+ * and, for a review launch, re-run envelope validation on the recorded prompt.
  *
  * D3 拒绝情形（不可绕过）：
  *  1. 字节数或 SHA-256 不匹配 → 实际执行 cancel + 释放 claim + 抛错
  *  2. request.prompt 缺失或为空 → cancel + 释放 claim + 抛错
- *  3. 信封读回后重跑六项自检失败 → cancel + 释放 claim + 抛错
+ *  3. 审查包读回后重跑自检失败 → cancel + 释放 claim + 抛错
  */
-export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expectBytes, ownerToken }) {
+export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expectBytes, ownerToken, review = false }) {
   const args = ["status", jobId, "--json", "--cwd", cwd];
   const r = runCompanion(companionPath, args, cwd);
   if (r.error || r.status !== 0) throw new Error(`status failed: ${r.stderr || r.stdout}`);
@@ -703,6 +763,10 @@ export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expe
   const actualBytes = Buffer.byteLength(prompt, "utf8");
   const actualSha256 = createHash("sha256").update(prompt, "utf8").digest("hex");
 
+  if (review && (!expectSha256 || expectBytes == null)) {
+    cancelAndRelease("只读审查的 verify-request 必须提供期望 prompt SHA-256 与字节数");
+  }
+
   // 拒绝情形 1: 字节数不匹配
   if (expectBytes != null && actualBytes !== Number(expectBytes)) {
     cancelAndRelease(`字节数不匹配（期望 ${expectBytes}，实际 ${actualBytes}）— 传输层可能改写了 prompt，已取消并停止`);
@@ -712,10 +776,10 @@ export function cmdVerifyRequest({ companionPath, cwd, jobId, expectSha256, expe
     cancelAndRelease(`SHA-256 不匹配 — 传输层可能改写了 prompt，已取消并停止`);
   }
 
-  // 拒绝情形 3: 读回后重跑六项自检
-  const recheck = validateEnvelope(prompt);
+  // Read-only review requests must validate again after transport.
+  const recheck = review ? validateEnvelope(prompt) : { ok: true, envelope: null };
   if (!recheck.ok) {
-    cancelAndRelease(`读回后重跑六项自检失败: ${recheck.reason} — 自检有 bug，请先修 helper`);
+    cancelAndRelease(`读回后重跑审查包自检失败: ${recheck.reason} — 自检有 bug，请先修 helper`);
   }
 
   return { ok: true, actualBytes, actualSha256, envelope: recheck.envelope };
@@ -851,13 +915,51 @@ export function cmdRecoverLock({ shape, ownerToken, fingerprint, force }) {
 // Release claim
 // ---------------------------------------------------------------------------
 
-/** Remove a specific claim (call after Codex task completes). */
+/** Low-level claim removal used by recovery tests and guarded release. */
 export function releaseClaim(ownerToken) {
   const orchDir = resolveOrchestrationDir();
   const mutex = acquireRegistryMutex(orchDir);
   try {
     const claims = loadClaims(orchDir);
     saveClaims(orchDir, claims.filter((c) => c.ownerToken !== ownerToken));
+  } finally {
+    releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
+  }
+}
+
+/**
+ * Release a claim only after the matching companion job is terminal. This is
+ * the normal CLI path; recover-lock remains the explicit manual escape hatch.
+ */
+export function cmdRelease({ companionPath, cwd, jobId, ownerToken }) {
+  if (!ownerToken || !jobId) {
+    throw new Error("release requires --owner-token and a job ID.");
+  }
+  const orchDir = resolveOrchestrationDir();
+  const claims = loadClaims(orchDir);
+  const claim = claims.find((item) => item.ownerToken === ownerToken);
+  if (!claim) {
+    throw new Error(`No active claim found for ownerToken ${ownerToken}.`);
+  }
+  if (claim.jobId !== jobId) {
+    throw new Error(`Claim jobId mismatch: expected ${claim.jobId ?? "none"}, received ${jobId}.`);
+  }
+
+  const statusPayload = cmdStatus({ companionPath, cwd, jobId });
+  const status = statusPayload?.job?.status;
+  if (!["completed", "failed", "cancelled"].includes(status)) {
+    throw new Error(`Job ${jobId} is not terminal (status="${status ?? "missing"}").`);
+  }
+
+  const mutex = acquireRegistryMutex(orchDir);
+  try {
+    const current = loadClaims(orchDir);
+    const currentClaim = current.find((item) => item.ownerToken === ownerToken);
+    if (!currentClaim || currentClaim.jobId !== jobId) {
+      throw new Error("Claim changed before release; stop and inspect active state.");
+    }
+    saveClaims(orchDir, current.filter((item) => item.ownerToken !== ownerToken));
+    return { ok: true, jobId, status };
   } finally {
     releaseRegistryMutex(orchDir, mutex.ownerToken, mutex.ino, mutex.dev);
   }
@@ -889,7 +991,7 @@ async function main() {
   const cwd = opts.cwd || process.cwd();
 
   let companionPath = opts["companion-path"] || null;
-  if (!companionPath && subcommand !== "recover-lock" && subcommand !== "active") {
+  if (!companionPath && !["recover-lock", "active"].includes(subcommand)) {
     companionPath = resolveCompanionPath();
   }
 
@@ -904,7 +1006,8 @@ async function main() {
           targetRoots: opts["target-roots"] ? opts["target-roots"].split(",") : null,
           write: opts.write === true || opts.write === "true",
           model: opts.model || null,
-          effort: opts.effort || null
+          effort: opts.effort || null,
+          review: opts.review === true || opts.review === "true"
         });
         break;
       case "status":
@@ -931,7 +1034,17 @@ async function main() {
           cwd,
           jobId: positionals[0] || opts["job-id"],
           expectSha256: opts["expect-sha256"] || null,
-          expectBytes: opts["expect-bytes"] ? Number(opts["expect-bytes"]) : null
+          expectBytes: opts["expect-bytes"] ? Number(opts["expect-bytes"]) : null,
+          ownerToken: opts["owner-token"] || null,
+          review: opts.review === true || opts.review === "true"
+        });
+        break;
+      case "release":
+        result = cmdRelease({
+          companionPath,
+          cwd,
+          jobId: positionals[0] || opts["job-id"],
+          ownerToken: opts["owner-token"] || null
         });
         break;
       case "recover-lock":
@@ -944,7 +1057,7 @@ async function main() {
         break;
       default:
         process.stderr.write(`Unknown subcommand: ${subcommand}\n`);
-        process.stderr.write("Usage: orchestration-control.mjs <launch|status|result|candidate|active|verify-request|recover-lock> [options]\n");
+        process.stderr.write("Usage: orchestration-control.mjs <launch|status|result|candidate|active|verify-request|release|recover-lock> [options]\n");
         process.exitCode = 1;
         return;
     }
@@ -958,4 +1071,3 @@ async function main() {
 // Only run main when executed directly (not imported as a module in tests).
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
 if (isMain) { main(); }
-

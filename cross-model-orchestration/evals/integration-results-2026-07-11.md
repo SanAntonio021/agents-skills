@@ -1,5 +1,10 @@
 # Integration Results - 2026-07-11
 
+> Historical evidence only. This record predates the global bidirectional peer-review workflow
+> introduced on 2026-08-14. Its references to a plan-review task carrying `--write` describe an
+> obsolete workaround and must not be used as current procedure; current requirements are in
+> `SKILL.md`, `references/workflow-contract.md`, and `evals/integration-cases.md`.
+
 ## Environment
 
 - Claude Code: 2.1.207

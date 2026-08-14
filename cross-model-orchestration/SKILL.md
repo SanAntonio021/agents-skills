@@ -1,12 +1,15 @@
 ---
 name: cross-model-orchestration
 description: >
-  Claude Code CLI 与 Codex 的跨模型编排。仅当当前主会话是 Claude Code CLI，且任务
-  需要检查或合并本地材料、制定计划、调研、比较、写作、修改文件、运行命令或多步
-  执行时自动使用，即使用户没有点名 Codex。Codex Desktop、Codex CLI、Claude Desktop
-  （Cowork）及其他宿主不自动触发；纯聊天、不依赖材料的简单解释和一条明确只读命令
-  也不触发。
-compatibility: Requires Claude Code plugin codex@openai-codex, an authenticated Codex CLI, exact user-level Bash permissions for the Plugin companion and this Skill helper, and read access to this Skill directory.
+  Codex Desktop/CLI 与 Claude Code CLI 的全局双向互审流程。除纯聊天、简单解释和一条
+  明确只读命令外，任何需要阅读或检查本地材料、制定正式计划、形成重要结论、修改文件、
+  运行命令、调研、比较、写作或多步骤推进的任务都自动使用。Codex 产物由固定的 Claude
+  Opus 5 只读审查；Claude 产物由 Codex 只读审查。审查失败、超时、模型不匹配或宿主没有
+  已验证通道时必须暂停报告，不能静默降级或跳过。
+compatibility: >
+  Codex Desktop/CLI requires the CC Switch-registered claude-codex-bridge MCP. Claude Code CLI
+  requires codex@openai-codex, an authenticated Codex CLI, and this Skill's precise companion
+  permissions. Claude Desktop/Cowork has no verified peer-review route in this workflow.
 allowed-tools:
   - Read
   - Glob
@@ -16,282 +19,194 @@ allowed-tools:
   - Agent
 ---
 
-# Claude-Codex 跨模型编排
+# Codex / Claude 双向互审
 
 ## 目标
 
-让 Claude Code 默认担任规划者和验收者，让 Codex 担任计划复核者和执行者。
-两边必须基于同一任务目标、证据和验收标准协作，不把模型之间的转述当成完成证据。
+把跨模型复核变成所有符合条件的未来实质任务的默认质量门：作者负责计划、交付和返工，
+审查者只检查，不代写、不改文件。不要把模型之间的转述、完成声明或旧日志当成证据。
+
+本 Skill 不依赖 `ExitPlanMode`、拒绝理由或关键词触发。用户明确说“审查计划”时当然进入，
+但符合范围的任务即使没有这句话也自动进入。
 
 ## 何时进入
 
-先判断当前主会话：
+以下任一情况进入：
 
-- Claude Code CLI：继续按下面的任务范围判断；
-- Codex Desktop、Codex CLI、Claude Desktop（Cowork）或其他宿主：不进入本流程，
-  由当前宿主按自身能力直接处理任务；
-- 用户在不兼容宿主中明确点名本 Skill：说明它只能在 Claude Code CLI 中运行，等待
-  用户切换；由于协作任务尚未启动，不输出 `CODEX_FAILURE_REPORT`。
+- 需要读取、检查、合并或比较本地材料；
+- 需要制定正式计划、形成重要结论、调研、写作、修改文件或运行命令；
+- 需要多步骤推进、审计、复核、仿真、维护 Skill 或完成项目交付物；
+- 已经产出正式计划、重要结论、代码、文档、报告或其他重要交付物，准备交付或执行。
 
-在 Claude Code CLI 中，以下任务进入本流程：
-
-- 需要读取或检查本地材料；
-- 需要调研、写作、修改文件或运行命令；
-- 需要多步骤推进、比较方案或形成重要结论；
-- 用户要求审计、复核、仿真、整理目录、维护 Skill 或处理项目交付物。
-
-以下任务直接由 Claude 回答，不调用 Codex：
+以下情况跳过：
 
 - 纯聊天；
 - 不依赖材料的简单解释；
 - 一条明确、只读、无需分析后续结果的命令。
 
-如果边界不清，优先进入本流程。用户希望能调用时尽量调用 Codex。
+若边界不清，进入互审。不要为了省一次调用把实质任务归类成简单任务。
 
-## 角色边界
+审查报告本身、一次失败报告和用户已经裁决的分歧报告不再递归触发审查。
 
-### Claude
+## 宿主与方向
 
-- 做开始规划所需的最小只读探索；
-- 明确目标、范围、约束、交付物和验收标准；
-- 根据 Codex 的复核意见修订计划；
-- 只读核验 Codex 的实际产出；
-- 组织返工意见或分歧报告。
+| 作者所在宿主 | 作者 | 只读审查者 | 已验证通道 |
+| --- | --- | --- | --- |
+| Codex Desktop / Codex CLI | Codex | Claude Opus 5 | `claude-codex-bridge` MCP |
+| Claude Code CLI | Claude | Codex | `codex@openai-codex` companion |
+| Claude Code CLI 派发的 Codex 执行任务 | Codex | Claude Opus 5 | Codex 已注册的 bridge MCP |
+| Claude Desktop / Cowork 或其他未验证宿主 | 当前作者 | 无 | 停止并输出失败报告 |
 
-Claude 不代替 Codex 修改文件或完成执行阶段。Codex 失败时也不静默接管。
+不要把“当前主会话是 Claude Code CLI”误当作唯一入口。Codex Desktop/CLI 的实质任务同样
+自动进入。反过来，Claude Desktop/Cowork 没有已验证通道时也不得假装已经互审，或私下用
+未登记的命令绕过宿主边界。
 
-上述"不静默接管"适用于**执行失败**（认证超时、sandbox 拦截、额度耗尽、runtime 错误等偶发可恢复情形，完整列表见 §2 的 `CODEX_FAILURE_REPORT` 触发条件）。若某项能力是 Codex **结构上从未具备**（非执行失败，而是运行时永远不给该能力、且无合法开关可打开），需向用户提交**能力缺口报告**，列出至少三层独立证据后请用户裁定；用户显式授权 Claude 承接后，Claude 方可执行，且授权边界须明确记录在任务计划里、不得向外扩展。
+## Claude 计划模式入口
 
-### Codex
+Claude Code 的 `ExitPlanMode` 权限对话框不是本 Skill 可订阅的 hook，也不能把拒绝理由当作未记录的
+环境变量或工具参数。用户在该对话框拒绝并写出“让 Codex 审查计划”“审计计划”或同义请求时，Claude
+把这条理由当作普通、明确的互审请求，立即走本 Skill 已有的正式计划审查状态机。
 
-- 先以只读方式检查 Claude 的计划；
-- 计划通过后读取、修改文件、运行命令并生成交付物；
-- 收到验收意见后在同一 thread 中返工；
-- 给出可核查的文件、命令、结果和剩余问题。
+这只是方便用户表达当前意图的入口，不是关键词唯一触发器：任何符合“何时进入”的正式计划本来就要
+互审。不要维护一个容易漂移的关键词白名单，也不要假设可以从 `ExitPlanMode` 调用隐式取得计划路径。
+审查包的 `artifactPath` 由作者明确填写；没有可靠文件路径时使用稳定 `artifactName` 和完整
+`artifactContent`，而不是猜测路径或执行。
 
-## 前置检查
+## 作者与审查者边界
 
-1. 确认 `codex@openai-codex` 已启用，Codex CLI 已安装且已登录。
-2. 再次确认主会话是 Claude Code CLI。Claude Desktop（Cowork）会话的 Agent 工具
-   不注册插件子代理，`codex:codex-rescue` 不可用（2026-07-26 实测报 Agent type
-   not found）。核验发起会话 cwd 所在目录的 `.claude/settings.json`（本任务即
-   `D:\BaiduSyncdisk\.claude\settings.json`），确认 `enabledPlugins["codex@openai-codex"]`
-   为 `true`。判据锚定 cwd，不锚定 skill 源码所在项目。该键缺失或为 `false` 按宿主不兼容
-   处理：退出本 Skill、不输出 `CODEX_FAILURE_REPORT`（协作任务尚未启动），告知用户需在该
-   项目启用插件。如果在启动任何 Plugin companion 或 Agent job 前发现宿主不兼容，退出本
-   Skill，返回宿主的正常处理流程；这不是 Codex 调用失败，不输出 `CODEX_FAILURE_REPORT`。
-   只有用户明确要求使用本 Skill 时，才说明需要改在 Claude Code CLI 会话运行并等待用户
-   切换，不改用其他调用方式绕过。
-3. Windows 下确认 Codex 全局配置包含
-   `[sandbox_workspace_write] exclude_slash_tmp = true`。保留用户 `TMPDIR`，不要把
-   当前盘根目录下的 `C:\tmp` 或 `D:\tmp` 加入 workspace-write；否则 elevated
-   helper 可能因无权刷新这些目录的 ACL 而报 `setup refresh had errors`。这不需要
-   启用 Windows 可选的 Windows Sandbox 虚拟机功能。
-4. 确认发起会话的 cwd 是本次全部目标路径的共同祖先目录。目标为多个仓库时取它们的
-   共同祖先，该目录本身不必是 git 仓库。cwd 与目标同级的旁系跨越会被命令允许列表
-   拦截：`git add` 报 `blocked by policy`，`git -C ..`、读父目录规则文件、companion
-   探测一并 `declined`，只有 `git status` 系放行。**改 job 的 `workspaceRoot` 参数
-   无法绕过**，闸门跟启动会话的 cwd 走，不跟 job 参数走（2026-08-10 实测：已把
-   `workspaceRoot` 正确设为目标仓库且 `write=true`，`git add` 仍被拒）。不满足时
-   停止并要求改在覆盖目标路径的会话运行，不重试、不改用其他调用方式绕过，也不
-   缩小任务范围。这属于发起环境不合规，不输出 `CODEX_FAILURE_REPORT`。
-5. 确认 Claude 用户级权限只放行当前 Plugin companion 的 `task` 命令、本 Skill
-   helper，以及本 Skill 目录的只读访问。权限规则按 shell 展开**前**的原始命令串
-   匹配，因此 Windows 规则要写成含 `$USERPROFILE` 字面量的形态，例如
-   `Bash(node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs"*)`
-   与 `Bash(node "$USERPROFILE/.claude/plugins/cache/openai-codex/*" task *)`；同时
-   保留旧的绝对路径规则以兼容尚未升级的运行时副本。Skill frontmatter 的
-   `allowed-tools` 不会传给 `codex:codex-rescue` subagent，不能替代用户级权限；
-   不得用全局 `Bash(node:*)` 代替精确规则。Claude Code 2.1.207 对带多行 task 参数
-   使用 `task *` 通配，不要只写旧式 `task:*`。
-   本机使用 cc-switch 时，精确权限必须写入 `common_config_claude` 与全部
-   claude/claude-desktop provider 快照；`%USERPROFILE%\.claude\settings.json`
-   是按当前 provider 渲染的快照产物，只改它会在 provider 切换或重渲染时丢失
-   （2026-07-11 打通后失效的根因；2026-07-26 写入全部快照并验证渲染存活）。
-6. 保持官方 stop-time `review gate` 关闭。本 Skill 自己管理复核和返工闭环。
-7. 同一 Claude session 内一次协作流程只运行一条 Codex 工作链，不在同一 session 里
-   并行启动多个 Codex 后台任务。跨 session 并行不禁止，但并发写同一批文件的风险
-   由"计划已授权的范围"约束控制。后台任务完成后 `result <jobId>` 精确读取，不依赖
-   线程续接。helper 对 job ID 做精确匹配；找不到或状态非 completed 时按失败处理。
-   **判活判据**：helper 依据 `<state-dir>/jobs/<jobId>.json` 的 `status` 字段判定活动
-   状态，不按 sessionId 隔离（同一 workspace 的所有 Claude session 共享状态池）。
-   `queued`/`running` 即活动，`completed`/`failed`/`cancelled` 即终态（已完成或已归档）。
-   未完成时 `.log` 可能仍在增长，禁止按字节不增作为收工信号。
-8. 禁止当前 Claude session 在闭环期间插入任何其他同项目 Codex task。
-9. 读取 [workflow-contract.md](references/workflow-contract.md)，使用其中的提示词和报告格式。
+- 作者维护同一个 `artifactId`，根据审查意见更新产物、证据和 SHA-256。
+- 审查者只读。审查阶段没有写权限、没有执行计划的权限，也不替作者修文件。
+- Codex 的执行或返工阶段可以有写权限，但那是作者执行，不是审查；其重要产物仍要在交付前
+  走 Codex -> Opus 5 的只读审查。
+- 正式计划即使通过互审，也只表示“可以请求执行授权”。展示最终计划、已解决意见和剩余风险，
+  等用户明确确认后才执行。
 
-## 工作流
+## 审查包与快照
 
-### 1. Claude 制定计划
+在每一轮发起前，作者先读取
+[workflow-contract.md](references/workflow-contract.md)，生成可审计的审查包。审查包必须有：
 
-先做最小只读探索，然后形成任务计划。计划至少包含：
+```text
+artifactId: 同一逻辑产物跨轮不变
+artifactType: plan | deliverable
+author / reviewer: 实际角色和模型
+round: 1 | 2 | 3
+maxRounds: 3
+artifactName 或受控路径
+artifactBytes 和 artifactSha256
+可审查的全文或完整、可定位的内容
+前轮 findings、仍未解决项、验收标准和限制
+reviewerAccess: read_only
+```
 
-- 目标与不做什么；
-- 输入材料和证据来源；
-- 执行步骤及顺序；
-- 交付物；
-- 可验证的验收标准；
-- 权限、安全和失败边界。
+对于 Codex -> Opus 5，必须把足够的全文、证据和上下文放进包中；Opus 5 的 bridge 会强制
+空工具，不能把“请自行读文件”当作审查输入。对于 Claude -> Codex，仍给出完整包和文件定位，
+但 Codex 只可读取包中允许的材料。
 
-此阶段不修改用户交付物。
+审查前记录审查范围内每个普通文件的相对路径、字节数和 SHA-256；Git 项目再记录 Git 状态。
+审查后逐项比较文件集合和内容，不能只看 `git status`。任何意外写入都使该轮结果无效，按
+`PEER_REVIEW_FAILURE_REPORT` 停止；作者不得回滚审查者的写入后继续接受该结果。
 
-### 2. Codex 复核计划
+同一 `artifactId` 同时只能有一轮活动审查。已有 job 未到终态时只能轮询它，不能重发、另开
+新 job 或把新会话当作续接。Claude -> Codex 方向必须由 `orchestration-control.mjs` 取得按目标
+路径的互斥声明；它在 `CLAUDE_PLUGIN_DATA/orchestration/claims.json` 中记录 `phase`、`artifactId`、
+`artifactSha256`、`round`、`jobId` 和目标根。该文件只由脚本维护，作者只读 `active` 查询状态。
+每一轮都使用新的、可追溯的审查 job；不要使用不可靠的 `--resume` 或 `--resume-last` 猜测上下文。
 
-启动一次后台 Codex 任务（`--background --fresh --write`）专门进行计划复核。Claude 先
-在主会话通过 Bash 运行 helper 取得 companion 路径：
+## 三轮状态机
+
+1. 作者发起第 1 轮只读审查，并保存审查包、快照和 job ID。
+2. 审查者必须按 `PLAN_REVIEW` 或 `DELIVERABLE_REVIEW` 返回结构化结果。
+3. `通过`：计划进入用户确认门；交付物进入独立验收或交付。
+4. `需修改`：作者修订产物，更新 SHA-256、前轮 findings 和未解决项，再发下一轮。
+5. `实质分歧`：立即输出 `DISAGREEMENT_REPORT`，等待用户裁决。
+6. 第 3 轮仍为 `需修改`：不发第 4 轮，输出 `DISAGREEMENT_REPORT`，说明最后意见、已完成
+   修订和需要用户决定的一个问题。
+
+格式错误、审查者写入、通道不可用、认证/权限/sandbox/运行时错误、超时、取消、模型缺失或
+不匹配都不是“需修改”。这些情况直接输出 `PEER_REVIEW_FAILURE_REPORT` 并暂停。不得重试、
+换模型、换审查者或由当前作者假称审查已通过。
+
+## Codex -> Claude Opus 5
+
+只在 Codex Desktop/CLI 或已经获得 Codex MCP 的 Codex 执行任务中进行。先确认 MCP 有且仅按
+现有名称提供 `submit_claude`、`await_claude`、`claude_result`、`bridge_status` 和
+`cancel_bridge_job`；不改工具名，不直接编辑 `.cc-switch`、`.codex`、`.claude` 或数据库。
+
+1. 用 `submit_claude` 提交审查包。只使用 `route: "headless"`，不传模型、工具或权限参数。
+   模型锁定属于 bridge：它固定启动 `--model claude-opus-5 --tools "" --permission-mode default`。
+2. 用 `await_claude` 轮询现有 job；45 秒未完成时用 `claude_result` 查询同一 job，不新建请求。
+3. 仅当终态是 `succeeded`、审查正文满足对应契约，且公共结果 `review_model` **精确等于**
+   `claude-opus-5` 时，才接受该轮。
+4. `review_model` 缺失、不同、bridge 返回 `model_mismatch`、任何失败或超时，记录 expected model、
+   reported model 和 job ID，输出失败报告并暂停。不存在 fallback model。
+
+Opus 5 只收到审查包，不能使用工具；它不是执行者。作者 Codex 根据意见进行下一轮修改，随后
+重新构造完整包。不要让 Opus 5 直接改文件，也不要把“它说可以改”解释成写权限。
+
+## Claude -> Codex
+
+只在 Claude Code CLI 中进行。先确认 `codex@openai-codex` 已启用、Codex CLI 已登录、启动 cwd
+覆盖全部目标路径，并读取本 Skill 的 `workflow-contract.md`。Claude Desktop/Cowork 的 Agent
+不注册这个 companion；这不是许可去调用未登记的本地命令，而是失败关闭。
+
+启动前还要确认 Claude 的权威权限配置允许本 Skill 的 `orchestration-control.mjs` 和它启动的
+`codex@openai-codex` companion；cc-switch 环境只改其权威配置来源，绝不手改 `.claude/settings.json`
+运行时副本。共同 cwd 必须覆盖全部目标根。以上任一项不成立时输出 `PEER_REVIEW_FAILURE_REPORT`，
+不得用旧的直接 companion 命令绕过控制器。
+
+审查调用必须由控制脚本启动，带 `--review` 且不得带 `--write`。脚本会校验完整审查包、拒绝第 4 轮、
+锁住重叠目标根，并在活动声明中持久化轮次、计划/交付物哈希和 job ID：
 
 ```bash
-node “$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/check-resume-candidate.mjs” --companion-path
+node "$USERPROFILE/.claude/skills/cross-model-orchestration/scripts/orchestration-control.mjs" launch --review --cwd "<共同祖先目录>" --target-roots "<逗号分隔的受控目标根>" "<含完整 ```json 审查包的单行只读提示词>"
 ```
 
-取得 `companionHomeRelative` 后，以如下形式启动后台任务（`$USERPROFILE` 由 shell 展开）：
+启动后以返回的 `ownerToken` 和 `jobId` 先运行 `verify-request --review`，校验传输的 prompt 字节数、
+SHA-256 与审查包未被改写；随后只轮询 `status <jobId>`，再用 `result <jobId>` 的 `rendered` 字段读取
+正文，不以 `.log` 兜底。job 到终态后运行 `candidate`，完成前后快照对比后再以匹配的 job ID 运行
+`release --owner-token`；控制器会再次验证 job 已到终态才释放声明。
+前后快照完全一致且输出符合 `PLAN_REVIEW`/`DELIVERABLE_REVIEW` 才接受。控制脚本、权限、锁、包校验或
+状态查询失败均为 `PEER_REVIEW_FAILURE_REPORT`，不能退回为直接 companion 调用。Claude 是作者时由
+Claude 修订计划、文本或其授权范围内的产物；Codex 审查者不改文件。
 
-```bash
-node “$USERPROFILE/<companionHomeRelative>” task --background --fresh --write --cwd “<共同祖先目录>” “<复核提示词（单行序列化）>”
-```
+如果后续用户确认执行，Codex 才作为执行作者以 `--background --fresh --write` 接手明确授权的
+范围。执行 prompt 必须要求 Codex 在返回每个重要产物前使用其已注册的 bridge MCP 取得 Opus 5
+只读审查，并把 `review_model: claude-opus-5`、轮次和对应审查结果带回。bridge 不可用时停止，
+不能把 Claude 的验收当成 Opus 5 的替代品。
 
-明确要求只读计划复核、禁止修改文件，并套用参考文件中的 `PLAN_REVIEW` 输出契约。
+## 正式计划、执行与验收
 
-**等待与轮询**：后台任务启动后，Claude 主会话使用 `status <jobId>` 轮询，直到状态变为
-终态（`completed`/`failed`/`cancelled`）。`result <jobId>` 取 `rendered` 字段作为
-Codex 的复核输出；**任何情况下不以 `.log` 作为正文兜底**。
+正式计划必须先完成上述三轮以内的互审，再向用户展示：最终计划、每轮结论、已解决项、剩余风险
+和明确的执行范围。只有用户明确确认后，执行作者才可以写入、运行命令或生成交付物。
 
-**快照约束**：Claude 在启动后台任务前为复核范围内每个普通文件记录相对路径、字节数和
-SHA256；Git 项目还要记录 Git 状态。任务完成后逐项比较文件集合与内容快照。发现任何变化
-时停止，不接受该复核结果，也不由 Claude 回滚或继续执行。
+执行后，作者或独立验收者仍须核验实际文件、命令、测试、Git 提交和验收标准。对已经提交的
+改动，空 `git diff` 不能代替 `git show --stat <commit>`、目标文件内容、远端祖先关系和本轮测试
+证据。重要交付物在最终交付前必须进入对应方向的 `DELIVERABLE_REVIEW`；验收者只读，不自行修补。
 
-**一次一链**：同一 Claude session 内最多运行一条 Codex 工作链。后台任务返回结果前，禁止
-再次启动 helper、发起第二个后台任务或直接调用 companion。
+执行返工只在执行作者已成功运行且独立验收发现明确不通过项时发生。返工 prompt 写出问题、证据、
+通过判据和允许修改范围；完成后重新验收并重新审查新的重要交付物。同一确认计划最多三次
+“返工 -> 独立验收”循环；第三次仍不通过时停止，报告未满足的验收标准、证据和未完成范围，等待用户
+决定。审查通道失败不能伪装成普通验收不通过，也不能进入无限返工循环。
 
-**辅助 helper**：`$USERPROFILE` 必须原样写入命令，由 shell 本地展开，不得替换成含用户名
-的绝对路径（2026-08-10 实测：路径在工具参数传输中被改写，导致 `MODULE_NOT_FOUND`）。
-POSIX 宿主用 `$HOME` 替换 `$USERPROFILE`，其余不变。
+## 失败、分歧与安全
 
-Plugin 1.0.8 以 `--background` 模式启动，不再依赖同步前台等待。后台任务与索引写入均
-已解耦，不存在持锁死锁风险（Plugin 1.0.6 `--wait` 模式的限制已通过异步化消除）。
+- `PEER_REVIEW_FAILURE_REPORT` 同时覆盖 Codex -> Opus 5 和 Claude -> Codex；保留既有
+  `CODEX_FAILURE_REPORT` 兼容执行阶段的历史调用。格式见参考契约。
+- `DISAGREEMENT_REPORT` 只整理作者和实际审查者已有的判断、理由和证据，不替用户选方案、
+  不新增未经双方评估的折中方案。
+- 不用 `--yolo`、`--dangerously-skip-permissions` 或其他绕过权限的参数。
+- 删除、覆盖、重置、权限变更、付费、对外发送、硬件操作和会丢失既有内容的整文件替换，仍按
+  项目规则征得用户同意；互审通过不扩大这些授权。
+- 审查包、快照和失败报告只记录必要的内容、路径、哈希和错误；bridge 的原始 prompt/结果继续
+  留在受保护 job detail，不写入普通审计日志或 Git。
 
-任何 Codex 任务报告认证、权限、sandbox、timeout、额度或 runtime 失败时，立即输出
-`CODEX_FAILURE_REPORT` 并暂停。不得先重试，不得把失败包装成计划问题，不得改用新任务或
-其他执行方式绕过，也不得让 Claude 接管。
+## 评测与发布
 
-- `通过`：进入执行；
-- `需修改`：Claude 只修订计划，以 `--fresh` 启动新后台任务进行第二轮复核（无法定向续接，
-  见前置检查第 7 条）；
-- `实质分歧`：停止执行，向用户提交分歧报告。
+修改本 Skill 后，读取 `evals/evals.json`、`evals/trigger-evals.json` 和
+`evals/integration-cases.md`，至少覆盖两条方向、简单任务跳过、只读快照、三轮上限、用户确认门、
+bridge 不可用和非 Opus 5 模型停止。运行本 Skill 的 focused control tests 与 JSON 校验。
 
-如果同一异议重复出现且双方都没有新证据，不继续空转，按实质分歧处理。
-
-#### 2a. 独立复核变体（双盲，仅召回类审计）
-
-当任务本身是”查有没有遗漏/有无覆盖不足”的召回类审计（典型：对若干贡献点逐条做范围核
-对），且用户明确要求双盲时，改用本变体：Claude 与 Codex 各自独立产出清单，互不见对方
-结论；只对两份清单的**差异项**做串行比对和取舍，不在各自的完整结论上逐条争论。调
-Codex 时，只给它任务定义本身，**剥离 Claude 自己的结论**，防止它的注意范围被
-Claude 的清单框定（锚定）。召回类之外（精度类：某项结论是否成立、怎么修、修到哪），
-仍走上面的串行路径，不做双盲。
-
-### 3. Codex 执行
-
-计划通过后，以 `--background --fresh --write` 启动新后台任务执行。任务提示词包含最终
-计划、验收标准、允许修改的范围和高风险停止条件。Claude 主会话持续轮询 `status`，直到
-终态；`result <jobId>` 取 `rendered` 字段，不以 `.log` 作为正文兜底。
-
-**无定向续接**：`--resume` / `--resume-last` 在本 Skill 中一律不使用，各阶段均 `--fresh`。
-证否依据：companion 的 `--resume` 只能绑定最近一个 session 内的 thread，跨轮次和跨
-session 不能可靠定向续接（`check-resume-candidate.mjs:87-88` 全等比对、不符退出 2）。
-正文来源是 job JSON 的 `rendered`（完整响应体），不依赖 thread 连续性。
-
-### 4. Claude 验收
-
-Claude 必须独立核验：
-
-- 交付物是否真实存在；
-- 修改范围是否符合计划；
-- 关键命令、测试或数据是否真实运行；
-- 每条验收标准是否有证据；
-- 是否存在未披露的失败、假设或副作用。
-
-验收前先按拟验收文件逐个确定 Git 根目录，使用
-`git -C "<文件所在目录>" rev-parse --show-toplevel` 建立文件与仓库的对应关系。
-同一任务可能同时修改父仓库、嵌套仓库或并列的独立仓库，不能只检查当前工作目录。
-每个独立仓库分别核对分支、remote、HEAD 和工作区状态。
-
-对已经提交的改动，空的 `git diff` 只表示当前工作区相对 HEAD 干净，不能据此判断
-文件没有修改或任务没有实施。至少联合核对：
-
-- 当前文件内容或 SHA256；
-- `git show --stat <commit>` 和 `git show <commit> -- <path>` 是否包含目标改动；
-- `git merge-base --is-ancestor <commit> origin/<branch>` 是否确认提交已进入远端分支；
-- 验收要求中的实际命令、测试和产物是否在当前版本上通过。
-
-如果交付包含本机自建 Skill，源码以
-`D:\BaiduSyncdisk\.agents\skills\<name>\` 为准。提交并推送后，Codex 执行者取得
-`agents-skills` 的 40 位远端提交 SHA，并在同一执行 turn 调用：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1" `
-  -Skills “<本次提交实际修改的逗号分隔 Skill 名称>” `
-  -ExpectedRemoteCommit “<40 位远端提交 SHA>”
-```
-
-**边注 1（MAX_PATH）**：skill assets 目录内文件的相对路径（相对 skill 根目录，含文件名）
-不得超过约 170 字符。同步脚本解压到临时目录时，临时前缀约 90 字符 + 相对路径合计
-不得超过 Windows MAX_PATH（260 字符）；超限时脚本以 exit 99 失败。解法：重命名超长
-文件并更新文档内所有引用。
-
-**边注 2（no-op commit）**：修复 commit 推进 HEAD 后，若某 Skill 未出现在最新 commit
-的 `changed_skills` 里，用新 SHA 传该 Skill 名会被拒（exit 10，`changed_skill_set_mismatch`）。
-解法：对该 Skill 追加 no-op 改动（如尾随换行），重新提交并推送，以最新 SHA 同步。
-
-目标集合必须与该提交实际修改且仍存在的 Skill 集合完全一致。helper 只执行一次”检查更新”
-和过滤后的单项“更新”，禁止“全部更新”；不建 watcher 或计划任务，不修改 CC Switch 源码、
-EXE、数据库、配置或运行时目录。Claude 验收者核对 helper 的单个 JSON、退出码、远端祖先关系，
-以及提交源码、`.cc-switch\skills`、`.claude\skills`、`.codex\skills` 四层全部目标文件集合和
-SHA-256。只有退出码 `0`、状态 `runtime_active` 且四层完全一致才算生效；任一自动更新或验收
-失败时，只能报告“源码已推送，运行时未生效”，不得直接修改运行时副本或把部分成功写成完成。
-
-验收标准明确要求真实集成测试时，Claude 必须在本轮验收中使用规定的环境开关和命令
-重新运行，并记录命令、退出状态、通过/失败/跳过数量和耗时。代码存在、旧测试日志或
-Codex 的完成声明都不能替代本轮真实结果。
-
-验收时只读文件和运行只读或验证命令，不自行修补产出。
-
-### 5. 自动返工
-
-验收不通过时，列出具体文件、问题、证据和通过判据。以 `--background --fresh --write`
-启动新后台任务（无定向续接，各阶段均 `--fresh`），在提示词中包含返工说明和通过判据。
-返工后重新执行完整验收。
-
-循环持续到：
-
-- 所有验收标准通过；或
-- 出现实质分歧；或
-- Codex 调用失败、超时、额度耗尽或无法可靠续接。
-
-上述失败条件不是验收不通过，不能进入自动返工。只有 Codex 已成功执行、Claude
-检查实际产出后发现未满足验收标准，才进入返工循环。
-
-### 6. 完成或停止
-
-双方一致时，由 Claude 汇总最终交付物、验证结果和残余风险。
-
-出现分歧时，使用 `DISAGREEMENT_REPORT`。Codex 不可用时，使用
-`CODEX_FAILURE_REPORT`，暂停等待用户处理。不得改由 Claude 接管执行。
-分歧报告只整理双方已有判断、理由、证据、争议点和选项影响；不得推荐或代选方案，
-也不得新增双方尚未评估的折中方案。用户裁决后再继续。
-
-## 安全边界
-
-- 不使用 `--yolo`、`--dangerously-skip-permissions` 或其他绕过权限的参数；
-- Codex 的写入和命令能力仍受当前项目、sandbox 和用户授权约束；
-- 删除、覆盖、重置、权限变更、付费、对外发送、硬件操作，以及会丢失既有内容的
-  整文件替换前必须询问用户；计划已授权的局部修改不重复询问；
-- 复核阶段必须只读；
-- 无法确认 `--resume` 指向本流程的 thread 时停止，不猜测续接。
-
-## 与专业 Skill 的关系
-
-本 Skill 只管 Claude 与 Codex 的角色、交接、复核和返工。论文、申报、文档、
-仿真、Skill 审计等专业做法继续由对应 Skill 决定。长期科研里程碑任务在本流程
-之上加载 `cross-model-research-loop`，使用其里程碑和研究评审门。
+Skill 源码推送后，只用 `Invoke-CcSwitchSkillSync.ps1` 定向同步本次实际改动的 Skill，并用同一
+个 40 位远端提交 SHA 验证源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256。不得直接
+改运行时副本、CC Switch 数据库或其他客户端配置。

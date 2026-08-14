@@ -22,6 +22,8 @@ import {
   _resetClock,
   cmdActive,
   cmdCandidate,
+  cmdLaunch,
+  cmdRelease,
   cmdVerifyRequest,
   cmdRecoverLock,
   releaseClaim,
@@ -151,6 +153,50 @@ test("releaseClaim removes exactly the targeted claim", () => {
     const result = cmdActive();
     assert.equal(result.claims.length, 1);
     assert.equal(result.claims[0].ownerToken, "tok2");
+  } finally {
+    restore();
+  }
+});
+
+test("cmdRelease removes a claim only after the matching job is terminal", () => {
+  const restore = withTempPluginData();
+  const cwd = makeTempDir();
+  const companionPath = path.join(cwd, "fake-terminal-status.mjs");
+  const ownerToken = "terminal-owner";
+  const jobId = "terminal-job";
+  try {
+    fs.writeFileSync(
+      companionPath,
+      `process.stdout.write(${JSON.stringify(JSON.stringify({ job: { status: "completed" } }))});\n`,
+      "utf8"
+    );
+    writeClaims([{ ownerToken, sessionId: "s", jobId, targetRoots: [cwd], startedAt: Date.now() }]);
+    const result = cmdRelease({ companionPath, cwd, jobId, ownerToken });
+    assert.deepEqual(result, { ok: true, jobId, status: "completed" });
+    assert.equal(cmdActive().active, false);
+  } finally {
+    restore();
+  }
+});
+
+test("cmdRelease preserves a claim while the matching job is active", () => {
+  const restore = withTempPluginData();
+  const cwd = makeTempDir();
+  const companionPath = path.join(cwd, "fake-active-status.mjs");
+  const ownerToken = "active-owner";
+  const jobId = "active-job";
+  try {
+    fs.writeFileSync(
+      companionPath,
+      `process.stdout.write(${JSON.stringify(JSON.stringify({ job: { status: "running" } }))});\n`,
+      "utf8"
+    );
+    writeClaims([{ ownerToken, sessionId: "s", jobId, targetRoots: [cwd], startedAt: Date.now() }]);
+    assert.throws(
+      () => cmdRelease({ companionPath, cwd, jobId, ownerToken }),
+      /not terminal/
+    );
+    assert.equal(cmdActive().active, true);
   } finally {
     restore();
   }
@@ -319,6 +365,38 @@ test("cmdVerifyRequest returns cancel when prompt is missing (mocked companion)"
   }
 });
 
+test("cmdVerifyRequest: review requires prompt bytes and SHA-256", () => {
+  const restore = withTempPluginData();
+  const cwd = makeTempDir();
+  const companionPath = path.join(cwd, "fake-status.mjs");
+  const ownerToken = "verify-review";
+  const jobId = "review-job";
+  const prompt = wrapInFence(makeValidEnvelope());
+  try {
+    fs.writeFileSync(
+      companionPath,
+      `process.stdout.write(${JSON.stringify(JSON.stringify({ job: { request: { prompt } } }))});\n`,
+      "utf8"
+    );
+    writeClaims([{ ownerToken, sessionId: "s", jobId, targetRoots: [cwd], startedAt: Date.now() }]);
+    assert.throws(
+      () => cmdVerifyRequest({
+        companionPath,
+        cwd,
+        jobId,
+        expectSha256: null,
+        expectBytes: null,
+        ownerToken,
+        review: true
+      }),
+      /必须提供期望 prompt SHA-256/
+    );
+    assert.equal(cmdActive().active, false);
+  } finally {
+    restore();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // 13. cmdCandidate: workspaceRoot mismatch detected
 // ---------------------------------------------------------------------------
@@ -409,14 +487,23 @@ test("stale lock within grace period prevents takeover (injected clock)", () => 
 
 function makeValidEnvelope() {
   return {
+    artifactId: "artifact-task0",
+    artifactType: "plan",
+    author: "Claude",
+    reviewer: "Codex",
     round: 1,
-    planPath: "C:\\plans\\task0.md",
-    planBytes: 1234,
-    planSha256: "a".repeat(64),
+    maxRounds: 3,
+    artifactName: "task0.md",
+    artifactBytes: 1234,
+    artifactSha256: "a".repeat(64),
+    artifactContent: "# Task 0\n\nA reviewable plan.",
+    artifactPath: "C:\\plans\\task0.md",
     priorRounds: [],
     priorFindings: [],
     openItems: [],
-    constraints: { readOnly: false, verdictEnum: ["pass", "fail"], noWrite: false }
+    acceptanceCriteria: ["The plan has explicit verification."],
+    constraints: ["No writes during review."],
+    reviewerAccess: "read_only"
   };
 }
 
@@ -424,10 +511,10 @@ function wrapInFence(obj) {
   return `Some preamble\n\`\`\`json\n${JSON.stringify(obj, null, 2)}\n\`\`\`\nSome postamble`;
 }
 
-test("validateEnvelope: prompt without json fence passes (no envelope)", () => {
+test("validateEnvelope: prompt without json fence fails", () => {
   const result = validateEnvelope("This is a prompt without any json fence block.");
-  assert.equal(result.ok, true);
-  assert.equal(result.envelope, null);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /json/);
 });
 
 test("validateEnvelope: valid envelope with empty arrays passes", () => {
@@ -437,24 +524,32 @@ test("validateEnvelope: valid envelope with empty arrays passes", () => {
   assert.ok(result.envelope !== null);
 });
 
+test("validateEnvelope: accepts Markdown code fences inside artifactContent", () => {
+  const env = makeValidEnvelope();
+  env.artifactContent = "# Plan\n\n```powershell\nGet-Date\n```";
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, true);
+});
+
 test("validateEnvelope: missing required field fails", () => {
   const env = makeValidEnvelope();
-  delete env.planSha256;
+  delete env.artifactSha256;
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, false);
-  assert.match(result.reason, /planSha256/);
+  assert.match(result.reason, /artifactSha256/);
 });
 
 test("validateEnvelope: null field fails", () => {
   const env = makeValidEnvelope();
-  env.planPath = null;
+  env.artifactName = null;
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, false);
-  assert.match(result.reason, /planPath/);
+  assert.match(result.reason, /artifactName/);
 });
 
 test("validateEnvelope: priorFindings count mismatch fails", () => {
   const env = makeValidEnvelope();
+  env.round = 2;
   env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
   env.priorFindings = [{ round: 1, index: 1, summary: "only one" }]; // expected 2
   const result = validateEnvelope(wrapInFence(env));
@@ -464,6 +559,7 @@ test("validateEnvelope: priorFindings count mismatch fails", () => {
 
 test("validateEnvelope: non-consecutive round numbers fail", () => {
   const env = makeValidEnvelope();
+  env.round = 3;
   env.priorRounds = [
     { round: 1, jobId: "j1", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" },
     { round: 3, jobId: "j3", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" }  // gap
@@ -471,11 +567,12 @@ test("validateEnvelope: non-consecutive round numbers fail", () => {
   env.priorFindings = [];
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, false);
-  assert.match(result.reason, /连续/);
+  assert.match(result.reason, /连续|必须是 1 或 2/);
 });
 
 test("validateEnvelope: duplicate round numbers fail", () => {
   const env = makeValidEnvelope();
+  env.round = 3;
   env.priorRounds = [
     { round: 1, jobId: "j1", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" },
     { round: 1, jobId: "j1b", findingCount: 0, completedAt: "2026-01-01T00:00:00Z" }
@@ -486,16 +583,17 @@ test("validateEnvelope: duplicate round numbers fail", () => {
   assert.match(result.reason, /重复/);
 });
 
-test("validateEnvelope: planSha256 must be 64 lowercase hex chars", () => {
+test("validateEnvelope: artifactSha256 must be 64 lowercase hex chars", () => {
   const env = makeValidEnvelope();
-  env.planSha256 = "AAAA"; // uppercase and wrong length
+  env.artifactSha256 = "AAAA"; // uppercase and wrong length
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, false);
-  assert.match(result.reason, /planSha256/);
+  assert.match(result.reason, /artifactSha256/);
 });
 
 test("validateEnvelope: priorFindings missing an index fails", () => {
   const env = makeValidEnvelope();
+  env.round = 2;
   env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
   env.priorFindings = [
     { round: 1, index: 1, summary: "finding 1" }
@@ -509,6 +607,7 @@ test("validateEnvelope: priorFindings missing an index fails", () => {
 
 test("validateEnvelope: complete valid envelope with findings passes", () => {
   const env = makeValidEnvelope();
+  env.round = 2;
   env.priorRounds = [{ round: 1, jobId: "j1", findingCount: 2, completedAt: "2026-01-01T00:00:00Z" }];
   env.priorFindings = [
     { round: 1, index: 1, summary: "first" },
@@ -516,4 +615,66 @@ test("validateEnvelope: complete valid envelope with findings passes", () => {
   ];
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, true);
+});
+
+test("validateEnvelope: rejects a fourth review round", () => {
+  const env = makeValidEnvelope();
+  env.round = 4;
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /round/);
+});
+
+test("validateEnvelope: rejects a non-read-only reviewer", () => {
+  const env = makeValidEnvelope();
+  env.reviewerAccess = "write";
+  const result = validateEnvelope(wrapInFence(env));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /reviewerAccess/);
+});
+
+test("cmdLaunch: review mode rejects --write before starting a job", () => {
+  const restore = withTempPluginData();
+  try {
+    assert.throws(
+      () => cmdLaunch({
+        companionPath: "/nonexistent/companion.mjs",
+        cwd: process.cwd(),
+        prompt: wrapInFence(makeValidEnvelope()),
+        targetRoots: [process.cwd()],
+        write: true,
+        review: true
+      }),
+      /cannot use --write/
+    );
+    assert.equal(cmdActive().active, false);
+  } finally {
+    restore();
+  }
+});
+
+test("cmdLaunch: review claim persists artifact state and job ID", () => {
+  const restore = withTempPluginData();
+  const cwd = makeTempDir();
+  const companionPath = path.join(cwd, "fake-companion.mjs");
+  try {
+    fs.writeFileSync(companionPath, 'process.stdout.write(JSON.stringify({ jobId: "review-job-1" }));\n', "utf8");
+    const launch = cmdLaunch({
+      companionPath,
+      cwd,
+      prompt: wrapInFence(makeValidEnvelope()),
+      targetRoots: [cwd],
+      write: false,
+      review: true
+    });
+    const claim = cmdActive().claims[0];
+    assert.equal(launch.jobId, "review-job-1");
+    assert.equal(claim.phase, "review");
+    assert.equal(claim.artifactId, "artifact-task0");
+    assert.equal(claim.artifactSha256, "a".repeat(64));
+    assert.equal(claim.round, 1);
+    assert.equal(claim.jobId, "review-job-1");
+  } finally {
+    restore();
+  }
 });

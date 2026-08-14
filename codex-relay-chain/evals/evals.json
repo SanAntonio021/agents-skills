@@ -116,6 +116,32 @@
         "区分 404 model_not_found 与 429/502/503/504/524/超时，并用真实 stream=true Responses SSE 复核",
         "不建议直接改数据库或把 Terra low 当作可配置的探测模型"
       ]
+    },
+    {
+      "id": 14,
+      "prompt": "这个中转的 /v1/responses 返回 HTTP 200，response.created 和 response.completed 也都有，但探测器报 SSE terminal output conflicts with streamed text。既然完成事件齐了，能不能算通过？",
+      "expected_output": "不能算通过。应按事件顺序拼接全部 response.output_text.delta，再从 response.completed 的 response.output 提取并拼接全部 output_text.text，要求两者逐字符完全一致；不能 Trim、折叠空白、只比包含关系或因为 HTTP 200 就放宽解析。终态与增量冲突属于 Responses SSE 协议不一致，样本无效。",
+      "files": [],
+      "expectations": [
+        "不把 HTTP 200 和 created/completed 事件存在当作充分通过条件",
+        "按事件顺序拼接全部 response.output_text.delta 的 delta",
+        "从 response.completed 的 response.output 提取并拼接全部 output_text.text",
+        "要求两侧逐字符完全一致，不做 Trim、空白折叠或包含关系比较",
+        "冲突时明确判为 Responses SSE 协议不一致且样本无效"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "我的贾维斯用 medium 探针跑 8 并发是 0/8，有人说就是并发太高或探针题目有问题。请给出最小控制实验和可以下结论的边界。",
+      "expected_output": "应先保持端点、模型、prompt、reasoning effort、include、stream、store、超时等请求形态不变，关闭重试并用 worker=1 重复取样。单 worker 仍稳定复现同类错误时，不能归因于 8 并发；只有单 worker 通过而提高并发后可重复失败，且限流、连接重置或超时等证据随并发变化时，才把并发容量列为候选。随后可只替换为简单固定回显来检查探针内容；其他字段保持不变，若仍出现同类终态/增量冲突，则不能归因于原探针题目。",
+      "files": [],
+      "expectations": [
+        "先用完全相同的请求形态做 worker=1 且关闭重试的控制实验",
+        "单 worker 稳定复现时明确否定把失败归因于 8 并发限制",
+        "只有单 worker 通过且失败随并发可重复变化时，才把并发容量列为候选",
+        "检查探针内容时只替换 prompt 为简单固定回显，其他字段保持不变",
+        "简单回显仍出现同类终态/增量冲突时，不归因于原探针题目"
+      ]
     }
   ]
 }

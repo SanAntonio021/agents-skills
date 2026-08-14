@@ -535,6 +535,30 @@ Codex -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
 简单回显任务可能不生成 reasoning item，即使线路正常也看不到 `encrypted_content`。验证这两个字段时使用
 上面的非平凡小题，并显式加入 `include = ["reasoning.encrypted_content"]`。
 
+#### 严格校验流式文本与终态文本
+
+不能只检查 HTTP 状态、事件名和字段是否存在。对本节预期返回文本的探测，按 SSE 事件顺序收集全部
+`response.output_text.delta` 的 `delta` 并直接拼接；再从 `response.completed` 的
+`response.output` 中按顺序提取全部 `output_text.text` 并拼接。两侧必须逐字符完全一致，不能先
+`Trim`、折叠空白、去重句段或只做包含关系比较。
+
+任一侧缺失或两侧冲突时，即使 HTTP 为 `200` 且 `response.created`、`response.completed` 都存在，
+仍判为 Responses SSE 协议不一致，并保留最短错误类型，例如
+`SSE terminal output conflicts with streamed text`。不要为了提高有效样本数而放宽解析器。
+
+#### 并发和探针内容的控制实验
+
+批量探测无有效样本时，不要先归因于并发数或探针内容。先保留失败请求的端点、模型、prompt、
+reasoning effort、`include`、`stream`、`store`、超时和其他请求形态，关闭重试，以 `worker = 1`
+重复取得原始样本：
+
+1. 单 worker 仍稳定出现同类 HTTP、SSE 或文本一致性错误时，不能写成“8 并发限制”；优先归为
+   上游或中转的协议/传输异常，再按三层链路定位。
+2. 只有单 worker 对照通过，而提高 worker 后可重复失败，并且状态码、连接重置、超时或限流证据
+   随并发变化时，才把并发容量列为候选原因。
+3. 判断探针内容是否触发异常时，先完成上述同请求对照，再把 prompt 换成最简单的固定回显，其他字段
+   保持不变。简单回显仍出现同类终态/增量冲突时，不能归因于原探针题目；HTTP `200` 也不能推翻该结论。
+
 合格信号：
 
 - HTTP `200`
@@ -553,6 +577,8 @@ Codex -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
 - `reasoning_tokens` 缺失：中转可能没有完整保留 Responses usage。
 - `encrypted_content` 缺失：中转或代理可能过滤了 reasoning 加密内容。
 - `proxy_rounds` 缺失：请求可能没经过 CodexCont，或 CodexCont 没正常处理。
+- `response.completed` 终态文本与全部 `response.output_text.delta` 拼接文本不一致：中转返回了
+  自相矛盾的 Responses SSE，不能计为有效样本。
 
 目标是“OAuth 登录 + 中转请求”时，SSE 通过后还要运行一次真实 `codex exec`。只有
 `codex login status` 为 ChatGPT、CLI 显示目标 `custom` provider、返回预期文本，且 CC Switch

@@ -146,12 +146,22 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
 4. 结构校验和相关确定性测试通过；
 5. 用合成数据在 Codex、Claude 全新只读会话分别验证路由和关键安全边界。
+6. 定向同步返回退出码 `0` 和 `runtime_active` 后，再以完全相同的 `ExpectedRemoteCommit` 与
+   `Skills` 运行一次 `-VerifyOnly`；第二次也返回退出码 `0`、`runtime_active`，且四层文件集合和
+   SHA-256 仍一致，才写“运行时已生效”。
 
 工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
 LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。
 
 认证、余额、中转或模型服务错误若发生在技能输出前，状态只能记为“运行时验收受环境阻断”。
 环境恢复后重跑同一用例；不得把这种错误记成技能失败，也不得在未重跑时记成通过。
+
+CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目标 commit、Skill 集合和
+`clicked_skills`，状态写“更新扫描受环境阻断，运行时待验收”，不写成技能失败或同步成功。只有
+`clicked_skills` 明确为空、确认尚未点击任何目标 Skill 的“更新”按钮时，才允许用同一 commit 和
+同一 Skill 集合重新运行完整 helper；如果已经点击或无法确认，则不再触发 UI 更新，只做
+`-VerifyOnly`，或等待用户手动定向更新后再验收。完整判据见
+[references/skill-hygiene.md](references/skill-hygiene.md) 的“更新扫描超时与 UI 竞态恢复”。
 
 ## 触发分层判断
 

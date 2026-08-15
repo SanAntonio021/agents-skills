@@ -25,7 +25,7 @@
 ## 结构与回归
 
 - 运行 `python -m unittest discover -s skill-check/tests -p 'test_*.py' -v`。
-- 验证 `evals/evals.json` 为合法 JSON，原有 10 个目录/同步回归用例仍存在，新用例 ID 不重复。
+- 验证 `evals/evals.json` 为合法 JSON，原有 14 个用例仍存在，新增的超时恢复与最终验收用例 ID 不重复。
 - 验证 `evals/trigger-evals.json` 恰有 20 条，正反例各 10 条。
 - 用 `skill-creator/scripts/quick_validate.py skill-check` 验证 frontmatter。
 - 全部测试通过后才进入跨模型 `review_repair`；审查同步后由原作者重跑相同测试并检查工作区 diff。

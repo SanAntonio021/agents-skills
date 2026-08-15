@@ -97,6 +97,32 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 - success_signal: 远端分支更新成功，PR 状态变 MERGEABLE / CLEAN，工作区文件一个没动
 - capture_rule: 工作区被同步软件 / CRLF 污染、又必须完成 merge 时，走纯对象层（merge-tree → commit-tree → update-ref），不碰工作区
 
+### Pattern: git-commit-pure-object-layer
+- scenario: 已按允许清单完成 `git add`，但 `git commit` 因同步软件锁住 `.git/index` 报 `unable to write new index file`，仍需创建一个单父提交
+- use_when: 暂存区内容已经逐路径核对，当前不在 merge / rebase / cherry-pick 状态，且本次提交不依赖必须运行的 commit hook；只绕过被锁的 index 重写，不绕过内容审查
+- shell: PowerShell 或 bash；下面的变量写法为 PowerShell
+- validated_shape:
+  ```powershell
+  $head = (git rev-parse HEAD).Trim()
+  git diff --cached --name-status
+  git diff --cached --check
+  if (git ls-files -u) { throw "Unmerged index entries are present" }
+  $tree = (git write-tree).Trim()
+  $commit = (git commit-tree $tree -p $head -m "<MESSAGE>").Trim()
+  git cat-file -p $commit
+  git diff-tree --no-commit-id --name-status -r $commit
+  # 仅当候选提交的父提交和文件清单都符合预期时才更新分支
+  git update-ref -m "commit: <MESSAGE>" refs/heads/<BRANCH> $commit $head
+  git status --short --branch
+  git push origin <BRANCH>
+  ```
+- substitute_only: `<MESSAGE>`, `<BRANCH>`；提交文件清单必须沿用此前核验过的明确路径，不从工作区重新猜测
+- preflight: `git rev-parse --show-toplevel` 确认实际仓库根；`git status --short`、`git diff --cached --name-status` 和 `git diff --cached --check` 确认范围；`git ls-files -u` 必须为空；确认当前分支和远端目标未分叉
+- candidate_check: `git cat-file -p $commit` 的 `parent` 必须等于 `$head`；`git diff-tree --no-commit-id --name-status -r $commit` 必须只列允许文件；候选不正确时不执行 `update-ref`
+- avoid: 不要删除 `index.lock`、停止同步客户端、`reset` / `checkout` 工作区或用 `git add .` 扩大范围；`git commit-tree` 不运行 hooks，若需要签名、`pre-commit` 或 `commit-msg` 校验就停止并先恢复正常 `git commit`
+- success_signal: 分支通过带旧值校验的 `update-ref` 前进一个提交，`git status` 中目标文件干净、无关改动仍保留，随后远端 push 为 fast-forward
+- capture_rule: 单提交的对象层回退是已核验暂存区的窄范围应急路径；先验证 tree/commit/差异，再原子更新 ref，不能把它当作普通提交的默认替代
+
 ## 为什么不直接修工作区
 
 被同步软件锁的文件，你没法稳定地 unlink / checkout；CRLF 噪声会让几十个文件显示 `modified`、反复挡路。对象层操作（cat-file / merge-tree / commit-tree / update-ref）只读写 `.git/objects` 和 ref，绕开整个工作区，是这种环境下最稳的路子。前提：每一步都先验证（rev-parse 出 hash、ls-tree 抽查、cat-file 查冲突标记），再推进。

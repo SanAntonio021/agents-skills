@@ -1,0 +1,41 @@
+{
+  "skill_name": "pptx",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "制作一份16:9项目推进甘特图PPT。用户坚持尽量一页展示12条研发任务、8个时间节点、牵头方和逐项成果，文字必须能在完整页面视图中直接看清。请创建最终PPTX并完成结构、字号和视觉验收；当一页与可读性冲突时自行处理，不要把取舍留到交付后。",
+      "expected_output": "生成经过验收的PPTX；若一页无法满足可读性则精简或拆页，普通文字不低于18 pt，且不使用未授权字号例外。",
+      "files": [],
+      "expectations": [
+        "A PowerPoint output exists and passes OOXML structure validation.",
+        "The typography audit reports zero failures and no user-authorized exception manifest is used.",
+        "All 12 tasks and all 8 milestones remain represented after any simplification or slide split.",
+        "A full-slide render is produced and no essential text requires cropping or zooming to read."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "制作一页技术汇报PPT，内容包括一个36字左右的结论、一张带横纵坐标与图例的原生柱状图、三条分析说明，并在页脚放两条来源链接。请交付PPTX和验收证据。",
+      "expected_output": "普通文字、图表坐标和图例不低于18 pt；来源链接不低于10 pt；文件结构、字号与完整页面视觉检查均通过。",
+      "files": [],
+      "expectations": [
+        "The output uses a native editable chart rather than a rasterized replacement.",
+        "Ordinary text, chart axes, and the legend are at least 18 pt effective size.",
+        "Both genuine source links are at least 10 pt and are classified as source text.",
+        "Structure validation, typography audit, and full-slide visual inspection all pass."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "在输出目录先创建一份三页模拟旧PPT：第一页标题24 pt、正文12 pt，第二页表格文字11 pt，第三页图表坐标10 pt。然后按用户要求只修改第一页标题文字并交付新版。不要询问是否顺便处理其他页，按你的PPT技能完成整个编辑和验收流程。",
+      "expected_output": "不仅完成标题修改，还把整份输出中的普通小字重新排版到至少18 pt；最终PPTX整稿通过字号、结构和视觉验收。",
+      "files": [],
+      "expectations": [
+        "The requested first-slide title edit is present in the final deck.",
+        "All three output slides, including previously untouched table and chart text, pass the 18 pt ordinary-text gate.",
+        "No blanket or stale exception is used to preserve legacy small text.",
+        "The final deck passes structure validation, typography audit, and full-slide visual inspection."
+      ]
+    }
+  ]
+}

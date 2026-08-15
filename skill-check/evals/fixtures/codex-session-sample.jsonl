@@ -1,0 +1,7 @@
+{"type":"session_meta","timestamp":"2026-01-01T00:00:00Z","payload":{"id":"codex-session-1","cwd":"C:\\Work\\sample"}}
+{"type":"event_msg","timestamp":"2026-01-01T00:01:00Z","payload":{"type":"user_message","message":"请用 [$alpha-skill](C:\\Users\\Example\\.codex\\skills\\alpha-skill\\SKILL.md) 处理 C:\\Private\\input.txt，并联系 demo@example.com。"}}
+{"type":"response_item","timestamp":"2026-01-01T00:01:00Z","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"请用 $alpha-skill 处理重复记录。"}]}}
+{"type":"event_msg","timestamp":"2026-01-01T00:02:00Z","payload":{"type":"user_message","message":"请做频谱整理和曲线检查，输出审查意见。"}}
+{"type":"event_msg","timestamp":"2026-01-01T00:03:00Z","payload":{"type":"user_message"}}
+{"type":"response_item","timestamp":"2026-01-01T00:04:00Z","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"normal non-target record"}]}}
+{broken-json

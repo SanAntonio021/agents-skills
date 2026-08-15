@@ -120,7 +120,21 @@ class AuditSkillUsageTests(unittest.TestCase):
         warnings = summary["warnings"]
         self.assertEqual(warnings["parse_error_count"], 2)
         self.assertEqual(warnings["missing_field_count"], 3)
+        self.assertEqual(warnings["non_text_user_record_count"], 0)
         self.assertTrue(all("detail" in item for item in warnings["parse_errors"]))
+
+    def test_image_only_codex_message_is_not_a_missing_field(self) -> None:
+        with (self.codex / "sample.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(
+                '{"type":"event_msg","timestamp":"2026-01-01T00:05:00Z",'
+                '"payload":{"type":"user_message","message":"\\n",'
+                '"images":["data:image/png;base64,fixture"]}}\n'
+            )
+        summary = self.run_audit()
+        warnings = summary["warnings"]
+        self.assertEqual(warnings["missing_field_count"], 3)
+        self.assertEqual(warnings["non_text_user_record_count"], 1)
+        self.assertIn("only image or attachment", warnings["non_text_user_records"][0]["detail"])
 
     def test_bridge_workspace_session_is_excluded(self) -> None:
         summary = self.run_audit()

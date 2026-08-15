@@ -90,6 +90,8 @@ description 规则要命中两个独立词组或一个六字高区分度词组�
 
 - JSON 解码失败：进入 `warnings.parse_errors`；
 - 目标事件缺必需字段：进入 `warnings.missing_fields`；
+- 纯图片或附件、没有可扫描文本的 Codex 用户消息：进入 `warnings.non_text_user_records`，单独计数，
+  不作为文本字段缺失；
 - 合法但与目标事件无关：静默跳过。
 
 详细警告最多各保留 200 条，同时保留总数和是否截断。bridge 固定审查副本通过 cwd/path 标记排除，并

@@ -25,6 +25,10 @@ python scripts/run_weekly_skill_review.py next-question --json
 新证据时不标记为已解决。上游退出码 `2` 只有在本轮确实写出有效新摘要时才可接受；目录健康和使用
 审计的旧摘要不能用来冒充本轮结果。
 
+使用审计中的缺失根、JSON 解析错误、目标事件缺字段或无效健康报告会让本周证据不完整。纯图片或附件
+且没有可扫描文本的用户消息单独计数，不会永久阻断连续完整周次；它本来也不可能包含可读取的显式
+`$skill-name`、`/skill-name` 或 Skill 链接文本。
+
 上游 `review_required` 先在本周日期目录下执行 `prepare-review`、收益/许可证/测试/风险四门和
 `finalize-review`，只在隔离候选副本内完成。候选成为 `awaiting_approval` 后重新运行周检，才会形成
 可批准的修改 finding。其他 finding 的候选修改也必须在

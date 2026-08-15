@@ -193,6 +193,16 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertIsNone(reason)
         self.assertEqual(result.get("alpha"), 0)
 
+    def test_non_text_user_records_do_not_make_usage_incomplete(self) -> None:
+        usage = self.valid_usage()
+        usage["warnings"]["non_text_user_record_count"] = 8
+        usage["warnings"]["non_text_user_records"] = [
+            {"root_id": "codex-archived", "path": "sample.jsonl", "line": 1}
+        ]
+        complete, reasons = REVIEW.usage_evidence_complete(usage)
+        self.assertTrue(complete)
+        self.assertEqual(reasons, [])
+
     def test_queue_limit_retention_and_critical_priority(self) -> None:
         observations = [self.observation(f"routine-{index}") for index in range(4)]
         state = REVIEW.new_state()

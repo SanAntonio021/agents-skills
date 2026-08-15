@@ -173,6 +173,30 @@
         "输出把可能冗余表述为人工复核候选。",
         "输出不会移动、归档、删除或改写任何技能。"
       ]
+    },
+    {
+      "id": 15,
+      "prompt": "CC Switch 定向同步返回 `update_scan_timeout`。JSON 里的 `clicked_skills` 是空数组，目标是 commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` 和 `skill-check`。这算技能失败吗？可以怎么恢复？",
+      "expected_output": "把结果标为更新扫描受环境阻断、运行时待验收，保留原始 JSON 和精确输入；因 `clicked_skills` 明确为空，可仅用同一 commit 与同一 Skill 集合重新运行完整 helper，不改变目标，也不直接修改运行时。",
+      "files": [],
+      "expectations": [
+        "输出不会把 `update_scan_timeout` 判成 Skill 失败、同步成功或已完成。",
+        "输出会保留目标 commit、精确 Skill 集合、失败阶段和 `clicked_skills` 证据。",
+        "输出只在 `clicked_skills` 明确为空时允许使用完全相同的输入重新运行完整 helper。",
+        "输出不会改用全部更新、扩大 Skill 集合、直接修改数据库或运行时目录。"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "同一 commit 和 Skill 集合重跑后 helper 已返回退出码 0、`runtime_active`。现在能直接宣布运行时生效吗？请给出最终只读验收口径。",
+      "expected_output": "还需用完全相同的 `ExpectedRemoteCommit` 与 `Skills` 运行 `-VerifyOnly`；只有它也返回退出码 0、`runtime_active`，且提交身份、目标集合及源码、CC Switch、Claude、Codex 四层文件集合与 SHA-256 一致，才宣布运行时生效。",
+      "files": [],
+      "expectations": [
+        "输出要求用完全相同的 commit 和 Skill 集合运行 `-VerifyOnly`。",
+        "输出要求 `-VerifyOnly` 同时返回退出码 `0` 和 `runtime_active`。",
+        "输出会核对源码、CC Switch、Claude、Codex 四层完整文件集合和 SHA-256。",
+        "缺少任一条件时，输出只写运行时未生效或待验收，不宣布完成。"
+      ]
     }
   ]
 }

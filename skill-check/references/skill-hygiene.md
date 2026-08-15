@@ -132,6 +132,24 @@ claude -p --no-session-persistence --permission-mode plan --no-chrome
 - 环境恢复后必须重跑相同合成用例；成功输出后才能写“运行时验收完成”。
 - 使用中转 API 时出现 `claude.ai connectors are disabled` 提示，但技能输出成功，可记录为非阻断提示。
 
+### 7. 更新扫描超时与 UI 竞态恢复
+
+定向同步 helper 返回 `update_scan_timeout` 时，先保留完整 JSON，并记录
+`ExpectedRemoteCommit`、精确 `Skills` 集合、失败阶段和 `clicked_skills`：
+
+- 结论固定为“更新扫描受环境阻断，运行时待验收”；不把超时判成 Skill 失败、同步失败或同步成功。
+- 恢复时不得更换 commit、增删 Skill、改用“全部更新”，也不得直接修改数据库或运行时目录。
+- `clicked_skills` 明确为空且失败发生在扫描阶段时，说明尚未点击任何目标 Skill 的“更新”按钮；可用
+  完全相同的 commit 和 Skill 集合重新运行一次完整 helper。这是重新执行扫描流程，不是重复点击目标更新。
+- `clicked_skills` 非空、字段缺失或无法确认是否已经点击时，不再触发 UI 更新。先用完全相同的参数运行
+  `-VerifyOnly`；若仍未对齐，由用户在 CC Switch 手动定向更新后再运行 `-VerifyOnly`。
+- 恢复记录必须同时保留首次超时证据和后续验收证据，不能用后一次成功覆盖前一次异常。
+
+最终生效必须同时满足：定向同步 helper 退出码为 `0`、状态为 `runtime_active`；随后使用完全相同的
+`ExpectedRemoteCommit` 与 `Skills` 执行 `-VerifyOnly`，退出码也为 `0`、状态也为 `runtime_active`；
+两次结果中的提交身份、目标集合、四层文件集合和 SHA-256 均一致。任一条件缺失时，只能写“源码已推送，
+运行时未生效”或“运行时待验收”。
+
 ## CC Switch SSOT 报错
 
 当 CC Switch 安装 skill 时弹出 `Skill 不存在于 SSOT: <skill-name>`，不要先判断 GitHub 仓库坏了。常见原因是面板仓库索引和本地 SSOT 记录不同步，尤其是远端默认分支已切到 `main`，但 `skills.repo_branch` 里还残留 `master`。

@@ -22,10 +22,25 @@
 - 检查 `warnings`：候选截断数量、bridge 排除数量、parse/missing 计数与源文件一致。
 - 对生成的 JSON 和 Markdown 搜索用户目录、邮箱、URL 查询参数、密钥形态和原始 UUID；发现泄漏即失败。
 
+## 融合周检状态机
+
+- 连续四个不同日期写入同范围、完整且未见使用的合成 usage 摘要，确认前三次不入队、第四次才形成 finding；
+  使用证据、扫描失败、无效报告或范围变化分别清零。
+- 先保存三条旧中低优先级问题和已回答 finding，再合并新结果；确认旧问题保留、稳定 fingerprint 不重复问、
+  新严重问题插队、每周最多新增三条中低优先级问题。
+- 对证据不足 finding 逐条回答事实，确认最多两问，并覆盖关闭、形成建议、等待新证据三个出口。
+- 对待确认或执行中 finding 提交调整意见，确认旧批准和批次失效、修订方案重新展示，未重新批准前不能执行。
+- 全部逐项决定后重复调用 `prepare-execution`，确认只返回同一批次；没有批准项时不创建空批次。
+- 在写入决定前替换 evidence/proposal fingerprint，确认返回 stale 且状态文件字节不变；并发持锁、损坏 JSON
+  和未知 schema 均保留原文件并返回严重问题。
+- 构造三个执行项：一个失败、一个显式依赖它、一个独立。确认失败项进入下周重试，依赖项暂停，独立项继续；
+  修改源码树或同步 helper 后，确认只阻止受影响批次或项目。
+- `record-execution success` 对需同步项必须拒绝短 SHA、非 `verified` 状态和不精确 Skill 集合。
+
 ## 结构与回归
 
 - 运行 `python -m unittest discover -s skill-check/tests -p 'test_*.py' -v`。
-- 验证 `evals/evals.json` 为合法 JSON，原有 14 个用例仍存在，新增的超时恢复与最终验收用例 ID 不重复。
-- 验证 `evals/trigger-evals.json` 恰有 20 条，正反例各 10 条。
+- 验证 `evals/evals.json` 为合法 JSON，19 个用例 ID 唯一，新增融合周检、超时恢复与最终验收用例都存在。
+- 验证 `evals/trigger-evals.json` 恰有 24 条，正反例各 12 条。
 - 用 `skill-creator/scripts/quick_validate.py skill-check` 验证 frontmatter。
-- 全部测试通过后才进入跨模型 `review_repair`；审查同步后由原作者重跑相同测试并检查工作区 diff。
+- 只有尚待用户确认的正式计划才进入跨模型 `review_repair`；已确认计划的实施完成后不自动追加互审，原作者仍需重跑全部测试并检查工作区 diff。

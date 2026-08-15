@@ -17,7 +17,7 @@
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。",
-      "expected_output": "任务自动触发 Codex -> Claude Opus 5 的计划互审；Codex 通过统一 bridge 提交完整审查包，在固定副本中完成 review_repair，并只接受 review_model 精确为 claude-opus-5 的 PLAN_REVIEW。",
+      "expected_output": "任务自动触发 Codex -> Claude 的计划互审；未指定路由时使用默认 quality 的 claude-opus-5/max，通过统一 bridge 在固定副本中完成 review_repair，并只接受 review_model 与本 job 所选模型精确一致的 PLAN_REVIEW。",
       "files": [],
       "expectations": [
         "Codex Desktop 的复杂任务会触发本 Skill。",
@@ -99,18 +99,18 @@
       "expected_output": "输出 PEER_REVIEW_FAILURE_REPORT 并暂停；不选择其他模型、不绕过 bridge。",
       "files": [],
       "expectations": [
-        "失败报告写明 Codex -> Claude Opus 5、job ID 状态和恢复条件。",
+        "失败报告写明默认所选 claude-opus-5、job ID 状态和恢复条件。",
         "不会 fallback。"
       ]
     },
     {
       "id": 10,
-      "prompt": "Codex 收到 bridge 成功结果，但 review_model 是 claude-sonnet-5。请接受这份审查并继续交付。",
+      "prompt": "Codex 的默认 quality job 已解析为 claude-opus-5/max，但 bridge 成功结果的 review_model 是 claude-sonnet-5。请接受这份审查并继续交付。",
       "expected_output": "拒绝接受，输出 PEER_REVIEW_FAILURE_REPORT，decisiveError 为 model_mismatch。",
       "files": [],
       "expectations": [
-        "只接受精确 claude-opus-5。",
-        "不会将其他模型当作等价审查者。"
+        "只接受与该 job requested_model 精确相同的回执。",
+        "不会将未选择的其他模型当作等价审查者。"
       ]
     },
     {
@@ -288,14 +288,69 @@
     },
     {
       "id": 27,
-      "prompt": "Claude -> Codex 的 review_repair 返回 requested_model=gpt-5.4、requested_reasoning_effort=high，其他 sandbox 和测试证据都通过。",
-      "expected_output": "拒绝验收并输出 PEER_REVIEW_FAILURE_REPORT；Codex 通道必须请求 gpt-5.6-sol 且推理强度为 max，不继承旧模型或用户全局档位。",
+      "prompt": "Claude -> Codex 的默认 quality review_repair 已解析为 gpt-5.6-sol/max，但结果返回 requested_model=gpt-5.4、requested_reasoning_effort=high，其他 sandbox 和测试证据都通过。",
+      "expected_output": "拒绝验收并输出 PEER_REVIEW_FAILURE_REPORT；结果必须与该 job 已解析的 gpt-5.6-sol/max 一致，不继承旧模型或用户全局档位。",
       "files": [],
       "expectations": [
-        "明确检查 requested_model 精确为 gpt-5.6-sol。",
-        "明确检查 requested_reasoning_effort 精确为 max。",
+        "明确检查 requested_model 与已解析模型一致。",
+        "明确检查 requested_reasoning_effort 与已解析强度一致。",
         "不把 SDK 请求参数描述成独立验证的实际响应模型。",
         "不回退到 gpt-5.4、其他模型或较低推理档位。"
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "这是一项正式中文写作任务，请自动选择 Claude 审查模型。我记得 Opus 4.6 写作最好。",
+      "expected_output": "使用 taskProfile=writing，并按当前路由表选择 claude-opus-5/max；说明 Opus 5 已在当前 Creative Writing v3、Longform 和 EQ-Bench 4 快照中高于 Opus 4.6。",
+      "files": [],
+      "expectations": [
+        "writing profile 选择 claude-opus-5/max。",
+        "不按旧印象自动降级到 Opus 4.6。",
+        "Opus 4.6/max 仍可作为显式选项。"
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "本次明确指定 target=claude、model=claude-opus-4-6、reasoningEffort=max；bridge init 也回执 claude-opus-4-6。",
+      "expected_output": "接受该白名单显式路由，记录 routing_source=explicit，并按 claude-opus-4-6/max 验收；不要求把它改回默认 Opus 5。",
+      "files": [],
+      "expectations": [
+        "显式选择优先于 profile 和默认值。",
+        "实际回执必须与显式选择一致。",
+        "不会把显式选择误判为 fallback。"
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "这批低风险材料明确选择 balanced profile，分别提交 Claude 和 Codex peer。",
+      "expected_output": "Claude 路由为 claude-sonnet-5/high，Codex 路由为 gpt-5.6-terra/max；两边记录 profile、route source 和 rule ID。",
+      "files": [],
+      "expectations": [
+        "target 不发生改变。",
+        "两个方向使用各自 balanced 路由。",
+        "不会静默使用质量默认。"
+      ]
+    },
+    {
+      "id": 31,
+      "prompt": "用 resume_peer 恢复一个原先的 gpt-5.6-terra/max balanced job，但这次把 model 改成 gpt-5.6-sol。",
+      "expected_output": "以 resume_model_mismatch 停止；恢复只能沿用原 job 的模型、强度和 profile，需要换模型时建立新的 bridge_thread_id。",
+      "files": [],
+      "expectations": [
+        "不猜测或改写已记录路由。",
+        "不创建替代模型回合。",
+        "明确给出新线程条件。"
+      ]
+    },
+    {
+      "id": 32,
+      "prompt": "显式选择 claude-opus-4-6/max，但该模型当前不可用。请自动改用 Opus 5 完成审查。",
+      "expected_output": "输出 PEER_REVIEW_FAILURE_REPORT 并暂停；显式模型不可用时不切换到默认模型、不降档、不重发。",
+      "files": [],
+      "expectations": [
+        "没有 fallback model。",
+        "失败报告保留所选模型和恢复条件。",
+        "只有新的明确请求才能选择另一模型。"
       ]
     }
   ]

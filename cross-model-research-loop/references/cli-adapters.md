@@ -8,14 +8,16 @@
 ```text
 submit_peer(target=codex|claude, operation=task|review_repair,
   targetRoot=<绝对共同根>, allowedPaths=<最小相对路径列表>, artifactId=<稳定 ID>,
-  testCommands=<逐条精确测试命令>)
+  taskProfile=research, testCommands=<逐条精确测试命令>)
 await_peer(job_id, timeout_ms<=45000)
 peer_result(job_id)
 ```
 
 Claude -> Codex 使用 bridge 的 SDK 适配器（`workspace-write`、`approvalPolicy=never`、网络和搜索关闭、
-无额外目录）。Codex -> Claude 固定 `claude-opus-5`；`ask` 用空工具和默认权限，`review_repair` 只
-开放 `Read,Edit,Write,Bash`、`acceptEdits` 和固定副本。模型、权限和 sandbox 参数不能由提示词覆盖。
+无额外目录）。科研默认使用 `research` profile，当前解析为 Codex `gpt-5.6-sol/max` 与 Claude
+`claude-opus-5/max`。公开 `model`/`reasoningEffort` 可在白名单内显式选择；原始 CLI 模型参数、权限和
+sandbox 参数不能由提示词覆盖。`ask` 用空工具和默认权限，`review_repair` 只开放
+`Read,Edit,Write,Bash`、`acceptEdits` 和固定副本。
 Claude 方向的 Bash 不做通配授权；`testCommands` 不得含引号、变量、通配符、重定向、管道或命令串联，
 且任何 permission denial 都使本轮失败。
 这里的 `workspace-write` 是 bridge 向 SDK 发出的请求，不是外层宿主权限的独立回执；必须用实际文件
@@ -27,6 +29,7 @@ Claude 方向的 Bash 不做通配授权；`testCommands` 不得含引号、变�
 {
   "target": "codex",
   "operation": "task",
+  "taskProfile": "research",
   "question": "完成 M2，跑完停下等评审；返回命令、退出码、结果文件和限制。",
   "artifactId": "research-m2",
   "targetRoot": "D:\\BaiduSyncdisk\\Project",
@@ -43,7 +46,8 @@ Claude 方向的 Bash 不做通配授权；`testCommands` 不得含引号、变�
 
 - 每次 `await_peer` 最多 45 秒；超时只用同一 job 的 `peer_result` 或 `peer_status`。
 - `cancel_peer` 只请求并确认目标进程取消；不要删除固定工作区或丢弃线程 ID。
-- `resume_peer` 必须给出明确的原 job ID 和 bridge 记录的线程 ID；不得用“最新会话”猜测。
+- `resume_peer` 必须给出明确的原 job ID，并沿用 bridge 记录的线程、模型、强度和 profile；不得用
+  “最新会话”猜测，也不得在恢复时换路由。
 - 删除、重命名、权限或类型变化会返回 `needs_attention`；用户批准精确高风险 ID 后用
   `approve_peer_sync`，这一步不重新调用模型。
 - `awaiting_user` 期间固定副本锁继续保留；新的重叠目标根任务应以 `retained_workspace_conflict` 停止。

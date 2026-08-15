@@ -14,8 +14,9 @@
 
 ## Claude -> Codex review_repair
 
-- 所有 Codex job 的公共状态和受保护详情都应记录 `requested_model=gpt-5.6-sol` 与
-  `requested_reasoning_effort=max`；任一缺失或不匹配都不得验收，且不能继承用户全局模型或推理档位。
+- 默认质量 job 的公共状态和受保护详情应记录 `requested_model=gpt-5.6-sol` 与
+  `requested_reasoning_effort=max`；其他 job 必须与其已解析 profile/显式选择一致。任一缺失或不匹配
+  都不得验收，且不能继承用户全局模型或推理档位。
 - Claude 形成正式计划或重要交付物后，用 `submit_peer(target=codex, operation=review_repair)`，
   提供完整审查包、`reviewerAccess=isolated_write`、目标根、最小 allowlist 和精确 `testCommands`。
 - `await_peer` 超时后只用同一 job 的 `peer_result`；不得重发、猜测线程或调用旧插件。
@@ -33,18 +34,30 @@
 - 运行一次 `npm.cmd run test:live:codex`，确认 `gpt-5.6-sol` 请求、`max` 推理强度、真实写入及同步哈希、取消、同线程恢复、CLI 版本、
   `workspace-write`、`approvalPolicy=never` 和 Windows sandbox 证据同时成立。
 
-## Codex -> Opus 5
+## Codex -> Claude
 
 - 在 Codex Desktop 和 Codex CLI 用 `submit_peer(target=claude, operation=review_repair)`完成一次
   隔离计划审查和一次重要交付物审查；MCP 工具名优先使用 `submit_peer`/`await_peer`/`peer_result`。
-- Opus 5 请求固定为 `claude-opus-5`。只接受终态 `succeeded`、正文契约合法、公共
-  `review_model === "claude-opus-5"`，以及 `system/init.model` 精确匹配的结果。
+- 默认质量请求为 `claude-opus-5` / `max`。只接受终态 `succeeded`、正文契约合法、公共
+  `review_model` 与本 job 所选模型相同，以及 `system/init.model` 精确匹配的结果。
 - 需要 Bash 验证时只允许作者逐条给出的精确 `testCommands`；测试命令含重定向、管道、通配符或
   命令串联必须在提交前拒绝。任何 `permission_denials` 都使 job 失败，即使正文写“通过”。
-- `ask` 模式验证 `--model claude-opus-5`、`--tools ""`、`--permission-mode default` 和空 init 工具；
+- `ask` 模式验证解析出的 `--model`、`--effort`、`--tools ""`、`--permission-mode default` 和空 init 工具；
   `review_repair` 模式验证受控工具、`acceptEdits`、固定 cwd/`--add-dir` 和副本哈希。
 - 运行一次 `npm.cmd run test:live:opus5`。请求模型、init 回执模型、工具隔离、结果格式和临时运行时
   清理任一不符合即验收失败；不选择 fallback。
+
+## 路由与恢复
+
+- 不传路由字段时分别得到 Opus 5/max 与 Sol/max；公共状态同时带 `task_profile=quality`、
+  `routing_source=default` 和版本化 rule ID。
+- `taskProfile=writing` 与 `creative_writing` 仍路由 Opus 5/max；不得按旧印象自动改为 Opus 4.6。
+- `balanced` 分别路由 Sonnet 5/high 与 Terra/max；`high_volume` 分别路由 Sonnet 5/medium 与 Luna/max。
+- 显式 `model=claude-opus-4-6, reasoningEffort=max` 可通过；Opus 4.6/xhigh、Claude 模型发往 Codex、
+  Luna/ultra 等非法组合必须在创建 job 前拒绝。
+- 同一记录线程尝试换模型、强度或 profile 必须失败；`resume_peer` 缺少完整路由证据或带不同覆盖值也
+  必须失败。新路由只能使用新的 `bridge_thread_id`。
+- 任一 profile 或显式模型不可用时停止，不退回质量默认、其他模型或较低强度。
 
 ## 计划、三轮与用户门
 
@@ -53,7 +66,7 @@
 - 第 1/2 轮 `需修改`由作者依据意见更新产物、字节数、SHA-256 和 prior findings；第 3 轮仍未通过时
   输出 `DISAGREEMENT_REPORT`，不发第 4 轮。
 - 计划互审通过后，transcript 必须停在用户确认门；未获明确确认不得执行写入。
-- 模拟模型不可用、超时、取消、格式错误、sandbox 拒绝、实际模型非 Opus 5 和主项目基线漂移；均输出
+- 模拟模型不可用、超时、取消、格式错误、sandbox 拒绝、实际模型不是本 job 所选模型和主项目基线漂移；均输出
   `PEER_REVIEW_FAILURE_REPORT`，不得把失败改写成普通返工。
 - 模拟 `review_repair` 返回 `DELIVERABLE_REVIEW - Blocked`、缺少结论，或失败测试却写成“通过”；
   bridge 应以 `peer_contract_error` 失败关闭，不同步审查副本，并保留失败报告证据。

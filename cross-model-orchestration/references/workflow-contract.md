@@ -2,7 +2,7 @@
 
 ## 基本约束
 
-本契约用于同一个 `claude-codex-bridge` MCP 的两个方向：`Codex -> Claude Opus 5` 和
+本契约用于同一个 `claude-codex-bridge` MCP 的两个方向：`Codex -> Claude` 和
 `Claude -> Codex`。每一轮的作者、审查者、产物、哈希、bridge job ID 和同步状态都必须可追溯。
 
 - 每个 `artifactId` 最多三轮，`round` 只能为 `1`、`2` 或 `3`，`maxRounds` 固定为 `3`。
@@ -24,7 +24,10 @@
   "artifactId": "stable-logical-artifact-id",
   "artifactType": "plan | deliverable",
   "author": "Codex | Claude",
-  "reviewer": "Claude Opus 5 | Codex",
+  "reviewer": "Claude Opus 5 | Claude Opus 4.6 | Claude Sonnet 5 | Codex",
+  "taskProfile": "quality | writing | creative_writing | coding | research | knowledge_work | balanced | high_volume",
+  "model": "optional allowlisted target model",
+  "reasoningEffort": "optional supported effort",
   "round": 1,
   "maxRounds": 3,
   "artifactName": "logical name or relative path",
@@ -46,7 +49,7 @@
 
 `artifactBytes` 和 `artifactSha256` 必须对应当前内容；`priorRounds.length === round - 1`，轮次连续且
 不重复。`review_repair` 必须提供稳定 `artifactId`、`artifactType`、`round`、`targetRoot` 和非空
-`allowedPaths`。Opus 5 的 `ask` 审查没有工具，必须把完整可审查内容放在 `artifactContent`。
+`allowedPaths`。Claude 的 `ask` 审查没有工具，必须把完整可审查内容放在 `artifactContent`。
 需要 Bash 验证时，作者必须在 `testCommands` 中逐条给出精确命令。bridge 拒绝含引号、变量、
 通配符、重定向、管道、命令串联或重复项的命令，只把通过校验的精确命令写入 Claude 的固定
 `--allowed-tools`；任何 permission denial 都使该轮失败关闭。
@@ -68,23 +71,38 @@ peer_result(job_id)
 
 同一 `artifactId + targetRoot` 使用一个固定副本和持久锁。下一轮先核对作者当前主项目，再由 bridge
 刷新同一路径；不另开逻辑产物，不猜测线程。取消后只可用明确 job ID 的 `resume_peer`。
+恢复必须沿用已记录的 model、reasoning effort、task profile、routing source 和 rule ID；任一缺失或
+调用方试图覆盖时停止。需要换路由时建立新的 `bridge_thread_id`，不能在旧会话中切换。
 
-## Codex -> Claude Opus 5
+## 模型解析
 
-调用方不得传入或覆盖模型、工具、权限参数；bridge 固定并验证：
+`taskProfile`、`model` 和 `reasoningEffort` 都可省略。bridge 按“显式模型/强度 > 显式 profile >
+质量默认”解析，并把 `requested_model`、`requested_reasoning_effort`、`task_profile`、
+`routing_source`、`routing_rule_id` 写入 job。调用方必须按这些解析结果验收，不能继续使用硬编码常量。
+
+质量默认是 Claude `claude-opus-5` / `max` 和 Codex `gpt-5.6-sol` / `max`。profile 路由和依据见
+[model-routing.md](model-routing.md)。`writing` 与 `creative_writing` 仍默认 Opus 5；Opus 4.6 只允许
+显式选择。bridge 不改变 `target`，不提供 fallback，也不在失败时自动降档。
+
+## Codex -> Claude
+
+调用方可以通过公开路由字段选择白名单模型和强度，但不能传入原始 CLI 参数或覆盖工具、权限参数。
+bridge 固定并验证：
 
 ```text
---model claude-opus-5
+--model <resolved selected model>
+--effort <resolved selected effort>
 ask: --tools "" --permission-mode default
 review_repair: --tools Read,Edit,Write,Bash --permission-mode acceptEdits
 review_repair Bash: --allowed-tools 只含作者 testCommands 对应的精确 Bash(...) 项
-system/init.model == claude-opus-5
+system/init.model == resolved selected model
 ask init.tools.length == 0
-public result.review_model == claude-opus-5
+public result.review_model == resolved selected model
 cwd and --add-dir == the fixed bridge workspace for review_repair
 ```
 
-缺失、重复、alternate/fallback 参数，init 回执缺失或实际模型不是 `claude-opus-5`，均停止；没有
+`--model`/`--effort` 缺失、重复或与解析结果不同，出现 alternate/fallback 参数，init 回执缺失或
+实际模型不是所选模型，均停止；没有
 fallback model。只有终态 `succeeded`、结果契约合法且模型证据精确匹配时才接受。
 
 ## Claude -> Codex
@@ -93,8 +111,8 @@ fallback model。只有终态 `succeeded`、结果契约合法且模型证据精
 bridge 必须记录并返回：
 
 ```text
-requested model = gpt-5.6-sol
-requested reasoning effort = max
+requested model = resolved selected Codex model (default gpt-5.6-sol)
+requested reasoning effort = resolved selected effort (default max)
 sandbox = workspace-write
 approvalPolicy = never
 network = disabled
@@ -103,7 +121,7 @@ additional directories = none
 requested model, requested reasoning effort, CLI version, and recorded thread ID
 ```
 
-`requested_model` 不是 `gpt-5.6-sol` 或 `requested_reasoning_effort` 不是 `max` 时停止。
+`requested_model` 或 `requested_reasoning_effort` 与本 job 的解析结果不同时停止。
 SDK 没有独立运行时模型回执时，`requested_model` 仍只能表示请求参数，不能写成“已验证模型”。
 `review_repair` 的 Codex 审查者可在固定副本中修复，主项目只由 allowlist、manifest、基线漂移和
 哈希同步门控制。
@@ -204,7 +222,7 @@ DISAGREEMENT_REPORT
 
 ```text
 PEER_REVIEW_FAILURE_REPORT
-方向：Codex -> Claude Opus 5 | Claude -> Codex
+方向：Codex -> Claude (<selected model>) | Claude -> Codex (<selected model>)
 阶段：计划复核 | 交付物复核 | 同步
 jobId：<bridge job id or unavailable>
 请求模型：<model or unavailable>

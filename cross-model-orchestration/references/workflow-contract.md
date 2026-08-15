@@ -93,15 +93,18 @@ fallback model。只有终态 `succeeded`、结果契约合法且模型证据精
 bridge 必须记录并返回：
 
 ```text
+requested model = gpt-5.6-sol
+requested reasoning effort = max
 sandbox = workspace-write
 approvalPolicy = never
 network = disabled
 web/search = disabled
 additional directories = none
-requested model, CLI version, and recorded thread ID
+requested model, requested reasoning effort, CLI version, and recorded thread ID
 ```
 
-SDK 没有独立运行时模型回执时，`requested_model` 只能表示请求参数，不能写成“已验证模型”。
+`requested_model` 不是 `gpt-5.6-sol` 或 `requested_reasoning_effort` 不是 `max` 时停止。
+SDK 没有独立运行时模型回执时，`requested_model` 仍只能表示请求参数，不能写成“已验证模型”。
 `review_repair` 的 Codex 审查者可在固定副本中修复，主项目只由 allowlist、manifest、基线漂移和
 哈希同步门控制。
 

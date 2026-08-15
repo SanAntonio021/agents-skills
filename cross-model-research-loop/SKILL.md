@@ -17,12 +17,13 @@ description: 跨模型科研自动循环：监督者通过统一 claude-codex-br
 2. 执行者负责在明确 `targetRoot`/`allowedPaths` 内运行任务并保存可复核产物。
 3. 监督者和执行者必须是异族模型；同族自监督不算互审。
 4. 两端都通过同一个 `claude-codex-bridge` MCP：Claude 监督时 `target=codex`，Codex 监督时
-   `target=claude`（固定 `claude-opus-5`）。不直接调用旧 companion、`codex exec`、`claude -p` 或隐藏 Hook。
+   `target=claude`。默认采用 `research` profile（当前为 Opus 5/max 与 Sol/max）；如任务明确选择
+   其他白名单 profile/模型，按 bridge 解析结果验收。不直接调用旧 companion、`codex exec`、`claude -p` 或隐藏 Hook。
 
 ## 循环流程
 
 1. 先把研究问题拆成里程碑，每个里程碑写清输入、精确 `testCommands`、输出文件、物理验收判据和“跑完停下等评审”。
-2. 用 `submit_peer(operation=task)` 提交执行任务；任务需要写入时必须给最小 allowlist 和固定工作区。
+2. 用 `submit_peer(operation=task, taskProfile=research)` 提交执行任务；任务需要写入时必须给最小 allowlist 和固定工作区。
    Claude 方向的 `testCommands` 不得含引号、变量、通配符、重定向、管道或命令串联；权限拒绝即失败。
 3. 用 `await_peer`/`peer_result` 轮询同一 job，确认目录、文件、字节数、哈希、命令退出码和结果时间戳。
 4. 用 `submit_peer(operation=review_repair, artifactType=deliverable)` 把里程碑产物交给对方模型；
@@ -48,7 +49,8 @@ description: 跨模型科研自动循环：监督者通过统一 claude-codex-br
 
 ## 长任务与恢复
 
-每个里程碑保存 `artifactId`、round、job ID、目标根、基线/结果 manifest、测试结果和错误原因。
+每个里程碑保存 `artifactId`、round、job ID、目标根、模型、推理强度、profile、路由规则、
+基线/结果 manifest、测试结果和错误原因。
 不要猜测最新线程；恢复只使用指定 job 的 `resume_peer`，或在用户裁决后创建新的 `artifactId`。
 取消、超时、MCP 不可用、模型不匹配、sandbox/权限错误和主项目漂移都输出
 `PEER_REVIEW_FAILURE_REPORT` 并暂停，不换模型、不静默降级。

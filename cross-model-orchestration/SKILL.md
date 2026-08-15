@@ -4,8 +4,9 @@ description: >
   Codex Desktop/CLI 与 Claude Code CLI 的全局双向互审流程。除纯聊天、简单解释和一条
   明确只读命令外，任何需要阅读本地材料、制定正式计划、形成重要结论、修改文件、运行命令、
   调研、比较、写作或多步骤推进的任务都自动使用同一个 claude-codex-bridge MCP，把产物交给
-  对方模型在固定副本中审查、修复和测试。Claude 方向固定使用 claude-opus-5；Codex 方向固定
-  请求 gpt-5.6-sol 与 max 推理强度，但不伪造运行时身份。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
+  对方模型在固定副本中审查、修复和测试。质量优先默认使用 claude-opus-5/max 与
+  gpt-5.6-sol/max；调用方可选任务 profile 或明确的目标侧模型/强度，bridge 严格校验且不回退。
+  失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP to be available to the current host.
   The legacy codex@openai-codex companion and its hooks are archived references only and are not
@@ -46,8 +47,8 @@ allowed-tools:
 
 | 当前作者 | `submit_peer.target` | 固定审查/执行通道 |
 | --- | --- | --- |
-| Codex Desktop / Codex CLI | `claude` | bridge 启动并验证 `claude-opus-5` |
-| Claude Code CLI | `codex` | bridge 的 `@openai/codex-sdk` 适配器，固定请求 `gpt-5.6-sol` / `max` |
+| Codex Desktop / Codex CLI | `claude` | 默认 `claude-opus-5` / `max`，验证所选 Claude 模型回执 |
+| Claude Code CLI | `codex` | 默认 `gpt-5.6-sol` / `max`，记录所选 SDK 请求参数 |
 
 调用顺序固定为 `submit_peer` -> `await_peer`（单次最多 45 秒）-> `peer_result`；需要状态时用
 `peer_status`，取消用 `cancel_peer`，恢复只用指定 job 的 `resume_peer`。不得扫描最新线程，
@@ -63,6 +64,24 @@ allowed-tools:
 Codex 方向的 `ask` 使用 bridge 专用的空只读目录，不把作者项目、daemon 状态、token 或保留 job
 副本暴露为 cwd。需要读取项目材料时不要伪装成 `ask`，应构造完整审查包并使用受控固定副本。
 
+## 模型路由
+
+每次调用可选传 `taskProfile`、`model`、`reasoningEffort`。优先级为：显式模型/强度 > 显式
+profile > 质量默认。路由只在既定 `target` 内选择模型，不能把异族互审改成同源自审。
+
+- 质量默认：Claude `claude-opus-5` / `max`；Codex `gpt-5.6-sol` / `max`。
+- `writing`、`creative_writing`、`coding`、`research`、`knowledge_work`：仍走质量默认。
+- `balanced`：Claude `claude-sonnet-5` / `high`；Codex `gpt-5.6-terra` / `max`。
+- `high_volume`：Claude `claude-sonnet-5` / `medium`；Codex `gpt-5.6-luna` / `max`。
+- `claude-opus-4-6` / `max` 可显式选择，但不作为文字任务自动路由。
+
+详细得分、来源和取舍见 [model-routing.md](references/model-routing.md)。当前 Creative Writing v3、
+Longform 和 EQ-Bench 4 均显示 Opus 5 高于 Opus 4.6，因此不能依据旧印象自动降级。
+
+bridge 返回并持久化 `requested_model`、`requested_reasoning_effort`、`task_profile`、
+`routing_source` 和 `routing_rule_id`。恢复只能沿用原 job 的完整路由；缺证据或试图换模型/强度/profile
+时停止。要换路由必须建立新的 `bridge_thread_id`。任何选择不可用都失败关闭，不换模型、不降档。
+
 ## 审查包
 
 每一轮先读取 [workflow-contract.md](references/workflow-contract.md)，再构造完整审查包：
@@ -71,6 +90,7 @@ Codex 方向的 `ask` 使用 bridge 专用的空只读目录，不把作者项�
 artifactId: 同一逻辑产物跨轮不变
 artifactType: plan | deliverable
 author / reviewer: 实际角色和模型
+taskProfile / model / reasoningEffort: 可选；省略时走质量默认
 round: 1 | 2 | 3
 maxRounds: 3
 artifactName 或受控 artifactPath
@@ -96,7 +116,7 @@ reviewerAccess: read_only | isolated_write
    然后发第 2 或第 3 轮。不要另开逻辑产物或猜测新线程。
 5. 第 3 轮仍需修改，或双方出现实质分歧：输出 `DISAGREEMENT_REPORT`，等待用户裁决，不发第 4 轮。
 
-审查通道不可用、超时、取消、认证/权限/sandbox 错误、格式错误、模型缺失或模型不匹配都不是
+审查通道不可用、超时、取消、认证/权限/sandbox 错误、格式错误、所选模型缺失或回执不匹配都不是
 “需修改”，直接输出 `PEER_REVIEW_FAILURE_REPORT` 并暂停；不换模型、不静默跳过、不回退。bridge
 还会在同步前拒绝缺少对应审查标记/结论、明确 blocked/incomplete，或把失败测试/未满足验收写成“通过”的
 `review_repair` 结果，并使用 `peer_contract_error` 记录原因。
@@ -108,19 +128,20 @@ Codex -> Claude 方向只接受：
 ```text
 target = claude
 operation = review_repair 或 ask
-requested model = claude-opus-5（由 bridge 固定，不由调用方覆盖）
+requested model / effort = bridge 解析出的目标侧白名单组合
 read-only ask: --tools "" --permission-mode default
 review_repair: Read,Edit,Write,Bash + acceptEdits，cwd/--add-dir 仅为固定副本
-public review_model = claude-opus-5
+public review_model = selected requested model
 ```
 
-`system/init.model` 缺失或不是 `claude-opus-5`、工具列表不符合操作、出现 fallback 参数或
-结果未报告精确模型时停止。`review_repair` 的 Bash 不做通配授权；bridge 只把作者在
+`--model`/`--effort` 缺失、重复或不是解析结果，`system/init.model` 缺失或不等于所选模型，
+工具列表不符合操作，出现 fallback 参数或结果未报告精确模型时停止。`review_repair` 的 Bash 不做通配授权；bridge 只把作者在
 `testCommands` 中逐条给出的安全精确命令写入固定 `--allowed-tools`。命令被拒绝本身就是失败证据，
-即使模型随后写“通过”也不得同步。Opus 5 无工具的 `ask` 审查必须把完整内容放进 `artifactContent`。
+即使模型随后写“通过”也不得同步。Claude 无工具的 `ask` 审查必须把完整内容放进 `artifactContent`。
 
-Claude -> Codex 方向只接受 bridge 返回的 SDK 记录：`requested_model=gpt-5.6-sol`、
-`requested_reasoning_effort=max`、`workspace-write`、`approvalPolicy=never`、
+Claude -> Codex 方向只接受 bridge 返回的 SDK 记录与本次解析结果一致：默认是
+`requested_model=gpt-5.6-sol`、`requested_reasoning_effort=max`；另有显式/profile 路由时按其
+已记录值验收。其余固定项为 `workspace-write`、`approvalPolicy=never`、
 网络和搜索关闭、无额外目录；记录请求模型、请求强度、CLI 版本和线程 ID，但没有运行时回执时不得把模型
 身份写成“已验证”。固定副本中的 `review_repair` 允许对方修复，主项目同步仍由 allowlist、manifest、
 基线漂移和逐文件哈希门控制。
@@ -156,5 +177,5 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 
 修改本 Skill 后，至少检查 `evals/evals.json`、`evals/trigger-evals.json`、`evals/integration-cases.md`，
 覆盖两方向自动触发、简单任务跳过、`review_repair` 一次修复、只读/隔离写边界、三轮上限、用户确认
-门、审批同步、通道不可用和非 Opus 5 停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
+门、审批同步、默认/显式/profile 路由、恢复时换模型被拒绝、通道不可用和非所选模型停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
 同步，并核对源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256。

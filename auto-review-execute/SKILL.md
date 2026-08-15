@@ -39,8 +39,12 @@ Claude 继续流程时，使用 `cross-model-orchestration` 的完整审查包�
 ```text
 submit_peer(target=codex, operation=review_repair,
   artifactType=plan, artifactId=auto-review-execute:<runId>,
-  round=<1..3>, targetRoot=<受控共同根>, allowedPaths=<计划和本轮输出文件>)
+  taskProfile=knowledge_work, round=<1..3>,
+  targetRoot=<受控共同根>, allowedPaths=<计划和本轮输出文件>)
 ```
+
+`knowledge_work` 当前默认解析为 `gpt-5.6-sol/max`。如调用方明确给出其他 Codex 白名单模型/强度，
+必须保存并按 bridge 的 route audit 验收；恢复时不能换模型、强度或 profile，也不能失败后回退。
 
 轮询只能使用同一 job 的 `await_peer`/`peer_result`。bridge 的 `review_repair` 会在固定副本中一次
 完成审查、修复、测试并返回包含结论、已确认事项、问题与理由、必须修改和剩余风险的完整

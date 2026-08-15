@@ -126,8 +126,10 @@ class WarningCollector:
     def __init__(self) -> None:
         self.parse_errors: list[dict[str, Any]] = []
         self.missing_fields: list[dict[str, Any]] = []
+        self.non_text_user_records: list[dict[str, Any]] = []
         self.parse_error_count = 0
         self.missing_field_count = 0
+        self.non_text_user_record_count = 0
 
     def parse_error(self, source: dict[str, Any], detail: str) -> None:
         self.parse_error_count += 1
@@ -138,6 +140,11 @@ class WarningCollector:
         self.missing_field_count += 1
         if len(self.missing_fields) < MAX_WARNING_DETAILS:
             self.missing_fields.append({**source, "detail": detail})
+
+    def non_text_user_record(self, source: dict[str, Any], detail: str) -> None:
+        self.non_text_user_record_count += 1
+        if len(self.non_text_user_records) < MAX_WARNING_DETAILS:
+            self.non_text_user_records.append({**source, "detail": detail})
 
 
 class CandidateCollector:
@@ -630,6 +637,28 @@ def codex_message_text(payload: dict[str, Any]) -> str | None:
     return None
 
 
+def codex_message_has_non_text_content(payload: dict[str, Any]) -> bool:
+    for key in ("images", "local_images", "attachments"):
+        value = payload.get(key)
+        if isinstance(value, list) and value:
+            return True
+    content = payload.get("content")
+    if not isinstance(content, list):
+        return False
+    non_text_types = {
+        "attachment",
+        "file",
+        "image",
+        "image_url",
+        "input_file",
+        "input_image",
+    }
+    return any(
+        isinstance(item, dict) and item.get("type") in non_text_types
+        for item in content
+    )
+
+
 def context_is_bridge(value: Any) -> bool:
     if not isinstance(value, str):
         return False
@@ -740,6 +769,12 @@ def scan_codex_history(
                 else:
                     continue
                 if text_value is None or not text_value.strip():
+                    if codex_message_has_non_text_content(payload):
+                        warnings.non_text_user_record(
+                            source,
+                            "Codex user record contains only image or attachment content",
+                        )
+                        continue
                     warnings.missing_field(source, "Codex user record is missing message text")
                     continue
                 if not timestamp:
@@ -1066,6 +1101,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "- `tengu_skill_loaded` 只表示 Claude 启动时把技能列为候选，不计为实际使用。",
             f"- 疑似漏用候选共 {warnings['candidate_total']} 条，报告保留 {warnings['candidate_returned']} 条，截断 {warnings['candidate_truncated']} 条。",
             f"- 已排除 bridge 临时副本会话 {warnings['bridge_copy_excluded_count']} 个。",
+            f"- 纯图片或附件用户记录 {warnings['non_text_user_record_count']} 条，单独计数且不作为文本字段缺失。",
             f"- JSON 解析错误 {warnings['parse_error_count']} 条；目标事件缺字段 {warnings['missing_field_count']} 条。",
             "",
         ]
@@ -1176,9 +1212,12 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "parse_errors": warnings.parse_errors,
         "missing_field_count": warnings.missing_field_count,
         "missing_fields": warnings.missing_fields,
+        "non_text_user_record_count": warnings.non_text_user_record_count,
+        "non_text_user_records": warnings.non_text_user_records,
         "warning_details_truncated": (
             warnings.parse_error_count > len(warnings.parse_errors)
             or warnings.missing_field_count > len(warnings.missing_fields)
+            or warnings.non_text_user_record_count > len(warnings.non_text_user_records)
         ),
         "missing_roots": missing_skill_roots + missing_history_roots,
         "unmatched_claude_startup_candidates": unmatched_loaded,

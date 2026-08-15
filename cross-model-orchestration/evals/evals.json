@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code CLI。把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计计划。",
-      "expected_output": "Claude 形成正式计划并由统一 bridge 的 target=codex、operation=review_repair 在固定副本中审查、修复和测试；需修改时 Claude 作为作者修订，最多三轮，计划通过后仍等待用户确认。",
+      "expected_output": "Claude 形成正式计划并由统一 bridge 的 target=codex、operation=review_repair 在固定副本中审查、修复和测试；Claude 检查同步结果并处理剩余修改，最多三轮，计划通过后仍等待用户确认。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
         "识别 Claude -> Codex 的统一 bridge 方向。",
         "完整审查包含作者、审查者、轮次、哈希、验收标准和限制；review_repair 只写固定副本。",
         "固定副本提供完整目标根上下文，但 allowlist 仍限制所有实际变化。",
         "PLAN_REVIEW 通过后不会直接执行。",
-        "作者而非审查者修订计划。"
+        "审查者只能修复固定副本中的 allowlist 文件，Claude 作为原作者负责验收和最终决定。"
       ]
     },
     {
@@ -49,7 +49,7 @@
         "明确 Claude -> Codex 使用 reviewerAccess=isolated_write，主项目仍只由 bridge 同步。",
         "使用 DELIVERABLE_REVIEW。",
         "Claude 独立验证链接和产物，不只接受完成声明。",
-        "审查者写入会使该轮失败。"
+        "审查者写作者主项目或越过固定副本 allowlist 会使该轮失败；副本内受控修复允许。"
       ]
     },
     {
@@ -272,6 +272,18 @@
         "permission_denials 是独立失败证据，优先于模型自报通过。",
         "Bash 只允许作者逐条给出的安全精确 testCommands，不扩大为任意 Bash。",
         "失败 job 不同步主项目，也不静默降级。"
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "Claude -> Codex 的隔离修复中，原生补丁工具明确失败后，Codex 用 shell 只写了 allowedPaths 内的 result.txt。同一条 node verify-result.mjs 第一次失败、修正换行后第二次通过。",
+      "expected_output": "允许受控 shell fallback，并按同一精确命令最后一次执行状态验收；完整事件历史继续保留，最终通过后可在其他同步门都满足时同步。",
+      "files": [],
+      "expectations": [
+        "shell 写入只能发生在原生补丁明确失败后，且不能越过固定副本和 allowedPaths。",
+        "Windows 证据同时包含 environment_context_enabled=true 和 windows_sandbox_mode=unelevated。",
+        "同一精确命令失败后复测成功会清除该命令的终态失败；未复测或最后仍失败继续拒绝。",
+        "完整命令事件仍保存在受保护审计证据中。"
       ]
     }
   ]

@@ -109,6 +109,13 @@ Codex 的 `ask` 使用专用空只读目录，不以作者项目、daemon 状态
 SDK 的 `requested_sandbox_mode` 只证明 bridge 请求了相应模式；外层宿主仍可能进一步收紧权限，写入
 是否真实生效必须由隔离材料和同步哈希证明。
 
+Windows bridge 子进程固定 `include_environment_context=true` 和
+`windows.sandbox="unelevated"`，因为只启用环境上下文仍可能被用户级 elevated sandbox 忽略 cwd；
+这些参数不得改写用户全局 Codex 配置。Codex 原生补丁工具明确失败后，才允许用本地 shell 写入
+固定副本中的 `allowedPaths`，其他路径仍由 manifest 与同步门拒绝。同一精确命令的所有执行事件都
+保留，但终态测试证据按最后一次执行计算；后来通过只覆盖该命令此前的失败，未复测或最终失败仍
+产生 `peer_contract_error`。
+
 ## 三轮与用户确认
 
 1. 作者发起第 1 轮，保存 job ID 和 manifest。

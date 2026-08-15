@@ -12,6 +12,7 @@
  */
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -486,25 +487,35 @@ test("stale lock within grace period prevents takeover (injected clock)", () => 
 // ---------------------------------------------------------------------------
 
 function makeValidEnvelope() {
+  const artifactContent = "# Task 0\n\nA reviewable plan.";
   return {
+    target: "codex",
+    question: "Review and repair this plan, then return PLAN_REVIEW.",
     artifactId: "artifact-task0",
     artifactType: "plan",
     author: "Claude",
     reviewer: "Codex",
     round: 1,
-    maxRounds: 3,
     artifactName: "task0.md",
-    artifactBytes: 1234,
-    artifactSha256: "a".repeat(64),
-    artifactContent: "# Task 0\n\nA reviewable plan.",
+    artifactBytes: Buffer.byteLength(artifactContent, "utf8"),
+    artifactSha256: createHash("sha256").update(artifactContent, "utf8").digest("hex"),
+    artifactContent,
     artifactPath: "C:\\plans\\task0.md",
+    targetRoot: "C:\\plans",
+    allowedPaths: ["task0.md"],
     priorRounds: [],
     priorFindings: [],
     openItems: [],
     acceptanceCriteria: ["The plan has explicit verification."],
-    constraints: ["No writes during review."],
-    reviewerAccess: "read_only"
+    testCommands: [],
+    constraints: ["No writes outside the fixed review copy."]
   };
+}
+
+function setArtifactContent(envelope, content) {
+  envelope.artifactContent = content;
+  envelope.artifactBytes = Buffer.byteLength(content, "utf8");
+  envelope.artifactSha256 = createHash("sha256").update(content, "utf8").digest("hex");
 }
 
 function wrapInFence(obj) {
@@ -526,7 +537,7 @@ test("validateEnvelope: valid envelope with empty arrays passes", () => {
 
 test("validateEnvelope: accepts Markdown code fences inside artifactContent", () => {
   const env = makeValidEnvelope();
-  env.artifactContent = "# Plan\n\n```powershell\nGet-Date\n```";
+  setArtifactContent(env, "# Plan\n\n```powershell\nGet-Date\n```");
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, true);
 });
@@ -591,6 +602,35 @@ test("validateEnvelope: artifactSha256 must be 64 lowercase hex chars", () => {
   assert.match(result.reason, /artifactSha256/);
 });
 
+test("validateEnvelope: artifact identity must match the complete UTF-8 content", () => {
+  const bytes = makeValidEnvelope();
+  bytes.artifactBytes += 1;
+  assert.match(validateEnvelope(wrapInFence(bytes)).reason, /artifactBytes/);
+
+  const hash = makeValidEnvelope();
+  hash.artifactSha256 = "b".repeat(64);
+  assert.match(validateEnvelope(wrapInFence(hash)).reason, /artifactSha256/);
+});
+
+test("validateEnvelope: testCommands is explicit, conditional, and exact", () => {
+  const noTests = makeValidEnvelope();
+  assert.equal(validateEnvelope(wrapInFence(noTests)).ok, true);
+
+  const exactTest = makeValidEnvelope();
+  exactTest.testCommands = ["npm.cmd test"];
+  assert.equal(validateEnvelope(wrapInFence(exactTest)).ok, true);
+
+  const unsafeTest = makeValidEnvelope();
+  unsafeTest.testCommands = ["npm.cmd test | Out-Null"];
+  assert.match(validateEnvelope(wrapInFence(unsafeTest)).reason, /testCommands/);
+});
+
+test("validateEnvelope: allowedPaths must be non-empty", () => {
+  const env = makeValidEnvelope();
+  env.allowedPaths = [];
+  assert.match(validateEnvelope(wrapInFence(env)).reason, /allowedPaths/);
+});
+
 test("validateEnvelope: priorFindings missing an index fails", () => {
   const env = makeValidEnvelope();
   env.round = 2;
@@ -625,12 +665,12 @@ test("validateEnvelope: rejects a fourth review round", () => {
   assert.match(result.reason, /round/);
 });
 
-test("validateEnvelope: rejects a non-read-only reviewer", () => {
+test("validateEnvelope: rejects fixed review_repair_peer field overrides", () => {
   const env = makeValidEnvelope();
-  env.reviewerAccess = "write";
+  env.reviewerAccess = "isolated_write";
   const result = validateEnvelope(wrapInFence(env));
   assert.equal(result.ok, false);
-  assert.match(result.reason, /reviewerAccess/);
+  assert.match(result.reason, /固定|不可覆盖/);
 });
 
 test("cmdLaunch: review mode rejects --write before starting a job", () => {
@@ -671,7 +711,7 @@ test("cmdLaunch: review claim persists artifact state and job ID", () => {
     assert.equal(launch.jobId, "review-job-1");
     assert.equal(claim.phase, "review");
     assert.equal(claim.artifactId, "artifact-task0");
-    assert.equal(claim.artifactSha256, "a".repeat(64));
+    assert.equal(claim.artifactSha256, makeValidEnvelope().artifactSha256);
     assert.equal(claim.round, 1);
     assert.equal(claim.jobId, "review-job-1");
   } finally {

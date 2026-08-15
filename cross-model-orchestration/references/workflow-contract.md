@@ -24,10 +24,13 @@
 
 ## 审查包
 
-每轮发送如下对象（MCP 工具可以使用 camelCase，bridge 会保存等价 snake_case）：
+每轮通过 `review_repair_peer` 发送如下对象（bridge 保存等价 snake_case；操作、隔离写权限和三轮
+上限由工具固定，调用方不能覆盖）：
 
 ```json
 {
+  "target": "claude | codex",
+  "question": "review, repair, test as authorized, and return the required marker",
   "artifactId": "stable-logical-artifact-id",
   "artifactType": "plan | deliverable",
   "author": "Codex | Claude",
@@ -36,12 +39,11 @@
   "model": "optional allowlisted target model",
   "reasoningEffort": "optional supported effort",
   "round": 1,
-  "maxRounds": 3,
-  "artifactName": "logical name or relative path",
+  "artifactName": "logical name or relative file name",
   "artifactBytes": 0,
   "artifactSha256": "64 lower-case hex characters",
   "artifactContent": "full reviewable content and evidence",
-  "artifactPath": "optional controlled path",
+  "artifactPath": "optional controlled path; required together with artifactName for a formal file",
   "targetRoot": "absolute project root when a copy is required",
   "allowedPaths": ["relative/file"],
   "priorRounds": [],
@@ -49,15 +51,17 @@
   "openItems": [],
   "acceptanceCriteria": ["objective criterion"],
   "testCommands": ["npm.cmd test"],
-  "constraints": ["scope or safety boundary"],
-  "reviewerAccess": "read_only | isolated_write"
+  "constraints": ["scope or safety boundary"]
 }
 ```
 
-`artifactBytes` 和 `artifactSha256` 必须对应当前内容；`priorRounds.length === round - 1`，轮次连续且
-不重复。`review_repair` 必须提供稳定 `artifactId`、`artifactType`、`round`、`targetRoot` 和非空
-`allowedPaths`。Claude 的 `ask` 审查没有工具，必须把完整可审查内容放在 `artifactContent`。
-需要 Bash 验证时，作者必须在 `testCommands` 中逐条给出精确命令。bridge 拒绝含引号、变量、
+先固定本轮完整 `artifactContent`，再立即按它的 UTF-8 编码重新计算 `artifactBytes` 和
+`artifactSha256`；不得复用旧轮次或文件元数据中的值。`priorRounds.length === round - 1`，轮次连续且
+不重复。`review_repair_peer` 必须提供稳定 `artifactId`、`artifactType`、`artifactName`、`round`、
+`targetRoot`、非空 `allowedPaths`、非空验收标准和显式 `testCommands` 数组。正式文件同时提供
+`artifactName` 和 `artifactPath`。Claude 的 `ask` 审查没有工具，必须把完整可审查内容放在
+`artifactContent`。无测试时明确传 `testCommands=[]`；此时 Claude 不获得 Bash。需要 Bash 验证时，
+作者必须在 `testCommands` 中逐条给出精确命令。bridge 拒绝含引号、变量、
 通配符、重定向、管道、命令串联或重复项的命令，只把通过校验的精确命令写入 Claude 的固定
 `--allowed-tools`；任何 permission denial 都使该轮失败关闭。
 
@@ -66,10 +70,13 @@
 两端统一调用：
 
 ```text
-submit_peer(target, operation=review_repair, artifact envelope, targetRoot, allowedPaths)
+review_repair_peer(target, complete artifact envelope)
 await_peer(job_id, timeout_ms <= 45000)
 peer_result(job_id)
 ```
+
+旧 `submit_peer(operation=review_repair)` 只保留 0.4 兼容周期；字段不完整时返回 `missing_fields`，且
+不得创建 job。新的正式互审不得继续使用该兼容入口。
 
 发起前记录目标根内普通文件的相对路径、字节数、SHA-256 和 Git 状态；bridge 把完整目标根复制到
 固定副本供审查者读取（排除 `.git`），并保存 baseline/result manifest。`allowedPaths` 只约束可变更
@@ -100,7 +107,9 @@ bridge 固定并验证：
 --model <resolved selected model>
 --effort <resolved selected effort>
 ask: --tools "" --permission-mode default
-review_repair: --tools Read,Edit,Write,Bash --permission-mode acceptEdits
+review_repair: --permission-mode acceptEdits
+review_repair + testCommands=[]: --tools Read,Edit,Write，且不生成 Bash allowlist
+review_repair + 非空 testCommands: --tools Read,Edit,Write,Bash
 review_repair Bash: --allowed-tools 只含作者 testCommands 对应的精确 Bash(...) 项
 system/init.model == resolved selected model
 ask init.tools.length == 0

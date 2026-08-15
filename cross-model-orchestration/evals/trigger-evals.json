@@ -15,6 +15,7 @@
   {"query":"让 Opus 5 审查这份计划。","should_trigger":true},
   {"query":"我在 Claude Code 的 ExitPlanMode 对话框拒绝执行，并写：让 Codex 审查当前计划。","should_trigger":true},
   {"query":"本次互审使用 balanced profile，让对方在隔离副本里审查、修复并测试。","should_trigger":true},
+  {"query":"让 Opus 5 正式互审这份纯文字计划，没有测试命令，testCommands 明确传空数组且不要给 Bash。","should_trigger":true},
   {"query":"这次明确指定 claude-opus-4-6/max 审查交付物，完成后我再验收。","should_trigger":true},
   {"query":"恢复刚才的 peer job，保持原模型和强度继续处理。","should_trigger":true},
   {"query":"解释一下什么是 sandbox mode。","should_trigger":false},

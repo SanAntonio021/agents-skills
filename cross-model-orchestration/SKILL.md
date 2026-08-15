@@ -52,22 +52,24 @@ allowed-tools:
 
 两端都使用同一个 MCP，不调用旧插件、未登记命令或隐藏 Hook：
 
-| 当前作者 | `submit_peer.target` | 固定审查/执行通道 |
+| 当前作者 | `review_repair_peer.target` | 固定审查/执行通道 |
 | --- | --- | --- |
 | Codex Desktop / Codex CLI | `claude` | 默认 `claude-opus-5` / `max`，验证所选 Claude 模型回执 |
 | Claude Code CLI | `codex` | 默认 `gpt-5.6-sol` / `max`，记录所选 SDK 请求参数 |
 
-调用顺序固定为 `submit_peer` -> `await_peer`（单次最多 45 秒）-> `peer_result`；需要状态时用
-`peer_status`，取消用 `cancel_peer`，恢复只用指定 job 的 `resume_peer`。不得扫描最新线程，
+正式互审的调用顺序固定为 `review_repair_peer` -> `await_peer`（单次最多 45 秒）-> `peer_result`；
+普通 `ask`/`task` 仍用 `submit_peer`。需要状态时用 `peer_status`，取消用 `cancel_peer`，恢复只用
+指定 job 的 `resume_peer`。不得扫描最新线程，
 不得用 `codex exec`、`claude -p` 或 `codex@openai-codex` 绕过 bridge。兼容的 Claude 命名工具
 仍可用，但新流程优先使用对称工具。仓库中保留的 `orchestration-control.mjs` 与
 `check-resume-candidate.mjs` 只用于历史状态测试；没有显式归档诊断标志时直接失败关闭，不读取旧插件注册表。
 
-正式计划默认使用 `review_repair`：对方在固定副本中审查、修订、运行测试并返回结构化结论和变更
-元数据。显式交付物审查也可复用该操作，但不会因交付动作自动发起。`ask` 只读；`task` 只有在明确
-允许写副本时使用。`reviewerAccess` 与操作必须一致：
-`ask` 为 `read_only`，`review_repair` 为 `isolated_write`。任何写入都不能越过 `targetRoot`、
-`allowedPaths` 或副本边界。
+正式计划默认使用 `review_repair_peer`：工具固定 `operation=review_repair`、
+`reviewerAccess=isolated_write` 和 `maxRounds=3`，对方在固定副本中审查、修订、运行获授权的测试并
+返回结构化结论和变更元数据。显式交付物审查也可复用该工具，但不会因交付动作自动发起。`ask`
+只读；`task` 只有在明确允许写副本时使用。任何写入都不能越过 `targetRoot`、`allowedPaths` 或副本
+边界。旧 `submit_peer(operation=review_repair)` 只保留一版兼容；缺少完整字段时必须在创建 job 前
+返回 `missing_fields`。
 
 Codex 方向的 `ask` 使用 bridge 专用的空只读目录，不把作者项目、daemon 状态、token 或保留 job
 副本暴露为 cwd。需要读取项目材料时不要伪装成 `ask`，应构造完整审查包并使用受控固定副本。
@@ -96,20 +98,25 @@ bridge 返回并持久化 `requested_model`、`requested_reasoning_effort`、`ta
 触发时 `artifactType` 必须为 `plan`；`deliverable` 只接受用户明确要求或专用工作流的显式调用：
 
 ```text
+target: claude | codex
+question: 本轮审查、修复、条件测试和输出标记要求
 artifactId: 同一逻辑产物跨轮不变
 artifactType: plan | deliverable
 author / reviewer: 实际角色和模型
 taskProfile / model / reasoningEffort: 可选；省略时走质量默认
 round: 1 | 2 | 3
-maxRounds: 3
-artifactName 或受控 artifactPath
-artifactBytes 和 artifactSha256
+artifactName；正式文件还同时提供受控 artifactPath
+artifactBytes 和 artifactSha256：必须在调用前从本轮完整 artifactContent 重新计算 UTF-8 字节数和 SHA-256
 artifactContent: 对无工具审查者足够的全文、证据和上下文
+targetRoot / 非空 allowedPaths
 priorRounds / priorFindings / openItems
-acceptanceCriteria / constraints
-testCommands: 需要 Bash 验证时逐条给出精确命令；不得含引号、变量、通配符、重定向、管道或命令串联
-reviewerAccess: read_only | isolated_write
+非空 acceptanceCriteria / constraints
+testCommands: 必须显式提供数组；无测试时传 []，需要 Bash 验证时逐条给出精确命令，不得含引号、变量、通配符、重定向、管道或命令串联
 ```
+
+不要复用上一轮、文件元数据或先前消息中的字节数和哈希。先确定最终 `artifactContent`，再按它的
+UTF-8 编码计算两项身份并立即调用；内容发生任何变化都重新计算。`testCommands=[]` 时 Claude 只能
+获得 `Read,Edit,Write`，不能生成 Bash allowlist；非空时才加入 `Bash`，且只授权数组中的精确命令。
 
 文件型交付物还要给出目标根和最小文件级 `allowedPaths`。bridge 会把目标根的完整上下文复制到
 固定副本并排除 `.git`，供审查者读取；`allowedPaths` 限制的是可变更文件，不是可读上下文。发起前
@@ -118,7 +125,7 @@ reviewerAccess: read_only | isolated_write
 
 ## 三轮状态机
 
-1. 作者用同一 `artifactId` 发起第 1 轮 `review_repair`，保存 job ID、基线 manifest 和结果 manifest。
+1. 作者用同一 `artifactId` 调用 `review_repair_peer` 发起第 1 轮，保存 job ID、基线 manifest 和结果 manifest。
 2. 只接受终态 `succeeded`、契约合法且方向/模型/权限证据匹配的结果；作者检查同步后的主项目。
 3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
 4. `需修改`：作者确认同步内容，修订主项目，更新字节数、SHA-256、`priorFindings` 和 `openItems`，
@@ -139,13 +146,16 @@ target = claude
 operation = review_repair 或 ask
 requested model / effort = bridge 解析出的目标侧白名单组合
 read-only ask: --tools "" --permission-mode default
-review_repair: Read,Edit,Write,Bash + acceptEdits，cwd/--add-dir 仅为固定副本
+review_repair + testCommands=[]: Read,Edit,Write + acceptEdits
+review_repair + 非空 testCommands: Read,Edit,Write,Bash + acceptEdits
+cwd/--add-dir 仅为固定副本
 public review_model = selected requested model
 ```
 
 `--model`/`--effort` 缺失、重复或不是解析结果，`system/init.model` 缺失或不等于所选模型，
-工具列表不符合操作，出现 fallback 参数或结果未报告精确模型时停止。`review_repair` 的 Bash 不做通配授权；bridge 只把作者在
-`testCommands` 中逐条给出的安全精确命令写入固定 `--allowed-tools`。命令被拒绝本身就是失败证据，
+工具列表不符合本轮 `testCommands` 条件，出现 fallback 参数或结果未报告精确模型时停止。
+`review_repair` 的 Bash 不做通配授权；bridge 只在数组非空时加入 Bash，并把作者在 `testCommands`
+中逐条给出的安全精确命令写入固定 `--allowed-tools`。命令被拒绝本身就是失败证据，
 即使模型随后写“通过”也不得同步。Claude 无工具的 `ask` 审查必须把完整内容放进 `artifactContent`。
 
 Claude -> Codex 方向只接受 bridge 返回的 SDK 记录与本次解析结果一致：默认是
@@ -187,7 +197,7 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 数据库。旧 `codex@openai-codex` 源码、许可证和测试可以留作行为参考，但不得作为运行时前置条件。
 
 修改本 Skill 后，至少检查 `evals/evals.json`、`evals/trigger-evals.json`、`evals/integration-cases.md`，
-覆盖两方向正式计划自动触发、普通实质任务和内部清单跳过、显式交付物调用、`review_repair` 一次
+覆盖两方向正式计划自动触发、普通实质任务和内部清单跳过、显式交付物调用、`review_repair_peer` 一次
 修复、只读/隔离写边界、三轮上限、用户确认门、审批同步、默认/显式/profile 路由、恢复时换模型
-被拒绝、通道不可用和非所选模型停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
+被拒绝、空/非空 `testCommands` 的条件工具列表、正文身份重算、通道不可用和非所选模型停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
 同步，并核对源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256。

@@ -4,11 +4,11 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code CLI。把随附的 sample-skill-alpha.md 和 sample-skill-beta.md 当作两个 Skill 的 SKILL.md，判断是否重复、冲突或可以合并，并形成可执行的审计计划。",
-      "expected_output": "Claude 形成正式计划并由统一 bridge 的 target=codex、operation=review_repair 在固定副本中审查、修复和测试；Claude 检查同步结果并处理剩余修改，最多三轮，计划通过后仍等待用户确认。",
+      "expected_output": "Claude 形成正式计划并调用统一 bridge 的 review_repair_peer(target=codex)，在固定副本中审查、修复和运行获授权测试；Claude 检查同步结果并处理剩余修改，最多三轮，计划通过后仍等待用户确认。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
         "识别 Claude -> Codex 的统一 bridge 方向。",
-        "完整审查包含作者、审查者、轮次、哈希、验收标准和限制；review_repair 只写固定副本。",
+        "完整审查包含作者、审查者、轮次、从完整正文重算的 UTF-8 字节数和 SHA-256、验收标准和限制；review_repair 只写固定副本。",
         "固定副本提供完整目标根上下文，但 allowlist 仍限制所有实际变化。",
         "PLAN_REVIEW 通过后不会直接执行。",
         "审查者只能修复固定副本中的 allowlist 文件，Claude 作为原作者负责验收和最终决定。"
@@ -17,12 +17,12 @@
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并形成一份 GLOBECOM 论文正式规划，等我确认后再执行。",
-      "expected_output": "任务自动触发 Codex -> Claude 的计划互审；未指定路由时使用默认 quality 的 claude-opus-5/max，通过统一 bridge 在固定副本中完成 review_repair，并只接受 review_model 与本 job 所选模型精确一致的 PLAN_REVIEW。",
+      "expected_output": "任务自动触发 Codex -> Claude 的计划互审；未指定路由时使用默认 quality 的 claude-opus-5/max，通过统一 bridge 的 review_repair_peer 在固定副本中完成审查，并只接受 review_model 与本 job 所选模型精确一致的 PLAN_REVIEW。",
       "files": [],
       "expectations": [
         "Codex Desktop 即将提交正式规划并等待用户确认，因此触发本 Skill；复杂度本身不是理由。",
         "审查包含计划内容、哈希、验收标准和 round=1。",
-        "需要 Bash 验证时提供逐条精确且不可串联的 testCommands。",
+        "显式提供 testCommands；空数组不授权 Bash，需要 Bash 时提供逐条精确且不可串联的命令。",
         "不传 opus 别名或 fallback model。",
         "计划通过后仍等待用户明确确认。"
       ]
@@ -33,7 +33,7 @@
       "expected_output": "Codex 直接完成修复、测试和交付，不因代码任务复杂或交付物重要而自动创建 Opus peer job；只有用户明确要求审查时才走显式 DELIVERABLE_REVIEW。",
       "files": [],
       "expectations": [
-        "不自动调用 submit_peer、await_peer 或 peer_result。",
+        "不自动调用 review_repair_peer、submit_peer、await_peer 或 peer_result。",
         "作者照常运行本地测试并独立验收。",
         "bridge 不可用不会阻止这个普通执行任务交付。",
         "不把内部执行清单误当正式计划。"
@@ -155,7 +155,7 @@
     {
       "id": 15,
       "prompt": "当前在 Claude Code CLI 的计划模式。用户在 ExitPlanMode 对话框拒绝，并写道：让 Codex 审查当前计划。计划文件已明确为 C:\\Users\\SanAn\\.claude\\plans\\link-plan.md。",
-      "expected_output": "把拒绝理由视为当前正式计划的互审请求，构造 artifactType=plan 的完整审查包，并由统一 bridge 以 target=codex、operation=review_repair 启动固定副本审查。",
+      "expected_output": "把拒绝理由视为当前正式计划的互审请求，构造 artifactType=plan 的完整审查包，并由统一 bridge 的 review_repair_peer(target=codex) 启动固定副本审查。",
       "files": [],
       "expectations": [
         "不依赖不存在的 ExitPlanMode hook、环境变量或隐式工具参数。",
@@ -166,11 +166,11 @@
     },
     {
       "id": 16,
-      "prompt": "Claude 准备通过统一 bridge 启动第 2 轮计划审查，却把 reviewerAccess 写成 write，并试图把允许路径扩大到计划包之外。",
+      "prompt": "Claude 准备通过统一 bridge 启动第 2 轮计划审查，却试图给 review_repair_peer 传 reviewerAccess=write 并把允许路径扩大到计划包之外。",
       "expected_output": "bridge 在启动前拒绝不合法的审查包或越界范围，不创建可接受的 review job，并输出 PEER_REVIEW_FAILURE_REPORT。",
       "files": [],
       "expectations": [
-        "审查包必须是完整 JSON，reviewerAccess 只能是 read_only 或 isolated_write。",
+        "review_repair_peer 固定 operation=review_repair、reviewerAccess=isolated_write 和 maxRounds=3，调用方不能覆盖。",
         "allowedPaths 不能被审查者扩大。",
         "不能改为直接调用旧 companion 绕过 bridge。"
       ]
@@ -200,11 +200,11 @@
     {
       "id": 19,
       "prompt": "Claude 需要把一份重要交付物交给 Codex 审查，并希望 Codex 直接修复允许范围内的问题、运行测试后返回 DELIVERABLE_REVIEW。",
-      "expected_output": "Claude 通过同一 bridge 的 submit_peer(target=codex, operation=review_repair) 完成一次审查、修复和测试，作者检查同步后的主项目。",
+      "expected_output": "Claude 通过同一 bridge 的 review_repair_peer(target=codex) 完成一次审查、修复和获授权测试，作者检查同步后的主项目。",
       "files": [],
       "expectations": [
         "不调用 codex@openai-codex、codex exec 或隐藏 Hook。",
-        "reviewerAccess 为 isolated_write，targetRoot 和 allowedPaths 明确。",
+        "工具固定 isolated_write，targetRoot、非空 allowedPaths、完整 artifactContent 及其重算身份明确。",
         "DELIVERABLE_REVIEW 必须包含五个固定组成部分，格式错误、越界写入或同步冲突停止。"
       ]
     },
@@ -360,6 +360,28 @@
         "内部 Todo、状态更新和执行清单不视为正式计划。",
         "任务可以按正常工具流程执行和验收。",
         "只有后续真正形成待用户确认的正式计划，或用户明确点名互审时才调用 bridge。"
+      ]
+    },
+    {
+      "id": 34,
+      "prompt": "把这份纯文字计划交给 Opus 5 在隔离副本中互审。本轮没有任何测试命令，请明确传 testCommands=[]。",
+      "expected_output": "调用 review_repair_peer(target=claude)，显式传空 testCommands；Claude init 工具严格为 Read,Edit,Write，不出现 Bash 或 Bash allowlist。",
+      "files": [],
+      "expectations": [
+        "正式互审使用 review_repair_peer，而不是旧 submit_peer review_repair 兼容入口。",
+        "testCommands=[] 时不向 Claude 暴露 Bash。",
+        "仍提供完整正文、正式文件名称和路径、重算的 UTF-8 字节数与 SHA-256、非空 allowedPaths 和验收标准。"
+      ]
+    },
+    {
+      "id": 35,
+      "prompt": "旧调用方用 submit_peer(operation=review_repair) 只传 artifactPath、字节数和 SHA-256，没有 artifactContent、artifactName、allowedPaths、acceptanceCriteria 或 testCommands。",
+      "expected_output": "bridge 在创建 job 前返回 missing_fields，并列出缺少的完整字段；没有 jobId，也没有新增 job 文件。",
+      "files": [],
+      "expectations": [
+        "缺少 artifactContent 不能靠路径或哈希替代。",
+        "错误发生在 scheduler 和 job 持久化之前。",
+        "不自动补字段、不调用模型、不重试。"
       ]
     }
   ]

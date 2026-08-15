@@ -14,8 +14,8 @@
  *   release      Release one terminal job's orchestration claim.
  *   recover-lock Four-shape manual recovery for stuck registry/claim state.
  *
- * Review launches are mechanically constrained by a complete read-only review
- * envelope. Execution launches are deliberately outside that mode.
+ * Archived review diagnostics validate the current review_repair_peer envelope,
+ * including isolated-write inputs and content identity. They do not dispatch it.
  * All subprocess calls use argv arrays + shell:false + UTF-8 encoding.
  * No $USERPROFILE literal paths — use os.homedir() or $USERPROFILE in the shell.
  */
@@ -300,13 +300,14 @@ export function validateEnvelope(prompt) {
     return { ok: false, reason: "交接信封必须是 JSON 对象" };
   }
 
-  // Keep this schema isomorphic with workflow-contract.md. A review that
-  // cannot be traced or lacks a read-only declaration is not launchable.
+  // Keep this schema isomorphic with workflow-contract.md. operation,
+  // reviewerAccess, and maxRounds are fixed by review_repair_peer itself.
   const requiredKeys = [
-    "artifactId", "artifactType", "author", "reviewer", "round", "maxRounds",
+    "target", "question", "artifactId", "artifactType", "author", "reviewer", "round",
     "artifactName", "artifactBytes", "artifactSha256", "artifactContent",
+    "targetRoot", "allowedPaths", "testCommands",
     "priorRounds", "priorFindings", "openItems", "acceptanceCriteria",
-    "constraints", "reviewerAccess"
+    "constraints"
   ];
   for (const key of requiredKeys) {
     if (!(key in envelope)) {
@@ -315,29 +316,44 @@ export function validateEnvelope(prompt) {
   }
 
   // History and finding arrays may be empty, but must be explicit arrays.
-  for (const key of ["openItems", "priorRounds", "priorFindings", "acceptanceCriteria", "constraints"]) {
+  for (const key of [
+    "allowedPaths", "testCommands", "openItems", "priorRounds", "priorFindings",
+    "acceptanceCriteria", "constraints"
+  ]) {
     if (!Array.isArray(envelope[key])) {
       return { ok: false, reason: `${key} 必须是数组（允许空数组 []）` };
     }
   }
   for (const key of [
-    "artifactId", "artifactType", "author", "reviewer", "round", "maxRounds",
-    "artifactName", "artifactBytes", "artifactSha256", "artifactContent", "reviewerAccess"
+    "target", "question", "artifactId", "artifactType", "author", "reviewer", "round",
+    "artifactName", "artifactBytes", "artifactSha256", "artifactContent", "targetRoot"
   ]) {
     if (envelope[key] == null || envelope[key] === "") {
       return { ok: false, reason: `字段 ${key} 不可为空/null` };
     }
   }
+  for (const key of ["question", "artifactId", "author", "reviewer", "artifactName", "targetRoot"]) {
+    if (typeof envelope[key] !== "string") {
+      return { ok: false, reason: `字段 ${key} 必须是字符串` };
+    }
+  }
 
-  // Type, three-round, and read-only constraints.
+  if (["operation", "reviewerAccess", "maxRounds"].some((key) => key in envelope)) {
+    return {
+      ok: false,
+      reason: "operation、reviewerAccess 和 maxRounds 由 review_repair_peer 固定，不可覆盖"
+    };
+  }
+  if (!["claude", "codex"].includes(envelope.target)) {
+    return { ok: false, reason: "target 必须是 claude 或 codex" };
+  }
+
+  // Type, three-round, and isolated-copy constraints.
   if (!["plan", "deliverable"].includes(envelope.artifactType)) {
     return { ok: false, reason: "artifactType 必须是 plan 或 deliverable" };
   }
   if (!Number.isInteger(envelope.round) || envelope.round < 1 || envelope.round > 3) {
     return { ok: false, reason: "round 必须是 1、2 或 3" };
-  }
-  if (envelope.maxRounds !== 3) {
-    return { ok: false, reason: "maxRounds 必须固定为 3" };
   }
   if (!Number.isInteger(envelope.artifactBytes) || envelope.artifactBytes < 0) {
     return { ok: false, reason: "artifactBytes 必须是非负整数" };
@@ -348,17 +364,34 @@ export function validateEnvelope(prompt) {
   if (typeof envelope.artifactContent !== "string" || envelope.artifactContent.length === 0) {
     return { ok: false, reason: "artifactContent 必须是非空字符串" };
   }
-  if (typeof envelope.artifactName !== "string") {
-    return { ok: false, reason: "artifactName 必须是字符串" };
+  const contentBytes = Buffer.byteLength(envelope.artifactContent, "utf8");
+  const contentSha256 = createHash("sha256")
+    .update(envelope.artifactContent, "utf8")
+    .digest("hex");
+  if (envelope.artifactBytes !== contentBytes) {
+    return {
+      ok: false,
+      reason: `artifactBytes 与 artifactContent 的 UTF-8 字节数不符（期望 ${contentBytes}）`
+    };
+  }
+  if (envelope.artifactSha256 !== contentSha256) {
+    return { ok: false, reason: "artifactSha256 与 artifactContent 的 SHA-256 不符" };
   }
   if (envelope.artifactPath != null && (typeof envelope.artifactPath !== "string" || envelope.artifactPath.length === 0)) {
     return { ok: false, reason: "artifactPath 如提供必须是非空字符串" };
   }
-  if (envelope.reviewerAccess !== "read_only") {
-    return { ok: false, reason: "reviewerAccess 必须是 read_only" };
+  if (envelope.allowedPaths.length === 0 || envelope.allowedPaths.some((value) => typeof value !== "string" || value.length === 0)) {
+    return { ok: false, reason: "allowedPaths 必须是非空字符串数组" };
   }
   if (envelope.acceptanceCriteria.length === 0) {
     return { ok: false, reason: "acceptanceCriteria 至少需要一项" };
+  }
+  const testCommandPattern = /^[A-Za-z0-9_.:\\/@=+\-]+(?: [A-Za-z0-9_.:\\/@=+\-]+)*$/;
+  if (envelope.testCommands.length > 16 || new Set(envelope.testCommands).size !== envelope.testCommands.length) {
+    return { ok: false, reason: "testCommands 最多 16 项且不可重复" };
+  }
+  if (envelope.testCommands.some((command) => typeof command !== "string" || !testCommandPattern.test(command))) {
+    return { ok: false, reason: "testCommands 必须是不可引用、展开、重定向、管道或串联的精确命令" };
   }
   for (const r of envelope.priorRounds) {
     if (!r || !Number.isInteger(r.round) || r.round < 1 || r.round > 2) {

@@ -164,8 +164,19 @@ Choose colors that match your topic — don't default to generic blue. Use these
 |---------|------|
 | Slide title | 36-44pt bold |
 | Section header | 20-24pt bold |
-| Body text | 14-16pt |
-| Captions | 10-12pt muted |
+| All other visible text | 18pt minimum |
+| Sources, links, and footnotes | 10pt minimum, muted |
+
+These are delivery gates, not suggestions. Tables, charts, axes, legends, timelines,
+Gantt labels, and other dense structures remain reader-facing content and use the 18pt
+minimum. Only genuine sources, links, and footnotes may use the 10pt minimum. When the
+requested amount of content does not fit at these sizes, simplify, enlarge the content
+area, reflow, or split the slide. Do not silently shrink text to preserve a one-slide
+layout.
+
+Give generated title, section-header, source, and footnote shapes meaningful
+`objectName` values (`Title`, `SectionHeader`, `Source`, `Citation`, or `Footnote`) when
+the creation library supports it. This makes the typography audit deterministic.
 
 ### Spacing
 
@@ -177,7 +188,7 @@ Choose colors that match your topic — don't default to generic blue. Use these
 
 - **Don't repeat the same layout** — vary columns, cards, and callouts across slides
 - **Don't center body text** — left-align paragraphs and lists; center only titles
-- **Don't skimp on size contrast** — titles need 36pt+ to stand out from 14-16pt body
+- **Don't skimp on size contrast** — titles need 36pt+ to stand out from 18pt body
 - **Don't default to blue** — pick colors that reflect the specific topic
 - **Don't mix spacing randomly** — choose 0.3" or 0.5" gaps and use consistently
 - **Don't style one slide and leave the rest plain** — commit fully or keep it simple throughout
@@ -187,7 +198,7 @@ Choose colors that match your topic — don't default to generic blue. Use these
 - **NEVER use accent lines under titles** — these are a hallmark of AI-generated slides; use whitespace or background color instead
 - **NEVER add decorative color bars or accent stripes** — this includes: header/footer bars spanning the slide width, vertical sidebar stripes down one edge of the slide, thin accent stripes along one edge of a card or content block, and "single-side borders" on rectangles. These read as AI-generated filler. If you want to set a card apart, use a subtle background tint, a drop shadow, or an icon — not an edge stripe.
 - **Don't default to cream/beige backgrounds** — when no background is specified, use white (`FFFFFF`) or the user's brand palette; avoid warm-neutral defaults like `F5F5DC`, `FAF0E6`, `FAEBD7`, `FFF8E1`
-- **Don't ship text that overflows its shape** — if text doesn't fit, reduce font size, split across slides, or enlarge the container; never leave content cut off or spilling past bounds
+- **Don't ship text that overflows its shape** — if text doesn't fit, simplify, split across slides, or enlarge the container; never reduce visible text below the typography gates or leave content cut off or spilling past bounds
 
 ## QA (Required)
 
@@ -214,6 +225,7 @@ If grep returns results, fix them before declaring success.
 ```bash
 python scripts/office/validate.py output.pptx                      # built from scratch
 python scripts/office/validate.py output.pptx --original src.pptx  # built from a template
+python scripts/typography_audit.py output.pptx
 ```
 
 **If the deck came from a template, always pass `--original`.** A template may itself
@@ -223,13 +235,27 @@ the schema and slide checks against the template, suppressing errors it already 
 The structural checks — relationships, content types, charts — ignore `--original` and
 report template-inherited problems either way, so read those on their own merits.
 
+The typography audit is read-only and checks the entire output deck, including text in
+tables, grouped shapes, and native chart text. It fails when ordinary visible text is
+below 18pt, when a source/link/footnote is below 10pt, when automatic shrink-to-fit
+reduces the effective size below its gate, or when the effective size cannot be
+resolved. `spAutoFit` may expand a shape but does not waive an unresolved base font
+size. Fix the layout and rerun the audit; the script does not mechanically enlarge
+text.
+
+For a user-authorized exception to the 18pt ordinary-text gate, pass
+`--exceptions exceptions.json`. Each entry must identify one slide and one shape and
+include the user's reason; blanket slide/deck exceptions are rejected, and 10pt remains
+the absolute floor. Do not create or use an exception file without explicit user
+authorization. Use `--json` when a machine-readable audit record is useful.
+
 pptxgenjs emits chart XML PowerPoint refuses to open, and every other tool
 accepts: python-pptx opens those decks, LibreOffice renders them, the XSD
 passes them. Every failure names its fix. Fix it in the generator and rebuild.
 
 ### Visual QA
 
-Convert the slides to images (see [Converting to Images](#converting-to-images)) and inspect every one. After staring at the generating code you tend to see what you expect rather than what rendered, so look at the images fresh (a subagent works well for this if you have one). User-visible defects to look for:
+Convert the slides to images (see [Converting to Images](#converting-to-images)) and inspect every one as a complete 16:9 page. Text that becomes readable only after cropping or zooming in does not pass. After staring at the generating code you tend to see what you expect rather than what rendered, so look at the images fresh (a subagent works well for this if you have one). User-visible defects to look for:
 
 - **Text overflow or text cut off at a box or slide boundary — check this first.** It is the most common defect and always user-visible. (For a font the previewer renders unreliably per Typography, the preview is approximate: trust the ~10% slack you left, not its apparent fit.)
 - Overlapping elements (text through shapes, lines through words, stacked elements)
@@ -243,6 +269,10 @@ Convert the slides to images (see [Converting to Images](#converting-to-images))
 - Low-contrast icons (e.g., dark icons on dark backgrounds without a contrasting circle)
 - Text boxes too narrow causing excessive wrapping
 - Leftover placeholder content
+
+If the user manually edits the deck after an audit, treat the edited file as a new
+output: rerun content QA, file validation, typography audit, rendering, and full-page
+visual inspection on that latest version.
 
 ## Converting to Images
 

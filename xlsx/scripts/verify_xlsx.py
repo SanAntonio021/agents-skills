@@ -3,18 +3,22 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import posixpath
 import sys
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
 
 from ooxml_common import (
+    DOC_REL_NS,
     FORMULA_ERRORS,
     MAIN_NS,
+    PKG_REL_NS,
     cached_value,
     displayed_value,
     formula_signature,
     has_formula_cache,
+    index_to_column,
     json_write,
     load_package,
     parse_qualified_range,
@@ -25,6 +29,7 @@ from ooxml_common import (
     sha256_bytes,
     sha256_file,
     shared_strings,
+    split_cell_ref,
     worksheet_cells,
 )
 
@@ -86,6 +91,149 @@ def row_records(root: ET.Element) -> tuple[dict[int, dict[str, str]], dict[int, 
         if other_attrs:
             other[row_number] = other_attrs
     return heights, other
+
+
+def range_bounds(value: str) -> tuple[int, int, int, int]:
+    refs = value.replace("$", "").split(":")
+    if len(refs) == 1:
+        refs.append(refs[0])
+    if len(refs) != 2:
+        raise ValueError(f"Invalid cell range: {value}")
+    start_row, start_col = split_cell_ref(refs[0])
+    end_row, end_col = split_cell_ref(refs[1])
+    if start_row > end_row or start_col > end_col:
+        raise ValueError(f"Reversed cell range: {value}")
+    return start_row, start_col, end_row, end_col
+
+
+def range_intersection(left: str, right: str) -> str | None:
+    left_start_row, left_start_col, left_end_row, left_end_col = range_bounds(left)
+    right_start_row, right_start_col, right_end_row, right_end_col = range_bounds(right)
+    start_row = max(left_start_row, right_start_row)
+    start_col = max(left_start_col, right_start_col)
+    end_row = min(left_end_row, right_end_row)
+    end_col = min(left_end_col, right_end_col)
+    if start_row > end_row or start_col > end_col:
+        return None
+    start = f"{index_to_column(start_col)}{start_row}"
+    end = f"{index_to_column(end_col)}{end_row}"
+    return start if start == end else f"{start}:{end}"
+
+
+def relationship_part_name(owner_part: str) -> str:
+    owner_dir = posixpath.dirname(owner_part)
+    owner_name = posixpath.basename(owner_part)
+    return posixpath.join(owner_dir, "_rels", f"{owner_name}.rels")
+
+
+def resolve_relationship_target(owner_part: str, target: str) -> str:
+    if target.startswith("/"):
+        return target.lstrip("/")
+    return posixpath.normpath(posixpath.join(posixpath.dirname(owner_part), target))
+
+
+def inspect_filter_topology(
+    entries: dict[str, bytes], sheet_name: str, sheet_part: str, root: ET.Element
+) -> dict[str, Any]:
+    worksheet_filters: list[str] = []
+    for element in root.findall(qn(MAIN_NS, "autoFilter")):
+        ref = element.attrib.get("ref")
+        if ref:
+            range_bounds(ref)
+            worksheet_filters.append(ref)
+
+    tables: list[dict[str, Any]] = []
+    table_parts = root.find(qn(MAIN_NS, "tableParts"))
+    if table_parts is not None:
+        rels_part = relationship_part_name(sheet_part)
+        if rels_part not in entries:
+            raise ValueError(
+                f"Worksheet {sheet_name!r} declares tableParts but is missing {rels_part}"
+            )
+        rels_root = parse_xml(entries[rels_part])
+        relationships = {
+            relationship.attrib.get("Id"): relationship
+            for relationship in rels_root.findall(qn(PKG_REL_NS, "Relationship"))
+            if relationship.attrib.get("Id")
+        }
+        for index, table_part in enumerate(
+            table_parts.findall(qn(MAIN_NS, "tablePart")), start=1
+        ):
+            relationship_id = table_part.attrib.get(qn(DOC_REL_NS, "id"))
+            if not relationship_id or relationship_id not in relationships:
+                raise ValueError(
+                    f"Worksheet {sheet_name!r} tablePart {index} has no resolvable relationship"
+                )
+            relationship = relationships[relationship_id]
+            relationship_type = relationship.attrib.get("Type")
+            if not relationship_type or not relationship_type.endswith("/table"):
+                raise ValueError(
+                    f"Worksheet {sheet_name!r} table relationship {relationship_id!r} "
+                    f"has unexpected type {relationship_type!r}"
+                )
+            target = relationship.attrib.get("Target")
+            if not target or relationship.attrib.get("TargetMode") == "External":
+                raise ValueError(
+                    f"Worksheet {sheet_name!r} table relationship {relationship_id!r} "
+                    "does not target an internal table part"
+                )
+            table_part_name = resolve_relationship_target(sheet_part, target)
+            if table_part_name not in entries:
+                raise ValueError(
+                    f"Worksheet {sheet_name!r} table relationship {relationship_id!r} "
+                    f"targets missing part {table_part_name!r}"
+                )
+            table_root = parse_xml(entries[table_part_name])
+            table_ref = table_root.attrib.get("ref")
+            if not table_ref:
+                raise ValueError(f"Table part {table_part_name!r} has no ref")
+            range_bounds(table_ref)
+            table_auto_filter = table_root.find(qn(MAIN_NS, "autoFilter"))
+            tables.append(
+                {
+                    "relationship_id": relationship_id,
+                    "relationship_type": relationship_type,
+                    "part": table_part_name,
+                    "name": table_root.attrib.get("name"),
+                    "display_name": table_root.attrib.get("displayName"),
+                    "ref": table_ref,
+                    "auto_filter_ref": (
+                        table_auto_filter.attrib.get("ref")
+                        if table_auto_filter is not None
+                        else None
+                    ),
+                }
+            )
+
+    overlaps: list[dict[str, str | None]] = []
+    for worksheet_ref in worksheet_filters:
+        for table in tables:
+            intersection = range_intersection(worksheet_ref, table["ref"])
+            if intersection is None:
+                continue
+            table_name = table["display_name"] or table["name"] or table["part"]
+            overlaps.append(
+                {
+                    "type": "worksheet_table_filter_overlap",
+                    "sheet": sheet_name,
+                    "worksheet_auto_filter_ref": worksheet_ref,
+                    "table_name": table_name,
+                    "table_part": table["part"],
+                    "table_ref": table["ref"],
+                    "intersection": intersection,
+                    "message": (
+                        f"Worksheet-level autoFilter {worksheet_ref!r} overlaps Excel Table "
+                        f"{table_name!r} range {table['ref']!r} on sheet {sheet_name!r} at "
+                        f"{intersection!r}; remove ws.auto_filter.ref or move it outside "
+                        "every Table range."
+                    ),
+                }
+            )
+    return {
+        "worksheet_auto_filters": worksheet_filters,
+        "tables": tables,
+        "overlaps": overlaps,
+    }
 
 
 def inspect_sheet(root: ET.Element, strings: list[str]) -> dict[str, Any]:
@@ -152,12 +300,16 @@ def inspect_workbook(path: Path) -> dict[str, Any]:
     total_formulas = 0
     total_caches = 0
     errors: list[dict[str, str]] = []
+    filter_overlaps: list[dict[str, str | None]] = []
     for sheet_name, part in sheet_parts.items():
         root = parse_xml(entries[part])
         inspected = inspect_sheet(root, strings)
+        filter_topology = inspect_filter_topology(entries, sheet_name, part, root)
+        inspected["filter_topology"] = filter_topology
         sheets[sheet_name] = {"part": part, **inspected}
         total_formulas += inspected["formula_count"]
         total_caches += inspected["formula_cache_count"]
+        filter_overlaps.extend(filter_topology["overlaps"])
         errors.extend(
             {"cell": f"{sheet_name}!{item['cell']}", "value": item["value"]}
             for item in inspected["formula_errors"]
@@ -177,6 +329,8 @@ def inspect_workbook(path: Path) -> dict[str, Any]:
         "formula_cache_count": total_caches,
         "formula_error_count": len(errors),
         "formula_errors": errors,
+        "filter_overlap_count": len(filter_overlaps),
+        "filter_overlaps": filter_overlaps,
         "objects": {
             "drawings": sorted(name for name in names if name.startswith("xl/drawings/")),
             "media": sorted(name for name in names if name.startswith("xl/media/")),
@@ -418,6 +572,7 @@ def main() -> int:
             current["zip_integrity"]
             and current["formula_cache_count"] == current["formula_count"]
             and current["formula_error_count"] == 0
+            and current["filter_overlap_count"] == 0
         )
         report = {
             "ok": standalone_ok and (comparison is None or comparison["ok"]),

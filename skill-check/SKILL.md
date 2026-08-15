@@ -105,6 +105,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 - Claude `tengu_skill_loaded` 只是启动时候选加载，绝不计为使用。
 - Codex 仅从真实用户记录里的 `$skill-name`、`/skill-name` 或技能 `SKILL.md` 链接识别显式点名。
 - Codex 当前没有稳定的隐式 Skill 调用事件；报告必须写明“未见记录不等于实际未使用”。
+- 纯图片或附件、没有可扫描文本的 Codex 用户记录单独计数，不作为目标字段缺失，避免永久阻断完整周次。
 - `疑似漏用` 只由技能名和 `description` 的确定性规则筛选，不调用模型，也不自动改技能。
 - `可能冗余` 只有在传入 `--hygiene-summary` 后，才把“历史内未见使用”与已有 duplicate/overlap
   finding 求交；它仍是人工复核候选，不是删除建议。

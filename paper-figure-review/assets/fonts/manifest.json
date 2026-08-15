@@ -1,0 +1,16 @@
+{
+  "family": "Liberation Serif",
+  "version": "2.1.5",
+  "license": "SIL Open Font License 1.1",
+  "license_file": "LICENSE",
+  "source_repository": "https://github.com/liberationfonts/liberation-fonts",
+  "source_commit": "49e1358e4017577429c9f8c39a3e6e879093264e",
+  "release_archive": "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+  "release_archive_sha256": "7191C669BF38899F73A2094ED00F7B800553364F90E2637010A69C0E268F25D0",
+  "sha256": {
+    "regular": "058EA80864AEF09A23F45CBEC2BB5400BC3DFBDEA01C3F10538A21FCB497FB74",
+    "bold": "D754BA427CFE0BCA54AE052384BAA8F842DA5BD6550AD4DA024AC441E7A7D5CE",
+    "italic": "0E3DEA9F8D613E006CCFA62201F33E265D19167BD0907725C3E145368B04FC2E",
+    "bold_italic": "F17DB8AF71E24D2066B587546021D4F0B296BE389512B658DEC3C09AFFEB11A7"
+  }
+}

@@ -1,8 +1,8 @@
-"""Copyable Matplotlib profile for compact IEEE single-column data figures.
+"""Legacy GLOBECOM/SCIS regression helper; do not use for new figures.
 
-Copy this file into a project's plotting directory. It only fixes presentation
-rules; callers must supply data, labels, limits, legend placement, and a
-project-specific plot profile.
+New IEEE single-column data plots use ``scripts/ieee_plot_style.py`` and
+``assets/ieee_single_column_data_plot.py``.  This file retains the historical
+CH1/CH2 mapping only so existing figures can be audited reproducibly.
 """
 
 from __future__ import annotations

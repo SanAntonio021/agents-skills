@@ -1,42 +1,60 @@
-# 数据图优先级色表
+# IEEE 数据图配色路由
 
-这份色表用于没有项目模板、期刊模板或合作者既有色表时，给 IEEE 论文数据图建立全文一致的默认配色。适用范围是当前论文内部的优先级；不同论文可以重新定义颜色含义。某个颜色一旦分配给一级强调、二级强调或参考/基线，就在全文图件中复用。
+IEEE 没有规定唯一官方 HEX 色表。默认规则是先确定数据角色，再为当前论文提出候选配色；用户确认一次后，全文冻结颜色、marker 和线型。未确认配色只能生成 draft。
 
 ## 使用顺序
 
-1. 先判断数据角色和阅读优先级，避免按曲线出现顺序临时分配颜色。
-2. 为当前论文建立一个 `figure color map`：一级强调、二级强调、三级强调、参考/基线、阈值/规范线、辅助元素。
-3. 同一篇论文中，相同优先级或相同物理变量保持同一颜色、线型和 marker。
-4. 颜色必须配合线型、marker、灰度或直接标注；不能只靠颜色区分。
-5. 如果一张图里有多条同等重要曲线，不要强行排成一级、二级、三级；改用无序类别色表，并在全文保持类别映射一致。
-6. 用 Python/Matplotlib 重画时，`scripts/ieee_plot_style.py` 中的 `FIGURE_PRIORITY_COLORS` 和 `OKABE_ITO` 应与本表保持一致。
+1. 列出物理变量和视觉角色，不按曲线出现顺序临时分色。
+2. 判断数据类型：无序类别、连续强度，或有明确中心值的正负偏差。
+3. 调用 `scripts/ieee_plot_style.py` 的 `propose_figure_color_map()` 生成候选。
+4. 在最终 `3.5 in` 尺寸下检查灰度、色盲、线型、marker 和图例。
+5. 用户确认后调用 `freeze_figure_color_map()` 写入论文 plot profile；后续图不得重新排序相同变量的颜色。
 
-## 默认优先级色表
+## 路由表
 
-| 级别 | 默认颜色 | Hex | 典型用途 | 冗余编码建议 |
-| --- | --- | --- | --- | --- |
-| 一级强调 | blue | `#0072B2` | 当前图或全文最希望读者优先看的主结果、主曲线、主方法 | 实线、较高线宽、圆形 marker、直接标注 |
-| 二级强调 | vermillion | `#D55E00` | 与一级强调直接对比的关键结果、次主曲线、主要对照条件 | 虚线或短划线、方形 marker |
-| 三级强调 | bluish green | `#009E73` | 第三个重要条件、另一类主要实验状态 | 点划线、三角 marker |
-| 四级补充 | reddish purple | `#CC79A7` | 补充类别、附加实验状态、必要时的第四条重要曲线 | 点线、菱形 marker |
-| 备用类别 | sky blue / orange | `#56B4E9` / `#E69F00` | 曲线数量较多但仍必须同图展示时的补充类别 | 与前四级不同的 marker 或线型 |
-| 参考/基线 | dark gray | `#4C4C4C` | baseline、reference、control、previous work、neutral state | 细实线或细虚线，弱于强调色 |
-| 阈值/规范线 | medium gray | `#8A8A8A` | threshold、limit、specification、target BER、noise floor | 细虚线或点划线，短文字标注 |
-| 置信区间/误差带 | 主线同色浅色透明填充 | 主线颜色，`alpha 0.15-0.25` | confidence interval、error band、operating range | 不单独进图例，除非图中确实需要 |
-| 网格/辅助线 | light gray | `#D9D9D9` | major/minor grid、辅助参考线 | 低线宽、低 alpha，不抢数据 |
+| 数据关系 | 默认候选 | 限制 |
+| --- | --- | --- |
+| 2--3 个无序类别 | Tol `high-contrast` | 同时使用不同 marker 或线型 |
+| 4--7 个无序类别 | Tol `bright` | 六条 BER 曲线仍需 marker/线型冗余，不能只靠颜色 |
+| 8--10 个无序类别 | Tol `muted` | 最终单栏尺寸过密时优先拆分子图 |
+| 连续强度、热力图、谱图 | `cividis`，备选 `viridis` | 必须有 colorbar；避免 `jet` 和 rainbow |
+| 有明确中心值的正负偏差场 | Tol `nightfall` | 必须记录中心值，例如 `0` 或 baseline |
+| 单个 Delta 数值、阈值、规范线 | 黑色 `#000000` | 用虚线、点划线或文字说明语义，不占用类别色 |
+| 参考或基线 | 深灰 `#404040` | 识别优先级弱于主数据 |
+| 置信区间、误差带 | 主线同色，`alpha=0.15--0.25` | 不遮挡数据；必要时增加边界线 |
+| 主网格 | `#B8B8B8`、`0.35 pt`、alpha `0.52`、dash `(5, 3)` | 固定背景框架 |
+| 次网格 | `#D6D6D6`、`0.35 pt`、alpha `0.40`、dash `(1, 1.65)` | 固定背景框架 |
 
-## 图类型补充规则
+## API 示例
 
-- 单序列图：可直接使用一级强调色；如果全文风格很克制，也可使用黑色或深灰，但要和全文色表一致。
-- 多条无序类别曲线：优先使用上表前 4-6 个离散颜色；超过 4 条时必须配合线型、marker 或直接标注。
-- 有序强度、热力图、谱图：不要使用上面的离散强调色；优先使用 `viridis`、`cividis` 或 `gray` 等感知均匀 sequential colormap。
-- 正负偏差、增益/损耗差值：使用 diverging colormap，并明确中心值，如 `0`、`baseline` 或 `no change`。
-- 双 Y 轴：如果左右轴颜色对应数据，轴题、刻度、刻度线和对应 spine 可以跟数据同色；上下边框通常保持黑色。
-- 多子图：不要因为某个子图曲线数量不同而重新排序颜色。全文优先级色表比单张图内的默认循环顺序更重要。
+```python
+from ieee_plot_style import propose_figure_color_map, freeze_figure_color_map
 
-## 检查项
+proposal = propose_figure_color_map(
+    ["channel_a", "channel_b", "channel_c", "channel_d", "channel_e", "channel_f"]
+)
+# 用户查看最终尺寸 draft 并确认 proposal 后：
+freeze_figure_color_map("plot_profile.json", proposal, confirmed_by="user")
+```
 
-- 灰度打印后，一级/二级/三级强调仍能靠线型、marker 或标注区分。
-- 不把红/绿作为唯一差异。
-- 图例命名和颜色映射在全文一致。
-- 强调色数量过多时，优先拆分子图，减少继续加颜色。
+连续量：
+
+```python
+proposal = propose_figure_color_map(["power_density"], data_kind="continuous")
+```
+
+有中心值的偏差场：
+
+```python
+proposal = propose_figure_color_map(["gain_delta"], data_kind="diverging", center=0.0)
+```
+
+## 黑白与可访问性检查
+
+- 同一含义同时使用颜色和线型、marker、纹理或直接标注。
+- 不把红绿、蓝绿、黄红作为唯一差异。
+- 参考线和网格不能压过主数据。
+- 图例命名、颜色、marker 和线型在全文保持一致。
+- 候选色不等于已确认配色；正式导出必须在 plot profile 中带 `palette_status=confirmed`、`confirmed_by=user` 和确认时间。
+
+旧代码中的 `FIGURE_PRIORITY_COLORS` 和 `OKABE_ITO` 仅为兼容已有脚本保留。新单栏数据图使用上述 Tol/连续色图路由。

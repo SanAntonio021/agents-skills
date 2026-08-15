@@ -24,6 +24,12 @@
   主项目文件集合。批准动作不重新调用 Codex。
 - `awaiting_user` 期间尝试提交重叠目标根的新任务，应以 `retained_workspace_conflict` 拒绝，不能绕锁。
 - Codex `ask` 应在专用空只读目录中运行，不能从 cwd 读取作者项目、daemon token 或其他 job 材料。
+- Windows 子进程应同时记录 `environment_context_enabled=true` 与
+  `windows_sandbox_mode=unelevated`，并证明实际命令 cwd 是固定副本；不得修改用户全局 Codex 配置。
+- 模拟原生补丁失败后用 shell 写入 allowlist 文件；同步前仍须通过全量 manifest。对同一精确测试命令
+  模拟“失败后通过”和“通过后失败”，前者终态通过，后者终态拒绝，受保护事件均保留全部尝试。
+- 运行一次 `npm.cmd run test:live:codex`，确认真实写入及同步哈希、取消、同线程恢复、CLI 版本、
+  `workspace-write`、`approvalPolicy=never` 和 Windows sandbox 证据同时成立。
 
 ## Codex -> Opus 5
 

@@ -124,6 +124,12 @@ Claude -> Codex 方向只接受 bridge 返回的 SDK 记录：`workspace-write`�
 身份写成“已验证”。固定副本中的 `review_repair` 允许对方修复，主项目同步仍由 allowlist、manifest、
 基线漂移和逐文件哈希门控制。
 
+Windows 下 bridge 子进程还固定 `include_environment_context=true` 与
+`windows.sandbox="unelevated"`；两者共同保证命令工具实际使用固定副本 cwd，且不修改用户全局
+Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失败后，才可用本地 shell 写入固定副本中的
+`allowedPaths`。同一精确测试命令多次执行时，受保护事件保留全部尝试，但验收按最后一次状态判断：
+后来通过只清除该命令此前的失败，未复测或最后仍失败继续停止同步。
+
 ## 同步与用户授权
 
 普通新增/修改在基线未漂移且仍在 allowlist 内时由 bridge 使用同卷 staging、备份、原子替换、

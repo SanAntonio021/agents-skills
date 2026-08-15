@@ -285,6 +285,18 @@
         "同一精确命令失败后复测成功会清除该命令的终态失败；未复测或最后仍失败继续拒绝。",
         "完整命令事件仍保存在受保护审计证据中。"
       ]
+    },
+    {
+      "id": 27,
+      "prompt": "Claude -> Codex 的 review_repair 返回 requested_model=gpt-5.4、requested_reasoning_effort=high，其他 sandbox 和测试证据都通过。",
+      "expected_output": "拒绝验收并输出 PEER_REVIEW_FAILURE_REPORT；Codex 通道必须请求 gpt-5.6-sol 且推理强度为 max，不继承旧模型或用户全局档位。",
+      "files": [],
+      "expectations": [
+        "明确检查 requested_model 精确为 gpt-5.6-sol。",
+        "明确检查 requested_reasoning_effort 精确为 max。",
+        "不把 SDK 请求参数描述成独立验证的实际响应模型。",
+        "不回退到 gpt-5.4、其他模型或较低推理档位。"
+      ]
     }
   ]
 }

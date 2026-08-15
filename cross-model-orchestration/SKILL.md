@@ -4,8 +4,8 @@ description: >
   Codex Desktop/CLI 与 Claude Code CLI 的全局双向互审流程。除纯聊天、简单解释和一条
   明确只读命令外，任何需要阅读本地材料、制定正式计划、形成重要结论、修改文件、运行命令、
   调研、比较、写作或多步骤推进的任务都自动使用同一个 claude-codex-bridge MCP，把产物交给
-  对方模型在固定副本中审查、修复和测试。Claude 方向固定使用 claude-opus-5；Codex 方向记录
-  SDK 请求模型但不伪造运行时身份。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
+  对方模型在固定副本中审查、修复和测试。Claude 方向固定使用 claude-opus-5；Codex 方向固定
+  请求 gpt-5.6-sol 与 max 推理强度，但不伪造运行时身份。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP to be available to the current host.
   The legacy codex@openai-codex companion and its hooks are archived references only and are not
@@ -47,7 +47,7 @@ allowed-tools:
 | 当前作者 | `submit_peer.target` | 固定审查/执行通道 |
 | --- | --- | --- |
 | Codex Desktop / Codex CLI | `claude` | bridge 启动并验证 `claude-opus-5` |
-| Claude Code CLI | `codex` | bridge 的 `@openai/codex-sdk` 适配器 |
+| Claude Code CLI | `codex` | bridge 的 `@openai/codex-sdk` 适配器，固定请求 `gpt-5.6-sol` / `max` |
 
 调用顺序固定为 `submit_peer` -> `await_peer`（单次最多 45 秒）-> `peer_result`；需要状态时用
 `peer_status`，取消用 `cancel_peer`，恢复只用指定 job 的 `resume_peer`。不得扫描最新线程，
@@ -119,8 +119,9 @@ public review_model = claude-opus-5
 `testCommands` 中逐条给出的安全精确命令写入固定 `--allowed-tools`。命令被拒绝本身就是失败证据，
 即使模型随后写“通过”也不得同步。Opus 5 无工具的 `ask` 审查必须把完整内容放进 `artifactContent`。
 
-Claude -> Codex 方向只接受 bridge 返回的 SDK 记录：`workspace-write`、`approvalPolicy=never`、
-网络和搜索关闭、无额外目录；记录请求模型、CLI 版本和线程 ID，但没有运行时回执时不得把模型
+Claude -> Codex 方向只接受 bridge 返回的 SDK 记录：`requested_model=gpt-5.6-sol`、
+`requested_reasoning_effort=max`、`workspace-write`、`approvalPolicy=never`、
+网络和搜索关闭、无额外目录；记录请求模型、请求强度、CLI 版本和线程 ID，但没有运行时回执时不得把模型
 身份写成“已验证”。固定副本中的 `review_repair` 允许对方修复，主项目同步仍由 allowlist、manifest、
 基线漂移和逐文件哈希门控制。
 

@@ -14,6 +14,8 @@
 
 ## Claude -> Codex review_repair
 
+- 所有 Codex job 的公共状态和受保护详情都应记录 `requested_model=gpt-5.6-sol` 与
+  `requested_reasoning_effort=max`；任一缺失或不匹配都不得验收，且不能继承用户全局模型或推理档位。
 - Claude 形成正式计划或重要交付物后，用 `submit_peer(target=codex, operation=review_repair)`，
   提供完整审查包、`reviewerAccess=isolated_write`、目标根、最小 allowlist 和精确 `testCommands`。
 - `await_peer` 超时后只用同一 job 的 `peer_result`；不得重发、猜测线程或调用旧插件。
@@ -28,7 +30,7 @@
   `windows_sandbox_mode=unelevated`，并证明实际命令 cwd 是固定副本；不得修改用户全局 Codex 配置。
 - 模拟原生补丁失败后用 shell 写入 allowlist 文件；同步前仍须通过全量 manifest。对同一精确测试命令
   模拟“失败后通过”和“通过后失败”，前者终态通过，后者终态拒绝，受保护事件均保留全部尝试。
-- 运行一次 `npm.cmd run test:live:codex`，确认真实写入及同步哈希、取消、同线程恢复、CLI 版本、
+- 运行一次 `npm.cmd run test:live:codex`，确认 `gpt-5.6-sol` 请求、`max` 推理强度、真实写入及同步哈希、取消、同线程恢复、CLI 版本、
   `workspace-write`、`approvalPolicy=never` 和 Windows sandbox 证据同时成立。
 
 ## Codex -> Opus 5

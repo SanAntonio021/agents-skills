@@ -16,11 +16,11 @@
     },
     {
       "id": 2,
-      "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并规划一篇 GLOBECOM 论文。",
+      "prompt": "当前在 Codex Desktop。读取本地 350 m 期刊稿和 1 km 实验结果，比较重复风险并形成一份 GLOBECOM 论文正式规划，等我确认后再执行。",
       "expected_output": "任务自动触发 Codex -> Claude 的计划互审；未指定路由时使用默认 quality 的 claude-opus-5/max，通过统一 bridge 在固定副本中完成 review_repair，并只接受 review_model 与本 job 所选模型精确一致的 PLAN_REVIEW。",
       "files": [],
       "expectations": [
-        "Codex Desktop 的复杂任务会触发本 Skill。",
+        "Codex Desktop 即将提交正式规划并等待用户确认，因此触发本 Skill；复杂度本身不是理由。",
         "审查包含计划内容、哈希、验收标准和 round=1。",
         "需要 Bash 验证时提供逐条精确且不可串联的 testCommands。",
         "不传 opus 别名或 fallback model。",
@@ -30,26 +30,24 @@
     {
       "id": 3,
       "prompt": "当前在 Codex CLI。修复这个脚本的数据计算错误，补测试并交付代码改动。",
-      "expected_output": "Codex 是执行作者；重要代码交付物在交付前由 Opus 5 在固定副本中以 review_repair 完成 DELIVERABLE_REVIEW，Codex 检查同步结果并根据意见修订。",
+      "expected_output": "Codex 直接完成修复、测试和交付，不因代码任务复杂或交付物重要而自动创建 Opus peer job；只有用户明确要求审查时才走显式 DELIVERABLE_REVIEW。",
       "files": [],
       "expectations": [
-        "交付物用 DELIVERABLE_REVIEW，不误用 PLAN_REVIEW。",
-        "Opus 5 不能写作者主项目；review_repair 的写入只能发生在 bridge 固定副本。",
-        "Codex 记录修改后新的字节数和 SHA-256。",
-        "测试命令只通过精确 testCommands 授权，permission denial 不能被通过结论覆盖。",
-        "最多三轮。"
+        "不自动调用 submit_peer、await_peer 或 peer_result。",
+        "作者照常运行本地测试并独立验收。",
+        "bridge 不可用不会阻止这个普通执行任务交付。",
+        "不把内部执行清单误当正式计划。"
       ]
     },
     {
       "id": 4,
       "prompt": "当前在 Claude Code CLI。把随附的 technical-note.md 修订成面向非程序员的版本，保留事实和目录结构，并检查所有本地链接。",
-      "expected_output": "Claude 的重要文字交付物先由统一 bridge 的 Codex review_repair 在固定副本中审查、修复和测试；Claude 作为作者检查同步结果并继续修订。",
+      "expected_output": "Claude 直接完成文字修订和链接检查，不自动把交付物送给 Codex；如果用户另行明确要求 Codex 审查，才进入显式 deliverable review。",
       "files": ["evals/fixtures/technical-note.md", "evals/fixtures/reference.md"],
       "expectations": [
-        "明确 Claude -> Codex 使用 reviewerAccess=isolated_write，主项目仍只由 bridge 同步。",
-        "使用 DELIVERABLE_REVIEW。",
-        "Claude 独立验证链接和产物，不只接受完成声明。",
-        "审查者写作者主项目或越过固定副本 allowlist 会使该轮失败；副本内受控修复允许。"
+        "不因文字任务或重要交付物自动创建 bridge job。",
+        "Claude 独立验证链接和产物。",
+        "普通交付不要求 DELIVERABLE_REVIEW。"
       ]
     },
     {
@@ -146,12 +144,12 @@
     {
       "id": 14,
       "prompt": "Claude 的计划已获用户明确确认。Codex 依计划完成了代码与报告，准备返回最终结果。",
-      "expected_output": "Codex 执行作者在返回每个重要产物前通过其已注册 bridge MCP 获取 Opus 5 DELIVERABLE_REVIEW；bridge 不可用则停止，不将 Claude 验收当作替代。",
+      "expected_output": "Codex 按原计划和验收标准检查代码、报告与测试后直接返回结果，不自动再次调用 Opus；只有用户明确要求交付物复核时才创建新 peer job。",
       "files": [],
       "expectations": [
-        "执行阶段写入只属于作者执行，review_repair 的写入只发生在 bridge 固定副本。",
-        "回传 review_model、轮次和审查结论。",
-        "Claude 继续独立验收真实文件、提交和测试。"
+        "已确认计划的执行和最终汇报不触发第二次互审。",
+        "作者独立验收真实文件、提交和测试。",
+        "bridge 不可用不会把已完成的普通交付改写成互审失败。"
       ]
     },
     {
@@ -351,6 +349,17 @@
         "没有 fallback model。",
         "失败报告保留所选模型和恢复条件。",
         "只有新的明确请求才能选择另一模型。"
+      ]
+    },
+    {
+      "id": 33,
+      "prompt": "这项修改直接做。你可以用 update_plan 记自己的进度，但不要先给我一份正式计划。",
+      "expected_output": "内部 update_plan 只用于执行管理，不触发 cross-model-orchestration，也不创建 Opus/Codex peer job。",
+      "files": [],
+      "expectations": [
+        "内部 Todo、状态更新和执行清单不视为正式计划。",
+        "任务可以按正常工具流程执行和验收。",
+        "只有后续真正形成待用户确认的正式计划，或用户明确点名互审时才调用 bridge。"
       ]
     }
   ]

@@ -9,22 +9,22 @@
       "type": "should-trigger"
     },
     {
-      "id": "trigger-exec-pitfall",
+      "id": "no-trigger-exec-pitfall",
       "prompt": "codex exec 跑完退出码 0，但它说建好的结果目录根本不存在",
-      "expect": "触发本 skill；把 SDK sandbox 记录视为请求而非外层宿主回执，并按实际文件、allowlist、manifest 和同步哈希检查写入，按 review-gates 第一层核验产出存在性",
-      "type": "should-trigger"
+      "expect": "不触发本 skill；这是一次执行环境诊断，不代表用户明确启用了跨模型科研循环",
+      "type": "should-not-trigger"
     },
     {
-      "id": "trigger-resume-fail",
+      "id": "no-trigger-resume-fail",
       "prompt": "我想用 codex exec resume 续接桌面版开的那个会话，报 does not start with session metadata",
-      "expect": "触发本 skill；说明旧 Desktop/CLI 会话续接不属于统一 bridge 的可验证恢复，改为指定 job 的 resume_peer 或用户确认后创建新 artifactId",
-      "type": "should-trigger"
+      "expect": "不触发本 skill；这是会话恢复诊断，可说明旧 Desktop/CLI 会话不能伪装成 bridge 科研循环",
+      "type": "should-not-trigger"
     },
     {
-      "id": "trigger-mirror",
+      "id": "no-trigger-one-off-mirror",
       "prompt": "我现在在 Codex 里干活，能不能反过来让 Claude 当执行者跑任务",
-      "expect": "触发本 skill；给统一 bridge 的 target=claude、operation=task/review_repair 调用方式，强调异族红线仍满足",
-      "type": "should-trigger"
+      "expect": "不触发本 skill；一次对方执行请求可走显式 bridge 能力，只有用户要求多轮科研监督和里程碑评审时才进入本循环",
+      "type": "should-not-trigger"
     },
     {
       "id": "no-trigger-aris-executor",

@@ -1,6 +1,6 @@
 ---
 name: cross-model-research-loop
-description: 跨模型科研自动循环：监督者通过统一 claude-codex-bridge MCP 调度异族执行者跑仿真、实验或论文流水线，在每个里程碑用 review_repair 审查、修复和测试，实现可暂停、可追溯的后台研究循环。Use when 用户要自动执行多轮仿真、实验计划或论文流水线，需要长期后台运行和科研里程碑评审；在两端叠加 cross-model-orchestration。旧 codex@openai-codex、codex exec 和 claude -p 仅作历史排错资料，不作为运行时入口。
+description: 跨模型科研自动循环：仅当用户明确要求启用异族模型监督、多轮后台仿真/实验/论文流水线或里程碑互审时，监督者才通过统一 claude-codex-bridge MCP 调度执行者，并在每个里程碑用 review_repair 审查、修复和测试。普通科研分析、单次仿真、计划执行和交付不触发本 Skill。启用后在两端叠加 cross-model-orchestration；旧 codex@openai-codex、codex exec 和 claude -p 仅作历史排错资料，不作为运行时入口。
 ---
 
 # 跨模型科研自动循环
@@ -10,6 +10,9 @@ description: 跨模型科研自动循环：监督者通过统一 claude-codex-br
 把科研任务拆成“监督者 + 执行者 + 里程碑验收”循环。执行者在 bridge 固定副本中跑仿真、写代码、
 产出数据和文档；监督者按 `review_repair` 检查证据、修复允许范围内的问题、运行测试并决定是否推进。
 文件系统、manifest、job ID 和验收报告是证据，不能用执行者的完成声明替代。
+
+这是用户明确启用后的专用循环，不是普通任务的默认复核门。全局默认仍只在正式计划阶段互审；
+本 Skill 的里程碑复核属于用户主动选择的例外。
 
 ## 角色与通道
 
@@ -65,6 +68,6 @@ description: 跨模型科研自动循环：监督者通过统一 claude-codex-br
 ## 维护与验证
 
 适配器变化、SDK/CLI 版本证据和新的科研风险模式分别追加到 `references/cli-adapters.md`、
-`references/review-gates.md` 并标注日期。评测至少覆盖两方向自动触发、简单任务跳过、一次
+`references/review-gates.md` 并标注日期。评测至少覆盖用户显式启用后两方向路由、普通科研任务跳过、一次
 `review_repair` 直接修复、三轮止损、用户确认门、审批同步、取消/恢复、模型不可用和 Codex Desktop
 可见性人工检查。源码推送后按全局规则定向同步并核对四层哈希。

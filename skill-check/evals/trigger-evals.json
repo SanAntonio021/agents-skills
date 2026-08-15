@@ -18,5 +18,9 @@
   {"query":"C 盘空间不足，检查哪些缓存可以安全清理，先不要删除。","should_trigger":false},
   {"query":"帮我总结这篇论文 PDF 的方法、实验设置和主要结论。","should_trigger":false},
   {"query":"查询今天的飞书日程和未完成任务，整理一份简短摘要。","should_trigger":false},
-  {"query":"把这段英文润色得更自然，保持原意，不要改变技术术语。","should_trigger":false}
+  {"query":"把这段英文润色得更自然，保持原意，不要改变技术术语。","should_trigger":false},
+  {"query":"运行融合的本地技能周检，把上游、目录健康和历史触发证据一起查，但每次只问我一条。","should_trigger":true},
+  {"query":"继续上周没答完的 skill 检查队列，旧问题保留，已回答且没变化的不要重复问。","should_trigger":true},
+  {"query":"每周五把这个项目的开发进展整理成一页工作周报。","should_trigger":false},
+  {"query":"每周运行一次 pytest，失败时把测试日志发给我。","should_trigger":false}
 ]

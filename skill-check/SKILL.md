@@ -173,6 +173,28 @@ CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目
 
 cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑，见 [references/skill-hygiene.md](references/skill-hygiene.md)。
 
+## 融合本地技能周检
+
+需要把上游、目录健康、历史使用和疑似漏用合并成每周逐项问答时，使用
+[references/weekly-review.md](references/weekly-review.md) 和
+`scripts/run_weekly_skill_review.py`。它复用本 skill 的三个审计入口，不另建职责重叠的技能。
+
+```powershell
+python scripts/run_weekly_skill_review.py scan --date <YYYY-MM-DD> --json
+python scripts/run_weekly_skill_review.py next-question --json
+```
+
+周检状态写入 `<reports-root>/weekly-review-state.json`，采用跨进程锁、临时文件和原子替换。
+状态损坏、未知 `schema_version` 或锁冲突只报告严重问题，保留原文件，不自动重建。finding ID
+按“类型、技能、独立修改目的”稳定生成；证据、方案和源码基线 fingerprint 未变时不重复问，
+变化后旧批准和相关执行批次自动失效。
+
+每次 `next-question` 只返回一项。证据不足最多追问两条事实，随后必须关闭、形成建议或转为等待新证据。
+“历史内未见使用”只有连续四次完整周检才进入队列；扫描失败、报告无效、使用证据或范围变化会清零。
+严重问题可插队，每周最多新增三条中低优先级问题。全部逐项决定后，`prepare-execution` 只生成一次
+最终执行确认；没有批准项不创建空批次。详细的自然语言映射、隔离候选、副本哈希、精确暂存、推送和
+双端同步验收见上述参考文件。
+
 ## 合并候选判断
 
 判断两个 skill 是否该合并时，不只看主题是否相近。
@@ -208,6 +230,7 @@ cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑�
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
 - 不启动 daemon、实时 watcher 或 dashboard，不联网，不修改 transcript、技能或运行时目录。
 - 不根据一次低频或无记录结论自动降级、合并、归档或删除技能。
+- 周检脚本只维护观察、决定和执行批次状态；它不替用户批准、修改、提交、推送或同步技能。
 
 ## 输出
 
@@ -246,3 +269,4 @@ cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑�
 - 如果路径、同步方式或启用链路变化，先更新 [references/skill-hygiene.md](references/skill-hygiene.md) 和脚本，再同步这里。
 - 如果本地目录方案变化，先改脚本和参考文件，再同步这里。
 - 如果以后接 automation，优先复用现有 CLI 入口，不把调度信息写进 `SKILL.md`。
+- 周检自动任务应回到当前任务执行 `scan`、`next-question` 和逐条决定，不另建独立周报任务。

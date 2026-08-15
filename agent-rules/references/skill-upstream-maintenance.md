@@ -197,4 +197,11 @@ python <script> record-review --state <reports-root>/state.json `
 
 ## 每周自动化任务
 
-自动化每周六 14:00（Asia/Shanghai）运行。任务必须先读全局规则、`agent-rules`、`skill-creator` 和 `web-access`，再执行 `weekly-run`。它可以准备隔离候选和测试，但不得自行批准、应用、提交或推送。提醒中给出摘要、异常和本地报告路径。
+自动化每周六 14:00（Asia/Shanghai）回到同一个用户任务运行，不再保留职责重叠的独立上游周报任务。
+统一入口是 `skill-check/scripts/run_weekly_skill_review.py scan`；它会调用这里的 `weekly-run`，再合并目录健康、
+历史使用和疑似漏用结果。完整队列、状态和一次一问协议见
+`../../skill-check/references/weekly-review.md`。
+
+任务必须先读全局规则、`skill-check`、`agent-rules`、`skill-creator` 和 `web-access`。它可以在日期报告
+目录中准备、评估和测试隔离候选，但用户逐项批准以及最终执行确认前，不得应用、提交、推送或同步。
+每次只展示一项问题；用户不需要阅读完整周报，报告路径只保留为可核验证据。

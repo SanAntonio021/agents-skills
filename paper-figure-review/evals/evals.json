@@ -8,23 +8,23 @@
     },
     {
       "id": "redraw-data-plot-from-csv",
-      "prompt": "我有一组 BER 随 SNR 变化的数据，想重画成 IEEE 单栏论文图，并导出 PDF 和 PNG。",
-      "expected_output": "要求读取原始数据，使用 IEEE 单栏尺寸和 Matplotlib 样式，保留重画脚本，导出 PDF/PNG，并说明坐标轴、单位、图例和黑白可读性。"
+      "prompt": "CSV 里有 CH1/CH2 两路 BER 随 SNR 的数据，纵轴要用 log scale，还要画 2e-2 的 SD-FEC 阈值。请重画成 IEEE 单栏图，先给我最终尺寸预览，再导出 PDF/SVG/PNG。",
+      "expected_output": "读取原始数据后使用 scripts/ieee_plot_style.py 的 use_ieee_single_column_style、repair_single_column_figure、preflight_single_column_figure 和 export_ieee_single_column；采用 3.5 in、8 pt 衬线字体、四边 0.7 pt 黑框、向内刻度和 3 pt 可见墨迹留白；SNR 是连续物理横轴，因此显式选择 grid_mode=major_xy，只画横纵主网格，对数 BER 轴不画次网格和次刻度；CH1/CH2 先按当前论文角色生成候选配色并用 marker/线型冗余区分，2e-2 阈值用黑色，并用 place_reference_line_label 在框内右端贴线标注而不占用图例；先写 drafts/，用户确认配色与最终尺寸预览后才冻结 color map 并 formal 导出；保留脚本、profile 和 manifest。"
     },
     {
       "id": "multi-panel-exact-size-plot-profile",
       "prompt": "我要把 IEEE 双栏图里的一行放 3 个数据子图，每个子图需要保持真实物理宽度，后面还要在 PPT 里拼版。你帮我重画时顺便把图的大小、坐标轴区域、轴题距离、刻度数字距离、图例位置和导出 dpi 都记录下来。",
-      "expected_output": "应先说明单张子图尺寸要由目标双栏宽度、子图数量、间距和高宽比反推，不能把某一次的三联图尺寸当作通用 IEEE 标准；使用或建议使用 scripts/ieee_plot_style.py 中的 compute_panel_size、apply_axes_box、apply_compact_axis_spacing、apply_ieee_grid 和 save_exact_size_figure；明确 exact-size 导出应使用 bbox_inches=None 和 pad_inches=0.0；要求在项目内保存 plot profile，记录 figsize、subplots_adjust、labelpad、tick pad、legend anchor、字体、线宽、坐标范围、源脚本、数据文件、输出文件和导出后有效 dpi。"
+      "expected_output": "应先说明单张子图尺寸要由目标双栏宽度、子图数量、间距和高宽比反推，不能把某一次的三联图尺寸当作通用 IEEE 标准；使用或建议使用 scripts/ieee_plot_style.py 中的 compute_panel_size、apply_axes_box、apply_compact_axis_spacing、带显式 grid_mode 的 apply_ieee_grid 和 save_exact_size_figure；明确 exact-size 导出应使用 bbox_inches=None 和 pad_inches=0.0；要求在项目内保存 plot profile，记录 figsize、subplots_adjust、labelpad、tick pad、legend anchor、字体、线宽、坐标范围、grid mode、源脚本、数据文件、输出文件和导出后有效 dpi。"
     },
     {
-      "id": "scis-compact-single-column-profile",
-      "prompt": "我已经确认图 2--4 要用紧凑单栏风格：左侧不要大白边，纵轴数字右对齐且贴近坐标轴，CH1/CH2 用绿色圆点和紫色方点，阈值用黑色。请按以后可复用的模板重画。",
-      "expected_output": "应读取 references/scis-compact-single-column.md，并将 assets/scis_compact_single_column.py 复制到项目绘图目录使用；采用 3.50 in、Times New Roman 8 pt、0.7 pt 黑色四边框、四边向内刻度、指定的双层网格和 exact-size 600 dpi 导出；完成全部标签和图例后调用 align_y_tick_labels() 与 place_ylabels_clear_of_ticks()，单面板再调用 fit_outer_label_margins(fig, ax, target_points=3.0) 后重复对齐，使左、下外白边相等；在项目 plot profile 中记录实际图高、axes_box、颜色角色、纵轴间距和导出设置，不把单张图的坐标范围或标注文本固定进模板。"
+      "id": "stacked-threshold-delta-single-column",
+      "prompt": "请把一个阈值曲线面板和一个 Delta-MER 分布面板上下堆叠成 IEEE 单栏图。(a)(b) 放在各面板下方居中，两个纵轴刻度数字和轴题要对齐，端点 marker 不能跑到框外。",
+      "expected_output": "使用唯一单栏 helper，不再复制旧 SCIS 模板；采集序号仍是数值坐标，因此显式选择 grid_mode=major_xy，同时画横纵主网格且不画次网格，不能只保留一个方向的主网格；若上下轴属于同一量纲族但刻度字符串宽度差异明显，统一提出显示倍率并写进轴题，刻度使用短数字且保持右边缘对齐，不用前导零补宽；先设置数据、标签和必要坐标约束，再由 repair_single_column_figure 自动统一字体、四边框、向内刻度、显示坐标中的纵轴刻度与轴题对齐、面板标签间距、按显示坐标收敛到 4 pt 的上下内容安全间距、3 pt 外边界和未锁定坐标的 marker 留量，不把某个 hspace 当作跨图固定值；阈值和 Delta 默认黑色；明确锁定坐标且 marker 无法完整显示时输出结构化冲突并阻止 formal；先生成 draft，人工检查最终尺寸后再 formal。"
     },
     {
       "id": "data-plot-visual-encoding-priority",
       "prompt": "我有 6 条 BER 曲线、2 条阈值线和一块置信区间，想画成 IEEE 单栏图。配色和线型应该怎么定？",
-      "expected_output": "先按通用优先级表把数据分成主曲线、阈值线和置信区间，并读取 references/data-plot-color-priority.md 建立当前论文的 figure color map；主曲线使用一级强调色，例如默认 blue #0072B2，二级强调可用 vermillion #D55E00，三级强调可用 bluish green #009E73，参考/基线用 dark gray #4C4C4C，阈值/规范线用 medium gray #8A8A8A；不同论文可以重新定色，同一篇论文内相同优先级应一致；同时用线型、marker 或直接标注冗余区分；置信区间用主线同色浅色透明填充；检查灰度、色盲和最终单栏尺寸可读性。"
+      "expected_output": "读取 references/data-plot-color-priority.md，并用 propose_figure_color_map 为六个无序类别提出 Tol bright 候选；六条曲线同时分配不同 marker/线型，阈值线用黑色并在框内空白端贴线标注、不列入图例，置信区间用对应主线同色低 alpha；不声称 IEEE 有唯一官方 HEX 色表；先生成最终 3.5 in draft 做灰度、色盲和图例复核，用户确认一次后用 freeze_figure_color_map 冻结全文映射，未确认不能 formal。"
     },
     {
       "id": "system-diagram-technical-review",

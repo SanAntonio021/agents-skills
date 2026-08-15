@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-07-22`
-- 说明：Galaxy-Dawn paper-self-review 只提供审计方法；本地论文图件规范、重画脚本和 IEEE 约束独立维护。
+- 最近来源登记审核：`2026-08-14`
+- 说明：Galaxy-Dawn 只提供审计方法；K-Dense 只提供角色配色、导出 manifest 和预检方法。IEEE 单栏几何、字体、修复算法和正式导出闸门由本地独立维护。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -44,3 +44,39 @@
 - `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
+
+## paper-figure-review-k-dense-scientific-visualization
+
+- 仓库：https://github.com/K-Dense-AI/claude-scientific-skills.git
+- 当前上游路径：`scientific-visualization`
+- 接受时上游路径：`scientific-visualization`
+- 已接受提交：`13385c7c4db02fdcc84a020752c07cce91ef780e`
+- 基线类型：`selective`
+- 许可证：`MIT`
+
+### 证据
+
+- 本地 `SKILL.md`、`THIRD_PARTY_NOTICES.md` 和测试记录了吸收边界。
+- 本地证据文件：`paper-figure-review/scripts/ieee_plot_style.py`
+
+### 已吸收
+
+- 按数据关系选择定性、连续和发散色表的路由思路。
+- exact-size 导出后记录物理尺寸、文件哈希和 manifest 的方法。
+- 字体、线宽、灰度和导出前预检的结构化报告方法。
+
+### 明确不吸收
+
+- Arial、开放上/右边框、向外刻度、`bbox_inches="tight"` 和固定外边距。
+- 任何会替代本地 3 pt 可见墨迹边界、纵轴显示坐标对齐或 formal 确认闸门的全局 rcParams。
+
+### 跟踪范围
+
+- `scientific-visualization`
+- `scripts/color_palettes.py`
+- `scripts/palette_audit.py`
+- `scripts/figure_export.py`
+
+### 许可证监控
+
+- `LICENSE`

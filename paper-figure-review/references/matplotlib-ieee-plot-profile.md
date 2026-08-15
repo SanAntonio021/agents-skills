@@ -31,7 +31,7 @@ IEEE 常用起点：
 
 1. 先看当前论文或项目是否已有统一字体和版式。
 2. 若用户未指定，默认字体可用 `Times New Roman`。
-3. 单栏图文字通常从 `8 pt` 起步；若图较稀疏，可再放宽到 `9-10 pt`。
+3. 新 IEEE 单栏数据图的统一基线是所有可见文字 `8 pt`；刻度数字、科学计数倍率、负号、上标和 mathtext 也使用同一已批准字体族，不允许静默回退；若目标刊物另有明确要求，在 profile 中记录覆盖原因。
 4. 若子图需要后期拼版，先固定真实宽度，再调 `axes_box`、`labelpad` 和 legend 位置；不要靠额外白边把图片“撑到”目标宽度。
 
 示例：如果一张双栏图需要在同一行放 3 张数据子图，并给子图之间留总间距，则可以得到约 `2.30 in` 的单张子图宽度。但这个数值只属于该图组，不是三联图通用标准。
@@ -44,7 +44,7 @@ IEEE 常用起点：
 fig.savefig(path, dpi=600, bbox_inches=None, pad_inches=0.0)
 ```
 
-`bbox_inches="tight"` 会根据可见元素重新裁剪外框。它适合单图预览或普通投稿图，但不适合需要保持固定宽度的拼版子图。
+`bbox_inches="tight"` 会根据可见元素重新裁剪外框。新 IEEE 单栏数据图的 draft 和 formal 都不用它；普通旧图预览只有在不要求精确物理尺寸时才可显式使用。
 
 如果一组并列子图的纵轴标题长度不同，不要只复制同一组 `label_coords` 数值。最终应以可见边界对齐为准，必要时分别微调纵轴标题位置，再检查导出的像素边界或最终拼版效果。
 
@@ -52,34 +52,41 @@ fig.savefig(path, dpi=600, bbox_inches=None, pad_inches=0.0)
 
 ```python
 from ieee_plot_style import (
-    compute_panel_size,
-    apply_axes_box,
-    apply_compact_axis_spacing,
-    apply_ieee_grid,
-    save_exact_size_figure,
+    export_ieee_single_column,
+    propose_figure_color_map,
+    repair_single_column_figure,
+    use_ieee_single_column_style,
 )
 
-figsize = compute_panel_size(
-    total_width="double",
-    ncols=3,
-    total_gutter_in=0.26,
-    height_ratio=0.74,
+use_ieee_single_column_style()
+fig, ax = plt.subplots(figsize=(3.5, 2.45))
+# Draw data and set all labels, limits, ticks, annotations, and legends first.
+proposal = propose_figure_color_map(["method_a", "method_b"])
+repair_single_column_figure(fig, [ax], grid_mode="major_xy")
+export_ieee_single_column(
+    fig,
+    "figure_panel",
+    output_dir="exports",
+    mode="draft",
+    profile_path="plot_profile.json",
+    grid_mode="major_xy",
 )
-fig, ax = plt.subplots(figsize=figsize)
-apply_axes_box(fig, left=0.16, right=0.97, bottom=0.15, top=0.955)
-apply_compact_axis_spacing(ax, xlabel_pad=0.8, ylabel_pad=0.8)
-apply_ieee_grid(ax)
-save_exact_size_figure(fig, "figure_panel", formats=("pdf", "png"))
 ```
 
-在没有项目级网格规范时，`apply_ieee_grid()` 的推荐起点如下；它不是 IEEE 强制规范，目标期刊、项目既有样式或用户要求可以覆盖：
+需要双栏或后期拼版的独立面板时，旧 `compute_panel_size()` 和 `save_exact_size_figure()` 仍可显式使用；它们不属于严格单栏 formal 闸门。
 
-```text
-major: #B8B8B8, 0.35 pt, long dash (5, 3), alpha=0.52
-minor: #D6D6D6, 0.35 pt, dotted, alpha=0.40
-```
+在没有项目级网格规范时，只在完整横纵主网格和无网格之间选模式：
 
-主、次网格采用相同线宽，使用颜色、透明度和线型形成层次。无论是否覆盖，最终值都应写入图组的 `grid` profile 字段。
+| 图形语义 | 模式 | 网格 |
+| --- | --- | --- |
+| 普通数值坐标图，包括连续量、采集序号和离散工作点 | `major_xy` | 横纵主网格 |
+| 类别图、热图、图像或网格会增加干扰的面板 | `none` | 无网格 |
+
+主网格为 `#B8B8B8`、`0.35 pt`、长虚线 `(5, 3)`、`alpha=0.52`。新图默认不画次网格；对数轴只画 decade 主网格并关闭次刻度。只有复现旧图时才使用 `legacy_major_minor_xy`，同时在 `grid` profile 字段记录理由。
+
+上下堆叠的面板若表达同一量纲族但默认刻度字符串长度差异明显，应优先统一显示倍率并把倍率写进各自轴题，例如都写为 `($\times 10^{-3}$)`，刻度只显示 `5, 10, ...` 与 `1, 2, ...`。保留原始数据语义，不用前导零填宽；随后仍按显示坐标对齐刻度右边缘和轴题右边缘。
+
+上下堆叠图的 `hspace` 只作为初始布局参数，不作为最终视觉规范。`repair_single_column_figure()` 会测量上方面板最低可见内容到下一坐标框上边界的显示距离，并收敛到 `4 pt`。profile 同时记录最终 `axes_box_gap_pt` 和 `content_clearance_pt`，这样标签或图高变化后仍能判断是否真正紧凑。
 
 ## plot profile 字段
 
@@ -98,13 +105,19 @@ minor: #D6D6D6, 0.35 pt, dotted, alpha=0.40
 | font | 字体族、坐标轴字体、刻度字体、图例字体 |
 | line_marker | 线宽、线型、marker、marker 大小 |
 | color_map | 每种数据角色对应颜色 |
+| palette_status | `proposed` 或 `confirmed`；formal 必须为 `confirmed` |
+| palette_confirmation | `confirmed_by=user` 和 `confirmed_at` |
 | axis_range_ticks | `xlim`、`ylim`、major/minor ticks |
 | axis_spacing | `labelpad`、tick pad、tick direction |
+| stacked_spacing | 上下相邻面板的 `axes_box_gap_pt`、`content_clearance_pt` 和 `4 pt` 目标；不要只记录初始 `hspace` |
 | visual_alignment | 并列子图左/右可见边界是否一致，是否单独调整过 `yaxis.set_label_coords(...)` |
 | legend | `loc`、`bbox_to_anchor`、字体、列数、handle 参数 |
-| grid | major/minor grid 颜色、线宽、透明度和线型 |
+| grid | `mode`、主网格参数；旧图启用次网格时同时记录理由和次网格参数 |
 | export | 格式、dpi、fonttype、是否 exact-size |
 | assembly_check | 插入 PPT/PDF 后的有效 dpi 和物理尺寸 |
+| visual_review_approval | 用户在最终尺寸预览后确认的 `reasons`、`approved_by=user` 和 `approved_at` |
+
+Matplotlib `>=3.5,<4.0` 是已验证范围。范围外版本允许生成 draft；用户检查最终尺寸预览后，在 `visual_review_approval.reasons` 中同时记录 `final_size_preview` 和 `unvalidated_matplotlib_version`，才允许 formal。
 
 ## 距离参数怎么看
 

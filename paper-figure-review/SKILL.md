@@ -63,38 +63,35 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 
 ### 小型数据图网格推荐基线
 
-对没有项目级网格规范的小型 IEEE 数据图，`apply_ieee_grid()` 默认采用一套克制的双层网格：
+对没有项目级网格规范的小型 IEEE 数据图，网格必须作为完整笛卡尔参考系出现或整体关闭，不能只画一个方向：
 
-- 主网格：`#B8B8B8`，`0.35 pt`，长虚线 `(5, 3)`，`alpha=0.52`
-- 次网格：`#D6D6D6`，`0.35 pt`，点线，`alpha=0.40`
+| 图形语义 | `grid_mode` | 可见网格 |
+| --- | --- | --- |
+| 普通数值坐标图，包括连续量、采集序号和离散工作点 | `major_xy` | 横纵轴主网格 |
+| 类别图、热图、图像或网格会增加干扰的面板 | `none` | 无笛卡尔网格 |
 
-主、次网格使用相同线宽，靠颜色、透明度和线型形成层次，避免背景线条压过数据。它是可复用的工作基线，不是 IEEE 强制规范；目标期刊、项目既有样式或用户明确指定的参数优先。实际导出后仍需在 plot profile 中记录最终采用的网格参数。
+主网格统一为 `#B8B8B8`、`0.35 pt`、长虚线 `(5, 3)`、`alpha=0.52`。次网格不进入新单栏图的默认路由；对数轴只画 decade 主网格，次网格和次刻度默认关闭。旧图必须复现双层网格时才显式使用 `legacy_major_minor_xy`，并在 plot profile 中记录理由。
 
 更细的检查项见 `references/ieee-figure-review-checklist.md`。
 
 ## 单栏数据图基线
 
-单栏数据图默认按下面顺序处理：
+未来 IEEE 单栏 Matplotlib 数据图只以 `scripts/ieee_plot_style.py` 为规范实现。先把
+`assets/ieee_single_column_data_plot.py` 复制到项目绘图目录作为调用骨架，不在项目里再复制一套
+字体、边框、网格或留白常量。
 
-1. 先确认是否已有项目字体、图例样式和线宽规范；有的话优先沿用。
-2. 若用户未指定字体，也没有现成项目规范，默认使用 `Times New Roman`。
-3. 单张独立单栏图按 `3.5 in` 宽导出；需要后期在 PPT、Illustrator 或 LaTeX 中拼版时，保持真实物理尺寸，不靠额外白边补宽度。
-4. 精确拼版导出优先使用 `save_exact_size_figure()`，并保持 `bbox_inches=None`、`pad_inches=0.0`；不要对最终拼版子图使用 `bbox_inches="tight"`。
-5. 密集单栏图通常可从 `8 pt` 起步，再按最终可读性微调；不要机械放大留白代替调整轴题、刻度和图例布局。
-6. 一组并列子图要检查可见边界是否一致，尤其是左侧边界。纵轴标题不同宽度时，应按最终可见效果微调 `yaxis.set_label_coords(...)`，不要只因为两张图用了相同数值就视为对齐。
+1. 调用 `use_ieee_single_column_style()`：画布宽 `3.5 in`，所有可见文字 `8 pt` 衬线字体，四边 `0.7 pt` 黑框，四边向内刻度。字体统一范围包括正文标签、图例、刻度数字、负号、科学计数倍率、上标和 Matplotlib mathtext；不能只检查外层 `Text` 对象后允许公式字形回退到 DejaVu 或 Computer Modern。
+2. Times New Roman 优先从本机查找并进程级注册；四个字形文件不完整时使用技能内固定 SHA-256 的 Liberation Serif 2.1.5，不修改系统字体目录，不静默回退。
+3. 数据、标签、图例和坐标范围设置完成后，在完整横纵主网格 `major_xy` 与无网格 `none` 之间显式选择，再调用 `repair_single_column_figure()`；它修字体、框线、刻度、语义网格、纵轴显示坐标对齐、面板标签间距、上下堆叠面板的 `4 pt` 内容安全间距、3 pt 可见墨迹留白和未锁定坐标的 marker 留量。
+4. 调用 `preflight_single_column_figure()` 检查字体完整性、mathtext 无回退配置、尺寸、所选网格模式、文字碰撞、裁切、越界 marker、锁定坐标冲突和最终视觉确认状态；导出后继续检查 PDF/SVG 实际字体名。复杂图无法在不改变数据语义的前提下修复时，保留结构化冲突报告。
+5. `export_ieee_single_column(mode="draft")` 只写入 `drafts/`；未确认配色、未完成人工复核或未验证 Matplotlib 版本都可以先出 draft。
+6. `mode="formal"` 只在预检通过、配色已由用户确认并冻结、字体已解析，且 plot profile 记录了最终尺寸视觉确认原因和时间后写入正式目录。PDF/SVG/PNG 始终使用 `bbox_inches=None`、`pad_inches=0.0`，并在 manifest 中记录物理尺寸和 SHA-256。
 
-需要记录可复现参数时，继续看 `references/matplotlib-ieee-plot-profile.md`。
+执行细节见 `references/ieee-single-column-data-plot.md`；需要记录可复现参数时，继续看 `references/matplotlib-ieee-plot-profile.md`。
 
-### SCIS 派生的紧凑单栏 profile
+### 旧 SCIS profile
 
-当用户已经选定“紧凑单栏、无人为外白边、刻度紧贴坐标轴”的视觉基线时，先读 `references/scis-compact-single-column.md`，再将 `assets/scis_compact_single_column.py` 复制到项目的绘图脚本目录并按数据语义填写。
-
-- 该 profile 固定几何、字体、边框、刻度、网格、色彩角色和 exact-size 导出；图高、坐标范围、图例、标注和数据语义仍按当前图决定。
-- 先完成所有刻度、标签和图例设置，再调用模板中的 `align_y_tick_labels()` 和 `place_ylabels_clear_of_ticks()`；不要手填纵轴标题的最终横坐标。
-- 单面板图需要进一步压缩外白边时，先完成一次上述对齐，再调用 `fit_outer_label_margins(fig, ax, target_points=3.0)`，随后重复两次对齐函数；这样纵轴标题左侧和横轴标题下方保留相同的 `3 pt` 外边距。
-- `#009E73` 圆点和 `#CC79A7` 方点是两个并列数据通道的默认角色色；阈值、差值和参考线默认黑色。若当前论文已有角色色表，优先保留其语义映射。
-- 该 profile 从 SCIS proof 中观察到的紧凑几何抽象而来，不声称获得了该论文的原始绘图参数，也不替代目标期刊要求。
-- 在当前论文的 plot profile 中记录实际 `axes_box`、纵轴对齐间距、色彩映射、网格和导出设置；不要把本模板的图高或数据标签写成跨项目固定标准。
+`assets/scis_compact_single_column.py` 和 `references/scis-compact-single-column.md` 只用于解释既有图件和只读回归，不再进入新图默认路由。不要把其中固定的 CH1/CH2 绿色、紫色映射带到下一篇论文。
 
 ## 审查流程
 
@@ -136,11 +133,13 @@ figure_id: Fig. X
 有原始数据时，优先用 Python/Matplotlib 重画：
 
 1. 读取原始数据，不手动改数据点。
-2. 使用 `scripts/ieee_plot_style.py` 中的 `use_ieee_style()`、`ieee_figure_size()`、`compute_panel_size()`、`save_ieee_figure()` 和 `save_exact_size_figure()` 等辅助函数。
-3. 统一字体、线宽、标记、图例、坐标轴单位和输出尺寸；配色常量应与 `references/data-plot-color-priority.md` 一致。
-4. 先按数据角色确定视觉编码；颜色应色盲友好，并用线型、标记或纹理做冗余区分。
-5. 导出 PDF/EPS 作为投稿主文件，必要时同时导出 PNG/TIFF 预览。
-6. 保留重画脚本、数据来源说明和 plot profile，保证论文修改时可复现。
+2. 单栏图使用 `use_ieee_single_column_style()`、`repair_single_column_figure()`、`preflight_single_column_figure()` 和 `export_ieee_single_column()`；`use_ieee_style()`、`save_ieee_figure()` 只为旧通用脚本保留。
+3. 第一次为一篇论文出图时，用 `propose_figure_color_map()` 按数据角色给出候选，再由用户确认一次并用 `freeze_figure_color_map()` 冻结全文映射。
+4. 无序类别使用 Tol high-contrast、bright 或 muted，并配合线型和 marker；连续量使用 `cividis` 或 `viridis`；阈值、参考线和普通 Delta 标注默认黑色。
+5. 先生成 draft 并按最终 `3.5 in` 尺寸检查；只有 profile 中记录配色确认和视觉确认后才生成 formal PDF/SVG/PNG。
+6. 保留重画脚本、数据来源说明、plot profile 和导出 manifest，保证论文修改时可复现。
+
+阈值、规范线和普通参考线统一贴线标注：默认放在坐标框内的右端、略高于线条，且不单独占用图例；右端拥挤时沿线移动到空白端并保持相同规则。
 
 如果用户只给截图，先说明无法保证数据精确；只有用户接受近似复刻时，才输出 `approximate_redraw`。
 
@@ -154,14 +153,16 @@ figure_id: Fig. X
 2. 明确同一行子图数量、子图间距、是否要给外部图题或手动标注留空间。
 3. 用 `compute_panel_size(total_width, ncols, total_gutter_in, height_ratio)` 计算单张子图尺寸；`height_ratio` 根据数据密度和最终可读性决定。
 4. 如果子图要在 PPT、Illustrator 或 LaTeX 中精确拼版，保存时用 `save_exact_size_figure()`，它使用 `bbox_inches=None` 和 `pad_inches=0.0`。不要用 `bbox_inches="tight"` 做最终拼版图，因为它会改变真实外框尺寸。
-5. 用 `apply_axes_box()`、`apply_compact_axis_spacing()` 和 `apply_ieee_grid()` 统一坐标轴区域、轴题距离、刻度数字距离和网格样式。
+5. 用 `apply_axes_box()`、`apply_compact_axis_spacing()` 和带显式 `grid_mode` 的 `apply_ieee_grid()` 统一坐标轴区域、轴题距离、刻度数字距离和网格样式。
 6. 在项目内保存 plot profile。profile 至少记录 `figsize`、`subplots_adjust`、`labelpad`、tick pad、legend anchor、线宽、字体、坐标范围、输出格式、dpi、源脚本、数据文件和输出文件。
 
-具体记录模板见 `references/matplotlib-ieee-plot-profile.md`。尺寸、间距等示例数值仍只属于当前图组；网格可先采用上面的推荐基线，再按目标期刊、项目样式或用户要求覆盖。
+上下堆叠图不固定某个 `hspace`。`repair_single_column_figure()` 按显示坐标测量上方面板最低可见内容（横轴刻度、轴题和面板编号）到下一坐标框上边界的距离，并自动收敛到 `4 pt`；这样图高或标签长度变化时仍保持紧凑且不遮挡。
+
+具体记录模板见 `references/matplotlib-ieee-plot-profile.md`。尺寸、间距等示例数值仍只属于当前图组；网格模式在 `major_xy` 与 `none` 之间选择，并在 profile 中记录。
 
 ## 数据图视觉编码优先级
 
-数据图先按信息角色定视觉编码，再定具体颜色。不要把某一篇论文里的 blue/orange/gray 经验写成通用答案；但同一篇论文内部应建立稳定的优先级色表，例如一级强调、二级强调、参考/基线、辅助元素。颜色只是分类、顺序、差异或强调的一层编码，不能承担全部区分任务。需要具体色表时，先读 `references/data-plot-color-priority.md`。
+数据图先按信息角色定视觉编码，再定具体颜色。IEEE 没有唯一官方 HEX 色表，不要把某一篇论文里的 blue/orange/gray 经验写成通用答案。颜色只是分类、顺序、差异或强调的一层编码，不能承担全部区分任务。需要具体色表时，先读 `references/data-plot-color-priority.md`。
 
 决策顺序：
 
@@ -181,11 +182,11 @@ figure_id: Fig. X
 | 拟合线、趋势线 | 与原始数据关联的线型或透明度 | 主数据同色的深浅版本，或灰色 | 不新增一个独立语义色 |
 | 置信区间、误差带、工作区间 | 半透明填充、灰阶填充、边界线 | 主线同色浅色透明填充，或浅灰填充 | 透明度不能遮挡原始数据 |
 | 有序强度、热力图、谱图 | 连续色图 + colorbar | `viridis`、`cividis`、`gray` 等感知均匀 sequential colormap | 避免 `jet`、rainbow 和红绿单通道 |
-| 正负偏差、增益/损耗差值 | 以中心值分开的 diverging colormap | 蓝-红、蓝-橙或灰-紫等色盲友好组合 | 必须明确中心值，如 `0`、`baseline` 或 `no change` |
+| 正负偏差、增益/损耗差值热图 | 以中心值分开的 diverging colormap | Tol `nightfall` | 必须明确中心值，如 `0`、`baseline` 或 `no change`；普通 Delta 数值或参考线仍用黑色 |
 | 多子图共享变量 | 同一变量同一颜色/线型/marker | 沿用全篇色表 | 不因某个子图曲线数量不同而重新排序颜色 |
 | 双 Y 轴图 | 轴题、刻度、对应 spine 和数据关联 | 可让左右轴颜色跟对应数据一致 | 上下边框通常保持黑色，避免图框过花 |
 
-缺少项目色表时，按 `references/data-plot-color-priority.md` 建立当前论文的 `figure color map`。候选色作为当前论文的配色起点；当前论文一旦把某个颜色分配给一级强调、二级强调或参考/基线，就应在全文图件中复用。
+缺少项目色表时，调用 `propose_figure_color_map()` 建立候选 `figure color map`。候选未确认只能出 draft；用户确认一次后调用 `freeze_figure_color_map()`，同一物理变量的颜色、线型和 marker 在全文保持不变。
 
 出图前检查：转灰度后能区分；色盲场景不依赖红绿差异；最终单栏/双栏尺寸下线型和 marker 仍可见；图例只负责识别数据类别，拟合方法、`R^2` 和实验条件优先放图注或正文。
 
@@ -284,8 +285,8 @@ figure_id: Fig. X
 ## 来源与吸收边界
 
 - IEEE 图件格式以 IEEE Author Center 和目标期刊/会议说明为最终准绳。
-- K-Dense `scientific-visualization` 的 publication-ready、journal formatting、colorblind-safe、multi-panel、export 思路可作为绘图底座。
-- K-Dense `matplotlib` 的细粒度绘图控制可作为数据图重画底座。
-- K-Dense `venue-templates` 的 IEEE 投稿边界可作为辅助参考。
+- K-Dense `scientific-visualization` 固定到提交 `13385c7c4db02fdcc84a020752c07cce91ef780e`；只吸收角色配色、精确尺寸导出 manifest 和预检方法，不复制其 Arial、开放坐标轴、向外刻度或外边距参数。
+- Paul Tol 的 high-contrast、bright、muted 和 nightfall 静态色值用于候选配色；不把颜色当作唯一识别编码。
+- Liberation Serif 2.1.5 是 Times New Roman 缺失时的固定备用字体，来源提交 `49e1358e4017577429c9f8c39a3e6e879093264e`，按 SIL OFL 1.1 分发；详情见 `THIRD_PARTY_NOTICES.md` 和 `assets/fonts/manifest.json`。
 - Galaxy-Dawn `claude-scholar` 的 paper-self-review 审计思路（主张与证据对齐、避免超出证据强度的措辞、结构化核验记录）吸收进「数据溯源与图-表-文一致性」一节。
 - 不吸收自由生成型 `generate-image` / `infographics` 风格作为论文图默认风格。

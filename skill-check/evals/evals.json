@@ -125,6 +125,54 @@
         "输出不会要求纯 eval 或不影响运行行为的说明制造无意义 `SKILL.md` 改动。",
         "输出最后使用全新只读会话验证关键行为，不直接修改运行时目录。"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "我怀疑本地下载了很多 skill，但半年里可能一直没触发。请只读扫描 Codex 当前、归档会话和 Claude projects/telemetry，告诉我哪些有真实使用证据、哪些历史内没看到，并保留可核验来源。",
+      "expected_output": "运行按需历史使用审计，覆盖全部默认历史根；把 Claude Skill 工具调用、Claude 启动候选和 Codex 显式点名分开，并输出 usage 子目录下的结构化报告。",
+      "files": [],
+      "expectations": [
+        "输出覆盖 Codex `sessions` 与 `archived_sessions`，以及 Claude `projects` 与 `telemetry`。",
+        "输出使用 `已用` 和 `历史内未见使用` 分类，不把技能目录存在当成使用证据。",
+        "证据源只保留根代号、POSIX 相对路径和行号，不复制真实 transcript。",
+        "输出明确说明扫描范围外或未落盘历史不在结论范围。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Claude telemetry 里每次启动都有 tengu_skill_loaded。请核对这是否说明技能真正用过；真正调用 Skill 工具的判断条件是什么？",
+      "expected_output": "明确 `tengu_skill_loaded` 只算启动候选，不计使用；仅把 assistant 的 Skill tool_use 且 input.skill 非空算 Claude 实际调用。",
+      "files": [],
+      "expectations": [
+        "输出不会把 `tengu_skill_loaded` 计入 `已用`。",
+        "输出要求 `assistant.message.content[].type == tool_use`。",
+        "输出要求 `name == Skill` 且 `input.skill` 非空。",
+        "输出允许单独报告启动候选加载次数。"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Codex 记录里没看到 skill-check 被调用，所以它一定从未触发，对吗？另外帮我找疑似该触发却漏用的请求。",
+      "expected_output": "拒绝把无 Codex 记录解释为从未使用；说明当前只能稳定识别真实用户消息中的显式技能点名，并用 name/description 规则给出有上限的疑似漏用候选。",
+      "files": [],
+      "expectations": [
+        "输出明确写出 Codex 隐式 Skill 调用事件当前不可稳定观测。",
+        "输出包含“未见记录不等于实际未使用”的解释边界。",
+        "疑似漏用筛选不调用模型且默认最多 50 条。",
+        "输出不会自动修改技能 description 或触发条件。"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "做技能使用审计，但报告不能保存任何对话片段；再把无使用证据的技能和昨天目录审计里的 duplicate/overlap findings 求交，列可能冗余项。不要删除或归档。",
+      "expected_output": "使用 `--no-excerpt` 和 `--hygiene-summary`；可能冗余只来自无使用证据与既有重复/重叠 finding 的交集，并保持人工复核、只读边界。",
+      "files": [],
+      "expectations": [
+        "输出使用 `--no-excerpt`，报告不包含 excerpt 字段。",
+        "输出不会仅凭低频或无记录就标记可能冗余。",
+        "输出把可能冗余表述为人工复核候选。",
+        "输出不会移动、归档、删除或改写任何技能。"
+      ]
     }
   ]
 }

@@ -1,0 +1,22 @@
+[
+  {"query":"监测一下本地技能的触发情况，我感觉下载了很多 skill 但一直没有用过。","should_trigger":true},
+  {"query":"统计 Codex 和 Claude 历史里哪些技能真的调用过，哪些半年内没看到使用证据。","should_trigger":true},
+  {"query":"帮我找可能应该触发 skill 却漏触发的历史请求，只读分析，不要自动改 description。","should_trigger":true},
+  {"query":"Claude telemetry 里的 tengu_skill_loaded 能算技能实际使用吗？请审计真实 Skill 工具调用。","should_trigger":true},
+  {"query":"列出 Codex 当前会话和 archived_sessions 里用户显式点名过的本地技能。","should_trigger":true},
+  {"query":"把一直未见使用的技能与目录审计的 duplicate 和 overlap 结果求交，看看可能冗余项。","should_trigger":true},
+  {"query":"我改了一个技能但 Codex 还是旧行为，检查源码、CC Switch 和双端运行时是否同步。","should_trigger":true},
+  {"query":"CC Switch 报 Skill 不存在于 SSOT，核对数据库 directory 和实际 SKILL.md。","should_trigger":true},
+  {"query":"当前 Codex 到底加载了哪些 skills？也检查 .system 和插件缓存有没有同名冲突。","should_trigger":true},
+  {"query":"检查本地 skill 目录有没有空技能、坏链接、name 与目录名不一致或真正重复。","should_trigger":true},
+  {"query":"给我的 Python 服务加 Prometheus 指标，监测请求次数、延迟和错误率。","should_trigger":false},
+  {"query":"监控 Windows CPU、内存和磁盘温度，超过阈值时发通知。","should_trigger":false},
+  {"query":"这个 Claude Code 插件运行时崩溃了，请分析堆栈并修复 TypeScript 代码。","should_trigger":false},
+  {"query":"从 GitHub 安装一个公开的 PDF 处理 skill 到 Codex。","should_trigger":false},
+  {"query":"请从零设计一个用于示波器自动测试的新技能，并给它写 SKILL.md。","should_trigger":false},
+  {"query":"论文里这张频谱图线宽太细，请按 IEEE 风格重画并导出 PDF。","should_trigger":false},
+  {"query":"C 盘空间不足，检查哪些缓存可以安全清理，先不要删除。","should_trigger":false},
+  {"query":"帮我总结这篇论文 PDF 的方法、实验设置和主要结论。","should_trigger":false},
+  {"query":"查询今天的飞书日程和未完成任务，整理一份简短摘要。","should_trigger":false},
+  {"query":"把这段英文润色得更自然，保持原意，不要改变技术术语。","should_trigger":false}
+]

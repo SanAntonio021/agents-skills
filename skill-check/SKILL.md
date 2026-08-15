@@ -1,6 +1,6 @@
 ---
 name: skill-check
-description: 检查本地技能目录，确认 Claude/Codex 实际读取哪些技能，发现目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或坏技能，以及源码已改但 cc-switch/运行时目录还没同步的问题。Use when 用户要确认当前加载了哪些 skill、查同名冲突（含 Codex 内置 .system 技能与 cc-switch 版重名）、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清 GitHub 源码、lark 实体层、cc-switch 同步目录和 Claude/Codex 实际读取的技能目录、排查 CC Switch 安装报 `Skill 不存在于 SSOT`、确认“已经改了为什么没生效”，或做只读盘点；prefer this over `agent-rules` when 目标是执行一次具体审计，而不是阅读维护规则。
+description: 检查本地技能目录和历史使用证据，确认 Claude/Codex 实际读取或调用过哪些技能，发现长期未见使用、疑似漏用、可能冗余、目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或源码与运行时未同步。Use when 用户要监测本地技能触发情况、查哪些 skill 一直没触发或可能该触发却没触发、区分 Claude 真正的 Skill 调用与启动时候选加载、确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清源码、lark 实体层、cc-switch 与 Claude/Codex 运行时、排查 `Skill 不存在于 SSOT` 或“已经改了为什么没生效”；prefer this over `agent-rules` when 目标是执行一次具体审计。
 ---
 
 # Skill 目录检查
@@ -19,6 +19,8 @@ description: 检查本地技能目录，确认 Claude/Codex 实际读取哪些�
 - 空技能或坏技能
 - 触发分层是否合理（该点名的没降级、不该降级的被降级）
 - cc-switch 未启用副本、双侧启用不对齐
+- Codex/Claude 历史里哪些技能有实际使用证据、哪些长期未见使用
+- 哪些用户请求疑似应该触发某个技能但未见对应调用证据
 
 ## 本地目录方案
 
@@ -55,6 +57,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 ## 流程
 
 1. 先判断用户到底想查哪一层：
+   - 查“哪些技能真正用过 / 一直没触发 / 是否存在漏触发”时，执行下方“历史使用审计”，不要拿目录存在或启动时候选加载代替使用证据。
    - 查“当前真的加载了哪些 skill”时，优先看 Codex 实际读取的技能目录。
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
    - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
@@ -81,6 +84,38 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
    - 链接或路径失效
    - 空技能或坏技能
 6. 优先看严重问题、建议动作和链接失效，再决定是否把具体修补工作交给 `skill-creator`。
+
+## 历史使用审计
+
+用户要监测技能触发、找长期未用技能或检查触发条件时，先读取
+[references/usage-audit.md](references/usage-audit.md)，再运行：
+
+```powershell
+python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-MM-DD>
+```
+
+默认只读扫描全部可用历史：Codex 的 `sessions`、`archived_sessions`，Claude 的 `projects` 和
+`telemetry`；技能清单覆盖源码、Codex/Claude 运行时、lark 实体层和 Codex 插件缓存。需要隔离测试或
+限定范围时，可重复传入 `--skills-root`、`--codex-sessions-root`、`--claude-projects-root` 和
+`--claude-telemetry-root`；一旦传入某一类自定义根，该类默认根就不再扫描。
+
+固定证据口径：
+
+- Claude 仅把 `assistant.message.content[].name == "Skill"` 且 `input.skill` 非空计为实际调用。
+- Claude `tengu_skill_loaded` 只是启动时候选加载，绝不计为使用。
+- Codex 仅从真实用户记录里的 `$skill-name`、`/skill-name` 或技能 `SKILL.md` 链接识别显式点名。
+- Codex 当前没有稳定的隐式 Skill 调用事件；报告必须写明“未见记录不等于实际未使用”。
+- `疑似漏用` 只由技能名和 `description` 的确定性规则筛选，不调用模型，也不自动改技能。
+- `可能冗余` 只有在传入 `--hygiene-summary` 后，才把“历史内未见使用”与已有 duplicate/overlap
+  finding 求交；它仍是人工复核候选，不是删除建议。
+
+报告固定输出到：
+
+- `<reports-root>/usage/manifests/<date>/summary.json`
+- `<reports-root>/usage/weekly/<date>.md`
+
+默认片段先脱敏再截到 240 字符；敏感场景传 `--no-excerpt`。真实 transcript 不复制进报告目录、技能
+仓库或评测夹具，报告证据源只保存配置根代号、POSIX 相对路径和行号。
 
 ## 结果类型
 
@@ -147,8 +182,10 @@ cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑�
 - [references/finding-severity.md](references/finding-severity.md)
 - [references/report-template.md](references/report-template.md)
 - [references/skill-hygiene.md](references/skill-hygiene.md)
+- [references/usage-audit.md](references/usage-audit.md)
 - [scripts/manage_market_skills.ps1](scripts/manage_market_skills.ps1)
 - [scripts/run_codex_skill_ecosystem_audit.py](scripts/run_codex_skill_ecosystem_audit.py)
+- [scripts/audit_skill_usage.py](scripts/audit_skill_usage.py)
 
 ## 边界
 
@@ -159,6 +196,8 @@ cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑�
 - 不自动跑市场搜索，也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
+- 不启动 daemon、实时 watcher 或 dashboard，不联网，不修改 transcript、技能或运行时目录。
+- 不根据一次低频或无记录结论自动降级、合并、归档或删除技能。
 
 ## 输出
 
@@ -166,6 +205,9 @@ cc-switch 的本地导入副本、单侧启用、更新链路等已知行为坑�
 
 - `manifests/<date>/summary.json`
 - `weekly/<date>.md`
+
+历史使用审计另输出到 `usage/` 子目录，使用 `已用`、`历史内未见使用`、`疑似漏用`、`可能冗余`
+四个面向用户的分类；不要把内部事件名直接当结论标题。
 
 默认汇报顺序是：
 

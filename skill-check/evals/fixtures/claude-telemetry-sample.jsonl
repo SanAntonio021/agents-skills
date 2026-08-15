@@ -1,0 +1,4 @@
+{"event_type":"ClaudeCodeInternalEvent","event_data":{"event_name":"tengu_skill_loaded","skill_name":"alpha-skill"}}
+{"event_type":"ClaudeCodeInternalEvent","event_data":{"event_name":"tengu_skill_loaded"}}
+{"event_type":"ClaudeCodeInternalEvent","event_data":{"event_name":"unrelated_event","skill_name":"beta-skill"}}
+{broken-json

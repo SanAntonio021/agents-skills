@@ -51,6 +51,7 @@ Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office
 
 - 使用当前环境规定的表格作者工具；没有强制工具时使用 `openpyxl`，批量分析可配合 `pandas`。
 - 将输入、公式和输出分清，保持数字、日期、百分比为真实类型。
+- Excel Table 自带该表范围的筛选；不得再设置与任何 Table 范围相交的工作表级 `autoFilter`（例如 `openpyxl` 的 `ws.auto_filter.ref`）。
 - 创建后必须重算公式并做视觉检查。
 
 ### 常规编辑

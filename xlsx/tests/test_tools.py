@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -71,6 +72,113 @@ class WorkbookToolTests(unittest.TestCase):
         chart.add_data(Reference(sheet, min_col=3, max_col=4, min_row=2, max_row=2))
         sheet.add_chart(chart, "H2")
         workbook.save(path)
+
+    @staticmethod
+    def _build_filter_workbook(
+        path: Path, *, worksheet_filter_ref: str | None, table_ref: str | None
+    ) -> None:
+        from openpyxl import Workbook
+        from openpyxl.worksheet.table import Table
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Filters"
+        for row in range(1, 11):
+            for column in range(1, 9):
+                sheet.cell(row=row, column=column, value=f"R{row}C{column}")
+        if table_ref is not None:
+            sheet.add_table(Table(displayName="FilterTable", ref=table_ref))
+        if worksheet_filter_ref is not None:
+            sheet.auto_filter.ref = worksheet_filter_ref
+        workbook.save(path)
+
+    def _run_verify(self, workbook: Path) -> tuple[subprocess.CompletedProcess[str], dict]:
+        result = subprocess.run(
+            [sys.executable, str(SCRIPTS / "verify_xlsx.py"), str(workbook)],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        return result, json.loads(result.stdout)
+
+    def test_identical_worksheet_filter_and_table_range_is_rejected(self) -> None:
+        workbook = self.root / "identical-filter-overlap.xlsx"
+        self._build_filter_workbook(
+            workbook, worksheet_filter_ref="A1:D5", table_ref="A1:D5"
+        )
+
+        result, report = self._run_verify(workbook)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["workbook"]["filter_overlap_count"], 1)
+        overlap = report["workbook"]["filter_overlaps"][0]
+        self.assertEqual(overlap["intersection"], "A1:D5")
+        self.assertIn("ws.auto_filter.ref", overlap["message"])
+
+    def test_partial_worksheet_filter_and_table_overlap_is_rejected(self) -> None:
+        workbook = self.root / "partial-filter-overlap.xlsx"
+        self._build_filter_workbook(
+            workbook, worksheet_filter_ref="A1:D5", table_ref="C4:F8"
+        )
+
+        result, report = self._run_verify(workbook)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertFalse(report["ok"])
+        overlap = report["workbook"]["filter_overlaps"][0]
+        self.assertEqual(overlap["worksheet_auto_filter_ref"], "A1:D5")
+        self.assertEqual(overlap["table_ref"], "C4:F8")
+        self.assertEqual(overlap["intersection"], "C4:D5")
+
+    def test_disjoint_worksheet_filter_and_table_range_is_valid(self) -> None:
+        workbook = self.root / "disjoint-filters.xlsx"
+        self._build_filter_workbook(
+            workbook, worksheet_filter_ref="A1:B4", table_ref="D1:F4"
+        )
+
+        result, report = self._run_verify(workbook)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["workbook"]["filter_overlap_count"], 0)
+        topology = report["workbook"]["sheets"]["Filters"]["filter_topology"]
+        self.assertEqual(topology["worksheet_auto_filters"], ["A1:B4"])
+        self.assertEqual(topology["tables"][0]["ref"], "D1:F4")
+
+    def test_table_only_filter_is_valid(self) -> None:
+        workbook = self.root / "table-only-filter.xlsx"
+        self._build_filter_workbook(
+            workbook, worksheet_filter_ref=None, table_ref="B2:E6"
+        )
+
+        result, report = self._run_verify(workbook)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(report["ok"])
+        topology = report["workbook"]["sheets"]["Filters"]["filter_topology"]
+        self.assertEqual(topology["worksheet_auto_filters"], [])
+        table = topology["tables"][0]
+        self.assertTrue(table["relationship_id"].startswith("rId"))
+        self.assertTrue(table["relationship_type"].endswith("/table"))
+        self.assertEqual(table["part"], "xl/tables/table1.xml")
+        self.assertEqual(table["ref"], "B2:E6")
+        self.assertEqual(table["auto_filter_ref"], "B2:E6")
+
+    def test_worksheet_filter_only_is_valid(self) -> None:
+        workbook = self.root / "worksheet-filter-only.xlsx"
+        self._build_filter_workbook(
+            workbook, worksheet_filter_ref="A1:D5", table_ref=None
+        )
+
+        result, report = self._run_verify(workbook)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(report["ok"])
+        topology = report["workbook"]["sheets"]["Filters"]["filter_topology"]
+        self.assertEqual(topology["worksheet_auto_filters"], ["A1:D5"])
+        self.assertEqual(topology["tables"], [])
 
     def test_targeted_patch_and_policy(self) -> None:
         output = self.root / "patched.xlsx"
@@ -290,8 +398,13 @@ class SkillStructureTests(unittest.TestCase):
 
     def test_skill_is_complete_xlsx_entry(self) -> None:
         skill_text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        workflow_text = (SKILL_ROOT / "references" / "general-workflow.md").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("name: xlsx", skill_text)
         self.assertIn("这是完整的表格技能", skill_text)
+        self.assertIn("ws.auto_filter.ref", skill_text)
+        self.assertIn("ws.auto_filter.ref", workflow_text)
         self.assertNotIn("xlsx-" + "preserve-ooxml", skill_text)
         self.assertNotIn("不使用本 " + "skill", skill_text)
 

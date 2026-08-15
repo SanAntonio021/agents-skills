@@ -63,6 +63,7 @@ value_book = load_workbook(path, data_only=True, read_only=True)
 - 数字、日期、布尔值使用对应类型；
 - 派生结果写公式；
 - 表格区域可用 Excel Table、筛选和冻结窗格；
+- 使用 Excel Table 时由 Table 自身的 `autoFilter` 管理该范围，不得同时设置与任一 Table 范围相交的工作表级 `autoFilter`（`openpyxl` 中为 `ws.auto_filter.ref`）；
 - 只在有比较价值时添加图表；
 - 来源写入来源列或单元格批注。
 

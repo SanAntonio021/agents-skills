@@ -5,20 +5,24 @@
 
 ## 自动触发与宿主
 
-- 在 Claude Code CLI、Codex Desktop 和 Codex CLI 中分别输入需要本地材料、多步骤判断和正式计划的
-  任务；都应自动加载本 Skill 并调用同一个 `claude-codex-bridge` MCP。
+- 在 Claude Code CLI、Codex Desktop 和 Codex CLI 中分别形成一份准备提交给用户确认的正式计划；
+  都应自动加载本 Skill 并调用同一个 `claude-codex-bridge` MCP。
 - 在已注册该 MCP 的 Claude Code CLI 中，Claude 方向请求为 `target=codex`；在 Codex Desktop/CLI
   中，请求为 `target=claude`。两端都不调用 `codex@openai-codex`、`codex exec` 或 `claude -p`。
-- 在未注册 MCP 的宿主输入同类任务，流程应进入 `PEER_REVIEW_FAILURE_REPORT`，说明没有已验证通道。
-- 输入纯聊天、简单解释和单条明确只读命令；不应创建 bridge job。
+- 在未注册 MCP 的宿主准备提交正式计划，流程应进入 `PEER_REVIEW_FAILURE_REPORT`，说明没有已验证通道。
+- 输入复杂调研、代码/文档修改、命令、测试、提交、已确认计划的执行或最终汇报，但不形成待确认的
+  正式计划；不应创建 bridge job。
+- 使用内部 Todo、`update_plan`、执行清单或状态更新管理进度；不应把它们当作正式计划。
+- 用户明确要求 Opus/Codex 审查计划或交付物时，应按显式请求进入本 Skill。
 
 ## Claude -> Codex review_repair
 
 - 默认质量 job 的公共状态和受保护详情应记录 `requested_model=gpt-5.6-sol` 与
   `requested_reasoning_effort=max`；其他 job 必须与其已解析 profile/显式选择一致。任一缺失或不匹配
   都不得验收，且不能继承用户全局模型或推理档位。
-- Claude 形成正式计划或重要交付物后，用 `submit_peer(target=codex, operation=review_repair)`，
-  提供完整审查包、`reviewerAccess=isolated_write`、目标根、最小 allowlist 和精确 `testCommands`。
+- Claude 形成正式计划时自动用 `submit_peer(target=codex, operation=review_repair)`；交付物只有在用户
+  明确要求或明确启用专用循环时才显式调用。两类请求都提供完整审查包、
+  `reviewerAccess=isolated_write`、目标根、最小 allowlist 和精确 `testCommands`。
 - `await_peer` 超时后只用同一 job 的 `peer_result`；不得重发、猜测线程或调用旧插件。
 - Codex 只能在 bridge 固定副本中检查、修复和测试。普通新增/修改自动同步；删除、重命名、权限或
   类型变化进入 `needs_attention`，列出 `pending_high_risk`。
@@ -36,8 +40,9 @@
 
 ## Codex -> Claude
 
-- 在 Codex Desktop 和 Codex CLI 用 `submit_peer(target=claude, operation=review_repair)`完成一次
-  隔离计划审查和一次重要交付物审查；MCP 工具名优先使用 `submit_peer`/`await_peer`/`peer_result`。
+- 在 Codex Desktop 和 Codex CLI 用 `submit_peer(target=claude, operation=review_repair)` 完成一次
+  自动正式计划审查，再用用户明确请求完成一次显式交付物审查；MCP 工具名优先使用
+  `submit_peer`/`await_peer`/`peer_result`。
 - 默认质量请求为 `claude-opus-5` / `max`。只接受终态 `succeeded`、正文契约合法、公共
   `review_model` 与本 job 所选模型相同，以及 `system/init.model` 精确匹配的结果。
 - 需要 Bash 验证时只允许作者逐条给出的精确 `testCommands`；测试命令含重定向、管道、通配符或
@@ -61,8 +66,9 @@
 
 ## 计划、三轮与用户门
 
-- 保留 `PLAN_REVIEW` 五个固定组成部分（结论、已确认事项、问题与理由、必须修改、剩余风险），并新增
-  同构 `DELIVERABLE_REVIEW`；缺少任一部分都应在同步前以 `peer_contract_error` 失败关闭。
+- 默认正式计划保留 `PLAN_REVIEW` 五个固定组成部分（结论、已确认事项、问题与理由、必须修改、
+  剩余风险）；显式交付物审查使用同构 `DELIVERABLE_REVIEW`。缺少任一部分都应在同步前以
+  `peer_contract_error` 失败关闭。
 - 第 1/2 轮 `需修改`由作者依据意见更新产物、字节数、SHA-256 和 prior findings；第 3 轮仍未通过时
   输出 `DISAGREEMENT_REPORT`，不发第 4 轮。
 - 计划互审通过后，transcript 必须停在用户确认门；未获明确确认不得执行写入。
@@ -74,6 +80,7 @@
 ## 作者验收与返工
 
 - 原作者检查 bridge 同步后的主项目、测试、提交和验收标准；审查者对自己的修复不做最终签字。
+- 已确认计划的普通执行、验收、返工和最终汇报不自动创建新的 peer job；显式跨模型执行工作流除外。
 - 对同一确认计划模拟三次独立验收失败；第三次后不得启动第四次返工，报告证据并等待用户决定。
 - 任何副本越界写入、符号链接、路径穿越、`.git` 或 allowlist 扩大都停止，不回滚后继续接受结果。
 

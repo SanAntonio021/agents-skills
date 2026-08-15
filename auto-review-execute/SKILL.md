@@ -3,8 +3,9 @@ name: auto-review-execute
 description: >
   在 Claude Code CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
   在固定副本中审查、修复和测试，最多三轮；Claude 复核同步结果、向用户展示最终计划，并在用户
-  明确确认后按 allowlist 执行。也用于重要交付物的 Claude to Codex review_repair。缺少明确计划
-  路径、MCP、用户确认或完整验收证据时停止，不猜测路径、不调用旧 codex@openai-codex 插件。
+  明确确认后按 allowlist 执行。默认跨模型复核只发生在正式计划阶段；执行结果由 Claude 按验收
+  标准检查，不自动再次调用 Codex。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
+  不猜测路径、不调用旧 codex@openai-codex 插件。
 compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill. Legacy orchestration scripts are offline state helpers only.
 ---
 
@@ -80,8 +81,9 @@ node scripts/execute-plan.mjs poll --run-dir "<run-dir>"
 node scripts/execute-plan.mjs validate --run-dir "<run-dir>"
 ```
 
-执行作者可以在确认的 `targetRoots`/`allowedPaths` 内写入，但重要交付物返回前必须再次走
-`submit_peer(target=codex, operation=review_repair, artifactType=deliverable)`；作者检查同步后才算交付。
+执行作者可以在确认的 `targetRoots`/`allowedPaths` 内写入。Claude 按计划中的验收标准、只读验证
+命令和前后快照独立验收；执行完成、返工和最终交付都不自动发起第二次 peer review。用户明确要求
+审查交付物时，才另按 `cross-model-orchestration` 的显式 `artifactType=deliverable` 流程处理。
 验收失败最多允许三次“返工 -> 独立验收”，第三次仍失败进入 `awaiting_user`，不发第四次。
 
 计划元数据的 `verifyCommand` 只允许无副作用的 `Test-Path`、`Get-Content` 和 `node --version`，并要求

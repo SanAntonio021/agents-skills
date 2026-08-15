@@ -1,12 +1,12 @@
 ---
 name: cross-model-orchestration
 description: >
-  Codex Desktop/CLI 与 Claude Code CLI 的全局双向互审流程。除纯聊天、简单解释和一条
-  明确只读命令外，任何需要阅读本地材料、制定正式计划、形成重要结论、修改文件、运行命令、
-  调研、比较、写作或多步骤推进的任务都自动使用同一个 claude-codex-bridge MCP，把产物交给
-  对方模型在固定副本中审查、修复和测试。质量优先默认使用 claude-opus-5/max 与
-  gpt-5.6-sol/max；调用方可选任务 profile 或明确的目标侧模型/强度，bridge 严格校验且不回退。
-  失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
+  Codex Desktop/CLI 与 Claude Code CLI 的正式计划双向互审流程。当任一端准备向用户提交一份
+  需要确认后才执行的正式计划时，自动使用同一个 claude-codex-bridge MCP，让对方模型在固定
+  副本中审查、修订和测试；普通读取、分析、修改、测试、提交、交付和内部 Todo 不自动调用。
+  用户明确要求对方审查交付物、让对方执行或启用专用跨模型循环时仍可显式使用。质量优先默认使用
+  claude-opus-5/max 与 gpt-5.6-sol/max；调用方可选任务 profile 或目标侧模型/强度，bridge
+  严格校验且不回退。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP to be available to the current host.
   The legacy codex@openai-codex companion and its hooks are archived references only and are not
@@ -24,18 +24,25 @@ allowed-tools:
 
 ## 目标与触发
 
-把跨模型复核变成所有符合条件的实质任务的默认质量门。作者负责计划、交付和返工；对方模型
-在 bridge 创建的固定副本中检查、允许范围内修复并运行测试。审查者不能直接写作者主项目，
-作者必须检查 bridge 同步后的主项目状态。
+把跨模型复核限定为正式计划的默认质量门。作者先形成将要提交给用户确认的计划草案；对方模型
+在 bridge 创建的固定副本中检查、允许范围内修订并运行必要测试。审查者不能直接写作者主项目，
+作者必须检查 bridge 同步后的计划状态，再向用户展示最终计划。
 
-以下任一情况自动进入：
+只有以下情况自动进入：
 
-- 需要读取、检查、合并或比较本地材料；
-- 需要正式计划、重要结论、调研、写作、代码、文档、报告、仿真或多步骤命令；
-- 已经产出重要交付物，准备执行、提交或交付。
+- 当前处于 Plan Mode，准备退出并向用户提交正式计划；
+- 即将展示一份多步骤实施方案，而且后续执行明确需要用户确认；
+- 已有稳定的计划文件或完整计划正文，正在进入计划确认门。
 
-以下情况跳过：纯聊天、不依赖材料的简单解释、一条明确只读且无需分析后续结果的命令。
-边界不清时进入互审。审查报告、失败报告和用户已裁决的分歧报告不递归触发。
+以下情况不自动进入：读取或分析材料、调研、写作、代码/文档修改、运行命令、测试、提交、执行
+已经确认的计划、验收和最终汇报。内部 Todo、`update_plan`、执行清单、简短步骤说明也不算正式
+计划。任务复杂、耗时或交付物重要都不是触发理由。边界不清时只判断“是否正准备提交一份需要
+用户确认的正式计划”，不能按复杂度扩大触发范围。
+
+用户明确要求“让 Opus/Codex 审查”、明确指定 `review_repair`、明确要求对方执行，或明确启用跨模型
+执行/科研循环等专用流程时，可以显式审查或使用 `task`；已确认计划中明确约定的对方执行也可以
+继续。这些属于用户点名能力，不是全局自动复核门。审查报告、失败报告和用户已裁决的分歧报告不
+递归触发。
 
 `ExitPlanMode` 的拒绝理由只是 Claude 表达“先审查计划”的一种方式，不是唯一触发器，也不是
 可信的计划路径来源。没有可靠路径时，使用稳定 `artifactName` 和完整 `artifactContent`，
@@ -56,8 +63,9 @@ allowed-tools:
 仍可用，但新流程优先使用对称工具。仓库中保留的 `orchestration-control.mjs` 与
 `check-resume-candidate.mjs` 只用于历史状态测试；没有显式归档诊断标志时直接失败关闭，不读取旧插件注册表。
 
-`review_repair` 是一次完整调用：对方在固定副本中审查、修复、运行测试并返回结构化结论和变更
-元数据。`ask` 只读；`task` 只有在明确允许写副本时使用。`reviewerAccess` 与操作必须一致：
+正式计划默认使用 `review_repair`：对方在固定副本中审查、修订、运行测试并返回结构化结论和变更
+元数据。显式交付物审查也可复用该操作，但不会因交付动作自动发起。`ask` 只读；`task` 只有在明确
+允许写副本时使用。`reviewerAccess` 与操作必须一致：
 `ask` 为 `read_only`，`review_repair` 为 `isolated_write`。任何写入都不能越过 `targetRoot`、
 `allowedPaths` 或副本边界。
 
@@ -84,7 +92,8 @@ bridge 返回并持久化 `requested_model`、`requested_reasoning_effort`、`ta
 
 ## 审查包
 
-每一轮先读取 [workflow-contract.md](references/workflow-contract.md)，再构造完整审查包：
+每一轮先读取 [workflow-contract.md](references/workflow-contract.md)，再构造完整审查包。全局自动
+触发时 `artifactType` 必须为 `plan`；`deliverable` 只接受用户明确要求或专用工作流的显式调用：
 
 ```text
 artifactId: 同一逻辑产物跨轮不变
@@ -111,7 +120,7 @@ reviewerAccess: read_only | isolated_write
 
 1. 作者用同一 `artifactId` 发起第 1 轮 `review_repair`，保存 job ID、基线 manifest 和结果 manifest。
 2. 只接受终态 `succeeded`、契约合法且方向/模型/权限证据匹配的结果；作者检查同步后的主项目。
-3. `通过`：交付物进入验收；正式计划进入用户确认门。
+3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
 4. `需修改`：作者确认同步内容，修订主项目，更新字节数、SHA-256、`priorFindings` 和 `openItems`，
    然后发第 2 或第 3 轮。不要另开逻辑产物或猜测新线程。
 5. 第 3 轮仍需修改，或双方出现实质分歧：输出 `DISAGREEMENT_REPORT`，等待用户裁决，不发第 4 轮。
@@ -165,7 +174,9 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 `retained_workspace_conflict` 失败，不能用另一个 `artifactId` 绕过待处理变更。
 
 正式计划互审通过不等于执行授权。作者必须向用户展示最终计划、轮次结论、已解决项和剩余风险，
-获得明确确认后才执行。执行作者仍需做独立验收；重要交付物在交付前再次走相反方向的互审。
+获得明确确认后才执行。已确认计划明确约定的对方 `task` 执行仍可通过 bridge 完成；执行作者自行
+按任务验收标准检查，执行、返工和最终交付不自动再走相反方向互审。只有用户明确提出交付物互审，
+或事先明确启用以里程碑互审为核心的专用工作流时，才发起对应的显式审查调用。
 
 ## 失败与发布
 
@@ -176,6 +187,7 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 数据库。旧 `codex@openai-codex` 源码、许可证和测试可以留作行为参考，但不得作为运行时前置条件。
 
 修改本 Skill 后，至少检查 `evals/evals.json`、`evals/trigger-evals.json`、`evals/integration-cases.md`，
-覆盖两方向自动触发、简单任务跳过、`review_repair` 一次修复、只读/隔离写边界、三轮上限、用户确认
-门、审批同步、默认/显式/profile 路由、恢复时换模型被拒绝、通道不可用和非所选模型停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
+覆盖两方向正式计划自动触发、普通实质任务和内部清单跳过、显式交付物调用、`review_repair` 一次
+修复、只读/隔离写边界、三轮上限、用户确认门、审批同步、默认/显式/profile 路由、恢复时换模型
+被拒绝、通道不可用和非所选模型停止。源码推送后，只对本次改动的 Skill 使用定向 CC Switch
 同步，并核对源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256。

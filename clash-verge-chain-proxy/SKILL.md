@@ -183,6 +183,44 @@ proxies:
 
 `select` 组适合在 UI 里临时换前置；`fallback` 组适合按候选顺序自动跳过故障节点。
 
+## 手动 NOV 链与动态全订阅前置池
+
+当用户要求“所有实际代理流量最终都经同一个 NOV 落地，AI 可手动选择 Flower 或普通订阅作为
+前置，普通国外流量只使用普通订阅前置”时，使用共享前置组，不为 AI 和普通流量复制两份普通
+前置选择：
+
+```text
+AI 规则 -> <AI group: select>
+           |- <Nov via Flower> -> <Flower front: select> -> Flower 节点
+           `- <Nov via normal> -> <normal front: select> -> 普通订阅节点
+
+普通国外规则 -> <normal group: select> -> <Nov via normal>
+                                      `-> 复用同一 <normal front>
+```
+
+- `<AI group>` 的候选只能是两条完整 NOV 链；不要放裸前置、`DIRECT`、`自动选择`或`故障转移`。
+- `<normal group>` 只引用 `<Nov via normal>`。用户在共享的 `<normal front>` 换一次节点，AI 的
+  普通订阅分支和普通国外流量应同时读取该选择。
+- 两条 NOV 代理的 `dialer-proxy` 分别指向 Flower 前置组和共享普通前置组。AI 规则仍须位于
+  宽泛国外规则之前；国内、局域网、`DIRECT` 和 `REJECT` 规则保持原语义。
+- 首次部署不顺手删除旧的 `自动选择`、`故障转移`等组。先证明没有规则或活动组再引用它们；删除
+  属于单独的清理动作，另行取得批准。
+
+普通前置池必须从**当前目标订阅自身**动态重建：
+
+1. 解析刚更新的目标订阅原始 YAML 或其未注入增强项的 provider 输出，按原顺序读取全部
+   `proxies[].name`。不要从已混合多订阅和注入代理的最终 `clash-verge.yaml` 反推来源。
+2. 只排除能够由来源或条目语义确认的非真实前置：流量/到期/续费等信息条目、注入的 NOV 落地
+   代理、旧链条，以及不属于目标订阅的 Flower 或其他辅助节点。不要按上一次的 7 个、9 个或任意
+   固定白名单做包含过滤，也不要把某次订阅的节点总数写成长期常量。
+3. 将过滤后的有序唯一列表完整写入 `<normal front>`。每次官网更新或重新导入后都从新订阅重新
+   计算，不能在旧白名单上增删修补。
+4. 计算 `expected = source_names - excluded_names`，再比较最终前置组：`expected - actual` 和
+   `actual - expected` 都必须为空。另查重并确认顺序稳定；仅比较数量不能发现漏节点或串入 Flower。
+
+如果要生成独立 profile，先记录当前激活 profile、备份原 YAML 并保存 SHA-256；导入为新名称，
+不覆盖原 profile。任一静态或运行态检查失败时，停用新 profile 并重新激活原 profile，保留备份。
+
 ## 双层自动故障转移
 
 当用户要求“前置节点自动选健康节点，AI 链路在两个前置之间自动切换”时，使用两层 `fallback`，不要把裸前置组直接放进 AI 组：
@@ -382,6 +420,21 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 - AI 域名或 `claude.exe`：`using <AI group>[<Nov via Flower>]`
 - 普通国外流量：`using <normal group>[<Nov via normal front>]`
 - 国内或原本直连流量：`using DIRECT`
+
+### 手动 `select` NOV 链验收
+
+1. 用 YAML 解析器确认目标组各只定义一次；普通前置组与当前目标订阅过滤后的完整节点集合严格
+   相等，且不含元信息、Flower、注入 NOV 或旧链条。
+2. 确认 AI 组候选恰好是两条 NOV 链、普通主组候选恰好是普通订阅 NOV 链，两条代理的
+   `dialer-proxy` 正确。扫描全部规则和活动组引用，确保没有流量仍指向旧的 `自动选择`、
+   `故障转移`或裸前置；旧组可以保留为未引用定义。
+3. 通过 controller 查询 `/proxies`，确认所有目标手动组均为 selector，且 `all` 与静态 YAML 一致。
+   对每个待测候选执行 `PUT` 后重新 `GET`，只有 `now` 精确等于所选项才继续请求。
+4. AI 组分别选择 Flower 链和普通订阅链，向 OpenAI/ChatGPT 与 Anthropic/Claude 发起真实请求；
+   普通国外站点必须命中普通订阅 NOV 链，国内站点仍命中 `DIRECT`。用同一时段服务日志确认
+   `using <group>[<chain>]`，不能只凭 selector 显示或通用 204 探测宣称完成。
+5. 共享性验证至少选两个不同的普通前置节点 A、B；每次分别测试普通国外流量和 AI 的普通订阅
+   分支，确认两者都随同一个 `<normal front>.now` 变化。结束后恢复用户原选择并复查。
 
 如果 `clash-verge.yaml` 仍是旧内容，说明增强文件已改但 Verge 还没重新生成。先重启 Clash Verge GUI；服务重启可能需要管理员权限，不要在无权限时反复硬停服务。
 

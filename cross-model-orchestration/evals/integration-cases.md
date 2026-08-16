@@ -29,6 +29,11 @@
   零工具 inline 审查；workspace 还必须是 `workspaceRepairs=true`、`workspaceProbeState=available`。
   `pending`/`unavailable` 时不得提交 workspace 请求或创建 job；纯审查继续用 `v2_review_peer`，显式
   workspace 需求输出 `v2_workspace_capability_unavailable` 失败报告，不能静默降级。
+- `loopbackState` / `childLoopbackState=reachable_residual_risk` 是 sandbox 到临时 loopback fixture
+  仍可达的残余风险，不是“已隔离”或“通过”。当 `activationState=eligible_with_loopback_residual_risk`
+  且其余硬门合格时 workspace 调用可以继续；能力记录和 daemon audit 必须保留
+  `loopbackResidualRisk=true`。工作区外写入、外网、子进程文件/外网边界继承或超时后进程树清理失败
+  仍要求 `active=false`，不得创建 job。
 - 发起前从完整 `artifactContent` 重新计算 UTF-8 `artifactBytes` 和 SHA-256；正文缺失、`author` 缺失/非法、
   空验收标准、相对路径非法或携带旧 `target/owner/operation/round/allowedPaths` 字段时不创建 job。
 - workspace `testCommands` 只能是最多 16 项结构化命令：绝对普通 `.exe`、程序字节数、SHA-256、

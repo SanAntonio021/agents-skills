@@ -87,6 +87,13 @@ separate evidence. Do not edit `.cc-switch`, `.codex`, or other rendered runtime
 `capabilities.workspaceRepairs=true` 与 `workspaceProbeState=available`。`pending` 或 `unavailable`
 只表示当前进程尚未证明 Windows workspace sandbox，不影响零工具 inline 审查。
 
+`loopbackState` 与 `childLoopbackState` 测量的是 sandbox 对临时 `127.0.0.1` fixture 的连通性，
+不是 bridge daemon 的固定 loopback 绑定。`reachable_residual_risk` 或 `unverified` 必须连同
+`loopbackResidualRisk` 和 `activationState` 作为能力证据原样保留；它们表示已披露的残余风险，
+不能写成 sandbox 已隔离或 loopback 通过。只要 workspace 写入、工作区外写入拒绝、外网拒绝、
+子进程文件/外网边界继承和超时后的进程树清理等硬门都合格，
+`eligible_with_loopback_residual_risk` 仍允许 v2 调用；任一硬门失败则不创建 job。
+
 `v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
 正式计划和普通审查在 workspace 能力不可用时的默认入口，作者自行采纳修改并重新计算下一轮身份。
 需要完整替换正文时使用 `v2_review_repair_peer artifactMode=inline`；它也不使用工具，返回完整

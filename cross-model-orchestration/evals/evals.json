@@ -163,6 +163,13 @@
       "expectations": ["不得静默改成 inline 修订。", "不得重启 daemon 或改用其他 sandbox。"]
     },
     {
+      "id": 23,
+      "prompt": "peer_status 显示 workspaceRepairs=true、workspaceProbeState=available、loopbackState=reachable_residual_risk、childLoopbackState=reachable_residual_risk，其他硬门均合格。请在固定副本中修订 plan.md。",
+      "expected_output": "允许 workspace v2_review_repair_peer，并在能力/验收证据中原样记录 loopbackResidualRisk=true 与 eligible_with_loopback_residual_risk。",
+      "files": [],
+      "expectations": ["不得把 loopback 可达写成 sandbox 已隔离或 loopback 通过。", "工作区外写入、外网、子进程继承和进程树清理仍是阻断硬门。"]
+    },
+    {
       "id": 24,
       "prompt": "CC Switch 为 Codex 的共享 claude-codex-bridge 记录同时渲染 headers.X-Bridge-Token 和 env_http_headers.X-Bridge-Token。",
       "expected_output": "保留 URL=/mcp 和 env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN，删除 headers.X-Bridge-Token；确认渲染后的 Codex TOML 没有该记录的 http_headers，codex mcp get 显示 http_headers=-。",

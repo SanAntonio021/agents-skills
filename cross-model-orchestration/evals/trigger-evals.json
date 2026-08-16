@@ -9,6 +9,7 @@
   {"query":"审查结束后有高风险删除项，我已经批准完整的变更 ID，按原 job 同步。","should_trigger":true},
   {"query":"恢复刚才的 peer job，保持原模型、强度和 profile。","should_trigger":true},
   {"query":"让 Opus 审查已经完成的交付物并直接修复允许范围的问题。","should_trigger":true},
+  {"query":"peer_status 显示 loopbackState=reachable_residual_risk，但其他 v2 硬门已合格。让 Codex 在固定副本中修订 plan.md，并如实保留该风险。","should_trigger":true},
   {"query":"当前在 Claude Code，用共享 /mcp、v2_review_peer 和 author=claude 让 Codex 审查这份正式计划。","should_trigger":true},
   {"query":"请读取本地材料、跑分析并直接给验收结论，不需要正式计划。","should_trigger":false},
   {"query":"把这个测试失败修好并跑单元测试，直接做。","should_trigger":false},

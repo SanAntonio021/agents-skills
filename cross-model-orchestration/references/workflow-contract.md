@@ -19,6 +19,11 @@
 - `v2_peer_status.active=true` 与 `capabilities.inlineReviews=true` 才允许 inline 调用。workspace 调用还必须
   有 `capabilities.workspaceRepairs=true` 和 `workspaceProbeState=available`；`pending`/`unavailable` 时
   零工具审查仍可用，但 workspace 修订、结构化测试和同步一律不得创建 job。
+- `loopbackState` 和 `childLoopbackState` 是 sandbox 到临时 `127.0.0.1` fixture 的实际观测，
+  不是 daemon 绑定状态。`reachable_residual_risk` 或 `unverified` 必须与
+  `loopbackResidualRisk`、`activationState` 一起保留在 capability/audit 证据中；不得表述为 sandbox
+  已隔离或 loopback 已通过。`eligible_with_loopback_residual_risk` 仅说明其他硬门已合格，仍允许调用；
+  工作区外写入失败、外网断开、子进程文件/外网边界继承、超时后进程树清理任一失败均阻断并且不创建 job。
 - 审查结果不是执行授权。正式计划通过互审后仍须用户明确确认。
 - 通道异常、模型不匹配、格式错误、越界写入、基线漂移、超时或取消立即失败关闭，不算“需修改”。
 - Codex 的共享 CC Switch 记录只能使用 URL `/mcp` 和

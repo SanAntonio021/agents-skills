@@ -19,8 +19,14 @@ python <skill-root>\scripts\verify_xlsx.py input.xlsx --json-out baseline.json
 python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx batch --input commands.json
 ```
 
+桥接器固定使用 OfficeCLI `1.0.144`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
+表格任务不会联网下载或自动修复；只有用户明确运行
+`python <skill-root>\scripts\repair_officecli.py --repair` 才会修复默认本机路径。设置
+`OFFICECLI_EXE` 时也必须通过相同校验，路径错误应自行修正或取消环境变量；修复脚本不会改写
+覆盖路径。
+
 桥接器会复制到新候选文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
-宏签名或打印版面验收，也不作为 XLSX schema 校验器：OfficeCLI `1.0.143` 会把有效的
+宏签名或打印版面验收，也不作为 XLSX schema 校验器：OfficeCLI `1.0.144` 会把有效的
 `styles.xml` 字体颜色节点误报为 schema 错误，bridge 因此提前拒绝 XLSX `validate`，正式校验
 统一使用 `verify_xlsx.py`。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
 差异要求时，继续使用本技能的 `openpyxl`/OOXML 工具和 `libreoffice-runner` 重算路径。

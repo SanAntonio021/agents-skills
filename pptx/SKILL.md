@@ -19,6 +19,12 @@ python <skill-root>\scripts\officecli_bridge.py validate input.pptx
 python <skill-root>\scripts\officecli_bridge.py mutate input.pptx draft.pptx batch --input commands.json
 ```
 
+The bridge pins OfficeCLI `1.0.144` and verifies its existence, SHA-256, and reported version before
+every invocation. Normal presentation work never downloads or repairs it. To repair the default local
+binary, the user must explicitly run `python <skill-root>\scripts\repair_officecli.py --repair`.
+An `OFFICECLI_EXE` override is subject to the same checks and must be fixed or unset directly; the
+repair script only repairs the default path.
+
 The bridge copies `input.pptx` to new `draft.pptx` before mutation and never overwrites an existing
 output. It is not a fidelity renderer: screenshots require either explicitly authorized native
 PowerPoint rendering (`--render native --allow-native`, no `POWERPNT.EXE`, isolated copy) or

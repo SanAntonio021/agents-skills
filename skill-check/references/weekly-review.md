@@ -94,6 +94,8 @@ python scripts/run_weekly_skill_review.py record-execution `
 
 失败项写入 `retry_pending` 并在下一轮优先询问“是否按相同输入重试”；漂移项只退回该项。helper 身份
 变化会使旧批次失效并允许重建确认批次，不会把项目留在无法恢复的等待状态。
+helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现模块 `CcSwitchSkillSync.psm1`；只改模块
+也必须让旧确认批次失效，不能把未审查的新实现藏在相同入口文件后面。
 
 如果失败发生在源码已提交和推送之后、运行时同步完成之前，重试不能继续沿用修改前的源码 fingerprint，
 也不能无条件接受当前目录。只有目标目录无未提交或未跟踪内容、失败记录中的独立提交确实改过目标、

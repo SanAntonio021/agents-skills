@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import errno
+import hashlib
+import io
 import json
 import os
 import shutil
@@ -29,6 +32,7 @@ from ooxml_common import (  # noqa: E402
     write_package,
 )
 from patch_ooxml import patch_workbook  # noqa: E402
+import publish_output as publisher  # noqa: E402
 from verify_pdf import find_pdftoppm, inspect_pdf  # noqa: E402
 from verify_xlsx import compare_workbooks, inspect_workbook  # noqa: E402
 
@@ -401,6 +405,435 @@ class WorkbookToolTests(unittest.TestCase):
             self.assertEqual(find_pdftoppm(None), wrapper.resolve())
 
 
+class PublishOutputTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="xlsx-publish-test-")
+        self.root = Path(self.temp_dir.name)
+        self.candidate = self.root / "candidate.xlsx"
+        self.candidate.write_bytes(b"new workbook bytes")
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def _run_cli(self, *arguments: str) -> tuple[subprocess.CompletedProcess[str], dict]:
+        result = subprocess.run(
+            [sys.executable, str(SCRIPTS / "publish_output.py"), *arguments],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        self.assertTrue(result.stdout, result.stderr)
+        return result, json.loads(result.stdout)
+
+    def _assert_no_staging_files(self, destination: Path) -> None:
+        pattern = f".{destination.name}.publish-*.tmp"
+        self.assertEqual(list(destination.parent.glob(pattern)), [])
+
+    def test_create_new_destination(self) -> None:
+        destination = self.root / "published.xlsx"
+
+        result, report = self._run_cli(str(self.candidate), str(destination))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            set(report),
+            {
+                "ok",
+                "action",
+                "candidate_path",
+                "destination_path",
+                "previous_sha256",
+                "published_sha256",
+            },
+        )
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["action"], "created")
+        self.assertIsNone(report["previous_sha256"])
+        self.assertEqual(report["published_sha256"], self._sha256(self.candidate))
+        self.assertEqual(destination.read_bytes(), self.candidate.read_bytes())
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_replace_existing_destination_with_matching_hash(self) -> None:
+        destination = self.root / "draft.xlsx"
+        destination.write_bytes(b"previous draft")
+        previous_sha256 = self._sha256(destination)
+
+        result, report = self._run_cli(
+            str(self.candidate),
+            str(destination),
+            "--replace-existing-if-sha256",
+            previous_sha256,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(report["action"], "replaced")
+        self.assertEqual(report["previous_sha256"], previous_sha256)
+        self.assertEqual(report["published_sha256"], self._sha256(destination))
+        self.assertEqual(destination.read_bytes(), self.candidate.read_bytes())
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_existing_destination_without_hash_is_rejected_with_failure_json(self) -> None:
+        destination = self.root / "protected.xlsx"
+        original = b"protected content"
+        destination.write_bytes(original)
+
+        result, report = self._run_cli(str(self.candidate), str(destination))
+
+        self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(
+            set(report),
+            {"ok", "error", "message", "candidate_path", "destination_path"},
+        )
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["error"], "destination_ownership_unconfirmed")
+        self.assertEqual(destination.read_bytes(), original)
+
+    def test_wrong_existing_hash_is_rejected(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"previous draft"
+        destination.write_bytes(original)
+
+        result, report = self._run_cli(
+            str(self.candidate),
+            str(destination),
+            "--replace-existing-if-sha256",
+            "0" * 64,
+        )
+
+        self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(report["error"], "destination_sha256_mismatch")
+        self.assertEqual(destination.read_bytes(), original)
+
+    def test_malformed_hash_is_argument_error(self) -> None:
+        destination = self.root / "draft.xlsx"
+        destination.write_bytes(b"previous draft")
+
+        result, report = self._run_cli(
+            str(self.candidate),
+            str(destination),
+            "--replace-existing-if-sha256",
+            "not-a-sha256",
+        )
+
+        self.assertEqual(result.returncode, publisher.EXIT_ARGUMENT_ERROR)
+        self.assertEqual(report["error"], "invalid_sha256")
+
+    def test_hash_is_forbidden_when_destination_is_missing(self) -> None:
+        destination = self.root / "missing.xlsx"
+
+        result, report = self._run_cli(
+            str(self.candidate),
+            str(destination),
+            "--replace-existing-if-sha256",
+            "0" * 64,
+        )
+
+        self.assertEqual(result.returncode, publisher.EXIT_ARGUMENT_ERROR)
+        self.assertEqual(report["error"], "replacement_hash_without_destination")
+        self.assertFalse(destination.exists())
+
+    def test_destination_change_between_hash_checks_is_rejected(self) -> None:
+        destination = self.root / "draft.xlsx"
+        destination.write_bytes(b"previous draft")
+        expected_sha256 = self._sha256(destination)
+        real_sha256_file = publisher._sha256_file
+        destination_hash_calls = 0
+
+        def hash_then_change(path: Path) -> str:
+            nonlocal destination_hash_calls
+            digest = real_sha256_file(path)
+            if Path(path) == destination:
+                destination_hash_calls += 1
+                if destination_hash_calls == 1:
+                    destination.write_bytes(b"external edit")
+            return digest
+
+        with patch("publish_output._sha256_file", side_effect=hash_then_change):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(caught.exception.error, "destination_changed_before_publish")
+        self.assertEqual(destination.read_bytes(), b"external edit")
+        self._assert_no_staging_files(destination)
+
+    def test_same_path_is_rejected(self) -> None:
+        result, report = self._run_cli(str(self.candidate), str(self.candidate))
+
+        self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(report["error"], "same_path_rejected")
+
+    def test_directory_candidate_and_destination_are_rejected(self) -> None:
+        candidate_directory = self.root / "candidate-directory"
+        candidate_directory.mkdir()
+        destination = self.root / "published.xlsx"
+
+        candidate_result, candidate_report = self._run_cli(
+            str(candidate_directory), str(destination)
+        )
+
+        self.assertEqual(candidate_result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(candidate_report["error"], "candidate_not_regular_file")
+
+        destination_directory = self.root / "destination-directory"
+        destination_directory.mkdir()
+        destination_result, destination_report = self._run_cli(
+            str(self.candidate), str(destination_directory)
+        )
+        self.assertEqual(destination_result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(destination_report["error"], "destination_not_regular_file")
+
+    def test_missing_destination_parent_is_rejected(self) -> None:
+        destination = self.root / "missing-parent" / "published.xlsx"
+
+        result, report = self._run_cli(str(self.candidate), str(destination))
+
+        self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(report["error"], "destination_parent_missing")
+        self.assertFalse(destination.exists())
+
+    def test_chinese_and_space_paths_are_supported(self) -> None:
+        destination_directory = self.root / "中文 目录"
+        destination_directory.mkdir()
+        candidate = self.root / "候选 文件.xlsx"
+        candidate.write_bytes(b"unicode path content")
+        destination = destination_directory / "正式 文件.xlsx"
+
+        result, report = self._run_cli(str(candidate), str(destination))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(report["action"], "created")
+        self.assertEqual(destination.read_bytes(), candidate.read_bytes())
+
+    def test_symbolic_link_candidate_is_rejected(self) -> None:
+        target = self.root / "real-candidate.xlsx"
+        target.write_bytes(b"real content")
+        link = self.root / "candidate-link.xlsx"
+        try:
+            os.symlink(target, link)
+        except OSError as error:
+            self.skipTest(f"symbolic links unavailable: {error}")
+
+        result, report = self._run_cli(str(link), str(self.root / "published.xlsx"))
+
+        self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+        self.assertEqual(report["error"], "reparse_point_rejected")
+
+    @unittest.skipUnless(os.name == "nt", "junction test is Windows-specific")
+    def test_destination_parent_junction_is_rejected(self) -> None:
+        real_directory = self.root / "real-output-directory"
+        real_directory.mkdir()
+        junction = self.root / "output-junction"
+        created = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(junction), str(real_directory)],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        if created.returncode != 0:
+            self.skipTest(f"junction creation unavailable: {created.stderr}")
+        try:
+            result, report = self._run_cli(
+                str(self.candidate), str(junction / "published.xlsx")
+            )
+            self.assertEqual(result.returncode, publisher.EXIT_GUARD_REJECTED)
+            self.assertEqual(report["error"], "reparse_point_rejected")
+        finally:
+            junction.rmdir()
+
+    def test_copy_failure_preserves_original_and_candidate(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"original draft"
+        destination.write_bytes(original)
+        expected_sha256 = self._sha256(destination)
+
+        with patch(
+            "publish_output._copy_file_contents",
+            side_effect=OSError(errno.EIO, "simulated copy failure"),
+        ):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertEqual(destination.read_bytes(), original)
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_fsync_failure_preserves_original_and_candidate(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"original draft"
+        destination.write_bytes(original)
+        expected_sha256 = self._sha256(destination)
+
+        with patch(
+            "publish_output.os.fsync",
+            side_effect=OSError(errno.EIO, "simulated fsync failure"),
+        ):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertEqual(destination.read_bytes(), original)
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_locked_destination_failure_preserves_original_and_candidate(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"original draft"
+        destination.write_bytes(original)
+        expected_sha256 = self._sha256(destination)
+
+        with patch(
+            "publish_output._atomic_publish",
+            side_effect=PermissionError(errno.EACCES, "simulated locked destination"),
+        ):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertEqual(caught.exception.error, "atomic_publish_failed")
+        self.assertEqual(destination.read_bytes(), original)
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_staging_permission_failure_preserves_original_and_candidate(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"original draft"
+        destination.write_bytes(original)
+        expected_sha256 = self._sha256(destination)
+
+        with patch(
+            "publish_output.tempfile.mkstemp",
+            side_effect=PermissionError(errno.EACCES, "simulated staging permission failure"),
+        ):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertEqual(caught.exception.error, "filesystem_error")
+        self.assertEqual(destination.read_bytes(), original)
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_atomic_move_failure_preserves_original_and_candidate(self) -> None:
+        destination = self.root / "draft.xlsx"
+        original = b"original draft"
+        destination.write_bytes(original)
+        expected_sha256 = self._sha256(destination)
+
+        with patch(
+            "publish_output._atomic_publish",
+            side_effect=OSError(errno.EIO, "simulated atomic move failure"),
+        ):
+            with self.assertRaises(publisher.PublishError) as caught:
+                publisher.publish_output(
+                    self.candidate,
+                    destination,
+                    replace_existing_if_sha256=expected_sha256,
+                )
+
+        self.assertEqual(caught.exception.exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertEqual(destination.read_bytes(), original)
+        self.assertTrue(self.candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_two_processes_create_same_destination_only_one_succeeds(self) -> None:
+        first_candidate = self.root / "first candidate.xlsx"
+        second_candidate = self.root / "second candidate.xlsx"
+        first_candidate.write_bytes(b"first")
+        second_candidate.write_bytes(b"second")
+        destination = self.root / "raced.xlsx"
+        command_prefix = [sys.executable, str(SCRIPTS / "publish_output.py")]
+        processes = [
+            subprocess.Popen(
+                [*command_prefix, str(candidate), str(destination)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+            )
+            for candidate in (first_candidate, second_candidate)
+        ]
+
+        completed = []
+        for process in processes:
+            stdout, stderr = process.communicate(timeout=15)
+            completed.append((process.returncode, json.loads(stdout), stderr))
+
+        self.assertEqual(
+            sorted(item[0] for item in completed),
+            [0, publisher.EXIT_GUARD_REJECTED],
+            completed,
+        )
+        self.assertEqual(sum(item[1]["ok"] for item in completed), 1)
+        self.assertIn(destination.read_bytes(), {b"first", b"second"})
+        self.assertTrue(first_candidate.exists())
+        self.assertTrue(second_candidate.exists())
+        self._assert_no_staging_files(destination)
+
+    def test_main_emits_json_for_publish_failure_exit_code(self) -> None:
+        destination = self.root / "published.xlsx"
+        failure = publisher.PublishError(
+            publisher.EXIT_PUBLISH_FAILED,
+            "simulated_publish_failure",
+            "simulated publish failure",
+        )
+        output = io.StringIO()
+
+        with patch("publish_output.publish_output", side_effect=failure):
+            with patch("sys.stdout", output):
+                exit_code = publisher.main([str(self.candidate), str(destination)])
+
+        report = json.loads(output.getvalue())
+        self.assertEqual(exit_code, publisher.EXIT_PUBLISH_FAILED)
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["error"], "simulated_publish_failure")
+
+    def test_main_emits_json_for_unclassified_error_exit_code(self) -> None:
+        destination = self.root / "published.xlsx"
+        output = io.StringIO()
+
+        with patch(
+            "publish_output.publish_output",
+            side_effect=RuntimeError("simulated internal failure"),
+        ):
+            with patch("sys.stdout", output):
+                exit_code = publisher.main([str(self.candidate), str(destination)])
+
+        report = json.loads(output.getvalue())
+        self.assertEqual(exit_code, publisher.EXIT_INTERNAL_ERROR)
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["error"], "internal_error")
+
+
 class SkillStructureTests(unittest.TestCase):
     def test_required_files_exist(self) -> None:
         required = [
@@ -409,11 +842,13 @@ class SkillStructureTests(unittest.TestCase):
             "references/formatting-and-formulas.md",
             "references/high-fidelity-workflow.md",
             "references/patch-spec.md",
+            "references/output-lifecycle.md",
             "scripts/patch_ooxml.py",
             "scripts/libreoffice_headless.py",
             "scripts/merge_formula_caches.py",
             "scripts/verify_xlsx.py",
             "scripts/verify_pdf.py",
+            "scripts/publish_output.py",
             "evals/evals.json",
         ]
         for relative in required:
@@ -434,7 +869,12 @@ class SkillStructureTests(unittest.TestCase):
     def test_eval_json_is_valid(self) -> None:
         data = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
         self.assertEqual(data["skill_name"], "xlsx")
-        self.assertGreaterEqual(len(data["evals"]), 8)
+        self.assertGreaterEqual(len(data["evals"]), 9)
+        lifecycle_eval = next(item for item in data["evals"] if item["id"] == 9)
+        lifecycle_text = json.dumps(lifecycle_eval, ensure_ascii=False)
+        self.assertIn("交付前", lifecycle_text)
+        self.assertIn("SHA-256", lifecycle_text)
+        self.assertIn("递增版本", lifecycle_text)
 
         triggers = json.loads(
             (SKILL_ROOT / "evals" / "trigger-evals.json").read_text(encoding="utf-8")

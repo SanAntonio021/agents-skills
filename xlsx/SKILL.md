@@ -19,7 +19,7 @@ python <skill-root>\scripts\verify_xlsx.py input.xlsx --json-out baseline.json
 python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx batch --input commands.json
 ```
 
-桥接器会复制到新文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
+桥接器会复制到新候选文件并拒绝覆盖已有输出。OfficeCLI 不负责公式重算、复杂样式保真、
 宏签名或打印版面验收，也不作为 XLSX schema 校验器：OfficeCLI `1.0.143` 会把有效的
 `styles.xml` 字体颜色节点误报为 schema 错误，bridge 因此提前拒绝 XLSX `validate`，正式校验
 统一使用 `verify_xlsx.py`。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
@@ -35,9 +35,10 @@ Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office
 
 1. 读取项目和上级规则，确认输入、输出、覆盖限制、允许变化和 Office 边界。
 2. 完整读取 [references/general-workflow.md](references/general-workflow.md)。
-3. 创建或常规编辑工作簿时读取 [references/formatting-and-formulas.md](references/formatting-and-formulas.md)。
-4. 复杂既有模板、严格差异或公式缓存任务，完整读取 [references/high-fidelity-workflow.md](references/high-fidelity-workflow.md)。
-5. 使用定点 OOXML 补丁时读取 [references/patch-spec.md](references/patch-spec.md)。
+3. 任务会产生文件时完整读取 [references/output-lifecycle.md](references/output-lifecycle.md)。
+4. 创建或常规编辑工作簿时读取 [references/formatting-and-formulas.md](references/formatting-and-formulas.md)。
+5. 复杂既有模板、严格差异或公式缓存任务，完整读取 [references/high-fidelity-workflow.md](references/high-fidelity-workflow.md)。
+6. 使用定点 OOXML 补丁时读取 [references/patch-spec.md](references/patch-spec.md)。
 
 ## 路由
 
@@ -85,28 +86,33 @@ Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office
 - `scripts/libreoffice_headless.py` 负责隔离重算和 PDF 导出，不使用 Office COM。
 - `scripts/merge_formula_caches.py` 负责公式签名核对与缓存回填。
 - `scripts/verify_xlsx.py`、`scripts/verify_pdf.py` 负责机器检查；最终仍需查看渲染结果。
+- `scripts/publish_output.py` 负责把已验证候选发布到正式路径；其他作者工具仍只能写不存在的候选路径。
 
 ## 基本边界
 
-- 源文件默认只读。输出使用新文件名、递增版本或用户指定的新路径。
+- 用户原文件、任务开始前已存在的文件、已交付文件和归属不明文件默认受保护，不覆盖。
+- 当前任务创建、尚未交付且未被用户接管的草稿，只有在上次记录的 SHA-256 仍匹配时，才可通过 `publish_output.py` 复用原路径。
+- 文件首次在最终回复中正式链接后即为已交付；后续修正默认生成递增版本。用户提前查看、打开、编辑或接管草稿时，先转为受保护状态再链接。
+- OfficeCLI、OOXML 和 `libreoffice-runner` 继续只生成不存在的候选路径，不直接覆盖任何已有文件。
+- 候选、重算副本、渲染结果和中间 JSON 放入任务独占临时目录；正式文件发布并验证后，在最终回复前只清理当前任务明确拥有的临时产物。
 - 未获本次明确许可，不启动、连接或控制 Excel，不使用 Office COM 或 GUI 自动化。
 - 不保存以 `data_only=True` 加载的工作簿；那会把公式替换成缓存值。
 - 公式结果用公式表达，不用脚本计算后硬写静态结果，除非用户明确要求静态值。
 - 不把标识符误写成数字；不把数字、日期、金额或百分比预格式化成普通文本。
 - 既有模板优先级高于默认风格。不全表重排、不无关改色、不随意自动列宽。
 - 无来源字段保持空白。外部事实记录来源，不根据常识补填。
-- 输出路径已存在时先停下，不静默覆盖。
+- 草稿不在 commentary 中链接。用户要求提前查看时，链接动作本身会结束草稿的可替换状态。
 
 ## 通用工作流
 
 1. **确认任务**：区分只读、创建、常规编辑、高保真编辑、格式转换。
 2. **检查输入**：读取工作表、已用范围、公式、缓存、样式、对象、合并和打印设置。
 3. **建立约束**：列出允许变化、锁定字段、关键合计、公式和输出路径。
-4. **实现**：选择常规作者工具或高保真 OOXML 路线。
+4. **实现**：选择常规作者工具或高保真 OOXML 路线，在任务独占临时目录生成不存在的候选文件。
 5. **重算**：含公式的交付文件必须生成有效缓存；外部链接、宏或复杂公式先判断兼容性。
 6. **数据验证**：检查公式错误、范围、合计、唯一性、类型、空白、排序和文本规则。
 7. **视觉验证**：渲染全部相关工作表或导出 PDF，检查裁切、重叠、空白页、图表和打印范围。
-8. **交付**：只链接正式文件；报告实际变化、公式检查、关键数值和仍未确认的事实。
+8. **发布与交付**：按 [references/output-lifecycle.md](references/output-lifecycle.md) 通过受控发布器落位；只在最终回复链接正式文件，并报告实际变化、公式检查、关键数值和仍未确认的事实。
 
 ## 公式规则
 
@@ -128,13 +134,14 @@ Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office
 ## 高保真命令顺序
 
 ```powershell
-python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out baseline.json
-python <skill-root>\scripts\patch_ooxml.py source.xlsx draft.xlsx --spec patch.json
-python <skill-root>\scripts\libreoffice_headless.py recalc draft.xlsx recalculated.xlsx
-python <skill-root>\scripts\merge_formula_caches.py draft.xlsx recalculated.xlsx final.xlsx
-python <skill-root>\scripts\verify_xlsx.py final.xlsx --baseline source.xlsx --policy policy.json
-python <skill-root>\scripts\libreoffice_headless.py pdf final.xlsx final.pdf
-python <skill-root>\scripts\verify_pdf.py final.pdf --render-dir rendered --pdftoppm <absolute-pdftoppm-executable>
+python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out <task-temp>\baseline.json
+python <skill-root>\scripts\patch_ooxml.py source.xlsx <task-temp>\draft.xlsx --spec <task-temp>\patch.json
+python <skill-root>\scripts\libreoffice_headless.py recalc <task-temp>\draft.xlsx <task-temp>\recalculated.xlsx
+python <skill-root>\scripts\merge_formula_caches.py <task-temp>\draft.xlsx <task-temp>\recalculated.xlsx <task-temp>\candidate-final.xlsx
+python <skill-root>\scripts\verify_xlsx.py <task-temp>\candidate-final.xlsx --baseline source.xlsx --policy <task-temp>\policy.json
+python <skill-root>\scripts\libreoffice_headless.py pdf <task-temp>\candidate-final.xlsx <task-temp>\candidate-final.pdf
+python <skill-root>\scripts\verify_pdf.py <task-temp>\candidate-final.pdf --render-dir <task-temp>\rendered --pdftoppm <absolute-pdftoppm-executable>
+python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <formal-destination.xlsx>
 ```
 
 Windows 下显式解析带 `.exe` 的 Poppler 程序，避免无扩展名命令命中运行时里的失效包装器：
@@ -152,10 +159,11 @@ Windows 下运行已保存的 `.py` 文件。不要把含中文路径或文本�
 
 创建或编辑任务：
 
-- 正式文件为独立输出，源文件哈希未变；
+- 正式文件通过受控发布器落位，源文件哈希未变；
 - 内容、类型、公式、合计和引用正确；
 - 所有公式都有有效缓存，错误为 0；
 - 格式与模板一致，图表和关键文本完整可见；
 - 高保真任务的差异只落在获准范围，受保护 OOXML 条目保持；
 - PDF 或渲染检查无空白页、窄页、重叠和裁切；
-- 最终报告说明输出路径、变化范围、验证结果和未确认项。
+- 最终报告说明输出路径、变化范围、验证结果和未确认项；首次链接后将该路径视为已交付、受保护文件；
+- 发送最终回复前，任务独占临时目录中由当前任务拥有的候选、重算副本、渲染结果和中间 JSON 已清理。

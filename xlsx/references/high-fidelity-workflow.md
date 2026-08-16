@@ -18,7 +18,7 @@
 
 ```powershell
 Get-FileHash -Algorithm SHA256 source.xlsx
-python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out baseline.json
+python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out <task-temp>\baseline.json
 ```
 
 基线至少记录：
@@ -31,7 +31,7 @@ python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out baseline.json
 
 ## 3. 写允许变化政策
 
-`verify_xlsx.py` 的政策文件示例：
+`verify_xlsx.py` 的政策文件放入任务独占临时目录。示例：
 
 ```json
 {
@@ -63,17 +63,17 @@ python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out baseline.json
 读取 [patch-spec.md](patch-spec.md)，建立补丁 JSON：
 
 ```powershell
-python <skill-root>\scripts\patch_ooxml.py source.xlsx draft.xlsx --spec patch.json
+python <skill-root>\scripts\patch_ooxml.py source.xlsx <task-temp>\draft.xlsx --spec <task-temp>\patch.json
 ```
 
-脚本保留未修改 ZIP 条目的内容和元数据，只重写确有变化的 XML 条目。它适合已有单元格、行高、验证范围和打印定义；不负责通用插行、公式平移或图表重构。
+脚本保留未修改 ZIP 条目的内容和元数据，只重写确有变化的 XML 条目。它适合已有单元格、行高、验证范围和打印定义；不负责通用插行、公式平移或图表重构。输出候选路径必须不存在，不得用补丁工具直接覆盖草稿或正式文件。
 
 ### 4.2 结构变化
 
 需要插入多行时：
 
 1. 先列明所有受影响公式、合并、验证、分页、打印区和绘图锚点。
-2. 在独立中间文件完成结构变化。
+2. 在任务独占临时目录的独立候选文件完成结构变化。
 3. 用前后语义差异和包条目差异判断常规库是否误改对象。
 4. 如果误改超出允许范围，停止使用该中间文件，编写任务专用 OOXML 变换。
 
@@ -83,13 +83,13 @@ python <skill-root>\scripts\patch_ooxml.py source.xlsx draft.xlsx --spec patch.j
 
 重算分三份文件：
 
-- `draft.xlsx`：权威内容和格式版本；
-- `recalculated.xlsx`：LibreOffice 隔离重算副本；
-- `final.xlsx`：从 `draft.xlsx` 复制并回填公式缓存的正式版本。
+- `<task-temp>\draft.xlsx`：权威内容和格式候选；
+- `<task-temp>\recalculated.xlsx`：LibreOffice 隔离重算副本；
+- `<task-temp>\candidate-final.xlsx`：从 `draft.xlsx` 复制并回填公式缓存的待发布候选。
 
 ```powershell
-python <skill-root>\scripts\libreoffice_headless.py recalc draft.xlsx recalculated.xlsx
-python <skill-root>\scripts\merge_formula_caches.py draft.xlsx recalculated.xlsx final.xlsx
+python <skill-root>\scripts\libreoffice_headless.py recalc <task-temp>\draft.xlsx <task-temp>\recalculated.xlsx
+python <skill-root>\scripts\merge_formula_caches.py <task-temp>\draft.xlsx <task-temp>\recalculated.xlsx <task-temp>\candidate-final.xlsx
 ```
 
 回填前必须满足：
@@ -105,7 +105,7 @@ python <skill-root>\scripts\merge_formula_caches.py draft.xlsx recalculated.xlsx
 ## 6. 包级复核
 
 ```powershell
-python <skill-root>\scripts\verify_xlsx.py final.xlsx --baseline source.xlsx --policy policy.json --json-out verification.json
+python <skill-root>\scripts\verify_xlsx.py <task-temp>\candidate-final.xlsx --baseline source.xlsx --policy <task-temp>\policy.json --json-out <task-temp>\verification.json
 ```
 
 检查结果分三类：
@@ -121,16 +121,16 @@ python <skill-root>\scripts\verify_xlsx.py final.xlsx --baseline source.xlsx --p
 ## 7. PDF 与视觉复核
 
 ```powershell
-python <skill-root>\scripts\libreoffice_headless.py pdf final.xlsx final.pdf
-python <skill-root>\scripts\verify_pdf.py final.pdf `
+python <skill-root>\scripts\libreoffice_headless.py pdf <task-temp>\candidate-final.xlsx <task-temp>\candidate-final.pdf
+python <skill-root>\scripts\verify_pdf.py <task-temp>\candidate-final.pdf `
   --expected-pages 7 `
   --landscape `
   --expect-every-page "室外" `
-  --render-dir rendered `
-  --json-out pdf-verification.json
+  --render-dir <task-temp>\rendered `
+  --json-out <task-temp>\pdf-verification.json
 ```
 
-然后逐页查看 `rendered` 中的 PNG。重点看：
+然后逐页查看 `<task-temp>\rendered` 中的 PNG。重点看：
 
 - 每页是否包含目标最右列；
 - 是否出现仅表头页、仅少数列的窄页或空白页；
@@ -140,7 +140,23 @@ python <skill-root>\scripts\verify_pdf.py final.pdf `
 
 文本提取能发现缺字和空白页，但不能证明视觉无裁切。若 PDF 字体缺少可靠的 Unicode 映射，脚本会把中文关键词标为 `required_text_unverifiable` 警告，不误报为实际缺字；此时必须在渲染图中人工确认。最终始终查看全部渲染页。
 
-## 8. 最终报告
+## 8. 受控发布
+
+内容和视觉检查全部通过后，完整遵守 [output-lifecycle.md](output-lifecycle.md)。正式路径不存在时：
+
+```powershell
+python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <formal-destination.xlsx>
+```
+
+只有目标是当前任务创建、尚未交付且未被用户接管的草稿时，才能用上次成功 JSON 中记录的哈希原路径更新：
+
+```powershell
+python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <formal-destination.xlsx> --replace-existing-if-sha256 <recorded-sha256>
+```
+
+已交付、用户已查看或归属不明的目标改用递增版本。候选、重算副本、PDF、渲染图和核验 JSON 不在 commentary 中链接；发布失败时保留候选和原目标。
+
+## 9. 最终报告
 
 报告顺序：
 
@@ -151,3 +167,5 @@ python <skill-root>\scripts\verify_pdf.py final.pdf `
 5. 包级未改对象；
 6. PDF 页数和逐页结论；
 7. 仍需人工确认的事实。
+
+正式文件发布并验证后，在最终回复前只清理当前任务明确拥有的临时目录和中间产物。第一次在最终回复链接正式路径后，该文件成为已交付、受保护文件。

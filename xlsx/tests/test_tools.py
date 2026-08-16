@@ -21,7 +21,9 @@ sys.path.insert(0, str(SCRIPTS))
 from libreoffice_headless import convert, find_soffice  # noqa: E402
 from merge_formula_caches import merge_caches  # noqa: E402
 from ooxml_common import (  # noqa: E402
+    DOC_REL_NS,
     MAIN_NS,
+    PKG_REL_NS,
     has_formula_cache,
     load_package,
     parse_xml,
@@ -34,6 +36,7 @@ from ooxml_common import (  # noqa: E402
 from patch_ooxml import patch_workbook  # noqa: E402
 import publish_output as publisher  # noqa: E402
 from verify_pdf import find_pdftoppm, inspect_pdf  # noqa: E402
+import verify_xlsx  # noqa: E402
 from verify_xlsx import compare_workbooks, inspect_workbook  # noqa: E402
 
 
@@ -42,7 +45,9 @@ class WorkbookToolTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory(prefix="xlsx-skill-test-")
         self.root = Path(self.temp_dir.name)
         self.source = self.root / "source.xlsx"
+        self.structure_source = self.root / "structure-source.xlsx"
         self._build_workbook(self.source)
+        self._build_structure_workbook(self.structure_source)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -96,6 +101,47 @@ class WorkbookToolTests(unittest.TestCase):
         if worksheet_filter_ref is not None:
             sheet.auto_filter.ref = worksheet_filter_ref
         workbook.save(path)
+
+    @staticmethod
+    def _build_structure_workbook(path: Path) -> None:
+        from openpyxl import Workbook
+
+        workbook = Workbook()
+        workbook.active.title = "First"
+        workbook.active["A1"] = "First sheet"
+        workbook.create_sheet("Second")["A1"] = "Second sheet"
+        workbook.save(path)
+
+    def _write_structure_variant(
+        self,
+        filename: str,
+        *,
+        workbook_mutator=None,
+        relationships_mutator=None,
+    ) -> Path:
+        entries, _, _ = load_package(self.structure_source)
+        replacements: dict[str, bytes] = {}
+        if workbook_mutator is not None:
+            workbook = parse_xml(entries["xl/workbook.xml"])
+            workbook_mutator(workbook)
+            replacements["xl/workbook.xml"] = serialize_xml(workbook)
+        if relationships_mutator is not None:
+            relationships = parse_xml(entries["xl/_rels/workbook.xml.rels"])
+            relationships_mutator(relationships)
+            replacements["xl/_rels/workbook.xml.rels"] = serialize_xml(relationships)
+        output = self.root / filename
+        write_package(self.structure_source, output, replacements)
+        return output
+
+    @staticmethod
+    def _sheets(workbook):
+        container = workbook.find(qn(MAIN_NS, "sheets"))
+        assert container is not None
+        return list(container.findall(qn(MAIN_NS, "sheet")))
+
+    @staticmethod
+    def _issue_kinds(report: dict) -> set[str]:
+        return {item["kind"] for item in report["workbook"]["workbook_issues"]}
 
     def _run_verify(self, workbook: Path) -> tuple[subprocess.CompletedProcess[str], dict]:
         result = subprocess.run(
@@ -184,6 +230,207 @@ class WorkbookToolTests(unittest.TestCase):
         topology = report["workbook"]["sheets"]["Filters"]["filter_topology"]
         self.assertEqual(topology["worksheet_auto_filters"], ["A1:D5"])
         self.assertEqual(topology["tables"], [])
+
+    def test_safe_sheet_name_passes_workbook_structure_gate(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[0].attrib["name"] = "移动及动中通终端"
+
+        candidate = self._write_structure_variant(
+            "safe-sheet-name.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["workbook"]["workbook_issue_count"], 0)
+
+    def test_fullwidth_slash_sheet_name_is_rejected_after_nfkc(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[0].attrib["name"] = "移动／动中通终端"
+
+        candidate = self._write_structure_variant(
+            "fullwidth-slash-sheet-name.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertFalse(report["ok"])
+        issue = next(
+            item
+            for item in report["workbook"]["workbook_issues"]
+            if item["kind"] == "excel_compatibility_issue"
+        )
+        self.assertEqual(issue["rule"], "sheet_name_nfkc_forbidden_character")
+        self.assertEqual(issue["normalized_name"], "移动/动中通终端")
+
+    def test_ascii_forbidden_sheet_name_is_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[0].attrib["name"] = "移动/动中通终端"
+
+        candidate = self._write_structure_variant(
+            "ascii-slash-sheet-name.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("invalid_sheet_name_character", self._issue_kinds(report))
+
+    def test_duplicate_sheet_name_and_sheet_id_are_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            first, second = self._sheets(workbook)
+            second.attrib["name"] = first.attrib["name"]
+            second.attrib["sheetId"] = first.attrib["sheetId"]
+
+        candidate = self._write_structure_variant(
+            "duplicate-sheet-name-and-id.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertTrue(
+            {"duplicate_sheet_name", "duplicate_sheet_id"}.issubset(
+                self._issue_kinds(report)
+            )
+        )
+
+    def test_duplicate_sheet_relationship_id_is_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            first, second = self._sheets(workbook)
+            second.attrib[qn(DOC_REL_NS, "id")] = first.attrib[qn(DOC_REL_NS, "id")]
+
+        candidate = self._write_structure_variant(
+            "duplicate-sheet-relationship-id.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("duplicate_sheet_relationship_id", self._issue_kinds(report))
+
+    def test_unresolved_sheet_relationship_id_is_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[1].attrib[qn(DOC_REL_NS, "id")] = "rId999"
+
+        candidate = self._write_structure_variant(
+            "unresolved-sheet-relationship-id.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("unresolved_sheet_relationship_id", self._issue_kinds(report))
+
+    def test_sheet_relationship_must_target_a_sheet_part(self) -> None:
+        def mutate(workbook) -> None:
+            entries, _, _ = load_package(self.structure_source)
+            relationships = parse_xml(entries["xl/_rels/workbook.xml.rels"])
+            styles = next(
+                relationship
+                for relationship in relationships.findall(qn(PKG_REL_NS, "Relationship"))
+                if relationship.attrib["Type"].endswith("/styles")
+            )
+            self._sheets(workbook)[1].attrib[qn(DOC_REL_NS, "id")] = styles.attrib["Id"]
+
+        candidate = self._write_structure_variant(
+            "sheet-relationship-to-styles.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("invalid_sheet_relationship_type", self._issue_kinds(report))
+
+    def test_missing_relationship_target_is_rejected(self) -> None:
+        def mutate(relationships) -> None:
+            first = relationships.findall(qn(PKG_REL_NS, "Relationship"))[0]
+            first.attrib["Target"] = "worksheets/missing.xml"
+
+        candidate = self._write_structure_variant(
+            "missing-relationship-target.xlsx", relationships_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("missing_relationship_target", self._issue_kinds(report))
+
+    def test_overlong_sheet_name_is_rejected_by_utf16_length(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[0].attrib["name"] = "A" * 32
+
+        candidate = self._write_structure_variant(
+            "overlong-sheet-name.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("sheet_name_too_long", self._issue_kinds(report))
+
+    def test_no_visible_worksheet_is_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            for sheet in self._sheets(workbook):
+                sheet.attrib["state"] = "hidden"
+
+        candidate = self._write_structure_variant(
+            "no-visible-sheet.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("no_visible_worksheets", self._issue_kinds(report))
+
+    def test_active_tab_out_of_range_is_rejected(self) -> None:
+        def mutate(workbook) -> None:
+            views = workbook.find(qn(MAIN_NS, "bookViews"))
+            assert views is not None
+            view = views.find(qn(MAIN_NS, "workbookView"))
+            assert view is not None
+            view.attrib["activeTab"] = "2"
+
+        candidate = self._write_structure_variant(
+            "active-tab-out-of-range.xlsx", workbook_mutator=mutate
+        )
+        result, report = self._run_verify(candidate)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("active_tab_out_of_range", self._issue_kinds(report))
+
+    def test_missing_workbook_part_is_reported_without_internal_error(self) -> None:
+        entries, infos, comment = load_package(self.structure_source)
+        missing_workbook_entries = dict(entries)
+        missing_workbook_entries.pop("xl/workbook.xml")
+        missing_workbook_infos = [
+            info for info in infos if info.filename != "xl/workbook.xml"
+        ]
+        with patch(
+            "verify_xlsx.load_package",
+            return_value=(missing_workbook_entries, missing_workbook_infos, comment),
+        ):
+            report = verify_xlsx.inspect_workbook(self.structure_source)
+
+        self.assertIn(
+            "missing_workbook_part",
+            {issue["kind"] for issue in report["workbook_issues"]},
+        )
+
+    def test_verify_cli_forces_utf8_output(self) -> None:
+        def mutate(workbook) -> None:
+            self._sheets(workbook)[0].attrib["name"] = "Registered®"
+
+        candidate = self._write_structure_variant(
+            "registered-symbol.xlsx", workbook_mutator=mutate
+        )
+        environment = os.environ.copy()
+        environment["PYTHONIOENCODING"] = "gbk"
+        result = subprocess.run(
+            [sys.executable, str(SCRIPTS / "verify_xlsx.py"), str(candidate)],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=environment,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertTrue(report["ok"])
+        self.assertIn("Registered®", result.stdout)
 
     def test_targeted_patch_and_policy(self) -> None:
         output = self.root / "patched.xlsx"

@@ -31,6 +31,11 @@ Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office
 未安装 exporter plugin 而禁用。Office 源文件转 PDF 使用本技能的 `libreoffice-runner` 路径，
 并按兼容性结果进行视觉验收。
 
+`verify_xlsx.py` 除公式、筛选和 ZIP 完整性外，还检查 `workbook.xml` 的工作表名称、
+`sheetId`、关系、可见工作表和活动页。半角禁用字符，以及名称经 NFKC 归一化后出现的禁用
+字符，均为 Excel 兼容硬错误；这能在生成阶段拦住某些 OOXML schema 本身接受、但 Excel 会要求
+修复的工作簿。它仍不能替代本机 Excel 原生打开复测。
+
 ## 先读
 
 1. 读取项目和上级规则，确认输入、输出、覆盖限制、允许变化和 Office 边界。

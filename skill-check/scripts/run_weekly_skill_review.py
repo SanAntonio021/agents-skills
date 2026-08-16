@@ -2229,9 +2229,14 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
 
 
 def sync_helper_fingerprint(path: Path) -> str:
-    if not path.is_file():
-        return fingerprint({"status": "missing", "name": path.name})
-    return file_sha256(path)
+    components = [path, path.with_name("CcSwitchSkillSync.psm1")]
+    rows = []
+    for component in components:
+        if component.is_file():
+            rows.append({"name": component.name, "sha256": file_sha256(component)})
+        else:
+            rows.append({"name": component.name, "status": "missing"})
+    return fingerprint(rows)
 
 
 def targets_overlap(left: Iterable[str], right: Iterable[str]) -> bool:

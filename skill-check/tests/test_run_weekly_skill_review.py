@@ -34,7 +34,9 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.reports = self.root / "reports"
         self.state_path = self.reports / "weekly-review-state.json"
         self.helper = self.root / "Invoke-CcSwitchSkillSync.ps1"
+        self.helper_module = self.root / "CcSwitchSkillSync.psm1"
         self.helper.write_text("helper-v1\n", encoding="utf-8")
+        self.helper_module.write_text("module-v1\n", encoding="utf-8")
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -567,7 +569,11 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(invalid["status"], "invalid_request")
         confirmation, _ = self.invoke("prepare-execution")
-        self.helper.write_text("helper-v2\n", encoding="utf-8")
+        original_entry_fingerprint = REVIEW.sync_helper_fingerprint(self.helper)
+        self.helper_module.write_text("module-v2\n", encoding="utf-8")
+        self.assertNotEqual(
+            REVIEW.sync_helper_fingerprint(self.helper), original_entry_fingerprint
+        )
         blocked, code = self.invoke(
             "prepare-execution",
             "--decision",

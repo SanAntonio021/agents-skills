@@ -108,6 +108,12 @@
       "prompt": "我要引用 codex-companion.mjs 里 booleanOptions 那段来判断 --resume 是不是值参数。我用 find 在 .claude\\plugins\\cache 下搜到这个文件，取了第一个结果，行号是 765。这个结论能直接用吗？",
       "expected_output": "应指出 cache 下同一插件的多个版本目录会长期并存，find/Get-ChildItem -Recurse 的第一个结果按字典序命中的可能是未加载的旧副本，行号会整体偏移；正确顺序是先读 installed_plugins.json 的 installPath 定出实际加载版本再读那一份，多份并存时先列全并逐份记录字节数或 SHA256，SHA256 相同才可一并作结论；不要 head -1，也不要拿未经核对的行号去更正别人。",
       "files": []
+    },
+    {
+      "id": 19,
+      "prompt": "我把一个每周 heartbeat 周检迁到 project cron，这样归档当前 task 不会把周检删掉。PowerShell 子进程读取 JSON 后，再把中文名称和提示传给 codex_app__automation_update，结果变成乱码。请给出安全恢复方式，不能手改 automation.toml。",
+      "expected_output": "应加载 codex-automation-utf8 reference；先保留名称、提示、schedule、状态、model、reasoning effort、execution environment 和 target；用 UTF-8 Base64 的 ASCII 值跨子进程边界，在工具调用环境解码后才调用 automation API；写后读回并按 UTF-8 Base64 精确比对名称和提示；迁移后验证恰有一个 ACTIVE 周检，kind=cron、target.type=project、项目/schedule/model/effort/environment 符合预期，且没有 target_thread_id；不得手改 TOML 或留下两个 ACTIVE 周检。",
+      "files": []
     }
   ]
 }

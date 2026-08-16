@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +29,7 @@ from ooxml_common import (  # noqa: E402
     write_package,
 )
 from patch_ooxml import patch_workbook  # noqa: E402
-from verify_pdf import inspect_pdf  # noqa: E402
+from verify_pdf import find_pdftoppm, inspect_pdf  # noqa: E402
 from verify_xlsx import compare_workbooks, inspect_workbook  # noqa: E402
 
 
@@ -376,6 +377,28 @@ class WorkbookToolTests(unittest.TestCase):
         )
         self.assertTrue(report["ok"], json.dumps(report, indent=2))
         self.assertTrue(report["visual_inspection_required"])
+
+    def test_find_pdftoppm_prefers_exe_over_extensionless_wrapper(self) -> None:
+        executable = self.root / "pdftoppm.exe"
+        wrapper = self.root / "pdftoppm.CMD"
+        executable.touch()
+        wrapper.touch()
+
+        def locate(name: str) -> str | None:
+            return str(executable) if name == "pdftoppm.exe" else str(wrapper)
+
+        with patch("verify_pdf.shutil.which", side_effect=locate):
+            self.assertEqual(find_pdftoppm(None), executable.resolve())
+
+    def test_find_pdftoppm_falls_back_to_extensionless_command(self) -> None:
+        wrapper = self.root / "pdftoppm"
+        wrapper.touch()
+
+        def locate(name: str) -> str | None:
+            return None if name == "pdftoppm.exe" else str(wrapper)
+
+        with patch("verify_pdf.shutil.which", side_effect=locate):
+            self.assertEqual(find_pdftoppm(None), wrapper.resolve())
 
 
 class SkillStructureTests(unittest.TestCase):

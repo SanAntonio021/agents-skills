@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -92,11 +93,11 @@ class WeeklySkillReviewTests(unittest.TestCase):
 
     def invoke(self, command: str, *extra: str):
         argv = [command, "--state", str(self.state_path), *extra]
+        if command in {"prepare-execution", "record-decision"}:
+            argv.extend(["--skills-root", str(self.skills)])
         if command == "prepare-execution":
             argv.extend(
                 [
-                    "--skills-root",
-                    str(self.skills),
                     "--reports-root",
                     str(self.reports),
                     "--sync-helper",
@@ -113,6 +114,26 @@ class WeeklySkillReviewTests(unittest.TestCase):
             "record-execution": REVIEW.record_execution_command,
         }
         return handlers[command](args)
+
+    def git(self, *arguments: str) -> str:
+        completed = subprocess.run(
+            ["git", "-C", str(self.skills), *arguments],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+        )
+        return completed.stdout.strip()
+
+    def initialize_skills_git(self, *skill_names: str) -> str:
+        self.git("init", "--quiet")
+        self.git("config", "user.name", "Weekly Review Test")
+        self.git("config", "user.email", "weekly-review@example.invalid")
+        paths = [f"{name}/SKILL.md" for name in skill_names]
+        self.git("add", "--", *paths)
+        self.git("commit", "--quiet", "-m", "initial skills")
+        return self.git("rev-parse", "HEAD")
 
     def seed(self, observations: list[dict]) -> dict:
         state = REVIEW.new_state()
@@ -661,6 +682,207 @@ class WeeklySkillReviewTests(unittest.TestCase):
         ids = {item["finding_id"] for item in self.load()["batches"][-1]["items"]}
         self.assertEqual(ids, {dependency["id"], dependent["id"]})
         self.assertEqual(new_confirmation["status"], "execution_confirmation")
+
+    def test_retry_adopts_only_the_clean_recorded_execution_commit(self) -> None:
+        observation = self.observation("retry-source", severity="high")
+        self.initialize_skills_git("retry-source")
+        state = self.seed([observation])
+        state["findings"][observation["id"]]["status"] = "approved"
+        state["queue"].remove(observation["id"])
+        self.save(state)
+        confirmation, _ = self.invoke("prepare-execution")
+        self.invoke(
+            "prepare-execution",
+            "--decision",
+            "approve",
+            "--batch-id",
+            confirmation["batch_id"],
+            "--expected-batch-fingerprint",
+            confirmation["batch_fingerprint"],
+        )
+
+        skill_md = self.skills / "retry-source" / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8") + "\nCommitted output.\n",
+            encoding="utf-8",
+        )
+        self.git("add", "--", "retry-source/SKILL.md")
+        self.git("commit", "--quiet", "-m", "apply retry source change")
+        execution_commit = self.git("rev-parse", "HEAD")
+        self.invoke(
+            "record-execution",
+            "--batch-id",
+            confirmation["batch_id"],
+            "--finding-id",
+            observation["id"],
+            "--expected-proposal-fingerprint",
+            observation["proposal_fingerprint"],
+            "--outcome",
+            "failed",
+            "--details",
+            "source committed but runtime sync failed",
+            "--commit",
+            execution_commit,
+            "--remote-sha",
+            execution_commit,
+            "--sync-status",
+            "failed",
+        )
+        retry_question, _ = self.invoke("next-question")
+        retried, code = self.invoke(
+            "record-decision",
+            "--finding-id",
+            observation["id"],
+            "--expected-evidence-fingerprint",
+            retry_question["expected_evidence_fingerprint"],
+            "--expected-proposal-fingerprint",
+            retry_question["expected_proposal_fingerprint"],
+            "--answer",
+            "批准",
+        )
+        self.assertEqual(code, 0)
+        self.assertTrue(retried["retry_source_rebased"])
+        current = self.load()
+        self.assertEqual(current["batches"][0]["status"], "stale")
+        self.assertEqual(
+            current["findings"][observation["id"]]["source_fingerprint"],
+            REVIEW.source_fingerprint(self.skills, ["retry-source"]),
+        )
+
+        retry_confirmation, _ = self.invoke("prepare-execution")
+        ready, code = self.invoke(
+            "prepare-execution",
+            "--decision",
+            "approve",
+            "--batch-id",
+            retry_confirmation["batch_id"],
+            "--expected-batch-fingerprint",
+            retry_confirmation["batch_fingerprint"],
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(ready["status"], "ready")
+        self.assertEqual(ready["drifted_finding_ids"], [])
+
+    def test_retry_rejects_uncommitted_changes_after_the_recorded_commit(self) -> None:
+        observation = self.observation("retry-drift", severity="high")
+        self.initialize_skills_git("retry-drift")
+        state = self.seed([observation])
+        state["findings"][observation["id"]]["status"] = "approved"
+        state["queue"].remove(observation["id"])
+        self.save(state)
+        confirmation, _ = self.invoke("prepare-execution")
+        self.invoke(
+            "prepare-execution",
+            "--decision",
+            "approve",
+            "--batch-id",
+            confirmation["batch_id"],
+            "--expected-batch-fingerprint",
+            confirmation["batch_fingerprint"],
+        )
+        skill_md = self.skills / "retry-drift" / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8") + "\nCommitted output.\n",
+            encoding="utf-8",
+        )
+        self.git("add", "--", "retry-drift/SKILL.md")
+        self.git("commit", "--quiet", "-m", "apply retry source change")
+        execution_commit = self.git("rev-parse", "HEAD")
+        self.invoke(
+            "record-execution",
+            "--batch-id",
+            confirmation["batch_id"],
+            "--finding-id",
+            observation["id"],
+            "--expected-proposal-fingerprint",
+            observation["proposal_fingerprint"],
+            "--outcome",
+            "failed",
+            "--details",
+            "source committed but runtime sync failed",
+            "--commit",
+            execution_commit,
+            "--remote-sha",
+            execution_commit,
+            "--sync-status",
+            "failed",
+        )
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8") + "Uncommitted drift.\n",
+            encoding="utf-8",
+        )
+        retry_question, _ = self.invoke("next-question")
+        blocked, code = self.invoke(
+            "record-decision",
+            "--finding-id",
+            observation["id"],
+            "--expected-evidence-fingerprint",
+            retry_question["expected_evidence_fingerprint"],
+            "--expected-proposal-fingerprint",
+            retry_question["expected_proposal_fingerprint"],
+            "--answer",
+            "批准",
+        )
+        self.assertEqual(code, 4)
+        self.assertEqual(blocked["status"], "blocked_retry_source_drift")
+        self.assertEqual(
+            self.load()["findings"][observation["id"]]["status"], "retry_pending"
+        )
+
+    def test_legacy_blocked_retry_is_recovered_without_editing_state_by_hand(self) -> None:
+        observation = self.observation("legacy-retry", severity="high")
+        self.initialize_skills_git("legacy-retry")
+        state = self.seed([observation])
+        original_source = state["findings"][observation["id"]]["source_fingerprint"]
+        skill_md = self.skills / "legacy-retry" / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8") + "\nCommitted output.\n",
+            encoding="utf-8",
+        )
+        self.git("add", "--", "legacy-retry/SKILL.md")
+        self.git("commit", "--quiet", "-m", "apply legacy retry source change")
+        execution_commit = self.git("rev-parse", "HEAD")
+        finding = state["findings"][observation["id"]]
+        finding["status"] = "waiting_evidence"
+        finding["execution"] = {
+            "outcome": "failed",
+            "details": "source committed but runtime sync failed",
+            "commit": execution_commit,
+            "remote_sha": execution_commit,
+            "sync_status": "failed",
+        }
+        finding["decision"] = {
+            "value": "approved",
+            "recorded_at": "2026-08-15T12:00:00+08:00",
+        }
+        state["queue"].remove(observation["id"])
+        state["batches"].append(
+            {
+                "id": "batch-legacy-blocked",
+                "status": "blocked",
+                "items": [
+                    {
+                        "finding_id": observation["id"],
+                        "status": "blocked_drift",
+                        "source_fingerprint": original_source,
+                    }
+                ],
+            }
+        )
+        self.save(state)
+
+        confirmation, code = self.invoke("prepare-execution")
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            confirmation["recovered_retry_finding_ids"], [observation["id"]]
+        )
+        current = self.load()
+        self.assertEqual(current["batches"][0]["status"], "stale")
+        self.assertEqual(current["findings"][observation["id"]]["status"], "approved")
+        self.assertNotEqual(
+            current["findings"][observation["id"]]["source_fingerprint"],
+            original_source,
+        )
 
     def test_corrupt_state_and_lock_are_blocking_without_rebuild(self) -> None:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)

@@ -61,13 +61,21 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 - BibTeX 条目统一小写 key 约定 `firstauthor-year-keyword`，页码、卷期、月份补全；IEEE 风格由 `IEEEtran.bst` 负责，不要手工排引用格式。
 - 引用元数据可疑（预印本当正式版、会议/期刊混淆）时标注出来，需要正式版 PDF 证据时转 `paper-download`。
 
-### 5. 编译验证
+### 5. 双源同步校验
+
+当 Markdown 阅读稿与 LaTeX 投稿工程并存时，先由用户或现有项目规则明确哪一份是权威源；不得根据文件时间戳、README 声明或其中一份能够成功编译来推断。将 PDF 称为 final 前，按已确认修改清单逐项进行语义核对，至少覆盖术语、数值、图表标题、论断和结论。
+
+- 已确认修改造成的差异，按声明的权威关系同步源稿或派生稿后，再执行编译。
+- 差异会新增或改变未经确认的科学表述时，停止同步，交给用户或 `ieee-manuscript-edit` 处理；不要自行推断哪一稿应覆盖另一稿。
+- 编译通过只说明 LaTeX 工程可生成 PDF，不能证明双源已经同步。例如，Markdown 写作 `digital signal processing (DSP)`，而 `main.tex` 仍写作 `DSP`；两份文件都可通过编译，但该 PDF 不能称为已同步的最终版本。
+
+### 6. 编译验证
 
 - 默认 `latexmk -pdf main.tex`；没有 latexmk 用 pdflatex → bibtex → pdflatex ×2。
 - 通过标准：零 error；warning 里 undefined references、multiply defined labels、citation undefined 必须清零；overfull hbox 超过 10 pt 的逐条处理。
 - 常见报错对照和处理见 [references/compile-and-submission-checklist.md](references/compile-and-submission-checklist.md)。
 
-### 6. 条件性投稿打包
+### 7. 条件性投稿打包
 
 只有目标期刊指南或当前页面明确要求 source 包时，才执行 [references/compile-and-submission-checklist.md](references/compile-and-submission-checklist.md) 的打包清单。页面只收 PDF 或 Word 时，本步骤记录为 `not_required`，不生成 ZIP。
 

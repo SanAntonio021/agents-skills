@@ -1,0 +1,22 @@
+[
+  {"query": "我要把固定用户地面站的产品调研做成按类别分表的 Excel 产品库，先从真实样本决定字段，再保留证据账本和采购渠道。", "should_trigger": true},
+  {"query": "对卫星调制解调设备做参数对比和询价渠道整理，产品编号要跨表连续，未知品牌和联系方式留空。", "should_trigger": true},
+  {"query": "Ka 相控阵组件和整机不能共用一套指标，请把 sample-first 设计、正式参数表和采购渠道表统一起来。", "should_trigger": true},
+  {"query": "审计现有射频设备产品库是否把 G/T、EIRP、接口和功耗按工程含义拆开，并检查每个产品有没有采购关联记录。", "should_trigger": true},
+  {"query": "把一份光通信收发模块调研清单规范成过程工作簿加正式工作簿，参数来源和采购来源要分开。", "should_trigger": true},
+  {"query": "已有产品表里品牌和生产厂家混在一列，帮我按统一产品调研契约拆开，并保持已发布的全局数字产品编号不变。", "should_trigger": true},
+  {"query": "为雷达天线、馈源组件和整机建立产品库，先抽样确认每类专用指标，再生成两行表头的正式 xlsx。", "should_trigger": true},
+  {"query": "检查这个设备调研 xlsx 有没有把证据原文、访问日期、采购状态泄漏到正式交付表，并验证链接的 OOXML relationship。", "should_trigger": true},
+  {"query": "新增一个工程设备类别到现有产品调查，旧数字编号不能重排，新产品从上一版最大编号后追加，还要检查采购一对多。", "should_trigger": true},
+  {"query": "我有产品候选、字段设计和参数证据表，用户已经确认字段了，请用确定性脚本生成分类参数表和采购渠道表并做业务验收。", "should_trigger": true},
+  {"query": "给采购部门整理一份供应商联系人台账，按公司、联系人、电话、邮箱和跟进状态筛选，不需要产品参数或证据研究。", "should_trigger": false},
+  {"query": "实时控制我正在打开的 Excel，把当前设备清单选区加黄色并立即保存。", "should_trigger": false},
+  {"query": "把一份物料 BOM 的数量和单价导入财务核算表，计算总成本和税额，不研究市场产品或采购渠道。", "should_trigger": false},
+  {"query": "从三篇论文提取器件参数，做一张投稿用 LaTeX 表格并写进论文正文。", "should_trigger": false},
+  {"query": "在 Google Sheets 做在线库存表，增加保护范围、共享权限和补货提醒。", "should_trigger": false},
+  {"query": "普通销售台账 xlsx 需要按月份汇总收入、成本和毛利率，做公式和柱状图。", "should_trigger": false},
+  {"query": "把项目排期表改成甘特图，增加负责人、开始日期和完成百分比。", "should_trigger": false},
+  {"query": "读取 forecast.xlsx 的一个单元格，解释现金余额为什么下降，不要修改工作簿。", "should_trigger": false},
+  {"query": "整理实验结果 CSV，计算 BER、EVM 的均值和置信区间，不需要长期产品库。", "should_trigger": false},
+  {"query": "把论文里的器件参数表转成 Markdown，最终只交 md，不要生成产品采购工作簿。", "should_trigger": false}
+]

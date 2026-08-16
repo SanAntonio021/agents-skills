@@ -33,6 +33,7 @@ description: 分阶段执行项目基线调研，包含 sample-first 取样、�
 4. 先做 sample-first 取样，再决定是否扩展。
 5. sample 完成后要先暂停，等用户确认指标口径和证据标准，再继续扩展剩余类别。
 6. 扩展阶段，对每条关键指标执行 source closure，尽量把证据链补闭。
+- 当已确认的基线需要落成正式工程产品参数表、产品库或采购渠道工作簿时，交回 `product-research-workbook`；本技能继续负责 sample-first、证据闭环和用户复核关口。
 
 ## 证据规则
 

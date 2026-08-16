@@ -1,4 +1,4 @@
-﻿---
+---
 name: style-vocab
 description: 三层词汇架构管理：收录通用文风词（vocab-full.md）、领域术语（scientific-terminology-bank.md）和项目专属词（terminology.md），支持”以后别用 X，用 Y”类用户偏好收录、AI 味候选词盘点、交付前用词检查，以及通过 domain 过滤加载跨层规则。Use when 用户说”别用这个词””这个词太 AI””换个说法””收录用词””记住这个用词””盘点词汇表””检查用词””交付前扫用词””收录领域术语””这个术语在我的研究方向都要这么写”，或要求按个人词表约束交付文稿正文；通用句式去 AI 味按语言转 `humanizer`（英文）或 `Humanizer-zh`（中文）。
 ---

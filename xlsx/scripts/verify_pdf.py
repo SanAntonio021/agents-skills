@@ -46,10 +46,13 @@ def find_pdftoppm(explicit: Path | None) -> Path:
         if candidate.is_file():
             return candidate
         raise FileNotFoundError(candidate)
-    located = shutil.which("pdftoppm") or shutil.which("pdftoppm.exe")
+    # Windows runtime PATHs can expose a stale extensionless wrapper before the real executable.
+    located = shutil.which("pdftoppm.exe") or shutil.which("pdftoppm")
     if located:
         return Path(located).resolve()
-    raise FileNotFoundError("pdftoppm was not found; render verification cannot run")
+    raise FileNotFoundError(
+        "pdftoppm was not found; pass --pdftoppm with the absolute executable path"
+    )
 
 
 def render_pdf(

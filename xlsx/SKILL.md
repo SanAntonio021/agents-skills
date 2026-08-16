@@ -134,7 +134,14 @@ python <skill-root>\scripts\libreoffice_headless.py recalc draft.xlsx recalculat
 python <skill-root>\scripts\merge_formula_caches.py draft.xlsx recalculated.xlsx final.xlsx
 python <skill-root>\scripts\verify_xlsx.py final.xlsx --baseline source.xlsx --policy policy.json
 python <skill-root>\scripts\libreoffice_headless.py pdf final.xlsx final.pdf
-python <skill-root>\scripts\verify_pdf.py final.pdf --render-dir rendered
+python <skill-root>\scripts\verify_pdf.py final.pdf --render-dir rendered --pdftoppm <absolute-pdftoppm-executable>
+```
+
+Windows 下显式解析带 `.exe` 的 Poppler 程序，避免无扩展名命令命中运行时里的失效包装器：
+
+```powershell
+$pdftoppm = (Get-Command pdftoppm.exe -ErrorAction Stop).Source
+python <skill-root>\scripts\verify_pdf.py final.pdf --render-dir rendered --pdftoppm $pdftoppm
 ```
 
 Windows 下运行已保存的 `.py` 文件。不要把含中文路径或文本的 PowerShell here-string 管道到 `python -`。

@@ -17,8 +17,14 @@ python <skill-root>\scripts\officecli_bridge.py view source.pptx text
 python <skill-root>\scripts\officecli_bridge.py validate source.pptx
 ```
 
+桥接器固定使用 OfficeCLI `1.0.144`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
+PDF/Office 文档任务不会联网下载或自动修复；只有用户明确运行
+`python <skill-root>\scripts\repair_officecli.py --repair` 才会修复默认本机路径。设置
+`OFFICECLI_EXE` 时也必须通过相同校验，路径错误应自行修正或取消环境变量；修复脚本不会改写
+覆盖路径。
+
 桥接器会隔离输入副本并核对源文件 SHA-256。不要通过 OfficeCLI 导出 Office-to-PDF：固定的
-OfficeCLI `1.0.143` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。需要 Microsoft
+OfficeCLI `1.0.144` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。需要 Microsoft
 Office 原生视觉结果时，只有在用户明确授权、对应 Office 进程不存在、使用隔离副本并显式传入
 `--render native --allow-native` 后才可尝试；桥接器不会关闭 Office。纯 PDF 仍按下面的
 Poppler、PyMuPDF、pypdf 和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器或保真渲染器。

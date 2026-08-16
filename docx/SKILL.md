@@ -20,6 +20,12 @@ python <skill-root>\scripts\officecli_bridge.py validate input.docx
 python <skill-root>\scripts\officecli_bridge.py mutate input.docx draft.docx batch --input commands.json
 ```
 
+The bridge pins OfficeCLI `1.0.144` and verifies its existence, SHA-256, and reported version before
+every invocation. Normal document work never downloads or repairs it. To repair the default local
+binary, the user must explicitly run `python <skill-root>\scripts\repair_officecli.py --repair`.
+An `OFFICECLI_EXE` override is subject to the same checks and must be fixed or unset directly; the
+repair script only repairs the default path.
+
 The bridge creates a new `draft.docx` copy before mutation. It is not a fidelity renderer:
 screenshots require either explicitly authorized native Word rendering (`--render native --allow-native`,
 no `WINWORD.EXE`, isolated copy) or `--render html --non-fidelity-preview` for diagnostics only.

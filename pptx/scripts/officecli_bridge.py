@@ -17,11 +17,14 @@ import sys
 import tempfile
 import time
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
 
 
-DEFAULT_EXE = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.143\officecli.exe")
+OFFICECLI_VERSION = "1.0.144"
+OFFICECLI_SHA256 = "E780CC6A5385F84B4D54D71B0C179904ED534125EC33FE39B1A8711FA80E387E"
+DEFAULT_EXE = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.144\officecli.exe")
 OFFICE_PROCESSES = {
     ".pptx": "POWERPNT.EXE",
     ".potx": "POWERPNT.EXE",
@@ -53,6 +56,14 @@ class BridgeError(RuntimeError):
     """A user-actionable bridge or safety failure."""
 
 
+@dataclass(frozen=True)
+class ResolvedOfficeCli:
+    path: Path
+    sha256: str
+    version: str
+    is_override: bool
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -61,11 +72,54 @@ def sha256(path: Path) -> str:
     return digest.hexdigest().upper()
 
 
-def resolve_exe() -> Path:
-    candidate = Path(os.environ.get("OFFICECLI_EXE", str(DEFAULT_EXE)))
+def repair_command() -> str:
+    return f"{sys.executable} {Path(__file__).with_name('repair_officecli.py')} --repair"
+
+
+def validation_error(candidate: Path, reason: str, *, is_override: bool) -> BridgeError:
+    if is_override:
+        return BridgeError(
+            f"OfficeCLI at override path {candidate} [{reason}]. Fix the override path or unset "
+            "OFFICECLI_EXE. repair_officecli.py only fixes the default path."
+        )
+    return BridgeError(
+        f"OfficeCLI at default path {candidate} [{reason}]. Run {repair_command()} to fix."
+    )
+
+
+def resolve_exe() -> ResolvedOfficeCli:
+    override = os.environ.get("OFFICECLI_EXE")
+    is_override = override is not None
+    candidate = Path(override if is_override else DEFAULT_EXE)
     if not candidate.is_file():
-        raise BridgeError(f"OfficeCLI binary not found: {candidate}")
-    return candidate
+        raise validation_error(candidate, "missing", is_override=is_override)
+
+    actual_sha256 = sha256(candidate)
+    if actual_sha256 != OFFICECLI_SHA256:
+        raise validation_error(
+            candidate,
+            f"hash mismatch: expected {OFFICECLI_SHA256}, got {actual_sha256}",
+            is_override=is_override,
+        )
+
+    try:
+        result = run_process([str(candidate), "--version"])
+    except BridgeError as exc:
+        raise validation_error(candidate, f"version check failed: {exc}", is_override=is_override) from exc
+    version = result.stdout.strip() or result.stderr.strip()
+    if result.returncode != 0:
+        raise validation_error(
+            candidate,
+            f"version check failed with exit code {result.returncode}: {version or 'no output'}",
+            is_override=is_override,
+        )
+    if version != OFFICECLI_VERSION:
+        raise validation_error(
+            candidate,
+            f"version mismatch: expected {OFFICECLI_VERSION}, got {version or 'no output'}",
+            is_override=is_override,
+        )
+    return ResolvedOfficeCli(candidate, actual_sha256, version, is_override)
 
 
 def run_process(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -368,11 +422,22 @@ def run_mutation(exe: Path, source: Path, output_text: str, verb: str, args: Seq
     return 0
 
 
-def run_status(exe: Path) -> int:
-    result = run_process([str(exe), "--version"])
-    version = result.stdout.strip() or result.stderr.strip()
-    print(json.dumps({"officecli": str(exe), "version": version, "exists": exe.is_file()}, ensure_ascii=False))
-    return result.returncode
+def run_status(resolved: ResolvedOfficeCli) -> int:
+    print(
+        json.dumps(
+            {
+                "ok": True,
+                "officecli": str(resolved.path),
+                "source": "override" if resolved.is_override else "default",
+                "expected_version": OFFICECLI_VERSION,
+                "version": resolved.version,
+                "expected_sha256": OFFICECLI_SHA256,
+                "sha256": resolved.sha256,
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -397,9 +462,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parsed = build_parser().parse_args(argv)
     try:
-        exe = resolve_exe()
+        resolved = resolve_exe()
         if parsed.operation == "status":
-            return run_status(exe)
+            return run_status(resolved)
+        exe = resolved.path
         if parsed.operation == "mutate":
             return run_mutation(
                 exe,

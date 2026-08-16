@@ -33,6 +33,7 @@ ROUTINE_QUEUE_LIMIT = 3
 MAX_DECISION_SUMMARY = 600
 MAX_COMMAND_DETAIL = 1200
 LOCK_TIMEOUT_SECONDS = 5.0
+GIT_COMMAND_TIMEOUT_SECONDS = 30.0
 SHA40_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 NULL_FINGERPRINT_VALUES = {"", "none", "null"}
 ATOMIC_REPLACE_DELAYS = (0.0, 0.05, 0.1, 0.2, 0.4)
@@ -45,7 +46,12 @@ PENDING_STATUSES = {
     "retry_pending",
 }
 ACTIVE_BATCH_STATUSES = {"awaiting_confirmation", "ready"}
-INVALIDATABLE_BATCH_STATUSES = {*ACTIVE_BATCH_STATUSES, "partial_failed", "partial_blocked"}
+INVALIDATABLE_BATCH_STATUSES = {
+    *ACTIVE_BATCH_STATUSES,
+    "partial_failed",
+    "partial_blocked",
+    "blocked",
+}
 TERMINAL_FINDING_STATUSES = {
     "closed",
     "completed",
@@ -184,6 +190,128 @@ def outside_root_targets(skills_root: Path, targets: Iterable[str]) -> list[str]
         except (OSError, ValueError):
             outside.append(target)
     return outside
+
+
+def run_retry_git(
+    repository: Path, *arguments: str
+) -> tuple[subprocess.CompletedProcess[str] | None, str | None]:
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repository), *arguments],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=GIT_COMMAND_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return None, compact_text(f"git command failed: {exc}")
+    return completed, None
+
+
+def verified_retry_source_fingerprint(
+    skills_root: Path, finding: dict[str, Any]
+) -> tuple[str | None, str | None]:
+    proposed = finding.get("proposal") or {}
+    targets = normalize_targets(proposed.get("targets", []))
+    if not targets:
+        return None, "retry proposal has no valid source targets"
+    outside = outside_root_targets(skills_root, targets)
+    if outside:
+        return None, f"retry targets resolve outside the skills root: {', '.join(outside)}"
+
+    current = source_fingerprint(skills_root, targets)
+    if current == finding.get("source_fingerprint"):
+        return current, None
+
+    execution = finding.get("execution") or {}
+    execution_commit = str(execution.get("commit") or "").lower()
+    remote_sha = str(execution.get("remote_sha") or "").lower()
+    if execution.get("outcome") != "failed":
+        return None, "retry source changed without a failed execution record"
+    if not SHA40_PATTERN.fullmatch(execution_commit):
+        return None, "failed execution does not record a full source commit"
+    if not SHA40_PATTERN.fullmatch(remote_sha):
+        return None, "failed execution does not record a full pushed remote SHA"
+
+    top_level, error = run_retry_git(skills_root, "rev-parse", "--show-toplevel")
+    if error or top_level is None or top_level.returncode != 0:
+        return None, error or "unable to resolve the skills Git root"
+    try:
+        resolved_top_level = Path(top_level.stdout.strip()).resolve()
+    except OSError as exc:
+        return None, compact_text(f"unable to resolve the skills Git root: {exc}")
+    if resolved_top_level != skills_root.resolve():
+        return None, "retry source is not the authoritative skills Git root"
+
+    head_result, error = run_retry_git(skills_root, "rev-parse", "HEAD")
+    if error or head_result is None or head_result.returncode != 0:
+        return None, error or "unable to resolve the current skills HEAD"
+    head = head_result.stdout.strip().lower()
+    if not SHA40_PATTERN.fullmatch(head):
+        return None, "current skills HEAD is not a full commit SHA"
+
+    for commit in (execution_commit, remote_sha):
+        exists, error = run_retry_git(skills_root, "cat-file", "-e", f"{commit}^{{commit}}")
+        if error or exists is None or exists.returncode != 0:
+            return None, error or f"recorded retry commit is unavailable: {commit}"
+
+    for ancestor, descendant, label in (
+        (execution_commit, remote_sha, "source commit is not contained in the recorded remote SHA"),
+        (remote_sha, head, "recorded remote SHA is not an ancestor of current HEAD"),
+    ):
+        ancestry, error = run_retry_git(
+            skills_root, "merge-base", "--is-ancestor", ancestor, descendant
+        )
+        if error or ancestry is None:
+            return None, error or label
+        if ancestry.returncode == 1:
+            return None, label
+        if ancestry.returncode != 0:
+            return None, f"unable to verify retry commit ancestry: {label}"
+
+    changed, error = run_retry_git(
+        skills_root,
+        "diff-tree",
+        "--root",
+        "--no-commit-id",
+        "--name-only",
+        "-r",
+        execution_commit,
+        "--",
+        *targets,
+    )
+    if error or changed is None or changed.returncode != 0:
+        return None, error or "unable to inspect the failed execution commit"
+    changed_paths = [
+        line.strip().replace("\\", "/")
+        for line in changed.stdout.splitlines()
+        if line.strip()
+    ]
+    for target in targets:
+        prefix = target.rstrip("/") + "/"
+        if not any(path == target or path.startswith(prefix) for path in changed_paths):
+            return None, f"failed execution commit did not change retry target: {target}"
+
+    dirty, error = run_retry_git(
+        skills_root, "status", "--porcelain=v1", "--untracked-files=all", "--", *targets
+    )
+    if error or dirty is None or dirty.returncode != 0:
+        return None, error or "unable to inspect retry target cleanliness"
+    if dirty.stdout.strip():
+        return None, "retry targets contain uncommitted or untracked changes"
+
+    unchanged, error = run_retry_git(
+        skills_root, "diff", "--quiet", execution_commit, head, "--", *targets
+    )
+    if error or unchanged is None:
+        return None, error or "unable to compare retry targets with the failed execution commit"
+    if unchanged.returncode == 1:
+        return None, "retry targets changed after the failed execution commit"
+    if unchanged.returncode != 0:
+        return None, "unable to compare retry targets with the failed execution commit"
+    return current, None
 
 
 def relative_report_ref(path: Path, reports_root: Path) -> str:
@@ -1127,6 +1255,81 @@ def invalidate_batches_for_finding(
     return invalidated
 
 
+def advance_retry_source_baseline(
+    state: dict[str, Any],
+    finding: dict[str, Any],
+    skills_root: Path,
+    *,
+    event: str,
+    timestamp: str,
+) -> tuple[dict[str, Any] | None, str | None]:
+    current, error = verified_retry_source_fingerprint(skills_root, finding)
+    if error or current is None:
+        return None, error or "retry source baseline could not be verified"
+    previous = finding.get("source_fingerprint")
+    invalidated: list[str] = []
+    changed = current != previous
+    if changed:
+        invalidated = invalidate_batches_for_finding(
+            state,
+            finding["id"],
+            "verified retry source baseline advanced to the recorded execution commit",
+        )
+        finding["source_fingerprint"] = current
+        finding.setdefault("history", []).append(
+            {
+                "event": event,
+                "previous_source_fingerprint": previous,
+                "source_fingerprint": current,
+                "execution_commit": finding.get("execution", {}).get("commit"),
+                "recorded_at": timestamp,
+            }
+        )
+    return {
+        "changed": changed,
+        "source_fingerprint": current,
+        "invalidated_batches": invalidated,
+    }, None
+
+
+def recover_legacy_retry_source_baselines(
+    state: dict[str, Any], skills_root: Path
+) -> list[str]:
+    recovered: list[str] = []
+    for finding in state["findings"].values():
+        if finding.get("status") != "waiting_evidence":
+            continue
+        if finding.get("execution", {}).get("outcome") != "failed":
+            continue
+        if finding.get("decision", {}).get("value") != "approved":
+            continue
+        has_blocked_retry = any(
+            batch.get("status") == "blocked"
+            and any(
+                item.get("finding_id") == finding.get("id")
+                and item.get("status") == "blocked_drift"
+                for item in batch.get("items", [])
+            )
+            for batch in state["batches"]
+        )
+        if not has_blocked_retry:
+            continue
+        result, error = advance_retry_source_baseline(
+            state,
+            finding,
+            skills_root,
+            event="legacy_retry_source_baseline_recovered",
+            timestamp=now_iso(),
+        )
+        if error or not result or not result["changed"]:
+            continue
+        finding["status"] = "approved"
+        finding["decision"]["source_fingerprint"] = result["source_fingerprint"]
+        remove_from_queue(state, finding["id"])
+        recovered.append(finding["id"])
+    return recovered
+
+
 def finding_changed(previous: dict[str, Any], observation: dict[str, Any]) -> bool:
     return (
         previous.get("evidence_fingerprint") != observation.get("evidence_fingerprint")
@@ -1641,6 +1844,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "record-decision", help="Record one answer with optimistic fingerprint checks."
     )
     add_state_arguments(record)
+    record.add_argument("--skills-root", type=Path, default=DEFAULT_SKILLS_ROOT)
     record.add_argument("--finding-id", required=True)
     record.add_argument("--expected-evidence-fingerprint", required=True)
     record.add_argument(
@@ -1812,6 +2016,7 @@ def ensure_in_queue(state: dict[str, Any], finding_id: str, *, front: bool = Fal
 def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     args = normalize_cli_fingerprints(args)
     state_path = args.state.resolve()
+    skills_root = args.skills_root.resolve()
     try:
         revised = parse_proposal_json(args.revised_proposal_json)
     except ValueError as exc:
@@ -1962,6 +2167,22 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
             if classification not in {"approve", "reject"}:
                 return {"status": "invalid_request", "error": "unsupported classification"}, 2
 
+            retry_baseline: dict[str, Any] | None = None
+            if classification == "approve" and status == "retry_pending":
+                retry_baseline, retry_error = advance_retry_source_baseline(
+                    state,
+                    finding,
+                    skills_root,
+                    event="retry_source_baseline_advanced",
+                    timestamp=timestamp,
+                )
+                if retry_error:
+                    return {
+                        "status": "blocked_retry_source_drift",
+                        "finding_id": finding["id"],
+                        "reason": retry_error,
+                    }, 4
+
             if classification == "approve":
                 if status == "revising":
                     pending = finding.pop("pending_revision", None)
@@ -1977,6 +2198,10 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     "proposal_fingerprint": finding["proposal_fingerprint"],
                     "recorded_at": timestamp,
                 }
+                if retry_baseline is not None:
+                    finding["decision"]["source_fingerprint"] = retry_baseline[
+                        "source_fingerprint"
+                    ]
             else:
                 finding.pop("pending_revision", None)
                 finding["status"] = "rejected"
@@ -1989,12 +2214,16 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 }
             remove_from_queue(state, finding["id"])
             save_state(state_path, state)
-            return {
+            response = {
                 "status": "recorded",
                 "finding_id": finding["id"],
                 "decision": finding["decision"]["value"],
                 "next_status": finding["status"],
-            }, 0
+            }
+            if retry_baseline is not None:
+                response["retry_source_rebased"] = retry_baseline["changed"]
+                response["invalidated_batches"] = retry_baseline["invalidated_batches"]
+            return response, 0
     except (StateError, LockConflict, OSError) as exc:
         return fatal_payload(exc.__class__.__name__, str(exc), state_path), 3
 
@@ -2132,6 +2361,9 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                 )
                 if awaiting is not None:
                     return execution_confirmation_payload(state, awaiting), 0
+                recovered_retry_ids = recover_legacy_retry_source_baselines(
+                    state, skills_root
+                )
                 approved = pending_approved_findings(state)
                 if not approved:
                     return {
@@ -2166,7 +2398,10 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                     }
                     state["batches"].append(existing)
                     save_state(state_path, state)
-                return execution_confirmation_payload(state, existing), 0
+                payload = execution_confirmation_payload(state, existing)
+                if recovered_retry_ids:
+                    payload["recovered_retry_finding_ids"] = recovered_retry_ids
+                return payload, 0
 
             if not args.batch_id:
                 return {"status": "invalid_request", "error": "--batch-id is required"}, 2

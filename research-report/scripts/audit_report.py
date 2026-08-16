@@ -208,6 +208,12 @@ TRANSITION_PATTERNS = (
     "综上所述",
     "总体而言",
 )
+MATERIAL_ROLE_META_RE = re.compile(
+    r"(?:这些|上述|相关|现有|公开)?(?:材料|资料|信息|来源|产品|文件|法规文本|公开产品)"
+    r".{0,24}(?:共同)?(?:构成|形成|提供|作为|承担)"
+    r".{0,24}(?:基础|依据|参照|参考|支撑|清单|信息职责)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -701,6 +707,22 @@ def audit_text(
                     "CONSULTING_JARGON",
                     "info",
                     f"发现可能空泛的报告用语：{', '.join(jargon)}。",
+                    line=paragraph.line,
+                    section=paragraph.section,
+                    excerpt=paragraph.text,
+                )
+            )
+
+        if (
+            formal
+            and MATERIAL_ROLE_META_RE.search(paragraph.text)
+            and not _is_reference_section(paragraph.section)
+        ):
+            findings.append(
+                _finding(
+                    "MATERIAL_ROLE_META",
+                    "info",
+                    "句子只说明材料、产品或来源的作用，没有增加对象、时间、数据或适用条件；应直接写来源实际列出的事实，或删除该句。",
                     line=paragraph.line,
                     section=paragraph.section,
                     excerpt=paragraph.text,

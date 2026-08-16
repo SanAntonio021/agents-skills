@@ -294,6 +294,32 @@ R-01：建议先补充认证条件。
         self.assertNotIn("DOUBLE_NEGATION", codes)
         self.assertNotIn("WEAK_QUALIFIER", codes)
 
+    def test_material_role_meta_statement_is_flagged(self):
+        report = """# 调研报告
+
+## 综合判断
+
+这些材料共同构成国内固定卫星宽带的公开业务与产业信息基础。
+"""
+        result = audit_report.audit_text(report)
+        codes = {item["code"] for item in result["findings"]}
+        self.assertIn("MATERIAL_ROLE_META", codes)
+
+    def test_direct_source_fact_does_not_trigger_material_role_meta(self):
+        report = """# 调研报告
+
+## 公开业务
+
+中国卫通公开宽带卫星基础运营平台和网络系统集成服务。[1]
+
+## 参考资料
+
+[1] 中国卫通公开页面。
+"""
+        result = audit_report.audit_text(report)
+        codes = {item["code"] for item in result["findings"]}
+        self.assertNotIn("MATERIAL_ROLE_META", codes)
+
     def test_definition_and_finding_mixed_in_body_is_flagged(self):
         report = """# 调研报告
 

@@ -178,6 +178,9 @@ python <script> complete-review `
    `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，只传本次提交
    实际修改且仍存在的 Skill。该 helper 只执行一次“检查更新”和过滤后的单项“更新”，禁止“全部更新”，
    不建 watcher 或计划任务，也不修改 CC Switch 源码、EXE、数据库、配置或运行时目录。
+   “检查更新”可能在单项按钮出现前异步完成运行时更新；精确过滤后没有更新按钮时，只允许在既有更新
+   超时内做一次有界的四层只读等待。四层完全一致则按未点击更新通过；始终未对齐则保留
+   `target_update_unavailable`，不重复扫描或点击，也不手工复制运行时。
 8. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且提交源码、`.cc-switch`、`.claude`、`.codex`
    四层全部目标文件集合和 SHA-256 完全一致，才算运行时生效。自动更新或验收失败时，不重复点击、不直接
    修运行时，只能报告“源码已推送，运行时未生效”，并保留 JSON 错误码和差异证据。删除或合并 Skill

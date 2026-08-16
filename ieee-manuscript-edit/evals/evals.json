@@ -100,6 +100,80 @@
       "prompt": "非 IEEE 期刊的稿件正文已经润色完，现在要填写 Editorial Manager 并最终提交。",
       "expected_output": "正文精修已经完成；平台事务路由到 journal-submission。最终 Submit 前先由 paper-review 生成有时间和证据的 pre_submission_review=pass，且最终操作由用户亲自确认。",
       "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "请对 evals/files/finalization-scopes.md 做只读终稿规范化审计。稿件同时在 Abstract、正文和两个 figure captions 中使用 MIMO；只有 Abstract 写了 multiple-input multiple-output (MIMO)。不要猜任何其他缩写全称，也不要修改稿件。请给出可定位的审计结果。",
+      "expected_output": "调用只读 convention audit；把 Abstract、正文和每个 caption 分成独立作用域；只依据稿内唯一显式映射为正文和各 caption 给出安全补全，其他不确定缩写只报告；不修改输入。",
+      "files": ["evals/files/finalization-scopes.md"],
+      "expectations": [
+        "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现问题而非脚本失败。",
+        "Abstract、正文和每个 figure caption 被作为独立缩写作用域。",
+        "只使用稿内唯一且一致的 full form (ACRONYM) 映射提供安全 replacement。",
+        "输入稿件保持不变。"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "对 evals/files/finalization-safe-fixes.md 的隔离副本执行终稿规范化并只自动处理确定安全的问题：正文首处 BER 可由稿内唯一 bit error rate (BER) 映射补全，同一 Results 段有两个相邻且完全相同的句子；另外有 under the tested conditions 和 comparison benchmark。应用安全修改后重新审计，并报告最终哈希和最终行号。不要修改技能目录里的 fixture。",
+      "expected_output": "只应用带精确 span/replacement 的缩写补全和同段相邻完全重复删除；保留科学限定与比较基准；修改后重跑脚本，最终 SHA-256、行号和计数来自新文件。",
+      "files": ["evals/files/finalization-safe-fixes.md"],
+      "expectations": [
+        "只自动采用 safe_findings，不自动改 review_candidates、protected_qualifiers 或 unresolved。",
+        "保留 under the tested conditions 和 comparison benchmark 的证据边界。",
+        "自动修改后重新运行审计。",
+        "最终报告使用修改后文件的 SHA-256 和行号。"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "请检查 evals/files/finalization-captions.md 里的两条图注是否自解释。Fig. 1 只有 '(a) setup; (b) result'，Fig. 2 已说明对象、1 km 条件、两种 marker、dBm 单位、median、whiskers 和 threshold。若本地图片存在要结合图片，但不要猜 fixture 没有提供的图像语义，也不要把图注改成 Results 段的复制品。",
+      "expected_output": "逐图核对对象、条件、面板、图例、单位、统计元素和主要读法；指出 Fig. 1 缺项，认可 Fig. 2 已明确的元素；图片存在时核对，不存在或统计定义不明时列待确认；不猜测、不用正文重复替代自解释。",
+      "files": ["evals/files/finalization-captions.md"],
+      "expectations": [
+        "逐项覆盖对象、条件、面板、图例、单位、统计元素和主要读法。",
+        "本地图像语义需要人工查看，脚本结果不冒充图像识别。",
+        "未知 whisker 定义只报告，不猜成极值或 1.5 IQR。",
+        "明确图注自解释不等于复述整段 Results。"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "evals/files/finalization-phase1.tex 需要只读终稿规范审计。它包含多行嵌套 \\caption、注释里的 \\caption、verbatim 里的 \\input、正文 \\include{appendix}，以及自定义 caption 宏。请按 Phase 1 边界报告，不要递归读取其他 tex。",
+      "expected_output": "正确解析标准嵌套多行 caption，忽略注释和 verbatim；把正文 include 和自定义 caption 宏列入 unresolved；不递归多文件，不声称全文 clean。",
+      "files": ["evals/files/finalization-phase1.tex"],
+      "expectations": [
+        "标准多行嵌套 caption 被作为独立作用域解析。",
+        "注释和 verbatim 内容被忽略。",
+        "include 与自定义 caption 宏进入 unresolved。",
+        "不读取外部 tex，也不报告多文件全文已通过。"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "审查 evals/files/finalization-language.md 的防御性表达和重复内容：指出 It should be noted that 和 The following discussion focuses on；保护 confidence interval、uncertainty、assumed condition 和 limitation；只把同一正文段内相邻完全相同句当安全删除，Abstract/Introduction/Conclusion 的近重复只列候选。",
+      "expected_output": "元话语进入 review_candidates；科学假设、不确定性、置信区间和限制进入 protected_qualifiers；安全删除严格限于同一正文段相邻完全相同句，跨章节近重复只报告。",
+      "files": ["evals/files/finalization-language.md"],
+      "expectations": [
+        "防御性元话语只作为改写候选，不自动删除其科学内容。",
+        "假设、不确定性、置信区间和限制被明确保护。",
+        "安全重复严格限于同一正文段内相邻完全相同句。",
+        "跨章节和语义近重复只报告，不自动删除。"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "请只读审计 evals/files/finalization-negation-chain.md 的否定链和间接否定。重点核对 cannot be ruled out、cannot be excluded 和 by no means 的人工复核噪音，同时检查 not without、not entirely without、not only 配对、neither/nor、No. 编号、无标点列表项和图注。所有结果只列人工复核候选，不自动改写科学限定，也不要把表格、代码、注释或参考文献中的文本算进去。",
+      "expected_output": "运行 convention audit，按完整句子合并 LANG_NEGATION_CHAIN；准确区分 fixed_indirect、coordination 和 atomic，报告 10 条否定链候选；用中文表格单列 by no means、cannot be ruled out、cannot be excluded 的人工处置与噪音统计（本 fixture 为建议改写 1 条、科学限定保留 2 条），并列出未触发及被屏蔽的正反例。",
+      "files": ["evals/files/finalization-negation-chain.md"],
+      "expectations": [
+        "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现候选而不是脚本失败。",
+        "LANG_NEGATION_CHAIN 只进入 review_candidates，共 10 条，每条 check=negative_construction 且不含 span/replacement。",
+        "by no means、cannot be ruled out、cannot be excluded 和直接 not without 被识别为 fixed_indirect；not entirely without 被识别为两个 atomic。",
+        "not only 配对只屏蔽紧邻 only 的 not，第二个实际否定仍进入 evidence；neither/nor 合并为 coordination；No. A1/No. A2 只屏蔽编号 No.，同句其他否定仍正常计数。",
+        "单独 without、cannot confirm、No packet loss 和单一 not statistically significant 不报告；表格、代码、注释、fenced code 和 References 内容不参与发现。",
+        "中文复核表把三个重点短语逐条标为建议改写或科学限定保留，并给出建议改写 1、保留 2、人工复核噪音 2/3；任何一项都不自动改写。"
+      ]
     }
   ]
 }

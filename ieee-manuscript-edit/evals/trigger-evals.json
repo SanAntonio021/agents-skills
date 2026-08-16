@@ -1,0 +1,82 @@
+[
+  {
+    "query": "D:\\Papers\\link-study\\final.md 是英文会议终稿。请做最后一轮规范化：摘要和正文各自检查缩写首现，每个图注也要能单独看懂；顺便找防御性套话和跨章节重复，但不确定的地方只列出来。",
+    "should_trigger": true
+  },
+  {
+    "query": "main.tex 已经写完了，投稿前帮我查一下为什么正文第一次出现 BER 没重新写 bit error rate，caption 里的缩写也请按独立作用域检查。只处理单文件，不要碰 \\input 的章节。",
+    "should_trigger": true
+  },
+  {
+    "query": "这篇 THz link paper 的 Fig. 2 caption 太依赖正文了。结合目录里的 fig2.png 检查对象、实验条件、marker、单位、error bars 和读图结论，缺证据的别猜。",
+    "should_trigger": true
+  },
+  {
+    "query": "英文稿准备发合作者，麻烦减少 It should be noted that / we do not claim 这类防御性措辞，同时保留 under the tested conditions、置信区间和实验限制。",
+    "should_trigger": true
+  },
+  {
+    "query": "results、abstract 和 conclusion 反复写 197/200 和弱路决定联合裕量。请判断哪些是功能性复述，只有确定安全的重复才直接删。",
+    "should_trigger": true
+  },
+  {
+    "query": "请只读审计 C:\\work\\paper.md 的终稿规范，不要修改。输出 JSON，给出文件哈希、行号、safe findings、review candidates、protected qualifiers 和 unresolved。",
+    "should_trigger": true
+  },
+  {
+    "query": "我已经按审计结果修了英文 Markdown。请重新跑一遍规范检查，确认最终 SHA-256 和行号来自修改后的文件，不要沿用上一次报告。",
+    "should_trigger": true
+  },
+  {
+    "query": "合作者给 final.tex 做了一轮 language edit。请核验他有没有把摘要定义的缩写直接沿用到正文、把必要限定删掉、或把图注压得不再自解释。",
+    "should_trigger": true
+  },
+  {
+    "query": "这段英文论文写得太像模型生成：not without、cannot be ruled out、by no means 这类否定链很多，同一个结论还换词说了三遍。按 SCI/IEEE 口气只列需要人工判断的候选，所有数字、citation keys、科学限定和结论边界都不能动。",
+    "should_trigger": true
+  },
+  {
+    "query": "准备 camera-ready 之前做文字约定检查，不是查模板：缩写全称、figure/table caption 独立可读、defensive wording、重复内容四项一起过一遍。",
+    "should_trigger": true
+  },
+  {
+    "query": "把 manuscript.md 转成 IEEEtran 的 main.tex，拆成 sections/*.tex，接好 bibliography，然后编译到没有 warning。",
+    "should_trigger": false
+  },
+  {
+    "query": "论文都改好了，请按 9 个维度做最终 Submit 审查门，给我 pre_submission_review=pass/fail 和阻塞项。",
+    "should_trigger": false
+  },
+  {
+    "query": "T-MTT 的文件已经齐了，帮我登录 Research Exchange 填作者、选分类、上传源文件并走到最终提交前。",
+    "should_trigger": false
+  },
+  {
+    "query": "这个摘要适合投 TCOM、TWC 还是 JSAC？请按 reach/match/safe 给候选，并设计被拒后的改投阶梯。",
+    "should_trigger": false
+  },
+  {
+    "query": "检查 Fig. 3 的字体、线宽、颜色、坐标轴和 IEEE 双栏尺寸，并从 CSV 重画成可投稿矢量图。",
+    "should_trigger": false
+  },
+  {
+    "query": "这篇英文公司博客里 not uncommon、not without 这种双重否定很多，想改得自然口语一点并加入作者个人经历；不是论文，也不需要 SCI/IEEE 规范审计。",
+    "should_trigger": false
+  },
+  {
+    "query": "请润色四川省科技进步奖申报书的项目必要性，压缩空话并保持中文正式工程口径。",
+    "should_trigger": false
+  },
+  {
+    "query": "根据 DOI 10.1109/XXX.2025.1234567 下载正式 PDF，登记到 paper_index.md，并核对文件哈希。",
+    "should_trigger": false
+  },
+  {
+    "query": "总结 downloads 里的这篇论文 PDF，整理研究问题、方法、关键指标、图表说明和中英术语表。",
+    "should_trigger": false
+  },
+  {
+    "query": "我只想把现有单文件 LaTeX 套进期刊官方模板并解决编译错误，正文一个词都不要改。",
+    "should_trigger": false
+  }
+]

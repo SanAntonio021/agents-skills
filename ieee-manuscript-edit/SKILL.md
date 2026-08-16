@@ -1,6 +1,8 @@
-﻿---
+---
 name: ieee-manuscript-edit
-description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、中文改英文、图注/引用/术语/单位核查、去 AI 写作痕迹、投稿前文字精修、Cover Letter 和 Response Letter 正文精修、合作者文件整理。触发场景：用户说"润色""改英文""精修""投稿前文字检查""审稿回复""改图注""改摘要/引言/方法/结果""术语校准""发给合作者""核验修改建议"，或要求审查另一批审查员/合作者/模型给出的修改建议清单，或说论文稿"AI 味重""像 AI 写的""去 AI 腔"，或要求把中文技术内容改成 SCI/IEEE 英文论文。正式投稿前审查门由 `paper-review` 负责；未指定或非 IEEE 投稿事务由 `journal-submission` 负责，明确 IEEE 投稿事务由 `ieee-journal-submission` 负责；纯英文句子质量审查的触发词还包括"检查英文句子""删废话""改被动语态""精简表达""太啰嗦""check English sentences""remove filler""fix passive voice""tighten expression""too verbose""check my English writing""improve clarity""tighten the writing"（纯句子质量审查；`sentence-polish` 已并入本技能）。
+description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、中文改英文、图注/引用/术语/单位核查、去 AI 写作痕迹、投稿前文字精修、Cover Letter 和 Response Letter 正文精修、合作者文件整理。用户要求“终稿规范化”“最后一轮规范检查”“缩写首次定义/全称重写”“图注自解释”“减少防御性用语”“压缩论文重复内容”“检查否定链/双重否定/反复说不”时必须使用本技能，即使没有明确说“润色”。其他触发场景包括“改英文”“精修”“投稿前文字检查”“审稿回复”“改图注”“改摘要/引言/方法/结果”“术语校准”“发给合作者”“核验修改建议”，或要求审查另一批审查员/合作者/模型给出的修改建议清单，或说论文稿“AI 味重”“像 AI 写的”“去 AI 腔”，或要求把中文技术内容改成 SCI/IEEE 英文论文。正式投稿前审查门由 `paper-review` 负责；LaTeX 模板、工程转换和编译由 `latex-paper` 负责；未指定或非 IEEE 投稿事务由 `journal-submission` 负责，明确 IEEE 投稿事务由 `ieee-journal-submission` 负责；纯英文句子质量审查的触发词还包括“检查英文句子”“删废话”“改被动语态”“精简表达”“太啰嗦”“check English sentences”“remove filler”“fix passive voice”“tighten expression”“too verbose”“check my English writing”“improve clarity”“tighten the writing”（纯句子质量审查；`sentence-polish` 已并入本技能）。
+metadata:
+  version: "1.0.0"
 ---
 
 # SCI/IEEE 论文精修
@@ -36,7 +38,8 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 9. 语言质量复查只改表达方式，科学内容、数据、技术结论和引用含义保持原边界。
 10. 审查合作者或 Claude 润色后的稿件前，先锁定准确文件路径、语言版本和实际修改章节；用户只要求局部审查时，只审指定章节，不混用旧稿或另一语种候选稿。
 11. "IEEE 风格"只表示语言、结构、引用、图注和常见工程论文写法；"IEEE 模板符合性"必须有目标期刊/会议官方模板、作者指南或投稿系统要求作为依据。
-12. 缩写按 IEEE 双作用域规则处理：摘要与正文相互独立——摘要用过的缩写，正文首次出现仍须重新定义（首现若在图注，则在图注定义）；摘要内只出现一次的缩写不引入缩写、直接写全称，复用的才在摘要定义。审计方法：对每个缩写分别检索 `(缩写)` 定义处与裸用处，按摘要、正文两个作用域各自核对首现是否已定义（2026-07-11 IQ-MIMO 论文实战定型：正文 4 个缩写通篇裸用、全靠摘要定义，属违规）。
+12. 缩写按独立作用域处理：摘要、正文、每个图注和每个表注分别计数。摘要用过的缩写，正文首次出现仍须重新定义；一个图注或表注不能借用正文或另一图表注的定义。摘要内只出现一次的缩写不引入缩写、直接写全称，复用的才在摘要定义。审计时对每个缩写分别检索 `(缩写)` 的显式定义与裸用处，并在各作用域核对首现（2026-07-11 IQ-MIMO 论文实战定型：正文 4 个缩写通篇裸用、全靠摘要定义，属违规）。
+13. 否定链审计只给人工复核候选。固定间接否定或同句多个否定单元不等于错误；不得自动删除、反转或改成正面句式，尤其要保护科学限定和证据边界。
 
 ## 本地文稿版本保护
 
@@ -44,7 +47,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 
 ## 工作流程
 
-1. 先判断用户要做哪类工作：英文精修、中文改英文、分节重写、图注/引用检查、投稿前文字精修、Cover Letter/Response Letter 正文精修、终稿精修，或发给合作者前整理文件。用户要整体投稿前审查或最终 Submit 门时转 `paper-review`。
+1. 先判断用户要做哪类工作：英文精修、中文改英文、分节重写、图注/引用检查、投稿前文字精修、Cover Letter/Response Letter 正文精修、终稿精修、终稿规范化、否定链/间接否定审计，或发给合作者前整理文件。用户要整体投稿前审查或最终 Submit 门时转 `paper-review`。
 2. 目标期刊或会议待定，且用户正在做终稿精修或投稿前文字精修时，先提示可做一次选刊判断。选刊判断要联网核验期刊官网、scope 和近期文章；用户选择先精修时，按通用 SCI/IEEE 版本处理。
 3. 目标期刊或会议已知时，先找用户提供的模板、作者指南或官方页面；依据缺失时，做通用 SCI/IEEE 精修，并把"目标期刊模板待核对"列为待确认问题。
 4. 目标期刊或会议待定，但用户明确只要语言精修时，默认按 IEEE journal article 的克制工程写法处理，版式保持通用。
@@ -53,7 +56,7 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 7. 先检查实验事实、章节安排和关键结论依据。有疑点时先列待确认问题；终稿英文等事实明确后再生成。
 8. 再做五项语言质量复查：删掉空话和重复句，改顺主语和动词，拆开过长的句子，固定术语，核对数字、单位和引用。需要独立完整句子审查（full-review / section-review / targeted / interactive 模式）时，读取 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 9. 再修改正文：压缩冗余，统一术语，理顺句子，控制结论强度。
-10. 最后检查缩写首次定义（按核心规则 12 的双作用域审计）、引用位置、图表标题、单位符号和中英文版本的一致性；然后运行 `scripts/audit_writing_memory.py` 做独立复扫。复扫不通过时停止交付。
+10. 最后检查缩写首次定义（按核心规则 12 的独立作用域审计）、引用位置、图表标题、单位符号和中英文版本的一致性。终稿规范化任务先按下节运行 convention audit；所有写入完成后再运行 `scripts/audit_writing_memory.py` 做独立复扫。复扫不通过时停止交付。
 
 ## 术语校准与全局术语库
 
@@ -84,6 +87,25 @@ description: 精修已有 SCI/IEEE 工程论文草稿：英文改写、润色、
 当用户已经有一版可交付初稿，当前步骤明确是提交前精修、导出前整理或审稿前整理时，按 [references/draft-finalization-rules.md](references/draft-finalization-rules.md) 执行。
 
 核心原则：先确保引用和数据完整，再统一术语和压缩冗余。详细规则见参考文件。
+
+## 终稿规范化
+
+当任务涉及缩写作用域、图注自解释、防御性元话语、否定链/间接否定或重复内容中的任一项，先读取 [references/draft-finalization-rules.md](references/draft-finalization-rules.md)，再按以下顺序执行：
+
+1. v1 只接受英文 Markdown 和单文件 LaTeX。Word/PDF、多文件 LaTeX 和中文论文转入相应既有流程；不要把不完整解析结果写成全文已通过。
+2. 修改前记录输入文件 SHA-256，并运行只读审计：
+
+   ```text
+   python -X utf8 scripts/audit_manuscript_conventions.py --input <path> --format json
+   ```
+
+   退出码 `1` 表示发现问题，不是脚本故障；退出码 `2` 才表示输入或解析错误。
+3. 只自动采用 `safe_findings` 中带精确 `span` 和 `replacement` 的项目。缩写补全只使用同一稿件中唯一且一致的显式 `full form (ACRONYM)` 映射；不从常识、领域词表或外部资料猜全称。
+4. `review_candidates` 和 `unresolved` 只报告或经人工判断后修改。否定链固定使用 `LANG_NEGATION_CHAIN` / `negative_construction`，按“编号/配对 → fixed_indirect → atomic”顺序合并命中，不带自动替换；`fail...to`、`neither...nor` 和 `not only...but also` 的配对不能吞掉同句其他否定。完整分类、屏蔽范围和优先级见终稿规则。`protected_qualifiers` 是需要保留的证据边界，不是删除清单。
+5. 对每个图注和表注逐项核对对象、条件、面板、图例、单位、统计元素和主要读法。本地图片存在时必须查看图片后判断；脚本不做图像语义识别。
+6. 修改完成后对最终文件重新运行同一审计。交付的 SHA-256、行号和计数必须来自重跑结果，不能沿用修改前报告。
+
+该模式是文字与约定层的终稿整理。整体投稿审查门仍由 `paper-review` 负责；LaTeX 模板、工程转换和编译仍由 `latex-paper` 负责；词级偏好仍由 `style-vocab` 负责。
 
 ## 审查建议的双镜头对抗核验（2026-07-11 由 IQ-MIMO 英文稿全文审查定型）
 

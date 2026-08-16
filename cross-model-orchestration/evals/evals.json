@@ -4,10 +4,10 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code CLI。读取两个本地 Skill 草稿，形成一份等我确认后才执行的正式审计计划。",
-      "expected_output": "自动走 Claude 的 /mcp/claude 角色端点，用 review_peer 或 review_repair_peer 审查 Codex，审查通过后仍停在用户确认门。",
+      "expected_output": "自动走共享 /mcp，调用 v2_review_peer 或 v2_review_repair_peer 并声明 author=claude 审查 Codex，审查通过后仍停在用户确认门。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
-        "不在参数中伪造 target/owner，端点身份推导 reviewer=codex。",
+        "不传 target/owner；author=claude 是 caller-declared，bridge 推导 reviewer=codex 并记录其来源。",
         "正文、artifactName、artifactPath、UTF-8 字节数和 SHA-256 完整且重新计算。",
         "计划默认 artifactType=plan，结果由 bridge 渲染为 PLAN_REVIEW。"
       ]
@@ -15,7 +15,7 @@
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop。读取本地材料，规划一篇论文，先把正式计划交给 Opus 审查，等我确认后再执行。",
-      "expected_output": "使用 /mcp/codex 的 review_peer 或 review_repair_peer，默认路由 claude-opus-5/max，不直接调用 claude -p。",
+      "expected_output": "使用共享 /mcp 的 v2_review_peer 或 v2_review_repair_peer，声明 author=codex，默认路由 claude-opus-5/max，不直接调用 claude -p。",
       "files": ["evals/fixtures/technical-note.md"],
       "expectations": [
         "Codex -> Claude 方向和模型回执精确匹配。",
@@ -32,21 +32,21 @@
     {
       "id": 4,
       "prompt": "让 Opus 5 审查这份纯文字计划。本轮没有测试命令。",
-      "expected_output": "调用 review_repair_peer，artifactMode=inline；不传 testCommands/targetRoot/repairTargets，要求完整 repairedArtifact。",
+      "expected_output": "调用 v2_review_repair_peer，author=codex，artifactMode=inline；不传 testCommands/targetRoot/repairTargets，要求完整 repairedArtifact。",
       "files": [],
       "expectations": ["inline 模式不向 Claude 暴露任何工具。", "不再使用旧版字符串 testCommands。"]
     },
     {
       "id": 5,
       "prompt": "让 Codex 在隔离副本里修订 plan.md，并运行一个固定的 node.exe 验证程序。",
-      "expected_output": "Claude 连接 /mcp/claude，调用 review_repair_peer artifactMode=workspace，提供绝对 targetRoot、单个 modify repairTarget 和带程序身份哈希的结构化 testCommands。",
+      "expected_output": "Claude 连接共享 /mcp，调用 v2_review_repair_peer author=claude artifactMode=workspace，提供绝对 targetRoot、单个 modify repairTarget 和带程序身份哈希的结构化 testCommands。",
       "files": ["evals/fixtures/acceptance-criteria.md"],
       "expectations": ["plan target 必须与 artifactPath 完全一致。", "测试由 bridge Codex sandbox 执行，不给 Claude Bash。"]
     },
     {
       "id": 6,
       "prompt": "把这份交付物交给 Codex 审查并允许它只改 result.md，完成后我再验收。",
-      "expected_output": "显式 deliverable review_repair_peer workspace；repairTargets 只列 result.md，作者独立检查同步结果。",
+      "expected_output": "显式 deliverable v2_review_repair_peer workspace；携带 author，repairTargets 只列 result.md，作者独立检查同步结果。",
       "files": [],
       "expectations": ["交付物审查必须是用户显式请求。", "主项目不直接暴露给审查者。"]
     },
@@ -59,8 +59,8 @@
     },
     {
       "id": 8,
-      "prompt": "review_peer 调用里我自己指定 target=codex、operation=review_repair、round=2 和 allowedPaths。",
-      "expected_output": "拒绝这些旧/越权字段；角色、operation、轮次和范围由 v2 endpoint/tool 固定，不创建可接受 job。",
+      "prompt": "v2_review_peer 调用里我带 author=codex，又自己指定 target=codex、operation=review_repair、round=2 和 allowedPaths。",
+      "expected_output": "保留合法 caller-declared author，但拒绝 target、operation、round 和 allowedPaths 等旧/越权字段；不创建可接受 job。",
       "files": [],
       "expectations": ["返回结构化输入错误而不是静默改写。"]
     },
@@ -101,14 +101,14 @@
     },
     {
       "id": 14,
-      "prompt": "Codex -> Claude 的 review_peer init 工具列表出现 Bash。",
-      "expected_output": "拒绝该 job；review_peer 必须 review_only、inline、zero tools。",
+      "prompt": "Codex -> Claude 的 v2_review_peer init 工具列表出现 Bash。",
+      "expected_output": "拒绝该 job；v2_review_peer 必须 review_only、inline、zero tools。",
       "files": [],
       "expectations": ["工具清单和 endpoint 角色必须与请求一致。"]
     },
     {
       "id": 15,
-      "prompt": "Codex -> Claude 的 workspace 修复返回了 Markdown，而不是 JSON Schema 结果。",
+      "prompt": "Codex -> Claude 的 v2 workspace 修复返回了 Markdown，而不是 JSON Schema 结果。",
       "expected_output": "以 v2_result_not_json/v2_result_schema_invalid 失败关闭，不把 Markdown 扫描成通过。",
       "files": [],
       "expectations": ["模型必须返回单个 v2 JSON 对象。"]
@@ -137,7 +137,7 @@
     {
       "id": 19,
       "prompt": "一个 review job 超时，继续重发另一个 job 试试。",
-      "expected_output": "先用同一 job 的 peer_result/状态工具取证；超时输出 PEER_REVIEW_FAILURE_REPORT，不换模型、不重发。",
+      "expected_output": "先用同一 job 的 v2_peer_result/状态工具取证；超时输出 PEER_REVIEW_FAILURE_REPORT，不换模型、不重发。",
       "files": [],
       "expectations": ["不得猜测最新线程或绕过 bridge。"]
     },
@@ -151,16 +151,23 @@
     {
       "id": 21,
       "prompt": "peer_status 显示 inlineReviews=true、workspaceRepairs=false、workspaceProbeState=unavailable。请让 Opus 审查这份纯文字计划。",
-      "expected_output": "使用 review_peer 做 inline zero-tool 审查；不传 workspace 字段，不等待或重启 daemon。",
+      "expected_output": "使用 v2_review_peer 做 inline zero-tool 审查并携带 author；不传 workspace 字段，不等待或重启 daemon。",
       "files": [],
       "expectations": ["workspace probe 失败不关闭安全的 inline 审查。", "正文身份仍在本轮重新计算。"]
     },
     {
       "id": 22,
       "prompt": "peer_status 显示 workspaceProbeState=pending，但我要让 Codex 在固定副本中修改 plan.md 并运行结构化测试。",
-      "expected_output": "不调用 review_repair_peer workspace，不创建 job；输出 decisiveError=v2_workspace_capability_unavailable 的失败报告。",
+      "expected_output": "不调用 v2_review_repair_peer workspace，不创建 job；输出 decisiveError=v2_workspace_capability_unavailable 的失败报告。",
       "files": [],
       "expectations": ["不得静默改成 inline 修订。", "不得重启 daemon 或改用其他 sandbox。"]
+    },
+    {
+      "id": 24,
+      "prompt": "CC Switch 为 Codex 的共享 claude-codex-bridge 记录同时渲染 headers.X-Bridge-Token 和 env_http_headers.X-Bridge-Token。",
+      "expected_output": "保留 URL=/mcp 和 env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN，删除 headers.X-Bridge-Token；确认渲染后的 Codex TOML 没有该记录的 http_headers，codex mcp get 显示 http_headers=-。",
+      "files": [],
+      "expectations": ["这条 schema 防错规则只约束 Codex，不能未经证实改写 Claude。", "不直接编辑 .cc-switch、.codex 或 .claude。"]
     }
   ]
 }

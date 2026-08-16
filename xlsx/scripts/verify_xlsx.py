@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter, defaultdict
 import fnmatch
 import json
 import posixpath
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
@@ -51,6 +53,16 @@ FEATURE_TAGS = {
     "drawing": "drawing",
     "legacy_drawing": "legacyDrawing",
     "sheet_protection": "sheetProtection",
+}
+
+SHEET_NAME_FORBIDDEN_CHARS = set("/\\:*?[]")
+MAX_SHEET_NAME_UTF16_UNITS = 31
+SHEET_RELATIONSHIP_KINDS = {
+    "worksheet",
+    "chartsheet",
+    "dialogsheet",
+    "macrosheet",
+    "intlmacrosheet",
 }
 
 
@@ -130,6 +142,395 @@ def resolve_relationship_target(owner_part: str, target: str) -> str:
     if target.startswith("/"):
         return target.lstrip("/")
     return posixpath.normpath(posixpath.join(posixpath.dirname(owner_part), target))
+
+
+def relationship_owner_part(relationships_part: str) -> str | None:
+    if relationships_part == "_rels/.rels":
+        return ""
+    parent = posixpath.dirname(relationships_part)
+    if posixpath.basename(parent) != "_rels":
+        return None
+    relation_name = posixpath.basename(relationships_part)
+    if not relation_name.endswith(".rels"):
+        return None
+    owner_name = relation_name[: -len(".rels")]
+    owner_dir = posixpath.dirname(parent)
+    return posixpath.join(owner_dir, owner_name) if owner_dir else owner_name
+
+
+def workbook_issue(kind: str, message: str, **context: Any) -> dict[str, Any]:
+    return {"kind": kind, "message": message, **context}
+
+
+def inspect_workbook_structure(
+    entries: dict[str, bytes], infos: list[Any]
+) -> dict[str, Any]:
+    issues: list[dict[str, Any]] = []
+    entry_counts = Counter(info.filename for info in infos)
+    for name, count in sorted(entry_counts.items()):
+        if count > 1:
+            issues.append(
+                workbook_issue(
+                    "duplicate_package_entry",
+                    f"OOXML ZIP package contains duplicate entry {name!r}",
+                    entry=name,
+                    count=count,
+                )
+            )
+
+    workbook_name = "xl/workbook.xml"
+    workbook_rels_name = "xl/_rels/workbook.xml.rels"
+    if workbook_name not in entries:
+        issues.append(
+            workbook_issue(
+                "missing_workbook_part",
+                "OOXML package is missing xl/workbook.xml",
+                entry=workbook_name,
+            )
+        )
+        return {"sheet_count": 0, "visible_sheet_count": 0, "issues": issues}
+    if workbook_rels_name not in entries:
+        issues.append(
+            workbook_issue(
+                "missing_workbook_relationships",
+                "OOXML package is missing xl/_rels/workbook.xml.rels",
+                entry=workbook_rels_name,
+            )
+        )
+
+    workbook = parse_xml(entries[workbook_name])
+    sheets_container = workbook.find(qn(MAIN_NS, "sheets"))
+    sheets = (
+        []
+        if sheets_container is None
+        else list(sheets_container.findall(qn(MAIN_NS, "sheet")))
+    )
+    if sheets_container is None:
+        issues.append(
+            workbook_issue(
+                "missing_sheets_container",
+                "xl/workbook.xml is missing its sheets container",
+            )
+        )
+
+    sheet_names: defaultdict[str, list[int]] = defaultdict(list)
+    sheet_ids: defaultdict[str, list[int]] = defaultdict(list)
+    sheet_relationship_ids: defaultdict[str, list[int]] = defaultdict(list)
+    visible_sheet_count = 0
+    for index, sheet in enumerate(sheets, start=1):
+        name = sheet.attrib.get("name")
+        if not name:
+            issues.append(
+                workbook_issue(
+                    "missing_sheet_name",
+                    f"Sheet {index} has no name attribute",
+                    sheet_index=index,
+                )
+            )
+        else:
+            sheet_names[name.casefold()].append(index)
+            utf16_units = len(name.encode("utf-16-le")) // 2
+            if utf16_units > MAX_SHEET_NAME_UTF16_UNITS:
+                issues.append(
+                    workbook_issue(
+                        "sheet_name_too_long",
+                        f"Sheet {name!r} uses {utf16_units} UTF-16 units; Excel allows at most "
+                        f"{MAX_SHEET_NAME_UTF16_UNITS}",
+                        sheet=name,
+                        sheet_index=index,
+                        utf16_units=utf16_units,
+                    )
+                )
+            for character in sorted(set(name) & SHEET_NAME_FORBIDDEN_CHARS):
+                issues.append(
+                    workbook_issue(
+                        "invalid_sheet_name_character",
+                        f"Sheet {name!r} contains Excel-forbidden character {character!r}",
+                        sheet=name,
+                        sheet_index=index,
+                        character=character,
+                    )
+                )
+            normalized_name = unicodedata.normalize("NFKC", name)
+            for character in sorted(set(normalized_name) & SHEET_NAME_FORBIDDEN_CHARS):
+                if character in name:
+                    continue
+                issues.append(
+                    workbook_issue(
+                        "excel_compatibility_issue",
+                        f"Sheet {name!r} normalizes to {normalized_name!r}, which contains "
+                        f"Excel-forbidden character {character!r}",
+                        rule="sheet_name_nfkc_forbidden_character",
+                        sheet=name,
+                        sheet_index=index,
+                        normalized_name=normalized_name,
+                        character=character,
+                    )
+                )
+
+        state = sheet.attrib.get("state", "visible")
+        if state == "visible":
+            visible_sheet_count += 1
+        elif state not in {"hidden", "veryHidden"}:
+            issues.append(
+                workbook_issue(
+                    "invalid_sheet_state",
+                    f"Sheet {name!r} has unsupported state {state!r}",
+                    sheet=name,
+                    sheet_index=index,
+                    state=state,
+                )
+            )
+
+        sheet_id = sheet.attrib.get("sheetId")
+        if not sheet_id:
+            issues.append(
+                workbook_issue(
+                    "missing_sheet_id",
+                    f"Sheet {name!r} has no sheetId attribute",
+                    sheet=name,
+                    sheet_index=index,
+                )
+            )
+        else:
+            sheet_ids[sheet_id].append(index)
+            try:
+                if int(sheet_id) < 1:
+                    raise ValueError
+            except ValueError:
+                issues.append(
+                    workbook_issue(
+                        "invalid_sheet_id",
+                        f"Sheet {name!r} has invalid sheetId {sheet_id!r}",
+                        sheet=name,
+                        sheet_index=index,
+                        sheet_id=sheet_id,
+                    )
+                )
+
+        relationship_id = sheet.attrib.get(qn(DOC_REL_NS, "id"))
+        if not relationship_id:
+            issues.append(
+                workbook_issue(
+                    "missing_sheet_relationship_id",
+                    f"Sheet {name!r} has no relationship id",
+                    sheet=name,
+                    sheet_index=index,
+                )
+            )
+        else:
+            sheet_relationship_ids[relationship_id].append(index)
+
+    for occurrences in sheet_names.values():
+        if len(occurrences) > 1:
+            first_name = sheets[occurrences[0] - 1].attrib.get("name", "")
+            issues.append(
+                workbook_issue(
+                    "duplicate_sheet_name",
+                    f"Sheet name {first_name!r} is duplicated (Excel names are case-insensitive)",
+                    sheet=first_name,
+                    sheet_indexes=occurrences,
+                )
+            )
+    for sheet_id, occurrences in sorted(sheet_ids.items()):
+        if len(occurrences) > 1:
+            issues.append(
+                workbook_issue(
+                    "duplicate_sheet_id",
+                    f"sheetId {sheet_id!r} is used by multiple sheets",
+                    sheet_id=sheet_id,
+                    sheet_indexes=occurrences,
+                )
+            )
+    for relationship_id, occurrences in sorted(sheet_relationship_ids.items()):
+        if len(occurrences) > 1:
+            issues.append(
+                workbook_issue(
+                    "duplicate_sheet_relationship_id",
+                    f"Relationship id {relationship_id!r} is used by multiple sheets",
+                    relationship_id=relationship_id,
+                    sheet_indexes=occurrences,
+                )
+            )
+    if visible_sheet_count == 0:
+        issues.append(
+            workbook_issue(
+                "no_visible_worksheets",
+                "Workbook has no visible worksheet",
+            )
+        )
+
+    for relationships_part in sorted(name for name in entries if name.endswith(".rels")):
+        owner_part = relationship_owner_part(relationships_part)
+        if owner_part is None:
+            issues.append(
+                workbook_issue(
+                    "unrecognized_relationship_part",
+                    f"Cannot determine the owner of relationship part {relationships_part!r}",
+                    relationships_part=relationships_part,
+                )
+            )
+            continue
+        if owner_part and owner_part not in entries:
+            issues.append(
+                workbook_issue(
+                    "missing_relationship_owner",
+                    f"Relationship part {relationships_part!r} has missing owner {owner_part!r}",
+                    relationships_part=relationships_part,
+                    owner_part=owner_part,
+                )
+            )
+        relationships = parse_xml(entries[relationships_part]).findall(
+            qn(PKG_REL_NS, "Relationship")
+        )
+        relationship_ids: defaultdict[str, list[int]] = defaultdict(list)
+        for index, relationship in enumerate(relationships, start=1):
+            relationship_id = relationship.attrib.get("Id")
+            if not relationship_id:
+                issues.append(
+                    workbook_issue(
+                        "missing_relationship_id",
+                        f"Relationship {index} in {relationships_part!r} has no Id",
+                        relationships_part=relationships_part,
+                        relationship_index=index,
+                    )
+                )
+            else:
+                relationship_ids[relationship_id].append(index)
+            target = relationship.attrib.get("Target")
+            if not target:
+                issues.append(
+                    workbook_issue(
+                        "missing_relationship_target",
+                        f"Relationship {relationship_id!r} in {relationships_part!r} has no Target",
+                        relationships_part=relationships_part,
+                        relationship_id=relationship_id,
+                    )
+                )
+                continue
+            if relationship.attrib.get("TargetMode") == "External":
+                continue
+            target_part = resolve_relationship_target(owner_part, target)
+            if target_part not in entries:
+                issues.append(
+                    workbook_issue(
+                        "missing_relationship_target",
+                        f"Relationship {relationship_id!r} in {relationships_part!r} targets "
+                        f"missing part {target_part!r}",
+                        relationships_part=relationships_part,
+                        relationship_id=relationship_id,
+                        target=target_part,
+                    )
+                )
+        for relationship_id, occurrences in sorted(relationship_ids.items()):
+            if len(occurrences) > 1:
+                issues.append(
+                    workbook_issue(
+                        "duplicate_relationship_id",
+                        f"Relationship id {relationship_id!r} is duplicated in "
+                        f"{relationships_part!r}",
+                        relationships_part=relationships_part,
+                        relationship_id=relationship_id,
+                        relationship_indexes=occurrences,
+                    )
+                )
+
+    if workbook_rels_name in entries:
+        workbook_relationships = parse_xml(entries[workbook_rels_name]).findall(
+            qn(PKG_REL_NS, "Relationship")
+        )
+        workbook_relationship_ids: defaultdict[str, list[ET.Element]] = defaultdict(list)
+        for relationship in workbook_relationships:
+            relationship_id = relationship.attrib.get("Id")
+            if relationship_id:
+                workbook_relationship_ids[relationship_id].append(relationship)
+        for index, sheet in enumerate(sheets, start=1):
+            name = sheet.attrib.get("name")
+            relationship_id = sheet.attrib.get(qn(DOC_REL_NS, "id"))
+            if not relationship_id:
+                continue
+            matching = workbook_relationship_ids.get(relationship_id, [])
+            if not matching:
+                issues.append(
+                    workbook_issue(
+                        "unresolved_sheet_relationship_id",
+                        f"Sheet {name!r} references missing relationship id {relationship_id!r}",
+                        sheet=name,
+                        sheet_index=index,
+                        relationship_id=relationship_id,
+                    )
+                )
+            elif len(matching) > 1:
+                issues.append(
+                    workbook_issue(
+                        "ambiguous_sheet_relationship_id",
+                        f"Sheet {name!r} references duplicate relationship id {relationship_id!r}",
+                        sheet=name,
+                        sheet_index=index,
+                        relationship_id=relationship_id,
+                    )
+                )
+            elif matching[0].attrib.get("TargetMode") == "External":
+                issues.append(
+                    workbook_issue(
+                        "external_sheet_relationship",
+                        f"Sheet {name!r} points to external relationship {relationship_id!r}",
+                        sheet=name,
+                        sheet_index=index,
+                        relationship_id=relationship_id,
+                    )
+                )
+            else:
+                relationship_type = matching[0].attrib.get("Type", "")
+                relationship_kind = relationship_type.rsplit("/", 1)[-1]
+                if relationship_kind not in SHEET_RELATIONSHIP_KINDS:
+                    issues.append(
+                        workbook_issue(
+                            "invalid_sheet_relationship_type",
+                            f"Sheet {name!r} references relationship {relationship_id!r} of "
+                            f"non-sheet type {relationship_type!r}",
+                            sheet=name,
+                            sheet_index=index,
+                            relationship_id=relationship_id,
+                            relationship_type=relationship_type,
+                        )
+                    )
+
+    workbook_views = workbook.find(qn(MAIN_NS, "bookViews"))
+    if workbook_views is not None:
+        for index, view in enumerate(workbook_views.findall(qn(MAIN_NS, "workbookView")), start=1):
+            active_tab = view.attrib.get("activeTab")
+            if active_tab is None:
+                continue
+            try:
+                active_tab_index = int(active_tab)
+            except ValueError:
+                issues.append(
+                    workbook_issue(
+                        "invalid_active_tab",
+                        f"Workbook view {index} has non-numeric activeTab {active_tab!r}",
+                        view_index=index,
+                        active_tab=active_tab,
+                    )
+                )
+                continue
+            if active_tab_index < 0 or active_tab_index >= len(sheets):
+                issues.append(
+                    workbook_issue(
+                        "active_tab_out_of_range",
+                        f"Workbook view {index} selects activeTab {active_tab_index}, but there are "
+                        f"{len(sheets)} sheets",
+                        view_index=index,
+                        active_tab=active_tab_index,
+                        sheet_count=len(sheets),
+                    )
+                )
+
+    return {
+        "sheet_count": len(sheets),
+        "visible_sheet_count": visible_sheet_count,
+        "issues": issues,
+    }
 
 
 def inspect_filter_topology(
@@ -285,6 +686,8 @@ def inspect_sheet(root: ET.Element, strings: list[str]) -> dict[str, Any]:
 
 
 def workbook_defined_names(entries: dict[str, bytes]) -> list[Any]:
+    if "xl/workbook.xml" not in entries:
+        return []
     root = parse_xml(entries["xl/workbook.xml"])
     container = root.find(qn(MAIN_NS, "definedNames"))
     if container is None:
@@ -294,14 +697,21 @@ def workbook_defined_names(entries: dict[str, bytes]) -> list[Any]:
 
 def inspect_workbook(path: Path) -> dict[str, Any]:
     entries, infos, _ = load_package(path)
+    workbook_structure = inspect_workbook_structure(entries, infos)
     strings = shared_strings(entries)
-    sheet_parts = resolve_sheet_parts(entries)
+    sheet_parts = (
+        resolve_sheet_parts(entries)
+        if "xl/workbook.xml" in entries and "xl/_rels/workbook.xml.rels" in entries
+        else {}
+    )
     sheets: dict[str, Any] = {}
     total_formulas = 0
     total_caches = 0
     errors: list[dict[str, str]] = []
     filter_overlaps: list[dict[str, str | None]] = []
     for sheet_name, part in sheet_parts.items():
+        if part not in entries:
+            continue
         root = parse_xml(entries[part])
         inspected = inspect_sheet(root, strings)
         filter_topology = inspect_filter_topology(entries, sheet_name, part, root)
@@ -331,6 +741,9 @@ def inspect_workbook(path: Path) -> dict[str, Any]:
         "formula_errors": errors,
         "filter_overlap_count": len(filter_overlaps),
         "filter_overlaps": filter_overlaps,
+        "workbook_issue_count": len(workbook_structure["issues"]),
+        "workbook_issues": workbook_structure["issues"],
+        "workbook_structure": workbook_structure,
         "objects": {
             "drawings": sorted(name for name in names if name.startswith("xl/drawings/")),
             "media": sorted(name for name in names if name.startswith("xl/media/")),
@@ -550,6 +963,10 @@ def compare_workbooks(
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description="Inspect and compare OOXML workbooks")
     parser.add_argument("workbook", type=Path)
     parser.add_argument("--baseline", type=Path)
@@ -573,6 +990,7 @@ def main() -> int:
             and current["formula_cache_count"] == current["formula_count"]
             and current["formula_error_count"] == 0
             and current["filter_overlap_count"] == 0
+            and current["workbook_issue_count"] == 0
         )
         report = {
             "ok": standalone_ok and (comparison is None or comparison["ok"]),

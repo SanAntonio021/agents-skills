@@ -151,8 +151,11 @@ def resolve_sheet_parts(entries: dict[str, bytes]) -> dict[str, str]:
     workbook = parse_xml(entries[workbook_name])
     rels = parse_xml(entries[rels_name])
     targets = {
-        rel.attrib["Id"]: rel.attrib["Target"]
+        relationship_id: target
         for rel in rels.findall(qn(PKG_REL_NS, "Relationship"))
+        if (relationship_id := rel.attrib.get("Id"))
+        and (target := rel.attrib.get("Target"))
+        and rel.attrib.get("TargetMode") != "External"
     }
     result: dict[str, str] = {}
     sheets = workbook.find(qn(MAIN_NS, "sheets"))

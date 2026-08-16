@@ -512,6 +512,24 @@ function makeValidEnvelope() {
   };
 }
 
+function makeV2Envelope(overrides = {}) {
+  const artifactContent = "# V2 plan\n\nReview this artifact.\n";
+  return {
+    tool: "review_peer",
+    question: "Review this plan and return the protocol-v2 result.",
+    artifactId: "v2-plan",
+    artifactType: "plan",
+    artifactName: "plan.md",
+    artifactPath: "plan.md",
+    artifactBytes: Buffer.byteLength(artifactContent, "utf8"),
+    artifactSha256: createHash("sha256").update(artifactContent, "utf8").digest("hex"),
+    artifactContent,
+    acceptanceCriteria: ["The plan has an explicit acceptance criterion."],
+    constraints: ["Do not change files in review_peer mode."],
+    ...overrides,
+  };
+}
+
 function setArtifactContent(envelope, content) {
   envelope.artifactContent = content;
   envelope.artifactBytes = Buffer.byteLength(content, "utf8");
@@ -673,6 +691,56 @@ test("validateEnvelope: rejects fixed review_repair_peer field overrides", () =>
   assert.match(result.reason, /固定|不可覆盖/);
 });
 
+test("validateEnvelope: protocol-v2 review_peer is endpoint-derived and zero-tool", () => {
+  const result = validateEnvelope(wrapInFence(makeV2Envelope()));
+  assert.equal(result.ok, true);
+  const inlineText = makeV2Envelope();
+  delete inlineText.artifactPath;
+  assert.equal(validateEnvelope(wrapInFence(inlineText)).ok, true);
+});
+
+test("validateEnvelope: protocol-v2 rejects caller target, round, and legacy allowlist fields", () => {
+  for (const key of ["target", "round", "allowedPaths", "reviewerAccess"]) {
+    const result = validateEnvelope(wrapInFence({ ...makeV2Envelope(), [key]: key === "round" ? 1 : [] }));
+    assert.equal(result.ok, false, key);
+    assert.match(result.reason, new RegExp(key));
+  }
+});
+
+test("validateEnvelope: protocol-v2 inline repair forbids workspace and test fields", () => {
+  const result = validateEnvelope(wrapInFence({
+    ...makeV2Envelope({ tool: "review_repair_peer", artifactMode: "inline" }),
+    targetRoot: "C:\\plans",
+  }));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /inline/);
+});
+
+test("validateEnvelope: protocol-v2 workspace repair accepts structured tests and CAS fields", () => {
+  const result = validateEnvelope(wrapInFence({
+    ...makeV2Envelope({ tool: "review_repair_peer", artifactMode: "workspace" }),
+    targetRoot: "C:\\plans",
+    repairTargets: [{ path: "plan.md", action: "modify" }],
+    testCommands: [{
+      program: "C:\\tools\\node.exe",
+      programBytes: 123,
+      programSha256: "a".repeat(64),
+      args: ["verify.mjs"],
+      timeoutMs: 5000,
+    }],
+    seriesId: "v2-plan-series",
+    seriesVersion: 0,
+    latestJobId: "11111111-1111-4111-8111-111111111111",
+  }));
+  assert.equal(result.ok, true);
+});
+
+test("validateEnvelope: protocol-v2 requires series CAS fields as a pair", () => {
+  const result = validateEnvelope(wrapInFence({ ...makeV2Envelope(), seriesVersion: 0 }));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /成对/);
+});
+
 test("cmdLaunch: review mode rejects --write before starting a job", () => {
   const restore = withTempPluginData();
   try {
@@ -712,7 +780,8 @@ test("cmdLaunch: review claim persists artifact state and job ID", () => {
     assert.equal(claim.phase, "review");
     assert.equal(claim.artifactId, "artifact-task0");
     assert.equal(claim.artifactSha256, makeValidEnvelope().artifactSha256);
-    assert.equal(claim.round, 1);
+    assert.equal(claim.seriesId, "artifact-task0");
+    assert.equal(claim.seriesVersion, null);
     assert.equal(claim.jobId, "review-job-1");
   } finally {
     restore();

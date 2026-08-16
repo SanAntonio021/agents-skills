@@ -1,6 +1,6 @@
 # OOXML 定点补丁规范
 
-`patch_ooxml.py` 接受 UTF-8 JSON。顶层 `sheets` 以工作表名称为键。
+`patch_ooxml.py` 接受 UTF-8 JSON。顶层 `sheets` 以工作表名称为键。补丁文件和输出候选放入任务独占临时目录；该工具不负责覆盖或发布正式路径。
 
 ## 完整示例
 
@@ -65,7 +65,7 @@
 ## 保护规则
 
 - 脚本拒绝源路径与输出路径相同。
-- 输出已存在时拒绝写入。
+- 输出候选已存在时拒绝写入。不要删除已有正式文件后重跑，也不要放宽该保护；验证通过后统一使用 `publish_output.py` 发布。
 - 默认只修改已存在单元格。需要创建新单元格时加 `--allow-new-cells`。
 - 共享公式单元格默认拒绝直接改写，避免破坏共享公式组。
 - `data_validation.require_count` 用于锁定验证条目数；不匹配时停止。
@@ -77,7 +77,9 @@
 补丁命令只证明 XML 可写，不证明业务正确。至少执行：
 
 ```powershell
-python <skill-root>\scripts\verify_xlsx.py output.xlsx --baseline input.xlsx --policy policy.json
+python <skill-root>\scripts\verify_xlsx.py <task-temp>\output.xlsx --baseline input.xlsx --policy <task-temp>\policy.json
 ```
 
 如改过公式，再完成隔离重算、缓存合并和零错误检查。
+
+全部检查通过后按 [output-lifecycle.md](output-lifecycle.md) 发布。目标不存在时创建新草稿；只有目标是当前任务尚未交付、未被用户接管且持有上次记录 SHA-256 的草稿时，才允许通过 `--replace-existing-if-sha256` 原路径更新。已交付或归属不明的文件使用递增版本。

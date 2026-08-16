@@ -3,38 +3,49 @@
 以下验收在源码提交、定向同步和相关客户端重启后进行。默认只使用可丢弃的合成材料和确定性测试，
 不运行 live/Opus 测试，不把真实用户计划提交给 bridge。
 
-## 角色端点与宿主
+## 共享入口与宿主
 
-- Codex Desktop/CLI 使用 `http://127.0.0.1:43123/mcp/codex` 和
-  `CLAUDE_CODEX_BRIDGE_CODEX_TOKEN`；Claude Code CLI 使用 `/mcp/claude` 和
-  `CLAUDE_CODEX_BRIDGE_CLAUDE_TOKEN`。端点 owner 分别为 `codex`、`claude`，reviewer 由 bridge
-  推导，不在工具参数中传 `target` 或 `owner`。
-- 两端都只调用同一个 Streamable HTTP daemon；不调用 `/mcp` 兼容端点、stdio wrapper、
-  `codex exec`、`claude -p`、`codex@openai-codex` 或隐藏 Hook。
-- endpoint、health、`peer_status` 和 job 证据都报告相同的当前 `version`、`build_id` 和
+- Codex Desktop/CLI 和 Claude Code 都使用 `http://127.0.0.1:43123/mcp` 与
+  `CLAUDE_CODEX_BRIDGE_TOKEN`。共享入口的正式 v2 工具均以 `v2_` 开头；每次提交必须带
+  `author=codex|claude`，bridge 由其派生相反 reviewer，并在 job 记录
+  `author_source=caller_declared`。共享 token 认证访问，不证明调用方作者身份。
+- `/mcp/codex`、`/mcp/claude` 与独立 owner token 保留为兼容/回滚入口。其未加前缀工具仍由
+  endpoint owner 推导 reviewer，并记录 `author_source=role_endpoint_token`；新的正式互审不默认使用它们。
+- 两端都只调用同一个 Streamable HTTP daemon；不调用 stdio wrapper、`codex exec`、`claude -p`、
+  `codex@openai-codex` 或隐藏 Hook。
+- endpoint、health、`v2_peer_status` 和 job 证据都报告相同的当前 `version`、`build_id` 和
   `protocol_version=2`；未注册 MCP 的宿主必须失败关闭并输出 `PEER_REVIEW_FAILURE_REPORT`。
 - 正式计划自动触发；普通读取/分析/代码修改/测试/提交、内部 Todo/`update_plan`、已确认计划执行和
   最终汇报都不创建 job；用户明确点名 Opus/Codex 或交付物审查时才显式进入。
 
 ## v2 工具契约
 
-- `review_peer` 固定 `review_only + inline + zero tools`，不接受 `artifactMode`、`targetRoot`、
+- `v2_review_peer` 固定 `review_only + inline + zero tools`，要求 `author`，且不接受 `artifactMode`、`targetRoot`、
   `repairTargets` 或 `testCommands`。
-- `review_repair_peer` 必须显式传 `artifactMode=inline|workspace`。inline 不接受工作区/测试字段，
+- `v2_review_repair_peer` 必须显式传 `author` 与 `artifactMode=inline|workspace`。inline 不接受工作区/测试字段，
   并要求完整 `repairedArtifact`；workspace 要求绝对 `targetRoot` 和非空 `{path, action}` 数组。
   plan 只能有一个与 `artifactPath` 相同的 `modify` target。
-- 首次进入和每次选择 workspace 前读取 `peer_status`。`active=true` 与 `inlineReviews=true` 即可进行
+- 首次进入和每次选择 workspace 前读取 `v2_peer_status`。`active=true` 与 `inlineReviews=true` 即可进行
   零工具 inline 审查；workspace 还必须是 `workspaceRepairs=true`、`workspaceProbeState=available`。
-  `pending`/`unavailable` 时不得提交 workspace 请求或创建 job；纯审查继续用 `review_peer`，显式
+  `pending`/`unavailable` 时不得提交 workspace 请求或创建 job；纯审查继续用 `v2_review_peer`，显式
   workspace 需求输出 `v2_workspace_capability_unavailable` 失败报告，不能静默降级。
-- 发起前从完整 `artifactContent` 重新计算 UTF-8 `artifactBytes` 和 SHA-256；正文缺失、身份不匹配、
-  空验收标准、相对路径非法或携带旧 `target/operation/round/allowedPaths` 字段时不创建 job。
+- 发起前从完整 `artifactContent` 重新计算 UTF-8 `artifactBytes` 和 SHA-256；正文缺失、`author` 缺失/非法、
+  空验收标准、相对路径非法或携带旧 `target/owner/operation/round/allowedPaths` 字段时不创建 job。
 - workspace `testCommands` 只能是最多 16 项结构化命令：绝对普通 `.exe`、程序字节数、SHA-256、
   参数数组和 100..900000 ms 超时；bridge 的 Codex sandbox 在固定副本内执行，网络关闭，不向 Claude
   暴露 Bash。空数组与省略都不产生 Bash allowlist。
 - `seriesId` 默认取 `artifactId`；续轮只携带上轮返回的 `seriesVersion` 和 `latestJobId`，两者必须成对，
   不传 `round`、`maxRounds`、`priorRounds` 或 `previousJobId`。同一 series 最多三次 accepted round，
   每轮最多两次尝试。
+
+## Codex CC Switch 渲染
+
+- Codex 的共享记录必须是 URL `/mcp` 加
+  `env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN`。不得同时存在
+  `headers.X-Bridge-Token`，也不得在渲染后的
+  `[mcp_servers.claude-codex-bridge.http_headers]` 出现静态 header。
+- `codex mcp get claude-codex-bridge` 必须报告 `transport=streamable_http`、
+  `http_headers=-` 和共享环境变量。该规则只约束 Codex；Claude 的 schema 须另行验证。
 
 ## 隔离与同步
 
@@ -78,5 +89,5 @@
 - Skill 与 Bridge 两个仓库分别精确暂存本任务路径，保留无关 dirty/untracked 文件；Skill 推送后用
   `Invoke-CcSwitchSkillSync.ps1` 传入精确 Skill 名和 40 位远端 SHA 定向同步，不直接改运行时目录或数据库。
 - 同步验收逐个比较 source、CC Switch、Claude、Codex 四层全部已提交 Skill 文件；任一层不一致只能报告
-  “源码已推送，运行时未生效”。激活后只做 health、`peer_status` 和两端连接探针，确认只有一个 daemon、
+  “源码已推送，运行时未生效”。激活后只做 health、`v2_peer_status` 和两端连接探针，确认只有一个 daemon、
   无 stdio wrapper、无新 job。

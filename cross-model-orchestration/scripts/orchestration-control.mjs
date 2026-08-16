@@ -26,6 +26,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { validateProtocolV2Envelope } from "./v2-envelope.mjs";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -300,6 +301,10 @@ export function validateEnvelope(prompt) {
     return { ok: false, reason: "交接信封必须是 JSON 对象" };
   }
 
+  // Protocol-v2 is the active contract. The legacy branch below remains only
+  // for archived state fixtures; no runtime MCP path calls this script.
+  if ("tool" in envelope) return validateProtocolV2Envelope(envelope);
+
   // Keep this schema isomorphic with workflow-contract.md. operation,
   // reviewerAccess, and maxRounds are fixed by review_repair_peer itself.
   const requiredKeys = [
@@ -500,7 +505,9 @@ export function cmdLaunch({ companionPath, cwd, prompt, targetRoots, write, mode
     artifactType: precheck.envelope.artifactType,
     artifactPath: precheck.envelope.artifactPath ?? null,
     artifactSha256: precheck.envelope.artifactSha256,
-    round: precheck.envelope.round
+    seriesId: precheck.envelope.seriesId ?? precheck.envelope.artifactId,
+    seriesVersion: precheck.envelope.seriesVersion ?? null,
+    latestJobId: precheck.envelope.latestJobId ?? null
   } : {};
 
   // Step 1 + 2 + 3: acquire lock, check overlaps, register placeholder

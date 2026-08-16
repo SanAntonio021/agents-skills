@@ -1,6 +1,6 @@
 ---
 name: command-memory
-description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、git 提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
+description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、git 提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入自动任务 API 的中文名称/提示变乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
 ---
 
 # Windows 命令急救卡
@@ -23,6 +23,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - 要引用本机插件或运行时源码的行号和行为，而同一份东西在磁盘上可能并存多个版本副本，先得判定哪一份真正加载。
 - 需要 Office COM、MATLAB batch / desktop、用户级 CLI 安装或环境变量持久化。
 - LibreOffice / Poppler 在 Windows 上转换或渲染失败，例如 helper 报 `socket.AF_UNIX`、profile URI 异常，或 `pdftoppm` / `pdfinfo` 命中了不可用包装器。
+- 需要将 Codex 自动任务在 `heartbeat` 与 `project cron` 间迁移，尤其归档当前 task 前；或中文、符号等非 ASCII 名称/提示经过 PowerShell、Python 等子进程传给自动任务 API 后变乱码。
 - 用户明确说”按上次正确方式跑””别再试错””用之前验证过的命令”。
 
 ## 不要触发
@@ -30,6 +31,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - 普通只读探索：`rg`、`Get-Content`、`Get-ChildItem`、`git status`、`git diff`。
 - 简单存在性检查：`Test-Path`、`Get-Command`。
 - 不涉及 Windows 易错点的构建、测试、脚本运行。
+- 单纯查看、创建或修改 Codex 自动任务，且不涉及类型迁移、跨进程非 ASCII 传输或编码异常。
 - 已有更具体 skill 覆盖的业务动作；这里只管命令形态，不管业务流程。
 
 ## 最小护栏
@@ -56,6 +58,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - 规则文件同步、软链、临时复制对齐：`references/rule-file-sync-and-symlink.md`
 - WindowsApps / AppX packaged app 启动锁、`0x80070020`、Claude 更新后”另一程序正在使用此文件”：`references/windows-appx-packaged-app-lock.md`
 - Codex Windows sandbox、`:slash_tmp`、`C:\tmp` / `D:\tmp` ACL 刷新失败：`references/codex-windows-sandbox.md`
+- Codex 自动任务在 `heartbeat` / `project cron` 间迁移，或名称、提示从 PowerShell / Python 等子进程传给自动任务 API 后出现乱码：`references/codex-automation-utf8.md`
 - MATLAB batch / desktop / 写 .m 带 BOM 让 -batch 报错：`references/matlab-batch-logfile.md`
 - MATLAB figure 中文显示 / 字体方框 / GUI 坑（modal→normal 销毁、batch GUI env var 旁路）：`references/matlab-figure-chinese.md`
 - Office COM、PowerPoint/Word/Excel 自动化：`references/office-com.md`

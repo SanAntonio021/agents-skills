@@ -214,6 +214,15 @@ MATERIAL_ROLE_META_RE = re.compile(
     r".{0,24}(?:基础|依据|参照|参考|支撑|清单|信息职责)",
     re.IGNORECASE,
 )
+THIN_SECTION_EXEMPT_RE = re.compile(
+    r"(?:摘要|参考资料|参考文献|资料来源|附录|综合判断|结论|(?:范围|研究对象).*(?:术语|定义))"
+)
+SCOPE_SECTION_RE = re.compile(
+    r"(?:(?:研究对象|研究范围|范围).*(?:术语|定义)|(?:术语|定义).*(?:研究对象|研究范围|范围)|研究范围)$"
+)
+SCOPE_CUTOFF_SENTENCE_RE = re.compile(
+    r"^(?:本报告|本文).{0,80}(?:资料整理|资料收集|资料检索).{0,20}(?:截止于|截止日为|截至).{0,40}$"
+)
 
 
 @dataclass(frozen=True)
@@ -294,6 +303,30 @@ def parse_markdown(text: str) -> tuple[list[Paragraph], list[tuple[int, str]]]:
 
     _flush_paragraph(paragraphs, buffer, buffer_line, current_section)
     return paragraphs, headings
+
+
+def _main_section_stats(text: str) -> list[tuple[int, str, int]]:
+    """Return H2 sections with the number of non-separator table rows."""
+    lines = text.splitlines()
+    headings: list[tuple[int, str]] = []
+    for line_number, raw_line in enumerate(lines, start=1):
+        match = HEADING_RE.match(raw_line.strip())
+        if match and len(match.group(1)) == 2:
+            headings.append((line_number, _clean_heading(match.group(2))))
+
+    sections: list[tuple[int, str, int]] = []
+    for index, (line_number, heading) in enumerate(headings):
+        next_line = (
+            headings[index + 1][0] if index + 1 < len(headings) else len(lines) + 1
+        )
+        table_rows = sum(
+            1
+            for raw_line in lines[line_number : next_line - 1]
+            if raw_line.strip().startswith("|")
+            and not re.fullmatch(r"[\s|:-]+", raw_line.strip())
+        )
+        sections.append((line_number, heading, table_rows))
+    return sections
 
 
 def split_sentences(text: str) -> list[str]:
@@ -460,6 +493,39 @@ def audit_text(
                     excerpt=heading,
                 )
             )
+
+    if formal:
+        main_sections = _main_section_stats(text)
+        meaningful_sections = [
+            section
+            for section in main_sections
+            if not _is_summary(section[1]) and not _is_reference_section(section[1])
+        ]
+        prose_counts = Counter(
+            paragraph.section
+            for paragraph in paragraphs
+            if not _is_reference_section(paragraph.section)
+        )
+        thin_sections = [
+            (line, heading, table_rows, prose_counts[heading])
+            for line, heading, table_rows in meaningful_sections
+            if not THIN_SECTION_EXEMPT_RE.search(heading)
+            and prose_counts[heading] <= 3
+            and table_rows < 4
+        ]
+        if len(meaningful_sections) >= 6 and len(thin_sections) >= 2:
+            for line, heading, table_rows, prose_count in thin_sections:
+                findings.append(
+                    _finding(
+                        "THIN_BODY_SECTION",
+                        "info",
+                        f"本节只有 {prose_count} 段正文和 {table_rows} 行表格；在章节较多的报告中，"
+                        "应人工判断是否可并入相邻的同对象内容。本项不要求机械合并。",
+                        line=line,
+                        section=heading,
+                        excerpt=heading,
+                    )
+                )
 
     summary_sentences: list[tuple[Paragraph, str, set[str]]] = []
     sentence_locations: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
@@ -676,6 +742,12 @@ def audit_text(
             for sentence, categories in zip(sentences, sentence_categories)
             if "fact" in categories and "definition" not in categories
         ]
+        if SCOPE_SECTION_RE.search(paragraph.section):
+            fact_sentences = [
+                sentence
+                for sentence in fact_sentences
+                if not SCOPE_CUTOFF_SENTENCE_RE.match(sentence)
+            ]
         has_evidence_reference = bool(
             CITATION_RE.search(paragraph.text)
             or FINDING_REFERENCE_RE.search(paragraph.text)

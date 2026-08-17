@@ -83,6 +83,27 @@ v2_await_peer(job_id, timeout_ms <= 45000)
 v2_peer_result(job_id)
 ```
 
+无论 `v2_await_peer` 是否已声称 complete，调用方都要继续调用一次 `v2_peer_result`。终态 public job
+必须含 bridge 持久化的：
+
+```text
+completion_receipt = {
+  schema_version: 1,
+  delivery_required: true,
+  disposition: passed | needs_changes | evidence_required | awaiting_user_decision | failed,
+  report_type: PLAN_REVIEW | DELIVERABLE_REVIEW | DISAGREEMENT_REPORT | PEER_REVIEW_FAILURE_REPORT,
+  report: bridge-rendered user report
+}
+```
+
+调用方收到终态后立即向用户呈现 `completion_receipt.report`，不得透传原始模型输出或自行声称审查已完成。
+若单次 45 秒等待后 `v2_peer_result` 仍为 pending，调用方输出 `PEER_REVIEW_FAILURE_REPORT`，
+`decisiveError=peer_wait_timeout`，注明 job ID、实际模型未验证和本次不重试/不换模型，然后暂停。
+
+Codex -> Claude 的严格 `V2ModelResponseJsonSchema` 是 bridge-owned transport contract。Claude 可在
+init/stream 中报告无能力的 `StructuredOutput` 内部验证器；它不授予文件、命令或网络访问，且只在该 schema
+存在时可接受。任何其他工具仍按零工具隔离失败处理。
+
 Codex 与 Claude 都连接 `/mcp` 并使用 `CLAUDE_CODEX_BRIDGE_TOKEN`；不得把 `target` 或另一角色 token
 写入工具参数。角色端点和独立 token 仅保留回滚：它们使用未加前缀工具并由 endpoint owner 推导 reviewer。
 旧 `submit_peer(operation=review_repair)` 只保留兼容周期；字段不完整时返回 `missing_fields`，且不得
@@ -127,6 +148,8 @@ workspace cwd and --add-dir == the fixed bridge workspace
 public reported model == resolved selected model
 ```
 
+Claude 方向传入固定的 `V2ModelResponseJsonSchema`；Codex 方向不传 transport schema，由 bridge 在
+结果返回后继续使用同一严格 JSON/Zod parser 校验，二者都不补默认数组、不接受额外字段、不重试或降档。
 `--model`/`--effort` 缺失、重复或与解析结果不同，出现 alternate/fallback 参数，init 回执缺失或
 实际模型不是所选模型，工具模式或 JSON schema 不匹配，均停止；没有 fallback model。只有终态
 `succeeded`、结果契约合法且模型证据精确匹配时才接受。workspace 的结构化测试由 bridge 的 Codex
@@ -201,6 +224,14 @@ pending_high_risk = [{ id, action, path, ... }]
 `retained_workspace_conflict` 停止，直到原高风险变更被明确授权同步或按记录处理。
 
 ## 输出格式
+
+### completion_receipt
+
+每个 v2 终态由 bridge 在持久化 job 时写入 `completion_receipt`。`report` 只能由 bridge renderer
+从已验证的审查结果、gate、模型证据、错误和裁决状态生成；不得透传原始模型文本。`succeeded` 与
+`awaiting_evidence` 分别使用安全的 `PLAN_REVIEW` 或 `DELIVERABLE_REVIEW`，`awaiting_user_decision`
+使用 `DISAGREEMENT_REPORT`，`failed` 使用完整 `PEER_REVIEW_FAILURE_REPORT`。没有独立模型回执时，
+失败报告的“实际模型”明确写“未验证”。
 
 ### PLAN_REVIEW
 

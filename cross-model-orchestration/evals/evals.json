@@ -175,6 +175,13 @@
       "expected_output": "保留 URL=/mcp 和 env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN，删除 headers.X-Bridge-Token；确认渲染后的 Codex TOML 没有该记录的 http_headers，codex mcp get 显示 http_headers=-。",
       "files": [],
       "expectations": ["这条 schema 防错规则只约束 Codex，不能未经证实改写 Claude。", "不直接编辑 .cc-switch、.codex 或 .claude。"]
+    },
+    {
+      "id": 25,
+      "prompt": "我向 Opus 提交了一个 v2 plan review；v2_await_peer 等了 45 秒仍是 pending。",
+      "expected_output": "继续调用同一 job 的 v2_peer_result；若仍 pending，立即输出 decisiveError=peer_wait_timeout 的 PEER_REVIEW_FAILURE_REPORT 并暂停。",
+      "files": [],
+      "expectations": ["不继续等待、不重试、不换模型或另开 job。", "终态时直接呈现 bridge completion_receipt.report，不透传原始模型输出。"]
     }
   ]
 }

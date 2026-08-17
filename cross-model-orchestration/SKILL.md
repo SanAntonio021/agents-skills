@@ -77,10 +77,26 @@ claude-codex-bridge` reports the shared environment header, `http_headers=-`, an
 separate evidence. Do not edit `.cc-switch`, `.codex`, or other rendered runtime copies directly.
 
 正式互审的调用顺序固定为 `v2_review_peer` 或 `v2_review_repair_peer` -> `v2_await_peer`（单次最多
-45 秒）-> `v2_peer_result`；首次进入或考虑 workspace 模式时，先用 `v2_peer_status` 读取能力；第三轮
-用户裁决用 `v2_adjudicate_peer_series`。不得扫描最新线程、调用未加前缀的 v1 工具、`codex exec`、
+45 秒）-> `v2_peer_result`，即使 `v2_await_peer` 已返回终态也要取一次 `v2_peer_result`。首次进入或考虑
+workspace 模式时，先用 `v2_peer_status` 读取能力；第三轮用户裁决用 `v2_adjudicate_peer_series`。不得扫描最新线程、调用未加前缀的 v1 工具、`codex exec`、
 `claude -p` 或 `codex@openai-codex` 绕过 bridge。`orchestration-control.mjs` 与
 `check-resume-candidate.mjs` 只用于历史状态测试和输入诊断，不是运行时入口。
+
+每个终态公开 job 都必须带 bridge 持久化的 `completion_receipt`：
+
+```text
+schema_version=1
+delivery_required=true
+disposition
+report_type=PLAN_REVIEW | DELIVERABLE_REVIEW | DISAGREEMENT_REPORT | PEER_REVIEW_FAILURE_REPORT
+report
+```
+
+终态一经获得，立即原样向用户呈现 `completion_receipt.report`；它是 bridge 根据持久化状态和
+renderer 生成的唯一用户报告，不能改用原始模型正文、自己的摘要或无结果的“已完成”表述。
+若一次 45 秒 `v2_await_peer` 后 `v2_peer_result` 仍为 pending，立即输出
+`PEER_REVIEW_FAILURE_REPORT`，`decisiveError=peer_wait_timeout`，写明 job ID、已等待 45 秒、未获得
+终态回执、实际模型为“未验证”，并暂停。本次不得继续等待、重试、换模型、降档或另开 job。
 
 能力门固定如下：`v2_peer_status.active=true` 和 `capabilities.inlineReviews=true` 是所有 v2 inline
 审查的前提；`v2_review_repair_peer artifactMode=workspace` 还必须同时满足
@@ -96,6 +112,9 @@ separate evidence. Do not edit `.cc-switch`, `.codex`, or other rendered runtime
 
 `v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
 正式计划和普通审查在 workspace 能力不可用时的默认入口，作者自行采纳修改并重新计算下一轮身份。
+Codex -> Claude 为严格 v2 结果注入 bridge-owned JSON schema 时，Claude 可能报告内部
+`StructuredOutput` 验证器；它没有文件、命令或网络能力，且只能随该 schema 出现，不改变零工具约束。
+任何其他工具记录仍是隔离失败。
 需要完整替换正文时使用 `v2_review_repair_peer artifactMode=inline`；它也不使用工具，返回完整
 `repairedArtifact`。workspace 修复只允许显式 `repairTargets`，并由 bridge 检查、同步和回滚。
 如果用户明确要求 workspace 修订或结构化测试而能力为 `pending`/`unavailable`，不得提交该请求、
@@ -165,7 +184,8 @@ workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把�
 ## 三轮状态机
 
 1. 作者用同一 `artifactId`（默认也是 `seriesId`）调用 `v2_review_peer` 或 `v2_review_repair_peer` 发起第 1 轮，保存 job ID、模式和（仅 workspace 时的）基线/结果 manifest。
-2. 只接受终态 `succeeded`、契约合法且方向/模型/权限证据匹配的结果；inline 由作者检查审查正文或 `repairedArtifact`，workspace 才检查同步后的主项目。
+2. 只接受带 `completion_receipt.schema_version=1` 和 `delivery_required=true` 的终态；先向用户呈现其
+   `report`，再检查方向/模型/权限证据。inline 由作者检查审查正文或 `repairedArtifact`，workspace 才检查同步后的主项目。
 3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
 4. `需修改`：作者自行修订主项目（inline 不发生同步；workspace 先检查同步内容），重新计算字节数和
    SHA-256，把上一轮 findings/未决项放入下一轮 `question`、`constraints` 或 `artifactContent`，并携带
@@ -173,7 +193,7 @@ workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把�
 5. 第 3 轮仍需修改，或双方出现实质分歧：输出 `DISAGREEMENT_REPORT`，等待用户裁决，不发第 4 轮。
 
 审查通道不可用、超时、取消、认证/权限/sandbox 错误、格式错误、所选模型缺失或回执不匹配都不是
-“需修改”，直接输出 `PEER_REVIEW_FAILURE_REPORT` 并暂停；不换模型、不静默跳过、不回退。bridge
+“需修改”，直接呈现 `completion_receipt.report` 中的 `PEER_REVIEW_FAILURE_REPORT` 并暂停；不换模型、不静默跳过、不回退。bridge
 还会在同步前拒绝缺少对应审查标记/结论、明确 blocked/incomplete，或把失败测试/未满足验收写成“通过”的
 `review_repair` 结果，并使用 `peer_contract_error` 记录原因。
 
@@ -228,7 +248,8 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 ## 失败与发布
 
 `PEER_REVIEW_FAILURE_REPORT` 至少包含方向、阶段、请求/实际模型、job ID、决定性错误、已完成内容、
-未完成范围和恢复条件。`DISAGREEMENT_REPORT` 只整理双方已有判断和证据，不替用户选折中方案。
+未完成范围和恢复条件。实际模型无独立运行时回执时必须明确写“未验证”，不能把请求参数写成已验证。
+`DISAGREEMENT_REPORT` 只整理双方已有判断和证据，不替用户选折中方案。
 
 不要使用 `--yolo`、`--dangerously-skip-permissions`、直接改 `.cc-switch`/`.claude`/`.codex` 或
 数据库。旧 `codex@openai-codex` 源码、许可证和测试可以留作行为参考，但不得作为运行时前置条件。

@@ -82,6 +82,13 @@
 - bridge 渲染 `PLAN_REVIEW`/`DELIVERABLE_REVIEW` 五段结果：结论、已确认事项、问题与理由、必须修改、
   剩余风险；缺段、blocked/incomplete、失败测试写成通过或 JSON schema 错误都以 `peer_contract_error`
   失败关闭。
+- 每个 v2 终态 public job 都带 `completion_receipt`，固定为 `schema_version=1`、
+  `delivery_required=true`、`disposition`、`report_type` 和 bridge-rendered `report`；调用端只展示该
+  `report`，不透传原始模型输出。Claude 方向注入 `V2ModelResponseJsonSchema`；Codex 方向不注入 schema，
+  Claude 可能为该 schema 报告无能力的 `StructuredOutput` 内部验证器，除此以外仍是零工具；两边都由 bridge
+  严格 JSON/Zod 校验、拒绝额外字段和默认补全。
+- 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`；仍 pending 则
+  输出 `decisiveError=peer_wait_timeout` 的 `PEER_REVIEW_FAILURE_REPORT` 并暂停，不重试、不降档、不另开 job。
 - 第 1/2 轮需修改时，inline 由作者自行修订主项目、workspace 才检查同步后的主项目；更新正文和身份
   后用 CAS 发下一轮；第 3 轮仍不通过或
   实质分歧时只输出 `DISAGREEMENT_REPORT`，不发第 4 轮。通过后仍停在用户执行确认门。

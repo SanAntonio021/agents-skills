@@ -335,6 +335,111 @@ R-01：建议先补充认证条件。
         codes = {item["code"] for item in result["findings"]}
         self.assertIn("MIXED_STATEMENT_TYPES", codes)
 
+    def test_thin_body_sections_are_reviewed_in_dense_report(self):
+        report = """# 调研报告
+
+## 摘要
+
+本文整理已公开的试验、终端和准入信息。
+
+## 研究对象与术语
+
+本报告所称固定站址终端，在同一安装位置运行。
+
+## 公开业务
+
+甲单位公开卫星接入服务。[1]
+
+## 低轨进展
+
+乙单位在 2026 年完成组网发射。[2]
+
+## 国内终端
+
+丙厂商公开固定终端参数。[3]
+
+## 国际终端
+
+丁厂商公开电子扫描终端。[4]
+
+## 频段与准入
+
+法规列出相关设备管理事项。[5]
+
+## 参数对照
+
+产品参数采用同一单位整理。
+
+| 产品 | 功耗 |
+| --- | --- |
+| A | 80 W |
+| B | 100 W |
+| C | 120 W |
+
+## 综合判断
+
+公开资料可用于比较产品形态。
+
+## 参考资料
+
+[1] 甲单位公开页面。
+[2] 乙单位公告。
+[3] 丙厂商规格页。
+[4] 丁厂商规格页。
+[5] 主管部门法规。
+"""
+        result = audit_report.audit_text(report)
+        findings = [
+            item
+            for item in result["findings"]
+            if item["code"] == "THIN_BODY_SECTION"
+        ]
+        sections = {item["section"] for item in findings}
+        self.assertIn("公开业务", sections)
+        self.assertIn("低轨进展", sections)
+        self.assertNotIn("参数对照", sections)
+        self.assertTrue(all(item["severity"] == "info" for item in findings))
+
+    def test_thin_body_sections_are_not_flagged_in_short_report(self):
+        report = """# 调研报告
+
+## 公开业务
+
+甲单位公开卫星接入服务。[1]
+
+## 终端产品
+
+乙厂商公开固定终端参数。[2]
+
+## 频段与准入
+
+法规列出相关设备管理事项。[3]
+
+## 参考资料
+
+[1] 甲单位公开页面。
+[2] 乙厂商规格页。
+[3] 主管部门法规。
+"""
+        result = audit_report.audit_text(report)
+        codes = {item["code"] for item in result["findings"]}
+        self.assertNotIn("THIN_BODY_SECTION", codes)
+
+    def test_scope_cutoff_date_is_not_treated_as_uncited_fact(self):
+        report = """# 调研报告
+
+## 研究对象与术语
+
+本报告研究中国境内固定卫星宽带的公开业务和用户终端，资料整理截止于 2026 年 8 月 15 日。
+"""
+        result = audit_report.audit_text(report)
+        uncited = [
+            item
+            for item in result["findings"]
+            if item["code"] == "UNCITED_FACTUAL_PARAGRAPH"
+        ]
+        self.assertEqual([], uncited)
+
     def test_summary_unfinished_research_status_is_flagged(self):
         report = """# 调研报告
 

@@ -87,8 +87,12 @@
   `report`，不透传原始模型输出。Claude 方向注入 `V2ModelResponseJsonSchema`；Codex 方向不注入 schema，
   Claude 可能为该 schema 报告无能力的 `StructuredOutput` 内部验证器，除此以外仍是零工具；两边都由 bridge
   严格 JSON/Zod 校验、拒绝额外字段和默认补全。
-- 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`；仍 pending 则
-  输出 `decisiveError=peer_wait_timeout` 的 `PEER_REVIEW_FAILURE_REPORT` 并暂停，不重试、不降档、不另开 job。
+- 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`。两次仍 pending
+  都是非终态：公开同一 job ID、state、`hard_deadline_at`、`elapsed_ms` 和 `remaining_ms`，不得生成
+  `completion_receipt` 或 `PEER_REVIEW_FAILURE_REPORT`，也不得重试、降档、另开 job 或重置截止时间。
+  没有配置后台监视器时，后续用户消息只按保存的 job ID 查询；取得终态立即展示 `completion_receipt.report`。
+  从提交起 10 分钟才是硬截止：bridge 必须请求取消同行任务、持久化 `peer_wait_timeout` 失败回执，并拒绝
+  任何迟到成功结果覆盖该终态。
 - 第 1/2 轮需修改时，inline 由作者自行修订主项目、workspace 才检查同步后的主项目；更新正文和身份
   后用 CAS 发下一轮；第 3 轮仍不通过或
   实质分歧时只输出 `DISAGREEMENT_REPORT`，不发第 4 轮。通过后仍停在用户执行确认门。

@@ -24,10 +24,38 @@ PDF/Office 文档任务不会联网下载或自动修复；只有用户明确运
 覆盖路径。
 
 桥接器会隔离输入副本并核对源文件 SHA-256。不要通过 OfficeCLI 导出 Office-to-PDF：固定的
-OfficeCLI `1.0.144` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。需要 Microsoft
-Office 原生视觉结果时，只有在用户明确授权、对应 Office 进程不存在、使用隔离副本并显式传入
-`--render native --allow-native` 后才可尝试；桥接器不会关闭 Office。纯 PDF 仍按下面的
-Poppler、PyMuPDF、pypdf 和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器或保真渲染器。
+OfficeCLI `1.0.144` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。OfficeCLI
+`--render native --allow-native` 只保留为诊断，失败会输出
+`officecli_native_diagnostic_failed`、原始 stderr 和退出码；它不证明 Office 未安装，也不
+提供发布证据。需要 Microsoft Office 原生打开/导出证据时，使用四个 Office 技能同构的
+`office_native_gate.py`；桥接器不会关闭 Office。纯 PDF 仍按下面的 Poppler、PyMuPDF、pypdf
+和 OCR 路径处理，不把 OfficeCLI 当作 PDF 编辑器或保真渲染器。
+
+## Acceptance layers
+
+Office 源文件和纯 PDF 分开记录验收层：
+
+- `STATIC_PASS`: OfficeCLI/OOXML 或 PDF 结构、文本、哈希和机器检查通过。
+- `LO_RENDER_PASS`: Office 源文件通过 `libreoffice-runner` 的兼容转换/渲染；这是默认的
+  Office-to-PDF 路径。
+- `NATIVE_OPEN_PASS`: 只有任务明确要求原生 Office 兼容性时，独立 gate 打开隔离副本。
+- `NATIVE_RENDER_PASS`: PPTX/DOCX gate 的原生导出和页面栅格化通过；纯 PDF 不使用此层。
+
+OfficeCLI `validate` 通过不等于 PowerPoint、Word 或 Excel 原生可打开。需要原生证据时，按
+输入格式调用同构 gate，例如：
+
+```powershell
+python <skill-root>\scripts\office_native_gate.py check source.pptx `
+  --format pptx --json --allow-office-com --require-render
+python <skill-root>\scripts\office_native_gate.py check source.docx `
+  --format docx --json --allow-office-com --require-render
+python <skill-root>\scripts\office_native_gate.py check source.xlsx `
+  --format xlsx --json --allow-office-com
+```
+
+gate 返回 `PASS`、`FAIL_OPEN`、`FAIL_RENDER`、`APP_UNAVAILABLE`、`UNVERIFIED` 或
+`UNSAFE_PROCESS`，并保留真实阶段和异常。纯 PDF 的验收链不因 OfficeCLI native 状态改变；
+Office 转 PDF 继续以 `libreoffice-runner` 为主。
 
 ## Windows Toolchain
 

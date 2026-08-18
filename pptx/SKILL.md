@@ -26,11 +26,44 @@ An `OFFICECLI_EXE` override is subject to the same checks and must be fixed or u
 repair script only repairs the default path.
 
 The bridge copies `input.pptx` to new `draft.pptx` before mutation and never overwrites an existing
-output. It is not a fidelity renderer: screenshots require either explicitly authorized native
-PowerPoint rendering (`--render native --allow-native`, no `POWERPNT.EXE`, isolated copy) or
-`--render html --non-fidelity-preview` for diagnostics only. HTML/SVG previews must not be used for
-final images, layout PDF, print/page QA, or publication graphics. OfficeCLI PDF export is disabled
-because the pinned installation has no exporter plugin. The bridge never quits or terminates Office.
+output. It is not a fidelity renderer. OfficeCLI `--render native --allow-native` is retained only
+as an explicit diagnostic probe; its success or failure is never release evidence, and its generic
+native error must not be interpreted as "PowerPoint is not installed". Use the independent native
+gate below for PowerPoint acceptance. `--render html --non-fidelity-preview` is also diagnostics only.
+HTML/SVG previews must not be used for final images, layout PDF, print/page QA, or publication
+graphics. OfficeCLI PDF export is disabled because the pinned installation has no exporter plugin.
+The bridge never quits or terminates Office.
+
+## Acceptance layers
+
+Keep these records separate:
+
+- `STATIC_PASS`: `validate.py`, OOXML/package checks, typography and source-hash checks.
+- `LO_RENDER_PASS`: the required LibreOffice compatibility render and visual inspection.
+- `NATIVE_OPEN_PASS`: the independent gate opened an isolated copy with PowerPoint and read
+  `Slides.Count`.
+- `NATIVE_RENDER_PASS`: the same gate exported every slide to a new non-empty PNG.
+
+OfficeCLI `validate` passing proves only `STATIC_PASS`; it does **not** prove that PowerPoint can
+open the file. A failed OfficeCLI native probe is reported as
+`officecli_native_diagnostic_failed` with the original stderr and exit code, never as
+`APP_UNAVAILABLE`.
+
+For native evidence, run the gate explicitly for the current task:
+
+```powershell
+python <skill-root>\scripts\office_native_gate.py check input.pptx `
+  --format pptx --json --allow-office-com
+python <skill-root>\scripts\office_native_gate.py check input.pptx `
+  --format pptx --json --allow-office-com --require-render
+```
+
+The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or
+`UNSAFE_PROCESS`, and records the actual phase and exception. It refuses to run without
+`--allow-office-com`, refuses an existing `POWERPNT.EXE`, uses `DispatchEx` plus an isolated copy,
+checks the source SHA-256 before and after, never saves the source, and quits only a task-created
+instance whose presentation collection is empty. For a PPTX release, require `STATIC_PASS`,
+`LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
 Keep the existing OOXML/pptxgenjs paths for template-sensitive work, unsupported PowerPoint
 features, and any operation where preserving package parts is the acceptance criterion. OfficeCLI
@@ -286,9 +319,9 @@ Convert presentations to individual slide images for visual inspection:
 
 Do not use OfficeCLI as a visual export path. Its HTML/SVG output is available only as an explicit
 non-fidelity diagnostic preview (`--render html --non-fidelity-preview` for screenshots) and cannot
-serve as final images or visual QA. If the user explicitly authorizes a native PowerPoint render and
-the native safety gate passes, use `--render native --allow-native` on an isolated copy. Otherwise
-use the existing LibreOffice-runner adapter below as the compatibility fallback.
+serve as final images or visual QA. For native acceptance, run `office_native_gate.py --require-render`;
+the gate owns the isolated PowerPoint export and records `NATIVE_RENDER_PASS`. Use the existing
+LibreOffice-runner adapter below for the visual compatibility render and human inspection.
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.pptx

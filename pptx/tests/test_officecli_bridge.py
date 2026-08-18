@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import io
+import json
 import os
 import subprocess
 import sys
@@ -201,6 +202,42 @@ class OfficeCliBridgeTests(unittest.TestCase):
                     )
             run_process.assert_not_called()
 
+    def test_native_officecli_failure_is_diagnostic_not_app_availability_evidence(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "sample.pptx"
+            output = Path(temp_dir) / "render.png"
+            source.write_bytes(b"officecli-test")
+
+            def fake_run(command):
+                if command[1] == "close":
+                    return subprocess.CompletedProcess(command, 0, "", "")
+                return subprocess.CompletedProcess(
+                    command,
+                    23,
+                    "",
+                    "--render native requires Windows with Microsoft PowerPoint installed\n",
+                )
+
+            stderr = io.StringIO()
+            with patch.object(bridge, "process_exists", return_value=False):
+                with patch.object(bridge, "run_process", side_effect=fake_run):
+                    with redirect_stderr(stderr):
+                        exit_code = bridge.run_view(
+                            Path("officecli.exe"),
+                            source,
+                            ["screenshot", "--render", "native", "--allow-native", "--out", str(output)],
+                        )
+
+            self.assertEqual(exit_code, 23)
+            diagnostic = json.loads(stderr.getvalue().splitlines()[-1])
+            self.assertEqual(diagnostic["status"], "officecli_native_diagnostic_failed")
+            self.assertEqual(diagnostic["exit_code"], 23)
+            self.assertEqual(diagnostic["input_format"], "pptx")
+            self.assertEqual(diagnostic["office_application_state"], "not_inferred")
+            self.assertIn("Microsoft PowerPoint installed", diagnostic["stderr"])
+            self.assertNotEqual(diagnostic["status"], "APP_UNAVAILABLE")
+            self.assertFalse(output.exists())
+
     def test_screenshot_requires_new_output_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / "sample.pptx"
@@ -398,6 +435,13 @@ class OfficeCliBridgeTests(unittest.TestCase):
         skills_root = MODULE.parents[2]
         for skill in ("docx", "xlsx", "pdf"):
             candidate = skills_root / skill / "scripts" / "repair_officecli.py"
+            self.assertEqual(candidate.read_bytes(), canonical, candidate)
+
+    def test_native_gate_runtime_copies_are_identical(self):
+        canonical = (MODULE.parent / "office_native_gate.py").read_bytes()
+        skills_root = MODULE.parents[2]
+        for skill in ("docx", "xlsx", "pdf"):
+            candidate = skills_root / skill / "scripts" / "office_native_gate.py"
             self.assertEqual(candidate.read_bytes(), canonical, candidate)
 
 

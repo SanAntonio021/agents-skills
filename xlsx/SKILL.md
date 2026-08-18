@@ -30,12 +30,34 @@ python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx bat
 `styles.xml` 字体颜色节点误报为 schema 错误，bridge 因此提前拒绝 XLSX `validate`，正式校验
 统一使用 `verify_xlsx.py`。遇到高保真模板、公式缓存、外部链接、图表/验证/VML 或精确 OOXML
 差异要求时，继续使用本技能的 `openpyxl`/OOXML 工具和 `libreoffice-runner` 重算路径。
-OfficeCLI 仅声明 DOCX/PPTX 的 native 截图渲染，不能把 Excel 截图当作其原生渲染能力。XLSX
-截图默认拒绝，HTML 截图仅能显式传入 `--render html --non-fidelity-preview` 作为诊断预览，不能
-用于正式图像、PDF 版面、打印/分页验收或论文图。需要 Excel 原生视觉结果时，必须另获本次
-Office 授权、确认没有 `EXCEL.EXE`，并在隔离副本上走原生 Office 路径；OfficeCLI PDF 导出因
-未安装 exporter plugin 而禁用。Office 源文件转 PDF 使用本技能的 `libreoffice-runner` 路径，
-并按兼容性结果进行视觉验收。
+OfficeCLI 仅提供诊断预览，不能把 Excel 截图当作其原生验收能力。OfficeCLI
+`--render native` 的失败统一记录为 `officecli_native_diagnostic_failed`，保留原始 stderr
+和退出码，不能据此判断 Excel 未安装；HTML 截图仅能显式传入
+`--render html --non-fidelity-preview` 作为诊断预览，不能用于正式图像、PDF 版面、打印/分页
+验收或论文图。OfficeCLI `validate` 或 `verify_xlsx.py` 通过也不等于 Excel 原生可打开。
+
+## Acceptance layers
+
+Keep these records separate:
+
+- `STATIC_PASS`: `verify_xlsx.py`、公式/结构/源文件哈希检查。
+- `LO_RENDER_PASS`: 默认的 LibreOffice 重算/兼容渲染和视觉检查。
+- `NATIVE_OPEN_PASS`: 仅在任务明确需要 Excel 兼容性时，独立 gate 只读打开隔离副本并读取
+  工作簿/工作表结构。
+- `NATIVE_RENDER_PASS`: XLSX 不提供此门禁；`--require-render` 会被拒绝。
+
+Excel 原生打开是可选门禁，不是默认动作。需要时运行：
+
+```powershell
+python <skill-root>\scripts\office_native_gate.py check input.xlsx `
+  --format xlsx --json --allow-office-com
+```
+
+该 gate 返回 `PASS`、`FAIL_OPEN`、`FAIL_RENDER`、`APP_UNAVAILABLE`、`UNVERIFIED` 或
+`UNSAFE_PROCESS`，并记录真实阶段和异常。它要求当前任务显式传入 `--allow-office-com`，发现
+`EXCEL.EXE` 即停止，使用 `DispatchEx` 和隔离副本，只读打开，不重算、不保存、不覆盖源文件，
+并仅在确认任务创建且 `Workbooks.Count == 0` 时退出实例。默认 XLSX 发布门禁是
+`STATIC_PASS` + `LO_RENDER_PASS`；只有任务声明需要 Excel 兼容性时才追加 `NATIVE_OPEN_PASS`。
 
 `verify_xlsx.py` 除公式、筛选和 ZIP 完整性外，还检查 `workbook.xml` 的工作表名称、
 `sheetId`、关系、可见工作表和活动页。半角禁用字符，以及名称经 NFKC 归一化后出现的禁用

@@ -26,12 +26,43 @@ binary, the user must explicitly run `python <skill-root>\scripts\repair_officec
 An `OFFICECLI_EXE` override is subject to the same checks and must be fixed or unset directly; the
 repair script only repairs the default path.
 
-The bridge creates a new `draft.docx` copy before mutation. It is not a fidelity renderer:
-screenshots require either explicitly authorized native Word rendering (`--render native --allow-native`,
-no `WINWORD.EXE`, isolated copy) or `--render html --non-fidelity-preview` for diagnostics only.
-HTML/SVG previews must not be used for final images, layout PDF, print/page QA, or publication
-graphics. OfficeCLI PDF export is disabled because the pinned installation has no exporter plugin;
-the bridge never attaches to, quits, or terminates an existing Word process.
+The bridge creates a new `draft.docx` copy before mutation. It is not a fidelity renderer.
+OfficeCLI `--render native --allow-native` is retained only as an explicit diagnostic probe; its
+success or failure is never release evidence, and its generic native error must not be interpreted
+as "Word is not installed". Use the independent native gate below for Word acceptance.
+`--render html --non-fidelity-preview` is diagnostics only. HTML/SVG previews must not be used for
+final images, layout PDF, print/page QA, or publication graphics. OfficeCLI PDF export is disabled
+because the pinned installation has no exporter plugin; the bridge never attaches to, quits, or
+terminates an existing Word process.
+
+## Acceptance layers
+
+Keep these records separate:
+
+- `STATIC_PASS`: OOXML/package, style, content and source-hash checks.
+- `LO_RENDER_PASS`: the required LibreOffice compatibility render and visual inspection.
+- `NATIVE_OPEN_PASS`: the independent gate opened an isolated copy with Word and calculated pages.
+- `NATIVE_RENDER_PASS`: Word exported a new PDF and Poppler rasterized the expected page count.
+
+OfficeCLI `validate` passing proves only `STATIC_PASS`; it does **not** prove that Word can open the
+file. A failed OfficeCLI native probe is reported as `officecli_native_diagnostic_failed` with the
+original stderr and exit code, never as `APP_UNAVAILABLE`.
+
+For native evidence, run the gate explicitly for the current task:
+
+```powershell
+python <skill-root>\scripts\office_native_gate.py check input.docx `
+  --format docx --json --allow-office-com
+python <skill-root>\scripts\office_native_gate.py check input.docx `
+  --format docx --json --allow-office-com --require-render
+```
+
+The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or
+`UNSAFE_PROCESS`, and records the actual phase and exception. It refuses to run without
+`--allow-office-com`, refuses an existing `WINWORD.EXE`, uses `DispatchEx` plus an isolated copy,
+checks the source SHA-256 before and after, opens read-only, never saves the source, and quits only
+a task-created instance whose document collection is empty. For a DOCX release, require
+`STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
 Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,
 comments, style-identity preservation, template installation, equations, and other operations

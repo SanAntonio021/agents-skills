@@ -1,0 +1,162 @@
+[
+  {
+    "id": "positive-research-route",
+    "category": "research-route",
+    "query": "我已经倾向把下一阶段 110 GHz 外场试验放在稳定跟踪，不再追晴空峰值速率；同事认为验收最看速率，应该先冲吞吐。两条路都会吃掉三个月仪器档期。你判断我该先押哪条？",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "已有倾向、可信替代路线和实质性资源/验收取舍同时存在。"
+  },
+  {
+    "id": "positive-engineering-architecture",
+    "category": "engineering-decision",
+    "query": "我想用共享参考时钟把异频链路先跑稳，但另一位同事坚持独立本振加异步恢复才有部署代表性。这个决定会改 FPGA 资源、接线和论文结论边界，帮我认真比较。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "是两条可落地架构的竞争性判断，后果会改变路线和主张边界。"
+  },
+  {
+    "id": "positive-personal-major",
+    "category": "personal-major-decision",
+    "query": "博士毕业后我更偏向去设备公司，另一条是两年博士后；收入、家庭地点和未来独立研究机会都不同，会影响我接下来五年。不要只安慰我，帮我把两边最强理由都讲清。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "用户已有倾向，替代路线可信，且存在重大价值取舍。"
+  },
+  {
+    "id": "positive-purchase-risk",
+    "category": "procurement-decision",
+    "query": "我偏向买交期短、演示峰值高的 A 接收机，B 贵 15% 但有独立用户的长期运行记录。设备预算只够选一台，外场计划也会跟着定。该怎么取舍？",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "采购选择存在证据不对称和重大预算/风险影响。"
+  },
+  {
+    "id": "positive-data-governance",
+    "category": "team-workflow",
+    "query": "我想把实验数据统一放到受版本控制的主库，同事主张继续让每个项目单独维护自己的目录。前者会增加迁移成本，后者会影响可追溯性和人员交接，全年都会受影响。请判断。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "两种真实组织路线会实质改变长期成本和风险。"
+  },
+  {
+    "id": "positive-automation-governance",
+    "category": "agent-workflow",
+    "query": "我倾向让 Codex 自动执行已审计划来节省时间，但同事认为关键改动必须继续人工逐步确认。两条做法会影响交付速度、误改风险和审计责任。请钢人论证。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "已有偏向、可信替代方案和速度/风险/责任的重大取舍。"
+  },
+  {
+    "id": "positive-product-scope",
+    "category": "product-decision",
+    "query": "我主张先做只有一个核心工作流的测试工具，合作者想第一版就把报表、权限和设备接入都做全。两条路线决定半年人力和首批用户是否能用，帮我挑出真正的分界。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "这是有明确初始方案的产品路线选择，资源和验收后果重大。"
+  },
+  {
+    "id": "positive-research-sequencing",
+    "category": "research-sequencing",
+    "query": "我认为先补可靠性实验再投论文，导师认为应该马上投，把补实验放在返修阶段。时间窗口、被拒风险和工作量都不同，我已经更偏向前者。请给真实判断。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "两条可信时序路线会改变时间、风险和论文策略。"
+  },
+  {
+    "id": "positive-build-vs-buy",
+    "category": "build-vs-buy",
+    "query": "我想自己做 RFSoC 实时处理板，避免被商用仪器锁定；替代方案是租现成平台先做链路验证。它会决定预算、开发周期和是否赶得上项目验收，我已有偏好但想检验它。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "典型的重大 build-versus-buy 竞争性选择。"
+  },
+  {
+    "id": "positive-skill-boundary",
+    "category": "skill-architecture",
+    "query": "我倾向把钢人论证做成自动触发的独立技能，同事说并进 ask-first 更简单。前者可能漏触发，后者可能误触发或破坏确认边界，这会影响以后很多任务的路由。请拆开判断。",
+    "should_trigger": true,
+    "expected_route": "steelman",
+    "rationale": "是有明确立场的技能架构选择，影响范围和路由风险都实质存在。"
+  },
+  {
+    "id": "negative-fact-lookup",
+    "category": "fact-lookup",
+    "query": "钢人论证（steelman argument）在论证学里通常是什么意思？给我定义和来源。",
+    "should_trigger": false,
+    "expected_route": "fact-lookup",
+    "rationale": "只是在查询事实和概念，即使出现关键词也不构成竞争性判断。"
+  },
+  {
+    "id": "negative-brainstorming",
+    "category": "brainstorming",
+    "query": "我想为太赫兹通信找十个可能的博士论文选题，先自由发散，不用判断哪一个最好。",
+    "should_trigger": false,
+    "expected_route": "brainstorming",
+    "rationale": "没有已有立场或需要判定的可信对立路线。"
+  },
+  {
+    "id": "negative-direct-execution",
+    "category": "settled-execution",
+    "query": "方案、预算和验收都确认了：按共享参考时钟架构改 FPGA 配置，跑回归测试并给我结果。",
+    "should_trigger": false,
+    "expected_route": "execution",
+    "rationale": "竞争性选择已经结束，当前请求是直接执行。"
+  },
+  {
+    "id": "negative-rigor-check",
+    "category": "scientific-evidence",
+    "query": "这组 110 GHz 外场结果只有两天样本、没有对照天气记录，却想证明雨衰模型有效。实验设计和结论的证据够不够？",
+    "should_trigger": false,
+    "expected_route": "rigor-check",
+    "rationale": "核心是方法学和证据质量审查。"
+  },
+  {
+    "id": "negative-target-feasibility",
+    "category": "metric-feasibility",
+    "query": "申报书写 1 km、100 Gbps、99.99% 可用性是否站得住？请拆解指标口径、工程余量和需要补的证据。",
+    "should_trigger": false,
+    "expected_route": "target-feasibility",
+    "rationale": "核心是性能指标的可行性和表述边界。"
+  },
+  {
+    "id": "negative-paper-review",
+    "category": "manuscript-review",
+    "query": "这是我现有论文的结果和讨论章节，按 A/B/C 找实质问题，判断还有没有必要继续改。",
+    "should_trigger": false,
+    "expected_route": "paper-review",
+    "rationale": "核心是已有文稿的停稿审查。"
+  },
+  {
+    "id": "negative-ask-first",
+    "category": "underspecified-design",
+    "query": "我想做一个记录太赫兹测试过程的桌面工具，但用户是谁、数据从哪来、做成什么样都还没定。先帮我问清楚。",
+    "should_trigger": false,
+    "expected_route": "ask-first",
+    "rationale": "需求还未成形，缺少已有立场和可信竞争选项。"
+  },
+  {
+    "id": "negative-low-stakes-preference",
+    "category": "low-stakes",
+    "query": "下午写论文时用深色主题还是浅色主题？我有点偏向深色，但都可以。",
+    "should_trigger": false,
+    "expected_route": "direct-answer",
+    "rationale": "虽有偏好和替代项，但没有实质路线、资源、风险或验收影响。"
+  },
+  {
+    "id": "negative-no-credible-alternative",
+    "category": "no-credible-alternative",
+    "query": "我已经决定用示波器测 BER。同事开玩笑说可以靠看频谱照片估计 BER；你觉得要不要听他的？",
+    "should_trigger": false,
+    "expected_route": "direct-answer",
+    "rationale": "替代做法不可信，不能为了钢人论证而强行抬高。"
+  },
+  {
+    "id": "negative-settled-followup",
+    "category": "already-decided",
+    "query": "共享参考时钟已经选定，也完成了评审。现在请把接收端恢复流程写成测试清单。",
+    "should_trigger": false,
+    "expected_route": "execution",
+    "rationale": "用户正在执行已定路线，不需要重新开启竞争性判断。"
+  }
+]

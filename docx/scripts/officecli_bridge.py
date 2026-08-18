@@ -270,6 +270,39 @@ def emit_result(result: subprocess.CompletedProcess[str], replacements: dict[str
     return result.returncode
 
 
+def emit_native_diagnostic_failure(
+    result: subprocess.CompletedProcess[str],
+    file_path: Path,
+) -> None:
+    """Record a failed OfficeCLI native attempt without inferring Office installation state."""
+
+    if result.stderr and not result.stderr.endswith(("\n", "\r")):
+        sys.stderr.write("\n")
+
+    print(
+        json.dumps(
+            {
+                "ok": False,
+                "status": "officecli_native_diagnostic_failed",
+                "operation": "view",
+                "input_format": file_path.suffix.lower().lstrip("."),
+                "render": "native",
+                "exit_code": result.returncode,
+                "stderr": result.stderr,
+                "stdout": result.stdout,
+                "office_application_state": "not_inferred",
+                "release_evidence": False,
+                "note": (
+                    "OfficeCLI native-render errors are diagnostic only and do not establish "
+                    "whether Microsoft Office is installed or whether the file is natively openable"
+                ),
+            },
+            ensure_ascii=False,
+        ),
+        file=sys.stderr,
+    )
+
+
 def run_read(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> int:
     if verb == "validate" and file_path.suffix.lower() in XLSX_EXTENSIONS:
         raise BridgeError(
@@ -371,6 +404,8 @@ def run_view(exe: Path, file_path: Path, args: Sequence[str]) -> int:
         replacements = {str(isolated_output): str(output)} if output and isolated_output else None
         exit_code = emit_result(result, replacements)
         if exit_code != 0:
+            if is_native:
+                emit_native_diagnostic_failure(result, file_path)
             return exit_code
         if sha256(file_path) != source_hash:
             raise BridgeError(f"Source changed during OfficeCLI view: {file_path}")

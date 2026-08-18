@@ -59,6 +59,31 @@ Clash 运行态。
 5. 证书名称不匹配只证明请求到达了错误 TLS 端点。没有证书 Subject/Issuer、DNS 对照和同一时段
    日志时，不把根因断言为 DNS 劫持、运营商拦截、校园认证页或某个代理节点。
 
+### 本地认证门户与 Mihomo TUN
+
+当本机自动登录程序访问校园网或其他私网认证门户时，先把“HTTP 代理”和“TUN 路由”分开判断。
+程序显式关闭或绕过 WinINET/HTTP 代理，并不代表流量不会被 `auto-route` 的 TUN 接管。
+
+1. 从当前 `profiles.yaml` 定位激活 profile 及其增强文件；确认门户的当前 IP 或 CIDR，不沿用旧环境
+   的地址。需要直连的门户地址只写入当前 profile 的 `merge` 增强文件，例如：
+
+```yaml
+tun:
+  route-exclude-address:
+    - <portal-ip>/32
+```
+
+2. 写入前备份增强文件；不要把规则写进原始订阅或生成的 `clash-verge.yaml`，也不要为了“直连门户”
+   改默认路由、禁用网卡或删除网关。门户地址变化时重新核对后再更新排除项。
+3. 受控重启 Clash Verge GUI/核心后，同时检查 `clash-verge.yaml` 和 `clash-verge-check.yaml`，
+   并运行 `verge-mihomo.exe -t`；两份生成配置都包含排除项才算持久化成功。
+4. 用 `Find-NetRoute -RemoteIPAddress <portal-ip>` 验收实际路径，预期为物理网卡和校园网网关，
+   而不是 Mihomo 虚拟网卡。自动登录程序若有 SYSTEM 开机任务，再以管理员权限运行其只读
+   `startup status`/`startup self-test`；普通用户的 `schtasks` 查询可能因任务 ACL 报“找不到”，
+   不能据此断言任务被删除。
+5. 最终验收必须包含一次真实重启：不手动启动客户端，记录任务启动、门户在线和门户路由；没有任务
+   审计日志时，不猜测是哪一个更新或进程删除了任务。
+
 ### 临时手机共享的接口跃点
 
 Windows 先选最长前缀，再在同样精确的路由中选择“路由跃点 + 接口跃点”更小者。界面中的

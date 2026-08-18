@@ -95,8 +95,13 @@ report
 终态一经获得，立即原样向用户呈现 `completion_receipt.report`；它是 bridge 根据持久化状态和
 renderer 生成的唯一用户报告，不能改用原始模型正文、自己的摘要或无结果的“已完成”表述。
 若一次 45 秒 `v2_await_peer` 后 `v2_peer_result` 仍为 pending，立即输出
-`PEER_REVIEW_FAILURE_REPORT`，`decisiveError=peer_wait_timeout`，写明 job ID、已等待 45 秒、未获得
-终态回执、实际模型为“未验证”，并暂停。本次不得继续等待、重试、换模型、降档或另开 job。
+非终态等待状态：向用户说明审查仍在运行，并原样保留同一 `jobId`、`state`、`hard_deadline_at`、
+`elapsed_ms` 和 `remaining_ms`。这不是 `PEER_REVIEW_FAILURE_REPORT`，也没有 `completion_receipt`；
+不得重试、换模型、降档、另开 job 或重置截止时间。当前没有配置能主动向用户发送完成消息的后台监视器；
+用户后续发送任意状态查询、继续或提醒消息时，调用方只用该 `jobId` 调用 `v2_peer_result`（可先再做一次
+最多 45 秒的 `v2_await_peer`）。若取得终态，立即原样呈现 `completion_receipt.report`。从首次提交起 10 分钟
+是不可延长的硬截止；bridge 到时请求取消同行任务并持久化 `decisiveError=peer_wait_timeout` 的
+`PEER_REVIEW_FAILURE_REPORT`。硬截止前后的查询均不得自动重新提交。
 
 能力门固定如下：`v2_peer_status.active=true` 和 `capabilities.inlineReviews=true` 是所有 v2 inline
 审查的前提；`v2_review_repair_peer artifactMode=workspace` 还必须同时满足

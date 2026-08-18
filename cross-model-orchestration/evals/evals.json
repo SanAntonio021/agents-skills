@@ -136,10 +136,10 @@
     },
     {
       "id": 19,
-      "prompt": "一个 review job 超时，继续重发另一个 job 试试。",
-      "expected_output": "先用同一 job 的 v2_peer_result/状态工具取证；超时输出 PEER_REVIEW_FAILURE_REPORT，不换模型、不重发。",
+      "prompt": "一个 review job 的 v2_await_peer 已等满 45 秒仍是 pending，先不要重发；我稍后会回来问结果。",
+      "expected_output": "呈现同一 job 的非终态等待状态和 hard_deadline_at/remaining_ms；不输出失败报告、不换模型、不重发，也不重置十分钟硬截止。",
       "files": [],
-      "expectations": ["不得猜测最新线程或绕过 bridge。"]
+      "expectations": ["不得猜测最新线程或绕过 bridge。", "后续用户消息只查询已保存的 jobId。"]
     },
     {
       "id": 20,
@@ -178,10 +178,17 @@
     },
     {
       "id": 25,
-      "prompt": "我向 Opus 提交了一个 v2 plan review；v2_await_peer 等了 45 秒仍是 pending。",
-      "expected_output": "继续调用同一 job 的 v2_peer_result；若仍 pending，立即输出 decisiveError=peer_wait_timeout 的 PEER_REVIEW_FAILURE_REPORT 并暂停。",
+      "prompt": "我向 Opus 提交了一个 v2 plan review；v2_await_peer 等了 45 秒仍是 pending。现在我发消息问它有没有完成。",
+      "expected_output": "只用原 jobId 调用 v2_peer_result（可先再等最多 45 秒）；若终态立即展示 bridge completion_receipt.report，若仍 pending 则继续报告非终态 deadline 元数据。",
       "files": [],
-      "expectations": ["不继续等待、不重试、不换模型或另开 job。", "终态时直接呈现 bridge completion_receipt.report，不透传原始模型输出。"]
+      "expectations": ["不重试、不换模型或另开 job。", "终态时直接呈现 bridge completion_receipt.report，不透传原始模型输出。"]
+    },
+    {
+      "id": 26,
+      "prompt": "同一个 Opus peer job 从首次提交起已经超过十分钟，bridge 返回 decisiveError=peer_wait_timeout。",
+      "expected_output": "立即原样展示该 job 持久化的 PEER_REVIEW_FAILURE_REPORT，说明 bridge 已请求取消同行任务；不把迟到结果写成通过，也不自动创建新 job。",
+      "files": [],
+      "expectations": ["实际模型没有独立运行时回执时必须写未验证。", "恢复只能由用户明确决定新的审查序列。"]
     }
   ]
 }

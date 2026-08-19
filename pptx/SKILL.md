@@ -65,6 +65,24 @@ checks the source SHA-256 before and after, never saves the source, and quits on
 instance whose presentation collection is empty. For a PPTX release, require `STATIC_PASS`,
 `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
+### Python runtime preflight
+
+Before running `scripts/office/validate.py` or `scripts/typography_audit.py`, run
+`scripts/python_runtime_preflight.py` with the interpreter currently selected for QA. The
+preflight is standard-library-only and probes each candidate in its own process by importing
+`defusedxml`, `lxml`, and `pptx` (the `python-pptx` distribution). It checks the current
+`sys.executable` first, then `py -3`, PATH Python, and any explicitly supplied system-Python
+candidate. Use only the first candidate for which all three imports pass; do not install or repair
+packages automatically.
+
+Keep the complete JSON report with the QA evidence. It must record every candidate, its source,
+actual interpreter path, Python version, each dependency's `ok`/`version`/`error` result, and the
+final `selected_executable`. If no candidate passes, stop before file validation. The report path
+must be an existing QA/evidence directory; the preflight refuses `.codex`, `.cc-switch`, `.claude`,
+and bundled runtime paths. The selected interpreter is the only interpreter allowed for the two
+static validators, and its path plus the three dependency results belong in the `STATIC_PASS`
+record.
+
 Keep the existing OOXML/pptxgenjs paths for template-sensitive work, unsupported PowerPoint
 features, and any operation where preserving package parts is the acceptance criterion. OfficeCLI
 is an interface and does not replace the visual QA or source-hash checks below.
@@ -84,6 +102,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/thumbnail.py deck.pptx [prefix]` | Labeled grid of every slide, for picking template layouts. `.pptx` only. Pass `prefix` — it defaults to `thumbnails`, which overwrites the grids of any other deck done in the same directory |
 | `scripts/add_slide.py unpacked/ slide2.xml [--after slideN.xml]` | Duplicate a slide (or a `slideLayoutN.xml`) with all the package bookkeeping. Also takes a `.pptx` directly with `-o out.pptx` |
 | `scripts/clean.py unpacked/` | Delete slides, media, and rels no longer referenced. Run **after** `<p:sldIdLst>` is final |
+| `scripts/python_runtime_preflight.py [--candidate PATH] [--json-out PATH]` | Select a verified Python runtime for static PPTX QA; import-checks `defusedxml`, `lxml`, and `python-pptx`, and never installs packages |
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
 | `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | LibreOffice wrapper — bare `soffice` hangs in this sandbox |
 
@@ -261,11 +280,23 @@ If grep returns results, fix them before declaring success.
 
 ### File QA (required)
 
-```bash
-python scripts/office/validate.py output.pptx                      # built from scratch
-python scripts/office/validate.py output.pptx --original src.pptx  # built from a template
-python scripts/typography_audit.py output.pptx
+```powershell
+$preflight = Join-Path "<skill-root>" "scripts/python_runtime_preflight.py"
+$report = Join-Path "<qa-evidence-dir>" "python-runtime-preflight.json"
+& "<current-python>" $preflight --json-out $report
+if ($LASTEXITCODE -ne 0) { throw "No verified Python runtime for PPTX static QA" }
+$qa_python = (Get-Content -LiteralPath $report -Raw -Encoding UTF8 | ConvertFrom-Json).selected_executable
+if ([string]::IsNullOrWhiteSpace($qa_python)) { throw "Preflight did not select an interpreter" }
+& $qa_python scripts/office/validate.py output.pptx                      # built from scratch
+& $qa_python scripts/office/validate.py output.pptx --original src.pptx  # built from a template
+& $qa_python scripts/typography_audit.py output.pptx
 ```
+
+The preflight command is mandatory even when the invoking Python is expected to be complete:
+record its JSON before recording `STATIC_PASS`. If the current runtime is missing a dependency,
+the only permitted recovery is to rerun the validators with a candidate that the preflight itself
+verified, such as `py -3` or an installed system Python. Do not run `pip install` and do not edit
+runtime directories.
 
 **If the deck came from a template, always pass `--original`.** A template may itself
 contain parts the XSD rejects, so a bare run can report failures you never caused — and
@@ -336,4 +367,4 @@ ls -1 "$PWD"/slide-*.jpg
 
 ## Dependencies
 
-`pptxgenjs` (npm, preinstalled — install only if `require('pptxgenjs')` fails) · `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml` (pip — text dump, thumbnail, clean, validate) · LibreOffice (`soffice`, auto-configured for sandboxed environments via `scripts/office/soffice.py`) · `pdftoppm` (Poppler)
+`pptxgenjs` (npm, preinstalled — install only if `require('pptxgenjs')` fails) · `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml`, `python-pptx` (the runtime preflight checks the imports used by validation) · LibreOffice (`soffice`, auto-configured for sandboxed environments via `scripts/office/soffice.py`) · `pdftoppm` (Poppler)

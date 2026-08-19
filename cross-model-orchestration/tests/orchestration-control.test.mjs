@@ -787,3 +787,28 @@ test("cmdLaunch: review claim persists artifact state and job ID", () => {
     restore();
   }
 });
+
+test("published v2 contract waits in the same turn without transport schemas or replacement jobs", () => {
+  const skillRoot = path.join(process.cwd(), "cross-model-orchestration");
+  const skill = fs.readFileSync(path.join(skillRoot, "SKILL.md"), "utf8");
+  const contract = fs.readFileSync(path.join(skillRoot, "references", "workflow-contract.md"), "utf8");
+  const evals = JSON.parse(fs.readFileSync(path.join(skillRoot, "evals", "evals.json"), "utf8")).evals;
+
+  assert.match(skill, /在同一回合循环执行/u);
+  assert.match(skill, /pending 不是最终答复/u);
+  assert.match(skill, /提交调用在获得 `jobId` 前即不可达/u);
+  assert.match(skill, /两个方向都不发送 provider-native transport schema/u);
+  assert.match(contract, /不得创建第二个\s*job/u);
+  assert.match(contract, /已有 `job_id` 后短暂断连/u);
+  assert.doesNotMatch(contract, /若单次 45 秒等待后.*输出 `PEER_REVIEW_FAILURE_REPORT`/u);
+  assert.doesNotMatch(skill, /用户后续发送任意状态查询/u);
+
+  const ids = evals.map((entry) => entry.id);
+  assert.equal(new Set(ids).size, ids.length, "eval IDs must be unique");
+  for (const requiredId of [19, 25, 26, 27, 28, 29]) {
+    assert.ok(ids.includes(requiredId), `missing reliability eval ${requiredId}`);
+  }
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 19)), /当前回合继续/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 27)), /同一 job/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 28)), /jobId=unavailable/u);
+});

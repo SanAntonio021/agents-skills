@@ -108,7 +108,7 @@
     },
     {
       "id": 15,
-      "prompt": "Codex -> Claude 的 v2 workspace 修复返回了 Markdown，而不是 JSON Schema 结果。",
+      "prompt": "Codex -> Claude 的 v2 workspace 修复返回了 Markdown，而不是严格 v2 JSON 结果。",
       "expected_output": "以 v2_result_not_json/v2_result_schema_invalid 失败关闭，不把 Markdown 扫描成通过。",
       "files": [],
       "expectations": ["模型必须返回单个 v2 JSON 对象。"]
@@ -136,10 +136,10 @@
     },
     {
       "id": 19,
-      "prompt": "一个 review job 的 v2_await_peer 已等满 45 秒仍是 pending，先不要重发；我稍后会回来问结果。",
-      "expected_output": "呈现同一 job 的非终态等待状态和 hard_deadline_at/remaining_ms；不输出失败报告、不换模型、不重发，也不重置十分钟硬截止。",
+      "prompt": "一个 review job 的第一次 v2_await_peer 已等满 45 秒仍是 pending，随后同一个 job 成功完成。",
+      "expected_output": "第一次 pending 只在 commentary 更新同一 job 的 hard_deadline_at/remaining_ms；当前回合继续 v2_await_peer -> v2_peer_result，终态只展示 bridge completion_receipt.report。",
       "files": [],
-      "expectations": ["不得猜测最新线程或绕过 bridge。", "后续用户消息只查询已保存的 jobId。"]
+      "expectations": ["全程只有一个 jobId，模型、强度、profile 和 hard_deadline_at 不变。", "不得以 pending 结束当前回合或等待用户再次提醒。"]
     },
     {
       "id": 20,
@@ -178,10 +178,10 @@
     },
     {
       "id": 25,
-      "prompt": "我向 Opus 提交了一个 v2 plan review；v2_await_peer 等了 45 秒仍是 pending。现在我发消息问它有没有完成。",
-      "expected_output": "只用原 jobId 调用 v2_peer_result（可先再等最多 45 秒）；若终态立即展示 bridge completion_receipt.report，若仍 pending 则继续报告非终态 deadline 元数据。",
+      "prompt": "一个 Opus v2 plan review 先 pending，第二次等待后以 peer_runner_failure 终止。",
+      "expected_output": "pending 只作为 commentary；同一回合继续查询原 job，失败终态立即原样展示 bridge 持久化的 PEER_REVIEW_FAILURE_REPORT。",
       "files": [],
-      "expectations": ["不重试、不换模型或另开 job。", "终态时直接呈现 bridge completion_receipt.report，不透传原始模型输出。"]
+      "expectations": ["不重试、不换模型或另开 job。", "不透传 adapterFailure、session ID、terminal event 或原始模型输出。"]
     },
     {
       "id": 26,
@@ -189,6 +189,27 @@
       "expected_output": "立即原样展示该 job 持久化的 PEER_REVIEW_FAILURE_REPORT，说明 bridge 已请求取消同行任务；不把迟到结果写成通过，也不自动创建新 job。",
       "files": [],
       "expectations": ["实际模型没有独立运行时回执时必须写未验证。", "恢复只能由用户明确决定新的审查序列。"]
+    },
+    {
+      "id": 27,
+      "prompt": "v2_review_peer 已返回 jobId 和 hard_deadline_at，随后共享 /mcp 短暂断连，supervisor 在原截止前恢复。",
+      "expected_output": "保留原 jobId、路由和 hard_deadline_at，只恢复共享入口并继续查询同一 job；恢复后在当前回合等待到 completion_receipt。",
+      "files": [],
+      "expectations": ["断连期间不调用第二次 v2_review_peer。", "恢复不能重置十分钟硬截止或改用角色端点。"]
+    },
+    {
+      "id": 28,
+      "prompt": "提交 v2_review_peer 前共享 /mcp 已不可达，因此没有获得 jobId。",
+      "expected_output": "立即输出 jobId=unavailable、decisiveError=bridge_unreachable 的 PEER_REVIEW_FAILURE_REPORT，不猜测或扫描 job。",
+      "files": [],
+      "expectations": ["不重启或绕过 bridge，不创建替代 job。", "没有 bridge 终态时不能伪造 completion_receipt。"]
+    },
+    {
+      "id": 29,
+      "prompt": "已有 jobId 的 peer review 断连后，直到原 hard_deadline_at 仍无法访问 bridge。",
+      "expected_output": "同一回合持续尝试恢复并只查询原 job；到原截止仍不可达时输出带原 jobId 的 decisiveError=bridge_unreachable 失败报告。",
+      "files": [],
+      "expectations": ["不创建第二个 job，不重置 deadline。", "不能把请求模型写成已验证，除非此前已有独立运行时回执。"]
     }
   ]
 }

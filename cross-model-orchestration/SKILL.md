@@ -76,11 +76,12 @@ claude-codex-bridge` reports the shared environment header, `http_headers=-`, an
 `transport=streamable_http`. This is a Codex-only rendering rule; do not apply it to Claude without
 separate evidence. Do not edit `.cc-switch`, `.codex`, or other rendered runtime copies directly.
 
-正式互审的调用顺序固定为 `v2_review_peer` 或 `v2_review_repair_peer` -> `v2_await_peer`（单次最多
-45 秒）-> `v2_peer_result`，即使 `v2_await_peer` 已返回终态也要取一次 `v2_peer_result`。首次进入或考虑
-workspace 模式时，先用 `v2_peer_status` 读取能力；第三轮用户裁决用 `v2_adjudicate_peer_series`。不得扫描最新线程、调用未加前缀的 v1 工具、`codex exec`、
-`claude -p` 或 `codex@openai-codex` 绕过 bridge。`orchestration-control.mjs` 与
-`check-resume-candidate.mjs` 只用于历史状态测试和输入诊断，不是运行时入口。
+正式互审的调用顺序固定为 `v2_review_peer` 或 `v2_review_repair_peer`，随后在同一回合循环执行
+`v2_await_peer`（单次最多 45 秒）-> `v2_peer_result`，直到原 job 形成终态；即使
+`v2_await_peer` 已返回终态也要取一次 `v2_peer_result`。首次进入或考虑 workspace 模式时，先用
+`v2_peer_status` 读取能力；第三轮用户裁决用 `v2_adjudicate_peer_series`。不得扫描最新线程、调用未加
+前缀的 v1 工具、`codex exec`、`claude -p` 或 `codex@openai-codex` 绕过 bridge。
+`orchestration-control.mjs` 与 `check-resume-candidate.mjs` 只用于历史状态测试和输入诊断，不是运行时入口。
 
 每个终态公开 job 都必须带 bridge 持久化的 `completion_receipt`：
 
@@ -94,14 +95,20 @@ report
 
 终态一经获得，立即原样向用户呈现 `completion_receipt.report`；它是 bridge 根据持久化状态和
 renderer 生成的唯一用户报告，不能改用原始模型正文、自己的摘要或无结果的“已完成”表述。
-若一次 45 秒 `v2_await_peer` 后 `v2_peer_result` 仍为 pending，立即输出
-非终态等待状态：向用户说明审查仍在运行，并原样保留同一 `jobId`、`state`、`hard_deadline_at`、
-`elapsed_ms` 和 `remaining_ms`。这不是 `PEER_REVIEW_FAILURE_REPORT`，也没有 `completion_receipt`；
-不得重试、换模型、降档、另开 job 或重置截止时间。当前没有配置能主动向用户发送完成消息的后台监视器；
-用户后续发送任意状态查询、继续或提醒消息时，调用方只用该 `jobId` 调用 `v2_peer_result`（可先再做一次
-最多 45 秒的 `v2_await_peer`）。若取得终态，立即原样呈现 `completion_receipt.report`。从首次提交起 10 分钟
-是不可延长的硬截止；bridge 到时请求取消同行任务并持久化 `decisiveError=peer_wait_timeout` 的
-`PEER_REVIEW_FAILURE_REPORT`。硬截止前后的查询均不得自动重新提交。
+若一次 45 秒 `v2_await_peer` 后 `v2_peer_result` 仍为 pending，只能在 commentary 更新非终态状态，
+保留同一 `jobId`、`state`、首次记录的 `hard_deadline_at`、`elapsed_ms` 和 `remaining_ms`，然后在当前
+回合继续下一次 `v2_await_peer` -> `v2_peer_result`。pending 不是最终答复、不是
+`PEER_REVIEW_FAILURE_REPORT`，也不能成为结束当前回合并等待用户再次提醒的理由。整个循环必须复用
+原 `jobId`、解析后的 model/effort/profile 和首次提交的十分钟硬截止；`hard_deadline_at` 发生变化时按
+协议错误停止，绝不重试、换模型、降档、另开 job 或重置截止时间。bridge 到达原硬截止时会请求取消
+同行任务并持久化 `decisiveError=peer_wait_timeout` 的失败回执；迟到结果不能覆盖该终态。
+
+若提交调用在获得 `jobId` 前即不可达，立即输出 `jobId=unavailable`、
+`decisiveError=bridge_unreachable` 的 `PEER_REVIEW_FAILURE_REPORT`，不猜测 job。若已经取得 `jobId`
+后共享 `/mcp` 短暂断连，保留原硬截止并只恢复该入口、查询或等待同一个 job；不得重新提交。断连期间
+继续在 commentary 报告恢复状态；到原硬截止仍无法读取该 job 时，输出带原 `jobId` 的
+`bridge_unreachable` 失败报告。除这种无法取得 bridge 终态回执的传输故障外，所有终态只呈现 bridge
+持久化的 `completion_receipt.report`。
 
 能力门固定如下：`v2_peer_status.active=true` 和 `capabilities.inlineReviews=true` 是所有 v2 inline
 审查的前提；`v2_review_repair_peer artifactMode=workspace` 还必须同时满足
@@ -117,9 +124,9 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 
 `v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
 正式计划和普通审查在 workspace 能力不可用时的默认入口，作者自行采纳修改并重新计算下一轮身份。
-Codex -> Claude 为严格 v2 结果注入 bridge-owned JSON schema 时，Claude 可能报告内部
-`StructuredOutput` 验证器；它没有文件、命令或网络能力，且只能随该 schema 出现，不改变零工具约束。
-任何其他工具记录仍是隔离失败。
+protocol-v2 的 Claude/Codex 两个方向都不发送 provider-native transport schema；模型返回不透明文本，
+bridge 再执行同一严格 JSON/Zod 校验，不补默认值、不接受额外字段、不降档或自动重试。v2 审查中出现
+`StructuredOutput` 或任何其他工具记录都按隔离/传输异常处理，不能当作允许的零工具验证器。
 需要完整替换正文时使用 `v2_review_repair_peer artifactMode=inline`；它也不使用工具，返回完整
 `repairedArtifact`。workspace 修复只允许显式 `repairTargets`，并由 bridge 检查、同步和回滚。
 如果用户明确要求 workspace 修订或结构化测试而能力为 `pending`/`unavailable`，不得提交该请求、

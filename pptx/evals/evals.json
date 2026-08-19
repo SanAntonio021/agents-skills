@@ -28,11 +28,11 @@
     {
       "id": 3,
       "prompt": "在输出目录先创建一份三页模拟旧PPT：第一页标题24 pt、正文12 pt，第二页表格文字11 pt，第三页图表坐标10 pt。然后按用户要求只修改第一页标题文字并交付新版。不要询问是否顺便处理其他页，按你的PPT技能完成整个编辑和验收流程。",
-      "expected_output": "不仅完成标题修改，还把整份输出中的普通小字重新排版到至少18 pt；最终PPTX整稿通过字号、结构和视觉验收。",
+      "expected_output": "不仅完成标题修改，还把整份输出中的普通文字和图表文字重新排版到至少18 pt、表格文字至少14 pt；最终PPTX整稿通过字号、结构和视觉验收。",
       "files": [],
       "expectations": [
         "The requested first-slide title edit is present in the final deck.",
-        "All three output slides, including previously untouched table and chart text, pass the 18 pt ordinary-text gate.",
+        "All three output slides pass their applicable gates: table text is at least 14 pt, while ordinary and chart text are at least 18 pt.",
         "No blanket or stale exception is used to preserve legacy small text.",
         "The final deck passes structure validation, typography audit, and full-slide visual inspection."
       ]

@@ -276,16 +276,19 @@ class TypographyAuditTests(unittest.TestCase):
                 "<p:grpSp>"
                 + shape_xml(2, "Nested body", "Nested readable", 1800)
                 + "</p:grpSp>"
-                + table_xml(3, "Task table", [("Task", 1800), ("Too small", 1700)])
+                + table_xml(3, "Task table", [("Task", 1400), ("Too small", 1399)])
             )
             write_package(path, content)
             result = run_audit(path)
             self.assertEqual(result["summary"]["text_items"], 3)
+            self.assertEqual(result["thresholds"]["table_text_pt"], 14.0)
             failures = [item for item in result["items"] if item["status"] == "fail"]
             self.assertEqual(len(failures), 1)
             self.assertEqual(failures[0]["location"], "table cell 2")
+            self.assertEqual(failures[0]["classification"], "table_text")
+            self.assertEqual(failures[0]["minimum_pt"], 14.0)
 
-    def test_table_url_doi_and_ordinary_text_use_correct_thresholds(self):
+    def test_table_url_doi_and_table_text_use_correct_thresholds(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "table-source.pptx"
             write_package(
@@ -296,15 +299,34 @@ class TypographyAuditTests(unittest.TestCase):
                     [
                         ("https://example.com", 1000),
                         ("doi:10.1000/test", 1000),
-                        ("Ordinary label", 1700),
+                        ("Table label", 1400),
                     ],
                 ),
             )
             result = run_audit(path)
-            self.assertEqual(result["summary"]["failures"], 1)
+            self.assertEqual(result["summary"]["failures"], 0)
             self.assertEqual(result["items"][0]["classification"], "source_or_footnote")
             self.assertEqual(result["items"][1]["classification"], "source_or_footnote")
-            self.assertEqual(result["items"][2]["classification"], "ordinary")
+            self.assertEqual(result["items"][2]["classification"], "table_text")
+            self.assertEqual(result["items"][2]["minimum_pt"], 14.0)
+
+    def test_table_gate_does_not_lower_ordinary_body_text(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "table-versus-body.pptx"
+            content = shape_xml(2, "Body", "Body remains too small", 1400) + table_xml(
+                3,
+                "Data table",
+                [("Accepted table text", 1400)],
+            )
+            write_package(path, content)
+            result = run_audit(path)
+            body, table = result["items"]
+            self.assertEqual(body["classification"], "ordinary")
+            self.assertEqual(body["minimum_pt"], 18.0)
+            self.assertEqual(body["status"], "fail")
+            self.assertEqual(table["classification"], "table_text")
+            self.assertEqual(table["minimum_pt"], 14.0)
+            self.assertEqual(table["status"], "pass")
 
     def test_hyperlink_requires_relationship_and_does_not_relax_adjacent_text(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -359,6 +381,28 @@ class TypographyAuditTests(unittest.TestCase):
             self.assertEqual(source["classification"], "source_or_footnote")
             self.assertEqual(axis["status"], "fail")
             self.assertEqual(axis["effective_pt"], 17.0)
+
+    def test_chart_data_table_uses_table_threshold(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            passing = Path(temp_dir) / "chart-data-table-pass.pptx"
+            failing = Path(temp_dir) / "chart-data-table-fail.pptx"
+
+            def data_table_chart(size: int) -> str:
+                return (
+                    f'<c:chartSpace xmlns:c="{C_NS}" xmlns:a="{A_NS}"><c:chart>'
+                    f'<c:dTable><c:txPr>{chart_text_body(None, size)}</c:txPr></c:dTable>'
+                    "</c:chart></c:chartSpace>"
+                )
+
+            write_package(passing, chart_frame_xml(), chart=data_table_chart(1400))
+            write_package(failing, chart_frame_xml(), chart=data_table_chart(1399))
+            passing_item = run_audit(passing)["items"][0]
+            failing_item = run_audit(failing)["items"][0]
+            self.assertEqual(passing_item["classification"], "table_text")
+            self.assertEqual(passing_item["minimum_pt"], 14.0)
+            self.assertEqual(passing_item["status"], "pass")
+            self.assertEqual(failing_item["classification"], "table_text")
+            self.assertEqual(failing_item["status"], "fail")
 
     def test_chart_without_explicit_text_size_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -3,8 +3,9 @@
 
 The gate is deliberately separate from OfficeCLI.  OfficeCLI is useful for
 static inspection and diagnostic previews, but only this module can produce
-native-open/native-export evidence.  The same file is distributed with the
-pptx, docx, xlsx, and pdf skills.
+native-open/native-export evidence.  The Office skills share this gate's
+baseline.  This PPTX copy adds PPTX-only preflight behavior while preserving
+the shared behavior for other formats.
 """
 
 from __future__ import annotations
@@ -199,6 +200,19 @@ def _set_optional(application: Any, name: str, value: Any) -> None:
         pass
 
 
+def _require_hidden(application: Any) -> None:
+    """Verify an Office application is hidden without changing its state."""
+
+    try:
+        visible = int(application.Visible)
+    except Exception as exc:
+        raise OwnershipFailure(
+            "unable to verify isolated Office instance property Visible"
+        ) from exc
+    if visible != 0:
+        raise OwnershipFailure("isolated Office instance is unexpectedly visible")
+
+
 @dataclass
 class OwnedApplication:
     application: Any
@@ -257,7 +271,12 @@ def owned_application(
             )
         owner.exclusive_at_start = True
 
-        _set_required(application, "Visible", False)
+        if spec["progid"] == "PowerPoint.Application":
+            # A new PowerPoint DispatchEx instance is already hidden.  Native
+            # PowerPoint rejects assigning Visible=False even in that state.
+            _require_hidden(application)
+        else:
+            _set_required(application, "Visible", False)
         _set_optional(application, "DisplayAlerts", 0)
         _set_optional(application, "ScreenUpdating", False)
         if spec["progid"] == "Excel.Application":
@@ -571,8 +590,16 @@ def check_file(
     probe = process_probe or process_present
     try:
         if probe(spec["process"]):
-            result["status"] = "UNSAFE_PROCESS"
-            result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
+            if format_name == "pptx":
+                result["status"] = "UNVERIFIED"
+                result["reason"] = "powerpoint_already_running"
+                result["error"] = "请关闭 PowerPoint 后重试。"
+            else:
+                result["status"] = "UNSAFE_PROCESS"
+                result["error"] = (
+                    f"{spec['process']} is already running; refusing to start, "
+                    "connect to, or close Office"
+                )
             result["source_sha256_after"] = sha256(source)
             return result
     except Exception as exc:
@@ -664,6 +691,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif result.get("reason") == "powerpoint_already_running":
+        print(result["error"])
     else:
         print(f"{result['status']} [{result['phase']}]: {result.get('error', 'native gate passed')}")
     return 0 if result["status"] == "PASS" else 2

@@ -12,7 +12,8 @@ description: >
   `.codex-global-state.json` 被 watcher 高频重写、需要保留 ChatGPT OAuth 登录但实际请求走
   CC Switch、`codex login` 报 Windows `10013`、CC Switch 生成保留 provider 覆盖、同一旧任务在
   登录或 provider 切换后持续报 OAuth 刷新/`INVALID_API_KEY` 而新任务正常，或需要用 Codex
-  对话分叉保留历史继续工作时，优先使用本技能。
+  对话分叉保留历史继续工作，或要求 CC Switch 成为 provider、认证、模型、推理强度和 Common
+  Config 的唯一配置入口，同时把 watcher 限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
 ---
 
 # Codex 中转链维护
@@ -29,12 +30,23 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 以及会改写这条链路的本地 Agent 配置都属于排查范围；通用 `AGENTS.md`、技能目录和其他 Agent
 规则维护仍由对应维护技能处理。
 
-重点不是泛讲代理原理，而是先确认当前模式，再检查对应链路：
+重点不是泛讲代理原理，而是先确认“谁有权写配置”，再检查对应链路。配置所有权与请求链路是两个维度：
+
+- `ccswitch-owned`：当前默认。provider、认证、模型、推理强度和 Common Config 只通过 CC Switch
+  配置；本地 watcher 不写 `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop
+  的两个 `full-access` 权限字段，并记录退出与启动后漂移。
+- `legacy-writer`：历史配置 writer。只有用户明确要求回滚旧架构并接受争用风险时才进入；不能因为
+  检测到漂移就自行启用。
+
+请求链路模式仍按以下三类判断：
 
 - `full`：Codex 是否固定打到 CodexCont，CodexCont 是否固定上游到 CC Switch。
 - `ccswitch-only`：Codex 是否直连 CC Switch，CodexCont 是否保持停用。
 - `disabled`：本地两层都不由 hook 自动启动。
 - 当前 provider、key、live backup 是否一致，并且真实 Responses SSE 能通过。
+
+本机当前默认组合是 `ccswitch-owned + ccswitch-only`。不要把“只监听 15721”误解成允许 watcher
+接管配置；15721 是请求入口，配置写入权仍属于 CC Switch。
 
 ## 适用场景
 
@@ -51,6 +63,8 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - 用户要求跳过本地链路、Codex 直连真实上游，且 `base_url` 手动改了又被自动改回本地端口。
 - 用户只想取消 CodexCont，但仍通过 CC Switch 切换中转站。
 - Codex 更新后，能力 watcher 因全局状态 JSON 的格式或 App 自管字段而反复写回。
+- 用户要求核对 watcher、计划任务 XML 和运行进程，确保 CC Switch 是唯一配置入口，同时保留
+  `show-context-window-usage = true`、禁用 `CodexCapabilityCheck` 且不改 `CodexAutoContinue`。
 
 不用本技能处理：
 
@@ -65,7 +79,8 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - Codex 配置：`%USERPROFILE%\.codex\config.toml`
 - 链路模式：`%USERPROFILE%\.codex\relay-chain.mode`
 - Codex 全局状态：`%USERPROFILE%\.codex\.codex-global-state.json`
-- 能力 watcher 日志：`%USERPROFILE%\.codex\state\codex-capability-ccswitch-watch.log`
+- 当前生命周期日志：`%USERPROFILE%\.codex\state\codex-preference-restore\lifecycle.log`
+- 历史能力 watcher 日志：`%USERPROFILE%\.codex\state\codex-capability-ccswitch-watch.log`（只作旧状态取证）
 - CC Switch DB：`%USERPROFILE%\.cc-switch\cc-switch.db`
 - CodexCont 根目录：`%USERPROFILE%\.codexcont\`
 - CodexCont 服务目录：`%USERPROFILE%\.codexcont\CodexCont\`
@@ -76,7 +91,33 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 
 ## 工作顺序
 
-### 0. 先区分登录身份与请求线路
+### 0. 先确认配置所有权、源码、任务和运行态
+
+用户要求切换到 `ccswitch-owned` 或排查“配置又被改回去”时，先只读检查，再实施：
+
+1. 读取当前 hook 源码、项目 README、计划任务 XML 和相关进程命令行；不能只看任务名称或 `Ready`。
+2. 对 `config.toml`、`auth.json`、`requirements.toml`、浏览器配置、CC Switch Common Config 和数据库
+   关键表建立哈希或结构化基线。provider、key、token 只输出名称、空值状态或掩码。
+3. 确认没有遗留进程调用 `Apply-CodexContHook.ps1`、配置 writer 或旧版 watcher。脚本文件已删除不代表
+   进程已退出；以进程命令行为准。
+4. 当前任务边界应为：`CodexPreferenceRestoreAtLogon`、`CodexPreferenceRestoreOnAppUpdate` 和
+   `CodexPreferenceRestoreOnExit` 启用；`CodexPreferenceRestoreMigration` 与
+   `CodexCapabilityCheck` 禁用；`CodexAutoContinue` 保持原状态和原 XML，不纳入配置迁移。
+5. 生命周期 watcher 只允许读写 `.codex-global-state.json` 中
+   `electron-persisted-atom-state.agent-mode-by-host-id.local` 和
+   `electron-persisted-atom-state.permission-selection-by-host-id:local` 两个权限字段。运行中的 Codex
+   只做 `AuditOnly`；确认退出后才恢复权限；快速重启时记录竞态而不写运行中状态。
+
+CC Switch 的 Common Config 与 provider 模型固定值要分开理解。CC Switch 3.19.2 生成 Common Config
+时排除根级 `model`；`model` 属于 provider 记录。官方 provider 的模型为空表示未固定模型、由 Codex
+采用默认值，不是 watcher 应补的缺口。`model_reasoning_effort` 和
+`[desktop].show-context-window-usage = true` 可以由 Common Config 统一管理。
+
+在 `ccswitch-owned` 下，任何 provider、认证、模型、推理强度或 Common Config 变更都通过 CC Switch
+完成。本技能可以只读核对数据库与最终 `config.toml`，但不得直接写数据库、`auth.json` 或
+`config.toml`；用户明确要求不修改 provider/认证数据库时，这一边界没有应急例外。
+
+### 0.1 区分登录身份与请求线路
 
 `Logged in using ChatGPT` 只说明 Codex 本地持有 ChatGPT OAuth 身份；它不要求模型请求官方
 直连，也不证明账号有官方付费模型权限。下面这组状态可以同时成立：
@@ -171,7 +212,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex
 
 ### 2. 检查 Codex 是否指向当前模式的入口
 
-读 `%USERPROFILE%\.codex\config.toml`，确认当前 provider（provider 名以 `model_provider` 实际值为准，本机常见为 `custom`）。`full` 模式应为：
+读 `%USERPROFILE%\.codex\config.toml`，确认 CC Switch 的最终输出和当前 provider（provider 名以
+`model_provider` 实际值为准，本机常见为 `custom`）。在 `ccswitch-owned` 下这里只读验证，不直接修复。
+历史 `full` 模式应为：
 
 ```toml
 model_provider = "custom"
@@ -183,6 +226,7 @@ requires_openai_auth = true
 ```
 
 `ccswitch-only` 模式应为 `http://127.0.0.1:15721/v1`；不能把这个正确状态误判成 hook 失效。
+如果当前是官方 provider 且没有固定 `model`，不要把缺少根级 `model` 判为漂移。
 
 #### CC Switch 3.18 保留 provider ID 兼容
 
@@ -195,17 +239,19 @@ requires_openai_auth = true
 - `custom` provider 指向 `127.0.0.1:15721`，使用 Responses API 和 `PROXY_MANAGED`。
 - 非法 `openai` 覆盖也指向 `127.0.0.1:15721`。
 
-修复动作只把当前 provider 选回 `custom` 并删除非法覆盖块。官方
-`model_provider = "openai"` 且没有该覆盖块时保持不动；`full` / `disabled` 模式或当前 provider
-不是 `openai` 时也不套用这个自动修复。修复后还要确认 OAuth 登录态仍在。
+在 `ccswitch-owned` 下只记录这种兼容性漂移，并通过 CC Switch 重新选择或修正 provider；watcher
+不得自动把当前 provider 选回 `custom`，也不得删除覆盖块。官方 `model_provider = "openai"` 且没有
+非法覆盖块时保持不动。只有用户明确批准回滚到历史恢复流程时，才把旧自动修复作为独立操作评估。
 
-只有 `full` 模式下，CC Switch 切换后这里变成 `15721` 或远端 URL，才说明 CodexCont hook 没接住。先运行：
+只有用户明确选择历史 `legacy-writer + full` 模式时，CC Switch 切换后这里变成 `15721` 或远端 URL，
+才说明旧 CodexCont hook 没接住。下面的命令是回滚旧架构的兼容入口，当前默认不得由 watcher 调用：
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codexcont\Apply-CodexContHook.ps1"
 ```
 
-再看 `%USERPROFILE%\.codexcont\logs\hook.log`。合格信号（`<provider>` 为当前 provider 名）：
+执行前必须再次确认用户确实要离开 `ccswitch-owned`。执行后再看
+`%USERPROFILE%\.codexcont\logs\hook.log`。历史合格信号（`<provider>` 为当前 provider 名）：
 
 ```text
 hooked: <provider> -> http://127.0.0.1:8787/v1
@@ -258,7 +304,8 @@ TOML 解析器读取，不要假设列名，也不要用字符串拼接读取 AP
 
 - 远端 provider 不应指向 `http://127.0.0.1:8787/v1` 或 `http://127.0.0.1:15721/v1`。
 - 如果目标 provider 指向 `8787`，链路会变成 `8787 -> 15721 -> 8787`，最终超时或返回 502/504。
-- 修复前备份 `cc-switch.db`；只恢复该 provider 的远端地址，保留原 API key。
+- 更正前记录 `cc-switch.db` 哈希；在 CC Switch 中只修正该 provider 的远端地址并保留原 API key，
+  不直接写数据库。
 - 远端地址必须来自历史配置、备份或 provider 官方信息，不凭名称猜测。
 
 切换完成后同时核对：
@@ -327,19 +374,14 @@ Provider: <current provider>
 如果 401 只发生在一个旧任务，而当前 provider、新任务和对应 key 直连均正常，先按第 0 节的
 “单个旧任务仍报旧认证错误”处理；不要用当前有效 key 覆盖数据库或备份。
 
-不要只改 `providers`。CC Switch 启动或恢复 live takeover 时可能从 `proxy_live_backup` 把旧 Codex 配置和旧 key 写回来。
+在 `ccswitch-owned` 下，`providers`、`proxy_live_backup`、`auth.json` 和 `config.toml` 都只读诊断：
 
-修复顺序：
-
-1. 从中转站页面或可信本地配置取真实 key。
-2. 不在回复、日志和命令输出里打印完整 key。
-3. 备份 `cc-switch.db` 和 `.codex/config.toml`。
-4. 同步更新：
-   - `providers.settings_config.auth.OPENAI_API_KEY`
-   - `proxy_live_backup.original_config.auth.OPENAI_API_KEY`
-   - `proxy_live_backup.original_config.config` 里的 `experimental_bearer_token`
-   - `.codex/config.toml` 当前 provider 的 `experimental_bearer_token`
-5. 确保 `.codex/config.toml` 的 `base_url` 仍是 `http://127.0.0.1:8787/v1`。
+1. 从 CC Switch 当前 provider、请求日志和结构化配置确认错误属于哪个 provider 与 `app_type`。
+2. 只比较 key 指纹、长度和空值状态，不在回复、日志或命令输出中打印完整 key。
+3. 需要修正时在 CC Switch 的对应 provider 页面完成，再复核数据库、live backup 与最终
+   `config.toml` 的结构化结果和哈希稳定性。
+4. 如果 CC Switch UI 无法修复、用户又要求直接恢复数据库，把它视为退出当前所有权方案的高风险
+   独立任务：展示精确表、字段和备份/回滚方案并重新取得授权。本技能不得把直接写库当作默认修复。
 
 如果需要从已登录网页取 key，使用浏览器/CDP 前按 `web-access` 的安全提示执行。优先从页面明确展示的配置块读取，避免把遮罩 key 当成真实 key。
 
@@ -353,17 +395,10 @@ Live 配置已恢复
 已同步 Codex Token 到数据库
 ```
 
-这说明它可能正在用 `proxy_live_backup` 恢复旧配置。此时要先修 `proxy_live_backup`，再重启 CC Switch。只修 provider 往往会被覆盖。
-
-重启命令：
-
-```powershell
-Get-Process cc-switch -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 2
-Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -WindowStyle Hidden
-```
-
-重启后重新检查 `providers`、`proxy_live_backup` 和 `.codex/config.toml` 的 key mask 是否一致。
+这说明它可能正在用 `proxy_live_backup` 恢复旧配置。在 `ccswitch-owned` 下先只读比较当前 provider、
+live backup 和磁盘输出，保留异常时间与哈希证据；通过 CC Switch 修正源记录后再重启。不得为了
+消除漂移而由 watcher 抢写 `proxy_live_backup` 或 `config.toml`。重启也属于显式维护动作，不能由
+漂移审计自动触发；重启后重新检查 provider、live backup、`auth.json` 语义和 `config.toml` 哈希。
 
 ### 7. 仅停用 CodexCont，保留 CC Switch
 
@@ -375,30 +410,48 @@ Codex -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
 
 按以下顺序执行：
 
-1. 把 `%USERPROFILE%\.codex\relay-chain.mode` 写为 `ccswitch-only`。
-2. 用 `Disable-ScheduledTask -TaskName 'CodexCont Chain'` 禁用旧任务，不注销任务。
-3. 运行 `%USERPROFILE%\.codexcont\Stop-CodexContChain.ps1`，保留安装文件便于恢复。
-4. 确认 `8787` 不监听、`15721` 监听，且 Codex `base_url` 为 `http://127.0.0.1:15721/v1`。
-5. 至少等待 60 秒后复查，确认 SessionStart、UserPromptSubmit 或常驻 watcher 没有重新启动 CodexCont。
-6. 对 `15721/v1/responses` 做真实 `stream=true` 测试；要求 HTTP 200、SSE created/completed 和预期 usage 字段。
+1. 先记录源码、计划任务 XML、进程命令行、8787/15721 监听和配置哈希；确认没有未识别的 writer。
+2. 把 `%USERPROFILE%\.codex\relay-chain.mode` 写为 `ccswitch-only`。
+3. 用 `Disable-ScheduledTask -TaskName 'CodexCont Chain'` 禁用旧任务，不注销任务。
+4. 运行 `%USERPROFILE%\.codexcont\Stop-CodexContChain.ps1`，保留安装文件便于恢复；确认它没有改写
+   provider、认证、模型或 `config.toml`。
+5. 确认 `8787` 不监听、`15721` 监听，且 CC Switch 输出的 Codex `base_url` 为
+   `http://127.0.0.1:15721/v1`；这里只读核验最终文件。
+6. 至少等待 60 秒后复查，确认 SessionStart、UserPromptSubmit 或常驻 watcher 没有重新启动
+   CodexCont，也没有改写 `config.toml`。
+7. 对 `15721/v1/responses` 做真实 `stream=true` 测试；要求 HTTP 200、SSE created/completed 和预期 usage 字段。
 
 此模式绕过 CodexCont，所以 `proxy_rounds` 缺失是预期结果，不应据此判失败。用户仍保留 CC Switch GUI 切换能力，但失去 CodexCont 的推理截断续跑能力。
 
 #### 全局状态 watcher 的写入边界
 
-监视 `.codex-global-state.json` 时，只在受管理字段的值确实变化后写文件。不要把整份 JSON 重新序列化后与原文本比较；Codex App 的属性顺序、压缩格式、结尾换行或原子替换方式不同，会形成 App 写入、hook 格式化、watcher 再触发的循环。
+当前 watcher 只能管理第 0 节列出的两个桌面权限字段。监视 `.codex-global-state.json` 时，只在
+受管理字段的语义值确实变化后写文件。不要把整份 JSON 重新序列化后与原文本比较；Codex App 的
+属性顺序、压缩格式、结尾换行或原子替换方式不同，会形成 App 写入、hook 格式化、watcher 再触发的循环。
 
 `selected-project` 和 `hotkey-window-projectless-default-enabled` 默认交给 Codex App 管理。除非用户明确要求并接受争用风险，否则 hook 不应删除或强制设置这些字段。
 
-验证至少包括：PowerShell 语法检查、两次 `-Force` 运行均为 `OK: no changes`、至少 60 秒 watcher 日志无重复 `FIXED`/`WARN: restart Codex required`，以及端口状态符合当前模式。
+它不得监听或写入 `config.toml`、`auth.json`、`requirements.toml`、浏览器配置、provider、模型、
+推理强度或 CC Switch 数据库；也不得修改 `copilot-default-model`、`seen-model-upgrade-list` 等 Codex
+Desktop 自管状态。
+
+验证至少包括：PowerShell 语法检查；权限恢复、集成、生命周期和配置所有权四项离线测试；安装脚本
+`-WhatIf -SkipMigration`；逐项解析任务 XML 的动作、启用状态和参数；核对
+`CodexCapabilityCheck` 与迁移任务禁用；核对 `CodexAutoContinue` XML/源码哈希不变；至少 60 秒比较
+`config.toml` 哈希不变。`auth.json` 哈希变化时按 OAuth 结构语义复核，避免把正常 token 刷新误判为覆盖。
 
 ### 8. 拆链路 / 改直连
 
-用户明确要求跳过本地链路、Codex 直连真实上游时用本节。目标：`base_url` 稳定停在真实上游地址，不再被改回本地端口，且改动可逆。
+用户明确要求跳过本地链路、Codex 直连真实上游时用本节。先区分两种含义：
+
+- 仍保留 `ccswitch-owned`：在 CC Switch 中创建或选择直连上游的 Codex provider，所有 provider、
+  key、模型和 Common Config 仍由 CC Switch 配置。本技能只核对最终输出。
+- 完全绕过 CC Switch：这会改变已确认的配置所有权和 GUI 切换能力，必须作为单独架构变更再次确认；
+  不得沿用本节旧脚本直接改数据库与 `config.toml`。
 
 #### 两类致病根因，必须都查
 
-`base_url` 被强制改回本地端口，通常是下面两类原因之一在起作用，**两者相互独立，只关掉一个不够**：
+`base_url` 被改回本地端口，通常有两类独立来源；先只读确认，不把正常 CC Switch 接管误判成恶意覆盖：
 
 - **(a) 外部 watcher 脚本 + Windows 计划任务**：某个第三方脚本（不一定是 CodexCont 官方的 `Watch-CodexConfigForCodexCont.ps1`，也可能是用户自己写的、路径已经失效但进程还在内存里跑的孤儿脚本）持续监视并强制改写 `config.toml`。排查：
   ```powershell
@@ -408,7 +461,9 @@ Codex -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
   Get-ScheduledTask | Where-Object { $_.TaskName -match "Codex|CC.?Switch" } | Select-Object TaskName, State
   ```
   即使脚本源文件已被删除、路径不存在，进程仍可能常驻并继续生效——不要只看计划任务，也要看当前运行进程的命令行。
-- **(b) cc-switch 自身的"本地代理接管"开关**：`proxy_config` 表里对应 `app_type` 的 `proxy_enabled`/`enabled` 为 1 时，cc-switch 会持续把 `config.toml` 改写指向自己的本地代理端口（通常 15721），这与 (a) 无关，即使 watcher 已经彻底停掉也会继续发生。排查：
+- **(b) CC Switch 自身的本地代理接管**：`proxy_config` 表里对应 `app_type` 的
+  `proxy_enabled`/`enabled` 为 1 时，CC Switch 会把 `config.toml` 输出为自己的本地代理端口
+  （通常 15721）。这与 (a) 无关，在 `ccswitch-owned` 下属于 CC Switch 的正常职责。只读排查：
   ```python
   import sqlite3
   con = sqlite3.connect(r"%USERPROFILE%\.cc-switch\cc-switch.db")
@@ -417,86 +472,51 @@ Codex -> CC Switch 127.0.0.1:15721/v1 -> 当前中转站
   print(cur.fetchall())
   ```
 
-实测教训：先停掉 (a)，改完文件后短时间内看似稳定，但那只是因为还没到 (b) 的下一次改写周期；几十秒后又被改回去，才发现 (b) 才是这次真正生效的那条路径。**验证要至少等待 60 秒后复查，不能改完看一眼就下结论。**
+先停掉 (a) 后短时间稳定，不代表 (b) 不存在；验证至少等待 60 秒。但如果目标仍是
+`ccswitch-owned`，发现 (b) 后不应关闭或直接改库，而应回到 CC Switch 设置目标 provider 与代理模式。
 
-#### 落地顺序
+#### `ccswitch-owned` 落地顺序
 
-1. 备份：DB (`%USERPROFILE%\.cc-switch\cc-switch.db`) 和 `.codex/config.toml` 都先复制一份到带时间戳的文件名。
-2. 停 (a)：跑 `Stop-CodexContChain.ps1`（或手动 `Stop-Process` 杀掉命中的进程），确认 8787 端口不再监听。
-3. 关 (b)：把对应 `app_type` 的 `proxy_config.proxy_enabled` 和 `enabled` 都置 0。
-4. **DB 和磁盘文件必须同步改，只改一处会被另一处覆盖回去**：
-   - DB 侧：`providers.settings_config` 里 JSON 的 `config` 字段（一个内嵌的 TOML 字符串），把其中 `base_url` 一行替换成真实上游地址，`experimental_bearer_token` 换成真实 key（不要留 `PROXY_MANAGED` 占位符）。
-   - 磁盘侧：`.codex/config.toml` 的 `[model_providers.custom]` 块做同样替换。
-5. 检查 `proxy_live_backup` 表：确认它当前存的 `original_config` 就是要保留的直连配置（`base_url` 是真实地址），不是旧的代理占位符。如果不是，cc-switch 异常退出后走恢复流程时会把旧配置写回来，等于白改。
-6. 永久停用 (a) 用 `Disable-ScheduledTask -TaskName "<task name>"`（不要 `Unregister`，保留可逆性，需要恢复时用 `Enable-ScheduledTask`）。
-7. 验证：`.codex/config.toml` 隔 10 秒查一次，连续 5~6 次不变才算稳定；再用真实 `stream=true` 的 `/v1/responses` 端到端测试一次（见下节 SSE 验证标准），不要只看 `base_url` 字符串对不对。
+1. 保存 DB、Common Config、`config.toml`、`auth.json` 语义和任务 XML 的只读基线。
+2. 停用已确认的外部 writer 或 CodexCont 任务；保留安装文件和可逆任务定义。
+3. 在 CC Switch 中选择直连上游的 provider，设置该 provider 的认证与模型；通用推理强度和
+   `show-context-window-usage` 继续由 Common Config 管理。
+4. 核对当前 provider、最终 `config.toml`、15721/8787 监听和请求日志；不要直接改
+   `providers`、`proxy_live_backup` 或磁盘配置。
+5. 至少 60 秒比较 `config.toml` 哈希；`auth.json` 只做 OAuth 语义复核。最后用真实
+   `stream=true /v1/responses` 做端到端测试。
 
 #### 代价，必须明确告知用户
 
 - 失去 CodexCont 的推理截断自动修复（`reasoning_tokens == 518*n-2` 场景），长推理任务理论上有恢复截断的风险。
-- 失去 cc-switch GUI 的切换/管理能力：以后在 GUI 里点这个 provider 的"切换"，大概率会把 (b) 重新打开、把 `base_url` 写回本地端口。之后要改 key 或模型，只能手动改 DB+文件，或者明确告知用户这个后果并重新走一遍本节。
+- 如果完全绕过 CC Switch，将失去 CC Switch 的 provider、认证、模型和 Common Config 单一入口；
+  这不是本节的默认动作，也不能在同一次“修复漂移”授权中顺带执行。
 
 ### 9. 重建链路 / 从直连恢复代理
 
-用户明确要求从直连切回本地代理链路时用本节。目标：恢复 `Codex → CodexCont(8787) → CC Switch(15721) → 远端` 的完整链路。
+用户明确要求从完全直连恢复到 CC Switch 时用本节。当前默认目标是
+`Codex → CC Switch(15721) → 远端`；不要自动恢复历史 CodexCont 配置 writer。
 
 #### 前置条件
 
-- CC Switch 进程正在运行（如果没有，先启动 `cc-switch.exe`）。
-- CodexCont 目录完好：`%USERPROFILE%\.codexcont\CodexCont\.venv\Scripts\python.exe` 存在。
+- 已取得当前配置、认证、数据库和任务 XML 的只读基线。
+- CC Switch 进程与程序路径已确认；启动或重启前不猜路径。
 
 #### 落地顺序
 
-1. 备份 DB：
-   ```powershell
-   $ts = Get-Date -Format "yyyyMMdd_HHmmss"
-   Copy-Item "$env:USERPROFILE\.cc-switch\cc-switch.db" "$env:USERPROFILE\.cc-switch\cc-switch.db.bak_$ts"
-   ```
+1. 通过 CC Switch 启用 Codex 本地代理并选择目标 provider；不直接更新 `proxy_config` 或 provider 表。
+2. 把 `relay-chain.mode` 设为 `ccswitch-only`，保持 `CodexCont Chain` 与
+   `CodexCapabilityCheck` 禁用，保持 `CodexAutoContinue` 原样。
+3. 确认 15721 监听、8787 不监听，且 CC Switch 输出的 `config.toml` 指向 15721。
+4. 解析生命周期任务 XML，确认 watcher 只调用权限恢复、退出审计和启动后漂移记录入口。
+5. 运行四项离线测试、60 秒稳定性核验和真实 Responses SSE；失败时回到 CC Switch 修正，不启用旧 writer。
 
-2. 开启 CC Switch 代理——修改 `proxy_config` 表：
-   ```python
-   import sqlite3, os
-   db = os.path.expanduser(r"~\.cc-switch\cc-switch.db")
-   conn = sqlite3.connect(db)
-   conn.execute("UPDATE proxy_config SET proxy_enabled=1 WHERE app_type='codex'")
-   conn.commit()
-   conn.close()
-   ```
-
-3. 重启 CC Switch 让代理在 15721 生效：
-   ```powershell
-   Get-Process cc-switch -ErrorAction SilentlyContinue | Stop-Process -Force
-   Start-Sleep -Seconds 2
-   Start-Process 'D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe' -WindowStyle Hidden
-   Start-Sleep -Seconds 5
-   ```
-
-4. 确认 15721 已监听：
-   ```powershell
-   Get-NetTCPConnection -State Listen -LocalPort 15721 -ErrorAction SilentlyContinue
-   ```
-   如果没有，检查 CC Switch 启动日志或 DB 是否被覆盖。
-
-5. 启动 CodexCont 链路：
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codexcont\Start-CodexContChain.ps1"
-   ```
-   合格信号：输出 `codexcont_listening: true`、`ccswitch_proxy_listening: true`、`watcher_running: true`。
-
-6. 确认 8787 监听：
-   ```powershell
-   Get-NetTCPConnection -State Listen -LocalPort 8787 -ErrorAction SilentlyContinue
-   ```
-
-7. 确认 `config.toml` 已被 hook 改为 8787：
-   ```powershell
-   Select-String -Path "$env:USERPROFILE\.codex\config.toml" -Pattern "base_url"
-   ```
-   预期：`base_url = "http://127.0.0.1:8787/v1"`。
+只有用户另行明确要求恢复 `legacy-writer + full`，才评估启动 CodexCont、8787 和旧 hook；这会改变
+当前所有权方案，不能从“恢复 CC Switch”自动推导。
 
 #### 常见卡点
 
-- **15721 起不来**：最常见原因是 `proxy_config.proxy_enabled` 仍为 0。可能是之前改直连时留下的残留（2026-07-13 实例），或 CC Switch 重启时从旧备份恢复了状态。再查一遍 DB 确认值为 1。
+- **15721 起不来**：只读核对 `proxy_config`、进程和日志，再通过 CC Switch 调整；不要直接写数据库。
 - **CodexCont 启动后立即退出**：查 `%USERPROFILE%\.codexcont\logs\codexcont.err.log` 尾部。常见：venv 依赖缺失（重装 `pip install -r requirements.txt`）或端口被占用。
 - **Codex 更新后链路自动断开**：不要仅凭更新时间和 CodexCont 消失时间就认定存在因果。先保存 Windows 更新事件、CodexCont/CC Switch 的进程启动/退出时间、端口 PID 和日志尾部；只有找到明确的终止或异常退出证据才归因。`proxy_enabled=0` 是独立问题：它会让 CC Switch 重启后不启动 15721，但不能据此证明是 Codex 更新写入。优先使用会话启动、恢复和提交消息前的健康检查做自愈，不把“登录触发的计划任务”当作进程级监视器。
 
@@ -620,6 +640,7 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 
 给用户只报关键判断：
 
+- 当前配置所有权：`ccswitch-owned` 或已明确批准的 `legacy-writer`。
 - 当前模式：`full`、`ccswitch-only` 或 `disabled`。
 - Codex 登录方式、`.tokens` 下 OAuth 四项是否非空、`OPENAI_API_KEY` 是否缺失/`null`/空，
   以及保留官方认证开关状态。
@@ -629,6 +650,8 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - SSE 是否 HTTP 200。
 - 是否看到 `reasoning`、`encrypted_content`、`reasoning_tokens`；仅 `full` 模式要求 `proxy_rounds`。
 - `codex exec` 是否经当前 provider 返回预期结果。
+- `CodexCapabilityCheck`、迁移任务、生命周期任务和 `CodexAutoContinue` 的 XML/状态是否符合边界。
+- 60 秒内 `config.toml` 是否稳定；`auth.json` 若变更，OAuth 结构是否仍完整。
 - 单个旧任务失败时，其错误 URL 是否与当前转发目标一致；如已分叉，子任务是否完成。
 - 如果失败，报最短错误原因和下一步。
 
@@ -641,6 +664,8 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - 不把真实 key 写进 skill、README、提交信息或日志摘要。
 - 不把某一家中转站硬编码成唯一方案。
 - 不直接改 `%USERPROFILE%\.cc-switch\skills` 或 `%USERPROFILE%\.codex\skills` 里的 skill 运行时副本。
+- `ccswitch-owned` 下不直接写 CC Switch 数据库、`config.toml`、`auth.json`、provider、模型、推理强度或 Common Config；需要变更时通过 CC Switch。
+- 不让 watcher 或兼容入口修改 `CodexAutoContinue`，也不重新启用 `CodexCapabilityCheck`。
 - 不把 `/v1/models` 当作最终通过信号。
 - 不在存在无关 git 改动时把它们一起提交。
 - 停用计划任务优先 `Disable-ScheduledTask`，不用 `Unregister-ScheduledTask`——保留可逆性，用户改主意时能直接 `Enable-ScheduledTask` 恢复，不用重新注册任务。
@@ -650,7 +675,8 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - 页面表格里的 `sk-xxx...xxxx` 是遮罩 key，不是真实 key。
 - provider 的远端地址可能嵌在 `settings_config.config` TOML 中，不要先假设数据库存在 `base_url` 列。
 - 远端 provider 指向 `8787/15721` 会形成本地代理回环；先修地址再切换。
-- CC Switch 运行中退出可能写回旧内存状态；必要时修 live backup。
+- CC Switch 运行中退出可能写回旧内存状态；先比较 live backup 与当前 provider，再通过 CC Switch
+  修正源记录，不由 watcher 直接改 live backup。
 - `settings.json` 的 `currentProviderCodex` 和 `providers.is_current` 都要和目标 provider 对上。
 - CodexCont 的 auth mode 是 `passthrough` 时，Codex 当前 token 仍会被传给 CC Switch。
 - `preserveCodexOfficialAuthOnSwitch` 不能恢复已经被 API key 覆盖的 OAuth 数据，必须使用可信备份。
@@ -666,3 +692,4 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - watcher 脚本源文件被删除不代表它失效；进程可能仍在内存里常驻运行，要查当前进程命令行，不能只看文件是否存在。
 - 关掉 watcher/计划任务后配置仍被改写，通常是 cc-switch 自身的本地代理接管开关（`proxy_config.proxy_enabled`/`enabled`）在起作用，这条路径独立于 watcher，必须单独检查。
 - 不要因 JSON 格式、属性顺序或结尾换行不同而重写整份 `.codex-global-state.json`；只按受管理字段的语义变化写入。
+- Common Config 不含根级 `model` 不代表模型配置丢失；模型固定值属于 provider。官方 provider 的模型为空可以是有意未固定，不得由 watcher 猜测并补写。

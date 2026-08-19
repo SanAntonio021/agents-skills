@@ -79,12 +79,13 @@
 
 ```text
 v2_review_peer(author + complete inline envelope) 或 v2_review_repair_peer(author + artifactMode + complete envelope)
-v2_await_peer(job_id, timeout_ms <= 45000)
-v2_peer_result(job_id)
+[v2_await_peer(job_id, timeout_ms <= 45000) -> v2_peer_result(job_id)] 循环到原 job 终态
 ```
 
-无论 `v2_await_peer` 是否已声称 complete，调用方都要继续调用一次 `v2_peer_result`。终态 public job
-必须含 bridge 持久化的：
+无论每次 `v2_await_peer` 是否已声称 complete，调用方都要继续调用一次 `v2_peer_result`。若仍为
+pending，只在 commentary 更新同一 job 的状态并继续当前回合；不得以 pending 结束最终回复或等待用户
+再次提醒。全程固定原 `job_id`、解析后的 model/effort/profile 和首次 `hard_deadline_at`，不得创建第二个
+job 或重置十分钟硬截止。终态 public job 必须含 bridge 持久化的：
 
 ```text
 completion_receipt = {
@@ -97,12 +98,18 @@ completion_receipt = {
 ```
 
 调用方收到终态后立即向用户呈现 `completion_receipt.report`，不得透传原始模型输出或自行声称审查已完成。
-若单次 45 秒等待后 `v2_peer_result` 仍为 pending，调用方输出 `PEER_REVIEW_FAILURE_REPORT`，
-`decisiveError=peer_wait_timeout`，注明 job ID、实际模型未验证和本次不重试/不换模型，然后暂停。
+单次 45 秒只是一段软等待；pending 没有 `completion_receipt`，也不是 `peer_wait_timeout`。只有 bridge 在
+首次提交的十分钟硬截止上持久化的 `peer_wait_timeout` 才是超时终态。
 
-Codex -> Claude 的严格 `V2ModelResponseJsonSchema` 是 bridge-owned transport contract。Claude 可在
-init/stream 中报告无能力的 `StructuredOutput` 内部验证器；它不授予文件、命令或网络访问，且只在该 schema
-存在时可接受。任何其他工具仍按零工具隔离失败处理。
+提交前共享入口不可达且没有 `job_id` 时，立即输出 `jobId=unavailable`、
+`decisiveError=bridge_unreachable` 的失败报告。已有 `job_id` 后短暂断连时，只恢复共享入口并继续查询或
+等待同一 job；保留首次 `hard_deadline_at`，不得重发。到原硬截止仍不可达时才输出带原 job ID 的
+`bridge_unreachable` 失败报告。除这种无法读取 bridge 终态的传输故障外，终态只能来自持久化的
+`completion_receipt.report`。
+
+Codex -> Claude 与 Claude -> Codex 都不发送 provider-native transport schema。模型返回不透明文本，
+bridge 在进程终态后用同一严格 JSON/Zod parser 校验；不补默认数组、不接受额外字段、不自动重试或降档。
+v2 审查中的 `StructuredOutput` 或其他工具事件都不是允许的零工具行为。
 
 Codex 与 Claude 都连接 `/mcp` 并使用 `CLAUDE_CODEX_BRIDGE_TOKEN`；不得把 `target` 或另一角色 token
 写入工具参数。角色端点和独立 token 仅保留回滚：它们使用未加前缀工具并由 endpoint owner 推导 reviewer。
@@ -148,10 +155,10 @@ workspace cwd and --add-dir == the fixed bridge workspace
 public reported model == resolved selected model
 ```
 
-Claude 方向传入固定的 `V2ModelResponseJsonSchema`；Codex 方向不传 transport schema，由 bridge 在
-结果返回后继续使用同一严格 JSON/Zod parser 校验，二者都不补默认数组、不接受额外字段、不重试或降档。
+Claude 与 Codex 两个方向都不传 transport schema，由 bridge 在结果返回后使用同一严格 JSON/Zod
+parser 校验，二者都不补默认数组、不接受额外字段、不重试或降档。
 `--model`/`--effort` 缺失、重复或与解析结果不同，出现 alternate/fallback 参数，init 回执缺失或
-实际模型不是所选模型，工具模式或 JSON schema 不匹配，均停止；没有 fallback model。只有终态
+实际模型不是所选模型，工具模式或严格 JSON 结果契约不匹配，均停止；没有 fallback model。只有终态
 `succeeded`、结果契约合法且模型证据精确匹配时才接受。workspace 的结构化测试由 bridge 的 Codex
 sandbox 运行，超时、退出码非零、程序哈希变化或漏测都是失败证据，不能被模型正文的“通过”覆盖。
 

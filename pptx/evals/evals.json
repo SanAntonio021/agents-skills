@@ -36,6 +36,19 @@
         "No blanket or stale exception is used to preserve legacy small text.",
         "The final deck passes structure validation, typography audit, and full-slide visual inspection."
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "对一份已有 PPTX 执行完整验收。当前 Python 解释器可能缺少 defusedxml；在运行 validate.py 和 typography_audit.py 前先执行 PPTX skill 的 Python 运行时预检，必要时回退到已验证的 py -3 或系统 Python。保留机器可读预检记录，并分别记录四层验收状态；不要安装依赖、修改运行时目录或把 OfficeCLI 当作原生证据。",
+      "expected_output": "验收记录包含最终 Python 解释器路径、defusedxml/lxml/python-pptx 的明确导入结果，以及独立的 STATIC_PASS、LO_RENDER_PASS、NATIVE_OPEN_PASS、NATIVE_RENDER_PASS；若已有 POWERPNT.EXE，原生门禁不被强行接管并保持未验证。",
+      "files": [],
+      "expectations": [
+        "A standard-library runtime preflight runs before validate.py and typography_audit.py.",
+        "The complete preflight JSON records candidates, candidate sources, the selected interpreter path, and import results for defusedxml, lxml, and python-pptx.",
+        "No pip install is attempted and no .codex, .cc-switch, .claude, or bundled runtime directory is modified.",
+        "STATIC_PASS, LO_RENDER_PASS, NATIVE_OPEN_PASS, and NATIVE_RENDER_PASS remain separate acceptance records.",
+        "OfficeCLI remains diagnostic/structural only, and an existing POWERPNT.EXE is never taken over, closed, or killed."
+      ]
     }
   ]
 }

@@ -226,12 +226,14 @@ Choose colors that match your topic — don't default to generic blue. Use these
 |---------|------|
 | Slide title | 36-44pt bold |
 | Section header | 20-24pt bold |
-| All other visible text | 18pt minimum |
+| Other non-table visible text | 18pt minimum |
+| Table cells and chart data tables, except sources/links | 14pt minimum |
 | Sources, links, and footnotes | 10pt minimum, muted |
 
-These are delivery gates, not suggestions. Tables, charts, axes, legends, timelines,
-Gantt labels, and other dense structures remain reader-facing content and use the 18pt
-minimum. Only genuine sources, links, and footnotes may use the 10pt minimum. When the
+These are delivery gates, not suggestions. Table cells and native chart data tables use
+the 14pt minimum. Charts, axes, legends, timelines, Gantt labels, and other reader-facing
+content still use the 18pt minimum. Only genuine sources, links, and footnotes may use
+the 10pt minimum. When the
 requested amount of content does not fit at these sizes, simplify, enlarge the content
 area, reflow, or split the slide. Do not silently shrink text to preserve a one-slide
 layout.
@@ -313,13 +315,12 @@ Per-slide `p:cNvPr@id` uniqueness is also structural and is never suppressed by
 
 The typography audit is read-only and checks the entire output deck, including text in
 tables, grouped shapes, and native chart text. It fails when ordinary visible text is
-below 18pt, when a source/link/footnote is below 10pt, when automatic shrink-to-fit
-reduces the effective size below its gate, or when the effective size cannot be
-resolved. `spAutoFit` may expand a shape but does not waive an unresolved base font
-size. Fix the layout and rerun the audit; the script does not mechanically enlarge
-text.
+below 18pt, table text is below 14pt, a source/link/footnote is below 10pt, automatic
+shrink-to-fit reduces the effective size below its gate, or the effective size cannot
+be resolved. `spAutoFit` may expand a shape but does not waive an unresolved base font
+size. Fix the layout and rerun the audit; the script does not mechanically enlarge text.
 
-For a user-authorized exception to the 18pt ordinary-text gate, pass
+For a user-authorized exception to the 18pt ordinary-text or 14pt table-text gate, pass
 `--exceptions exceptions.json`. Each entry must identify one slide and one shape and
 include the user's reason; blanket slide/deck exceptions are rejected, and 10pt remains
 the absolute floor. Do not create or use an exception file without explicit user

@@ -27,6 +27,7 @@ NS = {
 PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 BODY_MIN_PT = 18.0
+TABLE_MIN_PT = 14.0
 CITATION_MIN_PT = 10.0
 TITLE_MIN_PT = 36.0
 SECTION_MIN_PT = 20.0
@@ -116,6 +117,8 @@ class TextContext:
     relationships: dict[str, dict[str, str]]
     allow_object_marker: bool = True
     require_explicit_size: bool = False
+    ordinary_classification: str = "ordinary"
+    ordinary_minimum_pt: float = BODY_MIN_PT
 
 
 class Package:
@@ -403,7 +406,7 @@ def classify_text(
         return "slide_title", TITLE_MIN_PT, None
     if SECTION_NAME_RE.search(name):
         return "section_header", SECTION_MIN_PT, None
-    return "ordinary", BODY_MIN_PT, None
+    return context.ordinary_classification, context.ordinary_minimum_pt, None
 
 
 class TypographyAuditor:
@@ -449,6 +452,7 @@ class TypographyAuditor:
                 "slide_title_pt": TITLE_MIN_PT,
                 "section_header_pt": SECTION_MIN_PT,
                 "ordinary_pt": BODY_MIN_PT,
+                "table_text_pt": TABLE_MIN_PT,
                 "source_link_footnote_pt": CITATION_MIN_PT,
                 "absolute_floor_pt": CITATION_MIN_PT,
             },
@@ -566,6 +570,8 @@ class TypographyAuditor:
                     presentation_style=self.presentation_style,
                     relationships=slide_rels,
                     allow_object_marker=False,
+                    ordinary_classification="table_text",
+                    ordinary_minimum_pt=TABLE_MIN_PT,
                 )
                 self.audit_text_body(context)
 
@@ -634,6 +640,8 @@ class TypographyAuditor:
                     relationships=chart_rels,
                     allow_object_marker=False,
                     require_explicit_size=True,
+                    ordinary_classification="table_text" if tag_name == "dTable" else "ordinary",
+                    ordinary_minimum_pt=TABLE_MIN_PT if tag_name == "dTable" else BODY_MIN_PT,
                 )
                 self.audit_text_body(context, placeholder_text=f"[{location}]")
 

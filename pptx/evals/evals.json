@@ -40,14 +40,27 @@
     {
       "id": 4,
       "prompt": "对一份已有 PPTX 执行完整验收。当前 Python 解释器可能缺少 defusedxml；在运行 validate.py 和 typography_audit.py 前先执行 PPTX skill 的 Python 运行时预检，必要时回退到已验证的 py -3 或系统 Python。保留机器可读预检记录，并分别记录四层验收状态；不要安装依赖、修改运行时目录或把 OfficeCLI 当作原生证据。",
-      "expected_output": "验收记录包含最终 Python 解释器路径、defusedxml/lxml/python-pptx 的明确导入结果，以及独立的 STATIC_PASS、LO_RENDER_PASS、NATIVE_OPEN_PASS、NATIVE_RENDER_PASS；若已有 POWERPNT.EXE，原生门禁不被强行接管并保持未验证。",
+      "expected_output": "验收记录包含最终 Python 解释器路径、defusedxml/lxml/python-pptx 的明确导入结果，以及独立的 STATIC_PASS、LO_RENDER_PASS、NATIVE_OPEN_PASS、NATIVE_RENDER_PASS；若已有 POWERPNT.EXE，原生门禁不接管进程，状态为未验证，用户只看到“请关闭 PowerPoint 后重试。”。",
       "files": [],
       "expectations": [
         "A standard-library runtime preflight runs before validate.py and typography_audit.py.",
         "The complete preflight JSON records candidates, candidate sources, the selected interpreter path, and import results for defusedxml, lxml, and python-pptx.",
         "No pip install is attempted and no .codex, .cc-switch, .claude, or bundled runtime directory is modified.",
         "STATIC_PASS, LO_RENDER_PASS, NATIVE_OPEN_PASS, and NATIVE_RENDER_PASS remain separate acceptance records.",
-        "OfficeCLI remains diagnostic/structural only, and an existing POWERPNT.EXE is never taken over, closed, or killed."
+        "OfficeCLI remains diagnostic/structural only, and an existing POWERPNT.EXE is never taken over, closed, or killed.",
+        "When POWERPNT.EXE already exists, the user-facing non-JSON output is exactly 请关闭 PowerPoint 后重试。 and delivery is not declared complete."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "检查一份由 PptxGenJS 4.0.1 生成的单页表格 PPTX。PowerPoint 打开时要求修复，但现有 validate.py、LibreOffice 渲染和字体审查都通过。slide1.xml 的 p:cNvPr 编号为 1,2,3,4,2，其中 Title 和 ConstellationTable 都是 id=2，表格设置了 objectName。请按 PPTX 技能判断问题、给出可定位的静态验收结果，并验证把表格编号改为5后的文件。",
+      "expected_output": "原文件因同页 p:cNvPr@id=2 重复而静态验收失败，诊断列出 slide1.xml、重复编号、Title 与 ConstellationTable，并说明 objectName 只设置名称、不保证编号唯一；表格改为 id=5 后通过该检查，仍需完成四层发布门禁。",
+      "files": [],
+      "expectations": [
+        "The validator checks every p:cNvPr ID within each slide shape tree, including graphicFrame tables, charts, and nested groups.",
+        "The broken 1,2,3,4,2 case fails and identifies slide1.xml, duplicate ID 2, Title, and ConstellationTable.",
+        "The result explains that objectName maps to the object name and does not make the numeric shape ID unique.",
+        "Changing the table ID to 5 passes the per-slide uniqueness check, while the full four-layer release gate remains required."
       ]
     }
   ]

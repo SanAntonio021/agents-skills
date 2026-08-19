@@ -437,10 +437,10 @@ class OfficeCliBridgeTests(unittest.TestCase):
             candidate = skills_root / skill / "scripts" / "repair_officecli.py"
             self.assertEqual(candidate.read_bytes(), canonical, candidate)
 
-    def test_native_gate_runtime_copies_are_identical(self):
-        canonical = (MODULE.parent / "office_native_gate.py").read_bytes()
+    def test_non_pptx_native_gate_runtime_copies_are_identical(self):
         skills_root = MODULE.parents[2]
-        for skill in ("docx", "xlsx", "pdf"):
+        canonical = (skills_root / "docx" / "scripts" / "office_native_gate.py").read_bytes()
+        for skill in ("xlsx", "pdf"):
             candidate = skills_root / skill / "scripts" / "office_native_gate.py"
             self.assertEqual(candidate.read_bytes(), canonical, candidate)
 

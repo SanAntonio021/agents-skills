@@ -60,10 +60,13 @@ python <skill-root>\scripts\office_native_gate.py check input.pptx `
 
 The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or
 `UNSAFE_PROCESS`, and records the actual phase and exception. It refuses to run without
-`--allow-office-com`, refuses an existing `POWERPNT.EXE`, uses `DispatchEx` plus an isolated copy,
-checks the source SHA-256 before and after, never saves the source, and quits only a task-created
-instance whose presentation collection is empty. For a PPTX release, require `STATIC_PASS`,
-`LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
+`--allow-office-com`. If `POWERPNT.EXE` already exists, the PPTX gate does not call COM, returns
+`UNVERIFIED` in `preflight` with reason `powerpoint_already_running`, and its non-JSON output is
+exactly `请关闭 PowerPoint 后重试。` It never attaches to, closes, or kills that process. Otherwise
+it uses `DispatchEx` plus an isolated copy, checks the source SHA-256 before and after, never saves
+the source, and quits only a task-created instance whose presentation collection is empty. For a
+PPTX release, require `STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and
+`NATIVE_RENDER_PASS`; a blocked native check is not a completed delivery.
 
 ### Python runtime preflight
 
@@ -129,7 +132,8 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 - **Default charts render bare** — no title, no data labels, dated palette. Set `showTitle` + `title`, `showValue: true` + `dataLabelPosition`, `chartColors: [...]` from your palette, and quiet the frame (`catAxisLabelColor`/`valAxisLabelColor`, `valGridLine: { color, size }`, `catGridLine: { style: "none" }`, `showLegend: false` for a single series).
 - **On a stacked bar or column chart, `dataLabelPosition` must be `ctr`, `inEnd`, or `inBase`.** `outEnd` **corrupts the file**.
 - **A combo series using `secondaryValAxis`/`secondaryCatAxis` needs both `valAxes` and `catAxes` on the chart options, two entries each.** Without them pptxgenjs writes axis *ids* it never declares, and PowerPoint **discards that chart** and reports the file as corrupt. Supplying only `valAxes` is not enough.
-- **After `writeFile()`, run `python scripts/office/validate.py deck.pptx`.** It reports the two chart faults above and the slide-XML defects PowerPoint refuses, and names the fix for each. Fix them in your generator, not by hand-editing the packed XML.
+- **Tables need a post-write shape-ID check.** PptxGenJS 4.0.1 can give a table's `p:cNvPr@id` the same value as another object on that slide. `objectName` changes `p:cNvPr@name`; it does not reserve or replace the numeric ID. Rebuild the deck with an unused per-slide ID rather than relying on the name.
+- **After `writeFile()`, run `python scripts/office/validate.py deck.pptx`.** It reports the two chart faults above, duplicate per-slide `p:cNvPr@id` values (including tables, charts, and grouped shapes), and the other slide-XML defects PowerPoint refuses. The duplicate-ID diagnostic names the slide, ID, object type, and `objectName`/name. Fix them in your generator, not by hand-editing the packed XML.
 - **Never reorder the children of `<p:presentation>`.** pptxgenjs writes `<p:notesMasterIdLst>` right after `<p:sldIdLst>` and points both masters at one theme part. PowerPoint reads that happily — move the element and the same deck becomes unopenable.
 - **Icons:** render `react-icons` to SVG (`ReactDOMServer.renderToStaticMarkup`), rasterize with `sharp` at ≥256px, and insert via `addImage({ data: "image/png;base64," + buf.toString("base64") })` — the `image/png;base64,` prefix is required (`react-icons`, `react`, `react-dom`, and `sharp` are preinstalled — `npm install react-icons react react-dom sharp` only if a require fails).
 
@@ -304,6 +308,8 @@ a genuine regression can hide among them. `--original` baselines
 the schema and slide checks against the template, suppressing errors it already had.
 The structural checks — relationships, content types, charts — ignore `--original` and
 report template-inherited problems either way, so read those on their own merits.
+Per-slide `p:cNvPr@id` uniqueness is also structural and is never suppressed by
+`--original`; PowerPoint requires those object IDs to be unique within each slide.
 
 The typography audit is read-only and checks the entire output deck, including text in
 tables, grouped shapes, and native chart text. It fails when ordinary visible text is

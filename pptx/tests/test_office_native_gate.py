@@ -92,7 +92,7 @@ class FakePresentations(FakeCollection):
 class FakePowerPoint:
     def __init__(self, **open_options: object) -> None:
         self.Presentations = FakePresentations(self, **open_options)
-        self.Visible = True
+        self.Visible = False
         self.DisplayAlerts = 1
         self.quit_calls = 0
 
@@ -248,7 +248,7 @@ class NativeGateTests(unittest.TestCase):
             self.assertEqual(result["status"], "UNVERIFIED")
             self.assertEqual(calls, {"probe": 0, "dispatch": 0})
 
-    def test_existing_office_process_is_unsafe_and_never_dispatches(self) -> None:
+    def test_existing_powerpoint_is_unverified_with_short_prompt_and_never_dispatches(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             source = self._source(temp_dir, ".pptx")
             dispatch = unittest.mock.Mock()
@@ -259,8 +259,45 @@ class NativeGateTests(unittest.TestCase):
                 process_probe=lambda _name: True,
                 dispatch_ex=dispatch,
             )
-            self.assertEqual(result["status"], "UNSAFE_PROCESS")
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["status"], "UNVERIFIED")
+            self.assertEqual(result["phase"], "preflight")
+            self.assertEqual(result["reason"], "powerpoint_already_running")
+            self.assertEqual(result["error"], "请关闭 PowerPoint 后重试。")
             dispatch.assert_not_called()
+
+    def test_existing_non_pptx_process_keeps_unsafe_process_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".docx")
+            dispatch = unittest.mock.Mock()
+            result = native_gate.check_file(
+                source,
+                "docx",
+                allow_office_com=True,
+                process_probe=lambda _name: True,
+                dispatch_ex=dispatch,
+            )
+            self.assertEqual(result["status"], "UNSAFE_PROCESS")
+            self.assertNotIn("reason", result)
+            self.assertIn("WINWORD.EXE is already running", result["error"])
+            dispatch.assert_not_called()
+
+    def test_existing_powerpoint_cli_prints_only_the_short_prompt(self) -> None:
+        result = {
+            "ok": False,
+            "status": "UNVERIFIED",
+            "phase": "preflight",
+            "reason": "powerpoint_already_running",
+            "error": "请关闭 PowerPoint 后重试。",
+        }
+        with patch.object(native_gate, "check_file", return_value=result):
+            with patch("builtins.print") as printer:
+                exit_code = native_gate.main(
+                    ["check", "ignored.pptx", "--format", "pptx", "--allow-office-com"]
+                )
+
+        self.assertEqual(exit_code, 2)
+        printer.assert_called_once_with("请关闭 PowerPoint 后重试。")
 
     def test_pptx_open_and_native_export_pass(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -271,6 +308,41 @@ class NativeGateTests(unittest.TestCase):
             self.assertEqual(result["details"]["native_render"]["files"], 2)
             self.assertEqual(app.quit_calls, 1)
             self.assertEqual(source.read_bytes(), b"valid-office-package")
+
+    def test_powerpoint_hidden_state_is_verified_without_assigning_visible(self) -> None:
+        class ReadOnlyHiddenPowerPoint:
+            def __init__(self) -> None:
+                self.Presentations = FakePresentations(self, slide_count=1)
+                self.DisplayAlerts = 1
+                self.quit_calls = 0
+
+            @property
+            def Visible(self) -> int:
+                return 0
+
+            @Visible.setter
+            def Visible(self, _value: object) -> None:
+                raise AssertionError("PowerPoint Visible must not be assigned")
+
+            def Quit(self) -> None:
+                self.quit_calls += 1
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            app = ReadOnlyHiddenPowerPoint()
+            result = self._check(source, "pptx", app, require_render=True)
+            self.assertEqual(result["status"], "PASS")
+            self.assertEqual(app.quit_calls, 1)
+
+    def test_unexpected_visible_powerpoint_is_unverified(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            app = FakePowerPoint(slide_count=1)
+            app.Visible = True
+            result = self._check(source, "pptx", app)
+            self.assertEqual(result["status"], "UNVERIFIED")
+            self.assertEqual(result["phase"], "ownership")
+            self.assertIn("unexpectedly visible", result["error"])
 
     def test_corrupt_pptx_is_fail_open_not_app_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

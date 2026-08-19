@@ -15,6 +15,16 @@ class PPTXSchemaValidator(BaseSchemaValidator):
     PRESENTATIONML_NAMESPACE = (
         "http://schemas.openxmlformats.org/presentationml/2006/main"
     )
+    DRAWINGML_NAMESPACE = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    SLIDE_OBJECT_TYPES = {
+        "spTree": "shape tree",
+        "sp": "shape",
+        "pic": "picture",
+        "cxnSp": "connector",
+        "grpSp": "group",
+        "graphicFrame": "graphic frame",
+        "contentPart": "content part",
+    }
 
     ELEMENT_RELATIONSHIP_TYPES = {
         "sldid": "slide",
@@ -34,6 +44,9 @@ class PPTXSchemaValidator(BaseSchemaValidator):
             all_valid = False
 
         if not self.validate_unique_ids():
+            all_valid = False
+
+        if not self.validate_slide_shape_ids():
             all_valid = False
 
         if not self.validate_uuid_ids():
@@ -70,6 +83,102 @@ class PPTXSchemaValidator(BaseSchemaValidator):
             all_valid = False
 
         return all_valid
+
+    @staticmethod
+    def _local_name(tag) -> str:
+        if not isinstance(tag, str):
+            return ""
+        return tag.rsplit("}", 1)[-1]
+
+    def _slide_object_type(self, non_visual_property) -> str:
+        owner = next(
+            (
+                ancestor
+                for ancestor in non_visual_property.iterancestors()
+                if self._local_name(ancestor.tag) in self.SLIDE_OBJECT_TYPES
+            ),
+            None,
+        )
+        if owner is None:
+            return "object"
+
+        owner_name = self._local_name(owner.tag)
+        if owner_name != "graphicFrame":
+            return self.SLIDE_OBJECT_TYPES[owner_name]
+
+        graphic_data = owner.find(f".//{{{self.DRAWINGML_NAMESPACE}}}graphicData")
+        uri = graphic_data.get("uri", "") if graphic_data is not None else ""
+        if uri.endswith("/table"):
+            return "table"
+        if uri.endswith("/chart"):
+            return "chart"
+        return self.SLIDE_OBJECT_TYPES[owner_name]
+
+    def validate_slide_shape_ids(self):
+        """Require every p:cNvPr ID to be unique within its slide shape tree."""
+
+        import lxml.etree
+
+        problems = []
+        namespace = {"p": self.PRESENTATIONML_NAMESPACE}
+
+        for slide in sorted(self.unpacked_dir.glob("ppt/slides/slide*.xml")):
+            relative = slide.relative_to(self.unpacked_dir).as_posix()
+            try:
+                root = lxml.etree.parse(str(slide)).getroot()
+            except (lxml.etree.XMLSyntaxError, OSError) as exc:
+                problems.append(f"{relative}: could not inspect p:cNvPr IDs: {exc}")
+                continue
+
+            shape_tree = root.find(
+                f"{{{self.PRESENTATIONML_NAMESPACE}}}cSld/"
+                f"{{{self.PRESENTATIONML_NAMESPACE}}}spTree"
+            )
+            if shape_tree is None:
+                continue
+
+            by_id = {}
+            for non_visual_property in shape_tree.xpath(
+                ".//p:cNvPr", namespaces=namespace
+            ):
+                shape_id = non_visual_property.get("id")
+                if shape_id is None:
+                    continue
+                by_id.setdefault(shape_id, []).append(
+                    {
+                        "type": self._slide_object_type(non_visual_property),
+                        "name": non_visual_property.get("name", ""),
+                        "line": non_visual_property.sourceline,
+                    }
+                )
+
+            for shape_id, objects in by_id.items():
+                if len(objects) < 2:
+                    continue
+                descriptions = "; ".join(
+                    f"{obj['type']} name={obj['name']!r} line={obj['line'] or '?'}"
+                    for obj in objects
+                )
+                problems.append(
+                    f"{relative}: duplicate p:cNvPr id={shape_id!r}: {descriptions}"
+                )
+
+        if problems:
+            print(
+                "FAILED - Found "
+                f"{len(problems)} duplicate slide shape ID problem(s) PowerPoint rejects:"
+            )
+            for problem in problems:
+                print(f"  {problem}")
+            print(
+                "  Fix: assign every p:cNvPr on the same slide a unique numeric ID. "
+                "objectName/name labels the object but does not reserve or replace its ID."
+            )
+            return False
+
+        if self.verbose:
+            print("PASSED - Every slide has unique p:cNvPr shape IDs")
+        return True
 
     def _package_map(self) -> dict:
         wanted = []

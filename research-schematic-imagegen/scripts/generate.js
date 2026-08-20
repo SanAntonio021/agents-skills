@@ -12,6 +12,7 @@ import {
   readPromptInput,
   requireLocalApiEnabled,
   resolveOutput,
+  runtimeInfo,
   saveImage,
   savePrompt,
   slugify,
@@ -27,6 +28,8 @@ Options:
   --promptfile <path>
   --prompt-output <path>
   --image <path>
+  --provider <registered-alias>
+  --backend <ccswitch|direct>
   --model <name>
   --size <WxH>
   --quality <auto|high|medium|low>
@@ -43,6 +46,8 @@ function parse(argv) {
     ["--promptfile", "promptFile"],
     ["--prompt-output", "promptOutput"],
     ["--image", "image"],
+    ["--provider", "provider"],
+    ["--backend", "backend"],
     ["--model", "model"],
     ["--size", "size"],
     ["--quality", "quality"],
@@ -65,7 +70,7 @@ function parse(argv) {
 async function run() {
   const cfg = parse(process.argv.slice(2));
   if (cfg.help) return help();
-  await loadRuntimeEnv();
+  await loadRuntimeEnv({ backend: cfg.backend, providerAlias: cfg.provider, model: cfg.model });
   requireLocalApiEnabled();
   const prompt = await readPromptInput(cfg.prompt, cfg.promptFile);
   const hint = slugify(prompt.split(/\s+/).slice(0, 8).join(" "), "scientific-schematic");
@@ -83,7 +88,15 @@ async function run() {
   const requestUrl = `${buildBaseUrl()}/images/generations`;
   const bytes = await extractGeneratedBytes(await postJson(requestUrl, payload));
   await saveImage(outputPath, bytes);
-  const result = { savedImage: outputPath, savedPrompt: promptPath, model: payload.model, requestUrl };
+  const runtime = runtimeInfo();
+  const result = {
+    savedImage: outputPath,
+    savedPrompt: promptPath,
+    model: payload.model,
+    requestUrl,
+    backend: runtime.backend,
+    provider_alias: runtime.provider_alias,
+  };
   if (cfg.json) printJson(result);
   else console.log(outputPath);
 }

@@ -16,6 +16,7 @@ import {
   readPromptInput,
   requireLocalApiEnabled,
   resolveOutput,
+  runtimeInfo,
   saveImage,
   savePrompt,
   slugify,
@@ -33,6 +34,8 @@ Options:
   --promptfile <path>
   --prompt-output <path>
   --output <path>
+  --provider <registered-alias>
+  --backend <ccswitch|direct>
   --model <name>
   --size <WxH|auto>
   --quality <auto|high|medium|low>
@@ -52,6 +55,8 @@ function parse(argv) {
     ["--promptfile", "promptFile"],
     ["--prompt-output", "promptOutput"],
     ["--output", "output"],
+    ["--provider", "provider"],
+    ["--backend", "backend"],
     ["--model", "model"],
     ["--size", "size"],
     ["--quality", "quality"],
@@ -95,7 +100,7 @@ async function run() {
   const cfg = parse(process.argv.slice(2));
   if (cfg.help) return help();
   if (!cfg.image) throw new Error("--image is required");
-  await loadRuntimeEnv();
+  await loadRuntimeEnv({ backend: cfg.backend, providerAlias: cfg.provider, model: cfg.model });
   requireLocalApiEnabled();
   await ensureFilesExist([cfg.image, ...(cfg.mask ? [cfg.mask] : [])], "Image file");
   const prompt = await readPromptInput(cfg.prompt, cfg.promptFile);
@@ -105,7 +110,15 @@ async function run() {
   const requestUrl = `${buildBaseUrl()}/images/edits`;
   const bytes = await extractGeneratedBytes(await postMultipart(requestUrl, await buildForm(cfg, prompt)));
   await saveImage(outputPath, bytes);
-  const result = { savedImage: outputPath, savedPrompt: promptPath, model: cfg.model || imageModel(), requestUrl };
+  const runtime = runtimeInfo();
+  const result = {
+    savedImage: outputPath,
+    savedPrompt: promptPath,
+    model: cfg.model || imageModel(),
+    requestUrl,
+    backend: runtime.backend,
+    provider_alias: runtime.provider_alias,
+  };
   if (cfg.json) printJson(result);
   else console.log(outputPath);
 }

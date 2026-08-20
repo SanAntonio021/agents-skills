@@ -9,7 +9,8 @@ export const DEFAULT_WORKING_DIR = path.join(DEFAULT_OUTPUT_ROOT, "working");
 export const DEFAULT_PROMPT_DIR = path.join(DEFAULT_OUTPUT_ROOT, "prompt");
 export const DEFAULT_MODEL = "gpt-image-2";
 export const DEFAULT_CONFIG_DIR = process.env.RESEARCH_IMAGE_CONFIG_DIR || path.join(os.homedir(), ".config", "research-schematic-imagegen");
-let runtimeState = { backend: "direct", env_file: null, provider: null };
+export const DEFAULT_PROVIDER_REGISTRY = process.env.RESEARCH_IMAGE_PROVIDER_REGISTRY || path.join(DEFAULT_CONFIG_DIR, "providers.json");
+let runtimeState = { backend: "ccswitch", env_file: null, registry_path: null, provider_alias: null, provider: null };
 
 const TRUTHY = new Set(["1", "true", "yes", "on", "y"]);
 
@@ -35,43 +36,67 @@ export async function readEnvFile(filePath) {
   return result;
 }
 
-export async function loadRuntimeEnv() {
-  const explicitFile = process.env.RESEARCH_IMAGE_ENV_FILE;
+async function loadDirectEnv(configDir, explicitFile) {
   let envFile = explicitFile ? path.resolve(explicitFile) : "";
-
   if (!envFile) {
-    for (const candidate of [
-      path.join(DEFAULT_CONFIG_DIR, "image-api.env"),
-      path.join(DEFAULT_CONFIG_DIR, "hangzhale.env"),
-    ]) {
-      try {
-        await access(candidate);
-        envFile = candidate;
-        break;
-      } catch {
-        // Optional default config. Continue to normal environment variables if absent.
-      }
+    const candidate = path.join(configDir, "image-api.env");
+    try {
+      await access(candidate);
+      envFile = candidate;
+    } catch {
+      // Direct mode may also rely entirely on the parent process environment.
     }
   }
-
   if (envFile) {
     const pairs = await readEnvFile(envFile);
     for (const [key, value] of Object.entries(pairs)) {
       if (!process.env[key]) process.env[key] = value;
     }
   }
+  return envFile || null;
+}
 
-  const backend = String(process.env.RESEARCH_IMAGE_BACKEND || "direct").trim().toLowerCase();
-  const wantsCcSwitch = backend === "ccswitch" || process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID || process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME;
-  if (wantsCcSwitch) {
-    if (backend !== "ccswitch" && backend !== "direct") throw new Error(`Unsupported RESEARCH_IMAGE_BACKEND: ${backend}`);
-    const { loadCcSwitchImageProvider } = await import("./ccswitch.js");
-    const result = await loadCcSwitchImageProvider();
-    runtimeState = { backend: "ccswitch", env_file: envFile, provider: result.provider };
-  } else {
-    runtimeState = { backend: "direct", env_file: envFile, provider: null };
+export async function loadRuntimeEnv({
+  backend = process.env.RESEARCH_IMAGE_BACKEND || "ccswitch",
+  providerAlias = process.env.RESEARCH_IMAGE_PROVIDER || "",
+  model = "",
+  configDir = DEFAULT_CONFIG_DIR,
+  registryPath = process.env.RESEARCH_IMAGE_PROVIDER_REGISTRY || path.join(configDir, "providers.json"),
+  dbPath = process.env.RESEARCH_IMAGE_CCSWITCH_DB,
+  fetchImpl = fetch,
+  timeoutMs = 10000,
+} = {}) {
+  const normalizedBackend = String(backend || "").trim().toLowerCase();
+  if (normalizedBackend === "direct") {
+    const envFile = await loadDirectEnv(path.resolve(configDir), process.env.RESEARCH_IMAGE_ENV_FILE);
+    runtimeState = { backend: "direct", env_file: envFile, registry_path: null, provider_alias: null, provider: null };
+    return envFile;
   }
-  return envFile;
+  if (normalizedBackend !== "ccswitch") throw new Error(`Unsupported RESEARCH_IMAGE_BACKEND: ${normalizedBackend}`);
+  if (process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID || process.env.RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME) {
+    throw new Error("RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID and RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME are no longer supported. Use a registered --provider alias.");
+  }
+  const { loadRegisteredCcSwitchImageProvider } = await import("./provider-registry.js");
+  const selected = await loadRegisteredCcSwitchImageProvider({
+    registryPath,
+    dbPath,
+    alias: providerAlias,
+    model: model || process.env.RESEARCH_IMAGE_MODEL || "",
+    fetchImpl,
+    timeoutMs,
+  });
+  process.env.ENABLE_RESEARCH_IMAGEGEN = "1";
+  process.env.RESEARCH_IMAGE_BASE_URL = selected.provider.base_url;
+  process.env.RESEARCH_IMAGE_API_KEY = selected.provider.api_key;
+  process.env.RESEARCH_IMAGE_MODEL = selected.model;
+  runtimeState = {
+    backend: "ccswitch",
+    env_file: null,
+    registry_path: path.resolve(registryPath),
+    provider_alias: selected.alias,
+    provider: selected.public_provider,
+  };
+  return null;
 }
 
 export function runtimeInfo() {

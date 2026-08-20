@@ -38,64 +38,50 @@ metadata:
 
 本 skill 的图像请求与 Codex/Claude 聊天 provider 解耦。不要为了生图切换 CC Switch 当前聊天 provider；只支持 `/images/generations` 或 `/images/edits` 的中转站不能承担聊天请求。
 
-按以下顺序选择后端：
-
-1. 用户明确指定并已配置 OpenAI 兼容图像接口时，使用本地脚本直接调用该接口。
-2. 用户选择 `RESEARCH_IMAGE_BACKEND=ccswitch` 时，只读发现 CC Switch 中的候选并探测图像模型。
-3. 没有可用本地接口且宿主提供原生图像工具时，使用宿主原生工具。
-4. 两者都不可用时，只输出提示词并报告原因。
-
-本地 OpenAI 兼容接口先运行：
+默认后端是 Cici Switch 私有注册表，而不是独立 API key。每次生成或编辑都必须由用户指定一个已登记 alias；未指定时停止并只列出已登记 alias，向用户询问选择。不得扫描全部 CC Switch 记录后自动选择，也不得自动切换、重试或故障转移。
 
 ```powershell
-node <skill-dir>/scripts/check-mode.js --json
+node <skill-dir>/scripts/check-mode.js --provider <alias> --json
 ```
 
 规则：
 
-- `ENABLE_RESEARCH_IMAGEGEN=1` 且存在 API key 才允许本地脚本发起付费或计费请求。
-- API key 只通过当前进程环境变量传入，不写进 skill、项目文件、命令行参数或输出日志。
-- 用户未明确确认前，不启用付费本地接口；不切换 CC Switch 当前 provider。
-- `/models` 只说明模型名可见，不能证明 `/images/generations` 或 `/images/edits` 可用。
-- 需要判断渠道时，以用户确认后的真实小规模生成或编辑调用为准。
-- 认证、配额、超时、运行时或渠道错误按原文简短报告，不静默换路。
+- 用户的生图/改图请求加上其渠道选择，只授权该渠道的一次计费调用；失败后必须报告，不能改用其他渠道。
+- `/models` 仅证明模型可见；每个新渠道仍需在用户授权后做一次最小真实 `/images/generations` 验证。它不证明 `/images/edits` 可用。
+- `gpt-image-2` 是登记时的默认模型。`gpt-image-2-cf` 仅在用户明确指定，且该渠道当前 `/models` 返回它时使用。
+- API key 只从 CC Switch 数据库读取到当前进程内存，不写进 skill、项目、注册表、命令行参数或日志；不切换当前聊天 provider。
+- 认证、配额、超时或渠道错误按原文简短报告；不静默换路。
 
-密钥只通过当前进程环境读取。技能会自动发现以下用户私有配置文件（按顺序，显式 `RESEARCH_IMAGE_ENV_FILE` 优先）：
+私有注册表位于 `~/.config/research-schematic-imagegen/providers.json`，不属于技能源码或 Git 交付物。每条记录只含 `alias`、`provider_id`、`app_type`、`expected_name` 和 `default_model`，不含 API key。正常路径会核验 provider ID、名称、类型和所选模型，任一漂移即停止。
 
-- `~/.config/research-schematic-imagegen/image-api.env`
-- `~/.config/research-schematic-imagegen/hangzhale.env`（兼容既有配置）
+新增渠道流程：先对用户指定的候选 ID 运行 `/models` 检查，展示安全的名称、ID 与可用图像模型；取得用户确认后，才手动登记该渠道：
 
-配置文件不属于技能源码、项目文件或 Git 交付物。其内容只在本地进程中加载，不回显到日志。
+```powershell
+node <skill-dir>/scripts/register-ccswitch-image-provider.js --alias <alias> --provider-id <id> --default-model gpt-image-2 --json
+```
+
+`--replace` 才允许更新已有 alias 或 provider ID。候选检查可使用：
+
+```powershell
+node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id> --json
+```
+
+独立接口只保留为显式兼容路径：传入 `--backend direct` 或设置 `RESEARCH_IMAGE_BACKEND=direct`。该模式才会读取显式 `RESEARCH_IMAGE_ENV_FILE` 或 `~/.config/research-schematic-imagegen/image-api.env`；普通路径绝不自动读取 `hangzhale.env`。
 
 支持的环境变量：
 
 | 变量 | 作用 |
 | --- | --- |
-| `ENABLE_RESEARCH_IMAGEGEN` | `1/true/yes/on` 时允许本地 API 调用 |
-| `RESEARCH_IMAGE_API_KEY` | 图像接口 API key；也兼容 `OPENAI_API_KEY` |
-| `RESEARCH_IMAGE_BASE_URL` | OpenAI 兼容接口根地址；也兼容 `OPENAI_BASE_URL` |
-| `RESEARCH_IMAGE_MODEL` | 默认 `gpt-image-2`；也兼容 `OPENAI_IMAGE_MODEL` |
-| `RESEARCH_IMAGE_ENV_FILE` | 显式指定私有 env 文件；优先于自动发现路径 |
-| `RESEARCH_IMAGE_CONFIG_DIR` | 覆盖默认用户配置目录 |
-| `RESEARCH_IMAGE_BACKEND` | `direct` 或 `ccswitch`；默认 `direct` |
+| `RESEARCH_IMAGE_BACKEND` | `ccswitch`（默认）或显式兼容的 `direct` |
+| `RESEARCH_IMAGE_PROVIDER` | 已登记 alias；CLI 的 `--provider` 可指定本次渠道 |
+| `RESEARCH_IMAGE_PROVIDER_REGISTRY` | 覆盖私有 `providers.json` 路径 |
+| `RESEARCH_IMAGE_CONFIG_DIR` | 覆盖私有配置目录 |
 | `RESEARCH_IMAGE_CCSWITCH_DB` | CC Switch DB 路径；默认 `~/.cc-switch/cc-switch.db` |
-| `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID` | 指定 CC Switch provider ID；优先于自动选择 |
-| `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_NAME` | 指定 CC Switch provider 名称；同名多条记录仍需消歧 |
+| `RESEARCH_IMAGE_MODEL` | 指定模型；Cici Switch 路径会验证其当前可用性 |
+| `RESEARCH_IMAGE_ENV_FILE` | 仅 `direct` 模式使用的私有 env 文件 |
+| `RESEARCH_IMAGE_API_KEY`、`RESEARCH_IMAGE_BASE_URL` | 仅 `direct` 模式使用的 OpenAI 兼容接口配置 |
+| `ENABLE_RESEARCH_IMAGEGEN` | `direct` 模式中启用本地 API 调用；Cici Switch 在已选 alias 后由脚本在进程内设置 |
 | `RESEARCH_IMAGE_OUTPUT_ROOT` | 默认输出根目录 `research-schematic-imagegen` |
-
-CC Switch 发现规则：
-
-- 只读 `providers` 表的结构化配置，不修改 CC Switch DB，不切换当前聊天 provider。
-- 解析 provider 的基址和 key 后，自动补齐 `/v1`，逐个调用 `/models`。
-- 只把返回图像模型的 provider 视为候选；相同基址与相同 key 的重复记录合并。
-- 候选唯一时自动使用；多个候选时停止并列出名称和 ID，要求通过 `RESEARCH_IMAGE_CC_SWITCH_PROVIDER_ID` 或名称指定。
-- `/models` 只是候选筛选，正式使用前仍需一次真实小规模生图确认 `/images/generations`。
-
-手动查看候选：
-
-```powershell
-node <skill-dir>/scripts/discover-ccswitch-image-providers.js --json
-```
 
 ### 2. 建立技术表达合同
 
@@ -158,19 +144,19 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --json
 文本生图：
 
 ```powershell
-node <skill-dir>/scripts/generate.js --promptfile <prompt.md> --image <working.png> --size 1536x1024 --quality high
+node <skill-dir>/scripts/generate.js --provider <alias> --promptfile <prompt.md> --image <working.png> --size 1536x1024 --quality high
 ```
 
 基于原图编辑：
 
 ```powershell
-node <skill-dir>/scripts/edit.js --image <source.png> --promptfile <edit-prompt.md> --output <working.png> --input-fidelity high
+node <skill-dir>/scripts/edit.js --provider <alias> --image <source.png> --promptfile <edit-prompt.md> --output <working.png> --input-fidelity high
 ```
 
 带遮罩局部编辑：
 
 ```powershell
-node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --promptfile <edit-prompt.md> --output <working.png> --input-fidelity high
+node <skill-dir>/scripts/edit.js --provider <alias> --image <source.png> --mask <mask.png> --promptfile <edit-prompt.md> --output <working.png> --input-fidelity high
 ```
 
 所有生成和编辑结果先进入工作目录，不直接写入 `final/`。

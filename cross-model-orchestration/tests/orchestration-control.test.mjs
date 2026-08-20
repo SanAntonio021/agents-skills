@@ -798,6 +798,9 @@ test("published v2 contract waits in the same turn without transport schemas or 
   assert.match(skill, /pending 不是最终答复/u);
   assert.match(skill, /提交调用在获得 `jobId` 前即不可达/u);
   assert.match(skill, /两个方向都不发送 provider-native transport schema/u);
+  assert.match(skill, /CODEX_THREAD_ID/u);
+  assert.match(contract, /CODEX_THREAD_ID/u);
+  assert.match(contract, /缺失或无法核对时省略/u);
   assert.match(contract, /不得创建第二个\s*job/u);
   assert.match(contract, /已有 `job_id` 后短暂断连/u);
   assert.doesNotMatch(contract, /若单次 45 秒等待后.*输出 `PEER_REVIEW_FAILURE_REPORT`/u);

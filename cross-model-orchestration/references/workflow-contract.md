@@ -58,11 +58,16 @@
   "artifactPath": "optional forward-slash relative path",
   "acceptanceCriteria": ["objective criterion"],
   "constraints": ["scope or safety boundary"],
+  "continuation": {"host": "codex_desktop", "threadId": "current Codex Desktop task/thread ID"},
   "seriesId": "optional stable series id",
   "seriesVersion": 0,
   "latestJobId": "uuid from the previous round"
 }
 ```
+
+Codex Desktop 调用方必须从当前任务进程读取 `$env:CODEX_THREAD_ID`，并将非空值原样写入
+`continuation.threadId`。不能用旧任务 ID、扫描最近任务或猜测线程；变量缺失或无法核对时省略
+`continuation`，公开记录自动续接不可用并由作者侧继续。
 
 先固定本轮完整 `artifactContent`，再立即按它的 UTF-8 编码重新计算 `artifactBytes` 和
 `artifactSha256`；不得复用旧轮次或文件元数据中的值。`v2_review_peer` 的 `artifactMode` 和工作区字段
@@ -126,6 +131,29 @@ workspace 模式发起前记录目标根内普通文件的相对路径、字节�
 `seriesVersion` 与 `latestJobId` 做 CAS；不另开逻辑产物，不猜测最新 job。恢复或重试必须沿用已记录的
 model、reasoning effort、task profile、routing source 和 rule ID；任一缺失或调用方试图覆盖时停止。
 需要换路由时建立新的 `seriesId`，不能在旧 series 中切换。
+
+## `needs_changes` 后的自动续接
+
+`continuation` 为可选字段，只接受 `{ host: "codex_desktop", threadId }`。它不是授权 bridge 直接修改
+作者文件，而是指定在审查结果满足门槛后要唤醒的原 Codex Desktop 任务。自动续接仅适用于
+`author=codex` 的正式 `artifactType=plan`、目标 Claude、完整且匹配的模型/运行时回执、轮次 `< 3`、
+无高风险变更，以及普通同步、测试、基线和权限门均通过的 job。
+
+符合条件时，bridge 持久化 `needs_changes` 终态并将 continuation 排入 outbox，通过 Desktop IPC
+向同一 `threadId` 发送续接请求。被唤醒的原作者任务必须查询同一 `jobId`，采纳 findings，更新计划，
+按最终 UTF-8 内容重新计算 `artifactBytes`/`artifactSha256`，并用同一 `seriesId` 和上一轮返回的
+`seriesVersion`/`latestJobId` 提交下一轮；bridge 不替它判断或书写语义内容。超过第三轮、任何证据缺失、
+超时、断连、基线漂移或不安全同步都停止自动续接。Claude-authored 方向没有可验证的 Claude Desktop
+continuation API，不自动替 Claude 修改，仍由作者侧继续。
+
+workspace 出现删除、重命名、权限/类型变化或目录替换时，job 先进入 `awaiting_user_decision`，公开完整
+稳定的 `pending_high_risk[].id` 集合。只有用户精确批准全部 ID 后调用 `approve_peer_sync`；该调用只
+重新验证基线与保留副本并同步，不重新调用模型。同步成功后，若原 Codex continuation 仍满足门槛，才可
+再次唤醒原任务。
+
+continuation outbox 状态为 `queued`、`dispatching`、`delivered`、`uncertain`。重启、断连或超时使
+`dispatching` 变为 `uncertain`，不得自动重发或创建替代 job，以避免重复续接；该状态必须保留在公开
+job 证据中。
 
 ## 模型解析
 
@@ -199,8 +227,9 @@ Windows bridge 子进程固定 `include_environment_context=true` 和
 
 1. 作者通过共享 `/mcp` 和 `v2_review_peer`/`v2_review_repair_peer` 发起第 1 轮，保存 job ID、`seriesVersion` 和（仅 workspace 时的）manifest；每次都提供同一作者的 caller-declared `author`。
 2. `通过`：正式计划进入用户确认门；显式交付物审查返回原作者独立验收。
-3. `需修改`：inline 结果由作者在主项目中自行修订，workspace 先检查同步结果；随后更新内容、哈希，
-   并把前轮 findings 和 open items 放入新一轮 `question`、`constraints` 或 `artifactContent`，携带上一轮
+3. `需修改`：满足 continuation 门槛的 Codex Desktop 作者由 bridge 唤醒后继续；其他方向仍由作者侧
+   修订。inline 结果不直接同步主项目，workspace 先检查同步结果；随后更新内容、哈希，并把前轮 findings
+   和 open items 放入新一轮 `question`、`constraints` 或 `artifactContent`，携带上一轮
    `seriesVersion`/`latestJobId` 再发第 2/3 轮。
 4. 第 3 轮仍需修改，或出现无法由新证据消除的冲突：停止并输出 `DISAGREEMENT_REPORT`。
 5. 不发第 4 轮。计划互审通过不代表用户已授权执行。

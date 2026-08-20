@@ -210,6 +210,34 @@
       "expected_output": "同一回合持续尝试恢复并只查询原 job；到原截止仍不可达时输出带原 jobId 的 decisiveError=bridge_unreachable 失败报告。",
       "files": [],
       "expectations": ["不创建第二个 job，不重置 deadline。", "不能把请求模型写成已验证，除非此前已有独立运行时回执。"]
+    },
+    {
+      "id": 30,
+      "prompt": "我在 Codex Desktop 提交正式计划时提供 continuation={host:codex_desktop, threadId:当前任务ID}。Opus 返回 needs_changes。",
+      "expected_output": "bridge 将同一 Codex Desktop 任务加入并投递 continuation；被唤醒的原任务查询同一 job，处理 findings，重算 UTF-8 身份，并以同一 series CAS 提交下一轮。",
+      "files": [],
+      "expectations": ["只适用于 author=codex、artifactType=plan、目标 Claude、完整模型证据、round<3 且无高风险项。", "bridge 不直接编写作者计划正文，也不把审查通过当作执行授权。"]
+    },
+    {
+      "id": 31,
+      "prompt": "Codex authored workspace plan 的 Opus 结果包含删除项，job 列出 pending_high_risk；我还没有批准。",
+      "expected_output": "停在 awaiting_user_decision，不投递 continuation；只在用户精确批准完整风险 ID 集合后调用 approve_peer_sync，重新验证并同步，不重跑模型，然后才可唤醒原 Codex 任务。",
+      "files": [],
+      "expectations": ["部分、额外或过期 ID 均失败关闭。", "基线漂移和越界同步不能由审批覆盖。"]
+    },
+    {
+      "id": 32,
+      "prompt": "一个 Codex Desktop continuation 已在 dispatching 时发生 daemon 重启或 IPC 超时。",
+      "expected_output": "将 outbox 记录标为 uncertain 并保留公开证据；不自动重发、不开替代 job，以避免同一审查续接两次。",
+      "files": [],
+      "expectations": ["只有 queued 状态可首次投递。", "uncertain 必须等待明确恢复决定。"]
+    },
+    {
+      "id": 33,
+      "prompt": "Claude authored formal plan 返回 needs_changes，我要求 bridge 自动替 Claude 继续修改。",
+      "expected_output": "拒绝自动 continuation：当前没有可验证的 Claude Desktop continuation API；返回持久化审查结果，由 Claude 作者侧按同一 CAS 流程处理。",
+      "files": [],
+      "expectations": ["不得伪造 thread ID、猜测最新会话或自动写入 Claude 主项目。"]
     }
   ]
 }

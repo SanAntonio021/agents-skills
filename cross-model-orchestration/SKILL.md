@@ -123,7 +123,9 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 `eligible_with_loopback_residual_risk` 仍允许 v2 调用；任一硬门失败则不创建 job。
 
 `v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
-正式计划和普通审查在 workspace 能力不可用时的默认入口，作者自行采纳修改并重新计算下一轮身份。
+正式计划和普通审查在 workspace 能力不可用时的默认入口。若请求带有符合下节门槛的
+`continuation`，bridge 会在 `needs_changes` 终态后唤醒原作者任务；bridge 本身不替作者作语义修改，
+而是由被唤醒的原 Codex 任务采纳意见、重算身份并提交下一轮。
 protocol-v2 的 Claude/Codex 两个方向都不发送 provider-native transport schema；模型返回不透明文本，
 bridge 再执行同一严格 JSON/Zod 校验，不补默认值、不接受额外字段、不降档或自动重试。v2 审查中出现
 `StructuredOutput` 或任何其他工具记录都按隔离/传输异常处理，不能当作允许的零工具验证器。
@@ -170,6 +172,7 @@ artifactPath (正式文件建议提供，必须是正斜杠相对路径)
 acceptanceCriteria (非空), constraints (可选)
 taskProfile / model / reasoningEffort (可选)
 seriesId / seriesVersion / latestJobId (续轮按 CAS 提供)
+continuation (Codex Desktop 作者方向可选；必须使用当前任务的精确线程 ID)
 ```
 
 `v2_review_peer` 只接受上述 inline 字段；`v2_review_repair_peer` 还必须提供 `artifactMode`：
@@ -199,15 +202,44 @@ workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把�
 2. 只接受带 `completion_receipt.schema_version=1` 和 `delivery_required=true` 的终态；先向用户呈现其
    `report`，再检查方向/模型/权限证据。inline 由作者检查审查正文或 `repairedArtifact`，workspace 才检查同步后的主项目。
 3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
-4. `需修改`：作者自行修订主项目（inline 不发生同步；workspace 先检查同步内容），重新计算字节数和
+4. `需修改`：inline 不发生主项目同步，workspace 先检查同步内容。满足自动续接门槛时，bridge 将同一
+   Codex Desktop 任务唤醒；该原任务必须读取同一 job 的 findings，修订主项目，重新计算 UTF-8 字节数和
    SHA-256，把上一轮 findings/未决项放入下一轮 `question`、`constraints` 或 `artifactContent`，并携带
-   上一轮返回的 `seriesVersion` 与 `latestJobId`。不要另开逻辑产物或猜测新线程。
+   上一轮返回的 `seriesVersion` 与 `latestJobId`。没有可验证 continuation（包括 Claude-authored 任务）时，
+   作者侧按同一 CAS 流程继续；不要另开逻辑产物或猜测新线程。
 5. 第 3 轮仍需修改，或双方出现实质分歧：输出 `DISAGREEMENT_REPORT`，等待用户裁决，不发第 4 轮。
 
 审查通道不可用、超时、取消、认证/权限/sandbox 错误、格式错误、所选模型缺失或回执不匹配都不是
 “需修改”，直接呈现 `completion_receipt.report` 中的 `PEER_REVIEW_FAILURE_REPORT` 并暂停；不换模型、不静默跳过、不回退。bridge
 还会在同步前拒绝缺少对应审查标记/结论、明确 blocked/incomplete，或把失败测试/未满足验收写成“通过”的
 `review_repair` 结果，并使用 `peer_contract_error` 记录原因。
+
+## `needs_changes` 自动续接
+
+`continuation` 是可选的请求字段，形式为：
+
+```text
+continuation = { host: "codex_desktop", threadId: "<当前 Codex Desktop task/thread ID>" }
+```
+
+在 Codex Desktop 中，调用方先读取当前任务进程的 `$env:CODEX_THREAD_ID`，并把该值原样填入
+`continuation.threadId`；不得改用旧任务 ID、扫描最近任务或猜测线程。环境变量缺失、为空或无法核对时，
+省略 `continuation` 并明确记录“自动续接不可用”，由作者侧继续处理，不能假装已经启用自动闭环。
+
+bridge 只有在以下条件全部满足时才自动续接：`author=codex`、`artifactType=plan`、目标为 Claude、
+请求模型与运行时回执完整匹配、当前轮次小于 3、没有 `pending_high_risk`，且普通 workspace 同步、测试、
+基线和权限门均通过。此时 bridge 将已持久化的 `needs_changes` 结果写入 outbox，并通过 Desktop IPC
+唤醒同一个任务；它不会直接改写计划正文。原 Codex 任务负责查询同一 `jobId`、采纳审查意见、重新计算
+UTF-8 bytes/SHA-256，并以同一 `seriesId` 携带 `seriesVersion`/`latestJobId` 做 CAS 提交下一轮。
+
+删除、重命名、权限或类型变化、目录覆盖、基线漂移、测试/模型证据缺失、超时、断连或不确定 IPC 回执
+都会停止自动闭环。高风险变更先进入 `awaiting_user_decision`，完整展示稳定的
+`pending_high_risk[].id`；用户精确批准后调用 `approve_peer_sync`，bridge 只重新核验并同步，不重跑模型，
+同步成功后才再次唤醒原任务。Claude-authored 任务目前没有可验证的 Claude Desktop continuation API，
+因此 bridge 不会擅自自动修改该方向，仍由 Claude/用户按作者侧流程处理。
+
+续接 outbox 的状态为 `queued`、`dispatching`、`delivered` 或 `uncertain`。重启、断连或超时中断
+`dispatching` 时必须转为 `uncertain`，且永不自动重发；调用方只能向用户报告该状态并等待明确恢复决定。
 
 ## 模型与权限验收
 

@@ -4,7 +4,9 @@ description: >
   在 Claude Code CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
   在固定副本中审查、修复和测试，最多三轮；Claude 复核同步结果、向用户展示最终计划，并在用户
   明确确认后按 allowlist 执行。默认跨模型复核只发生在正式计划阶段；执行结果由 Claude 按验收
-  标准检查，不自动再次调用 Codex。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
+  标准检查，不自动再次调用 Codex。bridge 的自动 continuation 仅适用于 Codex-authored 的
+  Codex Desktop 正式计划；本 Skill 是 Claude-authored 方向，不能把 Codex 的审查意见直接自动写入
+  Claude 主项目。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
   不猜测路径、不调用旧 codex@openai-codex 插件。
 compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill. Legacy orchestration scripts are offline state helpers only.
 ---
@@ -61,7 +63,9 @@ submit_peer(target=codex, operation=review_repair,
 `reviewerAccess=isolated_write`。Claude 收到 bridge 结果后先检查主项目快照和同步状态，再作语义判断：
 
 - `通过`：保存 `PLAN_REVIEW`，进入 `done_phase1`；
-- `需修改`：由 Claude 修订 `plan-working.md`，更新哈希和 `priorFindings`，最多进入下一轮；
+- `需修改`：由 Claude 修订 `plan-working.md`，更新哈希和 `priorFindings`，最多进入下一轮；本方向
+  不提供可验证的 Claude Desktop continuation API，因此不会擅自自动修改或自动替用户确认。若任务
+  改由 Codex Desktop 作为作者发起，应改用 `cross-model-orchestration` 的 `continuation` 契约。
 - `实质分歧` 或第 3 轮仍需修改：输出 `DISAGREEMENT_REPORT`，等待用户裁决。
 
 格式错误、bridge 不可用、超时、Codex 越界写入、主项目漂移或同步冲突写入

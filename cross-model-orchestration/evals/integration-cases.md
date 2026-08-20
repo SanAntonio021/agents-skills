@@ -101,6 +101,25 @@
   实质分歧时只输出 `DISAGREEMENT_REPORT`，不发第 4 轮。通过后仍停在用户执行确认门。
 - 仅原作者签收同步后的文件、测试和验收；执行、返工和最终交付不自动追加相反方向互审。
 
+## Codex Desktop 自动续接
+
+- Codex Desktop 作者提交正式 `artifactType=plan` 时可带
+  `continuation={host:codex_desktop,threadId}`。只有 `author=codex`、目标 Claude、完整匹配的模型/回执、
+  round `< 3`、无 `pending_high_risk`，且普通同步、测试、基线和权限门均通过时，Claude 的
+  `needs_changes` 才能排入 outbox 并唤醒同一任务。
+- 被唤醒的原 Codex 任务必须查询同一 `jobId`，处理 findings，重算最终正文的 UTF-8 bytes/SHA-256，
+  并以原 `seriesId` 和上轮 `seriesVersion`/`latestJobId` 做 CAS 提交下一轮。bridge 不直接写语义计划，
+  审查通过仍不等于执行授权。
+- 删除、重命名、权限/类型变化或目录替换先进入 `awaiting_user_decision`。必须展示完整稳定的
+  `pending_high_risk[].id`；仅用户精确批准全部 ID 后调用 `approve_peer_sync`，该调用只重新验证和同步，
+  不重跑模型；同步成功后才可续接。
+- continuation outbox 只允许 `queued -> dispatching -> delivered`。重启、断连或超时使 `dispatching`
+  变为 `uncertain`；不自动重发、不猜测最新任务、不创建替代 job。`uncertain` 必须留在公开 job 证据中。
+- Claude-authored 任务没有可验证的 Claude Desktop continuation API，不自动续接或自动修改；由 Claude
+  作者侧继续同一 CAS 流程。
+- Codex Desktop 发起时必须从当前任务进程读取 `$env:CODEX_THREAD_ID` 并原样填入
+  `continuation.threadId`；缺失或无法核对时不启用自动续接，不猜测或扫描其他任务。
+
 ## 确定性运行与发布
 
 - 运行 Skill 的 JSON 校验、`skill-creator` 快速检查、`orchestration-control` 测试和 Bridge 全量单元/集成

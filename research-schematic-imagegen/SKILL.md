@@ -1,7 +1,8 @@
 ---
 name: research-schematic-imagegen
-description: 为自然科学基金、工程申报、科研汇报和答辩 PPT 设计、生成、编辑高技术密度科研示意图。用户提到科研示意图、关键技术图、机理图、技术路线图、系统框图、申报 PPT 配图、统一系列配图、英文图中文化、线条/箭头/光束局部修改、GPT Image 2 生图或改图、图中文字纠错时必须使用。只负责图件，不代写申报书正文，也不修改 PPT 文件，除非用户另行明确授权。
-compatibility: Node.js 18+ for direct OpenAI-compatible image API scripts; Node.js 22+ for CC Switch provider discovery; Windows PowerShell or PowerShell 7 for deterministic label correction.
+description: 为自然科学基金、工程申报、科研汇报和答辩 PPT 设计、生成、编辑高技术密度科研示意图。用户提到科研示意图、关键技术图、机理图、技术路线图、系统框图、端到端全流程图、业务/控制/运维流、申报 PPT 配图、统一系列配图、英文图中文化、线条/箭头/光束局部修改、GPT Image 2 生图或改图、图中文字纠错时必须使用。只负责图件，不代写申报书正文，也不修改 PPT 文件，除非用户另行明确授权。
+metadata:
+  compatibility: Node.js 18+ for direct OpenAI-compatible image API scripts; Node.js 22+ for CC Switch provider discovery; Windows PowerShell or PowerShell 7 for deterministic label correction.
 ---
 
 # 科研示意图生成与编辑
@@ -108,6 +109,15 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --json
 
 系列图先建立一份共同视觉合同，再分别建立每张图的技术合同。
 
+#### 全流程系统图
+
+一张图同时表达端到端主路径、运行保障/控制关系或可选机制时，除技术合同外，读取 [references/full-flow-system-diagram.md](references/full-flow-system-diagram.md)。先把节点、分区、连线和视觉语义写成台账，再让模型出图；不要用一串看似合理的箭头代替已确认的系统关系。
+
+- 主业务路径应是首要阅读线，箭头端点逐段对应台账中的源节点和目标节点。
+- 控制、运维、反馈和可选机制必须与主业务路径使用可区分的线型/颜色，并在图例中说明；可选关系不能被画成业务必经路径。
+- 控制或保障节点默认靠近其受管对象，避免用跨图绕线代替清晰的逻辑关系。图中要区分逻辑管理关系和实际物理通信链路，不能无依据地把其中一种暗示成另一种。
+- 面向汇报或跨专业讨论时，首次出现的陌生缩写使用已确认的中文全称或括号内短解释；这些解释仍必须进入准确标签清单，不能由模型临场改写。
+
 ### 3. 先做一张风格基准图
 
 系列任务不要一开始生成全部图片。先选信息结构最典型的一张作为基准，确认：
@@ -129,6 +139,8 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --json
 - 禁止出现什么
 - 视觉风格和尺寸
 - 允许出现的准确标签
+
+全流程系统图还必须逐条复述连线台账的源节点、目标节点、关系类型和图例语义；不要只写“清晰连接”或“合理布局”。
 
 图像模型不负责决定技术方案。禁止让模型自行补全关键技术路线、定量指标或系统能力。
 
@@ -191,6 +203,8 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 - 是否存在遮挡、裁切、重复元素或无意义装饰
 - 局部编辑后，遮罩外内容是否与原图一致；不应出现未经请求的背景、对象或构图变化
 - 按 PPT 实际显示尺寸检查边缘清晰度；细线、光束、文字和对象轮廓不能出现局部模糊、双边或不均匀光晕
+
+全流程系统图按 [references/full-flow-system-diagram.md](references/full-flow-system-diagram.md) 的整图和分区验收执行。文字重叠、裁切、悬空箭头、端点错误、图例与实际线型不一致，或控制/可选关系越界时，不能交付为最终图。局部问题优先做定向修正，并锁定已通过的主路径和无关区域；只有构图已无法表达技术关系时才重画整图。
 
 只要技术方案后来变化，就重新核对图片。文件名含 `final` 不能替代技术复核。
 

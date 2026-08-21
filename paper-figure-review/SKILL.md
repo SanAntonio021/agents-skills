@@ -87,6 +87,23 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 5. `export_ieee_single_column(mode="draft")` 只写入 `drafts/`；未确认配色、未完成人工复核或未验证 Matplotlib 版本都可以先出 draft。
 6. `mode="formal"` 只在预检通过、配色已由用户确认并冻结、字体已解析，且 plot profile 记录了最终尺寸视觉确认原因和时间后写入正式目录。PDF/SVG/PNG 始终使用 `bbox_inches=None`、`pad_inches=0.0`，并在 manifest 中记录物理尺寸和 SHA-256。
 
+### 固定 Python 运行时与双草稿
+
+Python 数据图统一通过 `scripts/invoke_paper_figure_python.ps1` 运行。该适配器固定调用
+`C:\Users\SanAn\.local\scientific-plotting-runtime\.venv\Scripts\python.exe`，并在子进程中注入本
+skill 的 `scripts/` 到 `PYTHONPATH`。它会校验 Python 3.12.x、Matplotlib 3.11.1 和 SciencePlots
+2.2.2；运行时缺失、损坏、版本不符或脚本失败时直接返回非零，不能回退到系统 Python，也不能静默安装依赖。
+
+第一次重画同一篇论文的数据图时，默认输出同一数据、同一物理尺寸的两套 draft：
+
+- `A`：现有 `ieee_plot_style.py` 严格 IEEE 基线。
+- `B`：SciencePlots `science + ieee + no-latex` 候选，仅用于比较视觉层级、线型、配色和留白意图。
+
+用户选择 B 后，formal 导出仍必须重新走 `ieee_plot_style.py` 的字体、尺寸、四边框、网格、预检和
+exact-size 导出；不得把 SciencePlots 的 rcParams 原样带入 formal。适配器会把运行时路径、解释器、版本、
+`draft_variant` 和 `formal_style_source` 注入 manifest 所读取的环境元数据。旧 profile 缺少这些字段时只按
+未声明运行时处理，不伪造版本信息。
+
 执行细节见 `references/ieee-single-column-data-plot.md`；需要记录可复现参数时，继续看 `references/matplotlib-ieee-plot-profile.md`。
 
 ### 旧 SCIS profile
@@ -137,7 +154,9 @@ figure_id: Fig. X
 3. 第一次为一篇论文出图时，用 `propose_figure_color_map()` 按数据角色给出候选，再由用户确认一次并用 `freeze_figure_color_map()` 冻结全文映射。
 4. 无序类别使用 Tol high-contrast、bright 或 muted，并配合线型和 marker；连续量使用 `cividis` 或 `viridis`；阈值、参考线和普通 Delta 标注默认黑色。
 5. 先生成 draft 并按最终 `3.5 in` 尺寸检查；只有 profile 中记录配色确认和视觉确认后才生成 formal PDF/SVG/PNG。
-6. 保留重画脚本、数据来源说明、plot profile 和导出 manifest，保证论文修改时可复现。
+6. 保留重画脚本、数据来源说明、plot profile 和导出 manifest，保证论文修改时可复现；manifest 至少记录
+   `runtime`（运行时路径、Python/Matplotlib/SciencePlots 版本和 `draft_variant`）以及
+   `formal_style_source=ieee_plot_style.py`。
 
 阈值、规范线和普通参考线统一贴线标注：默认放在坐标框内的右端、略高于线条，且不单独占用图例；右端拥挤时沿线移动到空白端并保持相同规则。
 

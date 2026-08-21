@@ -82,6 +82,26 @@
         "大型 PPTX 不进入普通 Git。",
         "不把每页编辑或普通保存映射为 commit。"
       ]
+    },
+    {
+      "id": "fixed-runtime-dual-draft-routing",
+      "prompt": "我有一份 BER/SNR CSV，想重画 Fig. 6。请用已经配置好的科研绘图运行时先给我 A/B 两张同尺寸草稿：A 按严格 IEEE，B 参考 SciencePlots 的视觉层级；我只想说重画 Fig. 6，不想自己调用入口脚本。",
+      "expected_output": "应自动走 paper-figure-review 的固定运行时适配器，不要求用户手动调用 run-figure.ps1；校验 Matplotlib 3.11.1 和 SciencePlots 2.2.2；生成同数据同物理尺寸的 A/B draft，并在 manifest/profile 中记录运行时路径、解释器、版本和 draft_variant；明确 B 只是候选视觉，不直接作为 formal IEEE 图。"
+    },
+    {
+      "id": "scienceplots-formal-boundary",
+      "prompt": "我选中了 B 草稿的配色和层级，请把 Fig. 6 导出成最终 IEEE 单栏 PDF/SVG/PNG。",
+      "expected_output": "必须重新使用 ieee_plot_style.py 的字体、3.5 in 尺寸、四边 0.7 pt 黑框、网格语义、预检和 bbox_inches=None exact-size 导出；不得把 SciencePlots rcParams 原样带入 formal；manifest 记录 formal_style_source=ieee_plot_style.py。"
+    },
+    {
+      "id": "system-diagram-keeps-runtime-boundary",
+      "prompt": "这是太赫兹实验平台系统框图，帮我改成 IEEE 论文图。",
+      "expected_output": "按 system_diagram 路由处理技术链路、模块命名、信号流和可编辑矢量源，不调用固定 Python 数据图运行时或 SciencePlots；应保持系统图与 data_plot 的边界。"
+    },
+    {
+      "id": "runtime-failure-no-python-fallback",
+      "prompt": "固定科研绘图运行时提示缺少 Python，但我电脑上还有 C:\\Python313\\python.exe。请继续帮我出图。",
+      "expected_output": "应明确报告固定运行时缺失/损坏并硬失败，不回退 C:\\Python313\\python.exe，不静默安装或切换解释器；给出修复运行时的具体提示后停止 Python 数据图执行。"
     }
   ]
 }

@@ -5,8 +5,20 @@ __pycache__/
 # Generated temp artifacts
 docx/tmp/
 docx-workspace/
+research-report-workspace/
 ieee-journal-submission-workspace/
 journal-submission-workspace/
+cross-model-orchestration-workspace/
+ieee-manuscript-edit-workspace/
+pptx-workspace/
+product-research-workbook-workspace/
+research-schematic-imagegen-workspace/
+steelman-workspace/
+.shared-mcp-index-contract.patch
+.shared-mcp-index-evals.patch
+.shared-mcp-index-fix.patch
+.shared-mcp-index-fix2.patch
+.shared-mcp-index.patch
 archive/cleanup-*/
 
 # EditaPlot setup lock remains local. The personal distribution intentionally

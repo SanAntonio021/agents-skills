@@ -18,6 +18,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 - 主写作层：
   - 中文工程申报：[../project-writing/SKILL.md](../project-writing/SKILL.md)
   - SCI/IEEE 论文精修与英文化：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
+  - 行业、市场、技术、竞品和政策调研报告：[../research-report/SKILL.md](../research-report/SKILL.md)
 - 过程层：
   - 讨论澄清与逐步确认：[../ask-first/SKILL.md](../ask-first/SKILL.md)
   - 前期调研与样本先行：[../baseline-research/SKILL.md](../baseline-research/SKILL.md)
@@ -41,7 +42,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 
 ## 流程
 
-1. 先判断任务类型：工程申报、一般申报、论文文章，还是仅处在下载文献、指标论证、停稿审查、初稿精修、Word 格式化这些局部步骤。
+1. 先判断任务类型：工程申报、一般申报、论文文章、调研报告，还是仅处在下载文献、指标论证、停稿审查、初稿精修、Word 格式化这些局部步骤。调研材料已经齐备、目标是形成报告或重构旧报告时转 `research-report`；仍在 sample-first 取样和补证据时转 `baseline-research`。
 2. 再判断当前阶段：问题澄清、前期调研、结构搭建、正文写作、完整性检查、审查停稿、修改回应、复审确认、精修抛光、格式交付，还是已经进入期刊投稿事务。投稿技能可先准备文件和填写普通字段，但任何最终 Submit 请求都先转 `paper-review` 完成投稿前审查门。
 3. 如果表达还不足以区分任务类型或当前步骤，只追问一个最阻塞的问题；如果已经够清楚，直接路由，不为稳妥重复开场。
 4. 路由时默认只带一个主写作 skill；过程层和支持层 skill 只在当前步骤明显需要时再补。
@@ -75,6 +76,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 - 不替代已明确命中的更具体下游 skill。
 - 任务已明显属于工程申报时，优先转到 [../project-writing/SKILL.md](../project-writing/SKILL.md)。
 - 如果当前任务只是在补文献、下载 PDF、单篇论文总结或整理 Word 模板，不接管支持层 skill 的主场。
+- 调研任务仍在建立任务池、设计单和证据基线时转 `baseline-research`；已有材料需要写成或重构为调研报告时转 `research-report`。
 - 核心任务是指标论证本身时，优先转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)。
 - 用户显式使用 `/21`、`二一` 或 `Consultant / Critic / Scribe` 这类说法时，也仍在当前任务里直接做高压缩收方向、压方案或定向写作，不再切独立模式 skill。
 - 只有润色已有 SCI/IEEE 初稿时，不接管 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)。

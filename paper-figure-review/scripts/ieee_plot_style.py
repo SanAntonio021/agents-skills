@@ -13,6 +13,7 @@ import copy
 import hashlib
 import json
 import math
+import os
 import re
 import struct
 import warnings
@@ -1755,6 +1756,27 @@ def _read_profile(profile_path: str | Path | None) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _runtime_metadata_from_environment() -> dict[str, Any]:
+    """Return adapter-provided runtime provenance without inventing values."""
+
+    environment_keys = {
+        "runtime_root": "PAPER_FIGURE_REVIEW_RUNTIME_ROOT",
+        "python_executable": "PAPER_FIGURE_REVIEW_PYTHON",
+        "python_version": "PAPER_FIGURE_REVIEW_PYTHON_VERSION",
+        "matplotlib_version": "PAPER_FIGURE_REVIEW_MATPLOTLIB_VERSION",
+        "scienceplots_version": "PAPER_FIGURE_REVIEW_SCIENCEPLOTS_VERSION",
+        "draft_variant": "PAPER_FIGURE_REVIEW_DRAFT_VARIANT",
+    }
+    metadata = {
+        key: os.environ[name]
+        for key, name in environment_keys.items()
+        if os.environ.get(name)
+    }
+    metadata["execution_source"] = "fixed_runtime_adapter" if metadata.get("runtime_root") else "direct_python"
+    metadata["formal_style_source"] = "ieee_plot_style.py"
+    return metadata
+
+
 def _parse_svg_length_points(value: str) -> float:
     match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)\s*(pt|in|px)?\s*", value)
     if not match:
@@ -1964,6 +1986,8 @@ def export_ieee_single_column(
         "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "mode": mode,
         "formal": mode == "formal",
+        "runtime": _runtime_metadata_from_environment(),
+        "formal_style_source": "ieee_plot_style.py",
         "output_files": [str(path) for path in saved],
         "font": resolution.to_dict(),
         "repair": repair,

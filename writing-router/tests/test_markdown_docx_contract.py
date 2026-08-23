@@ -31,7 +31,7 @@ def test_shared_markdown_docx_contract_is_referenced_by_content_skills() -> None
 
 
 def test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named() -> None:
-    boundary = SKILLS_ROOT / "docs" / "office-security-boundary.md"
+    boundary = SKILLS_ROOT / "docx" / "references" / "office-security-boundary.md"
     raw = boundary.read_bytes()
     assert not raw.startswith(b"\xef\xbb\xbf")
     assert b"\r" not in raw

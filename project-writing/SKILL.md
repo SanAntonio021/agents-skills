@@ -37,6 +37,10 @@ description: 中文工程申报书和工程课题写作与修订，也可由“�
 10. 如果用户明确希望“参照已有成熟口气”来收工程申报段落，再按需读取 [references/writing-samples.md](references/writing-samples.md) 里的对应样本；只借句式密度和论证推进方式，不机械套句。
 11. 交付前除扫描高风险词外，还要逐句检查主谓、动宾、并列中心词、修饰关系和指代；按 [references/proposal-revision-lessons.md#交付前语言搭配验收](references/proposal-revision-lessons.md#交付前语言搭配验收) 重读改动句及其上下文。词表扫描不能替代这一步。
 
+## Word 交付边界
+
+申报书正文先在 Markdown 主稿中完成、审阅和冻结。需要 Word 时，按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 生成清单并交给 `docx`；内容未冻结或未收到当前任务用户确认时只允许预览，不生成正式 DOCX。原 Markdown、模板和既有交付物保持不变。
+
 ## 本地文稿版本保护
 
 实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)。后续出现明确里程碑确认或旧版本查找、比较、恢复请求时也读取。只读审查、聊天内改句和未落盘的方案讨论不触发。

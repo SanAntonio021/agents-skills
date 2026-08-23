@@ -159,7 +159,7 @@ metadata:
 - 终稿精修或实验段落终稿化：读 [references/draft-finalization-rules.md](references/draft-finalization-rules.md)；按需读 [references/writing-samples.md](references/writing-samples.md)。
 - 用户自维护词级偏好和交付前扫用词：用 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)，词表数据在 `D:\BaiduSyncdisk\.agents\vocab\`。
 - 判断外部技能来源和边界：读 [references/upstream-skill-notes.md](references/upstream-skill-notes.md)。
-- 涉及 Word 版式、批注、标黄或母版回填时，交给 `docx`；本技能只判断论文内容和文件角色。
+- 涉及 Word 版式、批注、标黄或母版回填时，交给 `docx`；本技能只判断论文内容和文件角色。Markdown 内容冻结后，按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 交接，不在未确认时直接生成正式 DOCX。
 
 ## 验收
 

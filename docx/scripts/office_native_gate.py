@@ -390,7 +390,18 @@ def rasterize_pdf(pdf_path: Path, export_dir: Path, expected_pages: int) -> dict
     prefix = _new_output(export_dir / "page-stem")
     try:
         result = subprocess.run(
-            [str(executable), "-png", "-r", "144", str(pdf_path), str(prefix)],
+            [
+                str(executable),
+                "-r",
+                "150",
+                "-png",
+                "-aa",
+                "yes",
+                "-aaVector",
+                "yes",
+                str(pdf_path),
+                str(prefix),
+            ],
             capture_output=True,
             check=False,
         )

@@ -113,8 +113,9 @@ completion_receipt = {
 `completion_receipt.report`。
 
 Codex -> Claude 与 Claude -> Codex 都不发送 provider-native transport schema。模型返回不透明文本，
-bridge 接受规范 JSON、单层 `json` 代码围栏 JSON 或受控 Markdown，并在内部统一转换为现有
-`V2ModelResponse` 后执行同一严格 schema、结论、证据和修订正文校验；不补默认数组、不接受额外字段、
+bridge 接受规范 JSON、带前后说明的单层 `json` 代码围栏/对象或受控 Markdown，并在内部统一转换为现有
+`V2ModelResponse` 后执行同一严格 schema、结论、证据和修订正文校验；说明文字只作为外壳噪声丢弃，
+不补默认数组、不接受额外字段、
 不自动换模型或降档。格式明显错误但能识别审查意图时，只允许在同一 job 内追加一次同模型、同强度、同
 profile 的零工具格式整理调用，不增加 round/attempt、不重置硬截止、不新建 job。整理仍须保持原结论，
 且整理后继续执行语义、schema、证据、权限和测试门；整理失败或结果仍无效时输出失败报告。v2 审查中的
@@ -188,7 +189,7 @@ public reported model == resolved selected model
 ```
 
 Claude 与 Codex 两个方向都不传 transport schema，由 bridge 在结果返回后接受规范 JSON、单层
-`json` 代码围栏 JSON 或受控 Markdown，再统一按现有 `V2ModelResponse` 校验。额外字段、缺段、
+带前后说明的单层 `json` 代码围栏/对象或受控 Markdown，再统一按现有 `V2ModelResponse` 校验。额外字段、缺段、
 结论/证据/修订正文不完整仍失败；格式错误只有在能识别审查意图时才允许同 job 一次格式整理，且整理
 调用保持原模型、强度、profile、路由、权限和截止时间。`--model`/`--effort` 缺失、重复或与解析结果
 不同，出现 alternate/fallback 参数，init 回执缺失或实际模型不是所选模型，工具模式或结果契约不匹配，

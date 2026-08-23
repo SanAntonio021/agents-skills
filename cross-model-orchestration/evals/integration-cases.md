@@ -80,7 +80,7 @@
 ## 结果、三轮与用户门
 
 - bridge 渲染 `PLAN_REVIEW`/`DELIVERABLE_REVIEW` 五段结果：结论、已确认事项、问题与理由、必须修改、
-  剩余风险；规范 JSON、单层 `json` 围栏 JSON 和受控 Markdown 都统一转换到 `V2ModelResponse`。Markdown
+  剩余风险；规范 JSON、带前后说明的单层 `json` 围栏/对象和受控 Markdown 都统一转换到 `V2ModelResponse`。Markdown
   finding 必须带路径行号范围或精确引句，`类型：证据请求` 保持 `awaiting_evidence`，inline 修订正文必须
   使用独立代码块且原文保持不变。缺段、blocked/incomplete、失败测试写成通过或 schema/证据契约错误都以
   `peer_contract_error` 失败关闭。

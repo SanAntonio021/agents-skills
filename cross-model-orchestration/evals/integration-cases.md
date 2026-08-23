@@ -80,13 +80,17 @@
 ## 结果、三轮与用户门
 
 - bridge 渲染 `PLAN_REVIEW`/`DELIVERABLE_REVIEW` 五段结果：结论、已确认事项、问题与理由、必须修改、
-  剩余风险；缺段、blocked/incomplete、失败测试写成通过或严格 v2 JSON 契约错误都以 `peer_contract_error`
-  失败关闭。
+  剩余风险；规范 JSON、单层 `json` 围栏 JSON 和受控 Markdown 都统一转换到 `V2ModelResponse`。Markdown
+  finding 必须带路径行号范围或精确引句，`类型：证据请求` 保持 `awaiting_evidence`，inline 修订正文必须
+  使用独立代码块且原文保持不变。缺段、blocked/incomplete、失败测试写成通过或 schema/证据契约错误都以
+  `peer_contract_error` 失败关闭。
 - 每个 v2 终态 public job 都带 `completion_receipt`，固定为 `schema_version=1`、
   `delivery_required=true`、`disposition`、`report_type` 和 bridge-rendered `report`；调用端只展示该
   `report`，不透传原始模型输出。Claude/Codex 两个方向都不注入 provider-native transport schema；
-  两边都以不透明文本返回，再由 bridge 严格 JSON/Zod 校验、拒绝额外字段和默认补全。v2 审查中的
-  `StructuredOutput` 或其他工具事件都按异常处理。
+  两边都以不透明文本返回，bridge 接受规范 JSON、单层 `json` 围栏 JSON 或受控 Markdown，再统一按
+  `V2ModelResponse` 校验。格式明显错误但能识别审查意图时，只允许一次同 job、同路由、同硬截止的零工具
+  格式整理；整理失败或整理后语义/schema/证据仍不合格时生成失败报告。v2 审查中的 `StructuredOutput`
+  或其他工具事件都按异常处理。
 - 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`。两次仍 pending
   都是非终态：只在 commentary 公开同一 job ID、state、首次 `hard_deadline_at`、`elapsed_ms` 和
   `remaining_ms`，随后在同一回合继续 `v2_await_peer -> v2_peer_result`。pending 不得生成

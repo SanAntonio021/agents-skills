@@ -111,7 +111,7 @@
       "prompt": "Codex -> Claude 的 v2 workspace 修复返回了受控 Markdown，而不是规范 JSON。",
       "expected_output": "bridge 将受控 Markdown 转成现有 V2ModelResponse，继续检查结论、证据、权限和测试；格式明显错误但能识别审查意图时只在同一 job 内调用一次同路由零工具格式整理，整理失败不换模型、不重试、不同步主项目。",
       "files": [],
-      "expectations": ["接受规范 JSON、单层 json 围栏 JSON 和受控 Markdown。", "格式整理最多一次且不改变 round/attempt、模型、强度、profile 或硬截止。", "语义/schema/证据错误不触发格式整理。"]
+      "expectations": ["接受规范 JSON、带前后说明的单层 json 围栏/对象和受控 Markdown；review_repair 的独立修订正文必须保持原文。", "格式整理最多一次且不改变 round/attempt、模型、强度、profile 或硬截止。", "语义/schema/证据错误不触发格式整理。"]
     },
     {
       "id": 16,
@@ -242,7 +242,7 @@
     {
       "id": 34,
       "prompt": "Claude 返回一个带 PLAN_REVIEW 标记的五段 Markdown 审查，finding 用‘证据：plan.md:4-5’标注行号；如果格式不完整但能识别通过结论，请整理一次。",
-      "expected_output": "接受规范 JSON、单层 json 围栏 JSON 或受控 Markdown；Markdown 必须包含匹配 marker、结论和五个固定段落，finding 必须有路径行号范围或精确引句，证据请求保持 awaiting_evidence，inline 修订正文使用独立代码块。格式整理最多在同一 job 内调用一次，保持原结论、模型、强度、profile、路由、round/attempt 和 hard_deadline_at，且不写作者工作区。",
+      "expected_output": "接受规范 JSON、带前后说明的单层 json 围栏/对象或受控 Markdown；Markdown 必须包含匹配 marker、结论和五个固定段落，finding 必须有路径行号范围或精确引句，证据请求保持 awaiting_evidence，inline 修订正文使用独立代码块。格式整理最多在同一 job 内调用一次，保持原结论、模型、强度、profile、路由、round/attempt 和 hard_deadline_at，且不写作者工作区。",
       "files": [],
       "expectations": ["缺少结论、固定段落或 finding 证据时失败关闭。", "整理调用零工具、同 job、同路由且不增加 round/attempt。", "整理后仍执行语义/schema/证据校验。"]
     }

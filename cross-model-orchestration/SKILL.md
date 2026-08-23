@@ -127,8 +127,9 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 `continuation`，bridge 会在 `needs_changes` 终态后唤醒原作者任务；bridge 本身不替作者作语义修改，
 而是由被唤醒的原 Codex 任务采纳意见、重算身份并提交下一轮。
 protocol-v2 的 Claude/Codex 两个方向都不发送 provider-native transport schema；模型返回不透明文本，
-bridge 接受规范 JSON、单层 `json` 代码围栏 JSON 或受控 Markdown，再统一转换为现有
-`V2ModelResponse` 并执行同一严格 schema、结论、证据和修订正文校验。不补默认值、不接受额外字段、
+bridge 接受规范 JSON、带前后说明的单层 `json` 代码围栏/对象，或受控 Markdown，再统一转换为现有
+`V2ModelResponse` 并执行同一严格 schema、结论、证据和修订正文校验。说明文字只作为外壳噪声丢弃，
+不补默认值、不接受额外字段、
 不降档或无限重试。格式明显错误但仍能识别审查意图时，bridge 只在同一 job 内追加一次同模型、同强度、
 同 profile 的零工具格式整理调用；整理不会改变结论、权限、测试或硬截止。整理失败或整理后的结果仍未
 通过 v2 校验时直接失败关闭。v2 审查中出现 `StructuredOutput` 或任何其他工具记录都按隔离/传输异常处理，

@@ -33,4 +33,4 @@ Word 原生门的许可记录必须绑定当前 `run_id` 和 `artifact_id`，并
 
 ## 安全边界
 
-见项目内 [`docs/office-security-boundary.md`](../../docs/office-security-boundary.md)。Windows 上禁止直接启动 `soffice`；Word COM 只能在本次任务收到完整回复“允许本次 Word 验收”、且检测不到既有 `WINWORD.EXE` 时运行，只读打开隔离副本，不连接、保存或关闭用户实例。
+见 `docx` 技能内的 [Office security boundary](../../docx/references/office-security-boundary.md)。Windows 上禁止直接启动 `soffice`；Word COM 只能在本次任务收到完整回复“允许本次 Word 验收”、且检测不到既有 `WINWORD.EXE` 时运行，只读打开隔离副本，不连接、保存或关闭用户实例。

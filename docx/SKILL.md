@@ -64,6 +64,45 @@ checks the source SHA-256 before and after, opens read-only, never saves the sou
 a task-created instance whose document collection is empty. For a DOCX release, require
 `STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
+## Markdown-first formal delivery
+
+Markdown is the content source of truth. Content skills must finish review and
+freeze the Markdown before a formal DOCX run. Read the shared handoff contract
+at [Markdown to DOCX contract](../writing-router/references/markdown-docx-contract.md)
+and validate its machine-readable manifest with:
+
+```powershell
+python scripts/markdown_docx_delivery.py validate-manifest `
+  --manifest deliverables/manifests/<artifact_id>.r<revision>.manifest.json `
+  --project-root .
+```
+
+The helper blocks drafts, open items, missing current-task confirmation, source
+or template hash drift, unsafe paths, malformed packages, and output collisions.
+Use `--preview` only for an explicitly labelled preview; it can never produce a
+formal delivered record. Existing Pandoc and template scripts remain the
+formatting implementation, but they must write a new output path selected by
+the manifest and must not overwrite source Markdown, the original DOCX, or an
+existing deliverable.
+
+After native rendering produces the PDF/PNG evidence, stop at the same run and
+wait for a human per-page checklist. Submit it only through:
+
+```powershell
+python scripts/markdown_docx_delivery.py review-manual submit `
+  --manifest deliverables/manifests/<artifact_id>.r<revision>.manifest.json `
+  --checklist evidence/manual-inspection/<artifact_id>.r<revision>.checklist.json `
+  --project-root .
+```
+
+The four acceptance layers stay independent. OfficeCLI HTML/native output and
+any Office MCP are diagnostic or trial evidence only; they cannot replace
+LibreOffice rendering, Word native open, Word native rendering, an approved
+raster baseline, or human inspection.
+
+For a public Office MCP A/B trial, read [Office MCP trial](references/office-mcp-trial.md).
+Do not install or enable a trial candidate as a production dependency.
+
 Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,
 comments, style-identity preservation, template installation, equations, and other operations
 where package-level fidelity is the acceptance criterion. OfficeCLI does not replace those gates.
@@ -100,15 +139,18 @@ After writing a `.docx`, render it and look at it:
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.docx
-pdftoppm -jpeg -r 100 output.pdf page
-ls page-*.jpg   # then Read the images
+pdftoppm -r 150 -png -aa yes -aaVector yes output.pdf page
+ls page-*.png   # then inspect every page
 ```
 
 On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
 conversion command above and delegates all LibreOffice launch, queue, profile, and process management
 to the public `libreoffice-runner`; do not call `soffice` directly.
 
-`pdftoppm` zero-pads page numbers to the width of the page count (`page-01.jpg`…`page-12.jpg`).
+Formal `LO_RENDER_PASS` and `NATIVE_RENDER_PASS` use the same pinned Poppler
+command (`pdftoppm -r 150 -png -aa yes -aaVector yes`) and PNG output. Do not
+switch to JPEG, a different DPI, or default anti-aliasing for release evidence.
+`pdftoppm` zero-pads page numbers to the width of the page count (`page-01.png`…`page-12.png`).
 
 ## Optional delivery QA
 

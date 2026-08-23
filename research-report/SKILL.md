@@ -160,7 +160,7 @@ compatibility: 审计脚本仅依赖 Python 3.11+ 标准库；联网取证需同
 
 ## Word 交付
 
-内容在 Markdown 中通过研究闭合门和人工复核后，再按 docx 规则生成新的 DOCX。不要覆盖原文件，也不要把原文件的生硬模板自动带入新稿。
+内容在 Markdown 中通过研究闭合门和人工复核后，按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 冻结并确认，再按 docx 规则生成新的 DOCX。不要覆盖原文件，也不要把原文件的生硬模板自动带入新稿。研究技能只负责内容闭合和交接清单，不把预览或 OfficeCLI/MCP 诊断写成正式 Word 通过。
 
 ## 边界
 

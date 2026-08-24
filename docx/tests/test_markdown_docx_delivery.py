@@ -17,6 +17,7 @@ sys.path.insert(0, str(SCRIPTS_ROOT))
 from markdown_docx_delivery import (  # noqa: E402
     ContractError,
     acceptance_from_gate,
+    aggregate_acceptance,
     check_output_collision,
     cleanup_failure_evidence,
     confirm_content,
@@ -200,8 +201,42 @@ class MarkdownDocxDeliveryTests(unittest.TestCase):
 
     def test_acceptance_and_failure_mapping_are_explicit(self) -> None:
         self.assertEqual(acceptance_from_gate("LO_RENDER_PASS", {"status": "PASS"}), "PASS")
-        self.assertEqual(acceptance_from_gate("NATIVE_OPEN_PASS", {"status": "APP_UNAVAILABLE"}), "UNVERIFIED")
+        self.assertEqual(acceptance_from_gate("NATIVE_OPEN_PASS", {"status": "APP_UNAVAILABLE"}), "ENV_UNVERIFIED")
+        self.assertEqual(acceptance_from_gate("NATIVE_OPEN_PASS", {"status": "NOT_RUN"}), "UNVERIFIED")
         self.assertEqual(acceptance_from_gate("STATIC_PASS", {"status": "FAIL_OPEN"}), "FAIL")
+        self.assertEqual(
+            aggregate_acceptance(
+                {
+                    "STATIC_PASS": "PASS",
+                    "LO_RENDER_PASS": "PASS",
+                    "NATIVE_OPEN_PASS": "PASS",
+                    "NATIVE_RENDER_PASS": "PASS",
+                }
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            aggregate_acceptance(
+                {
+                    "STATIC_PASS": "FAIL",
+                    "LO_RENDER_PASS": "NOT_RUN",
+                    "NATIVE_OPEN_PASS": "UNVERIFIED",
+                    "NATIVE_RENDER_PASS": "ENV_UNVERIFIED",
+                }
+            ),
+            "FAIL",
+        )
+        self.assertEqual(
+            aggregate_acceptance(
+                {
+                    "STATIC_PASS": "PASS",
+                    "LO_RENDER_PASS": "NOT_RUN",
+                    "NATIVE_OPEN_PASS": "PASS",
+                    "NATIVE_RENDER_PASS": "PASS",
+                }
+            ),
+            "UNVERIFIED",
+        )
         self.assertEqual(
             select_primary_failure(["NATIVE_RENDER_FAILED", "STATIC_VALIDATION_FAILED"]),
             "STATIC_VALIDATION_FAILED",

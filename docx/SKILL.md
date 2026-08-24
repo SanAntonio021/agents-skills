@@ -107,6 +107,10 @@ raster baseline, or human inspection.
 For a public Office MCP A/B trial, read [Office MCP trial](references/office-mcp-trial.md).
 Do not install or enable a trial candidate as a production dependency.
 
+For an already-produced, isolated three-round trial only, use the offline comparator described in
+that reference. It validates the lock and package-level determinism; it does not acquire a
+candidate, install dependencies, start MCP/Office, or replace the four formal acceptance layers.
+
 Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,
 comments, style-identity preservation, template installation, equations, and other operations
 where package-level fidelity is the acceptance criterion. OfficeCLI does not replace those gates.

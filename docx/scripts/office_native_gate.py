@@ -10,13 +10,16 @@ pptx, docx, xlsx, and pdf skills.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -60,6 +63,11 @@ APP_UNAVAILABLE_HRESULTS = {
     -2147221005,
 }
 
+PID_OBSERVATION_TIMEOUT_SECONDS = 5.0
+PROCESS_EXIT_TIMEOUT_SECONDS = 10.0
+PROCESS_POLL_SECONDS = 0.1
+POPPLER_TIMEOUT_SECONDS = 120.0
+
 
 class GateFailure(RuntimeError):
     """A failure with an explicit stage and release-facing status."""
@@ -88,6 +96,10 @@ class ActivationFailure(RuntimeError):
 class OwnershipFailure(RuntimeError):
     """The task cannot prove exclusive ownership of an Office instance."""
 
+    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.details = details or {}
+
 
 class StageFailure(GateFailure):
     """A document open or native export failed."""
@@ -114,6 +126,12 @@ def _add_note(exc: BaseException, note: str) -> None:
 def process_present(image_name: str) -> bool:
     """Check the exact Office image without touching COM."""
 
+    return bool(_process_ids(image_name))
+
+
+def _process_ids(image_name: str) -> list[int]:
+    """Return PIDs for one exact image name without terminating anything."""
+
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
         result = subprocess.run(
@@ -136,13 +154,138 @@ def process_present(image_name: str) -> bool:
         raise RuntimeError(f"tasklist failed for {image_name}: {stderr.strip()}")
     stdout = result.stdout or b""
     if isinstance(stdout, str):
-        stdout = stdout.encode("utf-8", errors="replace")
-    wanted = image_name.lower().encode("ascii")
-    for line in stdout.splitlines():
-        first_field = line.strip().split(b",", 1)[0].strip(b'"').lower()
-        if first_field == wanted:
-            return True
-    return False
+        rows = stdout.splitlines()
+    else:
+        rows = stdout.decode("utf-8", errors="replace").splitlines()
+    wanted = image_name.lower()
+    pids: list[int] = []
+    for row in csv.reader(rows):
+        if len(row) < 2 or row[0].strip().lower() != wanted:
+            continue
+        try:
+            pids.append(int(row[1].strip()))
+        except ValueError:
+            continue
+    return sorted(set(pids))
+
+
+def _safe_process_ids(
+    image_name: str,
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+) -> tuple[list[int] | None, str | None]:
+    try:
+        probe = process_ids or _process_ids
+        return sorted({int(pid) for pid in probe(image_name)}), None
+    except Exception as exc:
+        return None, _exception_text(exc)
+
+
+def _observe_owned_processes(
+    image_name: str,
+    pre_dispatch_pids: list[int],
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+    timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Identify PIDs created after DispatchEx without guessing from COM alone."""
+
+    started = time.monotonic()
+    deadline = started + timeout_seconds
+    last: list[int] = []
+    while True:
+        current, error = _safe_process_ids(image_name, process_ids=process_ids)
+        elapsed = time.monotonic() - started
+        if current is None:
+            return {
+                "status": "UNOBSERVED",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": last,
+                "owned_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+                "error": error,
+            }
+        last = current
+        owned = sorted(set(current) - set(pre_dispatch_pids))
+        if owned:
+            return {
+                "status": "OBSERVED",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": current,
+                "owned_pids": owned,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        if time.monotonic() >= deadline:
+            return {
+                "status": "NO_NEW_PID",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": current,
+                "owned_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        time.sleep(min(PROCESS_POLL_SECONDS, max(0.0, deadline - time.monotonic())))
+
+
+def _wait_for_owned_processes_exit(
+    image_name: str,
+    owned_pids: list[int] | None,
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+    timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Wait for task-owned Office PIDs; never force-terminate residual PIDs."""
+
+    started = time.monotonic()
+    if not owned_pids:
+        return {
+            "status": "UNOBSERVED",
+            "image": image_name,
+            "owned_pids": [],
+            "residual_pids": [],
+            "wait_seconds": time.monotonic() - started,
+            "timeout_seconds": timeout_seconds,
+        }
+    deadline = started + timeout_seconds
+    last: list[int] = list(owned_pids)
+    while True:
+        current, error = _safe_process_ids(image_name, process_ids=process_ids)
+        elapsed = time.monotonic() - started
+        if current is None:
+            return {
+                "status": "UNOBSERVED",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": last,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+                "error": error,
+            }
+        last = sorted(set(current) & set(owned_pids))
+        if not last:
+            return {
+                "status": "CLEAN",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        if time.monotonic() >= deadline:
+            return {
+                "status": "RESIDUAL_PIDS",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": last,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        time.sleep(min(PROCESS_POLL_SECONDS, max(0.0, deadline - time.monotonic())))
 
 
 def default_dispatch_ex(progid: str) -> Any:
@@ -235,33 +378,99 @@ def owned_application(
     *,
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
+    process_ids: Callable[[str], list[int]] | None = None,
+    pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+    process_exit_timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
+    ownership_metadata: dict[str, Any] | None = None,
 ) -> Iterator[tuple[Any, OwnedApplication]]:
-    """Create one isolated COM instance and fail closed on cleanup ambiguity."""
+    """Create one isolated COM instance and retain PID ownership evidence."""
 
     runtime = com_runtime or default_com_runtime()
     dispatch = dispatch_ex or default_dispatch_ex
+    metadata = ownership_metadata if ownership_metadata is not None else {}
+    metadata.update(
+        {
+            "process_image": spec["process"],
+            "activation_attempted": False,
+            "activation_succeeded": False,
+        }
+    )
     runtime.CoInitialize()
     owner: OwnedApplication | None = None
     operation_error: BaseException | None = None
     try:
+        before_pids, before_error = _safe_process_ids(spec["process"], process_ids=process_ids)
+        metadata["pre_dispatch_pids"] = before_pids or []
+        if before_error:
+            metadata["pid_observation"] = {
+                "status": "UNOBSERVED",
+                "image": spec["process"],
+                "pre_dispatch_pids": [],
+                "owned_pids": [],
+                "error": before_error,
+            }
+            metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "PID probe failed before activation"}
+            raise OwnershipFailure(
+                f"cannot prove that {spec['process']} is absent before DispatchEx: {before_error}",
+                details={"ownership": metadata},
+            )
+        if before_pids:
+            metadata["pid_observation"] = {
+                "status": "PREEXISTING_PIDS",
+                "image": spec["process"],
+                "pre_dispatch_pids": before_pids,
+                "owned_pids": [],
+            }
+            metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "Office appeared before activation"}
+            raise OwnershipFailure(
+                f"{spec['process']} appeared before DispatchEx; exclusive ownership cannot be proven",
+                details={"ownership": metadata},
+            )
         try:
+            metadata["activation_attempted"] = True
             application = dispatch(spec["progid"])
         except Exception as exc:
             raise ActivationFailure(_exception_text(exc)) from exc
-        owner = OwnedApplication(application, spec["collection"])
+        metadata["activation_succeeded"] = True
+        owner = OwnedApplication(application, spec["collection"], metadata=metadata)
+        observation = _observe_owned_processes(
+            spec["process"],
+            before_pids,
+            process_ids=process_ids,
+            timeout_seconds=pid_observation_timeout_seconds,
+        )
+        metadata["pid_observation"] = observation
+        metadata["owned_pids"] = observation.get("owned_pids", [])
+        if observation["status"] != "OBSERVED":
+            metadata["cleanup"] = {
+                "status": "NOT_ATTEMPTED",
+                "reason": "task-owned Office PID was not observed",
+                "pid_exit": None,
+            }
+            raise OwnershipFailure(
+                "DispatchEx returned an Office object but task-owned process PID was not observed",
+                details={"ownership": metadata},
+            )
         initial_count = _collection_count(application, spec["collection"])
         if initial_count != 0:
+            metadata["cleanup"] = {
+                "status": "NOT_ATTEMPTED",
+                "reason": f"{spec['collection']} was not empty at activation",
+                "pid_exit": None,
+            }
             raise OwnershipFailure(
                 f"new {spec['progid']} instance already has {initial_count} open document(s); "
-                "exclusive ownership cannot be proven"
+                "exclusive ownership cannot be proven",
+                details={"ownership": metadata},
             )
         owner.exclusive_at_start = True
 
         _set_required(application, "Visible", False)
         _set_optional(application, "DisplayAlerts", 0)
         _set_optional(application, "ScreenUpdating", False)
-        if spec["progid"] == "Excel.Application":
+        if spec["progid"] in {"Excel.Application", "Word.Application"}:
             _set_optional(application, "AutomationSecurity", 3)
+        if spec["progid"] == "Excel.Application":
             _set_optional(application, "AskToUpdateLinks", False)
             _set_optional(application, "EnableEvents", False)
             _set_optional(application, "Calculation", -4135)  # xlCalculationManual
@@ -270,18 +479,43 @@ def owned_application(
         operation_error = exc
         raise
     finally:
-        if owner is not None and owner.exclusive_at_start:
-            try:
-                quit_owned_application(owner)
-            except Exception as cleanup_error:
-                if operation_error is None:
-                    raise
-                _add_note(operation_error, f"Office COM cleanup also failed: {_exception_text(cleanup_error)}")
+        if owner is not None:
+            if owner.exclusive_at_start:
+                quit_error: str | None = None
+                try:
+                    quit_owned_application(owner)
+                    owner.metadata["quit"] = {"status": "QUIT"}
+                except Exception as cleanup_error:
+                    quit_error = _exception_text(cleanup_error)
+                    owner.metadata["quit"] = {"status": "QUIT_FAILED", "error": quit_error}
+                    if operation_error is not None:
+                        _add_note(operation_error, f"Office COM cleanup also failed: {quit_error}")
+                owned_pids = owner.metadata.get("owned_pids")
+                pid_exit = _wait_for_owned_processes_exit(
+                    owner.metadata.get("process_image", "Office"),
+                    owned_pids if isinstance(owned_pids, list) else None,
+                    process_ids=process_ids,
+                    timeout_seconds=process_exit_timeout_seconds,
+                )
+                owner.metadata["cleanup"] = {
+                    "status": "QUIT_FAILED" if quit_error else pid_exit["status"],
+                    "quit": owner.metadata["quit"],
+                    "pid_exit": pid_exit,
+                }
+            elif "cleanup" not in owner.metadata:
+                owner.metadata["cleanup"] = {
+                    "status": "NOT_ATTEMPTED",
+                    "reason": "exclusive Office ownership was not proven",
+                }
         try:
             runtime.CoUninitialize()
         except Exception as cleanup_error:
+            metadata["com_uninitialize"] = {"status": "FAILED", "error": _exception_text(cleanup_error)}
             if operation_error is None:
-                raise OwnershipFailure(f"COM uninitialization failed: {_exception_text(cleanup_error)}") from cleanup_error
+                raise OwnershipFailure(
+                    f"COM uninitialization failed: {_exception_text(cleanup_error)}",
+                    details={"ownership": metadata},
+                ) from cleanup_error
             _add_note(operation_error, f"COM uninitialization also failed: {_exception_text(cleanup_error)}")
 
 
@@ -324,7 +558,20 @@ def _open_pptx(application: Any, path: Path) -> Any:
 
 def _open_docx(application: Any, path: Path) -> Any:
     try:
-        return application.Documents.Open(str(path), False, True, False)
+        return application.Documents.Open(
+            FileName=str(path),
+            ConfirmConversions=False,
+            ReadOnly=True,
+            AddToRecentFiles=False,
+            PasswordDocument="",
+            PasswordTemplate="",
+            Revert=False,
+            WritePasswordDocument="",
+            WritePasswordTemplate="",
+            Visible=False,
+            OpenAndRepair=False,
+            NoEncodingDialog=True,
+        )
     except Exception as exc:
         raise StageFailure("FAIL_OPEN", "open", f"Word could not open isolated copy: {_exception_text(exc)}") from exc
 
@@ -379,39 +626,223 @@ def _resolve_pdftoppm() -> Path | None:
     return Path(located).resolve() if located else None
 
 
-def rasterize_pdf(pdf_path: Path, export_dir: Path, expected_pages: int) -> dict[str, Any]:
-    executable = _resolve_pdftoppm()
+def _resolve_pdfinfo() -> Path | None:
+    user_profile = os.environ.get("USERPROFILE")
+    if user_profile:
+        candidate = Path(user_profile) / "poppler" / "poppler-24.08.0" / "Library" / "bin" / "pdfinfo.exe"
+        if candidate.is_file():
+            return candidate
+    located = shutil.which("pdfinfo.exe")
+    return Path(located).resolve() if located else None
+
+
+def _decode_process_stream(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def _pdf_page_evidence(pdf_path: Path) -> dict[str, Any]:
+    """Read the PDF page count independently from Word before rasterization."""
+
+    try:
+        pdf_hash = sha256(pdf_path)
+    except OSError as exc:
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            f"cannot hash Word PDF export for page-count evidence: {exc}",
+        ) from exc
+    executable = _resolve_pdfinfo()
+    record: dict[str, Any] = {
+        "pdf_sha256": pdf_hash,
+        "executable": str(executable) if executable is not None else None,
+        "command": None,
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "timeout_seconds": POPPLER_TIMEOUT_SECONDS,
+        "timed_out": False,
+    }
     if executable is None:
-        raise StageFailure(
-            "FAIL_RENDER",
-            "rasterize",
-            "pdftoppm.exe was not found; Word PDF export cannot be accepted without rasterization",
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "pdfinfo.exe was not found; PDF page-count evidence is unavailable",
+            details={"pdfinfo": record},
         )
-    prefix = _new_output(export_dir / "page-stem")
+    command = [str(executable), str(pdf_path)]
+    record["command"] = command
     try:
         result = subprocess.run(
-            [
-                str(executable),
-                "-r",
-                "150",
-                "-png",
-                "-aa",
-                "yes",
-                "-aaVector",
-                "yes",
-                str(pdf_path),
-                str(prefix),
-            ],
+            command,
             capture_output=True,
             check=False,
+            timeout=POPPLER_TIMEOUT_SECONDS,
         )
+    except subprocess.TimeoutExpired as exc:
+        record.update(
+            {
+                "stdout": _decode_process_stream(exc.stdout),
+                "stderr": _decode_process_stream(exc.stderr),
+                "timed_out": True,
+            }
+        )
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "pdfinfo.exe timed out; PDF page-count evidence is unavailable",
+            details={"pdfinfo": record},
+        ) from exc
     except OSError as exc:
-        raise StageFailure("FAIL_RENDER", "rasterize", f"could not start pdftoppm.exe: {exc}") from exc
+        record["stderr"] = _exception_text(exc)
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            f"could not start pdfinfo.exe: {exc}",
+            details={"pdfinfo": record},
+        ) from exc
+    stdout = _decode_process_stream(result.stdout)
+    stderr = _decode_process_stream(result.stderr)
+    record.update({"returncode": result.returncode, "stdout": stdout, "stderr": stderr})
     if result.returncode != 0:
-        stderr = (result.stderr or b"").decode("utf-8", errors="replace")
-        raise StageFailure("FAIL_RENDER", "rasterize", f"pdftoppm.exe failed: {stderr.strip()}")
-    files = _verify_files(export_dir, "page-stem-*.png", expected_pages)
-    return {"rasterizer": str(executable), "expected": expected_pages, "files": len(files)}
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            f"pdfinfo.exe failed: {stderr.strip() or stdout.strip()}",
+            details={"pdfinfo": record},
+        )
+    match = re.search(r"^Pages:\s*(\d+)\s*$", stdout, flags=re.MULTILINE)
+    if match is None:
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "pdfinfo.exe did not report a PDF page count",
+            details={"pdfinfo": record},
+        )
+    record["pages"] = int(match.group(1))
+    return record
+
+
+def _numbered_png_pages(export_dir: Path, stem: str) -> list[tuple[int, Path]]:
+    """Return non-empty PNG pages sorted by numeric page number, not filename text."""
+
+    pattern = re.compile(rf"^{re.escape(stem)}-(\d+)\.png$", re.IGNORECASE)
+    numbered: list[tuple[int, Path]] = []
+    malformed: list[str] = []
+    for path in export_dir.glob(f"{stem}-*.png"):
+        match = pattern.fullmatch(path.name)
+        if match is None:
+            malformed.append(path.name)
+            continue
+        try:
+            if path.stat().st_size <= 0:
+                raise GateFailure("UNVERIFIED", "page_count_evidence", f"rasterized page is empty: {path}")
+        except OSError as exc:
+            raise GateFailure("UNVERIFIED", "page_count_evidence", f"cannot inspect rasterized page {path}: {exc}") from exc
+        numbered.append((int(match.group(1)), path))
+    numbered.sort(key=lambda item: item[0])
+    page_numbers = [number for number, _path in numbered]
+    if malformed or not numbered or len(set(page_numbers)) != len(page_numbers):
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "rasterized PNG page evidence is missing or malformed",
+            details={"malformed_pngs": malformed, "png_page_numbers": page_numbers},
+        )
+    expected_numbers = list(range(1, len(numbered) + 1))
+    if page_numbers != expected_numbers:
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "rasterized PNG page numbers are not continuous",
+            details={"png_page_numbers": page_numbers, "expected_page_numbers": expected_numbers},
+        )
+    return numbered
+
+
+def rasterize_pdf(pdf_path: Path, export_dir: Path, expected_pages: int) -> dict[str, Any]:
+    """Rasterize a Word PDF and retain independent PDF/PNG page-count evidence."""
+
+    pdfinfo = _pdf_page_evidence(pdf_path)
+    executable = _resolve_pdftoppm()
+    raster_record: dict[str, Any] = {
+        "executable": str(executable) if executable is not None else None,
+        "command": None,
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "timeout_seconds": POPPLER_TIMEOUT_SECONDS,
+        "timed_out": False,
+    }
+    if executable is None:
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "pdftoppm.exe was not found; PNG page-count evidence is unavailable",
+            details={"pdfinfo": pdfinfo, "pdftoppm": raster_record},
+        )
+    prefix = _new_output(export_dir / "page-stem")
+    command = [
+        str(executable),
+        "-r",
+        "150",
+        "-png",
+        "-aa",
+        "yes",
+        "-aaVector",
+        "yes",
+        str(pdf_path),
+        str(prefix),
+    ]
+    raster_record["command"] = command
+    try:
+        result = subprocess.run(command, capture_output=True, check=False, timeout=POPPLER_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as exc:
+        raster_record.update(
+            {
+                "stdout": _decode_process_stream(exc.stdout),
+                "stderr": _decode_process_stream(exc.stderr),
+                "timed_out": True,
+            }
+        )
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            "pdftoppm.exe timed out; PNG page-count evidence is unavailable",
+            details={"pdfinfo": pdfinfo, "pdftoppm": raster_record},
+        ) from exc
+    except OSError as exc:
+        raster_record["stderr"] = _exception_text(exc)
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            f"could not start pdftoppm.exe: {exc}",
+            details={"pdfinfo": pdfinfo, "pdftoppm": raster_record},
+        ) from exc
+    stdout = _decode_process_stream(result.stdout)
+    stderr = _decode_process_stream(result.stderr)
+    raster_record.update({"returncode": result.returncode, "stdout": stdout, "stderr": stderr})
+    if result.returncode != 0:
+        raise GateFailure(
+            "UNVERIFIED",
+            "page_count_evidence",
+            f"pdftoppm.exe failed: {stderr.strip() or stdout.strip()}",
+            details={"pdfinfo": pdfinfo, "pdftoppm": raster_record},
+        )
+    files = _numbered_png_pages(export_dir, "page-stem")
+    return {
+        "rasterizer": str(executable),
+        "word_pages": expected_pages,
+        "pdf_pages": pdfinfo["pages"],
+        "png_pages": len(files),
+        "png_page_numbers": [number for number, _path in files],
+        "files": len(files),
+        "pdfinfo": pdfinfo,
+        "pdftoppm": raster_record,
+    }
 
 
 def _check_pptx(application: Any, isolated: Path, export_dir: Path, require_render: bool) -> dict[str, Any]:
@@ -469,12 +900,60 @@ def _check_docx(
             try:
                 if not pdf_path.is_file() or pdf_path.stat().st_size <= 0:
                     raise StageFailure("FAIL_RENDER", "office_export", "Word reported success but produced an empty PDF")
+                pdf_bytes = pdf_path.stat().st_size
+                pdf_sha256 = sha256(pdf_path)
             except OSError as exc:
                 raise StageFailure("FAIL_RENDER", "office_export", f"cannot inspect Word PDF export: {exc}") from exc
-            office_export = {"format": "pdf", "bytes": pdf_path.stat().st_size}
-            native_raster = rasterizer(pdf_path, export_dir, page_count)
+            office_export = {"format": "pdf", "bytes": pdf_bytes, "sha256": pdf_sha256}
+            try:
+                native_raster = rasterizer(pdf_path, export_dir, page_count)
+            except GateFailure as exc:
+                evidence = dict(exc.details)
+                evidence["office_export"] = office_export
+                evidence.setdefault("page_counts", {"word": page_count, "pdf": None, "png": None})
+                raise GateFailure(exc.status, exc.phase, exc.message, details=evidence) from exc
+            except Exception as exc:
+                raise StageFailure(
+                    "FAIL_RENDER",
+                    "rasterization",
+                    f"Word PDF rasterization failed: {_exception_text(exc)}",
+                    details={"office_export": office_export},
+                ) from exc
+            pdf_pages = native_raster.get("pdf_pages")
+            png_pages = native_raster.get("png_pages")
+            page_counts = {"word": page_count, "pdf": pdf_pages, "png": png_pages}
+            if (
+                isinstance(pdf_pages, bool)
+                or not isinstance(pdf_pages, int)
+                or pdf_pages < 1
+                or isinstance(png_pages, bool)
+                or not isinstance(png_pages, int)
+                or png_pages < 1
+            ):
+                raise GateFailure(
+                    "UNVERIFIED",
+                    "page_count_evidence",
+                    "rasterizer did not return valid PDF and PNG page-count evidence",
+                    details={
+                        "page_counts": page_counts,
+                        "office_export": office_export,
+                        "rasterization": native_raster,
+                    },
+                )
+            if len({page_count, pdf_pages, png_pages}) != 1:
+                raise StageFailure(
+                    "FAIL_RENDER",
+                    "page_count_evidence",
+                    "Word, PDF, and rasterized PNG page counts do not match",
+                    details={
+                        "page_counts": page_counts,
+                        "office_export": office_export,
+                        "rasterization": native_raster,
+                    },
+                )
             result["office_export"] = office_export
             result["rasterization"] = native_raster
+            result["page_counts"] = page_counts
         return result
     except BaseException as exc:
         primary_error = exc
@@ -537,6 +1016,27 @@ def _base_result(source: Path, format_name: str, before: str | None = None) -> d
     }
 
 
+def _record_cleanup_uncertainty(result: dict[str, Any], record: dict[str, Any]) -> None:
+    """Downgrade an activated Office run when cleanup cannot be proven complete."""
+
+    details = result.setdefault("details", {})
+    if "prior_result" not in details:
+        details["prior_result"] = {
+            "ok": result.get("ok"),
+            "status": result.get("status"),
+            "phase": result.get("phase"),
+            "error": result.get("error"),
+            "details": dict(details),
+        }
+    failures = details.setdefault("cleanup_uncertainties", [])
+    if isinstance(failures, list):
+        failures.append(record)
+    result["ok"] = False
+    result["status"] = "UNVERIFIED"
+    result["phase"] = "cleanup"
+    result["error"] = "Office native gate cleanup is not proven complete; result is unverified"
+
+
 def check_file(
     file_path: str | Path,
     format_name: str,
@@ -544,9 +1044,12 @@ def check_file(
     allow_office_com: bool = False,
     require_render: bool = False,
     process_probe: Callable[[str], bool] | None = None,
+    process_ids: Callable[[str], list[int]] | None = None,
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
+    pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+    process_exit_timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
     """Run a native gate; dependency injection keeps tests off real COM."""
 
@@ -579,21 +1082,45 @@ def check_file(
         result["source_sha256_after"] = before
         return result
 
-    probe = process_probe or process_present
-    try:
-        if probe(spec["process"]):
-            result["status"] = "UNSAFE_PROCESS"
-            result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
-            result["source_sha256_after"] = sha256(source)
-            return result
-    except Exception as exc:
-        result["error"] = f"cannot prove that {spec['process']} is absent: {_exception_text(exc)}"
-        result["source_sha256_after"] = sha256(source)
-        return result
-
+    ownership: dict[str, Any] = {"process_image": spec["process"], "activation_attempted": False, "activation_succeeded": False}
+    result["ownership"] = ownership
     workspace: Path | None = None
     try:
-        workspace = Path(tempfile.mkdtemp(prefix="office-native-gate-"))
+        preflight_pids, preflight_error = _safe_process_ids(spec["process"], process_ids=process_ids)
+        if preflight_pids is None:
+            ownership["preflight"] = {
+                "status": "UNOBSERVED",
+                "process_image": spec["process"],
+                "pids": [],
+                "error": preflight_error,
+            }
+            result["error"] = f"cannot prove that {spec['process']} is absent: {preflight_error}"
+            return result
+        ownership["preflight"] = {
+            "status": "PREEXISTING_PIDS" if preflight_pids else "ABSENT",
+            "process_image": spec["process"],
+            "pids": preflight_pids,
+        }
+        if preflight_pids:
+            result["status"] = "UNSAFE_PROCESS"
+            result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
+            return result
+        if process_probe is not None:
+            try:
+                probe_present = bool(process_probe(spec["process"]))
+            except Exception as exc:
+                ownership["legacy_process_probe"] = {"status": "UNOBSERVED", "error": _exception_text(exc)}
+                result["error"] = f"cannot prove that {spec['process']} is absent: {_exception_text(exc)}"
+                return result
+            ownership["legacy_process_probe"] = {"status": "PRESENT" if probe_present else "ABSENT"}
+            if probe_present:
+                result["status"] = "UNSAFE_PROCESS"
+                result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
+                return result
+
+        temp_root = Path(tempfile.gettempdir()).resolve() / "codex-docx-gates"
+        temp_root.mkdir(parents=True, exist_ok=True)
+        workspace = Path(tempfile.mkdtemp(prefix="docx-gate_", dir=temp_root))
         isolated = workspace / source.name
         exports = workspace / "exports"
         if exports.exists():
@@ -608,6 +1135,10 @@ def check_file(
             spec,
             dispatch_ex=dispatch_ex,
             com_runtime=com_runtime,
+            process_ids=process_ids,
+            pid_observation_timeout_seconds=pid_observation_timeout_seconds,
+            process_exit_timeout_seconds=process_exit_timeout_seconds,
+            ownership_metadata=ownership,
         ) as (application, _owner):
             if format_name == "pptx":
                 details = _check_pptx(application, isolated, exports, require_render)
@@ -624,6 +1155,11 @@ def check_file(
     except OwnershipFailure as exc:
         result["phase"] = "ownership"
         result["error"] = _exception_text(exc)
+        if exc.details:
+            supplied_ownership = exc.details.get("ownership")
+            if isinstance(supplied_ownership, dict):
+                result["ownership"] = supplied_ownership
+            result["details"].update({key: value for key, value in exc.details.items() if key != "ownership"})
     except GateFailure as exc:
         result["status"] = exc.status
         result["phase"] = exc.phase
@@ -648,8 +1184,30 @@ def check_file(
             result["status"] = "UNVERIFIED"
             result["phase"] = "integrity"
             result["error"] = "source SHA-256 changed during native gate; result is unverified"
+        ownership_record = result.get("ownership")
+        if isinstance(ownership_record, dict) and ownership_record.get("activation_succeeded") is True:
+            cleanup = ownership_record.get("cleanup")
+            cleanup_status = cleanup.get("status") if isinstance(cleanup, dict) else None
+            if cleanup_status != "CLEAN":
+                _record_cleanup_uncertainty(
+                    result,
+                    {
+                        "kind": "office_process",
+                        "cleanup": cleanup,
+                    },
+                )
         if workspace is not None:
-            shutil.rmtree(workspace, ignore_errors=True)
+            try:
+                shutil.rmtree(workspace)
+            except OSError as exc:
+                _record_cleanup_uncertainty(
+                    result,
+                    {
+                        "kind": "temporary_workspace",
+                        "workspace": str(workspace),
+                        "error": _exception_text(exc),
+                    },
+                )
     return result
 
 

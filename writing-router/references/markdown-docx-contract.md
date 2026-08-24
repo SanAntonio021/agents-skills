@@ -25,9 +25,9 @@
 1. `STATIC_PASS`：OOXML/package、样式、内容和源哈希检查；OfficeCLI 只能作为结构诊断。
 2. `LO_RENDER_PASS`：经 `libreoffice-runner`、独立 `UserInstallation` 转 PDF，使用固定 Poppler 参数并逐页检查。
 3. `NATIVE_OPEN_PASS`：获得本次任务明确许可后，Word 原生隔离副本打开并计算页数。
-4. `NATIVE_RENDER_PASS`：Word 导出 PDF，并用同一固定 Poppler 参数栅格化；必须有匹配的批准基准和逐页人工检查清单。
+4. `NATIVE_RENDER_PASS`：Word 导出 PDF，并用同一固定 Poppler 参数栅格化；Word 页数、导出 PDF 页数和编号连续的 PNG 页数必须为相同正整数。缺任一独立页数证据记 `UNVERIFIED`，不一致记 `FAIL`；还必须有匹配的批准基准和逐页人工检查清单。
 
-任一层为 `FAIL` 或 `UNVERIFIED` 都停止正式交付，保留失败证据，不写 `delivered`。OfficeCLI HTML/native 预览和任何 MCP 的“成功”都不能替代后三层。
+任一层为 `FAIL`、`UNVERIFIED`、`ENV_UNVERIFIED` 或 `NOT_RUN` 都停止正式交付，保留失败证据，不写 `delivered`。任务 PID 未观测、任务创建的 Office 实例未能证明退出，或隔离临时目录未能证明清理完成时，保留此前结果但整体降为 `UNVERIFIED`。OfficeCLI HTML/native 预览和任何 MCP 的“成功”都不能替代后三层。
 
 Word 原生门的许可记录必须绑定当前 `run_id` 和 `artifact_id`，并且用户完整回复“允许本次 Word 验收”；许可不跨任务、artifact 或 revision。栅格基准必须绑定模板哈希、Word 主版本、完整 Poppler 版本和固定命令 `pdftoppm -r 150 -png -aa yes -aaVector yes`，逐页哈希和 `user:<slug>` 审批身份缺一不可；没有匹配的 `approved` 基准只能记 `UNVERIFIED`。
 

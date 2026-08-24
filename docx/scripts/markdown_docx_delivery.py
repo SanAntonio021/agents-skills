@@ -31,7 +31,7 @@ LAYERS = (
     "NATIVE_OPEN_PASS",
     "NATIVE_RENDER_PASS",
 )
-ACCEPTANCE_VALUES = {"PASS", "FAIL", "UNVERIFIED", "NOT_RUN"}
+ACCEPTANCE_VALUES = {"PASS", "FAIL", "UNVERIFIED", "ENV_UNVERIFIED", "NOT_RUN"}
 FAILURE_CODES = {
     "CONTRACT_SCHEMA_INVALID",
     "CONTENT_NOT_FROZEN",
@@ -613,16 +613,39 @@ def validate_docx_package(path: str | Path) -> dict[str, Any]:
 
 
 def acceptance_from_gate(layer: str, result: Mapping[str, Any]) -> str:
-    """Map an independent gate result to the manifest's four-state vocabulary."""
+    """Map an independent gate result to the manifest acceptance vocabulary."""
 
     if layer not in LAYERS:
         raise _contract_error(f"unknown acceptance layer: {layer}")
     status = result.get("status")
     if status == "PASS":
         return "PASS"
-    if status in {"APP_UNAVAILABLE", "UNSAFE_PROCESS", "UNVERIFIED"}:
+    if status == "APP_UNAVAILABLE":
+        return "ENV_UNVERIFIED"
+    if status in {"UNSAFE_PROCESS", "UNVERIFIED", "NOT_RUN", None}:
         return "UNVERIFIED"
-    return "FAIL"
+    if status in {"FAIL_OPEN", "FAIL_RENDER", "FAIL"}:
+        return "FAIL"
+    return "UNVERIFIED"
+
+
+def aggregate_acceptance(acceptance: Mapping[str, Any]) -> str:
+    """Collapse four gate layers without treating an incomplete run as delivered."""
+
+    if not isinstance(acceptance, Mapping) or set(acceptance) != set(LAYERS):
+        raise _contract_error("acceptance must contain exactly the four delivery layers")
+    values = [acceptance[layer] for layer in LAYERS]
+    if any(value not in ACCEPTANCE_VALUES for value in values):
+        raise _contract_error("acceptance has an invalid status")
+    if all(value == "PASS" for value in values):
+        return "PASS"
+    if "FAIL" in values:
+        return "FAIL"
+    if "UNVERIFIED" in values or "NOT_RUN" in values:
+        return "UNVERIFIED"
+    if "ENV_UNVERIFIED" in values:
+        return "ENV_UNVERIFIED"
+    raise _contract_error("acceptance aggregate could not be determined")
 
 
 def select_primary_failure(codes: Iterable[str]) -> str | None:

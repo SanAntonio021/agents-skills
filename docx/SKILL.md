@@ -61,8 +61,12 @@ The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIF
 `UNSAFE_PROCESS`, and records the actual phase and exception. It refuses to run without
 `--allow-office-com`, refuses an existing `WINWORD.EXE`, uses `DispatchEx` plus an isolated copy,
 checks the source SHA-256 before and after, opens read-only, never saves the source, and quits only
-a task-created instance whose document collection is empty. For a DOCX release, require
-`STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
+a task-created instance whose document collection is empty. With `--require-render`, the positive
+page counts reported by Word, the exported PDF, and the rasterized PNG files must match exactly;
+missing independent evidence is `UNVERIFIED` and a mismatch is `FAIL_RENDER`. A missing task PID,
+unproven Office exit, or temporary-workspace cleanup uncertainty also downgrades the run to
+`UNVERIFIED`; it cannot be released. For a DOCX release, require `STATIC_PASS`,
+`LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
 ## Markdown-first formal delivery
 

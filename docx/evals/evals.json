@@ -33,6 +33,17 @@
         "Treats Normal.dotm as the formatting source without modifying the Markdown input.",
         "Requires current-task COM approval and stops if WINWORD.EXE already exists."
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "我想试用一个公开的 Office-Word-MCP-Server，让它生成 Word。请说明它能不能进入正式 DOCX 流程，以及如果只做隔离试验，如何处理三次确定性和 Word 打开、渲染验收。",
+      "expected_output": "Keep the public Office MCP out of production; use only an explicitly approved isolated diagnostic trial, run the offline three-round package comparator, and retain the independent LibreOffice, Word native open/render, and human inspection gates.",
+      "files": [],
+      "assertions": [
+        "Does not install or register a public Office MCP as a production dependency.",
+        "Requires three isolated rounds and reports MCP_NOT_ADMITTED even when package-level determinism passes.",
+        "Does not claim that an OOXML comparator proves page count, raster, Word open, or human visual acceptance."
+      ]
     }
   ]
 }

@@ -17,6 +17,7 @@ from style_guard import (  # noqa: E402
     M_NS,
     W_NS,
     DocxPackage,
+    StyleGuardError,
     audit_docx,
     remap_docx,
 )
@@ -24,6 +25,8 @@ from style_guard import (  # noqa: E402
 
 W = f"{{{W_NS}}}"
 M = f"{{{M_NS}}}"
+MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+MC = f"{{{MC_NS}}}"
 
 
 def build_styles(
@@ -459,6 +462,37 @@ class StyleRemapTests(unittest.TestCase):
                 before.read("word/_rels/document.xml.rels"),
                 after.read("word/_rels/document.xml.rels"),
             )
+
+    def test_remap_rejects_a_style_inside_alternate_content(self) -> None:
+        source_root = etree.fromstring(
+            build_styles(
+                [
+                    {"id": "Normal", "name": "Normal", "default": True},
+                    {"id": "00正文", "name": "正文", "custom": True},
+                ]
+            )
+        )
+        nested_style = source_root.find(f"{W}style[@{W}styleId='00正文']")
+        assert nested_style is not None
+        source_root.remove(nested_style)
+        alternate = etree.SubElement(source_root, f"{MC}AlternateContent")
+        choice = etree.SubElement(alternate, f"{MC}Choice")
+        choice.set("Requires", "w14")
+        choice.append(nested_style)
+        write_docx(
+            self.source,
+            etree.tostring(source_root, xml_declaration=True, encoding="UTF-8"),
+            build_document([{"style": "00正文", "text": "nested"}]),
+        )
+
+        with self.assertRaisesRegex(StyleGuardError, "direct child of w:styles"):
+            remap_docx(
+                self.source,
+                self.template,
+                self.output,
+                {"00正文": "1"},
+            )
+        self.assertFalse(self.output.exists())
 
     def test_output_is_never_overwritten(self) -> None:
         self.output.write_bytes(b"existing")

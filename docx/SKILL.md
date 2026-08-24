@@ -256,6 +256,13 @@ only after no references remain. Read [Style identity audit and remap](reference
 before using it. This is an explicit repair path, not permission to import a complete template style
 table during ordinary content edits.
 
+For package-level repair and remap, all writes to `word/styles.xml` go through
+`scripts/styles_normalizer.py`; generic OOXML repair paths deliberately skip that part. The boundary
+validates package-wide style references, preserves the root declaration/outer bytes and
+markup-compatibility structure, and rejects unsafe style remaps whose source or template definition
+is nested below `w:styles`. Check for unregistered direct writers before a release with
+`python scripts/styles_normalizer.py`.
+
 The default remap keeps input formatting. If the user wants the template's visible typography and
 accepts resulting pagination changes, pass `--format-source template`; this preserves the selected
 template styles' paragraph and run properties instead of writing the input styles' layout onto them.

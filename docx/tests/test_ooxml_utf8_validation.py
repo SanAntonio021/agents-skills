@@ -26,6 +26,15 @@ def load_base_validator():
 BaseSchemaValidator = load_base_validator()
 
 
+def load_docx_validator():
+    from validators.docx import DOCXSchemaValidator
+
+    return DOCXSchemaValidator
+
+
+DOCXSchemaValidator = load_docx_validator()
+
+
 class OoxmlUtf8ValidationTests(unittest.TestCase):
     def test_schema_validation_opens_utf8_ooxml_explicitly(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,6 +70,57 @@ class OoxmlUtf8ValidationTests(unittest.TestCase):
                     for call in mocked_open.call_args_list
                 )
             )
+
+    def test_generic_whitespace_repair_skips_word_styles_xml(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            word = root / "word"
+            word.mkdir()
+            styles_path = word / "styles.xml"
+            document_path = word / "document.xml"
+            styles_payload = (
+                b'<?xml version="1.0" encoding="UTF-8"?><w:styles '
+                b'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                b'<w:t> leading </w:t></w:styles>'
+            )
+            document_payload = (
+                b'<?xml version="1.0" encoding="UTF-8"?><w:document '
+                b'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                b'<w:t> leading </w:t></w:document>'
+            )
+            styles_path.write_bytes(styles_payload)
+            document_path.write_bytes(document_payload)
+
+            repairs = BaseSchemaValidator(root).repair_whitespace_preservation()
+
+            self.assertEqual(repairs, 1)
+            self.assertEqual(styles_path.read_bytes(), styles_payload)
+            self.assertIn(b'xml:space="preserve"', document_path.read_bytes())
+
+    def test_durable_id_repair_skips_word_styles_xml(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            word = root / "word"
+            word.mkdir()
+            styles_path = word / "styles.xml"
+            document_path = word / "document.xml"
+            namespace = "http://schemas.microsoft.com/office/word/2016/wordml/cid"
+            styles_payload = (
+                f'<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                f'xmlns:w16cid="{namespace}"><w:style w16cid:durableId="FFFFFFFF"/></w:styles>'
+            ).encode("utf-8")
+            document_payload = (
+                f'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                f'xmlns:w16cid="{namespace}"><w:p w16cid:durableId="FFFFFFFF"/></w:document>'
+            ).encode("utf-8")
+            styles_path.write_bytes(styles_payload)
+            document_path.write_bytes(document_payload)
+
+            repairs = DOCXSchemaValidator(root).repair_durableId()
+
+            self.assertEqual(repairs, 1)
+            self.assertEqual(styles_path.read_bytes(), styles_payload)
+            self.assertNotIn(b'FFFFFFFF', document_path.read_bytes())
 
 
 if __name__ == "__main__":

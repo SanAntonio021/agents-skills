@@ -20,6 +20,11 @@ from typing import Iterable
 
 from lxml import etree
 
+try:
+    from styles_normalizer import StylesNormalizationError, replace_styles_entry
+except ImportError:  # pragma: no cover - package-style imports
+    from .styles_normalizer import StylesNormalizationError, replace_styles_entry
+
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 M_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
@@ -195,9 +200,10 @@ def _style_reference_nodes(
     root: etree._Element,
 ) -> Iterable[tuple[etree._Element, str]]:
     for element in root.iter():
-        if not isinstance(element.tag, str) or not element.tag.startswith(W):
+        if not isinstance(element.tag, str):
             continue
-        if _local_name(element) not in STYLE_REFERENCE_NAMES:
+        qname = etree.QName(element)
+        if qname.namespace != W_NS or qname.localname not in STYLE_REFERENCE_NAMES:
             continue
         value = element.get(W_VAL)
         if value is not None:
@@ -219,7 +225,7 @@ def _rewrite_style_references(
 
 def _styles_by_id(styles_root: etree._Element) -> dict[str, etree._Element]:
     styles: dict[str, etree._Element] = {}
-    for style in styles_root.findall(f"{W}style"):
+    for style in styles_root.iter(f"{W}style"):
         style_id = style.get(W_STYLE_ID)
         if not style_id:
             raise StyleGuardError("A style definition has no w:styleId")
@@ -375,8 +381,10 @@ def _write_package(package: DocxPackage) -> bytes:
 
 def _style_metadata_signature(styles_root: etree._Element) -> bytes:
     clone = copy.deepcopy(styles_root)
-    for style in list(clone.findall(f"{W}style")):
-        clone.remove(style)
+    for style in list(clone.iter(f"{W}style")):
+        parent = style.getparent()
+        if parent is not None:
+            parent.remove(style)
     return _canonical(clone)
 
 
@@ -844,6 +852,15 @@ def remap_docx(
         raise StyleGuardError(
             "Template styles not found: " + ", ".join(missing_targets)
         )
+    for old_id, target_id in mapping.items():
+        if source_styles[old_id].getparent() is not source_styles_root:
+            raise StyleGuardError(
+                "Input style must be a direct child of w:styles for remapping: " + old_id
+            )
+        if template_styles[target_id].getparent() is not template_styles_root:
+            raise StyleGuardError(
+                "Template style must be a direct child of w:styles for remapping: " + target_id
+            )
 
     replacements: dict[str, etree._Element] = {}
     for old_id, target_id in mapping.items():
@@ -857,12 +874,11 @@ def remap_docx(
         )
 
     for old_id in mapping:
-        old_style = source_styles_root.xpath(
-            "./w:style[@w:styleId=$style_id]",
-            namespaces={"w": W_NS},
-            style_id=old_id,
-        )[0]
-        old_style.getparent().remove(old_style)
+        old_style = source_styles[old_id]
+        parent = old_style.getparent()
+        if parent is None:
+            raise StyleGuardError(f"Mapped style is detached from styles.xml: {old_id}")
+        parent.remove(old_style)
 
     current_styles = _styles_by_id(source_styles_root)
     for target_id, replacement in replacements.items():
@@ -873,7 +889,7 @@ def remap_docx(
     style_rewrites = _rewrite_style_references(source_styles_root, mapping)
 
     result_entries = dict(source.entries)
-    result_entries["word/styles.xml"] = _serialize_xml(
+    candidate_styles_payload = _serialize_xml(
         source_styles_root, source.entries["word/styles.xml"]
     )
     reference_rewrites: Counter[str] = Counter(style_rewrites)
@@ -886,6 +902,18 @@ def remap_docx(
             continue
         reference_rewrites.update(rewrites)
         result_entries[part] = _serialize_xml(root, payload)
+
+    # word/styles.xml has one production write boundary.  Validate it only
+    # after all other package parts have been rewritten so cross-part style
+    # references are checked against the final candidate.
+    try:
+        result_entries = replace_styles_entry(
+            result_entries,
+            candidate_styles_payload,
+            original=source.entries["word/styles.xml"],
+        )
+    except StylesNormalizationError as exc:
+        raise StyleGuardError(f"styles normalization failed: {exc}") from exc
 
     candidate_seed = DocxPackage(
         infos=source.infos,
@@ -1098,6 +1126,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (
         StyleGuardError,
+        StylesNormalizationError,
         FileExistsError,
         OSError,
         zipfile.BadZipFile,

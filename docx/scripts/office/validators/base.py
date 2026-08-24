@@ -124,11 +124,25 @@ class BaseSchemaValidator:
     def repair(self) -> int:
         return self.repair_whitespace_preservation()
 
+    def _is_word_styles_part(self, xml_file: Path) -> bool:
+        """Return whether a validator file is the protected Word style table."""
+
+        try:
+            return xml_file.relative_to(self.unpacked_dir).as_posix().lower() == "word/styles.xml"
+        except ValueError:
+            return False
+
     def repair_whitespace_preservation(self) -> int:
         repairs = 0
 
         for xml_file in self.xml_files:
             try:
+                # word/styles.xml is governed by the docx skill's style
+                # normalizer.  The generic whitespace repair must never
+                # serialize that part and thereby bypass its XML fidelity and
+                # cross-part reference checks.
+                if self._is_word_styles_part(xml_file):
+                    continue
                 content = xml_file.read_text(encoding="utf-8")
                 dom = defusedxml.minidom.parseString(content)
                 pending = []  

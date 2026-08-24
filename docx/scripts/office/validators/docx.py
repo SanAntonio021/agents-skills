@@ -413,6 +413,11 @@ class DOCXSchemaValidator(BaseSchemaValidator):
 
         for xml_file in self.xml_files:
             try:
+                # Keep all styles.xml writes behind styles_normalizer. This
+                # repair may otherwise reserialize the style table while
+                # repairing an unrelated durable ID.
+                if self._is_word_styles_part(xml_file):
+                    continue
                 content = xml_file.read_text(encoding="utf-8")
                 dom = defusedxml.minidom.parseString(content)
                 is_numbering = xml_file.name == "numbering.xml"

@@ -227,17 +227,15 @@ Choose colors that match your topic — don't default to generic blue. Use these
 |---------|------|
 | Slide title | 36-44pt bold |
 | Section header | 20-24pt bold |
-| Other non-table visible text | 18pt minimum |
-| Table cells and chart data tables, except sources/links | 14pt minimum |
-| Sources, links, and footnotes | 10pt minimum, muted |
+| Other non-table visible text | 12pt minimum |
+| Table cells and chart data tables, except sources/links | 12pt minimum |
+| Sources, links, and footnotes | 12pt minimum, muted |
 
 These are delivery gates, not suggestions. Table cells and native chart data tables use
-the 14pt minimum. Charts, axes, legends, timelines, Gantt labels, and other reader-facing
-content still use the 18pt minimum. Only genuine sources, links, and footnotes may use
-the 10pt minimum. When the
-requested amount of content does not fit at these sizes, simplify, enlarge the content
-area, reflow, or split the slide. Do not silently shrink text to preserve a one-slide
-layout.
+the 12pt minimum. Charts, axes, legends, timelines, Gantt labels, and other reader-facing
+content also use the 12pt minimum. Twelve points is a floor for collision avoidance, not
+the default: use larger text when the layout has room, and reduce content or reflow it
+before accepting overlaps. Titles and section headers retain their larger gates.
 
 Give generated title, section-header, source, and footnote shapes meaningful
 `objectName` values (`Title`, `SectionHeader`, `Source`, `Citation`, or `Footnote`) when
@@ -253,7 +251,7 @@ the creation library supports it. This makes the typography audit deterministic.
 
 - **Don't repeat the same layout** — vary columns, cards, and callouts across slides
 - **Don't center body text** — left-align paragraphs and lists; center only titles
-- **Don't skimp on size contrast** — titles need 36pt+ to stand out from 18pt body
+- **Don't skimp on size contrast** — titles need 36pt+ to stand out from body text
 - **Don't default to blue** — pick colors that reflect the specific topic
 - **Don't mix spacing randomly** — choose 0.3" or 0.5" gaps and use consistently
 - **Don't style one slide and leave the rest plain** — commit fully or keep it simple throughout
@@ -315,15 +313,15 @@ Per-slide `p:cNvPr@id` uniqueness is also structural and is never suppressed by
 `--original`; PowerPoint requires those object IDs to be unique within each slide.
 
 The typography audit is read-only and checks the entire output deck, including text in
-tables, grouped shapes, and native chart text. It fails when ordinary visible text is
-below 18pt, table text is below 14pt, a source/link/footnote is below 10pt, automatic
-shrink-to-fit reduces the effective size below its gate, or the effective size cannot
-be resolved. `spAutoFit` may expand a shape but does not waive an unresolved base font
-size. Fix the layout and rerun the audit; the script does not mechanically enlarge text.
+tables, grouped shapes, and native chart text. It fails when any non-title visible text
+is below 12pt, automatic shrink-to-fit reduces the effective size below its gate, or the
+effective size cannot be resolved. `spAutoFit` may expand a shape but does not waive an
+unresolved base font size. Fix the layout and rerun the audit; the script does not
+mechanically enlarge text.
 
-For a user-authorized exception to the 18pt ordinary-text or 14pt table-text gate, pass
+For a user-authorized exception to the 12pt visible-text gate, pass
 `--exceptions exceptions.json`. Each entry must identify one slide and one shape and
-include the user's reason; blanket slide/deck exceptions are rejected, and 10pt remains
+include the user's reason; blanket slide/deck exceptions are rejected, and 12pt remains
 the absolute floor. Do not create or use an exception file without explicit user
 authorization. Use `--json` when a machine-readable audit record is useful.
 

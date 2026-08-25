@@ -26,9 +26,12 @@ NS = {
 }
 PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
-BODY_MIN_PT = 18.0
-TABLE_MIN_PT = 14.0
-CITATION_MIN_PT = 10.0
+# 12 pt is the user-approved absolute floor for visible non-title text. Keep
+# title and section-header gates higher so the layout can shrink body content
+# to avoid collisions without flattening the slide hierarchy.
+BODY_MIN_PT = 12.0
+TABLE_MIN_PT = 12.0
+CITATION_MIN_PT = 12.0
 TITLE_MIN_PT = 36.0
 SECTION_MIN_PT = 20.0
 

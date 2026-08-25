@@ -49,6 +49,9 @@ class PPTXSchemaValidator(BaseSchemaValidator):
         if not self.validate_slide_shape_ids():
             all_valid = False
 
+        if not self.validate_non_negative_extents():
+            all_valid = False
+
         if not self.validate_uuid_ids():
             all_valid = False
 
@@ -178,6 +181,61 @@ class PPTXSchemaValidator(BaseSchemaValidator):
 
         if self.verbose:
             print("PASSED - Every slide has unique p:cNvPr shape IDs")
+        return True
+
+    def validate_non_negative_extents(self):
+        """Reject negative DrawingML extents that PowerPoint cannot open."""
+
+        import lxml.etree
+
+        problems = []
+        extent_tags = {
+            f"{{{self.DRAWINGML_NAMESPACE}}}ext",
+            f"{{{self.DRAWINGML_NAMESPACE}}}chExt",
+        }
+
+        for xml_file in sorted(self.unpacked_dir.glob("ppt/slides/slide*.xml")):
+            relative = xml_file.relative_to(self.unpacked_dir).as_posix()
+            try:
+                root = lxml.etree.parse(str(xml_file)).getroot()
+            except (lxml.etree.XMLSyntaxError, OSError) as exc:
+                problems.append(f"{relative}: could not inspect extents: {exc}")
+                continue
+
+            for element in root.iter():
+                if element.tag not in extent_tags:
+                    continue
+                for attribute in ("cx", "cy"):
+                    raw_value = element.get(attribute)
+                    if raw_value is None:
+                        continue
+                    try:
+                        value = int(raw_value)
+                    except ValueError:
+                        problems.append(
+                            f"{relative}: invalid {attribute}={raw_value!r} "
+                            "on DrawingML extent"
+                        )
+                        continue
+                    if value < 0:
+                        problems.append(
+                            f"{relative}: negative DrawingML extent "
+                            f"{attribute}={value}; normalize shape/line endpoints "
+                            "so cx/cy are non-negative"
+                        )
+
+        if problems:
+            print(
+                "FAILED - Found "
+                f"{len(problems)} negative or invalid DrawingML extent problem(s) "
+                "PowerPoint rejects:"
+            )
+            for problem in problems:
+                print(f"  {problem}")
+            return False
+
+        if self.verbose:
+            print("PASSED - All slide DrawingML extents are non-negative")
         return True
 
     def _package_map(self) -> dict:

@@ -136,6 +136,43 @@ class SlideShapeIdValidationTests(unittest.TestCase):
         self.assertIn("shape name='NestedBody'", message)
         self.assertIn("chart name='RevenueChart'", message)
 
+    def test_negative_shape_extent_is_rejected(self) -> None:
+        broken = slide_xml(
+            """
+            <p:sp>
+              <p:nvSpPr><p:cNvPr id="2" name="NegativeLine"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+              <p:spPr>
+                <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="-137160"/></a:xfrm>
+                <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+              </p:spPr>
+            </p:sp>
+            """
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            validator = self._validator(Path(temp_dir), broken)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                valid = validator.validate_non_negative_extents()
+
+        self.assertFalse(valid)
+        self.assertIn("negative DrawingML extent cy=-137160", output.getvalue())
+
+    def test_non_negative_shape_extent_passes(self) -> None:
+        fixed = slide_xml(
+            """
+            <p:sp>
+              <p:nvSpPr><p:cNvPr id="2" name="NormalizedLine"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+              <p:spPr>
+                <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="137160"/></a:xfrm>
+                <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+              </p:spPr>
+            </p:sp>
+            """
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            validator = self._validator(Path(temp_dir), fixed)
+            self.assertTrue(validator.validate_non_negative_extents())
+
 
 if __name__ == "__main__":
     unittest.main()

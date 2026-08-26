@@ -117,7 +117,7 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 
 `pptxgenjs` is preinstalled — do not run `npm install` first; write the script and `require('pptxgenjs')` directly. Only if that require fails: `npm install pptxgenjs`. The model knows the API; these are the footguns:
 
-- **Set `pres.layout` before adding slides.** The default canvas is `LAYOUT_16x9` = **10" × 5.625"**, not 13.3" wide. Coordinates past the edge are written, not clamped — the shape just isn't on the slide. (`LAYOUT_WIDE` is 13.3" × 7.5".)
+- **Set `pres.layout` before adding slides.** For the standard PowerPoint Widescreen preset, use `LAYOUT_WIDE` before adding any slide: it is **13.333" × 7.5"** and must serialize as `p:sldSz cx="12192000" cy="6858000"`. `LAYOUT_16x9` is a different **10" × 5.625"** canvas; the aspect ratio matches, but its physical coordinate system does not. Coordinates past the edge are written, not clamped — the shape just isn't on the slide. The `ppt-master` logical `ppt169` canvas (`1280 × 720`) maps to the standard wide physical size at export; do not treat pixel dimensions as inches.
 - **Hex colors: never `#`, never 8 digits.** `color: "FF0000"`. Both `"#FF0000"` and alpha baked into the hex (`"00000020"`) **corrupt the file**. For translucency: `transparency: 0-100` on fills and images, `opacity: 0.0-1.0` on shadows — each is silently ignored on the other.
 - **pptxgenjs mutates option objects in place** (converts values to EMU on first use). Never share one `shadow`/options object across two `add*` calls — build a fresh object each time.
 - **Shadow `offset` must be ≥ 0** — a negative offset corrupts the file. To cast a shadow upward, use `angle: 270` with a positive offset.
@@ -135,6 +135,7 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 - **A combo series using `secondaryValAxis`/`secondaryCatAxis` needs both `valAxes` and `catAxes` on the chart options, two entries each.** Without them pptxgenjs writes axis *ids* it never declares, and PowerPoint **discards that chart** and reports the file as corrupt. Supplying only `valAxes` is not enough.
 - **Tables need a post-write shape-ID check.** PptxGenJS 4.0.1 can give a table's `p:cNvPr@id` the same value as another object on that slide. `objectName` changes `p:cNvPr@name`; it does not reserve or replace the numeric ID. Rebuild the deck with an unused per-slide ID rather than relying on the name.
 - **After `writeFile()`, run `python scripts/office/validate.py deck.pptx`.** It reports the two chart faults above, duplicate per-slide `p:cNvPr@id` values (including tables, charts, and grouped shapes), negative DrawingML extents, and the other slide-XML defects PowerPoint refuses. The diagnostics name the slide and the offending object/attribute where available. Fix them in your generator, not by hand-editing the packed XML.
+- **After `writeFile()`, run `python scripts/slide_size_audit.py deck.pptx --expected wide16x9`.** This checks the presentation-level `p:sldSz` against the standard PowerPoint Widescreen dimensions (`12192000 × 6858000` EMU). Run it before visual QA; do not accept a same-ratio `10" × 5.625"` deck as interchangeable with a standard wide deck.
 - **Never reorder the children of `<p:presentation>`.** pptxgenjs writes `<p:notesMasterIdLst>` right after `<p:sldIdLst>` and points both masters at one theme part. PowerPoint reads that happily — move the element and the same deck becomes unopenable.
 - **Icons:** render `react-icons` to SVG (`ReactDOMServer.renderToStaticMarkup`), rasterize with `sharp` at ≥256px, and insert via `addImage({ data: "image/png;base64," + buf.toString("base64") })` — the `image/png;base64,` prefix is required (`react-icons`, `react`, `react-dom`, and `sharp` are preinstalled — `npm install react-icons react react-dom sharp` only if a require fails).
 
@@ -165,6 +166,11 @@ When filling in a template:
 - One `<a:p>` per list item — never concatenate items into a single paragraph. Copy the sibling `<a:pPr>` to preserve spacing, and put `b="1"` on the `<a:rPr>` of titles, section headers, and inline labels (`Status:`, `Owner:`).
 - Let bullets inherit from the layout; only add `<a:buChar>`, `<a:buAutoNum>` (numbered), or `<a:buNone>` to override — never a literal `•` in the text.
 - Text with leading or trailing spaces needs `xml:space="preserve"` on its `<a:t>`.
+
+When copying slides between decks:
+
+- Audit both files first: `python scripts/slide_size_audit.py source.pptx --json` and the same command for the target. For a standard wide presentation, both must report `12192000 × 6858000` EMU (`13.333" × 7.5"`).
+- If the target is not that exact size, set PowerPoint's **Design → Slide Size → Widescreen (16:9)** before copying. The label `16:9` alone is insufficient because `10" × 5.625"` and `13.333" × 7.5"` have the same ratio but different coordinates. Re-run the audit after changing the target and choose **Ensure Fit** when PowerPoint asks how to scale existing content.
 
 ## Design Ideas
 
@@ -295,6 +301,7 @@ if ([string]::IsNullOrWhiteSpace($qa_python)) { throw "Preflight did not select 
 & $qa_python scripts/office/validate.py output.pptx                      # built from scratch
 & $qa_python scripts/office/validate.py output.pptx --original src.pptx  # built from a template
 & $qa_python scripts/typography_audit.py output.pptx
+& $qa_python scripts/slide_size_audit.py output.pptx --expected wide16x9
 ```
 
 The preflight command is mandatory even when the invoking Python is expected to be complete:

@@ -105,6 +105,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/thumbnail.py deck.pptx [prefix]` | Labeled grid of every slide, for picking template layouts. `.pptx` only. Pass `prefix` — it defaults to `thumbnails`, which overwrites the grids of any other deck done in the same directory |
 | `scripts/add_slide.py unpacked/ slide2.xml [--after slideN.xml]` | Duplicate a slide (or a `slideLayoutN.xml`) with all the package bookkeeping. Also takes a `.pptx` directly with `-o out.pptx` |
 | `scripts/clean.py unpacked/` | Delete slides, media, and rels no longer referenced. Run **after** `<p:sldIdLst>` is final |
+| `scripts/release_bundle.py` | Create non-overwriting formal release directories, canonical external-output snapshots, revision slide-difference proofs, and final artifact manifests |
 | `scripts/python_runtime_preflight.py [--candidate PATH] [--json-out PATH]` | Select a verified Python runtime for static PPTX QA; import-checks `defusedxml`, `lxml`, and `python-pptx`, and never installs packages |
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
 | `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | LibreOffice wrapper — bare `soffice` hangs in this sandbox |
@@ -136,6 +137,7 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 - **Tables need a post-write shape-ID check.** PptxGenJS 4.0.1 can give a table's `p:cNvPr@id` the same value as another object on that slide. `objectName` changes `p:cNvPr@name`; it does not reserve or replace the numeric ID. Rebuild the deck with an unused per-slide ID rather than relying on the name.
 - **After `writeFile()`, run `python scripts/office/validate.py deck.pptx`.** It reports the two chart faults above, duplicate per-slide `p:cNvPr@id` values (including tables, charts, and grouped shapes), negative DrawingML extents, and the other slide-XML defects PowerPoint refuses. The diagnostics name the slide and the offending object/attribute where available. Fix them in your generator, not by hand-editing the packed XML.
 - **After `writeFile()`, run `python scripts/slide_size_audit.py deck.pptx --expected wide16x9`.** This checks the presentation-level `p:sldSz` against the standard PowerPoint Widescreen dimensions (`12192000 × 6858000` EMU). Run it before visual QA; do not accept a same-ratio `10" × 5.625"` deck as interchangeable with a standard wide deck.
+- **When a deck is derived from a real template, run `python scripts/slide_size_audit.py output.pptx --reference template.pptx` instead of relying on a generic 16:9 preset.** The reference gate compares the physical EMU width and height exactly.
 - **Never reorder the children of `<p:presentation>`.** pptxgenjs writes `<p:notesMasterIdLst>` right after `<p:sldIdLst>` and points both masters at one theme part. PowerPoint reads that happily — move the element and the same deck becomes unopenable.
 - **Icons:** render `react-icons` to SVG (`ReactDOMServer.renderToStaticMarkup`), rasterize with `sharp` at ≥256px, and insert via `addImage({ data: "image/png;base64," + buf.toString("base64") })` — the `image/png;base64,` prefix is required (`react-icons`, `react`, `react-dom`, and `sharp` are preinstalled — `npm install react-icons react react-dom sharp` only if a require fails).
 
@@ -159,6 +161,59 @@ python scripts/office/validate.py out.pptx --original deck.pptx
 - Legacy `.ppt` must be converted first: `python scripts/office/soffice.py --headless --convert-to pptx file.ppt`. `.potx` templates unpack and pack identically — keep the `.potx` extension on the output.
 - To reuse a template icon or image, duplicate a slide or layout that already contains it.
 
+## Formal release and revision workflow
+
+Use this workflow only when the task explicitly calls the output a formal deliverable, final candidate,
+or release. Temporary drafts may continue to use ordinary new-output filenames.
+
+1. **Start a formal release in a fresh directory.** Before generating the PPTX, run:
+
+   ```powershell
+   python scripts/release_bundle.py init --output-root <outputs> --topic <topic> `
+     --pptx-name final.pptx --pdf-name final.pdf --png-dir png --evidence-dir evidence
+   ```
+
+   The command creates `<topic>_YYYYMMDD_vNN` and refuses to reuse an existing directory. Keep the
+   manifest, PPTX, PDF, PNGs, and QA evidence inside that directory. Do not append `fixed`, `final2`,
+   or similar parallel names after rendering has started.
+
+2. **Snapshot the external output root consistently.** After the fresh bundle exists, create a before
+   snapshot using the same canonical root and exclusion for the after snapshot:
+
+   ```powershell
+   python scripts/release_bundle.py snapshot --root <outputs> `
+     --exclude <release-dir> --output <release-dir>/evidence/integrity-before.json
+   python scripts/release_bundle.py snapshot --root <outputs> `
+     --exclude <release-dir> --output <release-dir>/evidence/integrity-after.json
+   python scripts/release_bundle.py compare-snapshots `
+     <release-dir>/evidence/integrity-before.json <release-dir>/evidence/integrity-after.json
+   ```
+
+   Snapshots store POSIX paths relative to the same resolved root, byte counts, and SHA-256 values.
+   A root or exclusion mismatch is `scope_mismatch` and is not a valid change report. Files inside
+   the current release directory are excluded by design; never repair unrelated changes automatically.
+
+3. **Revise a formal release in a new version directory.** Use the prior release as `--parent` and
+   declare the pages intentionally changed. Regenerate all formal artifacts in the new directory, then
+   rerun content QA, structural validation, typography, canvas, and the LibreOffice full-document render.
+   `scripts/release_bundle.py compare-slides` compares slide XML, relationship closures, shared parts,
+   and global package parts. Only when it returns `UNCHANGED_SLIDES_PROVEN`, the parent manifest records
+   a full-deck visual pass, and all current static/LibreOffice gates pass may visual inspection be limited
+   to the declared changed pages. Any undeclared page, relationship, shared-resource, global-part, page
+   count, or parent-evidence difference returns `FULL_VISUAL_QA_REQUIRED` and requires every page to be
+   inspected. A partial or unverified native Office gate never becomes a complete release claim.
+
+4. **Finalize and record the release.** After all declared files and evidence exist, run:
+
+   ```powershell
+   python scripts/release_bundle.py finalize `
+     --manifest <release-dir>/release_manifest.json --status-json <release-dir>/evidence/gates.json
+   ```
+
+   The manifest records artifact hashes, missing files, each acceptance layer, visual scope, and one of
+   `COMPLETE`, `PARTIAL_ACCEPTANCE`, or `INCOMPLETE`. The helper never starts PowerPoint or LibreOffice;
+   use the existing independent gates and `libreoffice-runner` for those steps.
+
 When filling in a template:
 
 - If you script an XML transform, parse with `defusedxml.minidom` — round-tripping OOXML through `xml.etree.ElementTree` rewrites namespace prefixes and corrupts the deck.
@@ -169,7 +224,7 @@ When filling in a template:
 
 When copying slides between decks:
 
-- Audit both files first: `python scripts/slide_size_audit.py source.pptx --json` and the same command for the target. For a standard wide presentation, both must report `12192000 × 6858000` EMU (`13.333" × 7.5"`).
+- Audit both files first: `python scripts/slide_size_audit.py source.pptx --json` and the same command for the target. When reusing a real template, run `python scripts/slide_size_audit.py target.pptx --reference source.pptx`; the physical EMU width and height must match exactly.
 - If the target is not that exact size, set PowerPoint's **Design → Slide Size → Widescreen (16:9)** before copying. The label `16:9` alone is insufficient because `10" × 5.625"` and `13.333" × 7.5"` have the same ratio but different coordinates. Re-run the audit after changing the target and choose **Ensure Fit** when PowerPoint asks how to scale existing content.
 
 ## Design Ideas
@@ -353,9 +408,10 @@ Convert the slides to images (see [Converting to Images](#converting-to-images))
 - Text boxes too narrow causing excessive wrapping
 - Leftover placeholder content
 
-If the user manually edits the deck after an audit, treat the edited file as a new
-output: rerun content QA, file validation, typography audit, rendering, and full-page
-visual inspection on that latest version.
+If the user manually edits a temporary deck after an audit, treat the edited file as a new output:
+rerun content QA, file validation, typography audit, rendering, and full-page visual inspection on that
+latest version. If the edited file is a formal release, create a new release-bundle version first and
+follow the revision workflow above; never overwrite the prior formal artifacts.
 
 ## Converting to Images
 

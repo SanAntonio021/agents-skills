@@ -117,24 +117,51 @@ def read_slide_size(path: str | Path) -> SlideSizeReport:
     )
 
 
-def audit(path: str | Path, expected: str) -> dict[str, object]:
+def audit(
+    path: str | Path,
+    expected: str | None = "wide16x9",
+    *,
+    reference: str | Path | None = None,
+) -> dict[str, object]:
     report = read_slide_size(path)
-    expected_dimensions = EXPECTED_SIZES.get(expected)
-    passed = expected == "any" or (
-        expected_dimensions is not None
-        and (report.width_emu, report.height_emu) == expected_dimensions
-    )
+    if reference is not None and expected not in {None, "any"}:
+        raise SlideSizeInputError("--reference cannot be combined with --expected")
+    reference_report = read_slide_size(reference) if reference is not None else None
+    if reference_report is not None:
+        passed = (report.width_emu, report.height_emu) == (
+            reference_report.width_emu,
+            reference_report.height_emu,
+        )
+        expected_label = "reference"
+    else:
+        expected = expected or "wide16x9"
+        expected_dimensions = EXPECTED_SIZES.get(expected)
+        passed = expected == "any" or (
+            expected_dimensions is not None
+            and (report.width_emu, report.height_emu) == expected_dimensions
+        )
+        expected_label = expected
     result: dict[str, object] = {
         "status": "PASS" if passed else "FAIL",
         "path": str(Path(path)),
-        "expected": expected,
+        "expected": expected_label,
         "slide_size": asdict(report),
     }
+    if reference_report is not None:
+        result["reference"] = str(Path(reference))
+        result["reference_slide_size"] = asdict(reference_report)
     if not passed:
-        result["reason"] = (
-            f"expected {expected_dimensions[0]} x {expected_dimensions[1]} EMU, "
-            f"got {report.width_emu} x {report.height_emu} EMU"
-        )
+        if reference_report is not None:
+            result["reason"] = (
+                "reference mismatch: expected "
+                f"{reference_report.width_emu} x {reference_report.height_emu} EMU, "
+                f"got {report.width_emu} x {report.height_emu} EMU"
+            )
+        else:
+            result["reason"] = (
+                f"expected {expected_dimensions[0]} x {expected_dimensions[1]} EMU, "
+                f"got {report.width_emu} x {report.height_emu} EMU"
+            )
     return result
 
 
@@ -148,6 +175,14 @@ def emit_human(result: dict[str, object]) -> None:
         f"({report['width_emu']} x {report['height_emu']} EMU), "
         f"detected={report['detected_format']}, expected={result['expected']}."
     )
+    if "reference_slide_size" in result:
+        reference = result["reference_slide_size"]
+        assert isinstance(reference, dict)
+        print(
+            f"- reference={result['reference']}: "
+            f"{reference['width_inches']:.3f} x {reference['height_inches']:.3f} in "
+            f"({reference['width_emu']} x {reference['height_emu']} EMU)"
+        )
     if result["status"] != "PASS":
         print(f"- {result['reason']}")
 
@@ -157,11 +192,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="Audit the presentation-level PowerPoint slide size"
     )
     parser.add_argument("path", help="Input .pptx or .potx file (read-only)")
-    parser.add_argument(
+    expected = parser.add_mutually_exclusive_group()
+    expected.add_argument(
         "--expected",
         choices=("wide16x9", "legacy16x9", "any"),
-        default="wide16x9",
         help="Expected canvas; standard PowerPoint wide-screen is the default",
+    )
+    expected.add_argument(
+        "--reference",
+        help="Reference PPTX/POTX whose physical EMU canvas must match exactly",
     )
     parser.add_argument("--json", action="store_true", dest="as_json")
     return parser
@@ -171,7 +210,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     configure_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
-        result = audit(args.path, args.expected)
+        result = audit(args.path, args.expected, reference=args.reference)
     except SlideSizeInputError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2

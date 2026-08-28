@@ -62,6 +62,30 @@
         "The result explains that objectName maps to the object name and does not make the numeric shape ID unique.",
         "Changing the table ID to 5 passes the per-slide uniqueness check, while the full four-layer release gate remains required."
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "制作一份正式交付的两页PPTX，并同时交付PDF、PNG预览和验收证据。请先在输出根下创建唯一的版本化发布目录，所有正式文件写入该目录，不覆盖已有版本；记录统一根目录下的外部完整性快照，并完成结构、字体、画布和LibreOffice验收。",
+      "expected_output": "正式交付使用唯一版本目录和manifest；旧文件不被覆盖；快照使用同一规范化根和排除目录；缺少Office原生门禁时只能标记部分验收。",
+      "expectations": [
+        "A fresh versioned release directory is initialized before artifacts are generated.",
+        "Existing release directories and existing snapshot outputs are never overwritten.",
+        "The manifest declares PPTX, PDF, PNG, evidence, canvas reference, and acceptance-layer status.",
+        "External snapshots use the same canonical root and exclusion, and a scope mismatch fails closed.",
+        "A missing or unverified native Office gate is not reported as a complete release pass."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "已有一份完整验收的正式两页PPTX。现在只修改第1页的一句话并交付修订版。请创建新的正式版本目录，声明第1页为变更页，比较父版本与新版本的逐页XML、关系闭包和全局包结构；只有确定第2页未变时才允许只做第1页视觉检查，否则检查全部页面。",
+      "expected_output": "修订版不会覆盖父版本；未改页和全局结构被确定性证明未变时视觉范围为第1页，否则明确要求全页视觉检查。",
+      "expectations": [
+        "The revision is emitted into a new versioned release directory with the prior release recorded as parent.",
+        "Slide XML and recursive relationship closures are compared, including shared resources.",
+        "Global package-part changes or undeclared slide changes force FULL_VISUAL_QA_REQUIRED.",
+        "CHANGED_SLIDES_ONLY is allowed only with a recorded parent full-deck visual pass and passing current static/LibreOffice gates.",
+        "The prior formal artifacts remain unchanged."
+      ]
     }
   ]
 }

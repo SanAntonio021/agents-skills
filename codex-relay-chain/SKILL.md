@@ -113,6 +113,24 @@ CC Switch 的 Common Config 与 provider 模型固定值要分开理解。CC Swi
 采用默认值，不是 watcher 应补的缺口。`model_reasoning_effort` 和
 `[desktop].show-context-window-usage = true` 可以由 Common Config 统一管理。
 
+#### Common Config 的上下文窗口字段
+
+如果已从当前模型或客户端确认可用上限，需要扩大 Codex 的上下文窗口时，只在 CC Switch 的
+Common Config 中写入对应的 `model_context_window`。例如上限已确认是 `272000` 时，内容只保留：
+
+```toml
+model_context_window = 272000
+```
+
+不要把 `model_auto_compact_*` 当作窗口容量设置；它们改变自动压缩的触发时机，可能让内容更早被
+压缩。除非用户另有明确目的，否则不要添加这两个字段。保存必须通过 CC Switch 完成，并让 CC Switch
+重新渲染最终 `config.toml`；不得直接改 Common Config 文件、`config.toml` 或数据库。
+
+保存后至少复核：`currentProviderCodex`、`providers.is_current`、当前 provider 的远端 `base_url`、
+Codex 最终入口和链路模式仍正确；再用本技能的真实 Responses SSE 验证，并至少等待 60 秒比较
+`config.toml` 哈希，确认没有被其他进程改回去。上下文窗口数值只对已核实的模型/客户端组合成立，不能
+从 provider 名称或一次普通回复反推。
+
 在 `ccswitch-owned` 下，任何 provider、认证、模型、推理强度或 Common Config 变更都通过 CC Switch
 完成。本技能可以只读核对数据库与最终 `config.toml`，但不得直接写数据库、`auth.json` 或
 `config.toml`；用户明确要求不修改 provider/认证数据库时，这一边界没有应急例外。

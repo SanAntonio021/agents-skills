@@ -28,14 +28,15 @@ description: 中文工程申报书和工程课题写作与修订，也可由“�
    - 运行支撑
    - 应用场景
 3. 先统一主线，再按章节重写，避免各段各说各话。
-4. 如果用户没要求直接起草，先给修改路径和结构判断，再等确认。
-5. 涉及指标可行性时，转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md) 做专门论证。
-6. 面对老师批注、审稿意见或标注修改时，先提取原文和修改点，形成逐条对照稿，再进入正式补写。
-7. 补写新增内容时，优先沿“技术背景 -> 现状概述 -> 存在问题 -> 原因分析 -> 技术清单 -> 价值与成熟度评估 -> 重点发展方向”的同一链路向后展开，不在单一小节孤立补一句。
-8. 新增段落先做工程化措辞清理，再并回正文，避免解释腔、口语化、软件工程词和生造词残留。
-9. 起草或精修申报书正文时，按需读取 `D:\BaiduSyncdisk\.agents\vocab\vocab-full.md` 中 `申报书` 和 `通用` 场景词条；处理黑障或高超声速通信申报书、审查相关术语时，同时读取 [references/engineering-glossary-blackout.md](references/engineering-glossary-blackout.md)；交付前需要扫用词时，用 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。
-10. 如果用户明确希望“参照已有成熟口气”来收工程申报段落，再按需读取 [references/writing-samples.md](references/writing-samples.md) 里的对应样本；只借句式密度和论证推进方式，不机械套句。
-11. 交付前除扫描高风险词外，还要逐句检查主谓、动宾、并列中心词、修饰关系和指代；按 [references/proposal-revision-lessons.md#交付前语言搭配验收](references/proposal-revision-lessons.md#交付前语言搭配验收) 重读改动句及其上下文。词表扫描不能替代这一步。
+4. 成果简介或产业化应用简介需要压缩为固定段落时，优先采用三段式：实现方法与创新点；技术指标体系；应用验证、推广情况或成果产出。每段只承担一个叙事任务。
+5. 如果用户没要求直接起草，先给修改路径和结构判断，再等确认。
+6. 涉及指标可行性时，转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md) 做专门论证。
+7. 面对老师批注、审稿意见或标注修改时，先提取原文和修改点，形成逐条对照稿，再进入正式补写。
+8. 补写新增内容时，优先沿“技术背景 -> 现状概述 -> 存在问题 -> 原因分析 -> 技术清单 -> 价值与成熟度评估 -> 重点发展方向”的同一链路向后展开，不在单一小节孤立补一句。
+9. 新增段落先做工程化措辞清理，再并回正文，避免解释腔、口语化、软件工程词和生造词残留。若论文、专利、获奖等成果信息缺失，不在正文末尾主动添加“暂无相关成果”等缺失声明；只写已有的应用验证、推广情况或可核实的成果事实。
+10. 起草或精修申报书正文时，按需读取 `D:\BaiduSyncdisk\.agents\vocab\vocab-full.md` 中 `申报书` 和 `通用` 场景词条；处理黑障或高超声速通信申报书、审查相关术语时，同时读取 [references/engineering-glossary-blackout.md](references/engineering-glossary-blackout.md)；交付前需要扫用词时，用 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。
+11. 如果用户明确希望“参照已有成熟口气”来收工程申报段落，再按需读取 [references/writing-samples.md](references/writing-samples.md) 里的对应样本；只借句式密度和论证推进方式，不机械套句。
+12. 交付前除扫描高风险词外，还要逐句检查主谓、动宾、并列中心词、修饰关系和指代；按 [references/proposal-revision-lessons.md#交付前语言搭配验收](references/proposal-revision-lessons.md#交付前语言搭配验收) 重读改动句及其上下文。词表扫描不能替代这一步。
 
 ## Word 交付边界
 

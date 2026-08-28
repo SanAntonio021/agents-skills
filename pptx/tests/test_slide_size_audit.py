@@ -54,6 +54,36 @@ class SlideSizeAuditTests(unittest.TestCase):
             with self.assertRaises(audit_module.SlideSizeInputError):
                 audit_module.read_slide_size(path)
 
+    def test_reference_canvas_matches_exact_physical_dimensions(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "output.pptx"
+            reference = Path(temp_dir) / "reference.pptx"
+            write_package(output, width="13430000", height="7556000")
+            write_package(reference, width="13430000", height="7556000")
+            result = audit_module.audit(output, None, reference=reference)
+            self.assertEqual(result["status"], "PASS")
+            self.assertEqual(result["expected"], "reference")
+            self.assertEqual(result["reference_slide_size"]["width_emu"], 13430000)
+
+    def test_reference_same_ratio_but_different_canvas_fails(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "output.pptx"
+            reference = Path(temp_dir) / "reference.pptx"
+            write_package(output, width="12192000", height="6858000")
+            write_package(reference, width="13430000", height="7556000")
+            result = audit_module.audit(output, None, reference=reference)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("reference mismatch", result["reason"])
+
+    def test_reference_and_expected_are_mutually_exclusive(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "output.pptx"
+            reference = Path(temp_dir) / "reference.pptx"
+            write_package(output, width="12192000", height="6858000")
+            write_package(reference, width="12192000", height="6858000")
+            with self.assertRaises(audit_module.SlideSizeInputError):
+                audit_module.audit(output, "wide16x9", reference=reference)
+
 
 if __name__ == "__main__":
     unittest.main()

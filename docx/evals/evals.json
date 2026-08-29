@@ -44,6 +44,16 @@
         "Requires three isolated rounds and reports MCP_NOT_ADMITTED even when package-level determinism passes.",
         "Does not claim that an OOXML comparator proves page count, raster, Word open, or human visual acceptance."
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "请给出一份正式 DOCX 的验收清单。除了四层门禁，还要逐项检查字体回退、段落缩进和行距、表格首行首列、页眉页脚几何、分页、Word 原生打开和 Word 原生渲染。",
+      "expected_output": "引用 Word 权威验收清单，要求每个项目记录责任层、基线、比较规则、结果、严重级别和证据路径；缺失/失败阻断，警告在用户确认前展示。",
+      "assertions": [
+        "References the authoritative word-acceptance-checklist.md.",
+        "Lists all seven explicit document-level acceptance items.",
+        "Requires item-level evidence and distinguishes hard blocks from warnings."
+      ]
     }
   ]
 }

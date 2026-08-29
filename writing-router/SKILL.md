@@ -38,6 +38,7 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
   - 去掉文字里的 AI 味：英文一般文本 `humanizer`，中文一般文本 `humanizer-zh`；交付的论文稿优先转 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 学术模式，申报书稿优先转 [../project-writing/SKILL.md](../project-writing/SKILL.md)，不给交付正文注入个性和第一人称
   - 在线搜文献：`research-lookup`
   - Word 文档与模板格式化：[../docx/SKILL.md](../docx/SKILL.md)
+  - Markdown 到 Word 的阶段、确认、指纹和 PDF 发布工作流：[../markdown-docx-workflow/SKILL.md](../markdown-docx-workflow/SKILL.md)
   - md 转 LaTeX 与投稿工程（模板、BibTeX、编译；当前期刊或页面要求时才打包 source）：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)
 
 ## 流程
@@ -53,11 +54,12 @@ description: 作为申报书与论文文章类任务的默认写作总路由，�
 9. 多轮修订优先保持单一主稿和单一对照稿，减少版本分叉；文字未确认前，不反复导出多个 `Word` 版本。
 10. 需要回填 `Word` 时，先确认文字，再处理颜色标记和版式；默认另存新文件，保留原始标注内容不动。
 11. Markdown 是内容主稿。进入 Word 格式阶段时，按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 生成交接清单；内容未冻结、存在 open items 或未收到当前任务用户的完整确认前，不调用正式 DOCX 导出。
-12. 预览与正式交付分开记录。正式 DOCX 由 `docx` 负责模板、分页和四层验收；内容技能不复制 Word 验收规则，也不把 OfficeCLI 或 MCP 诊断当成 Word 原生通过。
-13. 如果任务已经缩到论文某个实验结果、图注或方法小节的多轮收口，且证据边界和技术口径已经定住，优先转入 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 做局部精修，不再把它当成重新起草整节。
-14. 对实验结果类小节，转入精修前先检查 6 件事：论题是否已经收紧、结果段和方法段是否分工、关键参数是否与图中可观测量一一对应、代表性指标是否说明选择依据、术语是否按层级分工统一、英文是否需要按目标期刊口气二次重写。
-15. 如果用户想吸收上游 skill，不直接批量改多个下游；先用 [references/academic-workflow-map.md](references/academic-workflow-map.md) 判断适合放到哪一层，再只改当前最需要的一处。
-16. 补触发词或别名时，先标明证据来源：
+12. 需要“先改 Markdown、确认内容、再生成 Word、验收 Word、最后可选导出 PDF”时，主路由进入 `markdown-docx-workflow`；它维护阶段和指纹，具体 Word 实现交给 `docx`。
+13. 预览与正式交付分开记录。正式 DOCX 由 `docx` 负责模板、分页和四层验收；内容技能不复制 Word 验收规则，也不把 OfficeCLI 或 MCP 诊断当成 Word 原生通过。
+14. 如果任务已经缩到论文某个实验结果、图注或方法小节的多轮收口，且证据边界和技术口径已经定住，优先转入 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 做局部精修，不再把它当成重新起草整节。
+15. 对实验结果类小节，转入精修前先检查 6 件事：论题是否已经收紧、结果段和方法段是否分工、关键参数是否与图中可观测量一一对应、代表性指标是否说明选择依据、术语是否按层级分工统一、英文是否需要按目标期刊口气二次重写。
+16. 如果用户想吸收上游 skill，不直接批量改多个下游；先用 [references/academic-workflow-map.md](references/academic-workflow-map.md) 判断适合放到哪一层，再只改当前最需要的一处。
+17. 补触发词或别名时，先标明证据来源：
     - 用户本轮原话只能作为候选表达。
     - 多轮真实对话重复出现，可视为稳定表达。
     - 只有历史 transcript 统计或用户明确确认，才可称为高频表达。

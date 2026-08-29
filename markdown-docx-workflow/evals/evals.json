@@ -1,0 +1,60 @@
+{
+  "skill_name": "markdown-docx-workflow",
+  "evals": [
+    {
+      "id": "unconfirmed-word-export",
+      "prompt": "我还在修改 Markdown，只说‘导出 Word’，请判断现在能不能生成正式 Word，以及下一步怎么做。",
+      "expected_output": "识别内容尚未确认，保持 DRAFT；先询问内容确认，最多只能生成明确标注的预览。",
+      "expectations": [
+        "Does not enter formal DOCX export from an unconfirmed Markdown draft.",
+        "Distinguishes preview from formal delivery."
+      ]
+    },
+    {
+      "id": "freeze-then-generate",
+      "prompt": "Markdown 已经审完了。用户回复‘确认内容并导出 Word’，请按流程生成 Word。",
+      "expected_output": "记录当前 Markdown 路径和 SHA-256，进入 CONTENT_FROZEN，再调用 docx 生成新 Word；不覆盖源稿或旧交付物。",
+      "expectations": [
+        "Records content confirmation and source fingerprint.",
+        "Delegates template and Word generation to docx after freezing content."
+      ]
+    },
+    {
+      "id": "fingerprint-invalidation",
+      "prompt": "Word 已经通过验收，但我又改了 Markdown 的一个标点，或者手动改了 Word 一句话。请说明状态如何处理。",
+      "expected_output": "Markdown 指纹变化回到 DRAFT 并清除所有下游状态；Word 指纹变化至少清除 DOCX_ACCEPTED、WORD_CONFIRMED 和 PDF_RELEASED，要求重新生成/验收。",
+      "expectations": [
+        "Treats source and Word fingerprint drift as invalidating events.",
+        "Does not retain a stale final confirmation."
+      ]
+    },
+    {
+      "id": "acceptance-report-items",
+      "prompt": "请设计 Word 验收报告，必须覆盖字体回退、段落、表格、页眉页脚、分页、Word 原生打开和 Word 原生渲染，并说明四层结果怎么记录。",
+      "expected_output": "给出带 Word 路径/SHA-256、四层顺序、七个项目、责任层、基线、比较规则、结果、严重级别和证据路径的 DocxAcceptanceReport。",
+      "expectations": [
+        "Includes all seven authoritative document acceptance items.",
+        "Keeps STATIC_PASS, LO_RENDER_PASS, NATIVE_OPEN_PASS, and NATIVE_RENDER_PASS independent and ordered.",
+        "Requires matching Word fingerprint and evidence for acceptance."
+      ]
+    },
+    {
+      "id": "warning-before-word-confirm",
+      "prompt": "Word 四层都通过，但分页项目有一个警告。用户说‘确认这个 Word’，流程应如何回应？",
+      "expected_output": "先展示警告及其证据，记录用户确认；没有展示和确认警告前不进入 WORD_CONFIRMED。",
+      "expectations": [
+        "Presents warnings before final Word confirmation.",
+        "Does not silently turn a warning into a clean pass."
+      ]
+    },
+    {
+      "id": "pdf-source-gate",
+      "prompt": "用户说‘导出 PDF’，但 Word 文件后来被重新保存过。请判断是否能直接导出。",
+      "expected_output": "先比对 WORD_CONFIRMED 中的 Word 路径和 SHA-256；指纹不一致时阻断 PDF 发布，重新生成和验收 Word。",
+      "expectations": [
+        "Requires the PDF source to match the confirmed Word fingerprint.",
+        "Separates internal _validation.pdf evidence from delivery PDF."
+      ]
+    }
+  ]
+}

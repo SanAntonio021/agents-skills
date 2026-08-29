@@ -28,6 +28,8 @@ from markdown_docx_delivery import (  # noqa: E402
     validate_export_readiness,
     validate_manifest,
     validate_manual_checklist,
+    validate_document_acceptance_items,
+    validate_acceptance_report,
     validate_baseline_manifest,
     validate_word_permission_record,
     write_json_atomic,
@@ -36,6 +38,30 @@ from markdown_docx_delivery import (  # noqa: E402
 
 def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _document_items(*, warning_id: str | None = None) -> list[dict[str, object]]:
+    layers = {
+        "fonts_and_fallback": "STATIC_PASS",
+        "paragraph_formatting": "STATIC_PASS",
+        "table_formatting": "STATIC_PASS",
+        "header_footer_geometry": "LO_RENDER_PASS",
+        "pagination": "LO_RENDER_PASS",
+        "word_native_open": "NATIVE_OPEN_PASS",
+        "word_native_render": "NATIVE_RENDER_PASS",
+    }
+    return [
+        {
+            "id": item_id,
+            "owner_layer": owner_layer,
+            "result": "WARN" if item_id == warning_id else "PASS",
+            "severity": "warning" if item_id == warning_id else "hard_block",
+            "baseline": "approved template and style profile",
+            "comparison": "compare package or rendered evidence against the approved baseline",
+            "evidence_path": f"evidence/docx/{item_id}.json",
+        }
+        for item_id, owner_layer in layers.items()
+    ]
 
 
 class MarkdownDocxDeliveryTests(unittest.TestCase):
@@ -242,6 +268,50 @@ class MarkdownDocxDeliveryTests(unittest.TestCase):
             "STATIC_VALIDATION_FAILED",
         )
 
+    def test_document_acceptance_items_cover_each_authoritative_check(self) -> None:
+        items = _document_items()
+        validate_document_acceptance_items(items)
+        for item_id in ("fonts_and_fallback", "paragraph_formatting", "table_formatting", "header_footer_geometry", "pagination", "word_native_open", "word_native_render"):
+            broken = [dict(item) for item in items]
+            next(item for item in broken if item["id"] == item_id)["result"] = "FAIL"
+            with self.assertRaises(ContractError) as raised:
+                validate_document_acceptance_items(broken)
+            self.assertEqual(raised.exception.code, "UNVERIFIED_GATE")
+
+    def test_acceptance_report_requires_matching_word_and_all_four_layers(self) -> None:
+        report = {
+            "report_version": "1",
+            "artifact_id": "demo-doc",
+            "revision": 1,
+            "word_path": "deliverables/word/demo-doc.r1.docx",
+            "word_sha256": "a" * 64,
+            "layers": [
+                {"id": layer, "status": "PASS", "evidence_path": f"evidence/{layer}.json"}
+                for layer in ("STATIC_PASS", "LO_RENDER_PASS", "NATIVE_OPEN_PASS", "NATIVE_RENDER_PASS")
+            ],
+            "items": _document_items(warning_id="pagination"),
+            "overall_verdict": "PASS_WITH_WARNINGS",
+            "warnings": ["pagination retained as a documented warning"],
+        }
+        result = validate_acceptance_report(
+            report,
+            artifact_id="demo-doc",
+            revision=1,
+            word_path="deliverables/word/demo-doc.r1.docx",
+            word_sha256="a" * 64,
+        )
+        self.assertEqual(result["overall_verdict"], "PASS_WITH_WARNINGS")
+        report["word_sha256"] = "b" * 64
+        with self.assertRaises(ContractError) as raised:
+            validate_acceptance_report(
+                report,
+                artifact_id="demo-doc",
+                revision=1,
+                word_path="deliverables/word/demo-doc.r1.docx",
+                word_sha256="a" * 64,
+            )
+        self.assertEqual(raised.exception.code, "SOURCE_MUTATED")
+
     def test_word_permission_and_baseline_are_bound_to_current_identity(self) -> None:
         validate_word_permission_record(
             {
@@ -308,6 +378,7 @@ class MarkdownDocxDeliveryTests(unittest.TestCase):
                     "evidence_screenshot": None,
                 }
             ],
+            "document_items": _document_items(),
             "overall_pass": True,
         }
         validate_manual_checklist(checklist, page_count=1)
@@ -357,6 +428,7 @@ class MarkdownDocxDeliveryTests(unittest.TestCase):
                         "evidence_screenshot": None,
                     }
                 ],
+                "document_items": _document_items(),
                 "overall_pass": True,
             },
         )

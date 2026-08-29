@@ -31,6 +31,24 @@ LAYERS = (
     "NATIVE_OPEN_PASS",
     "NATIVE_RENDER_PASS",
 )
+DOCUMENT_ACCEPTANCE_ITEMS = (
+    "fonts_and_fallback",
+    "paragraph_formatting",
+    "table_formatting",
+    "header_footer_geometry",
+    "pagination",
+    "word_native_open",
+    "word_native_render",
+)
+DOCUMENT_ITEM_LAYERS = {
+    "fonts_and_fallback": "STATIC_PASS",
+    "paragraph_formatting": "STATIC_PASS",
+    "table_formatting": "STATIC_PASS",
+    "header_footer_geometry": "LO_RENDER_PASS",
+    "pagination": "LO_RENDER_PASS",
+    "word_native_open": "NATIVE_OPEN_PASS",
+    "word_native_render": "NATIVE_RENDER_PASS",
+}
 ACCEPTANCE_VALUES = {"PASS", "FAIL", "UNVERIFIED", "ENV_UNVERIFIED", "NOT_RUN"}
 FAILURE_CODES = {
     "CONTRACT_SCHEMA_INVALID",
@@ -527,6 +545,107 @@ def validate_baseline_manifest(
         raise ContractError("UNVERIFIED_GATE", "raster baseline is deprecated", phase="native_baseline")
 
 
+def validate_document_acceptance_items(items: Any) -> None:
+    """Validate the authoritative document-level Word acceptance checklist."""
+
+    if not isinstance(items, list) or len(items) != len(DOCUMENT_ACCEPTANCE_ITEMS):
+        raise ContractError(
+            "UNVERIFIED_GATE",
+            "document acceptance checklist must contain exactly seven items",
+            phase="document_acceptance",
+        )
+    expected = set(DOCUMENT_ACCEPTANCE_ITEMS)
+    seen: set[str] = set()
+    required = {"id", "owner_layer", "result", "severity", "baseline", "comparison", "evidence_path"}
+    for item in items:
+        if not isinstance(item, dict) or set(item) != required:
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                "document acceptance item schema mismatch",
+                phase="document_acceptance",
+            )
+        item_id = item["id"]
+        if item_id not in expected or item_id in seen:
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                f"unknown or duplicate document acceptance item: {item_id}",
+                phase="document_acceptance",
+            )
+        seen.add(item_id)
+        if item["owner_layer"] != DOCUMENT_ITEM_LAYERS[item_id]:
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                f"document acceptance item {item_id} is assigned to the wrong layer",
+                phase="document_acceptance",
+            )
+        if item["result"] not in {"PASS", "WARN", "FAIL"}:
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                f"document acceptance item {item_id} has an invalid result",
+                phase="document_acceptance",
+            )
+        if item["severity"] not in {"hard_block", "warning"}:
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                f"document acceptance item {item_id} has an invalid severity",
+                phase="document_acceptance",
+            )
+        if not isinstance(item["baseline"], str) or not item["baseline"]:
+            raise ContractError("UNVERIFIED_GATE", f"document acceptance item {item_id} lacks a baseline", phase="document_acceptance")
+        if not isinstance(item["comparison"], str) or not item["comparison"]:
+            raise ContractError("UNVERIFIED_GATE", f"document acceptance item {item_id} lacks a comparison rule", phase="document_acceptance")
+        evidence = item["evidence_path"]
+        if evidence is not None and (not isinstance(evidence, str) or not evidence):
+            raise ContractError("UNVERIFIED_GATE", f"document acceptance item {item_id} has an invalid evidence path", phase="document_acceptance")
+        if item["result"] == "FAIL" or (item["result"] == "WARN" and item["severity"] != "warning"):
+            raise ContractError(
+                "UNVERIFIED_GATE",
+                f"document acceptance item {item_id} is not releasable",
+                phase="document_acceptance",
+            )
+    if seen != expected:
+        raise ContractError("UNVERIFIED_GATE", "document acceptance checklist is incomplete", phase="document_acceptance")
+
+
+def validate_acceptance_report(
+    report: Mapping[str, Any],
+    *,
+    artifact_id: str,
+    revision: int,
+    word_path: str,
+    word_sha256: str,
+) -> dict[str, Any]:
+    """Validate a DOCX acceptance report before it is attached to workflow state."""
+
+    required = {"report_version", "artifact_id", "revision", "word_path", "word_sha256", "layers", "items", "overall_verdict", "warnings"}
+    if not isinstance(report, Mapping) or set(report) != required:
+        raise ContractError("UNVERIFIED_GATE", "DOCX acceptance report schema mismatch", phase="docx_acceptance")
+    if report["report_version"] != "1" or report["artifact_id"] != artifact_id or report["revision"] != revision:
+        raise ContractError("UNVERIFIED_GATE", "DOCX acceptance report identity mismatch", phase="docx_acceptance")
+    if report["word_path"] != word_path or report["word_sha256"] != word_sha256:
+        raise ContractError("SOURCE_MUTATED", "DOCX acceptance report does not match generated Word", phase="docx_acceptance")
+    layers = report["layers"]
+    if not isinstance(layers, list) or len(layers) != len(LAYERS):
+        raise ContractError("UNVERIFIED_GATE", "DOCX acceptance report must list four layers", phase="docx_acceptance")
+    for expected, layer in zip(LAYERS, layers):
+        if not isinstance(layer, Mapping) or set(layer) != {"id", "status", "evidence_path"} or layer["id"] != expected:
+            raise ContractError("UNVERIFIED_GATE", "DOCX acceptance layers are not ordered or complete", phase="docx_acceptance")
+        if layer["status"] not in ACCEPTANCE_VALUES:
+            raise ContractError("UNVERIFIED_GATE", f"invalid DOCX acceptance status for {expected}", phase="docx_acceptance")
+        if layer["status"] == "PASS" and (not isinstance(layer["evidence_path"], str) or not layer["evidence_path"]):
+            raise ContractError("UNVERIFIED_GATE", f"{expected}=PASS requires evidence_path", phase="docx_acceptance")
+    validate_document_acceptance_items(report["items"])
+    warnings = report["warnings"]
+    if not isinstance(warnings, list) or not all(isinstance(value, str) and value for value in warnings):
+        raise ContractError("UNVERIFIED_GATE", "DOCX acceptance warnings must be a string array", phase="docx_acceptance")
+    verdict = report["overall_verdict"]
+    if verdict not in {"PASS", "PASS_WITH_WARNINGS"}:
+        raise ContractError("UNVERIFIED_GATE", "DOCX acceptance report is not releasable", phase="docx_acceptance")
+    if any(layer["status"] != "PASS" for layer in layers):
+        raise ContractError("UNVERIFIED_GATE", "all four DOCX acceptance layers must pass", phase="docx_acceptance")
+    return {"warnings": list(warnings), "overall_verdict": verdict}
+
+
 def confirm_content(
     manifest_path: str | Path,
     *,
@@ -669,6 +788,7 @@ def validate_manual_checklist(
         "reviewer_id",
         "reviewed_at",
         "pages",
+        "document_items",
         "overall_pass",
     }
     if set(checklist) != required or checklist["checklist_version"] != "1":
@@ -683,6 +803,7 @@ def validate_manual_checklist(
     pages = checklist["pages"]
     if not isinstance(pages, list) or len(pages) != page_count:
         raise ContractError("UNVERIFIED_GATE", "manual checklist must cover every rendered page")
+    validate_document_acceptance_items(checklist["document_items"])
     required_page_fields = {
         "page_num",
         "no_cropping",

@@ -31,6 +31,10 @@
 
 Word 原生门的许可记录必须绑定当前 `run_id` 和 `artifact_id`，并且用户完整回复“允许本次 Word 验收”；许可不跨任务、artifact 或 revision。栅格基准必须绑定模板哈希、Word 主版本、完整 Poppler 版本和固定命令 `pdftoppm -r 150 -png -aa yes -aaVector yes`，逐页哈希和 `user:<slug>` 审批身份缺一不可；没有匹配的 `approved` 基准只能记 `UNVERIFIED`。
 
+Word 权威验收项目见 [`docx/references/word-acceptance-checklist.md`](../../docx/references/word-acceptance-checklist.md)。正式 `DocxAcceptanceReport` 还需记录 Word 路径及 SHA-256、按固定顺序排列的四层结果，以及字体与回退、段落格式、表格格式、页眉页脚几何、分页、Word 原生打开和 Word 原生渲染七个项目。每个项目都要写责任层、对比基线、比较规则、结果、严重级别和证据路径；缺失或失败项目阻断，警告项目须在用户确认 Word 前展示。
+
+Word 阶段完成后由 `markdown-docx-workflow` 维护状态：`DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED`。Markdown、模板、Word、验收报告和 PDF 均以 SHA-256 绑定；任一源稿修改或 Word 指纹变化会使后续状态失效并要求重新生成或验收。
+
 ## 安全边界
 
 见 `docx` 技能内的 [Office security boundary](../../docx/references/office-security-boundary.md)。Windows 上禁止直接启动 `soffice`；Word COM 只能在本次任务收到完整回复“允许本次 Word 验收”、且检测不到既有 `WINWORD.EXE` 时运行，只读打开隔离副本，不连接、保存或关闭用户实例。

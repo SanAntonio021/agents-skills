@@ -25,9 +25,22 @@ def test_shared_markdown_docx_contract_is_referenced_by_content_skills() -> None
     ):
         assert fragment in text
 
-    for skill_name in ("writing-router", "research-report", "meeting-notes", "ieee-manuscript-edit", "project-writing"):
+    for skill_name in ("writing-router", "research-report", "meeting-notes", "ieee-manuscript-edit", "project-writing", "markdown-docx-workflow"):
         skill_text = (SKILLS_ROOT / skill_name / "SKILL.md").read_text(encoding="utf-8")
         assert "markdown-docx-contract.md" in skill_text
+
+
+def test_markdown_docx_workflow_routes_word_and_pdf_gates() -> None:
+    skill = (SKILLS_ROOT / "markdown-docx-workflow" / "SKILL.md").read_text(encoding="utf-8")
+    for fragment in (
+        "DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED",
+        "确认内容并导出 Word",
+        "Word 可以作为最终版本",
+        "DocxAcceptanceReport",
+        "_validation.pdf",
+        "workflow_state.py",
+    ):
+        assert fragment in skill
 
 
 def test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named() -> None:

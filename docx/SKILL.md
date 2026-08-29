@@ -68,6 +68,13 @@ unproven Office exit, or temporary-workspace cleanup uncertainty also downgrades
 `UNVERIFIED`; it cannot be released. For a DOCX release, require `STATIC_PASS`,
 `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
 
+The authoritative document-level checklist is [Word acceptance checklist](references/word-acceptance-checklist.md).
+Every formal acceptance report and manual review includes seven explicit items: fonts and fallback,
+paragraph formatting, table formatting, header/footer geometry, pagination, Word-native opening, and
+Word-native rendering. Each item records its owner layer, comparison baseline, result, severity, and
+evidence path. Missing or failed items block release; warnings must be shown before the user confirms
+Word as the final version.
+
 ## Markdown-first formal delivery
 
 Markdown is the content source of truth. Content skills must finish review and

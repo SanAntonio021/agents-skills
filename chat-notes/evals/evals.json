@@ -467,6 +467,21 @@
         "输出不会因 A 的验收失败重复扫描、点击更新、修改 `.cc-switch`、`.claude`、`.codex` 或数据库。",
         "输出使用 helper 指定提交的 Git blob 作为源码依据，不以 Windows 工作树 CRLF/LF 字节差异判断部署结果。"
       ]
+    },
+    {
+      "id": 34,
+      "prompt": "我只批准发布 chat-notes 里一段规则，但同一个 SKILL.md 还混有另一个任务的未批准改动。main 已在原工作区检出，手工写的 git apply --cached patch 又连续两次因为 hunk 行数错误失败。请按 chat-notes 安全完成这次发布。",
+      "expected_output": "识别为同文件混合改动，不在原工作区整文件暂存、stash、reset、checkout、restore 或覆盖文件；从最新远端固定提交创建 detached worktree，只重建批准内容，由 Git 自动生成 patch，并在隔离 index 先执行 git apply --cached --check。完整复核暂存差异和候选提交后才能推送；远端基线变化或批准内容无法准确重建时停止，原工作区始终保持不变。",
+      "files": [],
+      "expectations": [
+        "输出把同文件混合改动识别为独立的隔离发布分流，不把用户对部分内容的批准扩展为整文件批准。",
+        "输出不会在原工作区整文件暂存，也不会用 `stash`、`reset`、`checkout`、`restore` 或覆盖文件抽离改动。",
+        "输出从固定远端基线创建 detached worktree，因为目标分支已经在原工作区检出。",
+        "输出只在隔离副本重建批准内容，让 Git 自动生成 patch，并在写入 index 前执行 `git apply --cached --check`。",
+        "输出在手工 patch 已确认因 hunk 计数或格式损坏后，不继续手调 header 行数。",
+        "输出复核完整暂存差异、候选提交文件集合、远端基线和原工作区状态；任一不符时停止。",
+        "输出只发布批准内容，并在 push 后继续执行本次精确 Skill 集合的定向同步与四层验收。"
+      ]
     }
   ]
 }

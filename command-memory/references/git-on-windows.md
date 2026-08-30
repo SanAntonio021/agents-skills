@@ -2,13 +2,14 @@
 
 ## 这份说明管什么
 
-在 Windows（git bash / MSYS2）上跑 git 时，有三类坑会让命令莫名失败：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有四类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
 3. **同步客户端用云端旧快照回滚整个仓库**：双向同步的云盘把几天前的 `.git` 和工作区覆盖回来，提交历史倒退、已删目录复活。
+4. **同一文件混有批准与未批准改动**：整文件暂存会把未授权内容带入提交，手工编写 patch 又容易因 hunk 行数错误损坏。
 
-这三类都不是 git 本身的错，是 Windows 环境问题，按对应 pattern 处理。
+按对应 pattern 处理。第 4 类不是 Git 故障，但在非交互式 Windows 任务里容易因命令形态选错而造成范围越界。
 
 ## 坑 1：MSYS 把 `REF:path` 里的 `/` `:` 转坏
 
@@ -162,3 +163,54 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 - success_signal: `git log` 回到最新提交、`git status` 干净、`git push` 正常 fast-forward；再无新冲突副本生成
 - capture_rule: 2026-07-10 百度网盘实战沉淀（回滚 18 个提交，reset --hard origin/main 全量恢复）。新确认的同步客户端症状形态（临时文件后缀、冲突副本命名）补进四联征清单
 
+## 坑 4：同一文件混合改动，手工 patch 又已损坏
+
+同一文件同时包含本次允许提交的改动和其他任务的未授权改动时，`git add <file>` 会扩大提交范围。
+`git add -p` 依赖交互选择，也不适合作为自动化任务的唯一保护。若手工 patch 已报 hunk 行数或格式错误，
+继续修改 `@@ -a,b +c,d @@` 计数会把内容审查变成脆弱的文本记账。更稳的做法是从固定远端基线建立
+detached worktree，只重建批准内容，再让 Git 自动生成和检查 patch。
+
+### Pattern: git-stage-approved-same-file-changes-via-detached-worktree
+- scenario: 原工作区的同一文件混有批准与未批准改动，需要非交互式地只提交批准内容，同时保持原工作区和暂存区不变
+- use_when: 整文件暂存会越权；或手工 patch 已报 `corrupt patch`、`patch fragment without header`、hunk 行数不匹配
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $branch = "<BRANCH>"
+  $approvedPaths = @("<PATH_1>", "<PATH_2>")
+
+  git -C $repoRoot fetch origin
+  if ($LASTEXITCODE -ne 0) { throw "fetch failed" }
+  $base = (git -C $repoRoot rev-parse "refs/remotes/origin/$branch").Trim()
+  if ($base -notmatch '^[0-9a-f]{40}$') { throw "remote baseline is not a full commit id" }
+
+  $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("git-approved-" + [guid]::NewGuid().ToString("N"))
+  $isolatedTree = Join-Path $tempRoot "worktree"
+  $patchPath = Join-Path $tempRoot "approved.patch"
+  New-Item -ItemType Directory -Path $tempRoot -ErrorAction Stop | Out-Null
+  git -C $repoRoot worktree add --detach $isolatedTree $base
+  if ($LASTEXITCODE -ne 0) { throw "detached worktree creation failed" }
+
+  # 只在 $isolatedTree 中重建已经批准的内容，并完成该 skill / 项目的验证。
+  git -C $isolatedTree diff --check -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "reconstructed changes failed diff check" }
+  git -C $isolatedTree diff --binary --full-index "--output=$patchPath" -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "Git failed to generate the patch" }
+
+  git -C $isolatedTree apply --cached --check -- $patchPath
+  if ($LASTEXITCODE -ne 0) { throw "generated patch does not apply to the clean index" }
+  git -C $isolatedTree apply --cached -- $patchPath
+  if ($LASTEXITCODE -ne 0) { throw "staging generated patch failed" }
+  git -C $isolatedTree diff --cached --name-status
+  git -C $isolatedTree diff --cached --check
+  git -C $isolatedTree diff --cached -- $approvedPaths
+  ```
+- substitute_only: `<REPO_ROOT>`, `<BRANCH>`, `<PATH_1>...`；`approvedPaths` 必须来自已确认允许清单，不从当前工作区文件名猜测
+- preflight: 记录原仓库 `HEAD`、分支、`git status --short` 和 `git diff --cached --name-status`；确认远端目标分支是允许的发布基线；目标分支已在原工作区检出时必须保持 `--detach`
+- candidate_check: 暂存文件集合和完整差异只能包含批准内容；候选提交创建后再用 `git diff-tree --no-commit-id --name-status -r <COMMIT>` 和 `git show --stat --oneline <COMMIT>` 复核；推送前重新 `fetch`，远端分支必须仍等于 `$base`
+- cleanup: 只有候选提交已接受、需要的 push 已成功且原工作区复核无变化后，才运行 `git -C $repoRoot worktree remove $isolatedTree` 并删除本次 `$tempRoot`；失败时保留路径、`$base` 和恢复说明
+- optional_tool: `git-hunk` 只能在已经安装时辅助枚举和规划 hunk；不自动安装、不形成默认依赖，也不能替代暂存后的完整差异复核
+- avoid: 不在原工作区执行整文件 `git add`、`stash`、`reset`、`checkout`、`restore` 或覆盖目标文件；不把原工作区未批准内容复制进隔离副本；手工 patch 第一次确认是 hunk 计数或格式损坏后，不继续修改 header 计数；不 force push
+- success_signal: 隔离 worktree 的暂存差异只含批准内容，候选提交基于固定远端提交，原工作区 `HEAD`、暂存区和未提交内容保持不变
+- capture_rule: 同文件混合改动先隔离重建，再由 Git 生成 patch 并执行 `--cached --check`；内容范围不清或远端基线变化时失败关闭

@@ -1,8 +1,8 @@
 {
   "schema_version": "1.1",
-  "engine_home": "D:\\BaiduSyncdisk\\.agents\\runtimes\\editaplot\\ef94c133229e1e276db1745e6300b3bf91f35adb",
+  "engine_home": "D:\\BaiduSyncdisk\\.agents\\runtimes\\editaplot\\4aa986f3f84da9cb2a2297159a8f20e42b7e527c",
   "source_repo_url": "https://github.com/hang-jin/editaplot.git",
-  "expected_commit": "ef94c133229e1e276db1745e6300b3bf91f35adb",
-  "expected_runtime_manifest_sha256": "3ff9740b207c1a1350686afd824f0dd54a07807e3efbe203e2635f547d83f9e2",
+  "expected_commit": "4aa986f3f84da9cb2a2297159a8f20e42b7e527c",
+  "expected_runtime_manifest_sha256": "3a210ec708b95d866aa8b13e0ce87b8734437e096045135bcdca0ba116ccb933",
   "generated_by": "SanAntonio021/agents-skills personal distribution"
 }

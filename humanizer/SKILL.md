@@ -130,7 +130,7 @@ When voice is appropriate, avoid uniform sentence structures, bloodless neutrali
 
 ### 7. Overused "AI Vocabulary" Words
 
-**High-frequency AI words:** Actually, additionally, align with, crucial, delve, emphasizing, enduring, enhance, fostering, garner, highlight (verb), interplay, intricate/intricacies, key (adjective), landscape (abstract noun), pivotal, showcase, tapestry (abstract noun), testament, underscore (verb), valuable, vibrant
+**High-frequency AI words:** Actually, additionally, align with, crucial, delve, emphasizing, enduring, enhance, fostering, garner, gate/gated/gating (figurative; preserve established technical usage), highlight (verb), interplay, intricate/intricacies, key (adjective), landscape (abstract noun), pivotal, quietly, showcase, tapestry (abstract noun), testament, underscore (verb), valuable, vibrant
 **Problem:** These words appear far more frequently in post-2023 text. They often co-occur.
 **Before:**
 > Additionally, a distinctive feature of Somali cuisine is the incorporation of camel meat. An enduring testament to Italian colonial influence is the widespread adoption of pasta in the local culinary landscape, showcasing how these dishes have integrated into the traditional diet.
@@ -164,12 +164,18 @@ When voice is appropriate, avoid uniform sentence structures, bloodless neutrali
 **After:**
 > The event includes talks and panels. There's also time for informal networking between sessions.
 
-### 11. Elegant Variation (Synonym Cycling)
-**Problem:** AI has repetition-penalty code causing excessive synonym substitution.
-**Before:**
+### 11. Elegant Variation and Repeated Sentence Openings
+**Problem:** AI can over-manage repetition in either direction. It may cycle through synonyms for one subject, or open several plain narrative sentences with the same pronoun even when the repetition has no rhetorical purpose. Settle on one referent in the first case. In the second, merge sentences, shift the grammatical subject, or open on the action.
+**Before (synonym cycling):**
 > The protagonist faces many challenges. The main character must overcome obstacles. The central figure eventually triumphs. The hero returns home.
 **After:**
 > The protagonist faces many challenges but eventually triumphs and returns home.
+**Before (repeated openings):**
+> She noted the door. She noted the lock on it. She filed both away.
+**After:**
+> She noted the door and its lock, then filed both away.
+
+Do not ban the repeated word. Deliberate anaphora can build cadence or pressure; change it only when the repetition does no rhetorical work.
 
 ### 12. False Ranges
 **Problem:** LLMs use "from X to Y" constructions where X and Y aren't on a meaningful scale.
@@ -284,7 +290,9 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 - "It is important to note that the data shows" → "The data shows"
 
 ### 24. Excessive Hedging
-**Problem:** Over-qualifying statements.
+
+**Phrases to watch:** to be fair, it's also possible, could potentially, might arguably, in some cases it may, this is an inference
+**Problem:** Over-qualifying statements. Iterative editing can compound this: one pass softens an overstatement, and later passes soften the qualifier until almost every conclusion carries a fairness clause. Keep at most one honest qualifier. If a caveat exists only because an earlier draft overreached, remove the overreach and the leftover caveat together.
 **Before:**
 > It could potentially possibly be argued that the policy might have some effect on outcomes.
 **After:**
@@ -317,12 +325,16 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 
 ### 28. Signposting and Announcements
 
-**Phrases to watch:** Let's dive in, let's explore, let's break this down, here's what you need to know, now let's look at, without further ado
-**Problem:** LLMs announce what they are about to do instead of doing it. This meta-commentary slows the writing down and gives it a tutorial-script feel.
+**Phrases to watch:** Let's dive in, let's explore, let's break this down, here's what you need to know, now let's look at, without further ado, heads up, quick note, before I forget
+**Problem:** LLMs announce what they are about to do instead of doing it. The same tell survives a casual rewrite such as "one thing that bit me" or "heads up." Remove the announcement, not just its formality.
 **Before:**
 > Let's dive into how caching works in Next.js. Here's what you need to know.
 **After:**
 > Next.js caches data at multiple layers, including request memoization, the data cache, and the router cache.
+**Before (casual register):**
+> One thing that bit me hard, so pay attention to this part: the webpack dev server doesn't send the CORS header by default.
+**After:**
+> The webpack dev server doesn't send the CORS header by default.
 
 ### 29. Fragmented Headers
 
@@ -371,6 +383,28 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 **After:**
 > Whether it's worth the price depends on how often you'll use it.
 
+#### Supplemental check: Shadowboxing (Defending Against Unraised Objections)
+
+**Phrases to watch:** This isn't mainly about, I'm not arguing, to be clear, don't get me wrong, this is not to say, some might say... but
+**Problem:** LLMs sometimes rebut objections that never appear in the published text, often leaving behind a drafting exchange. Watch for an unattributed denial about the piece's aim or the author's intent when that topic appears nowhere else. An object-level claim such as "the API is not thread-safe" is not shadowboxing.
+**Before:**
+> This isn't mainly about prompt length, and I'm not arguing that documentation doesn't matter. You could categorize the problem another way, but the issue is whether the agent can use the instruction when it acts.
+**After:**
+> The issue is whether the agent can use the instruction when it acts.
+
+Remove only the unsupported defense. If it contains a real claim, state that claim directly. Keep attributed objections, replies, FAQs, legal or safety notices, and scope limits that do real work.
+
+#### Supplemental check: Editorial Scar Tissue (Phantom Alternatives)
+
+**Phrases to watch:** A tempting option would be, one might be tempted to, an obvious approach would be, you might think... but, it would be easy to just
+**Problem:** The model may preserve an option that was rejected during drafting, dismiss it in a clause, and never use it again. Remove an implausible phantom alternative and state the real constraint directly.
+**Before:**
+> Session tokens are rotated every 24 hours. A tempting approach would be to restart the auth service on a cron job, but that would drop every active session. Rotation happens in place, and clients refresh transparently.
+**After:**
+> Session tokens are rotated every 24 hours, in place, and clients refresh transparently.
+
+Keep real options in design documents, tutorials, and arguments. One rejected option may be valid; several short, unrelated rejections are stronger evidence of drafting residue.
+
 ## DETECTION GUIDANCE
 
 ### What NOT to flag (false positives)
@@ -386,7 +420,10 @@ A clean human writer can hit several of the patterns above without any AI involv
 - **Curly quotes alone.** macOS, Word, Google Docs, and most CMSes auto-curl by default. Curly quotes only count when stacked with other tells.
 - **Em dashes alone.** Many editors and journalists use them often. Em dashes are evidence only when paired with formulaic sales-y rhythm.
 - **One short emphatic sentence.** Humans use clipped sentences to land a point. Flag staccato drama only when several short fragments appear in a row and inflate the tone.
+- **Deliberate anaphora.** Repeating a sentence opening can build cadence or pressure. Flag it only when the run does no rhetorical work.
 - **"Honestly" or "look" mid-sentence.** These are ordinary in casual writing. The tell is the standalone theatrical opener, not the word itself.
+- **Disclaimers and scoping that do real work.** Legal and safety notices, corrections of real misconceptions, attributed objections, replies, and FAQs are content, not shadowboxing.
+- **Alternatives a reader would actually consider.** Design documents, tutorials, and arguments may need to compare real options. The tell is an implausible alternative dismissed mid-flow and never used again.
 - **Unsourced claims.** Most of the web is unsourced. Lack of citations doesn't prove anything.
 - **Correct, complex formatting.** Visual editors and templates produce clean output without any AI.
 - **Secondhand text.** Do not rewrite watched phrases inside quotations, titles, proper names, or examples where the phrase is being discussed rather than used.
@@ -420,7 +457,7 @@ When you see these, lean toward leaving the prose alone — they are evidence of
 1. Read the input carefully and identify every instance of the patterns above.
 2. Write a **draft rewrite**. Check that it reads naturally aloud, varies sentence length, prefers specific details and simple constructions (is/are/has), and keeps the appropriate register.
 3. Ask two questions: **"What makes the below so obviously AI generated?"** and **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"** Answer briefly. A fabrication is a defect even when it sounds more human than the vague original.
-4. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see §14).
+4. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see section 14). Re-state the point instead of patching one flagged phrase at a time. If a sentence still feels cross-examined or overqualified, rewrite the paragraph around its main point.
 
 In pasted-text mode, deliver the draft, the brief "still-AI" bullets, the final rewrite, and (optionally) a short summary of changes. In file and embedded modes, run the same loop but deliver only what the mode calls for (see Invocation Modes).
 

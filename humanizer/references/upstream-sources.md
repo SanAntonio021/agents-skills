@@ -3,7 +3,7 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-31`
-- 最近来源登记审核：`2026-07-31`
+- 最近来源登记审核：`2026-08-30`
 - 说明：完整收编 blader/humanizer 的 MIT 版本 2.9.1，保留英文通用文本边界；上游活跃，后续周检只跟踪已确认来源。TW93/Waza 仅提供三条编辑方法原则，不安装新的宽泛写作入口。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
@@ -14,9 +14,11 @@
 - 仓库：https://github.com/blader/humanizer.git
 - 当前上游路径：`.`
 - 接受时上游路径：`.`
-- 已接受提交：`523374dee72d67c7b2b5f858ea0094ffda49c3ac`
+- 技能入口：`SKILL.md`
+- 已接受提交：`e2e92e7b4b8229253ed5c8e81dc65463fdeddda5`
 - 已接受版本：`2.9.1`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`blader-humanizer`
 
@@ -55,9 +57,11 @@
 - 仓库：https://github.com/tw93/Waza.git
 - 当前上游路径：`skills/write`
 - 接受时上游路径：`skills/write`
-- 已接受提交：`9c97ccb6d96e776bf814e27498d0afc0ed3d1e94`
+- 技能入口：`skills/write/SKILL.md`
+- 已接受提交：`9fbf0ab2e33e26e4b77eac57f4c53170a2b15186`
 - 已接受版本：`3.32.0`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`tw93-waza`
 

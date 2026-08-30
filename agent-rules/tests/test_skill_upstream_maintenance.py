@@ -1090,6 +1090,78 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertEqual(invalid["status"], "invalid")
         self.assertTrue(any("skill entry missing at current HEAD" in item for item in invalid["errors"]))
 
+    def declarative_license_source(self):
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text(
+            "---\nname: source-skill\nlicense: MIT\nversion: 1.0\n---\n\n# Source\n\nBody v1.\n",
+            encoding="utf-8",
+        )
+        (self.mirror / "README.md").write_text(
+            "# Project\n\nIntro v1.\n\n> ## License\n>\n> MIT · Author\n\n> ## History\n",
+            encoding="utf-8",
+        )
+        baseline = commit_all(self.mirror, "declarative license baseline")
+        skills, mirrors = self.load()
+        source = MODULE.SourceRecord(
+            **{
+                **skills[0].sources[0].__dict__,
+                "accepted_commit": baseline,
+                "license_paths": ("skills/source-skill/SKILL.md", "README.md"),
+            }
+        )
+        return source, mirrors
+
+    def test_unrelated_skill_and_readme_edits_do_not_change_license(self) -> None:
+        source, _ = self.declarative_license_source()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text(
+            "---\nname: source-skill\nlicense: \"MIT\"\nversion: 1.1\n---\n\n# Source\n\nBody v2.\n",
+            encoding="utf-8",
+        )
+        readme = self.mirror / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8").replace("Intro v1.", "Intro v2."), encoding="utf-8")
+        current = commit_all(self.mirror, "non-license documentation changes")
+
+        diff = MODULE.source_diff(self.mirror, source, current)
+
+        self.assertEqual(diff["status"], "review_required")
+        self.assertNotEqual(diff["status"], "license_review_required")
+
+    def test_frontmatter_license_change_or_removal_is_blocked(self) -> None:
+        source, _ = self.declarative_license_source()
+        upstream = self.mirror / "skills" / "source-skill" / "SKILL.md"
+        upstream.write_text(
+            upstream.read_text(encoding="utf-8").replace("license: MIT", "license: Apache-2.0"),
+            encoding="utf-8",
+        )
+        changed_head = commit_all(self.mirror, "change frontmatter license")
+        changed = MODULE.source_diff(self.mirror, source, changed_head)
+        self.assertEqual(changed["status"], "license_review_required")
+
+        upstream.write_text(
+            upstream.read_text(encoding="utf-8").replace("license: Apache-2.0\n", ""),
+            encoding="utf-8",
+        )
+        removed_head = commit_all(self.mirror, "remove frontmatter license")
+        removed = MODULE.source_diff(self.mirror, source, removed_head)
+        self.assertEqual(removed["status"], "license_review_required")
+
+    def test_readme_license_section_change_or_removal_is_blocked(self) -> None:
+        source, _ = self.declarative_license_source()
+        readme = self.mirror / "README.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("MIT · Author", "Apache-2.0 · Author"),
+            encoding="utf-8",
+        )
+        changed_head = commit_all(self.mirror, "change README license")
+        changed = MODULE.source_diff(self.mirror, source, changed_head)
+        self.assertEqual(changed["status"], "license_review_required")
+
+        readme.write_text("# Project\n\nLicense section removed.\n", encoding="utf-8")
+        removed_head = commit_all(self.mirror, "remove README license section")
+        removed = MODULE.source_diff(self.mirror, source, removed_head)
+        self.assertEqual(removed["status"], "license_review_required")
+
     def test_verified_path_migration_preserves_accepted_path_and_allows_review(self) -> None:
         run_git(
             self.mirror,

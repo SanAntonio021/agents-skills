@@ -852,6 +852,83 @@ def strip_skill_frontmatter_version(text: str) -> str:
     return "\n".join(kept)
 
 
+def normalize_license_declaration(value: str) -> str:
+    normalized = " ".join(value.strip().split())
+    if len(normalized) >= 2 and normalized[0] == normalized[-1] and normalized[0] in {"'", '"'}:
+        normalized = normalized[1:-1].strip()
+    return normalized.casefold()
+
+
+def skill_frontmatter_license(text: str) -> str | None:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    end = next((index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---"), None)
+    if end is None:
+        return None
+    for line in lines[1:end]:
+        match = re.match(r"^license\s*:\s*(.+?)\s*$", line, re.I)
+        if match:
+            value = normalize_license_declaration(match.group(1))
+            return value or None
+    return None
+
+
+def markdown_license_section(text: str) -> str | None:
+    section_level: int | None = None
+    section_lines: list[str] = []
+    for raw_line in text.splitlines():
+        line = re.sub(r"^\s*(?:>\s*)+", "", raw_line).strip()
+        heading = re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", line)
+        if heading:
+            level = len(heading.group(1))
+            title = normalize_license_declaration(heading.group(2))
+            if section_level is None:
+                if title in {"license", "licence"}:
+                    section_level = level
+                continue
+            if level <= section_level:
+                break
+        if section_level is not None and line:
+            section_lines.append(" ".join(line.split()))
+    if section_level is None or not section_lines:
+        return None
+    return normalize_license_declaration("\n".join(section_lines))
+
+
+def license_declaration(path: str, text: str) -> str | None:
+    name = PurePosixPath(path).name.lower()
+    if name == "skill.md":
+        return skill_frontmatter_license(text)
+    if name.startswith("readme"):
+        return markdown_license_section(text)
+    return text.replace("\r\n", "\n").strip()
+
+
+def changed_license_declarations(
+    mirror: Path,
+    source: SourceRecord,
+    current: str,
+    changed_paths: set[str],
+) -> set[str]:
+    changed: set[str] = set()
+    for path in changed_paths:
+        before_text = git_text_at(mirror, source.accepted_commit, path)
+        current_text = git_text_at(mirror, current, path)
+        if before_text is None or current_text is None:
+            changed.add(path)
+            continue
+        before_declaration = license_declaration(path, before_text)
+        current_declaration = license_declaration(path, current_text)
+        if (
+            before_declaration is None
+            or current_declaration is None
+            or before_declaration != current_declaration
+        ):
+            changed.add(path)
+    return changed
+
+
 def is_ignorable_change(
     mirror: Path,
     before: str,
@@ -938,10 +1015,17 @@ def source_diff(
         for path in source.license_paths
         if git(mirror, ["cat-file", "-e", f"{current}:{path}"]).returncode != 0
     ]
-    if license_diff.stdout.strip() or missing_license:
+    changed_license_paths = set(license_diff.stdout.splitlines()) | set(missing_license)
+    semantic_license_changes = changed_license_declarations(
+        mirror,
+        source,
+        current,
+        changed_license_paths,
+    )
+    if semantic_license_changes:
         changed = [
             {"change": "LICENSE", "path": path}
-            for path in sorted(set(license_diff.stdout.splitlines()) | set(missing_license))
+            for path in sorted(semantic_license_changes)
         ]
         return {"status": "license_review_required", "changed": changed, "comparison_base": before}
 

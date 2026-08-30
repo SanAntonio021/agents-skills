@@ -179,7 +179,7 @@ ref 只对最近一次 snapshot 的当前 generation 有效。页面导航、动
 两种方式打开页面内的链接：
 
 - **ref + `/action`**：在当前 tab 内点击用户视角中的可交互单元。适合展开、翻页、进入详情等连续操作。
-- **`POST /v2/tabs` + 完整 URL**：在同一 task 中创建新 tab。适合并行读取多个页面；popup 会按 `openerId` 自动继承所属 task。
+- **`POST /v2/tabs` + 完整 URL**：在同一 task 中创建新 tab。Proxy 会先创建空白页、attach/初始化，再显式导航到该完整 URL，避免新页导航与 CDP 初始化竞争；适合并行读取多个页面。popup 会按 `openerId` 自动继承所属 task。
 
 很多网站的链接包含会话相关参数，这些参数是正常访问所必需的。提取 URL 时保留完整地址，不要裁剪；URL 放入 JSON body 的 `url` 字段传给 `/v2/tabs` 或 `/navigate`。
 
@@ -306,4 +306,5 @@ updated: 2026-03-19
 | `references/cdp-api.md` | 需要 CDP API 详细参考、JS 提取模式、错误处理时 |
 | `references/migration-dual-proxy.2.md` | 发现旧无版本路由、旧 Proxy 或需要迁移现有调用时 |
 | `references/browser-source-survey.md` | 审查本地设计来源、采纳边界和未来上游同步关系时 |
+| `references/site-patterns/google.com.md` | 读取 Google 搜索页脚的位置来源提示，或执行该站点的最小本机定位验收时 |
 | `references/site-patterns/{domain}.md` | 确定目标网站后，读取对应站点经验 |

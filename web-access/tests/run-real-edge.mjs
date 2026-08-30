@@ -188,6 +188,13 @@ try {
   const targetId = tabResult.body.targetId;
   const targetPath = `/v2/tabs/${encodeURIComponent(targetId)}`;
 
+  const createdUrl = await api(base, `${targetPath}/eval`, {
+    method: 'POST', token: task.taskToken, body: { expression: 'location.href' },
+  });
+  assert.equal(createdUrl.status, 200, JSON.stringify(createdUrl.body));
+  assert.equal(createdUrl.body.value, fixtureUrl, JSON.stringify(createdUrl.body));
+  report.checks.push('real-created-tab-requested-url');
+
   const load = await api(base, `${targetPath}/wait`, { method: 'POST', token: task.taskToken, body: { state: 'load', timeoutMs: 10_000 } });
   assert.equal(load.status, 200, JSON.stringify(load.body));
   let snapshot = (await api(base, `${targetPath}/snapshot?refresh=true`, { token: task.taskToken })).body;
@@ -276,7 +283,13 @@ try {
   await closeBrowser();
   await stopChild(edgeProcess);
   if (fixtureServer) await new Promise((resolve) => fixtureServer.close(resolve));
-  fs.rmSync(tempRoot, { recursive: true, force: true });
+  try {
+    await fs.promises.rm(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  } catch (error) {
+    report.passed = false;
+    report.cleanupError = error.stack || error.message;
+    report.error ||= `Failed to remove isolated Edge test directory: ${tempRoot}`;
+  }
 }
 
 if (outputPath) {

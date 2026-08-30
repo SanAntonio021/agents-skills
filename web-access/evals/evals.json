@@ -72,6 +72,29 @@
         "无版本操作端点返回 410",
         "重启后旧 token/归属/ref 清空而 tab 保留"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "用 Edge 的 Web Access Proxy 新建一个 task tab 打开 https://example.com/verify-created-tab。接口返回成功，但历史上真实浏览器偶尔仍停在 about:blank。请说明创建顺序并验证这次实际 URL。",
+      "expected_output": "Proxy 先以 about:blank 创建 target，归属 task 并完成 attach/session 初始化，再显式 Page.navigate 到请求 URL；返回后通过受 task 鉴权的页面回读确认 location.href 是目标 URL，不把 target 元数据中的 URL 当作唯一证据。",
+      "files": [],
+      "expectations": [
+        "新建 tab 的实际 URL 不得停留在 about:blank",
+        "Target.createTarget 使用 about:blank，attach 和初始化发生在 Page.navigate 前",
+        "通过页面 Runtime.evaluate 回读 location.href",
+        "不接管或枚举用户已有 tab"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "在 Edge 中验收 Google 搜索的当前位置来源。创建本 task 自有的 Google 搜索 tab，确认新 tab 已实际到达请求 URL，滚到底部读取页脚的位置提示，并与同一时段的 Edge 出口和 Mihomo 日志对照。用户只允许 Edge 本机范围，不允许改 Google 账号、活动记录、住址、代理或节点。",
+      "expected_output": "回读目标 URL；从 #footcnt 读取完整页脚提示；把活动记录、地点/住址、浏览器/Windows 定位、位置 Cookie 和 IP 推断区分开。若只剩整站 Google 数据清理，停止并报告退出登录风险。",
+      "files": [],
+      "expectations": [
+        "读取 Google 页脚时先确认搜索结果页并滚动到底部",
+        "不把节点名称或单一 IP 库城市当作 Google 位置证据",
+        "不修改账号、活动记录、住址、代理或节点"
+      ]
     }
   ]
 }

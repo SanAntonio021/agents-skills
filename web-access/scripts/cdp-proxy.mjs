@@ -561,18 +561,37 @@ async function reconcileTaskPopups(task) {
   return adopted;
 }
 
+async function navigateCreatedTarget(targetId, url) {
+  const sessionId = await ensureSession(targetId);
+  invalidateTarget(targetId);
+  lifecycle.set(targetId, { domcontentloaded: false, load: false });
+  return sendCDP('Page.navigate', { url }, sessionId);
+}
+
+async function navigateAndReleaseLateTarget(targetId, url) {
+  try {
+    await navigateCreatedTarget(targetId, url);
+  } finally {
+    // This task no longer owns the late tab, so leave it navigated for the user.
+    await detachAndReleaseTab(targetId);
+  }
+}
+
 async function handleLateCreatedTarget(task, result, url) {
   const targetId = result?.targetId;
   if (!targetId) return;
   await withTaskMutex(task, async () => {
     if (tabOwners.has(targetId)) return;
     if (task.state === 'active' || task.state === 'handoff') {
-      ownTab(task, targetId, 'created', null, { url });
+      ownTab(task, targetId, 'created', null, { url: 'about:blank' });
+      await navigateCreatedTarget(targetId, url);
       return;
     }
     if (task.state === 'completed' && task.completion?.keep === false) {
       await closeLateTaskTarget({ targetId }, task.id);
+      return;
     }
+    await navigateAndReleaseLateTarget(targetId, url);
   });
 }
 
@@ -1434,13 +1453,14 @@ async function handleRoute(req, parsed, rawBody) {
       if (!['http:', 'https:', 'about:'].includes(validated.protocol)) throw new ApiError(400, 'INVALID_URL', 'Only http, https, and about URLs are allowed.');
       const result = await sendCDP(
         'Target.createTarget',
-        { url, background: body.background !== false },
+        { url: 'about:blank', background: body.background !== false },
         null,
         CDP_COMMAND_TIMEOUT,
         { onLateResult: (late) => handleLateCreatedTarget(task, late, url) },
       );
       if (!result.targetId) throw new Error('Target.createTarget returned no targetId.');
-      ownTab(task, result.targetId, 'created', null, { url });
+      ownTab(task, result.targetId, 'created', null, { url: 'about:blank' });
+      await navigateCreatedTarget(result.targetId, url);
       task.lastActivity = Date.now();
       return jsonResponse(201, { targetId: result.targetId, kind: 'created' });
     });

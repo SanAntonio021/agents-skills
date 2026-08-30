@@ -1,4 +1,4 @@
 interface:
-  display_name: "停稿审查"
-  short_description: "按 A/B/C 分级审查现有文稿并判断是否继续修改"
-  default_prompt: "Use $paper-review to review this draft with A/B/C severity, distinguish must-fix issues from style preferences, and decide whether further revision is still necessary."
+  display_name: "论文审查"
+  short_description: "审查现有文稿、投稿前风险或受邀同行评审"
+  default_prompt: "Use $paper-review to assess this manuscript with the mode appropriate to my role: A/B/C stopline review, pre-submission review, or an evidence-based external peer-review draft."

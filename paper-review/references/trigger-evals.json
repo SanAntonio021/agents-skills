@@ -94,5 +94,45 @@
     "expected_primary_skill": "journal-selection",
     "expected_not_primary_skill": "paper-review",
     "reason": "期刊未定时是选刊定位问题；投稿前把关以目标刊已定为前提。"
+  },
+  {
+    "id": "should-trigger-external-peer-review-edas",
+    "query": "我是 GLOBECOM 审稿人，论文和 EDAS 的评分说明都在本地。请帮我完成完整同行评审，先给中文版本让我核对。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "run-authorized-external-peer-review-with-chinese-confirmation-gate",
+    "reason": "用户以受邀审稿人身份评价他人投稿并填写实际评审表，应进入外部同行评审模式，而不是作者侧模拟审稿。"
+  },
+  {
+    "id": "should-trigger-external-review-form-fields",
+    "query": "这份会议审稿表有 Strong Aspects、Weak Aspects、Recommended Changes、Comments to the TPC 和 Submission Policy。请按论文证据帮我逐项填写。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "separate-author-visible-confidential-and-policy-fields",
+    "reason": "用户要求形成真实外部审稿表内容，字段分流和政策判断属于 paper-review 的外部审稿职责。"
+  },
+  {
+    "id": "should-trigger-external-review-paste-ready",
+    "query": "中文意见已经确认。把它翻译成英文审稿意见，再给一份没有公式和奇怪换行、可以直接粘贴到网页的版本。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "preserve-approved-review-and-create-formula-free-no-hard-wrap-copy",
+    "reason": "已确认外部审稿意见的英文转换和网页粘贴版属于同一审稿交付流程。"
+  },
+  {
+    "id": "should-not-trigger-author-rebuttal",
+    "query": "我是作者，收到 major revision 了。请帮我逐条回复审稿人并改正文，最后整理 response letter。",
+    "should_trigger": false,
+    "expected_primary_skill": "ieee-manuscript-edit",
+    "expected_not_primary_skill": "paper-review",
+    "reason": "作者回复审稿意见和返修正文属于论文精修或投稿返修，不是外部审稿人形成评审意见。"
+  },
+  {
+    "id": "should-not-trigger-edas-portal-only",
+    "query": "审稿意见已经定稿，不用再审论文。请只帮我检查 EDAS 页面上的普通字段有没有漏填，先不提交。",
+    "should_trigger": false,
+    "expected_primary_skill": "web-access",
+    "expected_not_primary_skill": "paper-review",
+    "reason": "纯网页字段检查不涉及形成审稿判断，应由网页访问流程接管，不应由 paper-review 接管。"
   }
 ]

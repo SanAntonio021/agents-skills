@@ -36,6 +36,19 @@
         "Minimum crash-dump requirements are separated from conservative operating headroom.",
         "Any required restart is described as a full Windows reboot."
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "我只想先排查 C 盘占满原因。你发现 %LOCALAPPDATA%\\claude-codex-bridge 里有历史记录，而且 bridge daemon 正在跑同行审查。先列可清理项，别打断当前审查。",
+      "expected_output": "A read-only disk audit that treats bridge history cleanup as a separately approved application-maintenance step and never stops the daemon to obtain its cleanup lock.",
+      "files": [],
+      "expectations": [
+        "The discovery pass does not invoke bridge cleanup prepare, cleanup purge, or bridge stop.",
+        "Bridge history cleanup is presented as a separate approval from the disk scan.",
+        "If application-history review is later approved, cleanup prepare is run online without stopping the daemon.",
+        "Any active, queued, locked, or shutdown-blocked state is reported as skipped_busy and is not bypassed by stopping a service or task.",
+        "Purge requires a separate explicit approval and a fresh idle-state check."
+      ]
     }
   ]
 }

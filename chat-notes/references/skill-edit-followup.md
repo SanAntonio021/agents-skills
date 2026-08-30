@@ -27,7 +27,7 @@
    状态和本地文件，防止嵌套仓库操作改变另一仓库内容。
 11. Skill push 成功后，取得 40 位远端提交 SHA，并从提交差异中列出本次实际修改且仍存在的 Skill。
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
-    Skill 不进入自动更新，继续按第 16 条处理。
+    Skill 不进入自动更新，继续按第 17 条处理。
 12. 调用同步 helper 前重新读取本地 `HEAD` 和远端当前分支。若并发任务已提交并推送，使本次发布提交不再是
     当前 `HEAD`，不要把 `ExpectedRemoteCommit` 换成新的 `HEAD`，也不要 reset、rebase 或重新提交。本次提交只有在
     同时满足以下条件时才可继续：它是本地当前 `HEAD` 和远端当前分支的共同祖先；本次批准发布范围只由该单个
@@ -50,7 +50,15 @@
     并保留 JSON 中的错误码和差异证据。需要人工恢复时，用户可在 CC Switch 手动定向更新后用 `-VerifyOnly`
     重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
     `-ExpectedBaseCommit` 参数。
-16. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
+16. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
+    - 原发布提交仍使用原始 SHA、Skill 集合和历史/范围参数执行 `-VerifyOnly`。它未通过时，保留该提交的
+      `source_pushed_runtime_not_active` 结论和差异证据；当前版本的成功不能倒推为原提交已验收。
+    - 只有当前 `HEAD` 与远端为同一提交、原发布提交是该提交祖先、且源码没有未声明工作区偏差时，才可另外以当前
+      `HEAD` 执行 `-VerifyOnly`。只有该调用返回退出码 `0`、`runtime_active` 并完成四层一致性验收，才可报告
+      “当前最新版已部署”；这是一条独立事实，不改变原发布提交的结论。
+    - 这个分流只做只读验收，不重新扫描、点击或修改运行时。源码比较继续以 helper 指定提交的 Git blob 为准，
+      不直接比较 Windows 工作树字节，避免 `core.autocrlf` 引起 CRLF/LF 假差异。
+17. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
     skill。用户点完同步后，源码目录已消失，但 `.cc-switch\skills\<name>`、`.claude\skills\<name>`、
     `.codex\skills\<name>` 三处仍会残留旧副本，必须手动清理。顺序：先删 `.claude\skills\` 和
     `.codex\skills\` 下的软链接（用 `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，

@@ -5,7 +5,8 @@ description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
   站点分流、fallback 健康探测、自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
-  增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链，Edge/Chrome 扩展修复后很快又
+  增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链、Edge/Google 搜索位置来源与
+  代理出口联合验收，Edge/Chrome 扩展修复后很快又
   显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、切网后全站证书告警、接口跃点、
   Clash 核心受控重启、`external-controller-pipe` 命名管道查询、临时切换 selector、GitHub TLS/
   推送线路归因时，优先使用本技能。
@@ -425,6 +426,20 @@ rules:
 7. 触发 Clash Verge 重新生成配置，或重启 GUI；不直接把 `clash-verge.yaml` 当长期源文件。
 
 恢复脚本如果包含真实订阅地址、节点密码、用户名或落地节点凭据，必须加入 `.gitignore`，不要提交到公开仓库。
+
+## Edge/Google 搜索位置联合验收
+
+用户询问 Edge 中 Google 搜索显示的城市为什么不跟代理出口一致，或要求验收固定 NOV 出口时，读取
+[`references/google-search-location.md`](references/google-search-location.md)。这类任务必须在同一时间窗口绑定三类证据：
+
+- Edge 页面实际使用的公网出口回显；
+- Google 搜索页脚的位置文字及其明确标注的来源；
+- Mihomo 服务日志中该次 `msedge.exe` 请求的 `using <group>[<proxy>]`。
+
+浏览器/Windows 定位权限、Google 活动记录、地点/住址、位置 Cookie 和 IP 推断要分别判断。节点名称、
+单一 IP 地理库或一次 NOV 命中都不能单独完成验收；`fallback` 候选含裸节点时，还要明确说明固定出口并不稳定。
+用户只授权 Edge 本机处理时，不扩大到 Google 账号、活动记录、住址、Clash 节点或代理配置；若只能清理
+整个 Google 站点数据且可能退出登录，停止并报告。
 
 ## 验证
 

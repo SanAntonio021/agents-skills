@@ -596,6 +596,26 @@ try {
     return { tokenBytes: tokenBytes(first.taskToken), replayedTask: first.taskId, replayedTarget: tab.targetId };
   });
 
+  await runTest('created-tab-attaches-and-initializes-before-requested-navigation', async () => {
+    const task = await createTask(edgeBase);
+    const url = 'https://example.test/create-order';
+    const before = edgeMock.commands.length;
+    const tab = await createTab(edgeBase, task, url);
+    const commands = edgeMock.commands.slice(before);
+    const createIndex = commands.findIndex((command) => command.method === 'Target.createTarget');
+    const attachIndex = commands.findIndex((command) => command.method === 'Target.attachToTarget' && command.params.targetId === tab.targetId);
+    const navigateIndex = commands.findIndex((command) => command.method === 'Page.navigate' && command.params.url === url);
+    const initialized = commands.filter((command) => command.sessionId && [
+      'Page.enable', 'Runtime.enable', 'DOM.enable', 'Accessibility.enable',
+    ].includes(command.method));
+    assert.ok(createIndex >= 0 && attachIndex > createIndex && navigateIndex > attachIndex, JSON.stringify(commands));
+    assert.equal(commands[createIndex].params.url, 'about:blank');
+    assert.equal(initialized.length, 4, JSON.stringify(commands));
+    assert.ok(initialized.every((command) => commands.indexOf(command) < navigateIndex), JSON.stringify(commands));
+    assert.equal(edgeMock.targets.get(tab.targetId)?.url, url);
+    return { createUrl: 'about:blank', attachedBeforeNavigate: true, initializedBeforeNavigate: true };
+  });
+
   await runTest('task-tab-isolation-popup-and-browser-scope', async () => {
     const taskA = await createTask(edgeBase);
     const taskB = await createTask(edgeBase);
@@ -1172,9 +1192,14 @@ try {
     try {
       const task = await createTask(initializationProxy.base);
       const tab = await createTab(initializationProxy.base, task, 'https://example.test/wait-initializing');
+      const popupId = initializationMock.createPopup(tab.targetId, 'https://example.test/wait-initializing-popup');
+      await waitUntil(async () => {
+        const tabs = await listTabs(initializationProxy.base, task);
+        return tabs.some((candidate) => candidate.targetId === popupId);
+      }, 'popup ownership before initialization wait');
       const attachBefore = initializationMock.commands.filter((command) => command.method === 'Target.attachToTarget').length;
       const started = Date.now();
-      const waiting = postJson(initializationProxy.base, `/v2/tabs/${encodeURIComponent(tab.targetId)}/wait`, {
+      const waiting = postJson(initializationProxy.base, `/v2/tabs/${encodeURIComponent(popupId)}/wait`, {
         text: 'never-appears',
         timeoutMs: 2500,
       }, { token: task.taskToken, key: nextKey('initializing-wait'), timeoutMs: 5000 });
@@ -1183,7 +1208,7 @@ try {
         'wait entered Target.attachToTarget',
       );
 
-      const handoff = taskTransition(initializationProxy.base, task, 'handoff', { targetId: tab.targetId });
+      const handoff = taskTransition(initializationProxy.base, task, 'handoff', { targetId: popupId });
       const waitResult = await waiting;
       assertError(waitResult, 409, 'WAIT_CANCELLED');
       const handoffResult = await handoff;
@@ -1250,8 +1275,10 @@ try {
       const replay = await postJson(timeoutProxy.base, '/v2/tabs', { url: 'https://example.test/slow-create' }, { token: task.taskToken, key, timeoutMs: 2000 });
       assertError(replay, 504, 'UNKNOWN_RESULT');
       assert.deepEqual(replay.body, first.body);
-      await delay(300);
-      assert.ok([...timeoutMock.targets.values()].some((target) => target.url === 'https://example.test/slow-create'));
+      await waitUntil(
+        () => [...timeoutMock.targets.values()].some((target) => target.url === 'https://example.test/slow-create'),
+        'late-created target navigation',
+      );
     } finally {
       await stopIsolatedProxy(timeoutProxy);
       await timeoutMock.close();
@@ -1276,17 +1303,17 @@ try {
         timeoutMs: 2000,
       });
       assertError(activeCreate, 504, 'UNKNOWN_RESULT');
-      const activeTargetId = [...lateMock.targets.values()].find((target) => target.url === activeUrl)?.targetId;
-      assert.ok(activeTargetId, 'mock 必须已创建等待晚到结果的 target');
       const activeTabs = await waitUntil(async () => {
         const listed = await getJson(lateProxy.base, '/v2/tabs', activeTask.taskToken);
         if (listed.status !== 200) return null;
         const tabs = tabsFrom(listed.body) || [];
-        return tabs.some((tab) => tab.targetId === activeTargetId) ? tabs : null;
+        return tabs.some((tab) => lateMock.targets.get(tab.targetId)?.url === activeUrl) ? tabs : null;
       }, 'late create target ownership');
+      const activeTargetId = activeTabs.find((tab) => lateMock.targets.get(tab.targetId)?.url === activeUrl)?.targetId;
+      assert.ok(activeTargetId, 'mock 必须已创建并导航等待晚到结果的 target');
       assert.ok(activeTabs.some((tab) => tab.targetId === activeTargetId));
       const activeCreates = lateMock.commands.filter(
-        (command) => command.method === 'Target.createTarget' && command.params.url === activeUrl,
+        (command) => command.method === 'Target.createTarget' && command.params.url === 'about:blank',
       );
       assert.equal(activeCreates.length, 1);
 
@@ -1298,7 +1325,7 @@ try {
         timeoutMs: 2000,
       });
       assertError(completedCreate, 504, 'UNKNOWN_RESULT');
-      const completedTargetId = [...lateMock.targets.values()].find((target) => target.url === completedUrl)?.targetId;
+      const completedTargetId = [...lateMock.targets.values()].find((target) => target.url === 'about:blank')?.targetId;
       assert.ok(completedTargetId, 'mock 必须已创建待回收的晚到 target');
       assert.ok(lateMock.targets.has(completedTargetId));
 
@@ -1311,12 +1338,63 @@ try {
         (command) => command.method === 'Target.closeTarget' && command.params.targetId === completedTargetId,
       );
       assert.equal(lateClose.length, 1, '终态晚到 target 必须且只能关闭一次');
+
+      const keptTask = await createTask(lateProxy.base);
+      const keptUrl = 'https://example.test/late-kept';
+      const keptCreate = await postJson(lateProxy.base, '/v2/tabs', { url: keptUrl }, {
+        token: keptTask.taskToken,
+        key: nextKey('late-kept-create'),
+        timeoutMs: 2000,
+      });
+      assertError(keptCreate, 504, 'UNKNOWN_RESULT');
+      const keptTargetId = [...lateMock.targets.values()].find((target) => target.url === 'about:blank')?.targetId;
+      assert.ok(keptTargetId, 'mock 必须已创建待保留的晚到 target');
+      const keep = await taskTransition(lateProxy.base, keptTask, 'complete', { keep: true });
+      assert.equal(keep.status, 200, JSON.stringify(keep.body));
+      assert.equal(keep.body.keep, true);
+      await waitUntil(() => lateMock.targets.get(keptTargetId)?.url === keptUrl, 'kept late target navigation');
+      assert.ok(lateMock.targets.has(keptTargetId), 'keep:true 必须保留晚到 target');
+      assert.equal(lateMock.commands.filter(
+        (command) => command.method === 'Target.closeTarget' && command.params.targetId === keptTargetId,
+      ).length, 0);
       const terminalRead = await getJson(lateProxy.base, '/v2/tabs', completedTask.taskToken);
       assertError(terminalRead, 410, 'TASK_TERMINAL');
-      return { activeLateTargetOwned: true, completedLateTargetClosed: true };
+      return { activeLateTargetOwned: true, completedLateTargetClosed: true, keptLateTargetNavigated: true };
     } finally {
       await stopIsolatedProxy(lateProxy);
       await lateMock.close();
+    }
+  });
+
+  await runTest('expired-late-create-target-keeps-original-navigation', async () => {
+    const expiredMock = await startMockCdpServer('edge', { commandDelays: { 'Target.createTarget': 500 } });
+    const expiredProxy = await startIsolatedProxy(expiredMock, {
+      CDP_COMMAND_TIMEOUT: '50',
+      CDP_TASK_IDLE_TIMEOUT: '100',
+      CDP_TAB_IDLE_TIMEOUT: '5000',
+      CDP_TERMINAL_RETENTION: '2000',
+    });
+    try {
+      const task = await createTask(expiredProxy.base);
+      const url = 'https://example.test/late-expired';
+      const create = await postJson(expiredProxy.base, '/v2/tabs', { url }, {
+        token: task.taskToken,
+        key: nextKey('late-expired-create'),
+        timeoutMs: 2000,
+      });
+      assertError(create, 504, 'UNKNOWN_RESULT');
+      const targetId = [...expiredMock.targets.values()].find((target) => target.url === 'about:blank')?.targetId;
+      assert.ok(targetId, 'mock 必须已创建等待过期的 target');
+      await waitUntil(async () => {
+        const state = await getJson(expiredProxy.base, `/v2/tasks/${encodeURIComponent(task.taskId)}`, task.taskToken);
+        return state.status === 200 && state.body.state === 'expired';
+      }, 'task expiry before late create result');
+      await waitUntil(() => expiredMock.targets.get(targetId)?.url === url, 'expired late target navigation');
+      assert.ok(expiredMock.targets.has(targetId), 'expired task 的晚到 target 应作为用户 tab 保留');
+      return { expiredBeforeLateResult: true, originalUrlPreserved: true };
+    } finally {
+      await stopIsolatedProxy(expiredProxy);
+      await expiredMock.close();
     }
   });
 

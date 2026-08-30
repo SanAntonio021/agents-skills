@@ -94,9 +94,11 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 {"url":"https://example.com","background":true}
 ```
 
-只允许 `http:`、`https:` 和 `about:` URL。返回 `{targetId,kind}`。Popup 按 `openerId` 自动继承 opener 的 task。
+只允许 `http:`、`https:` 和 `about:` URL。Proxy 固定先以 `about:blank` 创建 target，归属当前 task 并完成
+attach/session 初始化后，才用 `Page.navigate` 前往请求 URL；返回 `201` 时该显式导航命令已经被浏览器接收。调用方
+仍应按需要用 `/wait` 与页面回读确认加载结果。Popup 按 `openerId` 自动继承 opener 的 task。
 
-`Target.createTarget` 超时后可能晚到。task 仍为 `active` 或 `handoff` 时，晚到 tab 继续归入原 task；task 已按默认 `keep:false` 完成时，Proxy 关闭晚到 tab。其他终态或 `keep:true` 情况不再建立归属，tab 视为用户 tab。首次返回 `UNKNOWN_RESULT` 后不得换 key 原样重试。
+`Target.createTarget` 超时后可能晚到。task 仍为 `active` 或 `handoff` 时，晚到 tab 继续归入原 task 并继续导航到原请求 URL；task 已按默认 `keep:false` 完成时，Proxy 关闭晚到 tab。`expired` 或 `keep:true` 的其他终态不再建立归属，但 Proxy 仍先尝试导航到原请求 URL，再释放给用户，不能遗留无意的空白页。首次返回 `UNKNOWN_RESULT` 后不得换 key 原样重试。
 
 ### `GET /v2/tabs`
 

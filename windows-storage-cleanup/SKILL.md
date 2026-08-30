@@ -16,7 +16,7 @@ description: >
 
 1. 提出操作前，先检查本地规则、当前磁盘状态、活动进程和可用审计材料。
 2. 在保护边界和预期结果明确前，每次只问一个问题。只有用户明确要求直接推进时，才跳过后续提问。
-3. 从只读检查开始。发现阶段不得删除、移动、卸载、停止服务或更改系统设置。
+3. 从只读检查开始。发现阶段不得删除、移动、卸载、停止服务、更改系统设置，也不得调用应用自身的 cleanup、purge、vacuum 或 history-prune 命令。
 4. 默认保护正在进行的工作、源代码、用户历史、原始实验数据和唯一的项目归档。
 5. 按相同来源和用途归组确认项，并说明大小、理由、风险和恢复方法。
 6. 只执行已批准的组。只有用户明确委托时，才允许自动处理低风险项。
@@ -47,6 +47,19 @@ description: >
 - 避免产生海量输出的无边界递归搜索。从最大文件夹开始，逐步缩小范围。
 
 有关扫描、官方清理、Recycle Bin 和页面文件的规则，读取 [references/windows-and-wiztree.md](references/windows-and-wiztree.md)。
+
+### 应用自身清理边界
+
+磁盘扫描与应用历史清理是两个独立步骤。扫描阶段只读取目录大小、文件元数据和已有审计材料；即使应用提供 `cleanup prepare` 这类只生成预案的命令，也不自动调用。
+
+当用户另行批准审查某个应用的历史材料时：
+
+1. 使用应用提供的在线 prepare/status 接口，保持其 daemon 或后台服务运行。
+2. 遇到 runtime lock、`daemon_already_running`、`shutdown_blocked`、HTTP `409` 或任何 active/queued 状态时，将该项记为 `skipped_busy`。不得通过 `stop`、结束进程、重启服务或停止计划任务绕过。
+3. prepare 只产生候选清单，不构成删除批准。不得把 prepare 返回的一次性 token 自动交给 purge。
+4. purge 必须作为单独的用户批准批次，并在执行前重新确认没有 active/queued 工作；若空闲门不成立，跳过该项，不扩大清理范围。
+
+对 `claude-codex-bridge`，普通 C 盘扫描不得执行 `bridge cleanup prepare`、`bridge cleanup purge` 或 `bridge stop`。只有用户明确批准 Bridge 历史材料审查后，才可在线运行 `bridge cleanup prepare`；不得为取得 daemon lock 先停止 bridge。
 
 ### 3. 对候选项分类
 

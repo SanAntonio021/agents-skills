@@ -27,20 +27,30 @@
    状态和本地文件，防止嵌套仓库操作改变另一仓库内容。
 11. Skill push 成功后，取得 40 位远端提交 SHA，并从提交差异中列出本次实际修改且仍存在的 Skill。
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
-    Skill 不进入自动更新，继续按第 14 条处理。
-12. 当前任务立即调用
+    Skill 不进入自动更新，继续按第 16 条处理。
+12. 调用同步 helper 前重新读取本地 `HEAD` 和远端当前分支。若并发任务已提交并推送，使本次发布提交不再是
+    当前 `HEAD`，不要把 `ExpectedRemoteCommit` 换成新的 `HEAD`，也不要 reset、rebase 或重新提交。本次提交只有在
+    同时满足以下条件时才可继续：它是本地当前 `HEAD` 和远端当前分支的共同祖先；本次批准发布范围只由该单个
+    提交构成；该提交实际修改的 Skill 集合与本次请求完全一致。满足时固定使用本次原始 40 位 SHA，并给 helper 增加
+    `-AllowHistoricalCommit`；历史提交模式不能同时使用 `-ExpectedBaseCommit`，发布源仍是该提交中的 Git blob。
+13. 当前任务立即调用
     `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，两个必填参数是
     `-Skills`（Skill 名称数组，不是 `-SkillNames`）和 `-ExpectedRemoteCommit`（40 位 SHA），例如
     `-Skills @("skill-a","skill-b") -ExpectedRemoteCommit "<40位SHA>"`。该 helper 只通过 UI Automation 进入 Skills 页、执行一次“检查更新”并
     逐个过滤后点击单项“更新”；禁止“全部更新”，每个目标最多点击一次。不建 watcher 或计划任务，不修改
     CC Switch 源码、EXE、数据库、配置或运行时目录。CC Switch 未运行时由 helper 启动；优先后台操作，必要时
     可短暂前台并在结束时恢复原窗口。
-13. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且本次提交源码与 `.cc-switch`、`.claude`、
+14. helper 若在任何 UI 操作前返回退出码 `11`、错误码 `sync_already_running`，说明另一轮定向同步持有互斥锁。
+    不结束对方进程、不抢锁，也不并行启动新同步；通过只读进程检查等待原同步结束后，才使用完全相同的提交 SHA、
+    Skill 集合和历史/范围参数重新调用。这项重试只适用于同步互斥的预检拒绝，不放宽页面、扫描、单项更新或验收
+    失败后的禁止重试规则。
+15. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且本次提交源码与 `.cc-switch`、`.claude`、
     `.codex` 的全部目标文件集合和 SHA-256 完全一致，才算运行时生效。页面被切走、过滤不唯一、扫描或单项更新
     超时、非目标 Skill 变化或四层验收失败时，不重试点击、不改运行时，只能报告“源码已推送，运行时未生效”，
     并保留 JSON 中的错误码和差异证据。需要人工恢复时，用户可在 CC Switch 手动定向更新后用 `-VerifyOnly`
-    重新验收。
-14. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
+    重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
+    `-ExpectedBaseCommit` 参数。
+16. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
     skill。用户点完同步后，源码目录已消失，但 `.cc-switch\skills\<name>`、`.claude\skills\<name>`、
     `.codex\skills\<name>` 三处仍会残留旧副本，必须手动清理。顺序：先删 `.claude\skills\` 和
     `.codex\skills\` 下的软链接（用 `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，

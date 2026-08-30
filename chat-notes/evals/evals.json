@@ -377,6 +377,22 @@
         "输出把执行前已经存在的旧清单按实际用途作为普通源文件分类，并在需要归档时记录其归档前 SHA-256。",
         "输出仍会对普通归档文件执行源离开、目标存在、字节数和 SHA-256 一致的逐项核验。"
       ]
+    },
+    {
+      "id": 28,
+      "prompt": "我刚把 research-schematic-imagegen 的单独提交推送。调用定向 helper 前，另一个任务又提交并推送了 chat-notes，所以原发布提交已经变成本地 HEAD 和 origin/main 的祖先；随后 helper 返回 sync_already_running，确认另一个 chat-notes 同步进程仍在运行。请按 chat-notes 只发布原来的 research-schematic-imagegen 改动。",
+      "expected_output": "固定使用原发布提交的 40 位 SHA，确认它是本地和远端当前提交的共同祖先、本次发布范围只由该单个提交构成，且改动 Skill 集合与请求一致；随后使用 -AllowHistoricalCommit，且不传 ExpectedBaseCommit。遇到 sync_already_running 时不结束进程或抢锁，等待原同步结束后用完全相同参数重新调用；如果后续发生页面、扫描、更新或验收失败，则停止重试并报告源码已推送、运行时未生效。",
+      "files": [],
+      "expectations": [
+        "输出重新读取本地 HEAD 和远端当前分支，并确认原发布提交同时是二者的祖先。",
+        "输出继续使用原发布提交的 40 位 SHA，不把 ExpectedRemoteCommit 替换成新的 HEAD。",
+        "输出只在单提交且改动 Skill 集合与请求完全一致时使用 `-AllowHistoricalCommit`，并且不同时传 `-ExpectedBaseCommit`。",
+        "输出不会 reset、rebase、重新提交或把后来提交的 chat-notes 一并作为本次发布源。",
+        "输出把 `sync_already_running` 识别为 UI 操作前的互斥预检拒绝，不结束对方进程、不抢锁，也不并行启动同步。",
+        "输出等待原同步进程结束后，使用相同提交 SHA、Skill 集合和历史模式参数重新调用。",
+        "输出不会把互斥预检后的重新调用扩大为页面、扫描、单项更新或验收失败后的重复点击。",
+        "输出只有在 helper 返回退出码 0、状态 runtime_active 且四层文件一致时才报告运行时生效。"
+      ]
     }
   ]
 }

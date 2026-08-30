@@ -363,6 +363,20 @@
         "输出指出空目录必须已经在预览中逐项列出、获明确批准且执行时确认无子项；否则保持原样。",
         "输出维持原项目相对目录结构、拒绝覆盖，并给出归档清单、验收与恢复信息。"
       ]
+    },
+    {
+      "id": 27,
+      "prompt": "完整清场预览已经批准。项目的 qa 目录里留有上一次清场生成的 archive-manifest-before.csv 和 retained-manifest-before.csv；这次也要生成同名清单。请用 chat-notes 执行，并确保所有文件都有 SHA-256。",
+      "expected_output": "先冻结执行前已经存在的文件集合。旧清单按实际用途作为普通源文件分类和记录哈希；本批新清单及验收记录写入新的 archive/cleanup-YYYYMMDD/ 批次根目录，不覆盖旧清单，也不进入候选集、保留集或自身描述的哈希范围。移动后按冻结基线逐项验收，控制记录只单独核对生成、解析和当前哈希。",
+      "files": [],
+      "expectations": [
+        "输出明确先冻结原有文件集合和哈希，再生成本批清单。",
+        "输出把本批清单和验收记录放在 `archive/cleanup-YYYYMMDD/` 批次根目录，而不是 qa 目录。",
+        "输出不会让 archive-manifest-before.csv、retained-manifest-before.csv、archive-manifest-after.csv 或 archive-acceptance.json 校验自身。",
+        "输出不会用本批同名清单覆盖项目中原本存在的旧清单。",
+        "输出把执行前已经存在的旧清单按实际用途作为普通源文件分类，并在需要归档时记录其归档前 SHA-256。",
+        "输出仍会对普通归档文件执行源离开、目标存在、字节数和 SHA-256 一致的逐项核验。"
+      ]
     }
   ]
 }

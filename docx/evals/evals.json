@@ -54,6 +54,19 @@
         "Lists all seven explicit document-level acceptance items.",
         "Requires item-level evidence and distinguishes hard blocks from warnings."
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "一份正式 Word 看起来基本正常，但表格表头有些单元格仍带首行缩进，首列只设置了单元格垂直居中，部分文字字号不一且变成蓝色，页眉中的校名对象宽度超过正文可用宽度。能否验收通过？请说明逐项检查和证据要求。",
+      "expected_output": "不能通过。逐表检查段落水平对齐、单元格垂直对齐和段落缩进，分别审计字体字号字色，并按节计算页眉对象宽度与页面可用宽度；静态属性清单和对应渲染页证据均需非空。",
+      "files": [],
+      "assertions": [
+        "Rejects visual centering when table-cell paragraph indentation remains noncompliant.",
+        "Separately checks paragraph horizontal alignment and cell vertical alignment for every table.",
+        "Treats unexpected font size or blue/theme color as a hard formatting defect.",
+        "Compares each section's header object width with the approved baseline and usable page width.",
+        "Requires non-null machine evidence and linked rendered-page evidence."
+      ]
     }
   ]
 }

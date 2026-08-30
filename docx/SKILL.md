@@ -73,7 +73,10 @@ Every formal acceptance report and manual review includes seven explicit items: 
 paragraph formatting, table formatting, header/footer geometry, pagination, Word-native opening, and
 Word-native rendering. Each item records its owner layer, comparison baseline, result, severity, and
 evidence path. Missing or failed items block release; warnings must be shown before the user confirms
-Word as the final version.
+Word as the final version. For fonts, paragraphs, tables, and headers/footers, apply the checklist's
+mandatory subchecks rather than relying on a visual spot-check: audit direct formatting, table-cell
+paragraph indents, horizontal and vertical alignment, font size and color, and per-section usable
+header width. A `PASS` requires the checklist's machine evidence and linked rendered-page evidence.
 
 ## Markdown-first formal delivery
 

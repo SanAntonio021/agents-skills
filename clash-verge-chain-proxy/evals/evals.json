@@ -28,8 +28,14 @@
     {
       "id": 5,
       "prompt": "我想让 AI 流量在 Flower 和良心云两条前置链路之间自动故障转移，同时每家前置内部也自动跳过坏节点；普通流量保持原样。应该怎样设计 Clash Verge 的分组和探测？",
-      "expected_output": "应使用两条同落地、不同 dialer-proxy 的完整代理链；两个前置组和 AI 组均使用 fallback，并配置 HTTPS url、interval、timeout、max-failed-times、lazy:false；说明内层组探测前置节点，外层 AI 组探测完整链路，AI 候选按 Flower、良心云排序且不加入 DIRECT。",
-      "files": []
+      "expected_output": "应为每个 Flower 和良心云前置节点分别生成一条到同一 NOV 的独立完整链，两个内层 fallback 直接探测这些完整链，而不是只探测裸前置节点；外层 AI fallback 按 Flower/NOV、良心云/NOV 排序，候选中不加入裸节点、普通降级组或 DIRECT；配置 HTTPS url、interval、timeout、max-failed-times、lazy:false，并说明通用 204 不能代替真实 AI 域名和日志验收。",
+      "files": [],
+      "expectations": [
+        "为每个前置节点生成独立的前置到 NOV 完整链，内层 fallback 探测完整链而非裸前置。",
+        "AI 外层 fallback 只含 Flower/NOV 与良心云/NOV，Flower 优先且没有 DIRECT 或普通裸节点。",
+        "说明 fallback 按顺序故障转移并持续探测备用路径，不把它解释成测速选最快。",
+        "说明 generate_204 不是 AI 专项验收，仍需真实目标请求和同一时段日志。"
+      ]
     },
     {
       "id": 6,
@@ -40,8 +46,14 @@
     {
       "id": 7,
       "prompt": "两条链路当前都能用，我想验证 AI 自动切换，但不想人为破坏线上节点。怎样做安全的故障转移测试？",
-      "expected_output": "应先检查 /proxies 中是否已有 alive:false 候选；有则优先利用已失败候选，无则复制最小隔离配置，关闭 TUN、使用独立 controller 端口和临时目录，故意让隔离候选失败后查询 AI fallback 是否切到备用完整链路；不得输出 secret，测试后清理隔离进程和临时文件。",
-      "files": []
+      "expected_output": "应先检查 /proxies 中是否已有 alive:false 候选；有则优先利用已失败候选，无则复制最小隔离配置并关闭其 TUN，使用独立监听、controller 和 DNS 端口。主 Clash TUN 仍开启时，应把隔离 Mihomo 绑定物理接口，配置可从该接口访问的 DNS，并用 PID 本地地址、Find-NetRoute 和隔离日志排除再次被主 TUN 接管；未排除时的 EOF、SERVFAIL 或超时只能判为测试环境不确定。不得输出 secret，清理前先给清场预览。",
+      "files": [],
+      "expectations": [
+        "优先利用现有 alive:false 候选，不人为破坏线上节点。",
+        "隔离配置关闭 TUN，并使用独立监听、controller、DNS 端口和临时目录。",
+        "主 TUN 开启时绑定物理接口并核实实际路由；未排除再次接管时不把 EOF、SERVFAIL 或超时归因到 NOV。",
+        "不输出 controller secret，隔离进程和临时材料清理前先展示清场预览。"
+      ]
     },
     {
       "id": 8,
@@ -89,6 +101,30 @@
         "使用共享的良心云前置 select；AI 只含两条完整 NOV 链，普通国外只引用 NOV <- 良心云，dialer-proxy 正确。",
         "用集合双向差集、查重和规则引用扫描验证无漏项、无串入项、无旧活动目标，而不只比较数量。",
         "保护原 profile，并用 controller 选择结果、真实 OpenAI/Claude 与普通国外请求、国内 DIRECT 和同一时段日志完成验收。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "把普通境外网站也改成自动切换：平常优先走良心云前置再到 NOV；如果所有良心云到 NOV 的链都断了，就自动降级到仍可用的普通良心云节点。AI 网站仍必须固定 NOV，不能跟着降级，也不要让 Flower 参与普通网站。该怎么设计和验收？",
+      "expected_output": "应为每个良心云节点生成独立的良心云到 NOV 完整链并聚合为 fallback，再建立只含普通良心云裸节点的 fallback；普通外层 fallback 按良心云/NOV 自动、普通良心云自动排序，Flower 不参与。AI 外层只含 Flower/NOV 与良心云/NOV，不能引用普通外层或裸节点；NOV 全失效时 AI 保持失败，普通流量才降级，NOV 恢复后普通流量自动回到首选路径。",
+      "files": [],
+      "expectations": [
+        "普通外层组优先良心云到 NOV 自动组，备用为普通良心云裸节点自动组。",
+        "良心云到 NOV 自动组逐节点探测完整链，普通裸节点组不含 NOV 或 Flower。",
+        "AI 组不引用普通降级组、裸节点或 DIRECT，全部 NOV 失效时保持失败。",
+        "验证普通流量故障降级与恢复回切，同时确认 Flower 从不参与普通网站。"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "帮我确认 AI 的 Flower->NOV、良心云->NOV，以及普通网站当前的良心云->NOV，最后看到的是不是同一个公网出口。实际 IP 属于敏感信息，不要在终端、日志或报告里显示。",
+      "expected_output": "应让三条路径访问同一个出口回显服务，把响应只保存在进程内变量中，规范化后比较相等性；仅报告布尔结果和路径状态，不输出或落盘实际 IPv4/IPv6，也不把节点名称当成出口证据。普通流量降级到裸良心云时允许出口变化，但必须同时确认 AI 仍固定在 NOV；若工具会自动打印响应正文且无法抑制，应停止验收。",
+      "files": [],
+      "expectations": [
+        "三条待测路径使用同一个出口回显来源，返回值只在内存中规范化和比较。",
+        "只报告是否同一出口和路径状态，不输出或持久化真实公网 IP。",
+        "不以节点名称替代实际出口回显证据。",
+        "普通流量降级后允许出口变化，但必须确认 AI 仍固定 NOV；无法避免泄露时停止测试。"
       ]
     }
   ]

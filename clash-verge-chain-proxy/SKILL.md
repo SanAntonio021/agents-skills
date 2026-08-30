@@ -246,39 +246,46 @@ AI 规则 -> <AI group: select>
 如果要生成独立 profile，先记录当前激活 profile、备份原 YAML 并保存 SHA-256；导入为新名称，
 不覆盖原 profile。任一静态或运行态检查失败时，停用新 profile 并重新激活原 profile，保留备份。
 
-## 双层自动故障转移
+## 完整链路自动故障转移
 
-当用户要求“前置节点自动选健康节点，AI 链路在两个前置之间自动切换”时，使用两层 `fallback`，不要把裸前置组直接放进 AI 组：
+当“前置节点本身能上网，但该节点到 NOV 超时”也必须触发切换时，不要只对裸前置节点做
+`generate_204`。为每个前置节点各生成一条独立的“前置 -> NOV”代理，再让 `fallback` 探测这些
+完整链路。每条链使用相同的 NOV 参数，只改变 `dialer-proxy`：
 
 ```yaml
 proxies:
-  - name: <Nov via Flower>
+  - name: <NOV via Flower node 1>
     type: socks5
     server: <landing-host>
     port: <landing-port>
     username: <landing-user>
     password: <landing-password>
-    dialer-proxy: <Flower front fallback>
+    dialer-proxy: <Flower node 1>
+```
 
-  - name: <Nov via normal front>
-    type: socks5
-    server: <landing-host>
-    port: <landing-port>
-    username: <landing-user>
-    password: <landing-password>
-    dialer-proxy: <normal front fallback>
+对 Flower 和普通订阅的每个真实节点重复生成该条目，再按下面的边界聚合：
 
+```yaml
 proxy-groups:
-  - name: <Flower front fallback>
+  - name: <Flower to NOV auto>
     type: fallback
     url: https://www.gstatic.com/generate_204
     interval: 30
     timeout: 5000
     max-failed-times: 2
     lazy: false
-    proxies: [<Flower node 1>, <Flower node 2>]
+    proxies: [<NOV via Flower node 1>, <NOV via Flower node 2>]
 
-  - name: <normal front fallback>
+  - name: <normal to NOV auto>
+    type: fallback
+    url: https://www.gstatic.com/generate_204
+    interval: 30
+    timeout: 5000
+    max-failed-times: 2
+    lazy: false
+    proxies: [<NOV via normal node 1>, <NOV via normal node 2>]
+
+  - name: <normal plain auto>
     type: fallback
     url: https://www.gstatic.com/generate_204
     interval: 30
@@ -294,20 +301,32 @@ proxy-groups:
     timeout: 5000
     max-failed-times: 2
     lazy: false
-    proxies:
-      - <Nov via Flower>
-      - <Nov via normal front>
+    proxies: [<Flower to NOV auto>, <normal to NOV auto>]
+
+  - name: <normal group>
+    type: fallback
+    url: https://www.gstatic.com/generate_204
+    interval: 30
+    timeout: 5000
+    max-failed-times: 2
+    lazy: false
+    proxies: [<normal to NOV auto>, <normal plain auto>]
 ```
 
-探测配置属于 `proxy-groups`，不是单个 `proxies` 条目：
+- AI 流量只引用 `<AI group>`：Flower/NOV 优先，普通订阅/NOV 备用；两边都失败就保持失败，候选中
+  不得加入裸节点、`DIRECT` 或 `<normal plain auto>`，因此最终出口不会降级。
+- 普通境外流量引用 `<normal group>`：平时优先走普通订阅/NOV，NOV 链全部失效后才降级到普通订阅
+  裸节点；普通节点的最终出口 IP 可以随故障转移变化，Flower 不得进入该组。
+- `<normal to NOV auto>` 可以同时作为 AI 的第二条固定出口路径和普通流量的首选路径；
+  `<normal plain auto>` 只能被普通流量的外层组引用。
+- `fallback` 按候选顺序选第一个健康项，不是测速选最快；`lazy: false` 让备用路径持续探测，恢复后会
+  自动回到更靠前的候选。
+- `generate_204` 只验证通用 HTTPS 链路，不等价于 ChatGPT 或 Anthropic 专项可用；最终仍需用目标
+  域名请求和同一时段日志验收。
 
-- 两个内层 `fallback` 组探测各自的前置候选；`now` 会落到第一个健康候选。
-- 外层 AI `fallback` 探测两条完整链路，先检查 Flower 链路，再检查普通前置链路。
-- `fallback` 是优先级故障转移，不是测速选最快；候选顺序决定主备顺序。
-- `lazy: false` 让备用候选持续探测；不把 `DIRECT` 放进 AI 组时，双链路都失败就保持失败。
-- `url` 只验证通用 HTTPS 出口，不等价于 ChatGPT 或 Anthropic 专项可用；最终验收仍需发起目标域名请求并查日志。
-
-增强文件改完后，必须检查当前 profile 绑定的 `script`。后处理脚本可能在合并完成后用 `upsertGroup` 重建同名 AI 组，把 `fallback` 覆盖回 `select`。最终生成的 `clash-verge.yaml` 和 `clash-verge-check.yaml` 才是验收对象，不直接编辑它们作为长期修复。
+增强文件改完后，必须检查当前 profile 绑定的 `script`。后处理脚本可能用 `upsertGroup` 重建同名组，
+把 `fallback` 覆盖回 `select`。最终生成的 `clash-verge.yaml` 和 `clash-verge-check.yaml` 才是验收对象，
+不直接编辑它们作为长期修复。
 
 ## AI 分流
 
@@ -432,19 +451,43 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
   (Join-Path $base 'logs\service\service_latest.log')
 ```
 
-### 双层 `fallback` 验收
+### 自动 `fallback` 验收
 
-1. 用 YAML 解析器确认两个前置组和 AI 组各出现一次；确认 AI 候选只有两条完整链路，且没有 `DIRECT`。
-2. 确认两条落地代理的 `dialer-proxy` 分别指向两个前置 `fallback` 组；确认三个组的 `url`、`interval`、`timeout`、`max-failed-times`、`lazy` 均在最终生成配置中。
+1. 用 YAML 解析器确认 Flower/NOV、普通订阅/NOV、普通裸节点、AI 和普通外层组各出现一次；确认每个
+   NOV 内层组的候选都是逐节点生成的完整链，AI 组没有 `DIRECT` 或普通裸节点。
+2. 确认每条 NOV 代理的 `dialer-proxy` 指向对应的单个前置节点；普通外层组的候选顺序只能是
+   “普通订阅/NOV 自动、普通裸节点自动”，Flower 不得进入普通外层组。确认所有自动组的 `url`、
+   `interval`、`timeout`、`max-failed-times`、`lazy` 均在最终生成配置中。
 3. 通过 `external-controller-pipe` 查询 `/version` 和 `/proxies`，只汇总目标组的 `now`、候选 `all`、`alive`、`history`，不打印 `secret`、密码、UUID 或完整代理对象。
-4. 受控测试优先使用运行态已经标记 `alive: false` 的候选。不要为了制造故障去破坏线上节点；没有安全失败候选时，复制最小配置到临时目录，关闭 TUN、使用独立 controller 端口，在隔离配置中让一个候选失效，再确认 AI 组切换到备用完整链路。
-5. 测试结束后确认运行态 selector 没有被临时 PUT 覆盖；隔离进程、临时配置和日志清理前先展示清场预览。
+4. 受控测试优先使用运行态已经标记 `alive: false` 的候选。不要为了制造故障去破坏线上节点；没有
+   安全失败候选时，复制最小配置到临时目录，关闭该配置的 TUN，并使用独立的监听端口、controller
+   和 DNS 端口。
+5. 主实例 TUN 仍开启时，隔离进程的出站也可能被再次接管。临时配置要用 `interface-name` 绑定当前
+   物理出口，并使用已验证可从该物理接口访问的 DNS；再根据隔离 Mihomo PID 的本地地址、
+   `Find-NetRoute` 和隔离日志确认没有绕回主 TUN。做不到这些时，隔离测试出现 `EOF`、`SERVFAIL`
+   或超时只能记为“测试环境不确定”，不能据此判定 NOV 或前置节点失效。
+6. 在隔离配置中分别让 Flower/NOV 和普通订阅/NOV 失效：AI 只能在两条 NOV 路径间切换，全部 NOV
+   失效时保持失败；普通外层组应降级到普通裸节点，恢复 NOV 后回到首选 NOV 路径。
+7. 测试结束后确认运行态 selector 没有被临时 PUT 覆盖；隔离进程、临时配置和日志清理前先展示清场预览。
 
 合格信号：
 
 - AI 域名或 `claude.exe`：`using <AI group>[<Nov via Flower>]`
-- 普通国外流量：`using <normal group>[<Nov via normal front>]`
+- 普通国外流量正常态：`using <normal group>[<normal to NOV auto>]`
+- 普通国外流量 NOV 故障态：`using <normal group>[<normal plain auto>]`
 - 国内或原本直连流量：`using DIRECT`
+
+### 出口 IP 一致性与隐私验收
+
+1. 对 AI 的 Flower/NOV、AI 的普通订阅/NOV，以及普通流量当前的 NOV 首选路径，分别通过同一个出口
+   回显服务发起请求。把返回值保存在进程内变量中，规范化后只比较是否相等，不把原始 IP 输出到
+   终端、日志、报告或验收文件。
+2. 报告只写布尔结果和路径状态，例如 `AI_NOV_PATHS_SAME_EXIT=true`、
+   `ORDINARY_USES_NOV=true`；不得写实际 IPv4/IPv6 地址，也不得用节点名称代替出口回显证据。
+3. 正常态下三条 NOV 路径应得到同一最终出口。普通流量降级到 `<normal plain auto>` 后出口可以变化，
+   但必须同时确认 AI 仍停留在 NOV 组，不能因普通流量的降级而暴露 AI 到普通节点。
+4. 若请求工具、异常堆栈或调试日志会自动打印响应正文，先改为只在内存中解析并输出比较结果；无法
+   避免原始 IP 落盘时停止该验收，不以泄露敏感网络信息换取结论。
 
 ### 手动 `select` NOV 链验收
 
@@ -467,11 +510,13 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 
 - 不把真实订阅 URL、节点密码、UUID、落地代理账号写进回复或 skill。
 - 不输出 Mihomo controller secret，也不把它放进进程命令行或日志。
+- 不输出或持久化出口回显服务返回的真实公网 IP；只报告路径间是否为同一出口。
 - 不直接改 `.cc-switch`、`.codex`、`.claude` 运行时 skill 目录；改源码目录后通过同步工具分发。
 - 不把含凭据的恢复脚本提交到公开仓库。
 - 不只改 `clash-verge.yaml` 就宣称完成持久化。
 - 不只看 UI 显示；必须用最终 YAML 和日志验证。
-- 受控故障测试不人为破坏线上节点；隔离配置不得复用线上 controller pipe 或 TUN。
+- 受控故障测试不人为破坏线上节点；隔离配置不得复用线上 controller pipe 或 TUN，主 TUN 接管风险
+  未排除时不得把隔离测试失败归因到代理链。
 - 不默认修改无关订阅。
 
 ## 常见坑

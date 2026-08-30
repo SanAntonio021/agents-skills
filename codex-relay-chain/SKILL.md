@@ -87,7 +87,7 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - CodexCont 配置：`%USERPROFILE%\.codexcont\CodexCont\config.toml`
 - CodexCont 日志：`%USERPROFILE%\.codexcont\logs\codexcont.out.log`
 - 钩子日志：`%USERPROFILE%\.codexcont\logs\hook.log`
-- CC Switch 默认程序：`D:\Users\SanAn\AppData\Local\Programs\CC Switch\cc-switch.exe`
+- CC Switch 程序：运行中用 `(Get-Process -Name cc-switch -ErrorAction Stop).Path` 读取；未运行时从已确认的快捷方式或安装记录解析，启动前不猜路径。
 
 ## 工作顺序
 

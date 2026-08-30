@@ -140,7 +140,7 @@ LetPub 失败状态要写清楚原因，例如：
 - `术语与专名` 放在前部，紧跟 `关键信息` 之后；它是阅读辅助，不放到文末。优先收录标题、摘要、图表和一句话总结里会遇到的缩写、器件名、算法名和关键指标。
 - 各节按模板注释分工写作。研究问题、研究方法、实验结果、结论与局限之间不要互相复述。
 - 关键数据优先用表格呈现，尤其是频率、距离、线速率、可达信息速率、净信息速率、净速率-距离积、调制格式、EVM、BER、SNR、带宽、器件增益、功耗、噪声系数等指标。
-- 图表信息里的图片和表格必须能在 Markdown 预览中直接查看。图片写法用 `![图 1](相对路径)`；HTML 表格若已保存为 `figures/table_1.md`，优先把表格内容嵌入正文，或在正文中给出该相对路径并摘录主要行列；PDF 表格截图才用 `![表 1](相对路径)`。优先引用 `manifest.json` 中的 `files`，例如 `images/<paper-short-name>/figures/fig_1.png`、`images/<paper-short-name>/figures/table_1.md`、`images/<paper-short-name>/figures/table_1_part1.png`；不要引用 `debug_pages/`。
+- 图表信息里的图片和表格必须能在 Markdown 预览中直接查看。图片按标准 Markdown 图片语法写，替代文本使用 `图 1`、`表 1` 等原文编号，链接目标直接取 `manifest.json` 中对应的 `files` 值；HTML 表格若已保存为 `figures/table_1.md`，优先把表格内容嵌入正文，或在正文中给出该相对路径并摘录主要行列。典型 `files` 值包括 `images/<paper-short-name>/figures/fig_1.png`、`images/<paper-short-name>/figures/table_1.md`、`images/<paper-short-name>/figures/table_1_part1.png`；不要引用 `debug_pages/`。
 - 如果论文涉及通信系统、太赫兹、MIMO、器件、实验链路、调制、DSP 或信道建模，增加 `## 通信与太赫兹专用信息`，字段按 `references/engineering-thz-profile.md`。
 - 公式、图表和关键结论尽量给出原文定位，例如章节、页码、图号、表号、公式号或补充说明编号。
 - 如果附件或 Extended Data 含有支撑主结论的图表，单独增加 `## 补充材料与扩展数据`；不全文翻译附件。优先放：Supplementary Note 结论、Extended Data 对比表、补充实验设置、功耗/复杂度/稳定性/距离扩展等限制信息。

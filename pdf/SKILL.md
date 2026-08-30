@@ -319,11 +319,10 @@ On failure, no official output names are created. Diagnostic files remain in the
 For visual reading or review of tables, formulas, stamps, handwriting, and complex layouts, render representative pages even after OCR. OCR preserves the page image in the PDF but plain text does not preserve table structure or formula semantics. Use Poppler or PyMuPDF:
 
 ```python
-import fitz, os
+import fitz, os, tempfile
 
 doc = fitz.open('scanned.pdf')
-out_dir = r'C:\Users\SanAn\AppData\Local\Temp\pages'
-os.makedirs(out_dir, exist_ok=True)
+out_dir = tempfile.mkdtemp(prefix='pdf-pages-')
 
 for i in range(len(doc)):
     pix = doc[i].get_pixmap(dpi=120)

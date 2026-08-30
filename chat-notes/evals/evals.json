@@ -436,6 +436,19 @@
         "输出明确区分不吸收的自动监听、遥测、自动写入、自动安装或自动提交机制。",
         "输出保持审查阶段，不生成补丁、不安装外部 skill。"
       ]
+    },
+    {
+      "id": 33,
+      "prompt": "我把 chat-notes 的单个提交 A 推送后，定向同步失败。随后同一 skill 又有提交 B，只改了 `references/skill-edit-followup.md`。我在 CC Switch 手动更新到了 B。现在用 A 加 `-AllowHistoricalCommit -VerifyOnly` 返回退出码 30，三处运行时都只在该 reference 上与 A 不同；用当前 B 的 `-VerifyOnly` 返回退出码 0、`runtime_active`，且四层文件集合和 SHA-256 完全一致。请按 chat-notes 收尾。",
+      "expected_output": "把 A 的验收结论保留为“源码已推送，运行时未生效”，明确差异来自后续提交 B；同时单独报告“当前最新版已部署”。不得把 B 的成功追认为 A 已验收，也不重新扫描、点击、修改运行时或以 Windows 工作树字节比较替代 helper 的 Git blob 验收。",
+      "files": [],
+      "expectations": [
+        "输出把原发布提交 A 与当前 HEAD 提交 B 的验收结论分开说明。",
+        "输出保留 A 的失败结论和差异证据，不把当前版本成功倒推为 A 已验收。",
+        "输出只在 B 与远端一致、A 是 B 的祖先且 B 的 `-VerifyOnly` 返回退出码 0、`runtime_active` 和四层一致时，报告当前最新版已部署。",
+        "输出不会因 A 的验收失败重复扫描、点击更新、修改 `.cc-switch`、`.claude`、`.codex` 或数据库。",
+        "输出使用 helper 指定提交的 Git blob 作为源码依据，不以 Windows 工作树 CRLF/LF 字节差异判断部署结果。"
+      ]
     }
   ]
 }

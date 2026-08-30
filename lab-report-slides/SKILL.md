@@ -116,7 +116,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
       "status": "已完成",
       "blocks": [
         {"type": "text", "heading": "观察", "text": "..."},
-        {"type": "image", "path": "D:\\path\\spectrum.png", "caption": "频谱仪 CH2"}
+        {"type": "image", "path": "<IMAGE_PATH>", "caption": "频谱仪 CH2"}
       ]
     }
   ]

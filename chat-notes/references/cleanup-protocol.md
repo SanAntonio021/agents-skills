@@ -28,7 +28,11 @@
 archive/cleanup-YYYYMMDD/data/<原项目相对路径>
 ```
 
-这保留原项目目录层级，避免平铺、同名改名和覆盖。归档根目录已经存在时，目标批次必须为空；任一目标文件已存在即停止，不覆盖、不换名继续。
+这保留原项目目录层级，避免平铺、同名改名和覆盖。开始建立本批预览前，`archive/cleanup-YYYYMMDD/` 不得含有旧批次内容；预览生成本批控制记录后，执行阶段允许这些记录继续留在批次根目录，但 `data/` 下任一归档目标都必须不存在。发现旧批次内容或目标文件已存在即停止，不覆盖、不换名继续。
+
+先在内存中冻结本次盘点的原有文件集合及其字节数、SHA-256 和分类，再向磁盘写清单。本批新生成的 `archive-manifest-before.csv`、`retained-manifest-before.csv`、`archive-manifest-after.csv`、`archive-acceptance.json` 和执行日志都是控制记录，统一放在 `archive/cleanup-YYYYMMDD/` 批次根目录，不进入本批候选集、保留集或任何由它们自身描述的哈希集合。清单不能把自己列为一行，否则写完清单后自身大小和哈希必然变化，形成无法成立的自指校验。
+
+项目中原本已经存在的旧批次清单不是本批新输出：若它们已在冻结的原有文件集合中，仍按实际用途归入保留、归档候选或待判断项，并像普通源文件一样记录归档前哈希。不得用本批同名输出覆盖旧清单。
 
 对本批全部归档候选建立归档前清单 `archive-manifest-before.csv`；对保留集建立 `retained-manifest-before.csv`。清单中的路径都相对于项目根目录，使用 UTF-8。每个归档候选至少记录：
 
@@ -81,6 +85,8 @@ bytes_after,sha256_after,source_absent,destination_present,verification_status
 - 保留集的当前 SHA-256 与 `retained-manifest-before.csv` 全部一致；
 - 已批准的空目录均已重新确认无子项；
 - 现役 `README`、`record`、`handoff` 等引用的目标路径均存在，或其后续修改已通过单独验证。
+
+批次根目录中的清单和验收记录只核对是否成功生成、能否解析及其当前 SHA-256；这些控制记录的哈希可以写入最终汇报或独立的批次摘要，但不得回写到文件自身或让某份清单校验自身。
 
 ## 空目录与引用
 

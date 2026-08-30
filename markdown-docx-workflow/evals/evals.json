@@ -55,6 +55,26 @@
         "Requires the PDF source to match the confirmed Word fingerprint.",
         "Separates internal _validation.pdf evidence from delivery PDF."
       ]
+    },
+    {
+      "id": "lock-user-specified-format-source",
+      "prompt": "我已经给了一份本地参考 Word，并说最终格式参考它。Markdown 审完后我回复‘确认内容并导出 Word’。请说明生成前怎样确定格式来源，能不能直接改用默认预设或 Normal.dotm。",
+      "expected_output": "把用户给出的参考 Word 锁定为 format_source=template，记录 template_id、template_path、template_sha256，并在现有事件记录中保存用户选择；不得静默改用默认预设或 Normal.dotm。",
+      "expectations": [
+        "Treats the user-provided reference Word as an explicitly selected formatting source.",
+        "Records format_source, template_id, template_path, and template_sha256 using the existing manifest contract.",
+        "Does not silently substitute a preset or Normal.dotm."
+      ]
+    },
+    {
+      "id": "format-source-fingerprint-drift",
+      "prompt": "Word 已生成并通过验收，但用于排版的参考 DOCX 后来被重新保存，SHA-256 变了。现有 Word 和 PDF 状态还能保留吗？",
+      "expected_output": "格式来源指纹变化后回到 CONTENT_FROZEN，清除生成、验收、Word 确认和 PDF 状态；重新锁定来源、生成 Word 并验收。",
+      "expectations": [
+        "Treats formatting-source path, type, or hash drift as an invalidating event.",
+        "Returns to CONTENT_FROZEN instead of retaining stale DOCX acceptance.",
+        "Requires format-source relock, regeneration, and re-acceptance."
+      ]
     }
   ]
 }

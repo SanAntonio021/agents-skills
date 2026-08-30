@@ -2,12 +2,13 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有四类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有五类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
 3. **同步客户端用云端旧快照回滚整个仓库**：双向同步的云盘把几天前的 `.git` 和工作区覆盖回来，提交历史倒退、已删目录复活。
 4. **同一文件混有批准与未批准改动**：整文件暂存会把未授权内容带入提交，手工编写 patch 又容易因 hunk 行数错误损坏。
+5. **云盘临时文件进入 Git 元数据**：上传临时 ref 会让 Git 报 `bad object`，`FETCH_HEAD` 被占用会让 `fetch` 报 `Permission denied`。
 
 按对应 pattern 处理。第 4 类不是 Git 故障，但在非交互式 Windows 任务里容易因命令形态选错而造成范围越界。
 
@@ -214,3 +215,49 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - avoid: 不在原工作区执行整文件 `git add`、`stash`、`reset`、`checkout`、`restore` 或覆盖目标文件；不把原工作区未批准内容复制进隔离副本；手工 patch 第一次确认是 hunk 计数或格式损坏后，不继续修改 header 计数；不 force push
 - success_signal: 隔离 worktree 的暂存差异只含批准内容，候选提交基于固定远端提交，原工作区 `HEAD`、暂存区和未提交内容保持不变
 - capture_rule: 同文件混合改动先隔离重建，再由 Git 生成 patch 并执行 `--cached --check`；内容范围不清或远端基线变化时失败关闭
+
+## 坑 5：云盘临时 ref 或 FETCH_HEAD 锁挡住 fetch
+
+同步客户端可能在 `.git/refs/heads/` 短暂生成 `*.baiduyun.uploading.cfg`，Git 会把它当作分支引用并报
+`fatal: bad object refs/heads/<name>.baiduyun.uploading.cfg`。也可能只有 `.git/FETCH_HEAD` 正被占用，
+使 `git fetch` 报 `cannot open '.git/FETCH_HEAD': Permission denied`。单独出现其中一项，只证明 Git
+元数据正受外部写入或锁影响，不足以按“坑 3”判定整个仓库已被旧快照回滚。
+
+### Pattern: git-verify-remote-tip-when-fetch-metadata-is-blocked
+- scenario: `fetch` 被临时 ref 或 `FETCH_HEAD` 锁阻断，但当前步骤只需要确认远端分支是否等于预期提交
+- use_when: 已取得明确的 `bad object refs/...uploading.cfg` 或 `FETCH_HEAD: Permission denied`；没有 merge、rebase、checkout 或下载远端对象的需求
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $branch = "<BRANCH>"
+
+  $gitDirText = (git -C $repoRoot rev-parse --git-dir).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "cannot resolve git dir" }
+  if ([IO.Path]::IsPathRooted($gitDirText)) {
+      $gitDir = [IO.Path]::GetFullPath($gitDirText)
+  } else {
+      $gitDir = [IO.Path]::GetFullPath((Join-Path $repoRoot $gitDirText))
+  }
+  Get-ChildItem -LiteralPath (Join-Path $gitDir "refs\heads") -Force -ErrorAction SilentlyContinue |
+      Where-Object Name -like "*.baiduyun.uploading.cfg" |
+      Select-Object FullName, Length, LastWriteTime
+  Get-Item -LiteralPath (Join-Path $gitDir "FETCH_HEAD") -Force -ErrorAction SilentlyContinue |
+      Select-Object FullName, Length, LastWriteTime, Attributes
+
+  $localHead = (git -C $repoRoot rev-parse HEAD).Trim()
+  $remoteLines = @(git -C $repoRoot ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $remoteLines.Count -ne 1) { throw "remote branch lookup failed or was ambiguous" }
+  $remoteHead = ($remoteLines[0] -split '\s+')[0].Trim()
+  if ($localHead -notmatch '^[0-9a-f]{40}$' -or $remoteHead -notmatch '^[0-9a-f]{40}$') {
+      throw "local or remote commit is not a full SHA"
+  }
+  [pscustomobject]@{ LocalHead = $localHead; RemoteHead = $remoteHead; Equal = ($localHead -eq $remoteHead) }
+  ```
+- substitute_only: `<REPO_ROOT>`, `<BRANCH>`；远端名不是 `origin` 时必须使用已核实的实际 remote，不从报错文本猜
+- diagnosis: 先检查报错指向的准确临时 ref 或 `FETCH_HEAD`，再核对真实 `HEAD`、目标远端 SHA 和当前 Git 状态；临时 ref 消失后可运行 `git fsck --no-reflogs --connectivity-only`，只有 dangling 对象不等于损坏，出现 missing/bad object 才停止并升级排查；只有同时出现历史倒退、冲突副本、旧目录复活等“坑 3”迹象时，才升级为云同步回滚处理
+- retry_boundary: 临时 ref 已自行消失或锁状态已经变化，且后续确实需要远端对象时，可以重新执行一次 `fetch`；同一状态下不原样重试，第二次仍失败就停止
+- scope_limit: `ls-remote` 只读取服务器端 ref，不更新本地 `origin/<BRANCH>`、不写 `FETCH_HEAD`、不下载对象；它只适合 push 后确认远端 tip、发布 helper 前核对 SHA 等只读门槛，不能替代 merge、rebase、checkout 或对象完整性检查前的 `fetch`
+- avoid: 不因单个临时文件就停止同步客户端、删除 `.git` 内文件、清理 refs、reset 仓库或宣称发生回滚；不把 `ls-remote` 的成功说成本地远端跟踪分支已更新；不在未知并发 Git 操作仍运行时继续写仓库
+- success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；若任务需要对象，则等阻断状态改变后正常 `fetch` 成功再继续
+- capture_rule: fetch 元数据被临时 ref 或锁阻断时，先缩小诊断范围；只读核验用 `ls-remote`，需要对象仍必须等到 `fetch` 恢复

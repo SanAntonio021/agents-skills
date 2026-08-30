@@ -120,6 +120,12 @@
       "prompt": "Windows 上一个已修改文件同时含我批准提交的修复和另一个任务未批准的改动。不能用交互式 git add -p，我手写 git apply --cached patch 又报 corrupt patch 和 hunk 行数不匹配。给我一个不会碰原工作区的可靠命令模式。",
       "expected_output": "应加载 git-on-windows reference 的同文件混合改动模式；记录原仓库状态，从最新远端固定基线创建 detached worktree，只在隔离副本重建批准内容；使用 git diff --binary --full-index --output 让 Git 生成 patch，先 git apply --cached --check 再写入隔离 index；检查完整暂存差异和候选提交，推送前确认远端仍是原基线。不得整文件暂存原文件、stash/reset/checkout/restore、继续手修 hunk 计数、自动安装 git-hunk 或 force push。",
       "files": []
+    },
+    {
+      "id": 21,
+      "prompt": "Windows 上 git fetch 先报 fatal: bad object refs/heads/main.baiduyun.uploading.cfg，检查时这个临时文件已经消失；代码 push 成功后再次 fetch，又报 cannot open '.git/FETCH_HEAD': Permission denied。我现在只需要确认 GitHub main 是否等于本地 HEAD，再调用发布 helper。要不要删 .git 里的文件、停百度网盘或 reset？",
+      "expected_output": "应加载 git-on-windows reference 的坑 5；把单个短暂上传 ref 或 FETCH_HEAD 锁识别为外部写入干扰，不直接判定仓库回滚，也不删除 .git 文件、停止同步客户端或 reset。先解析真实 git dir，检查准确临时 ref/FETCH_HEAD 元数据和本地 HEAD；临时 ref 消失后可用 git fsck --no-reflogs --connectivity-only 检查对象，只有 dangling 不算损坏，missing/bad object 才升级排查。仅需确认远端 tip 时，用 git ls-remote --exit-code --refs origin refs/heads/<branch>，要求唯一结果和完整 40 位 SHA。明确 ls-remote 不更新 origin/<branch>、不写 FETCH_HEAD、不下载对象，不能替代 merge/rebase/对象检查前的 fetch；只有临时文件消失或锁状态变化且确实需要对象时才重试一次 fetch，仍失败则停止。",
+      "files": []
     }
   ]
 }

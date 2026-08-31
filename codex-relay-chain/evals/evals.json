@@ -198,6 +198,19 @@
         "要求对齐 config.toml 写入时间、新任务创建时间和首个 turn_context",
         "没有其他故障证据时不清 provider、不改 watcher、不重装链路"
       ]
+    },
+    {
+      "id": 19,
+      "prompt": "我已经确认是 Sub2API 不兼容 Codex Desktop 无 call_id 的 delegation 首包，本地 CC Switch、OAuth 和代理都正常。我能登录中转站的 /admin/users，但没有服务器 SSH、Docker、部署面板或源码仓库权限。你能不能直接帮我升级？顺便建个定时监控，等上游 issue 修好后自动完成修复。",
+      "expected_output": "应区分账号管理面、服务部署面和源码维护面，明确 /admin/users 不能证明拥有升级、重启、回滚或发布权限。缺少服务器和源码发布入口时，终态应为诊断完成、修复受外部部署或源码权限阻塞，不能承诺直接升级，也不能用无关的本地 provider、用户分组或额度配置规避协议缺陷。应给上游维护者明确交接：部署包含该 delegation/call_id 修复的版本后，再用真实 Codex Desktop delegation 流程和 Responses 请求验收。定时监控只能提醒或续接诊断，不能部署修复；只有用户明确认可仅提醒的价值并同意触发条件与续接方式后才可创建。",
+      "files": [],
+      "expectations": [
+        "区分 /admin/users 账号管理权限与服务器部署、回滚和源码发布权限",
+        "没有部署或源码发布入口时不承诺直接升级，并明确终态是诊断完成、修复受外部权限阻塞",
+        "不通过修改本地 provider、用户分组、额度或其他无关配置掩盖上游协议缺陷",
+        "给上游维护者说明要部署的 delegation/call_id 修复和部署后的真实 Codex/Responses 验收方法",
+        "说明监控只能提醒或续接诊断，只有用户明确认可仅提醒价值后才创建"
+      ]
     }
   ]
 }

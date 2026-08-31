@@ -1,9 +1,10 @@
 ---
 name: cross-model-orchestration
 description: >
-  Codex Desktop/CLI 与 Claude Code CLI 的正式计划双向互审流程。当任一端准备向用户提交一份
+  Codex Desktop/CLI 与 Claude Code VS Code 插件/CLI 的正式计划双向互审流程。当任一端准备向用户提交一份
   需要确认后才执行的正式计划时，自动使用同一个 protocol-v2 claude-codex-bridge MCP，让对方模型
-  在固定副本中审查、修订和测试；普通读取、分析、修改、测试、提交、交付和内部 Todo 不自动调用。
+  以 inline 零工具方式审查并在需要时返回完整修订稿；只有用户明确选择且能力合格时才进入固定副本
+  修订和测试。普通读取、分析、修改、测试、提交、交付和内部 Todo 不自动调用。
   用户明确要求对方审查交付物、让对方执行或启用专用跨模型循环时仍可显式使用。质量优先默认使用
   claude-opus-5/max 与 gpt-5.6-sol/max；调用方可选任务 profile 或目标侧模型/强度，bridge
   严格校验且不回退。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
@@ -24,9 +25,10 @@ allowed-tools:
 
 ## 目标与触发
 
-把跨模型复核限定为正式计划的默认质量门。作者先形成将要提交给用户确认的计划草案；对方模型
-在 bridge 创建的固定副本中检查、允许范围内修订并运行必要测试。审查者不能直接写作者主项目，
-作者必须检查 bridge 同步后的计划状态，再向用户展示最终计划。
+把跨模型复核限定为正式计划的默认质量门。作者先形成将要提交给用户确认的计划草案；对方模型默认
+通过 inline 零工具调用检查正文，并在需要时返回完整 `repairedArtifact`。只有用户明确选择 workspace
+且能力门已通过时，bridge 才创建固定副本供受控修订和测试。无论哪种模式，审查者都不能直接写作者
+主项目；原作者必须验收回执或同步结果，再向用户展示最终计划。
 
 只有以下情况自动进入：
 
@@ -57,11 +59,22 @@ allowed-tools:
 | 当前作者 | 共享 URL | v2 必填 `author` | bridge reviewer |
 | --- | --- | --- | --- |
 | Codex Desktop / Codex CLI | `http://127.0.0.1:43123/mcp` | `"codex"` | Claude |
-| Claude Code CLI | `http://127.0.0.1:43123/mcp` | `"claude"` | Codex |
+| Claude Code VS Code 插件 / CLI | `http://127.0.0.1:43123/mcp` | `"claude"` | Codex |
 
 共享 v2 的 `author` 是调用方声明，bridge 由它派生相反 reviewer，并在 job 中记录
 `author_source=caller_declared`。共享 URL 或 token 只认证本机访问，不能写成作者身份已认证；不得把
 `author` 当作外部安全边界。`target`、`operation`、`round` 和权限仍由工具/bridge 固定，调用方不能覆盖。
+
+### 正常等待、后台会话与任务外唤醒
+
+把以下三件事分开判断，不能因为某一宿主缺少任务外唤醒接口，就写成该方向不能自动完成互审：
+
+- **正常任务内等待**：原作者任务保持运行，在同一回合等待 peer job 终态。Codex 作者和 Claude 作者
+  都按相同流程读取回执、修订正文、重算身份并提交下一轮；这不需要 `continuation`。
+- **后台 reviewer 会话**：bridge 启动的 Claude CLI 或 Codex SDK 会话是隔离 job worker，不是原作者的
+  UI 对话，也不要求显示在 VS Code Claude Code 插件或 Codex Desktop 中。用户看到的是持久化审查回执。
+- **任务外唤醒**：只有原作者任务已退出或不再等待时，才需要宿主级唤醒。当前 bridge 只实现
+  Codex Desktop 的 `continuation`/IPC；这是一项异常恢复能力，不是正常三轮互审的前置条件。
 
 `/mcp/codex`、`/mcp/claude` 以及 `CLAUDE_CODEX_BRIDGE_CODEX_TOKEN`、
 `CLAUDE_CODEX_BRIDGE_CLAUDE_TOKEN` 保留为兼容和回滚入口。它们继续使用未加前缀的 v2 工具名，且只有
@@ -76,7 +89,7 @@ claude-codex-bridge` reports the shared environment header, `http_headers=-`, an
 `transport=streamable_http`. This is a Codex-only rendering rule; do not apply it to Claude without
 separate evidence. Do not edit `.cc-switch`, `.codex`, or other rendered runtime copies directly.
 
-正式互审的调用顺序固定为 `v2_review_peer` 或 `v2_review_repair_peer`，随后在同一回合循环执行
+正式互审的调用顺序固定为 `v2_review_peer` 或 `v2_review_repair_peer`，原作者任务随后在同一回合循环执行
 `v2_await_peer`（单次最多 45 秒）-> `v2_peer_result`，直到原 job 形成终态；即使
 `v2_await_peer` 已返回终态也要取一次 `v2_peer_result`。首次进入或考虑 workspace 模式时，先用
 `v2_peer_status` 读取能力；第三轮用户裁决用 `v2_adjudicate_peer_series`。不得扫描最新线程、调用未加
@@ -123,9 +136,9 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 `eligible_with_loopback_residual_risk` 仍允许 v2 调用；任一硬门失败则不创建 job。
 
 `v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
-正式计划和普通审查在 workspace 能力不可用时的默认入口。若请求带有符合下节门槛的
-`continuation`，bridge 会在 `needs_changes` 终态后唤醒原作者任务；bridge 本身不替作者作语义修改，
-而是由被唤醒的原 Codex 任务采纳意见、重算身份并提交下一轮。
+正式计划和普通审查在 workspace 能力不可用时的默认入口。正常情况下，仍在运行的原作者任务直接
+采纳 `needs_changes` 回执、重算身份并提交下一轮。只有请求带有符合下节门槛的 `continuation` 且原
+Codex Desktop 任务需要任务外恢复时，bridge 才通过 IPC 唤醒它；bridge 本身不替作者作语义修改。
 protocol-v2 的 Claude/Codex 两个方向都不发送 provider-native transport schema；模型返回不透明文本，
 bridge 接受规范 JSON、带前后说明的单层 `json` 代码围栏/对象，或受控 Markdown，再统一转换为现有
 `V2ModelResponse` 并执行同一严格 schema、结论、证据和修订正文校验。说明文字只作为外壳噪声丢弃，
@@ -207,11 +220,11 @@ workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把�
 2. 只接受带 `completion_receipt.schema_version=1` 和 `delivery_required=true` 的终态；先向用户呈现其
    `report`，再检查方向/模型/权限证据。inline 由作者检查审查正文或 `repairedArtifact`，workspace 才检查同步后的主项目。
 3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
-4. `需修改`：inline 不发生主项目同步，workspace 先检查同步内容。满足自动续接门槛时，bridge 将同一
-   Codex Desktop 任务唤醒；该原任务必须读取同一 job 的 findings，修订主项目，重新计算 UTF-8 字节数和
-   SHA-256，把上一轮 findings/未决项放入下一轮 `question`、`constraints` 或 `artifactContent`，并携带
-   上一轮返回的 `seriesVersion` 与 `latestJobId`。没有可验证 continuation（包括 Claude-authored 任务）时，
-   作者侧按同一 CAS 流程继续；不要另开逻辑产物或猜测新线程。
+4. `需修改`：inline 不发生主项目同步，workspace 先检查同步内容。仍在运行的原作者任务，无论是 Codex
+   还是 Claude，都直接读取同一 job 的 findings，修订主项目，重新计算 UTF-8 字节数和 SHA-256，把上一轮
+   findings/未决项放入下一轮 `question`、`constraints` 或 `artifactContent`，并携带上一轮返回的
+   `seriesVersion` 与 `latestJobId`。只有原 Codex Desktop 任务已退出或不再等待、且满足任务外唤醒门槛时，
+   bridge 才投递 `continuation`；其他情况由当前作者任务按同一 CAS 流程继续，不另开逻辑产物或猜测线程。
 5. 第 3 轮仍需修改，或双方出现实质分歧：输出 `DISAGREEMENT_REPORT`，等待用户裁决，不发第 4 轮。
 
 审查通道不可用、超时、取消、认证/权限/sandbox 错误、格式错误、所选模型缺失或回执不匹配都不是
@@ -219,7 +232,10 @@ workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把�
 还会在同步前拒绝缺少对应审查标记/结论、明确 blocked/incomplete，或把失败测试/未满足验收写成“通过”的
 `review_repair` 结果，并使用 `peer_contract_error` 记录原因。
 
-## `needs_changes` 自动续接
+## 异常恢复：`needs_changes` 后的任务外唤醒
+
+正常三轮互审由仍在运行的原作者任务在同一回合完成，不使用本节机制。`continuation` 只解决
+Codex Desktop 原任务已经退出或不再等待后，如何把持久化的 `needs_changes` 回执重新投递给该任务。
 
 `continuation` 是可选的请求字段，形式为：
 
@@ -229,7 +245,8 @@ continuation = { host: "codex_desktop", threadId: "<当前 Codex Desktop task/th
 
 在 Codex Desktop 中，调用方先读取当前任务进程的 `$env:CODEX_THREAD_ID`，并把该值原样填入
 `continuation.threadId`；不得改用旧任务 ID、扫描最近任务或猜测线程。环境变量缺失、为空或无法核对时，
-省略 `continuation` 并明确记录“自动续接不可用”，由作者侧继续处理，不能假装已经启用自动闭环。
+省略 `continuation` 并明确记录“任务外唤醒不可用”；当前任务仍在运行时继续作者侧流程，不能把
+缺少该字段写成正常互审失败。
 
 bridge 只有在以下条件全部满足时才自动续接：`author=codex`、`artifactType=plan`、目标为 Claude、
 请求模型与运行时回执完整匹配、当前轮次小于 3、没有 `pending_high_risk`，且普通 workspace 同步、测试、
@@ -239,9 +256,10 @@ UTF-8 bytes/SHA-256，并以同一 `seriesId` 携带 `seriesVersion`/`latestJobI
 
 删除、重命名、权限或类型变化、目录覆盖、基线漂移、测试/模型证据缺失、超时、断连或不确定 IPC 回执
 都会停止自动闭环。高风险变更先进入 `awaiting_user_decision`，完整展示稳定的
-`pending_high_risk[].id`；用户精确批准后调用 `approve_peer_sync`，bridge 只重新核验并同步，不重跑模型，
-同步成功后才再次唤醒原任务。Claude-authored 任务目前没有可验证的 Claude Desktop continuation API，
-因此 bridge 不会擅自自动修改该方向，仍由 Claude/用户按作者侧流程处理。
+`pending_high_risk[].id`；用户精确批准后调用 `v2_approve_peer_sync`，bridge 只重新核验并同步，不重跑模型，
+同步成功后才再次唤醒原任务。Claude-authored 任务在 VS Code Claude Code 插件或 CLI 中保持运行时，
+直接读取回执并继续同一 CAS 流程；任务已退出后，bridge 目前没有可验证的 Claude Code 宿主唤醒接口，
+因此不会猜测会话、代替 Claude 修改或自动重发。
 
 续接 outbox 的状态为 `queued`、`dispatching`、`delivered` 或 `uncertain`。重启、断连或超时中断
 `dispatching` 时必须转为 `uncertain`，且永不自动重发；调用方只能向用户报告该状态并等待明确恢复决定。
@@ -283,7 +301,7 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 逐文件哈希复核和逆序回滚自动同步。删除、重命名、权限变化、类型替换或整目录变化进入
 `needs_attention`/`sync_status=awaiting_user`，列出稳定 `pending_high_risk[].id`。
 
-只有用户明确接受完整且精确的 ID 集合后，才调用 `approve_peer_sync`。它创建新的同步请求 ID，
+只有用户明确接受完整且精确的 ID 集合后，才调用 `v2_approve_peer_sync`。它创建新的同步请求 ID，
 重新检查主项目基线和保留副本结果，不再调用任何模型；ID 缺失、多余、过期或基线漂移均失败关闭。
 不能用授权扩大 `repairTargets`，也不能授权覆盖作者在审查期间产生的新改动。
 待授权期间固定副本和持久锁继续保留；任何重叠目标根的新任务必须以

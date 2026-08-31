@@ -13,10 +13,9 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getProxyPort, readConfig, runtimeEnvironment } from './runtime-config.mjs';
 
-const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CONFIG_PATH = path.join(SKILL_ROOT, 'config.env');
+export { getProxyPort, readConfig } from './runtime-config.mjs';
 
 // 已知支持 chrome://inspect#remote-debugging toggle 的浏览器
 // 加新浏览器：只改这里
@@ -59,50 +58,6 @@ export function checkPort(port, host = '127.0.0.1', timeoutMs = 2000) {
   });
 }
 
-// 读 config.env 文件（不写入 process.env，分清来源）
-// 格式：KEY=VALUE，# 开头是注释
-export function readConfig() {
-  const cfg = {};
-  let content;
-  try { content = fs.readFileSync(CONFIG_PATH, 'utf8'); }
-  catch { return cfg; }
-  for (const line of content.split(/\r?\n/)) {
-    const t = line.trim();
-    if (!t || t.startsWith('#')) continue;
-    const i = t.indexOf('=');
-    if (i === -1) continue;
-    const k = t.slice(0, i).trim();
-    const v = t.slice(i + 1).trim();
-    if (k && v) cfg[k] = v;
-  }
-  return cfg;
-}
-
-const DEFAULT_PROXY_PORTS = Object.freeze({ edge: 3456, chrome: 3457 });
-
-function parseProxyPort(raw, key) {
-  const port = Number(raw);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`${key} 必须是 1-65535 的整数，当前值为 "${raw}"`);
-  }
-  return port;
-}
-
-// 每个浏览器拥有固定的本地 Proxy 端口。进程环境优先于 config.env，便于测试或临时覆盖。
-export function getProxyPort(browserId) {
-  const envKey = `WEB_ACCESS_${browserId.toUpperCase().replaceAll('-', '_')}_PORT`;
-  const configured = process.env[envKey] || readConfig()[envKey];
-  if (configured) return parseProxyPort(configured, envKey);
-
-  const fallback = DEFAULT_PROXY_PORTS[browserId];
-  if (fallback) return fallback;
-
-  throw new Error(
-    `浏览器 "${browserId}" 没有专用 Proxy 端口。` +
-    `请设置 ${envKey}，或改用 edge/chrome。`
-  );
-}
-
 // 返回所有开了 toggle 且端口活的浏览器
 async function detectAll() {
   const result = [];
@@ -128,6 +83,7 @@ async function detectAll() {
 //   mismatch  = override/配偏好设了但未检测到对应 toggle，硬错
 //   empty     = 0 浏览器开 toggle 且未设偏好/override
 export async function selectBrowser(override = null) {
+  runtimeEnvironment();
   const detected = await detectAll();
   const configured = readConfig().WEB_ACCESS_BROWSER || null;
 

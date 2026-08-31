@@ -160,6 +160,8 @@ try {
   proxyProcess = spawn(process.execPath, [proxyScript, '--browser', 'edge'], {
     env: {
       ...process.env,
+      WEB_ACCESS_TEST_MODE: '1',
+      WEB_ACCESS_TEST_ROOT: tempRoot,
       LOCALAPPDATA: fakeLocalAppData,
       CDP_PROXY_PORT: String(proxyPort),
       WEB_ACCESS_EDGE_PORT: String(proxyPort),

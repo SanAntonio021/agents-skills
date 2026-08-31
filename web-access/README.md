@@ -27,7 +27,7 @@
 
 AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏览器自动化能力。这个 Agent Skill 补上的是：**联网策略 + CDP 浏览器操作 + 站点经验积累**。兼容所有支持 SKILL.md 的 Agent（Claude Code、Cursor、Gemini CLI、Codex CLI 等）。
 
-> **本地修订 dual-proxy.2 候选**：在上游 v2.5.3 与 dual-proxy.1 基础上，保留 Edge（默认 3456）和 Chrome（默认 3457）双长期 Proxy，并新增 task/token 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认。候选通过评测并获批前，不替换正式技能。
+> **本地修订 dual-proxy.2**：在上游 v2.5.3 与 dual-proxy.1 基础上，保留 Edge（固定 3456）和 Chrome（固定 3457）双长期 Proxy，并新增唯一生产配置、单实例并发复用、task/token 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认。
 
 > 推荐必读：[Web Access：一个 Skill，拉满 Agent 联网和浏览器能力](https://mp.weixin.qq.com/s/rps5YVB6TchT9npAaIWKCw) ，完整介绍了 Web-Access Skill 的开发细节与 Agent Skill 设计哲学，帮助你也能写出类似通用、高上限的 Skill
 
@@ -38,7 +38,7 @@ AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏
 | 能力 | 说明 |
 |------|------|
 | 联网工具自动选择 | WebSearch / WebFetch / curl / Jina / CDP，按场景自主判断，可任意组合 |
-| 双长期 CDP Proxy | Edge 与 Chrome 使用独立端口和 WebSocket；默认 Edge，切换时不停止另一浏览器 |
+| 双长期 CDP Proxy | Edge 固定 3456、Chrome 固定 3457；所有生产副本复用同一配置和现有兼容进程，不使用备用端口 |
 | task/token 隔离 | 每个对话创建独立 task，只能看到和控制自己创建的 tab 及 popup；不列出或接管用户 tab |
 | AX snapshot/ref | 默认读取交互式可访问性树，以短 ref 定位元素；动态重绘后重新 snapshot |
 | 结构化交互 | 支持 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`，动作后回读验证 |
@@ -126,20 +126,20 @@ CDP 模式需要 **Node.js 22+** 和浏览器（Chrome / Edge）开启远程调�
    - Edge：`edge://inspect/#remote-debugging`
 2. 勾选 **Allow remote debugging for this browser instance**（可能需要重启浏览器）
 
-### 浏览器偏好与专用端口（config.env）
+### 唯一生产配置与固定端口
 
-skill 长期偏好保存在 `${CLAUDE_SKILL_DIR}/config.env`（首次运行自动从 `config.env.template` 创建，gitignored）：
+源码、CC Switch、Claude 和 Codex 的技能副本统一读取 `%LOCALAPPDATA%\web-access\config.env`。首次运行会原子创建该文件；各技能目录中的 `config.env` 不再作为生产配置来源：
 
 ```bash
 # 未显式指定时默认使用 Edge
 WEB_ACCESS_BROWSER=edge
 
-# 两个长期 Proxy 必须使用不同端口
+# 生产端口固定，防止不同技能副本各起一份 Proxy
 WEB_ACCESS_EDGE_PORT=3456
 WEB_ACCESS_CHROME_PORT=3457
 ```
 
-合法值：`chrome` / `edge`
+`WEB_ACCESS_BROWSER` 合法值为 `chrome` / `edge`。生产配置中的端口必须保持 `3456/3457`；同名环境变量只有与固定值相等时才兼容，不能用于另起备用端口。临时端口仅供仓库测试脚本在系统临时目录下以 `WEB_ACCESS_TEST_MODE=1` 隔离使用。
 
 **本次使用 Chrome**（不修改默认浏览器，也不停止 Edge Proxy）：
 
@@ -147,13 +147,15 @@ WEB_ACCESS_CHROME_PORT=3457
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
 ```
 
-**首次同时配置两个浏览器**：
+**同时检查两个浏览器**：
 
 ```bash
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 ```
 
-两个浏览器会分别建立一个 Proxy/CDP WebSocket。浏览器和对应 Proxy 进程保持存活时，后续对话可复用连接；每个对话仍创建独立 task。通常无需再次点击允许。
+两个浏览器会分别建立一个 Proxy/CDP WebSocket。Edge 的授权绑定当前浏览器实例和长期 Proxy 连接：Edge 与 `3456` 上的正式 Proxy 都保持存活时，所有技能副本和后续对话都会复用这条连接，每个对话只新建自己的 task，通常只需点击一次“允许对此浏览器实例进行远程调试”。关闭 Edge、停止正式 Proxy、迁移旧 Proxy 或连接断开重建后，才可能再次提示。
+
+若同一 Edge 实例中反复提示授权，先检查是否有第二个 Proxy 进程或备用端口也在连接同一个 Edge CDP。不要靠再分配端口“解决”端口占用；并发启动的输家应核验 `3456` 上现有 Proxy 的协议、浏览器和能力后直接退出并让调用方复用它。
 
 环境检查（Agent 运行时会自动完成前置检查，无需手动执行）：
 

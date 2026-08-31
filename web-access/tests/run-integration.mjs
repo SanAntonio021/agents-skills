@@ -6,12 +6,14 @@ import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { startMockCdpServer } from './mock-cdp-server.mjs';
 
 const skillRoot = path.resolve(process.argv[2] || '');
 const outputPath = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const proxyScript = path.join(skillRoot, 'scripts', 'cdp-proxy.mjs');
 const checkDepsScript = path.join(skillRoot, 'scripts', 'check-deps.mjs');
+const runtimeConfigUrl = pathToFileURL(path.join(skillRoot, 'scripts', 'runtime-config.mjs')).href;
 
 if (!fs.existsSync(proxyScript) || !fs.existsSync(checkDepsScript)) {
   throw new Error(`无效 skill 路径: ${skillRoot}`);
@@ -57,6 +59,14 @@ function spawnNode(args, env, options = {}) {
   ownedChildren.add(child);
   child.once('exit', () => ownedChildren.delete(child));
   return child;
+}
+
+function productionEnv(localAppData, extra = {}) {
+  const env = { ...process.env, LOCALAPPDATA: localAppData, ...extra };
+  delete env.WEB_ACCESS_TEST_MODE;
+  delete env.WEB_ACCESS_TEST_ROOT;
+  delete env.CDP_PROXY_PORT;
+  return env;
 }
 
 function waitForExit(child, timeoutMs = 20000) {
@@ -292,10 +302,14 @@ function rawHostRequest(port, host) {
 
 async function startIsolatedProxy(mock, extraEnv = {}) {
   const proxyPort = await freePort();
-  const isolatedLocalAppData = path.join(tempRoot, `LocalAppData-${proxyPort}`);
+  const isolatedTestRoot = path.join(tempRoot, `isolated-${proxyPort}`);
+  const isolatedLocalAppData = path.join(isolatedTestRoot, 'LocalAppData');
+  fs.mkdirSync(isolatedTestRoot, { recursive: true });
   writeDevToolsPort(isolatedLocalAppData, 'edge', mock.port);
   const env = {
     ...process.env,
+    WEB_ACCESS_TEST_MODE: '1',
+    WEB_ACCESS_TEST_ROOT: isolatedTestRoot,
     LOCALAPPDATA: isolatedLocalAppData,
     CDP_PROXY_PORT: String(proxyPort),
     WEB_ACCESS_EDGE_PORT: String(proxyPort),
@@ -362,6 +376,8 @@ let chromeProxyPort = await freePort();
 while (chromeProxyPort === edgeProxyPort) chromeProxyPort = await freePort();
 const baseEnv = {
   ...process.env,
+  WEB_ACCESS_TEST_MODE: '1',
+  WEB_ACCESS_TEST_ROOT: tempRoot,
   LOCALAPPDATA: localAppData,
   WEB_ACCESS_EDGE_PORT: String(edgeProxyPort),
   WEB_ACCESS_CHROME_PORT: String(chromeProxyPort),
@@ -379,6 +395,76 @@ let edgeProxyChild = null;
 let chromeProxyChild = null;
 
 try {
+  await runTest('canonical-config-created-once-and-equal-production-override-is-compatible', async () => {
+    const productionRoot = path.join(tempRoot, 'production-equal');
+    const productionLocalAppData = path.join(productionRoot, 'LocalAppData');
+    fs.mkdirSync(productionLocalAppData, { recursive: true });
+    const legacyConfig = path.join(productionRoot, 'skill-copy', 'config.env');
+    fs.mkdirSync(path.dirname(legacyConfig), { recursive: true });
+    fs.writeFileSync(legacyConfig, 'WEB_ACCESS_BROWSER=edge\nWEB_ACCESS_EDGE_PORT=10056\nWEB_ACCESS_CHROME_PORT=10057\n');
+    const script = `import { canonicalConfigPath, getProxyPort } from ${JSON.stringify(runtimeConfigUrl)}; ` +
+      `console.log(JSON.stringify({ port: getProxyPort('edge'), configPath: canonicalConfigPath() }));`;
+    const child = spawnNode(
+      ['--input-type=module', '--eval', script],
+      productionEnv(productionLocalAppData, { WEB_ACCESS_EDGE_PORT: '3456' }),
+    );
+    const code = await waitForExit(child, 10000);
+    assert.equal(code, 0, `${child.stdoutText}\n${child.stderrText}`);
+    const result = JSON.parse(child.stdoutText);
+    assert.equal(result.port, 3456);
+    assert.equal(result.configPath, path.join(productionLocalAppData, 'web-access', 'config.env'));
+    const canonical = fs.readFileSync(result.configPath, 'utf8');
+    assert.match(canonical, /WEB_ACCESS_EDGE_PORT=3456/);
+    assert.match(canonical, /WEB_ACCESS_CHROME_PORT=3457/);
+    assert.match(fs.readFileSync(legacyConfig, 'utf8'), /10056/);
+    return { port: result.port, legacyIgnored: true, canonicalCreated: true };
+  });
+
+  await runTest('different-production-port-override-fails-before-browser-connection', async () => {
+    const productionRoot = path.join(tempRoot, 'production-conflict');
+    const productionLocalAppData = path.join(productionRoot, 'LocalAppData');
+    fs.mkdirSync(productionLocalAppData, { recursive: true });
+    const child = spawnNode(
+      [proxyScript, '--browser', 'edge'],
+      productionEnv(productionLocalAppData, { WEB_ACCESS_EDGE_PORT: String(await freePort()) }),
+    );
+    const code = await waitForExit(child, 10000);
+    assert.equal(code, 2, `${child.stdoutText}\n${child.stderrText}`);
+    assert.match(child.stderrText, /port_override_conflict/);
+    return { rejectedBeforeListen: true, status: 'port_override_conflict' };
+  });
+
+  await runTest('tampered-canonical-production-ports-fail-closed', async () => {
+    const productionRoot = path.join(tempRoot, 'production-tampered');
+    const productionLocalAppData = path.join(productionRoot, 'LocalAppData');
+    const configPath = path.join(productionLocalAppData, 'web-access', 'config.env');
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, 'WEB_ACCESS_BROWSER=edge\nWEB_ACCESS_EDGE_PORT=10056\nWEB_ACCESS_CHROME_PORT=10057\n');
+    const child = spawnNode([proxyScript, '--browser', 'edge'], productionEnv(productionLocalAppData));
+    const code = await waitForExit(child, 10000);
+    assert.equal(code, 2, `${child.stdoutText}\n${child.stderrText}`);
+    assert.match(child.stderrText, /config_invalid/);
+    assert.match(child.stderrText, /Production Proxy ports are fixed/);
+    return { rejectedBeforeListen: true, status: 'config_invalid' };
+  });
+
+  await runTest('test-mode-rejects-nonisolated-localappdata-before-browser-connection', async () => {
+    const wrongLocalAppData = path.join(tempRoot, 'wrong-local-app-data');
+    fs.mkdirSync(wrongLocalAppData, { recursive: true });
+    const child = spawnNode([proxyScript, '--browser', 'edge'], {
+      ...process.env,
+      WEB_ACCESS_TEST_MODE: '1',
+      WEB_ACCESS_TEST_ROOT: tempRoot,
+      LOCALAPPDATA: wrongLocalAppData,
+      CDP_PROXY_PORT: String(await freePort()),
+      WEB_ACCESS_EDGE_PORT: String(await freePort()),
+    });
+    const code = await waitForExit(child, 10000);
+    assert.equal(code, 2, `${child.stdoutText}\n${child.stderrText}`);
+    assert.match(child.stderrText, /test_isolation_invalid/);
+    return { rejectedBeforeListen: true, status: 'test_isolation_invalid' };
+  });
+
   await runTest('dual-browser-check-deps-json', async () => {
     assert.ok(checkDepsSource.includes("'--json'") || checkDepsSource.includes('"--json"'), 'check-deps 缺少 --json');
     const child = spawnNode([checkDepsScript, '--all', '--json'], baseEnv);
@@ -419,6 +505,7 @@ try {
     protocolVersion: 2,
     taskIsolation: true,
     userTabsVisible: false,
+    maxActiveTasks: 32,
     actions: ['click'],
   };
   const injectedCapabilitySecret = 'capability-secret-must-not-be-reported';
@@ -430,7 +517,8 @@ try {
 
   await runTest('check-deps-fetches-capabilities-before-reusing-ready-proxy', async () => {
     const proxyPort = await freePort();
-    const stub = await startProxyStub(proxyPort, capabilityHealth, { body: untrustedCapabilities });
+    const expectedHealth = { ...capabilityHealth, proxyPort };
+    const stub = await startProxyStub(proxyPort, expectedHealth, { body: untrustedCapabilities });
     try {
       const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
       const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
@@ -496,7 +584,8 @@ try {
   for (const scenario of capabilityFailureScenarios) {
     await runTest(`check-deps-capabilities-${scenario.name}-fails-closed`, async () => {
       const proxyPort = await freePort();
-      const stub = await startProxyStub(proxyPort, capabilityHealth, scenario.response);
+      const expectedHealth = { ...capabilityHealth, proxyPort };
+      const stub = await startProxyStub(proxyPort, expectedHealth, scenario.response);
       try {
         const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
         const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
@@ -518,7 +607,7 @@ try {
         assert.equal(stub.listening, true, 'capabilities 失败不得停止或覆盖现有 Proxy');
         const preserved = await request(`http://127.0.0.1:${proxyPort}/health`);
         assert.equal(preserved.status, 200);
-        assert.deepEqual(preserved.body, capabilityHealth);
+        assert.deepEqual(preserved.body, expectedHealth);
         return { scenario: scenario.name, failedClosed: true, existingProxyPreserved: true };
       } finally {
         await new Promise((resolve) => stub.close(resolve));
@@ -1468,6 +1557,7 @@ try {
       protocolVersion: 2,
       connected: true,
       requestedBrowser: 'unknown',
+      proxyPort: unknownPort,
       browser: { id: 'unknown', label: 'Unknown browser' },
       sessions: 0,
       managedTabs: 0,
@@ -1520,7 +1610,7 @@ try {
   for (const scenario of browserIdentityScenarios) {
     await runTest(`protocol-v2-proxy-${scenario.name}-is-rejected-and-preserved`, async () => {
       const proxyPort = await freePort();
-      const stub = await startProxyStub(proxyPort, scenario.health, { body: untrustedCapabilities });
+      const stub = await startProxyStub(proxyPort, { ...scenario.health, proxyPort }, { body: untrustedCapabilities });
       try {
         const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
         const check = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
@@ -1584,16 +1674,23 @@ try {
 
   await runTest('concurrent-start-has-one-live-proxy', async () => {
     const proxyPort = await freePort();
-    const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort) };
+    const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
+    const connectionsBefore = edgeMock.totalConnections;
     const children = Array.from({ length: 20 }, () => spawnNode([proxyScript, '--browser', 'edge'], env));
     const health = await waitForHealth(proxyPort);
     await delay(1500);
     const alive = children.filter((child) => child.exitCode === null);
     assert.equal(alive.length, 1, `同一端口仍有 ${alive.length} 个存活 Proxy 进程`);
+    assert.equal(edgeMock.totalConnections - connectionsBefore, 1, '并发输家不得连接浏览器 CDP');
     assert.equal(health.browser?.id, 'edge');
     assert.equal(health.protocolVersion, 2);
     await Promise.all(children.map(stopChild));
-    return { attempted: children.length, liveProcesses: alive.length, proxyPid: health.pid || null };
+    return {
+      attempted: children.length,
+      liveProcesses: alive.length,
+      newCdpWebSockets: edgeMock.totalConnections - connectionsBefore,
+      proxyPid: health.pid || null,
+    };
   });
 
   await runTest('atomic-bind-and-fatal-error-guard', async () => {

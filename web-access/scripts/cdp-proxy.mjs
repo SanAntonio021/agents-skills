@@ -6,10 +6,20 @@ import http from 'node:http';
 import os from 'node:os';
 import { URL } from 'node:url';
 import { selectBrowser, findFallbackPort } from './browser-discovery.mjs';
+import { getProxyPort, readConfig, RuntimeConfigError } from './runtime-config.mjs';
 
 const PROTOCOL_VERSION = 2;
-const PORT = parsePort(process.env.CDP_PROXY_PORT || '3456', 'CDP_PROXY_PORT');
 const BROWSER_OVERRIDE = parseBrowserArg();
+let CONFIGURED_BROWSER;
+let PORT;
+try {
+  CONFIGURED_BROWSER = BROWSER_OVERRIDE || readConfig().WEB_ACCESS_BROWSER;
+  PORT = getProxyPort(CONFIGURED_BROWSER, { includeLegacyCdpPort: true });
+} catch (error) {
+  const code = error instanceof RuntimeConfigError ? error.code : 'config_error';
+  console.error(`[CDP Proxy] ${code}: ${error.message}`);
+  process.exit(error?.exitCode || 1);
+}
 const TASK_LIMIT = parsePositiveInt(process.env.CDP_TASK_LIMIT, 32);
 const TASK_IDLE_TIMEOUT = parsePositiveInt(process.env.CDP_TASK_IDLE_TIMEOUT || process.env.CDP_TASK_ACTIVE_TIMEOUT, 30 * 60_000);
 const HANDOFF_TIMEOUT = parsePositiveInt(process.env.CDP_HANDOFF_TIMEOUT || process.env.CDP_TASK_HANDOFF_TIMEOUT, 30 * 60_000);
@@ -1734,9 +1744,9 @@ const server = http.createServer(async (req, res) => {
   writeResponse(res, response);
 });
 
-function getExistingProxyHealth(port, timeoutMs = 2000) {
+function getExistingProxyJson(port, route, timeoutMs = 200) {
   return new Promise((resolve) => {
-    const request = http.get(`http://127.0.0.1:${port}/health`, (response) => {
+    const request = http.get(`http://127.0.0.1:${port}${route}`, (response) => {
       let data = '';
       response.on('data', (chunk) => { data += chunk; });
       response.on('end', () => {
@@ -1759,28 +1769,65 @@ function existingBrowserId(health) {
 function existingProxyMatchesBrowser(health) {
   const runningId = existingBrowserId(health);
   const requestedId = health?.requestedBrowser || null;
-  if (!runningId) return false;
-  if (!BROWSER_OVERRIDE) return true;
-  return runningId === BROWSER_OVERRIDE && (!requestedId || requestedId === BROWSER_OVERRIDE);
+  if (!runningId || !requestedId) return false;
+  return runningId === CONFIGURED_BROWSER && requestedId === CONFIGURED_BROWSER;
+}
+
+function existingProxyIsCompatible(health, capabilities, expectedCdpPort) {
+  return isWebAccessProxy(health)
+    && health.protocolVersion === PROTOCOL_VERSION
+    && health.proxyPort === PORT
+    && health.connected === true
+    && health.chromePort === expectedCdpPort
+    && Number.isInteger(health.pid)
+    && health.pid > 0
+    && existingProxyMatchesBrowser(health)
+    && capabilities?.protocolVersion === PROTOCOL_VERSION
+    && capabilities?.taskIsolation === true
+    && capabilities?.userTabsVisible === false
+    && Number.isInteger(capabilities?.maxActiveTasks)
+    && capabilities.maxActiveTasks > 0;
+}
+
+async function waitForCompatibleProxy() {
+  const selected = await selectBrowser(CONFIGURED_BROWSER);
+  const expectedCdpPort = selected.kind === 'ok' ? selected.browser.port : null;
+  const deadline = Date.now() + 10_000;
+  let lastHealth = null;
+  while (Date.now() < deadline) {
+    const health = await getExistingProxyJson(PORT, '/health');
+    if (health) lastHealth = health;
+    if (health && isWebAccessProxy(health)) {
+      if (health.protocolVersion !== PROTOCOL_VERSION) return { compatible: false, reason: 'protocol_mismatch', health };
+      if (health.proxyPort !== PORT) return { compatible: false, reason: 'proxy_port_mismatch', health };
+      if (!existingProxyMatchesBrowser(health)) return { compatible: false, reason: 'browser_proxy_mismatch', health };
+      if (expectedCdpPort !== null && health.connected && health.chromePort !== expectedCdpPort) {
+        return { compatible: false, reason: 'cdp_port_mismatch', health };
+      }
+      if (health.connected && expectedCdpPort !== null) {
+        const capabilities = await getExistingProxyJson(PORT, '/capabilities');
+        if (existingProxyIsCompatible(health, capabilities, expectedCdpPort)) {
+          return { compatible: true, health, capabilities };
+        }
+        if (capabilities) return { compatible: false, reason: 'capabilities_mismatch', health };
+      }
+    }
+    await delay(250);
+  }
+  return { compatible: false, reason: lastHealth ? 'proxy_start_race_timeout' : 'port_conflict_unverified', health: lastHealth };
 }
 
 async function main() {
   let cleanupTimer = null;
   server.once('error', async (error) => {
     if (error.code === 'EADDRINUSE') {
-      const health = await getExistingProxyHealth(PORT);
-      if (isWebAccessProxy(health) && health.protocolVersion !== PROTOCOL_VERSION) {
-        console.error(`[CDP Proxy] LEGACY_PROXY_DETECTED on port ${PORT}; restart it explicitly to load protocol v2.`);
-        process.exit(2);
-      }
-      const runningId = existingBrowserId(health);
-      const compatible = existingProxyMatchesBrowser(health);
-      if (isWebAccessProxy(health) && health.protocolVersion === PROTOCOL_VERSION && compatible) {
+      const result = await waitForCompatibleProxy();
+      if (result.compatible) {
         console.log(`[CDP Proxy] Compatible protocol v2 proxy already runs on port ${PORT}.`);
         process.exit(0);
       }
-      console.error(`[CDP Proxy] Port ${PORT} is occupied by another service or browser proxy.`);
-      process.exit(1);
+      console.error(`[CDP Proxy] ${result.reason} on port ${PORT}; existing listener was preserved.`);
+      process.exit(result.reason === 'protocol_mismatch' ? 2 : 1);
     }
     console.error(`[CDP Proxy] HTTP listen failed: ${error.code || error.message}`);
     process.exit(1);

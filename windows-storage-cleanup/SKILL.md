@@ -46,6 +46,10 @@ description: >
 - 使用 CSV 前，确认文件存在、非空、包含预期表头并且可以解析。
 - 避免产生海量输出的无边界递归搜索。从最大文件夹开始，逐步缩小范围。
 
+当 CSV 较大或需要同时拆分多个热点目录时，使用
+[`scripts/Summarize-WizTreeCsv.ps1`](scripts/Summarize-WizTreeCsv.ps1) 流式读取，并通过 `-Roots` 和
+`-Top` 限制为指定目录的直接子项。不要整表载入内存，也不要把全部命中行输出到聊天或日志。
+
 有关扫描、官方清理、Recycle Bin 和页面文件的规则，读取 [references/windows-and-wiztree.md](references/windows-and-wiztree.md)。
 
 ### 应用自身清理边界
@@ -124,6 +128,7 @@ description: >
 每个已批准批次完成后：
 
 - 确认移动的项目已出现在 Recycle Bin 中，或官方清理已成功完成。
+- 按本批目标驱动器核对 Recycle Bin 状态；不得用 Windows Shell 的全局回收站条目数替代单盘状态。
 - 重新检查可用空间。移入 Recycle Bin 不会释放物理空间，清空后才会释放。
 - 报告预期和实际释放的空间，以及所有跳过项。
 - 隔离各项失败；不得为补偿某个失败目标而扩大清理范围。

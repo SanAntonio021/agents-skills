@@ -86,6 +86,30 @@
         "Regenerating caches are last, clearly labeled as recurrent, and excluded from stable-reclaim totals.",
         "The review stops when remaining candidates are only a few hundred MB, recurrent, or materially riskier."
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "这次只检查 C 盘。Windows Shell 的回收站视图显示 40 个条目，但逐项看都位于 D:\\$Recycle.Bin；C:\\$Recycle.Bin 只有 desktop.ini。请告诉我 C 盘回收站现在是什么状态。",
+      "expected_output": "A drive-scoped Recycle Bin report that identifies the Shell namespace as a combined multi-drive view and reports the C-drive bin as empty without deleting or reclassifying D-drive items.",
+      "files": [],
+      "expectations": [
+        "The C-drive status is derived from C:\\$Recycle.Bin\\<SID>, not Shell.Application.Namespace(10).Items().Count.",
+        "desktop.ini and control files are excluded from the logical entry count.",
+        "The 40 D-drive entries are excluded from the C-drive result and remain untouched.",
+        "The response labels any Shell namespace count as global rather than drive-specific."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "我导出了一个 250 MB 的 WizTree CSV，要拆看 uv、Downloads 和 Temp 的直接子项。不要把整张表或几千条路径打印出来，只给每个目录最大的 15 项和合计。",
+      "expected_output": "A bounded, structured summary that uses the bundled streaming WizTree CSV helper, validates the export banner and required columns, and reports direct children without double-counting descendants.",
+      "files": [],
+      "expectations": [
+        "The workflow uses scripts/Summarize-WizTreeCsv.ps1 with explicit Roots and Top 15 rather than loading the complete export with Import-Csv.",
+        "The WizTree banner and required path, size, allocated, modified, file-count, and folder-count columns are validated.",
+        "Only direct children are summarized, and descendant rows under an aggregate directory row are not added again.",
+        "Output is capped at 15 items per requested root and includes direct-item and allocated-byte totals."
+      ]
     }
   ]
 }

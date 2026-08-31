@@ -25,6 +25,11 @@ export, validate the artifact itself:
 Do not trust `$LASTEXITCODE` alone. WizTree 4.31 has produced a valid CSV while returning exit code `1` on this
 machine.
 
+For large exports, use `../scripts/Summarize-WizTreeCsv.ps1` instead of loading the complete file with `Import-Csv`
+or printing every match. The helper validates the banner and required columns, streams the rows with a structured CSV
+parser, selects only direct children of explicitly supplied roots, and caps each root at `-Top` results. Directory rows
+already contain WizTree's aggregate size, so descendants below a selected direct child must not be added again.
+
 ## Windows Cleanup Order
 
 Prefer supported mechanisms:
@@ -55,6 +60,17 @@ Before moving anything:
 - handle each approved item independently so one failure does not broaden the action.
 
 Emptying the Recycle Bin is a separate, potentially broad action. Obtain separate approval or leave it to the user.
+
+### Reporting One Drive's Recycle Bin State
+
+When a cleanup or report is scoped to one drive, resolve that drive's `$Recycle.Bin\<SID>` directory and inventory its
+`$I` metadata and `$R` payload pairs. Exclude `desktop.ini` and other non-entry control files, count one `$I`/`$R` pair
+as one logical item, and calculate occupied bytes from the matching payload.
+
+`Shell.Application.Namespace(10).Items()` is a combined view across drives. It can support a clearly labeled global
+inventory, but its item count must never be used to claim that a particular drive's Recycle Bin is empty or nonempty.
+If an entry resolves to another drive, exclude it from the target-drive status instead of treating it as an unrelated
+entry on the target drive.
 
 ### Permanently Removing One Staged Candidate
 

@@ -28,7 +28,7 @@ metadata:
 
 1. **图的用途**：基金申报、工程申报、答辩 PPT、论文概念图，还是内部讨论。
 2. **技术依据**：哪份本地文件或用户确认内容是当前权威版本。
-3. **生成路径**：宿主原生图像工具、用户已确认的 OpenAI 兼容图像接口，还是只输出提示词。
+3. **生成路径**：宿主原生图像工具、用户已确认的 OpenAI 兼容图像接口、经用户对准确站点单独授权的网页生图，还是只输出提示词。
 
 如果技术依据互相冲突，先列出冲突并问一个最关键的问题。不要先生成一张视觉上漂亮、技术上错误的图。
 
@@ -71,6 +71,12 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 ```
 
 独立接口只保留为显式兼容路径：传入 `--backend direct` 或设置 `RESEARCH_IMAGE_BACKEND=direct`。direct 模式不故障转移；该模式才会读取显式 `RESEARCH_IMAGE_ENV_FILE` 或 `~/.config/research-schematic-imagegen/image-api.env`，普通路径绝不自动读取 `hangzhale.env`。
+
+#### 网页生图与改图
+
+网页不是注册表默认链、pinned 渠道或 direct 接口的自动备用。只有用户对准确站点作出单独授权后，才进入网页生图；用户只说“换个网站”而未确认站点时，先说明准备使用的站点并等待确认。原渠道失败的停止条件和错误原文仍然保留，不能用网页成功倒推原渠道成功。
+
+进入网页路径时，必须同时使用 `web-access`，并先读 [references/web-image-generation.md](references/web-image-generation.md)。每项已授权的生成或编辑只提交一次。页面长时间停在进度状态、连接中断或结果不确定时，先重新打开或刷新同一会话并核对是否已有结果，不重复提交。用户计划在底图确认后继续改同一张图时，保留该会话作为后续编辑上下文。
 
 支持的环境变量：
 
@@ -183,6 +189,8 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 ```
 
 所有生成和编辑结果先进入工作目录，不直接写入 `final/`。
+
+网页结果优先保存可验证的服务器文件字节；若只能从浏览器中已经加载的图像导出像素，按 `web-access` 的自然尺寸媒体流程处理，并在 `record.md` 中明确写成“浏览器像素导出并重新编码”，不能称为服务器原始文件。后续裁切、缩放或格式转换另存为候选版本，保留来源映射。
 
 ### 6. 中文化和文字纠错
 

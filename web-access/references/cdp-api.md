@@ -116,6 +116,20 @@ attach/session 初始化后，才用 `Page.navigate` 前往请求 URL；返回 `
 
 Query 可选 `format=png|jpeg`。响应是图片二进制；`file` query 被拒绝，保存位置由调用方决定。
 
+### 自然尺寸图片像素导出
+
+仅在服务器文件字节无法取得、但目标图片已经在 task 自有页面中完整加载时使用。它通过 `/eval` 读取页面已解码像素，不是下载管理，也不能绕过资源权限。
+
+固定顺序：
+
+1. 用只读表达式返回目标元素的 `currentSrc`、`complete`、`naturalWidth`、`naturalHeight` 和解析后的资源 origin。`complete !== true` 或自然尺寸为 0 时先等待，不导出占位图。
+2. 同源图片可以进入 canvas。跨域图片只有页面已使用明确 CORS 且探测画布保持 origin-clean 时才可继续；`drawImage` 或 `toDataURL` 抛出 `SecurityError` 时立即停止，不修改浏览器安全策略、不代理凭据。
+3. 创建与自然尺寸相同的 canvas，执行 `drawImage(img, 0, 0)` 和 `toDataURL('image/png')`。把去掉前缀后的 Base64 暂存在页面内一个任务级随机键下；首次 `/eval` 只返回 MIME、宽高、编码字符数和可选 SHA-256，不返回整段内容。
+4. 调用前固定边界。默认每块最多 `262144` 个 Base64 字符，总量最多 `67108864` 个字符；超过上限先停止并报告，不能无界取回。按偏移量逐块读取，校验块序号、总字符数和结尾，不把块内容打印到用户可见输出。
+5. 在本地按顺序拼接并一次解码，复核 PNG 签名、宽高、文件大小和 SHA-256；随后用 `/eval` 清除页面暂存值。缺块、重复块、长度或哈希不符时丢弃候选，不用不完整数据补图。
+
+canvas 结果必须标为“浏览器像素导出并重新编码”。只有直接取得服务器响应字节时，才可标为原始文件字节。`/eval` 返回 `UNKNOWN_RESULT` 时，先用新的只读表达式检查随机键和已生成元数据；不得换幂等 key 原样重跑创建动作。分块读取的不确定结果使用原幂等 key 重放，仍无法确认时停止。
+
 ## AX snapshot/ref
 
 ### `GET /v2/tabs/{targetId}/snapshot`

@@ -8,6 +8,8 @@ import {
   defaultProviderRegistryPath,
   loadRegisteredCcSwitchImageProvider,
   registerCcSwitchImageProvider,
+  resolveProviderRoute,
+  validateProviderRegistry,
 } from "../provider-registry.js";
 import { inspectCcSwitchImageProviderCandidate } from "../ccswitch.js";
 import { apiKey, loadRuntimeEnv, runtimeInfo } from "../shared.js";
@@ -157,7 +159,7 @@ test("normal Cici Switch routing requires a registered alias and validates the r
     assert.equal(cfSelected.model, "gpt-image-2-cf");
     await assert.rejects(
       loadRegisteredCcSwitchImageProvider({ registryPath, dbPath, fetchImpl: modelFetch(), timeoutMs: 1 }),
-      /Available aliases: 贾维斯/,
+      /routing is not configured/,
     );
     await assert.rejects(
       loadRegisteredCcSwitchImageProvider({
@@ -169,6 +171,48 @@ test("normal Cici Switch routing requires a registered alias and validates the r
         timeoutMs: 1,
       }),
       /does not currently expose gpt-image-2-cf/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("version 2 routing is validated on load and registration writes the default chain atomically", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "research-schematic-v2-routing-"));
+  try {
+    const dbPath = createProviderDatabase(root);
+    const registryPath = await writeRegistry(root);
+    const result = await registerCcSwitchImageProvider({
+      alias: "贾维斯",
+      providerId: PROVIDER_ID,
+      registryPath,
+      dbPath,
+      replace: true,
+      setDefault: true,
+      fallbackAliases: [],
+      fetchImpl: modelFetch(),
+      timeoutMs: 1,
+    });
+    assert.deepEqual(result.routing, { default_alias: "贾维斯", fallback_aliases: [] });
+    const saved = JSON.parse(await readFile(registryPath, "utf8"));
+    assert.equal(saved.version, 2);
+    assert.deepEqual(resolveProviderRoute(saved).aliases, ["贾维斯"]);
+    assert.deepEqual(resolveProviderRoute(saved, "贾维斯").aliases, ["贾维斯"]);
+    assert.throws(
+      () => validateProviderRegistry({
+        version: 2,
+        providers: saved.providers,
+        routing: { default_alias: "贾维斯", fallback_aliases: ["贾维斯"] },
+      }),
+      /routing aliases must be unique/,
+    );
+    assert.throws(
+      () => validateProviderRegistry({
+        version: 2,
+        providers: saved.providers,
+        routing: { default_alias: "贾维斯", fallback_aliases: ["one", "two", "three"] },
+      }),
+      /between 1 and 3 aliases/,
     );
   } finally {
     await rm(root, { recursive: true, force: true });

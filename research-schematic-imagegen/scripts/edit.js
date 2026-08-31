@@ -4,21 +4,16 @@ import process from "node:process";
 import { readFile } from "node:fs/promises";
 import {
   appendIfPresent,
-  buildBaseUrl,
   buildDefaultImagePath,
   ensureFilesExist,
-  extractGeneratedBytes,
-  imageModel,
-  loadRuntimeEnv,
+  executeImageRequest,
   mimeFor,
-  postMultipart,
   printJson,
   readPromptInput,
-  requireLocalApiEnabled,
   resolveOutput,
-  runtimeInfo,
   saveImage,
   savePrompt,
+  serializeImageRouteError,
   slugify,
 } from "./shared.js";
 
@@ -77,7 +72,7 @@ function parse(argv) {
   return cfg;
 }
 
-async function buildForm(cfg, prompt) {
+async function buildForm(cfg, prompt, model) {
   const form = new FormData();
   const imageBytes = await readFile(cfg.image);
   form.append("image", new Blob([imageBytes], { type: mimeFor(cfg.image) }), cfg.image.split(/[\\/]/).pop());
@@ -86,7 +81,7 @@ async function buildForm(cfg, prompt) {
     form.append("mask", new Blob([maskBytes], { type: mimeFor(cfg.mask) }), cfg.mask.split(/[\\/]/).pop());
   }
   form.append("prompt", prompt);
-  form.append("model", cfg.model || imageModel());
+  form.append("model", model);
   appendIfPresent(form, "size", cfg.size);
   appendIfPresent(form, "quality", cfg.quality);
   appendIfPresent(form, "background", cfg.background);
@@ -100,30 +95,51 @@ async function run() {
   const cfg = parse(process.argv.slice(2));
   if (cfg.help) return help();
   if (!cfg.image) throw new Error("--image is required");
-  await loadRuntimeEnv({ backend: cfg.backend, providerAlias: cfg.provider, model: cfg.model });
-  requireLocalApiEnabled();
   await ensureFilesExist([cfg.image, ...(cfg.mask ? [cfg.mask] : [])], "Image file");
   const prompt = await readPromptInput(cfg.prompt, cfg.promptFile);
   const hint = slugify(prompt.split(/\s+/).slice(0, 8).join(" "), "scientific-schematic-edit");
   const promptPath = await savePrompt(prompt, cfg.promptOutput, hint);
   const outputPath = resolveOutput(cfg.output, buildDefaultImagePath("edit", hint));
-  const requestUrl = `${buildBaseUrl()}/images/edits`;
-  const bytes = await extractGeneratedBytes(await postMultipart(requestUrl, await buildForm(cfg, prompt)));
-  await saveImage(outputPath, bytes);
-  const runtime = runtimeInfo();
+  const execution = await executeImageRequest({
+    backend: cfg.backend,
+    providerAlias: cfg.provider,
+    model: cfg.model,
+    buildRequest: async ({ baseUrl, apiKey, model }) => ({
+      url: `${baseUrl}/images/edits`,
+      init: {
+        method: "POST",
+        headers: { authorization: `Bearer ${apiKey}` },
+        body: await buildForm(cfg, prompt, model),
+      },
+    }),
+  });
+  await saveImage(outputPath, execution.bytes);
   const result = {
     savedImage: outputPath,
     savedPrompt: promptPath,
-    model: cfg.model || imageModel(),
-    requestUrl,
-    backend: runtime.backend,
-    provider_alias: runtime.provider_alias,
+    model: execution.model,
+    requestUrl: execution.requestUrl,
+    backend: execution.route_mode === "direct" ? "direct" : "ccswitch",
+    provider_alias: execution.selected_alias,
+    selected_alias: execution.selected_alias,
+    route_mode: execution.route_mode,
+    route_source: execution.route_source,
+    provider_candidates: execution.provider_candidates,
+    attempted_aliases: execution.attempted_aliases,
+    failover_count: execution.failover_count,
+    billable_requests_sent: execution.billable_requests_sent,
+    duplicate_billing_risk: execution.duplicate_billing_risk,
   };
+  if (execution.duplicate_billing_risk) {
+    result.billing_warning = "More than one formal image request was sent; providers may charge more than once.";
+  }
   if (cfg.json) printJson(result);
   else console.log(outputPath);
 }
 
+const jsonRequested = process.argv.includes("--json");
 run().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  if (jsonRequested) printJson(serializeImageRouteError(error));
+  else console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

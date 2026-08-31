@@ -122,6 +122,20 @@
         "No bundled system skill, ad hoc generator, local pptx generation route, or zero-exposure mirror is used as a silent fallback.",
         "No candidate PPTX or completed-delivery claim is fabricated."
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "我在 Windows 桌面版 PowerPoint 中，已经把光标点进一个现有文本框。文本框里的文字是微软雅黑，并有既定字号和颜色。从 Codex 复制文字后按 Ctrl+V，粘贴选项只有“使用目标主题”“保留源格式”“粘贴为图片”，没有“只保留文本”。我只接受 PowerPoint 原生功能，不用 AutoHotkey、PowerToys 或其他辅助程序。请判断这是不是软件故障，能否把 Ctrl+V 设置成默认继承当前文本框格式；如果不能，给出最接近需求的原生操作。",
+      "expected_output": "根据光标状态和实际菜单判断这通常不是故障；说明 PowerPoint 没有 Word 式的默认粘贴设置，不能把 Ctrl+V 全局改成只保留文本；推荐 Ctrl+Alt+V 后选择无格式 Unicode 文本，并可把只保留文本命令加入快速访问工具栏，同时说明微软雅黑需要预先存在于插入点或占位符格式中。",
+      "files": [],
+      "expectations": [
+        "The answer uses the insertion caret and the three actually visible Paste Options as evidence instead of assuming a generic Office menu.",
+        "It explains that Paste Options are context-dependent, the missing keep-text-only item is not by itself a PowerPoint fault, and PowerPoint has no Word-style setting that makes Ctrl+V always paste plain text.",
+        "It correctly distinguishes Use Destination Theme, Keep Source Formatting, and Paste as Picture, and does not equate Use Destination Theme with inheriting the current text run exactly.",
+        "It recommends Ctrl+Alt+V followed by Unformatted Unicode Text and explains that plain text inherits the insertion point or paragraph formatting, with Microsoft YaHei already set at that destination.",
+        "It may offer the native keep-text-only Quick Access Toolbar command for repeated use, while making clear that this does not rebind Ctrl+V.",
+        "It does not recommend Ctrl+Shift+V as a plain-text shortcut or introduce AutoHotkey, PowerToys, macros, or another third-party workaround."
+      ]
     }
   ]
 }

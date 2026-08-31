@@ -607,6 +607,7 @@ def summary_is_valid(payload: Any, audit: str, date: str) -> tuple[bool, str | N
         for field in (
             "candidate_conflicts",
             "registry_coverage_gaps",
+            "registry_missing_skills",
             "unreferenced_mirror_failures",
         ):
             if field in payload and not isinstance(payload[field], list):
@@ -771,6 +772,19 @@ def scan_failure_observation(
     )
 
 
+def registry_gap_targets(summary: dict[str, Any], gap: Any) -> list[str]:
+    values: Any = None
+    if isinstance(gap, dict):
+        values = gap.get("skills")
+        if values is None and gap.get("skill"):
+            values = [gap["skill"]]
+    if values is None:
+        values = summary.get("registry_missing_skills", [])
+    if not isinstance(values, list):
+        values = []
+    return normalize_targets(values) or ["agent-rules"]
+
+
 def extract_upstream_observations(
     summary: dict[str, Any], report_ref: str, skills_root: Path
 ) -> list[dict[str, Any]]:
@@ -809,6 +823,8 @@ def extract_upstream_observations(
     for gap in summary.get("registry_coverage_gaps", []):
         gap_text = compact_text(gap)
         subject = str(gap.get("skill") if isinstance(gap, dict) else gap_text)
+        targets = registry_gap_targets(summary, gap)
+        target_label = ", ".join(f"`{target}`" for target in targets)
         observations.append(
             make_observation(
                 kind="upstream_registry_gap",
@@ -822,13 +838,13 @@ def extract_upstream_observations(
                 suggested_proposal=proposal(
                     "补齐来源登记",
                     "核对缺口技能的真实来源状态；确认后只补机器可读登记和生成页，不自动认定新上游。",
-                    ["agent-rules"],
-                    skills=["agent-rules"],
+                    targets,
+                    skills=targets,
                 ),
                 report_refs=[report_ref],
                 needs_facts=True,
                 fact_questions=[
-                    f"`{subject}` 是否确实需要纳入上游来源登记？",
+                    f"{target_label} 是否确实需要纳入上游来源登记？",
                     "如果需要，已确认的仓库、仓内路径和许可证证据是什么？",
                 ],
                 skills_root=skills_root,

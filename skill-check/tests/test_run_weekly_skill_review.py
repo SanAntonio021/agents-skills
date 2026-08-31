@@ -226,6 +226,41 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertTrue(complete)
         self.assertEqual(reasons, [])
 
+    def test_registry_gap_binds_proposal_to_missing_skills(self) -> None:
+        missing = [
+            "check",
+            "learn",
+            "markdown-docx-workflow",
+            "product-research-workbook",
+            "research-report",
+            "steelman",
+        ]
+        for skill in missing:
+            self.make_skill(skill)
+        summary = {
+            "registry_coverage_gaps": [
+                "Skills missing from registry: " + ", ".join(missing)
+            ],
+            "registry_missing_skills": missing,
+            "candidate_conflicts": [],
+            "sources": [],
+            "unreferenced_mirror_failures": [],
+        }
+
+        observations = REVIEW.extract_upstream_observations(
+            summary, "summary.json", self.skills
+        )
+
+        self.assertEqual(len(observations), 1)
+        finding = observations[0]
+        self.assertEqual(finding["proposal"]["targets"], missing)
+        self.assertEqual(finding["proposal"]["skills"], sorted(missing))
+        self.assertEqual(
+            finding["source_fingerprint"],
+            REVIEW.source_fingerprint(self.skills, missing),
+        )
+        self.assertNotIn("agent-rules", finding["proposal"]["targets"])
+
     def test_queue_limit_retention_and_critical_priority(self) -> None:
         observations = [self.observation(f"routine-{index}") for index in range(4)]
         state = REVIEW.new_state()

@@ -44,6 +44,10 @@ description: >-
 - [assets/external-review-en-template.md](assets/external-review-en-template.md)
 - [assets/external-review-paste-ready-template.md](assets/external-review-paste-ready-template.md)
 
+如果 Submission Policy 要求确认登记页与论文 PDF 的题目、作者或摘要一致，按
+[references/external-peer-review.md](references/external-peer-review.md) 的逐字段方法核对。
+只消除网页复制和 PDF 排版产生的差异；不能凭整体观感回答 `yes`，也不能用宽松归一化掩盖真实文字差异。
+
 ## 输出结构
 
 默认按下面结构输出：

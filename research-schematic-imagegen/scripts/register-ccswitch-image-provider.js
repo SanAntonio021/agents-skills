@@ -14,6 +14,8 @@ Options:
   --registry <private-registry-path>
   --db <cc-switch-db-path>
   --replace                         Replace the same alias or provider registration
+  --set-default                     Make this alias the default route
+  --fallback-alias <alias>          Add an ordered fallback; repeat up to two times
   --json
   -h, --help`);
 }
@@ -24,6 +26,8 @@ function parse(argv) {
     registryPath: defaultProviderRegistryPath(),
     defaultModel: "gpt-image-2",
     replace: false,
+    setDefault: false,
+    fallbackAliases: [],
     json: false,
   };
   const valued = new Map([
@@ -36,6 +40,12 @@ function parse(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--replace") config.replace = true;
+    else if (arg === "--set-default") config.setDefault = true;
+    else if (arg === "--fallback-alias") {
+      const value = argv[++index];
+      if (!value) throw new Error("Missing value for --fallback-alias");
+      config.fallbackAliases.push(value);
+    }
     else if (arg === "--json") config.json = true;
     else if (arg === "-h" || arg === "--help") config.help = true;
     else if (valued.has(arg)) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Adapted from ConardLi/garden-skills gpt-image-2 v1.0.4 under the MIT License.
 import process from "node:process";
-import { apiKey, buildBaseUrl, imageApiEnabled, imageModel, loadRuntimeEnv, runtimeInfo } from "./shared.js";
+import { apiKey, buildBaseUrl, imageApiEnabled, imageModel, loadRuntimeEnv, runtimeInfo, serializeImageRouteError } from "./shared.js";
 
 function parse(argv) {
   const config = { json: false };
@@ -33,13 +33,12 @@ let envFile = null;
 try {
   envFile = await loadRuntimeEnv({ backend: config.backend, providerAlias: config.provider, model: config.model });
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
+  const failure = serializeImageRouteError(error);
   const result = {
+    ...failure,
     mode: "blocked",
-    recommendation: message.startsWith("Choose a registered Cici Switch image provider") || message.startsWith("Unknown registered image provider alias")
-      ? "select-registered-provider"
-      : "image-backend-error",
-    error: message,
+    recommendation: "image-backend-error",
+    error: failure.error,
   };
   console.log(config.json ? JSON.stringify(result, null, 2) : Object.entries(result).map(([key, value]) => `${key}: ${value}`).join("\n"));
   process.exit(1);
@@ -73,6 +72,13 @@ const result = {
   env_file: envFile,
   backend: runtimeInfo().backend,
   provider: runtimeInfo().provider,
+  selected_alias: runtimeInfo().provider_alias,
+  route_mode: runtimeInfo().route_mode,
+  route_source: runtimeInfo().route_source,
+  provider_candidates: runtimeInfo().provider_candidates,
+  attempted_aliases: runtimeInfo().attempted_aliases,
+  failover_count: runtimeInfo().failover_count,
+  billable_requests_sent: 0,
   summary,
 };
 

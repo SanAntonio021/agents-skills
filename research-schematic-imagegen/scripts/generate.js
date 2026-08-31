@@ -2,19 +2,14 @@
 // Adapted from ConardLi/garden-skills gpt-image-2 v1.0.4 under the MIT License.
 import process from "node:process";
 import {
-  buildBaseUrl,
   buildDefaultImagePath,
-  extractGeneratedBytes,
-  imageModel,
-  loadRuntimeEnv,
-  postJson,
+  executeImageRequest,
   printJson,
   readPromptInput,
-  requireLocalApiEnabled,
   resolveOutput,
-  runtimeInfo,
   saveImage,
   savePrompt,
+  serializeImageRouteError,
   slugify,
 } from "./shared.js";
 
@@ -70,38 +65,57 @@ function parse(argv) {
 async function run() {
   const cfg = parse(process.argv.slice(2));
   if (cfg.help) return help();
-  await loadRuntimeEnv({ backend: cfg.backend, providerAlias: cfg.provider, model: cfg.model });
-  requireLocalApiEnabled();
   const prompt = await readPromptInput(cfg.prompt, cfg.promptFile);
   const hint = slugify(prompt.split(/\s+/).slice(0, 8).join(" "), "scientific-schematic");
   const promptPath = await savePrompt(prompt, cfg.promptOutput, hint);
   const outputPath = resolveOutput(cfg.image, buildDefaultImagePath("generate", hint));
-  const payload = {
-    model: cfg.model || imageModel(),
-    prompt,
-    output_format: "png",
-  };
-  if (cfg.size) payload.size = cfg.size;
-  if (cfg.quality) payload.quality = cfg.quality;
-  if (cfg.background) payload.background = cfg.background;
-  if (cfg.moderation) payload.moderation = cfg.moderation;
-  const requestUrl = `${buildBaseUrl()}/images/generations`;
-  const bytes = await extractGeneratedBytes(await postJson(requestUrl, payload));
-  await saveImage(outputPath, bytes);
-  const runtime = runtimeInfo();
+  const execution = await executeImageRequest({
+    backend: cfg.backend,
+    providerAlias: cfg.provider,
+    model: cfg.model,
+    buildRequest: ({ baseUrl, apiKey, model }) => {
+      const payload = { model, prompt, output_format: "png" };
+      if (cfg.size) payload.size = cfg.size;
+      if (cfg.quality) payload.quality = cfg.quality;
+      if (cfg.background) payload.background = cfg.background;
+      if (cfg.moderation) payload.moderation = cfg.moderation;
+      return {
+        url: `${baseUrl}/images/generations`,
+        init: {
+          method: "POST",
+          headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      };
+    },
+  });
+  await saveImage(outputPath, execution.bytes);
   const result = {
     savedImage: outputPath,
     savedPrompt: promptPath,
-    model: payload.model,
-    requestUrl,
-    backend: runtime.backend,
-    provider_alias: runtime.provider_alias,
+    model: execution.model,
+    requestUrl: execution.requestUrl,
+    backend: execution.route_mode === "direct" ? "direct" : "ccswitch",
+    provider_alias: execution.selected_alias,
+    selected_alias: execution.selected_alias,
+    route_mode: execution.route_mode,
+    route_source: execution.route_source,
+    provider_candidates: execution.provider_candidates,
+    attempted_aliases: execution.attempted_aliases,
+    failover_count: execution.failover_count,
+    billable_requests_sent: execution.billable_requests_sent,
+    duplicate_billing_risk: execution.duplicate_billing_risk,
   };
+  if (execution.duplicate_billing_risk) {
+    result.billing_warning = "More than one formal image request was sent; providers may charge more than once.";
+  }
   if (cfg.json) printJson(result);
   else console.log(outputPath);
 }
 
+const jsonRequested = process.argv.includes("--json");
 run().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  if (jsonRequested) printJson(serializeImageRouteError(error));
+  else console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

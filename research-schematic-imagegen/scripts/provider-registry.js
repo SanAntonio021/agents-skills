@@ -14,6 +14,7 @@ export const DEFAULT_PROVIDER_CONFIG_DIR = process.env.RESEARCH_IMAGE_CONFIG_DIR
   || path.join(os.homedir(), ".config", "research-schematic-imagegen");
 
 const ENTRY_FIELDS = new Set(["alias", "provider_id", "app_type", "expected_name", "default_model"]);
+const ROUTING_FIELDS = new Set(["default_alias", "fallback_aliases"]);
 
 export function defaultProviderRegistryPath(configDir = DEFAULT_PROVIDER_CONFIG_DIR) {
   return path.resolve(configDir, PROVIDER_REGISTRY_FILENAME);
@@ -43,11 +44,32 @@ function normalizeEntry(entry, index) {
   };
 }
 
+function normalizeRouting(routing, providers) {
+  if (!routing || typeof routing !== "object" || Array.isArray(routing)) {
+    throw registryError("routing must be an object for version 2.");
+  }
+  for (const key of Object.keys(routing)) {
+    if (!ROUTING_FIELDS.has(key)) throw registryError(`routing contains unsupported field ${key}.`);
+  }
+  const defaultAlias = requireString(routing.default_alias, "default_alias", "routing");
+  if (!Array.isArray(routing.fallback_aliases)) throw registryError("routing.fallback_aliases must be an array.");
+  const fallbackAliases = routing.fallback_aliases.map((alias, index) => requireString(alias, String(index), "routing.fallback_aliases"));
+  const route = [defaultAlias, ...fallbackAliases];
+  if (route.length < 1 || route.length > 3) throw registryError("routing must contain between 1 and 3 aliases.");
+  if (new Set(route).size !== route.length) throw registryError("routing aliases must be unique.");
+  const knownAliases = new Set(providers.map((provider) => provider.alias));
+  for (const alias of route) {
+    if (!knownAliases.has(alias)) throw registryError(`routing references unknown alias ${alias}.`);
+  }
+  return { default_alias: defaultAlias, fallback_aliases: fallbackAliases };
+}
+
 export function validateProviderRegistry(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw registryError("root must be an object.");
   const keys = Object.keys(value);
-  if (keys.some((key) => key !== "version" && key !== "providers")) throw registryError("root contains unsupported fields.");
-  if (value.version !== 1) throw registryError("version must be 1.");
+  if (keys.some((key) => key !== "version" && key !== "providers" && key !== "routing")) throw registryError("root contains unsupported fields.");
+  if (value.version !== 1 && value.version !== 2) throw registryError("version must be 1 or 2.");
+  if (value.version === 1 && Object.hasOwn(value, "routing")) throw registryError("version 1 must not contain routing.");
   if (!Array.isArray(value.providers)) throw registryError("providers must be an array.");
   const providers = value.providers.map(normalizeEntry);
   const aliases = new Set();
@@ -58,7 +80,8 @@ export function validateProviderRegistry(value) {
     aliases.add(provider.alias);
     ids.add(provider.provider_id);
   }
-  return { version: 1, providers };
+  if (value.version === 1) return { version: 1, providers };
+  return { version: 2, providers, routing: normalizeRouting(value.routing, providers) };
 }
 
 async function fileExists(filePath) {
@@ -89,19 +112,28 @@ export function registeredAliases(registry) {
   return registry.providers.map((provider) => provider.alias);
 }
 
-function chooseRegistryEntry(registry, alias) {
+function findRegistryEntry(registry, alias) {
   const aliases = registeredAliases(registry);
   const requested = String(alias || "").trim();
-  if (!requested) {
-    const choices = aliases.length > 0 ? aliases.join(", ") : "none";
-    throw new Error(`Choose a registered Cici Switch image provider with --provider. Available aliases: ${choices}.`);
-  }
   const entry = registry.providers.find((provider) => provider.alias === requested);
   if (!entry) {
     const choices = aliases.length > 0 ? aliases.join(", ") : "none";
     throw new Error(`Unknown registered image provider alias: ${requested}. Available aliases: ${choices}.`);
   }
   return entry;
+}
+
+export function resolveProviderRoute(registryValue, explicitAlias = "") {
+  const registry = validateProviderRegistry(registryValue);
+  const requested = String(explicitAlias || "").trim();
+  if (requested) {
+    return { mode: "pinned", aliases: [requested], entries: [findRegistryEntry(registry, requested)] };
+  }
+  if (registry.version !== 2) {
+    throw new Error("Image provider routing is not configured. Upgrade the private registry to version 2 with a default route.");
+  }
+  const aliases = [registry.routing.default_alias, ...registry.routing.fallback_aliases];
+  return { mode: "default", aliases, entries: aliases.map((alias) => findRegistryEntry(registry, alias)) };
 }
 
 function providerForEntry(provider, entry) {
@@ -124,18 +156,59 @@ export async function loadRegisteredCcSwitchImageProvider({
   timeoutMs = 10000,
 } = {}) {
   const { registry } = await readProviderRegistry(registryPath);
-  const entry = chooseRegistryEntry(registry, alias);
+  const entry = resolveProviderRoute(registry, alias).entries[0];
+  const result = await probeRegisteredCcSwitchImageProvider({
+    registry,
+    entry,
+    dbPath,
+    model,
+    fetchImpl,
+    timeoutMs,
+  });
+  if (!result.ok) {
+    if (result.status === "model-unavailable") {
+      throw new Error(`Registered image provider ${entry.alias} does not currently expose ${result.model}.`);
+    }
+    throw new Error(`Registered image provider ${entry.alias} failed its /models check (${result.status}).`);
+  }
+  return result;
+}
+
+export async function probeRegisteredCcSwitchImageProvider({
+  registry: registryValue,
+  entry: rawEntry,
+  dbPath = DEFAULT_CCSWITCH_DB,
+  model = "",
+  fetchImpl = fetch,
+  timeoutMs = 10000,
+} = {}) {
+  const registry = validateProviderRegistry(registryValue);
+  const entry = findRegistryEntry(registry, rawEntry?.alias);
   const candidate = await readCcSwitchImageProvider(entry.provider_id, dbPath);
   const provider = providerForEntry(candidate, entry);
   const probe = await probeCcSwitchProviderModels(provider, { fetchImpl, timeoutMs });
   if (!probe.ok) {
-    throw new Error(`Registered image provider ${entry.alias} failed its /models check (${probe.status}).`);
+    return {
+      ok: false,
+      alias: entry.alias,
+      status: probe.status,
+      image_models: probe.image_models,
+      public_provider: toPublicCcSwitchProvider(provider, probe),
+    };
   }
   const requestedModel = String(model || entry.default_model).trim();
   if (!probe.image_models.includes(requestedModel)) {
-    throw new Error(`Registered image provider ${entry.alias} does not currently expose ${requestedModel}.`);
+    return {
+      ok: false,
+      alias: entry.alias,
+      status: "model-unavailable",
+      model: requestedModel,
+      image_models: probe.image_models,
+      public_provider: toPublicCcSwitchProvider(provider, probe),
+    };
   }
   return {
+    ok: true,
     alias: entry.alias,
     model: requestedModel,
     image_models: probe.image_models,
@@ -167,6 +240,8 @@ export async function registerCcSwitchImageProvider({
   providerId,
   defaultModel = "gpt-image-2",
   replace = false,
+  setDefault = false,
+  fallbackAliases = [],
   fetchImpl = fetch,
   timeoutMs = 10000,
 } = {}) {
@@ -196,6 +271,29 @@ export async function registerCcSwitchImageProvider({
   }
   const providersAfterRegistration = registry.providers.filter((candidate) => candidate.alias !== entry.alias && candidate.provider_id !== entry.provider_id);
   providersAfterRegistration.push(entry);
-  const savedPath = await writeProviderRegistry(registryPath, { version: 1, providers: providersAfterRegistration });
-  return { registry_path: savedPath, entry, provider: toPublicCcSwitchProvider(provider, probe) };
+  if (!Array.isArray(fallbackAliases)) throw new Error("fallbackAliases must be an array.");
+  if (fallbackAliases.length > 0 && !setDefault) throw new Error("--fallback-alias requires --set-default.");
+  let updatedRegistry;
+  if (setDefault) {
+    updatedRegistry = {
+      version: 2,
+      providers: providersAfterRegistration,
+      routing: {
+        default_alias: entry.alias,
+        fallback_aliases: fallbackAliases,
+      },
+    };
+  } else if (registry.version === 2) {
+    updatedRegistry = { version: 2, providers: providersAfterRegistration, routing: registry.routing };
+  } else {
+    updatedRegistry = { version: 1, providers: providersAfterRegistration };
+  }
+  const validatedRegistry = validateProviderRegistry(updatedRegistry);
+  const savedPath = await writeProviderRegistry(registryPath, validatedRegistry);
+  return {
+    registry_path: savedPath,
+    entry,
+    routing: validatedRegistry.version === 2 ? validatedRegistry.routing : null,
+    provider: toPublicCcSwitchProvider(provider, probe),
+  };
 }

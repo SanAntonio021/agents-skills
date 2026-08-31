@@ -13,11 +13,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getProxyPort, knownBrowsers, selectBrowser } from './browser-discovery.mjs';
+import { ensureCanonicalConfig, RuntimeConfigError } from './runtime-config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROXY_SCRIPT = path.join(ROOT, 'scripts', 'cdp-proxy.mjs');
-const CONFIG_PATH = path.join(ROOT, 'config.env');
-const CONFIG_TEMPLATE = path.join(ROOT, 'templates', 'config.env.template');
 const PERSISTENT_BROWSERS = ['edge', 'chrome'];
 const EXPECTED_PROTOCOL_VERSION = 2;
 const MAX_JSON_RESPONSE_BYTES = 64 * 1024;
@@ -62,16 +61,6 @@ function parseArgs(argv) {
     throw new Error(`--browser 仅支持 ${PERSISTENT_BROWSERS.join(' / ')}`);
   }
   return opts;
-}
-
-function ensureConfigExists() {
-  if (fs.existsSync(CONFIG_PATH)) return;
-  try {
-    fs.copyFileSync(CONFIG_TEMPLATE, CONFIG_PATH);
-    diagnostic(`config: 已从模板创建 ${CONFIG_PATH}`);
-  } catch {
-    // 模板不存在或拷贝失败不阻塞，browser-discovery 会返回明确状态。
-  }
 }
 
 function checkNode() {
@@ -175,6 +164,12 @@ function browserIdentityIssue(health, browser) {
   return null;
 }
 
+function proxyPortIssue(health, proxyPort) {
+  if (!Number.isInteger(health?.proxyPort)) return 'proxy_port_missing';
+  if (health.proxyPort !== proxyPort) return 'proxy_port_mismatch';
+  return null;
+}
+
 function protocolVersionOf(health) {
   return Object.hasOwn(health || {}, 'protocolVersion') ? health.protocolVersion : null;
 }
@@ -217,6 +212,14 @@ function sanitizeCapabilities(value) {
     }
   }
   return output;
+}
+
+function capabilityIssue(capabilities) {
+  if (capabilities?.protocolVersion !== EXPECTED_PROTOCOL_VERSION) return 'protocol_version_mismatch';
+  if (capabilities?.taskIsolation !== true) return 'task_isolation_missing';
+  if (capabilities?.userTabsVisible !== false) return 'user_tabs_visibility_unsafe';
+  if (!Number.isInteger(capabilities?.maxActiveTasks) || capabilities.maxActiveTasks < 1) return 'task_limit_missing';
+  return null;
 }
 
 function browserDetails(browser, health = null) {
@@ -310,7 +313,8 @@ async function completeCapabilityHandshake({ browser, proxyPort, health, reused 
 
   const capabilities = sanitizeCapabilities(rawCapabilities);
   const actualProtocolVersion = protocolVersionOf(capabilities);
-  if (actualProtocolVersion !== EXPECTED_PROTOCOL_VERSION) {
+  const issue = capabilityIssue(capabilities);
+  if (issue) {
     diagnostic(
       `proxy[${browserId}]: capabilities_mismatch ` +
       `(实际 ${actualProtocolVersion ?? 'missing'}，期望 ${EXPECTED_PROTOCOL_VERSION}，${proxyUrl}/capabilities)`
@@ -324,6 +328,7 @@ async function completeCapabilityHandshake({ browser, proxyPort, health, reused 
       capabilities,
       reused,
       expectedProtocolVersion: EXPECTED_PROTOCOL_VERSION,
+      capabilityIssue: issue,
       existing: true,
     });
   }
@@ -398,6 +403,18 @@ async function ensureProxy(browserId, proxyPort) {
         actualRequestedBrowserId: initialHealth.requestedBrowser || null,
         actualCdpPort: Number.isInteger(initialHealth.chromePort) ? initialHealth.chromePort : null,
         identityIssue,
+        existing: true,
+      });
+    }
+    const portIssue = proxyPortIssue(initialHealth, proxyPort);
+    if (portIssue) {
+      diagnostic(`proxy[${browserId}]: 端口身份不一致 (${portIssue})`);
+      return makeResult({
+        status: 'browser_proxy_mismatch',
+        browser,
+        proxyPort,
+        health: initialHealth,
+        identityIssue: portIssue,
         existing: true,
       });
     }
@@ -493,6 +510,17 @@ async function ensureProxy(browserId, proxyPort) {
           existing: true,
         });
       }
+      const portIssue = proxyPortIssue(health, proxyPort);
+      if (portIssue) {
+        return makeResult({
+          status: 'browser_proxy_mismatch',
+          browser,
+          proxyPort,
+          health,
+          identityIssue: portIssue,
+          existing: true,
+        });
+      }
       if (health.connected) {
         return completeCapabilityHandshake({ browser, proxyPort, health, reused });
       }
@@ -507,7 +535,7 @@ async function ensureProxy(browserId, proxyPort) {
   diagnostic(`proxy[${browserId}]: 连接超时，请检查浏览器调试设置`);
   diagnostic(`  日志：${logFile}`);
   return makeResult({
-    status: 'timeout',
+    status: reused ? 'stale_proxy' : 'timeout',
     browser,
     proxyPort,
     health: lastHealth,
@@ -531,7 +559,7 @@ async function resolveAndReport(override) {
 
   switch (result.kind) {
     case 'ok': {
-      const proxyPort = getProxyPort(result.browser.id);
+      const proxyPort = getProxyPort(result.browser.id, { diagnostic });
       const sourceTag = result.source === 'override' ? '[--browser 指定]' : '[config.env 偏好]';
       diagnostic(`browser: ok (${result.browser.label}, CDP ${result.browser.port} -> Proxy ${proxyPort}) ${sourceTag}`);
       return { proceed: true, browser: result.browser, proxyPort };
@@ -562,7 +590,7 @@ async function resolveAndReport(override) {
       diagnostic(`    2. 若仍失败，在 ${expected}://inspect/#remote-debugging 勾选 "Allow remote debugging for this browser instance"`);
       printAvailableHint(result.detected);
       let proxyPort = null;
-      try { proxyPort = getProxyPort(expected); } catch {}
+      try { proxyPort = getProxyPort(expected, { diagnostic }); } catch {}
       return {
         proceed: false,
         result: makeResult({
@@ -642,14 +670,21 @@ async function main() {
     return;
   }
 
-  ensureConfigExists();
+  try {
+    ensureCanonicalConfig(diagnostic);
+  } catch (error) {
+    const status = error instanceof RuntimeConfigError ? error.code : 'config_error';
+    diagnosticError(`config: error — ${error.message}`);
+    finish(opts, [], null, error?.exitCode || 1, status);
+    return;
+  }
   const node = checkNode();
 
   let results;
   if (opts.all) {
     try {
-      const edgePort = getProxyPort('edge');
-      const chromePort = getProxyPort('chrome');
+      const edgePort = getProxyPort('edge', { diagnostic });
+      const chromePort = getProxyPort('chrome', { diagnostic });
       if (edgePort === chromePort) {
         throw new Error(`Edge 与 Chrome Proxy 端口不能相同（当前均为 ${edgePort}）`);
       }
@@ -683,5 +718,6 @@ try {
   await main();
 } catch (error) {
   diagnosticError(`check-deps: unexpected error — ${error.message}`);
-  finish(null, [makeResult({ status: 'internal_error', error: error.message })], null, 1, 'internal_error');
+  const status = error instanceof RuntimeConfigError ? error.code : 'internal_error';
+  finish(null, [makeResult({ status, error: error.message, exitCode: error?.exitCode || 1 })], null, error?.exitCode || 1, status);
 }

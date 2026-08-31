@@ -24,7 +24,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
 # 用户明确要求 Chrome（专用 Proxy 默认端口 3457）
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
 
-# 首次配置或同时检查两个长期 Proxy
+# 同时检查两个长期 Proxy
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 ```
 
@@ -32,12 +32,14 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 
 按脚本输出处理：
 - `exit 0` → 继续
-- `exit 2` → 参数冲突，或旧 `config.env` 未设置默认浏览器；按 stdout 修正
+- `exit 2` → 生产配置或端口覆盖冲突；按 stdout 修正，不以备用端口绕过
 - `exit 1` → 按 stdout 错误信息处理。若提示包含「Agent 处理顺序」，按其步骤执行（如先用系统命令打开浏览器后重跑），自动可解则不打扰用户；仍失败再向用户求助
 
 `--browser <chrome|edge>` 选择对应的专用 Proxy，不会切换或停止另一个浏览器。Edge 与 Chrome Proxy 可同时常驻；多个对话复用同一浏览器时，共享该浏览器的 Proxy 和 CDP WebSocket，但必须各自创建 task，不能共享 token 或 tab。不要为了改用另一个浏览器而停止现有 Proxy。
 
-脚本成功后会输出所选浏览器的 `proxyUrl`、`protocolVersion` 和能力信息。后续 HTTP API 必须使用本次所选浏览器对应的 URL；端口可在 `config.env` 中通过 `WEB_ACCESS_EDGE_PORT`、`WEB_ACCESS_CHROME_PORT` 修改，但两者必须不同。只有 `protocolVersion: 2` 才能继续；发现旧 Proxy 时按 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md) 迁移，不自动结束旧进程。
+所有生产副本统一读取 `%LOCALAPPDATA%\web-access\config.env`；文件不存在时由脚本原子创建。Edge Proxy 固定使用 `3456`，Chrome Proxy 固定使用 `3457`。生产环境变量只能重复相同值，不能改成备用端口；临时端口只允许在脚本创建的隔离测试根下显式启用 `WEB_ACCESS_TEST_MODE=1`。
+
+脚本成功后会输出所选浏览器的 `proxyUrl`、`protocolVersion` 和能力信息。后续 HTTP API 必须使用本次所选浏览器对应的 URL。只有 `protocolVersion: 2` 才能继续；发现旧 Proxy 时按 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md) 迁移，不自动结束旧进程。
 
 检查通过后并必须在回复中向用户直接展示以下须知，再启动 CDP Proxy 执行操作：
 
@@ -130,7 +132,9 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
 ```
 
-脚本会检查 Node.js、浏览器调试端口和 `/v2` 协议，并确保所选浏览器的专用 Proxy 已连接（未运行则自动启动并等待）。Proxy 启动后持续运行。首次同时配置两个浏览器时运行 `--all --json`，分别完成一次浏览器授权。
+脚本会检查 Node.js、浏览器调试端口和 `/v2` 协议，并确保所选浏览器的专用 Proxy 已连接（未运行则自动启动并等待）。它先绑定固定 Proxy 端口，再连接浏览器；并发启动时只有端口胜者建立 CDP 连接，其他调用核验并复用现有兼容 Proxy，不切换备用端口。
+
+Edge 的“允许对此浏览器实例进行远程调试”授权绑定当前浏览器实例和当前长期 Proxy 连接。同一 Edge 进程与正式 Proxy 都保持存活时，所有技能副本和后续对话都复用 `127.0.0.1:3456`，通常只需同意一次。关闭 Edge、停止正式 Proxy、迁移旧 Proxy，或连接断开后重建，下一次才可能再次提示。首次同时启用两个浏览器时可运行 `--all --json`，Edge 与 Chrome 分别完成一次授权。
 
 ### Proxy API
 
@@ -241,7 +245,7 @@ JavaScript dialog 默认不接受。先读取待处理状态，在需要 accept/
 
 active task 30 分钟无操作后进入 `expired`；自建 tab 和 popup 仍按 15 分钟闲置规则清理。Proxy 重启后浏览器 tab 保留，但 token、归属和 ref 全部清空，遗留 tab 降为用户 tab，不得重新接管。
 
-所用浏览器的 Proxy 持续运行，不建议主动停止；浏览器和该 Proxy 进程都存活时，后续对话可复用连接，但每个对话仍创建自己的 task。关闭浏览器或停止对应 Proxy 后，下一次连接可能需要重新授权。
+所用浏览器的 Proxy 持续运行，不建议主动停止；浏览器和该 Proxy 进程都存活时，后续对话和不同运行时副本复用同一连接，但每个对话仍创建自己的 task。若同一浏览器实例中反复出现授权提示，先检查是否有第二个 Proxy 端口或进程连接同一 CDP；不得用新端口启动另一份。关闭浏览器、停止对应 Proxy 或连接断开后重建时，下一次连接可能需要重新授权。
 
 ## 并行调研：子 Agent 分治策略
 

@@ -131,7 +131,7 @@ metadata:
 - 通用 SCI/IEEE 精修保证语言、结构和常见格式更接近工程论文；具体期刊符合性以官方模板和作者指南为准。
 - 选刊结合论文主题、创新点、实验完整度、目标读者、期刊 scope 和近期发文来判断。
 - 需要最新模板、作者指南或引用规则时，先联网核验官方来源，优先使用期刊官网、IEEE Author Center 或会议官网。
-- IEEE 官方 Word/LaTeX 模板先查技能内 `assets/ieee-official-templates/`；资源里没有目标期刊、年份或格式时，再从 IEEE 官方 Template Selector 下载，下载后同步回技能资源。
+- IEEE 官方 Word/LaTeX 模板先查技能内 `assets/ieee-official-templates/`；资源里没有目标期刊、年份或格式时，再从 IEEE 官方 Template Selector 下载。完整原包保存到本机带日期的来源快照，技能资源只保留可直接使用的 Word/LaTeX 文件，不纳入下载 ZIP、生成 PDF 或系统元数据。
 - 目标期刊缺失时，回复中明确当前版本为通用版本。
 
 ## 发给合作者前

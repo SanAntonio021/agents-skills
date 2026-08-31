@@ -511,6 +511,21 @@
         "输出把原人工恢复动作标为已完成，不再让用户重复处理。",
         "如果报告目录不能安全写入或验收范围有变化，输出保持未解决状态并说明原因。"
       ]
+    },
+    {
+      "id": 37,
+      "prompt": "chat-notes 的同步 helper 返回了 `ui.clicked_skills:[\"pptx\"]`、`all_update_invoked:false`、单项 `action:\"updated\"`，但最终状态是 `source_pushed_runtime_not_active`，等待 90 秒后四层仍未对齐。我问：你确定点击更新了吗？因为我后来在 CC Switch 里看到了“全部更新”按钮，才自己点击。请解释现在能确认什么。",
+      "expected_output": "用直白中文区分点击尝试和更新完成：可以确认 helper 记录了对 pptx 单项更新按钮的点击尝试，且没有调用“全部更新”；不能据此确认 CC Switch 已接受或完成更新，因为最终运行时未对齐。用户手动更新后应复用原提交和范围执行 -VerifyOnly；只有退出码 0、runtime_active 和四层完全一致才证明当前运行时已生效，也不能反推究竟是哪一次点击使更新完成。",
+      "files": [],
+      "expectations": [
+        "输出明确说 `clicked_skills` 和 `action: updated` 只证明 helper 记录了点击尝试，不证明 CC Switch 已接受、下载、安装或完成更新。",
+        "输出把 `all_update_invoked: false` 解释为 helper 没有调用“全部更新”，不把用户后来看到该按钮当成 helper 未点击单项更新的反证。",
+        "输出根据 `source_pushed_runtime_not_active` 和四层未对齐，保留“源码已推送，运行时未生效”的结论。",
+        "输出不说‘系统已完成更新’、‘CC Switch 已更新’或其他超过现有证据的结论。",
+        "输出要求用户手动更新后使用原提交、原 Skill 范围和原历史或范围参数执行 `-VerifyOnly`，而不是重复自动点击。",
+        "输出只在退出码 0、`runtime_active` 和四层文件集合及 SHA-256 完全一致时确认当前运行时生效。",
+        "输出不会用最终对齐反推此前 helper 点击已成功，也不会仅凭最终状态断定是哪一次点击导致更新。"
+      ]
     }
   ]
 }

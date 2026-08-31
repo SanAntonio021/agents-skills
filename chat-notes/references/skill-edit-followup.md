@@ -67,12 +67,19 @@
     不结束对方进程、不抢锁，也不并行启动新同步；通过只读进程检查等待原同步结束后，才使用完全相同的提交 SHA、
     Skill 集合和历史/范围参数重新调用。只有这种在任何 UI 操作前因其他同步任务未结束而被拒绝的情况，才允许重新
     调用；这不放宽页面、扫描、单项更新或验收失败后的禁止重试规则。
-15. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且本次提交源码与 `.cc-switch`、`.claude`、
-    `.codex` 的全部目标文件集合和 SHA-256 完全一致，才算运行时生效。页面被切走、过滤不唯一、扫描或单项更新
-    超时、非目标 Skill 变化或四层验收失败时，不重试点击、不改运行时。聊天只报告“源码已推送，运行时未生效”、
-    必要用户动作和中央异常报告链接；JSON 中的错误码和差异证据留在报告中。需要人工恢复时，用户可在 CC Switch 手动定向更新后用 `-VerifyOnly`
-    重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
-    `-ExpectedBaseCommit` 参数。
+15. helper 输出中的 `ui.clicked_skills`、单项 `action: updated` 或 `action: installed` 是点击尝试遥测：它们在等待
+    四层对齐前就会写入，只能证明 helper 已发出并记录对应点击，不能证明 CC Switch 已接受、下载、安装或完成更新。
+    `all_update_invoked: false` 也只证明 helper 没有调用“全部更新”。最终状态仍是
+    `source_pushed_runtime_not_active` 时，对用户应直说“helper 记录了点击尝试，但运行时没有对齐，因此不能确认更新完成”，
+    不能把这些字段改写成“CC Switch 已更新”或“系统已完成更新”。
+
+    只有 helper 返回退出码 `0`、状态 `runtime_active`，且本次提交源码与 `.cc-switch`、`.claude`、`.codex` 的
+    全部目标文件集合和 SHA-256 完全一致，才算运行时生效。页面被切走、过滤不唯一、扫描或单项更新超时、非目标
+    Skill 变化或四层验收失败时，不重试点击、不改运行时。聊天只报告“源码已推送，运行时未生效”、必要用户动作和
+    中央异常报告链接；JSON 中的错误码和差异证据留在报告中。需要人工恢复时，用户可在 CC Switch 手动定向更新后用
+    `-VerifyOnly` 重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
+    `-ExpectedBaseCommit` 参数。后续 `-VerifyOnly` 通过只证明人工处理后的当前运行时已经对齐，不能反推此前 helper 的
+    点击已经完成更新，也不能仅凭最终对齐断定是哪一次点击使更新生效。
 16. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
     - 原发布提交仍使用原始 SHA、Skill 集合和历史/范围参数执行 `-VerifyOnly`。它未通过时，保留该提交的
       `source_pushed_runtime_not_active` 结论和差异证据；当前版本的成功不能倒推为原提交已验收。

@@ -85,6 +85,32 @@
         "转到 ieee-manuscript-edit 或对应投稿技能处理 response letter 和返修。",
         "不生成外部审稿人的评分、TPC 意见或 Submission Policy 字段。"
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "Submission Policy 问登记页的题目、作者和摘要是否与 PDF 一致。我贴出的登记页文本带有 &#x20;、孤立反斜杠和一个空 Markdown 表格。PDF 文本提取把 substantially 断成 sub- 换行 stantially，把 fully connected 断成 fully con- 换行 nected；渲染页可确认这两处只是排版断词。题目、作者顺序、单位归属和其余摘要文字都一致。请判断该字段如何选择，不要访问或提交 EDAS。",
+      "expected_output": "去除明确的网页复制字符和 PDF 排版断词后逐字段确认一致，建议 Submission Policy 选择 yes；独立性声明继续由用户本人确认。",
+      "files": [],
+      "expectations": [
+        "分别报告题目、作者顺序、单位归属和摘要的核对结果。",
+        "把 HTML 实体、孤立转义符和空表格识别为复制产生的格式字符。",
+        "只删除经渲染页确认的排版断词，不删除原文复合词中的连字符。",
+        "全部必查字段一致后才建议选择 yes。",
+        "不访问或提交 EDAS，也不代填独立性声明。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "我在核对 Submission Policy。登记页和 PDF 的题目、作者顺序、单位都相同，网页复制文本也只有换行差异；但登记页摘要写 highest sum-rate，PDF 摘要写 higher sum-rate。能不能把它当成排版差异直接选 yes？",
+      "expected_output": "识别 highest 与 higher 是真实文字差异，不能通过空白或连字符归一化消除；按表单原问题选择 no，并指出独立性声明与此核验无关。",
+      "files": [],
+      "expectations": [
+        "明确区分排版差异与真实单词差异。",
+        "不因其他字段一致而忽略摘要差异。",
+        "不使用删除单词、标点或所有连字符的宽松比较方法。",
+        "按给定原问题建议选择 no。",
+        "不代填独立性声明。"
+      ]
     }
   ]
 }

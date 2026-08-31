@@ -27,6 +27,37 @@ Candidates can be handled in a delegated batch only when reproducible and inacti
 
 Cache directories can regenerate. Explain this before cleanup when recurrence matters to the user.
 
+## Verified Uninstall Residuals
+
+Treat a directory as an uninstall residual only after evidence shows that the owning application is gone and the
+directory is not shared with another installed application. Check all applicable ownership surfaces:
+
+1. Machine-wide and per-user uninstall registrations, including 32-bit and 64-bit registry views.
+2. AppX/MSIX package registration and package-manager records.
+3. Expected installation directories under Program Files, ProgramData, LocalAppData, and Roaming AppData.
+4. Running processes, Windows services, drivers, startup entries, and scheduled tasks.
+5. Start-menu and desktop shortcuts, protocol handlers, shell integration, and file associations.
+6. Application recovery, autosave, templates, profiles, and user-created documents that may be stored beside program
+   files.
+
+The absence of an uninstall entry or active process is only one signal. A vendor directory remains protected when an
+installed or running product from the same vendor still owns files inside it. Likewise, a shared runtime remains
+protected when another installed application declares or contains a dependency on it, even if no runtime process is
+currently active. Inspect application manifests, package metadata, configuration files such as
+`*.runtimeconfig.json`, bundled launchers, and documented runtime requirements before recommending removal.
+
+Examples of the decision boundary:
+
+- A directory with no uninstall registration, package, process, program files, recovery material, or user documents
+  can become a residual candidate after its contents and ownership are verified.
+- A vendor directory containing files used by a currently running companion application is active application data,
+  not an uninstall residual.
+- An inactive shared runtime referenced by another application's runtime configuration is a dependency and must be
+  kept. “No process is using it now” is not sufficient evidence.
+
+Use the registered uninstaller when the application is still installed. Only the leftover directory enters the
+recoverable Recycle Bin workflow after uninstall verification and explicit approval.
+
 ## Confirm as a Group
 
 Group by source and purpose, then ask:

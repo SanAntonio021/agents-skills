@@ -38,7 +38,7 @@ metadata:
 
 本 skill 的图像请求与 Codex/Claude 聊天 provider 解耦。不要为了生图切换 CC Switch 当前聊天 provider；只支持 `/images/generations` 或 `/images/edits` 的中转站不能承担聊天请求。
 
-默认后端是 Cici Switch 私有注册表，而不是独立 API key。未指定渠道时直接使用注册表 v2 的默认链，不再询问用户；当前默认链是 `UESTC -> 贾维斯 -> 夯炸了`。渠道优先级固定为 CLI `--provider`、`RESEARCH_IMAGE_PROVIDER`、注册表 routing。CLI 或环境变量选中的渠道属于 pinned 模式，任何失败都停止，不换路；两者同时存在时 CLI 覆盖环境变量。
+默认后端是 Cici Switch 私有注册表，而不是独立 API key。不要询问用户用哪家渠道。未指定渠道时直接按注册表 v2 的默认顺序 `UESTC -> 贾维斯 -> 夯炸了` 尝试。CLI `--provider` 或 `RESEARCH_IMAGE_PROVIDER` 只改变首选渠道，不锁定一家；首选失败后按全局默认顺序补齐尚未尝试的渠道。CLI 优先于环境变量。例如显式贾维斯时顺序为 `贾维斯 -> UESTC -> 夯炸了`，显式夯炸了时为 `夯炸了 -> UESTC -> 贾维斯`。
 
 ```powershell
 node <skill-dir>/scripts/check-mode.js --json
@@ -46,17 +46,18 @@ node <skill-dir>/scripts/check-mode.js --json
 
 规则：
 
-- 默认链只在渠道可用性错误时换路。网络错误、超时、401、非内容类 403、通用 404/405、408、429、5xx、空或畸形结果、无法解码的图像以及结果 URL 下载失败都属于可换路错误。
-- 参数、模型、格式等明确请求错误，以及内容审核或安全策略拒绝立即停止。先检查结构化 `error.type` / `error.code`，再做受控的短消息匹配；内容语义优先于 HTTP 状态。
-- `/models` 预检单次 10 秒，只对网络错误、超时、429 和 5xx 重试一次；预检不计费。每个渠道每次操作最多发送一次正式生成或编辑 POST，整个默认链最多三次。
+- 允许尝试下一家：网络错误、超时、拥堵、服务端故障、当前渠道没有所需生图模型、空图、坏图、无法识别的图片数据和结果下载失败。预检阶段对应网络错误、超时、404/405/408/429/5xx、模型不可用或无法解析模型列表；正式请求阶段对应网络错误、超时、404/405/408/429/5xx 和无效图片结果。
+- 必须立即停止：密钥失效，账号无权限，余额不足，套餐到期或未开通生图，请求本身写错，以及平台明确拒绝生成。注册表无效、CC Switch 数据库打不开、登记渠道丢失或身份变化也必须停止，不能伪装成普通渠道故障。
+- `/models` 预检单次 10 秒，只对网络错误、超时、429 和 5xx 重试一次；预检不计费。每个渠道每次操作最多发送一次正式生成或编辑 POST。
 - 单家正式请求上限 600 秒，结果 URL 下载上限 60 秒，整次操作总预算 900 秒。预算不足时不再发起下一家。
-- 正式请求发出后的任何换路都可能导致重复计费。成功和失败 JSON 都要返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；后者只统计已发出的生成/编辑 POST，取值为 0 到 3。
+- 正式请求发出后的任何换路都可能导致重复计费。成功和失败 JSON 都要返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；后者只统计已发出的生成/编辑 POST，最大值不超过本次候选渠道数。
 - `/models` 仅证明模型可见。每个新渠道仍需分别取得真实 `/images/generations` 与 `/images/edits` 证据，不能用一种接口的成功替代另一种。
 - `gpt-image-2` 是登记时的默认模型。`gpt-image-2-cf` 仅在用户明确指定，且该渠道当前 `/models` 返回它时使用。
 - API key 只从 CC Switch 数据库读取到当前进程内存，不写进 skill、项目、注册表、命令行参数或日志；不切换当前聊天 provider。
-- 错误只输出脱敏后的类型、状态和短消息，不输出 API key、认证字段或完整响应体。
+- 面向用户时用普通中文说明“渠道暂时不可用”“账号或额度需要修复”“图片要求需要调整”，不要直接抛出接口术语。错误只保留脱敏后的状态和短消息，不输出 API key、认证字段或完整响应体。
+- 不提供“只试一家”开关。用户明确要求只用一家时，直接说明当前渠道策略不支持这种锁定方式；不得暗中改走 direct、修改 CC Switch 数据库或改运行时副本。
 
-私有注册表位于 `~/.config/research-schematic-imagegen/providers.json`，不属于技能源码或 Git 交付物。每条 provider 记录只含 `alias`、`provider_id`、`app_type`、`expected_name` 和 `default_model`，不含 API key。v2 另含 `routing.default_alias` 和 `routing.fallback_aliases`；默认加备用总数必须为 1 到 3，且所有 alias 已登记、互不重复。写入和加载都会执行同一校验，越界时失败关闭，不截断执行。v1 仅保留显式 `--provider` 兼容；没有 routing 时不猜测默认渠道。
+私有注册表位于 `~/.config/research-schematic-imagegen/providers.json`，不属于技能源码或 Git 交付物。每条 provider 记录只含 `alias`、`provider_id`、`app_type`、`expected_name` 和 `default_model`，不含 API key。v2 另含 `routing.default_alias` 和 `routing.fallback_aliases`；默认加备用总数必须为 1 到 3，且所有 alias 已登记、互不重复。写入和加载都会执行同一校验，越界时失败关闭，不截断执行。v1 没有全局顺序，所有 Cici Switch 生图路径都在联网前要求升级 v2；不得从 providers 数组顺序猜测路由。
 
 新增渠道流程：先对用户指定的候选 ID 运行 `/models` 检查，展示安全的名称、ID 与可用图像模型；取得用户确认后再登记。设置默认链时由同一命令原子写入 v2 routing：
 
@@ -74,7 +75,7 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 
 #### 网页生图与改图
 
-网页不是注册表默认链、pinned 渠道或 direct 接口的自动备用。只有用户对准确站点作出单独授权后，才进入网页生图；用户只说“换个网站”而未确认站点时，先说明准备使用的站点并等待确认。原渠道失败的停止条件和错误原文仍然保留，不能用网页成功倒推原渠道成功。
+网页不是注册表渠道链或 direct 接口的自动备用。只有注册表渠道按上述规则结束，且用户对准确站点作出单独授权后，才进入网页生图；用户只说“换个网站”而未确认站点时，先说明准备使用的站点并等待确认。原渠道失败的停止条件和错误原文仍然保留，不能用网页成功倒推原渠道成功。
 
 进入网页路径时，必须同时使用 `web-access`，并先读 [references/web-image-generation.md](references/web-image-generation.md)。每项已授权的生成或编辑只提交一次。页面长时间停在进度状态、连接中断或结果不确定时，先重新打开或刷新同一会话并核对是否已有结果，不重复提交。用户计划在底图确认后继续改同一张图时，保留该会话作为后续编辑上下文。
 
@@ -83,7 +84,7 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 | 变量 | 作用 |
 | --- | --- |
 | `RESEARCH_IMAGE_BACKEND` | `ccswitch`（默认）或显式兼容的 `direct` |
-| `RESEARCH_IMAGE_PROVIDER` | 已登记 alias；设置后锁定该渠道，CLI `--provider` 优先级更高 |
+| `RESEARCH_IMAGE_PROVIDER` | 已登记 alias；设置后作为首选，失败时继续全局默认顺序；CLI `--provider` 优先级更高 |
 | `RESEARCH_IMAGE_PROVIDER_REGISTRY` | 覆盖私有 `providers.json` 路径 |
 | `RESEARCH_IMAGE_CONFIG_DIR` | 覆盖私有配置目录 |
 | `RESEARCH_IMAGE_CCSWITCH_DB` | CC Switch DB 路径；默认 `~/.cc-switch/cc-switch.db` |

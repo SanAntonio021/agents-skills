@@ -12,8 +12,8 @@ description: >
   `.codex-global-state.json` 被 watcher 高频重写、需要保留 ChatGPT OAuth 登录但实际请求走
   CC Switch、`codex login` 报 Windows `10013`、CC Switch 生成保留 provider 覆盖、同一旧任务在
   登录或 provider 切换后持续报 OAuth 刷新/`INVALID_API_KEY` 而新任务正常，或需要用 Codex
-  对话分叉保留历史继续工作，或要求 CC Switch 成为 provider、认证、模型、推理强度和 Common
-  Config 的唯一配置入口，同时把 watcher 限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
+  对话分叉保留历史继续工作，或要求 CC Switch 统一管理 provider、认证和 Common Config 基线，
+  同时区分 Codex Desktop 的新任务默认值与任务级覆盖，并把 watcher 限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
 ---
 
 # Codex 中转链维护
@@ -32,9 +32,10 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 
 重点不是泛讲代理原理，而是先确认“谁有权写配置”，再检查对应链路。配置所有权与请求链路是两个维度：
 
-- `ccswitch-owned`：当前默认。provider、认证、模型、推理强度和 Common Config 只通过 CC Switch
-  配置；本地 watcher 不写 `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop
-  的两个 `full-access` 权限字段，并记录退出与启动后漂移。
+- `ccswitch-owned`：当前默认。provider、认证、provider 固定模型和 Common Config 基线只通过
+  CC Switch 配置；Codex Desktop 仍可按用户操作更新新任务默认值和任务级设置。本地 watcher 不写
+  `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop 的两个 `full-access`
+  权限字段，并记录退出与启动后漂移。
 - `legacy-writer`：历史配置 writer。只有用户明确要求回滚旧架构并接受争用风险时才进入；不能因为
   检测到漂移就自行启用。
 
@@ -46,7 +47,8 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - 当前 provider、key、live backup 是否一致，并且真实 Responses SSE 能通过。
 
 本机当前默认组合是 `ccswitch-owned + ccswitch-only`。不要把“只监听 15721”误解成允许 watcher
-接管配置；15721 是请求入口，配置写入权仍属于 CC Switch。
+接管配置；15721 是请求入口。provider、认证和 Common Config 基线仍由 CC Switch 管理，Codex
+Desktop 自己维护的新任务默认值和任务级设置不属于 watcher 接管。
 
 ## 适用场景
 
@@ -63,8 +65,9 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 - 用户要求跳过本地链路、Codex 直连真实上游，且 `base_url` 手动改了又被自动改回本地端口。
 - 用户只想取消 CodexCont，但仍通过 CC Switch 切换中转站。
 - Codex 更新后，能力 watcher 因全局状态 JSON 的格式或 App 自管字段而反复写回。
-- 用户要求核对 watcher、计划任务 XML 和运行进程，确保 CC Switch 是唯一配置入口，同时保留
-  `show-context-window-usage = true`、禁用 `CodexCapabilityCheck` 且不改 `CodexAutoContinue`。
+- 用户要求核对 watcher、计划任务 XML 和运行进程，确保 provider、认证和 Common Config 基线只经
+  CC Switch 配置，同时区分 Desktop 的新任务默认值写回，保留 `show-context-window-usage = true`、
+  禁用 `CodexCapabilityCheck` 且不改 `CodexAutoContinue`。
 
 不用本技能处理：
 
@@ -111,7 +114,25 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 CC Switch 的 Common Config 与 provider 模型固定值要分开理解。CC Switch 3.19.2 生成 Common Config
 时排除根级 `model`；`model` 属于 provider 记录。官方 provider 的模型为空表示未固定模型、由 Codex
 采用默认值，不是 watcher 应补的缺口。`model_reasoning_effort` 和
-`[desktop].show-context-window-usage = true` 可以由 Common Config 统一管理。
+`[desktop].show-context-window-usage = true` 可以由 Common Config 设定共同基线，但 Common Config
+不是阻止 Codex Desktop 后续更新新任务默认值的锁。
+
+#### 区分 Common Config、新任务默认值和任务级覆盖
+
+看到 `config.toml` 的模型或推理强度与 Common Config 不一致时，不要仅凭差异判定配置漂移：
+
+1. Common Config 是 CC Switch 保存和重新渲染时使用的共同基线；切换 provider 或重新应用 Common
+   Config 后，相关根级默认值可能再次按该基线输出。
+2. 用户在空白新任务草稿中选择模型或 effort 时，Codex Desktop 可以把该选择作为后续新任务默认值
+   写入 `config.toml`。这是预期的 App 写入，不是 watcher、provider 覆盖或 Common Config 丢失。
+3. 用户进入已存在的任务后再切换模型或 effort，优先按任务级设置理解；它不应被反推为 Common
+   Config 或全局默认值已经改变。
+4. 取证时对齐 `config.toml` 写入时间、新任务创建时间和对应 session/rollout 的首个
+   `turn_context`。只有在没有 provider 切换、Common Config 重渲染、新任务草稿设置或其他明确 App
+   操作的受控空闲窗口里，出现无法解释的改写，才继续排查外部 writer。
+
+如果希望个别任务使用 `max`、但后续新任务仍默认 `xhigh`，先用默认值创建并进入任务，再在该已存在
+任务内切换；不要把空白新任务草稿中的选择误当作一次性任务覆盖。
 
 #### Common Config 的上下文窗口字段
 
@@ -131,9 +152,10 @@ Codex 最终入口和链路模式仍正确；再用本技能的真实 Responses 
 `config.toml` 哈希，确认没有被其他进程改回去。上下文窗口数值只对已核实的模型/客户端组合成立，不能
 从 provider 名称或一次普通回复反推。
 
-在 `ccswitch-owned` 下，任何 provider、认证、模型、推理强度或 Common Config 变更都通过 CC Switch
-完成。本技能可以只读核对数据库与最终 `config.toml`，但不得直接写数据库、`auth.json` 或
-`config.toml`；用户明确要求不修改 provider/认证数据库时，这一边界没有应急例外。
+在 `ccswitch-owned` 下，provider、认证、provider 固定模型和 Common Config 基线变更都通过 CC
+Switch 完成；Codex Desktop 的新任务默认值和任务级设置由其自身 UI/协议正常维护。本技能可以只读
+核对数据库与最终 `config.toml`，但不得直接写数据库、`auth.json` 或 `config.toml`；用户明确要求
+不修改 provider/认证数据库时，这一边界没有应急例外。
 
 ### 0.1 区分登录身份与请求线路
 
@@ -456,7 +478,9 @@ Desktop 自管状态。
 验证至少包括：PowerShell 语法检查；权限恢复、集成、生命周期和配置所有权四项离线测试；安装脚本
 `-WhatIf -SkipMigration`；逐项解析任务 XML 的动作、启用状态和参数；核对
 `CodexCapabilityCheck` 与迁移任务禁用；核对 `CodexAutoContinue` XML/源码哈希不变；至少 60 秒比较
-`config.toml` 哈希不变。`auth.json` 哈希变化时按 OAuth 结构语义复核，避免把正常 token 刷新误判为覆盖。
+`config.toml` 哈希不变。该 60 秒必须是没有 provider 切换、Common Config 重渲染或新任务草稿设置
+变化的受控空闲窗口；否则先按本节的三层区别解释。`auth.json` 哈希变化时按 OAuth 结构语义复核，
+避免把正常 token 刷新误判为覆盖。
 
 ### 8. 拆链路 / 改直连
 
@@ -682,7 +706,9 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - 不把真实 key 写进 skill、README、提交信息或日志摘要。
 - 不把某一家中转站硬编码成唯一方案。
 - 不直接改 `%USERPROFILE%\.cc-switch\skills` 或 `%USERPROFILE%\.codex\skills` 里的 skill 运行时副本。
-- `ccswitch-owned` 下不直接写 CC Switch 数据库、`config.toml`、`auth.json`、provider、模型、推理强度或 Common Config；需要变更时通过 CC Switch。
+- `ccswitch-owned` 下不由技能、脚本或 watcher 直接写 CC Switch 数据库、`config.toml`、`auth.json`、
+  provider 或 Common Config；provider 与共同基线通过 CC Switch 变更，Desktop 新任务默认值和任务级
+  设置只通过 Codex Desktop 自身交互维护。
 - 不让 watcher 或兼容入口修改 `CodexAutoContinue`，也不重新启用 `CodexCapabilityCheck`。
 - 不把 `/v1/models` 当作最终通过信号。
 - 不在存在无关 git 改动时把它们一起提交。
@@ -711,3 +737,5 @@ reasoning effort、`include`、`stream`、`store`、超时和其他请求形态�
 - 关掉 watcher/计划任务后配置仍被改写，通常是 cc-switch 自身的本地代理接管开关（`proxy_config.proxy_enabled`/`enabled`）在起作用，这条路径独立于 watcher，必须单独检查。
 - 不要因 JSON 格式、属性顺序或结尾换行不同而重写整份 `.codex-global-state.json`；只按受管理字段的语义变化写入。
 - Common Config 不含根级 `model` 不代表模型配置丢失；模型固定值属于 provider。官方 provider 的模型为空可以是有意未固定，不得由 watcher 猜测并补写。
+- Common Config 中的 effort 与 `config.toml` 不一致不自动等于漂移；先确认用户是否在空白新任务草稿中
+  改过 effort。该操作会更新后续新任务默认值，而已存在任务内的切换属于任务级覆盖。

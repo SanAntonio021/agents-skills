@@ -162,28 +162,41 @@
     {
       "id": 16,
       "prompt": "请把本机 Codex 配置改成新版方案：CC Switch 是 provider、认证、模型、推理强度和 Common Config 的唯一入口；watcher 只恢复桌面 full-access 权限、做退出审计和启动后漂移记录。保留 show-context-window-usage=true，不改已有 provider/中转/认证数据库和 CodexAutoContinue，CodexCapabilityCheck 继续 Disabled。工作区有未提交改动，请先检查源码、任务和运行态，再实施并做离线测试与任务 XML 验证。",
-      "expected_output": "应先读取规则并只读检查源码、Git 状态、计划任务 XML、进程、端口和配置/数据库哈希；实施时确保所有 provider、认证、模型、推理强度和 Common Config 变更只经 CC Switch，watcher 只管理 .codex-global-state.json 的两个 full-access 权限字段并做退出/启动审计。应说明 Common Config 排除根级 model，模型属于 provider，官方 provider 模型为空可表示未固定。保持 show-context-window-usage=true、CodexCapabilityCheck Disabled、CodexAutoContinue 与 CC Switch 数据库哈希不变；运行语法检查、四项离线测试、安装 WhatIf、正式任务 XML 解析和 60 秒稳定性核验。",
+      "expected_output": "应先读取规则并只读检查源码、Git 状态、计划任务 XML、进程、端口和配置/数据库哈希；同时纠正“CC Switch 是所有模型和推理强度的唯一写入者”这一过强目标。provider、认证、provider 固定模型和 Common Config 基线只经 CC Switch，Codex Desktop 仍可正常维护新任务默认值与任务级设置；watcher 只管理 .codex-global-state.json 的两个 full-access 权限字段并做退出/启动审计。应说明 Common Config 排除根级 model，模型属于 provider，官方 provider 模型为空可表示未固定。保持 show-context-window-usage=true、CodexCapabilityCheck Disabled、CodexAutoContinue 与 CC Switch 数据库哈希不变；运行语法检查、四项离线测试、安装 WhatIf、正式任务 XML 解析，并只在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口做 60 秒稳定性核验。",
       "files": [],
       "expectations": [
         "先检查规则、源码、未提交改动、任务 XML、运行进程、端口和配置基线",
-        "CC Switch 是 provider、认证、模型、推理强度和 Common Config 的唯一写入入口",
+        "把 CC Switch 的写入边界限定为 provider、认证、provider 固定模型和 Common Config 基线，并保留 Desktop 对新任务默认值及任务级设置的正常维护",
         "watcher 只管理两个 full-access 权限字段，并执行退出恢复、运行中审计和启动后漂移记录",
         "不修改现有 provider、中转、认证数据库或 CodexAutoContinue，CodexCapabilityCheck 保持 Disabled",
         "保留 show-context-window-usage=true，并正确区分 Common Config 与 provider 级 model",
-        "运行语法检查、四项离线测试、安装 WhatIf、任务 XML 解析和至少 60 秒稳定性核验"
+        "运行语法检查、四项离线测试、安装 WhatIf、任务 XML 解析，并只在无 provider/Common Config/新任务草稿设置变化的受控空闲窗口做至少 60 秒稳定性核验"
       ]
     },
     {
       "id": 17,
       "prompt": "我已经确认当前 Codex 模型支持 272000 上下文。请通过 CC Switch 的 Common Config 配置它，并判断 model_auto_compact_* 两个字段要不要一起加；保存后要确认 provider、127.0.0.1:15721/v1、真实 Responses SSE 和配置是否会被改回去。",
-      "expected_output": "应说明 Common Config 只写 model_context_window = 272000；model_auto_compact_* 改变自动压缩触发时机，不是扩容参数，除非有明确目的不添加。所有修改通过 CC Switch 保存并重新渲染，不直接改 config.toml、Common Config 文件或数据库；保存后核对 currentProviderCodex、providers.is_current、远端 base_url、Codex 最终入口和 ccswitch-only 模式，用真实 stream=true Responses SSE 验证，并至少等待 60 秒比较 config.toml 哈希。",
+      "expected_output": "应说明 Common Config 只写 model_context_window = 272000；model_auto_compact_* 改变自动压缩触发时机，不是扩容参数，除非有明确目的不添加。所有修改通过 CC Switch 保存并重新渲染，不直接改 config.toml、Common Config 文件或数据库；保存后核对 currentProviderCodex、providers.is_current、远端 base_url、Codex 最终入口和 ccswitch-only 模式，用真实 stream=true Responses SSE 验证，并在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口至少等待 60 秒比较 config.toml 哈希。",
       "files": [],
       "expectations": [
         "只在已确认模型上限时设置 model_context_window，并给出 272000 的准确 TOML 写法",
         "明确 model_auto_compact_* 改变压缩时机，不是扩大上下文窗口，默认不添加",
         "通过 CC Switch 保存并重新渲染，不直接改 Common Config 文件、config.toml 或数据库",
         "保存后核对当前 provider、providers.is_current、远端 base_url 和 127.0.0.1:15721/v1 入口",
-        "用真实 Responses SSE 验证，并至少等待 60 秒确认 config.toml 没有被改回去"
+        "用真实 Responses SSE 验证，并在无 provider/Common Config/新任务草稿设置变化的受控空闲窗口至少等待 60 秒确认 config.toml 没有被改回去"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "CC Switch 的 Common Config 里 effort 是 xhigh，但我在 Codex Desktop 新建对话的空白页面手动选了 max，随后 config.toml 也变成 max。是不是 Common Config 失效或 watcher 把配置改坏了？需要清 provider 或重装链路吗？",
+      "expected_output": "不应把这次变化判为配置漂移。应先确认用户是在空白新任务草稿中主动选择 max；该操作可由 Codex Desktop 写入 config.toml，作为后续新任务默认值。Common Config 仍是 CC Switch 重新渲染时的共同基线，不是禁止 Desktop 更新默认值的锁。应区分已存在任务内切换 effort 的任务级覆盖，并通过 config.toml 写入时间、新任务创建时间和首个 turn_context 对齐取证；没有其他故障证据时，不清 provider、不改 watcher、不重装链路。",
+      "files": [],
+      "expectations": [
+        "把空白新任务草稿中主动选择 max 识别为 Codex Desktop 的预期默认值写回",
+        "说明 Common Config 是重新渲染基线而不是阻止 Desktop 写入的锁",
+        "区分空白新任务默认值写回与已存在任务内的任务级覆盖",
+        "要求对齐 config.toml 写入时间、新任务创建时间和首个 turn_context",
+        "没有其他故障证据时不清 provider、不改 watcher、不重装链路"
       ]
     }
   ]

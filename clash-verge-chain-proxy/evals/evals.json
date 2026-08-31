@@ -150,6 +150,31 @@
         "把同一时段实际日志和 Edge 出口用于当前验收，不用节点名称推断城市。",
         "未获授权时不切节点、不修改代理分组。"
       ]
+    },
+    {
+      "id": 16,
+      "prompt": "我已经给校园认证门户配置了 fake-ip-filter、绑定‘以太网’的校园 nameserver-policy、DIRECT 规则和私网 /24 排除。当前 Clash 核心已经稳定，不想再重启。请证明 aaa.example.edu.cn 现在确实不受 Clash DNS/TUN 影响，但不要删除 cache.db，也不要泄露 controller secret。",
+      "expected_output": "应先核对当前 profile、增强源、两份生成 YAML、Mihomo 语法和运行态可见的 /24；说明 /configs 可能不返回完整 DNS 段。抓包启动后依次清 Windows DNS 缓存和 Mihomo 运行态 DNS 缓存，再查询精确门户域名；必须在同一捕获中看到目标域名向获批校园 DNS 发出的请求和应答，且 component ID 属于物理以太网。随后核对真实非 Fake-IP 地址、Find-NetRoute 的物理接口、自动登录状态和任务状态，并在 finally 停止 PktMon、清过滤器。不得删除 cache.db 或打印 secret。",
+      "files": [],
+      "expectations": [
+        "区分 Clash 内 DIRECT、Fake-IP 排除、接口绑定 nameserver-policy 和 TUN 路由排除四个控制面。",
+        "在抓包启动后清 Windows 与 Mihomo 运行态 DNS 缓存，不删除或修改 cache.db。",
+        "只用精确门户域名的校园 DNS 请求与应答和物理 component ID 证明接口绑定，不拿其他域名代替。",
+        "说明 /configs 缺少 DNS 字段不是未加载证据，并正确处理 Find-NetRoute 可能返回多个对象。",
+        "在 finally 停止 PktMon 和清过滤器，且只把本轮结论报告为当前运行态通过。"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "电脑重启后我以为校园自动登录后台任务没了，因为普通 PowerShell 的 startup status 返回 Windows PowerShell task operation was rejected。但管理员 Get-ScheduledTask 显示 Monitor 存在、Running，门户当前也在线。现在能否断言任务之前被删过，并把重启自动联网写成最终完成？",
+      "expected_output": "不能。受保护任务的普通权限查询失败不等于任务被删除；应以管理员 Get-ScheduledTask 的存在、状态和 Action 作为当前任务证据。没有任务审计日志时不能反推历史删除原因。当前在线和健康检查只能支持当前运行态通过；还需一次没有手动启动客户端或任务的真实重启，才能报告冷启动通过。若当前不方便重启，应写实施和运行态验收完成、冷启动验收延期。",
+      "files": [],
+      "expectations": [
+        "不把普通权限的 task operation rejected 或 schtasks 不可见解释成任务被删除。",
+        "使用提升权限的 Get-ScheduledTask 核对任务存在、Running 和 Action。",
+        "没有审计日志时不猜测历史删除或失败的唯一原因。",
+        "明确区分当前运行态通过与真实冷启动通过；不能立即重启时写冷启动验收延期。"
+      ]
     }
   ]
 }

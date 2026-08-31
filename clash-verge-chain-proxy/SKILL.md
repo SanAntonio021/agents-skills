@@ -65,25 +65,21 @@ Clash 运行态。
 当本机自动登录程序访问校园网或其他私网认证门户时，先把“HTTP 代理”和“TUN 路由”分开判断。
 程序显式关闭或绕过 WinINET/HTTP 代理，并不代表流量不会被 `auto-route` 的 TUN 接管。
 
-1. 从当前 `profiles.yaml` 定位激活 profile 及其增强文件；确认门户的当前 IP 或 CIDR，不沿用旧环境
-   的地址。需要直连的门户地址只写入当前 profile 的 `merge` 增强文件，例如：
+遇到门户解析成 Fake-IP、需要绑定校园 DNS 到物理网卡、普通权限看不到 SYSTEM 任务，或需要在不再次
+重启核心的情况下证明运行路径时，读取
+[`references/local-auth-portal.md`](references/local-auth-portal.md) 并按其中的配置与抓包流程验收。
 
-```yaml
-tun:
-  route-exclude-address:
-    - <portal-ip>/32
-```
-
-2. 写入前备份增强文件；不要把规则写进原始订阅或生成的 `clash-verge.yaml`，也不要为了“直连门户”
-   改默认路由、禁用网卡或删除网关。门户地址变化时重新核对后再更新排除项。
-3. 受控重启 Clash Verge GUI/核心后，同时检查 `clash-verge.yaml` 和 `clash-verge-check.yaml`，
-   并运行 `verge-mihomo.exe -t`；两份生成配置都包含排除项才算持久化成功。
-4. 用 `Find-NetRoute -RemoteIPAddress <portal-ip>` 验收实际路径，预期为物理网卡和校园网网关，
-   而不是 Mihomo 虚拟网卡。自动登录程序若有 SYSTEM 开机任务，再以管理员权限运行其只读
-   `startup status`/`startup self-test`；普通用户的 `schtasks` 查询可能因任务 ACL 报“找不到”，
-   不能据此断言任务被删除。
-5. 最终验收必须包含一次真实重启：不手动启动客户端，记录任务启动、门户在线和门户路由；没有任务
-   审计日志时，不猜测是哪一个更新或进程删除了任务。
+1. 从当前 `profiles.yaml` 定位激活 profile 和绑定的增强文件，重新确认门户域名、真实地址、CIDR、
+   校内 DNS 与物理接口，不沿用旧环境记录。
+2. “在 Clash 内命中 `DIRECT`”不等于“不受 Clash 影响”。使用 Fake-IP DNS 时，独立访问通常还需要
+   门户域名排除 Fake-IP、精确 `nameserver-policy` 绑定物理接口，以及 TUN `route-exclude-address`；
+   每项都写入当前 profile 的持久化增强源，并在写前备份。
+3. 检查 `clash-verge.yaml` 和 `clash-verge-check.yaml` 的最终结果并运行 `verge-mihomo.exe -t`。
+   `/configs` 可能不返回完整 DNS 段；字段缺失不能证明 DNS 配置未加载，也不能直接按数组索引。
+4. 运行态验收要把真实门户解析、物理接口上的目标 DNS 请求与应答、`Find-NetRoute`、自动登录状态和
+   任务状态绑定在同一时间窗口。只看到其他域名访问校园 DNS，不能证明门户 policy 生效。
+5. 报告时区分“持久配置通过”“当前运行态通过”和“真实冷启动通过”。没有实际重启时，前两项可以
+   完成，冷启动保持待验收；没有任务审计日志时，不猜测历史删除或启动失败的唯一原因。
 
 ### 临时手机共享的接口跃点
 

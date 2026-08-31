@@ -5,7 +5,27 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 # PPTX creation, editing, and analysis
 
-A `.pptx` is a ZIP archive of XML files. Choose your approach by task:
+## Route design work through PPT Master
+
+Keep this skill as the local PowerPoint entry and acceptance owner. Before choosing a local
+implementation, read [references/ppt-master-integration.md](references/ppt-master-integration.md)
+when the request creates a new presentation, substantially redesigns one, reconstructs slides from
+images, fills or enhances a template, adds narration or animation, or explicitly names
+`ppt-master`.
+
+- Route those authoring and high-design tasks to the active official `ppt-master` skill. Once routed,
+  let that skill own its integrity guard, route selection, workflow, and blocking confirmations. Do
+  not duplicate or partially reimplement its generation procedure here.
+- Keep reading, extraction, inspection, validation, combining/splitting, and small deterministic edits
+  in this local `pptx` skill.
+- After `ppt-master` produces its final candidate, return here for the independent local acceptance
+  layers below. Upstream workflow completion is not a substitute for local release evidence.
+- If an explicitly requested `ppt-master` is unavailable or its integrity guard fails, report the
+  blocker and stop. Do not silently replace it with a system skill, an ad hoc generator, or the
+  zero-exposure upstream mirror.
+
+A `.pptx` is a ZIP archive of XML files. After that routing decision, choose your local approach by
+task:
 
 ## OfficeCLI route
 
@@ -92,7 +112,7 @@ is an interface and does not replace the visual QA or source-hash checks below.
 
 | Task | Approach |
 |---|---|
-| **Create** a new deck | Write a `pptxgenjs` script — see gotchas below |
+| **Create** a new deck retained on the local route | Write a `pptxgenjs` script — see gotchas below |
 | **Edit** an existing deck, or build from a template | unzip → edit `ppt/slides/slideN.xml` → zip |
 | **Read** content | `markitdown deck.pptx` (one block per slide under `<!-- Slide number: N -->` markers); visual grid: `python scripts/thumbnail.py deck.pptx` |
 

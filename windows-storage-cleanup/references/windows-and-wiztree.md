@@ -56,6 +56,25 @@ Before moving anything:
 
 Emptying the Recycle Bin is a separate, potentially broad action. Obtain separate approval or leave it to the user.
 
+### Permanently Removing One Staged Candidate
+
+Approval to stage an item in the Recycle Bin does not approve permanent deletion. When the user later approves only
+one staged candidate, preserve every unrelated Recycle Bin entry:
+
+1. Resolve the candidate's drive-specific `$Recycle.Bin\<SID>` directory and enumerate its metadata without changing
+   it.
+2. Identify one exact `$I` metadata record whose decoded original path and original byte count match the approved
+   path. Use deletion time to disambiguate repeated entries for the same original path.
+3. Pair it only with the `$R` payload that has the identical suffix. For a directory, also verify the current payload
+   file count and total bytes against the staged audit; for a file, verify the payload byte count.
+4. Snapshot the names and sizes of unrelated Recycle Bin entries, then permanently delete only those two exact
+   literal paths. Do not use wildcards, suffix-prefix matching, or `Clear-RecycleBin` for a single-candidate approval.
+5. Verify that the original path and exact `$I`/`$R` pair are absent, unrelated entries are unchanged, and actual free
+   space changed by a plausible amount. Record any partial deletion as a failure instead of broadening the cleanup.
+
+If the metadata path, size, suffix pair, file count, or staged audit does not match exactly, stop. A request to empty
+the entire Recycle Bin is a separate broad approval and must not be inferred from approval of one candidate.
+
 ## Pagefile Inspection
 
 ```powershell

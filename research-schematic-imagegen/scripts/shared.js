@@ -191,22 +191,37 @@ export async function loadRuntimeEnv({
   });
   const attemptedAliases = [];
   const attempts = [];
+  let lastFailure = null;
   for (const entry of prepared.route.entries) {
     attemptedAliases.push(entry.alias);
-    const selected = await prepared.probe(entry);
+    let selected;
+    try {
+      selected = await prepared.probe(entry);
+    } catch {
+      lastFailure = { code: "provider_registration_mismatch", failoverEligible: false };
+      attempts.push({ alias: entry.alias, stage: "preflight", code: lastFailure.code, status: null });
+      break;
+    }
     if (selected.ok) {
       setCcSwitchRuntime({ registryPath, route: prepared.route, selected, attemptedAliases });
       return null;
     }
-    attempts.push({ alias: entry.alias, stage: "preflight", code: "provider_preflight_failed", status: selected.status });
-    if (prepared.route.mode === "pinned") break;
+    lastFailure = classifyPreflightFailure(selected.status);
+    attempts.push({ alias: entry.alias, stage: "preflight", code: lastFailure.code, status: selected.status });
+    if (!lastFailure.failoverEligible) break;
   }
-  throw routeError("No configured image provider passed the /models preflight.", {
+  const message = lastFailure?.code === "provider_registration_mismatch"
+    ? "当前渠道的登记信息与 CC Switch 当前记录不一致，需要重新登记后再试。"
+    : lastFailure && !lastFailure.failoverEligible
+      ? "当前渠道的接入配置、账号或权限状态有问题，需要先修复该渠道。"
+      : "已按顺序检查候选渠道，但没有找到当前可用的生图渠道。";
+  throw routeError(message, {
     routeMode: prepared.route.mode,
     routeSource: prepared.route.source,
     providerCandidates: prepared.route.aliases,
     attemptedAliases,
     attempts,
+    extra: { code: lastFailure?.code || "provider_preflight_failed" },
   });
 }
 
@@ -338,19 +353,49 @@ function classifyApiFailure(status, details) {
   const semantic = `${details.type} ${details.code} ${details.message}`.toLowerCase();
   const contentFailure = /(content[_ -]?(policy|filter|moderation)|moderation[_ -]?(blocked|rejected)|safety[_ -]?(policy|violation)|policy[_ -]?violation|审核|安全策略|内容违规)/i.test(semantic);
   if (contentFailure) return { code: "content_policy_rejected", failoverEligible: false };
+  const accountFailure = status === 401
+    || status === 402
+    || status === 403
+    || /(invalid[_ -]?(api[_ -]?key|token)|authentication|unauthorized|forbidden|permission|insufficient[_ -]?(quota|credit|balance)|billing|payment|subscription|plan[_ -]?(expired|required|inactive)|余额|额度|套餐|权限|密钥失效)/i.test(semantic);
+  if (accountFailure) return { code: "provider_account_problem", failoverEligible: false };
+  const modelUnavailable = status === 404
+    || /(model[_ -]?(not[_ -]?found|unavailable|unsupported)|unknown[_ -]?model|no[_ -]?such[_ -]?model|模型不可用|没有.*模型)/i.test(semantic);
+  if (modelUnavailable) return { code: "provider_model_unavailable", failoverEligible: true };
   const explicitRequestFailure = status === 400
     || status === 422
-    || /(invalid|bad[_ -]?request|validation|unsupported|malformed|model[_ -]?not[_ -]?found|parameter|missing[_ -]?required)/i.test(semantic);
+    || /(invalid|bad[_ -]?request|validation|unsupported|malformed|parameter|missing[_ -]?required)/i.test(semantic);
   if (explicitRequestFailure) return { code: "invalid_image_request", failoverEligible: false };
-  const availabilityFailure = status === 401
-    || status === 403
-    || status === 404
-    || status === 405
+  const availabilityFailure = status === 405
     || status === 408
     || status === 429
     || status >= 500;
   if (availabilityFailure) return { code: "provider_request_unavailable", failoverEligible: true };
   return { code: "image_api_rejected", failoverEligible: false };
+}
+
+function classifyPreflightFailure(status) {
+  const failoverEligible = status === "timeout"
+    || status === "network-error"
+    || status === "model-unavailable"
+    || status === 404
+    || status === 405
+    || status === 408
+    || status === 429
+    || (typeof status === "number" && status >= 500);
+  if (status === "model-unavailable") return { code: "provider_model_unavailable", failoverEligible: true };
+  return {
+    code: failoverEligible ? "provider_preflight_unavailable" : "provider_preflight_rejected",
+    failoverEligible,
+  };
+}
+
+function plainApiFailureMessage(classification, status) {
+  if (classification.code === "content_policy_rejected") return "当前渠道明确拒绝了这次生成，需要先调整图片要求。";
+  if (classification.code === "provider_account_problem") return "当前渠道的密钥、账号权限、余额或套餐状态有问题，需要先修复该渠道。";
+  if (classification.code === "provider_model_unavailable") return "当前渠道没有提供所需的生图模型。";
+  if (classification.code === "invalid_image_request") return "这次图片要求或设置有问题，需要先修改请求。";
+  if (classification.failoverEligible) return `当前渠道暂时不可用（状态 ${status}）。`;
+  return `当前渠道拒绝了这次图片请求（状态 ${status}），需要先检查原因。`;
 }
 
 function remainingMs(deadline) {
@@ -425,8 +470,7 @@ async function performFormalImageRequest({
   if (!response.ok) {
     const details = errorDetailsFromBody(await response.text());
     const classification = classifyApiFailure(response.status, details);
-    const suffix = [details.type, details.code, details.message].filter(Boolean).join(" / ");
-    throw new ImageRouteError(`Image API error (${response.status})${suffix ? `: ${suffix}` : ""}`, {
+    throw new ImageRouteError(plainApiFailureMessage(classification, response.status), {
       ...classification,
       status: response.status,
       stage: "request",
@@ -573,8 +617,8 @@ export async function executeImageRequest({
     try {
       candidate = await prepared.probe(entry, remainingMs(deadline));
     } catch (error) {
-      lastError = new ImageRouteError(`Registered image provider integrity check failed: ${safeErrorBody(error?.message || error)}`, {
-        code: "provider_integrity_error",
+      lastError = new ImageRouteError(`渠道 ${entry.alias} 的登记信息与 CC Switch 当前记录不一致，需要重新登记后再试。`, {
+        code: "provider_registration_mismatch",
         failoverEligible: false,
         stage: "preflight",
       });
@@ -582,14 +626,17 @@ export async function executeImageRequest({
       break;
     }
     if (!candidate.ok) {
-      lastError = new ImageRouteError(`Registered image provider ${entry.alias} failed its /models preflight (${candidate.status}).`, {
-        code: "provider_preflight_failed",
-        failoverEligible: true,
+      const classification = classifyPreflightFailure(candidate.status);
+      const message = classification.failoverEligible
+        ? `渠道 ${entry.alias} 当前未通过生图模型检查，准备尝试下一渠道。`
+        : `渠道 ${entry.alias} 的接入配置、账号或权限状态有问题，需要先修复该渠道。`;
+      lastError = new ImageRouteError(message, {
+        ...classification,
         stage: "preflight",
         status: candidate.status,
       });
       attempts.push({ alias: entry.alias, stage: "preflight", code: lastError.code, status: candidate.status });
-      if (prepared.route.mode === "pinned") break;
+      if (!lastError.failoverEligible) break;
       continue;
     }
     setCcSwitchRuntime({ registryPath, route: prepared.route, selected: candidate, attemptedAliases, billableRequestsSent });
@@ -623,10 +670,13 @@ export async function executeImageRequest({
         stage: "request",
       });
       attempts.push({ alias: entry.alias, stage: lastError.stage || "request", code: lastError.code, status: lastError.status || null });
-      if (prepared.route.mode === "pinned" || !lastError.failoverEligible) break;
+      if (!lastError.failoverEligible) break;
     }
   }
-  throw routeError("The image request did not succeed on the configured provider route.", {
+  const message = lastError && !lastError.failoverEligible
+    ? lastError.message
+    : "已按顺序尝试候选渠道，但仍未获得可用图片。";
+  throw routeError(message, {
     routeMode: prepared.route.mode,
     routeSource: prepared.route.source,
     providerCandidates: prepared.route.aliases,

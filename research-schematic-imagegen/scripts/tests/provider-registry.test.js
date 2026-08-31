@@ -79,6 +79,21 @@ function registry(alias = "贾维斯", expectedName = PROVIDER_NAME) {
   };
 }
 
+function routedRegistry() {
+  const aliases = ["UESTC", "贾维斯", "夯炸了", "备用四号"];
+  return {
+    version: 2,
+    providers: aliases.map((alias, index) => ({
+      alias,
+      provider_id: `provider-${index}`,
+      app_type: "codex",
+      expected_name: alias,
+      default_model: "gpt-image-2",
+    })),
+    routing: { default_alias: "UESTC", fallback_aliases: ["贾维斯", "夯炸了"] },
+  };
+}
+
 async function writeRegistry(root, value = registry()) {
   const registryPath = defaultProviderRegistryPath(path.join(root, "config"));
   await mkdir(path.dirname(registryPath), { recursive: true });
@@ -136,7 +151,11 @@ test("normal Cici Switch routing requires a registered alias and validates the r
   const root = await mkdtemp(path.join(os.tmpdir(), "research-schematic-routing-"));
   try {
     const dbPath = createProviderDatabase(root);
-    const registryPath = await writeRegistry(root);
+    const registryPath = await writeRegistry(root, {
+      version: 2,
+      providers: registry().providers,
+      routing: { default_alias: "贾维斯", fallback_aliases: [] },
+    });
     const selected = await loadRegisteredCcSwitchImageProvider({
       registryPath,
       dbPath,
@@ -157,10 +176,8 @@ test("normal Cici Switch routing requires a registered alias and validates the r
       timeoutMs: 1,
     });
     assert.equal(cfSelected.model, "gpt-image-2-cf");
-    await assert.rejects(
-      loadRegisteredCcSwitchImageProvider({ registryPath, dbPath, fetchImpl: modelFetch(), timeoutMs: 1 }),
-      /routing is not configured/,
-    );
+    const defaultSelected = await loadRegisteredCcSwitchImageProvider({ registryPath, dbPath, fetchImpl: modelFetch(), timeoutMs: 1 });
+    assert.equal(defaultSelected.alias, "贾维斯");
     await assert.rejects(
       loadRegisteredCcSwitchImageProvider({
         registryPath,
@@ -172,6 +189,22 @@ test("normal Cici Switch routing requires a registered alias and validates the r
       }),
       /does not currently expose gpt-image-2-cf/,
     );
+    const legacyPath = await writeRegistry(path.join(root, "legacy"), registry());
+    let legacyFetchCalls = 0;
+    await assert.rejects(
+      loadRegisteredCcSwitchImageProvider({
+        registryPath: legacyPath,
+        dbPath,
+        alias: "贾维斯",
+        fetchImpl: async (...args) => {
+          legacyFetchCalls += 1;
+          return modelFetch()(...args);
+        },
+        timeoutMs: 1,
+      }),
+      /routing is not configured/,
+    );
+    assert.equal(legacyFetchCalls, 0);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -198,6 +231,16 @@ test("version 2 routing is validated on load and registration writes the default
     assert.equal(saved.version, 2);
     assert.deepEqual(resolveProviderRoute(saved).aliases, ["贾维斯"]);
     assert.deepEqual(resolveProviderRoute(saved, "贾维斯").aliases, ["贾维斯"]);
+    const multi = routedRegistry();
+    assert.deepEqual(resolveProviderRoute(multi), { mode: "default", aliases: ["UESTC", "贾维斯", "夯炸了"], entries: multi.providers.slice(0, 3) });
+    assert.deepEqual(resolveProviderRoute(multi, "UESTC").aliases, ["UESTC", "贾维斯", "夯炸了"]);
+    assert.deepEqual(resolveProviderRoute(multi, "贾维斯").aliases, ["贾维斯", "UESTC", "夯炸了"]);
+    assert.deepEqual(resolveProviderRoute(multi, "夯炸了").aliases, ["夯炸了", "UESTC", "贾维斯"]);
+    const outside = resolveProviderRoute(multi, "备用四号");
+    assert.equal(outside.mode, "default");
+    assert.deepEqual(outside.aliases, ["备用四号", "UESTC", "贾维斯", "夯炸了"]);
+    assert.equal(new Set(outside.aliases).size, outside.aliases.length);
+    assert.throws(() => resolveProviderRoute(multi, "不存在"), /Unknown registered image provider alias/);
     assert.throws(
       () => validateProviderRegistry({
         version: 2,
@@ -237,7 +280,11 @@ test("normal routing does not auto-load the legacy direct env file", async () =>
     for (const key of envKeys) delete process.env[key];
     const dbPath = createProviderDatabase(root);
     const configDir = path.join(root, "config");
-    const registryPath = await writeRegistry(root);
+    const registryPath = await writeRegistry(root, {
+      version: 2,
+      providers: registry().providers,
+      routing: { default_alias: "贾维斯", fallback_aliases: [] },
+    });
     await writeFile(path.join(configDir, "hangzhale.env"), "RESEARCH_IMAGE_API_KEY=legacy-direct-key\nRESEARCH_IMAGE_BASE_URL=https://legacy.example/v1\n");
     await loadRuntimeEnv({
       configDir,

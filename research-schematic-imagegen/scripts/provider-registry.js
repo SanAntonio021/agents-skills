@@ -125,15 +125,17 @@ function findRegistryEntry(registry, alias) {
 
 export function resolveProviderRoute(registryValue, explicitAlias = "") {
   const registry = validateProviderRegistry(registryValue);
-  const requested = String(explicitAlias || "").trim();
-  if (requested) {
-    return { mode: "pinned", aliases: [requested], entries: [findRegistryEntry(registry, requested)] };
-  }
   if (registry.version !== 2) {
     throw new Error("Image provider routing is not configured. Upgrade the private registry to version 2 with a default route.");
   }
-  const aliases = [registry.routing.default_alias, ...registry.routing.fallback_aliases];
-  return { mode: "default", aliases, entries: aliases.map((alias) => findRegistryEntry(registry, alias)) };
+  const defaultAliases = [registry.routing.default_alias, ...registry.routing.fallback_aliases];
+  const requested = String(explicitAlias || "").trim();
+  if (requested) {
+    findRegistryEntry(registry, requested);
+    const aliases = [requested, ...defaultAliases.filter((alias) => alias !== requested)];
+    return { mode: "default", aliases, entries: aliases.map((alias) => findRegistryEntry(registry, alias)) };
+  }
+  return { mode: "default", aliases: defaultAliases, entries: defaultAliases.map((alias) => findRegistryEntry(registry, alias)) };
 }
 
 function providerForEntry(provider, entry) {

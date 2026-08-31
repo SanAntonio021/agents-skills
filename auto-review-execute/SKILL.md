@@ -1,12 +1,12 @@
 ---
 name: auto-review-execute
 description: >
-  在 Claude Code CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
-  在固定副本中审查、修复和测试，最多三轮；Claude 复核同步结果、向用户展示最终计划，并在用户
+  在 Claude Code VS Code 插件或 CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
+  审查并在需修改时返回完整修订稿，最多三轮；Claude 验收回执、向用户展示最终计划，并在用户
   明确确认后按 allowlist 执行。默认跨模型复核只发生在正式计划阶段；执行结果由 Claude 按验收
-  标准检查，不自动再次调用 Codex。bridge 的自动 continuation 仅适用于 Codex-authored 的
-  Codex Desktop 正式计划；本 Skill 是 Claude-authored 方向，不能把 Codex 的审查意见直接自动写入
-  Claude 主项目。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
+  标准检查，不自动再次调用 Codex。Claude 作者任务在同一回合等待回执、修订并继续下一轮，不需要
+  Codex Desktop continuation；只有任务退出后的宿主级唤醒目前不适用于 Claude。不能把 Codex 的审查
+  意见未经作者验收直接写入 Claude 主项目。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
   不猜测路径、不调用旧 codex@openai-codex 插件。
 compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill. Legacy orchestration scripts are offline state helpers only.
 ---
@@ -15,12 +15,14 @@ compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-co
 
 ## 目标和边界
 
-本 Skill 只在 Claude Code CLI 主会话中运行。Claude 是作者和最终验收者；Codex 是 bridge 固定副本
-中的审查/修复者。它不把审查者写入主项目，也不把审查通过当成执行授权。
+本 Skill 只在 Claude Code VS Code 插件或 CLI 主会话中运行。Claude 是作者和最终验收者；Codex 是 bridge
+调度的隔离审查者。正式计划默认使用 inline 零工具审查，不写入主项目，也不把审查通过当成
+执行授权。
 
 旧 `codex@openai-codex` companion、`orchestration-control.mjs` claim 和隐藏 Hook 不再是运行时入口。
-保留的 Node 脚本只维护本地状态、快照和用户确认哈希；模型调度必须通过同一个 MCP，或通过源码中
-明确标记的 bridge CLI 兼容适配器。
+保留的 Node 脚本维护本地状态、快照和用户确认哈希。正式计划互审必须由当前 Claude 作者任务直接
+使用共享 MCP 的 `v2_*` 工具；旧 bridge CLI 适配器只保留给已有运行状态和显式执行任务兼容，不再作为
+正式计划互审入口。
 
 运行根目录为 `%LOCALAPPDATA%\auto-review-execute\<runId>\`：
 
@@ -37,38 +39,41 @@ execution/ 或 rework-attempt-<n>/
 哈希无法读取时停止；不扫描“最新 Markdown”。ExitPlanMode hook 只复制计划、写入 `ready_for_review`
 状态并退出，不启动模型。
 
-Claude 继续流程时，使用 `cross-model-orchestration` 的完整审查包调用：
+Claude 继续流程时，使用 `cross-model-orchestration` 的完整审查包调用共享入口：
 
 ```text
-submit_peer(target=codex, operation=review_repair,
-  artifactType=plan, artifactId=auto-review-execute:<runId>,
-  taskProfile=knowledge_work, round=<1..3>,
-  targetRoot=<受控共同根>, allowedPaths=<计划和本轮输出文件>)
+v2_review_repair_peer(
+  author=claude, artifactType=plan, artifactMode=inline,
+  artifactId=auto-review-execute:<runId>, artifactContent=<plan-working.md>,
+  artifactBytes=<当前 UTF-8 字节数>, artifactSha256=<当前正文 SHA-256>,
+  acceptanceCriteria=<非空>, taskProfile=knowledge_work,
+  seriesId/seriesVersion/latestJobId=<续轮 CAS 字段>)
 ```
 
 `knowledge_work` 当前默认解析为 `gpt-5.6-sol/max`。如调用方明确给出其他 Codex 白名单模型/强度，
 必须保存并按 bridge 的 route audit 验收；恢复时不能换模型、强度或 profile，也不能失败后回退。
 
-轮询只能使用同一 job 的 `await_peer`/`peer_result`。bridge 的 `review_repair` 会在固定副本中一次
-完成审查、修复、测试并返回包含结论、已确认事项、问题与理由、必须修改和剩余风险的完整
-`PLAN_REVIEW`；普通变更自动同步，删除/重命名/权限/类型变化必须停在
-`awaiting_user`，由用户明确批准完整的 `pending_high_risk[].id` 集合后再调用 `approve_peer_sync`。
-授权只重新核对基线和副本哈希并同步，不重新调用 Codex；ID 不匹配、主项目漂移或副本变化都输出
-`PEER_REVIEW_FAILURE_REPORT` 并关闭本轮。
-待授权期间 bridge 保留固定副本和目标根锁；重叠任务必须停止，不能换 `artifactId` 绕过。
+当前 Claude 作者任务必须在同一回合循环同一 job 的 `v2_await_peer`/`v2_peer_result` 直到终态。
+inline `v2_review_repair_peer` 返回包含结论、已确认事项、问题与理由、必须修改和剩余风险的完整
+`PLAN_REVIEW`，并在需要修改时返回完整 `repairedArtifact`；Claude 验证后才更新 run-local
+`plan-working.md`。inline 模式不提供 `targetRoot`、`repairTargets`、`testCommands` 或工作区同步；计划的
+修订与完整性验收始终由当前 Claude 作者任务完成。
 
 ## 审查阶段
 
-审查包必须包含 `artifactBytes`、`artifactSha256`、完整内容或明确路径、前轮 findings、验收标准和
-`reviewerAccess=isolated_write`。Claude 收到 bridge 结果后先检查主项目快照和同步状态，再作语义判断：
+审查包必须包含 `author=claude`、`artifactMode=inline`、完整 `artifactContent`、`artifactBytes`、
+`artifactSha256`、前轮 findings、验收标准和续轮 CAS 字段。权限由 `v2_review_repair_peer` 固定，请求不得
+自行传入 `reviewerAccess`。Claude 收到 bridge 结果后先检查 `completion_receipt`、模型和零工具证据，
+再验收审查正文与 `repairedArtifact`：
 
 - `通过`：保存 `PLAN_REVIEW`，进入 `done_phase1`；
-- `需修改`：由 Claude 修订 `plan-working.md`，更新哈希和 `priorFindings`，最多进入下一轮；本方向
-  不提供可验证的 Claude Desktop continuation API，因此不会擅自自动修改或自动替用户确认。若任务
-  改由 Codex Desktop 作为作者发起，应改用 `cross-model-orchestration` 的 `continuation` 契约。
+- `需修改`：当前 Claude 作者任务验证 `repairedArtifact`，更新 run-local `plan-working.md`、UTF-8 字节数、
+  SHA-256 和前轮 findings，再用同一 series CAS 进入下一轮，最多三轮。正常任务内继续不需要
+  `continuation`；只有 Claude 任务已经退出时，bridge 才因没有可验证的 Claude Code 宿主任务外唤醒
+  接口而停止自动恢复。无论哪条路径，都不会自动替用户确认执行或未经作者验收写入主项目。
 - `实质分歧` 或第 3 轮仍需修改：输出 `DISAGREEMENT_REPORT`，等待用户裁决。
 
-格式错误、bridge 不可用、超时、Codex 越界写入、主项目漂移或同步冲突写入
+格式错误、bridge 不可用、超时、CAS/完整性不匹配、模型回执缺失或零工具隔离失败时写入
 `PEER_REVIEW_FAILURE_REPORT` 并停止，不换模型、不静默降级。旧的
 `orchestration-control.mjs` 和 `check-resume-candidate.mjs` 仅在显式归档诊断标志下可运行，不能作为
 模型调度入口。

@@ -95,7 +95,7 @@
     {
       "id": 13,
       "prompt": "审查者删除文件并改变权限，用户批准了其中一个 ID。",
-      "expected_output": "保持 awaiting_user，要求完整精确 pending change ID 集合；approve_peer_sync 重新核验且不重新调用模型。",
+      "expected_output": "保持 awaiting_user，要求完整精确 pending change ID 集合；v2_approve_peer_sync 重新核验且不重新调用模型。",
       "files": [],
       "expectations": ["不以部分批准扩大范围。"]
     },
@@ -221,7 +221,7 @@
     {
       "id": 31,
       "prompt": "Codex authored workspace plan 的 Opus 结果包含删除项，job 列出 pending_high_risk；我还没有批准。",
-      "expected_output": "停在 awaiting_user_decision，不投递 continuation；只在用户精确批准完整风险 ID 集合后调用 approve_peer_sync，重新验证并同步，不重跑模型，然后才可唤醒原 Codex 任务。",
+      "expected_output": "停在 awaiting_user_decision，不投递 continuation；只在用户精确批准完整风险 ID 集合后调用 v2_approve_peer_sync，重新验证并同步，不重跑模型，然后才可唤醒原 Codex 任务。",
       "files": [],
       "expectations": ["部分、额外或过期 ID 均失败关闭。", "基线漂移和越界同步不能由审批覆盖。"]
     },
@@ -234,10 +234,10 @@
     },
     {
       "id": 33,
-      "prompt": "Claude authored formal plan 返回 needs_changes，我要求 bridge 自动替 Claude 继续修改。",
-      "expected_output": "拒绝自动 continuation：当前没有可验证的 Claude Desktop continuation API；返回持久化审查结果，由 Claude 作者侧按同一 CAS 流程处理。",
+      "prompt": "VS Code Claude Code 插件中的原作者任务已经退出，Claude-authored formal plan 随后返回 needs_changes；我要求 bridge 猜一个 Claude 会话并自动唤醒。",
+      "expected_output": "拒绝任务外唤醒：bridge 没有可验证的 Claude Code VS Code/CLI 宿主唤醒接口；保留持久化审查结果，不猜测会话、不自动重发，恢复后由 Claude 作者侧按同一 CAS 流程继续。",
       "files": [],
-      "expectations": ["不得伪造 thread ID、猜测最新会话或自动写入 Claude 主项目。"]
+      "expectations": ["不得伪造 thread ID、猜测最新会话或自动写入 Claude 主项目。", "不能把缺少任务外唤醒写成正常双向互审不可用。"]
     },
     {
       "id": 34,
@@ -245,6 +245,13 @@
       "expected_output": "接受规范 JSON、带前后说明的单层 json 围栏/对象或受控 Markdown；Markdown 必须包含匹配 marker、结论和五个固定段落，finding 必须有路径行号范围或精确引句，证据请求保持 awaiting_evidence，inline 修订正文使用独立代码块。格式整理最多在同一 job 内调用一次，保持原结论、模型、强度、profile、路由、round/attempt 和 hard_deadline_at，且不写作者工作区。",
       "files": [],
       "expectations": ["缺少结论、固定段落或 finding 证据时失败关闭。", "整理调用零工具、同 job、同路由且不增加 round/attempt。", "整理后仍执行语义/schema/证据校验。"]
+    },
+    {
+      "id": 35,
+      "prompt": "我正在 VS Code 的 Claude Code 插件里制订正式计划，当前任务会一直运行。Codex 返回 needs_changes 后，Claude 能不能自动继续修改并送下一轮？",
+      "expected_output": "可以。当前 Claude 作者任务在同一回合等待原 job，读取持久化回执，修订正文并重算 UTF-8 bytes/SHA-256，再携带同一 series 的 seriesVersion/latestJobId 提交下一轮；正常路径不需要 continuation。",
+      "files": [],
+      "expectations": ["明确正常双向三轮互审对 Codex 和 Claude 对称。", "区分后台 reviewer 会话、任务内等待和任务退出后的宿主唤醒。"]
     }
   ]
 }

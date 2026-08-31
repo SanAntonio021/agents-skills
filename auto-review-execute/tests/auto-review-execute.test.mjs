@@ -43,6 +43,22 @@ function validMetadata() {
   };
 }
 
+test("published skill keeps Claude active-turn review separate from out-of-band wake", () => {
+  const skillPath = path.resolve(new URL("../SKILL.md", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
+  const skill = fs.readFileSync(skillPath, "utf8");
+  assert.match(skill, /Claude Code VS Code 插件或 CLI/u);
+  assert.match(skill, /v2_review_repair_peer/u);
+  assert.match(skill, /v2_await_peer/u);
+  assert.match(skill, /正常任务内继续不需要/u);
+  assert.match(skill, /任务外唤醒/u);
+  assert.match(skill, /artifactMode=inline/u);
+  assert.match(skill, /inline 模式不提供/u);
+  assert.doesNotMatch(skill, /Claude Desktop continuation API/u);
+  assert.doesNotMatch(skill, /submit_peer\(target=codex/u);
+  assert.doesNotMatch(skill, /reviewerAccess=isolated_write/u);
+  assert.doesNotMatch(skill, /`approve_peer_sync`/u);
+});
+
 test("trigger contract rejects missing CLAUDE_PLAN_FILE without guessing recent markdown", () => {
   const root = tempDir();
   const recent = path.join(root, "newest.md");

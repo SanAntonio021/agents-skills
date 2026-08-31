@@ -1,6 +1,6 @@
 ---
 name: pptx
-description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. If a .pptx or .potx file needs to be opened, created, or touched, use this skill. For OfficeCLI-backed inspection or constrained editing, route through the shared local OfficeCLI bridge described below."
+description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. Also use for PowerPoint desktop text-paste or clipboard-formatting questions even when no presentation file is being modified. If a .pptx or .potx file needs to be opened, created, or touched, use this skill. For OfficeCLI-backed inspection or constrained editing, route through the shared local OfficeCLI bridge described below."
 ---
 
 # PPTX creation, editing, and analysis
@@ -23,6 +23,16 @@ images, fills or enhances a template, adds narration or animation, or explicitly
 - If an explicitly requested `ppt-master` is unavailable or its integrity guard fails, report the
   blocker and stop. Do not silently replace it with a system skill, an ad hoc generator, or the
   zero-exposure upstream mirror.
+
+## Manual text paste into PowerPoint
+
+For PowerPoint desktop questions about pasting text from Codex, a browser, or another rich-text
+source into an existing text box, read
+[references/powerpoint-text-paste.md](references/powerpoint-text-paste.md). Confirm that the text
+insertion caret is inside the destination box and use the Paste Options actually shown as evidence.
+Do not transfer Word's default-paste settings to PowerPoint or claim that `Ctrl+V` can be configured
+to always keep text only. Paste Options are context-dependent; when a plain-text choice is absent,
+use the native Paste Special or Quick Access Toolbar routes in the reference.
 
 A `.pptx` is a ZIP archive of XML files. After that routing decision, choose your local approach by
 task:

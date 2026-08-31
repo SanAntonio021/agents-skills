@@ -81,7 +81,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 - **做**：优先用 `/action` 对 ref 执行 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`
 - **等**：用 `/wait` 等 selector、text、URL、`domcontentloaded` 或 `load`，不要固定 sleep
 - **兜底**：snapshot/ref 不足时再用 CSS `/click`，最后才用 `/eval`；每次动作后回读页面状态验证结果
-- **读媒体**：从页面提取媒体 URL 定向读取，只有视觉状态重要时才用 `/screenshot`
+- **读媒体**：先尝试取得服务器文件字节；登录态阻止下载但页面已加载完整图片时，按“媒体资源提取”导出自然尺寸像素；只有视觉状态重要时才用 `/screenshot`
 
 浏览网页时，**先了解页面结构，再决定下一步动作**。不需要提前规划所有步骤。
 
@@ -187,13 +187,20 @@ ref 只对最近一次 snapshot 的当前 generation 有效。页面导航、动
 
 ### 媒体资源提取
 
-判断内容在图片里时，先从 snapshot 或受 task 鉴权的 `/eval` 兜底提取图片 URL，再定向读取；这通常比全页截图更精准。
+判断内容在图片里时，先从 snapshot 或受 task 鉴权的 `/eval` 兜底定位准确的媒体元素、资源 URL、加载状态和自然尺寸，再按来源分流：
+
+1. 公开 URL 或站点下载动作能返回资源时，直接保存服务器文件字节。
+2. 资源需要登录态时，先使用站点已有下载动作或同源浏览器读取；只有取得完整响应时才称为服务器文件字节。
+3. 直链被拒、但页面中的目标 `<img>` 已完整加载时，读取 [`references/cdp-api.md`](references/cdp-api.md) 的“自然尺寸图片像素导出”，通过同源、保持 origin-clean 的 canvas 按 `naturalWidth × naturalHeight` 导出，并分块取回。跨域且不能证明画布保持 origin-clean 时停止，不尝试绕过站点权限。
+4. `/screenshot` 只用于页面视觉状态、视频当前帧，或用户不要求源分辨率的情况；视口截图不能冒充图片原件。
+
+canvas 导出是浏览器对已解码像素的重新编码，不是服务器原始文件。交付记录要区分“服务器文件字节”“浏览器像素导出”和“视口截图”，并记录自然尺寸、输出格式、文件大小与哈希。分块过程必须预设单块和总量上限，不把大段 Base64 写入聊天、日志或交付文本。
 
 ### 技术事实
 - 页面中存在大量已加载但未展示的内容——轮播中非当前帧的图片、折叠区块的文字、懒加载占位元素等，它们存在于 DOM 中但对用户不可见。以数据结构（容器、属性、节点关系）为单位思考，可以直接触达这些内容。
 - DOM 中存在选择器不可跨越的边界。首版 snapshot/ref 不支持跨域 OOPIF；同源 Shadow DOM/iframe 也可能需要 CSS 或 `/eval` 兜底。不要宣称可跨越所有 frame。
 - `/scroll` 到底部会触发懒加载，使未进入视口的图片完成加载。提取图片 URL 前若未滚动，部分图片可能尚未加载。
-- 拿到媒体资源 URL 后，公开资源可直接下载到本地后用读取；需要登录态才可获取的资源才需要在浏览器内 navigate + screenshot。
+- 拿到媒体资源 URL 后，公开资源直接下载；登录态资源按上面的来源分流处理，不再默认退化为视口截图。
 - 短时间内密集创建大量 tab 可能触发网站风控；单个 Proxy 最多同时保留 32 个 active task。
 - 平台返回的"内容不存在""页面不见了"等提示不一定反映真实状态，也可能是访问方式的问题（如 URL 缺失必要参数、触发反爬）而非内容本身的问题。
 
@@ -307,4 +314,5 @@ updated: 2026-03-19
 | `references/migration-dual-proxy.2.md` | 发现旧无版本路由、旧 Proxy 或需要迁移现有调用时 |
 | `references/browser-source-survey.md` | 审查本地设计来源、采纳边界和未来上游同步关系时 |
 | `references/site-patterns/google.com.md` | 读取 Google 搜索页脚的位置来源提示，或执行该站点的最小本机定位验收时 |
+| `references/site-patterns/chatgpt.com.md` | 在 ChatGPT 网页生成、恢复同一会话或提取已加载生成图时 |
 | `references/site-patterns/{domain}.md` | 确定目标网站后，读取对应站点经验 |

@@ -90,6 +90,12 @@
       "prompt": "这次我明确写 --provider 夯炸了 来改图。哪怕它返回503也别换其他渠道；同时不要把图片接口设成 Codex 聊天 provider。",
       "expected_output": "把 CLI 渠道视为 pinned，优先于 RESEARCH_IMAGE_PROVIDER 和注册表 routing；只预检并调用夯炸了，503 后停止且 billable_requests_sent 为1，不尝试 UESTC 或贾维斯；不切换聊天 provider、不修改 CC Switch 数据库或认证。",
       "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "我明确指定 --provider 夯炸了生成一张科研汇报底图。预检网络错误后先停；随后我单独授权改用 chatgpt.com 网页生成，并要求底图确认后还在同一张图上继续编辑。页面一直显示99%，你直接再点一次生成吧。",
+      "expected_output": "先原样报告 pinned 渠道错误并停止；只有取得 chatgpt.com 的准确站点授权后才进入网页路径。网页只提交一次，99%或连接状态不确定时刷新或重新打开同一会话并检查是否已有结果，不再次提交。保留原会话供确认后的同图编辑；优先保存服务器文件字节，若只能导出已加载像素则调用 web-access 的自然尺寸流程，并标注为浏览器像素重新编码而非服务器原始文件。",
+      "files": []
     }
   ]
 }

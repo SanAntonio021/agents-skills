@@ -1,0 +1,112 @@
+{
+  "schema_version": 2,
+  "records": [
+    {
+      "title": "One Author Journal Example",
+      "authors": ["Alice Smith"],
+      "journal": "Journal of Citation Tests",
+      "journal_abbreviation": "J. Citation Tests",
+      "volume": "12",
+      "issue": "3",
+      "pages": "101-109",
+      "publication_date": "2024-05-17",
+      "doi": "10.5555/example.001",
+      "url": "https://publisher.example/one",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "固定期刊样例。"
+    },
+    {
+      "title": "Six Author Journal Example",
+      "authors": ["A. Alpha", "B. Beta", "C. Gamma", "D. Delta", "E. Epsilon", "F. Zeta"],
+      "journal": "IEEE Test Journal",
+      "journal_abbreviation": "IEEE Test J.",
+      "article_number": "0400123",
+      "publication_date": "2025-02-02",
+      "doi": "https://doi.org/10.5555/example.002",
+      "url": "https://publisher.example/six",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "固定六作者样例。"
+    },
+    {
+      "title": "Seven Author Journal Example",
+      "authors": ["A. Alpha", "B. Beta", "C. Gamma", "D. Delta", "E. Epsilon", "F. Zeta", "G. Eta"],
+      "journal": "Photonics Test Letters",
+      "journal_abbreviation": "Photon. Test Lett.",
+      "volume": "4",
+      "issue": "1",
+      "pages": "20–27",
+      "publication_date": "2023-01-14",
+      "doi": "10.5555/example.003",
+      "url": "https://publisher.example/seven",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "固定七作者样例。"
+    },
+    {
+      "title": "Conference Paper With Pages",
+      "authors": ["Carol Jones", "David Lee"],
+      "conference": "2024 International Conference on Citation Systems",
+      "conference_abbreviation": "ICCS",
+      "pages": "44-49",
+      "publication_date": "2024-08-21",
+      "doi": "10.5555/example.004",
+      "url": "https://conference.example/four",
+      "source_type": "conference",
+      "verification_status": "primary-source-verified",
+      "relevance": "固定会议论文样例。"
+    },
+    {
+      "title": "Early Access Without Volume or Pages",
+      "authors": ["Eve Wang", "Frank Liu"],
+      "journal": "IEEE Early Access Journal",
+      "journal_abbreviation": "IEEE Early Access J.",
+      "article_number": "1234567",
+      "publication_date": "2026-07-23",
+      "doi": "10.5555/example.005",
+      "url": "https://publisher.example/early",
+      "source_type": "early-access",
+      "verification_status": "primary-source-verified",
+      "relevance": "固定 Early Access 样例。"
+    },
+    {
+      "title": "Preprint That Later Became a Journal Paper",
+      "authors": ["Grace Chen", "Henry Zhao"],
+      "arxiv_id": "2401.01234",
+      "publication_date": "2024-01-03",
+      "url": "https://arxiv.org/abs/2401.01234",
+      "source_type": "preprint",
+      "preprint": true,
+      "verification_status": "metadata-verified",
+      "relevance": "与下一条为同一工作。"
+    },
+    {
+      "title": "Preprint That Later Became a Journal Paper",
+      "authors": ["Grace Chen", "Henry Zhao"],
+      "journal": "Journal of Final Versions",
+      "journal_abbreviation": "J. Final Versions",
+      "volume": "9",
+      "issue": "2",
+      "pages": "200-211",
+      "publication_date": "2025-02-10",
+      "doi": "10.5555/example.006",
+      "arxiv_id": "2401.01234",
+      "url": "https://publisher.example/final",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "正式发表版本。"
+    },
+    {
+      "title": "Incomplete Metadata Must Survive",
+      "authors": [],
+      "journal": "",
+      "publication_date": "",
+      "doi": "",
+      "url": "https://institution.example/incomplete",
+      "source_type": "journal",
+      "verification_status": "unverified",
+      "relevance": "用于验证缺字段时仍保留条目。"
+    }
+  ]
+}

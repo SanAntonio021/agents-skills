@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-09-01`
 - 最近来源登记审核：`2026-09-01`
-- 说明：用户批准将 K-Dense research-lookup 1.4 本地化为 paper-search；本地只吸收证据记录整理方法，检索统一通过 web-access，更新只做人工审查提醒。
+- 说明：用户批准将 K-Dense research-lookup 1.4 本地化为 paper-search，并将 citation-management 2.0 的引用处理思路吸收到同一入口；本地联网统一通过 web-access，更新只做人工审查提醒。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -43,6 +43,51 @@
 - `SKILL.md`
 - `scripts/manuscript_packet.py`
 - `scripts/research_lookup.py`
+
+### 许可证监控
+
+- `LICENSE.md`
+
+## paper-search-kdense-citation-management
+
+- 仓库：https://github.com/K-Dense-AI/scientific-agent-skills.git
+- 当前上游路径：`skills/citation-management`
+- 接受时上游路径：`skills/citation-management`
+- 技能入口：`skills/citation-management/SKILL.md`
+- 已接受提交：`1dd0fccf46fc3c9855c4a0c313a0c57fe4319883`
+- 已接受版本：`2.0`
+- 基线类型：`exact`
+- 更新策略：`review`
+- 许可证：`MIT`
+- 镜像登记：`k-dense-ai-scientific-agent-skills`
+
+### 证据
+
+- 用户于 2026-09-01 批准把上游引用管理能力本地化进现有 paper-search，不新增大而全技能。
+- 只参考 BibTeX 解析、规范化、字段一致性检查和问题分类思路；IEEE 渲染独立依据 IEEE 官方 Reference Guide。
+- 本地证据文件：`paper-search/references/upstream-source.md`
+- 本地证据文件：`paper-search/references/citation-workflow.md`
+- 本地证据文件：`paper-search/README.md`
+
+### 已吸收
+
+- 嵌套花括号安全的 BibTeX 解析与稳定渲染思路；DOI 优先、题名兜底的匹配；字段规范化、必要字段检查和引用问题分类；只读检查与明确要求后才写文件。
+
+### 明确不吸收
+
+- requests、scholarly 和 OpenAlex、PubMed、Crossref、DataCite、arXiv 的直接联网客户端；API Key、邮箱、代理和供应商配置；强制补齐缺失字段；Google Scholar 抓取；固定篇数或 venue 数量；整篇稿件引用覆盖、Zotero 和写作工作流集成；默认多文件或原地改写；静默丢弃复杂条目。
+
+### 跟踪范围
+
+- `SKILL.md`
+- `scripts/_common.py`
+- `scripts/format_bibtex.py`
+- `scripts/validate_citations.py`
+- `references/core_workflow.md`
+- `references/metadata_extraction.md`
+- `references/bibtex_formatting.md`
+- `references/citation_validation.md`
+- `assets/citation_checklist.md`
 
 ### 许可证监控
 

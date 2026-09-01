@@ -75,8 +75,11 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 ### 2. CC Switch 记录与启用
 
 - 用只读方式打开 `cc-switch.db`，先运行 `PRAGMA integrity_check`。
-- 核对目标技能的 `directory`、`repo_branch`、`enabled_claude` 和 `enabled_codex`。
-- 数据库或面板显示启用不替代磁盘和行为验收。
+- 核对目标仓库在 `skill_repos` 中只有一条有效记录，`branch` 与远端目标分支一致且 `enabled = 1`。
+- 核对每个目标技能在 `skills` 中只有一条记录；`name`、`directory`、`repo_owner`、`repo_name`、
+  `repo_branch`、`readme_url`、`enabled_claude` 和 `enabled_codex` 都必须与预期源码和目标分支一致。
+- 文件已经对齐只证明当前副本相同。旧分支、旧 `readme_url` 或错误启用状态会破坏后续更新，仍属于
+  元数据验收失败；数据库或面板显示启用也不替代磁盘和行为验收。
 
 ### 3. 比较全部已提交文件
 
@@ -168,8 +171,9 @@ helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份
 
 最终生效必须同时满足：定向同步 helper 退出码为 `0`、状态为 `runtime_active`；随后使用完全相同的
 `ExpectedRemoteCommit` 与 `Skills` 执行 `-VerifyOnly`，退出码也为 `0`、状态也为 `runtime_active`；
-两次结果中的提交身份、目标集合、四层文件集合和 SHA-256 均一致。任一条件缺失时，只能写“源码已推送，
-运行时未生效”或“运行时待验收”。
+两次结果中的 `cc_switch_metadata.valid` 都为 `true`、`issues` 为空，数据库完整性、仓库分支和每个目标
+技能的来源及启用元数据均一致，且提交身份、目标集合、四层文件集合和 SHA-256 均一致。任一条件缺失时，
+只能写“源码已推送，运行时未生效”或“运行时待验收”。
 
 ## CC Switch SSOT 报错
 

@@ -143,13 +143,15 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 [references/skill-hygiene.md](references/skill-hygiene.md)，依次核对：
 
 1. 源码提交与远端目标分支一致；
-2. cc-switch 数据库完整，目标技能在 Claude 和 Codex 两侧均已启用；
+2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 以及目标技能的目录、仓库归属、
+   `repo_branch`、`readme_url` 和 Claude/Codex 启用状态均与预期源码一致；
 3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
 4. 结构校验和相关确定性测试通过；
 5. 用合成数据在 Codex、Claude 全新只读会话分别验证路由和关键安全边界。
 6. 定向同步返回退出码 `0` 和 `runtime_active` 后，再以完全相同的 `ExpectedRemoteCommit` 与
-   `Skills` 运行一次 `-VerifyOnly`；第二次也返回退出码 `0`、`runtime_active`，且四层文件集合和
-   SHA-256 仍一致，才写“运行时已生效”。
+   `Skills` 运行一次 `-VerifyOnly`；两次结果都必须显示 `cc_switch_metadata.valid == true` 且没有
+   元数据问题，第二次也返回退出码 `0`、`runtime_active`，四层文件集合和 SHA-256 仍一致，才写
+   “运行时已生效”。
 
 工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
 LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。

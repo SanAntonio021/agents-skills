@@ -299,6 +299,19 @@
         "输出要求完整同步与后续 `-VerifyOnly` 两次都返回 `cc_switch_metadata.valid = true`。",
         "在 helper 合同补齐并重跑前，输出保持运行时待验收，不直接修改数据库或运行时目录。"
       ]
+    },
+    {
+      "id": 25,
+      "prompt": "`skill-check` 自己的 `repo_branch` 和 `readme_url` 都是 `main`，仓库记录也是 `main`，但 CC Switch 检查更新时日志仍在请求 `agents-skills/master.zip`，因此目标没有更新按钮。同仓库另外三个已安装技能还残留 `master`。该怎么判断和恢复？",
+      "expected_output": "把它识别为仓库级元数据阻断。CC Switch 更新扫描以仓库为单位，不能只验收目标技能；应只读枚举同仓库全部已安装技能的 `repo_branch` 和 `readme_url`，完整列出旧分支记录并停止自动点击。多个技能受影响时，不套用单技能重装的隐含范围；获得对明确清单的批准后逐项通过 CC Switch 从真实分支恢复，或在 GUI 无法修复时另行批准最小数据库兜底。全部记录恢复后，用最终远端 SHA 和目标 Skill 集合重新运行完整同步及 `-VerifyOnly`，两次仓库级元数据和四层文件验收全部通过才算完成。",
+      "files": [],
+      "expectations": [
+        "输出不会因为目标技能和 `skill_repos.branch` 已是 `main` 就忽略日志中的 `master.zip` 请求。",
+        "输出会按同一 `repo_owner` 和 `repo_name` 枚举全部已安装技能的 `repo_branch` 与 `readme_url`。",
+        "输出明确说明仓库级扫描会被非目标兄弟技能的旧分支记录阻断。",
+        "输出在完整列出多个受影响技能并获得批准前，不自动卸载、重装或修改数据库。",
+        "修复后要求用同一最终远端 SHA 和目标 Skill 集合依次运行完整同步与 `-VerifyOnly`，两次都通过仓库级元数据和四层文件验收。"
+      ]
     }
   ]
 }

@@ -308,6 +308,7 @@ Choose colors that match your topic — don't default to generic blue. Use these
 
 **Font names you write into the .pptx are rendered by the user's PowerPoint, not by this environment.** Your visual QA renders via LibreOffice, which substitutes fonts it doesn't have — and for some fonts the substitute has different widths, so your QA preview can show text overflow (or fit) that the real deck won't have. To keep your QA trustworthy:
 
+- **Use native PowerPoint font-size stops for every newly authored or model-resized text run.** Choose a point size exposed by PowerPoint's standard font-size control and reachable through its built-in Increase/Decrease Font Size commands (for example, `14 pt`, not a conversion residue such as `13.9 pt`). If an existing user-supplied template intentionally uses a nonstandard size, preserve it unless the user asks to normalize it; do normalize fractional residue introduced by our own authoring, scaling, import, or export path.
 - **Safe fonts** (render true-to-width in QA *and* ship with Office): **Arial, Calibri, Cambria, Times New Roman, Courier New, Bookman Old Style, Century Schoolbook**. Use these for body text and anything where fit matters.
 - **Headers with personality at zero QA risk**: pair a safe-list serif header (Cambria, Bookman Old Style, Century Schoolbook) with a safe-list sans body (Calibri or Arial). You get visual contrast without giving up reliable overflow checks.
 - **If the user asks for a font outside the safe list** (e.g. Georgia or Trebuchet MS): use it where the user asked, but size those containers with extra slack (~10%) and don't trust QA text-fit on those elements — the preview of that font is approximate. If the user hasn't specified, prefer safe-list fonts for body text.
@@ -410,6 +411,15 @@ is below 12pt, automatic shrink-to-fit reduces the effective size below its gate
 effective size cannot be resolved. `spAutoFit` may expand a shape but does not waive an
 unresolved base font size. Fix the layout and rerun the audit; the script does not
 mechanically enlarge text.
+
+The minimum-size audit does not by itself prove that model-authored text uses native
+PowerPoint font-size stops. For every newly authored or resized text run, inspect the
+exported run-level OOXML and confirm that `a:rPr@sz` / `a:defRPr@sz` equals the exact
+intended hundredths of a point (`14 pt` -> `1400`), with no conversion residue such as
+`1390`. When an authoring API uses CSS pixels, start from the intended standard point
+size and use `px = pt * 96 / 72`; do not round the pixel value first. Imported rich text
+can keep explicit run sizes even after a whole-text setter, so update and verify every
+affected run or range rather than trusting the text-box default.
 
 For a user-authorized exception to the 12pt visible-text gate, pass
 `--exceptions exceptions.json`. Each entry must identify one slide and one shape and

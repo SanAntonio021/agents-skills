@@ -261,13 +261,15 @@
     {
       "id": 22,
       "prompt": "同步助手和 `-VerifyOnly` 都退出 0、返回 `runtime_active`，源码、CC Switch、Claude、Codex 四层文件也一致；但 `cc-switch.db` 里 `product-research-workbook` 的 `repo_branch` 和 `readme_url` 仍指向 `master`，仓库实际分支是 `main`。本周周检能记录成功吗？",
-      "expected_output": "不能。文件一致只证明当前副本相同，旧分支元数据会破坏后续更新。先只读检查数据库完整性、仓库记录和目标技能完整来源及启用元数据；经批准按最小范围修复或由用户在 CC Switch 中修复，再用同一远端 SHA 和 Skill 集合重新运行同步助手与 `-VerifyOnly`，全部通过后才能记录成功。",
+      "expected_output": "不能。文件一致只证明当前副本相同，旧分支元数据会破坏后续更新。先只读检查数据库完整性、仓库记录和目标技能完整来源及启用元数据；经批准优先在 CC Switch 中只卸载并从真实分支重新安装该技能，同时启用 Claude/Codex。重装不可用、未能修复或存在未处理的本机私有文件时，才进入单独批准的最小数据库修复。最后用同一远端 SHA 和 Skill 集合重新运行同步助手与 `-VerifyOnly`，两次 `cc_switch_metadata.valid` 和四层文件验收全部通过后才能记录成功。",
       "files": [],
       "expectations": [
         "输出不会仅凭两次 `runtime_active` 和四层文件一致记录成功。",
         "输出要求检查 `PRAGMA integrity_check`、`skill_repos.branch/enabled` 以及技能的目录、仓库归属、`repo_branch`、`readme_url` 和双端启用状态。",
         "输出明确识别 `master` 与预期 `main` 不一致，并把它视为阻断验收的元数据问题。",
-        "输出不会直接改运行时目录或未经批准修改数据库；修复后要求用同一远端 SHA 和 Skill 集合重跑同步助手与 `-VerifyOnly`。"
+        "输出不会直接改运行时目录或未经批准修改数据库；单技能场景优先通过 CC Switch 定向卸载并从真实分支重装，数据库修复只作兜底。",
+        "输出要求重装前检查按设计不进 Git 的本机私有文件，避免卸载造成不可恢复的本机状态丢失。",
+        "修复后要求用同一远端 SHA 和 Skill 集合重跑同步助手与 `-VerifyOnly`，两次都必须有 `cc_switch_metadata.valid = true`。"
       ]
     },
     {
@@ -283,6 +285,19 @@
         "输出不会修改上游 `quick_validate.py`，也不会删除 Claude 扩展字段来制造绿色结果。",
         "如果目标要求 Claude、Codex 都只能由用户点名，输出会把尚未独立验证的 Codex 侧保留为未完成。",
         "通用核心字段错误或没有官方依据的未知扩展仍按结构失败处理。"
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "同步助手和后续 `-VerifyOnly` 都退出 0、写了 `runtime_active`，四层文件也一致，但两份 JSON 都没有 `cc_switch_metadata` 字段。人工只读查询数据库暂时没发现问题。自动周检可以记录运行时已生效吗？",
+      "expected_output": "不能。人工数据库查询可以定位当前状态，但不能替代受控同步工具的机器可读回执。当前 helper 合同不完整，应先使用包含只读 CC Switch 元数据验收的已发布 helper；它必须检查数据库完整性、仓库和技能唯一记录、分支、readme URL、目录、仓库归属及双端启用状态，并在完整同步与 `-VerifyOnly` 两次结果中都返回 `cc_switch_metadata.valid = true`。缺少任一回执时保持运行时待验收。",
+      "files": [],
+      "expectations": [
+        "输出不会仅凭退出码 0、`runtime_active` 和四层文件一致记录成功。",
+        "输出明确区分人工只读数据库诊断与 helper 的机器可读验收回执。",
+        "输出要求 helper 核对 `PRAGMA integrity_check`、仓库和技能唯一记录、分支、`readme_url`、目录、仓库归属及 Claude/Codex 启用状态。",
+        "输出要求完整同步与后续 `-VerifyOnly` 两次都返回 `cc_switch_metadata.valid = true`。",
+        "在 helper 合同补齐并重跑前，输出保持运行时待验收，不直接修改数据库或运行时目录。"
       ]
     }
   ]

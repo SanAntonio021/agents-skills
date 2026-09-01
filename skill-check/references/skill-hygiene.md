@@ -122,8 +122,23 @@ $env:PYTHONUTF8 = '1'
 $env:PYTHONIOENCODING = 'utf-8'
 ```
 
-否则 `Path.read_text()` 可能按 GBK 读取 UTF-8 `SKILL.md`，产生假失败。随后运行
-`skill-creator/scripts/quick_validate.py` 和目标技能已有的合同测试、校验器测试。
+否则 `Path.read_text()` 可能按 GBK 读取 UTF-8 `SKILL.md`，产生假失败。随后先列明目标 Skill 实际面向
+哪些运行时，再把 frontmatter 分成通用字段和目标运行时扩展，分别验收：
+
+1. `skill-creator/scripts/quick_validate.py` 继续作为 Agent Skills / OpenAI 通用格式的严格检查。`name`、
+   `description` 等通用字段不合格时直接阻断；不要为了通过检查而修改上游校验器。
+2. 如果严格检查唯一拒绝的是目标运行时官方文档明确支持的扩展字段，分别报告“通用格式不兼容”和
+   “目标运行时扩展有效”，不能把它们合并成“整个 Skill 无效”，也不能删掉扩展字段制造假通过。
+3. `disable-model-invocation` 是 Claude Code 的调用控制字段，只能据此判断 Claude 的发现和调用行为。
+   同一 Skill 供 Codex 使用时，必须在全新 Codex 会话中单独验证；没有 Codex 证据时不能声称它会隐藏
+   description、禁止自动调用或实现“仅用户点名”。若成功标准要求 Claude、Codex 都只能由用户点名，
+   Codex 侧未验证就仍是未完成。
+4. 不在目标运行时官方文档中的未知字段仍按结构失败处理，不能套用“运行时扩展”名义放行。
+
+判据以 [Agent Skills 规范](https://github.com/agentskills/agentskills/blob/main/docs/specification.mdx)、
+[OpenAI skill-creator](https://github.com/openai/skills/blob/main/skills/.system/skill-creator/SKILL.md) 和
+[Claude Code Skills 文档](https://code.claude.com/docs/en/skills) 为准；目标技能已有的合同测试、校验器
+测试仍要运行。最终报告至少把“通用格式”“Claude”“Codex”三项状态分开，不用一项结果替代另外两项。
 
 ### 6. Codex 与 Claude 行为验收
 

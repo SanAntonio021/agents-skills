@@ -269,6 +269,21 @@
         "输出明确识别 `master` 与预期 `main` 不一致，并把它视为阻断验收的元数据问题。",
         "输出不会直接改运行时目录或未经批准修改数据库；修复后要求用同一远端 SHA 和 Skill 集合重跑同步助手与 `-VerifyOnly`。"
       ]
+    },
+    {
+      "id": 23,
+      "prompt": "`chat-notes/SKILL.md` 的 frontmatter 有合法的 `name`、`description` 和 `disable-model-invocation: true`。OpenAI `skill-creator/scripts/quick_validate.py` 只因这个额外字段返回 `Unexpected key`；CC Switch 元数据验收正常，Claude Code 官方文档也明确支持该字段。周检能否直接把整个 Skill 判为无效？这个字段是否同时保证 Codex 也只能由用户点名调用？",
+      "expected_output": "不能把两件事混成一个结论。应分别报告：Agent Skills / OpenAI 严格通用格式因额外字段不兼容；Claude Code 扩展在官方文档和对应行为验证成立时有效；该字段不能证明 Codex 会隐藏 description 或禁止自动调用，Codex 必须在全新会话中单独验证。不要修改上游 quick_validate 或删除 Claude 字段制造假通过；若成功标准要求双端都只能由用户点名，Codex 侧没有证据时验收仍未完成。",
+      "files": [],
+      "expectations": [
+        "输出不会仅凭 OpenAI 严格校验器的 `Unexpected key` 把整个 Skill 判为无效。",
+        "输出把 Agent Skills / OpenAI 通用格式、Claude Code 扩展和 Codex 行为三项状态分开。",
+        "输出确认 `disable-model-invocation` 的有效结论只来自 Claude Code 官方支持及 Claude 侧行为证据。",
+        "输出不会声称该字段能让 Codex 隐藏 description、禁止自动调用或实现仅用户点名。",
+        "输出不会修改上游 `quick_validate.py`，也不会删除 Claude 扩展字段来制造绿色结果。",
+        "如果目标要求 Claude、Codex 都只能由用户点名，输出会把尚未独立验证的 Codex 侧保留为未完成。",
+        "通用核心字段错误或没有官方依据的未知扩展仍按结构失败处理。"
+      ]
     }
   ]
 }

@@ -18,7 +18,7 @@
   {"id": "commit-message", "category": "negative", "query": "Make this Git commit message shorter.", "should_trigger": false, "expected_route": "none"},
   {"id": "chinese-paper-delivery", "category": "near-miss", "query": "润色这段中文论文交付稿，不要改变术语和证据强度。", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
   {"id": "journal-selection", "category": "negative", "query": "Which journal should I submit this paper to?", "should_trigger": false, "expected_route": "journal-selection"},
-  {"id": "fact-research", "category": "negative", "query": "Find primary sources that verify these English claims.", "should_trigger": false, "expected_route": "research-lookup"},
+  {"id": "fact-research", "category": "negative", "query": "Find primary sources that verify these English claims.", "should_trigger": false, "expected_route": "paper-search"},
   {"id": "simulated-bare-humanizer", "category": "ambiguous", "query": "humanizer", "should_trigger": true, "expected_route": "humanizer", "note": "Simulated sample; not a verbatim user quote."},
   {"id": "simulated-mixed-english-primary", "category": "mixed-language", "query": "Please humanize this English-first mixed passage while keeping the Chinese phrase unchanged: This release marks a pivotal milestone for our platform，也体现了团队持续创新的承诺。", "should_trigger": true, "expected_route": "humanizer", "note": "Simulated sample; not a verbatim user quote."},
   {"id": "simulated-ieee-humanizer-collision", "category": "near-miss", "query": "Please use humanizer to polish this IEEE Transactions manuscript section for submission, preserving terminology, citations, and evidence strength.", "should_trigger": false, "expected_route": "ieee-manuscript-edit", "note": "Simulated sample; not a verbatim user quote."}

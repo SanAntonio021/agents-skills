@@ -40,11 +40,23 @@ metadata:
 
 默认总路径是 `本地登录账号 -> UESTC -> 贾维斯 -> 夯炸了`，不要询问用户用哪家渠道。
 
-`本地登录账号` 指当前宿主提供的原生图像生成或编辑工具。它不是 CC Switch provider，不写入私有注册表，也不要求切换聊天 provider。宿主暴露原生图像工具时先调用一次；宿主没有该工具时直接进入 CC Switch 路径，不把“工具不存在”说成账号故障。宿主原生工具不能证明或选择用户要求的精确模型时，该路径不满足请求，直接进入能够验证模型的 CC Switch 路径。
+`本地登录账号` 指这台机器已经登录的 ChatGPT 账号。它不是 CC Switch provider，不写入私有注册表，也不要求切换当前聊天 provider。文本生图默认运行 `scripts/generate-local-account.js`：脚本先确认本机仍是 ChatGPT 登录，再启动一次隔离的官方 Codex 临时会话，并用 `--ignore-user-config` 绕开当前任务的自定义 provider 和 CC Switch 配置。这样本地账号生图不会跟随当前聊天线路进入只支持 Responses 的代理。
+
+不要在 CC Switch 或其他自定义 provider 任务里把当前会话的内嵌 `image_gen` 当作本地账号路径。该扩展会继承任务 provider；代理没有承接对应生图入口时会在渲染前立即失败。隔离官方会话每项文本生图只调用一次内置生图工具，原始返回保留在 `$CODEX_HOME/generated_images/<thread-id>/`，脚本再把同一文件非覆盖地复制到用户指定的工作路径。脚本找不到 Codex Desktop CLI、内置生图功能未暴露或官方临时会话发生可换路故障时，进入 CC Switch；需要重新登录、账号或额度有问题、请求被拒绝时立即停止。
+
+本地登录账号路径不能证明或选择用户要求的精确模型时，该路径不满足请求，直接进入能够验证模型的 CC Switch 路径。当前隔离脚本只承接文本生图；图像编辑继续使用宿主原生编辑工具。宿主没有原生编辑工具时进入 CC Switch，不把“工具不存在”说成账号故障。
 
 CC Switch 是第二层路径，继续使用私有注册表 v2 的顺序 `UESTC -> 贾维斯 -> 夯炸了`。CLI `--provider` 或 `RESEARCH_IMAGE_PROVIDER` 只改变这一层的首选渠道，不锁定一家，也不把该渠道提到本地登录账号之前；首选失败后按 CC Switch 全局默认顺序补齐尚未尝试的渠道。CLI 优先于环境变量。例如显式贾维斯时总顺序为 `本地登录账号 -> 贾维斯 -> UESTC -> 夯炸了`，显式夯炸了时为 `本地登录账号 -> 夯炸了 -> UESTC -> 贾维斯`。
 
-宿主原生工具无法由 Node.js 脚本调用，因此 `check-mode.js`、`generate.js` 和 `edit.js` 只负责 CC Switch 或 direct 这一段，不代表完整总路径。代理必须先执行本地登录账号路径，只有允许换路时才调用这些脚本。
+`generate-local-account.js` 负责总路径第一层的本地账号文本生图；`check-mode.js`、`generate.js` 和 `edit.js` 只负责 CC Switch 或 direct 这一段。代理必须先执行本地登录账号路径，只有允许换路时才调用 CC Switch 脚本。
+
+本地账号文本生图：
+
+```powershell
+node <skill-dir>/scripts/generate-local-account.js --promptfile <prompt.md> --image <working/raw/local-account.png> --json
+```
+
+成功 JSON 必须含 `route_mode=local-account-official`、`route_source=chatgpt-oauth`、`sourceImage`、`savedImage`、实际尺寸、字节数、SHA-256 和 `native_requests_sent=1`。只有 `savedImage` 是可解码图片且与 `sourceImage` 哈希一致时才算通过；临时官方会话能启动或只返回路径文字都不算通过。
 
 ```powershell
 node <skill-dir>/scripts/check-mode.js --json
@@ -57,7 +69,7 @@ node <skill-dir>/scripts/check-mode.js --json
 - 必须立即停止：本地或中转账号需要重新登录、密钥失效、账号无权限、余额不足、套餐到期或未开通生图，请求本身写错，以及平台明确拒绝生成。注册表无效、CC Switch 数据库打不开、登记渠道丢失或身份变化也必须停止，不能伪装成普通渠道故障。
 - `/models` 预检单次 10 秒，只对网络错误、超时、429 和 5xx 重试一次；预检不计费。每个渠道每次操作最多发送一次正式生成或编辑 POST。
 - 单家正式请求上限 600 秒，结果 URL 下载上限 60 秒，整次操作总预算 900 秒。预算不足时不再发起下一家。
-- 正式请求发出后的任何换路都可能导致重复计费。本地原生工具每项生成或编辑最多调用一次；在 `record.md` 中记录 `native_requests_sent`。成功和失败 JSON 继续返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；`billable_requests_sent` 只统计 CC Switch 已发出的生成/编辑 POST，不能把它误写成总请求数。记录总数时使用 `native_requests_sent + billable_requests_sent`。
+- 正式请求发出后的任何换路都可能导致重复计费。本地账号每项生成或编辑最多调用一次；文本生图只能执行一个隔离官方会话，不再额外调用当前任务的内嵌工具。在 `record.md` 中记录 `native_requests_sent`。成功和失败 JSON 继续返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；`billable_requests_sent` 只统计 CC Switch 已发出的生成/编辑 POST，不能把它误写成总请求数。记录总数时使用 `native_requests_sent + billable_requests_sent`。
 - `/models` 仅证明模型可见。每个新渠道仍需分别取得真实 `/images/generations` 与 `/images/edits` 证据，不能用一种接口的成功替代另一种。
 - `gpt-image-2` 是登记时的默认模型。`gpt-image-2-cf` 仅在用户明确指定，且该渠道当前 `/models` 返回它时使用。
 - API key 只从 CC Switch 数据库读取到当前进程内存，不写进 skill、项目、注册表、命令行参数或日志；不切换当前聊天 provider。
@@ -178,7 +190,7 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 - 对线条、箭头、光束和规则边框，模型编辑若出现边缘模糊、双边、线宽漂移、过强光晕或端点错位，最多再做一次针对性编辑；仍不清晰就停止生成。
 - 模型不适合稳定绘制简单几何元素时，改用脚本后期绘制。最终载体是 PPTX 且用户明确授权修改该文件时，优先使用 PowerPoint 原生矢量线条和发光效果；没有 PPTX 修改授权时，只处理位图或给出可复现的线宽、颜色、透明度和发光参数。
 
-本地登录账号可用时，先用宿主原生图像工具生成或编辑，并把实际路径记入 `record.md`。以下命令只在需要进入 CC Switch 或 direct 路径时使用。
+本地登录账号可用时，文本生图先用 `generate-local-account.js`，图像编辑先用宿主原生编辑工具，并把实际来源路径和工作路径记入 `record.md`。以下命令只在需要进入 CC Switch 或 direct 路径时使用。
 
 文本生图：
 

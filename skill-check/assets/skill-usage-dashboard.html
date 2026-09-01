@@ -4,24 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>本地技能触发谱</title>
+  <title>技能调用周报</title>
   <style>
     :root {
-      --canvas: #f4f7fb;
+      --canvas: #f3f5f8;
       --surface: #ffffff;
-      --surface-soft: #eef3f9;
-      --ink: #172235;
-      --muted: #64748b;
-      --grid: #d7e0ec;
-      --codex: #2563eb;
-      --codex-soft: #dbeafe;
-      --claude: #c66a2b;
-      --claude-soft: #ffead5;
-      --review: #b43b47;
-      --review-soft: #fde8eb;
-      --zero: #8a98ab;
-      --shadow: 0 18px 55px rgba(44, 62, 91, 0.09);
-      --radius: 20px;
+      --surface-soft: #f7f9fb;
+      --ink: #132238;
+      --muted: #58677b;
+      --border: #d8e0e9;
+      --navy: #184c78;
+      --navy-soft: #eaf1f7;
+      --codex: #285cc4;
+      --claude: #b45d28;
+      --review: #a33a43;
+      --review-soft: #faecee;
+      --success: #247156;
+      --zero: #8a98aa;
+      --radius: 12px;
     }
 
     * { box-sizing: border-box; }
@@ -32,87 +32,59 @@
       margin: 0;
       min-width: 320px;
       color: var(--ink);
-      background:
-        linear-gradient(rgba(215, 224, 236, 0.45) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(215, 224, 236, 0.45) 1px, transparent 1px),
-        radial-gradient(circle at 8% -10%, rgba(37, 99, 235, 0.11), transparent 30rem),
-        radial-gradient(circle at 100% 5%, rgba(198, 106, 43, 0.09), transparent 28rem),
-        var(--canvas);
-      background-size: 32px 32px, 32px 32px, auto, auto, auto;
+      background: var(--canvas);
       font-family: "Microsoft YaHei UI", "Segoe UI Variable", "Segoe UI", sans-serif;
+      font-size: 14px;
       line-height: 1.5;
     }
 
     button, input, select { font: inherit; }
 
     button, select, input {
-      border: 1px solid var(--grid);
       color: var(--ink);
+      border: 1px solid var(--border);
       background: var(--surface);
     }
 
     button:focus-visible, select:focus-visible, input:focus-visible {
-      outline: 3px solid rgba(37, 99, 235, 0.23);
+      outline: 3px solid rgba(40, 92, 196, 0.2);
       outline-offset: 2px;
     }
 
     .shell {
-      width: min(1500px, calc(100% - 40px));
+      width: min(1400px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 36px 0 56px;
+      padding: 24px 0 36px;
     }
 
-    .masthead {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
-      gap: 24px;
-      padding: 30px 32px;
-      border: 1px solid rgba(255, 255, 255, 0.86);
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-    }
-
-    .eyebrow {
+    .topbar {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 0 9px;
-      color: var(--codex);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 14px;
     }
 
-    .pulse {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.1);
+    .context {
+      margin: 0 0 2px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 700;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(30px, 4vw, 54px);
-      line-height: 1.05;
-      letter-spacing: -0.045em;
-    }
-
-    .subtitle {
-      max-width: 760px;
-      margin: 13px 0 0;
-      color: var(--muted);
-      font-size: 15px;
+      font-family: "Segoe UI Variable Display", "Microsoft YaHei UI", sans-serif;
+      font-size: clamp(25px, 3vw, 34px);
+      line-height: 1.15;
+      letter-spacing: -0.025em;
     }
 
     .week-control {
       display: grid;
-      gap: 7px;
-      min-width: 240px;
+      grid-template-columns: auto minmax(210px, 245px);
+      align-items: center;
+      gap: 10px;
     }
 
     .week-control label, .field label {
@@ -123,30 +95,65 @@
 
     select, input[type="search"] {
       width: 100%;
-      min-height: 44px;
-      padding: 9px 12px;
-      border-radius: 11px;
+      min-height: 40px;
+      padding: 8px 11px;
+      border-radius: 8px;
+    }
+
+    .conclusion {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: 20px 22px;
+      border: 1px solid var(--border);
+      border-left: 6px solid var(--navy);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .section-label {
+      margin: 0 0 4px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .conclusion h2 {
+      margin: 0;
+      font-family: "Segoe UI Variable Display", "Microsoft YaHei UI", sans-serif;
+      font-size: clamp(21px, 2.4vw, 30px);
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+
+    .conclusion-detail {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 14px;
     }
 
     .status-line {
       display: flex;
       flex-wrap: wrap;
-      gap: 9px;
-      margin-top: 17px;
+      justify-content: flex-end;
+      gap: 8px;
+      max-width: 380px;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      min-height: 30px;
-      padding: 5px 10px;
-      border: 1px solid var(--grid);
-      border-radius: 999px;
-      background: var(--surface);
+      min-height: 28px;
+      padding: 4px 9px;
       color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface-soft);
       font-size: 12px;
       font-weight: 700;
+      white-space: nowrap;
     }
 
     .badge::before {
@@ -157,26 +164,29 @@
       background: var(--zero);
     }
 
-    .badge.complete::before { background: #16815e; }
+    .badge.complete::before { background: var(--success); }
     .badge.incomplete::before { background: var(--review); }
 
     .metrics {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 13px;
-      margin: 18px 0;
+      margin: 14px 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
     }
 
     .metric {
-      min-height: 122px;
-      padding: 20px;
-      border: 1px solid rgba(215, 224, 236, 0.9);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 10px 35px rgba(44, 62, 91, 0.055);
+      min-width: 0;
+      padding: 13px 16px;
+      border-right: 1px solid var(--border);
     }
 
+    .metric:last-child { border-right: 0; }
+
     .metric-label {
+      display: block;
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
@@ -184,34 +194,26 @@
 
     .metric-value {
       display: block;
-      margin-top: 7px;
-      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-      font-size: clamp(28px, 3vw, 42px);
+      margin-top: 3px;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 25px;
       font-weight: 750;
-      line-height: 1;
-      letter-spacing: -0.06em;
-    }
-
-    .metric-note {
-      display: block;
-      margin-top: 11px;
-      color: var(--muted);
-      font-size: 11px;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
     }
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 330px;
-      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 14px;
       align-items: start;
     }
 
     .panel {
       overflow: hidden;
-      border: 1px solid rgba(215, 224, 236, 0.95);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.93);
-      box-shadow: 0 14px 42px rgba(44, 62, 91, 0.07);
+      background: var(--surface);
     }
 
     .panel-head {
@@ -219,20 +221,20 @@
       align-items: center;
       justify-content: space-between;
       gap: 18px;
-      padding: 21px 23px;
-      border-bottom: 1px solid var(--grid);
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .panel-title { margin: 0; font-size: 18px; letter-spacing: -0.02em; }
+    .panel-title { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
     .panel-kicker { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
 
     .legend {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 13px;
+      gap: 12px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
     }
 
@@ -241,78 +243,75 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(180px, 1fr) auto minmax(150px, 190px);
-      gap: 11px;
-      padding: 15px 23px;
-      border-bottom: 1px solid var(--grid);
-      background: rgba(238, 243, 249, 0.6);
+      grid-template-columns: minmax(190px, 1fr) auto minmax(155px, 190px);
+      gap: 10px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-soft);
     }
 
-    .field { display: grid; gap: 6px; }
+    .field { display: grid; gap: 5px; }
 
     .segmented {
       display: inline-grid;
       grid-template-columns: repeat(3, auto);
-      gap: 4px;
+      gap: 3px;
       align-self: end;
-      padding: 4px;
-      border: 1px solid var(--grid);
-      border-radius: 12px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
       background: var(--surface);
     }
 
     .segmented button {
-      min-height: 34px;
-      padding: 6px 11px;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
+      min-height: 32px;
+      padding: 5px 10px;
       color: var(--muted);
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
       cursor: pointer;
       font-size: 12px;
-      font-weight: 750;
+      font-weight: 700;
     }
 
     .segmented button[aria-pressed="true"] {
-      color: var(--ink);
-      background: var(--surface-soft);
-      box-shadow: inset 0 0 0 1px var(--grid);
+      color: var(--navy);
+      background: var(--navy-soft);
     }
 
     .spectrum-head,
     .spectrum-row {
       display: grid;
-      grid-template-columns: minmax(150px, 225px) minmax(200px, 1fr) 86px;
-      gap: 18px;
+      grid-template-columns: minmax(170px, 235px) minmax(230px, 1fr) 76px;
+      gap: 16px;
       align-items: center;
     }
 
     .spectrum-head {
-      padding: 11px 23px;
+      padding: 9px 18px;
       color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      background: #fbfcfd;
+      font-size: 12px;
+      font-weight: 700;
     }
 
-    .spectrum-list { min-height: 280px; }
+    .spectrum-list { min-height: 260px; }
 
     .spectrum-row {
-      position: relative;
-      min-height: 69px;
-      padding: 12px 23px;
-      border-top: 1px solid rgba(215, 224, 236, 0.7);
+      min-height: 62px;
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
     }
 
-    .spectrum-row:hover { background: rgba(238, 243, 249, 0.62); }
-    .spectrum-row.review { background: linear-gradient(90deg, rgba(253, 232, 235, 0.7), transparent 62%); }
+    .spectrum-row:hover { background: var(--surface-soft); }
+    .spectrum-row.review { background: linear-gradient(90deg, var(--review-soft), transparent 64%); }
 
     .skill-name {
       overflow: hidden;
       color: var(--ink);
       font-size: 13px;
-      font-weight: 780;
+      font-weight: 750;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -321,39 +320,38 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-top: 5px;
+      margin-top: 4px;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 11px;
     }
 
     .mini-tag {
-      padding: 2px 6px;
-      border: 1px solid var(--grid);
+      padding: 1px 6px;
+      border: 1px solid var(--border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.65);
+      background: var(--surface);
     }
 
-    .mini-tag.review { color: var(--review); border-color: rgba(180, 59, 71, 0.28); }
+    .mini-tag.review { color: var(--review); border-color: rgba(163, 58, 67, 0.35); }
 
-    .rail-wrap { display: grid; gap: 7px; }
+    .rail-wrap { display: grid; gap: 6px; }
 
     .rail {
-      position: relative;
       display: flex;
       width: 100%;
-      height: 13px;
+      height: 11px;
       overflow: hidden;
-      border: 1px solid rgba(215, 224, 236, 0.9);
       border-radius: 999px;
-      background:
-        repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(138, 152, 171, 0.2) calc(10% - 1px), rgba(138, 152, 171, 0.2) 10%),
-        var(--surface-soft);
+      background: #e7ecf2;
     }
 
-    .bar { height: 100%; min-width: 0; transition: width 260ms ease; }
+    .bar { height: 100%; min-width: 0; transition: width 220ms ease; }
     .bar.codex { background: var(--codex); }
     .bar.claude { background: var(--claude); }
-    .bar.zero { width: 100% !important; background: repeating-linear-gradient(135deg, rgba(138, 152, 171, 0.17) 0 5px, rgba(138, 152, 171, 0.04) 5px 10px); }
+    .bar.zero {
+      width: 100% !important;
+      background: repeating-linear-gradient(135deg, #c6cfda 0 5px, #e7ecf2 5px 10px);
+    }
 
     .rail-labels {
       display: flex;
@@ -361,91 +359,98 @@
       gap: 12px;
       color: var(--muted);
       font-family: "Cascadia Mono", Consolas, monospace;
-      font-size: 10px;
+      font-size: 11px;
     }
 
     .count {
       justify-self: end;
       font-family: "Cascadia Mono", Consolas, monospace;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 750;
-      letter-spacing: -0.06em;
+      letter-spacing: -0.04em;
     }
 
     .empty {
       display: grid;
       place-items: center;
-      min-height: 300px;
-      padding: 30px;
+      min-height: 240px;
+      padding: 28px;
       color: var(--muted);
       text-align: center;
     }
 
-    .side-stack { display: grid; gap: 18px; }
+    .review-panel { padding: 18px; }
+    .review-panel h2 { margin: 0; font-size: 17px; }
 
-    .side-panel { padding: 22px; }
-    .side-panel h2 { margin: 0; font-size: 17px; }
-    .side-panel > p { margin: 7px 0 17px; color: var(--muted); font-size: 12px; }
+    .review-count {
+      margin: 4px 0 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-    .review-list { display: grid; gap: 9px; }
+    .review-list { display: grid; gap: 8px; }
 
     .review-item {
-      padding: 13px;
-      border: 1px solid var(--grid);
-      border-left: 4px solid var(--zero);
-      border-radius: 12px;
-      background: var(--surface);
+      padding: 11px 12px;
+      border: 1px solid rgba(163, 58, 67, 0.24);
+      border-left: 4px solid var(--review);
+      border-radius: 9px;
+      background: var(--review-soft);
     }
 
-    .review-item.candidate { border-left-color: var(--review); background: var(--review-soft); }
-    .review-name { font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
-    .review-detail { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .review-name { overflow-wrap: anywhere; font-size: 13px; font-weight: 800; }
+    .review-detail { margin-top: 4px; color: var(--muted); font-size: 12px; }
 
-    .note {
-      padding: 18px 20px;
-      border: 1px solid var(--grid);
-      border-radius: 16px;
+    .review-empty {
+      padding: 16px;
       color: var(--muted);
-      background: rgba(255, 255, 255, 0.78);
-      font-size: 11px;
+      border: 1px dashed var(--border);
+      border-radius: 9px;
+      background: var(--surface-soft);
+      font-size: 13px;
     }
 
-    .note strong { color: var(--ink); }
+    .method {
+      margin: 14px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
     .footer {
       display: flex;
       justify-content: space-between;
       gap: 20px;
-      margin-top: 18px;
+      margin-top: 7px;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 12px;
     }
 
-    @media (max-width: 1120px) {
-      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 1050px) {
       .workspace { grid-template-columns: 1fr; }
-      .side-stack { grid-template-columns: 1fr 1fr; }
+      .metrics { grid-template-columns: repeat(5, minmax(105px, 1fr)); overflow-x: auto; }
     }
 
     @media (max-width: 760px) {
-      .shell { width: min(100% - 22px, 1500px); padding-top: 14px; }
-      .masthead { grid-template-columns: 1fr; padding: 23px 20px; }
-      .week-control { min-width: 0; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .shell { width: min(100% - 22px, 1400px); padding-top: 16px; }
+      .topbar { align-items: stretch; flex-direction: column; gap: 12px; }
+      .week-control { grid-template-columns: 70px 1fr; }
+      .conclusion { grid-template-columns: 1fr; gap: 13px; padding: 17px 16px; }
+      .status-line { justify-content: flex-start; max-width: none; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+      .metric { border-bottom: 1px solid var(--border); }
+      .metric:nth-child(2n) { border-right: 0; }
+      .metric:last-child { border-bottom: 0; }
       .toolbar { grid-template-columns: 1fr; }
       .segmented { grid-template-columns: repeat(3, 1fr); }
       .spectrum-head { display: none; }
-      .spectrum-row { grid-template-columns: minmax(120px, 0.8fr) minmax(125px, 1fr) 56px; gap: 9px; padding: 12px 14px; }
-      .count { font-size: 18px; }
-      .side-stack { grid-template-columns: 1fr; }
-      .footer { flex-direction: column; }
+      .spectrum-row { grid-template-columns: minmax(120px, 0.85fr) minmax(130px, 1fr) 54px; gap: 9px; padding: 10px 12px; }
+      .footer { flex-direction: column; gap: 3px; }
     }
 
     @media (max-width: 480px) {
-      .metrics { grid-template-columns: 1fr 1fr; }
-      .metric { min-height: 105px; padding: 16px; }
       .spectrum-row { grid-template-columns: minmax(105px, 0.9fr) minmax(95px, 1fr) 42px; }
       .skill-meta, .rail-labels { display: none; }
+      .count { font-size: 18px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -455,35 +460,42 @@
 </head>
 <body>
   <main class="shell">
-    <header class="masthead">
+    <header class="topbar">
       <div>
-        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>Local skill telemetry</p>
-        <h1>本地技能触发谱</h1>
-        <p class="subtitle">以用户请求为单位去重，分别显示 Codex、Claude 与合计触发次数。零触发只是本地历史中“本周未观察到”，不会自动修改或删除技能。</p>
-        <div class="status-line" id="statusLine" aria-live="polite"></div>
+        <p class="context">本地技能使用审计</p>
+        <h1>技能调用周报</h1>
       </div>
       <div class="week-control">
-        <label for="weekSelect">统计周</label>
-        <select id="weekSelect" aria-label="选择统计周"></select>
+        <label for="weekSelect">统计周期</label>
+        <select id="weekSelect" aria-label="选择统计周期"></select>
       </div>
     </header>
 
-    <section class="metrics" aria-label="本周概览">
-      <article class="metric"><span class="metric-label">合计触发</span><span class="metric-value" id="metricTotal">—</span><span class="metric-note">Codex + Claude 请求数</span></article>
-      <article class="metric"><span class="metric-label">Codex</span><span class="metric-value" id="metricCodex">—</span><span class="metric-note">显式调用或读取技能说明</span></article>
-      <article class="metric"><span class="metric-label">Claude</span><span class="metric-value" id="metricClaude">—</span><span class="metric-note">Skill 工具调用</span></article>
-      <article class="metric"><span class="metric-label">本周零触发</span><span class="metric-value" id="metricZero">—</span><span class="metric-note">仅统计已激活技能</span></article>
-      <article class="metric"><span class="metric-label">待人工复核</span><span class="metric-value" id="metricReview">—</span><span class="metric-note">连续 4 个完整周为零</span></article>
+    <section class="conclusion" aria-labelledby="conclusionTitle">
+      <div>
+        <p class="section-label">审计结论</p>
+        <h2 id="conclusionTitle">正在载入本周结论</h2>
+        <p class="conclusion-detail" id="conclusionDetail"></p>
+      </div>
+      <div class="status-line" id="statusLine" aria-live="polite"></div>
+    </section>
+
+    <section class="metrics" aria-label="核心指标">
+      <article class="metric"><span class="metric-label">调用请求</span><span class="metric-value" id="metricTotal">—</span></article>
+      <article class="metric"><span class="metric-label">Codex</span><span class="metric-value" id="metricCodex">—</span></article>
+      <article class="metric"><span class="metric-label">Claude</span><span class="metric-value" id="metricClaude">—</span></article>
+      <article class="metric"><span class="metric-label">本周未观测</span><span class="metric-value" id="metricZero">—</span></article>
+      <article class="metric"><span class="metric-label">复核候选</span><span class="metric-value" id="metricReview">—</span></article>
     </section>
 
     <section class="workspace">
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h2 class="panel-title">触发次数排名</h2>
-            <p class="panel-kicker" id="resultSummary">按当前筛选从高到低排列</p>
+            <h2 class="panel-title">技能调用频次</h2>
+            <p class="panel-kicker" id="resultSummary">按调用请求数降序</p>
           </div>
-          <div class="legend" aria-label="图例">
+          <div class="legend" aria-label="数据来源图例">
             <span class="legend-item"><span class="legend-swatch" style="background:var(--codex)"></span>Codex</span>
             <span class="legend-item"><span class="legend-swatch" style="background:var(--claude)"></span>Claude</span>
           </div>
@@ -492,44 +504,40 @@
         <div class="toolbar">
           <div class="field">
             <label for="searchInput">技能名称</label>
-            <input id="searchInput" type="search" autocomplete="off" placeholder="搜索技能…">
+            <input id="searchInput" type="search" autocomplete="off" placeholder="输入名称筛选">
           </div>
-          <div class="segmented" role="group" aria-label="统计来源">
-            <button type="button" data-host="total" aria-pressed="true">合计</button>
+          <div class="segmented" role="group" aria-label="调用来源">
+            <button type="button" data-host="total" aria-pressed="true">全部</button>
             <button type="button" data-host="codex" aria-pressed="false">Codex</button>
             <button type="button" data-host="claude" aria-pressed="false">Claude</button>
           </div>
           <div class="field">
-            <label for="stateFilter">状态</label>
+            <label for="stateFilter">观测状态</label>
             <select id="stateFilter">
               <option value="all">全部技能</option>
-              <option value="observed">本周已观察到</option>
-              <option value="zero">本周零触发</option>
-              <option value="review">连续四周为零</option>
-              <option value="source_only">仅在源目录</option>
+              <option value="observed">本周已观测</option>
+              <option value="zero">本周未观测</option>
+              <option value="review">复核候选</option>
+              <option value="source_only">仅源目录</option>
             </select>
           </div>
         </div>
 
-        <div class="spectrum-head" aria-hidden="true"><span>技能</span><span>触发谱</span><span style="text-align:right">次数</span></div>
+        <div class="spectrum-head" aria-hidden="true"><span>技能</span><span>调用请求</span><span style="text-align:right">次数</span></div>
         <div class="spectrum-list" id="spectrumList" aria-live="polite"></div>
       </article>
 
-      <aside class="side-stack">
-        <section class="panel side-panel">
-          <h2>零触发观察区</h2>
-          <p>优先列出连续多周未观察到的技能。达到 4 个完整周后，才进入人工复核队列。</p>
-          <div class="review-list" id="reviewList"></div>
-        </section>
-        <section class="note">
-          <strong>口径说明</strong><br>
-          同一用户请求内，同一技能最多计 1 次。Codex 统计显式点名及已成功读取的已知 SKILL.md；Claude 统计能关联到用户请求的 Skill 工具调用。数据仅含聚合计数、技能名、激活端和证据类型，不嵌入原始提示词或本机绝对路径。
-        </section>
+      <aside class="panel review-panel">
+        <h2>复核候选</h2>
+        <p class="review-count" id="reviewCount">正在载入</p>
+        <div class="review-list" id="reviewList"></div>
       </aside>
     </section>
 
+    <p class="method">统计单位：用户请求；同一请求内，同一技能只计 1 次。Codex 数据为可观测下界。</p>
+
     <footer class="footer">
-      <span id="coverageNote">覆盖信息载入中…</span>
+      <span id="coverageNote">正在核验数据覆盖</span>
       <span id="generatedAt"></span>
     </footer>
   </main>
@@ -545,7 +553,10 @@
       stateFilter: document.getElementById("stateFilter"),
       spectrumList: document.getElementById("spectrumList"),
       reviewList: document.getElementById("reviewList"),
+      reviewCount: document.getElementById("reviewCount"),
       statusLine: document.getElementById("statusLine"),
+      conclusionTitle: document.getElementById("conclusionTitle"),
+      conclusionDetail: document.getElementById("conclusionDetail"),
       resultSummary: document.getElementById("resultSummary"),
       coverageNote: document.getElementById("coverageNote"),
       generatedAt: document.getElementById("generatedAt")
@@ -562,26 +573,44 @@
 
     function currentWeek() { return Array.isArray(DATA) ? DATA[state.week] : null; }
 
-    function formatDate(value) {
+    function formatDate(value, includeTime = false) {
       if (!value) return "未知";
       const parsed = new Date(value);
       if (Number.isNaN(parsed.valueOf())) return String(value);
-      return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(parsed);
+      const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+      if (includeTime) Object.assign(options, { hour: "2-digit", minute: "2-digit", hour12: false });
+      return new Intl.DateTimeFormat("zh-CN", options).format(parsed);
     }
 
     function hostCount(row) { return Number(row.counts?.[state.host] || 0); }
 
     function setMetric(id, value) { document.getElementById(id).textContent = number.format(value || 0); }
 
+    function renderConclusion(week) {
+      const counts = week.counts || {};
+      const rows = Array.isArray(week.skills) ? week.skills : [];
+      const active = Number(counts.active ?? rows.filter(row => row.status !== "source_only").length);
+      const observed = Number(counts.observed ?? rows.filter(row => Number(row.counts?.total || 0) > 0).length);
+      const zero = Number(counts.zero || 0);
+      const review = Number(counts.review || 0);
+
+      if (!week.complete) {
+        elements.conclusionTitle.textContent = "本周数据不完整，暂不形成低活跃度结论";
+        elements.conclusionDetail.textContent = "当前覆盖存在缺口，本周不计入连续未观测周期。";
+      } else if (review > 0) {
+        elements.conclusionTitle.textContent = `发现 ${number.format(review)} 个需人工复核的低活跃技能`;
+        elements.conclusionDetail.textContent = `${number.format(active)} 个已激活技能中，${number.format(observed)} 个存在调用记录，${number.format(zero)} 个本周未观测到调用。`;
+      } else {
+        elements.conclusionTitle.textContent = "本周无技能进入低活跃度复核";
+        elements.conclusionDetail.textContent = `${number.format(active)} 个已激活技能中，${number.format(observed)} 个存在调用记录，${number.format(zero)} 个本周未观测到调用。`;
+      }
+    }
+
     function renderStatus(week) {
       elements.statusLine.replaceChildren();
-      const complete = el("span", `badge ${week.complete ? "complete" : "incomplete"}`, week.complete ? "完整周数据" : "数据不完整");
-      elements.statusLine.append(complete);
-      const windowBadge = el("span", "badge", `${formatDate(week.window?.start)} — ${formatDate(week.window?.end)}`);
-      elements.statusLine.append(windowBadge);
-      if (week.streak_reset_reason) {
-        elements.statusLine.append(el("span", "badge incomplete", `连续周计数已重置：${week.streak_reset_reason}`));
-      }
+      elements.statusLine.append(el("span", `badge ${week.complete ? "complete" : "incomplete"}`, week.complete ? "数据完整" : "数据不完整"));
+      elements.statusLine.append(el("span", "badge", `${formatDate(week.window?.start)} — ${formatDate(week.window?.end)}`));
+      if (week.streak_reset_reason) elements.statusLine.append(el("span", "badge incomplete", "连续周期已重置"));
     }
 
     function renderMetrics(week) {
@@ -601,15 +630,18 @@
 
     function renderSpectrum(week) {
       const query = state.query.trim().toLocaleLowerCase("zh-CN");
-      const rows = (Array.isArray(week.skills) ? week.skills : [])
+      const allRows = Array.isArray(week.skills) ? week.skills : [];
+      const rows = allRows
         .filter(row => statusMatches(row) && String(row.skill || "").toLocaleLowerCase("zh-CN").includes(query))
         .sort((a, b) => hostCount(b) - hostCount(a) || Number(b.counts?.total || 0) - Number(a.counts?.total || 0) || String(a.skill).localeCompare(String(b.skill), "zh-CN"));
       elements.spectrumList.replaceChildren();
-      elements.resultSummary.textContent = `显示 ${number.format(rows.length)} 项 · 按${state.host === "total" ? "合计" : state.host === "codex" ? " Codex" : " Claude"}次数排序`;
+      const sourceLabel = state.host === "total" ? "总调用请求数" : state.host === "codex" ? "Codex 调用请求数" : "Claude 调用请求数";
+      elements.resultSummary.textContent = `显示 ${number.format(rows.length)} 项，按${sourceLabel}降序`;
       if (!rows.length) {
-        elements.spectrumList.append(el("div", "empty", "当前筛选下没有技能。"));
+        elements.spectrumList.append(el("div", "empty", "当前条件无匹配技能。"));
         return;
       }
+
       const max = Math.max(1, ...rows.map(hostCount));
       const fragment = document.createDocumentFragment();
       rows.forEach(row => {
@@ -619,7 +651,7 @@
         const meta = el("div", "skill-meta");
         const hosts = Array.isArray(row.active_hosts) && row.active_hosts.length ? row.active_hosts.join(" + ") : "仅源目录";
         meta.append(el("span", "mini-tag", hosts));
-        if (row.zero_streak) meta.append(el("span", `mini-tag${row.review_candidate ? " review" : ""}`, `连续 ${row.zero_streak} 周为零`));
+        if (row.zero_streak) meta.append(el("span", `mini-tag${row.review_candidate ? " review" : ""}`, `连续 ${row.zero_streak} 周未观测`));
         identity.append(meta);
 
         const railWrap = el("div", "rail-wrap");
@@ -641,7 +673,7 @@
           rail.append(bar);
         }
         const labels = el("div", "rail-labels");
-        labels.append(el("span", "", `C ${row.counts?.codex || 0}`), el("span", "", `A ${row.counts?.claude || 0}`));
+        labels.append(el("span", "", `Codex ${row.counts?.codex || 0}`), el("span", "", `Claude ${row.counts?.claude || 0}`));
         railWrap.append(rail, labels);
         wrapper.append(identity, railWrap, el("div", "count", number.format(selected)));
         fragment.append(wrapper);
@@ -651,43 +683,42 @@
 
     function renderReview(week) {
       const rows = (Array.isArray(week.skills) ? week.skills : [])
-        .filter(row => row.status === "zero" || row.status === "review")
-        .sort((a, b) => Number(b.review_candidate) - Number(a.review_candidate) || Number(b.zero_streak || 0) - Number(a.zero_streak || 0) || String(a.skill).localeCompare(String(b.skill), "zh-CN"));
+        .filter(row => row.review_candidate || row.status === "review")
+        .sort((a, b) => Number(b.zero_streak || 0) - Number(a.zero_streak || 0) || String(a.skill).localeCompare(String(b.skill), "zh-CN"));
       elements.reviewList.replaceChildren();
+      elements.reviewCount.textContent = `${number.format(rows.length)} 个技能达到连续四周未观测条件`;
       if (!rows.length) {
-        elements.reviewList.append(el("div", "review-detail", "本周没有零触发的已激活技能。"));
+        elements.reviewList.append(el("div", "review-empty", "暂无符合复核条件的技能。"));
         return;
       }
-      rows.slice(0, 14).forEach(row => {
-        const item = el("div", `review-item${row.review_candidate ? " candidate" : ""}`);
+      rows.forEach(row => {
+        const item = el("div", "review-item");
         item.append(el("div", "review-name", row.skill));
-        const detail = row.review_candidate
-          ? `连续 ${row.zero_streak} 个完整周未观察到，等待人工判断。`
-          : `本周未观察到${row.zero_streak ? `；当前连续 ${row.zero_streak} 周` : ""}。`;
-        item.append(el("div", "review-detail", detail));
+        item.append(el("div", "review-detail", `连续 ${row.zero_streak} 个完整周未观测到调用，需人工复核。`));
         elements.reviewList.append(item);
       });
-      if (rows.length > 14) elements.reviewList.append(el("div", "review-detail", `另有 ${rows.length - 14} 项，请在左侧筛选“本周零触发”。`));
     }
 
     function renderCoverage(week) {
       const parts = [];
-      if (week.coverage?.missing_roots?.length) parts.push(`缺失 ${week.coverage.missing_roots.length} 个数据根`);
+      if (week.coverage?.missing_roots?.length) parts.push(`缺失 ${week.coverage.missing_roots.length} 个数据源`);
       if (week.coverage?.parse_error_count) parts.push(`${week.coverage.parse_error_count} 条解析错误`);
-      if (week.coverage?.unmapped_request_count) parts.push(`${week.coverage.unmapped_request_count} 条证据无法关联请求`);
-      elements.coverageNote.textContent = parts.length
-        ? `覆盖提醒：${parts.join("；")}。本周不能作为完整零触发证据。`
-        : "覆盖状态：未发现阻断性缺口；Codex 计数仍是可观察到的下界。";
-      elements.generatedAt.textContent = `生成于 ${formatDate(week.generated_at)}`;
+      if (week.coverage?.unmapped_request_count) parts.push(`${week.coverage.unmapped_request_count} 条记录无法关联请求`);
+      elements.coverageNote.textContent = parts.length ? `覆盖异常：${parts.join("；")}` : "数据覆盖完整";
+      elements.generatedAt.textContent = `生成时间：${formatDate(week.generated_at, true)}`;
     }
 
     function render() {
       const week = currentWeek();
       if (!week) {
-        elements.spectrumList.replaceChildren(el("div", "empty", "尚无可展示的周统计。请先运行一次技能周检。"));
-        elements.reviewList.replaceChildren(el("div", "review-detail", "暂无数据。"));
+        elements.conclusionTitle.textContent = "暂无周统计数据";
+        elements.conclusionDetail.textContent = "请先运行一次技能周检。";
+        elements.spectrumList.replaceChildren(el("div", "empty", "暂无数据。"));
+        elements.reviewList.replaceChildren(el("div", "review-empty", "暂无数据。"));
+        elements.reviewCount.textContent = "0 个复核候选";
         return;
       }
+      renderConclusion(week);
       renderStatus(week);
       renderMetrics(week);
       renderSpectrum(week);

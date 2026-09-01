@@ -326,7 +326,10 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertNotIn("__SKILL_USAGE_DATA__", html)
         self.assertNotIn("private prompt text", html)
         self.assertNotIn("C:/Private", html)
-        self.assertIn("本地技能触发谱", html)
+        self.assertIn("技能调用周报", html)
+        self.assertIn("审计结论", html)
+        self.assertNotIn("Local skill telemetry", html)
+        self.assertNotIn("零触发观察区", html)
 
     def test_non_text_user_records_do_not_make_usage_incomplete(self) -> None:
         usage = self.valid_usage()

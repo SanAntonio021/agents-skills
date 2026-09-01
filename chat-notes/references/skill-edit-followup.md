@@ -95,10 +95,13 @@
 14. 当前任务立即调用
     `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，两个必填参数是
     `-Skills`（Skill 名称数组，不是 `-SkillNames`）和 `-ExpectedRemoteCommit`（40 位 SHA），例如
-    `-Skills @("skill-a","skill-b") -ExpectedRemoteCommit "<40位SHA>"`。该 helper 只通过 UI Automation 进入 Skills 页、执行一次“检查更新”并
-    逐个过滤后点击单项“更新”；禁止“全部更新”，每个目标最多点击一次。不建 watcher 或计划任务，不修改
-    CC Switch 源码、EXE、数据库、配置或运行时目录。CC Switch 未运行时由 helper 启动；优先后台操作，必要时
-    可短暂前台并在结束时恢复原窗口。
+    `-Skills @("skill-a","skill-b") -ExpectedRemoteCommit "<40位SHA>"`。该 helper 用 UI Automation 识别页面和元素，
+    通过 CC Switch WebView 的后台消息完成导航、搜索、一次“检查更新”和逐个单项“更新”；禁止“全部更新”，
+    每个目标最多点击一次。不建 watcher 或计划任务，不修改 CC Switch 源码、EXE、数据库、配置或运行时目录。
+    后台能力已经通过兼容性验收时直接继续，不再为“是否可以后台操作”追加用户确认；页面暂时重载或处于忙状态时，
+    在既定超时内自动恢复。不得以前台激活后恢复焦点作为兜底。任务开始前已经存在“从备份中恢复”对话框、仓库管理
+    遮罩或无法识别的页面布局时停止，说明实际阻塞后再和用户讨论其他办法。焦点采样用于 UI 路径变更后的兼容性验收，
+    不是每次同步的固定步骤。CC Switch 未运行时由 helper 按既定方式启动，不得为此关闭或重启现有实例。
 15. helper 若在任何 UI 操作前返回退出码 `11`、错误码 `sync_already_running`，说明另一个技能同步任务仍在运行。
     不结束对方进程、不抢锁，也不并行启动新同步；通过只读进程检查等待原同步结束后，才使用完全相同的提交 SHA、
     Skill 集合和历史/范围参数重新调用。只有这种在任何 UI 操作前因其他同步任务未结束而被拒绝的情况，才允许重新

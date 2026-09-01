@@ -13,9 +13,11 @@ when the request creates a new presentation, substantially redesigns one, recons
 images, fills or enhances a template, adds narration or animation, or explicitly names
 `ppt-master`.
 
-- Route those authoring and high-design tasks to the active official `ppt-master` skill. Once routed,
-  let that skill own its integrity guard, route selection, workflow, and blocking confirmations. Do
-  not duplicate or partially reimplement its generation procedure here.
+- Route those authoring and high-design tasks to the active, pin-verified `ppt-master` skill. The
+  runtime skill must come from the trusted Fork's `ccswitch` branch while retaining the official
+  author workflow. Once routed, let that skill own its integrity guard, route selection, workflow,
+  and blocking confirmations. Do not duplicate or partially reimplement its generation procedure
+  here.
 - Keep reading, extraction, inspection, validation, combining/splitting, and small deterministic edits
   in this local `pptx` skill.
 - After `ppt-master` produces its final candidate, return here for the independent local acceptance
@@ -23,6 +25,18 @@ images, fills or enhances a template, adds narration or animation, or explicitly
 - If an explicitly requested `ppt-master` is unavailable or its integrity guard fails, report the
   blocker and stop. Do not silently replace it with a system skill, an ad hoc generator, or the
   zero-exposure upstream mirror.
+
+Before reading or executing the active `ppt-master`, resolve the actual installed skill root and run:
+
+```powershell
+python <pptx-skill-root>\scripts\verify_ppt_master_pin.py `
+  --skill-root <active-ppt-master-root> --json-out <task-evidence>\ppt-master-pin.json
+```
+
+Require `status=PASS`. `--pin-only` validates the state machine but never proves an installation.
+Pin failure, an unknown install root, a residual file, or any raw size/SHA-256 difference is a hard
+stop before the upstream attribution guard. Keep the pin state (`bootstrap`, `transition`, or
+`stable`), accepted Fork commit, tag, and manifest digest with the task evidence.
 
 ## Manual text paste into PowerPoint
 
@@ -136,6 +150,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/add_slide.py unpacked/ slide2.xml [--after slideN.xml]` | Duplicate a slide (or a `slideLayoutN.xml`) with all the package bookkeeping. Also takes a `.pptx` directly with `-o out.pptx` |
 | `scripts/clean.py unpacked/` | Delete slides, media, and rels no longer referenced. Run **after** `<p:sldIdLst>` is final |
 | `scripts/release_bundle.py` | Create non-overwriting formal release directories, canonical external-output snapshots, revision slide-difference proofs, and final artifact manifests |
+| `scripts/verify_ppt_master_pin.py --skill-root <path> [--json-out PATH]` | Verify the active CC Switch-installed `ppt-master` tree against the external bootstrap/transition/stable pin before handoff |
 | `scripts/python_runtime_preflight.py [--candidate PATH] [--json-out PATH]` | Select a verified Python runtime for static PPTX QA; import-checks `defusedxml`, `lxml`, and `python-pptx`, and never installs packages |
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
 | `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | LibreOffice wrapper — bare `soffice` hangs in this sandbox |

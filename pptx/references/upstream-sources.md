@@ -3,43 +3,60 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-31`
-- 最近来源登记审核：`2026-08-31`
-- 说明：官方 ppt-master 作为独立上游设计与生成引擎，本地 pptx 保留路由、确定性文件操作和最终验收；两者不合并，零暴露镜像不参与运行时技能查找。
+- 最近来源登记审核：`2026-09-01`
+- 说明：官方 ppt-master 保留作者工作流；受审计 Fork 只增加 CC Switch 分发适配。本地
+  pptx 保留路由、外部 pin、确定性文件操作和最终验收，系统 presentation skills 不进入
+  该路线。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
 
 ## pptx-hugohe3-ppt-master
 
-- 仓库：https://github.com/hugohe3/ppt-master.git
-- 当前上游路径：`skills/ppt-master`
-- 接受时上游路径：`skills/ppt-master`
+- 官方仓库：https://github.com/hugohe3/ppt-master.git
+- 官方路径：`skills/ppt-master`
+- 官方接受提交：`c40bca58e168fcef2facdc7612cc352d1233679b`
+- 官方接受版本：`6.1.0`
+- 分发 Fork：https://github.com/SanAntonio021/ppt-master.git
+- CC Switch 分支：`ccswitch`
+- 分发提交：`91b3951ec6ce1b7b344537c670b5c5bec829a2d6`
+- 不可变 tag：`v6.1.0-ccswitch.1`
 - 技能入口：`skills/ppt-master/SKILL.md`
-- 已接受提交：`5da13a00db898c34edcd099b043ec56234755809`
-- 已接受版本：`4.8.0`
-- 基线类型：`exact`
+- 基线类型：`exact + deterministic distribution adapter`
 - 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`hugohe3-ppt-master`
 
 ### 证据
 
-- 2026-08-31 核对当前 CC Switch 安装版 4.8.0 的官方仓库元数据、入口路由和完整性门，并经用户明确批准采用官方基座加本地接入层。
-- 本地证据文件：`pptx/SKILL.md`
+- 官方精确提交的真实 codeload inventory：13,180 个成员、13,015 个文件。
+- 五套图标库共 12,027 个 SVG，确定性分为 5 个 `ZIP_STORED` 分片；完整技能树由
+  `icons.manifest.json` 与 `distribution.manifest.json` 保护。
+- Fork 候选连续两次本机构建 raw 字节一致；GitHub Actions 在 `windows-2025`、Python
+  3.13.1、`core.autocrlf=false` 下从官方提交与 Fork 适配器重建并通过逐文件比较。
+- Fork 提交真实 codeload 为 1,171 个成员，SHA-256
+  `4f1ecd097d7ff4d9bbe1470dc1aad8417fb8f0de3ce23b5ce09e1fdd2b3da937`。
+- 本地证据文件：`pptx/references/ppt-master-pin.json`
+- 本地证据文件：`pptx/scripts/verify_ppt_master_pin.py`
 - 本地证据文件：`pptx/references/ppt-master-integration.md`
 
 ### 已吸收
 
-- 把新建演示、重设计、美化、图片重建、模板填充或增强以及演示动画等设计型任务路由给官方 ppt-master。
-- 官方生成完成后继续执行本地静态、LibreOffice 和 PowerPoint 原生验收，运行时启用与源码接受分别取证。
+- 把新建演示、重设计、美化、图片重建、模板填充或增强以及演示动画等设计型任务路由
+  给通过外部 pin 的 `ppt-master`。
+- 在运行上游工作流之前验证安装树；生成完成后继续执行本地静态、LibreOffice 和
+  PowerPoint 原生验收。
+- 明确区分官方基线、Fork 发布、pin 发布、CC Switch 安装和 Codex/Claude 运行时激活。
 
 ### 明确不吸收
 
-- 不复制或改写官方工作流，不直接修改官方安装目录，不让上游镜像进入运行时技能目录。
-- 不采用赞助或模型推荐，不绕过官方完整性检查和阻塞确认，不用系统技能静默替代失败的显式调用。
+- 不复制或改写官方作者工作流，不直接修改运行时技能目录，不让审查镜像进入运行时。
+- 不采用赞助或模型推荐，不绕过上游完整性检查和阻塞确认，不用系统 presentation
+  skills、临时生成器或镜像静默替代失败的显式调用。
 
 ### 跟踪范围
 
+- 官方正式 tag 与精确提交
 - `SKILL.md`
 - `.env.example`
 - `requirements.txt`
@@ -47,9 +64,8 @@
 - `references`
 - `scripts`
 - `templates`
-
-### 许可证监控
-
 - `LICENSE`
+- Fork `ccswitch` 分支、发布 tag、真实 codeload 与两类 manifest
 
-发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
+以后只处理官方正式 tag；先构建隔离候选和 transition pin，双端验收完成后再收敛为
+stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。

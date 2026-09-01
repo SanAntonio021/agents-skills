@@ -89,11 +89,12 @@
     },
     {
       "id": 8,
-      "prompt": "请从零制作一份面向投资人的12页太赫兹通信项目PPT，要求整体重设计、视觉效果专业、图文叙事完整，并交付可编辑PPTX。当前同时启用了本地pptx和官方ppt-master，请按技能职责完成生成和最终验收。",
-      "expected_output": "先把设计和生成交给官方ppt-master，遵守其完整性检查、路由和确认门；得到候选PPTX后，再由本地pptx执行独立静态、LibreOffice和PowerPoint原生验收。",
+      "prompt": "请从零制作一份面向投资人的12页太赫兹通信项目PPT，要求整体重设计、视觉效果专业、图文叙事完整，并交付可编辑PPTX。当前同时启用了本地pptx和由CC Switch安装的ppt-master，请按技能职责完成生成和最终验收。",
+      "expected_output": "先由本地pptx验证外部pin与安装树，再把设计和生成交给保留官方作者工作流的Fork版ppt-master，遵守其完整性检查、路由和确认门；得到候选PPTX后，再由本地pptx执行独立静态、LibreOffice和PowerPoint原生验收。",
       "files": [],
       "expectations": [
-        "The task routes to the active official ppt-master before any local generation pipeline starts.",
+        "The local external pin verifies the active CC Switch-installed ppt-master tree before any upstream workflow executes.",
+        "The task routes to the trusted Fork distribution of the official ppt-master workflow before any local generation pipeline starts.",
         "Ppt-master owns its attribution guard, top-level route selection, workflow steps, and blocking confirmations.",
         "The local pptx skill does not duplicate or partially run a competing authoring workflow.",
         "After authoring completes, the returned candidate is subjected to the local independent acceptance layers before formal delivery."
@@ -113,11 +114,11 @@
     },
     {
       "id": 10,
-      "prompt": "请明确使用$ppt-master把这份截图重建成可编辑PPTX。假设当前客户端没有启用ppt-master，或者它的attribution_guard返回非零。请说明怎么处理。",
-      "expected_output": "透明报告官方ppt-master不可用或完整性检查失败并停止；不使用系统技能、本地临时生成器或上游镜像静默替代，也不声称任务已生成。",
+      "prompt": "请明确使用$ppt-master把这份截图重建成可编辑PPTX。假设当前客户端没有启用ppt-master、外部pin校验失败，或者它的attribution_guard返回非零。请说明怎么处理。",
+      "expected_output": "透明报告受信Fork版ppt-master不可用、pin不匹配或完整性检查失败并停止；不使用系统技能、本地临时生成器或上游镜像静默替代，也不声称任务已生成。",
       "files": [],
       "expectations": [
-        "An explicit ppt-master request fails closed when the official skill is unavailable or its integrity guard fails.",
+        "An explicit ppt-master request fails closed when the trusted Fork distribution is unavailable, its external pin fails, or its integrity guard fails.",
         "The exact missing-skill or integrity blocker is reported and all inputs are preserved.",
         "No bundled system skill, ad hoc generator, local pptx generation route, or zero-exposure mirror is used as a silent fallback.",
         "No candidate PPTX or completed-delivery claim is fabricated."

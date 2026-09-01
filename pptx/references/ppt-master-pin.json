@@ -1,0 +1,35 @@
+{
+  "accepted_distributions": [
+    {
+      "codeload": {
+        "members": 1171,
+        "sha256": "4f1ecd097d7ff4d9bbe1470dc1aad8417fb8f0de3ce23b5ce09e1fdd2b3da937",
+        "size": 88371940
+      },
+      "distribution_manifest": {
+        "bytes": 85520437,
+        "files": 922,
+        "sha256": "a213c732d3062dd77df7377b324bd704b39d745292f0bb37ceed3303d84f7e4f"
+      },
+      "fork_commit": "91b3951ec6ce1b7b344537c670b5c5bec829a2d6",
+      "release_tag": "v6.1.0-ccswitch.1",
+      "role": "candidate",
+      "upstream": {
+        "commit": "c40bca58e168fcef2facdc7612cc352d1233679b",
+        "repository": "https://github.com/hugohe3/ppt-master",
+        "version": "6.1.0"
+      }
+    }
+  ],
+  "policy": {
+    "raw_file_identity": "relative_path+size+sha256",
+    "system_fallback": false
+  },
+  "schema_version": 1,
+  "skill_name": "ppt-master",
+  "source": {
+    "branch": "ccswitch",
+    "repository": "https://github.com/SanAntonio021/ppt-master"
+  },
+  "state": "bootstrap"
+}

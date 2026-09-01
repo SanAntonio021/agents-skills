@@ -62,6 +62,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
    - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
    - 单个已安装技能的文件仍在，但 `repo_branch`、`readme_url` 或双端启用元数据残留在旧状态时，先完成只读定位；获得批准后，优先在 CC Switch 中只卸载并重新安装该技能，从当前真实分支恢复来源元数据并启用 Claude/Codex。存在未处理的本机私有文件、重装未能修复或 GUI 无法完成时，才进入最小数据库修复。两种路径完成后都要用同一远端 SHA 和 Skill 集合重跑完整同步与 `-VerifyOnly`。
+   - 目标技能本身已经指向当前分支，但 CC Switch 日志仍请求同仓库旧分支压缩包时，检查该仓库下全部已安装技能的 `repo_branch` 和 `readme_url`。CC Switch 的更新扫描以仓库为单位，任一兄弟技能残留旧分支都可能阻断目标更新；这类多技能范围先完整列出，再单独批准修复。
    - 如果技能条目显示“已安装”但启动/同步时报 `Skill 不存在于 SSOT`，还要核对 SSOT 下 `<directory>\SKILL.md` 是否真实存在；这通常是数据库残留记录，不要直接改 Codex 运行时目录。
    - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、cc-switch 分发目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
    - 查“远端已推送，但 CC Switch 检查更新没有提示”时，先看提交是否只改了 `references/`、`scripts/` 或 `evals/` 等子文件。会改变运行行为的子文件必须在 `SKILL.md` 有对应语义入口；纯 eval 或不影响运行行为的说明不制造无意义入口。实证和诊断顺序见 [references/skill-hygiene.md](references/skill-hygiene.md)。
@@ -144,8 +145,8 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 [references/skill-hygiene.md](references/skill-hygiene.md)，依次核对：
 
 1. 源码提交与远端目标分支一致；
-2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 以及目标技能的目录、仓库归属、
-   `repo_branch`、`readme_url` 和 Claude/Codex 启用状态均与预期源码一致；
+2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled`、同仓库全部已安装技能的
+   `repo_branch`/`readme_url`，以及目标技能的目录、仓库归属和 Claude/Codex 启用状态均与预期源码一致；
 3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
 4. 结构校验按目标运行时分开判断：Agent Skills / OpenAI 通用格式与 Claude Code 扩展分别验收；
    严格通用校验器拒绝已确认的 Claude 扩展时，不能把整个 Skill 直接判为无效，也不能把 Claude

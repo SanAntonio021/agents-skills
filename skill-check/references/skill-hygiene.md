@@ -76,6 +76,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 - 用只读方式打开 `cc-switch.db`，先运行 `PRAGMA integrity_check`。
 - 核对目标仓库在 `skill_repos` 中只有一条有效记录，`branch` 与远端目标分支一致且 `enabled = 1`。
+- 枚举该仓库在 `skills` 中的全部已安装技能，逐项核对 `repo_branch` 和 `readme_url`。CC Switch 的更新扫描以仓库为单位；非目标兄弟技能残留旧分支也可能让整仓扫描请求错误压缩包。
 - 核对每个目标技能在 `skills` 中只有一条记录；`name`、`directory`、`repo_owner`、`repo_name`、
   `repo_branch`、`readme_url`、`enabled_claude` 和 `enabled_codex` 都必须与预期源码和目标分支一致。
 - 文件已经对齐只证明当前副本相同。旧分支、旧 `readme_url` 或错误启用状态会破坏后续更新，仍属于
@@ -200,6 +201,7 @@ helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份
 2. 对照 `skill_repos.branch` 和远端默认分支。
 3. 对照 `skills.name`、`skills.directory`、`skills.repo_owner`、`skills.repo_name`、`skills.repo_branch`。
 4. 如果界面出现重复卡片，区分正常目录和 `*-workspace\iteration-*` 这类临时目录。
+5. 如果目标技能已经是当前分支，但日志仍请求同仓库旧分支的 ZIP，按 `repo_owner` 和 `repo_name` 枚举全部兄弟技能；不要只复查目标行。
 
 如果确认只有一个已安装技能的来源或启用元数据残留，安全处理顺序是：
 
@@ -209,7 +211,7 @@ helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份
 4. 重装后只读复查 `PRAGMA integrity_check`、`skill_repos` 唯一记录、`skills` 唯一记录、分支、`readme_url`、目录、仓库归属和双端启用状态；随后用同一远端 SHA 和 Skill 集合依次运行完整同步与 `-VerifyOnly`。两次都返回 `runtime_active`、`cc_switch_metadata.valid = true` 且四层文件集合和 SHA-256 一致，才记录恢复完成。
 5. 重装无法完成、没有修正元数据，或本机私有文件使卸载不可接受时，才进入数据库兜底：关闭 `cc-switch.exe`，只修正已确认字段，重启后重复第 4 步的全部验收。数据库兜底仍需单独批准，不从只读诊断自动进入。
 
-多个技能、重复仓库记录、SSOT 文件缺失或行归属不清时，不套用单技能重装路径；先列出完整影响范围，再按下方残留清理流程处理。
+多个技能、重复仓库记录、SSOT 文件缺失或行归属不清时，不套用单技能重装路径；先列出完整影响范围，再按下方残留清理流程处理。同一仓库出现多个旧分支技能时，完成条件是这些明确列出的记录全部恢复到真实分支，并重新通过仓库级元数据验收；只重装当前目标技能不能解除整仓扫描阻断。
 
 实证案例：`SanAntonio021/agents-skills` 远端默认分支为 `main`，但 `chat-notes` 和 `paper-summary` 在 `skills` 表里残留 `master`；修正为 `main` 后，`chat-notes` 安装恢复正常。后续单技能案例进一步确认：在文件副本已经一致、目标记录仍残留旧分支时，定向卸载并从真实分支重新安装可以同时恢复分支、`readme_url` 和双端启用元数据；完成结论仍以重装后的完整只读验收为准。
 

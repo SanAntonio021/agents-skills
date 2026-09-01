@@ -649,6 +649,24 @@
         "输出继续使用后台页面操作，不切换前台，也不改用鼠标。",
         "输出保留最终门槛：完整集合 `runtime_active`，并以相同提交、集合和参数执行一次 `-VerifyOnly`。"
       ]
+    },
+    {
+      "id": 46,
+      "prompt": "我对 `chat-notes` 的定向更新已经返回退出 0、`runtime_active`，四层也一致。紧接着跑同一提交的 `-VerifyOnly` 前，另一个任务把 `main` 推进了一个只改 `skill-check/**` 的提交；本地 `HEAD` 仍是原发布提交。普通 `-VerifyOnly` 现在报 `remote_commit_mismatch`。我之前已给那个任务发了暂停消息，但它没有先回复；改用历史提交纯验收时第一次又在任何 UI 操作前报 `sync_already_running`。现在能不能把期望提交改成远端新 `HEAD`，或者重新点一次更新？",
+      "expected_output": "不能把暂停消息当作对方已经停止，也不能把期望提交改成远端新 HEAD 或重新执行 UI 更新。保留原发布 SHA 和完整参数，确认它仍是本地 HEAD 与远端 tip 的共同祖先，并核对请求 Skill 的完整目录 tree 在两条后续路径上都未变化、目标路径连续两次状态读取为空且一致。单提交模式满足这些条件时，只给纯验收增加 `-AllowHistoricalCommit -VerifyOnly`；若在任何 UI 操作前遇到 `sync_already_running`，等待锁释放后用完全相同的历史纯验收参数重试。请求 Skill 后来变化、使用范围模式或共同祖先和稳定性条件不成立时停止或转入版本分开验收。只有纯验收退出 0、`runtime_active`、登记有效且四层一致，才确认原发布提交仍已部署。",
+      "files": [],
+      "expectations": [
+        "输出明确说发送协调或暂停消息不构成对方已经停止或远端冻结的证据。",
+        "输出不把 `ExpectedRemoteCommit` 改成远端新 `HEAD`，也不重新扫描、点击或更新运行时。",
+        "输出保留原发布 SHA、完整 Skill 集合、历史或范围参数和本机文件声明。",
+        "输出要求原发布提交仍是本地 `HEAD` 与远端 tip 的共同祖先。",
+        "输出比较每个请求 Skill 的完整目录 tree object，确认从原发布提交到本地和远端均未变化，并要求目标路径连续两次状态读取为空且一致。",
+        "输出只在无 `-ExpectedBaseCommit` 的单提交模式满足条件时，使用原参数加 `-AllowHistoricalCommit -VerifyOnly` 做只读验收。",
+        "输出说明 `sync_already_running` 只有在任何 UI 操作前发生时，才允许等待锁释放后用完全相同的历史纯验收参数重试。",
+        "输出在请求 Skill 后续变化时转入原提交与当前版本分开验收；范围模式、祖先或稳定性条件失败时停止并留档。",
+        "输出以退出 0、`runtime_active`、登记有效和四层文件集合及 SHA-256 一致作为原发布提交仍已部署的门槛。",
+        "输出不把历史纯验收成功说成远端新 tip 已经部署。"
+      ]
     }
   ]
 }

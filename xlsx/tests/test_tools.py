@@ -1110,24 +1110,35 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("这是完整的表格技能", skill_text)
         self.assertIn("ws.auto_filter.ref", skill_text)
         self.assertIn("ws.auto_filter.ref", workflow_text)
+        self.assertIn("spreadsheets:excel-live-control", skill_text)
+        self.assertIn("独立电子表格文件", skill_text)
+        self.assertIn("已连接 Excel 会话", skill_text)
         self.assertNotIn("xlsx-" + "preserve-ooxml", skill_text)
         self.assertNotIn("不使用本 " + "skill", skill_text)
 
     def test_eval_json_is_valid(self) -> None:
         data = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
         self.assertEqual(data["skill_name"], "xlsx")
-        self.assertGreaterEqual(len(data["evals"]), 9)
+        self.assertGreaterEqual(len(data["evals"]), 11)
         lifecycle_eval = next(item for item in data["evals"] if item["id"] == 9)
         lifecycle_text = json.dumps(lifecycle_eval, ensure_ascii=False)
         self.assertIn("交付前", lifecycle_text)
         self.assertIn("SHA-256", lifecycle_text)
         self.assertIn("递增版本", lifecycle_text)
+        live_eval = next(item for item in data["evals"] if item["id"] == 11)
+        live_text = json.dumps(live_eval, ensure_ascii=False)
+        self.assertIn("spreadsheets:excel-live-control", live_text)
+        self.assertIn("连接文档工具", live_text)
 
         triggers = json.loads(
             (SKILL_ROOT / "evals" / "trigger-evals.json").read_text(encoding="utf-8")
         )
         self.assertEqual(len(triggers), 20)
         self.assertEqual(sum(item["should_trigger"] for item in triggers), 10)
+        live_trigger = next(
+            item for item in triggers if "ChatGPT Excel 加载项" in item["query"]
+        )
+        self.assertFalse(live_trigger["should_trigger"])
 
 
 if __name__ == "__main__":

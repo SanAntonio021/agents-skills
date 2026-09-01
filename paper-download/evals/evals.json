@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": "research-results-to-paper-index",
-      "prompt": "research-lookup 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理进 paper_index.md，并开始下载能下载的 PDF。",
+      "prompt": "paper-search 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理进 paper_index.md，并开始下载能下载的 PDF。",
       "expected_output": "先从当前对话里的零散论文线索整理 paper_index.md，再用 paper-search-mcp 补元数据和版本线索，最后下载可公开或已授权访问的 PDF，并继续更新 paper_index.md。"
     },
     {

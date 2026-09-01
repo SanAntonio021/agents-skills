@@ -28,7 +28,7 @@
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
 | 用词表维护/交付前扫词 | 别用这个词、这个词太 AI、收录用词、检查用词 | `style-vocab` |
 | 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | 英文一般文本 `humanizer`；中文一般文本 `humanizer-zh`；论文/申报书交付稿优先 `ieee-manuscript-edit` / `project-writing` |
-| 在线搜文献 | 搜论文、查最新进展、找相关工作 | `research-lookup` |
+| 在线搜文献 | 搜论文、查最新进展、找相关工作 | `paper-search` |
 | Word/模板交付 | 回填 Word、标黄、格式、目录 | `docx` |
 | LaTeX 转换与投稿工程 | 转 LaTeX、套期刊模板、BibTeX、编译报错；当前期刊或页面要求时打包 source | `latex-paper` |
 

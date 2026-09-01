@@ -165,7 +165,7 @@ compatibility: 审计脚本仅依赖 Python 3.11+ 标准库；联网取证需同
 ## 边界
 
 - 持续性 sample-first 调研、证据表和任务池维护由 baseline-research 负责；研究闭合后再使用本技能。
-- 单篇论文总结由 paper-summary 负责，多篇学术证据检索由 research-lookup 负责。
+- 单篇论文总结由 paper-summary 负责，多篇学术证据检索由 paper-search 负责。
 - 论文、申报书和投稿材料仍由 writing-router 的对应下游技能负责。
 - 只做 Word 样式、分页或格式转换时不接管 docx。
 - 不把投资、法律或合规意见伪装成调研事实。

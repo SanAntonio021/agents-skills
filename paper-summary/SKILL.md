@@ -16,7 +16,7 @@ description: 读取已有论文 PDF 或正文，生成面向科研复用的中�
 - 用户要求“总结这篇”“读这一篇”“整理这篇”“做文献卡片”时，只处理单篇论文，不扩成多篇综述。
 - 用户只给 DOI、题名或出版社页，并且本地没有 PDF 时，先转 `paper-download`。
 - 用户要求“下载并总结”时，先 `paper-download`，再本技能。
-- 用户还在问“某个领域有哪些论文”“近几年代表作是什么”“帮我筛方向”时，先走 `research-lookup`。
+- 用户还在问“某个领域有哪些论文”“近几年代表作是什么”“帮我筛方向”时，先走 `paper-search`。
 
 ## 按需读取 reference
 
@@ -254,7 +254,7 @@ LetPub 失败状态要写清楚原因，例如：
 ## 边界
 
 - PDF 下载、正式版判断、下载索引维护：用 `paper-download`。
-- 多篇文献综述、代表作筛选：先用 `research-lookup`。
+- 多篇文献综述、代表作筛选：先用 `paper-search`。
 - 投稿文章、引言综述、申报书材料：转 `writing-router` 或 `project-writing`。
 - 批判性评审、同行评议意见、审稿式打分：转 `paper-review`。
 

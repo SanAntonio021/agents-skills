@@ -74,7 +74,7 @@
 
 11. Skill push 成功后，取得 40 位远端提交 SHA，并从提交差异中列出本次实际修改且仍存在的 Skill。
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
-    Skill 不进入自动更新，继续按第 18 条处理。
+    Skill 不进入自动更新，继续按第 18 条处理；新旧 Skill 名称不同的替换按下方“不同名称 Skill 的受控替换”处理。
 12. 调用同步 helper 前重新读取本地 `HEAD` 和远端当前分支。若并发任务已提交并推送，使本次发布提交不再是
     当前 `HEAD`，不要把 `ExpectedRemoteCommit` 换成新的 `HEAD`，也不要 reset、rebase 或重新提交。本次提交只有在
     同时满足以下条件时才可继续：它是本地当前 `HEAD` 和远端当前分支的共同祖先；本次批准发布范围只由该单个
@@ -139,12 +139,33 @@
     - 这个分流只做只读验收，不重新扫描、点击或修改运行时。源码比较继续以 helper 指定提交的 Git blob 为准，
       不直接比较 Windows 工作树字节，避免 `core.autocrlf` 引起 CRLF/LF 假差异。
 18. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
-    skill。用户点完同步后，源码目录已消失，但 `.cc-switch\skills\<name>`、`.claude\skills\<name>`、
-    `.codex\skills\<name>` 三处仍会残留旧副本，必须手动清理。顺序：先删 `.claude\skills\` 和
-    `.codex\skills\` 下的软链接（用 `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，
-    否则会顺着软链接删掉 `.cc-switch` 里的目标内容），再删 `.cc-switch\skills\<name>` 实体目录。清完用
-    `Test-Path` 四层复核该 skill 已全部消失，同时确认保留的 skill 未被误删（2026-08-10 合并 sentence-polish
-    时定型）。
+    skill。CC Switch 中仍有该 Skill 登记时，先取得对准确条目的单独批准，再使用 CC Switch 自身的卸载动作；
+    不直接修改数据库或运行时目录。只有登记已经卸载或不存在、三处运行时仍留下孤儿副本，并且用户又批准了
+    这次准确路径清理时，才手动清理：先删 `.claude\skills\` 和 `.codex\skills\` 下的软链接（用
+    `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，否则会顺着软链接删掉
+    `.cc-switch` 里的目标内容），再删 `.cc-switch\skills\<name>` 实体目录。清完用 `Test-Path` 四层复核
+    该 skill 已全部消失，同时确认保留的 skill 未被误删（2026-08-10 合并 sentence-polish 时定型）。
+
+### 不同名称 Skill 的受控替换
+
+新 Skill 使用不同名称替代当前已安装的旧 Skill 时，新增入口和移除旧入口是两个独立状态。显式点名新 Skill
+成功，只证明新入口本身可用；旧 Skill 仍可能匹配同一个自然请求，因此不能据此宣布自然路由已经切换。
+
+1. 先保留旧 Skill，完成新 Skill 的源码推送、定向同步、四层一致性和双端显式点名验收。再在 Claude、Codex
+   全新只读会话中分别使用真实自然请求测试共存状态。自然请求仍选中旧 Skill 时，记录为
+   `coexistence_routing_conflict`；它既不是新 Skill 本体失败，也不是替换完成，不能靠增加未批准别名掩盖。
+2. 只有新 Skill 本身已经可用，且用户对准确旧 Skill 条目和移除范围给出明确批准后，才进入卸载。先检查
+   CC Switch 当前是否提供受支持的后台卸载入口；有则只处理该旧条目。没有后台入口时，由用户手动卸载，或在
+   确有必要时使用最小 UI Automation。不得直接改 `cc-switch.db`、`.cc-switch`、`.claude` 或 `.codex`；
+   自动化发出卸载点击也不等于 CC Switch 已经接受并完成卸载。
+3. 卸载后先只读检查 `PRAGMA integrity_check`、新 Skill 唯一登记及预期来源/启用状态、旧 Skill 记录消失，
+   并确认 `.cc-switch\skills\<old>`、`.claude\skills\<old>`、`.codex\skills\<old>` 均不存在。随后对新 Skill
+   固定同一远端提交、完整 Skill 集合、历史/范围参数和本机文件声明，连续运行两次纯后台 `-VerifyOnly`；两次都
+   必须退出 `0`、返回 `runtime_active`、`cc_switch_metadata.valid = true`、问题为空且四层文件集合和 SHA-256
+   一致。最后在 Claude、Codex 全新只读会话中重跑自然请求，确认都选择新 Skill，才记录替换完成。
+4. 卸载失败、超时、旧记录或路径仍残留、两次后台验收不一致，或任一宿主仍选择旧 Skill 时，保留新 Skill 的
+   已验证状态并原样报告实际错误，停止替换结论。不得换供应商、直接修数据库或手工复制运行时文件；孤儿路径清理
+   只有在重新列明准确范围并单独批准后，才按第 18 条执行。
 
 ## 多代理规则文件检查
 

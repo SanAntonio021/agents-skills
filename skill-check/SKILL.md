@@ -92,6 +92,9 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 用户要监测技能触发、找长期未用技能或检查触发条件时，先读取
 [references/usage-audit.md](references/usage-audit.md)，再运行：
 
+用户进一步要判断保留、停用、归档、删除，或是否为一组低频技能增加路由时，也先按该 reference
+的“保留价值复核”执行；不得把零调用、技能包文件总字数，或“CLI 已可读取这些说明”直接当成精简依据。
+
 ```powershell
 python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-MM-DD> `
   --window-start <ISO-8601> --window-end <ISO-8601> --timezone Asia/Shanghai

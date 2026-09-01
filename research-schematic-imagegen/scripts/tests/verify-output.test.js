@@ -55,3 +55,83 @@ test("manifest verifies current deliverables without touching existing PNGs", as
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("manifest object entries distinguish original and processed files with their own dimensions", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "research-schematic-mixed-size-"));
+  const finalDir = path.join(root, "final");
+  const manifestPath = path.join(root, "manifest.json");
+  try {
+    await mkdir(finalDir, { recursive: true });
+    const originalPath = path.join(finalDir, "scene-original.png");
+    const processedPath = path.join(finalDir, "scene-processed.png");
+    await writeFile(originalPath, minimalPng(1672, 941));
+    await writeFile(processedPath, minimalPng(2048, 1152));
+    await writeFile(manifestPath, JSON.stringify({
+      files: [
+        { name: "scene-original.png", role: "original", width: 1672, height: 941 },
+        { name: "scene-processed.png", role: "processed", width: 2048, height: 1152 },
+      ],
+    }));
+    const originalBefore = await readFile(originalPath);
+    const processedBefore = await readFile(processedPath);
+
+    const { stdout } = await execFileAsync(process.execPath, [
+      verifier,
+      "--dir", finalDir,
+      "--manifest", manifestPath,
+      "--expected-count", "2",
+      "--json",
+    ], { cwd: skillRoot });
+    const result = JSON.parse(stdout);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.actual_count, 2);
+    assert.equal(result.files[0].role, "original");
+    assert.equal(result.files[0].expected_width, 1672);
+    assert.equal(result.files[0].expected_height, 941);
+    assert.equal(result.files[1].role, "processed");
+    assert.equal(result.files[1].expected_width, 2048);
+    assert.equal(result.files[1].expected_height, 1152);
+    assert.deepEqual(await readFile(originalPath), originalBefore);
+    assert.deepEqual(await readFile(processedPath), processedBefore);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("manifest object dimensions reject a processed file with the wrong actual size", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "research-schematic-size-mismatch-"));
+  const finalDir = path.join(root, "final");
+  const manifestPath = path.join(root, "manifest.json");
+  try {
+    await mkdir(finalDir, { recursive: true });
+    await writeFile(path.join(finalDir, "scene-processed.png"), minimalPng(1672, 941));
+    await writeFile(manifestPath, JSON.stringify({
+      files: [
+        { name: "scene-processed.png", role: "processed", width: 2048, height: 1152 },
+      ],
+    }));
+
+    await assert.rejects(
+      execFileAsync(process.execPath, [
+        verifier,
+        "--dir", finalDir,
+        "--manifest", manifestPath,
+        "--expected-count", "1",
+        "--json",
+      ], { cwd: skillRoot }),
+      (error) => {
+        const result = JSON.parse(error.stdout);
+        assert.equal(result.ok, false);
+        assert.equal(result.files[0].role, "processed");
+        assert.equal(result.files[0].width, 1672);
+        assert.equal(result.files[0].height, 941);
+        assert.equal(result.files[0].expected_width, 2048);
+        assert.equal(result.files[0].expected_height, 1152);
+        return true;
+      },
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

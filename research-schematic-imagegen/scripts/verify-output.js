@@ -31,11 +31,36 @@ function parse(argv) {
 async function readManifest(manifestPath) {
   const raw = JSON.parse(await readFile(path.resolve(manifestPath), "utf8"));
   const files = Array.isArray(raw) ? raw : raw?.files;
-  if (!Array.isArray(files) || files.some((item) => typeof item !== "string" || !item.trim())) {
-    throw new Error("manifest must be a JSON array or an object with a string files array");
+  if (!Array.isArray(files)) {
+    throw new Error("manifest must be a JSON array or an object with a files array");
   }
-  const normalized = files.map((item) => item.trim());
-  if (new Set(normalized).size !== normalized.length) {
+  const roles = new Set(["original", "processed"]);
+  const normalized = files.map((item, index) => {
+    if (typeof item === "string" && item.trim()) {
+      return { name: item.trim() };
+    }
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(`manifest files[${index}] must be a file name or an object entry`);
+    }
+    const unknown = Object.keys(item).filter((key) => !["name", "role", "width", "height"].includes(key));
+    if (unknown.length) {
+      throw new Error(`manifest files[${index}] contains unsupported fields: ${unknown.join(", ")}`);
+    }
+    const name = typeof item.name === "string" ? item.name.trim() : "";
+    if (!name) throw new Error(`manifest files[${index}].name must be a non-empty string`);
+    if (!roles.has(item.role)) {
+      throw new Error(`manifest files[${index}].role must be original or processed`);
+    }
+    if (!Number.isInteger(item.width) || item.width <= 0) {
+      throw new Error(`manifest files[${index}].width must be a positive integer`);
+    }
+    if (!Number.isInteger(item.height) || item.height <= 0) {
+      throw new Error(`manifest files[${index}].height must be a positive integer`);
+    }
+    return { name, role: item.role, width: item.width, height: item.height };
+  });
+  const names = normalized.map((item) => item.name);
+  if (new Set(names).size !== names.length) {
     throw new Error("manifest contains duplicate file names");
   }
   return normalized;
@@ -73,18 +98,37 @@ async function run() {
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".png"))
     .map((entry) => entry.name)
     .sort();
-  const manifestFiles = cfg.manifest ? await readManifest(cfg.manifest) : null;
-  const files = manifestFiles
-    ? manifestFiles.map((fileName) => resolveManifestFile(dir, fileName))
-    : directoryFiles.map((relative) => ({ relative, resolvedFile: path.join(dir, relative) }));
+  const manifestEntries = cfg.manifest ? await readManifest(cfg.manifest) : null;
+  const files = manifestEntries
+    ? manifestEntries.map((entry) => ({
+      ...resolveManifestFile(dir, entry.name),
+      role: entry.role ?? null,
+      expectedWidth: entry.width,
+      expectedHeight: entry.height,
+    }))
+    : directoryFiles.map((relative) => ({
+      relative,
+      resolvedFile: path.join(dir, relative),
+      role: null,
+      expectedWidth: undefined,
+      expectedHeight: undefined,
+    }));
   const checks = [];
   const missingFiles = [];
   for (const file of files) {
-    const item = { name: file.relative, ok: true };
+    const expectedWidth = file.expectedWidth ?? cfg.width;
+    const expectedHeight = file.expectedHeight ?? cfg.height;
+    const item = {
+      name: file.relative,
+      role: file.role,
+      expected_width: expectedWidth ?? null,
+      expected_height: expectedHeight ?? null,
+      ok: true,
+    };
     try {
       Object.assign(item, await pngDimensions(file.resolvedFile));
-      if (cfg.width !== undefined && item.width !== cfg.width) item.ok = false;
-      if (cfg.height !== undefined && item.height !== cfg.height) item.ok = false;
+      if (expectedWidth !== undefined && item.width !== expectedWidth) item.ok = false;
+      if (expectedHeight !== undefined && item.height !== expectedHeight) item.ok = false;
     } catch (error) {
       item.ok = false;
       item.error = error instanceof Error ? error.message : String(error);
@@ -93,7 +137,7 @@ async function run() {
     checks.push(item);
   }
   const selectedNames = new Set(files.map((file) => file.relative));
-  const extraFiles = manifestFiles
+  const extraFiles = manifestEntries
     ? directoryFiles.filter((file) => !selectedNames.has(file))
     : [];
   const countOk = cfg.expectedCount === undefined || files.length === cfg.expectedCount;

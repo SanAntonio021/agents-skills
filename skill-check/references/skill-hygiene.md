@@ -97,7 +97,20 @@ $actual = git hash-object --no-filters -- $runtimeFile
 不要只比较工作区 SHA-256。Windows 工作区可能保存为 CRLF，Git 提交和运行时副本可能是 LF；
 这会造成工作区哈希不同，但提交 blob 与运行时文件完全一致。先排除换行差异，再判断同步是否漂移。
 
-### 4. 结构和确定性测试
+### 4. 合法本机文件的精确声明
+
+只有同时满足以下条件，才把运行时额外文件认定为合法本机文件：
+
+- 它是该 Skill 明确需要、且按设计不进入 Git 的本机私有配置或状态文件；
+- 已核对目标提交没有跟踪该路径，文件也不属于应发布的源码；
+- 路径精确到单个文件并属于本次请求的 Skill，不使用通配符、目录或跨 Skill 路径。
+
+调用定向同步 helper 时，通过 `-ExpectedRuntimeLocalFiles "web-access/config.env"` 逐项声明。
+声明只把该路径从运行时文件集合比较中排除；helper 不读取、散列、复制或修改文件内容，并会拒绝
+目标提交已经跟踪的路径。完整同步与后续 `-VerifyOnly` 必须使用完全相同的声明。任何未声明的额外
+文件仍然是漂移，不能因为某个 Skill 有一处合法本机配置就忽略它的全部额外文件。
+
+### 5. 结构和确定性测试
 
 Windows 上运行 Python 校验器前设置：
 
@@ -109,7 +122,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 否则 `Path.read_text()` 可能按 GBK 读取 UTF-8 `SKILL.md`，产生假失败。随后运行
 `skill-creator/scripts/quick_validate.py` 和目标技能已有的合同测试、校验器测试。
 
-### 5. Codex 与 Claude 行为验收
+### 6. Codex 与 Claude 行为验收
 
 只使用合成数据，不登录、不上传、不发送、不点击最终动作、不修改项目文件。每个场景使用全新会话：
 
@@ -125,14 +138,14 @@ claude -p --no-session-persistence --permission-mode plan --no-chrome
 - 旧兼容入口能独立完成自己的流程；
 - 人工确认门和禁止代点最终动作仍生效。
 
-### 6. 失败分类与完成措辞
+### 7. 失败分类与完成措辞
 
 - 模型已输出但规则判断错误：运行时行为验收失败。
 - 技能输出前出现认证、余额、预扣费、中转或模型服务错误：环境阻断，既不算通过，也不算技能失败。
 - 环境恢复后必须重跑相同合成用例；成功输出后才能写“运行时验收完成”。
 - 使用中转 API 时出现 `claude.ai connectors are disabled` 提示，但技能输出成功，可记录为非阻断提示。
 
-### 7. 更新扫描超时与 UI 竞态恢复
+### 8. 更新扫描超时与 UI 竞态恢复
 
 定向同步 helper 返回 `update_scan_timeout` 时，先保留完整 JSON，并记录
 `ExpectedRemoteCommit`、精确 `Skills` 集合、失败阶段和 `clicked_skills`：
@@ -144,6 +157,14 @@ claude -p --no-session-persistence --permission-mode plan --no-chrome
 - `clicked_skills` 非空、字段缺失或无法确认是否已经点击时，不再触发 UI 更新。先用完全相同的参数运行
   `-VerifyOnly`；若仍未对齐，由用户在 CC Switch 手动定向更新后再运行 `-VerifyOnly`。
 - 恢复记录必须同时保留首次超时证据和后续验收证据，不能用后一次成功覆盖前一次异常。
+
+helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份中恢复”窗口挡住了 Skills 页面：
+
+- 这是已识别的 UI 阻塞，不是网络错误、更新扫描超时或 Skill 失败；
+- 不继续点击或重跑同步，也不由 helper 擅自关闭其他流程留下的窗口；
+- 若窗口由当前诊断流程主动打开，该流程必须在 `finally` 中关闭窗口并断言已经回到操作前页面；
+- 若窗口在本流程开始前已经存在，报告准确窗口名称并停止，待窗口关闭后再用原提交、Skill 集合和
+  本机文件声明重新执行。
 
 最终生效必须同时满足：定向同步 helper 退出码为 `0`、状态为 `runtime_active`；随后使用完全相同的
 `ExpectedRemoteCommit` 与 `Skills` 执行 `-VerifyOnly`，退出码也为 `0`、状态也为 `runtime_active`；

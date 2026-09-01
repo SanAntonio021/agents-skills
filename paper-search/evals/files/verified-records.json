@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "records": [
+    {
+      "title": "Reliable Citation Record",
+      "authors": ["Alice Smith", "Bob Jones"],
+      "journal": "Journal of Reliable Metadata",
+      "volume": "7",
+      "issue": "2",
+      "pages": "11-19",
+      "publication_date": "2025-02-11",
+      "doi": "10.5555/reliable.001",
+      "url": "https://publisher.example/reliable",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "用于 BibTeX 保守修订评测。",
+      "field_sources": {
+        "title": [{"source": "publisher", "value": "Reliable Citation Record"}],
+        "authors": [{"source": "publisher", "value": "Alice Smith; Bob Jones"}],
+        "journal": [{"source": "publisher", "value": "Journal of Reliable Metadata"}],
+        "volume": [{"source": "publisher", "value": "7"}],
+        "issue": [{"source": "publisher", "value": "2"}],
+        "pages": [{"source": "publisher", "value": "11-19"}],
+        "publication_date": [{"source": "publisher", "value": "2025-02-11"}],
+        "doi": [{"source": "doi-registry", "value": "10.5555/reliable.001"}]
+      }
+    },
+    {
+      "title": "Title Fallback Record",
+      "authors": ["Carol White"],
+      "journal": "Metadata Notes",
+      "publication_date": "2024",
+      "url": "https://publisher.example/fallback",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "用于无 DOI 的题名兜底匹配。"
+    },
+    {
+      "title": "Safely Patchable Record",
+      "authors": ["Dana Green"],
+      "journal": "Journal of Safe Patches",
+      "volume": "2",
+      "issue": "4",
+      "pages": "30-38",
+      "publication_date": "2025",
+      "doi": "10.5555/reliable.003",
+      "url": "https://publisher.example/patchable",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "用于验证简单字段可窄范围修订。"
+    },
+    {
+      "title": "Case Protected THz Entry",
+      "authors": ["Casey Macro"],
+      "journal": "Journal of LaTeX Preservation",
+      "publication_date": "2025",
+      "doi": "10.5555/reliable.004",
+      "url": "https://publisher.example/latex",
+      "source_type": "journal",
+      "verification_status": "primary-source-verified",
+      "relevance": "用于验证复杂 LaTeX 条目失败关闭。"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "wiki_title": "脱敏论文表",
+  "carrier_type": "bitable",
+  "revision": 15,
+  "fields": ["论文名称", "DOI", "期刊名称", "核验状态", "核验说明"],
+  "records": [
+    {
+      "record_id": "rec-a",
+      "论文名称": "Verified Paper One.",
+      "DOI": "10.5555/feishu.001",
+      "期刊名称": "Test Journal",
+      "核验状态": "待核验",
+      "核验说明": ""
+    },
+    {
+      "record_id": "rec-b",
+      "论文名称": "Verified Paper Two",
+      "DOI": "10.5555/WRONG.999",
+      "期刊名称": "Test Letters",
+      "核验状态": "待核验",
+      "核验说明": "页码疑似错误"
+    },
+    {
+      "record_id": "rec-c",
+      "论文名称": "Verified Paper One",
+      "DOI": "https://doi.org/10.5555/FEISHU.001",
+      "期刊名称": "Test Journal",
+      "核验状态": "待核验",
+      "核验说明": "疑似重复"
+    },
+    {
+      "record_id": "rec-d",
+      "论文名称": "Unresolved Author Conflict",
+      "DOI": "10.5555/feishu.004",
+      "期刊名称": "Conflict Journal",
+      "核验状态": "已核验",
+      "核验说明": "不同来源作者数量不一致"
+    }
+  ]
+}

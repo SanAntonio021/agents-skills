@@ -1,28 +1,31 @@
 ---
 name: paper-search
-description: 为科研问题检索、扩展并核实论文证据。Use whenever 用户要找论文、查文献、补参考文献、找某方向代表作/最新进展/相反证据，或在已有检索后说“继续找”“太少”“再深入”。默认先快速返回一批可核实且去重的结果；联网统一使用 `web-access`。已知论文下载转 `paper-download`，已有全文总结转 `paper-summary`，审稿转 `paper-review`，成文调研转 `research-report`，产品与采购调研转 `product-research-workbook`。
+description: 为科研问题检索、扩展并核实论文证据，也负责正式参考文献、IEEE 格式、BibTeX、DOI/元数据一致性核验和已有引用清单纠错。Use whenever 用户要找论文、查文献、补参考文献、找某方向代表作/最新进展/相反证据，或在已有检索后说“继续找”“太少”“再深入”；用户提到 IEEE 引用、BibTeX、正式参考文献、引用核验或引用纠错时必须使用本技能并进入逐篇完整核验。普通检索默认快速返回一批可核实且去重的结果；联网统一使用 `web-access`。已知论文下载转 `paper-download`，已有全文总结转 `paper-summary`，审稿转 `paper-review`，整篇稿件引用覆盖检查转相应论文编辑或审查技能，远程文档写回转对应文档技能。
 license: MIT
 metadata:
-  version: "1.0.0"
-  skill-author: "SanAn local adaptation; evidence normalization adapted from K-Dense Inc. under MIT"
+  version: "1.1.0"
+  skill-author: "SanAn local adaptation; evidence and citation-management approaches adapted from K-Dense Inc. under MIT"
 ---
 
-# 论文检索
+# 论文检索与引用核验
 
 ## 目标
 
 围绕用户当前研究问题，先给出一批可靠、直接相关、可继续核实的论文，再按自然追问扩展覆盖范围。结果默认在对话中呈现，不固定生成“文献包”或其他文件。
 
-本技能负责“找到并核实证据”。它不替用户判断未公开实验结果，也不把搜索摘要写成已经核实的论文事实。
+本技能负责找到论文、核实证据，并在用户需要正式引用时逐篇核对引用元数据。它不替用户判断未公开实验结果，也不把搜索摘要写成已经核实的论文事实。
 
 ## 入口与边界
 
 - 用户要找论文、筛代表作、查最新进展、找支撑或反对某个科学论断的证据：使用本技能。
+- 用户要求 IEEE 引用、BibTeX、正式参考文献、DOI/元数据一致性核验，或修正已有引用清单：使用本技能的完整核验模式。
 - 用户已经给出题名、DOI、论文页或清单并要下载 PDF：转 `paper-download`。
 - 用户已有 PDF、正文或可读全文并要总结：转 `paper-summary`。
 - 用户要审查现有论文、模拟审稿或填写审稿意见：转 `paper-review`。
 - 用户已经完成取证并要写行业、技术、政策或市场调研报告：转 `research-report`。
 - 用户要建立产品库、参数对比、采购渠道或产品调研工作簿：转 `product-research-workbook`。
+- 用户要检查整篇稿件是否漏引、错引、正文编号是否对应或参考文献是否被正文使用：转相应论文编辑或审查技能；本技能只核对给定条目本身。
+- 用户要把核验结果写回飞书：本技能先生成核验后的内容，再按 Wiki 节点的实际载体转 `lark-doc` 或 `lark-base`，只改用户指定的引用区块或记录字段；不得顺手改其他正文或表格内容。
 - 用户要求正式系统综述时，先确认协议、数据库范围、筛选流程、排除理由和偏倚评价；普通主题检索不能冒充 PRISMA 完整性。
 
 ## 联网规则
@@ -32,7 +35,7 @@ metadata:
 搜索引擎结果、聚合页和摘要只用于发现候选。支撑最终条目的信息应尽量回到直接来源：
 
 1. 论文出版社页、正式会议页、期刊页或可信全文库；
-2. DOI、PubMed、Crossref 等权威元数据记录；
+2. DOI 注册记录，以及 Crossref、PubMed、OpenAlex 等权威元数据记录；
 3. 作者或机构主页、机构知识库中的可对应版本；
 4. 只有搜索摘要可见时，保留为发现线索，不升级为已核实事实。
 
@@ -63,7 +66,21 @@ metadata:
 
 先返回一批可靠结果，不为了达到固定数量填充弱相关文献。若直接匹配较少，明确写出缺口和下一轮最值得扩展的方向。
 
-### 3. 逐条核实
+普通检索只核对识别论文和判断相关性所需的信息，不自动追查每篇的卷、期、页码和全部作者。这样可以先把真正相关的论文找对，再把时间花在用户准备正式使用的条目上。
+
+### 3. 正式引用完整核验
+
+用户要求 IEEE、BibTeX、正式参考文献、引用核验或引用纠错时，逐篇进入完整核验，不沿用快速检索中的未核实元数据。开始前读取 `references/citation-workflow.md`，按其中的字段、来源优先级、版本合并、BibTeX 对照和 IEEE 输出规则执行。
+
+完整核验遵守这些结果边界：
+
+- 正式发表版本优先于预印本；两者能确定为同一工作时合并为一条，并保留预印本或其他版本入口。
+- 出版商、DOI 注册记录和权威索引不一致时，不选择对输出更方便的值；记录具体冲突并保留可核实的原值。
+- 没查到作者、卷期、页码、文章号或 DOI 时，字段留空并直接说明“未查到什么”，不删除该论文，也不猜测补齐。
+- 修正已有参考文献时保持原编号和输入顺序；只有用户明确要求重新排序时才改变顺序。
+- 默认在对话中给出 IEEE 引用和逐条问题；只有用户明确要求才另外生成 BibTeX、JSON 或 Markdown 文件。
+
+### 4. 逐条核实
 
 每条结果至少保留：
 
@@ -86,7 +103,7 @@ metadata:
 
 存在 DOI 不等于全文已读，也不自动等于 `primary-source-verified`。不要虚构作者、年份、DOI、结论、样本量或实验指标。题名、年份、DOI 或链接发生冲突时，保留冲突并说明待核项。
 
-### 4. 自然语言续搜
+### 5. 自然语言续搜
 
 用户说“继续找”“还是太少”“再深入”“再来一些”时，把它视为当前检索的延续：
 
@@ -99,7 +116,7 @@ metadata:
 
 除非用户明确改变范围，续搜不能擅自放宽核心技术拓扑、年份或证据门槛。
 
-### 5. 输出
+### 6. 输出
 
 普通查询直接在对话中给出紧凑表格：
 
@@ -112,7 +129,7 @@ metadata:
 - 基于多条证据作出的推论，并明确标为推论；
 - 仍未闭合的证据缺口。
 
-如果用户要求 Word、Markdown、表格、JSON 或参考文献文件，再路由到相应现有技能或使用下方整理脚本。不要为普通查询自动写文件。
+如果用户要求 Word、Markdown、表格、JSON 或参考文献文件，再路由到相应现有技能或使用下方整理脚本。不要为普通查询自动写文件。正式引用模式默认在聊天中输出 IEEE 引用，并在条目下用直接中文说明问题，例如“未查到页码”“BibTeX 中的 DOI 对应另一篇论文”。
 
 ## 证据记录整理脚本
 
@@ -122,14 +139,17 @@ metadata:
 python scripts/evidence_records.py --input records.json --format json
 python scripts/evidence_records.py --input records.json --format markdown --output records.md
 python scripts/evidence_records.py --input records.json --format bibtex --output references.bib
+python scripts/evidence_records.py --input records.json --format ieee --order input
+python scripts/evidence_records.py --input verified.json --bibtex-input existing.bib --format json --order input
 ```
 
-输入可为记录数组，或包含 `query` 与 `records`/`sources` 数组的对象。脚本会做保守规范化、DOI/PMID/年份抽取、来源分类、去重、排序和 coverage 统计；缺失事实保持缺失，不自行联网补齐。
+输入可为记录数组，或包含 `query` 与 `records`/`sources` 数组的对象。脚本会做保守规范化、DOI/PMID/年份抽取、来源分类、去重、排序和 coverage 统计；引用核验输入还可保留完整出版字段、字段来源、原引用和逐条问题。`--order ranked` 是默认的检索结果排序；修正已有清单时使用 `--order input` 保持原顺序。用 `--bibtex-input` 传入需要对照的现有 `.bib` 文件。缺失事实保持缺失，脚本不自行联网补齐。
 
 ## 质量底线
 
 - 直接拓扑匹配优先于结构相似但对象不同的近似工作。
 - 预印本、正式发表版本、勘误和撤稿状态分开记录。
+- 正式引用模式只输出经过本轮来源核验的字段；未核实的原引用内容可以保留用于比较，但不能冒充已核实结果。
 - 引用量、期刊名气和作者声望只能作为次级排序信号，不能替代直接相关性。
 - 保留相反、零结果和限制性证据，不只收集支持用户预期的论文。
 - 只看到摘要时，不声称完成全文核查。

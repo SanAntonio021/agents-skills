@@ -96,9 +96,19 @@
 17. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
     - 原发布提交仍使用原始 SHA、Skill 集合和历史/范围参数执行 `-VerifyOnly`。它未通过时，保留该提交的
       `source_pushed_runtime_not_active` 结论和差异证据；当前版本的成功不能倒推为原提交已验收。
-    - 只有当前 `HEAD` 与远端为同一提交、原发布提交是该提交祖先、且源码没有未声明工作区偏差时，才可另外以当前
-      `HEAD` 执行 `-VerifyOnly`。只有该调用返回退出码 `0`、`runtime_active` 并完成四层一致性验收，才可报告
-      “当前最新版已部署”；这是一条独立事实，不改变原发布提交的结论。
+    - 验收当前可用版本前，先确认当前 `HEAD` 与远端为同一提交、原发布提交是其祖先，且目标 Skill 连续两次有界
+      状态读取均为空且一致。当前 `HEAD` 确实修改了目标 Skill 时，按该提交实际修改的完整 Skill 集合执行
+      `-VerifyOnly`；不能只请求其中一个 Skill。
+    - 当前 `HEAD` 没有修改目标 Skill，或 helper 因目标不属于该提交而返回 `changed_skill_set_mismatch` 时，不把
+      与目标无关的 HEAD 当作验收版本。按时间倒序检查所有修改过目标 Skill 的祖先提交，比较每个候选的
+      `<skill>` 目录 tree object 与 `HEAD:<skill>`；选择最近一个整个目录内容与当前 HEAD 相同的提交，而不是只比较
+      `SKILL.md` 等单个文件。随后从该提交差异取得完整 Skill 集合，并确认集合中每个 Skill 的目录 tree object 到
+      当前 HEAD 均未变化、对应路径没有 tracked、staged 或 untracked 偏差。候选不是当前 HEAD 和远端的祖先、任一
+      Skill 后来又变化、范围不完整或状态不稳定时停止，不靠手工哈希或缩小请求范围绕过 helper。
+    - 上述候选满足条件时，以候选提交、其完整 Skill 集合和 `-AllowHistoricalCommit -VerifyOnly` 执行只读验收。
+      只有该调用返回退出码 `0`、`runtime_active` 并完成四层一致性验收，才可报告目标 Skill 的当前内容已部署；
+      这是独立事实，不改变原发布提交的失败结论。中央异常报告同时写清原提交状态和当前可用状态，当前版本已经可用时
+      删除过期的人工操作要求，但不把整份报告标成原提交已经 `resolved`。
     - 这个分流只做只读验收，不重新扫描、点击或修改运行时。源码比较继续以 helper 指定提交的 Git blob 为准，
       不直接比较 Windows 工作树字节，避免 `core.autocrlf` 引起 CRLF/LF 假差异。
 18. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的

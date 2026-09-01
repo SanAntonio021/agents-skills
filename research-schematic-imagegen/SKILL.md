@@ -28,7 +28,7 @@ metadata:
 
 1. **图的用途**：基金申报、工程申报、答辩 PPT、论文概念图，还是内部讨论。
 2. **技术依据**：哪份本地文件或用户确认内容是当前权威版本。
-3. **生成路径**：宿主原生图像工具、用户已确认的 OpenAI 兼容图像接口、经用户对准确站点单独授权的网页生图，还是只输出提示词。
+3. **生成路径**：默认按本地登录账号和 CC Switch 渠道的总顺序执行；只有用户明确要求独立兼容接口、准确网页站点或只输出提示词时，才改走对应路径。
 
 如果技术依据互相冲突，先列出冲突并问一个最关键的问题。不要先生成一张视觉上漂亮、技术上错误的图。
 
@@ -38,7 +38,13 @@ metadata:
 
 本 skill 的图像请求与 Codex/Claude 聊天 provider 解耦。不要为了生图切换 CC Switch 当前聊天 provider；只支持 `/images/generations` 或 `/images/edits` 的中转站不能承担聊天请求。
 
-默认后端是 Cici Switch 私有注册表，而不是独立 API key。不要询问用户用哪家渠道。未指定渠道时直接按注册表 v2 的默认顺序 `UESTC -> 贾维斯 -> 夯炸了` 尝试。CLI `--provider` 或 `RESEARCH_IMAGE_PROVIDER` 只改变首选渠道，不锁定一家；首选失败后按全局默认顺序补齐尚未尝试的渠道。CLI 优先于环境变量。例如显式贾维斯时顺序为 `贾维斯 -> UESTC -> 夯炸了`，显式夯炸了时为 `夯炸了 -> UESTC -> 贾维斯`。
+默认总路径是 `本地登录账号 -> UESTC -> 贾维斯 -> 夯炸了`，不要询问用户用哪家渠道。
+
+`本地登录账号` 指当前宿主提供的原生图像生成或编辑工具。它不是 CC Switch provider，不写入私有注册表，也不要求切换聊天 provider。宿主暴露原生图像工具时先调用一次；宿主没有该工具时直接进入 CC Switch 路径，不把“工具不存在”说成账号故障。宿主原生工具不能证明或选择用户要求的精确模型时，该路径不满足请求，直接进入能够验证模型的 CC Switch 路径。
+
+CC Switch 是第二层路径，继续使用私有注册表 v2 的顺序 `UESTC -> 贾维斯 -> 夯炸了`。CLI `--provider` 或 `RESEARCH_IMAGE_PROVIDER` 只改变这一层的首选渠道，不锁定一家，也不把该渠道提到本地登录账号之前；首选失败后按 CC Switch 全局默认顺序补齐尚未尝试的渠道。CLI 优先于环境变量。例如显式贾维斯时总顺序为 `本地登录账号 -> 贾维斯 -> UESTC -> 夯炸了`，显式夯炸了时为 `本地登录账号 -> 夯炸了 -> UESTC -> 贾维斯`。
+
+宿主原生工具无法由 Node.js 脚本调用，因此 `check-mode.js`、`generate.js` 和 `edit.js` 只负责 CC Switch 或 direct 这一段，不代表完整总路径。代理必须先执行本地登录账号路径，只有允许换路时才调用这些脚本。
 
 ```powershell
 node <skill-dir>/scripts/check-mode.js --json
@@ -46,11 +52,12 @@ node <skill-dir>/scripts/check-mode.js --json
 
 规则：
 
-- 允许尝试下一家：网络错误、超时、拥堵、服务端故障、当前渠道没有所需生图模型、空图、坏图、无法识别的图片数据和结果下载失败。预检阶段对应网络错误、超时、404/405/408/429/5xx、模型不可用或无法解析模型列表；正式请求阶段对应网络错误、超时、404/405/408/429/5xx 和无效图片结果。
-- 必须立即停止：密钥失效，账号无权限，余额不足，套餐到期或未开通生图，请求本身写错，以及平台明确拒绝生成。注册表无效、CC Switch 数据库打不开、登记渠道丢失或身份变化也必须停止，不能伪装成普通渠道故障。
+- 允许从本地登录账号进入 CC Switch：宿主没有原生图像工具，原生工具网络错误、超时、拥堵或服务端故障，原生工具不能满足精确模型要求，以及返回空图、坏图、无法识别或无法保存的图片结果。
+- 允许在 CC Switch 内尝试下一家：网络错误、超时、拥堵、服务端故障、当前渠道没有所需生图模型、空图、坏图、无法识别的图片数据和结果下载失败。预检阶段对应网络错误、超时、404/405/408/429/5xx、模型不可用或无法解析模型列表；正式请求阶段对应网络错误、超时、404/405/408/429/5xx 和无效图片结果。
+- 必须立即停止：本地或中转账号需要重新登录、密钥失效、账号无权限、余额不足、套餐到期或未开通生图，请求本身写错，以及平台明确拒绝生成。注册表无效、CC Switch 数据库打不开、登记渠道丢失或身份变化也必须停止，不能伪装成普通渠道故障。
 - `/models` 预检单次 10 秒，只对网络错误、超时、429 和 5xx 重试一次；预检不计费。每个渠道每次操作最多发送一次正式生成或编辑 POST。
 - 单家正式请求上限 600 秒，结果 URL 下载上限 60 秒，整次操作总预算 900 秒。预算不足时不再发起下一家。
-- 正式请求发出后的任何换路都可能导致重复计费。成功和失败 JSON 都要返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；后者只统计已发出的生成/编辑 POST，最大值不超过本次候选渠道数。
+- 正式请求发出后的任何换路都可能导致重复计费。本地原生工具每项生成或编辑最多调用一次；在 `record.md` 中记录 `native_requests_sent`。成功和失败 JSON 继续返回 `attempted_aliases`、`failover_count` 与 `billable_requests_sent`；`billable_requests_sent` 只统计 CC Switch 已发出的生成/编辑 POST，不能把它误写成总请求数。记录总数时使用 `native_requests_sent + billable_requests_sent`。
 - `/models` 仅证明模型可见。每个新渠道仍需分别取得真实 `/images/generations` 与 `/images/edits` 证据，不能用一种接口的成功替代另一种。
 - `gpt-image-2` 是登记时的默认模型。`gpt-image-2-cf` 仅在用户明确指定，且该渠道当前 `/models` 返回它时使用。
 - API key 只从 CC Switch 数据库读取到当前进程内存，不写进 skill、项目、注册表、命令行参数或日志；不切换当前聊天 provider。
@@ -71,11 +78,11 @@ node <skill-dir>/scripts/register-ccswitch-image-provider.js --alias UESTC --pro
 node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id> --json
 ```
 
-独立接口只保留为显式兼容路径：传入 `--backend direct` 或设置 `RESEARCH_IMAGE_BACKEND=direct`。direct 模式不故障转移；该模式才会读取显式 `RESEARCH_IMAGE_ENV_FILE` 或 `~/.config/research-schematic-imagegen/image-api.env`，普通路径绝不自动读取 `hangzhale.env`。
+独立接口只保留为显式兼容路径：传入 `--backend direct` 或设置 `RESEARCH_IMAGE_BACKEND=direct`。用户明确选择 direct 时直接执行该接口，不先调用本地登录账号；direct 模式不故障转移。该模式才会读取显式 `RESEARCH_IMAGE_ENV_FILE` 或 `~/.config/research-schematic-imagegen/image-api.env`，普通路径绝不自动读取 `hangzhale.env`。
 
 #### 网页生图与改图
 
-网页不是注册表渠道链或 direct 接口的自动备用。只有注册表渠道按上述规则结束，且用户对准确站点作出单独授权后，才进入网页生图；用户只说“换个网站”而未确认站点时，先说明准备使用的站点并等待确认。原渠道失败的停止条件和错误原文仍然保留，不能用网页成功倒推原渠道成功。
+网页不是本地登录账号、注册表渠道链或 direct 接口的自动备用。只有本地登录账号和注册表渠道按上述规则结束，且用户对准确站点作出单独授权后，才进入网页生图；用户只说“换个网站”而未确认站点时，先说明准备使用的站点并等待确认。原渠道失败的停止条件和错误原文仍然保留，不能用网页成功倒推原渠道成功。
 
 进入网页路径时，必须同时使用 `web-access`，并先读 [references/web-image-generation.md](references/web-image-generation.md)。每项已授权的生成或编辑只提交一次。页面长时间停在进度状态、连接中断或结果不确定时，先重新打开或刷新同一会话并核对是否已有结果，不重复提交。用户计划在底图确认后继续改同一张图时，保留该会话作为后续编辑上下文。
 
@@ -170,6 +177,8 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 - 当设备外形、结构关系和透视已经确认，后续只增加或修改文字、标注线、箭头或方框时，优先用脚本后期添加标注，不再调用生图或改图接口重绘设备主体。只有新的技术关系无法在现有构图中表达，或用户明确要求重画时，才生成新的候选图。
 - 对线条、箭头、光束和规则边框，模型编辑若出现边缘模糊、双边、线宽漂移、过强光晕或端点错位，最多再做一次针对性编辑；仍不清晰就停止生成。
 - 模型不适合稳定绘制简单几何元素时，改用脚本后期绘制。最终载体是 PPTX 且用户明确授权修改该文件时，优先使用 PowerPoint 原生矢量线条和发光效果；没有 PPTX 修改授权时，只处理位图或给出可复现的线宽、颜色、透明度和发光参数。
+
+本地登录账号可用时，先用宿主原生图像工具生成或编辑，并把实际路径记入 `record.md`。以下命令只在需要进入 CC Switch 或 direct 路径时使用。
 
 文本生图：
 

@@ -120,6 +120,10 @@
     `-VerifyOnly` 重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
     `-ExpectedBaseCommit` 参数。后续 `-VerifyOnly` 通过只证明人工处理后的当前运行时已经对齐，不能反推此前 helper 的
     点击已经完成更新，也不能仅凭最终对齐断定是哪一次点击使更新生效。
+
+    已安装 Skill 的定向更新通过，只证明更新路径已经验证，不能据此声称首次安装也已实测。首次安装新 Skill 只有在
+    用户确实需要该 Skill、后台安装真实执行，并且同样通过 `runtime_active` 和四层一致性验收后，才报告为已经验证；
+    不为了补测试随便安装无用 Skill。
 17. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
     - 原发布提交仍使用原始 SHA、Skill 集合和历史/范围参数执行 `-VerifyOnly`。它未通过时，保留该提交的
       `source_pushed_runtime_not_active` 结论和差异证据；当前版本的成功不能倒推为原提交已验收。

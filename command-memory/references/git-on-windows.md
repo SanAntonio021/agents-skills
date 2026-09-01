@@ -234,6 +234,19 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - success_signal: 隔离 worktree 的暂存差异只含批准内容，候选提交基于固定远端提交，原工作区 `HEAD`、暂存区和未提交内容保持不变
 - capture_rule: 同文件混合改动先隔离重建，再由 Git 生成 patch 并执行 `--cached --check`；内容范围不清或远端基线变化时失败关闭
 
+### Pattern: git-align-authorized-local-worktree-after-isolated-release
+- scenario: 批准内容已经在 detached worktree 中提交并发布，用户随后明确要求把同一补丁更新到原本地工作副本；原工作副本仍有必须保留的其他改动，甚至与批准改动位于同一文件
+- use_when: 发布提交及其唯一父提交已固定；这次“更新本地工作副本”取得了发布之后的单独明确授权；可以准确列出会改变行为的目标文件、仅含说明文字的混合文件以及批准 hunk
+- shell: PowerShell + Git for Windows；文本修改使用 `apply_patch`
+- preflight: 先确认已知并行写入者当前的 Git 写操作已经结束，记录本地 `HEAD`、分支、`git status --short` 和完整暂存清单；对这些状态做两次有界只读检查，只有两次一致才继续。发布批准本身不等于本地修改授权，缺少用户后续明确要求时停止
+- parent_match: 对每个会改变执行行为的目标文件，用 `git hash-object --path=<RELATIVE_PATH> -- <RELATIVE_PATH>` 计算当前工作树经 Git 过滤后的 blob，并与 `<RELEASE_COMMIT>^:<RELATIVE_PATH>` 比较；全部相等才说明本地文件仍处于发布补丁的准确起点。任何一个不相等都停止，不覆盖、不整文件复制
+- apply_rule: 只用 `apply_patch` 应用已经审查过的准确 hunk。行为文件可以应用完整批准差异；含有其他任务改动的文档只应用获批的文字 hunk，不能用 checkout、restore、整文件复制或从隔离副本覆盖
+- candidate_check: 修改后，每个行为目标的过滤后 blob 必须等于 `<RELEASE_COMMIT>:<RELATIVE_PATH>`；完整暂存清单必须与修改前一致；逐项确认同文件内原有的未批准 hunk 仍在。随后运行相关完整测试，不以单个冒烟测试代替已有完整套件
+- publication_boundary: 本地对齐不再生成提交或再次推送；远端发布已经完成，本步骤只让用户当前工作副本取得同一批准改动。若发布后远端又有新提交，不把这些新内容顺带带入本地
+- avoid: 不把“源码已推送”解释成可以改原工作副本；不在并行写入未结束或两次状态不一致时继续；不 stash、reset、checkout、restore、清空暂存区、覆盖整文件、重放未知工作树差异或再次提交推送
+- success_signal: 行为目标的 blob 与发布提交一致，暂存集合未变，原有未批准 hunk 完整保留，相关完整测试通过；汇报应明确说出哪些本地脚本或模块已经可直接使用
+- capture_rule: 隔离发布和本地启用是两次授权；本地启用只在准确父版本、稳定现场和逐 hunk 保留其他改动的条件下进行
+
 <a id="pitfall-5"></a>
 
 ## 坑 5：云盘临时 ref 或 FETCH_HEAD 锁挡住 fetch

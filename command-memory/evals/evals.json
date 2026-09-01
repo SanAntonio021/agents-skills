@@ -144,6 +144,12 @@
       "prompt": "Windows 上运行 Skill 发布验收时，第一次 `-VerifyOnly` 在远端预检阶段报 `schannel: failed to receive handshake, SSL/TLS connection failed`，还没开始检查运行时。我要不要把它算作第一轮验收，或者先执行 `git config --global http.sslVerify false` 再重试？",
       "expected_output": "应加载 git-on-windows 的 TLS 预检恢复模式；把该调用识别为加密连接阶段的网络传输中断，不判为仓库、Skill 或证书配置损坏，也不计入正式验收轮次。使用同一仓库、远端和分支执行一次只读 `git ls-remote --exit-code --refs`，要求唯一 40 位 SHA；探针成功后，以原提交、原 Skill 集合和原范围参数从头运行原验收，探针或原验收再次出现同类错误则停止并报告网络阻断。不得关闭 SSL 校验、改 TLS 后端、替换 CA、凭据或 remote URL。",
       "files": []
+    },
+    {
+      "id": 25,
+      "prompt": "我批准的 CC Switch 同步脚本修复已经在 detached worktree 中提交并推送。原本地工作副本还停在发布提交的父版本：`CcSwitchSkillSync.psm1` 和对应测试没有别的改动，但 README 同时有另一个任务留下的未提交说明。现在我另外明确同意把已发布修复更新到这份本地工作副本。请安全完成，不能覆盖 README 的另一段改动。",
+      "expected_output": "应加载 git-on-windows 的隔离发布后本地对齐模式。把这次同意视为独立于发布的本地修改授权；先确认并行 Git 写入结束，记录 HEAD、完整状态和暂存集合并做两次一致的有界只读检查。对会改变行为的模块和测试文件，用 git hash-object --path 计算当前过滤后 blob，要求分别等于发布提交父版本中的 blob；不一致就停止。只用 apply_patch 应用已审查的准确 hunk，README 只改获批段落并保留另一任务的 hunk。修改后要求行为文件 blob 等于发布提交、暂存集合不变、README 原改动仍在，并运行相关完整测试。不得 checkout/restore/整文件复制，也不再次提交或推送。",
+      "files": []
     }
   ]
 }

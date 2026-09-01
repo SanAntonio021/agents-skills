@@ -50,24 +50,37 @@
 
 11. Skill push 成功后，取得 40 位远端提交 SHA，并从提交差异中列出本次实际修改且仍存在的 Skill。
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
-    Skill 不进入自动更新，继续按第 17 条处理。
+    Skill 不进入自动更新，继续按第 18 条处理。
 12. 调用同步 helper 前重新读取本地 `HEAD` 和远端当前分支。若并发任务已提交并推送，使本次发布提交不再是
     当前 `HEAD`，不要把 `ExpectedRemoteCommit` 换成新的 `HEAD`，也不要 reset、rebase 或重新提交。本次提交只有在
     同时满足以下条件时才可继续：它是本地当前 `HEAD` 和远端当前分支的共同祖先；本次批准发布范围只由该单个
     提交构成；该提交实际修改的 Skill 集合与本次请求完全一致。满足时固定使用本次原始 40 位 SHA，并给 helper 增加
     `-AllowHistoricalCommit`；历史提交模式不能同时使用 `-ExpectedBaseCommit`，发布源仍是该提交中的 Git blob。
-13. 当前任务立即调用
+13. 同文件混合改动或分叉隔离发布使用 detached worktree 时，生产 helper 的权威源码根仍是
+    `D:\BaiduSyncdisk\.agents\skills`，不得把隔离 worktree 或其他副本改作 `SourceRoot`。如果发布提交已经推送，
+    远端 tip 仍精确等于本次批准的发布提交，而权威 checkout 的目标分支落后，可在以下条件全部成立时做一次受控
+    快进：权威 checkout 正检出目标分支；其 `HEAD` 是远端 tip 的祖先；全仓库 tracked 和 staged 状态为空；先记录
+    完整 untracked 路径集合，并确认它们与 `HEAD..远端 tip` 的变更路径不存在同路径或祖先/后代重叠。随后只允许
+    `git merge --ff-only <已核实的远端引用>`；完成后必须确认本地 `HEAD`、远端 tip 和批准提交三者完全相同，tracked
+    和 staged 状态仍为空，untracked 路径集合逐项不变。远端已越过本次发布提交、分支分叉、存在 tracked/staged
+    改动、路径重叠或快进后复核不一致时立即停止，不 merge、rebase、reset，也不清理或搬动原有 untracked 文件。
+
+    对齐完成或本来已经对齐后，调用 helper 前还要对本次目标 Skill 路径连续做两次有界状态读取；两次都必须没有
+    tracked、staged 或 untracked 变化且结果一致，才算源码状态稳定。任一次不干净或两次结果不同都在 UI 操作前
+    停止并留档，不靠等待后重试 helper 来掩盖并发写入。
+14. 当前任务立即调用
     `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，两个必填参数是
     `-Skills`（Skill 名称数组，不是 `-SkillNames`）和 `-ExpectedRemoteCommit`（40 位 SHA），例如
     `-Skills @("skill-a","skill-b") -ExpectedRemoteCommit "<40位SHA>"`。该 helper 只通过 UI Automation 进入 Skills 页、执行一次“检查更新”并
     逐个过滤后点击单项“更新”；禁止“全部更新”，每个目标最多点击一次。不建 watcher 或计划任务，不修改
     CC Switch 源码、EXE、数据库、配置或运行时目录。CC Switch 未运行时由 helper 启动；优先后台操作，必要时
     可短暂前台并在结束时恢复原窗口。
-14. helper 若在任何 UI 操作前返回退出码 `11`、错误码 `sync_already_running`，说明另一个技能同步任务仍在运行。
+15. helper 若在任何 UI 操作前返回退出码 `11`、错误码 `sync_already_running`，说明另一个技能同步任务仍在运行。
     不结束对方进程、不抢锁，也不并行启动新同步；通过只读进程检查等待原同步结束后，才使用完全相同的提交 SHA、
     Skill 集合和历史/范围参数重新调用。只有这种在任何 UI 操作前因其他同步任务未结束而被拒绝的情况，才允许重新
-    调用；这不放宽页面、扫描、单项更新或验收失败后的禁止重试规则。
-15. helper 输出中的 `ui.clicked_skills`、单项 `action: updated` 或 `action: installed` 是点击尝试遥测：它们在等待
+    调用；这不放宽页面、扫描、单项更新或验收失败后的禁止重试规则。helper 返回 `source_skill_dirty` 时说明第 13 条
+    的稳定前提已经失效，必须停止并生成中央异常报告；不得自动清理源码、改用其他 `SourceRoot` 或再次调用 helper。
+16. helper 输出中的 `ui.clicked_skills`、单项 `action: updated` 或 `action: installed` 是点击尝试遥测：它们在等待
     四层对齐前就会写入，只能证明 helper 已发出并记录对应点击，不能证明 CC Switch 已接受、下载、安装或完成更新。
     `all_update_invoked: false` 也只证明 helper 没有调用“全部更新”。最终状态仍是
     `source_pushed_runtime_not_active` 时，对用户应直说“helper 记录了点击尝试，但运行时没有对齐，因此不能确认更新完成”，
@@ -80,7 +93,7 @@
     `-VerifyOnly` 重新验收；重新验收必须复用原调用的提交 SHA、Skill 集合和 `-AllowHistoricalCommit` 或
     `-ExpectedBaseCommit` 参数。后续 `-VerifyOnly` 通过只证明人工处理后的当前运行时已经对齐，不能反推此前 helper 的
     点击已经完成更新，也不能仅凭最终对齐断定是哪一次点击使更新生效。
-16. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
+17. 同一 Skill 的后续提交可能覆盖原发布提交的运行时基线。此时原发布提交与当前版本必须分开验收和报告：
     - 原发布提交仍使用原始 SHA、Skill 集合和历史/范围参数执行 `-VerifyOnly`。它未通过时，保留该提交的
       `source_pushed_runtime_not_active` 结论和差异证据；当前版本的成功不能倒推为原提交已验收。
     - 只有当前 `HEAD` 与远端为同一提交、原发布提交是该提交祖先、且源码没有未声明工作区偏差时，才可另外以当前
@@ -88,7 +101,7 @@
       “当前最新版已部署”；这是一条独立事实，不改变原发布提交的结论。
     - 这个分流只做只读验收，不重新扫描、点击或修改运行时。源码比较继续以 helper 指定提交的 Git blob 为准，
       不直接比较 Windows 工作树字节，避免 `core.autocrlf` 引起 CRLF/LF 假差异。
-17. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
+18. 删除或合并 skill（源码目录被移除）时，CC Switch 同步只做增量更新，不会删除运行时里已移除的
     skill。用户点完同步后，源码目录已消失，但 `.cc-switch\skills\<name>`、`.claude\skills\<name>`、
     `.codex\skills\<name>` 三处仍会残留旧副本，必须手动清理。顺序：先删 `.claude\skills\` 和
     `.codex\skills\` 下的软链接（用 `Get-Item -Force` 拿到后调 `.Delete()`，不要用 `Remove-Item -Recurse`，

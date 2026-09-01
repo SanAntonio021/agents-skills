@@ -5,6 +5,7 @@
 ## 参考范围
 
 - 参考 OpenAI 运行时 `Spreadsheets` skill 的能力范围，独立实现读取、创建、分析、常规编辑、公式检查和视觉验证的本地工作流。
+- 参考官方插件已公开的能力边界，将已打开的 Excel、当前选区、ChatGPT Excel 加载项和已连接会话明确路由到 `spreadsheets:excel-live-control`；本 skill 只保留独立文件工作流。
 - 融合本轮已经验证的本地经验：OOXML 包级差异审计、LibreOffice 隔离重算、公式缓存回填、打印范围与分页复核、PDF 高分辨率逐页检查。
 - 使用公开的 OOXML ZIP/XML 结构、Python 标准库接口和 LibreOffice 命令行能力。
 
@@ -12,6 +13,7 @@
 
 - 未复制、近似改写或打包任何官方或第三方 skill 的受限文本、脚本、资产。
 - 未复制运行时依赖目录或专有实现。
+- 未复制 `spreadsheets:excel-live-control` 的正文、工具说明或资产，只在触发说明中引用其公开名称作为路由目标。
 - 不依赖或复制旧运行时 `xlsx` skill；同步后本 skill 可独立承担通用表格和高保真任务。
 
 ## 维护原则

@@ -1,11 +1,17 @@
 ---
 name: xlsx
-description: 处理以电子表格为主要输入或输出的全部任务，包括读取、问答、创建、编辑、修复、分析、清洗、重构、公式、格式、图表、数据验证、CSV/TSV 转换，以及复杂既有 XLSX/XLSM 模板的 OOXML 高保真修改、LibreOffice 无界面重算、公式缓存回填和 PDF 版面验证。用户只要提到 `.xlsx`、`.xlsm`、`.xltx`、`.xls`、`.csv`、`.tsv` 或“表格/工作簿”，并希望读取、修改或产出表格，就使用本 skill。不要用于实时控制已打开的 Excel、Google Sheets API，或主要交付物是 Word、PPT、网页、数据库管道而非表格的任务。
+description: 处理独立电子表格文件，包括读取、问答、创建、编辑、修复、分析、清洗、重构、公式、格式、图表、数据验证、CSV/TSV 转换，以及复杂既有 XLSX/XLSM 模板的 OOXML 高保真修改、LibreOffice 无界面重算、公式缓存回填和 PDF 版面验证。用户提到 `.xlsx`、`.xlsm`、`.xltx`、`.xls`、`.csv`、`.tsv` 或本地表格/工作簿文件，并希望读取、修改或产出文件时使用。不要用于已打开或当前活动的 Excel 工作簿、当前选区、ChatGPT Excel 加载项或已连接 Excel 会话；这些实时操作交给 `spreadsheets:excel-live-control`。也不要用于 Google Sheets API，或主要交付物是 Word、PPT、网页、数据库管道而非表格的任务。
 ---
 
 # XLSX
 
 这是完整的表格技能，不依赖另一个通用 xlsx skill。先判断任务属于常规路线还是高保真路线，再用最小风险工具完成并验证交付。
+
+## 边界路由
+
+- 输入或交付物是独立 `.xlsx`、`.xlsm`、`.xltx`、`.xls`、`.csv`、`.tsv` 文件时，使用本 skill。
+- 目标是已打开或当前活动的 Microsoft Excel 工作簿、当前选区、ChatGPT Excel 加载项或已连接 Excel 会话时，停止本地文件工作流，改用 `spreadsheets:excel-live-control`。
+- 同一任务从独立文件切换到已连接 Excel 会话后，重新确认目标，不把本 skill 的 OfficeCLI、OOXML、LibreOffice 或 Office COM 路线用于实时会话。
 
 ## OfficeCLI route
 

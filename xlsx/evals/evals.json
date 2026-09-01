@@ -99,6 +99,28 @@
         "替换前使用上次成功发布记录的 SHA-256，不能临时现算哈希绕过保护门",
         "首次最终回复交付后不覆盖原文件，标题修正输出新的递增版本"
       ]
+    },
+    {
+      "id": 10,
+      "prompt": "读取 downloads 里的独立 orders.csv，保留订单号前导零，生成 orders_checked.xlsx，并验证公式和版面。",
+      "expected_output": "使用本地 xlsx 文件工作流处理独立 CSV/XLSX，不要求启动或连接 Excel。",
+      "files": [],
+      "assertions": [
+        "路由到本地 xlsx skill",
+        "输出为独立的新工作簿文件",
+        "不调用 Excel Live Control 或连接文档工具"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "我已在 ChatGPT Excel 加载项中连接当前工作簿。请把当前选区设为黄色，在 A2 写入 41、A3 写入 =A2+1，并读回结果。",
+      "expected_output": "不启动本地文件、OfficeCLI、OOXML、LibreOffice 或 Office COM 路线；转交 spreadsheets:excel-live-control，通过连接文档工具操作当前会话。",
+      "files": [],
+      "assertions": [
+        "不把请求作为独立 XLSX 文件任务处理",
+        "明确路由到 spreadsheets:excel-live-control",
+        "实时读写使用连接文档工具而非本地文件工具"
+      ]
     }
   ]
 }

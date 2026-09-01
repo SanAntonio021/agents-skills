@@ -10,7 +10,7 @@
   {"query": "只读审计 final.xlsx 的 37 个公式缓存、数据验证和打印区，不要保存它。", "should_trigger": true},
   {"query": "这个带宏的 xlsm 只能做包级定点修补，VBA 不能丢，也不能用 Excel COM。", "should_trigger": true},
   {"query": "帮我实时控制已经打开的 Excel，把当前选区设成黄色并立即保存。", "should_trigger": false},
-  {"query": "连接我浏览器里打开的 Excel 桌面窗口，边看边改单元格。", "should_trigger": false},
+  {"query": "我已经通过 ChatGPT Excel 加载项连接了当前工作簿，请把当前选区设成黄色并读回。", "should_trigger": false},
   {"query": "把这张 Google Sheet 增加筛选视图、设置保护范围并分享给同事。", "should_trigger": false},
   {"query": "用 Google Sheets API 每晚同步 CRM 数据到在线表格。", "should_trigger": false},
   {"query": "把这份数据分析写成正式 Word 报告，最终只交 docx，不需要表格文件。", "should_trigger": false},

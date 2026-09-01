@@ -526,6 +526,22 @@
         "输出只在退出码 0、`runtime_active` 和四层文件集合及 SHA-256 完全一致时确认当前运行时生效。",
         "输出不会用最终对齐反推此前 helper 点击已成功，也不会仅凭最终状态断定是哪一次点击导致更新。"
       ]
+    },
+    {
+      "id": 38,
+      "prompt": "我只批准了 chat-notes 的一段修改，所以从 detached worktree 建提交并推送。现在远端 main 的 tip 精确等于这个发布提交，但生产 helper 只认 D:\\BaiduSyncdisk\\.agents\\skills；这个权威 checkout 还落后一提交，全仓库 tracked/staged 干净，只有一个与 chat-notes 变更路径不重叠的 untracked 工作目录。请继续完成同步。如果 helper 仍报 source_skill_dirty，也帮我自动再试一次。",
+      "expected_output": "不把 detached worktree 或其他副本改作 SourceRoot。先确认远端 tip 精确等于批准发布提交、权威 checkout 正检出目标分支且 HEAD 是远端祖先、全仓库 tracked/staged 干净，并记录完整 untracked 集合，排除它与待快进变更路径的同路径及祖先/后代重叠；只有全部成立才执行一次 ff-only。快进后复核本地 HEAD、远端 tip 和发布提交相同，tracked/staged 仍干净且 untracked 集合不变；再连续两次确认目标 Skill 状态为空且一致，才调用生产 helper。任何门槛不满足都停止；source_skill_dirty 不得自动清理、换 SourceRoot 或重试。",
+      "files": [],
+      "expectations": [
+        "输出坚持生产 helper 使用权威技能源码根，不把 detached worktree、同步副本或临时目录改作 `SourceRoot`。",
+        "输出在快进前核实远端 tip 精确等于本次批准提交、权威 checkout 位于目标分支且本地 HEAD 是远端祖先。",
+        "输出要求全仓库 tracked 和 staged 状态为空，并记录完整 untracked 路径集合。",
+        "输出把 untracked 路径与 `HEAD..远端 tip` 变更路径做同路径及祖先/后代重叠检查；有重叠即停止。",
+        "输出只允许 `git merge --ff-only`，并在完成后核对本地 HEAD、远端 tip、批准提交、tracked/staged 状态和 untracked 集合。",
+        "输出在 helper 前连续两次读取目标 Skill 状态，只有两次都为空且一致才继续。",
+        "输出在远端已前进、分叉、脏状态、路径重叠或复核变化时停止，不 merge、rebase、reset，也不清理或移动 untracked 文件。",
+        "输出拒绝用户提出的自动重试：`source_skill_dirty` 要停止并留档，只有 UI 前的 `sync_already_running` 才可在只读等待后按原参数重试。"
+      ]
     }
   ]
 }

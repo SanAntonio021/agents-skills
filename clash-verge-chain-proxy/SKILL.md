@@ -4,7 +4,8 @@ disable-model-invocation: true
 description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
-  站点分流、fallback 健康探测、自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
+  站点分流、fallback 健康探测、url-test 延迟优先、tolerance 防抖、定时测速仍提前重测或切换、
+  自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
   增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链、Edge/Google 搜索位置来源与
   代理出口联合验收，Edge/Chrome 扩展修复后很快又
   显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、切网后全站证书告警、接口跃点、
@@ -324,6 +325,22 @@ proxy-groups:
 增强文件改完后，必须检查当前 profile 绑定的 `script`。后处理脚本可能用 `upsertGroup` 重建同名组，
 把 `fallback` 覆盖回 `select`。最终生成的 `clash-verge.yaml` 和 `clash-verge-check.yaml` 才是验收对象，
 不直接编辑它们作为长期修复。
+
+### 延迟优先且减少切换
+
+当用户希望自动选择低延迟节点，但不希望轻微波动频繁切换时，读取
+[`references/url-test-latency-priority.md`](references/url-test-latency-priority.md)。
+
+- 内层候选需要比较延迟时使用 `url-test`，NOV 场景仍探测逐节点生成的完整“前置 -> NOV”链；
+  外层业务优先级继续由 `fallback` 决定，不把“最快”和“优先级”混成同一层。
+- 把 `interval` 解释为定时健康检查间隔，不解释成硬性切换冷却。失败次数超过
+  `max-failed-times` 配置值会提前触发强制健康检查，失效切换也不受 `tolerance` 保护。
+- 同名自动组可能继承 `store-selected` 的旧选择。转换策略时优先使用新组名并精确更新引用，不删除
+  全局 `cache.db`；候选卡片顺序也不等于实际选中顺序。
+- 父 `fallback` 嵌套子 `url-test` 时，要检查组级健康状态导致越过子组的风险。AI 外层不得因此加入
+  裸节点或 `DIRECT`；普通流量是否允许降级到裸节点继续服从用户已确认的边界。
+- 验收至少跨过一次自然定时周期：持续连接用来观察旧连接是否重连，切换后另建新连接确认新节点；
+  只做手动测速或短时轮询不能证明 30 分钟周期和长连接表现。
 
 ## AI 分流
 

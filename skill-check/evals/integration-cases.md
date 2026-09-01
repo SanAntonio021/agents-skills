@@ -40,8 +40,8 @@
 ## 结构与回归
 
 - 运行 `python -m unittest discover -s skill-check/tests -p 'test_*.py' -v`。
-- 验证 `evals/evals.json` 为合法 JSON，21 个用例 ID 唯一，新增融合周检、超时恢复、阻塞弹窗、
-  合法本机文件与最终验收用例都存在。
+- 验证 `evals/evals.json` 为合法 JSON，22 个用例 ID 唯一，新增融合周检、超时恢复、阻塞弹窗、
+  合法本机文件、CC Switch 元数据与最终验收用例都存在。
 - 验证 `evals/trigger-evals.json` 恰有 24 条，正反例各 12 条。
 - 用 `skill-creator/scripts/quick_validate.py skill-check` 验证 frontmatter。
 - 只有尚待用户确认的正式计划才进入跨模型 `review_repair`；已确认计划的实施完成后不自动追加互审，原作者仍需重跑全部测试并检查工作区 diff。

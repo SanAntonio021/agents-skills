@@ -78,7 +78,9 @@ python scripts/run_weekly_skill_review.py prepare-execution --json
 4. 独立目的独立提交、推送，不把拒绝项或失败项带入提交；
 5. Skill 推送后取得最终 40 位远端 SHA，只对实际修改且仍存在的精确 Skill 集合运行
    `Invoke-CcSwitchSkillSync.ps1`，随后用完全相同的 SHA 和 Skill 集合运行 `-VerifyOnly`；两次都必须
-   是退出码 `0`、`runtime_active`，且源码、CC Switch、Claude、Codex 四层文件集合和 SHA-256 一致；
+   是退出码 `0`、`runtime_active`，`cc_switch_metadata.valid` 为 `true` 且没有元数据问题；数据库完整性、
+   仓库分支、技能目录、仓库归属、`repo_branch`、`readme_url` 和双端启用状态均一致，同时源码、
+   CC Switch、Claude、Codex 四层文件集合和 SHA-256 一致；
 6. 只有满足上一步才可用 `record-execution` 记录 `success`，并提供远端 SHA、`sync_status=verified`
    和完全相同的 `--synced-skill` 集合。
 

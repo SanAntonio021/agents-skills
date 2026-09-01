@@ -257,6 +257,18 @@
         "输出要求完整同步与后续 `-VerifyOnly` 使用相同声明。",
         "输出不会笼统忽略该 Skill 的所有额外文件。"
       ]
+    },
+    {
+      "id": 22,
+      "prompt": "同步助手和 `-VerifyOnly` 都退出 0、返回 `runtime_active`，源码、CC Switch、Claude、Codex 四层文件也一致；但 `cc-switch.db` 里 `product-research-workbook` 的 `repo_branch` 和 `readme_url` 仍指向 `master`，仓库实际分支是 `main`。本周周检能记录成功吗？",
+      "expected_output": "不能。文件一致只证明当前副本相同，旧分支元数据会破坏后续更新。先只读检查数据库完整性、仓库记录和目标技能完整来源及启用元数据；经批准按最小范围修复或由用户在 CC Switch 中修复，再用同一远端 SHA 和 Skill 集合重新运行同步助手与 `-VerifyOnly`，全部通过后才能记录成功。",
+      "files": [],
+      "expectations": [
+        "输出不会仅凭两次 `runtime_active` 和四层文件一致记录成功。",
+        "输出要求检查 `PRAGMA integrity_check`、`skill_repos.branch/enabled` 以及技能的目录、仓库归属、`repo_branch`、`readme_url` 和双端启用状态。",
+        "输出明确识别 `master` 与预期 `main` 不一致，并把它视为阻断验收的元数据问题。",
+        "输出不会直接改运行时目录或未经批准修改数据库；修复后要求用同一远端 SHA 和 Skill 集合重跑同步助手与 `-VerifyOnly`。"
+      ]
     }
   ]
 }

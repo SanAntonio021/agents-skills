@@ -18,9 +18,9 @@
 - 官方接受提交：`c40bca58e168fcef2facdc7612cc352d1233679b`
 - 官方接受版本：`6.1.0`
 - 分发 Fork：https://github.com/SanAntonio021/ppt-master.git
-- CC Switch 分支：`ccswitch`
-- 分发提交：`91b3951ec6ce1b7b344537c670b5c5bec829a2d6`
-- 不可变 tag：`v6.1.0-ccswitch.1`
+- CC Switch 默认安装分支：`main`
+- 分发提交：`87dc229407d558e6fc9e7e08c45e81c61769fc20`
+- 不可变 tag：`v6.1.0-ccswitch.2`
 - 技能入口：`skills/ppt-master/SKILL.md`
 - 基线类型：`exact + deterministic distribution adapter`
 - 更新策略：`review`
@@ -35,7 +35,7 @@
 - Fork 候选连续两次本机构建 raw 字节一致；GitHub Actions 在 `windows-2025`、Python
   3.13.1、`core.autocrlf=false` 下从官方提交与 Fork 适配器重建并通过逐文件比较。
 - Fork 提交真实 codeload 为 1,171 个成员，SHA-256
-  `4f1ecd097d7ff4d9bbe1470dc1aad8417fb8f0de3ce23b5ce09e1fdd2b3da937`。
+  `c2bc603f75e4a5f49e503a67a0e46a2b71bc3c05230a0dc69b782b73020dc773`。
 - 本地证据文件：`pptx/references/ppt-master-pin.json`
 - 本地证据文件：`pptx/scripts/verify_ppt_master_pin.py`
 - 本地证据文件：`pptx/references/ppt-master-integration.md`
@@ -65,7 +65,7 @@
 - `scripts`
 - `templates`
 - `LICENSE`
-- Fork `ccswitch` 分支、发布 tag、真实 codeload 与两类 manifest
+- Fork 默认 `main` 分支、发布 tag、真实 codeload 与两类 manifest
 
 以后只处理官方正式 tag；先构建隔离候选和 transition pin，双端验收完成后再收敛为
 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。

@@ -14,7 +14,7 @@ images, fills or enhances a template, adds narration or animation, or explicitly
 `ppt-master`.
 
 - Route those authoring and high-design tasks to the active, pin-verified `ppt-master` skill. The
-  runtime skill must come from the trusted Fork's `ccswitch` branch while retaining the official
+  runtime skill must come from the trusted Fork's default `main` branch while retaining the official
   author workflow. Once routed, let that skill own its integrity guard, route selection, workflow,
   and blocking confirmations. Do not duplicate or partially reimplement its generation procedure
   here.

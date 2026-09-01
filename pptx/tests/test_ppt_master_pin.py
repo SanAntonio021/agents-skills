@@ -96,7 +96,7 @@ def write_pin(path: Path, state: str, releases: list[dict]) -> None:
             "schema_version": 1,
             "skill_name": "ppt-master",
             "source": {
-                "branch": "ccswitch",
+                "branch": "main",
                 "repository": "https://github.com/SanAntonio021/ppt-master",
             },
             "state": state,
@@ -111,13 +111,13 @@ class PptMasterPinTests(unittest.TestCase):
         root = base / "ppt-master"
         root.mkdir()
         if state == "bootstrap":
-            releases = [release_record("candidate", "a", "v6.1.0-ccswitch.1")]
+            releases = [release_record("candidate", "a", "v6.1.0-ccswitch.2")]
         elif state == "stable":
-            releases = [release_record("stable", "b", "v6.1.0-ccswitch.1")]
+            releases = [release_record("stable", "b", "v6.1.0-ccswitch.2")]
         else:
             releases = [
                 release_record("stable", "c", "v6.0.0-ccswitch.1"),
-                release_record("candidate", "d", "v6.1.0-ccswitch.1"),
+                release_record("candidate", "d", "v6.1.0-ccswitch.2"),
             ]
         selected = next(release for release in releases if release["role"] == selected_role)
         write_distribution(root, selected)

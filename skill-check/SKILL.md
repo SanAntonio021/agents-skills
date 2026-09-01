@@ -61,7 +61,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
    - 查“当前真的加载了哪些 skill”时，优先看 Codex 实际读取的技能目录。
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
    - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
-   - 单个已安装技能的文件仍在，但 `repo_branch`、`readme_url` 或双端启用元数据残留在旧状态时，先完成只读定位；获得批准后，优先在 CC Switch 中只卸载并重新安装该技能，从当前真实分支恢复来源元数据并启用 Claude/Codex。存在未处理的本机私有文件、重装未能修复或 GUI 无法完成时，才进入最小数据库修复。两种路径完成后都要用同一远端 SHA 和 Skill 集合重跑完整同步与 `-VerifyOnly`。
+   - 单个已安装技能的文件仍在，但 `repo_branch`、`readme_url` 或双端启用元数据残留在旧状态时，先完成只读定位；获得批准后，优先在 CC Switch 中只卸载并重新安装该技能，从当前真实分支恢复来源元数据并启用 Claude/Codex。存在未处理的本机私有文件、重装未能修复或 GUI 无法完成时，才进入最小数据库修复。由本任务执行恢复时，用同一远端 SHA 和 Skill 集合重跑完整同步与 `-VerifyOnly`；用户明确自行完成恢复且不授权 UI 自动化时，改走下方“两次后台 `-VerifyOnly`”验收。
    - 目标技能本身已经指向当前分支，但 CC Switch 日志仍请求同仓库旧分支压缩包时，检查该仓库下全部已安装技能的 `repo_branch` 和 `readme_url`。CC Switch 的更新扫描以仓库为单位，任一兄弟技能残留旧分支都可能阻断目标更新；这类多技能范围先完整列出，再单独批准修复。
    - 如果技能条目显示“已安装”但启动/同步时报 `Skill 不存在于 SSOT`，还要核对 SSOT 下 `<directory>\SKILL.md` 是否真实存在；这通常是数据库残留记录，不要直接改 Codex 运行时目录。
    - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、cc-switch 分发目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
@@ -157,6 +157,13 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
    元数据问题，第二次也返回退出码 `0`、`runtime_active`，四层文件集合和 SHA-256 仍一致，才写
    “运行时已生效”。
 
+当用户明确选择自己在 CC Switch 完成卸载、重装或定向更新，并明确不授权本任务控制鼠标或执行 UI
+自动化时，不再运行会进入界面的完整同步 helper。用户报告手动操作完成后，以完全相同的
+`ExpectedRemoteCommit`、`Skills`、历史/范围参数和本机文件声明，连续运行两次纯后台
+`-VerifyOnly`。两次都必须退出 `0`、返回 `runtime_active`，且 `cc_switch_metadata.valid == true`、
+元数据问题为空、四层文件集合和 SHA-256 一致；任何在运行时核验前因网络或预检失败而中止的调用都
+不计入这两次验收。该分流只证明手动操作后的当前运行时已经稳定对齐，不反推具体哪次手动操作使其生效。
+
 工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
 LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。
 
@@ -172,7 +179,7 @@ CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目
 `clicked_skills`，状态写“更新扫描受环境阻断，运行时待验收”，不写成技能失败或同步成功。只有
 `clicked_skills` 明确为空、确认尚未点击任何目标 Skill 的“更新”按钮时，才允许用同一 commit 和
 同一 Skill 集合重新运行完整 helper；如果已经点击或无法确认，则不再触发 UI 更新，只做
-`-VerifyOnly`，或等待用户手动定向更新后再验收。完整判据见
+`-VerifyOnly`，或等待用户手动定向更新后按上述两次后台 `-VerifyOnly` 分流验收。完整判据见
 [references/skill-hygiene.md](references/skill-hygiene.md) 的“更新扫描超时与 UI 竞态恢复”。
 
 若 helper 返回 `skills_page_blocked_by_restore`，结论是“从备份中恢复”窗口阻塞了 Skills 页面，

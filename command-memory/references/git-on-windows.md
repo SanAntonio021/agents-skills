@@ -282,6 +282,33 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；若任务需要对象，则等阻断状态改变后正常 `fetch` 成功再继续
 - capture_rule: fetch 元数据被临时 ref 或锁阻断时，先缩小诊断范围；只读核验用 `ls-remote`，需要对象仍必须等到 `fetch` 恢复
 
+### Pattern: git-recover-transient-schannel-tls-preflight
+- scenario: Git for Windows 或发布/验收 helper 在任何仓库写入、UI 更新或运行时核验前，远端预检报 `schannel: failed to receive handshake` 或 `SSL/TLS connection failed`
+- use_when: 已确认报错发生在访问准确远端和分支的 TLS 建连阶段；当前只需判断连接是否恢复，并决定能否重新运行原验收
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $remoteName = "<REMOTE>"
+  $branchName = "<BRANCH>"
+
+  $remoteLines = @(git -C $repoRoot ls-remote --exit-code --refs $remoteName "refs/heads/$branchName")
+  if ($LASTEXITCODE -ne 0 -or $remoteLines.Count -ne 1) {
+      throw "remote TLS/read probe failed or branch result was ambiguous"
+  }
+  $remoteCommit = (($remoteLines[0] -split '\s+')[0]).Trim()
+  if ($remoteCommit -notmatch '^[0-9a-f]{40}$') { throw "remote commit is not a full SHA" }
+  $remoteCommit
+  ```
+- substitute_only: `<REPO_ROOT>`, `<REMOTE>`, `<BRANCH>`；使用任务已经核实的远端和分支，不因 TLS 报错改写 remote URL、协议或目标分支
+- diagnosis: `schannel` 是 Git for Windows 使用的 Windows TLS 后端；握手失败只证明当次加密传输没有建立完成，常见于临时网络、代理链路或远端连接中断。它本身不证明仓库损坏、Skill 失败、远端分支不存在或本机证书配置损坏
+- retry_boundary: 只执行一次上述窄范围只读探针；探针成功后可用原提交、原 Skill 集合和原范围参数重新运行一次原验收。探针失败或原验收再次出现同类 TLS 错误时停止并报告网络阻断，不循环重试
+- acceptance_count: 在运行时核验开始前因 TLS 或远端预检中止的调用不计入“完整同步 + `-VerifyOnly`”或“两次后台 `-VerifyOnly`”的验收轮次；连接恢复后从第一次完整有效调用重新计数
+- scope_limit: `ls-remote` 成功只证明该远端分支此刻可读取，并返回唯一 40 位 SHA；它不下载对象、不更新本地远端跟踪分支，也不能单独证明发布、同步或运行时验收成功
+- avoid: 不把第一次 TLS 失败记成仓库、Skill 或证书故障；不先关闭 `http.sslVerify`、切换 `http.sslBackend`、替换 CA、凭据或 remote URL；不修改仓库、CC Switch 数据库或运行时目录来绕过网络错误
+- success_signal: 只读探针返回唯一完整 SHA，随后原验收从头执行并按其自身全部判据通过；完成结论来自原验收，不来自 `ls-remote`
+- capture_rule: TLS 预检失败先缩小为一次只读远端探针；网络恢复后重跑原验收，预检中断不占用正式验收轮次
+
 <a id="pitfall-6"></a>
 
 ## 坑 6：并行任务共用同一 worktree，提交状态相互污染

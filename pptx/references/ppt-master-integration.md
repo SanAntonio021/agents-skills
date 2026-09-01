@@ -3,7 +3,7 @@
 ## Purpose and trust boundary
 
 Use the official `ppt-master` author workflow through the audited CC Switch distribution at
-`SanAntonio021/ppt-master:ccswitch`. The Fork changes only the distribution layer: loose icon assets
+`SanAntonio021/ppt-master:main`. The Fork changes only the distribution layer: loose icon assets
 are stored in deterministic local shards, and runtime access remains offline. The local `pptx` skill
 owns routing, the external pin, deterministic file operations, and final acceptance.
 
@@ -26,7 +26,7 @@ python <pptx-skill-root>\scripts\verify_ppt_master_pin.py `
   --skill-root <active-ppt-master-root> --json-out <task-evidence>\ppt-master-pin.json
 ```
 
-The verifier requires the trusted Fork repository and `ccswitch` branch in the pin, validates state
+The verifier requires the trusted Fork repository and default `main` branch in the pin, validates state
 cardinality, matches the installed `distribution.manifest.json` to an accepted release, and verifies
 every protected file using relative path, raw size, and raw SHA-256. It rejects symlinks/reparse
 points, unsafe or case-colliding paths, missing files, and residual files. Python bytecode under
@@ -97,9 +97,9 @@ Do not substitute a bundled/system presentation skill, an ad hoc generator, or
 ## Ownership and updates
 
 - Official `hugohe3/ppt-master`: author workflow and upstream release source.
-- `SanAntonio021/ppt-master:main`: sync-only view of the official repository.
-- `SanAntonio021/ppt-master:ccswitch`: installable, manifest-protected distribution tracked by CC
-  Switch. Tags are immutable release evidence; CC Switch follows the branch head.
+- `SanAntonio021/ppt-master:main`: installable, manifest-protected distribution tracked by CC
+  Switch. Official updates are imported from the upstream repository; tags are immutable release
+  evidence and CC Switch follows the default branch head.
 - Local `pptx`: routing, external pin, deterministic operations, acceptance gates, and release policy.
 - Review mirror: zero-exposure comparison evidence only; never a runtime source.
 

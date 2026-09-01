@@ -202,8 +202,8 @@ def validate_pin(pin: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(source, dict):
         raise PinVerificationError("pin.source must be an object")
     _exact_keys(source, {"repository", "branch"}, "pin.source")
-    if source != {"repository": FORK_REPOSITORY, "branch": "ccswitch"}:
-        raise PinVerificationError("pin source must be the trusted Fork ccswitch branch")
+    if source != {"repository": FORK_REPOSITORY, "branch": "main"}:
+        raise PinVerificationError("pin source must be the trusted Fork default main branch")
 
     policy = pin["policy"]
     if not isinstance(policy, dict):

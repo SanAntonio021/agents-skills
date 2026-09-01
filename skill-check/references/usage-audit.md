@@ -8,8 +8,12 @@
 2. 哪些技能在所扫描历史内没有看到使用证据；
 3. 哪些用户请求与技能 `name` / `description` 相符，但该条记录没有对应调用证据。
 
-它不是实时监控器，也不证明 Codex 的隐式路由是否发生。扫描结果只能描述当前可访问的历史范围；历史被
+它不是实时监控器，也不证明 Codex 的全部隐式路由是否发生。扫描结果只能描述当前可访问的历史范围；历史被
 删除、轮转、未落盘或来自其他客户端时，`历史内未见使用` 不能外推成“从未使用”。
+
+周检使用固定左闭右开窗口：前一周六 14:00（含）到本周六 14:00（不含），时区为
+`Asia/Shanghai`。计数单位固定为用户请求；去重键为 `(host, request_id, skill)`，因此同一请求内
+重复点名、重复调用或同时存在多种证据都只计一次。
 
 ## 数据源
 
@@ -32,6 +36,9 @@
 python scripts/audit_skill_usage.py `
   --reports-root D:\AuditReports `
   --date 2026-08-15 `
+  --window-start 2026-08-08T14:00:00+08:00 `
+  --window-end 2026-08-15T14:00:00+08:00 `
+  --timezone Asia/Shanghai `
   --skills-root D:\BaiduSyncdisk\.agents\skills `
   --codex-sessions-root C:\Users\SanAn\.codex\sessions `
   --codex-sessions-root C:\Users\SanAn\.codex\archived_sessions `
@@ -50,29 +57,34 @@ python scripts/audit_skill_usage.py `
 - `name == "Skill"`；
 - `input.skill` 是非空字符串。
 
-工具调用通过 `parentUuid` 向上关联最近用户记录，用来避免把已经正确调用的同一请求标成疑似漏用。
-关联失败时仍可把工具调用计为使用，但不据此压制其他请求的候选。
+工具调用通过 `parentUuid` 向上关联最近一条含用户编写文本的用户记录；中间的 `tool_result` 虽然也以
+`type=user` 保存，但只是传输记录，不会被当成新请求。这样可以避免把已经正确调用的同一请求标成疑似漏用。
+关联失败时进入 `warnings.unmapped_requests`，不计为使用，也不据此压制其他请求的候选。相同用户祖先
+下对同一技能的多次 Skill 工具调用合并为一次请求触发。
 
 ### Claude 启动候选
 
 `event_data.event_name == "tengu_skill_loaded"` 只表示 Claude 在启动时加载了候选技能信息。该信号单独
 计数，绝不进入 `已用`。这样可以避免“每次启动都加载”被误读为“每次都调用”。
 
-### Codex 显式点名
+### Codex 显式点名与观察到的技能读取
 
-Codex 历史中只读取真实用户消息：
+Codex 历史中的真实用户消息按以下优先级读取：
 
-- 优先 `event_msg` + `payload.type == "user_message"`；
+- 优先 `event_msg` + `payload.type == "item_completed"` + `item.type == "UserMessage"`；
+- 其次 `event_msg` + `payload.type == "user_message"`；
 - `response_item` + `payload.type == "message"` + `role == "user"` 只作回退；
-- 同一 session + timestamp 两种记录重复时保留 `event_msg`。
+- 同一 session + `turn_id` 的重复用户记录只保留优先级最高者。
 
 只把 `$skill-name`、独立 `/skill-name` 或指向 `skills/<name>/SKILL.md` 的链接计为显式点名。普通文本
-提到某个主题不算实际调用。Codex 目前没有稳定的隐式 Skill 调用事件，因此报告固定保留
-`codex_implicit_usage_not_captured=true`。
+提到某个主题不算实际调用。此外，`item_completed` 中执行成功、明确读取已登记技能 `SKILL.md` 且能
+关联到 `turn_id` 的 `CommandExecution`，计为观察到的技能读取。失败命令和无法关联请求的读取不计数。
+同一请求的显式点名与读取合并为一个触发，同时在 `evidence_kinds` 保留证据构成。Codex 目前仍没有
+覆盖全部隐式 Skill 路由的稳定事件，因此报告固定保留 `codex_implicit_usage_not_captured=true`。
 
 ## 分类
 
-- `已用`：至少有一次 Claude Skill 工具调用或 Codex 用户显式点名。
+- `已用`：至少一个去重后的用户请求存在 Claude Skill 工具调用、Codex 用户显式点名或 Codex 技能读取证据。
 - `历史内未见使用`：扫描范围内没有上述证据；不等于实际从未使用。
 - `疑似漏用`：用户文本命中技能名或 `description` 的低频确定性词组，但该条记录未见对应调用证据。
 - `可能冗余`：仅当传入 `--hygiene-summary` 时，历史内未见使用的技能又出现在 duplicate/overlap
@@ -90,6 +102,7 @@ description 规则要命中两个独立词组或一个六字高区分度词组�
 
 - JSON 解码失败：进入 `warnings.parse_errors`；
 - 目标事件缺必需字段：进入 `warnings.missing_fields`；
+- 技能调用或读取无法关联用户请求：进入 `warnings.unmapped_requests`，不计数；
 - 纯图片或附件、没有可扫描文本的 Codex 用户消息：进入 `warnings.non_text_user_records`，单独计数，
   不作为文本字段缺失；
 - 合法但与目标事件无关：静默跳过。
@@ -111,4 +124,7 @@ POSIX 相对路径和行号；结构化 `session_ref` 只保存不可逆短哈�
 3. `疑似漏用`，回到对应相对路径和行号人工核验；
 4. `可能冗余`，再结合技能目标、输入、输出和触发场景判断是否需要 `skill-creator`。
 
-任何自动修改、归档、删除、合并、降级点名、daemon、dashboard 或网络请求都超出本审计边界。
+融合周检会把聚合结果写入 `usage/dashboard/data/<date>.json`，并生成稳定入口
+`usage/dashboard/index.html`。页面只内嵌最近 12 周的技能名、宿主、聚合请求计数、连续零周数、状态、
+证据类型和覆盖警告；不得包含提示词片段、session 来源或绝对路径。任何自动修改、归档、删除、合并、
+降级点名、daemon、常驻页面服务或网络请求都超出本审计边界。

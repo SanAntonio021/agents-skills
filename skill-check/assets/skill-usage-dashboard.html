@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>本地技能触发谱</title>
+  <style>
+    :root {
+      --canvas: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #eef3f9;
+      --ink: #172235;
+      --muted: #64748b;
+      --grid: #d7e0ec;
+      --codex: #2563eb;
+      --codex-soft: #dbeafe;
+      --claude: #c66a2b;
+      --claude-soft: #ffead5;
+      --review: #b43b47;
+      --review-soft: #fde8eb;
+      --zero: #8a98ab;
+      --shadow: 0 18px 55px rgba(44, 62, 91, 0.09);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--canvas); }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(215, 224, 236, 0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(215, 224, 236, 0.45) 1px, transparent 1px),
+        radial-gradient(circle at 8% -10%, rgba(37, 99, 235, 0.11), transparent 30rem),
+        radial-gradient(circle at 100% 5%, rgba(198, 106, 43, 0.09), transparent 28rem),
+        var(--canvas);
+      background-size: 32px 32px, 32px 32px, auto, auto, auto;
+      font-family: "Microsoft YaHei UI", "Segoe UI Variable", "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input, select { font: inherit; }
+
+    button, select, input {
+      border: 1px solid var(--grid);
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.23);
+      outline-offset: 2px;
+    }
+
+    .shell {
+      width: min(1500px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      padding: 30px 32px;
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 9px;
+      color: var(--codex);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.05;
+      letter-spacing: -0.045em;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      margin: 13px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .week-control {
+      display: grid;
+      gap: 7px;
+      min-width: 240px;
+    }
+
+    .week-control label, .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    select, input[type="search"] {
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 12px;
+      border-radius: 11px;
+    }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--grid);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--zero);
+    }
+
+    .badge.complete::before { background: #16815e; }
+    .badge.incomplete::before { background: var(--review); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 13px;
+      margin: 18px 0;
+    }
+
+    .metric {
+      min-height: 122px;
+      padding: 20px;
+      border: 1px solid rgba(215, 224, 236, 0.9);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 10px 35px rgba(44, 62, 91, 0.055);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      display: block;
+      margin-top: 7px;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 750;
+      line-height: 1;
+      letter-spacing: -0.06em;
+    }
+
+    .metric-note {
+      display: block;
+      margin-top: 11px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      overflow: hidden;
+      border: 1px solid rgba(215, 224, 236, 0.95);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.93);
+      box-shadow: 0 14px 42px rgba(44, 62, 91, 0.07);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 21px 23px;
+      border-bottom: 1px solid var(--grid);
+    }
+
+    .panel-title { margin: 0; font-size: 18px; letter-spacing: -0.02em; }
+    .panel-kicker { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 13px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-swatch { width: 18px; height: 6px; border-radius: 99px; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto minmax(150px, 190px);
+      gap: 11px;
+      padding: 15px 23px;
+      border-bottom: 1px solid var(--grid);
+      background: rgba(238, 243, 249, 0.6);
+    }
+
+    .field { display: grid; gap: 6px; }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 4px;
+      align-self: end;
+      padding: 4px;
+      border: 1px solid var(--grid);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .segmented button {
+      min-height: 34px;
+      padding: 6px 11px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--surface-soft);
+      box-shadow: inset 0 0 0 1px var(--grid);
+    }
+
+    .spectrum-head,
+    .spectrum-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 225px) minmax(200px, 1fr) 86px;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .spectrum-head {
+      padding: 11px 23px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .spectrum-list { min-height: 280px; }
+
+    .spectrum-row {
+      position: relative;
+      min-height: 69px;
+      padding: 12px 23px;
+      border-top: 1px solid rgba(215, 224, 236, 0.7);
+    }
+
+    .spectrum-row:hover { background: rgba(238, 243, 249, 0.62); }
+    .spectrum-row.review { background: linear-gradient(90deg, rgba(253, 232, 235, 0.7), transparent 62%); }
+
+    .skill-name {
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 780;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .skill-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .mini-tag {
+      padding: 2px 6px;
+      border: 1px solid var(--grid);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .mini-tag.review { color: var(--review); border-color: rgba(180, 59, 71, 0.28); }
+
+    .rail-wrap { display: grid; gap: 7px; }
+
+    .rail {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 13px;
+      overflow: hidden;
+      border: 1px solid rgba(215, 224, 236, 0.9);
+      border-radius: 999px;
+      background:
+        repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(138, 152, 171, 0.2) calc(10% - 1px), rgba(138, 152, 171, 0.2) 10%),
+        var(--surface-soft);
+    }
+
+    .bar { height: 100%; min-width: 0; transition: width 260ms ease; }
+    .bar.codex { background: var(--codex); }
+    .bar.claude { background: var(--claude); }
+    .bar.zero { width: 100% !important; background: repeating-linear-gradient(135deg, rgba(138, 152, 171, 0.17) 0 5px, rgba(138, 152, 171, 0.04) 5px 10px); }
+
+    .rail-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 10px;
+    }
+
+    .count {
+      justify-self: end;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 22px;
+      font-weight: 750;
+      letter-spacing: -0.06em;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 300px;
+      padding: 30px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .side-stack { display: grid; gap: 18px; }
+
+    .side-panel { padding: 22px; }
+    .side-panel h2 { margin: 0; font-size: 17px; }
+    .side-panel > p { margin: 7px 0 17px; color: var(--muted); font-size: 12px; }
+
+    .review-list { display: grid; gap: 9px; }
+
+    .review-item {
+      padding: 13px;
+      border: 1px solid var(--grid);
+      border-left: 4px solid var(--zero);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .review-item.candidate { border-left-color: var(--review); background: var(--review-soft); }
+    .review-name { font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+    .review-detail { margin-top: 5px; color: var(--muted); font-size: 11px; }
+
+    .note {
+      padding: 18px 20px;
+      border: 1px solid var(--grid);
+      border-radius: 16px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.78);
+      font-size: 11px;
+    }
+
+    .note strong { color: var(--ink); }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    @media (max-width: 1120px) {
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 22px, 1500px); padding-top: 14px; }
+      .masthead { grid-template-columns: 1fr; padding: 23px 20px; }
+      .week-control { min-width: 0; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toolbar { grid-template-columns: 1fr; }
+      .segmented { grid-template-columns: repeat(3, 1fr); }
+      .spectrum-head { display: none; }
+      .spectrum-row { grid-template-columns: minmax(120px, 0.8fr) minmax(125px, 1fr) 56px; gap: 9px; padding: 12px 14px; }
+      .count { font-size: 18px; }
+      .side-stack { grid-template-columns: 1fr; }
+      .footer { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric { min-height: 105px; padding: 16px; }
+      .spectrum-row { grid-template-columns: minmax(105px, 0.9fr) minmax(95px, 1fr) 42px; }
+      .skill-meta, .rail-labels { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>Local skill telemetry</p>
+        <h1>本地技能触发谱</h1>
+        <p class="subtitle">以用户请求为单位去重，分别显示 Codex、Claude 与合计触发次数。零触发只是本地历史中“本周未观察到”，不会自动修改或删除技能。</p>
+        <div class="status-line" id="statusLine" aria-live="polite"></div>
+      </div>
+      <div class="week-control">
+        <label for="weekSelect">统计周</label>
+        <select id="weekSelect" aria-label="选择统计周"></select>
+      </div>
+    </header>
+
+    <section class="metrics" aria-label="本周概览">
+      <article class="metric"><span class="metric-label">合计触发</span><span class="metric-value" id="metricTotal">—</span><span class="metric-note">Codex + Claude 请求数</span></article>
+      <article class="metric"><span class="metric-label">Codex</span><span class="metric-value" id="metricCodex">—</span><span class="metric-note">显式调用或读取技能说明</span></article>
+      <article class="metric"><span class="metric-label">Claude</span><span class="metric-value" id="metricClaude">—</span><span class="metric-note">Skill 工具调用</span></article>
+      <article class="metric"><span class="metric-label">本周零触发</span><span class="metric-value" id="metricZero">—</span><span class="metric-note">仅统计已激活技能</span></article>
+      <article class="metric"><span class="metric-label">待人工复核</span><span class="metric-value" id="metricReview">—</span><span class="metric-note">连续 4 个完整周为零</span></article>
+    </section>
+
+    <section class="workspace">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">触发次数排名</h2>
+            <p class="panel-kicker" id="resultSummary">按当前筛选从高到低排列</p>
+          </div>
+          <div class="legend" aria-label="图例">
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--codex)"></span>Codex</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--claude)"></span>Claude</span>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="field">
+            <label for="searchInput">技能名称</label>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="搜索技能…">
+          </div>
+          <div class="segmented" role="group" aria-label="统计来源">
+            <button type="button" data-host="total" aria-pressed="true">合计</button>
+            <button type="button" data-host="codex" aria-pressed="false">Codex</button>
+            <button type="button" data-host="claude" aria-pressed="false">Claude</button>
+          </div>
+          <div class="field">
+            <label for="stateFilter">状态</label>
+            <select id="stateFilter">
+              <option value="all">全部技能</option>
+              <option value="observed">本周已观察到</option>
+              <option value="zero">本周零触发</option>
+              <option value="review">连续四周为零</option>
+              <option value="source_only">仅在源目录</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="spectrum-head" aria-hidden="true"><span>技能</span><span>触发谱</span><span style="text-align:right">次数</span></div>
+        <div class="spectrum-list" id="spectrumList" aria-live="polite"></div>
+      </article>
+
+      <aside class="side-stack">
+        <section class="panel side-panel">
+          <h2>零触发观察区</h2>
+          <p>优先列出连续多周未观察到的技能。达到 4 个完整周后，才进入人工复核队列。</p>
+          <div class="review-list" id="reviewList"></div>
+        </section>
+        <section class="note">
+          <strong>口径说明</strong><br>
+          同一用户请求内，同一技能最多计 1 次。Codex 统计显式点名及已成功读取的已知 SKILL.md；Claude 统计能关联到用户请求的 Skill 工具调用。数据仅含聚合计数、技能名、激活端和证据类型，不嵌入原始提示词或本机绝对路径。
+        </section>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span id="coverageNote">覆盖信息载入中…</span>
+      <span id="generatedAt"></span>
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+    const DATA = __SKILL_USAGE_DATA__;
+    const state = { week: 0, host: "total", filter: "all", query: "" };
+
+    const elements = {
+      weekSelect: document.getElementById("weekSelect"),
+      searchInput: document.getElementById("searchInput"),
+      stateFilter: document.getElementById("stateFilter"),
+      spectrumList: document.getElementById("spectrumList"),
+      reviewList: document.getElementById("reviewList"),
+      statusLine: document.getElementById("statusLine"),
+      resultSummary: document.getElementById("resultSummary"),
+      coverageNote: document.getElementById("coverageNote"),
+      generatedAt: document.getElementById("generatedAt")
+    };
+
+    const number = new Intl.NumberFormat("zh-CN");
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function currentWeek() { return Array.isArray(DATA) ? DATA[state.week] : null; }
+
+    function formatDate(value) {
+      if (!value) return "未知";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.valueOf())) return String(value);
+      return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(parsed);
+    }
+
+    function hostCount(row) { return Number(row.counts?.[state.host] || 0); }
+
+    function setMetric(id, value) { document.getElementById(id).textContent = number.format(value || 0); }
+
+    function renderStatus(week) {
+      elements.statusLine.replaceChildren();
+      const complete = el("span", `badge ${week.complete ? "complete" : "incomplete"}`, week.complete ? "完整周数据" : "数据不完整");
+      elements.statusLine.append(complete);
+      const windowBadge = el("span", "badge", `${formatDate(week.window?.start)} — ${formatDate(week.window?.end)}`);
+      elements.statusLine.append(windowBadge);
+      if (week.streak_reset_reason) {
+        elements.statusLine.append(el("span", "badge incomplete", `连续周计数已重置：${week.streak_reset_reason}`));
+      }
+    }
+
+    function renderMetrics(week) {
+      const rows = Array.isArray(week.skills) ? week.skills : [];
+      setMetric("metricTotal", rows.reduce((sum, row) => sum + Number(row.counts?.total || 0), 0));
+      setMetric("metricCodex", rows.reduce((sum, row) => sum + Number(row.counts?.codex || 0), 0));
+      setMetric("metricClaude", rows.reduce((sum, row) => sum + Number(row.counts?.claude || 0), 0));
+      setMetric("metricZero", week.counts?.zero || 0);
+      setMetric("metricReview", week.counts?.review || 0);
+    }
+
+    function statusMatches(row) {
+      if (state.filter === "all") return true;
+      if (state.filter === "zero") return row.status === "zero" || row.status === "review";
+      return row.status === state.filter;
+    }
+
+    function renderSpectrum(week) {
+      const query = state.query.trim().toLocaleLowerCase("zh-CN");
+      const rows = (Array.isArray(week.skills) ? week.skills : [])
+        .filter(row => statusMatches(row) && String(row.skill || "").toLocaleLowerCase("zh-CN").includes(query))
+        .sort((a, b) => hostCount(b) - hostCount(a) || Number(b.counts?.total || 0) - Number(a.counts?.total || 0) || String(a.skill).localeCompare(String(b.skill), "zh-CN"));
+      elements.spectrumList.replaceChildren();
+      elements.resultSummary.textContent = `显示 ${number.format(rows.length)} 项 · 按${state.host === "total" ? "合计" : state.host === "codex" ? " Codex" : " Claude"}次数排序`;
+      if (!rows.length) {
+        elements.spectrumList.append(el("div", "empty", "当前筛选下没有技能。"));
+        return;
+      }
+      const max = Math.max(1, ...rows.map(hostCount));
+      const fragment = document.createDocumentFragment();
+      rows.forEach(row => {
+        const wrapper = el("div", `spectrum-row${row.status === "review" ? " review" : ""}`);
+        const identity = el("div");
+        identity.append(el("div", "skill-name", String(row.skill || "未命名技能")));
+        const meta = el("div", "skill-meta");
+        const hosts = Array.isArray(row.active_hosts) && row.active_hosts.length ? row.active_hosts.join(" + ") : "仅源目录";
+        meta.append(el("span", "mini-tag", hosts));
+        if (row.zero_streak) meta.append(el("span", `mini-tag${row.review_candidate ? " review" : ""}`, `连续 ${row.zero_streak} 周为零`));
+        identity.append(meta);
+
+        const railWrap = el("div", "rail-wrap");
+        const rail = el("div", "rail");
+        rail.setAttribute("aria-label", `${row.skill}：Codex ${row.counts?.codex || 0} 次，Claude ${row.counts?.claude || 0} 次`);
+        const selected = hostCount(row);
+        if (selected === 0) {
+          rail.append(el("span", "bar zero"));
+        } else if (state.host === "total") {
+          const scale = 100 / max;
+          const codex = el("span", "bar codex");
+          codex.style.width = `${Number(row.counts?.codex || 0) * scale}%`;
+          const claude = el("span", "bar claude");
+          claude.style.width = `${Number(row.counts?.claude || 0) * scale}%`;
+          rail.append(codex, claude);
+        } else {
+          const bar = el("span", `bar ${state.host}`);
+          bar.style.width = `${selected / max * 100}%`;
+          rail.append(bar);
+        }
+        const labels = el("div", "rail-labels");
+        labels.append(el("span", "", `C ${row.counts?.codex || 0}`), el("span", "", `A ${row.counts?.claude || 0}`));
+        railWrap.append(rail, labels);
+        wrapper.append(identity, railWrap, el("div", "count", number.format(selected)));
+        fragment.append(wrapper);
+      });
+      elements.spectrumList.append(fragment);
+    }
+
+    function renderReview(week) {
+      const rows = (Array.isArray(week.skills) ? week.skills : [])
+        .filter(row => row.status === "zero" || row.status === "review")
+        .sort((a, b) => Number(b.review_candidate) - Number(a.review_candidate) || Number(b.zero_streak || 0) - Number(a.zero_streak || 0) || String(a.skill).localeCompare(String(b.skill), "zh-CN"));
+      elements.reviewList.replaceChildren();
+      if (!rows.length) {
+        elements.reviewList.append(el("div", "review-detail", "本周没有零触发的已激活技能。"));
+        return;
+      }
+      rows.slice(0, 14).forEach(row => {
+        const item = el("div", `review-item${row.review_candidate ? " candidate" : ""}`);
+        item.append(el("div", "review-name", row.skill));
+        const detail = row.review_candidate
+          ? `连续 ${row.zero_streak} 个完整周未观察到，等待人工判断。`
+          : `本周未观察到${row.zero_streak ? `；当前连续 ${row.zero_streak} 周` : ""}。`;
+        item.append(el("div", "review-detail", detail));
+        elements.reviewList.append(item);
+      });
+      if (rows.length > 14) elements.reviewList.append(el("div", "review-detail", `另有 ${rows.length - 14} 项，请在左侧筛选“本周零触发”。`));
+    }
+
+    function renderCoverage(week) {
+      const parts = [];
+      if (week.coverage?.missing_roots?.length) parts.push(`缺失 ${week.coverage.missing_roots.length} 个数据根`);
+      if (week.coverage?.parse_error_count) parts.push(`${week.coverage.parse_error_count} 条解析错误`);
+      if (week.coverage?.unmapped_request_count) parts.push(`${week.coverage.unmapped_request_count} 条证据无法关联请求`);
+      elements.coverageNote.textContent = parts.length
+        ? `覆盖提醒：${parts.join("；")}。本周不能作为完整零触发证据。`
+        : "覆盖状态：未发现阻断性缺口；Codex 计数仍是可观察到的下界。";
+      elements.generatedAt.textContent = `生成于 ${formatDate(week.generated_at)}`;
+    }
+
+    function render() {
+      const week = currentWeek();
+      if (!week) {
+        elements.spectrumList.replaceChildren(el("div", "empty", "尚无可展示的周统计。请先运行一次技能周检。"));
+        elements.reviewList.replaceChildren(el("div", "review-detail", "暂无数据。"));
+        return;
+      }
+      renderStatus(week);
+      renderMetrics(week);
+      renderSpectrum(week);
+      renderReview(week);
+      renderCoverage(week);
+    }
+
+    function initialize() {
+      elements.weekSelect.replaceChildren();
+      if (Array.isArray(DATA)) {
+        DATA.forEach((week, index) => {
+          const option = document.createElement("option");
+          option.value = String(index);
+          option.textContent = `${week.date || `第 ${index + 1} 周`} · ${week.complete ? "完整" : "不完整"}`;
+          elements.weekSelect.append(option);
+        });
+      }
+      elements.weekSelect.addEventListener("change", event => { state.week = Number(event.target.value || 0); render(); });
+      elements.searchInput.addEventListener("input", event => { state.query = event.target.value; renderSpectrum(currentWeek()); });
+      elements.stateFilter.addEventListener("change", event => { state.filter = event.target.value; renderSpectrum(currentWeek()); });
+      document.querySelectorAll("[data-host]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.host = button.dataset.host;
+          document.querySelectorAll("[data-host]").forEach(candidate => candidate.setAttribute("aria-pressed", String(candidate === button)));
+          renderSpectrum(currentWeek());
+        });
+      });
+      render();
+    }
+
+    initialize();
+  </script>
+</body>
+</html>

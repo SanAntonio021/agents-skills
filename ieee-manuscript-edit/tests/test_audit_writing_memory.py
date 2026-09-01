@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -11,260 +13,250 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import audit_writing_memory as audit  # noqa: E402
 
 
+STYLE_HEADER = "| 不建议 | 建议 | 例外 |\n|---|---|---|\n"
+
+
 def write(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
 
 
-def run_audit(
-    tmp_path: Path,
-    manuscript: str,
-    *,
-    domain: str = "control theory",
-    include_exception: bool = True,
-) -> dict:
-    source = write(tmp_path / "paper.md", manuscript)
-    vocab = write(
-        tmp_path / "vocab.md",
-        """| 词条 | 改用 | 场景 | 匹配模式 | 例外语境 |
-|---|---|---|---|---|
-| robust | stable; reliable | 通用/论文 | `(?i)\\brobust\\b` | 控制理论中的正式术语 |
-| leverage | use | 通用/论文 | `(?i)\\bleverag[a-z]*\\b` | |
+def make_vocab_root(tmp_path: Path) -> Path:
+    root = tmp_path / "vocab"
+    write(
+        root / "中文" / "通用.md",
+        "# 中文通用\n\n" + STYLE_HEADER + "| 赋能 | 用于 | 引用原文 |\n",
+    )
+    write(
+        root / "中文" / "申报书.md",
+        "# 中文申报书\n\n"
+        + STYLE_HEADER
+        + "| 赋能 | 支撑 | 政策标题原文 |\n"
+        + "| 不作为……前提/条件 | 直接陈述任务和限制 | 真实限制或合规要求 |\n",
+    )
+    for name in ("调研报告.md", "论文.md", "审稿回复.md"):
+        write(root / "中文" / name, f"# {name}\n\n" + STYLE_HEADER)
+    write(
+        root / "英文" / "通用.md",
+        "# English general\n\n"
+        + STYLE_HEADER
+        + "| leverage | use; apply | finance or mechanics contexts |\n",
+    )
+    write(
+        root / "英文" / "论文.md",
+        "# English paper\n\n"
+        + STYLE_HEADER
+        + "| robust | stable; reliable | robust control or robust statistics |\n",
+    )
+    write(root / "英文" / "审稿回复.md", "# English response\n\n" + STYLE_HEADER)
+    write(root / "术语.md", "# 术语\n\n| 中文 | 英文 |\n|---|---|\n| 杂散分量 | spurious component |\n")
+    write(
+        root / "维护.md",
+        r"""# 维护
+
+## 待确认
+
+当前无记录。
+
+## 不采用
+
+当前无记录。
+
+## 检查补充
+
+| 条目 | 匹配 |
+|---|---|
+| 不作为……前提/条件 | `(不作为.{0,20}(前提\|条件))` |
+| leverage | `(?i)\bleverag[a-z]*\b` |
+| robust | `(?i)\brobust[a-z]*\b` |
+
+## 变更记录
+
+- test fixture
 """,
     )
-    terms = write(
-        tmp_path / "terms.md",
-        """| ID | 状态 | 中文术语 | 推荐英文 | 匹配模式 | 适用领域 | 目标期刊 | 章节功能 | 来源 | 用户审阅 | 例外覆盖用户禁用 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| TERM-1 | 已确认 | 鲁棒控制 | robust control | `(?i)\\brobust control\\b` | control theory | 通用 | all | user-confirmed | 是 | 否 |
-""",
-    )
-    exceptions = tmp_path / "exceptions.md"
-    exception_text = """| ID | 状态 | 词条 | 例外模式 | 适用领域 | 目标期刊 | 章节功能 | 来源 | 用户审阅 | 例外覆盖用户禁用 |
-|---|---|---|---|---|---|---|---|---|---|
-"""
-    if include_exception:
-        exception_text += "| EXC-1 | 已确认 | robust | `(?i)\\brobust control\\b` | control theory | 通用 | all | user-confirmed | 是 | 是 |\n"
-    write(exceptions, exception_text)
-    args = audit.build_parser().parse_args(
+    return root
+
+
+def parse_args(root: Path, source: Path, language: str, kind: str, output_format: str = "json"):
+    return audit.build_parser().parse_args(
         [
             "--file",
             str(source),
-            "--domain",
-            domain,
-            "--journal",
-            "IEEE control",
-            "--section",
-            "results",
-            "--vocab-table",
-            str(vocab),
-            "--term-bank",
-            str(terms),
-            "--exception-table",
-            str(exceptions),
+            "--vocab-root",
+            str(root),
+            "--language",
+            language,
+            "--document-kind",
+            kind,
+            "--output-format",
+            output_format,
         ]
     )
-    return audit.audit(args)
 
 
-def test_user_hard_deny_wins_without_explicit_term_override(tmp_path: Path) -> None:
-    result = run_audit(tmp_path, "The robust control loop is stable, but leverage is used.", include_exception=False)
-    assert result["counts"]["conflicts"] == 1
-    assert result["counts"]["violations"] >= 1
-    assert result["counts"]["unresolved"] >= 1
-    assert result["pass"] is False
+def run_audit(tmp_path: Path, text: str, language: str = "en", kind: str = "paper"):
+    root = make_vocab_root(tmp_path)
+    source = write(tmp_path / "draft.md", text)
+    return audit.audit(parse_args(root, source, language, kind))
 
 
-def test_structured_exception_requires_explicit_override(tmp_path: Path) -> None:
-    result = run_audit(tmp_path, "The robust control loop is stable.")
-    assert result["counts"]["exceptions"] == 1
-    assert result["counts"]["violations"] == 0
-    assert result["counts"]["unresolved"] == 0
+def test_complete_language_and_document_kind_routing(tmp_path: Path) -> None:
+    root = make_vocab_root(tmp_path)
+    for kind in audit.DOCUMENT_KINDS:
+        zh_paths = audit.selected_style_paths(root, "zh", kind)
+        en_paths = audit.selected_style_paths(root, "en", kind)
+        assert zh_paths[0].name == "通用.md"
+        assert en_paths[0].name == "通用.md"
+        assert len(zh_paths) == (2 if kind in {"proposal", "research-report", "paper", "review-response"} else 1)
+        assert len(en_paths) == (2 if kind in {"paper", "review-response"} else 1)
 
 
-def test_cross_domain_term_is_unresolved_and_not_applied(tmp_path: Path) -> None:
-    result = run_audit(tmp_path, "The robust control loop is stable.", domain="THz imaging")
-    assert any(item["type"] == "scope_mismatch" for item in result["unresolved"])
-    assert result["pass"] is False
+def test_task_rule_overrides_general_rule(tmp_path: Path) -> None:
+    root = make_vocab_root(tmp_path)
+    source = write(tmp_path / "proposal.md", "本项目赋能产业发展。")
+    proposal = audit.audit(parse_args(root, source, "zh", "proposal"))
+    general = audit.audit(parse_args(root, source, "zh", "general"))
+    assert proposal["matches"][0]["suggestion"] == "支撑"
+    assert proposal["matches"][0]["rule_scope"] == "proposal"
+    assert general["matches"][0]["suggestion"] == "用于"
+    assert general["matches"][0]["rule_scope"] == "general"
 
 
-def test_candidate_never_becomes_active_rule(tmp_path: Path) -> None:
-    result = run_audit(tmp_path, "The leverage method is useful.")
-    # The active style table catches it; the test ensures the result remains a
-    # real violation rather than being silently accepted as a learned choice.
-    assert result["counts"]["violations"] == 1
+def test_proposal_nonliteral_rule_is_routed_and_reported(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "该方向不作为阶段一的前提条件。", language="zh", kind="proposal")
+    assert result["status"] == "review_required"
+    assert result["matches"][0]["not_recommended"] == "不作为……前提/条件"
+    assert result["matches"][0]["exception"] == "真实限制或合规要求"
 
 
-def test_candidate_ledger_is_reported_but_never_applied(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The preferred phrase is signal-layer.")
-    vocab = write(tmp_path / "vocab.md", "| 词条 | 改用 | 场景 | 匹配模式 |\n|---|---|---|---|\n")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| 状态 | 原始表达 | 推荐表达 | 场景 | 匹配模式 |\n|---|---|---|---|---|\n| 候选 | signal-layer | how the signals are defined | 论文 | `(?i)\\bsignal-layer\\b` |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "methods", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert any(item["type"] == "candidate_not_active" for item in result["unresolved"])
-    assert result["counts"]["violations"] == 0
+def test_proposal_rule_is_not_loaded_for_general_chinese(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "该方向不作为阶段一的前提条件。", language="zh", kind="general")
+    assert result["status"] == "clean"
 
 
-def test_rejected_candidate_reappearing_is_a_violation(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The manuscript uses spurious signal.")
-    vocab = write(tmp_path / "vocab.md", "| 词条 | 改用 | 场景 | 匹配模式 |\n|---|---|---|---|\n")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| 状态 | 原始表达 | 推荐表达 | 场景 | 匹配模式 |\n|---|---|---|---|---|\n| 已拒绝 | spurious signal | spurious component | 论文 | `(?i)\\bspurious signal\\b` |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "results", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert result["counts"]["violations"] == 1
-    assert result["violations"][0]["reason"] == "previously rejected candidate reappeared"
+def test_english_paper_loads_general_and_paper_morphology(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "The leveraged method was robustly validated.")
+    assert result["status"] == "review_required"
+    assert [item["match"] for item in result["matches"]] == ["leveraged", "robustly"]
+    assert {item["rule_scope"] for item in result["matches"]} == {"general", "paper"}
 
 
-def test_rejected_candidate_synonym_is_a_violation(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The manuscript uses a spurious component.")
-    vocab = write(tmp_path / "vocab.md", "| 词条 | 改用 | 场景 | 匹配模式 |\n|---|---|---|---|\n")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| 状态 | 原始表达 | 推荐表达 | 匹配模式 | 场景 | 拒绝理由 |\n|---|---|---|---|---|---|\n| 已拒绝 | spurious signal | noise floor | `(?i)\\bspurious (signal|component)s?\\b` | 论文 | 用户要求避免混用术语 |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "results", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert result["counts"]["violations"] == 1
-    assert result["violations"][0]["match"] == "spurious component"
+def test_other_english_kinds_load_only_general(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "The method is robust but leveraged carefully.", kind="proposal")
+    assert [item["not_recommended"] for item in result["matches"]] == ["leverage"]
 
 
-def test_rejected_candidate_without_reason_fails_schema(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "No rejected wording appears here.")
-    vocab = write(tmp_path / "vocab.md", "| 词条 | 改用 | 场景 | 匹配模式 |\n|---|---|---|---|\n")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| 状态 | 原始表达 | 推荐表达 | 匹配模式 | 场景 | 拒绝理由 |\n|---|---|---|---|---|---|\n| 已拒绝 | spurious signal | noise floor | `(?i)\\bspurious signal\\b` | 论文 | |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "results", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert any(item["type"] == "rejected_candidate_missing_reason" for item in result["schema_errors"])
-    assert result["pass"] is False
+def test_exception_text_is_always_in_match_report(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "The robust controller is tested.")
+    assert result["matches"][0]["exception"] == "robust control or robust statistics"
 
 
-def test_confirmed_candidate_requires_verified_active_migration(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The method is stated plainly.")
-    vocab = write(tmp_path / "vocab.md", "| 词条 | 改用 | 场景 | 匹配模式 |\n|---|---|---|---|\n")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| 状态 | 原始表达 | 推荐表达 | 匹配模式 | 场景 | 用户确认 | 迁入位置 |\n|---|---|---|---|---|---|---|\n| 已确认 | signal-layer | signal definition | `(?i)\\bsignal-layer\\b` | 论文 | 是 | vocab-full.md |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "methods", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert any(item["type"] == "confirmed_candidate_not_migrated" for item in result["schema_errors"])
-    assert result["pass"] is False
-
-
-def test_missing_required_rule_file_fails_closed(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The method is stable.")
-    terms = write(tmp_path / "terms.md", "| 状态 | 中文术语 | 推荐英文 | 匹配模式 | 来源 | 用户审阅 |\n|---|---|---|---|---|---|\n")
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "methods", "--vocab-table", str(tmp_path / "missing-vocab.md"), "--term-bank", str(terms)]
-    )
-    try:
-        audit.audit(args)
-    except ValueError as exc:
-        assert "vocab_table" in str(exc)
-    else:
-        raise AssertionError("missing required rule file must not pass")
-
-
-def test_parser_exposes_no_report_file_output_option() -> None:
-    parser = audit.build_parser()
-    assert "--report" not in parser.format_help()
-
-
-def test_markdown_table_parser_preserves_regex_backslashes_and_alternation() -> None:
-    text = "| status | source_form | match_pattern |\n|---|---|---|\n| rejected | spurious signal | `(?i)\\bspurious (signal|component)s?\\b` |\n"
-    headers, cells = next(audit.table_rows(text))
-    rule = audit.rule_from_row(headers, cells, "candidate", 1)
-    assert rule is not None
-    assert rule.pattern == r"(?i)\bspurious (signal|component)s?\b"
-    assert [item.group(0) for item in audit.match_rule(rule, "spurious component")] == ["spurious component"]
-
-
-def test_markdown_table_parser_preserves_escaped_regex_pipe() -> None:
-    text = "| source_form | match_pattern |\n|---|---|\n| experiment day | `(?i)(experiment[- ]day|day's \\w+ conditions)` |\n"
-    headers, cells = next(audit.table_rows(text))
-    rule = audit.rule_from_row(headers, cells, "style", 1)
-    assert rule is not None
-    assert rule.pattern == r"(?i)(experiment[- ]day|day's \w+ conditions)"
-    assert [item.group(0) for item in audit.match_rule(rule, "the day's rain conditions")] == ["day's rain conditions"]
-
-
-def test_confirmed_candidate_with_matching_active_rule_is_migrated(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The method is stated plainly.")
-    vocab = write(
-        tmp_path / "vocab.md",
-        "| source_form | preferred_form | scope | match_pattern |\n|---|---|---|---|\n| signal layer | signal definition | paper | `(?i)\\bsignal[ -]layer\\b` |\n",
-    )
-    terms = write(tmp_path / "terms.md", "| status | source_form | preferred_form | match_pattern | source | user_reviewed |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| status | candidate_type | source_form | preferred_form | match_pattern | scope | source | user_reviewed | migrated_to |\n|---|---|---|---|---|---|---|---|---|\n| confirmed | style | signal layer | signal definition | `(?i)\\bsignal[ -]layer\\b` | paper | user-confirmed | yes | vocab-full.md |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "methods", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert not result["schema_errors"]
-    assert result["pass"] is True
-
-
-def test_confirmed_candidate_cannot_claim_the_wrong_active_bank(tmp_path: Path) -> None:
-    source = write(tmp_path / "paper.md", "The method is stated plainly.")
-    vocab = write(
-        tmp_path / "vocab.md",
-        "| source_form | preferred_form | scope | match_pattern |\n|---|---|---|---|\n| signal layer | signal definition | paper | `(?i)\\bsignal[ -]layer\\b` |\n",
-    )
-    terms = write(tmp_path / "terms.md", "| status | source_form | preferred_form | match_pattern | source | user_reviewed |\n|---|---|---|---|---|---|\n")
-    candidates = write(
-        tmp_path / "candidates.md",
-        "| status | candidate_type | source_form | preferred_form | match_pattern | scope | source | user_reviewed | migrated_to |\n|---|---|---|---|---|---|---|---|---|\n| confirmed | term | signal layer | signal definition | `(?i)\\bsignal[ -]layer\\b` | paper | user-confirmed | yes | scientific-terminology-bank.md |\n",
-    )
-    args = audit.build_parser().parse_args(
-        ["--file", str(source), "--domain", "THz communication", "--journal", "IEEE", "--section", "methods", "--vocab-table", str(vocab), "--term-bank", str(terms), "--candidate-ledger", str(candidates)]
-    )
-    result = audit.audit(args)
-    assert any(item["type"] == "confirmed_candidate_not_migrated" for item in result["schema_errors"])
-    assert result["pass"] is False
-
-
-def test_masking_skips_latex_commands_and_references(tmp_path: Path) -> None:
+def test_masking_skips_code_urls_paths_latex_citations_quotes_and_references(tmp_path: Path) -> None:
     result = run_audit(
         tmp_path,
-        r"""The method uses \texttt{leverage} only in code.
+        r"""`leverage`
+
+```text
+leverage
+```
+
+https://example.com/leverage
+D:\leverage\file.md
+./leverage/file.md
+\texttt{leverage}
+[@leverage2024]
+> leverage is quoted from the source.
+“leverage”
 
 ## References
 
-leverage should not be audited in this bibliography section.
+leverage in a title
 """,
     )
-    assert result["counts"]["violations"] == 0
+    assert result["status"] == "clean"
 
 
-def test_report_has_input_and_rule_hashes(tmp_path: Path) -> None:
-    result = run_audit(tmp_path, "The robust control loop is stable.")
+def test_terms_are_not_style_rules(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "The spurious component is measured.")
+    assert result["status"] == "clean"
+
+
+def test_report_contains_input_and_loaded_rule_hashes(tmp_path: Path) -> None:
+    result = run_audit(tmp_path, "The method leverages prior work.")
     assert result["inputs"][0]["sha256"]
+    assert len(result["rule_files"]) == 3
     assert all(item["sha256"] for item in result["rule_files"])
     json.dumps(result, ensure_ascii=False)
+
+
+def test_cli_status_and_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    root = make_vocab_root(tmp_path)
+    clean = write(tmp_path / "clean.md", "The method uses prior work.")
+    review = write(tmp_path / "review.md", "The method leverages prior work.")
+
+    clean_code = audit.main(["--file", str(clean), "--vocab-root", str(root), "--language", "en", "--document-kind", "paper"])
+    clean_result = json.loads(capsys.readouterr().out)
+    assert clean_code == 0
+    assert clean_result["status"] == "clean"
+
+    review_code = audit.main(["--file", str(review), "--vocab-root", str(root), "--language", "en", "--document-kind", "paper"])
+    review_result = json.loads(capsys.readouterr().out)
+    assert review_code == 1
+    assert review_result["status"] == "review_required"
+
+    error_code = audit.main(["--file", str(clean), "--vocab-root", str(tmp_path / "missing"), "--language", "en", "--document-kind", "paper"])
+    error_result = json.loads(capsys.readouterr().out)
+    assert error_code == 2
+    assert error_result["status"] == "error"
+
+
+def test_markdown_output_contains_suggestion_and_exception(tmp_path: Path) -> None:
+    root = make_vocab_root(tmp_path)
+    source = write(tmp_path / "draft.md", "The method leverages prior work.")
+    result = audit.audit(parse_args(root, source, "en", "paper", "markdown"))
+    report = audit.markdown_report(result)
+    assert "use; apply" in report
+    assert "finance or mechanics contexts" in report
+
+
+def test_malformed_style_table_returns_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    root = make_vocab_root(tmp_path)
+    write(root / "英文" / "通用.md", "| 不建议 | 建议 | 例外 | 备注 |\n|---|---|---|---|\n")
+    source = write(tmp_path / "draft.md", "Plain text.")
+    code = audit.main(["--file", str(source), "--vocab-root", str(root), "--language", "en", "--document-kind", "paper"])
+    result = json.loads(capsys.readouterr().out)
+    assert code == 2
+    assert result["status"] == "error"
+    assert "invalid table header" in result["errors"][0]["message"]
+
+
+def test_escaped_regex_pipe_is_preserved() -> None:
+    cells = audit.split_table_line(r"| item | `(?i)(first\|second)` |")
+    assert cells == ["item", "(?i)(first|second)"]
+    assert audit.compile_pattern(cells[1], cells[0]).search("second")
+
+
+def test_full_vocab_validation_checks_schema_routes_and_mapping(tmp_path: Path) -> None:
+    root = make_vocab_root(tmp_path)
+    result = audit.validate_vocab_root(root)
+    assert result == {
+        "style_files": 8,
+        "style_rules": 5,
+        "term_rows": 1,
+        "match_overrides": 3,
+        "routes": 14,
+    }
+
+
+def test_full_vocab_validation_rejects_unmapped_match_rule(tmp_path: Path) -> None:
+    root = make_vocab_root(tmp_path)
+    maintenance = (root / "维护.md").read_text(encoding="utf-8")
+    maintenance = maintenance.replace(
+        "| robust | `(?i)\\brobust[a-z]*\\b` |",
+        "| robust | `(?i)\\brobust[a-z]*\\b` |\n| missing active row | `missing` |",
+    )
+    write(root / "维护.md", maintenance)
+    with pytest.raises(audit.AuditError, match="without active style rows"):
+        audit.validate_vocab_root(root)

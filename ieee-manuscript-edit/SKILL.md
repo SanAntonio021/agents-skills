@@ -52,35 +52,30 @@ metadata:
 3. 目标期刊或会议已知时，先找用户提供的模板、作者指南或官方页面；依据缺失时，做通用 SCI/IEEE 精修，并把"目标期刊模板待核对"列为待确认问题。
 4. 目标期刊或会议待定，但用户明确只要语言精修时，默认按 IEEE journal article 的克制工程写法处理，版式保持通用。
 5. 涉及专业术语时，先按"术语校准与全局术语库"执行：读术语库、识别新增/冲突/待判定术语、必要时联网核验，再进入句子润色。
-6. 写作或精修论文正文时，读取 `D:\BaiduSyncdisk\.agents\vocab\vocab-full.md`、`scientific-terminology-bank.md`、`academic-expression-bank.md` 和结构化例外表；只加载状态为 `已确认` 且领域/目标期刊/章节功能匹配的记录。用户硬禁用优先于普通术语建议，未经显式例外确认不得覆盖。
+6. 写作或精修论文正文时，中文稿读取 `D:\BaiduSyncdisk\.agents\vocab\中文\通用.md` 和 `中文\论文.md`，英文稿读取 `D:\BaiduSyncdisk\.agents\vocab\英文\通用.md` 和 `英文\论文.md`。需要统一中英文术语时再读全局 `术语.md`；当前项目存在 `术语.md` 时，以项目表为准。
 7. 先检查实验事实、章节安排和关键结论依据。有疑点时先列待确认问题；终稿英文等事实明确后再生成。
 8. 再做五项语言质量复查：删掉空话和重复句，改顺主语和动词，拆开过长的句子，固定术语，核对数字、单位和引用。需要独立完整句子审查（full-review / section-review / targeted / interactive 模式）时，读取 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 9. 再修改正文：压缩冗余，统一术语，理顺句子，控制结论强度。
-10. 最后检查缩写首次定义（按核心规则 12 的独立作用域审计）、引用位置、图表标题、单位符号和中英文版本的一致性。终稿规范化任务先按下节运行 convention audit；所有写入完成后再运行 `scripts/audit_writing_memory.py` 做独立复扫。复扫不通过时停止交付。
+10. 最后检查缩写首次定义（按核心规则 12 的独立作用域审计）、引用位置、图表标题、单位符号和中英文版本的一致性。终稿规范化任务先按下节运行 convention audit；所有写入完成后再运行 `scripts/audit_writing_memory.py` 做独立复扫。`review_required` 表示需要结合句子和例外人工判断；`error` 表示词表或输入无效，停止交付。
 
 ## 术语校准与全局术语库
 
-术语校准的目标是保护专业词，同时控制用户审阅负担。默认使用活数据术语库 `D:\BaiduSyncdisk\.agents\vocab\scientific-terminology-bank.md`；技能内 [references/sci-terminology-bank.md](references/sci-terminology-bank.md) 只作兼容说明。表达模式、候选、结构化例外和状态机见 [references/writing-memory-schema.md](references/writing-memory-schema.md)。
+术语校准的目标是固定中英文对应关系。默认读取 `D:\BaiduSyncdisk\.agents\vocab\术语.md`；当前项目存在 `术语.md` 时，项目表优先。文件结构和维护约定见 [references/writing-memory-schema.md](references/writing-memory-schema.md)。
 
 执行顺序：
 
-1. 先读取活数据术语库，找出与当前稿件领域、目标期刊、章节功能和关键词相匹配的 `已确认` 术语；`候选`、`待审`、`待迁移`、`已拒绝` 不得自动影响润色。
-2. 用户明确硬禁用优先于普通术语建议。只有术语记录或结构化例外明确标记 `例外覆盖用户禁用=是` 且用户审阅为 `是` 时才能覆盖；任何其他重叠都标为"冲突待审"。
-3. 从当前稿件中提取高频中文术语、英文术语、缩写、图注关键词和领域特有表达。
-4. 对新增、冲突、待判定、跨领域复用风险高的术语做联网核验；已审且上下文一致的术语直接沿用。联网或从本轮差异学习前，必须先取得用户同意。
-5. 联网核验优先级：目标期刊近期正式论文和高相关正式论文 > 目标期刊作者指南或官方页面 > 用户已审术语库和当前稿件定义 > ScienceDirect Topics、权威教材或综述定义。ScienceDirect Topics 可作为入口和辅助定义，最终依据优先取正式论文或官方来源。
-6. 工具路由：普通网页检索、目标期刊页面、ScienceDirect Topics、LetPub 或动态页面用 `web-access`；已经有题名、DOI、出版社页或需要正式论文 PDF 时，用 `paper-download` 获取正式版本和原文证据；已有本地 PDF 且需要总结或术语摘录时，用 `paper-summary`。
-7. 如果需要从论文原文中确认术语，优先读取正式发表论文的标题、摘要、关键词、图注、方法段和结论附近表述；只提炼术语、标准搭配或不超过 4 个连续实词的抽象模式，不保存完整句子、图注或方法描述。来源必须写入 DOI、正式链接或官方页面。
-8. 润色前只向用户展示短表，列出需要审阅的术语：
+1. 先读取全局术语表和项目术语表，按“项目优先”形成当前稿件的中文—英文对应关系。
+2. 从当前稿件中提取高频术语、缩写、图注关键词和领域特有表达，检查同一概念是否出现多个译法。
+3. 已有对应关系直接沿用；新增术语、全局与项目冲突、或当前稿件内部冲突列入短表，每轮最多展示 3 条：
 
-| 状态 | 中文术语 | 推荐英文 | 适用领域 | 依据 | 需要用户确认 |
-|---|---|---|---|---|---|
-| 新增待审 | 术语 | term | THz communication | 目标论文 / DOI / URL | 是 |
-| 冲突待审 | 术语 | term A / term B | photonics | 已审术语 vs 本次论文证据 | 是 |
-| 待判定 | 术语 | candidate term | device / system | 证据待补 | 是 |
+| 状态 | 中文 | 英文 | 处理 |
+|---|---|---|---|
+| 新增待确认 | 术语 | term | 确认后写入全局或项目术语表 |
+| 冲突待确认 | 术语 | term A / term B | 用户选择本项目采用的写法 |
 
-9. 用户确认后，统一调用 `style-vocab` 收录模式完成写入；展示完整 15 列记录后经用户明确确认才写入活数据术语库，并在候选台账填写迁入位置；拒绝候选写入 `已拒绝` 及理由，不能删除或绕过。
-10. 术语库保存可复用表达；临时句子、整段翻译和待核验说法留在当前稿件里处理。每轮最多展示 3 条候选。
+4. 术语含义或标准写法确有疑问时再联网核验。优先级为目标期刊近期正式论文和高相关正式论文、作者指南或官方页面、当前稿件定义；需要取论文原文时用 `paper-download` 或 `paper-summary`。
+5. 用户确认后调用 `style-vocab`，只把中文和英文写入对应 `术语.md`。候选、冲突、不采用项和必要来源说明写入 `维护.md`，不增加日常术语表的列。
+6. 临时句子、整段翻译和待核验说法留在当前稿件中处理，不写入术语表。
 
 ## 终稿精修
 
@@ -122,7 +117,7 @@ metadata:
 
 - **不适用的通用规则**：注入个性、第一人称、幽默、表达不确定感——期刊论文保持客观工程口吻，去 AI 味不等于加人味。
 - **红线**：所有数值、单位、术语、LaTeX 命令原样保留；结论的方向和力度不得削弱；写作禁忌类规则（如项目大纲中的 overclaim 禁令）优先级高于文风调整。
-- **重点清理的学术 AI 腔**：`是……而非……`/`不是……而是……`句式（改正面陈述"由 A 变为 B"，或拆成事实句）；"换言之/需要说明的是/据此"引出的金句式总结句（多数可整句删除，让事实自己说话）；防御性表述（"本文不主张……""为保证公平性……""贡献定位于……"——改写成中性事实陈述，把结论留给读者，不删论证本身）；行话直译（"口径"要说清是什么统计方式）。用户自维护的词级替换对由 `style-vocab` 和 `vocab-full.md` 处理，不在本节继续扩清单。
+- **重点清理的学术 AI 腔**：`是……而非……`/`不是……而是……`句式（改正面陈述"由 A 变为 B"，或拆成事实句）；"换言之/需要说明的是/据此"引出的金句式总结句（多数可整句删除，让事实自己说话）；防御性表述（"本文不主张……""为保证公平性……""贡献定位于……"——改写成中性事实陈述，把结论留给读者，不删论证本身）；行话直译（"口径"要说清是什么统计方式）。用户自维护的词级替换对由 `style-vocab` 和当前语言的通用表、论文表处理，不在本节继续扩清单。
 - **统计量必须带含义**：中位数、百分位数、CDF 出现时，用一句话说清读者该读出什么（如"中位数 4.6 dB，即一半频点低于该值"），不要只报数。
 - 交给子智能体重写时，把上述边界连同数值/术语红线清单写进任务书，逐项列明待保留数字。
 
@@ -152,7 +147,7 @@ metadata:
 - 语言精修：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md)。
 - 独立完整 Sainani 五轮句子审查：读 [references/sainani-sentence-review.md](references/sainani-sentence-review.md)。
 - 中文改英文或分节重写：读 [references/manuscript-refinement-checklist.md](references/manuscript-refinement-checklist.md) 和 [references/section-by-section-review.md](references/section-by-section-review.md)。
-- 术语校准和长期复用：读 `D:\BaiduSyncdisk\.agents\vocab\scientific-terminology-bank.md` 和 [references/writing-memory-schema.md](references/writing-memory-schema.md)；技能内旧术语库只作兼容说明，只把用户审过或带明确来源的术语通过 `style-vocab` 收录模式写入活数据表。
+- 术语校准和长期复用：读 `D:\BaiduSyncdisk\.agents\vocab\术语.md`、当前项目的 `术语.md`（如有）和 [references/writing-memory-schema.md](references/writing-memory-schema.md)；通过 `style-vocab` 收录确认后的中文—英文对应关系。
 - 术语需要联网证据：用 `web-access` 查网页、目标期刊页面和 ScienceDirect Topics；需要定位或下载正式论文 PDF 时，调用 `paper-download`；已有本地 PDF 需要总结或术语摘录时，调用 `paper-summary`。
 - IEEE 风格、引用、图表和模板：读 [references/ieee-structure-and-style.md](references/ieee-structure-and-style.md)。
 - IEEE 官方模板资源：读 [references/ieee-official-template-cache.md](references/ieee-official-template-cache.md)，优先复用技能内 `assets/ieee-official-templates/` 的 Word/LaTeX 模板。
@@ -166,9 +161,9 @@ metadata:
 - 事实新增项均有证据。
 - 数值、单位和实验条件保持原边界。
 - 术语、缩写、符号和变量保持一致。
-- 新增、冲突或待判定术语已经形成短审阅表；用户确认后才写成"已确认"。
-- 术语来源能追溯到目标期刊/高相关正式论文、官方页面、用户审过的术语库或明确标注的辅助来源。
-- 复扫报告记录稿件、词表、术语库和脚本版本/哈希；`violations`、`unresolved` 或 `schema_errors` 非空时，交付状态必须是“复扫未通过”。
+- 新增或冲突术语已经形成短审阅表；用户确认后才写入全局或项目 `术语.md`。
+- 需要外部核验的术语有正式论文、官方页面或当前稿件定义作为依据，必要说明保存在维护记录或当前任务记录中。
+- 复扫报告记录稿件、实际加载的文风表和脚本版本/哈希；`review_required` 已逐条结合例外判断，`error` 已排除。
 - 引用仍然紧跟对应论点。
 - 图注和正文能互相对应。
 - 占位符、截断标记和重复套话已清理。

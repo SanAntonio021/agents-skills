@@ -3,32 +3,38 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "以后交付文稿里别写“赋能”，写“用于”或者“支持”。帮我收录。",
-      "expected_output": "判断为通用文风词；读取 vocab-full.md 和 vocab-core.md；查重后写入或更新词条；如进入核心表，保持核心表格式和数量限制。",
+      "prompt": "以后所有中文正式文稿里别写‘赋能’，写‘用于’或者‘支持’。帮我收录。",
+      "expected_output": "判断为中文通用文风规则；只检查并更新 vocab/中文/通用.md 的三列表，不创建核心表或重复写入任务表；普通字面匹配不写入维护.md。",
       "files": []
     },
     {
       "id": 2,
-      "prompt": "以后把“太赫兹近场”统一写成 terahertz near-field，帮我记住。",
-      "expected_output": "判断为专业术语，不写入 style-vocab；转 ieee-manuscript-edit 的 sci-terminology-bank 流程，并提示需要适用领域和来源。",
+      "prompt": "以后把‘太赫兹近场’统一写成 terahertz near field，收录。",
+      "expected_output": "判断为中英文术语；查重后只在全局或项目术语.md 的两列表中记录中文和英文，不要求领域、来源或十五列元数据。",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "帮我按词表检查这段英文：The platform leverages a balanced portfolio strategy. The paper leverages a 115 GHz carrier to demonstrate link stability.",
-      "expected_output": "识别第一句 leverage 属于金融/投资语境例外，保留；第二句属于论文普通动词，建议改为 uses 或 builds on。",
+      "prompt": "按英文论文词表检查：The platform leverages a balanced portfolio strategy. The paper leverages a 115 GHz carrier.",
+      "expected_output": "加载英文/通用.md 和英文/论文.md；报告两处 leverage 命中及同一例外说明，由模型判断金融语境保留、论文普通动词改为 uses 或 applies，不做自动替换。",
       "files": []
     },
     {
       "id": 4,
       "prompt": "检查这个 LaTeX 片段：\\cite{delve2024_thz} shows prior work. We delve into the measured EVM trend in Section~\\ref{sec:evm}.",
-      "expected_output": "跳过 citation key 中的 delve；检查正文中的 delve，并建议改为 examine 或 analyze；保留 LaTeX 命令和引用结构。",
+      "expected_output": "跳过 citation key 和 LaTeX 命令参数，只报告正文 delve，给出 examine 或 analyze 及例外说明。",
       "files": []
     },
     {
       "id": 5,
-      "prompt": "核心表已经有 30 个词了。现在我想把“生态”也加进核心表。",
-      "expected_output": "不直接追加导致核心表超限；先提示核心表已满，要求用户选择移出一个低频项，或只写入 vocab-full.md。",
+      "prompt": "这是中文申报书。检查：本方向作为后续评估内容，不作为阶段一的前提条件。",
+      "expected_output": "加载中文/通用.md 和中文/申报书.md；使用维护.md 的非字面匹配，报告防御性表达命中，建议直接陈述研制任务、形成能力、适配对象或真实限制。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "全局术语.md 写‘杂散分量 | spurious component’，这个项目的术语.md 写‘杂散分量 | spur’。本项目英文稿怎么处理？",
+      "expected_output": "按项目术语优先规则在本项目使用 spur，同时指出全局表保持不变；不把术语送入禁用词检查。",
       "files": []
     }
   ]

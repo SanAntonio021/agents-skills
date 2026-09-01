@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
@@ -28,6 +28,10 @@ except ImportError:  # pragma: no cover
 
 
 SCHEMA_VERSION = 1
+USAGE_AUDIT_VERSION = "skill-usage-audit-v2"
+USAGE_SEMANTICS_VERSION = 2
+DEFAULT_USAGE_TIMEZONE = "Asia/Shanghai"
+DEFAULT_USAGE_BOUNDARY_HOUR = 14
 UNSEEN_STREAK_THRESHOLD = 4
 ROUTINE_QUEUE_LIMIT = 3
 MAX_DECISION_SUMMARY = 600
@@ -67,6 +71,8 @@ DEFAULT_SKILLS_ROOT = SKILL_ROOT.parent
 DEFAULT_AGENTS_ROOT = DEFAULT_SKILLS_ROOT.parent
 DEFAULT_REPORTS_ROOT = DEFAULT_AGENTS_ROOT / "reports" / "skill-upstream"
 DEFAULT_STATE_PATH = DEFAULT_REPORTS_ROOT / "weekly-review-state.json"
+DEFAULT_DASHBOARD_ROOT = DEFAULT_REPORTS_ROOT / "usage" / "dashboard"
+DEFAULT_DASHBOARD_TEMPLATE = SKILL_ROOT / "assets" / "skill-usage-dashboard.html"
 DEFAULT_SYNC_HELPER = (
     DEFAULT_AGENTS_ROOT
     / "automation"
@@ -89,6 +95,28 @@ def now_iso() -> str:
 
 def today_local() -> str:
     return datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
+
+
+def usage_window_for_date(
+    date: str,
+    *,
+    timezone_name: str = DEFAULT_USAGE_TIMEZONE,
+    explicit_end: str | None = None,
+) -> tuple[str, str]:
+    timezone = ZoneInfo(timezone_name)
+    if explicit_end:
+        normalized = explicit_end.strip().replace("Z", "+00:00")
+        end = datetime.fromisoformat(normalized)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone)
+        else:
+            end = end.astimezone(timezone)
+    else:
+        end = datetime.fromisoformat(f"{date}T{DEFAULT_USAGE_BOUNDARY_HOUR:02d}:00:00").replace(
+            tzinfo=timezone
+        )
+    start = end - timedelta(days=7)
+    return start.isoformat(), end.isoformat()
 
 
 def compact_text(value: Any, limit: int = MAX_DECISION_SUMMARY) -> str:
@@ -353,6 +381,139 @@ def atomic_write_json(path: Path, payload: Any) -> None:
     atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
 
 
+def build_dashboard_snapshot(
+    usage: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    date: str,
+    complete: bool,
+    streak_reset_reason: str | None,
+) -> dict[str, Any]:
+    used = {
+        str(item.get("skill")): item
+        for item in usage.get("classifications", {}).get("已用", [])
+        if isinstance(item, dict) and item.get("skill")
+    }
+    evidence = usage.get("usage_evidence", {})
+    streaks = state.get("unseen_streaks", {})
+    rows: list[dict[str, Any]] = []
+    for item in usage.get("skill_inventory", []):
+        if not isinstance(item, dict) or not item.get("skill"):
+            continue
+        skill = str(item["skill"])
+        active_hosts = sorted(str(host) for host in item.get("active_hosts", []))
+        counts = used.get(skill, {})
+        codex = int(counts.get("codex_requests", 0))
+        claude = int(counts.get("claude_requests", counts.get("claude_skill_calls", 0)))
+        total = codex + claude
+        zero_streak = int(streaks.get(skill, {}).get("count", 0)) if total == 0 else 0
+        source_only = not active_hosts
+        review_candidate = bool(
+            complete
+            and not source_only
+            and total == 0
+            and zero_streak >= UNSEEN_STREAK_THRESHOLD
+        )
+        if source_only:
+            status = "source_only"
+        elif review_candidate:
+            status = "review"
+        elif total:
+            status = "observed"
+        else:
+            status = "zero"
+        evidence_kinds = sorted(
+            {
+                str(kind)
+                for event in evidence.get(skill, [])
+                if isinstance(event, dict)
+                for kind in event.get("evidence_kinds", [event.get("kind")])
+                if kind
+            }
+        )
+        rows.append(
+            {
+                "skill": skill,
+                "active_hosts": active_hosts,
+                "counts": {"codex": codex, "claude": claude, "total": total},
+                "zero_streak": zero_streak,
+                "review_candidate": review_candidate,
+                "status": status,
+                "evidence_kinds": evidence_kinds,
+            }
+        )
+    counts = {
+        "skills": len(rows),
+        "active": sum(row["status"] != "source_only" for row in rows),
+        "observed": sum(row["status"] == "observed" for row in rows),
+        "zero": sum(row["status"] in {"zero", "review"} for row in rows),
+        "review": sum(row["status"] == "review" for row in rows),
+        "source_only": sum(row["status"] == "source_only" for row in rows),
+    }
+    warnings = usage.get("warnings", {})
+    return {
+        "schema_version": 1,
+        "date": date,
+        "generated_at": now_iso(),
+        "complete": complete,
+        "streak_reset_reason": streak_reset_reason,
+        "window": usage.get("window"),
+        "count_unit": usage.get("configuration", {}).get("count_unit"),
+        "coverage": {
+            "codex_is_observed_lower_bound": True,
+            "missing_roots": list(warnings.get("missing_roots", [])),
+            "parse_error_count": int(warnings.get("parse_error_count", 0)),
+            "unmapped_request_count": int(warnings.get("unmapped_request_count", 0)),
+        },
+        "counts": counts,
+        "skills": sorted(rows, key=lambda row: row["skill"].lower()),
+    }
+
+
+def render_usage_dashboard(
+    usage: dict[str, Any],
+    state: dict[str, Any],
+    reports_root: Path,
+    *,
+    date: str,
+    complete: bool,
+    streak_reset_reason: str | None,
+) -> dict[str, Any]:
+    dashboard_root = reports_root / "usage" / "dashboard"
+    data_root = dashboard_root / "data"
+    snapshot = build_dashboard_snapshot(
+        usage,
+        state,
+        date=date,
+        complete=complete,
+        streak_reset_reason=streak_reset_reason,
+    )
+    snapshot_path = data_root / f"{date}.json"
+    atomic_write_json(snapshot_path, snapshot)
+
+    snapshots: list[dict[str, Any]] = []
+    for path in sorted(data_root.glob("*.json"), reverse=True)[:12]:
+        payload, error = load_json_file(path)
+        if error or not isinstance(payload, dict) or payload.get("schema_version") != 1:
+            continue
+        snapshots.append(payload)
+    template = DEFAULT_DASHBOARD_TEMPLATE.read_text(encoding="utf-8")
+    serialized = json.dumps(snapshots, ensure_ascii=False, separators=(",", ":"))
+    serialized = serialized.replace("</", "<\\/")
+    marker = "__SKILL_USAGE_DATA__"
+    if marker not in template:
+        raise StateError("dashboard template is missing its data marker")
+    html = template.replace(marker, serialized)
+    index_path = dashboard_root / "index.html"
+    atomic_write_text(index_path, html)
+    return {
+        "valid": True,
+        "index": relative_report_ref(index_path, reports_root),
+        "snapshot": relative_report_ref(snapshot_path, reports_root),
+        "weeks_embedded": len(snapshots),
+    }
+
+
 class StateLock:
     def __init__(self, state_path: Path, timeout: float = LOCK_TIMEOUT_SECONDS) -> None:
         self.path = Path(f"{state_path}.lock")
@@ -405,6 +566,7 @@ def new_state() -> dict[str, Any]:
         "created_at": timestamp,
         "updated_at": timestamp,
         "scope_fingerprint": None,
+        "usage_semantics_version": USAGE_SEMANTICS_VERSION,
         "unseen_streaks": {},
         "findings": {},
         "queue": [],
@@ -590,7 +752,7 @@ def summary_is_valid(payload: Any, audit: str, date: str) -> tuple[bool, str | N
     expected_versions: dict[str, Any] = {
         "upstream": 1,
         "hygiene": "flat-skill-tree-v1",
-        "usage": "skill-usage-audit-v1",
+        "usage": USAGE_AUDIT_VERSION,
     }
     key = "schema_version" if audit == "upstream" else "version"
     if payload.get(key) != expected_versions[audit]:
@@ -621,6 +783,15 @@ def summary_is_valid(payload: Any, audit: str, date: str) -> tuple[bool, str | N
             return False, "usage summary has no warnings object"
         if not isinstance(payload.get("skill_inventory"), list):
             return False, "usage summary has no skill_inventory list"
+        window = payload.get("window")
+        if (
+            not isinstance(window, dict)
+            or not isinstance(window.get("start"), str)
+            or not isinstance(window.get("end"), str)
+        ):
+            return False, "usage summary has no complete weekly window"
+        if payload.get("configuration", {}).get("count_unit") != "request":
+            return False, "usage summary count unit is not request"
         for field, value in payload["classifications"].items():
             if not isinstance(value, list):
                 return False, f"usage classification {field!r} is not a list"
@@ -673,6 +844,9 @@ def run_audits(
     skills_root: Path,
     reports_root: Path,
     date: str,
+    usage_window_start: str,
+    usage_window_end: str,
+    usage_timezone: str,
     reuse_reports: bool,
 ) -> tuple[dict[str, Any], dict[str, Path]]:
     paths = {
@@ -733,6 +907,14 @@ def run_audits(
             str(reports_root),
             "--date",
             date,
+            "--window-start",
+            usage_window_start,
+            "--window-end",
+            usage_window_end,
+            "--timezone",
+            usage_timezone,
+            "--count-unit",
+            "request",
             "--hygiene-summary",
             str(paths["hygiene"]),
             "--json",
@@ -1045,6 +1227,8 @@ def usage_evidence_complete(summary: dict[str, Any]) -> tuple[bool, list[str]]:
         reasons.append("parse errors")
     if warnings.get("missing_field_count"):
         reasons.append("missing target fields")
+    if warnings.get("unmapped_request_count"):
+        reasons.append("usage evidence could not be mapped to user requests")
     if warnings.get("hygiene_summary_warning"):
         reasons.append("invalid hygiene summary")
     return not reasons, reasons
@@ -1083,30 +1267,41 @@ def update_unseen_streaks(
     date: str,
 ) -> tuple[dict[str, int], str | None]:
     streaks = state["unseen_streaks"]
-    previous_scope = state.get("scope_fingerprint")
     if not complete or not usage or not scope_value:
         for entry in streaks.values():
             if isinstance(entry, dict):
                 entry["count"] = 0
                 entry["last_reset_date"] = date
         return {}, "incomplete_scan"
-    if previous_scope and previous_scope != scope_value:
+
+    semantics_changed = state.get("usage_semantics_version") != USAGE_SEMANTICS_VERSION
+    if semantics_changed:
         for entry in streaks.values():
             if isinstance(entry, dict):
                 entry["count"] = 0
                 entry["last_reset_date"] = date
-                entry["last_counted_date"] = date
-        for item in usage.get("classifications", {}).get("历史内未见使用", []):
-            if not isinstance(item, dict) or not item.get("skill"):
-                continue
-            entry = streaks.setdefault(str(item["skill"]), {"count": 0})
-            entry["count"] = 0
-            entry["last_reset_date"] = date
-            entry["last_counted_date"] = date
-        state["scope_fingerprint"] = scope_value
-        return {}, "scope_changed"
-
+        state["usage_semantics_version"] = USAGE_SEMANTICS_VERSION
     state["scope_fingerprint"] = scope_value
+    inventory = {
+        str(item.get("skill")): sorted(str(host) for host in item.get("active_hosts", []))
+        for item in usage.get("skill_inventory", [])
+        if isinstance(item, dict) and item.get("skill")
+    }
+    configuration = usage.get("configuration", {})
+    scope_signatures = {
+        skill: fingerprint(
+            {
+                "skill": skill,
+                "active_hosts": active_hosts,
+                "usage_version": usage.get("version"),
+                "count_unit": configuration.get("count_unit"),
+            }
+        )
+        for skill, active_hosts in inventory.items()
+    }
+    window = usage.get("window", {})
+    window_start = str(window.get("start") or "")
+    window_end = str(window.get("end") or "")
     used = {
         str(item.get("skill"))
         for item in usage.get("classifications", {}).get("已用", [])
@@ -1116,23 +1311,48 @@ def update_unseen_streaks(
         str(item.get("skill"))
         for item in usage.get("classifications", {}).get("历史内未见使用", [])
         if isinstance(item, dict)
+        and (
+            item.get("active_hosts")
+            or inventory.get(str(item.get("skill")))
+            or str(item.get("skill")) not in inventory
+        )
     }
     for skill in used:
         entry = streaks.setdefault(skill, {"count": 0})
         entry["count"] = 0
         entry["last_used_date"] = date
         entry["last_counted_date"] = date
+        entry["last_window_end"] = window_end
+        entry["scope_signature"] = scope_signatures.get(skill)
     counts: dict[str, int] = {}
+    gap_detected = False
     for skill in unseen:
         entry = streaks.setdefault(skill, {"count": 0})
-        if entry.get("last_counted_date") != date:
-            entry["count"] = int(entry.get("count", 0)) + 1
+        signature = scope_signatures.get(skill)
+        scope_changed = entry.get("scope_signature") not in {None, signature}
+        if scope_changed:
+            entry["count"] = 0
+            entry["last_reset_date"] = date
+        if entry.get("last_counted_date") != date and entry.get("last_window_end") != window_end:
+            previous_end = str(entry.get("last_window_end") or "")
+            if previous_end and previous_end != window_start and not semantics_changed and not scope_changed:
+                entry["count"] = 1
+                entry["last_reset_date"] = date
+                gap_detected = True
+            else:
+                entry["count"] = int(entry.get("count", 0)) + 1
             entry["last_counted_date"] = date
+            entry["last_window_end"] = window_end
+        entry["scope_signature"] = signature
         counts[skill] = int(entry.get("count", 0))
     for skill, entry in streaks.items():
         if skill not in used and skill not in unseen and isinstance(entry, dict):
             entry["count"] = 0
             entry["last_reset_date"] = date
+    if semantics_changed:
+        return counts, "usage_semantics_changed"
+    if gap_detected:
+        return counts, "window_gap"
     return counts, None
 
 
@@ -1185,10 +1405,14 @@ def extract_usage_observations(
             )
         )
 
+    four_week_redundant: set[str] = set()
     for item in classifications.get("可能冗余", []):
         if not isinstance(item, dict) or not item.get("skill"):
             continue
         skill = str(item["skill"])
+        if unseen_counts.get(skill, 0) < UNSEEN_STREAK_THRESHOLD:
+            continue
+        four_week_redundant.add(skill)
         related = [str(value) for value in item.get("related_skills", [])]
         targets = [skill, *related]
         observations.append(
@@ -1218,7 +1442,7 @@ def extract_usage_observations(
         )
 
     for skill, count in sorted(unseen_counts.items()):
-        if count < UNSEEN_STREAK_THRESHOLD:
+        if count < UNSEEN_STREAK_THRESHOLD or skill in four_week_redundant:
             continue
         observations.append(
             make_observation(
@@ -1522,6 +1746,7 @@ def build_scan_report(
     streak_reset_reason: str | None,
     observations: list[dict[str, Any]],
     merge_result: dict[str, Any] | None,
+    dashboard: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1535,6 +1760,7 @@ def build_scan_report(
         "validation": validation,
         "observations": observations,
         "merge": merge_result,
+        "dashboard": dashboard,
     }
 
 
@@ -1543,17 +1769,26 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     skills_root = args.skills_root.resolve()
     reports_root = args.reports_root.resolve()
     state_path = args.state.resolve()
+    usage_window_start, usage_window_end = usage_window_for_date(
+        args.date,
+        timezone_name=args.usage_timezone,
+        explicit_end=args.usage_window_end,
+    )
     command_results, summary_paths = run_audits(
         agents_root=agents_root,
         skills_root=skills_root,
         reports_root=reports_root,
         date=args.date,
+        usage_window_start=usage_window_start,
+        usage_window_end=usage_window_end,
+        usage_timezone=args.usage_timezone,
         reuse_reports=args.reuse_reports,
     )
     summaries: dict[str, dict[str, Any] | None] = {}
     validation: dict[str, Any] = {}
     observations: list[dict[str, Any]] = []
     completeness_reasons: list[str] = []
+    dashboard_result: dict[str, Any] = {"valid": False, "error": "usage summary unavailable"}
 
     for audit in ("upstream", "hygiene", "usage"):
         payload, read_error = load_json_file(summary_paths[audit])
@@ -1688,9 +1923,26 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             streak_reset_reason="state_blocked",
             observations=observations,
             merge_result=None,
+            dashboard={"valid": False, "error": "weekly review state is blocked"},
         )
         atomic_write_json(report_path, report)
         return {**failure, "scan_report": relative_report_ref(report_path, reports_root)}, 3
+
+    if summaries["usage"]:
+        try:
+            dashboard_result = render_usage_dashboard(
+                summaries["usage"],
+                state,
+                reports_root,
+                date=args.date,
+                complete=complete,
+                streak_reset_reason=streak_reset_reason,
+            )
+        except (OSError, UnicodeError, ValueError, StateError, json.JSONDecodeError) as exc:
+            dashboard_result = {
+                "valid": False,
+                "error": compact_text(f"{exc.__class__.__name__}: {exc}", 1000),
+            }
 
     report = build_scan_report(
         date=args.date,
@@ -1702,6 +1954,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         streak_reset_reason=streak_reset_reason,
         observations=observations,
         merge_result=merge_result,
+        dashboard=dashboard_result,
     )
     atomic_write_json(report_path, report)
     return {
@@ -1712,6 +1965,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "scan_report": relative_report_ref(report_path, reports_root),
         "state": relative_report_ref(state_path, reports_root),
         "merge": merge_result,
+        "dashboard": dashboard_result,
     }, 0 if complete else 2
 
 
@@ -1845,6 +2099,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scan.add_argument("--agents-root", type=Path, default=DEFAULT_AGENTS_ROOT)
     scan.add_argument("--skills-root", type=Path, default=DEFAULT_SKILLS_ROOT)
     scan.add_argument("--reports-root", type=Path, default=DEFAULT_REPORTS_ROOT)
+    scan.add_argument(
+        "--usage-window-end",
+        help=(
+            "Exclusive ISO-8601 end of the seven-day usage window. "
+            "Defaults to --date at 14:00 in --usage-timezone."
+        ),
+    )
+    scan.add_argument(
+        "--usage-timezone",
+        default=DEFAULT_USAGE_TIMEZONE,
+        help=f"Usage window timezone (default: {DEFAULT_USAGE_TIMEZONE}).",
+    )
     scan.add_argument(
         "--reuse-reports",
         action="store_true",

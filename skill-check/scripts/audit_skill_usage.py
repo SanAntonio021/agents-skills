@@ -10,12 +10,16 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 
 MAX_WARNING_DETAILS = 200
 MAX_EXCERPT_CHARS = 240
+AUDIT_VERSION = "skill-usage-audit-v2"
+DEFAULT_TIMEZONE = "Asia/Shanghai"
 BRIDGE_MARKERS = (
     "claude-codex-bridge",
     "cross-model-orchestration-workspace",
@@ -109,6 +113,7 @@ class SkillInfo:
     aliases: set[str] = field(default_factory=set)
     locations: list[dict[str, Any]] = field(default_factory=list)
     trigger_terms: list[str] = field(default_factory=list)
+    path_aliases: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -119,7 +124,34 @@ class MessageRecord:
     text: str
     source: dict[str, Any]
     message_id: str = ""
+    request_id: str = ""
     used_skills: set[str] = field(default_factory=set)
+
+
+@dataclass(frozen=True)
+class AuditWindow:
+    start: datetime | None
+    end: datetime | None
+    timezone: str
+
+    @property
+    def kind(self) -> str:
+        return "weekly" if self.start is not None and self.end is not None else "all-history"
+
+    def contains(self, value: datetime) -> bool:
+        if self.start is not None and value < self.start:
+            return False
+        if self.end is not None and value >= self.end:
+            return False
+        return True
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "start": self.start.isoformat() if self.start else None,
+            "end": self.end.isoformat() if self.end else None,
+            "timezone": self.timezone,
+        }
 
 
 class WarningCollector:
@@ -127,9 +159,11 @@ class WarningCollector:
         self.parse_errors: list[dict[str, Any]] = []
         self.missing_fields: list[dict[str, Any]] = []
         self.non_text_user_records: list[dict[str, Any]] = []
+        self.unmapped_requests: list[dict[str, Any]] = []
         self.parse_error_count = 0
         self.missing_field_count = 0
         self.non_text_user_record_count = 0
+        self.unmapped_request_count = 0
 
     def parse_error(self, source: dict[str, Any], detail: str) -> None:
         self.parse_error_count += 1
@@ -145,6 +179,11 @@ class WarningCollector:
         self.non_text_user_record_count += 1
         if len(self.non_text_user_records) < MAX_WARNING_DETAILS:
             self.non_text_user_records.append({**source, "detail": detail})
+
+    def unmapped_request(self, source: dict[str, Any], detail: str) -> None:
+        self.unmapped_request_count += 1
+        if len(self.unmapped_requests) < MAX_WARNING_DETAILS:
+            self.unmapped_requests.append({**source, "detail": detail})
 
 
 class CandidateCollector:
@@ -224,6 +263,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--reports-root", required=True, help="Directory for generated reports.")
     parser.add_argument("--date", required=True, help="Report date in YYYY-MM-DD format.")
     parser.add_argument(
+        "--window-start",
+        help="Inclusive ISO-8601 start of the usage window. Must be paired with --window-end.",
+    )
+    parser.add_argument(
+        "--window-end",
+        help="Exclusive ISO-8601 end of the usage window. Must be paired with --window-start.",
+    )
+    parser.add_argument(
+        "--timezone",
+        default=DEFAULT_TIMEZONE,
+        help=f"Timezone for naive window values (default: {DEFAULT_TIMEZONE}).",
+    )
+    parser.add_argument(
+        "--count-unit",
+        choices=("request",),
+        default="request",
+        help="Count each skill at most once per user request (default: request).",
+    )
+    parser.add_argument(
         "--skills-root",
         action="append",
         default=[],
@@ -268,12 +326,58 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def parse_iso_datetime(value: str, timezone_name: str) -> datetime:
+    normalized = value.strip().replace("Z", "+00:00")
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo(timezone_name))
+    return parsed
+
+
+def build_audit_window(args: argparse.Namespace) -> AuditWindow:
+    if bool(args.window_start) != bool(args.window_end):
+        raise ValueError("--window-start and --window-end must be provided together")
+    try:
+        ZoneInfo(args.timezone)
+    except Exception as exc:
+        raise ValueError(f"unknown timezone: {args.timezone}") from exc
+    if not args.window_start:
+        return AuditWindow(None, None, args.timezone)
+    start = parse_iso_datetime(args.window_start, args.timezone)
+    end = parse_iso_datetime(args.window_end, args.timezone)
+    if start >= end:
+        raise ValueError("--window-start must be earlier than --window-end")
+    return AuditWindow(start, end, args.timezone)
+
+
+def timestamp_in_window(
+    timestamp: str,
+    window: AuditWindow,
+    warnings: WarningCollector,
+    source: dict[str, Any],
+    *,
+    target: str,
+) -> bool:
+    if window.start is None:
+        return True
+    try:
+        parsed = parse_iso_datetime(timestamp, window.timezone)
+    except (TypeError, ValueError):
+        warnings.missing_field(source, f"{target} has an invalid timestamp")
+        return False
+    return window.contains(parsed)
+
+
 def normalize_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
 
 def short_session_ref(session_id: str) -> str:
     return hashlib.sha256(session_id.encode("utf-8", errors="replace")).hexdigest()[:12]
+
+
+def short_request_ref(session_id: str, request_id: str) -> str:
+    return short_session_ref(f"{session_id}:{request_id}")
 
 
 def source_ref(root: RootSpec, path: Path, line: int) -> dict[str, Any]:
@@ -398,6 +502,18 @@ def custom_roots(values: list[str], prefix: str, kind: str) -> list[RootSpec]:
     return [RootSpec(f"{prefix}-{index}", Path(value).expanduser(), kind) for index, value in enumerate(values, 1)]
 
 
+def custom_skill_roots(values: list[str]) -> list[RootSpec]:
+    return [
+        RootSpec(
+            f"skills-{index}",
+            Path(value).expanduser(),
+            "custom",
+            ("claude", "codex"),
+        )
+        for index, value in enumerate(values, 1)
+    ]
+
+
 def build_inventory(roots: list[RootSpec]) -> tuple[dict[str, SkillInfo], list[str]]:
     inventory: dict[str, SkillInfo] = {}
     missing_roots: list[str] = []
@@ -416,6 +532,9 @@ def build_inventory(roots: list[RootSpec]) -> tuple[dict[str, SkillInfo], list[s
                 skill.aliases.add(name.rsplit(":", 1)[1].lower())
             if description:
                 skill.descriptions.add(description)
+            absolute_alias = os.path.normcase(os.path.abspath(skill_md)).replace("\\", "/").lower()
+            relative_alias = skill_md.relative_to(root.path).as_posix().lower()
+            skill.path_aliases.update({absolute_alias, relative_alias})
             skill.locations.append(
                 {
                     "root_id": root.root_id,
@@ -628,11 +747,16 @@ def codex_message_text(payload: dict[str, Any]) -> str | None:
     if isinstance(content, str):
         return content
     if isinstance(content, list):
-        parts = [
-            item.get("text", "")
-            for item in content
-            if isinstance(item, dict) and item.get("type") in {"input_text", "text"} and isinstance(item.get("text"), str)
-        ]
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif (
+                isinstance(item, dict)
+                and str(item.get("type") or "").lower() in {"input_text", "text"}
+                and isinstance(item.get("text"), str)
+            ):
+                parts.append(item["text"])
         return "\n".join(part for part in parts if part)
     return None
 
@@ -680,6 +804,7 @@ def build_usage_event(
         "skill": skill.name,
         "timestamp": message.timestamp,
         "session_ref": short_session_ref(message.session_id),
+        "request_ref": short_request_ref(message.session_id, message.request_id),
         "source": message.source,
     }
     add_excerpt(event, detail_text, args)
@@ -724,6 +849,73 @@ def add_candidates(
         candidates.add(candidate)
 
 
+READ_COMMAND_MARKERS = (
+    "get-content",
+    "readalltext",
+    "read_text",
+    "type ",
+    "type\t",
+    "more ",
+    "cat ",
+    "sed ",
+    "head ",
+    "tail ",
+    "bat ",
+    "rg ",
+    "ripgrep ",
+    "grep ",
+)
+
+
+def codex_command_reads_skill(item: dict[str, Any]) -> bool:
+    command = str(item.get("command") or "")
+    lowered = command.lower()
+    if "skill.md" not in lowered or not any(marker in lowered for marker in READ_COMMAND_MARKERS):
+        return False
+    status = str(item.get("status") or "").lower()
+    exit_code = item.get("exit_code")
+    return status in {"completed", "success"} and exit_code in {0, "0", None}
+
+
+def command_skill_keys(command: str, inventory: dict[str, SkillInfo]) -> set[str]:
+    normalized_command = os.path.normcase(command).replace("\\", "/").lower()
+    matched: set[str] = set()
+    for key, skill in inventory.items():
+        if any(alias and alias in normalized_command for alias in skill.path_aliases):
+            matched.add(key)
+    return matched
+
+
+def deduplicate_usage_events(
+    usage: dict[str, list[dict[str, Any]]]
+) -> dict[str, list[dict[str, Any]]]:
+    result: dict[str, list[dict[str, Any]]] = {}
+    for skill_key, events in usage.items():
+        grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+        for event in events:
+            grouped[(event["host"], event["request_ref"])].append(event)
+        collapsed: list[dict[str, Any]] = []
+        for group in grouped.values():
+            ordered = sorted(
+                group,
+                key=lambda item: (
+                    item["timestamp"],
+                    item["source"]["path"],
+                    item["source"]["line"],
+                ),
+            )
+            primary = dict(ordered[0])
+            evidence_kinds = sorted({item["kind"] for item in group})
+            primary["kind"] = evidence_kinds[0] if len(evidence_kinds) == 1 else "multiple"
+            primary["evidence_kinds"] = evidence_kinds
+            collapsed.append(primary)
+        result[skill_key] = sorted(
+            collapsed,
+            key=lambda item: (item["timestamp"], item["host"], item["source"]["path"]),
+        )
+    return result
+
+
 def scan_codex_history(
     roots: list[RootSpec],
     inventory: dict[str, SkillInfo],
@@ -732,10 +924,12 @@ def scan_codex_history(
     usage: dict[str, list[dict[str, Any]]],
     candidates: CandidateCollector,
     warnings: WarningCollector,
+    window: AuditWindow,
     args: argparse.Namespace,
 ) -> tuple[int, set[tuple[str, str, str]]]:
     excluded_sessions: set[tuple[str, str, str]] = set()
     seen_messages: set[tuple[str, str]] = set()
+    seen_commands: set[tuple[str, str]] = set()
     scanned_files = 0
     for root in roots:
         for path in list_history_files(root, (".jsonl",)):
@@ -747,6 +941,8 @@ def scan_codex_history(
 
             preferred: dict[tuple[str, str], MessageRecord] = {}
             priorities: dict[tuple[str, str], int] = {}
+            command_events: list[tuple[str, str, str, dict[str, Any], dict[str, Any], set[str]]] = []
+            current_turn_id = ""
             for line_number, row in iter_json_lines(path, root, warnings):
                 row_type = row.get("type")
                 payload = row.get("payload")
@@ -754,9 +950,55 @@ def scan_codex_history(
                     continue
                 timestamp = str(row.get("timestamp") or payload.get("timestamp") or "")
                 source = source_ref(root, path, line_number)
+                payload_turn_id = str(payload.get("turn_id") or "")
+                if payload_turn_id:
+                    current_turn_id = payload_turn_id
+
+                item = payload.get("item")
+                if (
+                    row_type == "event_msg"
+                    and payload.get("type") == "item_completed"
+                    and isinstance(item, dict)
+                    and item.get("type") == "CommandExecution"
+                    and codex_command_reads_skill(item)
+                ):
+                    matched_keys = command_skill_keys(str(item.get("command") or ""), inventory)
+                    if not matched_keys:
+                        continue
+                    request_id = payload_turn_id or current_turn_id
+                    if not request_id:
+                        warnings.unmapped_request(
+                            source,
+                            "Codex skill read could not be mapped to a user request",
+                        )
+                        continue
+                    if not timestamp:
+                        warnings.missing_field(source, "Codex skill read is missing timestamp")
+                        continue
+                    if not timestamp_in_window(
+                        timestamp, window, warnings, source, target="Codex skill read"
+                    ):
+                        continue
+                    command_events.append(
+                        (request_id, timestamp, str(item.get("command") or ""), source, item, matched_keys)
+                    )
+                    continue
+
                 priority = 0
                 text_value: str | None = None
-                if row_type == "event_msg" and payload.get("type") == "user_message":
+                request_id = payload_turn_id or current_turn_id
+                message_payload = payload
+                if (
+                    row_type == "event_msg"
+                    and payload.get("type") == "item_completed"
+                    and isinstance(item, dict)
+                    and item.get("type") == "UserMessage"
+                ):
+                    priority = 3
+                    request_id = payload_turn_id or str(item.get("id") or "")
+                    message_payload = item
+                    text_value = codex_message_text(item)
+                elif row_type == "event_msg" and payload.get("type") == "user_message":
                     priority = 2
                     text_value = codex_message_text(payload)
                 elif (
@@ -769,7 +1011,7 @@ def scan_codex_history(
                 else:
                     continue
                 if text_value is None or not text_value.strip():
-                    if codex_message_has_non_text_content(payload):
+                    if codex_message_has_non_text_content(message_payload):
                         warnings.non_text_user_record(
                             source,
                             "Codex user record contains only image or attachment content",
@@ -779,8 +1021,13 @@ def scan_codex_history(
                     continue
                 if not timestamp:
                     warnings.missing_field(source, "Codex user record is missing timestamp")
-                    timestamp = f"line-{line_number}"
-                key = (session_id, timestamp)
+                    continue
+                if not timestamp_in_window(
+                    timestamp, window, warnings, source, target="Codex user record"
+                ):
+                    continue
+                request_id = request_id or f"legacy:{timestamp}"
+                key = (session_id, request_id)
                 if priority <= priorities.get(key, -1):
                     continue
                 preferred[key] = MessageRecord(
@@ -789,6 +1036,8 @@ def scan_codex_history(
                     timestamp=timestamp,
                     text=text_value,
                     source=source,
+                    message_id=request_id,
+                    request_id=request_id,
                 )
                 priorities[key] = priority
 
@@ -810,6 +1059,32 @@ def scan_codex_history(
                         )
                     )
                 add_candidates(message, inventory, matcher, explicit, candidates, args)
+
+            for request_id, timestamp, command, source, item, matched_keys in command_events:
+                command_id = str(item.get("id") or f"{source['path']}:{source['line']}")
+                if (session_id, command_id) in seen_commands:
+                    continue
+                seen_commands.add((session_id, command_id))
+                message = MessageRecord(
+                    host="codex",
+                    session_id=session_id,
+                    timestamp=timestamp,
+                    text=command,
+                    source=source,
+                    message_id=command_id,
+                    request_id=request_id,
+                )
+                for skill_key in sorted(matched_keys):
+                    usage[skill_key].append(
+                        build_usage_event(
+                            host="codex",
+                            kind="observed_skill_read",
+                            skill=inventory[skill_key],
+                            message=message,
+                            detail_text=command,
+                            args=args,
+                        )
+                    )
     return scanned_files, excluded_sessions
 
 
@@ -829,7 +1104,11 @@ def claude_text_content(message: Any) -> str:
     return "\n".join(part for part in parts if part)
 
 
-def ancestor_user_id(parent_id: str, nodes: dict[str, tuple[str, str]]) -> str:
+def ancestor_user_id(
+    parent_id: str,
+    nodes: dict[str, tuple[str, str]],
+    eligible_users: set[str],
+) -> str:
     current = parent_id
     visited: set[str] = set()
     while current and current not in visited:
@@ -838,7 +1117,10 @@ def ancestor_user_id(parent_id: str, nodes: dict[str, tuple[str, str]]) -> str:
         if node is None:
             return ""
         node_type, parent = node
-        if node_type == "user":
+        # Claude records tool results as `type=user` too. They are transport
+        # records, not new user requests, so continue to the nearest user node
+        # that actually contains user-authored text.
+        if node_type == "user" and current in eligible_users:
             return current
         current = parent
     return ""
@@ -852,6 +1134,7 @@ def scan_claude_history(
     usage: dict[str, list[dict[str, Any]]],
     candidates: CandidateCollector,
     warnings: WarningCollector,
+    window: AuditWindow,
     args: argparse.Namespace,
 ) -> tuple[int, set[tuple[str, str, str]]]:
     excluded_sessions: set[tuple[str, str, str]] = set()
@@ -863,6 +1146,7 @@ def scan_claude_history(
             scanned_files += 1
             nodes: dict[str, tuple[str, str]] = {}
             users: dict[str, MessageRecord] = {}
+            users_in_window: set[str] = set()
             tools_found: list[tuple[str, str, str, str, dict[str, Any], str, str]] = []
             bridge_session_ids: set[str] = set()
             file_session_ids: set[str] = set()
@@ -890,7 +1174,12 @@ def scan_claude_history(
                             text=text_value,
                             source=source,
                             message_id=user_key,
+                            request_id=user_key,
                         )
+                        if timestamp_in_window(
+                            timestamp, window, warnings, source, target="Claude user record"
+                        ):
+                            users_in_window.add(user_key)
                     continue
 
                 if row_type != "assistant" or not isinstance(row.get("message"), dict):
@@ -925,6 +1214,7 @@ def scan_claude_history(
             if file_session_ids and file_session_ids.issubset(bridge_session_ids):
                 continue
 
+            eligible_user_ids = set(users)
             for tool_id, parent_id, session_id, timestamp, source, args_text, raw_skill in tools_found:
                 if session_id in bridge_session_ids or (session_id, tool_id) in seen_tool_ids:
                     continue
@@ -932,9 +1222,18 @@ def scan_claude_history(
                 matched_keys = aliases.get(normalize_name(raw_skill), set())
                 if not matched_keys:
                     continue
-                user_id = ancestor_user_id(parent_id, nodes)
-                if user_id in users:
-                    users[user_id].used_skills.update(matched_keys)
+                if not timestamp_in_window(
+                    timestamp, window, warnings, source, target="Claude Skill tool_use"
+                ):
+                    continue
+                user_id = ancestor_user_id(parent_id, nodes, eligible_user_ids)
+                if not user_id or user_id not in users:
+                    warnings.unmapped_request(
+                        source,
+                        "Claude Skill tool_use could not be mapped to a user request",
+                    )
+                    continue
+                users[user_id].used_skills.update(matched_keys)
                 for skill_key in sorted(matched_keys):
                     message = MessageRecord(
                         host="claude",
@@ -942,6 +1241,8 @@ def scan_claude_history(
                         timestamp=timestamp,
                         text=args_text,
                         source=source,
+                        message_id=tool_id,
+                        request_id=user_id,
                     )
                     usage[skill_key].append(
                         build_usage_event(
@@ -955,7 +1256,11 @@ def scan_claude_history(
                     )
 
             for user_id, message in sorted(users.items(), key=lambda item: item[1].timestamp):
-                if message.session_id in bridge_session_ids or (message.session_id, user_id) in seen_user_ids:
+                if (
+                    user_id not in users_in_window
+                    or message.session_id in bridge_session_ids
+                    or (message.session_id, user_id) in seen_user_ids
+                ):
                     continue
                 seen_user_ids.add((message.session_id, user_id))
                 explicit = extract_explicit_skills(message.text, aliases)
@@ -964,7 +1269,10 @@ def scan_claude_history(
 
 
 def scan_claude_telemetry(
-    roots: list[RootSpec], aliases: dict[str, set[str]], warnings: WarningCollector
+    roots: list[RootSpec],
+    aliases: dict[str, set[str]],
+    warnings: WarningCollector,
+    window: AuditWindow,
 ) -> tuple[int, Counter[str], int]:
     scanned_files = 0
     loaded: Counter[str] = Counter()
@@ -982,6 +1290,14 @@ def scan_claude_telemetry(
                 if not isinstance(event_data, dict) or event_data.get("event_name") != "tengu_skill_loaded":
                     continue
                 source = source_ref(root, path, line_number)
+                timestamp = str(row.get("timestamp") or event_data.get("timestamp") or "")
+                if window.start is not None:
+                    if not timestamp:
+                        continue
+                    if not timestamp_in_window(
+                        timestamp, window, warnings, source, target="Claude telemetry record"
+                    ):
+                        continue
                 raw_skill = event_data.get("skill_name")
                 if not isinstance(raw_skill, str) or not raw_skill.strip():
                     warnings.missing_field(source, "tengu_skill_loaded is missing event_data.skill_name")
@@ -1049,10 +1365,18 @@ def possible_redundancy(
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
+    window = summary.get("window", {})
+    window_label = (
+        f"{window.get('start')} 至 {window.get('end')}（{window.get('timezone')}）"
+        if window.get("start") and window.get("end")
+        else "全部可访问历史"
+    )
     lines = [
-        f"# 技能历史使用审计（{summary['date']}）",
+        f"# 技能触发审计（{summary['date']}）",
         "",
         "## 扫描范围",
+        f"- 统计窗口：{window_label}",
+        "- 计数单位：同一技能在同一用户请求内最多计 1 次。",
         f"- 技能：{summary['counts']['skills']} 个",
         f"- Codex 历史文件：{summary['counts']['codex_history_files']} 个",
         f"- Claude 历史文件：{summary['counts']['claude_history_files']} 个",
@@ -1064,12 +1388,14 @@ def render_markdown(summary: dict[str, Any]) -> str:
     used = summary["classifications"]["已用"]
     lines.extend(
         [
-            f"- `{item['skill']}`：Codex 显式点名 {item['codex_explicit']} 次，Claude Skill 调用 {item['claude_skill_calls']} 次"
+            f"- `{item['skill']}`：Codex 请求 {item.get('codex_requests', 0)} 次"
+            f"（显式点名 {item.get('codex_explicit', 0)}、观察到读取 {item.get('codex_observed_reads', 0)}），"
+            f"Claude 请求 {item.get('claude_requests', item.get('claude_skill_calls', 0))} 次"
             for item in used
         ]
         or ["- 无"]
     )
-    lines.extend(["", "## 历史内未见使用"])
+    lines.extend(["", "## 本期未观察到触发"])
     unseen = summary["classifications"]["历史内未见使用"]
     lines.extend([f"- `{item['skill']}`" for item in unseen] or ["- 无"])
     lines.extend(["", "## 疑似漏用"])
@@ -1097,11 +1423,13 @@ def render_markdown(summary: dict[str, Any]) -> str:
         [
             "",
             "## 解释边界",
-            "- Codex 当前没有稳定的隐式 Skill 调用事件；未见记录不等于实际未使用。",
+            "- Codex 统计显式点名和可关联到请求的成功技能文件读取；其他隐式调用仍可能无法观察。",
+            "- 未见记录不等于实际未使用，连续四个完整统计周才进入人工复核。",
             "- `tengu_skill_loaded` 只表示 Claude 启动时把技能列为候选，不计为实际使用。",
             f"- 疑似漏用候选共 {warnings['candidate_total']} 条，报告保留 {warnings['candidate_returned']} 条，截断 {warnings['candidate_truncated']} 条。",
             f"- 已排除 bridge 临时副本会话 {warnings['bridge_copy_excluded_count']} 个。",
             f"- 纯图片或附件用户记录 {warnings['non_text_user_record_count']} 条，单独计数且不作为文本字段缺失。",
+            f"- 无法关联到用户请求的调用证据 {warnings.get('unmapped_request_count', 0)} 条。",
             f"- JSON 解析错误 {warnings['parse_error_count']} 条；目标事件缺字段 {warnings['missing_field_count']} 条。",
             "",
         ]
@@ -1116,8 +1444,9 @@ def write_text(path: Path, text: str) -> None:
 
 def audit(args: argparse.Namespace) -> dict[str, Any]:
     script_path = Path(__file__)
+    window = build_audit_window(args)
     if args.skills_root:
-        skill_roots = custom_roots(args.skills_root, "skills", "custom")
+        skill_roots = custom_skill_roots(args.skills_root)
     else:
         skill_roots = default_skill_roots(script_path)
 
@@ -1150,14 +1479,15 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     warnings = WarningCollector()
 
     codex_files, codex_excluded = scan_codex_history(
-        codex_roots, inventory, aliases, matcher, usage, candidates, warnings, args
+        codex_roots, inventory, aliases, matcher, usage, candidates, warnings, window, args
     )
     claude_files, claude_excluded = scan_claude_history(
-        claude_roots, inventory, aliases, matcher, usage, candidates, warnings, args
+        claude_roots, inventory, aliases, matcher, usage, candidates, warnings, window, args
     )
     telemetry_files, loaded_counts, unmatched_loaded = scan_claude_telemetry(
-        telemetry_roots, aliases, warnings
+        telemetry_roots, aliases, warnings, window
     )
+    usage = deduplicate_usage_events(usage)
 
     candidate_total = candidates.total
     returned_candidates = candidates.items()
@@ -1167,28 +1497,45 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     evidence: dict[str, list[dict[str, Any]]] = {}
     inventory_output: list[dict[str, Any]] = []
     for key, skill in sorted(inventory.items(), key=lambda item: item[1].name.lower()):
-        events = sorted(
-            usage.get(key, []), key=lambda item: (item["timestamp"], item["host"], item["source"]["path"])
+        events = usage.get(key, [])
+        active_hosts = sorted(
+            {host for location in skill.locations for host in location.get("active_hosts", [])}
         )
         if events:
             used.append(
                 {
                     "skill": skill.name,
-                    "codex_explicit": sum(event["host"] == "codex" for event in events),
+                    "active_hosts": active_hosts,
+                    "codex_explicit": sum(
+                        event["host"] == "codex"
+                        and "explicit_user_invocation" in event.get("evidence_kinds", [])
+                        for event in events
+                    ),
+                    "codex_observed_reads": sum(
+                        event["host"] == "codex"
+                        and "observed_skill_read" in event.get("evidence_kinds", [])
+                        for event in events
+                    ),
+                    "codex_requests": sum(event["host"] == "codex" for event in events),
                     "claude_skill_calls": sum(event["host"] == "claude" for event in events),
+                    "claude_requests": sum(event["host"] == "claude" for event in events),
                     "evidence_count": len(events),
                 }
             )
             evidence[skill.name] = events
         else:
-            unseen.append({"skill": skill.name, "startup_candidate_loads": loaded_counts.get(key, 0)})
+            unseen.append(
+                {
+                    "skill": skill.name,
+                    "active_hosts": active_hosts,
+                    "startup_candidate_loads": loaded_counts.get(key, 0),
+                }
+            )
         inventory_output.append(
             {
                 "skill": skill.name,
                 "locations": skill.locations,
-                "active_hosts": sorted(
-                    {host for location in skill.locations for host in location.get("active_hosts", [])}
-                ),
+                "active_hosts": active_hosts,
             }
         )
 
@@ -1200,6 +1547,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     ]
     warning_payload = {
         "codex_implicit_usage_not_captured": True,
+        "codex_observed_skill_reads_counted": True,
         "claude_startup_candidates_not_counted_as_usage": True,
         "candidate_limit": args.max_candidates,
         "candidate_per_skill_limit": candidates.per_skill_limit,
@@ -1214,18 +1562,22 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "missing_fields": warnings.missing_fields,
         "non_text_user_record_count": warnings.non_text_user_record_count,
         "non_text_user_records": warnings.non_text_user_records,
+        "unmapped_request_count": warnings.unmapped_request_count,
+        "unmapped_requests": warnings.unmapped_requests,
         "warning_details_truncated": (
             warnings.parse_error_count > len(warnings.parse_errors)
             or warnings.missing_field_count > len(warnings.missing_fields)
             or warnings.non_text_user_record_count > len(warnings.non_text_user_records)
+            or warnings.unmapped_request_count > len(warnings.unmapped_requests)
         ),
         "missing_roots": missing_skill_roots + missing_history_roots,
         "unmatched_claude_startup_candidates": unmatched_loaded,
         "hygiene_summary_warning": hygiene_warning,
     }
     summary = {
-        "version": "skill-usage-audit-v1",
+        "version": AUDIT_VERSION,
         "date": args.date,
+        "window": window.as_dict(),
         "configuration": {
             "skill_roots": [
                 {"root_id": root.root_id, "kind": root.kind, "active_hosts": list(root.active_hosts)}
@@ -1236,9 +1588,12 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
             "claude_telemetry_roots": [root.root_id for root in telemetry_roots],
             "excerpt_enabled": not args.no_excerpt,
             "excerpt_chars": 0 if args.no_excerpt else args.excerpt_chars,
+            "count_unit": args.count_unit,
         },
         "counts": {
             "skills": len(inventory),
+            "active_skills": sum(bool(item["active_hosts"]) for item in inventory_output),
+            "source_only_skills": sum(not item["active_hosts"] for item in inventory_output),
             "used_skills": len(used),
             "unseen_skills": len(unseen),
             "suspected_missed_use": len(returned_candidates),

@@ -67,6 +67,11 @@ class AuditSkillUsageTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    @staticmethod
+    def write_jsonl(path: Path, rows: list[dict]) -> None:
+        text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
+        path.write_text(text, encoding="utf-8")
+
     def run_audit(self, *extra: str):
         argv = [
             "--reports-root",
@@ -99,12 +104,288 @@ class AuditSkillUsageTests(unittest.TestCase):
         summary = self.run_audit()
         alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
         self.assertEqual(alpha["codex_explicit"], 1)
+        self.assertEqual(alpha["codex_requests"], 1)
 
     def test_claude_skill_tool_is_usage_but_startup_load_is_not(self) -> None:
         summary = self.run_audit()
         beta = next(item for item in summary["classifications"]["已用"] if item["skill"] == "beta-skill")
         self.assertEqual(beta["claude_skill_calls"], 1)
+        self.assertEqual(beta["claude_requests"], 1)
         self.assertEqual(summary["claude_startup_candidate_loads"], {"alpha-skill": 1})
+
+    def test_codex_deduplicates_explicit_and_observed_read_within_turn(self) -> None:
+        self.write_jsonl(
+            self.codex / "sample.jsonl",
+            [
+                {
+                    "type": "session_meta",
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "payload": {"id": "codex-request-dedupe"},
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-01-01T00:01:00Z",
+                    "payload": {
+                        "type": "item_completed",
+                        "turn_id": "turn-1",
+                        "item": {"type": "UserMessage", "id": "user-1", "content": "$alpha-skill 请检查。"},
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-01-01T00:01:10Z",
+                    "payload": {
+                        "type": "item_completed",
+                        "turn_id": "turn-1",
+                        "item": {
+                            "type": "CommandExecution",
+                            "id": "command-1",
+                            "command": "Get-Content skills-a/alpha-skill/SKILL.md",
+                            "status": "completed",
+                            "exit_code": 0,
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-01-01T00:02:00Z",
+                    "payload": {
+                        "type": "item_completed",
+                        "turn_id": "turn-2",
+                        "item": {
+                            "type": "CommandExecution",
+                            "id": "command-2",
+                            "command": "Get-Content skills-a/alpha-skill/SKILL.md",
+                            "status": "completed",
+                            "exit_code": 0,
+                        },
+                    },
+                },
+            ],
+        )
+        self.write_jsonl(self.claude / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
+        self.assertEqual(alpha["codex_requests"], 2)
+        self.assertEqual(alpha["codex_explicit"], 1)
+        self.assertEqual(alpha["codex_observed_reads"], 2)
+        events = summary["usage_evidence"]["alpha-skill"]
+        self.assertEqual(len(events), 2)
+        first = next(item for item in events if "explicit_user_invocation" in item["evidence_kinds"])
+        self.assertEqual(
+            first["evidence_kinds"],
+            ["explicit_user_invocation", "observed_skill_read"],
+        )
+
+    def test_claude_deduplicates_repeated_skill_tools_by_ancestor_user(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(
+            self.claude / "sample.jsonl",
+            [
+                {
+                    "type": "user",
+                    "uuid": "u1",
+                    "parentUuid": None,
+                    "sessionId": "claude-request-dedupe",
+                    "timestamp": "2026-01-02T00:00:00Z",
+                    "message": {"content": "请检查频谱。"},
+                },
+                {
+                    "type": "assistant",
+                    "uuid": "a1",
+                    "parentUuid": "u1",
+                    "sessionId": "claude-request-dedupe",
+                    "timestamp": "2026-01-02T00:00:10Z",
+                    "message": {"content": [{"type": "tool_use", "id": "tool-1", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                },
+                {
+                    "type": "assistant",
+                    "uuid": "a2",
+                    "parentUuid": "a1",
+                    "sessionId": "claude-request-dedupe",
+                    "timestamp": "2026-01-02T00:00:20Z",
+                    "message": {"content": [{"type": "tool_use", "id": "tool-2", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                },
+                {
+                    "type": "user",
+                    "uuid": "u2",
+                    "parentUuid": "a2",
+                    "sessionId": "claude-request-dedupe",
+                    "timestamp": "2026-01-02T00:01:00Z",
+                    "message": {"content": "再次检查频谱。"},
+                },
+                {
+                    "type": "assistant",
+                    "uuid": "a3",
+                    "parentUuid": "u2",
+                    "sessionId": "claude-request-dedupe",
+                    "timestamp": "2026-01-02T00:01:10Z",
+                    "message": {"content": [{"type": "tool_use", "id": "tool-3", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                },
+            ],
+        )
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        beta = next(item for item in summary["classifications"]["已用"] if item["skill"] == "beta-skill")
+        self.assertEqual(beta["claude_skill_calls"], 2)
+        self.assertEqual(beta["claude_requests"], 2)
+        self.assertEqual(len(summary["usage_evidence"]["beta-skill"]), 2)
+
+    def test_claude_tool_result_user_record_does_not_split_the_request(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(
+            self.claude / "sample.jsonl",
+            [
+                {
+                    "type": "user",
+                    "uuid": "u1",
+                    "parentUuid": None,
+                    "sessionId": "claude-tool-result",
+                    "timestamp": "2026-01-02T00:00:00Z",
+                    "message": {"content": "请检查频谱。"},
+                },
+                {
+                    "type": "assistant",
+                    "uuid": "a1",
+                    "parentUuid": "u1",
+                    "sessionId": "claude-tool-result",
+                    "timestamp": "2026-01-02T00:00:10Z",
+                    "message": {"content": [{"type": "tool_use", "id": "shell-1", "name": "Bash", "input": {"command": "echo test"}}]},
+                },
+                {
+                    "type": "user",
+                    "uuid": "tool-result-1",
+                    "parentUuid": "a1",
+                    "sessionId": "claude-tool-result",
+                    "timestamp": "2026-01-02T00:00:11Z",
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "shell-1", "content": "ok"}]},
+                },
+                {
+                    "type": "assistant",
+                    "uuid": "a2",
+                    "parentUuid": "tool-result-1",
+                    "sessionId": "claude-tool-result",
+                    "timestamp": "2026-01-02T00:00:20Z",
+                    "message": {"content": [{"type": "tool_use", "id": "skill-1", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                },
+            ],
+        )
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        beta = next(item for item in summary["classifications"]["已用"] if item["skill"] == "beta-skill")
+        self.assertEqual(beta["claude_requests"], 1)
+        self.assertEqual(summary["warnings"]["unmapped_request_count"], 0)
+
+    def test_weekly_window_is_left_closed_and_right_open(self) -> None:
+        self.write_jsonl(
+            self.codex / "sample.jsonl",
+            [
+                {
+                    "type": "session_meta",
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "payload": {"id": "codex-window"},
+                },
+                *[
+                    {
+                        "type": "event_msg",
+                        "timestamp": timestamp,
+                        "payload": {
+                            "type": "item_completed",
+                            "turn_id": turn_id,
+                            "item": {"type": "UserMessage", "id": turn_id, "content": "$alpha-skill"},
+                        },
+                    }
+                    for turn_id, timestamp in (
+                        ("at-start", "2026-01-01T00:00:00Z"),
+                        ("before-end", "2026-01-01T23:59:59Z"),
+                        ("at-end", "2026-01-02T00:00:00Z"),
+                    )
+                ],
+            ],
+        )
+        self.write_jsonl(self.claude / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit(
+            "--window-start",
+            "2026-01-01T00:00:00Z",
+            "--window-end",
+            "2026-01-02T00:00:00Z",
+            "--timezone",
+            "Asia/Shanghai",
+        )
+        alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
+        self.assertEqual(alpha["codex_requests"], 2)
+        self.assertEqual(summary["version"], "skill-usage-audit-v2")
+        self.assertEqual(summary["configuration"]["count_unit"], "request")
+        self.assertEqual(summary["window"]["kind"], "weekly")
+
+    def test_unmapped_usage_evidence_is_warned_and_not_counted(self) -> None:
+        self.write_jsonl(
+            self.codex / "sample.jsonl",
+            [
+                {
+                    "type": "session_meta",
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "payload": {"id": "codex-unmapped"},
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-01-01T00:00:10Z",
+                    "payload": {
+                        "type": "item_completed",
+                        "item": {
+                            "type": "CommandExecution",
+                            "id": "orphan-command",
+                            "command": "Get-Content skills-a/alpha-skill/SKILL.md",
+                            "status": "completed",
+                            "exit_code": 0,
+                        },
+                    },
+                },
+            ],
+        )
+        self.write_jsonl(
+            self.claude / "sample.jsonl",
+            [
+                {
+                    "type": "assistant",
+                    "uuid": "orphan-assistant",
+                    "parentUuid": "missing-user",
+                    "sessionId": "claude-unmapped",
+                    "timestamp": "2026-01-02T00:00:10Z",
+                    "message": {"content": [{"type": "tool_use", "id": "orphan-tool", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                }
+            ],
+        )
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        self.assertEqual(summary["warnings"]["unmapped_request_count"], 2)
+        self.assertEqual(summary["classifications"]["已用"], [])
+
+    def test_unmapped_evidence_outside_window_does_not_block_week(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(
+            self.claude / "sample.jsonl",
+            [
+                {
+                    "type": "assistant",
+                    "uuid": "old-orphan",
+                    "parentUuid": "missing-user",
+                    "sessionId": "claude-old-unmapped",
+                    "timestamp": "2025-12-01T00:00:00Z",
+                    "message": {"content": [{"type": "tool_use", "id": "old-tool", "name": "Skill", "input": {"skill": "beta-skill"}}]},
+                }
+            ],
+        )
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit(
+            "--window-start",
+            "2026-01-01T00:00:00Z",
+            "--window-end",
+            "2026-01-08T00:00:00Z",
+        )
+        self.assertEqual(summary["warnings"]["unmapped_request_count"], 0)
 
     def test_suspected_missed_use_uses_description_rules(self) -> None:
         summary = self.run_audit()

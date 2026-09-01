@@ -93,7 +93,8 @@ python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <rep
 [references/usage-audit.md](references/usage-audit.md)，再运行：
 
 ```powershell
-python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-MM-DD>
+python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-MM-DD> `
+  --window-start <ISO-8601> --window-end <ISO-8601> --timezone Asia/Shanghai
 ```
 
 默认只读扫描全部可用历史：Codex 的 `sessions`、`archived_sessions`，Claude 的 `projects` 和
@@ -103,10 +104,13 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 
 固定证据口径：
 
-- Claude 仅把 `assistant.message.content[].name == "Skill"` 且 `input.skill` 非空计为实际调用。
+- 计数单位是用户请求；同一宿主、同一请求、同一技能无论出现多少条证据，最多计一次。
+- Claude 仅把 `assistant.message.content[].name == "Skill"`、`input.skill` 非空且能沿
+  `parentUuid` 关联到用户请求的事件计为实际调用；无法关联的事件只报警，不计数。
 - Claude `tengu_skill_loaded` 只是启动时候选加载，绝不计为使用。
-- Codex 仅从真实用户记录里的 `$skill-name`、`/skill-name` 或技能 `SKILL.md` 链接识别显式点名。
-- Codex 当前没有稳定的隐式 Skill 调用事件；报告必须写明“未见记录不等于实际未使用”。
+- Codex 统计真实用户记录里的 `$skill-name`、`/skill-name`、技能 `SKILL.md` 链接，以及能映射到
+  `turn_id`、执行成功且读取已知 `SKILL.md` 的命令；显式点名和读取证据在同一请求内合并。
+- Codex 仍没有覆盖全部隐式路由的稳定事件，因此计数是可观察下界；报告必须写明“未见记录不等于实际未使用”。
 - 纯图片或附件、没有可扫描文本的 Codex 用户记录单独计数，不作为目标字段缺失，避免永久阻断完整周次。
 - `疑似漏用` 只由技能名和 `description` 的确定性规则筛选，不调用模型，也不自动改技能。
 - `可能冗余` 只有在传入 `--hygiene-summary` 后，才把“历史内未见使用”与已有 duplicate/overlap
@@ -116,6 +120,8 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 
 - `<reports-root>/usage/manifests/<date>/summary.json`
 - `<reports-root>/usage/weekly/<date>.md`
+- 周检另维护 `<reports-root>/usage/dashboard/index.html`，这是内嵌最近 12 周聚合数据的离线页面，
+  不需要启动本地服务或联网。
 
 默认片段先脱敏再截到 240 字符；敏感场景传 `--no-excerpt`。真实 transcript 不复制进报告目录、技能
 仓库或评测夹具，报告证据源只保存配置根代号、POSIX 相对路径和行号。
@@ -216,7 +222,9 @@ python scripts/run_weekly_skill_review.py next-question --json
 变化后旧批准和相关执行批次自动失效。
 
 每次 `next-question` 只返回一项。证据不足最多追问两条事实，随后必须关闭、形成建议或转为等待新证据。
-“历史内未见使用”只有连续四次完整周检才进入队列；扫描失败、报告无效、使用证据或范围变化会清零。
+“历史内未见使用”只有连续四个相邻、完整、同口径周窗才进入队列；扫描失败、报告无效、证据无法
+关联用户请求、周窗中断、统计口径升级或该技能的激活宿主范围变化会重置连续计数。同一周重跑不会
+重复累加。周窗固定为上海时区前一周六 14:00（含）到本周六 14:00（不含）。
 严重问题可插队，每周最多新增三条中低优先级问题。全部逐项决定后，`prepare-execution` 只生成一次
 最终执行确认；没有批准项不创建空批次。详细的自然语言映射、隔离候选、副本哈希、精确暂存、推送和
 双端同步验收见上述参考文件。
@@ -259,7 +267,8 @@ python scripts/run_weekly_skill_review.py next-question --json
 - 不自动跑市场搜索，也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
-- 不启动 daemon、实时 watcher 或 dashboard，不联网，不修改 transcript、技能或运行时目录。
+- 不启动 daemon、实时 watcher 或常驻 dashboard 服务，不联网，不修改 transcript、技能或运行时目录；
+  周检只生成可直接打开的离线 dashboard 文件。
 - 不根据一次低频或无记录结论自动降级、合并、归档或删除技能。
 - 周检脚本只维护观察、决定和执行批次状态；它不替用户批准、修改、提交、推送或同步技能。
 
@@ -272,6 +281,10 @@ python scripts/run_weekly_skill_review.py next-question --json
 
 历史使用审计另输出到 `usage/` 子目录，使用 `已用`、`历史内未见使用`、`疑似漏用`、`可能冗余`
 四个面向用户的分类；不要把内部事件名直接当结论标题。
+
+融合周检还输出 `usage/dashboard/data/<date>.json` 和稳定入口 `usage/dashboard/index.html`。dashboard
+只含技能名、宿主、聚合请求次数、连续零周数、状态、证据类型和覆盖警告，不含提示词片段、session
+来源路径或本机绝对路径。
 
 默认汇报顺序是：
 

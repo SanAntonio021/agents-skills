@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -144,13 +145,23 @@ class WeeklySkillReviewTests(unittest.TestCase):
         return state
 
     @staticmethod
-    def valid_usage(skill: str = "alpha") -> dict:
+    def valid_usage(skill: str = "alpha", date: str = "2026-08-15") -> dict:
+        end = datetime.fromisoformat(f"{date}T14:00:00+08:00")
+        start = end - timedelta(days=7)
         return {
-            "version": "skill-usage-audit-v1",
-            "date": "2026-08-15",
+            "version": "skill-usage-audit-v2",
+            "date": date,
+            "window": {
+                "kind": "weekly",
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "timezone": "Asia/Shanghai",
+            },
             "classifications": {
                 "已用": [],
-                "历史内未见使用": [{"skill": skill}],
+                "历史内未见使用": [
+                    {"skill": skill, "active_hosts": ["claude", "codex"]}
+                ],
                 "疑似漏用": [],
                 "可能冗余": [],
             },
@@ -158,63 +169,164 @@ class WeeklySkillReviewTests(unittest.TestCase):
                 "missing_roots": [],
                 "parse_error_count": 0,
                 "missing_field_count": 0,
+                "unmapped_request_count": 0,
                 "hygiene_summary_warning": None,
             },
-            "configuration": {"root": "fixture"},
-            "skill_inventory": [{"skill": skill}],
+            "configuration": {"root": "fixture", "count_unit": "request"},
+            "usage_evidence": {},
+            "skill_inventory": [
+                {"skill": skill, "active_hosts": ["claude", "codex"], "locations": []}
+            ],
         }
 
     def test_four_complete_weeks_and_reset_conditions(self) -> None:
         state = REVIEW.new_state()
-        usage = self.valid_usage()
         scope = REVIEW.fingerprint({"scope": "same"})
         counts = []
-        for week in range(1, 5):
+        usage = None
+        for date in ("2026-08-01", "2026-08-08", "2026-08-15", "2026-08-22"):
+            usage = self.valid_usage(date=date)
             result, reason = REVIEW.update_unseen_streaks(
                 state,
                 usage,
                 complete=True,
                 scope_value=scope,
-                date=f"2026-08-{week:02d}",
+                date=date,
             )
             self.assertIsNone(reason)
             counts.append(result.get("alpha", 0))
         self.assertEqual(counts, [1, 2, 3, 4])
+        assert usage is not None
         observations = REVIEW.extract_usage_observations(usage, "usage/summary.json", self.skills, {"alpha": 4})
         self.assertTrue(any(item["kind"] == "unseen_four_complete_weeks" for item in observations))
 
-        used = self.valid_usage()
-        used["classifications"]["已用"] = [{"skill": "alpha"}]
+        used = self.valid_usage(date="2026-08-29")
+        used["classifications"]["已用"] = [
+            {
+                "skill": "alpha",
+                "active_hosts": ["claude", "codex"],
+                "codex_requests": 1,
+                "claude_requests": 0,
+            }
+        ]
+        used["classifications"]["历史内未见使用"] = []
         result, reason = REVIEW.update_unseen_streaks(
-            state, used, complete=True, scope_value=scope, date="2026-08-05"
+            state, used, complete=True, scope_value=scope, date="2026-08-29"
         )
         self.assertIsNone(reason)
-        self.assertEqual(result.get("alpha"), 0)
+        self.assertEqual(result.get("alpha", 0), 0)
 
         result, reason = REVIEW.update_unseen_streaks(
-            state, usage, complete=False, scope_value=scope, date="2026-08-06"
+            state,
+            self.valid_usage(date="2026-09-05"),
+            complete=False,
+            scope_value=scope,
+            date="2026-09-05",
         )
         self.assertEqual(reason, "incomplete_scan")
         self.assertEqual(result, {})
 
+        changed_scope = self.valid_usage(date="2026-09-12")
+        changed_scope["skill_inventory"][0]["active_hosts"] = ["codex"]
+        changed_scope["classifications"]["历史内未见使用"][0]["active_hosts"] = ["codex"]
         result, reason = REVIEW.update_unseen_streaks(
             state,
-            usage,
+            changed_scope,
             complete=True,
             scope_value=REVIEW.fingerprint({"scope": "changed"}),
-            date="2026-08-07",
-        )
-        self.assertEqual(reason, "scope_changed")
-        self.assertEqual(result, {})
-        result, reason = REVIEW.update_unseen_streaks(
-            state,
-            usage,
-            complete=True,
-            scope_value=REVIEW.fingerprint({"scope": "changed"}),
-            date="2026-08-07",
+            date="2026-09-12",
         )
         self.assertIsNone(reason)
-        self.assertEqual(result.get("alpha"), 0)
+        self.assertEqual(result.get("alpha"), 1)
+        result, reason = REVIEW.update_unseen_streaks(
+            state,
+            changed_scope,
+            complete=True,
+            scope_value=REVIEW.fingerprint({"scope": "changed"}),
+            date="2026-09-12",
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(result.get("alpha"), 1)
+
+        gap = self.valid_usage(date="2026-09-26")
+        gap["skill_inventory"][0]["active_hosts"] = ["codex"]
+        gap["classifications"]["历史内未见使用"][0]["active_hosts"] = ["codex"]
+        result, reason = REVIEW.update_unseen_streaks(
+            state,
+            gap,
+            complete=True,
+            scope_value=REVIEW.fingerprint({"scope": "changed"}),
+            date="2026-09-26",
+        )
+        self.assertEqual(reason, "window_gap")
+        self.assertEqual(result.get("alpha"), 1)
+
+    def test_dashboard_contains_only_aggregated_skill_data(self) -> None:
+        usage = self.valid_usage()
+        usage["classifications"]["已用"] = [
+            {
+                "skill": "alpha",
+                "active_hosts": ["claude", "codex"],
+                "codex_requests": 3,
+                "claude_requests": 2,
+            }
+        ]
+        usage["classifications"]["历史内未见使用"] = [
+            {"skill": "beta", "active_hosts": ["codex"]}
+        ]
+        usage["skill_inventory"].append(
+            {
+                "skill": "beta",
+                "active_hosts": ["codex"],
+                "locations": [{"path": "C:/Private/beta/SKILL.md"}],
+            }
+        )
+        usage["usage_evidence"] = {
+            "alpha": [
+                {
+                    "kind": "multiple",
+                    "evidence_kinds": ["explicit_user_invocation", "observed_skill_read"],
+                    "excerpt": "private prompt text",
+                    "source": {"path": "C:/Private/session.jsonl", "line": 3},
+                }
+            ]
+        }
+        state = REVIEW.new_state()
+        state["unseen_streaks"]["beta"] = {"count": 4}
+
+        snapshot = REVIEW.build_dashboard_snapshot(
+            usage,
+            state,
+            date="2026-08-15",
+            complete=True,
+            streak_reset_reason=None,
+        )
+        serialized = json.dumps(snapshot, ensure_ascii=False)
+        self.assertNotIn("private prompt text", serialized)
+        self.assertNotIn("C:/Private", serialized)
+        alpha = next(item for item in snapshot["skills"] if item["skill"] == "alpha")
+        beta = next(item for item in snapshot["skills"] if item["skill"] == "beta")
+        self.assertEqual(alpha["counts"], {"codex": 3, "claude": 2, "total": 5})
+        self.assertTrue(beta["review_candidate"])
+
+        result = REVIEW.render_usage_dashboard(
+            usage,
+            state,
+            self.reports,
+            date="2026-08-15",
+            complete=True,
+            streak_reset_reason=None,
+        )
+        self.assertTrue(result["valid"])
+        index = self.reports / result["index"]
+        data = self.reports / result["snapshot"]
+        self.assertTrue(index.is_file())
+        self.assertTrue(data.is_file())
+        html = index.read_text(encoding="utf-8")
+        self.assertNotIn("__SKILL_USAGE_DATA__", html)
+        self.assertNotIn("private prompt text", html)
+        self.assertNotIn("C:/Private", html)
+        self.assertIn("本地技能触发谱", html)
 
     def test_non_text_user_records_do_not_make_usage_incomplete(self) -> None:
         usage = self.valid_usage()

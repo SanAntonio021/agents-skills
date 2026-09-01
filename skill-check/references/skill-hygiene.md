@@ -190,7 +190,7 @@ helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份
 技能的来源及启用元数据均一致，且提交身份、目标集合、四层文件集合和 SHA-256 均一致。任一条件缺失时，
 只能写“源码已推送，运行时未生效”或“运行时待验收”。
 
-## CC Switch SSOT 报错
+## CC Switch SSOT 报错与单技能元数据残留
 
 当 CC Switch 安装 skill 时弹出 `Skill 不存在于 SSOT: <skill-name>`，不要先判断 GitHub 仓库坏了。常见原因是面板仓库索引和本地 SSOT 记录不同步，尤其是远端默认分支已切到 `main`，但 `skills.repo_branch` 里还残留 `master`。
 
@@ -201,15 +201,17 @@ helper 返回 `skills_page_blocked_by_restore` 时，说明可见的“从备份
 3. 对照 `skills.name`、`skills.directory`、`skills.repo_owner`、`skills.repo_name`、`skills.repo_branch`。
 4. 如果界面出现重复卡片，区分正常目录和 `*-workspace\iteration-*` 这类临时目录。
 
-如果确认是本地 SSOT 分支残留，安全处理顺序是：
+如果确认只有一个已安装技能的来源或启用元数据残留，安全处理顺序是：
 
-1. 备份 `cc-switch.db` 和 `settings.json`。
-2. 关闭 `cc-switch.exe`。
-3. 只做最小数据库修复，例如把对应 `skills.repo_branch` 从旧分支改成当前真实分支，并同步修正 `readme_url`。
-4. 重启 CC Switch。
-5. 复查 `skills` 表和日志，确认没有新的 `Skill 不存在于 SSOT`。
+1. 备份 `cc-switch.db` 和 `settings.json`，记录目标技能、预期仓库、真实分支、远端提交和双端启用状态。
+2. 枚举目标技能三个运行时副本中的额外文件。存在按设计不进 Git 的本机私有文件时，先确认其精确路径和恢复方案；没有恢复方案时不执行卸载。
+3. 获得用户对该目标技能的明确批准后，在 CC Switch 中只卸载该技能，再从预期仓库的真实分支重新安装，并同时启用 Claude 与 Codex。不要点“全部更新”，也不要处理其他技能。
+4. 重装后只读复查 `PRAGMA integrity_check`、`skill_repos` 唯一记录、`skills` 唯一记录、分支、`readme_url`、目录、仓库归属和双端启用状态；随后用同一远端 SHA 和 Skill 集合依次运行完整同步与 `-VerifyOnly`。两次都返回 `runtime_active`、`cc_switch_metadata.valid = true` 且四层文件集合和 SHA-256 一致，才记录恢复完成。
+5. 重装无法完成、没有修正元数据，或本机私有文件使卸载不可接受时，才进入数据库兜底：关闭 `cc-switch.exe`，只修正已确认字段，重启后重复第 4 步的全部验收。数据库兜底仍需单独批准，不从只读诊断自动进入。
 
-实证案例：`SanAntonio021/agents-skills` 远端默认分支为 `main`，但 `chat-notes` 和 `paper-summary` 在 `skills` 表里残留 `master`；修正为 `main` 后，`chat-notes` 安装恢复正常。
+多个技能、重复仓库记录、SSOT 文件缺失或行归属不清时，不套用单技能重装路径；先列出完整影响范围，再按下方残留清理流程处理。
+
+实证案例：`SanAntonio021/agents-skills` 远端默认分支为 `main`，但 `chat-notes` 和 `paper-summary` 在 `skills` 表里残留 `master`；修正为 `main` 后，`chat-notes` 安装恢复正常。后续单技能案例进一步确认：在文件副本已经一致、目标记录仍残留旧分支时，定向卸载并从真实分支重新安装可以同时恢复分支、`readme_url` 和双端启用元数据；完成结论仍以重装后的完整只读验收为准。
 
 ## cc-switch 已知行为与坑（2026-07-06 实证）
 

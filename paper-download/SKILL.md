@@ -1,6 +1,6 @@
 ---
 name: paper-download
-description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when 用户给出题名、DOI、论文 URL、出版社页、作者主页、论文列表或 research-lookup 结果，要求下载正式版 PDF、判断正式版/预印本、继续机构授权下载，或为 SCI 润色和术语核查提供正式论文原文证据。总结已有 PDF 时用 `paper-summary`。
+description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when 用户给出题名、DOI、论文 URL、出版社页、作者主页、论文列表或 paper-search 结果，要求下载正式版 PDF、判断正式版/预印本、继续机构授权下载，或为 SCI 润色和术语核查提供正式论文原文证据。总结已有 PDF 时用 `paper-summary`。
 ---
 
 # 论文 PDF 下载
@@ -13,7 +13,7 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 
 ## 什么时候用
 
-- 用户还在问“有哪些论文”“哪些方向重要”“帮我筛代表作”时，先走 `research-lookup`。
+- 用户还在问“有哪些论文”“哪些方向重要”“帮我筛代表作”时，先走 `paper-search`。
 - 用户已经给出题名、DOI、URL、作者主页、出版社页面、论文列表或检索结果时，进入下载流程。
 - 用户要“下载并总结”时，先用本技能获取 PDF，再用 `paper-summary` 总结。
 - 用户给的是本地 PDF，并且要读懂或总结时，转 `paper-summary`。
@@ -29,7 +29,7 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 - arXiv ID、PubMed ID 或论文 URL
 - 论文题目、作者主页、出版社页面
 - 用户手写论文列表
-- `research-lookup` 返回的标题、摘要、链接或引用信息
+- `paper-search` 返回的标题、摘要、链接或引用信息
 
 如果一篇明确论文都识别不出来，只问一个问题：这次要下载的是哪几篇？
 
@@ -146,13 +146,13 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 
 ## 边界
 
-- 多篇文献综述、代表作筛选：先用 `research-lookup`。
+- 多篇文献综述、代表作筛选：先用 `paper-search`。
 - 投稿文章、引言综述、申报书材料：转 `writing-router` 或 `project-writing`。
 - 本地 PDF 总结、文献卡片、术语摘录：转 `paper-summary`。
 
 ## 会用到的工具
 
-- 上游查找：`research-lookup`
+- 上游查找：`paper-search`
 - 论文检索和下载后端：`paper-search-mcp`
 - 网页访问和动态页面：`web-access`
 - 浏览器协作：`browser-use` 或当前可用的浏览器工具

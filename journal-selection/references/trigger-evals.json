@@ -4,7 +4,7 @@
     "query": "我这篇太赫兹多子带链路的稿子写完了，你觉得投哪个期刊合适？给我几个备选和顺序。",
     "should_trigger": true,
     "expected_primary_skill": "journal-selection",
-    "expected_not_primary_skill": "research-lookup",
+    "expected_not_primary_skill": "paper-search",
     "reason": "用户在为自己的稿件选投稿去向并要求排序，这是选刊定位的核心场景，不是文献检索。"
   },
   {
@@ -34,7 +34,7 @@
     "id": "should-not-trigger-literature-search",
     "query": "帮我搜一下最近两年太赫兹多子带传输方向都发了哪些论文，主要发在哪些期刊上。",
     "should_trigger": false,
-    "expected_primary_skill": "research-lookup",
+    "expected_primary_skill": "paper-search",
     "expected_not_primary_skill": "journal-selection",
     "reason": "这是检索领域文献和发表版图，不是给自己的稿件选投稿去向。"
   },

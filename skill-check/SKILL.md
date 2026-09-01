@@ -154,6 +154,11 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
 LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。
 
+运行时若有经过确认的本机私有文件，只能通过同步 helper 的 `ExpectedRuntimeLocalFiles` 逐文件声明；
+路径必须属于本次 Skill、不能被目标提交跟踪，也不能使用通配符或目录。完整同步与后续
+`-VerifyOnly` 必须复用同一声明；未声明的额外文件仍按漂移失败。具体判据见
+[references/skill-hygiene.md](references/skill-hygiene.md) 的“合法本机文件的精确声明”。
+
 认证、余额、中转或模型服务错误若发生在技能输出前，状态只能记为“运行时验收受环境阻断”。
 环境恢复后重跑同一用例；不得把这种错误记成技能失败，也不得在未重跑时记成通过。
 
@@ -163,6 +168,10 @@ CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目
 同一 Skill 集合重新运行完整 helper；如果已经点击或无法确认，则不再触发 UI 更新，只做
 `-VerifyOnly`，或等待用户手动定向更新后再验收。完整判据见
 [references/skill-hygiene.md](references/skill-hygiene.md) 的“更新扫描超时与 UI 竞态恢复”。
+
+若 helper 返回 `skills_page_blocked_by_restore`，结论是“从备份中恢复”窗口阻塞了 Skills 页面，
+不能再归为网络错误或导航超时，也不能继续重试同步。不是当前流程打开的窗口只报告并停止；任何主动
+打开弹窗或覆盖层的诊断流程都必须在 `finally` 中关闭它，并确认回到操作前页面。
 
 ## 触发分层判断
 

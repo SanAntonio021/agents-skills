@@ -233,6 +233,30 @@
         "只精确暂存本项路径，禁止 `git add .` 和 `git add -A`，保留现有无关改动。",
         "只有最终 40 位远端 SHA、精确 Skill 集合、两次 `runtime_active` 及四层文件集合和 SHA-256 全通过，才记录完成。"
       ]
+    },
+    {
+      "id": 20,
+      "prompt": "CC Switch 同步助手没有进入 Skills 页面，返回 `skills_page_blocked_by_restore`，界面上还开着“从备份中恢复”。这是不是网络超时？现在能不能直接再跑一次同步？",
+      "expected_output": "把它识别为具体的恢复窗口阻塞，不归为网络或导航超时；不继续重试或代关其他流程留下的窗口。定位打开该窗口的流程，并要求该流程关闭窗口、恢复原页面后，再用原参数重跑。",
+      "files": [],
+      "expectations": [
+        "输出明确指出阻塞窗口名称是“从备份中恢复”。",
+        "输出不会把该结果描述为网络错误、更新扫描超时或 Skill 失败。",
+        "输出不会在窗口仍存在时继续点击或重跑同步。",
+        "输出要求主动打开窗口的流程在 finally 中关闭窗口并确认恢复原页面。"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "`web-access` 的 Git 提交文件与 CC Switch、Claude、Codex 三层都一致，但三个运行时目录都额外有一个按设计不进 Git 的 `config.env`，严格验收因此退出 30。怎样只放行这个合法本机配置，同时继续拦截其他额外文件？",
+      "expected_output": "先确认 `web-access/config.env` 未被目标提交跟踪且确为本机私有配置，再以 `ExpectedRuntimeLocalFiles` 精确声明该文件；完整同步与 VerifyOnly 复用同一声明，任何未声明额外文件仍然失败。",
+      "files": [],
+      "expectations": [
+        "输出要求先确认声明路径属于目标 Skill 且没有被目标提交跟踪。",
+        "输出使用精确路径 `web-access/config.env`，不使用通配符或目录。",
+        "输出要求完整同步与后续 `-VerifyOnly` 使用相同声明。",
+        "输出不会笼统忽略该 Skill 的所有额外文件。"
+      ]
     }
   ]
 }

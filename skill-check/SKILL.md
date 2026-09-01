@@ -146,7 +146,9 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 以及目标技能的目录、仓库归属、
    `repo_branch`、`readme_url` 和 Claude/Codex 启用状态均与预期源码一致；
 3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
-4. 结构校验和相关确定性测试通过；
+4. 结构校验按目标运行时分开判断：Agent Skills / OpenAI 通用格式与 Claude Code 扩展分别验收；
+   严格通用校验器拒绝已确认的 Claude 扩展时，不能把整个 Skill 直接判为无效，也不能把 Claude
+   扩展的效果外推给 Codex；相关确定性测试通过；
 5. 用合成数据在 Codex、Claude 全新只读会话分别验证路由和关键安全边界。
 6. 定向同步返回退出码 `0` 和 `runtime_active` 后，再以完全相同的 `ExpectedRemoteCommit` 与
    `Skills` 运行一次 `-VerifyOnly`；两次结果都必须显示 `cc_switch_metadata.valid == true` 且没有
@@ -179,7 +181,10 @@ CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目
 
 审计每个技能时问一句：**用户实际怎么调用它**。
 
-- 用户只点名调用（`/技能名`）→ 建议加 `disable-model-invocation: true`，description 移出常驻上下文。
+- 用户只在 Claude Code 点名调用（`/技能名`）→ 可建议加 `disable-model-invocation: true`，让 description
+  不进入 Claude 的常驻上下文；这个结论只适用于 Claude Code。
+- 同一 Skill 还供 Codex 使用时，必须单独验证 Codex 的发现和调用行为；不能凭 Claude 专用字段宣称
+  Codex 也隐藏 description、禁止自动调用或实现了“仅用户点名”。
 - 用户靠描述任务自动触发 → 保持默认，**不管它看起来多低频**。2026-07-06 实证：agent-rules 和 skill-check 看似点名场景，实际用户靠描述触发，降级会直接失效。
 - 判断依据只能来自用户的真实使用习惯，不能从技能主题倒推；拿不准时问用户，不要默认降级。
 

@@ -2,15 +2,27 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有五类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有六类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
 3. **同步客户端用云端旧快照回滚整个仓库**：双向同步的云盘把几天前的 `.git` 和工作区覆盖回来，提交历史倒退、已删目录复活。
 4. **同一文件混有批准与未批准改动**：整文件暂存会把未授权内容带入提交，手工编写 patch 又容易因 hunk 行数错误损坏。
 5. **云盘临时文件进入 Git 元数据**：上传临时 ref 会让 Git 报 `bad object`，`FETCH_HEAD` 被占用会让 `fetch` 报 `Permission denied`。
+6. **并行任务共用同一 worktree**：即使修改路径不同，也会共用 index 和提交状态；`COMMIT_EDITMSG` / index 占用、`HEAD` 或暂存文件集合漂移都可能把另一任务的内容带入本次提交。
 
-按对应 pattern 处理。第 4 类不是 Git 故障，但在非交互式 Windows 任务里容易因命令形态选错而造成范围越界。
+按对应 pattern 处理。第 4、6 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
+
+## 目录
+
+- [坑 1：MSYS 引用路径转换](#pitfall-1)
+- [坑 2：文件或 index 被锁](#pitfall-2)
+- [坑 3：云同步回滚仓库](#pitfall-3)
+- [坑 4：同一文件混合改动](#pitfall-4)
+- [坑 5：临时 ref 或 FETCH_HEAD 锁](#pitfall-5)
+- [坑 6：并行任务共享 worktree](#pitfall-6)
+
+<a id="pitfall-1"></a>
 
 ## 坑 1：MSYS 把 `REF:path` 里的 `/` `:` 转坏
 
@@ -37,6 +49,8 @@ fatal: ambiguous argument 'origin\master;.gitignore': unknown revision or path
 - avoid: 反复给 `git show origin/master:file` 加引号——加引号没用，MSYS 在更早层转换；不要把 `:` 换成别的符号猜
 - success_signal: 文件内容正常打印，没有 `ambiguous argument`
 - capture_rule: 凡是 git bash 下 `<REF>:<path>` 形态报路径歧义，就先 `rev-parse` 再 `cat-file -p`
+
+<a id="pitfall-2"></a>
 
 ## 坑 2：文件被锁时仍要完成 merge / 解 PR 冲突
 
@@ -100,8 +114,8 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 - capture_rule: 工作区被同步软件 / CRLF 污染、又必须完成 merge 时，走纯对象层（merge-tree → commit-tree → update-ref），不碰工作区
 
 ### Pattern: git-commit-pure-object-layer
-- scenario: 已按允许清单完成 `git add`，但 `git commit` 因同步软件锁住 `.git/index` 报 `unable to write new index file`，仍需创建一个单父提交
-- use_when: 暂存区内容已经逐路径核对，当前不在 merge / rebase / cherry-pick 状态，且本次提交不依赖必须运行的 commit hook；只绕过被锁的 index 重写，不绕过内容审查
+- scenario: 已按允许清单完成 `git add`，但 `git commit` 因同步软件锁住 `.git/index` 报 `unable to write new index file`；已经排除并行 Git 写入，仍需创建一个单父提交
+- use_when: 报错准确指向 index 重写，已确认没有其他任务或 Git 进程写同一 worktree，且两次只读检查的 `HEAD` 和完整暂存文件集合一致；当前不在 merge / rebase / cherry-pick 状态，且本次提交不依赖必须运行的 commit hook。只绕过稳定 index 的重写，不绕过内容审查
 - shell: PowerShell 或 bash；下面的变量写法为 PowerShell
 - validated_shape:
   ```powershell
@@ -119,15 +133,17 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
   git push origin <BRANCH>
   ```
 - substitute_only: `<MESSAGE>`, `<BRANCH>`；提交文件清单必须沿用此前核验过的明确路径，不从工作区重新猜测
-- preflight: `git rev-parse --show-toplevel` 确认实际仓库根；`git status --short`、`git diff --cached --name-status` 和 `git diff --cached --check` 确认范围；`git ls-files -u` 必须为空；确认当前分支和远端目标未分叉
+- preflight: `git rev-parse --show-toplevel` 确认实际仓库根；连续两次读取 `HEAD`、`git status --short`、`git diff --cached --name-status` 和 `git diff --cached --check`，结果必须稳定且只含批准范围；`git ls-files -u` 必须为空；确认当前分支和远端目标未分叉，并排除已知并行写入者
 - candidate_check: `git cat-file -p $commit` 的 `parent` 必须等于 `$head`；`git diff-tree --no-commit-id --name-status -r $commit` 必须只列允许文件；候选不正确时不执行 `update-ref`
-- avoid: 不要删除 `index.lock`、停止同步客户端、`reset` / `checkout` 工作区或用 `git add .` 扩大范围；`git commit-tree` 不运行 hooks，若需要签名、`pre-commit` 或 `commit-msg` 校验就停止并先恢复正常 `git commit`
+- avoid: `COMMIT_EDITMSG` 被占用、存在已知并行写入者、`HEAD` / 暂存集合发生漂移时，禁止从共享 index 执行 `write-tree` 或 `commit-tree`，改走坑 6；不要删除 `index.lock`、停止同步客户端、`reset` / `checkout` 工作区或用 `git add .` 扩大范围；`git commit-tree` 不运行 hooks，若需要签名、`pre-commit` 或 `commit-msg` 校验就停止并先恢复正常 `git commit`
 - success_signal: 分支通过带旧值校验的 `update-ref` 前进一个提交，`git status` 中目标文件干净、无关改动仍保留，随后远端 push 为 fast-forward
 - capture_rule: 单提交的对象层回退是已核验暂存区的窄范围应急路径；先验证 tree/commit/差异，再原子更新 ref，不能把它当作普通提交的默认替代
 
 ## 为什么不直接修工作区
 
 被同步软件锁的文件，你没法稳定地 unlink / checkout；CRLF 噪声会让几十个文件显示 `modified`、反复挡路。对象层操作（cat-file / merge-tree / commit-tree / update-ref）只读写 `.git/objects` 和 ref，绕开整个工作区，是这种环境下最稳的路子。前提：每一步都先验证（rev-parse 出 hash、ls-tree 抽查、cat-file 查冲突标记），再推进。
+
+<a id="pitfall-3"></a>
 
 ## 坑 3：同步客户端用云端旧快照回滚整个仓库
 
@@ -163,6 +179,8 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 - avoid: 先修工作区文件再管 `.git`（历史不对，改了也会乱）；直接删冲突副本（里面可能有未推送的独有内容，先 diff 再归档）；恢复后不改同步模式（100% 复发）；把 `.git` 留在任何双向同步目录里
 - success_signal: `git log` 回到最新提交、`git status` 干净、`git push` 正常 fast-forward；再无新冲突副本生成
 - capture_rule: 2026-07-10 百度网盘实战沉淀（回滚 18 个提交，reset --hard origin/main 全量恢复）。新确认的同步客户端症状形态（临时文件后缀、冲突副本命名）补进四联征清单
+
+<a id="pitfall-4"></a>
 
 ## 坑 4：同一文件混合改动，手工 patch 又已损坏
 
@@ -216,6 +234,8 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - success_signal: 隔离 worktree 的暂存差异只含批准内容，候选提交基于固定远端提交，原工作区 `HEAD`、暂存区和未提交内容保持不变
 - capture_rule: 同文件混合改动先隔离重建，再由 Git 生成 patch 并执行 `--cached --check`；内容范围不清或远端基线变化时失败关闭
 
+<a id="pitfall-5"></a>
+
 ## 坑 5：云盘临时 ref 或 FETCH_HEAD 锁挡住 fetch
 
 同步客户端可能在 `.git/refs/heads/` 短暂生成 `*.baiduyun.uploading.cfg`，Git 会把它当作分支引用并报
@@ -261,3 +281,73 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - avoid: 不因单个临时文件就停止同步客户端、删除 `.git` 内文件、清理 refs、reset 仓库或宣称发生回滚；不把 `ls-remote` 的成功说成本地远端跟踪分支已更新；不在未知并发 Git 操作仍运行时继续写仓库
 - success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；若任务需要对象，则等阻断状态改变后正常 `fetch` 成功再继续
 - capture_rule: fetch 元数据被临时 ref 或锁阻断时，先缩小诊断范围；只读核验用 `ls-remote`，需要对象仍必须等到 `fetch` 恢复
+
+<a id="pitfall-6"></a>
+
+## 坑 6：并行任务共用同一 worktree，提交状态相互污染
+
+同一 worktree 只有一份 index。一个任务暂存的文件会进入另一个任务看到的提交候选；另一个任务执行
+`git commit` 时，也可能更新共同的 `HEAD` 或占用 `COMMIT_EDITMSG`。Git 的 linked worktree 会共享对象和
+refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行任务建立独立提交环境
+（[Git 官方说明](https://git-scm.com/docs/git-worktree.html)）。
+
+### Pattern: git-isolate-after-shared-worktree-concurrency
+- scenario: `git commit` 被 `COMMIT_EDITMSG` / index 占用阻断，或本任务未操作时 `HEAD`、暂存文件集合、目标文件提交归属发生变化，且存在另一个可能写入同一仓库的任务
+- use_when: 已有具体证据把另一写入者定位到同一 Git 仓库；双方即使修改不同路径也适用。只有其他任务处于 active 状态、但仓库无关时不触发
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $branch = "<BRANCH>"
+  $approvedPaths = @("<PATH_1>", "<PATH_2>")
+
+  # 只读保存共享 worktree 现场；这些暂存内容不再作为本次提交来源。
+  $sharedHead = (git -C $repoRoot rev-parse HEAD).Trim()
+  $sharedStage = @(git -C $repoRoot diff --cached --name-status)
+  $gitDir = (git -C $repoRoot rev-parse --absolute-git-dir).Trim()
+  $commitMessagePath = Join-Path $gitDir "COMMIT_EDITMSG"
+  Get-Item -LiteralPath $commitMessagePath -Force -ErrorAction SilentlyContinue |
+      Select-Object FullName, Length, LastWriteTime, Attributes
+
+  # 向已知任务说明准确仓库和路径边界；若其正在执行 Git 写操作，先等该次操作结束，不抢锁。
+  $remoteLines = @(git -C $repoRoot ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $remoteLines.Count -ne 1) { throw "remote branch lookup failed" }
+  $base = ($remoteLines[0] -split '\s+')[0].Trim()
+  if ($base -notmatch '^[0-9a-f]{40}$') { throw "remote baseline is not a full commit id" }
+  git -C $repoRoot cat-file -e "$base^{commit}"
+  if ($LASTEXITCODE -ne 0) { throw "remote baseline object is not available locally" }
+
+  $taskRoot = Join-Path ([IO.Path]::GetTempPath()) ("git-concurrent-" + [guid]::NewGuid().ToString("N"))
+  $isolatedTree = Join-Path $taskRoot "worktree"
+  New-Item -ItemType Directory -Path $taskRoot -ErrorAction Stop | Out-Null
+  git -C $repoRoot worktree add --detach $isolatedTree $base
+  if ($LASTEXITCODE -ne 0) { throw "detached worktree creation failed" }
+
+  # 只在 $isolatedTree 中重建批准内容，不复制共享 index 或未知中间文件。
+  git -C $isolatedTree diff --check -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "reconstructed changes failed diff check" }
+  git -C $isolatedTree add -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "staging approved paths failed" }
+  git -C $isolatedTree diff --cached --name-status
+  git -C $isolatedTree diff --cached --check
+  if ($LASTEXITCODE -ne 0) { throw "staged changes failed diff check" }
+  git -C $isolatedTree diff --cached -- $approvedPaths
+  git -C $isolatedTree commit -m "<MESSAGE>"
+  if ($LASTEXITCODE -ne 0) { throw "isolated commit failed" }
+  $candidate = (git -C $isolatedTree rev-parse HEAD).Trim()
+  $candidateParent = (git -C $isolatedTree rev-parse "$candidate^").Trim()
+  if ($candidateParent -ne $base) { throw "candidate parent is not the fixed baseline" }
+  git -C $isolatedTree diff-tree --no-commit-id --name-status -r $candidate
+
+  $remoteAfter = @(git -C $repoRoot ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $remoteAfter.Count -ne 1) { throw "remote recheck failed" }
+  if ((($remoteAfter[0] -split '\s+')[0].Trim()) -ne $base) { throw "remote baseline moved" }
+  git -C $isolatedTree push origin "$candidate`:refs/heads/$branch"
+  ```
+- substitute_only: `<REPO_ROOT>`, `<BRANCH>`, `<PATH_1>...`, `<MESSAGE>`；批准路径来自已确认范围，不从共享暂存区或另一个任务的文件名猜测
+- preflight: 记录共享 worktree 的 `HEAD`、分支、状态和完整暂存清单；把并行写入证据定位到准确仓库；已知 Git 写操作结束后再顺序创建 worktree，不结束进程、不抢锁
+- candidate_check: 隔离提交只能有固定基线这一个父提交，完整 `git diff-tree` 只能包含批准路径；推送前远端 tip 必须仍等于基线；当前任务没有对原共享 worktree 执行任何写入、清理或还原
+- cleanup: 只有候选提交通过范围检查并成功推送后，才用 `git worktree remove` 移除准确隔离 worktree；失败时保留路径、基线 SHA 和恢复说明
+- avoid: 不删除 `COMMIT_EDITMSG`、`index.lock` 或其他 Git 元数据，不停止未知进程，不在共享 index 上运行 `commit-tree`，不清空、取消暂存或复用共享暂存区，不用 `stash`、`reset`、`checkout`、`restore` 伪造干净状态，不因一个锁就宣称云盘回滚
+- success_signal: 本次候选提交基于固定远端提交且只含批准路径，远端仅发生一次 fast-forward；原共享 worktree 的文件、index 和 `HEAD` 未被本任务改动
+- capture_rule: 并行任务只要共用同一 worktree，就不能靠“文件路径不同”判断提交隔离；出现提交锁或状态漂移后，保存现场、放弃共享 index，并在独立 worktree 重建本次批准提交

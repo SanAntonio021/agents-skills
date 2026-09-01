@@ -13,7 +13,7 @@ import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import {
   buildDefaultImagePath,
   printJson,
@@ -358,7 +358,12 @@ async function run() {
   else console.log(outputPath);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+export function isMainModule(argv1, moduleUrl = import.meta.url) {
+  if (!argv1) return false;
+  return path.basename(fileURLToPath(moduleUrl)).toLowerCase() === path.basename(argv1).toLowerCase();
+}
+
+if (isMainModule(process.argv[1])) {
   const jsonRequested = process.argv.includes("--json");
   run().catch((error) => {
     const failure = serializeFailure(error);

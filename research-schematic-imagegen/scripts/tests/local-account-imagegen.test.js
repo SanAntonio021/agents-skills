@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   buildCodexArgs,
   inspectPng,
+  isMainModule,
   parseThreadId,
   resolveGeneratedImage,
 } from "../generate-local-account.js";
@@ -26,6 +27,14 @@ test("extracts the isolated task ID from Codex JSONL", () => {
   const threadId = "01a05ab0-9e95-7e72-ab67-19bc197abe1a";
   const jsonl = `diagnostic before json\n${JSON.stringify({ type: "thread.started", thread_id: threadId })}\n`;
   assert.equal(parseThreadId(jsonl), threadId);
+});
+
+test("recognizes execution through a runtime symlink path", () => {
+  assert.equal(
+    isMainModule("C:\\Users\\tester\\.codex\\skills\\research-schematic-imagegen\\scripts\\generate-local-account.js"),
+    true,
+  );
+  assert.equal(isMainModule("C:\\workspace\\local-account-imagegen.test.js"), false);
 });
 
 test("accepts exactly one valid PNG from the isolated generated-images directory", async (t) => {

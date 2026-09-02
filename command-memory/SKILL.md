@@ -1,6 +1,6 @@
 ---
 name: command-memory
-description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、用 CommandLine 检查进程时把当前 PowerShell 自己误认为目标进程、git 同一文件混有批准与未批准改动需要安全部分暂存、隔离发布后用户另行批准把同一补丁安全更新到含有其他改动的本地工作副本、工作树文件已经逐项等于后续远端 tip 但普通快进仍被本地修改阻断、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存文件集合异常变化且可能有并行任务共用仓库、`git fetch` 被云盘临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入自动任务 API 的中文名称/提示变乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
+description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、现成 Python 脚本读取 UTF-8 中文文件时报 GBK `UnicodeDecodeError`、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、用 CommandLine 检查进程时把当前 PowerShell 自己误认为目标进程、git 同一文件混有批准与未批准改动需要安全部分暂存、隔离发布后用户另行批准把同一补丁安全更新到含有其他改动的本地工作副本、工作树文件已经逐项等于后续远端 tip 但普通快进仍被本地修改阻断、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存文件集合异常变化且可能有并行任务共用仓库、`git fetch` 被云盘临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入自动任务 API 的中文名称/提示变乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
 ---
 
 # Windows 命令急救卡
@@ -16,6 +16,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - PowerShell / 外部 CLI 命令已经失败，需要换命令形态继续。
 - 路径含中文、空格、很深目录，且要写入、移动、复制、删除、压缩或调用外部程序。
 - 出现乱码、GBK/UTF-8、BOM、PowerShell here-string、`python -c` 编码问题。
+- 运行现成 Python helper 或校验脚本时，脚本读取已知 UTF-8 中文文件并按 Windows 默认编码报 `UnicodeDecodeError`。
 - **目录移动/删除报 “Device or resource busy” / “Permission denied” / “另一个程序正在使用此文件”**（进程占用、MCP 僵尸、IDE/Office 锁文件）。
 - Codex 在 Windows 上写入时报 `windows sandbox failed`、`setup refresh had errors`、`read ACL run had errors` 或 `SetNamedSecurityInfoW failed`。
 - 需要判断或修复规则文件同步、软链、旧副本。
@@ -57,7 +58,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 
 - 路径、外部 CLI、下载、用户级安装、PATH、LibreOffice / Poppler Windows 调用失败、`%USERPROFILE%` 路径匿名化改写、插件与运行时多版本副本定位：`references/cli-paths.md`
 - CSV 批量重写为 UTF-8 BOM 且要保住引号和内嵌逗号：`references/csv-rewrite-utf8.md`
-- Python / inline here-string / 中文路径乱码：`references/python-utf8.md`
+- Python / inline here-string / 中文路径乱码 / 现成脚本按 GBK 读取 UTF-8 文本失败：`references/python-utf8.md`
 - 中文 Markdown 或 UTF-8 文本读取：`references/markdown-read-utf8.md`
 - 搜索、遍历、匹配：`references/search-and-traversal.md`
 - 按命令行检查 Windows 进程、排除当前 PowerShell 自身、核实后台任务或占用者：`references/process-inspection.md`

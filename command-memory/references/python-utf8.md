@@ -18,6 +18,13 @@
 - preflight: `Get-Command "python"`; 代码保持短；复杂就切脚本文件。
 - avoid: 裸 `python -c`; 大段多行代码塞进命令行。
 
+### Pattern: existing-script-reads-utf8-as-gbk
+- use_when: 现成 helper 或校验脚本读取已知 UTF-8 中文文件时，因使用 Windows 默认编码报 GBK `UnicodeDecodeError`。
+- preflight: 先确认目标文件确为 UTF-8；文件编码不明时先检查，不能用 UTF-8 模式掩盖实际编码错误。
+- shape: `python -X utf8 "<SCRIPT>.py" <ARGS>`
+- success_signal: 同一脚本越过原解码错误，并按预期完成校验或给出下一项真实错误。
+- avoid: 为此修改第三方 helper、永久设置全局 `PYTHONUTF8` 或更改系统区域设置；仍失败时应检查文件实际编码和脚本假设，不原样重试。
+
 ### Pattern: stdin-script-with-arg
 - use_when: 必须打开一个精确中文路径文件，直接把路径写进 Python 代码不稳。
 - shape: `$p = "<ABS_INPUT_PATH>"; @'<PY>'@ | python -X utf8 - $p`

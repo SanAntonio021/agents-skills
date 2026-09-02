@@ -112,6 +112,23 @@
    路径、基线 SHA 和恢复说明，按 `report-format.md` 记录异常。具体 Windows/PowerShell 命令骨架见
    `command-memory/references/git-on-windows.md` 的同文件混合改动模式。
 
+#### 用户明确禁止 worktree 时
+
+detached worktree 是默认隔离路径。只有用户明确禁止创建任何 worktree 时，才允许跳过上面的第 3 至
+第 7 步并改走无 worktree 例外；“尽量少建”“路径太长”或普通 worktree 失败都不构成该授权。
+
+先加载 `command-memory/references/git-on-windows.md` 的
+`git-publish-approved-changes-without-worktree` 模式。必须同时确认：唯一远端 40 位基线及全部所需对象已
+在本地；所有已知 writer 已明确释放；连续两次仓库与远端状态稳定；批准内容可从远端 blob 精确重建；
+目标均为属性行为明确的普通 blob；不需要 hooks 或签名。候选文件只能放在任务自有临时目录，提交只能
+由外置 `GIT_INDEX_FILE`、`read-tree`、`hash-object`、`update-index`、`write-tree` 和 `commit-tree`
+生成，再显式推送候选 SHA。不得读取原工作区的未批准 hunk，不得写共享 index、本地分支 ref 或原文件。
+
+任一前提失败就停止并按 `report-format.md` 留档；不能把“禁止 worktree”解释为允许整文件暂存、复用
+共享 index、复制混合文件或绕过 hooks。发布前后都必须证明原 `HEAD`、分支、完整状态、暂存区、真实
+index 哈希和本地目标文件哈希未变，远端只从固定基线 fast-forward 到已核对的候选提交；成功后只清理
+本任务准确的临时索引和候选目录。
+
 11. Skill push 成功后，取得 40 位远端提交 SHA，并从提交差异中列出本次实际修改且仍存在的 Skill。
     请求集合必须与提交中的 Skill 集合完全一致，不能顺手加入未修改的 Skill；删除或合并后源码目录已消失的
     Skill 不进入自动更新，继续按第 18 条处理；新旧 Skill 名称不同的替换按下方“不同名称 Skill 的受控替换”处理。

@@ -1,6 +1,6 @@
 ---
 name: command-memory
-description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、现成 Python 脚本读取 UTF-8 中文文件时报 GBK `UnicodeDecodeError`、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、用 CommandLine 检查进程时把当前 PowerShell 自己误认为目标进程、git 同一文件混有批准与未批准改动需要安全部分暂存、隔离发布后用户另行批准把同一补丁安全更新到含有其他改动的本地工作副本、工作树文件已经逐项等于后续远端 tip 但普通快进仍被本地修改阻断、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、linked worktree 提交仍报 `unable to write new index file`、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存文件集合异常变化且可能有并行任务共用仓库、`git fetch` 被云盘临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入自动任务 API 的中文名称/提示变乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
+description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在明显高风险或已经失败后需要纠偏时使用：编码乱码、现成 Python 脚本读取 UTF-8 中文文件时报 GBK `UnicodeDecodeError`、中文/空格路径、软链或规则文件同步、压缩/移动/删除等文件操作、目录被进程占用删不掉或删掉后又自动重生、用 CommandLine 检查进程时把当前 PowerShell 自己误认为目标进程、git 同一文件混有批准与未批准改动需要安全部分暂存、获批将隔离发布补丁更新到含其他改动的本地副本、工作树等于远端 tip 但快进受阻、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、linked worktree 提交仍报 `unable to write new index file`、`git worktree remove` 报错但目录已消失并残留管理记录、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存文件集合异常变化且可能有并行任务共用仓库、`git fetch` 被云盘临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史莫名倒退或仓库被云同步软件回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、照抄对话里显示的 `%USERPROFILE%` 用户目录路径后报 `EPERM` 或建出不存在的目录树、引用本机插件与运行时源码的行号前要确认磁盘上哪份版本副本真正加载、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入自动任务 API 的中文名称/提示变乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
 ---
 
 # Windows 命令急救卡
@@ -28,6 +28,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - Git 同一文件同时含有本次允许提交和其他未授权改动，不能整文件暂存；或手工构造的 patch 已出现 `corrupt patch`、`patch fragment without header`、hunk 行数不匹配，需要换成隔离 worktree 纠偏。
 - `git worktree add` 在深层父目录下报 `Filename too long`，或已创建的 worktree 内出现 `*.baiduyun.uploading.cfg` 等同步/备份临时文件，需要改用短、任务自有且不受监控的本地路径，并在不删除未知临时文件的前提下收口旧位置。
 - 已把候选放到短且不受监控的 linked worktree，但 `git commit` 仍报 `unable to write new index file`，且该 worktree 的 Git 管理目录指向原仓库 `.git/worktrees/<id>`；需要先排除并行写入、锁和提交状态，再改用真正独立的临时 Git 仓库。
+- `git worktree remove` 返回非零，但准确目标目录已经消失，原仓库 `.git/worktrees/<id>` 仍留有管理记录；需要区分“完全没删”和“工作树已删、管理记录未收口”，再决定是否能用普通 `git worktree prune`。
 - 已在隔离工作副本完成发布，用户随后明确要求把同一已审查补丁更新到当前本地工作副本，而本地还有必须保留的其他改动。
 - 目标分支可以快进，工作树中全部远端变化路径已经逐项等于新的远端 tip，但 Git 仍因这些路径显示为本地修改而拒绝普通快进；用户又明确批准校准当前仓库的 index 和分支记录。
 - `git commit` 被 `.git/COMMIT_EDITMSG` 或 index 占用阻断，或 `HEAD`、暂存文件集合在本任务未操作时发生变化，需要区分并行 Git 写入与普通同步软件锁，并隔离本次提交。
@@ -63,7 +64,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令存在�
 - 中文 Markdown 或 UTF-8 文本读取：`references/markdown-read-utf8.md`
 - 搜索、遍历、匹配：`references/search-and-traversal.md`
 - 按命令行检查 Windows 进程、排除当前 PowerShell 自身、核实后台任务或占用者：`references/process-inspection.md`
-- git on Windows：`REF:path` 路径被 MSYS 转坏、文件被同步软件/Office 锁住导致 merge 崩、并行任务共用 worktree 引发 `COMMIT_EDITMSG` / index 占用或暂存区漂移、隔离 worktree 的路径过长或受到同步/备份临时文件干扰、linked worktree 的管理 index 仍位于原仓库时改用独立临时 Git 仓库、同一文件混合改动的隔离暂存、隔离发布后经用户另行批准把补丁安全更新到本地工作副本、工作树已等于后续远端 tip 时精确校准 index 和分支记录、手工 patch 损坏后的纠偏、云盘临时 ref 或 `FETCH_HEAD` 锁阻断 fetch、`schannel` / SSL/TLS 握手失败、云同步客户端回滚仓库（提交历史倒退/冲突文件副本/删掉的目录复活）、纯对象层解 PR 冲突：`references/git-on-windows.md`
+- git on Windows：`REF:path` 路径被 MSYS 转坏、文件被同步软件/Office 锁住导致 merge 崩、并行任务共用 worktree 引发 `COMMIT_EDITMSG` / index 占用或暂存区漂移、隔离 worktree 的路径过长或受到同步/备份临时文件干扰、linked worktree 的管理 index 仍位于原仓库时改用独立临时 Git 仓库、`git worktree remove` 部分成功后安全核对并收口管理残留、同一文件混合改动的隔离暂存、隔离发布后经用户另行批准把补丁安全更新到本地工作副本、工作树已等于后续远端 tip 时精确校准 index 和分支记录、手工 patch 损坏后的纠偏、云盘临时 ref 或 `FETCH_HEAD` 锁阻断 fetch、`schannel` / SSL/TLS 握手失败、云同步客户端回滚仓库（提交历史倒退/冲突文件副本/删掉的目录复活）、纯对象层解 PR 冲突：`references/git-on-windows.md`
 - 压缩、复制、移动、删除：`references/archive-and-file-ops.md`
 - **目录移动/删除被占用**：`mv: Device or resource busy` / Permission denied、进程 cwd 压住目录、MCP 僵尸残留、删掉的目录几秒后被重建、Office/VS Code 锁文件：`references/directory-move-locked.md`
 - 规则文件同步、软链、临时复制对齐：`references/rule-file-sync-and-symlink.md`

@@ -37,8 +37,9 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 
 - `ccswitch-owned`：当前默认。provider、认证、provider 固定模型和 Common Config 基线只通过
   CC Switch 配置；Codex Desktop 仍可按用户操作更新新任务默认值和任务级设置。本地 watcher 不写
-  `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop 的两个权限字段；当前目标值
-  为 `guardian-approvals`，并记录退出与启动后漂移。
+  `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop 的两个权限字段；目标模式必须
+  与所需审批组合一致，并记录退出与启动后漂移。需要显式
+  `danger-full-access + on-request + auto_review` 时目标为 `custom`；`guardian-approvals` 只代表其内置组合。
 - `legacy-writer`：历史配置 writer。只有用户明确要求回滚旧架构并接受争用风险时才进入；不能因为
   检测到漂移就自行启用。
 
@@ -124,8 +125,10 @@ CC Switch 的 Common Config 与 provider 模型固定值要分开理解。CC Swi
 #### 审批策略与桌面权限必须成组核对
 
 看到“完全访问已经开启，但删除或其他命令仍在 PowerShell 启动前被 `blocked by policy` 拒绝”时，
-不要把 `danger-full-access` 当成自动批准。依次核对四层：CC Switch Common Config、当前 provider 的
-`commonConfigEnabled`、最终生成的 `config.toml`，以及当前任务启动时缓存的审批策略。
+不要把 `danger-full-access` 当成自动批准。依次核对五层：CC Switch Common Config、当前 provider 的
+`commonConfigEnabled`、最终生成的 `config.toml`、Codex Desktop 当前激活的权限模式与 permission
+selection，以及当前任务 `turn_context` 中实际生效的 `sandbox_policy`、`approval_policy` 和
+`approvals_reviewer`。前四层说明配置来源和选择，第五层才是当前任务的运行态依据。
 
 需要自动审批时，推荐共同基线为：
 
@@ -135,15 +138,29 @@ approvals_reviewer = "auto_review"
 sandbox_mode = "danger-full-access"
 ```
 
-桌面权限目标同时设为 `guardian-approvals`。`sandbox_mode` 可以保留完全访问；它只决定底层访问范围。
-`approval_policy = "never"` 会关闭审批交接，因此即使配置了 `approvals_reviewer = "auto_review"`，
-命中宿主审批策略的命令也只能失败，不能交给审批器判断。
+Codex Desktop 26.831 的内置权限模式映射为：
+
+| Desktop 模式 | sandbox | approval policy | reviewer |
+| --- | --- | --- | --- |
+| `full-access` | `danger-full-access` | `never` | `user` |
+| `guardian-approvals` | `workspace-write` | `on-request` | `guardian_subagent` |
+| `custom` | 从当前配置解析 | 从当前配置解析 | 从当前配置解析 |
+
+因此，上述显式组合必须把 `agent-mode-by-host-id.local` 设为 `custom`，并让当前 permission selection
+为 `{"kind":"custom"}`；不能把 `guardian-approvals` 当作该组合的别名。Codex Desktop 升级后若映射可能
+变化，先核对实际加载版本，再沿用结论。`sandbox_mode` 只决定底层访问范围；
+`approval_policy = "never"` 会关闭审批交接，即使磁盘配置仍写着
+`approvals_reviewer = "auto_review"`，以 `full-access` 启动的新任务也会得到 `never + user`，不会交给
+自动审批器判断。
 
 通过 CC Switch 支持的后台服务或 CLI 更新 Common Config，并确认当前 provider 已启用
 `commonConfigEnabled`；不得直接改 `cc-switch.db` 或生成的 `config.toml`。审批策略由任务启动时读取，
-旧任务仍可能沿用原值；配置落盘只证明下一次启动的输入正确，必须在新任务中用一个原先会触发审批的
-窄范围动作验证审批器确实接管。若当前旧任务仍拒绝删除任务自产生的无害临时文件，保留并报告准确路径，
-按 `command-memory/references/archive-and-file-ops.md` 处理，不换 `cmd`、.NET 或其他 API 绕过宿主策略。
+旧任务仍可能沿用原值；配置落盘只证明输入正确。必须新建任务，先核对首个 `turn_context` 已是
+`danger-full-access + on-request + auto_review`，再用一个原先会触发审批的窄范围动作确认审批器确实
+接管。动作成功本身不是自动审批证据：如果 `turn_context` 仍是 `never + user`，或没有任何 reviewer
+介入证据，只能说明动作被当前策略允许。若当前旧任务仍拒绝删除任务自产生的无害临时文件，保留并报告
+准确路径，按 `command-memory/references/archive-and-file-ops.md` 处理，不换 `cmd`、.NET 或其他 API
+绕过宿主策略。
 
 #### 区分 Common Config、新任务默认值和任务级覆盖
 

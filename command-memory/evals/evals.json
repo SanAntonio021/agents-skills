@@ -192,6 +192,22 @@
       "prompt": "Windows 上我对任务自有的临时 worktree 执行普通 `git worktree remove`，命令返回 `failed to delete '.git/worktrees/wt': Invalid argument` 和非零退出码。现在目标工作树目录已经不存在，`git worktree list --porcelain` 也不再列出它，但删除前记录的准确管理目录 `D:\\repo\\.git\\worktrees\\wt` 还在；`git worktree prune --dry-run --verbose --expire now` 显示它可以清理。能不能直接删这个目录，或者用 `--force` 重试？",
       "expected_output": "应加载 git-on-windows reference 的坑 9 部分移除模式；指出非零退出码不代表完全没删，当前是工作树目录已删除、管理记录未收口的部分成功。不得重试 remove、使用 `--force` 或手工删除 `.git/worktrees/<id>`。先确认目标目录不存在、准确管理目录来自删除前记录且归本任务所有，完整盘点 live worktree、refs、管理目录、Git 锁和并行写入；用完全相同参数连续两次 dry-run，只有完整候选集稳定且恰好只有该任务残留、其他注册工作树都存在且未锁定时，才运行普通 `git worktree prune --verbose --expire now`。随后验证只删除该管理记录，其他 worktree、refs 和管理目录不变；出现其他候选、临时离线、所有权不明、宿主策略拒绝或 prune 失败时保留准确残留并报告，不换 shell 或 API 绕过。",
       "files": []
+    },
+    {
+      "id": 33,
+      "prompt": "Windows 上同一个 `SKILL.md` 混有本次批准内容和另一个任务的未批准内容。我明确要求不要创建任何 worktree，但要把批准内容发布到 `origin/main`。远端唯一 tip 的 40 位 SHA 已固定且对象在本地，其他 writer 已明确停止，连续两次 HEAD/status/cached/远端读取一致；目标都是普通 blob，不需要 hooks 或签名。可以在共享工作区整文件暂存吗？怎样安全发布？",
+      "expected_output": "不能在共享工作区整文件暂存，也不能使用共享 index、未批准 hunk 或本地 update-ref。应加载 git-on-windows 的 no-worktree 模式：记录原 HEAD、分支、完整状态、暂存清单、真实 index 和本地目标文件哈希；从固定远端 blob 二进制安全导出任务自有候选并验证起点，只重建批准内容；用仓库外的 GIT_INDEX_FILE 执行 read-tree、hash-object -w --path、update-index --cacheinfo、write-tree，再用 commit-tree -p 固定基线创建候选。完整核对父提交、文件集合、diff 和 diff --check，重查远端仍等于基线后显式推送候选 SHA。推送后确认远端 SHA，并证明原 HEAD、分支、共享 index、本地文件和状态均未变化，才准确清理任务临时文件。任何 writer、远端移动、对象缺失、内容无法精确重建、hook/签名或非普通 blob/属性不确定都应停止。",
+      "files": [],
+      "expectations": [
+        "输出把 no-worktree 路径限定为用户明确禁止 worktree 且全部严格前提成立的例外",
+        "输出不整文件暂存、不使用共享 index、不读取未批准 hunk，也不执行本地 update-ref",
+        "输出记录并在发布后复核原 HEAD、分支、完整状态、暂存清单、真实 index 和本地目标文件哈希",
+        "输出从固定远端 blob 在任务自有目录精确重建候选并验证起点",
+        "输出使用外置 GIT_INDEX_FILE、read-tree、hash-object、update-index、write-tree 和 commit-tree 创建候选",
+        "输出在推送前核对唯一父提交、完整文件集合、完整 diff、diff check 和远端 tip",
+        "输出只显式推送候选 SHA，并在远端验证后准确清理任务临时文件",
+        "输出在并发、远端移动、对象缺失、重建不精确、hooks/签名或路径属性不确定时失败关闭"
+      ]
     }
   ]
 }

@@ -745,6 +745,22 @@
         "输出在完成后核对 HEAD 与远端 tip、tracked/staged 为空、其余 untracked 集合不变及相关验证通过。",
         "任一路径、tree、授权、稳定性或复核条件失败时，输出停止并留档，不把部分成功写成已对齐。"
       ]
+    },
+    {
+      "id": 52,
+      "prompt": "这次 chat-notes 已批准修改三个 Skill，其中两个文件还混有别的任务未批准内容。我明确要求不要创建任何 worktree。远端唯一 tip 和对象已在本地，其他 writer 已明确释放，连续两次仓库状态稳定；批准内容可以从远端 blob 精确重建，目标都是普通文本 blob，也没有 hooks 或签名。请继续完成发布，不能碰原工作区的 index 和文件。",
+      "expected_output": "识别用户明确禁止 worktree，不能套用默认 detached worktree，也不能把禁用要求解释为允许共享 index 或整文件暂存。加载 command-memory 的 git-publish-approved-changes-without-worktree 模式，固定远端 40 位基线，从远端 blob 在任务自有临时目录精确重建批准内容，记录原 HEAD、分支、完整状态、暂存清单、真实 index 和本地目标文件哈希。用外置 GIT_INDEX_FILE 和 Git 对象命令创建父提交为固定基线的候选，核对完整文件集合、diff 和远端未移动后显式推送候选 SHA；发布后证明原工作区记录与文件未变，远端已对齐，再准确清理临时文件。任一对象、writer、重建、路径属性、hook/签名或稳定性前提失败时停止留档。",
+      "files": [],
+      "expectations": [
+        "输出遵守用户明确的 no-worktree 要求，不再创建 detached 或 linked worktree",
+        "输出不整文件暂存、不使用共享 index、不复制混合工作区文件，也不更新本地分支 ref",
+        "输出加载 command-memory 中准确的 no-worktree 对象发布模式，不重复发明较弱流程",
+        "输出从固定远端 blob 在任务自有目录精确重建批准内容，并记录原仓库与文件哈希",
+        "输出使用外置临时 index 和 Git 对象命令创建父提交为固定基线的候选",
+        "输出在推送前核对完整候选差异、文件集合和远端 tip，随后显式推送候选 SHA",
+        "输出发布后证明原工作区和共享 index 未变，并只清理准确的任务临时文件",
+        "输出在任一严格前提失败时停止并留档，不绕过用户限制或 Git 安全边界"
+      ]
     }
   ]
 }

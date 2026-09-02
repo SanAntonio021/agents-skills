@@ -176,15 +176,17 @@ python <script> complete-review `
 6. 只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
 7. Skill 推送成功后取得 40 位远端提交 SHA，调用
    `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，只传本次提交
-   实际修改且仍存在的 Skill。该 helper 只执行一次“检查更新”和过滤后的单项“更新”，禁止“全部更新”，
-   不建 watcher 或计划任务，也不修改 CC Switch 源码、EXE、数据库、配置或运行时目录。
-   “检查更新”可能在单项按钮出现前异步完成运行时更新；精确过滤后没有更新按钮时，只允许在既有更新
-   超时内做一次有界的四层只读等待。四层完全一致则按未点击更新通过；始终未对齐则保留
-   `target_update_unavailable`，不重复扫描或点击，也不手工复制运行时。
+   实际修改且仍存在的 Skill。该 helper 使用固定版本、固定哈希的隐藏命令行程序，先创建 CC Switch 数据库
+   备份，再按准确名称更新或首次安装目标，并显式启用 Claude 和 Codex；不打开、查找、显示或激活 CC Switch
+   桌面窗口，不建 watcher 或计划任务，也不提供“全部更新”。后台程序通过 CC Switch 服务层更新数据库登记、
+   公共 Skill 副本和已启用运行目录，这种受控写入属于正式更新流程；仍禁止任务自行执行 SQL、手工复制运行时
+   文件、替换 CC Switch EXE 或直接改配置。明确的临时下载、连接或数据库占用错误只在单条后台命令内部重试
+   一次；其他错误直接停止，不切换到 UI Automation、鼠标或前台窗口。
 8. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且提交源码、`.cc-switch`、`.claude`、`.codex`
-   四层全部目标文件集合和 SHA-256 完全一致，才算运行时生效。自动更新或验收失败时，不重复点击、不直接
-   修运行时，只能报告“源码已推送，运行时未生效”，并保留 JSON 错误码和差异证据。删除或合并 Skill
-   产生的运行时残留不走该 helper，仍需单独批准清理。
+   四层全部目标文件集合和 SHA-256 完全一致，且 CC Switch 数据库完整性、仓库分支、目录归属和双端启用状态
+   通过核验，才算运行时生效。`updated_background`、`installed_background` 或单条命令退出成功不能替代这个
+   结论。后台更新或验收失败时，不重复完整 helper、不直接修运行时，只能报告“源码已推送，运行时未生效”，
+   并保留 JSON 错误码和差异证据。删除或合并 Skill 产生的运行时残留不走该 helper，仍需单独批准清理。
 
 ## 记录已审核提交
 

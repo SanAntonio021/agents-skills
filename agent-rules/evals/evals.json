@@ -103,14 +103,27 @@
     {
       "id": 11,
       "prompt": "我已经逐技能批准 chat-notes 和 agent-rules 的上游候选，complete-review 与复测都通过。现在请提交、push，并让这两个 Skill 在 CC Switch、Claude 和 Codex 中立即生效；不要更新仓库里的其他 Skill。",
-      "expected_output": "只提交并 push 已批准目标。push 成功后使用远端 40 位 SHA 调用 ccswitch-skill-sync helper，目标集合严格等于该提交实际修改的 chat-notes 和 agent-rules；只执行一次检查和两个单项更新。只有源码与三个运行时层文件集合和 SHA-256 全部一致才报生效。",
+      "expected_output": "只提交并 push 已批准目标。push 成功后使用远端 40 位 SHA 调用 ccswitch-skill-sync helper，目标集合严格等于该提交实际修改的 chat-notes 和 agent-rules；helper 先备份数据库，再用隐藏命令按名称更新两个目标并核对 CC Switch 元数据。只有源码、三个运行时层文件集合和 SHA-256 全部一致且元数据有效才报生效。",
       "files": [],
       "expectations": [
         "只暂存、提交并 push 已批准的 chat-notes 和 agent-rules 文件。",
         "helper 参数中的 Skill 集合与远端提交实际修改的 Skill 集合完全一致。",
-        "不会建立 watcher 或计划任务，不会点击“全部更新”。",
-        "不会修改 CC Switch 源码、EXE、数据库、配置或运行时目录。",
+        "不会建立 watcher 或计划任务，也不会打开或激活 CC Switch 桌面窗口。",
+        "允许固定后台程序通过 CC Switch 服务层更新数据库登记和运行目录，但不会自行执行 SQL、手工复制运行时、替换 EXE 或直接改配置。",
         "自动更新或四层验收失败时只报告“源码已推送，运行时未生效”，不把任务写成完成。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "全局规则说不要直接改 CC Switch 数据库和运行时，但新的技能同步 helper 会先备份数据库，再调用固定版本的 cc-switch-cli 更新技能登记和 Claude/Codex 目录。这是不是违反规则？如果后台下载第一次报响应解码失败，应该怎么处理？",
+      "expected_output": "把人工直接写数据库或复制运行时，与受控程序调用 CC Switch 服务层分开。前者继续禁止；后者在固定版本和哈希、数据库备份、准确目标、非目标不变、元数据完整和四层一致的约束下属于正式同步。明确的响应解码、下载超时、连接重置、暂时不可用或数据库锁定/忙碌错误只在单条后台命令内部自动重试一次；第二次失败或其他错误立即停止，不切换到桌面界面。",
+      "files": [],
+      "expectations": [
+        "明确区分受控服务层写入与人工直接修改数据库或运行时。",
+        "只允许固定版本和哈希的后台程序处理准确目标，并要求更新前数据库备份。",
+        "保留非目标不变、CC Switch 元数据有效和四层一致的完成门槛。",
+        "只对明确的临时下载、连接或数据库占用错误自动重试一次。",
+        "第二次失败或非临时错误直接停止，不以前台 CC Switch 或手工复制作为兜底。"
       ]
     }
   ]

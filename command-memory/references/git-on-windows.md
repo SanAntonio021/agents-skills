@@ -2,7 +2,7 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有七类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有八类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
@@ -11,6 +11,7 @@
 5. **云盘临时文件进入 Git 元数据**：上传临时 ref 会让 Git 报 `bad object`，`FETCH_HEAD` 被占用会让 `fetch` 报 `Permission denied`。
 6. **并行任务共用同一 worktree**：即使修改路径不同，也会共用 index 和提交状态；`COMMIT_EDITMSG` / index 占用、`HEAD` 或暂存文件集合漂移都可能把另一任务的内容带入本次提交。
 7. **工作树已等于远端但快进仍被阻断**：远端继续推进后，本地相关文件已经逐项等于新 tip，Git 仍因它们相对旧 `HEAD` 显示为修改而拒绝普通快进。
+8. **隔离 worktree 的位置不合适**：仓库内最长相对路径叠加较长父目录后可能报 `Filename too long`；放在同步或备份监控树下，又可能混入 `*.baiduyun.uploading.cfg` 等外部临时文件。
 
 按对应 pattern 处理。第 4、6、7 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
 
@@ -23,6 +24,7 @@
 - [坑 5：临时 ref 或 FETCH_HEAD 锁](#pitfall-5)
 - [坑 6：并行任务共享 worktree](#pitfall-6)
 - [坑 7：工作树已等于远端但快进仍被阻断](#pitfall-7)
+- [坑 8：worktree 路径过长或受备份客户端干扰](#pitfall-8)
 
 <a id="pitfall-1"></a>
 
@@ -206,8 +208,10 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
   $base = (git -C $repoRoot rev-parse "refs/remotes/origin/$branch").Trim()
   if ($base -notmatch '^[0-9a-f]{40}$') { throw "remote baseline is not a full commit id" }
 
-  $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("git-approved-" + [guid]::NewGuid().ToString("N"))
-  $isolatedTree = Join-Path $tempRoot "worktree"
+  # <SHORT_LOCAL_ROOT> 必须先按坑 8 预检：路径短、任务自有，且不在仓库或同步/备份监控树下。
+  $taskToken = [guid]::NewGuid().ToString("N").Substring(0, 8)
+  $tempRoot = Join-Path "<SHORT_LOCAL_ROOT>" ("ga-" + $taskToken)
+  $isolatedTree = Join-Path $tempRoot "wt"
   $patchPath = Join-Path $tempRoot "approved.patch"
   New-Item -ItemType Directory -Path $tempRoot -ErrorAction Stop | Out-Null
   git -C $repoRoot worktree add --detach $isolatedTree $base
@@ -228,7 +232,7 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
   git -C $isolatedTree diff --cached -- $approvedPaths
   ```
 - substitute_only: `<REPO_ROOT>`, `<BRANCH>`, `<PATH_1>...`；`approvedPaths` 必须来自已确认允许清单，不从当前工作区文件名猜测
-- preflight: 记录原仓库 `HEAD`、分支、`git status --short` 和 `git diff --cached --name-status`；确认远端目标分支是允许的发布基线；目标分支已在原工作区检出时必须保持 `--detach`
+- preflight: 记录原仓库 `HEAD`、分支、`git status --short` 和 `git diff --cached --name-status`；确认远端目标分支是允许的发布基线；目标分支已在原工作区检出时必须保持 `--detach`；按坑 8 验证短根、最长候选路径和同步/备份监控边界后再创建 worktree
 - candidate_check: 暂存文件集合和完整差异只能包含批准内容；候选提交创建后再用 `git diff-tree --no-commit-id --name-status -r <COMMIT>` 和 `git show --stat --oneline <COMMIT>` 复核；推送前重新 `fetch`，远端分支必须仍等于 `$base`
 - cleanup: 只有候选提交已接受、需要的 push 已成功且原工作区复核无变化后，才运行 `git -C $repoRoot worktree remove $isolatedTree` 并删除本次 `$tempRoot`；失败时保留路径、`$base` 和恢复说明
 - optional_tool: `git-hunk` 只能在已经安装时辅助枚举和规划 hunk；不自动安装、不形成默认依赖，也不能替代暂存后的完整差异复核
@@ -359,8 +363,10 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
   git -C $repoRoot cat-file -e "$base^{commit}"
   if ($LASTEXITCODE -ne 0) { throw "remote baseline object is not available locally" }
 
-  $taskRoot = Join-Path ([IO.Path]::GetTempPath()) ("git-concurrent-" + [guid]::NewGuid().ToString("N"))
-  $isolatedTree = Join-Path $taskRoot "worktree"
+  # <SHORT_LOCAL_ROOT> 必须先按坑 8 预检：路径短、任务自有，且不在仓库或同步/备份监控树下。
+  $taskToken = [guid]::NewGuid().ToString("N").Substring(0, 8)
+  $taskRoot = Join-Path "<SHORT_LOCAL_ROOT>" ("gc-" + $taskToken)
+  $isolatedTree = Join-Path $taskRoot "wt"
   New-Item -ItemType Directory -Path $taskRoot -ErrorAction Stop | Out-Null
   git -C $repoRoot worktree add --detach $isolatedTree $base
   if ($LASTEXITCODE -ne 0) { throw "detached worktree creation failed" }
@@ -387,7 +393,7 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
   git -C $isolatedTree push origin "$candidate`:refs/heads/$branch"
   ```
 - substitute_only: `<REPO_ROOT>`, `<BRANCH>`, `<PATH_1>...`, `<MESSAGE>`；批准路径来自已确认范围，不从共享暂存区或另一个任务的文件名猜测
-- preflight: 记录共享 worktree 的 `HEAD`、分支、状态和完整暂存清单；把并行写入证据定位到准确仓库；已知 Git 写操作结束后再顺序创建 worktree，不结束进程、不抢锁
+- preflight: 记录共享 worktree 的 `HEAD`、分支、状态和完整暂存清单；把并行写入证据定位到准确仓库；已知 Git 写操作结束后再顺序创建 worktree，不结束进程、不抢锁；按坑 8 验证短根、最长候选路径和同步/备份监控边界
 - candidate_check: 隔离提交只能有固定基线这一个父提交，完整 `git diff-tree` 只能包含批准路径；推送前远端 tip 必须仍等于基线；当前任务没有对原共享 worktree 执行任何写入、清理或还原
 - cleanup: 只有候选提交通过范围检查并成功推送后，才用 `git worktree remove` 移除准确隔离 worktree；失败时保留路径、基线 SHA 和恢复说明
 - avoid: 不删除 `COMMIT_EDITMSG`、`index.lock` 或其他 Git 元数据，不停止未知进程，不在共享 index 上运行 `commit-tree`，不清空、取消暂存或复用共享暂存区，不用 `stash`、`reset`、`checkout`、`restore` 伪造干净状态，不因一个锁就宣称云盘回滚
@@ -509,3 +515,74 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
 - avoid: 不使用 `stash`、`reset`、`checkout`、`restore`、整文件复制或覆盖工作树；不因几个文件哈希相同就推进分支；不清理其余 untracked 文件；不在远端再次推进后自动追赶
 - success_signal: `HEAD` 等于复核过的远端 tip，tracked 和 staged 状态为空，其余 untracked 路径集合逐项不变，相关验证通过；任何一项不成立都不报告已经对齐
 - capture_rule: 只有“完整远端变化路径都已在工作树中准确实现”才能把内容一致转换成 Git 记录一致；先用临时 index 证明完整 tree，再精确更新真实 index，并以旧值保护 ref 更新
+
+<a id="pitfall-8"></a>
+
+## 坑 8：隔离 worktree 路径过长或受备份客户端干扰
+
+`git worktree add <path> <commit-ish>` 的目标路径由调用方选择（[Git 官方文档](https://git-scm.com/docs/git-worktree.html)）。
+Windows 下，较长父目录会和仓库内的长文件名叠加，导致 checkout 报 `Filename too long`；微软也明确说明，长父路径会增加触发传统
+`MAX_PATH` 限制的风险（[Microsoft 文档](https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation)）。
+即使路径长度够用，把临时 worktree 放进同步或备份监控树，也可能产生 `*.baiduyun.uploading.cfg` 等不属于候选提交的临时文件。
+
+### Pattern: git-create-detached-worktree-at-short-owned-root
+- scenario: 需要创建隔离 worktree，但常规临时目录仍然过长，或先前位置受到同步/备份客户端临时文件干扰
+- use_when: `git worktree add` 明确报 `Filename too long`；或 worktree 内出现 `*.baiduyun.uploading.cfg` 等外部临时文件，导致候选树不再干净
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $base = "<FULL_40_CHAR_COMMIT>"
+  $shortLocalRoot = "<SHORT_LOCAL_ROOT>"  # 例如已确认可用的 C:\cwt；不要放进仓库或同步/备份监控树
+
+  if ($base -notmatch '^[0-9a-f]{40}$') { throw "baseline is not a full commit id" }
+  git -C $repoRoot cat-file -e "$base^{commit}"
+  if ($LASTEXITCODE -ne 0) { throw "baseline object is not available locally" }
+  if (-not (Test-Path -LiteralPath $shortLocalRoot -PathType Container)) {
+      throw "short local root must already exist and be approved"
+  }
+
+  $repoFull = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\')
+  $rootFull = [IO.Path]::GetFullPath($shortLocalRoot).TrimEnd('\')
+  if ($rootFull -eq $repoFull -or
+      $rootFull.StartsWith($repoFull + '\', [StringComparison]::OrdinalIgnoreCase)) {
+      throw "short local root must be outside the repository"
+  }
+
+  $taskToken = [guid]::NewGuid().ToString("N").Substring(0, 8)
+  $taskRoot = Join-Path $rootFull ("gw-" + $taskToken)
+  $isolatedTree = Join-Path $taskRoot "wt"
+  if (Test-Path -LiteralPath $taskRoot) { throw "task root already exists" }
+
+  $treePaths = @(git -C $repoRoot -c core.quotepath=false ls-tree -r --name-only $base)
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory baseline tree" }
+  $maxRelativeLength = 0
+  if ($treePaths.Count -gt 0) {
+      $maxRelativeLength = [int](($treePaths | ForEach-Object { $_.Length } |
+          Measure-Object -Maximum).Maximum)
+  }
+  $estimatedLongestPath = $isolatedTree.Length + 1 + $maxRelativeLength
+  if ($estimatedLongestPath -gt 240) {
+      throw "candidate worktree is still too deep: estimated longest path=$estimatedLongestPath"
+  }
+
+  New-Item -ItemType Directory -Path $taskRoot -ErrorAction Stop | Out-Null
+  git -C $repoRoot worktree add --detach $isolatedTree $base
+  if ($LASTEXITCODE -ne 0) {
+      git -C $repoRoot worktree list --porcelain
+      throw "worktree creation failed; inspect registration and exact target before cleanup"
+  }
+
+  $statusLines = @(git -C $isolatedTree status --porcelain=v1 --untracked-files=all)
+  $uploadTemps = @($statusLines | Where-Object { $_ -match '\.baiduyun\.uploading\.cfg(?:"|$)' })
+  if ($uploadTemps.Count -gt 0) {
+      throw "backup-client transient files detected; do not delete or commit them"
+  }
+  ```
+- substitute_only: `<REPO_ROOT>`, `<FULL_40_CHAR_COMMIT>`, `<SHORT_LOCAL_ROOT>`；短根必须是已经确认归本任务使用的本地目录
+- preflight: 用 `git worktree list --porcelain` 记录已有 worktree；确认短根不位于仓库、云同步或备份监控根目录内；按候选根长度加基线树内最长相对路径做保守预检。`240` 是为传统 `MAX_PATH` 留余量的任务级阈值，不是修改系统设置
+- failure_boundary: 如果创建失败，先检查 worktree 注册记录和准确目标目录；不要因路径失败就递归删除父目录。如果已出现上传临时文件，停止在该位置继续写入，做有界复查等待其自行消失，或在新的干净短根重建；未知临时文件不删除、不暂存
+- cleanup: 只有准确 worktree 已干净、候选提交和 push 均完成，才执行 `git -C $repoRoot worktree remove $isolatedTree`。如果临时文件仍使其不干净，不使用 `--force`，保留准确路径并报告
+- avoid: 不默认使用很深的 `%TEMP%` / `AppData` 路径；不把临时 worktree 建在项目仓库、同步目录或备份监控树内；不为绕过本次问题修改全局 `core.longpaths`、删除 `*.baiduyun.uploading.cfg`、跨 shell 强删目录或 `git worktree remove --force`
+- success_signal: worktree 在短、任务自有且不受监控的位置创建成功；初始状态无外部临时文件；候选流程结束后可用普通 `git worktree remove` 安全移除
+- capture_rule: 隔离 worktree 的安全边界不仅是 Git 状态，还包括父路径长度和外部监控范围；长路径失败或备份临时文件出现时，改换干净短根，不清理未知文件来伪造干净状态

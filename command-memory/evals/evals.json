@@ -186,6 +186,12 @@
       "prompt": "Windows 上我已经在 `C:\\Users\\me\\AppData\\Local\\Temp\\gw-abcd\\wt` 建了短且不受备份监控的 detached worktree，只改了批准的 3 个文件。`git commit` 仍报 `fatal: unable to write new index file`。`git rev-parse --absolute-git-dir` 指向 `D:\\repo\\.git\\worktrees\\wt`；连续两次 `HEAD`、状态、暂存清单和差异完全一致，已确认没有 `index.lock`、merge/rebase/cherry-pick、必须运行的 hook/签名或并行 Git 写入，远端 tip 也没变。能不能删锁或用 `commit-tree`，怎样安全完成发布？",
       "expected_output": "应加载 git-on-windows reference 的坑 9；指出短路径 linked worktree 的管理 index 仍位于原仓库 `.git/worktrees/<id>`，因此工作目录移走不等于 Git 管理目录独立。不得删改 Git 元数据、在原仓库或 linked worktree 上使用 write-tree/commit-tree/update-ref、原样重试提交或 force push。应从固定远端 40 位基线，在仓库和监控树之外新建任务自有的真正独立临时 Git 仓库；从本地源仓库精确取得该基线对象，配置已核实的原远端，只应用已审核的批准差异，运行完整验证，检查候选父提交和完整文件集合，并在推送前确认远端仍等于基线后 fast-forward push。",
       "files": []
+    },
+    {
+      "id": 32,
+      "prompt": "Windows 上我对任务自有的临时 worktree 执行普通 `git worktree remove`，命令返回 `failed to delete '.git/worktrees/wt': Invalid argument` 和非零退出码。现在目标工作树目录已经不存在，`git worktree list --porcelain` 也不再列出它，但删除前记录的准确管理目录 `D:\\repo\\.git\\worktrees\\wt` 还在；`git worktree prune --dry-run --verbose --expire now` 显示它可以清理。能不能直接删这个目录，或者用 `--force` 重试？",
+      "expected_output": "应加载 git-on-windows reference 的坑 9 部分移除模式；指出非零退出码不代表完全没删，当前是工作树目录已删除、管理记录未收口的部分成功。不得重试 remove、使用 `--force` 或手工删除 `.git/worktrees/<id>`。先确认目标目录不存在、准确管理目录来自删除前记录且归本任务所有，完整盘点 live worktree、refs、管理目录、Git 锁和并行写入；用完全相同参数连续两次 dry-run，只有完整候选集稳定且恰好只有该任务残留、其他注册工作树都存在且未锁定时，才运行普通 `git worktree prune --verbose --expire now`。随后验证只删除该管理记录，其他 worktree、refs 和管理目录不变；出现其他候选、临时离线、所有权不明、宿主策略拒绝或 prune 失败时保留准确残留并报告，不换 shell 或 API 绕过。",
+      "files": []
     }
   ]
 }

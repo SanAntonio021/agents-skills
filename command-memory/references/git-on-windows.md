@@ -682,3 +682,79 @@ linked worktree 顶层的 `.git` 是一个指针；它自己的 `HEAD`、index �
 - avoid: 不删除或改名原仓库的 `index` / `index.lock` / `COMMIT_EDITMSG`，不在原仓库或 linked worktree 上运行 `write-tree`、`commit-tree`、`update-ref` 或继续重试提交；不以完整网络 clone 作为默认回退，不复制源 `.git`，不改 remote、凭据、TLS 或全局 Git 配置，不 force push
 - success_signal: 独立仓库中的候选基于固定远端提交且只含批准路径，完整验证通过，远端只发生一次 fast-forward；原仓库的工作树、index 和 `HEAD` 均未被本次回退修改
 - capture_rule: 短路径 linked worktree 只隔离工作目录，不隔离位于原 `$GIT_DIR/worktrees` 的管理 index；该 index 被稳定阻断且已排除并发时，从本地对象库在真正独立的临时仓库重建同一候选
+
+### Pattern: git-classify-and-prune-partially-removed-worktree
+- scenario: 普通 `git worktree remove` 返回非零，但准确目标目录已经消失，`git worktree list` 也不再列出该工作树，原仓库 `$GIT_COMMON_DIR/worktrees/<id>` 却仍残留；需要判断删除是否已部分成功，并安全收口仅属于本任务的失效管理记录
+- use_when: 目标工作树和准确管理目录在删除前已经记录，或有同等强度的任务台账可以证明二者归本任务所有；目标目录现在确实不存在，管理目录仍是 common Git dir 下的一个直接子目录。无法证明准确路径、所有权或删除前状态时停止，不从报错文字猜 `<id>`
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<SOURCE_REPO>"
+  $targetTree = [IO.Path]::GetFullPath("<REMOVED_WORKTREE>")
+  $targetAdmin = [IO.Path]::GetFullPath("<PRECAPTURED_ADMIN_DIR>")
+
+  $commonGitDir = [IO.Path]::GetFullPath(
+      (git -C $repoRoot rev-parse --path-format=absolute --git-common-dir).Trim())
+  if ($LASTEXITCODE -ne 0) { throw "cannot resolve common Git directory" }
+  $adminRoot = (Join-Path $commonGitDir "worktrees").TrimEnd('\') + '\'
+  if (-not $targetAdmin.StartsWith($adminRoot, [StringComparison]::OrdinalIgnoreCase) -or
+      [IO.Path]::GetDirectoryName($targetAdmin).TrimEnd('\') -ne $adminRoot.TrimEnd('\')) {
+      throw "target admin record is not a direct child of the worktrees admin root"
+  }
+  if (Test-Path -LiteralPath $targetTree) { throw "worktree directory still exists; removal was not partial in the expected shape" }
+  if (-not (Test-Path -LiteralPath $targetAdmin -PathType Container)) { throw "expected stale admin record is absent" }
+
+  $adminId = Split-Path -Leaf $targetAdmin
+  $expectedPattern = '^Removing worktrees[/\\]' + [regex]::Escape($adminId) + '(?::|$)'
+  $liveBefore = @(git -C $repoRoot worktree list --porcelain)
+  if ($LASTEXITCODE -ne 0 -or $liveBefore -match '^(locked|prunable)(\s|$)') {
+      throw "live worktree inventory is unavailable, locked, or already ambiguous"
+  }
+  $livePaths = @($liveBefore | Where-Object { $_ -like 'worktree *' } |
+      ForEach-Object { $_.Substring(9) })
+  if (@($livePaths | Where-Object { -not (Test-Path -LiteralPath $_) }).Count -gt 0) {
+      throw "a registered worktree is temporarily unavailable"
+  }
+  $refsBefore = @(git -C $repoRoot for-each-ref --format='%(refname)%00%(objectname)')
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory refs" }
+  $adminBefore = @(Get-ChildItem -LiteralPath $adminRoot -Directory -Force -ErrorAction Stop |
+      ForEach-Object { [IO.Path]::GetFullPath($_.FullName) } | Sort-Object)
+
+  function Get-ExactPrunePlan {
+      $lines = @(git -C $repoRoot worktree prune --dry-run --verbose --expire now 2>&1)
+      if ($LASTEXITCODE -ne 0) { throw "worktree prune dry-run failed" }
+      if ($lines.Count -ne 1 -or [string]$lines[0] -notmatch $expectedPattern) {
+          throw "dry-run candidate set is not exactly the task-owned stale record"
+      }
+      return @($lines | ForEach-Object { [string]$_ })
+  }
+
+  $plan1 = @(Get-ExactPrunePlan)
+  $plan2 = @(Get-ExactPrunePlan)
+  if ((Compare-Object $plan1 $plan2).Count -ne 0) { throw "prune candidate set changed" }
+  # 此处还须确认没有并行 Git 写入者、Git 锁或进行中的 merge/rebase/cherry-pick。
+  git -C $repoRoot worktree prune --verbose --expire now
+  if ($LASTEXITCODE -ne 0) { throw "ordinary worktree prune failed" }
+
+  if (Test-Path -LiteralPath $targetAdmin) { throw "stale admin record remains" }
+  $liveAfter = @(git -C $repoRoot worktree list --porcelain)
+  $refsAfter = @(git -C $repoRoot for-each-ref --format='%(refname)%00%(objectname)')
+  $adminAfter = if (Test-Path -LiteralPath $adminRoot -PathType Container) {
+      @(Get-ChildItem -LiteralPath $adminRoot -Directory -Force -ErrorAction Stop |
+          ForEach-Object { [IO.Path]::GetFullPath($_.FullName) } | Sort-Object)
+  } else { @() }
+  $expectedAdminAfter = @($adminBefore | Where-Object {
+      -not $_.Equals($targetAdmin, [StringComparison]::OrdinalIgnoreCase) })
+  if ((Compare-Object $liveBefore $liveAfter).Count -ne 0 -or
+      (Compare-Object $refsBefore $refsAfter).Count -ne 0 -or
+      (Compare-Object $expectedAdminAfter $adminAfter).Count -ne 0) {
+      throw "non-target worktree, ref, or admin inventory changed"
+  }
+  ```
+- substitute_only: `<SOURCE_REPO>`、`<REMOVED_WORKTREE>`、`<PRECAPTURED_ADMIN_DIR>`；后两项必须来自删除前记录或同等强度的任务台账，不从错误消息、目录顺序或名称相似度推断
+- preflight: 先把非零退出码归类为“结果未知”，分别检查目标目录、`git worktree list --porcelain` 和准确管理目录；完整记录 live worktree、refs 与管理目录清单，并连续两次运行相同的 `git worktree prune --dry-run --verbose --expire now`。只有两次完整候选集合都恰好是一条且就是本任务残留，所有其他注册工作树均存在、未锁定，没有其他 Git 写入者、锁或进行中的操作，才能执行普通 prune
+- global_scope_warning: `git worktree prune` 面向整个仓库，不能按单个 worktree 定向清理；`--expire now` 还会让所有当前失效记录立即成为候选。因此 dry-run 出现第二条记录、候选变化、其他工作树暂时离线或所有权不明时，必须停止并保留残留
+- cleanup: 只运行与两次 dry-run 参数完全相同的普通 `git worktree prune --verbose --expire now`；完成后要求目标管理记录消失，live worktree、refs 和除目标外的管理目录清单逐项不变
+- avoid: 不重试 `git worktree remove`，不使用 `git worktree remove --force`，不手工删除 `.git/worktrees/<id>`，不删除 Git 锁或停止未知进程；宿主策略拒绝或普通 prune 失败时，不换 `cmd`、.NET、WSL、API 或其他 shell 绕过，也不扩大到其他候选
+- success_signal: 目标目录在操作前已经不存在，dry-run 的完整稳定候选集只有准确的任务自有残留；普通 prune 后只移除了该管理记录，其他 worktree、refs 和管理目录均未变化
+- capture_rule: `git worktree remove` 的非零退出码不证明“什么都没删”；目标目录已消失而管理记录仍在时按部分成功处理。无法把仓库级 prune 的全部候选收窄到唯一任务残留，就保留这份无害残留并报告准确路径

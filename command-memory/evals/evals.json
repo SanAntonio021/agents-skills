@@ -150,6 +150,12 @@
       "prompt": "我批准的 CC Switch 同步脚本修复已经在 detached worktree 中提交并推送。原本地工作副本还停在发布提交的父版本：`CcSwitchSkillSync.psm1` 和对应测试没有别的改动，但 README 同时有另一个任务留下的未提交说明。现在我另外明确同意把已发布修复更新到这份本地工作副本。请安全完成，不能覆盖 README 的另一段改动。",
       "expected_output": "应加载 git-on-windows 的隔离发布后本地对齐模式。把这次同意视为独立于发布的本地修改授权；先确认并行 Git 写入结束，记录 HEAD、完整状态和暂存集合并做两次一致的有界只读检查。对会改变行为的模块和测试文件，用 git hash-object --path 计算当前过滤后 blob，要求分别等于发布提交父版本中的 blob；不一致就停止。只用 apply_patch 应用已审查的准确 hunk，README 只改获批段落并保留另一任务的 hunk。修改后要求行为文件 blob 等于发布提交、暂存集合不变、README 原改动仍在，并运行相关完整测试。不得 checkout/restore/整文件复制，也不再次提交或推送。",
       "files": []
+    },
+    {
+      "id": 26,
+      "prompt": "我用 `Get-CimInstance Win32_Process` 搜索 `CommandLine` 中含 `Invoke-CcSwitchSkillSync.ps1` 的进程，结果每次都看到一个刚创建的 `pwsh.exe`，PID 还不断变化，因此判断锁一直没释放。怎样核实？",
+      "expected_output": "应加载 process-inspection reference；指出当前 PowerShell 的命令行本身也含有搜索词，所以查询可能命中检查器自己。先保存 `$selfPid = $PID`，再用 `ProcessId -ne $selfPid` 排除当前进程。不得仅凭命令行文字匹配断言另一个任务仍在运行或锁未释放；结果仍存在时，继续核对目标脚本、可执行文件路径、启动时间以及 helper 或 mutex 的实际状态。身份未核实时不得停止未知进程。",
+      "files": []
     }
   ]
 }

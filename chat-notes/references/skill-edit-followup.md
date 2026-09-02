@@ -132,6 +132,25 @@
     对齐完成或本来已经对齐后，调用 helper 前还要对本次目标 Skill 路径连续做两次有界状态读取；两次都必须没有
     tracked、staged 或 untracked 变化且结果一致，才算源码状态稳定。任一次不干净或两次结果不同都在后台操作前
     停止并留档，不靠等待后重试 helper 来掩盖并发写入。
+
+### 同步 helper 自身的来源门禁
+
+目标 Skill 已发布和同步 helper 本身可信是两个独立条件。helper 会修改 CC Switch 登记和运行时；执行前必须证明
+实际运行的代码来自可追溯、稳定的已发布版本，不能用目标 Skill 的干净状态替代这项检查。
+
+1. 从正式入口 `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`
+   开始，沿 `Import-Module`、点源、子脚本和本地包装程序递归列出实际加载的仓库文件；同时列出门禁期间准备执行的
+   测试入口及其本地依赖。固定版本的外部 `cc-switch-cli` 继续按既有版本和 SHA-256 契约单独核验。无法穷尽实际
+   执行文件集合时停止，不能先运行未知脚本再用输出反推它可信。
+2. 正常路径要求 helper 所属仓库的当前分支、`HEAD` 和远端目标分支对齐，工作区没有 tracked、staged 或 untracked
+   变化，且没有已定位的写入进程或 Git 锁。记录执行文件清单后连续做两次有界状态与哈希读取；两次结果相同才继续。
+3. 仓库脏或本地 `HEAD` 落后时，只允许一个严格例外：全部运行文件和将执行的测试文件都对应同一个准确的已发布
+   远端提交，按 Git clean-filter 后的 blob 逐项一致；该提交是当前远端 tip 的祖先，且这些路径从该提交到当前 tip
+   没有变化；两次有界读取的路径状态与完整哈希清单一致，并确认没有相关写入进程、锁或中途远端推进。先完成这些
+   静态证明，再运行该已发布版本规定的完整测试命令；测试通过后、正式调用前再复核远端 tip 和同一清单。任一条件
+   不成立都停止，不修改、暂存、清理、还原或对齐 helper 仓库来制造通过状态。
+4. “测试通过”、入口文件相同、少数文件 SHA-256 相同或以前成功运行都不能单独放行。门禁失败时不启动 helper，
+   不改用页面点击、数据库写入或运行时复制；按 `report-format.md` 保存准确仓库、提交、执行文件集合和失败证据。
 14. 当前任务立即调用
     `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，两个必填参数是
     `-Skills`（Skill 名称数组，不是 `-SkillNames`）和 `-ExpectedRemoteCommit`（40 位 SHA），例如

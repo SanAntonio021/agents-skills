@@ -1,6 +1,6 @@
 ---
 name: skill-check
-description: 检查本地技能目录和历史使用证据，确认 Claude/Codex 实际读取或调用过哪些技能，发现长期未见使用、疑似漏用、可能冗余、目录结构问题、重复或可合并技能、名字不一致、链接失效、空技能或源码与运行时未同步。Use when 用户要监测本地技能触发情况、查哪些 skill 一直没触发或可能该触发却没触发、区分 Claude 真正的 Skill 调用与启动时候选加载、确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、检查目录名和 `name:` 是否一致、分清源码、lark 实体层、cc-switch 与 Claude/Codex 运行时、排查 `Skill 不存在于 SSOT` 或“已经改了为什么没生效”；prefer this over `agent-rules` when 目标是执行一次具体审计。
+description: 检查本地技能目录和历史使用证据，确认 Claude/Codex 实际读取或调用过哪些技能，发现长期未见使用、疑似漏用、可能冗余、目录结构问题、重复或可合并技能、插件与本地技能重叠、名字不一致、链接失效、空技能或源码与运行时未同步。Use when 用户要监测本地技能触发情况、查哪些 skill 一直没触发或可能该触发却没触发、区分 Claude 真正的 Skill 调用与启动时候选加载、确认当前加载了哪些 skill、查同名冲突、判断技能是否该合并、判断应停用整个插件还是只停用其中的重复技能、检查目录名和 `name:` 是否一致、分清源码、lark 实体层、cc-switch 与 Claude/Codex 运行时、排查 `Skill 不存在于 SSOT` 或“已经改了为什么没生效”；prefer this over `agent-rules` when 目标是执行一次具体审计。
 ---
 
 # Skill 目录检查
@@ -53,6 +53,12 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 用户问“现在到底加载了什么”时，看对应工具的运行时层：Claude 看第 4 层，Codex 看第 5＋6 层再叠加第 2 层（直读）；不要把源文件目录当成当前已加载列表。
 
 停用某个技能用 `~\.codex\config.toml` 的 `[[skills.config]]`（`name`/`path` + `enabled = false`）。注意：config.toml 是 cc-switch 按 DB 快照渲染的产物，直接改会在 provider 切换时被冲回，持久化要进 cc-switch 的配置快照。
+
+插件与本地技能重叠时，先把插件包、插件内各技能和连接工具分开盘点。只要插件还提供本地技能没有的能力，
+就保留插件，仅考虑按**当前版本的精确绝对 `SKILL.md` 路径**停用重复技能；不能因为主题相同就关闭整个
+插件。写入前必须用一次性配置覆盖证明技能目录只少目标身份，连接工具和保留技能仍在；无法证明就停止，
+不能退化为整插件禁用。完整判据、真实能力 canary 和上下文差值口径见
+[references/skill-hygiene.md](references/skill-hygiene.md) 的“插件技能重叠的选择性处理”。
 
 ## 流程
 

@@ -28,6 +28,13 @@
 - preflight: `Test-Path "<SCRIPT_PATH>"`; `Test-Path "<WORKDIR>"`。
 - avoid: 失败后继续直接 `& "<SCRIPT_PATH>"`。
 
+### Pattern: child-powershell-preserve-inner-variables
+- use_when: 当前 PowerShell 通过 `powershell.exe` 或 `pwsh` 的 `-Command` 启动子进程，内层命令含 `$result`、`$LASTEXITCODE` 等变量；外层双引号会先展开这些变量，使赋值或失败判断在传入子进程前已经损坏。
+- preferred_shape: 多步测试或校验写入一份短小、可检查的 UTF-8 `.ps1`，再用 `powershell.exe -NoLogo -NoProfile -NonInteractive -File "<SCRIPT_PATH>" <ARGS>`；减少两层 PowerShell 同时解析同一段代码。
+- short_shape: 确需 `-Command` 时，外层使用单引号原样传递完整脚本块，内层路径改用双引号，例如 `powershell.exe -NoLogo -NoProfile -NonInteractive -Command '& { $result = Invoke-Pester "<TEST_PATH>" -PassThru; Write-Output ("passed={0} failed={1}" -f $result.PassedCount,$result.FailedCount); if ($result.FailedCount -gt 0) { exit 1 } }'`。
+- acceptance: 子进程输出必须证明目标测试实际运行，并给出通过数和失败数；调用方再检查子进程退出码。只有退出码 `0` 而没有有效测试汇总，不能算通过。
+- avoid: 用外层双引号包住含 `$变量` 的整段 `-Command`；看到 `= is not recognized`、`.FailedCount is not recognized` 等内层命令损坏迹象后仍把父进程退出码 `0` 当作成功。
+
 ### Pattern: dotnet-io-absolute-path
 - use_when: PowerShell 里调用 .NET 文件 API（`[IO.File]::ReadAllText/WriteAllText/ReadAllBytes` 等）做读写或批量替换。
 - shape: `$f = Join-Path "<ABS_ROOT>" "<REL_PATH>"; [IO.File]::WriteAllText($f, $text, (New-Object Text.UTF8Encoding($hasBom)))`

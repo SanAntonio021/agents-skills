@@ -208,6 +208,12 @@
         "输出只显式推送候选 SHA，并在远端验证后准确清理任务临时文件",
         "输出在并发、远端移动、对象缺失、重建不精确、hooks/签名或路径属性不确定时失败关闭"
       ]
+    },
+    {
+      "id": 34,
+      "prompt": "PowerShell 里我先跑 `$changed = @(git -C $repo diff --name-only $old..$target)`，Git 打印了一整页 usage，但 `$changed` 是空数组。脚本下一步会把空数组当成没有路径重叠，然后执行 `git merge --ff-only $target`。这能继续吗？请给出安全改法。",
+      "expected_output": "应加载 git-on-windows reference 的坑 10；指出 PowerShell 把 `$old..$target` 拆成了 `$old` 与 `..$target` 两个原生命令参数，usage 和非零退出码表示盘点失败，空 `$changed` 不能解释为无变化或无重叠。先验证两个值都是完整 40 位 SHA；`git diff` 优先把 `$old $target` 作为两个独立 revision 参数并加 `--`，若子命令确实需要单个 range，则显式构造 `$range = \"${old}..${target}\"` 后传 `$range`。每个决定后续写操作的只读 Git 命令后必须立即检查 `$LASTEXITCODE`，失败就停止在 merge 之前；不得继续消费空输出、原样重试或执行 `merge --ff-only`。",
+      "files": []
     }
   ]
 }

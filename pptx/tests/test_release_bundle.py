@@ -46,6 +46,31 @@ def write_presentation(path: Path, slide_texts: list[str], *, global_text: str =
             package.writestr(name, data)
 
 
+def prepare_release(root: Path, *, require_design_acceptance: bool = True) -> tuple[Path, Path]:
+    bundle = release.initialize_release(
+        root,
+        "评审稿",
+        date="20260828",
+        require_design_acceptance=require_design_acceptance,
+    )
+    (bundle / "final.pptx").write_bytes(b"candidate-v1")
+    (bundle / "final.pdf").write_bytes(b"pdf-v1")
+    (bundle / "png").mkdir()
+    (bundle / "png" / "slide-1.png").write_bytes(b"render-v1")
+    (bundle / "evidence").mkdir()
+    (bundle / "evidence" / "gates.json").write_text("{}", encoding="utf-8")
+    return bundle, bundle / "release_manifest.json"
+
+
+PASSING_STATUSES = {
+    "static": "PASS",
+    "lo_render": "PASS",
+    "native_open": "PASS",
+    "native_render": "PASS",
+    "visual_qa": {"status": "PASS", "scope": "FULL_DECK"},
+}
+
+
 class ReleaseBundleTests(unittest.TestCase):
     def test_initialize_creates_versioned_bundle_and_refuses_existing_version(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -57,6 +82,79 @@ class ReleaseBundleTests(unittest.TestCase):
             self.assertTrue((first / "release_manifest.json").is_file())
             with self.assertRaises(release.ReleaseBundleError):
                 release._write_json(first / "release_manifest.json", {}, refuse_existing=True)
+
+    def test_required_design_acceptance_starts_pending(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bundle = release.initialize_release(
+                Path(temp_dir),
+                "设计稿",
+                date="20260828",
+                require_design_acceptance=True,
+            )
+            manifest = json.loads((bundle / "release_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(
+                manifest["acceptance"]["design_acceptance"],
+                {"required": True, "status": "PENDING"},
+            )
+
+    def test_non_design_release_keeps_existing_completion_behavior(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, manifest_path = prepare_release(
+                Path(temp_dir),
+                require_design_acceptance=False,
+            )
+            result = release.finalize_release(manifest_path, PASSING_STATUSES)
+            self.assertEqual(result["status"], "COMPLETE")
+
+    def test_design_acceptance_binds_candidate_and_allows_complete_release(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bundle, manifest_path = prepare_release(Path(temp_dir))
+            receipt = release.record_design_acceptance(
+                manifest_path,
+                "PASS",
+                "用户并排查看后确认此版本可作为最终稿。",
+            )
+            self.assertEqual(receipt["status"], "PASS")
+            self.assertEqual(receipt["render_count"], 1)
+            result = release.finalize_release(manifest_path, PASSING_STATUSES)
+            self.assertEqual(result["status"], "COMPLETE")
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            design = manifest["acceptance"]["design_acceptance"]
+            self.assertEqual(design["candidate_pptx"]["sha256"], receipt["candidate_sha256"])
+            self.assertEqual(design["status"], "PASS")
+            self.assertEqual(design["statement"], "用户并排查看后确认此版本可作为最终稿。")
+
+    def test_candidate_or_render_change_makes_design_acceptance_stale(self):
+        for changed_name in ("final.pptx", "png/slide-1.png"):
+            with self.subTest(changed_name=changed_name), tempfile.TemporaryDirectory() as temp_dir:
+                bundle, manifest_path = prepare_release(Path(temp_dir))
+                release.record_design_acceptance(manifest_path, "PASS", "我确认当前候选稿。")
+                (bundle / changed_name).write_bytes(b"changed-after-verdict")
+                result = release.finalize_release(manifest_path, PASSING_STATUSES)
+                self.assertEqual(result["status"], "INCOMPLETE")
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                design = manifest["acceptance"]["design_acceptance"]
+                self.assertEqual(design["status"], "STALE")
+                self.assertIn("changed after", design["stale_reason"])
+
+    def test_rejected_design_candidate_remains_incomplete(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, manifest_path = prepare_release(Path(temp_dir))
+            release.record_design_acceptance(
+                manifest_path,
+                "REJECTED",
+                "整体效果一般，文字居中仍有问题。",
+            )
+            result = release.finalize_release(manifest_path, PASSING_STATUSES)
+            self.assertEqual(result["status"], "INCOMPLETE")
+
+    def test_gate_status_file_cannot_forge_design_acceptance(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, manifest_path = prepare_release(Path(temp_dir))
+            statuses = dict(PASSING_STATUSES)
+            statuses["design_acceptance"] = {"status": "PASS"}
+            with self.assertRaises(release.ReleaseBundleError):
+                release.finalize_release(manifest_path, statuses)
 
     def test_snapshot_excludes_bundle_and_detects_external_changes(self):
         with tempfile.TemporaryDirectory() as temp_dir:

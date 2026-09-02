@@ -20,8 +20,9 @@ images, fills or enhances a template, adds narration or animation, or explicitly
   here.
 - Keep reading, extraction, inspection, validation, combining/splitting, and small deterministic edits
   in this local `pptx` skill.
-- After `ppt-master` produces its final candidate, return here for the independent local acceptance
-  layers below. Upstream workflow completion is not a substitute for local release evidence.
+- After `ppt-master` produces a candidate, return here for package editability audit, rendered
+  comparison, independent gates, and exact-candidate user visual acceptance. Upstream workflow
+  completion is not local release evidence.
 - If an explicitly requested `ppt-master` is unavailable or its integrity guard fails, report the
   blocker and stop. Do not silently replace it with a system skill, an ad hoc generator, or the
   zero-exposure upstream mirror.
@@ -150,6 +151,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/add_slide.py unpacked/ slide2.xml [--after slideN.xml]` | Duplicate a slide (or a `slideLayoutN.xml`) with all the package bookkeeping. Also takes a `.pptx` directly with `-o out.pptx` |
 | `scripts/clean.py unpacked/` | Delete slides, media, and rels no longer referenced. Run **after** `<p:sldIdLst>` is final |
 | `scripts/release_bundle.py` | Create non-overwriting formal release directories, canonical external-output snapshots, revision slide-difference proofs, and final artifact manifests |
+| `scripts/pptx_editability_audit.py deck.pptx [--json-out PATH] [--fail-on-flattened]` | Report native objects, pictures/SVG media, likely flattened slides, and centered-but-top-anchored text that needs rendered review |
 | `scripts/verify_ppt_master_pin.py --skill-root <path> [--json-out PATH]` | Verify the active CC Switch-installed `ppt-master` tree against the external bootstrap/transition/stable pin before handoff |
 | `scripts/python_runtime_preflight.py [--candidate PATH] [--json-out PATH]` | Select a verified Python runtime for static PPTX QA; import-checks `defusedxml`, `lxml`, and `python-pptx`, and never installs packages |
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
@@ -220,7 +222,8 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
 
    The command creates `<topic>_YYYYMMDD_vNN` and refuses to reuse an existing directory. Keep the
    manifest, PPTX, PDF, PNGs, and QA evidence inside that directory. Do not append `fixed`, `final2`,
-   or similar parallel names after rendering has started.
+   or similar parallel names after rendering has started. For high-design work, append
+   `--require-design-acceptance` so technical gates cannot substitute for the user's visual verdict.
 
 2. **Snapshot the external output root consistently.** After the fresh bundle exists, create a before
    snapshot using the same canonical root and exclusion for the after snapshot:
@@ -248,16 +251,19 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    count, or parent-evidence difference returns `FULL_VISUAL_QA_REQUIRED` and requires every page to be
    inspected. A partial or unverified native Office gate never becomes a complete release claim.
 
-4. **Finalize and record the release.** After all declared files and evidence exist, run:
+4. **Record visual acceptance and finalize.** For a high-design release, show the exact rendered
+   candidate to the user first. Only after their explicit verdict, bind it to the PPTX and PNG bytes:
 
    ```powershell
+   python scripts/release_bundle.py record-design-acceptance --manifest <release-dir>/release_manifest.json `
+     --status PASS --statement <user-verdict>
    python scripts/release_bundle.py finalize `
      --manifest <release-dir>/release_manifest.json --status-json <release-dir>/evidence/gates.json
    ```
 
-   The manifest records artifact hashes, missing files, each acceptance layer, visual scope, and one of
-   `COMPLETE`, `PARTIAL_ACCEPTANCE`, or `INCOMPLETE`. The helper never starts PowerPoint or LibreOffice;
-   use the existing independent gates and `libreoffice-runner` for those steps.
+   Use `REJECTED` when that is the verdict; never infer approval. Any later PPTX or PNG change makes
+   the receipt `STALE`. The manifest records hashes, acceptance layers, visual scope, and `COMPLETE`,
+   `PARTIAL_ACCEPTANCE`, or `INCOMPLETE`. The helper never starts PowerPoint or LibreOffice.
 
 When filling in a template:
 

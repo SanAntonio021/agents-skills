@@ -137,6 +137,32 @@
         "It may offer the native keep-text-only Quick Access Toolbar command for repeated use, while making clear that this does not rebind Ctrl+V.",
         "It does not recommend Ctrl+Shift+V as a plain-text shortcut or introduce AutoHotkey, PowerToys, macros, or another third-party workaround."
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "PPT Master 已经生成了一组 SVG 预览并导出最终 PPTX。用户问：最后真的能在幻灯片里作为各个元素编辑吗？请验收最终文件，不能只看 SVG 或导出日志。",
+      "expected_output": "直接审计最终 PPTX 包，分别报告原生文字、形状、组合对象、图片、SVG 媒体和整页图片；说明原生对象可编辑、普通图片内部不可拆分，并把机器可读结果与渲染检查一起留存。",
+      "files": [],
+      "expectations": [
+        "The final PPTX package is inspected directly and the report is bound to its raw SHA-256 identity.",
+        "Native text shapes, other shapes, groups, pictures, SVG media, and exact full-slide pictures are counted separately.",
+        "The answer does not infer final editability from SVG previews, exporter logs, or a merely parsable package.",
+        "Raster pictures are described as movable/resizable/croppable but not internally decomposable PowerPoint elements.",
+        "Likely flattened slides and centered-but-top-anchored text shapes are surfaced for rendered review."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "PPT Master 返回的精修候选稿结构校验通过，但用户说很多文字没有真正居中，而且整体效果一般、没有成熟模板好。这个文件原先准备作为正式交付。请决定如何记录和继续。",
+      "expected_output": "把当前文件保留为候选稿并记录 REJECTED 或 PENDING 的设计验收，不宣称最终完成；将候选与成熟模板并排复核，下一版以模板为质量基线，由 PPT Master 负责上游设计、由本地 pptx 完成原生收口，再让用户对精确文件重新确认。",
+      "files": [],
+      "expectations": [
+        "Technical structure/render gates are not promoted into aesthetic acceptance.",
+        "The current candidate remains INCOMPLETE when the explicit user design verdict is REJECTED or PENDING.",
+        "The supplied mature template or source is used in a side-by-side rendered comparison when it is the quality target.",
+        "The next iteration repairs the owning source rather than patching an installed runtime or the distribution-only Fork adapter.",
+        "Any later user approval is bound to the exact PPTX and reviewed PNG hashes and becomes stale after either changes."
+      ]
     }
   ]
 }

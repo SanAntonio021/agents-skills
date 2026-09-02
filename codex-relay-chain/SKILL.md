@@ -14,7 +14,9 @@ description: >
   CC Switch、`codex login` 报 Windows `10013`、CC Switch 生成保留 provider 覆盖、同一旧任务在
   登录或 provider 切换后持续报 OAuth 刷新/`INVALID_API_KEY` 而新任务正常，或需要用 Codex
   对话分叉保留历史继续工作，或要求 CC Switch 统一管理 provider、认证和 Common Config 基线，
-  同时区分 Codex Desktop 的新任务默认值与任务级覆盖，并把 watcher 限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
+  同时区分 Codex Desktop 的新任务默认值与任务级覆盖，或遇到完全访问已开启但命令仍被
+  `blocked by policy`、自动审批没有出现、`approval_policy` 与桌面权限模式互相冲突，并把 watcher
+  限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
 ---
 
 # Codex 中转链维护
@@ -35,8 +37,8 @@ Codex -> CodexCont 127.0.0.1:8787/v1 -> CC Switch 127.0.0.1:15721/v1 -> 当前�
 
 - `ccswitch-owned`：当前默认。provider、认证、provider 固定模型和 Common Config 基线只通过
   CC Switch 配置；Codex Desktop 仍可按用户操作更新新任务默认值和任务级设置。本地 watcher 不写
-  `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop 的两个 `full-access`
-  权限字段，并记录退出与启动后漂移。
+  `config.toml`、`auth.json` 或 CC Switch 数据库，只管理 Codex Desktop 的两个权限字段；当前目标值
+  为 `guardian-approvals`，并记录退出与启动后漂移。
 - `legacy-writer`：历史配置 writer。只有用户明确要求回滚旧架构并接受争用风险时才进入；不能因为
   检测到漂移就自行启用。
 
@@ -118,6 +120,30 @@ CC Switch 的 Common Config 与 provider 模型固定值要分开理解。CC Swi
 采用默认值，不是 watcher 应补的缺口。`model_reasoning_effort` 和
 `[desktop].show-context-window-usage = true` 可以由 Common Config 设定共同基线，但 Common Config
 不是阻止 Codex Desktop 后续更新新任务默认值的锁。
+
+#### 审批策略与桌面权限必须成组核对
+
+看到“完全访问已经开启，但删除或其他命令仍在 PowerShell 启动前被 `blocked by policy` 拒绝”时，
+不要把 `danger-full-access` 当成自动批准。依次核对四层：CC Switch Common Config、当前 provider 的
+`commonConfigEnabled`、最终生成的 `config.toml`，以及当前任务启动时缓存的审批策略。
+
+需要自动审批时，推荐共同基线为：
+
+```toml
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "danger-full-access"
+```
+
+桌面权限目标同时设为 `guardian-approvals`。`sandbox_mode` 可以保留完全访问；它只决定底层访问范围。
+`approval_policy = "never"` 会关闭审批交接，因此即使配置了 `approvals_reviewer = "auto_review"`，
+命中宿主审批策略的命令也只能失败，不能交给审批器判断。
+
+通过 CC Switch 支持的后台服务或 CLI 更新 Common Config，并确认当前 provider 已启用
+`commonConfigEnabled`；不得直接改 `cc-switch.db` 或生成的 `config.toml`。审批策略由任务启动时读取，
+旧任务仍可能沿用原值；配置落盘只证明下一次启动的输入正确，必须在新任务中用一个原先会触发审批的
+窄范围动作验证审批器确实接管。若当前旧任务仍拒绝删除任务自产生的无害临时文件，保留并报告准确路径，
+按 `command-memory/references/archive-and-file-ops.md` 处理，不换 `cmd`、.NET 或其他 API 绕过宿主策略。
 
 #### 区分 Common Config、新任务默认值和任务级覆盖
 

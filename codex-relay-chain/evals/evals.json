@@ -81,11 +81,11 @@
     {
       "id": 10,
       "prompt": "Codex 更新后，能力 watcher 一直重写 .codex-global-state.json，日志反复出现 FIXED 和 restart Codex required。新对话默认是否进入项目、selected-project 这两项都交给 Codex 自己管理。请定位写入循环并给出修复与验证标准。",
-      "expected_output": "应识别整份 JSON 重新序列化会因属性顺序、压缩格式、结尾换行或原子替换形成写入循环；新版 watcher 只管理两个 full-access 权限字段，运行中只做 AuditOnly，退出后才恢复权限，并记录启动后漂移。它不得写 config.toml、auth.json、provider、模型或 Codex Desktop 自管字段。验证应包含 PowerShell 语法检查、四项离线测试、安装 WhatIf、任务 XML 解析和至少 60 秒 config.toml 稳定性；auth.json 哈希变化按 OAuth 结构复核。",
+      "expected_output": "应识别整份 JSON 重新序列化会因属性顺序、压缩格式、结尾换行或原子替换形成写入循环；新版 watcher 只管理两个 guardian-approvals 权限字段，运行中只做 AuditOnly，退出后才恢复权限，并记录启动后漂移。它不得写 config.toml、auth.json、provider、模型或 Codex Desktop 自管字段。验证应包含 PowerShell 语法检查、四项离线测试、安装 WhatIf、任务 XML 解析和至少 60 秒 config.toml 稳定性；auth.json 哈希变化按 OAuth 结构复核。",
       "files": [],
       "expectations": [
         "识别整份 JSON 重新序列化与原文本比较会因格式差异形成 watcher 写入循环",
-        "只在两个 full-access 权限字段的语义值实际变化且 Codex 已退出时恢复，运行中只做 AuditOnly",
+        "只在两个 guardian-approvals 权限字段的语义值实际变化且 Codex 已退出时恢复，运行中只做 AuditOnly",
         "不删除也不强制设置 selected-project 和 hotkey-window-projectless-default-enabled，交给 Codex App 管理",
         "明确禁止 watcher 写 config.toml、auth.json、provider、模型或 CC Switch 数据库",
         "验证包含 PowerShell 语法检查、四项离线测试、安装 WhatIf 和计划任务 XML 解析",
@@ -161,13 +161,13 @@
     },
     {
       "id": 16,
-      "prompt": "请把本机 Codex 配置改成新版方案：CC Switch 是 provider、认证、模型、推理强度和 Common Config 的唯一入口；watcher 只恢复桌面 full-access 权限、做退出审计和启动后漂移记录。保留 show-context-window-usage=true，不改已有 provider/中转/认证数据库和 CodexAutoContinue，CodexCapabilityCheck 继续 Disabled。工作区有未提交改动，请先检查源码、任务和运行态，再实施并做离线测试与任务 XML 验证。",
-      "expected_output": "应先读取规则并只读检查源码、Git 状态、计划任务 XML、进程、端口和配置/数据库哈希；同时纠正“CC Switch 是所有模型和推理强度的唯一写入者”这一过强目标。provider、认证、provider 固定模型和 Common Config 基线只经 CC Switch，Codex Desktop 仍可正常维护新任务默认值与任务级设置；watcher 只管理 .codex-global-state.json 的两个 full-access 权限字段并做退出/启动审计。应说明 Common Config 排除根级 model，模型属于 provider，官方 provider 模型为空可表示未固定。保持 show-context-window-usage=true、CodexCapabilityCheck Disabled、CodexAutoContinue 与 CC Switch 数据库哈希不变；运行语法检查、四项离线测试、安装 WhatIf、正式任务 XML 解析，并只在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口做 60 秒稳定性核验。",
+      "prompt": "请把本机 Codex 配置改成新版方案：CC Switch 是 provider、认证、模型、推理强度和 Common Config 的唯一入口；watcher 只恢复桌面 guardian-approvals 权限、做退出审计和启动后漂移记录。保留 show-context-window-usage=true，不改已有 provider/中转/认证数据库和 CodexAutoContinue，CodexCapabilityCheck 继续 Disabled。工作区有未提交改动，请先检查源码、任务和运行态，再实施并做离线测试与任务 XML 验证。",
+      "expected_output": "应先读取规则并只读检查源码、Git 状态、计划任务 XML、进程、端口和配置/数据库哈希；同时纠正“CC Switch 是所有模型和推理强度的唯一写入者”这一过强目标。provider、认证、provider 固定模型和 Common Config 基线只经 CC Switch，Codex Desktop 仍可正常维护新任务默认值与任务级设置；watcher 只管理 .codex-global-state.json 的两个 guardian-approvals 权限字段并做退出/启动审计。应说明 Common Config 排除根级 model，模型属于 provider，官方 provider 模型为空可表示未固定。保持 show-context-window-usage=true、CodexCapabilityCheck Disabled、CodexAutoContinue 与 CC Switch 数据库哈希不变；运行语法检查、四项离线测试、安装 WhatIf、正式任务 XML 解析，并只在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口做 60 秒稳定性核验。",
       "files": [],
       "expectations": [
         "先检查规则、源码、未提交改动、任务 XML、运行进程、端口和配置基线",
         "把 CC Switch 的写入边界限定为 provider、认证、provider 固定模型和 Common Config 基线，并保留 Desktop 对新任务默认值及任务级设置的正常维护",
-        "watcher 只管理两个 full-access 权限字段，并执行退出恢复、运行中审计和启动后漂移记录",
+        "watcher 只管理两个 guardian-approvals 权限字段，并执行退出恢复、运行中审计和启动后漂移记录",
         "不修改现有 provider、中转、认证数据库或 CodexAutoContinue，CodexCapabilityCheck 保持 Disabled",
         "保留 show-context-window-usage=true，并正确区分 Common Config 与 provider 级 model",
         "运行语法检查、四项离线测试、安装 WhatIf、任务 XML 解析，并只在无 provider/Common Config/新任务草稿设置变化的受控空闲窗口做至少 60 秒稳定性核验"
@@ -210,6 +210,20 @@
         "不通过修改本地 provider、用户分组、额度或其他无关配置掩盖上游协议缺陷",
         "给上游维护者说明要部署的 delegation/call_id 修复和部署后的真实 Codex/Responses 验收方法",
         "说明监控只能提醒或续接诊断，只有用户明确认可仅提醒价值后才创建"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "Codex Desktop 已经开了完全访问，但删除一个由当前任务创建的临时 Git 索引时仍提示 blocked by policy，PowerShell 根本没有启动，也没有出现自动审批。现在配置同时有 approval_policy=never、approvals_reviewer=auto_review 和 sandbox_mode=danger-full-access。请判断原因并修好，不能控制鼠标、不能直接写 CC Switch 数据库或生成的 config.toml，也不要换 cmd 或 .NET 强删。",
+      "expected_output": "应识别 danger-full-access 只决定底层访问范围，approval_policy=never 会关闭审批交接，使需要审批的命令在 shell 启动前失败，auto_review 无法接管。应通过 CC Switch 支持的后台入口把 Common Config 调整为 approval_policy=on-request、approvals_reviewer=auto_review，并保留 sandbox_mode=danger-full-access；确认当前 provider 的 commonConfigEnabled 已启用，最终 config.toml 正确生成，桌面 watcher 目标为 guardian-approvals。还应说明旧任务可能缓存原策略，必须在新任务中验证；旧任务中的无害残留应报告路径并保留，不能换 shell 或 API 绕过策略。",
+      "files": [],
+      "expectations": [
+        "区分 sandbox_mode 的访问范围与 approval_policy 的审批交接，指出 never 会让 auto_review 无法接管",
+        "通过 CC Switch 支持的后台入口修改 Common Config，不直接写数据库或生成的 config.toml",
+        "采用 on-request、auto_review、danger-full-access 与桌面 guardian-approvals 的兼容组合",
+        "确认当前 provider 启用 commonConfigEnabled，并核对最终生成配置",
+        "说明任务启动时会缓存审批策略，必须在新任务中做运行态验收",
+        "策略拒绝后不改用 cmd、.NET 或其他 API 强删，只报告并保留无害残留"
       ]
     }
   ]

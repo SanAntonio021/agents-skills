@@ -2,7 +2,7 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有六类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有七类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
@@ -10,8 +10,9 @@
 4. **同一文件混有批准与未批准改动**：整文件暂存会把未授权内容带入提交，手工编写 patch 又容易因 hunk 行数错误损坏。
 5. **云盘临时文件进入 Git 元数据**：上传临时 ref 会让 Git 报 `bad object`，`FETCH_HEAD` 被占用会让 `fetch` 报 `Permission denied`。
 6. **并行任务共用同一 worktree**：即使修改路径不同，也会共用 index 和提交状态；`COMMIT_EDITMSG` / index 占用、`HEAD` 或暂存文件集合漂移都可能把另一任务的内容带入本次提交。
+7. **工作树已等于远端但快进仍被阻断**：远端继续推进后，本地相关文件已经逐项等于新 tip，Git 仍因它们相对旧 `HEAD` 显示为修改而拒绝普通快进。
 
-按对应 pattern 处理。第 4、6 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
+按对应 pattern 处理。第 4、6、7 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
 
 ## 目录
 
@@ -21,6 +22,7 @@
 - [坑 4：同一文件混合改动](#pitfall-4)
 - [坑 5：临时 ref 或 FETCH_HEAD 锁](#pitfall-5)
 - [坑 6：并行任务共享 worktree](#pitfall-6)
+- [坑 7：工作树已等于远端但快进仍被阻断](#pitfall-7)
 
 <a id="pitfall-1"></a>
 
@@ -391,3 +393,119 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
 - avoid: 不删除 `COMMIT_EDITMSG`、`index.lock` 或其他 Git 元数据，不停止未知进程，不在共享 index 上运行 `commit-tree`，不清空、取消暂存或复用共享暂存区，不用 `stash`、`reset`、`checkout`、`restore` 伪造干净状态，不因一个锁就宣称云盘回滚
 - success_signal: 本次候选提交基于固定远端提交且只含批准路径，远端仅发生一次 fast-forward；原共享 worktree 的文件、index 和 `HEAD` 未被本任务改动
 - capture_rule: 并行任务只要共用同一 worktree，就不能靠“文件路径不同”判断提交隔离；出现提交锁或状态漂移后，保存现场、放弃共享 index，并在独立 worktree 重建本次批准提交
+
+<a id="pitfall-7"></a>
+
+## 坑 7：工作树已等于远端，普通快进仍被本地修改阻断
+
+远端在并行任务后继续推进时，本地工作树可能已经以未提交修改的形式包含了同样内容。此时
+`git merge --ff-only` 会为保护本地文件而拒绝更新，即使最终文件逐项等于远端。只有完整 tree 可以证明一致；
+少量文件肉眼相同或测试通过都不够。下面的模式基于 Git 官方的
+[`update-index --cacheinfo`](https://git-scm.com/docs/git-update-index.html) 和
+[`update-ref <ref> <new> <old>`](https://git-scm.com/docs/git-update-ref.html)，只校准 index 和分支 ref，
+不改写工作树文件。
+
+### Pattern: git-align-index-and-ref-when-worktree-equals-remote
+- scenario: 当前分支落后于远端且可快进；普通快进因本地修改被拒绝，但完整核对证明工作树中的全部远端变化已经等于准确远端 tip
+- use_when: 用户已经另外批准校准当前仓库的 Git 记录；旧 `HEAD`、准确远端 tip、完整变化路径和其余 untracked 路径都已固定；暂存集合为空且没有并行 Git 写入者或锁
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $branchName = "<BRANCH>"
+  $remoteName = "<REMOTE>"
+  $oldHead = "<OLD_HEAD_40_SHA>"
+  $remoteCommit = "<REMOTE_TIP_40_SHA>"
+  $alignmentPaths = @("<RELATIVE_PATH_1>", "<RELATIVE_PATH_2>")
+
+  if ($env:GIT_INDEX_FILE) { throw "a pre-existing alternate Git index is active" }
+  if ($oldHead -notmatch '^[0-9a-f]{40}$' -or $remoteCommit -notmatch '^[0-9a-f]{40}$') {
+      throw "both commits must be full SHA values"
+  }
+  if ((git -C $repoRoot rev-parse HEAD).Trim() -ne $oldHead) { throw "local HEAD changed" }
+  if ((git -C $repoRoot symbolic-ref --quiet HEAD).Trim() -ne "refs/heads/$branchName") {
+      throw "the expected branch is not checked out"
+  }
+  if (@(git -C $repoRoot diff --cached --name-only).Count -ne 0) { throw "staged set is not empty" }
+  git -C $repoRoot cat-file -e "$remoteCommit`^{commit}"
+  if ($LASTEXITCODE -ne 0) { throw "the remote target object is not available locally" }
+  git -C $repoRoot merge-base --is-ancestor $oldHead $remoteCommit
+  if ($LASTEXITCODE -ne 0) { throw "local HEAD is not an ancestor of the remote target" }
+
+  $remotePaths = @(git -C $repoRoot diff --name-only --no-renames $oldHead $remoteCommit)
+  if (@(Compare-Object ($remotePaths | Sort-Object -Unique) ($alignmentPaths | Sort-Object -Unique)).Count -ne 0) {
+      throw "approved alignment paths do not equal the complete remote change set"
+  }
+  $trackedPaths = @(git -C $repoRoot diff --name-only)
+  $untrackedPaths = @(git -C $repoRoot ls-files --others --exclude-standard)
+  $localRelevant = @($trackedPaths + @($untrackedPaths | Where-Object { $alignmentPaths -contains $_ })) |
+      Sort-Object -Unique
+  if (@(Compare-Object $localRelevant ($alignmentPaths | Sort-Object -Unique)).Count -ne 0) {
+      throw "local changes do not exactly cover the remote change set"
+  }
+
+  $targetEntries = [ordered]@{}
+  foreach ($path in $alignmentPaths) {
+      $treeLine = @(git -C $repoRoot ls-tree $remoteCommit -- $path)
+      if ($treeLine.Count -eq 0) {
+          if (Test-Path -LiteralPath (Join-Path $repoRoot $path)) { throw "remote deletion still exists locally: $path" }
+          $targetEntries[$path] = $null
+          continue
+      }
+      if ($treeLine.Count -ne 1) { throw "remote path lookup is ambiguous: $path" }
+      $tab = $treeLine[0].IndexOf("`t")
+      if ($tab -lt 0) { throw "unexpected ls-tree output: $path" }
+      $meta = $treeLine[0].Substring(0, $tab) -split ' '
+      if ($meta.Count -ne 3 -or $meta[1] -ne 'blob' -or $meta[0] -notin @('100644', '100755')) {
+          throw "unsupported tree entry; stop instead of aligning it: $path"
+      }
+      $workOid = (git -C $repoRoot hash-object "--path=$path" -- $path).Trim()
+      if ($LASTEXITCODE -ne 0 -or $workOid -ne $meta[2]) { throw "working file differs from remote: $path" }
+      $targetEntries[$path] = [pscustomobject]@{ Mode = $meta[0]; Oid = $meta[2] }
+  }
+
+  $tempIndex = Join-Path ([IO.Path]::GetTempPath()) ("git-align-index-" + [guid]::NewGuid().ToString('N'))
+  try {
+      $env:GIT_INDEX_FILE = $tempIndex
+      git -C $repoRoot read-tree $oldHead
+      foreach ($path in $alignmentPaths) {
+          $entry = $targetEntries[$path]
+          if ($null -eq $entry) { git -C $repoRoot update-index --remove -- $path }
+          else { git -C $repoRoot update-index --add --cacheinfo $entry.Mode $entry.Oid $path }
+          if ($LASTEXITCODE -ne 0) { throw "temporary index update failed: $path" }
+      }
+      $candidateTree = (git -C $repoRoot write-tree).Trim()
+  } finally {
+      $env:GIT_INDEX_FILE = $null
+      Remove-Item -LiteralPath $tempIndex -Force -ErrorAction SilentlyContinue
+  }
+  $remoteTree = (git -C $repoRoot rev-parse "$remoteCommit`^{tree}").Trim()
+  if ($candidateTree -ne $remoteTree) { throw "candidate index tree does not equal the remote tree" }
+
+  $remoteLines = @(git -C $repoRoot ls-remote --exit-code --refs $remoteName "refs/heads/$branchName")
+  if ($LASTEXITCODE -ne 0 -or $remoteLines.Count -ne 1 -or
+      (($remoteLines[0] -split '\s+')[0]).Trim() -ne $remoteCommit) { throw "remote tip changed" }
+
+  try {
+      foreach ($path in $alignmentPaths) {
+          $entry = $targetEntries[$path]
+          if ($null -eq $entry) { git -C $repoRoot update-index --remove -- $path }
+          else { git -C $repoRoot update-index --add --cacheinfo $entry.Mode $entry.Oid $path }
+          if ($LASTEXITCODE -ne 0) { throw "real index update failed: $path" }
+      }
+      if ((git -C $repoRoot write-tree).Trim() -ne $remoteTree) { throw "real index tree does not equal remote" }
+      git -C $repoRoot update-ref -m "align: verified worktree equals $remoteName/$branchName" "refs/heads/$branchName" $remoteCommit $oldHead
+      if ($LASTEXITCODE -ne 0) { throw "guarded branch update failed" }
+  } catch {
+      if ((git -C $repoRoot rev-parse HEAD).Trim() -eq $oldHead) { git -C $repoRoot read-tree $oldHead }
+      throw
+  }
+  ```
+- substitute_only: 仓库、分支、远端、两个 40 位提交和完整相对路径集合；路径集合必须由 `旧 HEAD..远端 tip` 的完整差异产生，不能手填一个方便的子集
+- preflight: 连续两次读取 `HEAD`、唯一远端 tip、`git status --short`、完整暂存清单和 untracked 清单，结果必须一致；确认普通快进只被这些本地修改阻断；保存其余 untracked 路径，并检查与 alignment paths 不存在同路径或祖先、后代重叠；`git ls-files -u` 必须为空，`GIT_INDEX_FILE` 必须未设置，index 中不能有无法完整恢复的 intent-to-add、skip-worktree 或 assume-unchanged 状态
+- scope_limit: 上述骨架只处理普通 blob 和删除。symlink、gitlink、目录/文件类型变化、带换行文件名、属性过滤结果不稳定或无法一一核对时停止，改用隔离 worktree；不把这个模式用作普通 pull、merge 或清理脏工作区
+- candidate_check: 临时 index 与真实 index 的 `write-tree` 都必须等于远端提交的完整 tree；更新 ref 前再次读取唯一远端 tip；`update-ref` 必须传旧 `HEAD` 作为保护值
+- recovery: 如果真实 index 已开始更新但带旧值 ref 更新尚未成功，只在当前 `HEAD` 仍等于 `$oldHead`、原暂存集合为空且没有并行写入证据时，用 `git read-tree $oldHead` 恢复 index；条件不完整时保留现场并停止
+- avoid: 不使用 `stash`、`reset`、`checkout`、`restore`、整文件复制或覆盖工作树；不因几个文件哈希相同就推进分支；不清理其余 untracked 文件；不在远端再次推进后自动追赶
+- success_signal: `HEAD` 等于复核过的远端 tip，tracked 和 staged 状态为空，其余 untracked 路径集合逐项不变，相关验证通过；任何一项不成立都不报告已经对齐
+- capture_rule: 只有“完整远端变化路径都已在工作树中准确实现”才能把内容一致转换成 Git 记录一致；先用临时 index 证明完整 tree，再精确更新真实 index，并以旧值保护 ref 更新

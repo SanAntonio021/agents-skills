@@ -2,7 +2,7 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有八类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有九类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
@@ -12,6 +12,7 @@
 6. **并行任务共用同一 worktree**：即使修改路径不同，也会共用 index 和提交状态；`COMMIT_EDITMSG` / index 占用、`HEAD` 或暂存文件集合漂移都可能把另一任务的内容带入本次提交。
 7. **工作树已等于远端但快进仍被阻断**：远端继续推进后，本地相关文件已经逐项等于新 tip，Git 仍因它们相对旧 `HEAD` 显示为修改而拒绝普通快进。
 8. **隔离 worktree 的位置不合适**：仓库内最长相对路径叠加较长父目录后可能报 `Filename too long`；放在同步或备份监控树下，又可能混入 `*.baiduyun.uploading.cfg` 等外部临时文件。
+9. **linked worktree 的 index 仍受原仓库影响**：工作目录即使位于短且不受监控的本地路径，其 `HEAD`、index 等管理文件仍在原仓库的 `$GIT_DIR/worktrees/<id>`；原仓库管理目录被占用时，隔离提交仍可能报 `unable to write new index file`。
 
 按对应 pattern 处理。第 4、6、7 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
 
@@ -25,6 +26,7 @@
 - [坑 6：并行任务共享 worktree](#pitfall-6)
 - [坑 7：工作树已等于远端但快进仍被阻断](#pitfall-7)
 - [坑 8：worktree 路径过长或受备份客户端干扰](#pitfall-8)
+- [坑 9：linked worktree 的管理 index 仍被原仓库阻断](#pitfall-9)
 
 <a id="pitfall-1"></a>
 
@@ -586,3 +588,97 @@ Windows 下，较长父目录会和仓库内的长文件名叠加，导致 check
 - avoid: 不默认使用很深的 `%TEMP%` / `AppData` 路径；不把临时 worktree 建在项目仓库、同步目录或备份监控树内；不为绕过本次问题修改全局 `core.longpaths`、删除 `*.baiduyun.uploading.cfg`、跨 shell 强删目录或 `git worktree remove --force`
 - success_signal: worktree 在短、任务自有且不受监控的位置创建成功；初始状态无外部临时文件；候选流程结束后可用普通 `git worktree remove` 安全移除
 - capture_rule: 隔离 worktree 的安全边界不仅是 Git 状态，还包括父路径长度和外部监控范围；长路径失败或备份临时文件出现时，改换干净短根，不清理未知文件来伪造干净状态
+
+<a id="pitfall-9"></a>
+
+## 坑 9：linked worktree 的管理 index 仍被原仓库阻断
+
+linked worktree 顶层的 `.git` 是一个指针；它自己的 `HEAD`、index 等管理文件实际位于原仓库的
+`$GIT_DIR/worktrees/<id>`。因此，把工作目录挪到短、本地且不受监控的位置，只隔离了工作树路径，
+没有把 Git 管理目录搬走。Git 官方文档也明确说明了这层关系：
+[`git-worktree`](https://git-scm.com/docs/git-worktree.html) 和
+[`gitrepository-layout`](https://git-scm.com/docs/gitrepository-layout)。
+
+### Pattern: git-rebuild-approved-candidate-in-independent-repository
+- scenario: 已在短且不受监控的 linked worktree 中重建批准内容，但 `git commit` 仍因其管理 index 位于原仓库而报 `unable to write new index file`；需要避开原仓库的 Git 管理目录完成同一候选提交
+- use_when: `git rev-parse --absolute-git-dir` 明确落在原仓库 `$GIT_COMMON_DIR/worktrees/<id>`；连续两次只读检查的 `HEAD`、状态、暂存集合和完整候选差异一致；没有已定位的并行 Git 写入者、`index.lock`、merge / rebase / cherry-pick 状态或必须执行的 hook / 签名；远端目标分支仍等于固定基线。任一条件不成立时停止，不使用本模式
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $sourceRepo = "<SOURCE_REPO>"
+  $linkedTree = "<FAILED_LINKED_WORKTREE>"
+  $branch = "<BRANCH>"
+  $approvedPaths = @("<PATH_1>", "<PATH_2>")
+  $taskRoot = "<SHORT_TASK_OWNED_ROOT>"
+  $independentRepo = Join-Path $taskRoot "repo"
+  $patchPath = Join-Path $taskRoot "approved.patch"
+
+  $base = (git -C $linkedTree rev-parse HEAD).Trim()
+  if ($base -notmatch '^[0-9a-f]{40}$') { throw "baseline is not a full commit id" }
+  $linkedGitDir = [IO.Path]::GetFullPath((git -C $linkedTree rev-parse --absolute-git-dir).Trim())
+  $commonGitDir = [IO.Path]::GetFullPath((git -C $linkedTree rev-parse --path-format=absolute --git-common-dir).Trim())
+  $linkedIndex = [IO.Path]::GetFullPath((git -C $linkedTree rev-parse --path-format=absolute --git-path index).Trim())
+  $adminRoot = (Join-Path $commonGitDir "worktrees").TrimEnd('\') + '\'
+  if (-not $linkedGitDir.StartsWith($adminRoot, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "failed checkout is not a linked worktree under the source repository"
+  }
+  if (-not $linkedIndex.StartsWith($linkedGitDir.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)) {
+      throw "cannot prove which administrative index failed"
+  }
+
+  $remoteUrl = (git -C $sourceRepo remote get-url origin).Trim()
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($remoteUrl)) { throw "cannot resolve source remote" }
+  $remoteLines = @(git -C $sourceRepo ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $remoteLines.Count -ne 1) { throw "remote lookup failed or was ambiguous" }
+  $remoteBase = (($remoteLines[0] -split '\s+')[0]).Trim()
+  if ($remoteBase -ne $base) { throw "remote baseline moved" }
+
+  # $taskRoot 必须按坑 8 验证为短、任务自有、尚不存在，且位于仓库和监控树之外。
+  if (Test-Path -LiteralPath $taskRoot) { throw "task root already exists" }
+  New-Item -ItemType Directory -Path $taskRoot -ErrorAction Stop | Out-Null
+  git -C $linkedTree diff --binary --full-index "--output=$patchPath" $base -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "approved patch export failed" }
+
+  git init $independentRepo
+  if ($LASTEXITCODE -ne 0) { throw "independent repository initialization failed" }
+  git -C $independentRepo remote add origin $remoteUrl
+  if ($LASTEXITCODE -ne 0) { throw "independent remote setup failed" }
+  git -C $independentRepo fetch --no-tags $sourceRepo $base
+  if ($LASTEXITCODE -ne 0 -or (git -C $independentRepo rev-parse FETCH_HEAD).Trim() -ne $base) {
+      throw "exact local baseline fetch failed"
+  }
+  git -C $independentRepo checkout --detach $base
+  if ($LASTEXITCODE -ne 0) { throw "fixed baseline checkout failed" }
+  git -C $independentRepo apply --check -- $patchPath
+  if ($LASTEXITCODE -ne 0) { throw "approved patch does not apply to the fixed baseline" }
+  git -C $independentRepo apply -- $patchPath
+  if ($LASTEXITCODE -ne 0) { throw "approved patch application failed" }
+
+  # 在此运行该项目或 Skill 已定义的完整验证；失败即停止。
+  git -C $independentRepo add -A -- $approvedPaths
+  if ($LASTEXITCODE -ne 0) { throw "staging approved paths failed" }
+  git -C $independentRepo diff --cached --name-status
+  git -C $independentRepo diff --cached --check
+  if ($LASTEXITCODE -ne 0) { throw "staged changes failed diff check" }
+  git -C $independentRepo diff --cached -- $approvedPaths
+  git -C $independentRepo commit -m "<MESSAGE>"
+  if ($LASTEXITCODE -ne 0) { throw "independent commit failed" }
+
+  $candidate = (git -C $independentRepo rev-parse HEAD).Trim()
+  if ((git -C $independentRepo rev-parse "$candidate^").Trim() -ne $base) {
+      throw "candidate parent is not the fixed baseline"
+  }
+  git -C $independentRepo diff-tree --no-commit-id --name-status -r $candidate
+  $remoteAfter = @(git -C $independentRepo ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $remoteAfter.Count -ne 1 -or
+      (($remoteAfter[0] -split '\s+')[0]).Trim() -ne $base) { throw "remote baseline moved" }
+  git -C $independentRepo push origin "$candidate`:refs/heads/$branch"
+  if ($LASTEXITCODE -ne 0) { throw "fast-forward push failed" }
+  ```
+- substitute_only: `<SOURCE_REPO>`, `<FAILED_LINKED_WORKTREE>`, `<BRANCH>`, `<PATH_1>...`, `<SHORT_TASK_OWNED_ROOT>`, `<MESSAGE>`；源仓库、远端和批准路径必须来自失败前已经核实的现场，不从报错文字或临时目录内容重新猜测
+- preflight: 用 `rev-parse --absolute-git-dir`、`--git-common-dir` 和 `--git-path index` 证明失败 index 的准确位置；对 linked worktree 的 `HEAD`、完整状态、暂存集合、`diff --check` 和 `diff HEAD -- <approvedPaths>` 做两次一致的只读检查；再核对准确 index / `index.lock`、Git 操作状态、任务相关进程、hook / 签名要求和唯一远端 40 位基线。单次没有发现进程或锁不等于已经排除并发
+- candidate_check: 独立仓库只能从本地源仓库取得固定基线对象，不把源仓库的 `.git`、index 或工作树复制进去；应用后完整差异只能包含批准内容，候选只有固定基线这一个父提交，推送前远端仍必须等于基线
+- cleanup: 只有候选提交、测试和 fast-forward push 全部成功后，才清理本任务的独立仓库；原 linked worktree 只有恢复为干净状态后才能用普通 `git worktree remove` 移除，仍不干净或 index 仍不可写时保留准确路径并报告。若宿主策略阻止删除，保留无害的任务自有目录，不换 shell、API 或强制选项绕过
+- avoid: 不删除或改名原仓库的 `index` / `index.lock` / `COMMIT_EDITMSG`，不在原仓库或 linked worktree 上运行 `write-tree`、`commit-tree`、`update-ref` 或继续重试提交；不以完整网络 clone 作为默认回退，不复制源 `.git`，不改 remote、凭据、TLS 或全局 Git 配置，不 force push
+- success_signal: 独立仓库中的候选基于固定远端提交且只含批准路径，完整验证通过，远端只发生一次 fast-forward；原仓库的工作树、index 和 `HEAD` 均未被本次回退修改
+- capture_rule: 短路径 linked worktree 只隔离工作目录，不隔离位于原 `$GIT_DIR/worktrees` 的管理 index；该 index 被稳定阻断且已排除并发时，从本地对象库在真正独立的临时仓库重建同一候选

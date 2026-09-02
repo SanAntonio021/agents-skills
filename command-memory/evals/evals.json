@@ -168,6 +168,12 @@
       "prompt": "Windows 上我要为一次批准发布创建 detached worktree。放在百度网盘备份目录里的上一份 worktree 出现了很多 `*.baiduyun.uploading.cfg`；我没有删。改放到 `C:\\Users\\me\\AppData\\Local\\Codex\\worktrees\\very-long-task-name` 后，`git worktree add` 又报 `Filename too long`。能不能删掉那些临时文件、强制移除旧 worktree，或者直接全局打开 `core.longpaths`？请给我安全的继续方式。",
       "expected_output": "应加载 git-on-windows reference 的坑 8；先记录 `git worktree list --porcelain` 并核对准确目标，选择一个已经确认归本任务使用、位于仓库和同步/备份监控树之外的短本地根；创建前用候选根长度加基线树内最长相对路径做保守预检，固定完整 40 位基线后再建立 detached worktree。不得删除、暂存 `*.baiduyun.uploading.cfg`，不得用 `git worktree remove --force`、跨 shell 强删或把全局 `core.longpaths` 当成本次默认修复；受干扰位置先停止写入并有界等待临时文件自行消失，或保留准确路径并在干净短根重建。只有旧 worktree 恢复干净且任务完成后，才用普通 `git worktree remove` 清理。",
       "files": []
+    },
+    {
+      "id": 29,
+      "prompt": "Windows 上直接运行 `python quick_validate.py D:\\repo\\中文技能\\SKILL.md`，脚本内部用 `Path.read_text()` 读取这个 UTF-8 文件，报 `UnicodeDecodeError: 'gbk' codec can't decode byte ...`。脚本是现成的校验工具，我不想改它，也不想改系统区域设置。下一步怎么做？",
+      "expected_output": "应加载 python-utf8 reference；先确认目标文件确为 UTF-8，再用进程级 UTF-8 模式执行同一个现成脚本，即 `python -X utf8 quick_validate.py <文件路径>`。若原解码错误消失并完成校验或出现下一项真实错误，说明命令形态已纠正；若仍失败，应检查文件实际编码和脚本假设。不得为了这次校验修改第三方 helper、永久设置全局 PYTHONUTF8 或更改系统区域设置，也不得原样重试裸 python。",
+      "files": []
     }
   ]
 }

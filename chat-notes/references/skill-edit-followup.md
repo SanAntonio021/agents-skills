@@ -133,6 +133,27 @@
     tracked、staged 或 untracked 变化且结果一致，才算源码状态稳定。任一次不干净或两次结果不同都在后台操作前
     停止并留档，不靠等待后重试 helper 来掩盖并发写入。
 
+### 工作树已等于后续远端 tip 时的记录校准
+
+远端已经越过本次发布提交，而权威工作树里的相关文件恰好已经逐项等于新的远端 tip 时，普通快进仍可能因为这些
+文件显示为本地修改而拒绝。这里校准的是 Git 的索引和分支记录，不是把远端内容覆盖到工作树；只在以下条件全部
+成立时使用：
+
+1. 用户另外明确同意校准当前本地仓库的 Git 记录。skill 修改或发布批准本身不包含这项授权。权威 checkout 必须
+   正检出目标分支，旧 `HEAD` 是准确远端 tip 的祖先，暂存集合为空；没有已定位的并行 Git 写入者、锁或正在变化的
+   远端。操作前连续两次读取 `HEAD`、远端 tip、完整状态和暂存清单，结果必须一致。
+2. 以 `旧 HEAD..远端 tip` 的完整变化路径作为唯一允许集合。该集合必须与当前 tracked 变化及其中与远端新增路径
+   对应的 untracked 文件完全相符；每个普通文件按 Git clean-filter 后的 blob 和目标 mode 都等于远端，远端删除的
+   路径在工作树中确实不存在。其余 untracked 路径逐项记录，并确认与变化路径不存在同路径或祖先、后代重叠。
+   路径集合不等、出现 symlink、gitlink、未合并条目或无法准确核对的文件类型时停止。
+3. 加载 `command-memory`，按其 `references/git-on-windows.md` 中的
+   `git-align-index-and-ref-when-worktree-equals-remote` 模式执行：先在临时 index 证明目标 tree 完全等于远端 tree，
+   再只更新准确变化路径的真实 index；`git write-tree` 仍必须等于远端 tree，最后用旧 `HEAD` 作为保护值更新分支 ref。
+   不使用 `stash`、`reset`、`checkout`、`restore`、整文件复制或覆盖工作树。
+4. 完成后要求本地 `HEAD` 与刚复核的远端 tip 相同，tracked 和 staged 状态为空，其余 untracked 路径集合逐项不变，
+   并运行相关验证。任一前提、tree 对照、带旧值 ref 更新或完成后复核失败，都停止并按异常流程留档；不把部分索引
+   更新或一次 Git 命令成功写成已经完成对齐，也不自动追赶再次推进的远端。
+
 ### 同步 helper 自身的来源门禁
 
 目标 Skill 已发布和同步 helper 本身可信是两个独立条件。helper 会修改 CC Switch 登记和运行时；执行前必须证明

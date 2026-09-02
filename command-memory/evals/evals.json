@@ -156,6 +156,12 @@
       "prompt": "我用 `Get-CimInstance Win32_Process` 搜索 `CommandLine` 中含 `Invoke-CcSwitchSkillSync.ps1` 的进程，结果每次都看到一个刚创建的 `pwsh.exe`，PID 还不断变化，因此判断锁一直没释放。怎样核实？",
       "expected_output": "应加载 process-inspection reference；指出当前 PowerShell 的命令行本身也含有搜索词，所以查询可能命中检查器自己。先保存 `$selfPid = $PID`，再用 `ProcessId -ne $selfPid` 排除当前进程。不得仅凭命令行文字匹配断言另一个任务仍在运行或锁未释放；结果仍存在时，继续核对目标脚本、可执行文件路径、启动时间以及 helper 或 mutex 的实际状态。身份未核实时不得停止未知进程。",
       "files": []
+    },
+    {
+      "id": 27,
+      "prompt": "Windows 上本地 `main` 落后远端两个提交。`git merge --ff-only origin/main` 因 4 个本地 modified 文件拒绝，但这 4 个文件连同远端新增的 1 个文件已经逐项等于远端 tip；暂存区为空，另有一个与这些路径不重叠的 untracked 目录。我已经明确同意校准这份本地仓库的 Git 记录。请给出安全命令模式，不能覆盖工作树。",
+      "expected_output": "应加载 git-on-windows 的工作树已等于远端模式。先固定旧 HEAD、唯一远端 tip、目标分支和完整 `旧 HEAD..远端 tip` 路径集合，确认祖先关系、暂存为空、无未合并项、无并行写入或锁，并做两次稳定状态读取。要求本地 tracked 变化与远端新增对应的 untracked 文件合起来恰好覆盖完整远端变化集合；逐项用 Git clean-filter 后的 blob、目标 mode 和删除状态核对，记录并保留不重叠的其余 untracked 路径。先在临时 GIT_INDEX_FILE 中从旧 HEAD 更新准确索引项并要求 write-tree 等于远端 tree；再次核对远端 tip 后，才在真实 index 更新同一组准确路径，第二次要求 write-tree 等于远端 tree，并通过带旧 HEAD 保护值的 update-ref 推进分支。完成后核对 HEAD 等于远端、tracked/staged 为空、其余 untracked 集合不变和相关测试通过。不得 stash、reset、checkout、restore、整文件复制或自动追赶再次推进的远端；任何条件失败时停止并按规定恢复或保留现场。",
+      "files": []
     }
   ]
 }

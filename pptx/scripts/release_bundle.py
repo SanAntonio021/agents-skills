@@ -157,6 +157,7 @@ def initialize_release(
     template: str | Path | None = None,
     parent: str | Path | None = None,
     changed_slides: Iterable[int] = (),
+    require_design_acceptance: bool = False,
 ) -> Path:
     root = _canonical_path(output_root)
     root.mkdir(parents=True, exist_ok=True)
@@ -200,11 +201,90 @@ def initialize_release(
             "native_open": {"status": "PENDING"},
             "native_render": {"status": "PENDING"},
             "visual_qa": {"status": "PENDING", "scope": "FULL_DECK"},
+            "design_acceptance": {
+                "required": bool(require_design_acceptance),
+                "status": "PENDING" if require_design_acceptance else "NOT_REQUIRED",
+            },
         },
         "release_status": "DRAFT",
     }
     _write_json(release_dir / "release_manifest.json", manifest, refuse_existing=True)
     return release_dir
+
+
+def _required_candidate_identities(
+    manifest: Mapping[str, object], release_dir: Path
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    artifacts = manifest.get("artifacts", {})
+    if not isinstance(artifacts, Mapping):
+        raise ReleaseBundleError("manifest artifacts must be an object")
+    pptx_relative = artifacts.get("pptx")
+    if not isinstance(pptx_relative, str):
+        raise ReleaseBundleError("manifest does not declare a PPTX artifact")
+    pptx_path = _inside(release_dir, pptx_relative, "pptx")
+    if not pptx_path.is_file() or pptx_path.stat().st_size == 0:
+        raise ReleaseBundleError("candidate PPTX is missing or empty")
+
+    png_relative = artifacts.get("png_dir")
+    if not isinstance(png_relative, str):
+        raise ReleaseBundleError("manifest does not declare a PNG directory")
+    png_dir = _inside(release_dir, png_relative, "png_dir")
+    png_paths = (
+        [
+            item
+            for item in sorted(png_dir.rglob("*.png"))
+            if item.is_file() and item.stat().st_size > 0
+        ]
+        if png_dir.is_dir()
+        else []
+    )
+    if not png_paths:
+        raise ReleaseBundleError("candidate render directory contains no PNG files")
+    return _file_identity(pptx_path), [_file_identity(item) for item in png_paths]
+
+
+def record_design_acceptance(
+    manifest_path: str | Path,
+    status: str,
+    statement: str,
+) -> dict[str, object]:
+    """Bind an explicit user visual verdict to the current PPTX and PNG render bytes."""
+
+    path = _canonical_path(manifest_path)
+    manifest = _read_json(path)
+    acceptance = manifest.setdefault("acceptance", {})
+    if not isinstance(acceptance, dict):
+        raise ReleaseBundleError("manifest acceptance must be an object")
+    design = acceptance.get("design_acceptance")
+    if not isinstance(design, Mapping) or not design.get("required"):
+        raise ReleaseBundleError(
+            "design acceptance was not required at init; create a new release with "
+            "--require-design-acceptance"
+        )
+    normalized_status = status.strip().upper()
+    if normalized_status not in {"PASS", "REJECTED"}:
+        raise ReleaseBundleError("design acceptance status must be PASS or REJECTED")
+    normalized_statement = statement.strip()
+    if not normalized_statement:
+        raise ReleaseBundleError("design acceptance requires the user's explicit statement")
+
+    candidate, renders = _required_candidate_identities(manifest, path.parent)
+    acceptance["design_acceptance"] = {
+        "required": True,
+        "status": normalized_status,
+        "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        "statement": normalized_statement,
+        "candidate_pptx": candidate,
+        "rendered_pages": renders,
+    }
+    manifest["release_status"] = "DRAFT" if normalized_status == "PASS" else "INCOMPLETE"
+    _write_json(path, manifest, refuse_existing=False)
+    return {
+        "status": normalized_status,
+        "manifest": _posix_path(path),
+        "candidate_sha256": candidate["sha256"],
+        "render_count": len(renders),
+    }
 
 
 def snapshot_tree(root: str | Path, exclude: str | Path) -> dict[str, object]:
@@ -499,6 +579,11 @@ def finalize_release(manifest_path: str | Path, statuses: Mapping[str, object] |
         acceptance = manifest.setdefault("acceptance", {})
         for key, value in statuses.items():
             if key in acceptance:
+                if key == "design_acceptance":
+                    raise ReleaseBundleError(
+                        "design acceptance cannot come from a gate status file; use "
+                        "record-design-acceptance after the user's explicit visual verdict"
+                    )
                 if isinstance(value, Mapping):
                     acceptance[key] = dict(value)
                 else:
@@ -513,7 +598,24 @@ def finalize_release(manifest_path: str | Path, statuses: Mapping[str, object] |
     native_statuses = [
         acceptance.get(key, {}).get("status") for key in ("native_open", "native_render")
     ]
-    if missing:
+    design = acceptance.get("design_acceptance", {})
+    design_required = isinstance(design, Mapping) and bool(design.get("required"))
+    design_status = design.get("status") if isinstance(design, Mapping) else None
+    if design_required and design_status == "PASS":
+        current_candidate = artifact_records.get("pptx")
+        current_renders = [_file_identity(item) for item in png_files]
+        if (
+            design.get("candidate_pptx") != current_candidate
+            or design.get("rendered_pages") != current_renders
+        ):
+            updated_design = dict(design)
+            updated_design["status"] = "STALE"
+            updated_design["stale_reason"] = (
+                "candidate PPTX or rendered-page bytes changed after the recorded user verdict"
+            )
+            acceptance["design_acceptance"] = updated_design
+            design_status = "STALE"
+    if missing or (design_required and design_status != "PASS"):
         release_status = "INCOMPLETE"
     elif all(value == "PASS" for value in required_statuses + native_statuses):
         release_status = "COMPLETE"
@@ -559,6 +661,7 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--template")
     init.add_argument("--parent")
     init.add_argument("--changed-slide", type=int, action="append", default=[])
+    init.add_argument("--require-design-acceptance", action="store_true")
 
     snapshot = sub.add_parser("snapshot", help="write a canonical external-output snapshot")
     snapshot.add_argument("--root", required=True)
@@ -578,6 +681,15 @@ def build_parser() -> argparse.ArgumentParser:
     slides.add_argument("--parent-visual-pass", action="store_true")
     slides.add_argument("--output")
 
+    design = sub.add_parser(
+        "record-design-acceptance",
+        help="bind an explicit user visual verdict to the current PPTX and PNG renders",
+    )
+    design.add_argument("--manifest", required=True)
+    design.add_argument("--status", required=True, choices=("PASS", "REJECTED"))
+    design.add_argument("--statement", required=True)
+    design.add_argument("--output")
+
     finalize = sub.add_parser("finalize", help="verify artifacts and update release manifest")
     finalize.add_argument("--manifest", required=True)
     finalize.add_argument("--status-json")
@@ -590,13 +702,28 @@ def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "init":
-            result: object = {"release_dir": _posix_path(initialize_release(args.output_root, args.topic, date=args.date, pptx_name=args.pptx_name, pdf_name=args.pdf_name, png_dir=args.png_dir, evidence_dir=args.evidence_dir, template=args.template, parent=args.parent, changed_slides=args.changed_slide))}
+            release_dir = initialize_release(
+                args.output_root,
+                args.topic,
+                date=args.date,
+                pptx_name=args.pptx_name,
+                pdf_name=args.pdf_name,
+                png_dir=args.png_dir,
+                evidence_dir=args.evidence_dir,
+                template=args.template,
+                parent=args.parent,
+                changed_slides=args.changed_slide,
+                require_design_acceptance=args.require_design_acceptance,
+            )
+            result: object = {"release_dir": _posix_path(release_dir)}
         elif args.command == "snapshot":
             result = {"snapshot": _posix_path(write_snapshot(args.root, args.exclude, args.output))}
         elif args.command == "compare-snapshots":
             result = compare_snapshots(args.before, args.after)
         elif args.command == "compare-slides":
             result = compare_slides(args.parent, args.current, args.changed_slide, parent_visual_pass=args.parent_visual_pass, parent_manifest=args.parent_manifest)
+        elif args.command == "record-design-acceptance":
+            result = record_design_acceptance(args.manifest, args.status, args.statement)
         elif args.command == "finalize":
             result = finalize_release(args.manifest, _load_status_file(args.status_json))
         else:

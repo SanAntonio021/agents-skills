@@ -66,8 +66,9 @@ After the external pin passes:
    candidate.
 
 The expected return is the candidate PPTX plus the upstream workspace or source artifacts needed to
-revise it. Record the candidate path, external-pin report, Fork commit, release tag, and official
-upstream version.
+revise it. SVG pages shown during authoring are design/preview intermediates, not proof of how the
+final PPTX is represented. Record the candidate path, external-pin report, Fork commit, release tag,
+and official upstream version.
 
 ## Local acceptance after handoff
 
@@ -75,14 +76,32 @@ Treat the returned PPTX as a candidate, not as a finished local release. Apply t
 acceptance policy:
 
 - run Python runtime preflight before the static validators;
+- run `scripts/pptx_editability_audit.py <candidate.pptx> --json-out <evidence.json>` on the returned
+  package; report native text/shapes/groups separately from pictures, SVG media, and likely flattened
+  full-slide pictures. Pictures remain movable/croppable objects, but their internal pixels are not
+  decomposable PowerPoint elements;
+- inspect every centered-but-top-anchored text item reported by the audit in the rendered pages;
 - record `STATIC_PASS` independently;
 - use `libreoffice-runner` for `LO_RENDER_PASS` and inspect the full-slide render;
 - obtain task-specific Office authorization before running the native gate;
 - keep `NATIVE_OPEN_PASS` and `NATIVE_RENDER_PASS` separate;
-- use the formal release bundle workflow when the user calls the output final or formal.
+- for beautification or other high-design work, render the candidate beside the supplied source or
+  mature template when that artifact is the quality target. A technically valid package does not
+  establish equal-or-better design quality;
+- use the formal release bundle workflow with `--require-design-acceptance` when the user calls a
+  high-design output final or formal. Internal full-page `visual_qa` and explicit user
+  `design_acceptance` are separate gates.
 
-Do not edit an upstream workspace merely to make a local gate appear green. Repair the owning source,
-regenerate the candidate, and rerun the affected acceptance layers.
+The returned file remains a candidate until the user reviews the rendered pages and explicitly
+accepts that exact version. Record the verdict with `release_bundle.py record-design-acceptance`;
+the receipt binds the statement to raw SHA-256 identities of the PPTX and all reviewed PNG pages.
+`PENDING`, `REJECTED`, or `STALE` design acceptance blocks `COMPLETE`. Any change to the PPTX or a
+reviewed render invalidates the prior approval. If the user rejects the candidate or asks for a
+change, revise the owning source, regenerate, and present the new candidate for a new verdict.
+
+Do not patch the installed runtime, official author workflow, or distribution-only Fork adapter to
+make a local gate appear green. Repair the owning project source, regenerate the candidate, and rerun
+the affected acceptance layers.
 
 ## Failure behavior
 

@@ -162,6 +162,12 @@
       "prompt": "Windows 上本地 `main` 落后远端两个提交。`git merge --ff-only origin/main` 因 4 个本地 modified 文件拒绝，但这 4 个文件连同远端新增的 1 个文件已经逐项等于远端 tip；暂存区为空，另有一个与这些路径不重叠的 untracked 目录。我已经明确同意校准这份本地仓库的 Git 记录。请给出安全命令模式，不能覆盖工作树。",
       "expected_output": "应加载 git-on-windows 的工作树已等于远端模式。先固定旧 HEAD、唯一远端 tip、目标分支和完整 `旧 HEAD..远端 tip` 路径集合，确认祖先关系、暂存为空、无未合并项、无并行写入或锁，并做两次稳定状态读取。要求本地 tracked 变化与远端新增对应的 untracked 文件合起来恰好覆盖完整远端变化集合；逐项用 Git clean-filter 后的 blob、目标 mode 和删除状态核对，记录并保留不重叠的其余 untracked 路径。先在临时 GIT_INDEX_FILE 中从旧 HEAD 更新准确索引项并要求 write-tree 等于远端 tree；再次核对远端 tip 后，才在真实 index 更新同一组准确路径，第二次要求 write-tree 等于远端 tree，并通过带旧 HEAD 保护值的 update-ref 推进分支。完成后核对 HEAD 等于远端、tracked/staged 为空、其余 untracked 集合不变和相关测试通过。不得 stash、reset、checkout、restore、整文件复制或自动追赶再次推进的远端；任何条件失败时停止并按规定恢复或保留现场。",
       "files": []
+    },
+    {
+      "id": 28,
+      "prompt": "Windows 上我要为一次批准发布创建 detached worktree。放在百度网盘备份目录里的上一份 worktree 出现了很多 `*.baiduyun.uploading.cfg`；我没有删。改放到 `C:\\Users\\me\\AppData\\Local\\Codex\\worktrees\\very-long-task-name` 后，`git worktree add` 又报 `Filename too long`。能不能删掉那些临时文件、强制移除旧 worktree，或者直接全局打开 `core.longpaths`？请给我安全的继续方式。",
+      "expected_output": "应加载 git-on-windows reference 的坑 8；先记录 `git worktree list --porcelain` 并核对准确目标，选择一个已经确认归本任务使用、位于仓库和同步/备份监控树之外的短本地根；创建前用候选根长度加基线树内最长相对路径做保守预检，固定完整 40 位基线后再建立 detached worktree。不得删除、暂存 `*.baiduyun.uploading.cfg`，不得用 `git worktree remove --force`、跨 shell 强删或把全局 `core.longpaths` 当成本次默认修复；受干扰位置先停止写入并有界等待临时文件自行消失，或保留准确路径并在干净短根重建。只有旧 worktree 恢复干净且任务完成后，才用普通 `git worktree remove` 清理。",
+      "files": []
     }
   ]
 }

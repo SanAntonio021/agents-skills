@@ -13,14 +13,23 @@ Word 是最终提交主文件，Markdown 是内容主稿。PDF 只从已经确�
 
 `DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED`
 
-- `DRAFT`：起草、修改、审阅 Markdown；内容仍可变化。
-- `CONTENT_FROZEN`：用户确认当前 Markdown 内容，记录原话、时间、Markdown 路径和 SHA-256；此时不自动导出 Word。
+- `DRAFT`：起草、修改、审阅 Markdown；内容仍可变化。完整草稿提交用户审阅前先通过内容质量门。
+- `CONTENT_FROZEN`：用户确认当前 Markdown 内容，且内容质量门与当前 Markdown 哈希一致；记录原话、时间、Markdown 路径和 SHA-256，此时不自动导出 Word。
 - `DOCX_GENERATED`：`docx` 按已锁定的格式来源生成新 Word，记录生成清单、格式来源和 Word 指纹。
 - `DOCX_ACCEPTED`：完成 `docx` 的四层验收，并提交匹配 Word 指纹的 `DocxAcceptanceReport`。
 - `WORD_CONFIRMED`：用户确认该 Word 可作为最终版本，记录确认原话、时间、路径和 SHA-256。
 - `PDF_RELEASED`：仅从匹配 `WORD_CONFIRMED` 的 Word 导出交付 PDF。
 
 任何 Markdown 修改都会清除 Word、验收和 PDF 的后续状态；任何 Word 重新导出、人工编辑或 SHA-256 变化都会清除 `DOCX_ACCEPTED`、`WORD_CONFIRMED` 和 `PDF_RELEASED`，并要求重新验收。已锁定的格式来源发生路径、类型或 SHA-256 变化时，回到 `CONTENT_FROZEN`，重新锁定格式来源、生成 Word 并验收。
+
+## 内容质量门
+
+完整 Markdown 第一次提交用户审阅前，以及用户修改正文后准备进入 `CONTENT_FROZEN` 时，自动完成两项检查，用户不需要提醒：
+
+1. 调用 `humanizer-zh` 检查套话、空泛结构、防御性句式、宣传腔和其他通用 AI 写作模式。
+2. 调用 `style-vocab` 按语言和文稿类型运行个人词表审计。
+
+词表审计必须返回 `clean`，或对每个命中说明为何属于例外。报告至少记录 Markdown 路径、SHA-256、两项检查是否完成、词表审计状态和例外数量。Markdown 内容一旦变化，旧检查记录立即失效；重新检查前保持 `DRAFT`。临时关键词搜索、人工浏览和“读起来还可以”不能替代这两项检查，也不能据此宣称文字验收通过。
 
 ## 格式来源门
 

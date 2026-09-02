@@ -2,7 +2,7 @@
 
 ## 这份说明管什么
 
-在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有九类坑会让命令失败或越过提交范围：
+在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有十类坑会让命令失败或越过提交范围：
 
 1. **路径被 MSYS 自动转换**：命令里带 `/` 或 `:` 的 git 引用（如 `origin/master:file`）被改写成 `\` 和 `;`，git 报 `ambiguous argument`。
 2. **文件被同步软件或编辑器锁住**：百度网盘 / OneDrive / PowerPoint 锁着某个文件或 `.git/index`，git 任何要写它的操作报 `unable to unlink old` 或 `unable to write .git/index`，merge / checkout 直接崩。
@@ -13,8 +13,9 @@
 7. **工作树已等于远端但快进仍被阻断**：远端继续推进后，本地相关文件已经逐项等于新 tip，Git 仍因它们相对旧 `HEAD` 显示为修改而拒绝普通快进。
 8. **隔离 worktree 的位置不合适**：仓库内最长相对路径叠加较长父目录后可能报 `Filename too long`；放在同步或备份监控树下，又可能混入 `*.baiduyun.uploading.cfg` 等外部临时文件。
 9. **linked worktree 的 index 仍受原仓库影响**：工作目录即使位于短且不受监控的本地路径，其 `HEAD`、index 等管理文件仍在原仓库的 `$GIT_DIR/worktrees/<id>`；原仓库管理目录被占用时，隔离提交仍可能报 `unable to write new index file`。
+10. **PowerShell 拆开 revision range 或吞掉失败**：把两个变量直接写成 `$old..$new` 时，Git 可能收到两个参数并打印 usage；如果随后不检查退出码，空输出还会被误当成“没有变化”并放行写操作。
 
-按对应 pattern 处理。第 4、6、7 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
+按对应 pattern 处理。第 4、6、7、10 类不一定是 Git 故障，但在非交互式 Windows 任务里容易因共享状态或命令形态选错而造成范围越界。
 
 ## 目录
 
@@ -27,6 +28,7 @@
 - [坑 7：工作树已等于远端但快进仍被阻断](#pitfall-7)
 - [坑 8：worktree 路径过长或受备份客户端干扰](#pitfall-8)
 - [坑 9：linked worktree 的管理 index 仍被原仓库阻断](#pitfall-9)
+- [坑 10：PowerShell revision range 拆参与失败输出误判](#pitfall-10)
 
 <a id="pitfall-1"></a>
 
@@ -512,22 +514,31 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
   if ($oldHead -notmatch '^[0-9a-f]{40}$' -or $remoteCommit -notmatch '^[0-9a-f]{40}$') {
       throw "both commits must be full SHA values"
   }
-  if ((git -C $repoRoot rev-parse HEAD).Trim() -ne $oldHead) { throw "local HEAD changed" }
-  if ((git -C $repoRoot symbolic-ref --quiet HEAD).Trim() -ne "refs/heads/$branchName") {
+  $currentHead = (git -C $repoRoot rev-parse HEAD).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "cannot read local HEAD" }
+  if ($currentHead -ne $oldHead) { throw "local HEAD changed" }
+  $currentBranchRef = (git -C $repoRoot symbolic-ref --quiet HEAD).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "cannot read current branch ref" }
+  if ($currentBranchRef -ne "refs/heads/$branchName") {
       throw "the expected branch is not checked out"
   }
-  if (@(git -C $repoRoot diff --cached --name-only).Count -ne 0) { throw "staged set is not empty" }
+  $stagedPaths = @(git -C $repoRoot diff --cached --name-only)
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory staged paths" }
+  if ($stagedPaths.Count -ne 0) { throw "staged set is not empty" }
   git -C $repoRoot cat-file -e "$remoteCommit`^{commit}"
   if ($LASTEXITCODE -ne 0) { throw "the remote target object is not available locally" }
   git -C $repoRoot merge-base --is-ancestor $oldHead $remoteCommit
   if ($LASTEXITCODE -ne 0) { throw "local HEAD is not an ancestor of the remote target" }
 
-  $remotePaths = @(git -C $repoRoot diff --name-only --no-renames $oldHead $remoteCommit)
+  $remotePaths = @(git -C $repoRoot diff --name-only --no-renames $oldHead $remoteCommit --)
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory complete remote change set" }
   if (@(Compare-Object ($remotePaths | Sort-Object -Unique) ($alignmentPaths | Sort-Object -Unique)).Count -ne 0) {
       throw "approved alignment paths do not equal the complete remote change set"
   }
   $trackedPaths = @(git -C $repoRoot diff --name-only)
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory tracked changes" }
   $untrackedPaths = @(git -C $repoRoot ls-files --others --exclude-standard)
+  if ($LASTEXITCODE -ne 0) { throw "cannot inventory untracked paths" }
   $localRelevant = @($trackedPaths + @($untrackedPaths | Where-Object { $alignmentPaths -contains $_ })) |
       Sort-Object -Unique
   if (@(Compare-Object $localRelevant ($alignmentPaths | Sort-Object -Unique)).Count -ne 0) {
@@ -537,6 +548,7 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
   $targetEntries = [ordered]@{}
   foreach ($path in $alignmentPaths) {
       $treeLine = @(git -C $repoRoot ls-tree $remoteCommit -- $path)
+      if ($LASTEXITCODE -ne 0) { throw "cannot read remote tree entry: $path" }
       if ($treeLine.Count -eq 0) {
           if (Test-Path -LiteralPath (Join-Path $repoRoot $path)) { throw "remote deletion still exists locally: $path" }
           $targetEntries[$path] = $null
@@ -558,6 +570,7 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
   try {
       $env:GIT_INDEX_FILE = $tempIndex
       git -C $repoRoot read-tree $oldHead
+      if ($LASTEXITCODE -ne 0) { throw "temporary index initialization failed" }
       foreach ($path in $alignmentPaths) {
           $entry = $targetEntries[$path]
           if ($null -eq $entry) { git -C $repoRoot update-index --remove -- $path }
@@ -565,11 +578,13 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
           if ($LASTEXITCODE -ne 0) { throw "temporary index update failed: $path" }
       }
       $candidateTree = (git -C $repoRoot write-tree).Trim()
+      if ($LASTEXITCODE -ne 0) { throw "temporary index tree write failed" }
   } finally {
       $env:GIT_INDEX_FILE = $null
       Remove-Item -LiteralPath $tempIndex -Force -ErrorAction SilentlyContinue
   }
   $remoteTree = (git -C $repoRoot rev-parse "$remoteCommit`^{tree}").Trim()
+  if ($LASTEXITCODE -ne 0) { throw "cannot read remote tree id" }
   if ($candidateTree -ne $remoteTree) { throw "candidate index tree does not equal the remote tree" }
 
   $remoteLines = @(git -C $repoRoot ls-remote --exit-code --refs $remoteName "refs/heads/$branchName")
@@ -583,7 +598,9 @@ refs，但 `HEAD`、index 等状态按 worktree 分开，因此适合给并行�
           else { git -C $repoRoot update-index --add --cacheinfo $entry.Mode $entry.Oid $path }
           if ($LASTEXITCODE -ne 0) { throw "real index update failed: $path" }
       }
-      if ((git -C $repoRoot write-tree).Trim() -ne $remoteTree) { throw "real index tree does not equal remote" }
+      $realTree = (git -C $repoRoot write-tree).Trim()
+      if ($LASTEXITCODE -ne 0) { throw "real index tree write failed" }
+      if ($realTree -ne $remoteTree) { throw "real index tree does not equal remote" }
       git -C $repoRoot update-ref -m "align: verified worktree equals $remoteName/$branchName" "refs/heads/$branchName" $remoteCommit $oldHead
       if ($LASTEXITCODE -ne 0) { throw "guarded branch update failed" }
   } catch {
@@ -840,3 +857,42 @@ linked worktree 顶层的 `.git` 是一个指针；它自己的 `HEAD`、index �
 - avoid: 不重试 `git worktree remove`，不使用 `git worktree remove --force`，不手工删除 `.git/worktrees/<id>`，不删除 Git 锁或停止未知进程；宿主策略拒绝或普通 prune 失败时，不换 `cmd`、.NET、WSL、API 或其他 shell 绕过，也不扩大到其他候选
 - success_signal: 目标目录在操作前已经不存在，dry-run 的完整稳定候选集只有准确的任务自有残留；普通 prune 后只移除了该管理记录，其他 worktree、refs 和管理目录均未变化
 - capture_rule: `git worktree remove` 的非零退出码不证明“什么都没删”；目标目录已消失而管理记录仍在时按部分成功处理。无法把仓库级 prune 的全部候选收窄到唯一任务残留，就保留这份无害残留并报告准确路径
+
+<a id="pitfall-10"></a>
+
+## 坑 10：PowerShell 拆开 revision range，并把失败输出当空集合
+
+Git 把 `A..B` 定义为一个 revision range；但在 PowerShell 的原生命令边界，裸写 `$oldHead..$remoteCommit`
+不会可靠地产生一个参数。实测 Git 会收到 `$oldHead` 和 `..$remoteCommit` 两个参数并打印 usage。更危险的是，
+`$changed = @(git ...)` 仍可能得到空数组；如果不先检查 `$LASTEXITCODE` 就看 `$changed.Count`，脚本会把“盘点失败”
+误写成“没有变化”，继而执行 merge、push 或其他修改。
+
+### Pattern: git-build-revision-arguments-and-fail-fast-in-powershell
+- scenario: PowerShell 要把两个提交交给 Git 做差异或范围盘点，该只读结果将决定后续是否允许修改仓库
+- use_when: 命令包含 `$old..$target`、Git 打印 usage、捕获结果意外为空，或脚本准备根据 diff / status / ls-files / ls-tree / ls-remote 的输出继续 merge、commit、update-ref、push 等写操作
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $oldHead = "<OLD_HEAD_40_SHA>"
+  $remoteCommit = "<REMOTE_COMMIT_40_SHA>"
+
+  if ($oldHead -notmatch '^[0-9a-f]{40}$' -or $remoteCommit -notmatch '^[0-9a-f]{40}$') {
+      throw "both revisions must be full commit ids"
+  }
+
+  # git diff 接受两个独立 revision；优先直接传两个参数，不必拼 A..B。
+  $changed = @(git -C $repoRoot diff --name-only --no-renames $oldHead $remoteCommit --)
+  if ($LASTEXITCODE -ne 0) { throw "changed-path inventory failed" }
+  # 只有到这里，$changed.Count -eq 0 才能表示一次成功盘点得到空集合。
+
+  # 只有命令确实要求一个 revision-range token 时，才显式构造并作为一个参数传入。
+  $range = "${oldHead}..${remoteCommit}"
+  $commits = @(git -C $repoRoot log --format='%H' $range --)
+  if ($LASTEXITCODE -ne 0) { throw "revision-range inventory failed" }
+  ```
+- substitute_only: `<REPO_ROOT>` 和两个完整 40 位提交；不要把分支名、空字符串或未核实的命令输出直接拼进 range
+- preflight: 先验证两个 revision 的格式和来源；确认目标 Git 子命令是接受两个 endpoint，还是必须接收一个 `A..B` token；所有会放行后续写操作的只读命令都要在读取、排序、比较或执行下一个原生命令前立即检查 `$LASTEXITCODE`
+- avoid: 不写 `git ... $oldHead..$remoteCommit`；不因变量已加引号就假定它是一个参数；不从非零退出命令的空 stdout 推断“无变化”“无冲突”或“无重叠”；不在 usage 或错误文本出现后继续 merge、commit、update-ref 或 push
+- success_signal: Git 收到预期参数形状，只读盘点退出码为 `0` 后才消费输出；任何盘点失败都会在第一个仓库写操作前停止
+- capture_rule: 先证明命令成功，再解释空输出。能传两个 revision 就分别传；必须传 range 时用 `"${old}..${new}"` 显式生成单个参数

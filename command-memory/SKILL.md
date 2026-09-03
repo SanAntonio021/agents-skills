@@ -1,6 +1,6 @@
 ---
 name: command-memory
-description: Windows 命令急救卡。只在 Windows / PowerShell 命令高风险或已失败、需要纠偏时使用：编码乱码、现成 Python 脚本读取 UTF-8 中文文件时报 GBK `UnicodeDecodeError`、中文/空格路径、软链或规则同步、归档、目录占用/重生、CommandLine 检查自匹配、git 同文件混合改动需部分暂存、PowerShell 拆开 Git revision range 或把失败盘点的空输出当正常、禁用 worktree 的 Git 对象发布、获批将隔离发布补丁更新到含其他改动的本地副本、工作树等于远端 tip 但快进受阻、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、linked worktree 提交仍报 `unable to write new index file`、`git worktree remove` 报错但目录已消失并残留管理记录、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存集合异常变化且可能有并行任务、`git fetch` 被临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史倒退或仓库被云同步回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、`%USERPROFILE%` 匿名路径导致 `EPERM` 或假目录树、引用插件源码行号前定位实际加载副本、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入非 ASCII 名称/提示后乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
+description: Windows 命令急救卡。只在 Windows / PowerShell 命令高风险或已失败、需要纠偏时使用：编码乱码、现成 Python 脚本读取 UTF-8 中文文件时报 GBK `UnicodeDecodeError`、函数的单项命令输出退化为标量导致 `[0]` 取得字符、Pester 参数跨版本不兼容、中文/空格路径、软链或规则同步、归档、目录占用/重生、CommandLine 检查自匹配、git 同文件混合改动需部分暂存、PowerShell 拆开 Git revision range 或把失败盘点的空输出当正常、禁用 worktree 的 Git 对象发布、获批将隔离发布补丁更新到含其他改动的本地副本、工作树等于远端 tip 但快进受阻、手工 patch 出现 hunk 计数或格式错误、`git worktree add` 在长路径下报 `Filename too long` 或 worktree 内出现备份客户端的 `*.baiduyun.uploading.cfg`、linked worktree 提交仍报 `unable to write new index file`、`git worktree remove` 报错但目录已消失并残留管理记录、`git commit` 遇到 `COMMIT_EDITMSG` / index 占用或暂存集合异常变化且可能有并行任务、`git fetch` 被临时 ref 或 `FETCH_HEAD` 锁阻断、Git for Windows 报 `schannel` / SSL/TLS 握手失败、提交历史倒退或仓库被云同步回滚、Codex Windows sandbox 的 `setup refresh had errors` / ACL 失败、Office COM、MATLAB batch、LibreOffice / Poppler 转换或渲染失败、外部 CLI 调用失败、`%USERPROFILE%` 匿名路径导致 `EPERM` 或假目录树、引用插件源码行号前定位实际加载副本、Codex 自动任务在 heartbeat 与 project cron 间迁移或经子进程传入非 ASCII 名称/提示后乱码、用户要求“按上次正确方式跑”。普通只读命令如 `rg`、`Get-Content`、`git status`、简单 `Test-Path` 不要触发。
 ---
 
 # Windows 命令急救卡
@@ -25,6 +25,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令高风�
 - 需要 Office COM、MATLAB batch / desktop、用户级 CLI 安装或环境变量持久化。
 - LibreOffice / Poppler 在 Windows 上转换或渲染失败，例如 helper 报 `socket.AF_UNIX`、profile URI 异常，或 `pdftoppm` / `pdfinfo` 命中了不可用包装器。
 - 用 `Get-CimInstance Win32_Process` 按 `CommandLine` 搜索后台任务，却反复命中刚启动且进程号变化的 `pwsh.exe` / `powershell.exe`，需要排除检查命令自身后再判断。
+- PowerShell 函数包装外部命令并声称返回多行结果，但只有一行时调用端得到 `System.String`，随后 `[0].Trim()` 报 `System.Char` 没有 `Trim`；或 `Invoke-Pester` 因本机版本不支持照搬来的 `-Show`、`-Output` 等可选参数而在测试开始前失败。
 - Git 同一文件同时含有本次允许提交和其他未授权改动，不能整文件暂存；或手工构造的 patch 已出现 `corrupt patch`、`patch fragment without header`、hunk 行数不匹配，需要换成隔离 worktree 纠偏。
 - PowerShell 中把两个 Git revision 变量直接写成 `$old..$new` 后出现 usage、空结果或参数拆分，或用于决定后续 merge / push 等写操作的只读 Git 盘点失败后仍把空输出当成“无变化、无冲突、无重叠”。
 - Git 同一文件混合改动且用户明确禁止创建任何 worktree；只有固定远端基线对象已在本地、全部其他写入者已明确停止、批准内容可从远端 blob 精确重建，并且不需要 hooks 或签名时，才改走外置临时索引和 Git 对象提交。
@@ -60,7 +61,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令高风�
 
 只读一个最相关文件：
 
-- 路径、外部 CLI、下载、用户级安装、PATH、LibreOffice / Poppler Windows 调用失败、`%USERPROFILE%` 路径匿名化改写、插件与运行时多版本副本定位：`references/cli-paths.md`
+- 路径、外部 CLI、PowerShell 命令输出的数组形状、Pester 跨版本参数、下载、用户级安装、PATH、LibreOffice / Poppler Windows 调用失败、`%USERPROFILE%` 路径匿名化改写、插件与运行时多版本副本定位：`references/cli-paths.md`
 - CSV 批量重写为 UTF-8 BOM 且要保住引号和内嵌逗号：`references/csv-rewrite-utf8.md`
 - Python / inline here-string / 中文路径乱码 / 现成脚本按 GBK 读取 UTF-8 文本失败：`references/python-utf8.md`
 - 中文 Markdown 或 UTF-8 文本读取：`references/markdown-read-utf8.md`

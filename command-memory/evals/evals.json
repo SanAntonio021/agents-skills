@@ -214,6 +214,18 @@
       "prompt": "PowerShell 里我先跑 `$changed = @(git -C $repo diff --name-only $old..$target)`，Git 打印了一整页 usage，但 `$changed` 是空数组。脚本下一步会把空数组当成没有路径重叠，然后执行 `git merge --ff-only $target`。这能继续吗？请给出安全改法。",
       "expected_output": "应加载 git-on-windows reference 的坑 10；指出 PowerShell 把 `$old..$target` 拆成了 `$old` 与 `..$target` 两个原生命令参数，usage 和非零退出码表示盘点失败，空 `$changed` 不能解释为无变化或无重叠。先验证两个值都是完整 40 位 SHA；`git diff` 优先把 `$old $target` 作为两个独立 revision 参数并加 `--`，若子命令确实需要单个 range，则显式构造 `$range = \"${old}..${target}\"` 后传 `$range`。每个决定后续写操作的只读 Git 命令后必须立即检查 `$LASTEXITCODE`，失败就停止在 merge 之前；不得继续消费空输出、原样重试或执行 `merge --ff-only`。",
       "files": []
+    },
+    {
+      "id": 35,
+      "prompt": "我写了一个 PowerShell 函数包装 Git：函数里先 `$out = @(& git @Arguments)`、检查 `$LASTEXITCODE`，最后 `return @($out)`。当 `git rev-parse HEAD` 只返回一行时，调用端的 `$head = (Invoke-GitLines @('rev-parse','HEAD'))[0].Trim()` 却报 `System.Char` 没有 `Trim`。函数不是已经返回数组了吗？请给出稳定写法。",
+      "expected_output": "应加载 cli-paths 的 PowerShell 输出形状模式；说明 PowerShell 会枚举函数成功输出流中的集合，函数里的 `return @($out)` 不能保证调用表达式在只有一个对象时仍保持数组，直接 `[0]` 会索引单个字符串并得到字符。调用端应写 `$headLines = @(Invoke-GitLines ...)` 固定数组形状，先要求 `Count` 恰好为 1，再用 `$head = ([string]$headLines[0]).Trim()` 取得完整行；包装器仍须在输出前立即检查外部命令退出码。对复用包装器还应验证零行、一行和多行，不得只为这次错误硬编码字符串。",
+      "files": []
+    },
+    {
+      "id": 36,
+      "prompt": "我必须在 Windows PowerShell 5.1 里运行仓库的 Pester 测试。本机实际加载的是 Pester 3.4.0，`Invoke-Pester <tests> -PassThru -Show None` 报找不到 `Show` 参数，测试根本没开始。不能升级或安装模块，怎样写成兼容当前版本又能可靠判断成败的命令？",
+      "expected_output": "应加载 cli-paths 的 Pester 版本感知模式；先固定实际 PowerShell 进程，读取可用 Pester 模块并导入目标版本，再通过 `Get-Command Invoke-Pester` 的实际 `Parameters` 判断静默选项：有 `Show` 才传 `Show=None`，否则有 `Quiet` 才传 `Quiet=$true`，都没有就省略静默参数。始终保留 `PassThru`，要求返回有效测试汇总，输出 PassedCount/FailedCount，并在失败数非零或汇总缺失时让承载测试的进程失败。参数绑定错误发生在测试开始前，不能算测试失败或通过；不得为适配命令升级模块。",
+      "files": []
     }
   ]
 }

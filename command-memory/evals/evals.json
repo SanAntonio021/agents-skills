@@ -295,6 +295,22 @@
         "输出要求在目标 PowerShell 版本中验证零项、一项和多项的数量、顺序与完整内容。",
         "输出不使用位置绑定、全局变量或强制数组转换掩盖冲突。"
       ]
+    },
+    {
+      "id": 42,
+      "prompt": "Windows 上正式发布 helper 所在仓库的 `git fetch` 持续报 `fatal: bad object refs/codex/turn-diffs/.../base.baiduyun.uploading.cfg`。`ls-remote` 显示远端 main 已推进，但新 tip 对象不在本地；当前只需要核对 helper 的入口、模块和测试文件是否仍对应同一个已发布基线，不需要 merge、checkout、更新本地 ref 或 push。能不能删掉这个伪引用，或者怎样在不修原仓库的情况下取得足够的远端对象证据？",
+      "expected_output": "应加载 git-on-windows 坑 5 的独立裸仓库来源证明模式；不删除、移动或 update-ref 伪引用，也不改 remote、TLS、凭据或原仓库。先记录失败、准确 Git dir、伪 ref 元数据、原 HEAD、目标路径状态、锁和 writer；在原仓库及同步/备份树外创建尚不存在的任务自有短路径，初始化独立 bare repo，直接向已核实远端只取准确分支。要求 fetch 成功、独立仓库的提交等于唯一 live ls-remote tip、已发布基线存在且是 tip 祖先、全部 helper/测试路径从基线到 tip 未变化，并以 Git clean-filter 后的工作 blob 逐项等于远端 blob；两次完整快照稳定且正式消费前远端未移动。该结果只证明远端来源，不表示原仓库已 fetch、修复或对齐；若任务需要 merge、checkout、写 ref、构建候选或 push，仍须停止并等待原仓库恢复或进入相应隔离发布流程。",
+      "files": [],
+      "expectations": [
+        "输出不删除、移动、改名或 update-ref 处理原仓库中的伪引用，也不修改 remote、凭据、TLS 或全局 Git 配置",
+        "输出把独立裸仓库路径限定为纯只读来源证明，不能用于 merge、checkout、更新原仓库 ref、构建候选或 push",
+        "输出要求独立仓库位于原仓库和同步或备份监控树之外，且任务根尚不存在",
+        "输出从已核实远端抓取准确分支，并核对 fetched commit 等于唯一 live ls-remote tip",
+        "输出以已发布基线而非原仓库本地独有 HEAD 作为祖先锚点，并核对证明路径从基线到 tip 未变化",
+        "输出用 hash-object --path 比较原工作文件与独立仓库中的远端 blob，并要求两次完整快照稳定",
+        "输出在正式消费证明前再次核对远端 tip、锁和 writer，没有把一次命令成功当成完整来源证明",
+        "输出明确区分远端来源已证明与原仓库仍未 fetch、修复或对齐"
+      ]
     }
   ]
 }

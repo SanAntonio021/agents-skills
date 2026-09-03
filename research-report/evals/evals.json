@@ -1,5 +1,6 @@
 {
   "skill_name": "research-report",
+  "fixture_policy": "synthetic-only",
   "evals": [
     {
       "id": 1,

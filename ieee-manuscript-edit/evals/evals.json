@@ -1,5 +1,6 @@
 {
   "skill_name": "ieee-manuscript-edit",
+  "fixture_policy": "synthetic-only",
   "evals": [
     {
       "id": 1,

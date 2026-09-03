@@ -614,6 +614,24 @@ R-01：建议先补充认证条件。
         codes = {item["code"] for item in result["findings"]}
         self.assertIn("ACTION_DIRECTIVE", codes)
 
+    def test_decision_report_mode_permits_recommendation_heading_and_sentence(self):
+        report = """# 调研报告
+
+## 方案建议
+
+在预算不超过 80 万元且需要在 6 个月内完成验证的条件下，建议先采购两套样机开展接口测试。[1]
+
+## 参考资料
+
+[1] 合成测试计划，2026-08-01。
+"""
+        result = audit_report.audit_text(
+            report, document_role="decision-report"
+        )
+        codes = {item["code"] for item in result["findings"]}
+        self.assertNotIn("ACTION_DIRECTIVE_HEADING", codes)
+        self.assertNotIn("ACTION_DIRECTIVE", codes)
+
     def test_implicit_validation_arrangement_is_flagged(self):
         report = """# 调研报告
 

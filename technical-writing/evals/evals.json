@@ -1,0 +1,34 @@
+{
+  "skill_name": "technical-writing",
+  "fixture_policy": "synthetic-only",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "合成案例：写系统说明。采集模块通过千兆以太网发送 UDP 数据；处理模块每 10 ms 汇总一次；告警模块只接收处理结果。",
+      "expected_output": "写清接口、数据流和模块边界，不补不存在的模块。",
+      "files": [],
+      "expectations": ["保留 UDP 和 10 ms", "告警模块不读取原始数据"]
+    },
+    {
+      "id": 2,
+      "prompt": "合成案例：只知道系统要使用无线信号定位。写一份可实施技术方案。",
+      "expected_output": "不自选制式、频段和指标，只列会改变方案选择的必要缺项。",
+      "files": [],
+      "expectations": ["材料不足时不凑完整方案", "不虚构参数"]
+    },
+    {
+      "id": 3,
+      "prompt": "合成案例：Pr=Pt+Gt+Gr-L，Pt=10 dBm、Gt=12 dBi、Gr=12 dBi、L=78 dB，计算得到 -44 dBm；台架尚未搭建。改写结果说明。",
+      "expected_output": "保护公式、数值和计算状态，解释变量及工程意义，不写成实测。",
+      "files": [],
+      "expectations": ["公式和单位不变", "计算不升级为实测"]
+    },
+    {
+      "id": 4,
+      "prompt": "只审不改。合成说明在三节重复 CAN 接口，最后一节又写成 RS-485。",
+      "expected_output": "建立论点—证据—章节功能表，指出重复和接口矛盾；矛盾判 fail。",
+      "files": [],
+      "expectations": ["audit_only 不改正文", "跨节接口矛盾判 fail"]
+    }
+  ]
+}

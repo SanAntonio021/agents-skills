@@ -8,7 +8,7 @@ PowerShell 的自动变量 `$PID` 表示当前 PowerShell 会话的进程号。�
 
 ```powershell
 $selfPid = $PID
-$matches = @(Get-CimInstance Win32_Process | Where-Object {
+$matchedProcesses = @(Get-CimInstance Win32_Process | Where-Object {
     $_.ProcessId -ne $selfPid -and
     $_.CommandLine -and
     $_.CommandLine -match '<TARGET_PATTERN>'

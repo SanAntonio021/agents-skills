@@ -51,7 +51,8 @@ TUN `auto-route` 或接口绑定 DNS 时，使用本检查表。目标是让门�
 
 核心已经稳定加载目标配置后，不要仅为制造一次 DNS 查询再次重启服务。按以下顺序验证：
 
-1. 确认 `pktmon` 没有活动会话或他人过滤器；记录物理接口对应的 PktMon component ID。
+1. 确认 `pktmon` 没有活动会话或他人过滤器；用当前 `pktmon list --json` 按物理接口及其 binding stack
+   重新定位候选 component，不沿用旧 ID。component ID 会在重启或 PktMon 驱动重载后变化。
 2. 只为获批的校内 DNS 添加 UDP/53 过滤器并开始抓包。抓包启动、停止和过滤器清理必须由同一个
    脚本管理，并在 `finally` 中执行 `pktmon stop` 和过滤器移除。
 3. 运行 `Clear-DnsClientCache` 清 Windows DNS Client 缓存，再通过现有命名管道 controller 调用
@@ -63,6 +64,13 @@ TUN `auto-route` 或接口绑定 DNS 时，使用本检查表。目标是让门�
    - 至少有一个发往获批校内 DNS 的请求和对应应答；
    - 门户请求与应答的 component ID 都属于目标物理接口；
    - 系统答案是预期的真实门户地址，不落入当前配置的 Fake-IP 地址段。
+
+不要把物理网卡 miniport 的 component ID 自动等同于双向观察点。miniport 通常只有上边缘，可能只看到
+一个方向；同一网卡 binding stack 内的 filter driver 才可能同时提供上、下边缘。正式判定前结合
+`pktmon list --json` 的绑定关系和捕获期间 `pktmon counters --json` 的 Tx/Rx 计数确认观察能力，不按
+component 名称猜，也不写死某个 ID。若候选 component 只看到应答或只看到请求，先换到同一物理接口
+绑定栈内已验证能观察双向流量的 component 后重抓。DNS 验收仍要求同次捕获中的请求与应答；找不到
+合格观察点时报告“接口绑定证据不足”，不能把缺失方向写成网络失败，也不能用单向包降级通过。
 
 只抓到其他域名访问校内 DNS，只能证明校内 DNS 可达，不能证明门户 `nameserver-policy` 生效。门户查询
 仍完全命中缓存、没有目标上游包或没有应答时，报告“接口绑定证据不足”，不把配置存在或一次解析成功

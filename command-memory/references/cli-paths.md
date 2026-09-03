@@ -1,6 +1,6 @@
 # CLI Paths
 
-用途：Windows 下外部 CLI、绝对路径、下载、用户级安装、PATH/env 持久化的命令骨架。只在这些场景有风险或已失败时读取。
+用途：Windows 下外部 CLI、PowerShell 命令形态、绝对路径、下载、用户级安装、PATH/env 持久化的命令骨架。只在这些场景有风险或已失败时读取。
 
 ## 通用骨架
 
@@ -42,6 +42,14 @@
 - preflight: 包装器在输出结果前立即检查外部命令的 `$LASTEXITCODE`；调用端先验证行数，再把准确元素转成预期类型。对会复用的包装器分别探测零行、一行和多行结果。
 - acceptance: 单行时 `$lines` 仍是数组、`Count` 为 `1`，`$lines[0]` 是完整字符串；零行或多行会被显式分流，不会因为字符索引、空值或隐式标量化继续后续写操作。
 - avoid: `$first = (Invoke-ToolLines ...)[0].Trim()`；依赖函数内部的 `return @($output)` 保证调用方拿到数组；不检查行数就消费首项。
+
+### Pattern: powershell-avoid-matches-automatic-variable-collision
+- use_when: 脚本把普通结果、筛选集合或布尔状态命名为 `$matches`（任意大小写），随后又执行 `-match`、`-notmatch` 或 `switch -Regex`，原值意外变成哈希表或读取到上一次正则捕获。
+- shape: 普通业务结果改名为 `$matchedRows`、`$matchResults` 或更具体的名称；正则命中后立即把需要的捕获复制到业务变量，例如 `if ($text -match '<REGEX>') { $capturedValue = [string]$Matches[1] }`，后续只使用 `$capturedValue`。
+- reason: PowerShell 变量名不区分大小写，所以 `$matches` 与自动变量 `$Matches` 是同一个变量。标量 `-match` / `-notmatch` 和 `switch -Regex` 会填充该哈希表；后续未命中的 `-match` 也不会自动清空旧值。
+- preflight: 在失败脚本中同时查找普通 `$matches` 赋值和正则操作，确认类型变化发生在相同作用域；把业务变量重命名后，从脚本入口重跑，而不是只在出错行前强制转型。
+- acceptance: 普通结果集合跨越全部正则操作后类型、数量和内容保持不变；正则捕获只从紧邻的成功匹配复制，未命中分支不会误用旧捕获。
+- avoid: 把 `$matches` 的大小写变体当普通变量；依赖一次未命中的 `-match` 清空 `$Matches`；用 `@($matches)` 或强制转型掩盖自动变量已经覆盖业务状态。
 
 ### Pattern: pester-version-aware-invocation
 - use_when: `Invoke-Pester` 在测试开始前报某个输出控制参数不存在，例如 Windows PowerShell 5.1 自带 Pester 3.4 不接受从新版命令复制来的 `-Show None`；当前任务不能为适配一条命令而升级测试框架。

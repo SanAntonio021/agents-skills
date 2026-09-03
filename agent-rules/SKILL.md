@@ -68,7 +68,6 @@ description: 维护当前本地智能体的底层规则、系统提示词、技�
 - 处理文件修改，以及规则文件没同步上时怎么查、怎么修：[references/file-editing-best-practices.md](references/file-editing-best-practices.md)
 - 精简系统提示词和主规则：[references/system-prompt-refinement.md](references/system-prompt-refinement.md)
 - 网页端无工具环境下的提示词写法：[references/web-system-prompt-guidelines.md](references/web-system-prompt-guidelines.md)
-- 本地子对话交接模板：[references/subdialog-handoff-template.md](references/subdialog-handoff-template.md)
 - 媒体处理能力边界：[references/media-processing-limitations.md](references/media-processing-limitations.md)
 
 ## 维护脚本

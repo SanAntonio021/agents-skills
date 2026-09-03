@@ -20,22 +20,24 @@
 
 ## v2 工具契约
 
-- `v2_review_peer` 固定 `review_only + inline + zero tools`，要求 `author`，且不接受 `artifactMode`、`targetRoot`、
-  `repairTargets` 或 `testCommands`。
+- `v2_review_peer` 固定 `review_only` 并要求 `author`。稳定本地文件使用
+  `artifactMode=workspace`、最小绝对 `targetRoot` 和相对 `artifactPath`，省略正文、`repairTargets` 与
+  `testCommands`；没有可靠文件路径时使用 inline zero tools，省略所有 workspace 字段。
 - `v2_review_repair_peer` 必须显式传 `author` 与 `artifactMode=inline|workspace`。inline 不接受工作区/测试字段，
   并要求完整 `repairedArtifact`；workspace 要求绝对 `targetRoot` 和非空 `{path, action}` 数组。
   plan 只能有一个与 `artifactPath` 相同的 `modify` target。
 - 首次进入和每次选择 workspace 前读取 `v2_peer_status`。`active=true` 与 `inlineReviews=true` 即可进行
-  零工具 inline 审查；workspace 还必须是 `workspaceRepairs=true`、`workspaceProbeState=available`。
-  `pending`/`unavailable` 时不得提交 workspace 请求或创建 job；纯审查继续用 `v2_review_peer`，显式
-  workspace 需求输出 `v2_workspace_capability_unavailable` 失败报告，不能静默降级。
+  零工具 inline 审查；workspace 还必须是 `workspaceReviews=true`、`workspaceRepairs=true`、
+  `workspaceProbeState=available`。`pending`/`unavailable` 时不得提交 workspace 请求或创建 job；已经
+  选择的路径审查输出 `v2_workspace_capability_unavailable` 失败报告，不能静默改成 inline 长正文。
 - `loopbackState` / `childLoopbackState=reachable_residual_risk` 是 sandbox 到临时 loopback fixture
   仍可达的残余风险，不是“已隔离”或“通过”。当 `activationState=eligible_with_loopback_residual_risk`
   且其余硬门合格时 workspace 调用可以继续；能力记录和 daemon audit 必须保留
   `loopbackResidualRisk=true`。工作区外写入、外网、子进程文件/外网边界继承或超时后进程树清理失败
   仍要求 `active=false`，不得创建 job。
-- 发起前从完整 `artifactContent` 重新计算 UTF-8 `artifactBytes` 和 SHA-256；正文缺失、`author` 缺失/非法、
-  空验收标准、相对路径非法或携带旧 `target/owner/operation/round/allowedPaths` 字段时不创建 job。
+- 发起前按 inline 正文或 workspace 目标文件的当前 UTF-8 字节重新计算 `artifactBytes` 和 SHA-256；
+  inline 正文缺失、workspace 路径身份缺失、`author` 缺失/非法、空验收标准、相对路径非法或携带旧
+  `target/owner/operation/round/allowedPaths` 字段时不创建 job。workspace 请求和持久 job 都不得携带正文。
 - workspace `testCommands` 只能是最多 16 项结构化命令：绝对普通 `.exe`、程序字节数、SHA-256、
   参数数组和 100..900000 ms 超时；bridge 的 Codex sandbox 在固定副本内执行，网络关闭，不向 Claude
   暴露 Bash。空数组与省略都不产生 Bash allowlist。
@@ -54,8 +56,8 @@
 
 ## 隔离与同步
 
-- workspace 固定副本包含完整目标根上下文但排除 `.git`；manifest、路径/链接检查和主项目 baseline
-  防止越界、删除、重命名、类型/权限变化及基线漂移。
+- workspace 固定副本包含最小目标根上下文但排除 `.git`；manifest、路径/链接检查和作者文件 baseline
+  防止越界和基线漂移。只读审查不接受任何文件变化，终态后删除副本和 manifest。
 - `repairTargets` 之外的任何写入、符号链接、路径穿越、`.git` 或目标根漂移都生成不可重试的
   `isolation_breach`/`reviewer_scope_violation` 证据，不同步主项目。
 - 正常新增/修改只在 baseline 未漂移且仍在 `repairTargets` 内时原子同步；高风险变化进入
@@ -69,8 +71,9 @@
 - 默认质量路由为 Claude `claude-opus-5/max`、Codex `gpt-5.6-sol/max`；profile/显式路由必须与
   `requested_model`、`requested_reasoning_effort`、`task_profile`、`routing_source` 和 rule ID 一致，
   不可 fallback 或降档。
-- Codex -> Claude 只接受 init 模型回执精确匹配、inline 零工具或 workspace 原生文件变更模式；
-  Claude -> Codex 记录 `workspace-write`、`approvalPolicy=never`、网络/搜索关闭、无额外目录，
+- Codex -> Claude 只接受 init 模型回执精确匹配、inline 零工具、workspace `Read` 只读或 workspace
+  原生文件变更模式；Claude -> Codex 的只读审查记录 read-only sandbox，workspace 修订记录
+  `workspace-write`，两者均为 `approvalPolicy=never`、网络/搜索关闭、无额外目录，
   SDK 没有运行时模型回执时不得写成“已验证模型”。
 - Windows Codex 子进程固定 `include_environment_context=true` 与 `windows.sandbox="unelevated"`，
   不修改用户全局配置；结构化测试超时、非零退出、程序身份变化或漏测优先于模型的“通过”。
@@ -89,8 +92,8 @@
   `report`，不透传原始模型输出。Claude/Codex 两个方向都不注入 provider-native transport schema；
   两边都以不透明文本返回，bridge 接受规范 JSON、单层 `json` 围栏 JSON 或受控 Markdown，再统一按
   `V2ModelResponse` 校验。格式明显错误但能识别审查意图时，只允许一次同 job、同路由、同硬截止的零工具
-  格式整理；整理失败或整理后语义/schema/证据仍不合格时生成失败报告。v2 审查中的 `StructuredOutput`
-  或其他工具事件都按异常处理。
+  格式整理；整理失败或整理后语义/schema/证据仍不合格时生成失败报告。inline 审查中的
+  `StructuredOutput` 或任何工具事件都按异常处理；workspace 只读审查只允许密封副本内的 `Read`。
 - 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`。两次仍 pending
   都是非终态：只在 commentary 公开同一 job ID、state、首次 `hard_deadline_at`、`elapsed_ms` 和
   `remaining_ms`，随后在同一回合继续 `v2_await_peer -> v2_peer_result`。pending 不得生成
@@ -100,8 +103,8 @@
 - 提交前不可达且没有 job ID 时立即输出 `bridge_unreachable`。已有 job ID 后短暂断连时，只恢复 `/mcp`
   并查询同一 job；原硬截止前恢复则继续循环，原截止仍不可达才输出带原 job ID 的
   `bridge_unreachable`。所有路径都断言只创建一个 job。
-- 第 1/2 轮需修改时，inline 由作者自行修订主项目、workspace 才检查同步后的主项目；更新正文和身份
-  后用 CAS 发下一轮；第 3 轮仍不通过或
+- 第 1/2 轮需修改时，inline 和 workspace 只读审查都由作者自行修订，workspace 修订才检查同步后的
+  主项目；更新正文和身份后用 CAS 发下一轮；第 3 轮仍不通过或
   实质分歧时只输出 `DISAGREEMENT_REPORT`，不发第 4 轮。通过后仍停在用户执行确认门。
 - 仅原作者签收同步后的文件、测试和验收；执行、返工和最终交付不自动追加相反方向互审。
 

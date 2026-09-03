@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-31`
 - 最近来源登记审核：`2026-07-31`
-- 说明：完整收编 op7418/Humanizer-zh 的 MIT 主线提交，保留中文独立入口并统一本地目录与 frontmatter 名称；上游自 2026-01-19 后未见新提交，状态仍为 confirmed，不写 dormant。
+- 说明：v1 曾收编 op7418/Humanizer-zh 的 MIT 主线提交。v2 保留名称和许可证兼容性，重写为“共同质量规则 + 条件式气味目录 + 文体路由”；不再声称当前 SKILL.md 与上游逐字一致。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -29,7 +29,7 @@
 
 ### 已吸收
 
-- 保留中文 24 类 AI 写作模式和中文语境示例；补充本地语言、学术交付和申报书交付边界。
+- 保留“先保护含义、不得虚构、结合语境复核 AI 写作模式”的基本边界；具体目录已在 v2 重新归并。
 
 ### 明确不吸收
 
@@ -79,3 +79,14 @@
 - `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
+
+## v2 设计参考
+
+以下来源用于方法比较，不作为镜像或逐字收编对象：
+
+| 来源 | 吸收 | 不直接照搬 |
+|---|---|---|
+| [MrGeDiao/shuorenhua](https://github.com/MrGeDiao/shuorenhua) | 事实与关系保护、受保护片段、修改范围、漂移复核 | 不把它当作个人文风或正式文体规则 |
+| [KKKKhazix/human-writing](https://github.com/KKKKhazix/human-writing) | 材料不足就少写、段落推进信息、写够即停 | 不采用面向网络长文的统一标点和句式限制 |
+| [Linux.do topic 2709199](https://linux.do/t/topic/2709199) | 日常中文先答问题、少铺垫 | 不用于替代长文结构、证据和终稿审校 |
+| [TW93/Waza /write](https://github.com/tw93/Waza/blob/main/skills/write/SKILL.md) | 气味需判断、少改、保留作者声音 | 不承担工程与学术事实保护 |

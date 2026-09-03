@@ -1,77 +1,82 @@
 ---
 name: project-writing
-description: 中文工程申报书和工程课题写作与修订，也可由“工程申报”“工程本子”“gongcheng-shenbao”“gongcheng-benzi”唤起。Use when 任务已经明显属于工程申报、工程建设、产业化应用、软建设机制、卡点陈述或研发需求写作；也用于工程申报 `.md`/`.tex` 修改后的里程碑确认和旧版本查找、比较或恢复。
+description: 中文工程项目书、申请书正文、专家答复和终稿审校。Use when 任务涉及工程申报、工程建设、产业化应用、研发需求、技术指标、专家意见回复或项目书定稿；根据 proposal、expert_reply、final_audit 三种模式处理，不把固定三段式当作默认模板。
 ---
 
-# 工程申报写作
+# 工程项目写作
 
-## 作用
+## 入口
 
-这份 skill 负责把任务直接拉进工程申报口径，不再沿用科研论文或纯科学基金的叙事方式。
+从 [writing-router](../writing-router/SKILL.md) 接收：
 
-## 适用任务
+- `document_type=project`
+- `mode=proposal|expert_reply|final_audit`
+- `edit_scope`、`language`、`loaded_refs`
 
-- 主体建设内容
-- 产业化与应用内容
-- 软建设与运行机制
-- 项目标题和主线统一
-- 卡点陈述
-- 研发需求
-- 工程化措辞清理
+读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整草稿、结构重写、终稿审校和只审不改任务再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
 
-## 流程
+私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `project` 样稿获批时才加载对应文件。公开的本技能不保存个人项目样稿。
 
-1. 先判断当前要处理的是哪一类工程段落。
-2. 抽出四个关键锚点：
-   - 核心对象
-   - 部署或落地形态
-   - 运行支撑
-   - 应用场景
-3. 先统一主线，再按章节重写，避免各段各说各话。
-4. 成果简介或产业化应用简介需要压缩为固定段落时，优先采用三段式：实现方法与创新点；技术指标体系；应用验证、推广情况或成果产出。每段只承担一个叙事任务。
-5. 如果用户没要求直接起草，先给修改路径和结构判断，再等确认。
-6. 涉及指标可行性时，转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md) 做专门论证。
-7. 面对老师批注、审稿意见或标注修改时，先提取原文和修改点，形成逐条对照稿，再进入正式补写。
-8. 补写新增内容时，优先沿“技术背景 -> 现状概述 -> 存在问题 -> 原因分析 -> 技术清单 -> 价值与成熟度评估 -> 重点发展方向”的同一链路向后展开，不在单一小节孤立补一句。
-9. 新增段落先做工程化措辞清理，再并回正文，避免解释腔、口语化、软件工程词和生造词残留。若论文、专利、获奖等成果信息缺失，不在正文末尾主动添加“暂无相关成果”等缺失声明；只写已有的应用验证、推广情况或可核实的成果事实。
-10. 起草或精修申报书正文时，读取 `D:\BaiduSyncdisk\.agents\vocab\中文\通用.md` 和 `D:\BaiduSyncdisk\.agents\vocab\中文\申报书.md`；处理黑障或高超声速通信申报书、审查相关术语时，同时读取 [references/engineering-glossary-blackout.md](references/engineering-glossary-blackout.md)；交付前需要扫用词时，用 [../style-vocab/SKILL.md](../style-vocab/SKILL.md)。
-11. 如果用户明确希望“参照已有成熟口气”来收工程申报段落，再按需读取 [references/writing-samples.md](references/writing-samples.md) 里的对应样本；只借句式密度和论证推进方式，不机械套句。
-12. 交付前除扫描高风险词外，还要逐句检查主谓、动宾、并列中心词、修饰关系和指代；按 [references/proposal-revision-lessons.md#交付前语言搭配验收](references/proposal-revision-lessons.md#交付前语言搭配验收) 重读改动句及其上下文。词表扫描不能替代这一步。
+## `proposal`
 
-## Word 交付边界
+先锁定申报表栏目、字数、评价对象和事实来源，再决定结构。常用的信息链包括：
 
-申报书正文先在 Markdown 主稿中完成、审阅和冻结。需要 Word 时，按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 生成清单并交给 `docx`；内容未冻结或未收到当前任务用户确认时只允许预览，不生成正式 DOCX。原 Markdown、模板和既有交付物保持不变。
+- 要解决的工程问题和使用场景；
+- 建设或研发对象；
+- 实现方法、关键接口和适配条件；
+- 可考核指标与验证方法；
+- 已有基础、部署约束和风险边界。
 
-## 本地文稿版本保护
+这些是可选职责，不是固定章节。栏目已规定时按栏目写；短段落只保留完成该栏目所需的职责。成果简介确需三段式时可以使用，但不得为了凑三段重复同一结论。
 
-实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)。后续出现明确里程碑确认或旧版本查找、比较、恢复请求时也读取。只读审查、聊天内改句和未落盘的方案讨论不触发。
+工程表述应明确“任务—能力—适配对象—真实约束”。“卡点”写当前能力缺口及其后果；“研发需求”写要形成的能力和验收条件，不提前宣称已经突破。
 
-## 边界
+## `expert_reply`
 
-- 不把工程申报写成纯研究论文。
-- 不把核心产品和部署载体混为一谈。
-- 不把“卡点”写成解决方案广告。
-- 不把“研发需求”写成空泛口号。
-- 不在老师原有批注基础上减信息量；补写内容不得比原批注更少。
-- 如果任务只是一般学术总控、前期调研或 SCI 写作，退回更合适的 skill。
+逐条处理专家真正问的问题：
 
-## 相关技能
+1. 先给明确答复或判断；
+2. 写支撑答复的事实、数据、计算或已有工作；
+3. 说明正文将改在哪里、改成什么口径；
+4. 仍缺证据时直说缺哪一项，不用礼貌套话或防御性长段落代替证据。
 
-- 学术协作总控：[../writing-router/SKILL.md](../writing-router/SKILL.md)
-- 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
-- 前期调研：[../baseline-research/SKILL.md](../baseline-research/SKILL.md)
-- SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-- 用词表维护与交付前扫用词：[../style-vocab/SKILL.md](../style-vocab/SKILL.md)
+若模板要求“意见—回复—修改位置”，保留模板。没有模板时不强制三栏或三段。专家原话、指标和否定范围属于受保护内容。
 
-## 参考文件
+## `final_audit`
 
-- [references/proposal-defense-protocol.md](references/proposal-defense-protocol.md)
-- [references/engineering-glossary-blackout.md](references/engineering-glossary-blackout.md)
-- [references/proposal-revision-lessons.md](references/proposal-revision-lessons.md)
-- [references/writing-samples.md](references/writing-samples.md)
+终稿先做“论点—证据—章节功能”表，再检查：
 
-## 维护
+- 同一任务、指标或价值判断是否跨栏目无理由重复；
+- 拟开展、已设计、已实现、已测试和已应用是否与证据一致；
+- 技术指标是否写清对象、条件、单位、测量或计算方法；
+- 项目价值是否有应用对象、现有差距或量化效果支撑；
+- 专家答复与正文修改是否一致；
+- 模板必填项、字数和固定标题是否保留。
 
-- 这里只保留工程申报的稳定边界、结构和措辞规则。
-- 一次性项目事实、老师原话和临时命名偏好不要沉淀进来。
-- 老师批注驱动的补写经验、措辞清理示例和章节补写链条，优先沉淀到 `references/`，不要把 `SKILL.md` 主体写重。
+任何数字漂移、公式含义变化、状态升级或跨节矛盾都判 `fail`。
+
+## 公式和指标
+
+公式旁边说明每个变量、单位和取值来源，并用一句话解释公式在工程上用来判断什么。计算值要区分输入、假设、计算方法和结果；仿真、台架测试、外场实测不得混写。
+
+核心任务是论证指标是否可行时转 `target-feasibility`。本技能负责把核验后的结论放回正确栏目。
+
+## 用词与样式
+
+- 用具体对象、动作、条件和结果替代空泛评价。
+- 术语保持稳定，不为避重轮换“系统、平台、装置、载体”。
+- 可以写项目必要性和价值，但结论强度必须由差距、场景、指标或验证支撑。
+- 起草或精修时读取 `D:\BaiduSyncdisk\.agents\vocab\中文\通用.md` 和 `D:\BaiduSyncdisk\.agents\vocab\中文\申报书.md`；交付前用 `style-vocab` 做软审计，命中项仍结合文体例外判断。
+- 黑障或高超声速通信术语按需读取 [专门术语表](references/engineering-glossary-blackout.md)。
+
+## 文件边界
+
+实际写入 `.md` 或 `.tex` 前，执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 交付先执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md)，在正文审校、冻结并确认后交给 `docx`，默认另存新文件；不在导出时再做通用风格改写。
+
+## 完成条件
+
+- 每个栏目只承担模板要求的功能；
+- 任务、能力、适配对象和约束说清楚；
+- 指标、公式、变量、单位和状态可回查；
+- 必要复述有不同栏目功能，无整段复制；
+- `loaded_refs` 只包含实际读取文件。

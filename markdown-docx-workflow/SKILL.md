@@ -13,8 +13,8 @@ Word 是最终提交主文件，Markdown 是内容主稿。PDF 只从已经确�
 
 `DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED`
 
-- `DRAFT`：起草、修改、审阅 Markdown；内容仍可变化。完整草稿提交用户审阅前先通过内容质量门。
-- `CONTENT_FROZEN`：用户确认当前 Markdown 内容，且内容质量门与当前 Markdown 哈希一致；记录原话、时间、Markdown 路径和 SHA-256，此时不自动导出 Word。
+- `DRAFT`：由 `writing-router` 和当前文体技能起草、修改、审阅 Markdown；内容仍可变化。完整草稿提交用户审阅前先通过内容质量门。
+- `CONTENT_FROZEN`：用户确认当前 Markdown 内容，且文体技能的内容审校记录与当前 Markdown 哈希一致；记录原话、时间、Markdown 路径和 SHA-256，此时不自动导出 Word。
 - `DOCX_GENERATED`：`docx` 按已锁定的格式来源生成新 Word，记录生成清单、格式来源和 Word 指纹。
 - `DOCX_ACCEPTED`：完成 `docx` 的四层验收，并提交匹配 Word 指纹的 `DocxAcceptanceReport`。
 - `WORD_CONFIRMED`：用户确认该 Word 可作为最终版本，记录确认原话、时间、路径和 SHA-256。
@@ -24,12 +24,18 @@ Word 是最终提交主文件，Markdown 是内容主稿。PDF 只从已经确�
 
 ## 内容质量门
 
-完整 Markdown 第一次提交用户审阅前，以及用户修改正文后准备进入 `CONTENT_FROZEN` 时，自动完成两项检查，用户不需要提醒：
+本技能只接收已经由 `writing-router` 和当前文体技能完成审校的正文，不自行改写正文，也不再次调用 `humanizer-zh`。普通中文材料可以由 `humanizer-zh` 作为当前文体技能；项目书、技术文档、调研报告、会议纪要和论文必须使用各自的文体技能。
 
-1. 调用 `humanizer-zh` 检查套话、空泛结构、防御性句式、宣传腔和其他通用 AI 写作模式。
-2. 调用 `style-vocab` 按语言和文稿类型运行个人词表审计。
+进入 `CONTENT_FROZEN` 前，核对一份绑定当前 Markdown 的内容审校记录。记录至少包含：
 
-词表审计必须返回 `clean`，或对每个命中说明为何属于例外。报告至少记录 Markdown 路径、SHA-256、两项检查是否完成、词表审计状态和例外数量。Markdown 内容一旦变化，旧检查记录立即失效；重新检查前保持 `DRAFT`。临时关键词搜索、人工浏览和“读起来还可以”不能替代这两项检查，也不能据此宣称文字验收通过。
+- Markdown 路径和 SHA-256；
+- `document_type`、`mode`、`edit_scope` 和 `language`；
+- 实际 `loaded_refs`；
+- 共同质量检查结果；
+- 本轮需要 AI 气味复核时的目录版本、结果和未决项；
+- `style-vocab` 的检查状态及有依据的例外。
+
+共同质量检查必须通过；阻断项必须为零；词表检查必须为 `clean`，或逐项说明例外。记录缺失、哈希不一致或仍有阻断项时，保持 `DRAFT`，退回当前文体技能处理。Markdown 内容一旦变化，旧记录立即失效。导出、套模板、分页和格式验收不能改变正文，也不能生成一份新的文字审校结论。
 
 ## 格式来源门
 

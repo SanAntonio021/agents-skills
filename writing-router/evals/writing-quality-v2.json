@@ -1,0 +1,406 @@
+{
+  "suite": "writing-quality-v2",
+  "fixture_policy": "synthetic-only",
+  "evals": [
+    {
+      "id": 101,
+      "document_type": "project",
+      "mode": "proposal",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "normal_writing",
+      "prompt": "以下材料均为合成。请写一段项目申请书的建设内容：对象为港区巡检链路；拟研发双频点微波回传终端；目标是在遮挡出现时于 200 ms 内切换链路；验证方式为 3 个固定点位各连续运行 8 小时。目前只有实验室样机，不得写成已部署。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "正文直接说明任务、能力、适配场景、指标和验证条件，不使用固定三段式，不把样机写成已部署。",
+      "expectations": [
+        "保留 200 ms、3 个点位和 8 小时。",
+        "状态保持为拟研发和实验室样机。",
+        "加载 project-writing 与共同质量规则，不加载其他文体细则。"
+      ],
+      "protected_literals": ["200 ms", "3 个固定点位", "8 小时", "实验室样机"],
+      "forbidden_claims": ["已部署", "已规模应用"],
+      "expected_loaded_refs": ["project-writing/SKILL.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md", "meeting-notes/references/workflow.md"],
+      "synthetic": true
+    },
+    {
+      "id": 102,
+      "document_type": "project",
+      "mode": "proposal",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "insufficient_material",
+      "prompt": "以下材料均为合成。为“山地应急通信平台”写完整的技术指标与验收方案。现有材料只有项目名称和“希望通信稳定”一句话。不要联网。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "不编造频段、距离、速率或验收门槛，只列出形成指标与验收方案所缺的最少信息。",
+      "expectations": [
+        "不生成貌似完整的指标表。",
+        "明确缺少场景、链路距离、业务需求、环境条件和测量方法中的关键项。",
+        "材料不足时写够即停。"
+      ],
+      "protected_literals": ["山地应急通信平台", "希望通信稳定"],
+      "forbidden_claims": ["10 Gbps", "99.999%", "已完成"],
+      "expected_loaded_refs": ["project-writing/SKILL.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 103,
+      "document_type": "project",
+      "mode": "expert_reply",
+      "edit_scope": "bounded",
+      "language": "zh",
+      "case_kind": "fact_formula_protection",
+      "prompt": "以下材料均为合成。专家问“为什么目标速率写 8 Gbit/s”。材料只给出估算式 C=B log2(1+SNR)，其中 B=2 GHz、SNR=15 dB；该值是链路预算阶段的计算结果，尚未实测。请写答复并解释变量的工程含义。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "先直接回答估算依据，解释 C、B、SNR 和单位，明确这是计算结果而非实测，不改公式。",
+      "expectations": [
+        "公式 C=B log2(1+SNR) 原样保留。",
+        "保留 B=2 GHz、SNR=15 dB。",
+        "不得把计算结果升级为实测或验收结果。"
+      ],
+      "protected_literals": ["C=B log2(1+SNR)", "B=2 GHz", "SNR=15 dB", "尚未实测"],
+      "forbidden_claims": ["实测达到", "已经通过验收"],
+      "expected_loaded_refs": ["project-writing/SKILL.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["research-report/references/decision-report.md"],
+      "synthetic": true
+    },
+    {
+      "id": 104,
+      "document_type": "project",
+      "mode": "final_audit",
+      "edit_scope": "audit_only",
+      "language": "zh",
+      "case_kind": "repetition_smell_audit",
+      "prompt": "以下材料均为合成，只审不改。第一节写“项目拟建设一套 6 GHz 试验链路，用于园区巡检。”第二节整段重复这句话。第三节又写“该系统将全面重塑园区数字化格局”，没有证据。请审查。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "建立论点—证据—章节功能表，整段重复判 fail，空洞拔高单列；不生成改写稿。",
+      "expectations": [
+        "识别第二节无理由整段重复。",
+        "识别第三节缺少事实支撑。",
+        "保持 audit_only，不顺手改正文。"
+      ],
+      "protected_literals": ["6 GHz", "拟建设"],
+      "forbidden_claims": ["已建成"],
+      "expected_loaded_refs": ["project-writing/SKILL.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["technical-writing/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 201,
+      "document_type": "technical",
+      "mode": "system_description",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "normal_writing",
+      "prompt": "以下材料均为合成。写一段系统说明：采集模块通过千兆以太网向处理模块发送 UDP 数据；处理模块每 10 ms 汇总一次；告警模块只接收处理结果，不读取原始采样。设备版本为 TX-4A v0.7。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "写清模块关系、接口、数据流和边界，不重复系统目标，不混淆原始采样与处理结果。",
+      "expectations": [
+        "保留 UDP、10 ms 和 TX-4A v0.7。",
+        "明确告警模块不读取原始采样。",
+        "加载 technical-writing，不加载项目书或论文细则。"
+      ],
+      "protected_literals": ["UDP", "10 ms", "TX-4A v0.7", "不读取原始采样"],
+      "forbidden_claims": ["TCP", "每 1 ms", "告警模块读取原始采样"],
+      "expected_loaded_refs": ["technical-writing/SKILL.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["project-writing/SKILL.md", "ieee-manuscript-edit/references/chinese-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 202,
+      "document_type": "technical",
+      "mode": "technical_scheme",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "insufficient_material",
+      "prompt": "以下材料均为合成。请写一份可实施的室内定位技术方案。现有材料只有“使用无线信号定位”，没有场地尺寸、精度、终端数量、频段、预算或既有设备信息。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "不凭常识补成完整方案，只说明当前能确定的目标，并列出会改变方案选择的必要缺项。",
+      "expectations": [
+        "不自行选择 UWB、Wi-Fi、蓝牙或具体频段。",
+        "不生成虚构架构和指标。",
+        "缺项清单简短且与方案选择直接相关。"
+      ],
+      "protected_literals": ["使用无线信号定位"],
+      "forbidden_claims": ["采用 UWB", "定位精度 10 cm", "已部署"],
+      "expected_loaded_refs": ["technical-writing/SKILL.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["research-report/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 203,
+      "document_type": "technical",
+      "mode": "test_result_analysis",
+      "edit_scope": "bounded",
+      "language": "zh",
+      "case_kind": "fact_formula_protection",
+      "prompt": "以下材料均为合成。改写结果段：接收功率按 Pr=Pt+Gt+Gr-L 计算，Pt=10 dBm、Gt=12 dBi、Gr=12 dBi、L=78 dB；计算值为 -44 dBm。台架尚未搭建。说明变量和结果含义，不得写成实测。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "保持公式、输入、单位和 -44 dBm，明确结果来自计算并说明台架尚未搭建。",
+      "expectations": [
+        "保护所有公式变量和数值。",
+        "计算与实测状态分开。",
+        "说明该结果用于判断接收功率预算。"
+      ],
+      "protected_literals": ["Pr=Pt+Gt+Gr-L", "Pt=10 dBm", "Gt=12 dBi", "Gr=12 dBi", "L=78 dB", "-44 dBm", "台架尚未搭建"],
+      "forbidden_claims": ["实测为 -44 dBm", "测试表明"],
+      "expected_loaded_refs": ["technical-writing/SKILL.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 204,
+      "document_type": "technical",
+      "mode": "system_description",
+      "edit_scope": "audit_only",
+      "language": "zh",
+      "case_kind": "repetition_smell_audit",
+      "prompt": "以下材料均为合成，只审不改。概述、架构和模块说明三节都重复“控制器通过 CAN 总线读取传感器状态”，没有新增条件；模块说明又把 CAN 改写成 RS-485。请审查。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "建立论点—证据—章节功能表，识别无增量重复和接口矛盾；接口矛盾判 fail。",
+      "expectations": [
+        "不以同义改写掩盖重复。",
+        "识别 CAN 与 RS-485 的跨节矛盾。",
+        "不生成修订后的完整文档。"
+      ],
+      "protected_literals": ["CAN", "RS-485"],
+      "forbidden_claims": [],
+      "expected_loaded_refs": ["technical-writing/SKILL.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["meeting-notes/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 301,
+      "document_type": "research_report",
+      "mode": "evidence_report",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "normal_writing",
+      "prompt": "以下材料均为合成。写一段证据型报告：A 公告称 2025 年建成 4 个监测站；B 年报称 2026 年新增 2 个站；统计口径均为投入运行的站点。报告只回答站点数量变化，不给建设建议。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "区分来源事实和综合判断，得出站点由 4 个增至 6 个；不加入行动建议。",
+      "expectations": [
+        "保留 2025 年、4 个、2026 年和新增 2 个。",
+        "说明统计口径一致。",
+        "不生成采购或建设建议。"
+      ],
+      "protected_literals": ["2025 年", "4 个监测站", "2026 年", "新增 2 个站"],
+      "forbidden_claims": ["建议", "应立即"],
+      "expected_loaded_refs": ["research-report/SKILL.md", "research-report/references/modes.md", "research-report/references/report-contract.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["research-report/references/decision-report.md", "ieee-manuscript-edit/references/chinese-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 302,
+      "document_type": "research_report",
+      "mode": "evidence_report",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "insufficient_material",
+      "prompt": "以下材料均为合成。写一份某市低空通信市场规模报告。材料只有一家厂商宣传册中的“市场增长迅速”，没有地区口径、年份、销量、金额或原始来源。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "不生成市场规模报告或数字，转为内部台账，说明必须补的口径和证据。",
+      "expectations": [
+        "不把宣传语改成市场事实。",
+        "不静默缩小研究范围。",
+        "不写虚构规模和增长率。"
+      ],
+      "protected_literals": ["市场增长迅速"],
+      "forbidden_claims": ["亿元", "增长率", "市场规模达到"],
+      "expected_loaded_refs": ["research-report/SKILL.md", "research-report/references/research-ledger.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["research-report/references/decision-report.md"],
+      "synthetic": true
+    },
+    {
+      "id": 303,
+      "document_type": "research_report",
+      "mode": "decision_report",
+      "edit_scope": "bounded",
+      "language": "zh",
+      "case_kind": "fact_formula_protection",
+      "prompt": "以下材料均为合成。事实：方案甲单价 18 万元，交付期 3 个月；方案乙单价 12 万元，交付期 7 个月。预算上限 40 万元，必须在 4 个月内完成两套设备联调。请写采购建议，不改变数值。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "先比较成本和交付条件，再建议方案甲；写清两套共 36 万元和 4 个月约束，不把建议写成已采购。",
+      "expectations": [
+        "保留 18 万元、3 个月、12 万元、7 个月、40 万元和 4 个月。",
+        "建议依据能回指事实。",
+        "状态保持为建议而非已批准。"
+      ],
+      "protected_literals": ["18 万元", "3 个月", "12 万元", "7 个月", "40 万元", "4 个月"],
+      "forbidden_claims": ["已经采购", "已经批准"],
+      "expected_loaded_refs": ["research-report/SKILL.md", "research-report/references/report-contract.md", "research-report/references/decision-report.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["meeting-notes/references/workflow.md"],
+      "synthetic": true
+    },
+    {
+      "id": 304,
+      "document_type": "research_report",
+      "mode": "final_audit",
+      "edit_scope": "audit_only",
+      "language": "zh",
+      "case_kind": "repetition_smell_audit",
+      "prompt": "以下材料均为合成，只审不改。摘要和结论逐字重复“样本中 6 家企业有 4 家提供一年质保”。正文另写“行业普遍提供长期质保”，没有其他来源。请审查。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "建立论点—证据—章节功能表，逐字重复判 fail，并指出“行业普遍”超过 6 家样本证据。",
+      "expectations": [
+        "识别摘要与结论整句重复。",
+        "识别样本外推过度。",
+        "保持只审不改。"
+      ],
+      "protected_literals": ["6 家企业", "4 家", "一年质保"],
+      "forbidden_claims": [],
+      "expected_loaded_refs": ["research-report/SKILL.md", "research-report/references/modes.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 401,
+      "document_type": "meeting_notes",
+      "mode": "discussion",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "normal_writing",
+      "prompt": "以下转写均为合成。甲：现有时钟抖动可能影响解调。乙：还没有测量数据，先不要下结论。甲：可以比较外部时钟和板载时钟。请整理讨论型纪要，不补任务。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "保留甲的判断、乙的异议和待比较问题，不写成共识或已分配任务，不补空栏目。",
+      "expectations": [
+        "观点归属清楚。",
+        "“可以比较”不变成待办。",
+        "结构只包含有内容的部分。"
+      ],
+      "protected_literals": ["还没有测量数据", "外部时钟", "板载时钟"],
+      "forbidden_claims": ["会议决定", "甲负责", "必须完成"],
+      "expected_loaded_refs": ["meeting-notes/SKILL.md", "meeting-notes/references/workflow.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["project-writing/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 402,
+      "document_type": "meeting_notes",
+      "mode": "discussion",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "insufficient_material",
+      "prompt": "以下材料均为合成。转写只有“这个以后再说”“嗯”“好的”，没有可识别议题、决定、发言人或任务。请整理正式纪要。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "不补会议主题、结论或任务，简要说明现有转写不足以形成纪要，并指出最少需要的信息。",
+      "expectations": [
+        "不从文件名或常识猜主题。",
+        "不生成空的四段模板。",
+        "不虚构决定和负责人。"
+      ],
+      "protected_literals": ["这个以后再说", "嗯", "好的"],
+      "forbidden_claims": ["会议围绕", "会议决定", "负责人"],
+      "expected_loaded_refs": ["meeting-notes/SKILL.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["research-report/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 403,
+      "document_type": "meeting_notes",
+      "mode": "mixed",
+      "edit_scope": "draft",
+      "language": "zh",
+      "case_kind": "fact_formula_protection",
+      "prompt": "以下转写均为合成。主持人：接口保持 2.5 GbE。李工：我周五前核对交换机兼容表。王工：是否改用 10 GbE 还需测试，暂未决定。请整理混合型纪要。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "把 2.5 GbE 写成已确认接口，把李工的动作和时间列为任务，把 10 GbE 保留为未决问题。",
+      "expectations": [
+        "保留 2.5 GbE、李工和周五前。",
+        "10 GbE 不得写成决定或任务。",
+        "不补其他负责人。"
+      ],
+      "protected_literals": ["2.5 GbE", "李工", "周五前", "10 GbE", "暂未决定"],
+      "forbidden_claims": ["决定改用 10 GbE", "王工负责测试"],
+      "expected_loaded_refs": ["meeting-notes/SKILL.md", "meeting-notes/references/workflow.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["technical-writing/SKILL.md"],
+      "synthetic": true
+    },
+    {
+      "id": 404,
+      "document_type": "meeting_notes",
+      "mode": "discussion",
+      "edit_scope": "audit_only",
+      "language": "zh",
+      "case_kind": "repetition_smell_audit",
+      "prompt": "以下材料均为合成，只审不改。纪要三次写“赵工认为功耗偏高”，没有新增依据；最后写“会议一致确认功耗超标”，但转写中孙工明确反对。请审查。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "建立论点—证据—章节功能表，识别无增量重复，并把虚构共识判 fail。",
+      "expectations": [
+        "保留赵工与孙工的观点差异。",
+        "一致确认不得成立。",
+        "不输出重写后的纪要。"
+      ],
+      "protected_literals": ["赵工", "孙工"],
+      "forbidden_claims": [],
+      "expected_loaded_refs": ["meeting-notes/SKILL.md", "meeting-notes/references/workflow.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/chinese-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 501,
+      "document_type": "paper",
+      "mode": "zh_paper",
+      "edit_scope": "bounded",
+      "language": "zh",
+      "case_kind": "normal_writing",
+      "prompt": "以下材料均为合成。把结果写成中文论文段落：在 20 °C、输入功率 -8 dBm 条件下，算法 A 的均方误差由 0.032 降至 0.019；只测试了 12 组数据。不要写普遍优越。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "先写条件和观察结果，再给受 12 组数据范围约束的解释；不加载英文论文细则。",
+      "expectations": [
+        "保留 20 °C、-8 dBm、0.032、0.019 和 12 组。",
+        "结论限定在已测试数据。",
+        "loaded_refs 不含 english-paper.md。"
+      ],
+      "protected_literals": ["20 °C", "-8 dBm", "0.032", "0.019", "12 组数据"],
+      "forbidden_claims": ["普遍优于", "显著领先所有方法"],
+      "expected_loaded_refs": ["ieee-manuscript-edit/SKILL.md", "ieee-manuscript-edit/references/chinese-paper.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 502,
+      "document_type": "paper",
+      "mode": "en_paper",
+      "edit_scope": "draft",
+      "language": "en",
+      "case_kind": "insufficient_material",
+      "prompt": "All material is synthetic. Write a complete Results section from this note: 'Method B looked better.' No metric, baseline, sample size, setup, or figure is available. Do not search the web. TRACE_WRITING_CONTEXT=1",
+      "expected_output": "Do not invent a Results section. Identify the minimum missing evidence in concise Chinese or English and stop.",
+      "expectations": [
+        "No numerical result or significance claim is invented.",
+        "The response asks for metric, baseline, setup, and sample scope only as needed.",
+        "loaded_refs contains english-paper.md and excludes chinese-paper.md."
+      ],
+      "protected_literals": ["Method B looked better."],
+      "forbidden_claims": ["significantly outperformed", "p < 0.05", "100 samples"],
+      "expected_loaded_refs": ["ieee-manuscript-edit/SKILL.md", "ieee-manuscript-edit/references/english-paper.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/chinese-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 503,
+      "document_type": "paper",
+      "mode": "en_paper",
+      "edit_scope": "bounded",
+      "language": "en",
+      "case_kind": "fact_formula_protection",
+      "prompt": "All material is synthetic. Edit this for an English paper without changing facts: 'The gain was calculated as G=10log10(Pout/Pin). With Pout=4 mW and Pin=1 mW, G=6.02 dB. The value has not been measured.' Explain the variables briefly. TRACE_WRITING_CONTEXT=1",
+      "expected_output": "Produce concise technical English, preserve the formula and values, and keep the result explicitly calculated rather than measured.",
+      "expectations": [
+        "G=10log10(Pout/Pin), 4 mW, 1 mW, and 6.02 dB remain unchanged.",
+        "Pout and Pin are explained.",
+        "The wording does not upgrade calculation to measurement."
+      ],
+      "protected_literals": ["G=10log10(Pout/Pin)", "Pout=4 mW", "Pin=1 mW", "G=6.02 dB", "has not been measured"],
+      "forbidden_claims": ["was measured", "experimental gain"],
+      "expected_loaded_refs": ["ieee-manuscript-edit/SKILL.md", "ieee-manuscript-edit/references/english-paper.md", "humanizer-zh/references/common-quality.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/chinese-paper.md"],
+      "synthetic": true
+    },
+    {
+      "id": 504,
+      "document_type": "paper",
+      "mode": "final_audit",
+      "edit_scope": "audit_only",
+      "language": "zh",
+      "case_kind": "repetition_smell_audit",
+      "prompt": "以下材料均为合成，只审不改。中文摘要与结论逐字重复同一段，其中声称“在全部场景中均有效”；正文只报告室内 5 m 条件。请做终稿审校。TRACE_WRITING_CONTEXT=1",
+      "expected_output": "建立论点—证据—章节功能表，整段重复和超范围结论均判 fail；加载中文与终稿规则，不加载英文规则。",
+      "expectations": [
+        "识别摘要与结论整段重复。",
+        "把“全部场景”与室内 5 m 证据不匹配列为失败。",
+        "保持只审不改。"
+      ],
+      "protected_literals": ["室内 5 m"],
+      "forbidden_claims": [],
+      "expected_loaded_refs": ["ieee-manuscript-edit/SKILL.md", "ieee-manuscript-edit/references/chinese-paper.md", "ieee-manuscript-edit/references/final-audit.md", "humanizer-zh/references/common-quality.md", "humanizer-zh/references/ai-smell-catalog.md"],
+      "expected_unloaded_refs": ["ieee-manuscript-edit/references/english-paper.md"],
+      "synthetic": true
+    }
+  ]
+}

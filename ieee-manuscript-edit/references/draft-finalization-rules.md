@@ -122,4 +122,4 @@ Markdown 的 ATX/Setext 标题、表格、原始 HTML 的 `table`/`pre`/`code`/`
 9. 拟合斜率只用于比较功率增长趋势或功率依赖关系；互调来源主要由频率关系、谱线位置和实验链路支撑。
 10. 中英双语场景下，英文稿按目标期刊风格二次重写。
 
-如果用户明确要求对齐正式技术文体或英文论文风格，再按需读取 [writing-samples.md](writing-samples.md)；只借句式密度、术语分层和信息推进方式，具体内容仍以当前稿件为准。
+如果用户明确要求对齐个人论文文风，先读取 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `paper` 样稿标为 `approved` 时才读取当前语言的对应片段。只借句式密度、术语分层和信息推进方式，具体内容仍以当前稿件为准。

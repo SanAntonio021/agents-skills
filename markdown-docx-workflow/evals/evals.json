@@ -1,6 +1,18 @@
 {
   "skill_name": "markdown-docx-workflow",
+  "fixture_policy": "synthetic-only",
   "evals": [
+    {
+      "id": "consume-reviewed-content-once",
+      "prompt": "合成案例：技术方案 Markdown 已由 technical-writing 完成共同质量、AI 气味和词表检查，审校记录与当前 SHA-256 一致。现在准备导出 Word。交付流程还要不要再调用 humanizer-zh 改一遍正文？",
+      "expected_output": "不再次调用 humanizer-zh，也不改正文；核对绑定当前哈希的审校记录后，按内容确认和 Word 生成流程继续。",
+      "expectations": [
+        "Consumes the reviewed Markdown without a second generic rewrite.",
+        "Requires the content review record to match the current Markdown hash.",
+        "Returns to the current genre skill when the review record is missing or blocked."
+      ],
+      "synthetic": true
+    },
     {
       "id": "unconfirmed-word-export",
       "prompt": "我还在修改 Markdown，只说‘导出 Word’，请判断现在能不能生成正式 Word，以及下一步怎么做。",

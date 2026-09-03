@@ -94,7 +94,12 @@ FORMAL_UNFINISHED_STATUS_RE = re.compile(
     r"(?:说明|判断|确认|评估|估算|证明)|"
     r"(?:还|仍).{0,8}(?:需要|缺少).{0,24}(?:资料|证据|来源|数据))"
 )
-DOCUMENT_ROLES = {"formal", "internal-ledger"}
+DOCUMENT_ROLES = {
+    "formal",
+    "evidence-report",
+    "decision-report",
+    "internal-ledger",
+}
 ACTIONABLE_HEADING_RE = re.compile(
     r"(?:建议|行动(?:安排|方案)?|下一步|下一阶段|推进(?:安排|计划)?|"
     r"实施(?:计划|安排)?|验证安排|后续安排|工作安排|路线图)"
@@ -429,7 +434,8 @@ def audit_text(
         choices = ", ".join(sorted(DOCUMENT_ROLES))
         raise ValueError(f"unsupported document role {document_role!r}; use {choices}")
 
-    formal = document_role == "formal"
+    formal = document_role in {"formal", "evidence-report", "decision-report"}
+    allow_action = document_role == "decision-report"
     paragraphs, headings = parse_markdown(text)
     findings: list[dict[str, object]] = []
     summary_labelled_paragraphs: list[Paragraph] = []
@@ -460,7 +466,7 @@ def audit_text(
                     excerpt=heading,
                 )
             )
-        if formal and ACTIONABLE_HEADING_RE.search(heading):
+        if formal and not allow_action and ACTIONABLE_HEADING_RE.search(heading):
             findings.append(
                 _finding(
                     "ACTION_DIRECTIVE_HEADING",
@@ -642,6 +648,7 @@ def audit_text(
 
         if (
             formal
+            and not allow_action
             and
             ACTION_DIRECTIVE_RE.search(paragraph.text)
             and not _is_reference_section(paragraph.section)
@@ -1029,7 +1036,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         choices=tuple(sorted(DOCUMENT_ROLES)),
         default="formal",
-        help="formal audits reader-facing reports; internal-ledger permits work status and internal keys",
+        help=(
+            "formal/evidence-report audit evidence reports; decision-report permits "
+            "evidence-backed recommendations; internal-ledger permits work status and internal keys"
+        ),
     )
     parser.add_argument(
         "--fail-on",

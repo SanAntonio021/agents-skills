@@ -800,10 +800,13 @@ test("published v3 contract uses real project tools, exact approvals, and one fi
   assert.match(skill, /不传 `artifactContent`/u);
   assert.match(skill, /一个普通文件/u);
   assert.match(skill, /action、完整 targets、approval ID、fingerprint/u);
+  assert.match(skill, /审批拒绝或过期本身不是 job 终态/u);
+  assert.match(skill, /继续查询同一 job/u);
   assert.match(skill, /author_modified=true/u);
   assert.match(skill, /只检查/u);
   assert.match(contract, /Codex 使用 bundled App Server/u);
   assert.match(contract, /批准有效期 24 小时/u);
+  assert.match(contract, /只有对端随后返回终态失败，整轮才失败/u);
   assert.match(contract, /conclusion_valid=true/u);
   assert.match(contract, /同一个 realpath `projectRoot`/u);
   assert.match(contract, /502\/503\/504\/524/u);
@@ -812,10 +815,11 @@ test("published v3 contract uses real project tools, exact approvals, and one fi
 
   const ids = evals.map((entry) => entry.id);
   assert.equal(new Set(ids).size, ids.length, "eval IDs must be unique");
-  for (const requiredId of [1, 2, 4, 8, 9, 10, 11, 13, 14, 16, 19, 25, 26, 27, 28, 29, 33, 35, 36]) {
+  for (const requiredId of [1, 2, 4, 8, 9, 10, 11, 13, 14, 16, 19, 25, 26, 27, 28, 29, 33, 35, 36, 37]) {
     assert.ok(ids.includes(requiredId), `missing reliability eval ${requiredId}`);
   }
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 25)), /额外重试一次/u);
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 29)), /不同项目/u);
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 36)), /完整权限/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 37)), /不能把拒绝本身写成终态失败/u);
 });

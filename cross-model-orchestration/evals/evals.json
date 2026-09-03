@@ -140,6 +140,13 @@
       "expected_output": "仍使用 v3_review_peer，省略 artifactContent，并把只检查写入 constraints；运行时保持完整权限和完整工具，不通过权限层擅自缩减。",
       "files": [],
       "expectations": ["用户的任务约束与系统权限是两层。", "终审本身由 bridge 强制 check-only。"]
+    },
+    {
+      "id": 37,
+      "prompt": "v3 对端想删除项目外的临时文件，用户拒绝了这项精确审批；审查本身仍可不执行删除而完成。",
+      "expected_output": "原样调用 v3_resolve_approval(decision=deny)，随后继续查询同一 job；bridge 在同一会话中取消该动作并让对端继续，不能把拒绝本身写成终态失败或另开任务。",
+      "files": [],
+      "expectations": ["只有对端随后明确无法完成并返回失败，才按最终失败报告。"]
     }
   ]
 }

@@ -57,6 +57,8 @@ test("published skill uses project-local v3 review and preserves the user execut
   assert.match(skill, /final_check/u);
   assert.match(skill, /用户明确确认后/u);
   assert.match(skill, /一个普通文件/u);
+  assert.match(skill, /拒绝或过期后继续原 job/u);
+  assert.match(skill, /不能把拒绝本身当成终态/u);
   assert.doesNotMatch(skill, /Claude Desktop continuation API/u);
   assert.doesNotMatch(skill, /submit_peer\(target=codex/u);
   assert.doesNotMatch(skill, /reviewerAccess=isolated_write/u);

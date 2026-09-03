@@ -15,6 +15,12 @@
       "type": "should-trigger"
     },
     {
+      "id": "trigger-denied-action-continues",
+      "prompt": "跨模型里程碑审查时对端想删项目外临时文件，我拒绝这项审批，但审查可以继续。",
+      "expect": "触发本 skill；原样拒绝该精确动作后继续查询同一 v3 job，不把拒绝本身当成终态，也不另开任务。",
+      "type": "should-trigger"
+    },
+    {
       "id": "no-trigger-exec-pitfall",
       "prompt": "codex exec 退出码 0，但它说建好的结果目录不存在。",
       "expect": "不触发；这是一次执行环境诊断。",

@@ -388,8 +388,8 @@ index 的 stat cache，让文件哈希在没有内容改动时变化。所有用
 
 ## 坑 5：云盘临时 ref 或 FETCH_HEAD 锁挡住 fetch
 
-同步客户端可能在 `.git/refs/heads/` 短暂生成 `*.baiduyun.uploading.cfg`，Git 会把它当作分支引用并报
-`fatal: bad object refs/heads/<name>.baiduyun.uploading.cfg`。也可能只有 `.git/FETCH_HEAD` 正被占用，
+同步客户端可能在 `.git/refs/` 任意子目录短暂生成 `*.baiduyun.uploading.cfg`，Git 会把它当作引用并报
+`fatal: bad object refs/<path>/<name>.baiduyun.uploading.cfg`。也可能只有 `.git/FETCH_HEAD` 正被占用，
 使 `git fetch` 报 `cannot open '.git/FETCH_HEAD': Permission denied`。单独出现其中一项，只证明 Git
 元数据正受外部写入或锁影响，不足以按“坑 3”判定整个仓库已被旧快照回滚。
 
@@ -409,7 +409,7 @@ index 的 stat cache，让文件哈希在没有内容改动时变化。所有用
   } else {
       $gitDir = [IO.Path]::GetFullPath((Join-Path $repoRoot $gitDirText))
   }
-  Get-ChildItem -LiteralPath (Join-Path $gitDir "refs\heads") -Force -ErrorAction SilentlyContinue |
+  Get-ChildItem -LiteralPath (Join-Path $gitDir "refs") -Recurse -Force -File -ErrorAction SilentlyContinue |
       Where-Object Name -like "*.baiduyun.uploading.cfg" |
       Select-Object FullName, Length, LastWriteTime
   Get-Item -LiteralPath (Join-Path $gitDir "FETCH_HEAD") -Force -ErrorAction SilentlyContinue |
@@ -426,11 +426,75 @@ index 的 stat cache，让文件哈希在没有内容改动时变化。所有用
   ```
 - substitute_only: `<REPO_ROOT>`, `<BRANCH>`；远端名不是 `origin` 时必须使用已核实的实际 remote，不从报错文本猜
 - diagnosis: 先检查报错指向的准确临时 ref 或 `FETCH_HEAD`，再核对真实 `HEAD`、目标远端 SHA 和当前 Git 状态；临时 ref 消失后可运行 `git fsck --no-reflogs --connectivity-only`，只有 dangling 对象不等于损坏，出现 missing/bad object 才停止并升级排查；只有同时出现历史倒退、冲突副本、旧目录复活等“坑 3”迹象时，才升级为云同步回滚处理
-- retry_boundary: 临时 ref 已自行消失或锁状态已经变化，且后续确实需要远端对象时，可以重新执行一次 `fetch`；同一状态下不原样重试，第二次仍失败就停止
+- retry_boundary: 临时 ref 已自行消失或锁状态已经变化，且后续确实需要远端对象时，可以重新执行一次 `fetch`；同一状态下不原样重试。重试仍失败时，写入、合并或修复原仓库的任务必须停止；只有纯只读来源证明可按下一模式在独立裸仓库取对象
 - scope_limit: `ls-remote` 只读取服务器端 ref，不更新本地 `origin/<BRANCH>`、不写 `FETCH_HEAD`、不下载对象；它只适合 push 后确认远端 tip、发布 helper 前核对 SHA 等只读门槛，不能替代 merge、rebase、checkout 或对象完整性检查前的 `fetch`
 - avoid: 不因单个临时文件就停止同步客户端、删除 `.git` 内文件、清理 refs、reset 仓库或宣称发生回滚；不把 `ls-remote` 的成功说成本地远端跟踪分支已更新；不在未知并发 Git 操作仍运行时继续写仓库
-- success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；若任务需要对象，则等阻断状态改变后正常 `fetch` 成功再继续
-- capture_rule: fetch 元数据被临时 ref 或锁阻断时，先缩小诊断范围；只读核验用 `ls-remote`，需要对象仍必须等到 `fetch` 恢复
+- success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；需要在原仓库消费对象时仍须等正常 `fetch` 恢复
+- capture_rule: fetch 元数据被临时 ref 或锁阻断时，先缩小诊断范围；只读核验 SHA 用 `ls-remote`，只有纯来源证明需要对象时才转入独立裸仓库模式
+
+### Pattern: git-prove-remote-blobs-in-disposable-bare-repository
+- scenario: 原仓库的持久伪 ref 使正常 `fetch` 无法取得新远端对象，但当前步骤只需证明一组本地运行文件对应哪个已发布版本，不需要在原仓库 merge、checkout、更新 ref 或发布
+- use_when: 已记录一次正常 `fetch` 因 `bad object refs/.../*.baiduyun.uploading.cfg` 失败；目标远端、分支、待核对路径和已发布基线提交均已准确固定；远端 tip 对象在原仓库缺失；任务只消费远端 commit/tree/blob 做只读祖先、路径差异和文件来源比较。缺少任一条件时停止
+- shell: PowerShell + Git for Windows
+- validated_shape:
+  ```powershell
+  $repoRoot = "<REPO_ROOT>"
+  $remoteName = "<REMOTE>"
+  $branch = "<BRANCH>"
+  $published = "<PUBLISHED_BASELINE_40_SHA>"
+  $proofRoot = "<NEW_TASK_OWNED_LOCAL_ROOT>"
+  $proofRepo = Join-Path $proofRoot "remote.git"
+  $paths = @("<RELATIVE_PATH_1>", "<RELATIVE_PATH_2>")
+
+  if ($published -notmatch '^[0-9a-f]{40}$') { throw "published baseline is not a full commit id" }
+  if (Test-Path -LiteralPath $proofRoot) { throw "proof root already exists" }
+  $remoteUrlRows = @(git --no-optional-locks -C $repoRoot remote get-url $remoteName)
+  if ($LASTEXITCODE -ne 0 -or $remoteUrlRows.Count -ne 1) { throw "cannot resolve the verified remote" }
+  $remoteUrl = ([string]$remoteUrlRows[0]).Trim()
+
+  New-Item -ItemType Directory -Path $proofRoot -ErrorAction Stop | Out-Null
+  git init --bare $proofRepo
+  if ($LASTEXITCODE -ne 0) { throw "proof repository initialization failed" }
+  git -C $proofRepo remote add origin $remoteUrl
+  if ($LASTEXITCODE -ne 0) { throw "proof remote setup failed" }
+  $refspec = "refs/heads/${branch}:refs/remotes/origin/${branch}"
+  git -C $proofRepo fetch --no-tags --no-recurse-submodules --no-write-fetch-head origin $refspec
+  if ($LASTEXITCODE -ne 0) { throw "clean proof fetch failed" }
+
+  $fetchedRows = @(git -C $proofRepo rev-parse "refs/remotes/origin/$branch`^{commit}")
+  if ($LASTEXITCODE -ne 0 -or $fetchedRows.Count -ne 1) { throw "cannot resolve fetched commit" }
+  $fetched = ([string]$fetchedRows[0]).Trim()
+  $liveRows = @(git -C $proofRepo ls-remote --exit-code --refs origin "refs/heads/$branch")
+  if ($LASTEXITCODE -ne 0 -or $liveRows.Count -ne 1) { throw "live remote tip is unavailable or ambiguous" }
+  $live = (([string]$liveRows[0] -split '\s+')[0]).Trim()
+  if ($fetched -ne $live) { throw "remote advanced during proof fetch" }
+
+  git -C $proofRepo cat-file -e "$published`^{commit}"
+  if ($LASTEXITCODE -ne 0) { throw "published baseline is absent from remote history" }
+  git -C $proofRepo merge-base --is-ancestor $published $fetched
+  if ($LASTEXITCODE -ne 0) { throw "published baseline is not an ancestor of the remote tip" }
+  $changedPaths = @(git -C $proofRepo diff --name-only --no-renames $published $fetched -- @paths)
+  if ($LASTEXITCODE -ne 0) { throw "remote path comparison failed" }
+  if ($changedPaths.Count -ne 0) { throw "proof paths changed after the published baseline" }
+
+  foreach ($path in $paths) {
+      $workRows = @(git --no-optional-locks -C $repoRoot hash-object "--path=$path" -- $path)
+      if ($LASTEXITCODE -ne 0 -or $workRows.Count -ne 1) { throw "working blob hash failed: $path" }
+      $remoteBlobRows = @(git -C $proofRepo rev-parse "$fetched`:$path")
+      if ($LASTEXITCODE -ne 0 -or $remoteBlobRows.Count -ne 1) { throw "remote blob lookup failed: $path" }
+      if (([string]$workRows[0]).Trim() -ne ([string]$remoteBlobRows[0]).Trim()) {
+          throw "working file does not match the remote blob: $path"
+      }
+  }
+  ```
+- substitute_only: 原仓库、已核实 remote、分支、已发布基线、全量运行/测试相对路径和一个尚不存在的任务自有短本地根；不能从错误文字猜远端、分支或路径集合
+- preflight: 记录原仓库准确 Git dir、失败的正常 fetch、伪 ref 元数据、本地 `HEAD`、目标路径状态和相关 Git writer/锁；确认 `$proofRoot` 在原仓库和同步/备份监控树之外。完整证明至少连续执行两次，比较原 `HEAD`、分支、目标路径状态、工作 blob 清单、唯一远端 tip、锁和 writer，且正式消费证明前再核对远端 tip 未移动
+- proof_boundary: 独立仓库只提供远端对象证据；原仓库的本地独有 `HEAD` 不必出现在远端历史中，也不能拿它替代 `$published`。放行依据必须是已发布基线属于远端历史、目标路径从该基线到当前 tip 未变化，并且实际工作文件逐项等于当前远端 blob
+- scope_limit: 只用于读取 commit/tree/blob 并完成来源证明。需要在原仓库 merge、rebase、checkout、更新远端跟踪 ref、构建候选或 push 时，本模式不满足前提，必须等原仓库正常 fetch 恢复或走该写入任务自己的隔离发布流程
+- avoid: 不删除、移动、改名或 `update-ref -d` 处理原伪 ref；不复制原 `.git`，不从损坏仓库做本地 clone、`--reference` 或 `--mirror`；不改 remote、凭据、TLS 或全局 Git 配置；不把独立仓库的成功说成原仓库已修复、已 fetch 或已对齐
+- cleanup: 保留证明仓库直到依赖它的验证和正式操作取得终态；之后只按任务记录中的准确路径及适用清理授权收口，失败时保留路径、远端 tip 和基线提交供恢复核对
+- success_signal: 两次证明快照稳定，独立仓库取得的提交等于当时唯一远端 tip，已发布基线是其祖先，全部证明路径随后未变，原工作文件与远端 blob 逐项相等，且原仓库未被本模式修改
+- capture_rule: 原仓库 fetch 被持久伪 ref 阻断时，不为取得只读证据修 Git 元数据；在干净独立裸仓库直接向已核实远端取对象，并把“远端来源已证明”和“原仓库仍未修复”分开报告
 
 ### Pattern: git-recover-transient-schannel-tls-preflight
 - scenario: Git for Windows 或发布/验收 helper 在任何仓库写入、UI 更新或运行时核验前，远端预检报 `schannel: failed to receive handshake` 或 `SSL/TLS connection failed`

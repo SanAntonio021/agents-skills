@@ -1,59 +1,64 @@
-# Bridge 适配与排错（2026-08-14）
+# Bridge 适配与排错（2026-09-03）
 
-## 运行入口
+## 两类入口
 
-科研里程碑不直接启动 `codex exec`、`claude -p` 或 `codex@openai-codex`。当前唯一运行入口是
-`claude-codex-bridge` MCP：
+科研循环有两种用途，不能混淆：
+
+1. 已有兼容任务接口可继续下发执行任务：
 
 ```text
-submit_peer(target=codex|claude, operation=task|review_repair,
-  targetRoot=<绝对共同根>, allowedPaths=<最小相对路径列表>, artifactId=<稳定 ID>,
-  taskProfile=research, testCommands=<逐条精确测试命令>)
+submit_peer(target=codex|claude, operation=task, taskProfile=research, ...)
 await_peer(job_id, timeout_ms<=45000)
 peer_result(job_id)
 ```
 
-Claude -> Codex 使用 bridge 的 SDK 适配器（`workspace-write`、`approvalPolicy=never`、网络和搜索关闭、
-无额外目录）。科研默认使用 `research` profile，当前解析为 Codex `gpt-5.6-sol/max` 与 Claude
-`claude-opus-5/max`。公开 `model`/`reasoningEffort` 可在白名单内显式选择；原始 CLI 模型参数、权限和
-sandbox 参数不能由提示词覆盖。`ask` 用空工具和默认权限，`review_repair` 只开放
-`Read,Edit,Write,Bash`、`acceptEdits` 和固定副本。
-Claude 方向的 Bash 不做通配授权；`testCommands` 不得含引号、变量、通配符、重定向、管道或命令串联，
-且任何 permission denial 都使本轮失败。
-这里的 `workspace-write` 是 bridge 向 SDK 发出的请求，不是外层宿主权限的独立回执；必须用实际文件
-与同步哈希证明写入成功。Codex `ask` 另用专用空只读目录，不能从 cwd 读取项目或 bridge 状态。
+2. 已落盘里程碑统一使用 v3 审查：
 
-## 里程碑请求模板
+```text
+v3_review_peer(
+  author, target,
+  projectRoot=<真实项目绝对路径>, artifactPath=<主文件相对路径>,
+  artifactType=deliverable, task, acceptanceCriteria,
+  model, reasoningEffort
+)
+v3_await_peer(job_id, timeout_ms<=45000)
+v3_peer_result(job_id)
+v3_author_checkpoint(...)
+```
+
+旧任务接口的范围和测试字段只属于执行任务。v3 审查不接收 `artifactContent`、`allowedPaths`、
+`repairTargets`、`testCommands`、sandbox 或工具列表；Claude CLI 和 Codex App Server 都以真实项目为 cwd，
+加载完整工具并可直接修改。
+
+## 里程碑模板
 
 ```json
 {
+  "author": "claude",
   "target": "codex",
-  "operation": "task",
-  "taskProfile": "research",
-  "question": "完成 M2，跑完停下等评审；返回命令、退出码、结果文件和限制。",
+  "projectRoot": "D:\\BaiduSyncdisk\\Project",
+  "artifactPath": "results/m2/summary.md",
   "artifactId": "research-m2",
-  "targetRoot": "D:\\BaiduSyncdisk\\Project",
-  "allowedPaths": ["src", "results\\m2", "logs\\m2"],
-  "acceptanceCriteria": ["results/m2/summary.json 存在且可解析"],
-  "testCommands": ["npm.cmd test"]
+  "artifactType": "deliverable",
+  "task": "核对 M2 的代码、原始数据、统计和物理结论，必要时直接修复项目。",
+  "acceptanceCriteria": ["summary.md 的结论可由保存的数据和脚本复现"],
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "max"
 }
 ```
 
-完成后另发 `operation=review_repair`，提供 `artifactType=deliverable`、完整内容/证据、当前哈希、
-前轮 findings 和相同 allowlist。不要把执行任务和验收任务合并成同一模型回合。
+正文、数据和日志留在项目中。请求只写任务和判据，不复制文档全文或秘密值。
 
-## 长任务、取消与恢复
+## 等待、审批和恢复
 
-- 每次 `await_peer` 最多 45 秒；超时只用同一 job 的 `peer_result` 或 `peer_status`。
-- `cancel_peer` 只请求并确认目标进程取消；不要删除固定工作区或丢弃线程 ID。
-- `resume_peer` 必须给出明确的原 job ID，并沿用 bridge 记录的线程、模型、强度和 profile；不得用
-  “最新会话”猜测，也不得在恢复时换路由。
-- 删除、重命名、权限或类型变化会返回 `needs_attention`；用户批准精确高风险 ID 后用
-  `approve_peer_sync`，这一步不重新调用模型。
-- `awaiting_user` 期间固定副本锁继续保留；新的重叠目标根任务应以 `retained_workspace_conflict` 停止。
+- 每次等待最多 45 秒；pending 时继续查询同一 job。
+- 502/503/504/524 由 v3 内部在同一 job 和会话额外重试一次，调用方不重发。
+- `awaiting_approval` 只批准或拒绝 bridge 展示的精确 action、targets、fingerprint 和 approval ID。
+- 批准后继续原 job；拒绝或超时取消动作。
+- 同一真实项目的 v3 job 串行，不同项目可并行。
+- 作者验收后调用 `v3_author_checkpoint`；作者改过主文件才运行一次只检查终审。
 
 ## 历史 CLI 资料
 
-旧版 `codex exec` 的 `sandbox_mode`、stdin EOF、PowerShell 引号和 Desktop/CLI 会话不互通问题只供
-排查旧日志和迁移材料参考。它们不是本工作流的可执行步骤；发现调用方仍依赖旧命令时，停止并迁移到
-bridge，而不是增加 `--dangerously-skip-permissions`、网络或额外目录。
+原生 `codex exec`、`claude -p`、旧 companion、固定副本 sandbox 和 v2 `review_repair` 只用于排查历史
+日志或继续既有 job，不是新里程碑审查入口。迁移时保留旧记录，不把 v3 权限降为只读或白名单。

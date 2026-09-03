@@ -1,95 +1,85 @@
 ---
 name: auto-review-execute
 description: >
-  在 Claude Code VS Code 插件或 CLI 中把已退出 Plan Mode 的明确计划交给统一 claude-codex-bridge MCP，由 Codex
-  按本地计划文件路径进行只读审查，最多三轮；Claude 根据审查意见修改计划、验收回执、向用户展示
-  最终计划，并在用户
-  明确确认后按 allowlist 执行。默认跨模型复核只发生在正式计划阶段；执行结果由 Claude 按验收
-  标准检查，不自动再次调用 Codex。Claude 作者任务在同一回合等待回执、修订并继续下一轮，不需要
-  Codex Desktop continuation；只有任务退出后的宿主级唤醒目前不适用于 Claude。不能把 Codex 的审查
-  意见未经作者验收直接写入 Claude 主项目。缺少明确计划路径、MCP、用户确认或完整验收证据时停止，
-  不猜测路径、不调用旧 codex@openai-codex 插件。
-compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill. Legacy orchestration scripts are offline state helpers only.
+  在 Claude Code VS Code 插件或 CLI 中，把已退出 Plan Mode 且已保存到真实项目内的正式计划交给
+  claude-codex-bridge v3，由 Codex 在同一项目中使用完整工具审查并可直接修改。Claude 随后重读、
+  验收并按需修改；只有 Claude 又改过主计划时才追加一次 Codex 只检查终审。互审完成后仍需用户明确
+  确认才能执行。高风险动作只使用 bridge 返回的精确审批目标，不自行缩减成只读、快照、文件白名单
+  或 sandbox。旧 v2 适配器仅用于既有运行状态和未落盘内容兼容。
+compatibility: Requires Windows, Node.js 24+, the CC Switch-registered claude-codex-bridge MCP, and the sibling cross-model-orchestration skill.
 ---
 
 # Auto Review Execute
 
-## 目标和边界
+## 边界
 
-本 Skill 只在 Claude Code VS Code 插件或 CLI 主会话中运行。Claude 是作者和最终验收者；Codex 是 bridge
-调度的隔离审查者。正式计划已有明确路径，因此默认使用 workspace 只读审查：只传文件路径、字节数
-和哈希，不把整篇正文塞进 MCP 请求，也不写入主项目。审查通过仍不等于执行授权。
+本 Skill 只在 Claude Code VS Code 插件或 CLI 作者任务中运行。Claude 是原作者和执行验收者，Codex 是
+异族审查者。正式计划互审使用 `v3_review_peer`；审查通过只表示可以向用户呈现，不代表用户已经授权
+执行。
 
-旧 `codex@openai-codex` companion、`orchestration-control.mjs` claim 和隐藏 Hook 不再是运行时入口。
-保留的 Node 脚本维护本地状态、快照和用户确认哈希。正式计划互审必须由当前 Claude 作者任务直接
-使用共享 MCP 的 `v2_*` 工具；旧 bridge CLI 适配器只保留给已有运行状态和显式执行任务兼容，不再作为
-正式计划互审入口。
+`codex@openai-codex`、原生 `codex exec`、隐藏 Hook 和旧 `orchestration-control.mjs` 不作为新的互审
+入口。保留的本地脚本只维护运行记录、最终计划哈希、用户确认和执行验收；旧 bridge 适配器只供已有
+v2 状态兼容。
 
-运行根目录为 `%LOCALAPPDATA%\auto-review-execute\<runId>\`：
+## 计划必须位于真实项目
 
-```text
-plan-original.md / plan-working.md / plan-final.md
-state.json / run.lock
-round-<n>/review-input/plan-working.md (本轮只读快照)
-round-<n>/ (审查包、快照、结果)
-execution/ 或 rework-attempt-<n>/
-```
+先确定当前真实项目根 `projectRoot`。正式审查的主计划必须是该根目录下的普通文件，并有明确相对
+`artifactPath`。如果 `CLAUDE_PLAN_FILE` 已在项目内，直接以它为主计划；如果它位于 Claude 的用户级
+计划目录，先把当前正式稿保存为项目内明确文件，例如 `.claude/plans/<runId>.md`，并从此把该文件作为
+权威工作稿。不要让 bridge 审查 `%LOCALAPPDATA%` 下的副本，也不要扫描“最新 Markdown”。
 
-## 入口与计划路径
+长期运行记录可继续位于 `%LOCALAPPDATA%\auto-review-execute\<runId>\`，但其中只保存流程状态、哈希、
+回执和用户确认，不把它当成 v3 的项目根。
 
-只接受 `CLAUDE_PLAN_FILE` 明确指向的常规文件。环境变量不存在、路径不存在、符号链接、字节数或
-哈希无法读取时停止；不扫描“最新 Markdown”。ExitPlanMode hook 只复制计划、写入 `ready_for_review`
-状态并退出，不启动模型。
+如果计划确实无法可靠落盘，才按 `cross-model-orchestration` 明确使用 v2 inline 兼容流程；v3 失败后
+不能自动回退 v2，也不能把正文塞进 `task`。
 
-Claude 继续流程时，先把当前 `plan-working.md` 逐字复制到本轮独立的 `review-input` 目录，重新核对
-UTF-8 字节数和 SHA-256，再使用 `cross-model-orchestration` 的路径审查包调用共享入口：
+## v3 互审
+
+先调用 `v3_peer_status`，确认 protocol 3 已启用并报告真实 cwd、完整原生工具、直接项目写入和
+`artifactContentAccepted=false`。随后调用：
 
 ```text
-v2_review_peer(
-  author=claude, artifactType=plan, artifactMode=workspace,
-  artifactId=auto-review-execute:<runId>,
-  targetRoot=<round-n/review-input 的绝对路径>, artifactPath=plan-working.md,
-  artifactBytes=<当前 UTF-8 字节数>, artifactSha256=<当前正文 SHA-256>,
-  acceptanceCriteria=<非空>, taskProfile=knowledge_work,
-  seriesId/seriesVersion/latestJobId=<续轮 CAS 字段>)
+v3_review_peer(
+  author=claude, target=codex,
+  projectRoot=<真实项目绝对路径>, artifactPath=<项目内相对计划路径>,
+  artifactType=plan, artifactId=auto-review-execute:<runId>,
+  task=<审查任务>, acceptanceCriteria=<非空>, constraints=<可选>,
+  model=gpt-5.6-sol, reasoningEffort=max
+)
 ```
 
-路径审查省略 `artifactContent`、`repairTargets` 和 `testCommands`。提交前必须确认
-`workspaceReviews=true`、`workspaceRepairs=true` 和 `workspaceProbeState=available`；能力未就绪时停止，
-不把长计划静默改成 inline。只有用户明确要求 Codex 返回完整替换稿时，才另按
-`cross-model-orchestration` 使用 `v2_review_repair_peer artifactMode=inline`；这不是本 Skill 的默认路径。
+不传 `artifactContent`、字节数、哈希、`targetRoot`、`repairTargets`、`allowedPaths`、sandbox 或工具列表。
+Codex 以真实项目为 cwd，加载完整工具、项目规则、技能、插件、MCP 和网络能力，并可直接修改项目。
 
-`knowledge_work` 当前默认解析为 `gpt-5.6-sol/max`。如调用方明确给出其他 Codex 白名单模型/强度，
-必须保存并按 bridge 的 route audit 验收；恢复时不能换模型、强度或 profile，也不能失败后回退。
+当前 Claude 作者任务在同一回合循环同一 job 的
+`v3_await_peer(job_id, timeout_ms<=45000)` 和 `v3_peer_result(job_id)`，直到终态。软等待返回 pending 时
+继续原 job，不创建替代 job、不换模型、不降档。
 
-当前 Claude 作者任务必须在同一回合循环同一 job 的 `v2_await_peer`/`v2_peer_result` 直到终态。
-workspace `v2_review_peer` 返回包含结论、已确认事项、问题与理由、必须修改和剩余风险的完整
-`PLAN_REVIEW`，不返回 `repairedArtifact`，也不产生工作区同步。Claude 根据 findings 修改 run-local
-`plan-working.md`，并负责修订与完整性验收。
+首轮成功后，Claude 必须重新读取主计划和 review 结果，核对 Codex 的实际改动并可自行修改，然后用
+首轮最新的 `series_id`、`series_version`、`latest_job_id` 调用 `v3_author_checkpoint`：
 
-## 审查阶段
+- `author_modified=false`：直接向用户展示最新计划、结论和未决项；
+- `author_modified=true`：以完全相同的任务、项目、路径、验收、约束和模型字段，再调用一次
+  `v3_review_peer`。该轮是 `final_check`，Codex 只能检查，不能修改；
+- 终审无论通过、仍需修改或存在分歧，都交给用户，不继续循环。
 
-审查包必须包含 `author=claude`、`artifactMode=workspace`、最小 `targetRoot`、相对 `artifactPath`、
-`artifactBytes`、`artifactSha256`、前轮 findings、验收标准和续轮 CAS 字段，并且不含正文。
-权限由 `v2_review_peer` 固定，请求不得自行传入 `reviewerAccess`。Claude 收到 bridge 结果后先检查
-`completion_receipt`、模型、只读工作区证据以及作者文件未变化，再验收审查正文：
+呈现前再次查询 `v3_peer_result`。只有 `conclusion_valid=true` 时才能引用结论；计划哈希变化或文件消失
+会使旧结论失效。
 
-- `通过`：保存 `PLAN_REVIEW`，进入 `done_phase1`；
-- `需修改`：当前 Claude 作者任务根据 findings 更新 run-local `plan-working.md`、UTF-8 字节数、
-  SHA-256 和前轮 findings，生成新的本轮只读快照，再用同一 series CAS 进入下一轮，最多三轮。正常任务内继续不需要
-  `continuation`；只有 Claude 任务已经退出时，bridge 才因没有可验证的 Claude Code 宿主任务外唤醒
-  接口而停止自动恢复。无论哪条路径，都不会自动替用户确认执行或未经作者验收写入主项目。
-- `实质分歧` 或第 3 轮仍需修改：输出 `DISAGREEMENT_REPORT`，等待用户裁决。
+## 权限与审批
 
-格式错误、bridge 不可用、超时、CAS/完整性不匹配、模型回执缺失、路径只读隔离失败或审查者写入时写入
-`PEER_REVIEW_FAILURE_REPORT` 并停止，不换模型、不静默降级。旧的
-`orchestration-control.mjs` 和 `check-resume-candidate.mjs` 仅在显式归档诊断标志下可运行，不能作为
-模型调度入口。
+v3 对端默认拥有完整权限。普通操作自动执行，包括删除项目内一个普通文件。批量、递归、通配符、
+目录、项目外或远程删除，丢弃 Git 修改及清空数据库时，job 进入 `awaiting_approval`。
 
-## 确认、执行和验收
+此时只向用户展示 bridge 返回的 action、完整 targets、approval ID、fingerprint 和到期时间；用户
+决定后把这些字段原样传给 `v3_resolve_approval`。一次确认只覆盖该精确动作，24 小时后失效；拒绝或
+超时取消动作。不要自行扩大或缩小审批目标，也不要声称能发现普通程序内部没有显式暴露的删除。
 
-`finalize` 只生成 `plan-final.md`，不会启动执行。Claude 必须向用户展示最终计划、每轮结论、已解决
-项、剩余风险和范围；用户明确确认后才记录确认人及 `plan-final.md` SHA-256：
+## 用户确认、执行和验收
+
+互审结束后，Claude 向用户展示最终计划、对端是否改过、Claude 是否改过、是否运行终审、有效哈希、
+结论和剩余问题。用户明确确认后，才记录 `plan-final.md` 的 SHA-256 并开始执行：
 
 ```powershell
 node scripts/execute-plan.mjs confirm --run-dir "<run-dir>" --confirmed-by "user"
@@ -98,21 +88,14 @@ node scripts/execute-plan.mjs poll --run-dir "<run-dir>"
 node scripts/execute-plan.mjs validate --run-dir "<run-dir>"
 ```
 
-执行作者可以在确认的 `targetRoots`/`allowedPaths` 内写入。Claude 按计划中的验收标准、只读验证
-命令和前后快照独立验收；执行完成、返工和最终交付都不自动发起第二次 peer review。用户明确要求
-审查交付物时，才另按 `cross-model-orchestration` 的显式 `artifactType=deliverable` 流程处理。
-验收失败最多允许三次“返工 -> 独立验收”，第三次仍失败进入 `awaiting_user`，不发第四次。
+这里的执行范围来自用户确认的计划，与 v3 审查者权限无关。Claude 按验收标准、文件快照和验证命令
+独立检查执行结果；执行和交付完成后不自动再发互审，除非用户明确要求审查交付物。验收失败最多三次
+返工，第三次仍失败就交给用户。
 
-计划元数据的 `verifyCommand` 只允许无副作用的 `Test-Path`、`Get-Content` 和 `node --version`，并要求
-退出码为 0 且输出包含 `expectedOutput`。执行前后快照记录所有目录项；符号链接、范围外新增/删除/重命名
-或计划确认哈希变化均停止，不生成纯文本补丁。
+## 失败与发布
 
-## 验证与发布
+路径无效、bridge 不可达、模型回执不匹配、结果 schema 错误、审批拒绝或过期、会话清理失败和终审
+写入都按实际状态报告。不要伪造通过、猜测路径、扫描其他 job、重启 daemon、自动降级或替用户裁决。
 
-```powershell
-node --test tests/*.test.mjs
-```
-
-源码修改后从 `D:\BaiduSyncdisk\.agents\skills` 精确暂存 `auto-review-execute`，提交并推送。推送
-成功后按全局规则调用定向 `Invoke-CcSwitchSkillSync.ps1`，传入 Skill 名和 40 位远端提交 SHA；只有
-四层文件集合和 SHA-256 一致才报告运行时已生效，否则报告“源码已推送，运行时未生效”。
+修改后运行 `node --test tests/*.test.mjs`。源码推送后按全局规则定向同步本 Skill，并核对 source、
+CC Switch、Claude、Codex 四层文件集合与 SHA-256；未完全一致时只能报告运行时未生效。

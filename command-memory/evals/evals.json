@@ -226,6 +226,20 @@
       "prompt": "我必须在 Windows PowerShell 5.1 里运行仓库的 Pester 测试。本机实际加载的是 Pester 3.4.0，`Invoke-Pester <tests> -PassThru -Show None` 报找不到 `Show` 参数，测试根本没开始。不能升级或安装模块，怎样写成兼容当前版本又能可靠判断成败的命令？",
       "expected_output": "应加载 cli-paths 的 Pester 版本感知模式；先固定实际 PowerShell 进程，读取可用 Pester 模块并导入目标版本，再通过 `Get-Command Invoke-Pester` 的实际 `Parameters` 判断静默选项：有 `Show` 才传 `Show=None`，否则有 `Quiet` 才传 `Quiet=$true`，都没有就省略静默参数。始终保留 `PassThru`，要求返回有效测试汇总，输出 PassedCount/FailedCount，并在失败数非零或汇总缺失时让承载测试的进程失败。参数绑定错误发生在测试开始前，不能算测试失败或通过；不得为适配命令升级模块。",
       "files": []
+    },
+    {
+      "id": 37,
+      "prompt": "我在 PowerShell 发布脚本里先记录真实 `.git/index` 的 SHA-256，再运行 `git status --porcelain=v1 -uall` 和 `git diff --cached`。工作区内容和暂存集合都没变，但第二次 index 哈希不同。脚本下一步准备用外置 `GIT_INDEX_FILE` 生成候选并 push。这个哈希变化能直接判定为并发修改吗？怎样重建可信基线？",
+      "expected_output": "应加载 git-on-windows 的 no-worktree 发布模式；指出普通 `git status` 可能通过 optional lock 刷新 index 的 stat cache，因此内容未变时真实 index 文件哈希也可能变化，当前未保护的差异只能算证据不足，既不能直接归因于并发，也不能据此放行 push。先确认没有 writer 或 Git 锁，再从第一次 index 哈希之前开始，让所有用于基线和保全判断的只读 Git 命令使用 `git --no-optional-locks ...`，或仅在受控只读作用域内把 `GIT_OPTIONAL_LOCKS=0` 保存旧值、设置并在 finally 恢复；每条命令都要在消费输出前检查退出码。连续两次受保护 snapshot 必须在 HEAD、分支、完整 status、暂存清单、真实 index 哈希和远端 tip 上完全一致，创建候选后与 push 后也用同一读取组复核。不得把该设置泄漏给 read-tree、update-index、commit-tree、push 等写操作，不得重写共享 index 或把最初哈希差异自动解释成安全。",
+      "files": [],
+      "expectations": [
+        "输出指出普通 git status 可能刷新 index，内容不变时 index 文件哈希仍可能变化",
+        "输出把首次未保护的哈希差异视为证据不足，不直接归因并发，也不放行写操作",
+        "输出要求从第一次 index 哈希前就对只读 Git 命令使用 --no-optional-locks 或受控的 GIT_OPTIONAL_LOCKS=0",
+        "输出要求每条只读 Git 命令在消费输出前检查退出码，并连续取得两次完全一致的受保护 snapshot",
+        "输出要求创建候选后和 push 后复用同一受保护读取组核对共享 index 与仓库状态",
+        "输出不把 optional-locks 设置泄漏给写操作，也不修改共享 index 来制造通过状态"
+      ]
     }
   ]
 }

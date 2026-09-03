@@ -248,6 +248,12 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
 - scenario: 原工作区含同文件混合改动，用户又明确禁止创建任何 worktree，但仍要求把可精确重建的批准内容发布到当前远端分支
 - use_when: 用户明确说不创建 worktree；唯一远端 40 位 tip 已固定且提交和所需 blob 对象都已在本地；全部已知 Git 写入者已明确停止；连续两次读取的远端 tip、原 `HEAD`、分支、完整状态和暂存清单一致；批准内容能从远端 blob 在任务自有临时目录中准确重建；全部目标都是普通 blob；本次提交不需要签名、`pre-commit`、`commit-msg` 或其他 hooks。任一条件不成立时停止，不把“不要 worktree”解释为允许使用共享 index
 - shell: PowerShell + Git for Windows；候选文本使用 `apply_patch` 编辑
+
+真实 index 的 SHA-256 是字节级保全证据，不等同于“暂存内容没变”。普通 `git status` 默认可能顺手刷新
+index 的 stat cache，让文件哈希在没有内容改动时变化。所有用于建立或复核保全基线的只读 Git 命令都用
+`git --no-optional-locks ...`；它等价于仅对该进程设置 `GIT_OPTIONAL_LOCKS=0`，不会把这项环境设置泄漏到
+后续 `read-tree`、`update-index`、`commit-tree`、push 等写操作。
+
 - validated_shape:
   ```powershell
   $repoRoot = "<REPO_ROOT>"
@@ -258,26 +264,50 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
   $tempIndex = "<TASK_OWNED_TEMP_INDEX>"
 
   if ($env:GIT_INDEX_FILE) { throw "a pre-existing alternate Git index is active" }
-  $remoteRows = @(git -C $repoRoot ls-remote --heads $remoteName "refs/heads/$branch")
+  $remoteRows = @(& git --no-optional-locks -C $repoRoot ls-remote --heads $remoteName "refs/heads/$branch")
   if ($LASTEXITCODE -ne 0 -or $remoteRows.Count -ne 1) { throw "remote tip is not unique" }
   $base = ($remoteRows[0] -split '\s+')[0]
   if ($base -notmatch '^[0-9a-f]{40}$') { throw "remote baseline is not a full commit id" }
-  git -C $repoRoot cat-file -e "$base^{commit}"
+  & git --no-optional-locks -C $repoRoot cat-file -e "$base^{commit}"
   if ($LASTEXITCODE -ne 0) { throw "remote baseline object is not available locally" }
 
-  $realIndex = (git -C $repoRoot rev-parse --git-path index).Trim()
+  $realIndexRows = @(& git --no-optional-locks -C $repoRoot rev-parse --git-path index)
+  if ($LASTEXITCODE -ne 0 -or $realIndexRows.Count -ne 1) { throw "cannot locate the shared index" }
+  $realIndexRaw = ([string]$realIndexRows[0]).Trim()
+  $realIndex = if ([IO.Path]::IsPathRooted($realIndexRaw)) {
+      [IO.Path]::GetFullPath($realIndexRaw)
+  } else {
+      [IO.Path]::GetFullPath((Join-Path $repoRoot $realIndexRaw))
+  }
   $realIndexHashBefore = (Get-FileHash -LiteralPath $realIndex -Algorithm SHA256).Hash
-  $headBefore = (git -C $repoRoot rev-parse HEAD).Trim()
-  $branchBefore = (git -C $repoRoot branch --show-current).Trim()
-  $statusBefore = (git -C $repoRoot status --porcelain=v1 -uall) -join "`n"
-  $cachedBefore = (git -C $repoRoot diff --cached --name-status) -join "`n"
+
+  $headRows = @(& git --no-optional-locks -C $repoRoot rev-parse HEAD)
+  if ($LASTEXITCODE -ne 0 -or $headRows.Count -ne 1) { throw "cannot read the original HEAD" }
+  $headBefore = ([string]$headRows[0]).Trim()
+  $branchRows = @(& git --no-optional-locks -C $repoRoot branch --show-current)
+  if ($LASTEXITCODE -ne 0 -or $branchRows.Count -ne 1) { throw "cannot read the original branch" }
+  $branchBefore = ([string]$branchRows[0]).Trim()
+  $statusRows = @(& git --no-optional-locks -C $repoRoot status --porcelain=v1 -uall)
+  if ($LASTEXITCODE -ne 0) { throw "cannot read the original status" }
+  $statusBefore = $statusRows -join "`n"
+  $cachedRows = @(& git --no-optional-locks -C $repoRoot diff --cached --name-status)
+  if ($LASTEXITCODE -ne 0) { throw "cannot read the original staged set" }
+  $cachedBefore = $cachedRows -join "`n"
+  $realIndexHashAfterReads = (Get-FileHash -LiteralPath $realIndex -Algorithm SHA256).Hash
+  if ($realIndexHashAfterReads -ne $realIndexHashBefore) {
+      throw "the protected read-only snapshot changed the shared index"
+  }
 
   # 用二进制安全的 stdout byte stream 把每个 $base:$path 导出到 $candidateRoot；
   # 不复制原工作区文件。导出后用下式逐项证明起点就是远端 blob，再只编辑批准内容。
   foreach ($path in $approvedPaths) {
       $candidatePath = Join-Path $candidateRoot ($path -replace '/', '\')
-      $baseBlob = (git -C $repoRoot rev-parse "${base}:$path").Trim()
-      $extractedBlob = (git -C $repoRoot hash-object "--path=$path" -- $candidatePath).Trim()
+      $baseBlobRows = @(& git --no-optional-locks -C $repoRoot rev-parse "${base}:$path")
+      if ($LASTEXITCODE -ne 0 -or $baseBlobRows.Count -ne 1) { throw "cannot read base blob: $path" }
+      $baseBlob = ([string]$baseBlobRows[0]).Trim()
+      $extractedBlobRows = @(& git --no-optional-locks -C $repoRoot hash-object "--path=$path" -- $candidatePath)
+      if ($LASTEXITCODE -ne 0 -or $extractedBlobRows.Count -ne 1) { throw "cannot hash candidate start: $path" }
+      $extractedBlob = ([string]$extractedBlobRows[0]).Trim()
       if ($extractedBlob -ne $baseBlob) { throw "candidate does not start from remote blob: $path" }
   }
 
@@ -287,30 +317,39 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
       if ($LASTEXITCODE -ne 0) { throw "temporary index initialization failed" }
       foreach ($path in $approvedPaths) {
           $candidatePath = Join-Path $candidateRoot ($path -replace '/', '\')
-          $entry = (git -C $repoRoot ls-tree $base -- $path)
+          $entryRows = @(& git --no-optional-locks -C $repoRoot ls-tree $base -- $path)
+          if ($LASTEXITCODE -ne 0 -or $entryRows.Count -ne 1) { throw "cannot read base tree entry: $path" }
+          $entry = [string]$entryRows[0]
           if ($entry -notmatch '^(100644|100755) blob ([0-9a-f]{40})\t') {
               throw "unsupported or missing base entry: $path"
           }
           $mode = $Matches[1]
-          $blob = (git -C $repoRoot hash-object -w "--path=$path" -- $candidatePath).Trim()
-          if ($blob -notmatch '^[0-9a-f]{40}$') { throw "candidate blob creation failed: $path" }
+          $blobRows = @(git -C $repoRoot hash-object -w "--path=$path" -- $candidatePath)
+          if ($LASTEXITCODE -ne 0 -or $blobRows.Count -ne 1) { throw "candidate blob creation failed: $path" }
+          $blob = ([string]$blobRows[0]).Trim()
+          if ($blob -notmatch '^[0-9a-f]{40}$') { throw "candidate blob id is invalid: $path" }
           git -C $repoRoot update-index --add --cacheinfo "$mode,$blob,$path"
           if ($LASTEXITCODE -ne 0) { throw "temporary index update failed: $path" }
       }
-      $tree = (git -C $repoRoot write-tree).Trim()
-      if ($tree -notmatch '^[0-9a-f]{40}$') { throw "candidate tree creation failed" }
+      $treeRows = @(git -C $repoRoot write-tree)
+      if ($LASTEXITCODE -ne 0 -or $treeRows.Count -ne 1) { throw "candidate tree creation failed" }
+      $tree = ([string]$treeRows[0]).Trim()
+      if ($tree -notmatch '^[0-9a-f]{40}$') { throw "candidate tree id is invalid" }
   }
   finally {
       $env:GIT_INDEX_FILE = $null
   }
 
-  $candidateCommit = (git -C $repoRoot commit-tree $tree -p $base -m "<MESSAGE>").Trim()
-  if ($candidateCommit -notmatch '^[0-9a-f]{40}$') { throw "candidate commit creation failed" }
-  git -C $repoRoot diff --check $base $candidateCommit
+  $candidateCommitRows = @(git -C $repoRoot commit-tree $tree -p $base -m "<MESSAGE>")
+  if ($LASTEXITCODE -ne 0 -or $candidateCommitRows.Count -ne 1) { throw "candidate commit creation failed" }
+  $candidateCommit = ([string]$candidateCommitRows[0]).Trim()
+  if ($candidateCommit -notmatch '^[0-9a-f]{40}$') { throw "candidate commit id is invalid" }
+  & git --no-optional-locks -C $repoRoot diff --check $base $candidateCommit --
   if ($LASTEXITCODE -ne 0) { throw "candidate diff check failed" }
-  # 逐项核对 candidateCommit 的唯一 parent、完整 name-status、完整 diff 和批准路径集合。
+  # 逐项核对 candidateCommit 的唯一 parent、完整 name-status、完整 diff 和批准路径集合；
+  # 创建候选后及 push 后，都用上面的 --no-optional-locks 读取组重建 snapshot，再比较共享 index 哈希。
 
-  $remoteRows = @(git -C $repoRoot ls-remote --heads $remoteName "refs/heads/$branch")
+  $remoteRows = @(& git --no-optional-locks -C $repoRoot ls-remote --heads $remoteName "refs/heads/$branch")
   if ($LASTEXITCODE -ne 0 -or $remoteRows.Count -ne 1 -or (($remoteRows[0] -split '\s+')[0] -ne $base)) {
       throw "remote moved before push"
   }
@@ -318,13 +357,13 @@ detached worktree，只重建批准内容，再让 Git 自动生成和检查 pat
   if ($LASTEXITCODE -ne 0) { throw "explicit candidate push failed" }
   ```
 - substitute_only: `<REPO_ROOT>`, `<REMOTE>`, `<BRANCH>`, `<PATH_1>...`, `<TASK_OWNED_CANDIDATE_ROOT>`, `<TASK_OWNED_TEMP_INDEX>`, `<MESSAGE>`；批准路径和内容必须来自已确认清单
-- preflight: 记录原 `HEAD`、分支、完整 status、完整暂存清单、真实 index SHA-256 和每个本地目标文件 SHA-256；连续两次确认这些状态与唯一远端 tip 稳定。若普通 fetch 被阻断，只有远端 tip 对应的 commit 和全部基线 blob 已在本地时才可继续；不为凑齐对象创建临时 ref。用 `git check-attr` 核对目标路径；filter、working-tree-encoding、symlink、gitlink、非普通 blob 或属性行为无法确定时停止
+- preflight: 从第一次真实 index 哈希前开始，所有用于基线和保全判断的 `status`、`diff`、`rev-parse`、`ls-tree`、`hash-object`、`ls-remote` 等只读命令都使用 `git --no-optional-locks`，并在消费输出前立即检查退出码；连续两次确认原 `HEAD`、分支、完整 status、完整暂存清单、真实 index SHA-256、每个本地目标文件 SHA-256 与唯一远端 tip 稳定。若首次未保护的读取已经造成 index 哈希变化，这份差异只能记为证据不足，不能直接归因于并发，也不能放行写操作；应在无 writer、无锁且状态未再变化时从头建立受保护基线。若普通 fetch 被阻断，只有远端 tip 对应的 commit 和全部基线 blob 已在本地时才可继续；不为凑齐对象创建临时 ref。用 `git check-attr` 核对目标路径；filter、working-tree-encoding、symlink、gitlink、非普通 blob 或属性行为无法确定时停止
 - candidate_check: 候选文件必须逐项从 `$base:<path>` 二进制安全导出并以 `hash-object --path` 证明起点一致；候选提交的唯一父提交必须是 `$base`，完整文件集合和 diff 只能含批准内容，`diff --check` 必须通过。push 前再次确认远端 tip 等于 `$base`；push 后用 `ls-remote` 验证远端精确等于候选 SHA
-- preservation_check: 创建候选后和 push 后都复核原 `HEAD`、分支、完整 status、完整暂存清单、真实 index 哈希及本地目标文件哈希与记录值完全一致；本模式不得执行本地 `update-ref`，也不得让 `GIT_INDEX_FILE` 指向共享 index
+- preservation_check: 创建候选后和 push 后都用与基线完全相同的 `--no-optional-locks` 只读命令组复核原 `HEAD`、分支、完整 status、完整暂存清单、真实 index 哈希及本地目标文件哈希与记录值完全一致；读命令失败或受保护读取前后 index 哈希变化时立即停止。本模式不得执行本地 `update-ref`，也不得让 `GIT_INDEX_FILE` 指向共享 index
 - cleanup: 只有显式候选 SHA 已 fast-forward 推送、远端已验证且 preservation check 全部通过后，才删除准确的任务自有临时 index、候选文件和空父目录；失败时保留准确路径、基线、候选 SHA 和恢复说明，不扩大清理范围
-- avoid: 不在原工作区 `git add`，不使用其 index、文件内容或未批准 hunk；不 `stash`、`reset`、`checkout`、`restore`、merge、rebase、cherry-pick、force push 或本地 `update-ref`；不在仍有并行 writer、远端已移动、基线对象缺失、批准内容无法精确重建、需要 hooks/签名或路径类型/属性不确定时继续
+- avoid: 不先记录 index 哈希、再运行未带 `--no-optional-locks` 的普通 `git status` 并把随后哈希变化直接算作外部漂移；不把 `GIT_OPTIONAL_LOCKS=0` 留给写操作。仍不在原工作区 `git add`，不使用其 index、文件内容或未批准 hunk；不 `stash`、`reset`、`checkout`、`restore`、merge、rebase、cherry-pick、force push 或本地 `update-ref`；不在仍有并行 writer、远端已移动、基线对象缺失、批准内容无法精确重建、需要 hooks/签名或路径类型/属性不确定时继续
 - success_signal: 远端分支从固定 `$base` 一次 fast-forward 到仅含批准内容的候选提交；原工作区 `HEAD`、分支、index、文件和未提交状态均未变化；任务自有临时文件已准确收口
-- capture_rule: 用户明确禁止 worktree 时，只能在全部严格前提下从远端 blob 重建候选，用外置临时 index 生成 Git tree 和 commit，并推送显式候选 SHA；任何不确定性都失败关闭
+- capture_rule: 用户明确禁止 worktree 时，只能在全部严格前提下从远端 blob 重建候选，用外置临时 index 生成 Git tree 和 commit，并推送显式候选 SHA；共享 index 要做字节级保全时，先用 `--no-optional-locks` 消除只读命令自身的刷新副作用，再解释哈希差异；任何不确定性都失败关闭
 
 ### Pattern: git-align-authorized-local-worktree-after-isolated-release
 - scenario: 批准内容已经在 detached worktree 中提交并发布，用户随后明确要求把同一补丁更新到原本地工作副本；原工作副本仍有必须保留的其他改动，甚至与批准改动位于同一文件

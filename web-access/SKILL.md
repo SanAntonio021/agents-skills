@@ -15,7 +15,9 @@ metadata:
 
 ## 前置检查
 
-在开始联网操作前，先检查所需浏览器的 CDP 模式可用性。未指定时使用 Edge：
+先按“联网工具选择”确定获取路径。只有选择浏览器 CDP，或静态路径证明确实不足而升级到浏览器 CDP 时，才检查
+所需浏览器的 CDP 模式可用性；未指定浏览器时使用 Edge。普通 WebSearch、WebFetch、curl、Jina 以及不依赖
+浏览器状态的 API / CLI 联网，不运行 `check-deps.mjs`，也不启动或连接 Edge / Chrome：
 
 ```bash
 # 默认 Edge（专用 Proxy 默认端口 3456）；Agent 优先使用 JSON 输出
@@ -28,7 +30,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 ```
 
-**Node.js 22+** 必需（使用原生 WebSocket）。
+浏览器 CDP 路径要求 **Node.js 22+**（使用原生 WebSocket）。
 
 按脚本输出处理：
 - `exit 0` → 继续
@@ -41,7 +43,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 
 脚本成功后会输出所选浏览器的 `proxyUrl`、`protocolVersion` 和能力信息。后续 HTTP API 必须使用本次所选浏览器对应的 URL。只有 `protocolVersion: 2` 才能继续；发现旧 Proxy 时按 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md) 迁移，不自动结束旧进程。
 
-检查通过后并必须在回复中向用户直接展示以下须知，再启动 CDP Proxy 执行操作：
+选择浏览器 CDP 且检查通过后，必须在回复中向用户直接展示以下须知，再启动 CDP Proxy 执行操作：
 
 ```
 温馨提示：部分站点对浏览器自动化操作检测严格，存在账号封禁风险。已内置防护措施但无法完全避免，Agent 继续操作即视为接受。

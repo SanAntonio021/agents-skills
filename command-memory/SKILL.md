@@ -28,7 +28,7 @@ description: Windows 命令急救卡。只在 Windows / PowerShell 命令高风�
 - PowerShell 函数包装外部命令并声称返回多行结果，但只有一行时调用端得到 `System.String`，随后 `[0].Trim()` 报 `System.Char` 没有 `Trim`；或 `Invoke-Pester` 因本机版本不支持照搬来的 `-Show`、`-Output` 等可选参数而在测试开始前失败。
 - Git 同一文件同时含有本次允许提交和其他未授权改动，不能整文件暂存；或手工构造的 patch 已出现 `corrupt patch`、`patch fragment without header`、hunk 行数不匹配，需要换成隔离 worktree 纠偏。
 - PowerShell 中把两个 Git revision 变量直接写成 `$old..$new` 后出现 usage、空结果或参数拆分，或用于决定后续 merge / push 等写操作的只读 Git 盘点失败后仍把空输出当成“无变化、无冲突、无重叠”。
-- Git 同一文件混合改动且用户明确禁止创建任何 worktree；只有固定远端基线对象已在本地、全部其他写入者已明确停止、批准内容可从远端 blob 精确重建，并且不需要 hooks 或签名时，才改走外置临时索引和 Git 对象提交。
+- Git 同一文件混合改动且用户明确禁止创建任何 worktree；只有固定远端基线对象已在本地、全部其他写入者已明确停止、批准内容可从远端 blob 精确重建，并且不需要 hooks 或签名时，才改走外置临时索引和 Git 对象提交；若要按字节证明共享 index 未变，基线和复核阶段的只读 Git 命令都要禁用 optional locks，避免 `git status` 自己刷新 index。
 - `git worktree add` 在深层父目录下报 `Filename too long`，或已创建的 worktree 内出现 `*.baiduyun.uploading.cfg` 等同步/备份临时文件，需要改用短、任务自有且不受监控的本地路径，并在不删除未知临时文件的前提下收口旧位置。
 - 已把候选放到短且不受监控的 linked worktree，但 `git commit` 仍报 `unable to write new index file`，且该 worktree 的 Git 管理目录指向原仓库 `.git/worktrees/<id>`；需要先排除并行写入、锁和提交状态，再改用真正独立的临时 Git 仓库。
 - `git worktree remove` 返回非零，但准确目标目录已经消失，原仓库 `.git/worktrees/<id>` 仍留有管理记录；需要区分“完全没删”和“工作树已删、管理记录未收口”，再决定是否能用普通 `git worktree prune`。

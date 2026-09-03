@@ -35,6 +35,21 @@
 - acceptance: 子进程输出必须证明目标测试实际运行，并给出通过数和失败数；调用方再检查子进程退出码。只有退出码 `0` 而没有有效测试汇总，不能算通过。
 - avoid: 用外层双引号包住含 `$变量` 的整段 `-Command`；看到 `= is not recognized`、`.FailedCount is not recognized` 等内层命令损坏迹象后仍把父进程退出码 `0` 当作成功。
 
+### Pattern: powershell-caller-normalize-command-output
+- use_when: PowerShell 函数包装一个可能输出零行、一行或多行的外部命令，调用端随后要读取 `.Count`、按索引取值或调用字符串方法；单行结果处出现 `System.Char` 没有 `Trim` 等类型错误。
+- shape: `function Invoke-ToolLines { param([string[]]$Arguments) $output = @(& "<TOOL>" @Arguments); if ($LASTEXITCODE -ne 0) { throw "tool failed: $($Arguments -join ' ')" }; $output }; $lines = @(Invoke-ToolLines -Arguments @('<ARG1>','<ARG2>')); if ($lines.Count -ne 1) { throw "expected one line, got $($lines.Count)" }; $first = ([string]$lines[0]).Trim()`
+- reason: PowerShell 会枚举函数写入成功输出流的集合；即使函数里写了 `return @($output)`，调用表达式只有一个对象时仍可能在赋值处退化为标量。需要稳定集合语义时，由消费结果的调用端用 `@(...)` 固定形状。
+- preflight: 包装器在输出结果前立即检查外部命令的 `$LASTEXITCODE`；调用端先验证行数，再把准确元素转成预期类型。对会复用的包装器分别探测零行、一行和多行结果。
+- acceptance: 单行时 `$lines` 仍是数组、`Count` 为 `1`，`$lines[0]` 是完整字符串；零行或多行会被显式分流，不会因为字符索引、空值或隐式标量化继续后续写操作。
+- avoid: `$first = (Invoke-ToolLines ...)[0].Trim()`；依赖函数内部的 `return @($output)` 保证调用方拿到数组；不检查行数就消费首项。
+
+### Pattern: pester-version-aware-invocation
+- use_when: `Invoke-Pester` 在测试开始前报某个输出控制参数不存在，例如 Windows PowerShell 5.1 自带 Pester 3.4 不接受从新版命令复制来的 `-Show None`；当前任务不能为适配一条命令而升级测试框架。
+- shape: `$module = Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1; if (-not $module) { throw 'Pester is unavailable' }; Import-Module $module.Path -Force; $command = Get-Command Invoke-Pester -Module Pester; $pesterParams = @{ Script = '<TEST_PATH>'; PassThru = $true }; if ($command.Parameters.ContainsKey('Show')) { $pesterParams.Show = 'None' } elseif ($command.Parameters.ContainsKey('Quiet')) { $pesterParams.Quiet = $true }; $result = Invoke-Pester @pesterParams; if ($null -eq $result -or $null -eq $result.FailedCount) { throw 'Pester did not return a test summary' }; Write-Output ("passed={0} failed={1}" -f $result.PassedCount,$result.FailedCount); if ([int]$result.FailedCount -ne 0) { throw 'Pester tests failed' }`
+- preflight: 先固定实际要运行的 PowerShell 版本，再查看该进程能加载的 Pester 模块和实际 `Invoke-Pester` 的 `Parameters`；以命令参数表决定可选的静默参数，不只凭记忆或主版本号拼命令。测试路径必须存在。
+- acceptance: 输出包含目标测试的真实通过数和失败数，失败数为 `0`，并且承载测试的 PowerShell 进程退出码为 `0`。参数绑定失败发生在测试执行前，既不是测试失败，也不能算测试通过。
+- avoid: 把 Pester 4/5 的 `-Show None` 或更新版的 `-Output None` 无条件传给 Pester 3.4；为让命令可用而临时安装或升级模块；删除不兼容参数后只看进程退出码、不再核对测试汇总。
+
 ### Pattern: dotnet-io-absolute-path
 - use_when: PowerShell 里调用 .NET 文件 API（`[IO.File]::ReadAllText/WriteAllText/ReadAllBytes` 等）做读写或批量替换。
 - shape: `$f = Join-Path "<ABS_ROOT>" "<REL_PATH>"; [IO.File]::WriteAllText($f, $text, (New-Object Text.UTF8Encoding($hasBom)))`

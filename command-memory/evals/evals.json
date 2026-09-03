@@ -267,6 +267,34 @@
         "要求成功匹配后立即把需要的捕获复制到独立变量，未命中分支不复用旧值。",
         "要求从脚本入口重跑并验证业务集合的类型、数量和内容，不用转型掩盖。"
       ]
+    },
+    {
+      "id": 40,
+      "prompt": "Windows 上 `git commit` 报 `unable to write new index file` 后，我确认没有其他 writer 或锁，HEAD 和暂存集合连续两次稳定，于是记录真实 `.git/index` 的 SHA-256，再执行 `git write-tree` 和 `git commit-tree`。tree 内容与暂存差异都没变，但 `write-tree` 后 index 哈希变了。能直接判定是并发修改吗？如果必须保证真实 index 字节从头到尾不变，该怎么做？",
+      "expected_output": "应加载 git-on-windows 的 `git-commit-pure-object-layer` 模式；指出 `git write-tree` 可能更新 cache-tree 扩展并重写当前活跃 index，因此它不是字节级保全意义上的只读命令。若本任务确实在共享 index 上调用了它，仅凭调用前后 SHA-256 不同不能直接证明并发，也不能继续沿用调用前基线；只有 HEAD、完整暂存集合、write-tree 得到的 tree、状态和锁都没有其他漂移时，才能在所有有意 index 写命令结束后用 `git --no-optional-locks` 只读组重建受保护基线。若成功标准要求真实 index 原始字节从头到尾不变，就不得在共享 index 上调用 write-tree，应改用任务自有外置 `GIT_INDEX_FILE` 或真正独立的临时仓库，并复核共享 index 未变。不得把 `--no-optional-locks` 当成让 write-tree 只读的开关，也不得用预期的 cache-tree 改写掩盖其他状态漂移。",
+      "files": [],
+      "expectations": [
+        "输出指出 git write-tree 可能更新 cache-tree 并重写当前活跃 index。",
+        "输出说明 write-tree 不是字节级 index 保全意义上的只读命令。",
+        "输出不把调用前后 index 哈希差异单独判为并发，也不继续沿用调用前基线。",
+        "输出要求在全部有意 index 写操作后，以 no-optional-locks 只读组和其他仓库状态重建受保护基线。",
+        "输出在要求原 index 字节不变时改用外置 GIT_INDEX_FILE 或真正独立仓库。",
+        "输出不把 no-optional-locks 当成 write-tree 的只读开关，也不忽略其他状态漂移。"
+      ]
+    },
+    {
+      "id": 41,
+      "prompt": "我在 PowerShell 写了 `function Invoke-GitRead([string[]]$Args) { @(& git @Args) }`。无论位置调用 `Invoke-GitRead @('rev-parse','HEAD')`，还是命名调用 `Invoke-GitRead -Args @('rev-parse','HEAD')`，函数体内 `$Args.Count` 都是 0；改成 `$GitArgs` 后才得到 2。为什么？请给出稳定写法和验证方法。",
+      "expected_output": "应加载 cli-paths 的 `$args` 自动变量参数冲突模式；指出 PowerShell 的变量名和参数名不区分大小写，而 `$args` 是保存未绑定实参的自动变量，所以显式声明 `$Args` 仍与自动变量同名，在 PowerShell 7 和 Windows PowerShell 5.1 中都可能表现为调用端已传值、函数体内却为空。应把参数改为 `$GitArgs`、`$ToolArgs` 或其他语义化名称，并在命令展开、错误信息和调用端统一使用新名称；外部命令后立即检查 `$LASTEXITCODE`，调用端用 `@(...)` 固定输出集合。应在实际目标 PowerShell 版本中分别测试零项、一项和多项，确认数量、顺序、完整字符串和空输入分支；不能只改大小写、依赖位置绑定、全局变量或强制数组转换掩盖冲突。",
+      "files": [],
+      "expectations": [
+        "输出说明 PowerShell 变量名和参数名不区分大小写，$Args 与自动变量 $args 同名。",
+        "输出把参数改为 $GitArgs、$ToolArgs 或其他语义化名称，而不是只改大小写。",
+        "输出要求命令展开、错误信息和调用端统一使用新参数名。",
+        "输出要求外部命令后检查 LASTEXITCODE，并在调用端固定输出集合形状。",
+        "输出要求在目标 PowerShell 版本中验证零项、一项和多项的数量、顺序与完整内容。",
+        "输出不使用位置绑定、全局变量或强制数组转换掩盖冲突。"
+      ]
     }
   ]
 }

@@ -51,6 +51,14 @@
 - acceptance: 普通结果集合跨越全部正则操作后类型、数量和内容保持不变；正则捕获只从紧邻的成功匹配复制，未命中分支不会误用旧捕获。
 - avoid: 把 `$matches` 的大小写变体当普通变量；依赖一次未命中的 `-match` 清空 `$Matches`；用 `@($matches)` 或强制转型掩盖自动变量已经覆盖业务状态。
 
+### Pattern: powershell-avoid-args-automatic-variable-parameter-collision
+- use_when: 函数或脚本显式声明了名为 `$Args` 的参数（任意大小写），调用端已经传入一项或多项值，参数在函数体内却是空数组，外部命令因此收到零个参数。
+- shape: 使用能说明用途且不与自动变量重名的参数，例如 `function Invoke-ToolLines { param([string[]]$ToolArgs) $output = @(& "<TOOL>" @ToolArgs); if ($LASTEXITCODE -ne 0) { throw "tool failed: $($ToolArgs -join ' ')" }; $output }; $lines = @(Invoke-ToolLines -ToolArgs @('<ARG1>','<ARG2>'))`。
+- reason: PowerShell 的变量名和参数名不区分大小写，而 `$args` 是保存未绑定实参的自动变量；把 `$Args` 声明成普通参数仍与该自动变量同名，PowerShell 7 和 Windows PowerShell 5.1 中都可能表现为已传值却在函数体内得到空数组。
+- preflight: 检查函数签名和 `param(...)` 中是否存在大小写不敏感的 `args` 参数名；改名后分别用零项、一项和多项参数调用同一入口，外部命令包装器还要独立检查 `$LASTEXITCODE` 和输出行数。
+- acceptance: 一项和多项调用在函数体内保持准确数量、顺序和完整字符串，零项走明确的空输入分支；调用端继续用 `@(...)` 固定输出集合形状，不把参数绑定问题与单行输出标量化混为一谈。
+- avoid: 仅把 `$Args` 改成 `$ARGS` 等大小写变体；依赖位置绑定掩盖冲突；用全局变量、强制数组转换或重新读取自动 `$args` 猜回丢失的参数。
+
 ### Pattern: pester-version-aware-invocation
 - use_when: `Invoke-Pester` 在测试开始前报某个输出控制参数不存在，例如 Windows PowerShell 5.1 自带 Pester 3.4 不接受从新版命令复制来的 `-Show None`；当前任务不能为适配一条命令而升级测试框架。
 - shape: `$module = Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1; if (-not $module) { throw 'Pester is unavailable' }; Import-Module $module.Path -Force; $command = Get-Command Invoke-Pester -Module Pester; $pesterParams = @{ Script = '<TEST_PATH>'; PassThru = $true }; if ($command.Parameters.ContainsKey('Show')) { $pesterParams.Show = 'None' } elseif ($command.Parameters.ContainsKey('Quiet')) { $pesterParams.Quiet = $true }; $result = Invoke-Pester @pesterParams; if ($null -eq $result -or $null -eq $result.FailedCount) { throw 'Pester did not return a test summary' }; Write-Output ("passed={0} failed={1}" -f $result.PassedCount,$result.FailedCount); if ([int]$result.FailedCount -ne 0) { throw 'Pester tests failed' }`

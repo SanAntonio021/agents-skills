@@ -1,106 +1,113 @@
 ---
 name: writing-router
-description: 作为申报书与论文文章类任务的默认写作总路由，先判断任务类型、当前阶段和最小必要下游 skill，再分流执行。Use when 用户自然表达为写申报书、准备申报材料、写文章、准备论文、摘要、综述、投稿材料、审稿修改或定稿检查，且当前任务还没有被更具体的 custom skill 明确覆盖；也用于本地 `.md`/`.tex` 多轮修改后的“这版可以”“结构定了”“投稿候选”确认，以及查找、比较或恢复文稿旧版本；明显属于工程建设类申报时优先转给 `project-writing`，若目标是按严重程度审查现有文稿或判断是否继续修改，转给 `paper-review`；未指定或非 IEEE 期刊投稿事务转给 `journal-submission`，明确 IEEE 期刊投稿事务转给 `ieee-journal-submission`。
+description: 中文正式写作的默认总路由。Use when 用户要撰写、重写、润色或审查项目书、技术方案、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，以及无法直接归类的中文材料；也用于确定写作模式、修改范围、语言和实际加载规则。投稿事务、论文停稿审查、文献检索和单纯文件排版仍转给对应专门技能。
 ---
 
-# 学术与申报写作总路由
+# 中文正式写作总路由
 
-## 作用
+## 目标
 
-这份 skill 是申报书与论文文章类任务的默认轻量入口。
+先确定文稿类型和本轮改动边界，再加载一个主文体技能。不要把所有写作规则一次性塞进上下文，也不要用同一套“去 AI 味”规则处理所有正式文稿。
 
-它先判断“当前在写什么、现在做到哪一步”，再把任务分流到最小必要的下游 skill，而不是一上来全量展开相关能力。
+## 写作上下文
 
-## 路由
+开始正文工作前，在任务内部记录以下字段；当前任务未换文稿或阶段时沿用。普通交付不展示这段记录。评测提示包含 `TRACE_WRITING_CONTEXT=1` 时，才在文末输出同名 JSON 对象。
 
-如果任务涉及完整论文/申报流程、上游 skill 取舍或“该走哪一步”，先按需读取 [references/academic-workflow-map.md](references/academic-workflow-map.md)。该文件只提供路由和吸收地图，不替代下游技能。
+| 字段 | 允许值 |
+|---|---|
+| `document_type` | `project`、`technical`、`research_report`、`meeting_notes`、`paper`、`general` |
+| `mode` | 使用下表中与文稿类型对应的值 |
+| `edit_scope` | `draft`、`structural`、`bounded`、`in_place`、`audit_only` |
+| `language` | `zh`、`en`、`mixed` |
+| `loaded_refs` | 本轮实际读取过的规则和样稿路径；不得登记“准备读取”或凭规则名称猜测 |
 
-- 主写作层：
-  - 中文工程申报：[../project-writing/SKILL.md](../project-writing/SKILL.md)
-  - SCI/IEEE 论文精修与英文化：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-  - 行业、市场、技术、竞品和政策调研报告：[../research-report/SKILL.md](../research-report/SKILL.md)
-- 过程层：
-  - 讨论澄清与逐步确认：[../ask-first/SKILL.md](../ask-first/SKILL.md)
-  - 前期调研与样本先行：[../baseline-research/SKILL.md](../baseline-research/SKILL.md)
-  - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
-  - 实验设计、证据质量、论证有效性评估：[../rigor-check/SKILL.md](../rigor-check/SKILL.md)
-  - 停稿审查与投稿前把关（最终 Submit 前必须通过）：[../paper-review/SKILL.md](../paper-review/SKILL.md)
-  - 选刊定位（投哪本、被拒后改投哪）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
-  - 通用期刊投稿全生命周期（未指定或非 IEEE）：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
-  - IEEE 期刊投稿全生命周期（明确 IEEE）：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
-  - SCI/IEEE 论文精修（中改英、术语、图注、终稿）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-  - 纯英文句子质量审查（Sainani 五轮检查，已并入）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)，独立审查细则见 [../ieee-manuscript-edit/references/sainani-sentence-review.md](../ieee-manuscript-edit/references/sainani-sentence-review.md)
-- 支持层：
-  - 论文 PDF 下载与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
-  - 单篇论文中文总结：[../paper-summary/SKILL.md](../paper-summary/SKILL.md)
-  - 论文配图检查和规范化：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
-  - 用词表维护与交付前用词检查：[../style-vocab/SKILL.md](../style-vocab/SKILL.md)
-  - 去掉文字里的 AI 味：英文一般文本 `humanizer`，中文一般文本 `humanizer-zh`；交付的论文稿优先转 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 学术模式，申报书稿优先转 [../project-writing/SKILL.md](../project-writing/SKILL.md)，不给交付正文注入个性和第一人称
-  - 在线搜文献：`paper-search`
-  - Word 文档与模板格式化：[../docx/SKILL.md](../docx/SKILL.md)
-  - Markdown 到 Word 的阶段、确认、指纹和 PDF 发布工作流：[../markdown-docx-workflow/SKILL.md](../markdown-docx-workflow/SKILL.md)
-  - md 转 LaTeX 与投稿工程（模板、BibTeX、编译；当前期刊或页面要求时才打包 source）：[../latex-paper/SKILL.md](../latex-paper/SKILL.md)
+`edit_scope` 的含义：
 
-## 流程
+- `draft`：从材料起草正文。
+- `structural`：允许调整章节、段落职责和信息顺序。
+- `bounded`：只改用户指定章节、段落或问题。
+- `in_place`：保留结构和作者声音，只做必要的原位修改。
+- `audit_only`：只审不改；必须建立“论点—证据—章节功能”表。
 
-1. 先判断任务类型：工程申报、一般申报、论文文章、调研报告，还是仅处在下载文献、指标论证、停稿审查、初稿精修、Word 格式化这些局部步骤。调研材料已经齐备、目标是形成报告或重构旧报告时转 `research-report`；仍在 sample-first 取样和补证据时转 `baseline-research`。
-2. 再判断当前阶段：问题澄清、前期调研、结构搭建、正文写作、完整性检查、审查停稿、修改回应、复审确认、精修抛光、格式交付，还是已经进入期刊投稿事务。投稿技能可先准备文件和填写普通字段，但任何最终 Submit 请求都先转 `paper-review` 完成投稿前审查门。
-3. 如果表达还不足以区分任务类型或当前步骤，只追问一个最阻塞的问题；如果已经够清楚，直接路由，不为稳妥重复开场。
-4. 路由时默认只带一个主写作 skill；过程层和支持层 skill 只在当前步骤明显需要时再补。完整中文正式文稿交付前的 `humanizer-zh` 和 `style-vocab` 属于固定检查，不按可选支持项处理。
-5. 一旦当前线程已经确定任务类型和当前步骤，后续默认沿用，不要求用户每轮重复声明；只有用户明确换任务或换步骤时才切换。
-6. 如果对象是已有专利草稿，且用户意图是“审查 / 评审 / 是否继续修改 / 按严重程度分类指出问题”，优先转到 [../paper-review/SKILL.md](../paper-review/SKILL.md)。
-7. 只有在任务口径和当前步骤已形成共识，或用户明确要求直接起草时，才进入正式文本输出。
-8. 对老师修改稿、标黄文档或批注 `Word`，先提取标注内容并形成“原文 + 建议补写”的对照稿，不直接改正文。
-9. 多轮修订优先保持单一主稿和单一对照稿，减少版本分叉；文字未确认前，不反复导出多个 `Word` 版本。
-10. 需要回填 `Word` 时，先确认文字，再处理颜色标记和版式；默认另存新文件，保留原始标注内容不动。
-11. Markdown 是内容主稿。进入 Word 格式阶段时，按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 生成交接清单；内容未冻结、存在 open items 或未收到当前任务用户的完整确认前，不调用正式 DOCX 导出。
-12. 需要“先改 Markdown、确认内容、再生成 Word、验收 Word、最后可选导出 PDF”时，主路由进入 `markdown-docx-workflow`；它维护阶段和指纹，具体 Word 实现交给 `docx`。
-13. 预览与正式交付分开记录。正式 DOCX 由 `docx` 负责模板、分页和四层验收；内容技能不复制 Word 验收规则，也不把 OfficeCLI 或 MCP 诊断当成 Word 原生通过。
-14. 如果任务已经缩到论文某个实验结果、图注或方法小节的多轮收口，且证据边界和技术口径已经定住，优先转入 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md) 做局部精修，不再把它当成重新起草整节。
-15. 对实验结果类小节，转入精修前先检查 6 件事：论题是否已经收紧、结果段和方法段是否分工、关键参数是否与图中可观测量一一对应、代表性指标是否说明选择依据、术语是否按层级分工统一、英文是否需要按目标期刊口气二次重写。
-16. 如果用户想吸收上游 skill，不直接批量改多个下游；先用 [references/academic-workflow-map.md](references/academic-workflow-map.md) 判断适合放到哪一层，再只改当前最需要的一处。
-17. 补触发词或别名时，先标明证据来源：
-    - 用户本轮原话只能作为候选表达。
-    - 多轮真实对话重复出现，可视为稳定表达。
-    - 只有历史 transcript 统计或用户明确确认，才可称为高频表达。
-    - 人工扩展的近义词只用于测试召回，不代表用户习惯。
-18. 生成、重写或实质性修改完整中文正式文稿时，在首次提交完整稿给用户审阅前自动调用 `humanizer-zh`，随后调用 `style-vocab`。用户修改正文后，在定稿、内容冻结或格式交付前重新检查当前文件。用户不需要主动要求“去 AI 味”；临时关键词搜索不能替代这两项检查。
+## 两级路由
 
-## 本地文稿版本保护
+| `document_type` | `mode` | 主技能 |
+|---|---|---|
+| `project` | `proposal`、`expert_reply`、`final_audit` | [project-writing](../project-writing/SKILL.md) |
+| `technical` | `technical_scheme`、`system_description`、`test_result_analysis` | [technical-writing](../technical-writing/SKILL.md) |
+| `research_report` | `evidence_report`、`decision_report`、`final_audit` | [research-report](../research-report/SKILL.md) |
+| `meeting_notes` | `discussion`、`action`、`mixed` | [meeting-notes](../meeting-notes/SKILL.md) |
+| `paper` | `zh_paper`、`en_paper`、`final_audit` | [ieee-manuscript-edit](../ieee-manuscript-edit/SKILL.md) |
+| `general` | `general_edit` | [humanizer-zh](../humanizer-zh/SKILL.md) |
 
-当前任务将实际写入工作区内的 `.md` 或 `.tex` 时，修改前读取并执行 [references/document-version-protection.md](references/document-version-protection.md)。用户在后续消息中给出“这版可以”“结构定了”“投稿候选”等明确里程碑确认，或要求查找、比较、恢复旧版本时，也读取该规则。它按“用户一轮修改完成并验证通过”创建本地 commit，不按 `Ctrl+S` 创建版本。
+判断顺序：
 
-纯审查、只在聊天中改句、方案讨论和其他只读任务不触发。下游写作 skill 已命中时仍沿用同一规则，不能因为绕过本路由而漏掉版本保护。
+1. 用户明确说出的文稿类型、用途和读者。
+2. 原文件的栏目、模板和内容职责。
+3. 仍无法区分且会改变产物时，只问一个最关键的问题；不影响实质结果时按最窄范围继续。
 
-## 句子精修已并入 ieee-manuscript-edit
+项目书、技术文档、调研报告、会议纪要和论文都属于正式文稿。直接调用 `humanizer-zh` 处理这些材料时，也要回到本路由，再进入对应文体技能。
 
-`sentence-polish`（Sainani 五轮英文句子审查）已并入 `ieee-manuscript-edit`。用户说"检查英文句子""删废话""改被动语态""精简表达""太啰嗦""check English sentences""remove filler""improve clarity""tighten the writing"时，直接路由到 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)；该技能按需读取 [../ieee-manuscript-edit/references/sainani-sentence-review.md](../ieee-manuscript-edit/references/sainani-sentence-review.md) 执行独立句子审查，不再保留独立的 `sentence-polish` 技能。
+## 规则优先级
 
-## 边界
+正文中的冲突按以下顺序处理：
 
-- 不替代已明确命中的更具体下游 skill。
-- 任务已明显属于工程申报时，优先转到 [../project-writing/SKILL.md](../project-writing/SKILL.md)。
-- 如果当前任务只是在补文献、下载 PDF、单篇论文总结或整理 Word 模板，不接管支持层 skill 的主场。
-- 调研任务仍在建立任务池、设计单和证据基线时转 `baseline-research`；已有材料需要写成或重构为调研报告时转 `research-report`。
-- 核心任务是指标论证本身时，优先转到 [../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)。
-- 用户显式使用 `/21`、`二一` 或 `Consultant / Critic / Scribe` 这类说法时，也仍在当前任务里直接做高压缩收方向、压方案或定向写作，不再切独立模式 skill。
-- 只有润色已有 SCI/IEEE 初稿时，不接管 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)。
-- 未指定出版商或非 IEEE 期刊已经进入投稿系统、编辑处理、同行评审、返修提交、录用后文件、版权费用或校样阶段时，转到 [../journal-submission/SKILL.md](../journal-submission/SKILL.md)。明确 IEEE 时转到 [../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)。不要在写作总路由里维护投稿页面规则。
-- 不把“相关 skill 很多”理解成“一次全带上”；默认只补当前步骤最相关的少量 skill。
-- 不把 Imbad 或 K-Dense 的完整流程照搬成本地总流程；这里只吸收阶段判断和质量门控，具体写作、调研、审查细节留给下游 skill。
-- 任务类型已经确定后，不因为用户后续一句短话就擅自改写整个任务方向；确有歧义时，再补问一句。
-- 不把老师批注直接当成最终正文；需先与用户确认补写口径，再决定是否并回主稿。
-- 不在未确认前覆盖原始 `Word`；回填默认使用新文件保存补写结果。
-- 对已经确定证据边界的实验段落，不反复回到“重搭结构”模式；优先做局部收口、术语统一和图文对齐。
-- 不把局部实验段落的成熟收口经验再拆成新的写作主 skill；优先并入这里和 [../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)。
+1. 用户要求、权威源材料、指定模板和受保护事实；
+2. 当前文体与 `mode` 的规则；
+3. [共同质量规则](../humanizer-zh/references/common-quality.md)；
+4. 已批准的个人样稿。
 
-## 维护
+个人样稿只用于句子密度、信息顺序和语气。样稿不能覆盖事实、模板、术语、证据边界或当前任务的文体规则。
 
-- 保持它是轻量总路由，不把具体写作细则和单项目结论堆进来。
-- 当默认学术协作路由变化时，优先更新这里的分流边界。
-- 写作入口词、持续状态和步骤分流规则优先收口在这里；具体写作细节继续放在下游写作 skill。
-- 不把单次对话中的例子表述成“用户最常用”或“高频表达”。
-- 触发测试优先使用真实原话；人工构造样例必须标成模拟样例。
-- 测试结论分开报告“行为是否符合预期路由”和“是否有明确证据表明实际加载了目标 skill”，不用前者冒充后者。
-- 老师修改稿的提取、对照确认、回填标色流程，只保留编排层规则，不把局部经验扩成第二套写作主流程。
-- 论文实验段落、图注和方法小节的多轮收口经验，优先沉淀成“何时转精修、精修前检查什么”的路由规则，不在这里堆具体句式。
+摘要与结论、申报表规定栏目、会议行动项可以为不同章节功能复述同一论点。复述必须服务于新的章节功能，不能整段复制，也不能改变事实、适用范围或完成状态。
+
+## 最小加载规则
+
+1. 只加载路由表中的一个主技能。
+2. 五类正式文稿的主技能都读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。形成完整草稿、结构重写、终稿审校或 `audit_only` 时，再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
+3. 个人样稿入口固定为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`。只有入口和对应样稿都标为 `approved` 时才读取；一次只读当前文体的样稿。未读取的文件不能写入 `loaded_refs`。
+4. 完整正式文稿交付前使用 `style-vocab` 检查术语和个人用词。若当前文体技能已经完成共同质量与 AI 气味审校，向 `style-vocab` 传递这一状态，不再调用 `humanizer-zh` 做第二遍通用改写。
+5. 中文论文不加载英文写作细则；英文论文不加载中文写作细则。`final_audit` 只加载当前稿件语言对应的细则和终稿规则。
+
+## 通用流程
+
+1. 锁定当前主稿、来源、模板、交付范围和受保护片段。
+2. 建立写作上下文并选择主技能。
+3. 材料不足时只写材料能支持的部分，明确列出阻塞正文成立的缺项，不用常识或套话补篇幅。
+4. 按当前文体和模式起草、重构、局部修改或审查。
+5. 用共同质量规则检查事实漂移、段落职责、信息推进、全文重复和停笔条件；需要时再按气味目录复核。
+6. 完整正式稿再做术语与个人用词检查。修改理由只说一次；正文、审计记录和交付说明分开。
+7. 实际写入工作区内的 `.md` 或 `.tex` 时，读取 [文稿版本保护](references/document-version-protection.md)。只读审查和聊天内改句不触发。
+8. 需要 Word 时，正文先完成审校和冻结，再按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 交给 `docx`。交付流程不再自行运行第二遍通用风格改写。
+
+## `audit_only` 的最低产物
+
+五类正式文稿一律先列内部审计表：
+
+| 字段 | 含义 |
+|---|---|
+| 论点 | 文稿实际声称的最小事实、判断、决定或任务 |
+| 证据 | 来源、数据、原始发言、公式或“缺失” |
+| 章节功能 | 该处负责背景、方法、结果、判断、决定、行动等哪一项 |
+| 状态 | `supported`、`review_required`、`fail` |
+
+整段无理由重复、跨节事实矛盾、虚构数据或把“计划/设计/测试”升级成更高完成状态，直接判 `fail`。`audit_only` 不顺手改正文。
+
+## 相邻任务
+
+- 指标是否可实现：`target-feasibility`。
+- 研究取样和补证据：`baseline-research`。
+- 论文整体停稿审查或最终 Submit 门：`paper-review`。
+- 投稿系统与返修事务：`journal-submission` 或 `ieee-journal-submission`。
+- 文献检索、下载和总结：`paper-search`、`paper-download`、`paper-summary`。
+- Word、PDF、LaTeX 工程：`docx`、`pdf`、`latex-paper`。
+
+需要判断完整学术流程时，按需读取 [学术流程地图](references/academic-workflow-map.md)，不要因此加载所有下游技能。
+
+## 完成条件
+
+- 写作上下文字段已经确定，`loaded_refs` 与实际读取一致。
+- 事实、数值、公式、引用关系和状态没有漂移。
+- 每段承担明确功能，并推进新信息。
+- 必要复述有新的章节功能；无意义重复已删除。
+- 没有未处理的阻断项；继续改写已经不能带来明确收益。

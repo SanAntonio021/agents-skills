@@ -1,5 +1,6 @@
 {
   "skill_name": "writing-router",
+  "fixture_policy": "synthetic-only",
   "evals": [
     {
       "id": "route-complex-paper-workflow",
@@ -8,7 +9,7 @@
     },
     {
       "id": "route-engineering-proposal-metric",
-      "prompt": "工程申报书里老师要求把 100Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
+      "prompt": "合成案例：工程申报书里要求把 24Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
       "expected_output": "判断核心阻塞是指标口径和可行性，先路由到 target-feasibility；指标站稳后再回到 project-writing 改正文。"
     },
     {
@@ -40,8 +41,8 @@
     },
     {
       "id": "block-overbroad-workspace-root",
-      "prompt": "当前工作区根目录是 D:\\BaiduSyncdisk\\Paper，里面有很多论文项目。请修改其中 2026-iqmimo-115g\\main.tex；这里还没有 Git。",
-      "expected_output": "拒绝在 D:\\BaiduSyncdisk\\Paper 初始化仓库，显示该准确路径并要求把工作区切到具体论文项目；不能自行猜测一个更深根目录后初始化。",
+      "prompt": "合成案例：当前工作区根目录是 X:\\SyntheticWorkspace\\PaperCollection，里面有很多论文项目。请修改其中 paper-alpha\\main.tex；这里还没有 Git。",
+      "expected_output": "拒绝在 X:\\SyntheticWorkspace\\PaperCollection 初始化仓库，显示该准确路径并要求把工作区切到具体论文项目；不能自行猜测一个更深根目录后初始化。",
       "files": [],
       "expectations": [
         "识别并拦截过大公共目录。",
@@ -51,7 +52,7 @@
     },
     {
       "id": "block-existing-overbroad-git-root",
-      "prompt": "我打开的是 D:\\BaiduSyncdisk\\Paper\\2026-iqmimo-115g，但 git rev-parse 返回的仓库根目录是 D:\\BaiduSyncdisk\\Paper。请继续修改 main.tex。",
+      "prompt": "合成案例：我打开的是 X:\\SyntheticWorkspace\\PaperCollection\\paper-alpha，但 git rev-parse 返回的仓库根目录是 X:\\SyntheticWorkspace\\PaperCollection。请继续修改 main.tex。",
       "expected_output": "识别这是被误初始化的公共父仓库并停止，不沿用该仓库，也不自动创建嵌套仓库；显示准确父仓库路径，提示用户先处理公共父仓库。",
       "files": [],
       "expectations": [

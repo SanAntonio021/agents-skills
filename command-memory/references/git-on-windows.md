@@ -131,7 +131,12 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
   git diff --cached --name-status
   git diff --cached --check
   if (git ls-files -u) { throw "Unmerged index entries are present" }
-  $tree = (git write-tree).Trim()
+  # write-tree 会读取当前 index，也可能为 cache-tree 扩展回写当前 index。
+  # 若真实 index 的字节哈希必须保持不变，停止使用共享 index，改走外置 index 或独立仓库模式。
+  $treeRows = @(git write-tree)
+  if ($LASTEXITCODE -ne 0 -or $treeRows.Count -ne 1) { throw "tree creation failed" }
+  $tree = ([string]$treeRows[0]).Trim()
+  if ($tree -notmatch '^[0-9a-f]{40}$') { throw "tree id is invalid" }
   $commit = (git commit-tree $tree -p $head -m "<MESSAGE>").Trim()
   git cat-file -p $commit
   git diff-tree --no-commit-id --name-status -r $commit
@@ -141,11 +146,12 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
   git push origin <BRANCH>
   ```
 - substitute_only: `<MESSAGE>`, `<BRANCH>`；提交文件清单必须沿用此前核验过的明确路径，不从工作区重新猜测
-- preflight: `git rev-parse --show-toplevel` 确认实际仓库根；连续两次读取 `HEAD`、`git status --short`、`git diff --cached --name-status` 和 `git diff --cached --check`，结果必须稳定且只含批准范围；`git ls-files -u` 必须为空；确认当前分支和远端目标未分叉，并排除已知并行写入者
+- preflight: `git rev-parse --show-toplevel` 确认实际仓库根；连续两次读取 `HEAD`、`git status --short`、`git diff --cached --name-status` 和 `git diff --cached --check`，结果必须稳定且只含批准范围；`git ls-files -u` 必须为空；确认当前分支和远端目标未分叉，并排除已知并行写入者。调用 `write-tree` 前先决定是否要求真实 index 的字节哈希从头到尾不变；若要求，就不能在共享 index 上运行本模式，应改用任务自有的外置 `GIT_INDEX_FILE` 或真正独立的临时仓库
+- index_effect: `git write-tree` 不是字节级 index 保全意义上的只读探针。它可能在 tree 内容不变时更新 cache-tree 并重写当前 index；因此只要本任务确实在共享 index 上调用过它，不能再拿调用前后的 index SHA-256 差异单独证明并发。若任务不要求保留原始字节，必须在全部有意的 index 写命令结束后，用 `git --no-optional-locks ...` 重建新的受保护基线，并同时确认 `HEAD`、完整暂存集合、`write-tree` 得到的 tree、状态和锁均未发生其他漂移；任一项不一致仍按并发或证据不足停止
 - candidate_check: `git cat-file -p $commit` 的 `parent` 必须等于 `$head`；`git diff-tree --no-commit-id --name-status -r $commit` 必须只列允许文件；候选不正确时不执行 `update-ref`
-- avoid: `COMMIT_EDITMSG` 被占用、存在已知并行写入者、`HEAD` / 暂存集合发生漂移时，禁止从共享 index 执行 `write-tree` 或 `commit-tree`，改走坑 6；不要删除 `index.lock`、停止同步客户端、`reset` / `checkout` 工作区或用 `git add .` 扩大范围；`git commit-tree` 不运行 hooks，若需要签名、`pre-commit` 或 `commit-msg` 校验就停止并先恢复正常 `git commit`
+- avoid: 不把 `--no-optional-locks` 解释为能让 `write-tree` 只读，也不在执行 `write-tree` 后静默沿用调用前的 index 哈希基线；`COMMIT_EDITMSG` 被占用、存在已知并行写入者、`HEAD` / 暂存集合发生漂移时，禁止从共享 index 执行 `write-tree` 或 `commit-tree`，改走坑 6；不要删除 `index.lock`、停止同步客户端、`reset` / `checkout` 工作区或用 `git add .` 扩大范围；`git commit-tree` 不运行 hooks，若需要签名、`pre-commit` 或 `commit-msg` 校验就停止并先恢复正常 `git commit`
 - success_signal: 分支通过带旧值校验的 `update-ref` 前进一个提交，`git status` 中目标文件干净、无关改动仍保留，随后远端 push 为 fast-forward
-- capture_rule: 单提交的对象层回退是已核验暂存区的窄范围应急路径；先验证 tree/commit/差异，再原子更新 ref，不能把它当作普通提交的默认替代
+- capture_rule: 单提交的对象层回退是已核验暂存区的窄范围应急路径；`write-tree` 可能为 cache-tree 重写活跃 index。要求原 index 字节不变时改用外置 index 或独立仓库；允许这次有意写入时，只能在写入结束后重建受保护基线，不能把预期哈希变化误报成并发，也不能因此忽略其他状态漂移
 
 ## 为什么不直接修工作区
 

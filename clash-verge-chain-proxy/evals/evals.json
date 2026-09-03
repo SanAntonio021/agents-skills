@@ -201,6 +201,19 @@
         "持续 HTTP/2 连接跨过自然 30 分钟周期和实际自动切换，分别记录旧连接的错误与重连，并在切换后新建连接确认新节点。",
         "手动健康检查不能代替自然周期，单次无中断不扩大成所有协议或应用的保证。"
       ]
+    },
+    {
+      "id": 20,
+      "prompt": "我用 PktMon 抓校园认证门户的 DNS。按物理以太网找到的 miniport component 只看到了校园 DNS 返回的应答，没有看到本机发出的查询；解析和绑定该物理源地址的连接都成功。能否据此判网络或 nameserver-policy 失败？下一步怎样选抓包 component？",
+      "expected_output": "不能把单向 miniport 的缺包直接判成网络或 policy 失败。应重新运行 pktmon list --json，按当前物理接口及其 binding stack 定位候选，不沿用历史 component ID；结合 component 边缘和捕获期间 pktmon counters --json 的 Tx/Rx 计数判断观察能力。miniport 通常只有上边缘，优先在同一物理接口绑定栈中选择经实测能观察双向流量的 filter component 后重新抓取。DNS policy 验收仍必须在同次捕获中看到精确门户查询及对应应答；没有合格双向观察点时只能报告接口绑定证据不足，不能用单向应答降级通过。",
+      "files": [],
+      "expectations": [
+        "不把 miniport 缺少一个方向的包直接判为网络或 nameserver-policy 失败。",
+        "要求用当前 pktmon list --json 重新按物理接口 binding stack 定位 component，不复用旧 ID。",
+        "结合 component 边缘和 pktmon counters --json 的 Tx/Rx 计数验证观察能力，不按名称猜。",
+        "选择同一物理接口绑定栈内经验证可观察双向流量的 component 后重抓。",
+        "DNS 验收仍要求同次捕获中的精确查询与应答；否则只报告证据不足，不降级通过。"
+      ]
     }
   ]
 }

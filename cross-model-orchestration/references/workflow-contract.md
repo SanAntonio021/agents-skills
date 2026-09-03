@@ -1,364 +1,195 @@
-# 工作流契约
+# Claude–Codex Bridge v3 互审契约
 
-## 基本约束
+## 适用面
 
-本契约用于同一个 `claude-codex-bridge` MCP 的两个方向：`Codex -> Claude` 和
-`Claude -> Codex`。每一轮的作者、审查者、产物、哈希、bridge job ID 和同步状态都必须可追溯。
+已落盘的正式计划和用户明确要求审查的交付物使用 protocol v3。v3 让对端在真实项目中使用完整原生
+工具，自行按路径读取并可直接修改；bridge 不复制文件正文。未落盘内容和旧调用方继续使用 v2 inline
+兼容流程。
 
-全局自动入口只适用于准备提交给用户确认的正式计划，自动请求必须使用 `artifactType=plan`。
-内部 Todo、执行清单、状态更新、普通读取/分析/修改/测试/提交/交付都不自动创建复核 job。用户明确
-要求对方执行，或已确认计划明确约定异族执行者时，可以显式使用兼容的 v1 task 路径；v2 正式审查
-使用共享 `/mcp` 和 `v2_review_peer`/`v2_review_repair_peer`，任务完成后不自动追加审查。
-`artifactType=deliverable` 继续作为显式能力保留，只能由用户明确要求，或由用户明确启用的专用
-跨模型循环发起，不能因为任务复杂或交付物重要而自动触发。
+正式计划通过后仍需用户确认才能执行。普通执行、测试、提交和交付不自动追加互审。
 
-- 每个 `seriesId` 最多三次 accepted round，轮次由 bridge 根据 `seriesVersion`/`latestJobId` CAS 推导；调用方不传 `round` 或 `maxRounds`。每轮最多两次尝试。
-- 已有活动 job 时只能查询该 job；不得重发、猜测最新线程、使用 `--resume-last` 或绕过 bridge。
-- `v2_review_peer` 在已有稳定本地文件时优先使用 workspace 只读模式，只传路径、字节数和哈希；没有
-  可靠文件路径时使用 inline zero-tool 模式。`v2_review_repair_peer` 的 inline 模式返回完整 artifact，
-  workspace 模式在固定副本产生受控文件变更并由 bridge 负责测试；作者主项目不直接暴露。
-- `v2_peer_status.active=true` 与 `capabilities.inlineReviews=true` 才允许 inline 调用。workspace 调用还必须
-  有 `capabilities.workspaceReviews=true`、`capabilities.workspaceRepairs=true` 和
-  `workspaceProbeState=available`；`pending`/`unavailable` 时零工具审查仍可用，但已经选择的路径审查
-  和 workspace 修订不得创建 job，也不得静默改成 inline 后发送整篇正文。
-- `loopbackState` 和 `childLoopbackState` 是 sandbox 到临时 `127.0.0.1` fixture 的实际观测，
-  不是 daemon 绑定状态。`reachable_residual_risk` 或 `unverified` 必须与
-  `loopbackResidualRisk`、`activationState` 一起保留在 capability/audit 证据中；不得表述为 sandbox
-  已隔离或 loopback 已通过。`eligible_with_loopback_residual_risk` 仅说明其他硬门已合格，仍允许调用；
-  工作区外写入失败、外网断开、子进程文件/外网边界继承、超时后进程树清理任一失败均阻断并且不创建 job。
-- 审查结果不是执行授权。正式计划通过互审后仍须用户明确确认。
-- 通道异常、模型不匹配、格式错误、越界写入、基线漂移、超时或取消立即失败关闭，不算“需修改”。
-- Codex 的共享 CC Switch 记录只能使用 URL `/mcp` 和
-  `env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN`；`headers.X-Bridge-Token` 及渲染出的
-  `[mcp_servers.claude-codex-bridge.http_headers]` 都必须不存在。`codex mcp get
-  claude-codex-bridge` 应报告 `transport=streamable_http`、`http_headers=-` 和共享环境变量。这是
-  Codex 专属渲染约束，不据此改写 Claude 配置。
-- `review_repair` 的结果在 bridge 同步前必须包含对应的 `PLAN_REVIEW` 或 `DELIVERABLE_REVIEW`
-  标记和明确的 `结论`（`通过`、`需修改` 或 `实质分歧`）。模型明确报告阻塞/未完成、认证或权限失败，
-  或把失败测试/未满足验收写成“通过”时，job 进入 `failed`，错误码为 `peer_contract_error`，并返回
-  `PEER_REVIEW_FAILURE_REPORT`；审查副本的变更不得同步回作者主项目。
+## 入口与身份
 
-## 审查包
+主入口为 `http://127.0.0.1:43123/mcp`。Codex 和 Claude 均使用
+`CLAUDE_CODEX_BRIDGE_TOKEN`；token 只认证 loopback 调用，不证明 `author`。
 
-每轮通过共享 `/mcp` 的 `v2_review_peer` 或 `v2_review_repair_peer` 发送如下对象。调用方必须声明
-`author`，bridge 由它推导 target、固定 operation/权限/轮次上限，并记录
-`author_source=caller_declared`；共享 token 不证明声明的作者身份：
+每次 v3 请求显式提供：
 
 ```json
 {
   "author": "codex | claude",
-  "question": "review, repair when requested, and return the protocol-v2 JSON result",
-  "artifactId": "stable-logical-artifact-id",
+  "target": "claude | codex（必须与 author 不同）",
+  "projectRoot": "现有绝对目录",
+  "artifactPath": "projectRoot 下现有普通文件的相对路径",
+  "artifactId": "可选稳定标识",
   "artifactType": "plan | deliverable",
-  "taskProfile": "quality | writing | creative_writing | coding | research | knowledge_work | balanced | high_volume",
-  "model": "optional allowlisted target model",
-  "reasoningEffort": "optional supported effort",
-  "artifactName": "logical name or relative file name",
-  "artifactMode": "workspace for a stable local file; omit for inline review",
-  "artifactBytes": 0,
-  "artifactSha256": "64 lower-case hex characters",
-  "artifactContent": "inline requests only: full reviewable content and evidence",
-  "artifactPath": "workspace requests: required forward-slash relative path",
-  "targetRoot": "workspace requests: smallest absolute directory containing artifactPath",
-  "acceptanceCriteria": ["objective criterion"],
-  "constraints": ["scope or safety boundary"],
-  "continuation": {"host": "codex_desktop", "threadId": "current Codex Desktop task/thread ID"},
-  "seriesId": "optional stable series id",
-  "seriesVersion": 0,
-  "latestJobId": "uuid from the previous round"
+  "task": "本轮任务",
+  "acceptanceCriteria": ["至少一项"],
+  "constraints": [],
+  "taskProfile": "可选 profile",
+  "model": "目标侧精确白名单模型",
+  "reasoningEffort": "可选合法强度"
 }
 ```
 
-Codex Desktop 调用方必须从当前任务进程读取 `$env:CODEX_THREAD_ID`，并将非空值原样写入
-`continuation.threadId`。不能用旧任务 ID、扫描最近任务或猜测线程；变量缺失或无法核对时省略
-`continuation`，公开记录自动续接不可用并由作者侧继续。
+`artifactContent`、`targetRoot`、`repairTargets`、`allowedPaths`、`testCommands`、sandbox 和工具
+列表不是 v3 字段。出现额外字段时在创建 job 前拒绝。bridge 对 `projectRoot` 取 realpath，并拒绝
+绝对 `artifactPath`、路径穿越、目录或不存在的主文件。
 
-inline 请求先固定本轮完整 `artifactContent`，路径请求直接读取目标文件的当前 UTF-8 字节；随后立即计算
-`artifactBytes` 和 `artifactSha256`，不得复用旧轮次或文件元数据中的值。`v2_review_peer` 对稳定本地
-文件显式提供 `artifactMode=workspace`、绝对 `targetRoot` 和相对 `artifactPath`，省略
-`artifactContent`、`repairTargets` 和 `testCommands`；没有可靠文件路径时省略 `artifactMode`，提交完整
-`artifactContent` 做 inline 审查。`v2_review_repair_peer` 必须显式提供 `artifactMode`；workspace 模式
-要求绝对 `targetRoot` 和非空 `repairTargets`，plan 只能有一个与 `artifactPath` 相同的 `modify` 目标；
-inline 模式禁止工作区和测试字段并要求模型返回完整 `repairedArtifact`。当前 `v2_peer_status` 必须同时
-报告 `workspaceReviews=true`、`workspaceRepairs=true` 与 `workspaceProbeState=available` 才可使用
-workspace；无测试时 workspace 修订传 `testCommands=[]`。需要测试时逐条提供
-`{program, programBytes, programSha256, args, timeoutMs}`，其中 program 必须是未链接的绝对 `.exe`，
-由 bridge 的 Codex sandbox 在固定副本内执行。
+## 能力门
 
-## 发起与快照
-
-两端统一调用共享 `/mcp`（首次进入和 workspace 前先读取 `v2_peer_status`）：
+调用 `v3_peer_status` 后至少验证：
 
 ```text
-v2_review_peer(author + workspace path identity | complete inline envelope) 或
-v2_review_repair_peer(author + artifactMode + complete envelope)
-[v2_await_peer(job_id, timeout_ms <= 45000) -> v2_peer_result(job_id)] 循环到原 job 终态
+protocol_version = 3
+active = true
+capabilities.pathReviews = true
+capabilities.artifactContentAccepted = false
+capabilities.realProjectCwd = true
+capabilities.fullNativeTools = true
+capabilities.directProjectWrites = true
+capabilities.claudeTransport = cli
+capabilities.codexTransport = app_server
 ```
 
-正常调用期间，原作者任务保持运行并执行上述循环；Codex 作者和 Claude Code VS Code 插件/CLI 作者
-都在终态后直接处理回执并按同一 series CAS 进入下一轮。bridge 启动的 reviewer 会话是后台隔离 worker，
-不要求出现在任一作者 UI 中。`continuation` 只处理作者任务已经退出或不再等待后的任务外恢复。
+Claude 子会话以真实 `projectRoot` 为 cwd，加载 user/project/local settings、项目规则、技能、插件、
+MCP、网络和默认完整工具。Codex 使用 bundled App Server、真实 cwd、`runtimeWorkspaceRoots`、
+`dangerFullAccess` 与临时 thread，同时保留原生配置、规则、技能、插件、MCP 和网络。两端只移除
+bridge 的长期 MCP token，并以 `BRIDGE_CHILD=1` 阻止递归 bridge 调用。
 
-无论每次 `v2_await_peer` 是否已声称 complete，调用方都要继续调用一次 `v2_peer_result`。若仍为
-pending，只在 commentary 更新同一 job 的状态并继续当前回合；不得以 pending 结束最终回复或等待用户
-再次提醒。全程固定原 `job_id`、解析后的 model/effort/profile 和首次 `hard_deadline_at`，不得创建第二个
-job 或重置十分钟硬截止。终态 public job 必须含 bridge 持久化的：
+不得把 v3 改成 read-only、safe mode、快照、固定副本、文件白名单或缩减工具集。
+
+## 首轮
+
+调用：
 
 ```text
-completion_receipt = {
-  schema_version: 1,
-  delivery_required: true,
-  disposition: passed | needs_changes | evidence_required | awaiting_user_decision | failed,
-  report_type: PLAN_REVIEW | DELIVERABLE_REVIEW | DISAGREEMENT_REPORT | PEER_REVIEW_FAILURE_REPORT,
-  report: bridge-rendered user report
+v3_review_peer(完整 v3 请求)
+[v3_await_peer(job_id, timeout_ms <= 45000) -> v3_peer_result(job_id)] 循环
+```
+
+对端先从磁盘读取最新主文件和必要项目上下文，可直接修改真实项目。bridge 在 dispatch 前后记录主
+文件 SHA-256，并要求结果符合：
+
+```json
+{
+  "kind": "final_review",
+  "verdict": "pass | needs_changes | disagreement",
+  "summary": "...",
+  "confirmed": [],
+  "findings": [
+    {"summary": "...", "rationale": "...", "path": "可选", "line": 1}
+  ],
+  "requiredChanges": [],
+  "risks": []
 }
 ```
 
-调用方收到终态后立即向用户呈现 `completion_receipt.report`，不得透传原始模型输出或自行声称审查已完成。
-单次 45 秒只是一段软等待；pending 没有 `completion_receipt`，也不是 `peer_wait_timeout`。只有 bridge 在
-首次提交的十分钟硬截止上持久化的 `peer_wait_timeout` 才是超时终态。
+请求模型必须由对端运行时精确回报；缺失或不同即失败。单次 await 返回非终态时继续等待同一 job，
+不另开 job、不换模型、不降档。
 
-提交前共享入口不可达且没有 `job_id` 时，立即输出 `jobId=unavailable`、
-`decisiveError=bridge_unreachable` 的失败报告。已有 `job_id` 后短暂断连时，只恢复共享入口并继续查询或
-等待同一 job；保留首次 `hard_deadline_at`，不得重发。到原硬截止仍不可达时才输出带原 job ID 的
-`bridge_unreachable` 失败报告。除这种无法读取 bridge 终态的传输故障外，终态只能来自持久化的
-`completion_receipt.report`。
+## 作者复查与终审
 
-Codex -> Claude 与 Claude -> Codex 都不发送 provider-native transport schema。模型返回不透明文本，
-bridge 接受规范 JSON、带前后说明的单层 `json` 代码围栏/对象或受控 Markdown，并在内部统一转换为现有
-`V2ModelResponse` 后执行同一严格 schema、结论、证据和修订正文校验；说明文字只作为外壳噪声丢弃，
-不补默认数组、不接受额外字段、
-不自动换模型或降档。格式明显错误但能识别审查意图时，只允许在同一 job 内追加一次同模型、同强度、同
-profile 的零工具格式整理调用，不增加 round/attempt、不重置硬截止、不新建 job。整理仍须保持原结论，
-且整理后继续执行语义、schema、证据、权限和测试门；整理失败或结果仍无效时输出失败报告。inline
-审查中的 `StructuredOutput` 或其他工具事件都不是允许行为；workspace 只读审查仅允许对密封副本使用
-`Read`，其他工具、范围外读取或任何写入都失败关闭。
+首轮成功后 phase 为 `awaiting_author`。原作者必须重新读取最新主文件、检查对端改动和 review，
+并可自行修改。随后调用：
 
-Codex 与 Claude 都连接 `/mcp` 并使用 `CLAUDE_CODEX_BRIDGE_TOKEN`；不得把 `target` 或另一角色 token
-写入工具参数。角色端点和独立 token 仅保留回滚：它们使用未加前缀工具并由 endpoint owner 推导 reviewer。
-旧 `submit_peer(operation=review_repair)` 只保留兼容周期；字段不完整时返回 `missing_fields`，且不得
-创建 job。新的正式互审不得继续使用该兼容入口。
-
-workspace 模式发起前记录目标根内普通文件的相对路径、字节数、SHA-256 和 Git 状态；`targetRoot` 应取
-包含审查文件的最小目录。bridge 把该目录复制到固定副本供审查者读取（排除 `.git`），并保存
-baseline/result manifest。只读审查不接受任何文件变化，终态后删除副本和 manifest；workspace 修订的
-`repairTargets` 只约束可变更文件，不缩小可读上下文。job 终态后比较整个文件集合和全部哈希。审查者
-写入副本以外、作者文件在审查期间漂移、出现符号链接或路径穿越都直接生成
-`PEER_REVIEW_FAILURE_REPORT`。
-
-同一 `author + seriesId` 使用一个 v2 series 和持久状态。共享入口的 author 来源也必须持续记录为
-`caller_declared`。下一轮先核对作者当前主项目，再用上一轮的
-`seriesVersion` 与 `latestJobId` 做 CAS；不另开逻辑产物，不猜测最新 job。恢复或重试必须沿用已记录的
-model、reasoning effort、task profile、routing source 和 rule ID；任一缺失或调用方试图覆盖时停止。
-需要换路由时建立新的 `seriesId`，不能在旧 series 中切换。
-
-## `needs_changes` 后的任务外唤醒
-
-`continuation` 为可选字段，只接受 `{ host: "codex_desktop", threadId }`。它不是授权 bridge 直接修改
-作者文件，也不是正常三轮互审的前置条件；它只指定在审查结果满足门槛后要唤醒的原 Codex Desktop
-任务。任务内仍在等待的作者直接继续，不使用 outbox。任务外唤醒仅适用于
-`author=codex` 的正式 `artifactType=plan`、目标 Claude、完整且匹配的模型/运行时回执、轮次 `< 3`、
-无高风险变更，以及普通同步、测试、基线和权限门均通过的 job。
-
-符合条件时，bridge 持久化 `needs_changes` 终态并将 continuation 排入 outbox，通过 Desktop IPC
-向同一 `threadId` 发送续接请求。被唤醒的原作者任务必须查询同一 `jobId`，采纳 findings，更新计划，
-按最终 UTF-8 内容重新计算 `artifactBytes`/`artifactSha256`，并用同一 `seriesId` 和上一轮返回的
-`seriesVersion`/`latestJobId` 提交下一轮；bridge 不替它判断或书写语义内容。超过第三轮、任何证据缺失、
-超时、断连、基线漂移或不安全同步都停止任务外唤醒。Claude-authored 方向在原 VS Code Claude Code
-插件或 CLI 任务仍运行时直接继续作者侧流程；任务退出后，bridge 没有可验证的 Claude Code 宿主唤醒
-接口，不猜测会话，也不自动替 Claude 修改。
-
-workspace 出现删除、重命名、权限/类型变化或目录替换时，job 先进入 `awaiting_user_decision`，公开完整
-稳定的 `pending_high_risk[].id` 集合。只有用户精确批准全部 ID 后调用 `v2_approve_peer_sync`；该调用只
-重新验证基线与保留副本并同步，不重新调用模型。同步成功后，若原 Codex continuation 仍满足门槛，才可
-再次唤醒原任务。
-
-continuation outbox 状态为 `queued`、`dispatching`、`delivered`、`uncertain`。重启、断连或超时使
-`dispatching` 变为 `uncertain`，不得自动重发或创建替代 job，以避免重复续接；该状态必须保留在公开
-job 证据中。
-
-## 模型解析
-
-`taskProfile`、`model` 和 `reasoningEffort` 都可省略。bridge 按“显式模型/强度 > 显式 profile >
-质量默认”解析，并把 `requested_model`、`requested_reasoning_effort`、`task_profile`、
-`routing_source`、`routing_rule_id` 写入 job。调用方必须按这些解析结果验收，不能继续使用硬编码常量。
-
-质量默认是 Claude `claude-opus-5` / `max` 和 Codex `gpt-5.6-sol` / `max`。profile 路由和依据见
-[model-routing.md](model-routing.md)。`writing` 与 `creative_writing` 仍默认 Opus 5；Opus 4.6 只允许
-显式选择。bridge 不改变 `target`，不提供 fallback，也不在失败时自动降档。
-
-## Codex -> Claude
-
-Codex 连接共享 `/mcp` 并提交 `author="codex"`；调用方可以通过公开路由字段选择白名单模型和强度，
-但不能传入原始 CLI 参数或覆盖工具、权限参数。`author` 仅是 caller-declared，job 必须如实记录
-`author_source=caller_declared`。bridge 固定并验证：
-
-```text
-author = codex; derived target = claude
---model <resolved selected model>
---effort <resolved selected effort>
-v2_review_peer + artifactMode=workspace: review_only + sealed copy + Read only; no writes
-v2_review_peer + inline: review_only + zero tools
-v2_review_repair_peer + artifactMode=inline: zero tools; complete repairedArtifact required
-v2_review_repair_peer + artifactMode=workspace: acceptEdits + native file changes only; no Bash
-system/init.model == resolved selected model
-workspace cwd and --add-dir == the fixed bridge workspace
-public reported model == resolved selected model
+```json
+{
+  "author": "原作者",
+  "seriesId": "首轮 series_id",
+  "seriesVersion": "首轮最新 series_version",
+  "latestJobId": "首轮 latest_job_id"
+}
 ```
 
-Claude 与 Codex 两个方向都不传 transport schema，由 bridge 在结果返回后接受规范 JSON、单层
-带前后说明的单层 `json` 代码围栏/对象或受控 Markdown，再统一按现有 `V2ModelResponse` 校验。额外字段、缺段、
-结论/证据/修订正文不完整仍失败；格式错误只有在能识别审查意图时才允许同 job 一次格式整理，且整理
-调用保持原模型、强度、profile、路由、权限和截止时间。`--model`/`--effort` 缺失、重复或与解析结果
-不同，出现 alternate/fallback 参数，init 回执缺失或实际模型不是所选模型，工具模式或结果契约不匹配，
-均停止；没有 fallback model。只有终态 `succeeded`、结果契约合法且模型证据精确匹配时才接受。workspace 的结构化测试由 bridge 的 Codex
-sandbox 运行，超时、退出码非零、程序哈希变化或漏测都是失败证据，不能被模型正文的“通过”覆盖。
+- `author_modified=false`：不再调用模型，直接向用户呈现最新文件和首轮结论；非 pass 也交给用户。
+- `author_modified=true`：用首轮完全相同的身份、任务、验收、约束和路由字段，加 checkpoint
+  返回的 `seriesId/seriesVersion/latestJobId` 再调用 `v3_review_peer`。
 
-## Claude -> Codex
+第二次 peer job 的 stage 为 `final_check`，只能检查，不能修改。主文件在终审中变化时 job 失败。
+终审的 pass、needs_changes 或 disagreement 都直接交给用户，不继续循环。
 
-Claude 连接共享 `/mcp` 并提交 `author="claude"`；此方向由该声明推导 Codex reviewer，且 job 必须记录
-`author_source=caller_declared`，不直接运行 `codex exec`、旧 companion 或控制脚本。
-bridge 必须记录并返回：
+bridge 在可交付结论上保存 `conclusion_sha256`。每次 `v3_peer_result` 都重读主文件：
+`conclusion_valid=true` 才能引用旧结论；文件变化或消失时 `stale=true`，旧结论失效。
 
-```text
-requested model = resolved selected Codex model (default gpt-5.6-sol)
-requested reasoning effort = resolved selected effort (default max)
-sandbox = read-only for workspace review; workspace-write for workspace repair
-approvalPolicy = never
-network = disabled
-web/search = disabled
-additional directories = none
-requested model, requested reasoning effort, CLI version, and recorded thread ID
-```
+## 高风险动作批准
 
-`requested_model` 或 `requested_reasoning_effort` 与本 job 的解析结果不同时停止。
-SDK 没有独立运行时模型回执时，`requested_model` 仍只能表示请求参数，不能写成“已验证模型”。
-workspace `v2_review_peer` 的 Codex 审查者只能读取密封副本；workspace `v2_review_repair_peer` 的
-Codex 审查者可在固定副本中修复，主项目只由 `repairTargets`、manifest、基线漂移和
-哈希同步门控制。
+普通可见工具调用自动允许，包括删除项目内一个普通文件。以下明确动作暂停：
 
-Codex 的 inline `v2_review_peer` 使用专用空只读目录，不以作者项目、daemon 状态、token 目录或保留 workspace 为 cwd。
-SDK 的 `requested_sandbox_mode` 只证明 bridge 请求了相应模式；外层宿主仍可能进一步收紧权限，写入
-是否真实生效必须由隔离材料和同步哈希证明。
+- 多目标、递归、通配符、目录、项目外删除；
+- 远程删除；
+- `git reset --hard`、`git clean`、`git restore`、`git checkout --`、清空 stash 等丢弃修改；
+- DROP、TRUNCATE 或无条件 DELETE 等数据库清空。
 
-Windows bridge 子进程固定 `include_environment_context=true` 和
-`windows.sandbox="unelevated"`，因为只启用环境上下文仍可能被用户级 elevated sandbox 忽略 cwd；
-这些参数不得改写用户全局 Codex 配置。Codex 原生补丁工具明确失败后，才允许用本地 shell 写入
-固定副本中的 `repairTargets`，其他路径仍由 manifest 与同步门拒绝。同一结构化命令的所有执行事件都
-保留，但终态测试证据按最后一次执行计算；后来通过只覆盖该命令此前的失败，未复测或最终失败仍
-产生 `peer_contract_error`。
-
-## 三轮与用户确认
-
-1. 作者通过共享 `/mcp` 和 `v2_review_peer`/`v2_review_repair_peer` 发起第 1 轮，保存 job ID、`seriesVersion` 和（仅 workspace 时的）manifest；每次都提供同一作者的 caller-declared `author`。
-2. `通过`：正式计划进入用户确认门；显式交付物审查返回原作者独立验收。
-3. `需修改`：仍在运行的 Codex 或 Claude 作者任务直接继续修订；只有原 Codex Desktop 任务已退出或
-   不再等待且满足 continuation 门槛时，才由 bridge 任务外唤醒。inline 和 workspace 只读结果都不
-   同步主项目，workspace 修订先检查同步结果；随后更新内容、哈希，并把前轮 findings
-   和 open items 放入新一轮 `question`、`constraints` 或 `artifactContent`，携带上一轮
-   `seriesVersion`/`latestJobId` 再发第 2/3 轮。
-4. 第 3 轮仍需修改，或出现无法由新证据消除的冲突：停止并输出 `DISAGREEMENT_REPORT`。
-5. 不发第 4 轮。计划互审通过不代表用户已授权执行。
-
-执行和交付阶段不自动再次调用对方模型。`v2_workspace_capability_unavailable` 是环境能力失败，
-不是“需修改”；对路径审查或显式 workspace 修订请求必须输出 `PEER_REVIEW_FAILURE_REPORT`，不创建
-job、不重发、不静默改为 inline。用户明确启用的跨模型执行工作流可以保留最多三次
-“返工 -> 独立验收”循环；每次不通过必须指出文件、证据和通过判据，第三次仍不通过时停止并等待
-用户决定。审查通道失败不能伪装成普通验收失败。
-
-## 同步授权
-
-普通新增/修改在主项目基线未漂移、结果格式正确且仍在 `repairTargets` 内时自动同步。删除、重命名、权限
-变化、类型替换或整目录覆盖进入：
+public job 在 `awaiting_approval` 时返回：
 
 ```text
-state = needs_attention
-sync_status = awaiting_user
-pending_high_risk = [{ id, action, path, ... }]
+approval_id
+action
+action_fingerprint
+targets = 完整规范化目标清单
+created_at
+expires_at
+state
 ```
 
-用户明确接受完整且精确的 `pending_high_risk[].id` 集合后，才调用 `v2_approve_peer_sync`。该调用创建
-新的 `sync_request_id`，重新验证主项目 baseline 和保留副本 result manifest，然后只做原子同步，不再
-唤起模型。ID 不匹配、工作区被改动、主项目漂移、超出 `repairTargets` 或同步故障均停止；不得生成纯文本
-补丁或覆盖作者的新改动。
+一次只向用户确认该精确动作。批准或拒绝时把 `jobId`、`approvalId`、fingerprint 和完整 targets
+不变地传给 `v3_resolve_approval`。缺少、增加、重排或改写目标均拒绝。批准有效期 24 小时；拒绝
+或超时取消该动作。相同 job 内再次出现相同规范化 action+targets 才可复用批准。
 
-`awaiting_user` 期间固定副本和锁继续占用目标根；任何活动任务或新的重叠目标根请求都以
-`retained_workspace_conflict` 停止，直到原高风险变更被明确授权同步或按记录处理。
+该门只覆盖 hook 或 App Server 事件中明确的工具名和参数。普通程序内部未显式暴露的删除不在保证
+范围内，报告中不得声称已检测。
 
-## 输出格式
+## 稳定性、会话和并发
 
-### completion_receipt
+对完整 502/503/504/524 失败，bridge 仅额外重试一次。重试保持同一 job、模型、项目、文件和会话，
+保留前次已完成修改，并要求重新读取最新文件。调用方不叠加重试或切供应商。
 
-每个 v2 终态由 bridge 在持久化 job 时写入 `completion_receipt`。`report` 只能由 bridge renderer
-从已验证的审查结果、gate、模型证据、错误和裁决状态生成；不得透传原始模型文本。`succeeded` 与
-`awaiting_evidence` 分别使用安全的 `PLAN_REVIEW` 或 `DELIVERABLE_REVIEW`，`awaiting_user_decision`
-使用 `DISAGREEMENT_REPORT`，`failed` 使用完整 `PEER_REVIEW_FAILURE_REPORT`。没有独立模型回执时，
-失败报告的“实际模型”明确写“未验证”。
+同一个 realpath `projectRoot` 同时只运行一个 v3 job；其他项目可并行，总活动 job 不超过 bridge
+全局限制。排队、运行和等待批准都纳入 health/status 的 v3 activity，并阻止停机、token 轮换和路由
+配置变更。
 
-### PLAN_REVIEW
+Claude session 或 Codex ephemeral App Server process 保留到本轮、审批和单次外层重试结束。bridge
+先清理会话和 transient session ID，再发布 terminal job。daemon 重启会把未终态 job 标为失败并清理
+已记录的精确 Claude session ID。
 
-保留五段结构以兼容既有调用：
+## 记录与秘密
+
+长期 v3 记录只保存清理后的任务、路径、模型、路由、各轮哈希、耗时、尝试/重试计数、审批元数据、
+结构化结果和错误。不得保存文件正文、完整 prompt、transcript、原始工具参数或工具输出。
+
+密码、API key、token、Cookie、session 值、私钥、认证头和设备登录值不得主动写入 prompt、日志或
+报告。输入任务、模型结果、错误和审批目标在持久化或公开前脱敏。bridge 长期 MCP token 不进入 peer
+环境；内部 hook 只收到本 job 临时 token。
+
+## v2 inline 兼容
+
+没有可靠落盘路径时，可调用：
 
 ```text
-PLAN_REVIEW
-结论：通过 | 需修改 | 实质分歧
-已确认事项：
-- ...
-问题与理由：
-- <问题；理由；证据或待核事实>
-必须修改：
-- <作者可执行的修订>
-剩余风险：
-- ...
+v2_review_peer(
+  author,
+  artifactType,
+  artifactMode=inline,
+  artifactContent,
+  artifactBytes,
+  artifactSha256,
+  acceptanceCriteria,
+  constraints,
+  model/reasoningEffort
+)
+v2_await_peer -> v2_peer_result
 ```
 
-### DELIVERABLE_REVIEW
+v2 inline 固定 zero-tool 和只读，继续使用 `completion_receipt`。旧 v2 workspace、
+`v2_review_repair_peer`、CAS、同步和批准工具保持兼容，但保存文件的新流程不得默认使用。v3 失败
+不能自动回退 v2，也不能通过旧协议绕过高风险审批。
 
-这是用户明确请求或专用跨模型工作流使用的显式格式，不是默认交付门。它与 `PLAN_REVIEW` 同构，
-但必须具体到文件、结果、测试和验收标准：
+## 用户门与失败
 
-```text
-DELIVERABLE_REVIEW
-结论：通过 | 需修改 | 实质分歧
-已确认事项：
-- ...
-问题与理由：
-- <问题；理由；文件或证据>
-必须修改：
-- <作者可执行的修订>
-剩余风险：
-- ...
-```
+互审结果只是用户决策材料。向用户报告 peer 是否修改、作者是否修改、终审是否运行、最终主文件
+SHA-256 是否仍有效，以及 pass、未决问题或分歧；获得明确确认后才能执行正式计划。
 
-### DISAGREEMENT_REPORT
-
-只整理双方已有判断和证据，不推荐折中方案：
-
-```text
-DISAGREEMENT_REPORT
-产物：<artifactId / 名称>
-阶段：计划复核 | 交付物复核
-轮次：<1 | 2 | 3>
-共识：<已确认事项>
-作者判断：<角色、模型、结论、理由和证据>
-审查者判断：<角色、模型、结论、理由和证据>
-待用户裁决：<一个明确问题>
-```
-
-### PEER_REVIEW_FAILURE_REPORT
-
-```text
-PEER_REVIEW_FAILURE_REPORT
-方向：Codex -> Claude (<selected model>) | Claude -> Codex (<selected model>)
-阶段：计划复核 | 交付物复核 | 同步
-jobId：<bridge job id or unavailable>
-请求模型：<model or unavailable>
-实际模型：<reported model or unavailable>
-decisiveError：<model_mismatch | timeout | reviewer_write_detected | baseline_drift | ...>
-已完成：<审查包、快照和已保留证据>
-未完成：<未执行的修订、同步或验收>
-恢复条件：<用户需重新提交、授权或创建新 artifactId 的条件>
-```
-
-`peer_contract_error` 属于格式/完成状态失败，不得改写成普通“需修改”。错误、失败报告和用户已裁决的分歧报告不再递归触发互审。任何模型不可用或身份不匹配都暂停，
-不得选择 fallback。
+路径无效、MCP 不可达、精确模型缺失、结果 schema 错误、会话清理失败、审批拒绝/过期或终审写入
+都保留原 job/series 和清理后的错误。pending 不是失败也不是最终答复。不得伪造 completion、扫描
+其他 job、降低模型、创建重复 job 或替用户裁决。

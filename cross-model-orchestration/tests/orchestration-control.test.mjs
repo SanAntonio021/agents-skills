@@ -788,46 +788,34 @@ test("cmdLaunch: review claim persists artifact state and job ID", () => {
   }
 });
 
-test("published v2 contract waits in the same turn without transport schemas or replacement jobs", () => {
+test("published v3 contract uses real project tools, exact approvals, and one final check", () => {
   const skillRoot = path.join(process.cwd(), "cross-model-orchestration");
   const skill = fs.readFileSync(path.join(skillRoot, "SKILL.md"), "utf8");
   const contract = fs.readFileSync(path.join(skillRoot, "references", "workflow-contract.md"), "utf8");
   const evals = JSON.parse(fs.readFileSync(path.join(skillRoot, "evals", "evals.json"), "utf8")).evals;
 
-  assert.match(skill, /在同一回合循环执行/u);
-  assert.match(skill, /正常任务内等待/u);
-  assert.match(skill, /Claude Code VS Code 插件 \/ CLI/u);
-  assert.match(skill, /这不需要 `continuation`/u);
-  assert.match(skill, /后台 reviewer 会话/u);
-  assert.match(skill, /任务外唤醒/u);
-  assert.match(skill, /优先按可验证的本地文件路径进行只读审查/u);
-  assert.match(skill, /没有可靠文件路径时才使用 inline 零工具审查/u);
-  assert.match(skill, /只有用户\s*明确要求对方直接修订且能力合格/u);
-  assert.match(skill, /workspaceReviews=true/u);
-  assert.match(contract, /省略\s*`artifactContent`、`repairTargets`/u);
-  assert.match(skill, /pending 不是最终答复/u);
-  assert.match(skill, /提交调用在获得 `jobId` 前即不可达/u);
-  assert.match(skill, /两个方向都不发送 provider-native transport schema/u);
-  assert.match(skill, /CODEX_THREAD_ID/u);
-  assert.match(contract, /CODEX_THREAD_ID/u);
-  assert.match(contract, /缺失或无法核对时省略/u);
-  assert.match(contract, /原作者任务保持运行/u);
-  assert.match(contract, /不要求出现在任一作者 UI 中/u);
-  assert.match(contract, /不得创建第二个\s*job/u);
-  assert.match(contract, /已有 `job_id` 后短暂断连/u);
-  assert.doesNotMatch(contract, /若单次 45 秒等待后.*输出 `PEER_REVIEW_FAILURE_REPORT`/u);
-  assert.doesNotMatch(skill, /用户后续发送任意状态查询/u);
+  assert.match(skill, /v3_review_peer/u);
+  assert.match(skill, /完整原生工具/u);
+  assert.match(skill, /可直接修改真实项目/u);
+  assert.match(skill, /不传 `artifactContent`/u);
+  assert.match(skill, /一个普通文件/u);
+  assert.match(skill, /action、完整 targets、approval ID、fingerprint/u);
+  assert.match(skill, /author_modified=true/u);
+  assert.match(skill, /只检查/u);
+  assert.match(contract, /Codex 使用 bundled App Server/u);
+  assert.match(contract, /批准有效期 24 小时/u);
+  assert.match(contract, /conclusion_valid=true/u);
+  assert.match(contract, /同一个 realpath `projectRoot`/u);
+  assert.match(contract, /502\/503\/504\/524/u);
+  assert.match(contract, /不得保存文件正文/u);
+  assert.doesNotMatch(skill, /workspaceReviews=true/u);
 
   const ids = evals.map((entry) => entry.id);
   assert.equal(new Set(ids).size, ids.length, "eval IDs must be unique");
-  for (const requiredId of [19, 25, 26, 27, 28, 29, 33, 35, 36]) {
+  for (const requiredId of [1, 2, 4, 8, 9, 10, 11, 13, 14, 16, 19, 25, 26, 27, 28, 29, 33, 35, 36]) {
     assert.ok(ids.includes(requiredId), `missing reliability eval ${requiredId}`);
   }
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 19)), /当前回合继续/u);
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 27)), /同一 job/u);
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 28)), /jobId=unavailable/u);
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 33)), /任务外唤醒/u);
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 35)), /不需要 continuation/u);
-  assert.match(JSON.stringify(evals.find((entry) => entry.id === 36)), /省略 artifactContent/u);
-  assert.doesNotMatch(skill, /Claude Desktop continuation API/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 25)), /额外重试一次/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 29)), /不同项目/u);
+  assert.match(JSON.stringify(evals.find((entry) => entry.id === 36)), /完整权限/u);
 });

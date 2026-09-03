@@ -1,142 +1,42 @@
-# 集成验收清单
+# Claude–Codex Bridge v3 集成验收
 
-以下验收在源码提交、定向同步和相关客户端重启后进行。默认只使用可丢弃的合成材料和确定性测试，
-不运行 live/Opus 测试，不把真实用户计划提交给 bridge。
+## 请求与路径
 
-## 共享入口与宿主
+- 两个方向都用共享 `/mcp` 调用 `v3_review_peer`，只传真实绝对 `projectRoot` 和相对
+  `artifactPath`，不传正文、文件白名单、sandbox 或工具列表。
+- 路径穿越、绝对 artifactPath、目录、不存在文件、同族 author/target 和任何额外字段都在创建 job
+  前拒绝。
+- Claude CLI 与 Codex App Server 都以真实项目为 cwd；项目规则、技能、插件、MCP、网络和完整工具可用，
+  首轮可直接修改真实项目。精确模型回执缺失或不匹配时失败。
 
-- Codex Desktop/CLI 和 Claude Code 都使用 `http://127.0.0.1:43123/mcp` 与
-  `CLAUDE_CODEX_BRIDGE_TOKEN`。共享入口的正式 v2 工具均以 `v2_` 开头；每次提交必须带
-  `author=codex|claude`，bridge 由其派生相反 reviewer，并在 job 记录
-  `author_source=caller_declared`。共享 token 认证访问，不证明调用方作者身份。
-- `/mcp/codex`、`/mcp/claude` 与独立 owner token 保留为兼容/回滚入口。其未加前缀工具仍由
-  endpoint owner 推导 reviewer，并记录 `author_source=role_endpoint_token`；新的正式互审不默认使用它们。
-- 两端都只调用同一个 Streamable HTTP daemon；不调用 stdio wrapper、`codex exec`、`claude -p`、
-  `codex@openai-codex` 或隐藏 Hook。
-- endpoint、health、`v2_peer_status` 和 job 证据都报告相同的当前 `version`、`build_id` 和
-  `protocol_version=2`；未注册 MCP 的宿主必须失败关闭并输出 `PEER_REVIEW_FAILURE_REPORT`。
-- 正式计划自动触发；普通读取/分析/代码修改/测试/提交、内部 Todo/`update_plan`、已确认计划执行和
-  最终汇报都不创建 job；用户明确点名 Opus/Codex 或交付物审查时才显式进入。
+## 权限
 
-## v2 工具契约
+- 项目内单个普通文件删除自动允许。
+- 多目标、递归、通配符、目录、项目外或远程删除，Git 丢弃修改和数据库清空进入
+  `awaiting_approval`。
+- 解析 Bash、apply_patch、MCP 和原生 App Server 审批事件；只有显式可见的动作纳入保证。
+- `v3_resolve_approval` 必须逐字匹配 job、approval ID、fingerprint 和有序完整 targets；24 小时过期，
+  拒绝或超时取消动作。
 
-- `v2_review_peer` 固定 `review_only` 并要求 `author`。稳定本地文件使用
-  `artifactMode=workspace`、最小绝对 `targetRoot` 和相对 `artifactPath`，省略正文、`repairTargets` 与
-  `testCommands`；没有可靠文件路径时使用 inline zero tools，省略所有 workspace 字段。
-- `v2_review_repair_peer` 必须显式传 `author` 与 `artifactMode=inline|workspace`。inline 不接受工作区/测试字段，
-  并要求完整 `repairedArtifact`；workspace 要求绝对 `targetRoot` 和非空 `{path, action}` 数组。
-  plan 只能有一个与 `artifactPath` 相同的 `modify` target。
-- 首次进入和每次选择 workspace 前读取 `v2_peer_status`。`active=true` 与 `inlineReviews=true` 即可进行
-  零工具 inline 审查；workspace 还必须是 `workspaceReviews=true`、`workspaceRepairs=true`、
-  `workspaceProbeState=available`。`pending`/`unavailable` 时不得提交 workspace 请求或创建 job；已经
-  选择的路径审查输出 `v2_workspace_capability_unavailable` 失败报告，不能静默改成 inline 长正文。
-- `loopbackState` / `childLoopbackState=reachable_residual_risk` 是 sandbox 到临时 loopback fixture
-  仍可达的残余风险，不是“已隔离”或“通过”。当 `activationState=eligible_with_loopback_residual_risk`
-  且其余硬门合格时 workspace 调用可以继续；能力记录和 daemon audit 必须保留
-  `loopbackResidualRisk=true`。工作区外写入、外网、子进程文件/外网边界继承或超时后进程树清理失败
-  仍要求 `active=false`，不得创建 job。
-- 发起前按 inline 正文或 workspace 目标文件的当前 UTF-8 字节重新计算 `artifactBytes` 和 SHA-256；
-  inline 正文缺失、workspace 路径身份缺失、`author` 缺失/非法、空验收标准、相对路径非法或携带旧
-  `target/owner/operation/round/allowedPaths` 字段时不创建 job。workspace 请求和持久 job 都不得携带正文。
-- workspace `testCommands` 只能是最多 16 项结构化命令：绝对普通 `.exe`、程序字节数、SHA-256、
-  参数数组和 100..900000 ms 超时；bridge 的 Codex sandbox 在固定副本内执行，网络关闭，不向 Claude
-  暴露 Bash。空数组与省略都不产生 Bash allowlist。
-- `seriesId` 默认取 `artifactId`；续轮只携带上轮返回的 `seriesVersion` 和 `latestJobId`，两者必须成对，
-  不传 `round`、`maxRounds`、`priorRounds` 或 `previousJobId`。同一 series 最多三次 accepted round，
-  每轮最多两次尝试。
+## 三阶段与完整性
 
-## Codex CC Switch 渲染
+- 首轮 peer 可修改，完成后进入 `awaiting_author`。
+- 作者重读并调用 `v3_author_checkpoint`。未修改时直接进入用户门；修改后只发一次 `final_check`。
+- final_check 修改主文件时失败。终审的 pass、needs_changes 和 disagreement 都交给用户。
+- 每次结果查询都重算主文件 SHA-256；后续变化使 `stale=true`、`conclusion_valid=false`。
 
-- Codex 的共享记录必须是 URL `/mcp` 加
-  `env_http_headers.X-Bridge-Token=CLAUDE_CODEX_BRIDGE_TOKEN`。不得同时存在
-  `headers.X-Bridge-Token`，也不得在渲染后的
-  `[mcp_servers.claude-codex-bridge.http_headers]` 出现静态 header。
-- `codex mcp get claude-codex-bridge` 必须报告 `transport=streamable_http`、
-  `http_headers=-` 和共享环境变量。该规则只约束 Codex；Claude 的 schema 须另行验证。
+## 稳定性与记录
 
-## 隔离与同步
+- 502/503/504/524 的整轮失败在同一 job、会话、模型和项目中额外重试一次；第二次失败即终止。
+- 同一真实项目串行，不同项目可并行；等待审批仍占项目锁。
+- 会话贯穿本轮、内部重试和审批，终态发布前删除；daemon 重启清理已记录的临时 session。
+- 长期记录只有清理后的任务、路径、哈希、模型、耗时、重试、审批、结果和错误；没有正文、完整
+  prompt、transcript 或原始工具输出。
+- 密码、API key、token、Cookie、session、私钥、认证头和设备登录值在输入、结果、错误及审批目标中
+  脱敏。
 
-- workspace 固定副本包含最小目标根上下文但排除 `.git`；manifest、路径/链接检查和作者文件 baseline
-  防止越界和基线漂移。只读审查不接受任何文件变化，终态后删除副本和 manifest。
-- `repairTargets` 之外的任何写入、符号链接、路径穿越、`.git` 或目标根漂移都生成不可重试的
-  `isolation_breach`/`reviewer_scope_violation` 证据，不同步主项目。
-- 正常新增/修改只在 baseline 未漂移且仍在 `repairTargets` 内时原子同步；高风险变化进入
-  `awaiting_user`，列出稳定 ID，用户明确接受完整 ID 集合后才调用 `v2_approve_peer_sync`，且不重新调用模型。
-- `awaiting_user` 的保留副本和锁阻止同一目标根的新 series；不得用新 artifactId 绕过。
-- 公共 `isolation_violation` 只含事件序号、工具、原因码和最多 256 字符脱敏预览；工作区绝对路径替换为
-  `<workspace>`，控制字符转义；完整原始事件只写受保护 job 详情。
+## 兼容
 
-## 路由、模型与 Codex sandbox
-
-- 默认质量路由为 Claude `claude-opus-5/max`、Codex `gpt-5.6-sol/max`；profile/显式路由必须与
-  `requested_model`、`requested_reasoning_effort`、`task_profile`、`routing_source` 和 rule ID 一致，
-  不可 fallback 或降档。
-- Codex -> Claude 只接受 init 模型回执精确匹配、inline 零工具、workspace `Read` 只读或 workspace
-  原生文件变更模式；Claude -> Codex 的只读审查记录 read-only sandbox，workspace 修订记录
-  `workspace-write`，两者均为 `approvalPolicy=never`、网络/搜索关闭、无额外目录，
-  SDK 没有运行时模型回执时不得写成“已验证模型”。
-- Windows Codex 子进程固定 `include_environment_context=true` 与 `windows.sandbox="unelevated"`，
-  不修改用户全局配置；结构化测试超时、非零退出、程序身份变化或漏测优先于模型的“通过”。
-- 通道不可用、超时、取消、认证/权限/sandbox 错误、模型或 schema 不匹配都输出
-  `PEER_REVIEW_FAILURE_REPORT`，不改写成普通“需修改”，不换模型、不重发、不静默跳过。
-
-## 结果、三轮与用户门
-
-- bridge 渲染 `PLAN_REVIEW`/`DELIVERABLE_REVIEW` 五段结果：结论、已确认事项、问题与理由、必须修改、
-  剩余风险；规范 JSON、带前后说明的单层 `json` 围栏/对象和受控 Markdown 都统一转换到 `V2ModelResponse`。Markdown
-  finding 必须带路径行号范围或精确引句，`类型：证据请求` 保持 `awaiting_evidence`，inline 修订正文必须
-  使用独立代码块且原文保持不变。缺段、blocked/incomplete、失败测试写成通过或 schema/证据契约错误都以
-  `peer_contract_error` 失败关闭。
-- 每个 v2 终态 public job 都带 `completion_receipt`，固定为 `schema_version=1`、
-  `delivery_required=true`、`disposition`、`report_type` 和 bridge-rendered `report`；调用端只展示该
-  `report`，不透传原始模型输出。Claude/Codex 两个方向都不注入 provider-native transport schema；
-  两边都以不透明文本返回，bridge 接受规范 JSON、单层 `json` 围栏 JSON 或受控 Markdown，再统一按
-  `V2ModelResponse` 校验。格式明显错误但能识别审查意图时，只允许一次同 job、同路由、同硬截止的零工具
-  格式整理；整理失败或整理后语义/schema/证据仍不合格时生成失败报告。inline 审查中的
-  `StructuredOutput` 或任何工具事件都按异常处理；workspace 只读审查只允许密封副本内的 `Read`。
-- 单次 `v2_await_peer(job_id, 45000)` 后仍 pending 时必须再调用 `v2_peer_result(job_id)`。两次仍 pending
-  都是非终态：只在 commentary 公开同一 job ID、state、首次 `hard_deadline_at`、`elapsed_ms` 和
-  `remaining_ms`，随后在同一回合继续 `v2_await_peer -> v2_peer_result`。pending 不得生成
-  `completion_receipt` 或 `PEER_REVIEW_FAILURE_REPORT`，不得结束最终回复、重试、降档、另开 job 或重置
-  截止时间。取得终态立即展示 `completion_receipt.report`。从提交起 10 分钟才是硬截止：bridge 必须请求
-  取消同行任务、持久化 `peer_wait_timeout` 失败回执，并拒绝任何迟到成功结果覆盖该终态。
-- 提交前不可达且没有 job ID 时立即输出 `bridge_unreachable`。已有 job ID 后短暂断连时，只恢复 `/mcp`
-  并查询同一 job；原硬截止前恢复则继续循环，原截止仍不可达才输出带原 job ID 的
-  `bridge_unreachable`。所有路径都断言只创建一个 job。
-- 第 1/2 轮需修改时，inline 和 workspace 只读审查都由作者自行修订，workspace 修订才检查同步后的
-  主项目；更新正文和身份后用 CAS 发下一轮；第 3 轮仍不通过或
-  实质分歧时只输出 `DISAGREEMENT_REPORT`，不发第 4 轮。通过后仍停在用户执行确认门。
-- 仅原作者签收同步后的文件、测试和验收；执行、返工和最终交付不自动追加相反方向互审。
-
-## 正常任务内继续与 Codex Desktop 任务外唤醒
-
-- 正常互审中，Codex Desktop/CLI 与 Claude Code VS Code 插件/CLI 作者任务都保持运行，循环等待同一
-  job，并在 `needs_changes` 后按同一 series CAS 修订和提交下一轮；该路径不要求 `continuation`。
-- bridge 的 Claude CLI/Codex SDK reviewer 会话是后台隔离 worker，不要求显示在作者 UI 中。
-
-- Codex Desktop 作者提交正式 `artifactType=plan` 时可带
-  `continuation={host:codex_desktop,threadId}`。只有 `author=codex`、目标 Claude、完整匹配的模型/回执、
-  round `< 3`、无 `pending_high_risk`，且普通同步、测试、基线和权限门均通过时，Claude 的
-  `needs_changes` 才能排入 outbox 并唤醒同一任务。
-- 被唤醒的原 Codex 任务必须查询同一 `jobId`，处理 findings，重算最终正文的 UTF-8 bytes/SHA-256，
-  并以原 `seriesId` 和上轮 `seriesVersion`/`latestJobId` 做 CAS 提交下一轮。bridge 不直接写语义计划，
-  审查通过仍不等于执行授权。
-- 删除、重命名、权限/类型变化或目录替换先进入 `awaiting_user_decision`。必须展示完整稳定的
-  `pending_high_risk[].id`；仅用户精确批准全部 ID 后调用 `v2_approve_peer_sync`，该调用只重新验证和同步，
-  不重跑模型；同步成功后才可续接。
-- continuation outbox 只允许 `queued -> dispatching -> delivered`。重启、断连或超时使 `dispatching`
-  变为 `uncertain`；不自动重发、不猜测最新任务、不创建替代 job。`uncertain` 必须留在公开 job 证据中。
-- Claude-authored 任务在 VS Code Claude Code 插件或 CLI 中仍运行时直接继续同一 CAS 流程；任务退出后
-  没有可验证的 Claude Code 宿主任务外唤醒接口，不猜测会话或自动修改。
-- Codex Desktop 发起时必须从当前任务进程读取 `$env:CODEX_THREAD_ID` 并原样填入
-  `continuation.threadId`；缺失或无法核对时不启用自动续接，不猜测或扫描其他任务。
-
-## 确定性运行与发布
-
-- 运行 Skill 的 JSON 校验、`skill-creator` 快速检查、`orchestration-control` 测试和 Bridge 全量单元/集成
-  测试；不运行 live/Opus、生产 daemon 或真实用户文件写入。测试临时目录中的受控 daemon 允许启动。
-- Skill 与 Bridge 两个仓库分别精确暂存本任务路径，保留无关 dirty/untracked 文件；Skill 推送后用
-  `Invoke-CcSwitchSkillSync.ps1` 传入精确 Skill 名和 40 位远端 SHA 定向同步，不直接改运行时目录或数据库。
-- 同步验收逐个比较 source、CC Switch、Claude、Codex 四层全部已提交 Skill 文件；任一层不一致只能报告
-  “源码已推送，运行时未生效”。激活后只做 health、`v2_peer_status` 和两端连接探针，确认只有一个 daemon、
-  无 stdio wrapper、无新 job。
+- v1/v2 现有工具、schema、路由和结果保持回归通过。
+- 没有可靠落盘路径时，v2 inline 仍要求 artifactContent、字节数和哈希，并保持 zero-tool。
+- v3 失败不得静默回退 v2，也不得借旧协议绕过高风险审批。

@@ -1,73 +1,72 @@
 ---
 name: cross-model-research-loop
-description: 跨模型科研自动循环：仅当用户明确要求启用异族模型监督、多轮后台仿真/实验/论文流水线或里程碑互审时，监督者才通过统一 claude-codex-bridge MCP 调度执行者，并在每个里程碑用 review_repair 审查、修复和测试。普通科研分析、单次仿真、计划执行和交付不触发本 Skill。启用后在两端叠加 cross-model-orchestration；旧 codex@openai-codex、codex exec 和 claude -p 仅作历史排错资料，不作为运行时入口。
+description: >
+  跨模型科研自动循环：仅当用户明确要求异族模型监督、多轮后台仿真或实验流水线、论文流水线或里程碑
+  互审时启用。执行任务可继续使用 bridge 兼容任务接口；每个已落盘里程碑通过 v3_review_peer 在真实
+  项目中审查，对端拥有完整工具并可直接修改。普通科研分析、单次仿真、计划执行和一般交付不触发。
 ---
 
 # 跨模型科研自动循环
 
-## 作用
+## 作用和角色
 
-把科研任务拆成“监督者 + 执行者 + 里程碑验收”循环。执行者在 bridge 固定副本中跑仿真、写代码、
-产出数据和文档；监督者按 `review_repair` 检查证据、修复允许范围内的问题、运行测试并决定是否推进。
-文件系统、manifest、job ID 和验收报告是证据，不能用执行者的完成声明替代。
+把科研工作拆成“监督者下发任务、执行者产出、异族模型里程碑审查、作者验收”的循环。文件、日志、
+数据、哈希和物理判据是证据，不能用模型的完成声明替代。
 
-这是用户明确启用后的专用循环，不是普通任务的默认复核门。全局默认仍只在正式计划阶段互审；
-本 Skill 的里程碑复核属于用户主动选择的例外。
+本 Skill 只在用户明确启用后运行，并叠加 `cross-model-orchestration`。Claude 与 Codex 可互换监督者和
+执行者，但审查者必须是异族模型。默认研究路由使用 Claude Opus 5/max 与 Codex Sol/max；不得自动
+换模型或降档。
 
-## 角色与通道
+## 循环
 
-1. 监督者负责拆分里程碑、发任务、收结果、做物理和逻辑评审、决定下一步。
-2. 执行者负责在明确 `targetRoot`/`allowedPaths` 内运行任务并保存可复核产物。
-3. 监督者和执行者必须是异族模型；同族自监督不算互审。
-4. 两端都通过同一个 `claude-codex-bridge` MCP：Claude 监督时 `target=codex`，Codex 监督时
-   `target=claude`。默认采用 `research` profile（当前为 Opus 5/max 与 Sol/max）；如任务明确选择
-   其他白名单 profile/模型，按 bridge 解析结果验收。不直接调用旧 companion、`codex exec`、`claude -p` 或隐藏 Hook。
+1. 把研究问题拆成里程碑，写清输入、输出、复现实验、物理判据和“完成后停下等待审查”。
+2. 需要后台执行者时，可用兼容 `submit_peer(operation=task, taskProfile=research)` 下发任务，并用
+   `await_peer`/`peer_result` 跟踪同一 job。该旧任务接口的范围字段只约束执行任务，不得用于缩减随后
+   v3 审查者的权限。
+3. 执行结果必须落在真实项目中。选择一份主文件作为相对 `artifactPath`，把完整证据留在项目文件、
+   数据、日志和脚本里，不把这些正文复制进 bridge 消息。
+4. 用 `v3_review_peer(artifactType=deliverable)` 发起里程碑审查。`projectRoot` 是真实项目绝对路径；
+   对端以它为 cwd，使用完整工具、项目规则、技能、插件、MCP 和网络，读取所需文件并可直接修改。
+5. 监督者循环同一 v3 job 至终态，然后原作者重读主文件、相关数据、测试结果和对端改动，再调用
+   `v3_author_checkpoint`。作者若改过主文件，追加一次同 series 的 `final_check`；否则直接交给用户或
+   进入下一里程碑。
+6. 终审仍有问题或双方分歧时，保存证据并交给用户，不无限返工。一个已确认计划最多三次
+   “返工 -> 独立验收”。
 
-## 循环流程
+## 权限与审批
 
-1. 先把研究问题拆成里程碑，每个里程碑写清输入、精确 `testCommands`、输出文件、物理验收判据和“跑完停下等评审”。
-2. 用 `submit_peer(operation=task, taskProfile=research)` 提交执行任务；任务需要写入时必须给最小 allowlist 和固定工作区。
-   Claude 方向的 `testCommands` 不得含引号、变量、通配符、重定向、管道或命令串联；权限拒绝即失败。
-3. 用 `await_peer`/`peer_result` 轮询同一 job，确认目录、文件、字节数、哈希、命令退出码和结果时间戳。
-4. 用 `submit_peer(operation=review_repair, artifactType=deliverable)` 把里程碑产物交给对方模型；
-   审查者在固定副本中检查证据、直接修复允许范围内的问题并运行测试，返回含五个固定组成部分的
-   `DELIVERABLE_REVIEW`。
-5. 作者检查 bridge 同步后的主项目。普通新增/修改自动同步；删除、重命名、权限、类型变化先停在
-   `awaiting_user`，用户明确批准精确 `pending_high_risk` ID 后才调用 `approve_peer_sync`。
-   待授权期间固定副本和目标根锁继续保留，不能用重叠任务绕过。
-6. 通过才进入下一个里程碑；不通过则把具体文件、证据、判据和 allowlist 发回执行者返工。
-7. 同一确认计划最多三次“返工 -> 独立验收”；第三次仍不通过输出报告并等待用户。
+v3 里程碑审查不传文件白名单、snapshot、sandbox、工具列表或 `artifactContent`。普通操作自动执行，
+包括删除项目内一个普通文件。bridge 仅对明确可见的批量、递归、通配符、目录、项目外或远程删除，
+丢弃 Git 修改和清空数据库暂停。
 
-## 研究专用评审门
+出现 `awaiting_approval` 时，只向用户确认 bridge 给出的完整 action、targets、approval ID、fingerprint
+和到期时间，并原样调用 `v3_resolve_approval`。拒绝或超时就取消该动作。不能自行缩减权限，也不能
+声称捕获了普通程序内部未暴露的删除。
 
-评审抓手清单见 `references/review-gates.md`，至少检查：
+## 科研证据门
 
-- 输入材料和参数是否真实存在、版本和单位是否一致；
-- 仿真/离线/Mock/硬件结果是否明确区分，不能把 dry-run 写成硬件 PASS；
-- 物理边界、SNR、带宽、采样率、时钟、温漂、Doppler、误码和统计重复是否满足验收判据；
-- 图表、日志、随机种子、环境版本和脚本是否能复现结果；
-- 结论是否超出证据，失败结果和未完成范围是否保留。
+评审抓手见 `references/review-gates.md`，至少核对：
 
-监督者不得因“结果目录存在”就认定完成，也不得让执行者扩大 allowlist 或覆盖作者新改动。
+- 输入和参数真实存在，版本、单位与条件一致；
+- 仿真、离线、Mock 和硬件结果明确区分；
+- 物理边界、SNR、带宽、采样率、时钟、温漂、Doppler、误码和统计重复符合判据；
+- 图表、日志、随机种子、环境版本和脚本能复现；
+- 结论不超出证据，失败与未完成范围保留。
 
-## 长任务与恢复
+结果目录存在本身不代表通过。主文件哈希后来变化时，v3 结论失效，必须重查。
 
-每个里程碑保存 `artifactId`、round、job ID、目标根、模型、推理强度、profile、路由规则、
-基线/结果 manifest、测试结果和错误原因。
-不要猜测最新线程；恢复只使用指定 job 的 `resume_peer`，或在用户裁决后创建新的 `artifactId`。
-取消、超时、MCP 不可用、模型不匹配、sandbox/权限错误和主项目漂移都输出
-`PEER_REVIEW_FAILURE_REPORT` 并暂停，不换模型、不静默降级。
+## 长任务、记录和失败
 
-## 与通用编排和 ARIS 的边界
+每个里程碑保存 artifact ID、真实项目根、相对路径、job/series ID、模型、强度、哈希、测试结果、
+审批元数据和错误原因。正文、完整 prompt、transcript 和原始工具输出不进入长期 bridge 记录；密码、
+API key、token、Cookie、session、私钥、认证头和设备登录值不得复制到任务说明或报告。
 
-- `cross-model-orchestration` 负责宿主方向、审查包、三轮状态机、计划确认门、同步和失败报告。
-- 本 Skill 只增加科研里程碑拆分、物理验收抓手和长任务恢复，不另起并行调度协议。
-- 执行者侧的 `experiment-plan`、`novelty-check`、`paper-plan`、`paper-write` 等项目 Skill 仍由
-  执行者在其固定副本中调用；本 Skill 不存放项目专属参数或路径。
+等待超时只查询同一 job。上游 502/503/504/524 的整轮失败由 v3 在同一 job 和会话中额外重试一次，
+调用方不叠加重试。同一真实项目串行，不同项目可并行。取消、模型不匹配、审批拒绝、结果错误和路径
+漂移按实际状态停止，不伪造通过、不猜“最新会话”。
 
-## 维护与验证
+## 维护
 
-适配器变化、SDK/CLI 版本证据和新的科研风险模式分别追加到 `references/cli-adapters.md`、
-`references/review-gates.md` 并标注日期。评测至少覆盖用户显式启用后两方向路由、普通科研任务跳过、一次
-`review_repair` 直接修复、三轮止损、用户确认门、审批同步、取消/恢复、模型不可用和 Codex Desktop
-可见性人工检查。源码推送后按全局规则定向同步并核对四层哈希。
+兼容执行任务与 v3 里程碑审查的边界见 `references/cli-adapters.md`。评测至少覆盖显式触发、普通任务
+跳过、两方向 v3 路径读写、完整工具、直接修改、作者 checkpoint、终审、哈希失效、高风险审批、
+重试、并发和秘密清理。源码推送后定向同步并核对四层哈希。

@@ -43,24 +43,24 @@ function validMetadata() {
   };
 }
 
-test("published skill keeps Claude active-turn review separate from out-of-band wake", () => {
+test("published skill uses project-local v3 review and preserves the user execution gate", () => {
   const skillPath = path.resolve(new URL("../SKILL.md", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
   const skill = fs.readFileSync(skillPath, "utf8");
   assert.match(skill, /Claude Code VS Code 插件或 CLI/u);
-  assert.match(skill, /v2_review_peer/u);
-  assert.match(skill, /v2_review_repair_peer/u);
-  assert.match(skill, /v2_await_peer/u);
-  assert.match(skill, /正常任务内继续不需要/u);
-  assert.match(skill, /任务外唤醒/u);
-  assert.match(skill, /artifactMode=workspace/u);
-  assert.match(skill, /workspaceReviews=true/u);
-  assert.match(skill, /review-input/u);
-  assert.match(skill, /不把长计划静默改成 inline/u);
-  assert.match(skill, /不返回 `repairedArtifact`/u);
+  assert.match(skill, /v3_review_peer/u);
+  assert.match(skill, /v3_author_checkpoint/u);
+  assert.match(skill, /真实项目/u);
+  assert.match(skill, /完整工具/u);
+  assert.match(skill, /可直接修改/u);
+  assert.match(skill, /不传 `artifactContent`/u);
+  assert.match(skill, /author_modified=true/u);
+  assert.match(skill, /final_check/u);
+  assert.match(skill, /用户明确确认后/u);
+  assert.match(skill, /一个普通文件/u);
   assert.doesNotMatch(skill, /Claude Desktop continuation API/u);
   assert.doesNotMatch(skill, /submit_peer\(target=codex/u);
   assert.doesNotMatch(skill, /reviewerAccess=isolated_write/u);
-  assert.doesNotMatch(skill, /`approve_peer_sync`/u);
+  assert.doesNotMatch(skill, /workspaceReviews=true/u);
 });
 
 test("trigger contract rejects missing CLAUDE_PLAN_FILE without guessing recent markdown", () => {

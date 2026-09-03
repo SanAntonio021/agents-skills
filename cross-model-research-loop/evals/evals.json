@@ -1,41 +1,35 @@
 {
   "skill": "cross-model-research-loop",
-  "updated": "2026-08-14",
+  "updated": "2026-09-03",
   "cases": [
     {
       "id": "trigger-supervise-codex",
-      "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督它，出问题你把关",
-      "expect": "触发本 skill，并叠加 cross-model-orchestration；通过统一 bridge 的 submit_peer(target=codex, operation=task) 下发里程碑，提供精确 testCommands，再用 review_repair 审查。没有 bridge 或测试权限被拒绝时失败关闭。",
+      "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督并逐里程碑让 Claude 复核。",
+      "expect": "触发本 skill；执行任务可走兼容 task 接口，里程碑落盘后用 v3_review_peer 在真实项目内以完整工具审查并可直接修正。",
+      "type": "should-trigger"
+    },
+    {
+      "id": "trigger-full-tools",
+      "prompt": "启用跨模型科研循环，审查者要能读写整个项目、跑脚本、联网，危险删除再问我。",
+      "expect": "触发本 skill；v3 不传正文、白名单或 sandbox，普通操作自动执行，高风险动作按精确 targets 审批。",
       "type": "should-trigger"
     },
     {
       "id": "no-trigger-exec-pitfall",
-      "prompt": "codex exec 跑完退出码 0，但它说建好的结果目录根本不存在",
-      "expect": "不触发本 skill；这是一次执行环境诊断，不代表用户明确启用了跨模型科研循环",
+      "prompt": "codex exec 退出码 0，但它说建好的结果目录不存在。",
+      "expect": "不触发；这是一次执行环境诊断。",
       "type": "should-not-trigger"
     },
     {
-      "id": "no-trigger-resume-fail",
-      "prompt": "我想用 codex exec resume 续接桌面版开的那个会话，报 does not start with session metadata",
-      "expect": "不触发本 skill；这是会话恢复诊断，可说明旧 Desktop/CLI 会话不能伪装成 bridge 科研循环",
-      "type": "should-not-trigger"
-    },
-    {
-      "id": "no-trigger-one-off-mirror",
-      "prompt": "我现在在 Codex 里干活，能不能反过来让 Claude 当执行者跑任务",
-      "expect": "不触发本 skill；一次对方执行请求可走显式 bridge 能力，只有用户要求多轮科研监督和里程碑评审时才进入本循环",
-      "type": "should-not-trigger"
-    },
-    {
-      "id": "no-trigger-aris-executor",
-      "prompt": "帮我用 experiment-plan 给这个课题设计实验计划",
-      "expect": "不触发本 skill；这是执行者侧 ARIS skill 的职责",
+      "id": "no-trigger-one-off",
+      "prompt": "帮我跑一次仿真并画图。",
+      "expect": "不触发；用户没有要求跨模型、多轮监督或里程碑互审。",
       "type": "should-not-trigger"
     },
     {
       "id": "no-trigger-plain-review",
-      "prompt": "帮我审一下这篇论文初稿的英文表达",
-      "expect": "不触发本 skill；走论文润色类 skill",
+      "prompt": "帮我审一下论文初稿的英文表达。",
+      "expect": "不触发；走论文编辑流程。",
       "type": "should-not-trigger"
     }
   ]

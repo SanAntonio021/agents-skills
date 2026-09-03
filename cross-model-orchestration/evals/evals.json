@@ -4,18 +4,18 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code CLI。读取两个本地 Skill 草稿，形成一份等我确认后才执行的正式审计计划。",
-      "expected_output": "自动走共享 /mcp，调用 v2_review_peer 或 v2_review_repair_peer 并声明 author=claude 审查 Codex，审查通过后仍停在用户确认门。",
+      "expected_output": "自动走共享 /mcp；计划形成稳定本地文件后，调用 v2_review_peer artifactMode=workspace 并声明 author=claude，让 Codex 按路径只读审查，审查通过后仍停在用户确认门。",
       "files": ["evals/fixtures/sample-skill-alpha.md", "evals/fixtures/sample-skill-beta.md"],
       "expectations": [
         "不传 target/owner；author=claude 是 caller-declared，bridge 推导 reviewer=codex 并记录其来源。",
-        "正文、artifactName、artifactPath、UTF-8 字节数和 SHA-256 完整且重新计算。",
+        "提交最小 targetRoot、artifactName、artifactPath、UTF-8 字节数和 SHA-256，不提交正文。",
         "计划默认 artifactType=plan，结果由 bridge 渲染为 PLAN_REVIEW。"
       ]
     },
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop。读取本地材料，规划一篇论文，先把正式计划交给 Opus 审查，等我确认后再执行。",
-      "expected_output": "使用共享 /mcp 的 v2_review_peer 或 v2_review_repair_peer，声明 author=codex，默认路由 claude-opus-5/max，不直接调用 claude -p。",
+      "expected_output": "计划形成稳定本地文件后，使用共享 /mcp 的 v2_review_peer workspace 路径审查，声明 author=codex，默认路由 claude-opus-5/max，不直接调用 claude -p。",
       "files": ["evals/fixtures/technical-note.md"],
       "expectations": [
         "Codex -> Claude 方向和模型回执精确匹配。",
@@ -32,7 +32,7 @@
     {
       "id": 4,
       "prompt": "让 Opus 5 审查这份纯文字计划。本轮没有测试命令。",
-      "expected_output": "调用 v2_review_repair_peer，author=codex，artifactMode=inline；不传 testCommands/targetRoot/repairTargets，要求完整 repairedArtifact。",
+      "expected_output": "如果计划只存在于当前消息中且没有可靠文件路径，调用 v2_review_peer author=codex 做 inline 零工具审查；不传 testCommands/targetRoot/repairTargets。",
       "files": [],
       "expectations": ["inline 模式不向 Claude 暴露任何工具。", "不再使用旧版字符串 testCommands。"]
     },
@@ -101,8 +101,8 @@
     },
     {
       "id": 14,
-      "prompt": "Codex -> Claude 的 v2_review_peer init 工具列表出现 Bash。",
-      "expected_output": "拒绝该 job；v2_review_peer 必须 review_only、inline、zero tools。",
+      "prompt": "Codex -> Claude 的 inline v2_review_peer init 工具列表出现 Bash。",
+      "expected_output": "拒绝该 job；inline v2_review_peer 必须 review_only、zero tools。workspace 只读审查也只允许 Read。",
       "files": [],
       "expectations": ["工具清单和 endpoint 角色必须与请求一致。"]
     },
@@ -150,7 +150,7 @@
     },
     {
       "id": 21,
-      "prompt": "peer_status 显示 inlineReviews=true、workspaceRepairs=false、workspaceProbeState=unavailable。请让 Opus 审查这份纯文字计划。",
+      "prompt": "peer_status 显示 inlineReviews=true、workspaceRepairs=false、workspaceProbeState=unavailable。这份纯文字计划只在消息里，没有本地文件，请让 Opus 审查。",
       "expected_output": "使用 v2_review_peer 做 inline zero-tool 审查并携带 author；不传 workspace 字段，不等待或重启 daemon。",
       "files": [],
       "expectations": ["workspace probe 失败不关闭安全的 inline 审查。", "正文身份仍在本轮重新计算。"]
@@ -164,7 +164,7 @@
     },
     {
       "id": 23,
-      "prompt": "peer_status 显示 workspaceRepairs=true、workspaceProbeState=available、loopbackState=reachable_residual_risk、childLoopbackState=reachable_residual_risk，其他硬门均合格。请在固定副本中修订 plan.md。",
+      "prompt": "peer_status 显示 workspaceReviews=true、workspaceRepairs=true、workspaceProbeState=available、loopbackState=reachable_residual_risk、childLoopbackState=reachable_residual_risk，其他硬门均合格。请在固定副本中修订 plan.md。",
       "expected_output": "允许 workspace v2_review_repair_peer，并在能力/验收证据中原样记录 loopbackResidualRisk=true 与 eligible_with_loopback_residual_risk。",
       "files": [],
       "expectations": ["不得把 loopback 可达写成 sandbox 已隔离或 loopback 通过。", "工作区外写入、外网、子进程继承和进程树清理仍是阻断硬门。"]
@@ -252,6 +252,13 @@
       "expected_output": "可以。当前 Claude 作者任务在同一回合等待原 job，读取持久化回执，修订正文并重算 UTF-8 bytes/SHA-256，再携带同一 series 的 seriesVersion/latestJobId 提交下一轮；正常路径不需要 continuation。",
       "files": [],
       "expectations": ["明确正常双向三轮互审对 Codex 和 Claude 对称。", "区分后台 reviewer 会话、任务内等待和任务退出后的宿主唤醒。"]
+    },
+    {
+      "id": 36,
+      "prompt": "这份 29 KB 的 plan.md 已经保存在本地。请让 Opus 5 审查，但不要把全文塞进对话，也不要让它修改原文件。",
+      "expected_output": "先确认 workspaceReviews=true、workspaceRepairs=true 和 workspaceProbeState=available，再调用 v2_review_peer author=codex artifactMode=workspace；targetRoot 取包含 plan.md 的最小目录，只提交相对路径、当前 UTF-8 字节数和 SHA-256，省略 artifactContent、repairTargets 和 testCommands。",
+      "files": ["evals/fixtures/technical-note.md"],
+      "expectations": ["Claude 只可在密封副本内使用 Read，任何写入都失败关闭。", "终态后密封副本和 manifest 自动清理，作者原文件保持不变。", "路径能力不可用时不静默回退为 inline 长正文。"]
     }
   ]
 }

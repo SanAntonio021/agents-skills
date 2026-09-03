@@ -3,8 +3,9 @@ name: cross-model-orchestration
 description: >
   Codex Desktop/CLI 与 Claude Code VS Code 插件/CLI 的正式计划双向互审流程。当任一端准备向用户提交一份
   需要确认后才执行的正式计划时，自动使用同一个 protocol-v2 claude-codex-bridge MCP，让对方模型
-  以 inline 零工具方式审查并在需要时返回完整修订稿；只有用户明确选择且能力合格时才进入固定副本
-  修订和测试。普通读取、分析、修改、测试、提交、交付和内部 Todo 不自动调用。
+  优先按可验证的本地文件路径进行只读审查；没有可靠文件路径时才使用 inline 零工具审查。只有用户
+  明确要求对方直接修订且能力合格时，才进入固定副本修订和测试。普通读取、分析、修改、测试、提交、
+  交付和内部 Todo 不自动调用。
   用户明确要求对方审查交付物、让对方执行或启用专用跨模型循环时仍可显式使用。质量优先默认使用
   claude-opus-5/max 与 gpt-5.6-sol/max；调用方可选任务 profile 或目标侧模型/强度，bridge
   严格校验且不回退。失败、超时、模型不匹配、越界写入或同步冲突必须暂停。
@@ -26,9 +27,10 @@ allowed-tools:
 ## 目标与触发
 
 把跨模型复核限定为正式计划的默认质量门。作者先形成将要提交给用户确认的计划草案；对方模型默认
-通过 inline 零工具调用检查正文，并在需要时返回完整 `repairedArtifact`。只有用户明确选择 workspace
-且能力门已通过时，bridge 才创建固定副本供受控修订和测试。无论哪种模式，审查者都不能直接写作者
-主项目；原作者必须验收回执或同步结果，再向用户展示最终计划。
+对已有稳定本地文件的计划，优先通过 workspace 只读调用让对方按路径读取密封副本；没有可靠文件路径
+时才使用 inline 零工具调用。只读审查返回问题和修改要求，由原作者修改正文。只有用户明确要求审查者
+直接修订且能力门已通过时，才使用 `v2_review_repair_peer` 进入固定副本修订和测试。无论哪种模式，
+审查者都不能直接写作者主项目；原作者必须验收回执或同步结果，再向用户展示最终计划。
 
 只有以下情况自动进入：
 
@@ -124,9 +126,10 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 持久化的 `completion_receipt.report`。
 
 能力门固定如下：`v2_peer_status.active=true` 和 `capabilities.inlineReviews=true` 是所有 v2 inline
-审查的前提；`v2_review_repair_peer artifactMode=workspace` 还必须同时满足
-`capabilities.workspaceRepairs=true` 与 `workspaceProbeState=available`。`pending` 或 `unavailable`
-只表示当前进程尚未证明 Windows workspace sandbox，不影响零工具 inline 审查。
+审查的前提；路径只读审查还必须满足 `capabilities.workspaceReviews=true`、
+`capabilities.workspaceRepairs=true` 与 `workspaceProbeState=available`，workspace 修订使用同一组能力门。
+`pending` 或 `unavailable` 只表示当前进程尚未证明 Windows workspace sandbox，不影响零工具 inline
+审查；对已经选择的路径审查不得静默改成 inline 并重新发送整篇正文。
 
 `loopbackState` 与 `childLoopbackState` 测量的是 sandbox 对临时 `127.0.0.1` fixture 的连通性，
 不是 bridge daemon 的固定 loopback 绑定。`reachable_residual_risk` 或 `unverified` 必须连同
@@ -135,19 +138,21 @@ renderer 生成的唯一用户报告，不能改用原始模型正文、自己�
 子进程文件/外网边界继承和超时后的进程树清理等硬门都合格，
 `eligible_with_loopback_residual_risk` 仍允许 v2 调用；任一硬门失败则不创建 job。
 
-`v2_review_peer` 固定为 `review_only + inline`：只读、零工具、不得声明工作区或测试命令。它是纯文字
-正式计划和普通审查在 workspace 能力不可用时的默认入口。正常情况下，仍在运行的原作者任务直接
-采纳 `needs_changes` 回执、重算身份并提交下一轮。只有请求带有符合下节门槛的 `continuation` 且原
-Codex Desktop 任务需要任务外恢复时，bridge 才通过 IPC 唤醒它；bridge 本身不替作者作语义修改。
+`v2_review_peer` 有两种只读模式：已有稳定本地文件时使用 `artifactMode=workspace`，只提交绝对
+`targetRoot`、相对 `artifactPath`、UTF-8 字节数和 SHA-256，不提交 `artifactContent`；bridge 为
+Claude 只开放 `Read`，为 Codex 使用只读工作区，并在终态后删除密封副本。没有可靠文件路径时使用
+inline 零工具模式并提交完整正文。正常情况下，仍在运行的原作者任务直接采纳 `needs_changes` 回执、
+修改作者正文、重算身份并提交下一轮。只有请求带有符合下节门槛的 `continuation` 且原 Codex Desktop
+任务需要任务外恢复时，bridge 才通过 IPC 唤醒它；bridge 本身不替作者作语义修改。
 protocol-v2 的 Claude/Codex 两个方向都不发送 provider-native transport schema；模型返回不透明文本，
 bridge 接受规范 JSON、带前后说明的单层 `json` 代码围栏/对象，或受控 Markdown，再统一转换为现有
 `V2ModelResponse` 并执行同一严格 schema、结论、证据和修订正文校验。说明文字只作为外壳噪声丢弃，
 不补默认值、不接受额外字段、
 不降档或无限重试。格式明显错误但仍能识别审查意图时，bridge 只在同一 job 内追加一次同模型、同强度、
 同 profile 的零工具格式整理调用；整理不会改变结论、权限、测试或硬截止。整理失败或整理后的结果仍未
-通过 v2 校验时直接失败关闭。v2 审查中出现 `StructuredOutput` 或任何其他工具记录都按隔离/传输异常处理，
-不能当作允许的零工具验证器。
-需要完整替换正文时使用 `v2_review_repair_peer artifactMode=inline`；它也不使用工具，返回完整
+通过 v2 校验时直接失败关闭。inline 审查中出现 `StructuredOutput` 或任何工具记录都按隔离/传输异常
+处理；workspace 只读审查只允许在密封副本内使用 `Read`，其他工具、范围外读取或任何写入都按异常处理。
+需要审查者返回完整替换正文时使用 `v2_review_repair_peer artifactMode=inline`；它也不使用工具，返回完整
 `repairedArtifact`。workspace 修复只允许显式 `repairTargets`，并由 bridge 检查、同步和回滚。
 如果用户明确要求 workspace 修订或结构化测试而能力为 `pending`/`unavailable`，不得提交该请求、
 不得创建 job、不得重启或改用其他 sandbox；输出 `PEER_REVIEW_FAILURE_REPORT`，
@@ -181,11 +186,11 @@ bridge 返回并持久化 `requested_model`、`requested_reasoning_effort`、`ta
 每一轮先读取 [workflow-contract.md](references/workflow-contract.md)，再构造 protocol-v2 审查包。
 全局自动触发时 `artifactType` 必须为 `plan`；`deliverable` 只接受用户明确要求或专用工作流的显式调用。
 公共字段如下。共享入口必须带 `author`；它是 caller-declared，并由 bridge 记录来源。工具固定未列出的
-`target`、`operation` 和权限：
+`target`、`operation` 和权限。`artifactContent` 只属于 inline 请求；workspace 只读审查不携带正文：
 
 ```text
 author ("codex" | "claude"), question, artifactId, artifactType, artifactName
-artifactContent, artifactBytes, artifactSha256
+artifactBytes, artifactSha256
 artifactPath (正式文件建议提供，必须是正斜杠相对路径)
 acceptanceCriteria (非空), constraints (可选)
 taskProfile / model / reasoningEffort (可选)
@@ -193,15 +198,23 @@ seriesId / seriesVersion / latestJobId (续轮按 CAS 提供)
 continuation (Codex Desktop 作者方向可选；必须使用当前任务的精确线程 ID)
 ```
 
-`v2_review_peer` 只接受上述 inline 字段；`v2_review_repair_peer` 还必须提供 `artifactMode`：
+模式字段如下：
 
 ```text
+v2_review_peer + artifactMode=workspace（稳定本地文件的默认方式）:
+  targetRoot 为包含审查文件的最小绝对目录；artifactPath 为其中的相对路径；
+  不提供 artifactContent、repairTargets 或 testCommands。
+v2_review_peer + inline（没有可靠文件路径时）:
+  提供完整 artifactContent；不提供 targetRoot、repairTargets 或 testCommands。
 artifactMode=inline:
+  仅用于 v2_review_repair_peer；提供完整 artifactContent；
   不提供 targetRoot、repairTargets、testCommands；结果必须含完整 repairedArtifact。
 artifactMode=workspace:
+  仅用于用户明确要求的 v2_review_repair_peer；
   targetRoot 为绝对路径；repairTargets 为非空的 {path, action} 数组；
   计划必须只有一个与 artifactPath 相同的 modify 目标；testCommands 可为 [] 或结构化命令数组。
-  仅当 v2_peer_status 同时报告 workspaceRepairs=true 和 workspaceProbeState=available 时允许提交。
+  仅当 v2_peer_status 同时报告 workspaceReviews=true、workspaceRepairs=true 和
+  workspaceProbeState=available 时允许提交。
 ```
 
 结构化 `testCommands` 的每项是 `{program, programBytes, programSha256, args, timeoutMs}`：`program`
@@ -209,19 +222,21 @@ artifactMode=workspace:
 执行，网络关闭、工作目录为固定副本，不向 Claude 暴露 Bash。不得把旧版字符串命令、shell 片段、
 引号、变量、通配符、管道、重定向或命令串联塞进该字段。
 
-不要复用上一轮、文件元数据或先前消息中的字节数和哈希。先确定最终 `artifactContent`，再按它的
-UTF-8 编码计算两项身份并立即调用；内容发生任何变化都重新计算。正式文件还要给出 `artifactPath`，
-workspace 能力已经通过时才给出最小 `repairTargets`。bridge 会把目标根完整复制到固定副本并排除 `.git`，
-由 manifest、路径/链接检查和基线快照保护主项目。
+不要复用上一轮、文件元数据或先前消息中的字节数和哈希。inline 请求先确定最终 `artifactContent`，
+再按它的 UTF-8 编码计算两项身份；路径审查直接读取目标文件的当前 UTF-8 字节并立即计算。内容发生
+任何变化都重新计算。路径审查的 `targetRoot` 使用包含目标文件的最小目录，避免把无关材料复制进
+密封副本。只有 workspace 修订才给出最小 `repairTargets`。bridge 会排除 `.git`，并用 manifest、
+路径/链接检查和基线快照保护作者文件。
 
 ## 三轮状态机
 
 1. 作者用同一 `artifactId`（默认也是 `seriesId`）调用 `v2_review_peer` 或 `v2_review_repair_peer` 发起第 1 轮，保存 job ID、模式和（仅 workspace 时的）基线/结果 manifest。
 2. 只接受带 `completion_receipt.schema_version=1` 和 `delivery_required=true` 的终态；先向用户呈现其
-   `report`，再检查方向/模型/权限证据。inline 由作者检查审查正文或 `repairedArtifact`，workspace 才检查同步后的主项目。
+   `report`，再检查方向/模型/权限证据。inline 与 workspace 只读审查由作者检查 findings；inline 修订
+   还要检查 `repairedArtifact`，workspace 修订才检查同步后的主项目。
 3. `通过`：正式计划进入用户确认门；显式交付物审查则返回原作者独立验收。
-4. `需修改`：inline 不发生主项目同步，workspace 先检查同步内容。仍在运行的原作者任务，无论是 Codex
-   还是 Claude，都直接读取同一 job 的 findings，修订主项目，重新计算 UTF-8 字节数和 SHA-256，把上一轮
+4. `需修改`：inline 和 workspace 只读审查都不发生主项目同步；workspace 修订先检查同步内容。仍在运行的
+   原作者任务，无论是 Codex 还是 Claude，都直接读取同一 job 的 findings，修订主项目，重新计算 UTF-8 字节数和 SHA-256，把上一轮
    findings/未决项放入下一轮 `question`、`constraints` 或 `artifactContent`，并携带上一轮返回的
    `seriesVersion` 与 `latestJobId`。只有原 Codex Desktop 任务已退出或不再等待、且满足任务外唤醒门槛时，
    bridge 才投递 `continuation`；其他情况由当前作者任务按同一 CAS 流程继续，不另开逻辑产物或猜测线程。
@@ -270,7 +285,8 @@ Codex -> Claude 方向只接受共享 `v2_*` 调用中的 `author=codex`：
 
 ```text
 author = codex; author_source = caller_declared; derived reviewer = claude
-v2_review_peer: review_only + inline + zero tools
+v2_review_peer + artifactMode=workspace: review_only + sealed copy + Read only; no writes
+v2_review_peer + inline: review_only + zero tools
 v2_review_repair_peer + artifactMode=inline: ask-style zero tools; repairedArtifact required
 v2_review_repair_peer + artifactMode=workspace: acceptEdits + native file changes only; no Bash
 requested model / effort = bridge 解析出的目标侧白名单组合
@@ -285,8 +301,9 @@ public reported model = selected requested model
 Claude -> Codex 方向只接受 bridge 返回的 SDK 记录与本次解析结果一致（共享调用中 `author=claude`）：默认是
 `requested_model=gpt-5.6-sol`、`requested_reasoning_effort=max`；另有显式/profile 路由时按其
 已记录值验收。其余固定项为 `workspace-write`、`approvalPolicy=never`、
-网络和搜索关闭、无额外目录；记录请求模型、请求强度、CLI 版本和线程 ID，但没有运行时回执时不得把模型
-身份写成“已验证”。固定副本中的 workspace `v2_review_repair_peer` 允许对方修复，主项目同步仍由 `repairTargets`、manifest、
+网络和搜索关闭；workspace 只读审查的 cwd 固定为密封副本，其他目录不可写；记录请求模型、请求强度、
+CLI 版本和线程 ID，但没有运行时回执时不得把模型身份写成“已验证”。固定副本中的 workspace
+`v2_review_repair_peer` 允许对方修复，主项目同步仍由 `repairTargets`、manifest、
 基线漂移和逐文件哈希门控制。
 
 Windows 下 bridge 子进程还固定 `include_environment_context=true` 与
@@ -323,7 +340,7 @@ Codex 配置。Codex 先用原生补丁工具；只有该工具明确写入失�
 
 修改本 Skill 后，至少检查 `evals/evals.json`、`evals/trigger-evals.json`、`evals/integration-cases.md`，
 覆盖两方向正式计划自动触发、普通实质任务和内部清单跳过、显式交付物调用、共享 `author` 的缺失/非法值、
-caller-declared 来源记录、`v2_review_peer` 零工具、`v2_review_repair_peer` 的 inline/workspace 两种模式、workspace capability pending/unavailable 时的无 job
+caller-declared 来源记录、`v2_review_peer` 的 workspace 只读与 inline 零工具模式、`v2_review_repair_peer` 的 inline/workspace 两种模式、workspace capability pending/unavailable 时的无 job
 失败关闭、repair target/manifest 边界、三轮 CAS、用户确认门、审批同步、默认/显式/profile 路由、恢复时
 换模型被拒绝、结构化/空 `testCommands`、正文身份重算、通道不可用和非所选模型停止。源码推送后，只对
 本次改动的 Skill 使用定向 CC Switch

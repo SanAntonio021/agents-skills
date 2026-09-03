@@ -47,12 +47,16 @@ test("published skill keeps Claude active-turn review separate from out-of-band 
   const skillPath = path.resolve(new URL("../SKILL.md", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
   const skill = fs.readFileSync(skillPath, "utf8");
   assert.match(skill, /Claude Code VS Code 插件或 CLI/u);
+  assert.match(skill, /v2_review_peer/u);
   assert.match(skill, /v2_review_repair_peer/u);
   assert.match(skill, /v2_await_peer/u);
   assert.match(skill, /正常任务内继续不需要/u);
   assert.match(skill, /任务外唤醒/u);
-  assert.match(skill, /artifactMode=inline/u);
-  assert.match(skill, /inline 模式不提供/u);
+  assert.match(skill, /artifactMode=workspace/u);
+  assert.match(skill, /workspaceReviews=true/u);
+  assert.match(skill, /review-input/u);
+  assert.match(skill, /不把长计划静默改成 inline/u);
+  assert.match(skill, /不返回 `repairedArtifact`/u);
   assert.doesNotMatch(skill, /Claude Desktop continuation API/u);
   assert.doesNotMatch(skill, /submit_peer\(target=codex/u);
   assert.doesNotMatch(skill, /reviewerAccess=isolated_write/u);

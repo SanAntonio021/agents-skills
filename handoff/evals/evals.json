@@ -1,0 +1,59 @@
+{
+  "skill_name": "handoff",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "把我们刚才关于 Claude–Codex Bridge 的讨论整理成一段交接话，我要新开一个对话继续讨论方案。记得我只确定了桥接可以给完整工具权限，具体怎么改还没定。",
+      "expected_output": "应触发 handoff。交接明确写成继续讨论，保留已经确定和仍待讨论的内容，不把它改写成直接实施。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "这个实施方案我已经批准了。给我一段交接内容，我要让另一个 Codex 对话按 D:\\Project\\docs\\approved-plan.md 直接做。",
+      "expected_output": "应触发 handoff。交接保留用户已经批准执行的状态，以绝对路径指向计划，不重新要求接收方讨论方案。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "把当前 Eband 目录整理问题交给 Claude 接着看。相关审计材料都在 D:\\BaiduSyncdisk\\Program\\Eband\\项目归档，先给我能复制过去的交接内容。",
+      "expected_output": "应触发 handoff。交接面向另一个模型，默认其能读取本机路径，只引用相关材料，不复制审计正文，也不逐条摘抄本地材料已有的文件清单、哈希和检查结果。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "我要把这个问题发到网页版对话，那里读不到我的 D 盘。帮我整理一段交接，并告诉我还要附上哪些文件。",
+      "expected_output": "应触发 handoff。因为接收端不能读取本机路径，正文补充最少必要背景，并明确需要用户附带的文件。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "新开个对话继续查这个测试失败。错误日志在 D:\\Lab\\logs\\run-17.txt，当前只确认失败发生在连接阶段，原因还不知道。给我交接一下。",
+      "expected_output": "应触发 handoff。交接解释日志用途和已知边界，不把未确认原因写成结论，并给出接手后的第一步。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "总结一下我们今天讨论了什么。",
+      "expected_output": "不应触发 handoff；按普通对话总结处理。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "这个对话好像已经很长了。",
+      "expected_output": "不应主动触发 handoff，也不应自行生成交接内容。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Claude Code 对这个问题一般会怎么处理？",
+      "expected_output": "不应因为提到另一个模型而触发 handoff。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "先不聊桥接了，我们看看 E 波段机箱的资料。",
+      "expected_output": "不应因为普通任务切换而触发 handoff。",
+      "files": []
+    }
+  ]
+}

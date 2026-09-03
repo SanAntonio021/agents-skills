@@ -54,7 +54,7 @@ v3_author_checkpoint(...)
 - 每次等待最多 45 秒；pending 时继续查询同一 job。
 - 502/503/504/524 由 v3 内部在同一 job 和会话额外重试一次，调用方不重发。
 - `awaiting_approval` 只批准或拒绝 bridge 展示的精确 action、targets、fingerprint 和 approval ID。
-- 批准后继续原 job；拒绝或超时取消动作。
+- 批准、拒绝或超时后都继续查询原 job；拒绝或超时只取消该动作，不把审批决定本身写成终态失败。
 - 同一真实项目的 v3 job 串行，不同项目可并行。
 - 作者验收后调用 `v3_author_checkpoint`；作者改过主文件才运行一次只检查终审。
 

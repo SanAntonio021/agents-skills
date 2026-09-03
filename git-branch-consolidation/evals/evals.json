@@ -1,0 +1,69 @@
+{
+  "skill_name": "git-branch-consolidation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这个 Windows 仓库本地和 GitHub 都有很多分支，还有两个 dirty worktree、stash、未跟踪结果和被 gitignore 忽略的日志。仓库在百度网盘目录里。我确认最终只留远端默认分支，tags 全保留；有效提交按线性历史合入，其他内容备份后清理。",
+      "expected_output": "先冻结所有写入者和同步程序，建立并隔离重放双份恢复包，再判重、线性集成、快进发布，最后用 atomic leases 删除远端分支并逐项清理本地状态。",
+      "files": [],
+      "expectations": [
+        "从 live remote symbolic HEAD 确定默认分支，不猜 main 或 master",
+        "在仓库位于同步目录时记录并暂停同步程序，无法确认则停止",
+        "逐个保存 staged、unstaged、untracked、stash、reflog、worktree 和 preserve ignored 内容",
+        "reproducible ignored 内容仍有完整哈希清单和明确重建依据",
+        "bundle 和所有 worktree 状态在隔离仓库重放成功后才允许删除",
+        "有效提交逐个 cherry-pick，不整体 squash，不产生 merge commit",
+        "默认分支只用普通 fast-forward push，tags 原样保留",
+        "远端辅助分支以一次 atomic push 和每 ref 的冻结 SHA lease 删除",
+        "恢复同步后复查 Git 元数据，污染重现则不宣称验收完成"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "当前仓库只有 feature/layout 和 main 两个分支。我只要把 feature/layout 正常合并进 main、解决冲突并跑测试，分支和 worktree 是否删除以后再说。",
+      "expected_output": "识别为普通单分支合并，不启动全面收口、双份恢复包和全局分支删除流程；按项目常规 Git 规则处理。",
+      "files": [],
+      "expectations": [
+        "不触发全面 branch consolidation",
+        "不把普通 merge 请求扩大成删除全部本地与远端分支",
+        "按项目规则处理冲突和测试"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "恢复包和测试都通过了，但删除前发现远端 old-experiment 从冻结的 abc123 更新成了 def456。其他三个待删分支没有变化。服务器支持 atomic。继续把没变化的三个删掉。",
+      "expected_output": "停止整批远端删除；冻结现场已漂移，不能把一次 atomic 删除退化成部分删除或逐分支重试。",
+      "files": [],
+      "expectations": [
+        "把远端 ref 漂移视为删除门失败",
+        "一个远端分支漂移时整批一个也不删",
+        "不更新 lease 到新 SHA 来绕过冻结条件",
+        "重新冻结和评估 def456 的内容后才能形成新删除计划"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "git status 看起来干净，但 --ignored=matching 显示 node_modules、dist、local-results 和 vendor-old.exe。请把分支全部收口，并把这些目录都当缓存直接删掉。",
+      "expected_output": "要求对每个 ignored 根路径做 preserve 或 reproducible 分类；node_modules 和 dist 需有重建依据，local-results 与旧二进制默认进入 preserve 或等待判断，不能只因被忽略就删除。",
+      "files": [],
+      "expectations": [
+        "普通 git status 为空不等于工作树所有内容都已纳入恢复",
+        "每个 ignored 根路径必须且只能有一种 disposition",
+        "可重建缓存记录哈希和重建依据",
+        "唯一结果和旧二进制进入恢复 payload 或停止等待判断",
+        "不临时扩大 .gitignore"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我有 D:\\RepoA 和 E:\\RepoB 两个独立仓库，另外还有一个旧资料目录。想把它们整理到 D:\\Projects 下面，同时各仓库内部最终只保留默认分支。",
+      "expected_output": "先由 project-organizer 处理多目录与多仓库的目标结构和迁移审批；每个仓库内部获批的分支收口再分别调用 git-branch-consolidation。",
+      "files": [],
+      "expectations": [
+        "多目录和多仓库整理由 project-organizer 负责",
+        "不把两个仓库的 Git 历史拼成一个仓库",
+        "对每个独立仓库分别冻结、恢复和验收分支收口"
+      ]
+    }
+  ]
+}

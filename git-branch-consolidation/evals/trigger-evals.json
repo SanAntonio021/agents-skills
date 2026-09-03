@@ -1,0 +1,34 @@
+[
+  {
+    "query": "把这个仓库所有本地和远端分支都收口到默认分支，最后只留一个 branch，worktree 和 stash 也清干净，但 tags 要保留。",
+    "should_trigger": true
+  },
+  {
+    "query": "本地几十个旧分支不知道后面在哪个改的，帮我判重，把有效提交线性放进 main，做好恢复包后把本地远端临时分支都删掉。",
+    "should_trigger": true
+  },
+  {
+    "query": "仓库在百度网盘里，有 dirty worktree、stash 和 ignored 结果。我要彻底收口到 GitHub 默认分支，任何内容删除前都要能完整恢复。",
+    "should_trigger": true
+  },
+  {
+    "query": "只合并 feature/api 到 main，保留其他分支，冲突时停下来告诉我。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我 rebase 当前功能分支到 origin/main，然后开一个 PR。",
+    "should_trigger": false
+  },
+  {
+    "query": "D 盘和 E 盘有三个项目目录，请合成统一项目入口并保留各自 Git 历史。",
+    "should_trigger": false
+  },
+  {
+    "query": "把 GitHub Project 看板里完成的卡片归档，代码仓库不要动。",
+    "should_trigger": false
+  },
+  {
+    "query": "删除已经合并的一个远端 feature 分支，不处理本地其他分支。",
+    "should_trigger": false
+  }
+]

@@ -8,7 +8,8 @@ description: >
   Agent、Read、Glob、Bash 或 PowerShell 代做。适用任务包括：把同一项目的散落内容合并为统一入口；
   把多个独立同类项目归入共同父目录且保持彼此独立；迁移验收后退役旧路径。用户说“这几个目录”
   “这些项目”“两个仓库”“旧电脑备份”“散落各处”而没有点名技能时同样触发。不得用于单个项目内部
-  整理、普通磁盘或缓存清理、扫描整盘自动分类、数据库迁移、Git 分支合并、单文件移动、新建单个项目
+  整理、普通磁盘或缓存清理、扫描整盘自动分类、数据库迁移、单仓库 Git 分支合并或彻底收口
+  （使用 git-branch-consolidation）、单文件移动、新建单个项目
   或论文返修工作区、代码托管平台迁移、GitHub Project 看板归档。
 compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports local drive-letter paths only.
 ---
@@ -140,6 +141,7 @@ Windows 路径、回收站和云端规则见 [references/windows-safety.md](refe
 
 ## 与其他技能的边界
 
+- 单个仓库内把本地与远端分支、worktree 和 stash 收口到默认分支时使用 git-branch-consolidation；本技能只处理多个目录或仓库之间的项目整理。
 - `cross-model-orchestration` 只负责 Claude 与 Codex 的角色和交接。Claude 全局规则要求先加载它时，
   随后必须在读取项目目录、制定目录方案或提出结构问题前加载 `project-organizer`；两者叠加，通用编排
   不得代替本技能的模式确认、目录树、计划和退役审批门。

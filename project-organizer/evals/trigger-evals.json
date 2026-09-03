@@ -13,6 +13,7 @@
   {"query":"C 盘只剩 8 GB。请检查 Windows 临时目录、浏览器缓存和包管理器缓存，列出可安全释放的空间并等我批准清理；不要整理或合并任何项目工作区。","should_trigger":false},
   {"query":"生产库要从 MySQL 8 迁移到 PostgreSQL 16，需要评估 schema、数据类型、停机窗口、双写和回滚方案。项目文件目录不变，这次只做数据库迁移设计。","should_trigger":false},
   {"query":"当前 Git 仓库的 feature/layout 和 main 都修改了 README 与 src/config.ts。请比较提交、合并分支、解决冲突、跑测试并提交；不要移动仓库目录或整理多个工作区。","should_trigger":false},
+  {"query":"这是一个仓库，我要把所有本地和远端分支线性收口到默认分支，清理 worktree 和 stash，最终只留一个 branch；不涉及多个项目目录迁移。","should_trigger":false},
   {"query":"把 D:\\Downloads\\report.pdf 移到 D:\\Documents\\Reports，并确认目标没有同名文件。这只是一个文件的移动，不需要扫描其他目录或建立项目入口。","should_trigger":false},
   {"query":"我要从零新建一个仪器实验项目，请在 D:\\Projects\\NewTest 下建立 code、config、data 和 results 骨架，写 README 和代理规则。没有旧项目来源需要合并。","should_trigger":false},
   {"query":"把现有单个仓库从 GitHub 转移到 GitLab，要求保留 branches、tags、issues 导出和 CI 变量清单。工作区路径保持不变，不涉及多个目录归组。","should_trigger":false},

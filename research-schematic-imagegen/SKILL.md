@@ -125,6 +125,10 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 
 系列图先建立一份共同视觉合同，再分别建立每张图的技术合同。
 
+正式申报书、论文和技术报告中的图，技术合同还必须写明“对应正文标题”和“图题”。默认删除章节编号与 Markdown 标记后逐字一致；确需使用概括性图题时，先取得用户对该差异的明确确认，并把例外写入最终清单。不能根据旧 Word、旧图片或历史记录自行恢复旧标题。
+
+图题和全部图内标签都属于正式文稿用词。生成前冻结准确标签清单；工程申报图、论文图，或用户指出“AI 味”、空泛、含混用词时，同时使用 `style-vocab` 核对图题和全部标签。优先写具体对象、信号、动作和结果，不用“证据类型”“多源异步输入”“典型工况”一类抽象总括词替代实际内容。用户确认形成的禁用词、替换词和适用例外按 `style-vocab` 规则进入相应词表，不能只留在单图对话或 `record.md` 中。
+
 #### 全流程系统图
 
 一张图同时表达端到端主路径、运行保障/控制关系或可选机制时，除技术合同外，读取 [references/full-flow-system-diagram.md](references/full-flow-system-diagram.md)。先逐项定义节点、分区、连线和视觉语义，再让模型出图；不要用一串看似合理的箭头代替已确认的系统关系。
@@ -260,6 +264,8 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 ### 8. 整理最终输出
 
 先读 [references/output-ownership.md](references/output-ownership.md)。科研图目录常混有历史定稿和其他课题图；目录名是 `final` 不表示当前任务拥有其中所有文件。
+
+同一项目有多张图、多个对话或多个 `final` 版本时，必须维护一份项目级最终清单。跨对话选择图片、更新 Markdown 引用或准备回填 Word，只能读取这份清单中 `status=confirmed` 的当前路径；不得按文件名后缀、修改时间、目录位置或某个旧 `record.md` 猜测版本。用户确认新版本后，先更新清单并复核文件哈希，再更新 Markdown；Word、PPT 等载体仍按各自授权和工作流处理。
 
 - 写入前只读列出目标目录已有文件。任务开始前已存在的文件一律视为用户资产。
 - 未经用户明确授权，不移动、删除、重命名、覆盖或归档既有文件。

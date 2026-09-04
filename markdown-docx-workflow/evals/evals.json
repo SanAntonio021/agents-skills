@@ -87,6 +87,17 @@
         "Returns to CONTENT_FROZEN instead of retaining stale DOCX acceptance.",
         "Requires format-source relock, regeneration, and re-acceptance."
       ]
+    },
+    {
+      "id": "canonical-figure-reference-gate",
+      "prompt": "17张图都讨论完了，准备从三份Markdown生成Word。图17目录里有确认版、确认版_v2和确认版_v3，Markdown仍引用旧确认版；另有一处‘图建议：后续替换’。请继续导出。",
+      "expected_output": "保持 DRAFT 并阻断正式Word生成。先读取项目级最终图清单，核对17张图的数量、顺序、图号、路径、哈希、尺寸、图题、替代文字、题注和正文引用；旧确认版即使位于final也不能使用，‘图建议’必须删除。修正Markdown并通过确定性检查和人工内容对应检查后，才能进入CONTENT_FROZEN。",
+      "expectations": [
+        "Uses the project-level confirmed manifest instead of filename suffixes or modification times.",
+        "Rejects working, draft, superseded confirmed files, and figure placeholders before formal Word generation.",
+        "Checks figure count, order, numbering, path, hash, dimensions, title, alt text, caption, and body references.",
+        "Keeps the workflow in DRAFT until all figure checks pass."
+      ]
     }
   ]
 }

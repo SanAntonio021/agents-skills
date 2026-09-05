@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: 中文技术方案、系统说明、测试方案、测试记录和结果分析的写作、重构与审校。Use when 用户要说明系统怎么构成、方案怎么实现、接口和参数是什么、测试如何开展、结果说明什么，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、system_description、test_result_analysis 三种模式。
+description: 中文技术方案、会前技术交流稿、系统说明、测试方案、测试记录和结果分析的写作、重构与审校。Use when 用户要说明系统怎么构成、方案怎么实现、会议要讨论什么、接口和参数是什么、测试如何开展、结果说明什么，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、test_result_analysis 四种模式。
 ---
 
 # 技术文档写作
@@ -10,7 +10,7 @@ description: 中文技术方案、系统说明、测试方案、测试记录和�
 从 [writing-router](../writing-router/SKILL.md) 接收：
 
 - `document_type=technical`
-- `mode=technical_scheme|system_description|test_result_analysis`
+- `mode=technical_scheme|technical_exchange|system_description|test_result_analysis`
 - `edit_scope`、`language`、`loaded_refs`
 
 读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整草稿、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
@@ -46,6 +46,14 @@ description: 中文技术方案、系统说明、测试方案、测试记录和�
 
 方案比较要写相同条件下的差异和取舍。没有证据时不把候选方案写成“最优”，也不把计划写成已落地。
 
+## `technical_exchange`
+
+会前技术交流稿的作用是让参会人快速看清已有条件、可选方案、会上要作出的决定，以及需要另行计算或测试的事项。按 [技术交流稿写法](references/technical-exchange.md) 组织和审校。
+
+会上不能取得的数据不写成“会上确认”。需要回读配置、计算、机械测量或仪器测试的事项，写清执行人、具体动作和要形成的结果；真正需要共同取舍的方案、接口和指标要求才列为讨论项。已经确定的约束直接作为方案条件，不再伪装成问题。
+
+方案名称必须对应可辨认的连接关系或结构差异。同一对象全篇使用同一名称；“模块”“端口”“输入输出”“台架”等概括词若不足以让读者识别对象，应改成具体器件、信号、接口或测试连接。
+
 ## `system_description`
 
 从系统边界进入，说明外部输入输出、内部组成、模块关系、控制或数据流以及异常边界。模块介绍不重复系统目标；接口表负责参数，正文解释关系和工程含义。
@@ -78,6 +86,9 @@ description: 中文技术方案、系统说明、测试方案、测试记录和�
 - 测试条件能否支撑结论；
 - 计划、设计、实现、测试、实测和计算状态是否被升级；
 - 同一结果是否在多个章节换说法重复。
+- 采用 `technical_exchange` 时，是否把计算、回读或实测任务误写成会上可确认的问题；
+- 采用 `technical_exchange` 时，是否遗漏真实方案分支，或把已经确定的约束重复写成讨论项；
+- 采用 `technical_exchange` 时，责任、测试和方案说明是否分散重复，导致读者需要跨节拼接同一件事。
 
 状态升级、公式漂移、跨节参数矛盾、虚构测试数据直接判 `fail`。
 
@@ -91,4 +102,5 @@ description: 中文技术方案、系统说明、测试方案、测试记录和�
 - 参数、单位、接口、版本和公式可回查；
 - 结果与解释分开，状态与证据一致；
 - 没有为完整感补造模块、步骤或结论；
+- 采用 `technical_exchange` 时，讨论项能在会上形成明确选择，另行工作均有具体动作和结果；
 - `loaded_refs` 与实际读取一致。

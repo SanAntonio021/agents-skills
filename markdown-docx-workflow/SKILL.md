@@ -52,6 +52,14 @@ Markdown 含图片时，进入 `CONTENT_FROZEN` 前还必须通过 [图片引用
 
 用户原话、选择时间和采用受管默认值的理由写入现有工作流事件记录。生成前重新计算文件或样式配置指纹；路径不存在、指纹变化或来源类型与记录不符时停止生成。`scripts/workflow_state.py` 已在 `DOCX_GENERATED` 记录 `manifest_path`、`template_path` 和 `template_sha256`，不新增平行状态文件。
 
+## 排版约束门
+
+页数、字号、行距、页边距、图片尺寸和表格是否必须单页完整显示，均属于排版约束。执行前写清约束来自用户、指定模板还是正式提交要求；助手提出的页数建议只有经用户确认后才作为硬约束。
+
+Markdown 的内容、图片或表格发生变化后，重新判断原排版约束是否仍成立。不得为了维持来源不明、未经确认或已经过时的页数目标，静默缩小字号、压紧行距、缩图或裁字。约束与可读性冲突时，先展示具体冲突并只询问一个会改变结果的取舍。
+
+用户明确要把某张表截图发送时，将“该表在目标页面内完整、清晰且不跨页”传给 `docx` 作为验收条件，并检查实际渲染页。详细表和截图简表可以并存，但不能靠表外的重复说明才能看懂。
+
 ## 自然语言门
 
 - “继续修改”：保持 `DRAFT`，只改 Markdown。
@@ -67,7 +75,7 @@ Markdown 含图片时，进入 `CONTENT_FROZEN` 前还必须通过 [图片引用
 ## 与 docx 的分工
 
 1. 在内容阶段读取并遵守 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md)，只维护 Markdown 主稿和状态记录。
-2. 进入 Word 阶段前按“格式来源门”锁定格式来源；进入 Word 阶段后调用 [docx](../docx/SKILL.md)。模板、样式、分页、LibreOffice、Word 原生打开/渲染和人工逐页检查全部由 `docx` 负责。
+2. 进入 Word 阶段前按“格式来源门”锁定格式来源，并按“排版约束门”核对约束来源和当前有效性；进入 Word 阶段后调用 [docx](../docx/SKILL.md)。模板、样式、分页、LibreOffice、Word 原生打开/渲染和人工逐页检查全部由 `docx` 负责。
 3. `DocxAcceptanceReport` 必须包含 Word 路径/SHA-256、按顺序排列的四层结果，以及 [Word 权威验收清单](../docx/references/word-acceptance-checklist.md) 的七个项目：字体与回退、段落格式、表格格式、页眉页脚几何、分页、Word 原生打开、Word 原生渲染。
 4. 四层中出现 `FAIL`、`UNVERIFIED`、`ENV_UNVERIFIED` 或 `NOT_RUN` 时不得进入 `DOCX_ACCEPTED`。警告可以保留，但必须在 Word 最终确认前展示。
 5. PDF 阶段只使用已确认 Word；内部的 `_validation.pdf` 仅是 `NATIVE_RENDER_PASS` 证据，不是交付 PDF，也不能绕过确认门。

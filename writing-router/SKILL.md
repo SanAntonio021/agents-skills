@@ -1,6 +1,6 @@
 ---
 name: writing-router
-description: 中文正式写作的默认总路由。Use when 用户要撰写、重写、润色或审查项目书、技术方案、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，以及无法直接归类的中文材料；也用于确定写作模式、修改范围、语言和实际加载规则。投稿事务、论文停稿审查、文献检索和单纯文件排版仍转给对应专门技能。
+description: 中文正式写作的默认总路由。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，以及无法直接归类的中文材料；也用于确定写作模式、修改范围、语言和实际加载规则。投稿事务、论文停稿审查、文献检索和单纯文件排版仍转给对应专门技能。
 ---
 
 # 中文正式写作总路由
@@ -34,7 +34,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 | `document_type` | `mode` | 主技能 |
 |---|---|---|
 | `project` | `proposal`、`expert_reply`、`final_audit` | [project-writing](../project-writing/SKILL.md) |
-| `technical` | `technical_scheme`、`system_description`、`test_result_analysis` | [technical-writing](../technical-writing/SKILL.md) |
+| `technical` | `technical_scheme`、`technical_exchange`、`system_description`、`test_result_analysis` | [technical-writing](../technical-writing/SKILL.md) |
 | `research_report` | `evidence_report`、`decision_report`、`final_audit` | [research-report](../research-report/SKILL.md) |
 | `meeting_notes` | `discussion`、`action`、`mixed` | [meeting-notes](../meeting-notes/SKILL.md) |
 | `paper` | `zh_paper`、`en_paper`、`final_audit` | [ieee-manuscript-edit](../ieee-manuscript-edit/SKILL.md) |
@@ -45,6 +45,8 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 1. 用户明确说出的文稿类型、用途和读者。
 2. 原文件的栏目、模板和内容职责。
 3. 仍无法区分且会改变产物时，只问一个最关键的问题；不影响实质结果时按最窄范围继续。
+
+会前方案讨论稿、技术交流材料或待讨论问题清单，目标是区分已有条件、会上决定和另行工作时，使用 `document_type=technical`、`mode=technical_exchange`。会议已经结束，任务是整理实际发言、结论和行动项时，使用 `meeting_notes`。
 
 项目书、技术文档、调研报告、会议纪要和论文都属于正式文稿。直接调用 `humanizer-zh` 处理这些材料时，也要回到本路由，再进入对应文体技能。
 

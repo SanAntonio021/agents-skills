@@ -82,6 +82,11 @@
       "id": "route-final-submit-review-gate",
       "prompt": "ScholarOne 普通字段和文件都准备好了，现在想点最终 Submit。下一步先做什么？",
       "expected_output": "先路由 paper-review 完成投稿前把关并生成有 checked_at 和 evidence 的 pre_submission_review=pass；此前可准备文件和普通字段，但不能进入最终提交确认。"
+    },
+    {
+      "id": "route-pre-meeting-technical-exchange",
+      "prompt": "我要把一份射频方案改成会前技术交流材料，里面既有已知接口、三种器件结构，也有会上要选的方案和会后才能测出的参数。",
+      "expected_output": "路由到 technical-writing 的 technical_exchange 模式，区分已有条件、会上决定和另行计算或测试；不按会议纪要整理，也不只做通用去 AI 味改写。"
     }
   ]
 }

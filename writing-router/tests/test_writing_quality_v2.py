@@ -132,6 +132,15 @@ class WritingQualityV2Tests(unittest.TestCase):
             for label in ["成立条件", "文体例外", "blocking_when", "处理"]:
                 self.assertIn(label, body, f"S{index:02d} missing {label}")
 
+    def test_blind_review_requires_complete_matched_outputs_and_user_choice(self):
+        guidance = (ROUTER_ROOT / "evals" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("必须完整展示本轮待比较的实际输出", guidance)
+        self.assertIn("不得摘要、删减或用空白替代其中一版", guidance)
+        self.assertIn("两版使用同一种清晰排版", guidance)
+        self.assertIn("先用一句具体的话说明本组要判断什么", guidance)
+        self.assertIn("只有用户明确选择后，才写入人工复核结果", guidance)
+        self.assertIn("另记为评测调整，不能记成用户选择", guidance)
+
     def test_public_personal_sample_files_are_removed(self):
         self.assertFalse(
             (REPO_ROOT / "project-writing" / "references" / "writing-samples.md").exists()

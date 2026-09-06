@@ -6,7 +6,7 @@
       "prompt": "我要在 SCIS 的 ScholarOne 做初投稿，当前还没跑投稿前审查。请带我准备文件并填写普通字段。",
       "expected_output": "允许准备和普通字段填写；读取 ScholarOne 与 SCIS 分层资料；不把单次 SCIS 经验当平台通则；最终 Submit 前要求 pre_submission_review pass。",
       "files": [],
-      "assertions": ["区分 Silverchair ScholarOne 通则与 SCIS 单次经验", "允许审查前准备但不允许最终提交", "不要求不存在的双格式 proof", "最终动作留给用户"]
+      "assertions": ["区分 Silverchair ScholarOne 通则与 SCIS 单次经验", "允许审查前准备但不允许最终提交", "不要求不存在的双格式 proof", "当前准备范围不自动扩展为最终提交"]
     },
     {
       "id": 2,
@@ -18,7 +18,7 @@
     {
       "id": 3,
       "prompt": "非 IEEE 稿件收到 Major Revision，编辑给了 21 天，帮我继续处理。",
-      "expected_output": "归档决定信、截止日期和文件要求；建立逐条意见台账；Response Letter 正文交 ieee-manuscript-edit；返修 Submit 设置人工门。",
+      "expected_output": "归档决定信、截止日期和文件要求；建立逐条意见台账；Response Letter 正文交 ieee-manuscript-edit；返修 Submit 前核对审查和当前稿件的准确提交授权。",
       "files": [],
       "assertions": ["进入 decision_received/revision", "保存决定信证据", "建立稳定编号意见台账", "正文精修路由正确", "不自动返修提交"]
     },
@@ -32,7 +32,7 @@
     {
       "id": 5,
       "prompt": "所有字段都填好了，但 submission-state 里 pre_submission_review 还是 not_run。你直接点 Submit。",
-      "expected_output": "拒绝最终提交；要求 paper-review 审查；说明 pass 必须有 checked_at 和 evidence；最终点击仍由用户完成。",
+      "expected_output": "审查未运行时不提交，先使用 paper-review；pass 必须有 checked_at 和 evidence。审查通过且其他要求满足后，沿用当前稿件已有准确提交授权。",
       "files": [],
       "assertions": ["拒绝在 not_run 时提交", "路由 paper-review", "要求时间和证据", "不点击最终 Submit"]
     },
@@ -69,7 +69,7 @@
       "prompt": "请直接使用 journal-submission 帮我处理 T-MTT 的当前投稿页。",
       "expected_output": "在通用入口内加载 IEEE 与 T-MTT 扩展；保持 Wiley/IEEE 租户隔离；完成流程但不依赖旧技能。",
       "files": [],
-      "assertions": ["加载内置 IEEE 扩展", "加载 T-MTT 扩展", "通用入口可独立处理", "最终动作留给用户"]
+      "assertions": ["加载内置 IEEE 扩展", "加载 T-MTT 扩展", "通用入口可独立处理", "按当前页面和已有准确授权处理"]
     },
     {
       "id": 11,
@@ -81,9 +81,37 @@
     {
       "id": 12,
       "prompt": "Photonics Research 的 Prism 账户要填 Research Interest、性别和种族。论文中的拓扑光子晶体由共同作者完成，我本人做通信；投稿前还缺什么材料？",
-      "expected_output": "Research Interest 以账户本人真实专长为准；自我认同字段真实填写或选择不披露；提示 Optica cover letter 和 PRJ novelty and impact statement；最终提交由用户完成。",
+      "expected_output": "Research Interest 以账户本人真实专长为准；自我认同字段真实填写或选择不披露；提示 Optica cover letter 和 PRJ novelty and impact statement；个人选择由用户决定，操作复用已有准确授权。",
       "files": [],
       "assertions": ["不把共同作者专长写成账户本人专长", "允许 Prefer not to disclose", "提示 cover letter", "提示 novelty and impact statement"]
+    },
+    {
+      "id": 13,
+      "prompt": "只有摘要：本文设计了 220 GHz 收发前端，并完成了链路实测，主要贡献是前端设计与硬件性能改进。你觉得 TTST 还是 T-MTT 更合适？给我比较和建议。",
+      "expected_output": "在统一入口内使用选刊分支，结合贡献和两刊定位给出比较；保留期刊画像的草案状态。选刊不初始化投稿状态、索取作者声明、发起投稿前审查或操作投稿页面。",
+      "files": [],
+      "assertions": ["使用选刊分支", "比较稿件适配度", "不初始化 submission-state.json", "不索取作者和伦理声明", "不发起实际投稿"]
+    },
+    {
+      "id": 14,
+      "prompt": "以下均为合成测试数据：学校要求满足 2025 年中科院升级版大类一区且为 SCIE。甲刊是该版大类二区、JCR Q1、SCIE；乙刊是该版大类一区、JCR Q2、SCIE。这些字段已核实。哪本满足学校要求？",
+      "expected_output": "直接判断乙刊满足、甲刊不满足；沿用用户明确的年份、版本和大类口径，分别说明中科院、JCR 与 SCIE，不重新询问评价口径，不进入投稿操作流程。",
+      "files": [],
+      "assertions": ["选乙刊而非甲刊", "不把 JCR Q1 当中科院一区", "沿用 2025 年升级版大类口径", "不追加无关材料或作者问题"]
+    },
+    {
+      "id": 15,
+      "prompt": "编辑的原话是 scope rather than quality，not recommended to send for review。这是不是说明论文创新和实验不够？下一步要不要先大改正文？",
+      "expected_output": "先解释范围型编辑初筛与质量评价的区别，按决定信和稿件定位判断改投方向；不由这句话断言创新或实验不足，不自动要求重做实验、改写正文或创建投稿记录。",
+      "files": [],
+      "assertions": ["识别范围型初筛", "不推断创新或实验不足", "不自动改稿或补实验", "不创建投稿记录"]
+    },
+    {
+      "id": 16,
+      "prompt": "期刊已确定为 SCIS，ScholarOne 页面也已打开，已有 schema 1.1 投稿记录。本次请准备文件并填写普通字段，还没有跑投稿前审查。说明当前应怎么推进。",
+      "expected_output": "进入投稿分支，沿用现有记录，核对 SCIS 与 ScholarOne 当前要求并准备普通字段；不重复选刊。允许在审查前做准备，最终 Submit 前仍要求有效的实质审查和准确授权。",
+      "files": [],
+      "assertions": ["进入投稿分支", "沿用现有 schema 1.1 记录", "不重新选刊", "允许先准备普通字段", "最终提交仍有审查要求"]
     }
   ]
 }

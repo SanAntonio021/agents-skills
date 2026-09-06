@@ -6,7 +6,8 @@
 工具，自行按路径读取并可直接修改；bridge 不复制文件正文。未落盘内容和旧调用方继续使用 v2 inline
 兼容流程。
 
-正式计划通过后仍需用户确认才能执行。普通执行、测试、提交和交付不自动追加互审。
+正式计划通过后，尚未获得执行授权时交给用户确认；已有授权继续有效。普通执行、测试、提交和交付
+不自动追加互审。显式科研循环的里程碑继续条件见 [research-loop.md](research-loop.md)。
 
 ## 入口与身份
 
@@ -102,12 +103,13 @@ v3_review_peer(完整 v3 请求)
 }
 ```
 
-- `author_modified=false`：不再调用模型，直接向用户呈现最新文件和首轮结论；非 pass 也交给用户。
+- `author_modified=false`：不再调用模型，呈现最新文件和首轮结论；已授权科研里程碑按科研分支继续，
+  非 pass 交给用户。
 - `author_modified=true`：用首轮完全相同的身份、任务、验收、约束和路由字段，加 checkpoint
   返回的 `seriesId/seriesVersion/latestJobId` 再调用 `v3_review_peer`。
 
 第二次 peer job 的 stage 为 `final_check`，只能检查，不能修改。主文件在终审中变化时 job 失败。
-终审的 pass、needs_changes 或 disagreement 都直接交给用户，不继续循环。
+终审后不追加审查阶段；科研里程碑通过时按科研分支继续，needs_changes 或 disagreement 交给用户。
 
 bridge 在可交付结论上保存 `conclusion_sha256`。每次 `v3_peer_result` 都重读主文件：
 `conclusion_valid=true` 才能引用旧结论；文件变化或消失时 `stale=true`，旧结论失效。
@@ -190,7 +192,7 @@ v2 inline 固定 zero-tool 和只读，继续使用 `completion_receipt`。旧 v
 ## 用户门与失败
 
 互审结果只是用户决策材料。向用户报告 peer 是否修改、作者是否修改、终审是否运行、最终主文件
-SHA-256 是否仍有效，以及 pass、未决问题或分歧；获得明确确认后才能执行正式计划。
+SHA-256 是否仍有效，以及 pass、未决问题或分歧；正式计划执行复用已有授权，未授权时再交给用户确认。
 
 路径无效、MCP 不可达、精确模型缺失、结果 schema 错误、会话清理失败、审批拒绝/过期或终审写入
 都保留原 job/series 和清理后的错误。pending 不是失败也不是最终答复。不得伪造 completion、扫描

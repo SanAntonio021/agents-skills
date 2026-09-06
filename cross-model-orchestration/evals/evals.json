@@ -147,6 +147,76 @@
       "expected_output": "原样调用 v3_resolve_approval(decision=deny)，随后继续查询同一 job；bridge 在同一会话中取消该动作并让对端继续，不能把拒绝本身写成终态失败或另开任务。",
       "files": [],
       "expectations": ["只有对端随后明确无法完成并返回失败，才按最终失败报告。"]
+    },
+    {
+      "id": 38,
+      "prompt": "我想让 Codex 晚上自动跑这个仿真项目的下一批实验，你来监督并逐里程碑让 Claude 复核。",
+      "expected_output": "进入科研循环分支；后台执行可用兼容 task 接口，落盘里程碑用 v3_review_peer 在真实项目内审查，执行和审查分别跟踪原 job。",
+      "files": [],
+      "expectations": ["读取 research-loop.md 及相关科研检查。", "不为等待超时重复提交。"]
+    },
+    {
+      "id": 39,
+      "prompt": "启用跨模型科研循环，审查者要能读写整个项目、跑脚本、联网，危险删除再问我。",
+      "expected_output": "进入科研分支，复用通用 v3 完整工具和直接修改流程；不传正文、白名单或 sandbox，高风险动作按精确 targets 审批。",
+      "files": [],
+      "expectations": ["不创建另一套审批或调度协议。"]
+    },
+    {
+      "id": 40,
+      "prompt": "跨模型里程碑审查时对端想删项目外临时文件，我拒绝这项审批，但审查可以继续。",
+      "expected_output": "原样拒绝该精确动作后继续查询同一 v3 job，不把拒绝本身当作终态，也不另开任务。",
+      "files": [],
+      "expectations": ["科研分支与通用互审使用相同审批语义。"]
+    },
+    {
+      "id": 41,
+      "prompt": "codex exec 退出码 0，但它说建好的结果目录不存在。",
+      "expected_output": "处理一次执行环境诊断，不触发互审或科研循环。",
+      "files": [],
+      "expectations": ["不能因涉及科研产出就调度另一个模型。"]
+    },
+    {
+      "id": 42,
+      "prompt": "帮我跑一次仿真并画图。",
+      "expected_output": "按普通任务执行；不触发科研循环或额外互审。",
+      "files": [],
+      "expectations": ["用户没有要求跨模型监督。"]
+    },
+    {
+      "id": 43,
+      "prompt": "帮我审一下论文初稿的英文表达。",
+      "expected_output": "进入论文编辑流程，不触发跨模型互审或科研循环。",
+      "files": [],
+      "expectations": ["审阅措辞不等于要求另一个模型审查。"]
+    },
+    {
+      "id": 44,
+      "prompt": "科研循环已经获批，M2 首轮通过，我复查后没有改主文件，下一步是已批准的 M3。",
+      "expected_output": "重读相关数据和结果并调用 v3_author_checkpoint；author_modified=false 且 conclusion_valid=true、物理判据满足时继续 M3，不等待新的继续口令。",
+      "files": [],
+      "expectations": ["主文件未改不代表数据和脚本无需核对。", "不额外追加 final_check。"]
+    },
+    {
+      "id": 45,
+      "prompt": "科研里程碑的终审仍然 needs_changes，要不要再新建一个 series 反复改到通过？",
+      "expected_output": "保留当前结果和分歧，交给用户决定；只暂停依赖该结论的步骤，不另建 series 绕过终审。",
+      "files": [],
+      "expectations": ["可继续其他独立的已授权工作。"]
+    },
+    {
+      "id": 46,
+      "prompt": "只让 Claude 复核一次这份仿真报告，不需要后续实验。",
+      "expected_output": "只做当前落盘报告的 v3 互审，不启动科研循环或规划后续里程碑。",
+      "files": [],
+      "expectations": ["科研主题本身不触发多轮监督。"]
+    },
+    {
+      "id": 47,
+      "prompt": "今晚后台扫十组参数并汇总结果。",
+      "expected_output": "按普通批量仿真任务执行；后台、多轮或参数扫描本身不触发跨模型科研循环。",
+      "files": [],
+      "expectations": ["不能把未提及其他模型参与的任务升级为跨模型调度。"]
     }
   ]
 }

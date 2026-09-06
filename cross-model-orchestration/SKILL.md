@@ -1,12 +1,10 @@
 ---
 name: cross-model-orchestration
 description: >
-  Codex Desktop/CLI 与 Claude Code VS Code 插件/CLI 的正式计划双向互审流程。正式计划或用户明确要求
-  审查的已落盘交付物默认通过 claude-codex-bridge protocol v3：只传真实 projectRoot 和相对
-  artifactPath，由异族模型在真实项目中使用完整工具读取、审查并可直接修改。作者复查后，只有作者
-  又改过文件才追加一次对端只检查终审。没有可靠落盘路径的旧调用才使用 v2 inline zero-tool 并传正文。
-  普通读取、分析、修改、测试、提交、交付和内部 Todo 不自动调用。质量默认使用
-  claude-opus-5/max 与 gpt-5.6-sol/max；bridge 不换模型或降档。
+  Codex 与 Claude 的正式计划互审、用户明确要求的对端审查或执行，以及跨模型科研循环。
+  科研循环仅在用户明确要求其他模型参与多轮科研监督、仿真或实验流水线、论文流水线、逐里程碑互审时启用。
+  已落盘材料通过 claude-codex-bridge v3 在真实项目中审查并可直接修改，作者修改后只追加一次终审。
+  普通分析、单次或批量仿真、论文润色、计划执行、测试、提交和交付不自动触发；单次互审不扩展成科研循环。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP on the current host. Protocol v3 is the
   normal saved-file route; protocol v2 remains only for unsaved inline content and old callers.
@@ -19,11 +17,14 @@ allowed-tools:
   - Agent
 ---
 
-# Codex / Claude 双向互审
+# Codex / Claude 互审与科研循环
 
 ## 适用范围
 
-触发条件以共享全局规则为准：正式计划互审或用户明确要求对端审查/执行时使用本技能；普通业务不自动进入。
+正式计划的触发条件以共享全局规则为准。用户明确要求对端审查或执行时使用本技能；普通业务不自动进入。
+
+单次互审按下文处理。只有用户明确要求其他模型参与科研监督、流水线或逐里程碑互审时，才读取
+[科研循环](references/research-loop.md)，复用同一套协议；不为普通任务加载科研检查清单。
 
 ## 统一入口和方向
 
@@ -73,11 +74,12 @@ v2 inline 兼容流程；不要为了绕过 v3 路径校验猜路径、扫描“
    缺失或不匹配按失败处理。
 4. 原作者重新读取最新文件和 review 结果，检查对端改动，并可自行修改。完成后用首轮返回的
    `series_id`、`series_version` 和 `latest_job_id` 调用 `v3_author_checkpoint`。
-5. 若 `author_modified=false`，直接把最新文件、结论和未决项交给用户。
+5. 若 `author_modified=false`，不再调用模型，交付最新文件、结论和未决项；科研里程碑按科研分支判断是否继续。
 6. 若 `author_modified=true`，使用与首轮完全相同的项目、文件、任务、验收、约束和模型字段，加上
    checkpoint 返回的 `seriesId/seriesVersion/latestJobId`，再次调用 `v3_review_peer`。这一轮对端
    只检查，不修改。
-7. 终审通过、仍有问题或双方分歧都交给用户；不发第四个阶段，也不替用户裁决。
+7. 终审后交付结论；科研里程碑通过且仍在已有授权内时继续下一步。仍有问题或双方分歧交给用户，
+   不发第四个审查阶段，也不替用户裁决。
 
 终审完成后再次调用 `v3_peer_result` 检查 `conclusion_valid`。若文件哈希后来变化，
 `stale=true`，旧结论失效，不能继续作为用户确认依据。

@@ -4,7 +4,7 @@
 - 状态：`none`
 - 首次统一调查：`2026-07-22`
 - 最近来源登记审核：`2026-07-22`
-- 说明：2026-07-22 调查未找到经确认且已实际吸收的上游 skill。
+- 说明：本地自建；2026-09-07 合并科研循环分支。原科研循环曾建议参考 Auto-claude-code-research-in-sleep 的 auto-review-loop 和 experiment-bridge，未经确认，未登记为正式上游来源。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。

@@ -21,8 +21,8 @@
 ## 三阶段与完整性
 
 - 首轮 peer 可修改，完成后进入 `awaiting_author`。
-- 作者重读并调用 `v3_author_checkpoint`。未修改时直接进入用户门；修改后只发一次 `final_check`。
-- final_check 修改主文件时失败。终审的 pass、needs_changes 和 disagreement 都交给用户。
+- 作者重读并调用 `v3_author_checkpoint`。未修改时不再调用模型；修改后只发一次 `final_check`。
+- final_check 修改主文件时失败。终审后不追加审查阶段；已授权科研里程碑通过后继续，其他情况交付结论或未决项。
 - 每次结果查询都重算主文件 SHA-256；后续变化使 `stale=true`、`conclusion_valid=false`。
 
 ## 稳定性与记录
@@ -40,3 +40,10 @@
 - v1/v2 现有工具、schema、路由和结果保持回归通过。
 - 没有可靠落盘路径时，v2 inline 仍要求 artifactContent、字节数和哈希，并保持 zero-tool。
 - v3 失败不得静默回退 v2，也不得借旧协议绕过高风险审批。
+
+## 科研分支
+
+- 显式科研监督或里程碑互审进入科研分支；普通科研、单次仿真和论文润色不触发，单次互审不扩成循环。
+- 兼容执行任务跟踪原 task job；落盘里程碑复用 v3 job/series、checkpoint、终审和精确审批。
+- 已授权里程碑通过且结论有效后继续；非 pass 只暂停依赖步骤，拒绝单个动作仍继续原 job。
+- 区分 Mock、仿真、离线和实测；核对单位、物理判据、复现资料、独立验证与相关因果反例。

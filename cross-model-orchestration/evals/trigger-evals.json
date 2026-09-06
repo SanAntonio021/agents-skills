@@ -6,5 +6,12 @@
   {"query":"帮我修复这个 TypeScript 编译错误。","should_trigger":false},
   {"query":"运行测试并提交当前改动。","should_trigger":false},
   {"query":"解释 App Server 是什么。","should_trigger":false},
-  {"query":"解释 sandbox mode 是什么。","should_trigger":false}
+  {"query":"解释 sandbox mode 是什么。","should_trigger":false},
+  {"query":"我想让 Codex 晚上跑下一批实验，你来监督并逐里程碑让 Claude 复核。","should_trigger":true},
+  {"query":"启用跨模型科研循环，沿用我已经批准的实验计划。","should_trigger":true},
+  {"query":"只让 Claude 复核一次仿真报告，不启动后续实验。","should_trigger":true},
+  {"query":"帮我跑一次仿真并画图。","should_trigger":false},
+  {"query":"今晚后台扫十组参数并汇总结果。","should_trigger":false},
+  {"query":"帮我审一下论文初稿的英文表达。","should_trigger":false},
+  {"query":"codex exec 退出码 0，但结果目录不存在。","should_trigger":false}
 ]

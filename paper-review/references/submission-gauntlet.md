@@ -4,7 +4,7 @@
 
 先跑预检（便宜、机械），预检过了再跑模拟审稿（贵、实质）。
 
-来源：结构改写自 brycewang-stanford/Awesome-Journal-Skills 的 `submission-readiness`（MIT，详见 journal-selection skill 的 upstream-source.md）。
+来源：结构改写自 brycewang-stanford/Awesome-Journal-Skills 的 `submission-readiness`（MIT，详见 [选刊资料来源](../../journal-submission/references/selection-upstream-source.md)）。
 
 ## 第一层：投稿预检（机械/结构性）
 
@@ -12,7 +12,7 @@
 
 | # | 维度 | PASS 标准 |
 |---|---|---|
-| 1 | 期刊 fit | 问题在目标刊范围内、按其读者定调；贡献类型是该刊奖励的类型（对照 `journal-selection` 画像库该刊红线） |
+| 1 | 期刊 fit | 问题在目标刊范围内、按其读者定调；贡献类型与该刊定位匹配（参考 `journal-submission` 的期刊画像及当前官方说明） |
 | 2 | 贡献清晰度 | 引言里一句话说清相对最近工作的边际贡献 |
 | 3 | 方法/证据链 | 核心论证链完整：该刊期待实测的地方有实测或有正当理由；关键假设有辩护（对照画像库该刊证据链红线） |
 | 4 | 稳健性与推断 | 决定性检查在正文；数值口径统一（如 qSNR 类指标的口径声明）；扫参/择优过程有披露 |
@@ -32,7 +32,7 @@
 
 ### 校准
 
-先取目标刊的口径，不用泛泛直觉：从 `journal-selection` 画像库读该刊的证据链红线、秒拒触发、读者面；顶刊桌面筛选严、要求跨领域吸引力，专业刊更重正确性和增量贡献，按此设定严格度。
+先从 `journal-submission` 的[期刊画像](../../journal-submission/references/journal-profiles.md)读取目标刊的定位、审稿关注点和读者面，并核对当前官方说明。保留画像的草案状态，结合实际稿件设定审查重点。
 
 ### 角色（视角必须不同，禁止三个一样的怀疑者）
 

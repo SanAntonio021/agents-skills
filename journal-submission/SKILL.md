@@ -1,15 +1,21 @@
 ---
 name: journal-submission
-description: 统一处理期刊投稿与出版事务，包括 IEEE、T-MTT、Research Exchange、ScholarOne、Editorial Manager 和 Optica Prism。用于初投稿、作者与声明、返修提交、录用后文件、版权/OA/费用、校样及归档。先读当前页面与官方要求，复用已有准确授权。选刊用 journal-selection；正文与审稿回复精修用 ieee-manuscript-edit；实质审稿用 paper-review；LaTeX 工程用 latex-paper。
+description: 处理期刊选择、改投建议及投稿出版事务。用户问“这篇投哪”“TTST 还是 TMTT”、分区口径或拒稿后投哪时，按需读取选刊资料并给出比较建议；初投稿、作者与声明、返修、录用后文件、版权/OA/费用和校样按当前请求处理。支持 IEEE、T-MTT、Research Exchange、ScholarOne、Editorial Manager 和 Optica Prism。正文精修用 ieee-manuscript-edit，实质审稿用 paper-review，LaTeX 工程用 latex-paper。
 ---
 
-# 通用期刊投稿助手
+# 期刊选择与投稿
 
 ## 定位
 
-负责从投稿准备到正式发表和项目归档的事务流程。先读取项目记录、当前页面和当日官方规则，再决定下一步；不把任何平台的旧页面顺序当成固定清单。
+负责选刊建议，以及从投稿准备到正式发表和项目归档的事务流程。先按当前请求选择分支，再读取相关材料；平台操作以当前页面和当日官方规则为准。
 
 默认用中文解释，保留页面上的英文专业术语。一次只问一个问题。能从页面、决定信或项目记录确定的事实不再询问。
+
+## 任务分流
+
+- **选刊与改投建议**：读取 [选刊流程](references/journal-selection.md)，需要时再读 [期刊画像](references/journal-profiles.md)。只交付当前要求的比较、建议或选刊材料；不进入下方投稿操作流程，不初始化 `submission-state.json`、索取作者声明或启动投稿前审查。
+- **投稿与出版操作**：用户要求准备投稿文件、处理平台页面、返修提交或录用后事项时，继续下方流程。选刊建议本身不构成实际投稿授权。
+- **相邻任务**：正文精修、实质审稿、LaTeX 工程和文献检索分别使用 `ieee-manuscript-edit`、`paper-review`、`latex-paper` 和 `paper-search`。
 
 ## 开始前
 
@@ -147,7 +153,7 @@ description: 统一处理期刊投稿与出版事务，包括 IEEE、T-MTT、Res
 
 ## 职责边界
 
-- 选刊和拒稿后的改投阶梯：`journal-selection`。
+- 选刊和拒稿后的改投建议：[选刊流程](references/journal-selection.md)。
 - 投稿前实质审查和模拟审稿：`paper-review`。
 - 正文、摘要、图注、Cover Letter 和 Response Letter 语言精修：`ieee-manuscript-edit`。
 - LaTeX 模板、编译和按需 source 打包：`latex-paper`。

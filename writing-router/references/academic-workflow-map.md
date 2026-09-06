@@ -20,7 +20,7 @@
 | 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `ieee-manuscript-edit`（已并入） |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
 | 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人、最终 Submit 前审查门 | `paper-review`（submission-gauntlet 模式） |
-| 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-selection` |
+| 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-submission` 的选刊分支 |
 | 通用期刊投稿事务 | 未指定或非 IEEE 的投稿系统、作者、声明、状态、返修、录用后、版权、费用、校样和归档 | `journal-submission` |
 | IEEE 期刊投稿事务 | 明确 IEEE 的投稿系统、作者、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `journal-submission` |
 | 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
@@ -48,9 +48,9 @@
 
 | 上游模块 | 已吸收内容 | 本地承接 |
 |---|---|---|
-| `shared-resources/journal-selection` | 论文画像→五维评估→reach/match/safe 三档→降级阶梯 | 新建 `journal-selection` |
+| `shared-resources/journal-selection` | 论文画像→五维评估→reach/match/safe 三档→降级阶梯 | `journal-submission/references/journal-selection.md` |
 | `shared-resources/submission-readiness`（readiness-checklist + simulated-referee） | 9 维预检 + 多视角模拟审稿 + 意见三重过滤 | `paper-review` 的 submission-gauntlet 模式 |
-| TWC/TCOM/NC 期刊 skill | 证据链红线、秒拒清单、兄弟刊分流 | `journal-selection` 的 journal-profiles.md |
+| TWC/TCOM/NC 期刊 skill | 期刊定位、审稿关注点、兄弟刊分流 | `journal-submission/references/journal-profiles.md` |
 | TAP/TWC 的期刊画像版式 | 定位→红线→秒拒→分流→官方核查 | TTST/TMTT 画像自建模板（`[初稿待校准]`，待与用户投稿经验校准） |
 
 ### 暂缓/不吸收

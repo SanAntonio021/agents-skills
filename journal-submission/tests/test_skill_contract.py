@@ -122,12 +122,32 @@ class SkillContractTests(unittest.TestCase):
         tmtt = next(item for item in self.trigger_cases if item["id"] == "tmtt-revision")
         self.assertEqual(tmtt["expected_route"], "journal-submission")
         self.assertTrue(tmtt["should_trigger"])
+        for item in self.trigger_cases:
+            if item["category"] == "selection":
+                with self.subTest(selection=item["id"]):
+                    self.assertTrue(item["should_trigger"])
+                    self.assertEqual(item["expected_route"], "journal-submission")
+
+    def test_selection_resources_and_license_are_available(self):
+        selection = (ROOT / "references" / "journal-selection.md").read_text(encoding="utf-8")
+        profiles = (ROOT / "references" / "journal-profiles.md").read_text(encoding="utf-8")
+        provenance = (ROOT / "references" / "selection-upstream-source.md").read_text(encoding="utf-8")
+        license_text = (ROOT / "references" / "licenses" / "awesome-journal-skills.txt").read_text(encoding="utf-8")
+        self.assertIn("references/journal-selection.md", self.skill_text)
+        for name in ("reach", "match", "safe", "JCR", "SCIE/ESCI", "scope rather than quality"):
+            self.assertIn(name, selection)
+        for name in ("TTST", "TMTT", "TWC", "TCOM", "Nature Communications", "SCIS", "JSAC"):
+            self.assertIn(name, profiles)
+        self.assertIn("初稿待校准", profiles)
+        self.assertIn("d08b584", provenance)
+        self.assertIn("Copyright (c) 2026 Bryce Wang", license_text)
+        self.assertIn("Permission is hereby granted", license_text)
 
     def test_real_routes_replace_nonexistent_names(self):
         files = [
             SKILLS_ROOT / "writing-router" / "SKILL.md",
             SKILLS_ROOT / "writing-router" / "references" / "academic-workflow-map.md",
-            SKILLS_ROOT / "journal-selection" / "SKILL.md",
+            ROOT / "references" / "journal-selection.md",
             SKILLS_ROOT / "paper-review" / "SKILL.md",
             SKILLS_ROOT / "latex-paper" / "SKILL.md",
             SKILLS_ROOT / "ieee-manuscript-edit" / "SKILL.md",
@@ -147,7 +167,7 @@ class SkillContractTests(unittest.TestCase):
     def test_unified_submission_route_is_documented(self):
         for relative in (
             "writing-router/SKILL.md",
-            "journal-selection/SKILL.md",
+            "journal-submission/SKILL.md",
             "paper-review/SKILL.md",
             "latex-paper/SKILL.md",
             "ieee-manuscript-edit/SKILL.md",

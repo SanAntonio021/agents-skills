@@ -21,7 +21,7 @@ description: >-
 1. 先确认对象是“已有文稿”，不是从零起草。
 2. 先判断用户角色和模式，不能把真实外部审稿当成作者侧模拟审稿：
    - 日常审查（默认）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。
-   - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人，或投稿技能请求 `pre_submission_review` 时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径从 `journal-selection` 画像库取。
+   - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人，或投稿技能请求 `pre_submission_review` 时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。
    - 外部同行评审：用户是受邀审稿人，要评价他人投稿、填写 EDAS/评审表或生成作者可见与 TPC 意见时，读取 [references/external-peer-review.md](references/external-peer-review.md)，按会务表单和评分说明完成真实审稿草稿。
 3. 先按独立根因聚类，再做 `A/B/C` 分类，避免同一问题重复记多次。
 4. 优先识别 `A 类`，不要把单纯措辞偏好包装成严重问题，也不要把同一根因拆成多个新 `A`。
@@ -98,7 +98,7 @@ C 类：风格偏好
 - 工程申报写作：[../project-writing/SKILL.md](../project-writing/SKILL.md)
 - SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
 - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
-- 选刊定位（投稿前把关的期刊口径来源）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
+- 选刊定位（投稿前把关的期刊口径参考）：[../journal-submission/references/journal-selection.md](../journal-submission/references/journal-selection.md)
 - 通用投稿系统、决定信、返修提交和录用后事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 - 明确 IEEE 的投稿事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 

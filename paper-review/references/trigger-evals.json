@@ -91,7 +91,7 @@
     "id": "should-not-trigger-journal-choice",
     "query": "稿子还没定投哪，你先帮我看看这个工作投 TTST 合适还是 TCOM 合适。",
     "should_trigger": false,
-    "expected_primary_skill": "journal-selection",
+    "expected_primary_skill": "journal-submission",
     "expected_not_primary_skill": "paper-review",
     "reason": "期刊未定时是选刊定位问题；投稿前把关以目标刊已定为前提。"
   },

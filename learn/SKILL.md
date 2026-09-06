@@ -14,7 +14,7 @@ disable-model-invocation: true
 
 “学概念”和“学范例”仍是可接受的明确写法，但只是帮助路由的可选提示，不是调用格式要求。
 
-它不替代事实核查、实验论证、指标可行性或重大路线比较；这些任务分别交给 `check`、`rigor-check`、`target-feasibility` 和 `steelman`。
+它不替代事实核查、实验论证或指标可行性；这些任务分别交给 `check`、`rigor-check` 和 `target-feasibility`。
 
 ## 先判断学习对象
 

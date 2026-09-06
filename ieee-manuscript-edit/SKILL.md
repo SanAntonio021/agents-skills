@@ -25,7 +25,7 @@ metadata:
 
 中文论文不得加载英文写作细则，英文论文不得加载中文写作细则。只有用户明确要求同时核对中英文两版时，`language=mixed` 才读取两份，并分别记录范围。
 
-私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`。只有 `paper` 样稿获批时才读；中文任务只看其中中文样稿，英文任务只看英文样稿。公开技能不保存个人论文段落。
+私有样稿按语言读取：中文使用 `D:\BaiduSyncdisk\.agents\writing-samples\ieee-manuscript-edit-zh.md`，英文使用 `D:\BaiduSyncdisk\.agents\writing-samples\ieee-manuscript-edit-en.md`。只读取当前语言、`status: approved` 的正文，候选区不作为写作依据。公开技能不保存个人论文段落。
 
 ## 共同红线
 

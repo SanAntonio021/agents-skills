@@ -6,7 +6,8 @@ description: >
   API key 被旧值覆盖、127.0.0.1:8787/15721 本地代理、Responses SSE 兼容性验证、
   provider 地址误指本地端口形成回环、上游 502/503/524 归因、三层链路对照、
   Sub2API 等兼容网关对 Codex Desktop delegation 首包或 `call_id` 的协议兼容缺陷、
-  CC Switch provider 熔断、官网页面正常但 Codex 请求失败、健康探测与实际模型不一致、
+  CC Switch provider 熔断、WebDAV/坚果云备份恢复失败或转圈后配置未变、
+  官网页面正常但 Codex 请求失败、健康探测与实际模型不一致、
   reasoning/encrypted_content/
   reasoning_tokens 丢失、用户要求改直连/跳过本地代理/停用监视链路且 base_url
   改了又被自动改回本地端口、只停用 CodexCont 但保留 CC Switch，或 Codex 更新后
@@ -98,6 +99,27 @@ Desktop 自己维护的新任务默认值和任务级设置不属于 watcher 接
 - CC Switch 程序：运行中用 `(Get-Process -Name cc-switch -ErrorAction Stop).Path` 读取；未运行时从已确认的快捷方式或安装记录解析，启动前不猜路径。
 
 ## 工作顺序
+
+### CC Switch 云端备份恢复
+
+遇到 WebDAV/坚果云下载转圈、结束后配置未变，或用户询问恢复是否成功时，先核对以下证据：
+
+1. **区分历史错误与本次失败。** 读取当前运行程序的版本、`settings.json` 中的
+   `webdavSync.status` 和本次操作时段的日志。`lastError` 可能是旧记录，`lastSyncAt` 是上次
+   成功时间，不能据此认定刚才失败的原因。必要时通过已配置的 WebDAV 只读获取云端 manifest
+   和 SQL，校验文件大小与摘要，只提取 `PRAGMA user_version`；不执行远端 SQL，不输出凭据或
+   备份正文。manifest 的 `dbCompatVersion` 与 SQL 的 `user_version` 不是同一个版本号。
+2. **区分下载等待与导入失败。** 转圈时长不能直接证明网络故障。核对当前版本的下载顺序、
+   文件大小和超时设置，分别判断网络传输、校验与本地导入。2026-09-06 的案例中，3.19.2
+   先下载数据库和约 64 MB 的技能包，再导入数据库；云端 `user_version=18` 超出该应用支持的
+   16，升级到支持 18 的 3.20.1 后恢复成功。约两分钟是否都用于下载、界面为何没有显示错误，
+   当时没有完整证据，不能写成已确认机制；后续版本也不能照搬这组版本号或等待时间。
+3. **分项确认恢复结果。** 结合本次同步记录、数据库版本和预期配置变化确认快照是否应用，
+   再检查 `post-download sync warning` 等后续同步结果。数据库恢复成功后，提示词仍可能因
+   `AGENTS.md` 是符号链接而原子替换失败（Windows `os error 1464`）；应报告“备份已恢复，
+   对应提示词未写入”，并按规则维护流程处理实际目标，不能为消除告警直接覆盖链接。
+   保存的 `lastLocalManifestHash` 与 `lastRemoteManifestHash` 相等只反映那次同步记录，
+   不证明当前云端、数据库、技能和提示词仍全部一致，也不代替 Codex 请求链路验收。
 
 ### 0. 先确认配置所有权、源码、任务和运行态
 

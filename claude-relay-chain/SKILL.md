@@ -25,10 +25,10 @@ Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 
 
 ## 强制边界
 
-1. 默认只读。先检查，再给判断和修改方案。
+1. 先检查当前证据；诊断请求覆盖必要的只读检查和本地备份。按已有准确授权推进修改。
 2. 修改方案必须写清：修改对象、备份位置、改动内容、是否需要重启、验证方法和回滚方法。
-3. 用户明确同意前，不备份、不修改、不切换 provider、不重启、不运行带凭据或可能计费的验证请求。
-4. 用户批准的对象与方案发生变化时，重新说明差异并再次确认。
+3. 本地备份和受支持的非计费只读检查无需另问。配置修改、provider 切换、重启或收费验证按当前准确授权执行，缺少授权时只暂停该动作。
+4. 实质目标、范围或风险改变时重新判断授权；同范围重试和工具实现调整不自动要求再次确认。
 5. 不输出 API key、OAuth token、gateway token、完整认证 JSON、带凭据的命令行或完整响应正文。
 6. 不直接修改 `%USERPROFILE%\.cc-switch\skills`、`.claude\skills` 或 `.codex\skills` 中的运行时副本。
 
@@ -119,7 +119,7 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 出现以下任一现象时必须执行本节：普通聊天或 Cowork 能回复，但内置 Code 没有模型；配置页显示 `Invalid: Model list`；模型选择器为空；1M context 选项消失。
 
 1. 先记录当前 Claude Desktop、内置 Code 与 CC Switch 版本，以及当前 Desktop provider 的 `direct`/`proxy`、applied base URL、`inferenceModels` 和 route 数量。用户描述的模式若与实时状态不同，以实时结构化证据为准并明确纠正前提。
-2. 分开检查根 `/v1/models` 与本地路由 `/claude-desktop/v1/models`。未获 HTTP 批准时，只检查 profile、二进制路由、日志和既有响应记录，并把实时接口状态写为 `未验证`。
+2. 分开检查根 `/v1/models` 与本地路由 `/claude-desktop/v1/models`。诊断范围内可执行受支持的非计费只读请求，不泄露凭据；无法验证的接口如实标为 `未验证`。
 3. 明确核对 [CC Switch #4540](https://github.com/farion1231/cc-switch/issues/4540) 与 [#4415](https://github.com/farion1231/cc-switch/issues/4415)：
    - `#4540`：关注 namespace 和返回结构不一致，例如根路径返回 `{"models":[]}`，而 Desktop 需要可识别的模型数组或正确 `data` 结构。
    - `#4415`：关注从模型 route 合成列表失败、空列表，以及 `supports1m` 没有正确反映到 1M model variant 或 `context_window`。
@@ -128,7 +128,7 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 
 更完整的通过标准和当前 issue 状态见 [references/verification-and-known-issues.md](references/verification-and-known-issues.md)。
 
-### 4. 给出修改方案并停在确认门
+### 4. 准备准确改动并按已有授权执行
 
 方案用以下格式：
 

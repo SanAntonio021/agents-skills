@@ -77,6 +77,30 @@ def _ink_margins_from_rgb(rgb: np.ndarray, dpi: float) -> dict[str, float]:
     }
 
 
+
+def test_agent_visual_inspection_requires_timestamp_and_all_reasons():
+    fig, ax, resolution = _simple_figure()
+    style.repair_single_column_figure(fig, [ax], font_resolution=resolution)
+    profile = _confirmed_profile()
+    approval = profile["visual_review_approval"]
+    approval["approved_by"] = "agent"
+
+    def check():
+        return style.preflight_single_column_figure(
+            fig, [ax], mode="formal", profile=profile, font_resolution=resolution
+        )
+
+    report = check()
+    assert not report["errors"]
+    assert report["metrics"]["visual_review_approval"]["approved_by"] == "agent"
+
+    approval["approved_at"] = ""
+    assert any("actual visual inspection" in error for error in check()["errors"])
+    approval["approved_at"] = "2026-08-14T12:05:00+08:00"
+    approval["reasons"] = []
+    assert any("final_size_preview" in error for error in check()["errors"])
+
+
 def _render_vector_at_600(path: Path) -> np.ndarray:
     fitz = pytest.importorskip("fitz")
     document = (
@@ -348,11 +372,11 @@ def test_palette_routing_and_freeze(tmp_path):
     assert style.propose_figure_color_map(["delta_field"], data_kind="diverging", center=0.0)["center"] == 0.0
 
     profile_path = tmp_path / "plot_profile.json"
-    frozen = style.freeze_figure_color_map(profile_path, proposal, confirmed_at="2026-08-14T12:00:00+08:00")
+    frozen = style.freeze_figure_color_map(profile_path, proposal, confirmed_by="user", confirmed_at="2026-08-14T12:00:00+08:00")
     assert frozen["figure_color_map"]["palette_status"] == "confirmed"
     changed = style.propose_figure_color_map(["different_a", "different_b"])
     with pytest.raises(PermissionError, match="frozen"):
-        style.freeze_figure_color_map(profile_path, changed)
+        style.freeze_figure_color_map(profile_path, changed, confirmed_by="user")
 
 
 def test_draft_and_formal_export_gates_and_exact_geometry(tmp_path):
@@ -364,7 +388,7 @@ def test_draft_and_formal_export_gates_and_exact_geometry(tmp_path):
     assert draft_manifest["preflight"]["visual_review_required"] == ["final_size_preview"]
 
     formal_fig, _formal_ax, _resolution = _simple_figure()
-    with pytest.raises(style.FigurePreflightError, match="user-confirmed"):
+    with pytest.raises(style.FigurePreflightError, match="recorded, timestamped"):
         style.export_ieee_single_column(formal_fig, "formal", tmp_path, mode="formal")
     assert not (tmp_path / "formal.pdf").exists()
 
@@ -512,3 +536,15 @@ def test_globecom_audit_reports_failed_vector_font_validation(tmp_path, monkeypa
         f"{stem}.svg failed font validation: DejaVu Serif"
         for stem in globecom_audit.FIGURES.values()
     ]
+
+
+def test_agent_palette_requires_truthful_authorship_and_reason(tmp_path):
+    proposal = style.propose_figure_color_map(["observed", "calculated"])
+    profile_path = tmp_path / "profile.json"
+    with pytest.raises(PermissionError):
+        style.freeze_figure_color_map(profile_path, proposal, confirmed_by="agent")
+    profile = style.freeze_figure_color_map(profile_path, proposal, confirmed_by="agent", confirmation_reason="Use a consistent accessible default for these two supplied data roles")
+    assert profile["figure_color_map"]["confirmed_by"] == "agent"
+    assert style._palette_confirmation_valid(profile)
+    profile["figure_color_map"]["confirmation_reason"] = ""
+    assert not style._palette_confirmation_valid(profile)

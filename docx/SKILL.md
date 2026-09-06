@@ -35,95 +35,48 @@ final images, layout PDF, print/page QA, or publication graphics. OfficeCLI PDF 
 because the pinned installation has no exporter plugin; the bridge never attaches to, quits, or
 terminates an existing Word process.
 
-## Acceptance layers
+## Content and layout checks
 
-Keep these records separate:
+For Markdown input, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
+Use the current source, specified template and requested output. Do not rewrite reviewed prose or
+repeat a general writing pass. Existing `loaded_refs` records describe only references actually read.
+用户要求导出即复用本轮授权；格式阶段不自行改写正文。
 
-- `STATIC_PASS`: OOXML/package, style, content and source-hash checks.
-- `LO_RENDER_PASS`: the required LibreOffice compatibility render and visual inspection.
-- `NATIVE_OPEN_PASS`: the independent gate opened an isolated copy with Word and calculated pages.
-- `NATIVE_RENDER_PASS`: Word exported a new PDF and Poppler rasterized the expected page count.
+Check the OOXML/package, styles, content, figure references and unchanged source. Render with one
+renderer suited to the target application and inspect every page yourself. Use the existing
+[Word checklist](references/word-acceptance-checklist.md) for fonts, paragraphs, tables,
+headers/footers and pagination. No mandatory second renderer, approved raster baseline, fixed
+confirmation phrase, delivery state machine or user per-page signature is required.
 
-OfficeCLI `validate` passing proves only `STATIC_PASS`; it does **not** prove that Word can open the
-file. A failed OfficeCLI native probe is reported as `officecli_native_diagnostic_failed` with the
-original stderr and exit code, never as `APP_UNAVAILABLE`.
-
-For native evidence, run the gate explicitly for the current task:
+Prefer the guarded Word gate when Word is the target:
 
 ```powershell
-python <skill-root>\scripts\office_native_gate.py check input.docx `
-  --format docx --json --allow-office-com
 python <skill-root>\scripts\office_native_gate.py check input.docx `
   --format docx --json --allow-office-com --require-render
 ```
 
-The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or
-`UNSAFE_PROCESS`, and records the actual phase and exception. It refuses to run without
-`--allow-office-com`, refuses an existing `WINWORD.EXE`, uses `DispatchEx` plus an isolated copy,
-checks the source SHA-256 before and after, opens read-only, never saves the source, and quits only
-a task-created instance whose document collection is empty. With `--require-render`, the positive
-page counts reported by Word, the exported PDF, and the rasterized PNG files must match exactly;
-missing independent evidence is `UNVERIFIED` and a mismatch is `FAIL_RENDER`. A missing task PID,
-unproven Office exit, or temporary-workspace cleanup uncertainty also downgrades the run to
-`UNVERIFIED`; it cannot be released. For a DOCX release, require `STATIC_PASS`,
-`LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and `NATIVE_RENDER_PASS`.
+Pass `--allow-office-com` under the shared standing authorization only when the existing guard can
+prove isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
+copy, checks the source hash, and quits only its own empty instance. Keep all these protections.
+The Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
+Never attach to or end a user's instance. If isolation is unavailable, continue with suitable
+file-level checks or `libreoffice-runner`; ask only if the remaining native action requires it.
 
-The authoritative document-level checklist is [Word acceptance checklist](references/word-acceptance-checklist.md).
-Every formal acceptance report and manual review includes seven explicit items: fonts and fallback,
-paragraph formatting, table formatting, header/footer geometry, pagination, Word-native opening, and
-Word-native rendering. Each item records its owner layer, comparison baseline, result, severity, and
-evidence path. Missing or failed items block release; warnings must be shown before the user confirms
-Word as the final version. For fonts, paragraphs, tables, and headers/footers, apply the checklist's
-mandatory subchecks rather than relying on a visual spot-check: audit direct formatting, table-cell
-paragraph indents, horizontal and vertical alignment, font size and color, and per-section usable
-header width. A `PASS` requires the checklist's machine evidence and linked rendered-page evidence.
+Record actual evidence: static validation does not establish rendering; LibreOffice rendering does
+not establish Word-native behavior. A failed OfficeCLI native diagnostic does not establish that
+Word is absent. If the user specifically requires native validation, report any unfinished item
+as unverified while delivering the completed work.
 
-## Markdown-first formal delivery
+Default to a new output and protect the current source and prior deliverables. Figure-heavy
+documents use [figure reference checks](references/figure-integration-gate.md) and, when a project
+manifest already exists, `scripts/validate_figure_references.py`.
 
-Markdown is the content source of truth. Content skills must finish review and
-freeze the Markdown before a formal DOCX run. Read the shared handoff contract
-at [Markdown to DOCX contract](../writing-router/references/markdown-docx-contract.md)
-and validate its machine-readable manifest with:
+For explicitly requested Office MCP trials only, see [Office MCP trial](references/office-mcp-trial.md).
+Trials do not change production dependencies or substitute for actual document checks.
 
-```powershell
-python scripts/markdown_docx_delivery.py validate-manifest `
-  --manifest deliverables/manifests/<artifact_id>.r<revision>.manifest.json `
-  --project-root .
-```
-
-The helper blocks drafts, open items, missing current-task confirmation, source
-or template hash drift, unsafe paths, malformed packages, and output collisions.
-Use `--preview` only for an explicitly labelled preview; it can never produce a
-formal delivered record. Existing Pandoc and template scripts remain the
-formatting implementation, but they must write a new output path selected by
-the manifest and must not overwrite source Markdown, the original DOCX, or an
-existing deliverable.
-
-After native rendering produces the PDF/PNG evidence, stop at the same run and
-wait for a human per-page checklist. Submit it only through:
-
-```powershell
-python scripts/markdown_docx_delivery.py review-manual submit `
-  --manifest deliverables/manifests/<artifact_id>.r<revision>.manifest.json `
-  --checklist evidence/manual-inspection/<artifact_id>.r<revision>.checklist.json `
-  --project-root .
-```
-
-The four acceptance layers stay independent. OfficeCLI HTML/native output and
-any Office MCP are diagnostic or trial evidence only; they cannot replace
-LibreOffice rendering, Word native open, Word native rendering, an approved
-raster baseline, or human inspection.
-
-For a public Office MCP A/B trial, read [Office MCP trial](references/office-mcp-trial.md).
-Do not install or enable a trial candidate as a production dependency.
-
-For an already-produced, isolated three-round trial only, use the offline comparator described in
-that reference. It validates the lock and package-level determinism; it does not acquire a
-candidate, install dependencies, start MCP/Office, or replace the four formal acceptance layers.
-
-Continue to use the existing OOXML/template and guarded Word-COM workflows for tracked changes,
-comments, style-identity preservation, template installation, equations, and other operations
-where package-level fidelity is the acceptance criterion. OfficeCLI does not replace those gates.
+Existing OOXML/template and guarded Word-COM tools still handle tracked changes, comments,
+style identity, equations and template application. A failed pinned OfficeCLI check disables that
+tool; use a trustworthy available file library or existing tool instead of blocking document work.
 
 | Task | Approach |
 |---|---|
@@ -165,7 +118,7 @@ On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It acce
 conversion command above and delegates all LibreOffice launch, queue, profile, and process management
 to the public `libreoffice-runner`; do not call `soffice` directly.
 
-Formal `LO_RENDER_PASS` and `NATIVE_RENDER_PASS` use the same pinned Poppler
+For comparable evidence, Word and LibreOffice renders use the existing Poppler
 command (`pdftoppm -r 150 -png -aa yes -aaVector yes`) and PNG output. Do not
 switch to JPEG, a different DPI, or default anti-aliasing for release evidence.
 `pdftoppm` zero-pads page numbers to the width of the page count (`page-01.png`…`page-12.png`).
@@ -194,7 +147,7 @@ governed default when the user requests a Word export but leaves the format sour
 Template commands are relative to this skill directory:
 
 ```powershell
-# Inspect or extract a template/profile after current-task Word COM approval.
+# Inspect or extract a template/profile after standing Office authorization with proven isolation.
 python scripts/template/word_template_formatter.py extract `
   --template C:\path\template.docx `
   --profile C:\path\template.style-profile.json `

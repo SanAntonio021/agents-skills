@@ -222,8 +222,8 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
 
    The command creates `<topic>_YYYYMMDD_vNN` and refuses to reuse an existing directory. Keep the
    manifest, PPTX, PDF, PNGs, and QA evidence inside that directory. Do not append `fixed`, `final2`,
-   or similar parallel names after rendering has started. For high-design work, append
-   `--require-design-acceptance` so technical gates cannot substitute for the user's visual verdict.
+   or similar parallel names after rendering has started. Only when the user explicitly requests a personal visual sign-off, append
+   `--require-design-acceptance`. Otherwise inspect rendered pages yourself and deliver the checked result.
 
 2. **Snapshot the external output root consistently.** After the fresh bundle exists, create a before
    snapshot using the same canonical root and exclusion for the after snapshot:
@@ -251,8 +251,8 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    count, or parent-evidence difference returns `FULL_VISUAL_QA_REQUIRED` and requires every page to be
    inspected. A partial or unverified native Office gate never becomes a complete release claim.
 
-4. **Record visual acceptance and finalize.** For a high-design release, show the exact rendered
-   candidate to the user first. Only after their explicit verdict, bind it to the PPTX and PNG bytes:
+4. **Inspect and finalize.** Agent visual inspection is the default completion check. Only for an
+   explicitly requested user sign-off, record their actual verdict against the PPTX and PNG bytes:
 
    ```powershell
    python scripts/release_bundle.py record-design-acceptance --manifest <release-dir>/release_manifest.json `
@@ -498,3 +498,6 @@ ls -1 "$PWD"/slide-*.jpg
 ## Dependencies
 
 `pptxgenjs` (npm, preinstalled — install only if `require('pptxgenjs')` fails) · `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml`, `python-pptx` (the runtime preflight checks the imports used by validation) · LibreOffice (`soffice`, auto-configured for sandboxed environments via `scripts/office/soffice.py`) · `pdftoppm` (Poppler)
+
+
+Office 隔离与已有授权遵循共享规则。现有守护程序能证明隔离时，可由智能体传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

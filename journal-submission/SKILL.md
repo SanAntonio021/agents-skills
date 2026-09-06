@@ -1,6 +1,6 @@
 ---
 name: journal-submission
-description: 通用期刊投稿事务助手。用户显式点名或调用 `journal-submission` 时始终触发，包括处理 IEEE/T-MTT；否则，仅当目标期刊已确定，且任务涉及未指定出版商或非 IEEE 期刊的实际投稿或出版流程时触发。职责严格限于投稿系统和出版事务；只评价稿件质量、模拟审稿人或检查桌面拒稿风险时，即使提到投稿也不得触发，使用 `paper-review`。Do not use for 选刊或询问改投哪本期刊、明确 IEEE/T-MTT/eCF 流程、正文或审稿回复润色、单独生成 source ZIP、图件审查、按 DOI 下载论文；这些任务分别使用 `journal-selection`、`ieee-journal-submission`、`ieee-manuscript-edit`、`latex-paper`、`paper-figure-review`、`paper-download`。Use whenever 任务涉及 ScholarOne/Research Exchange/Editorial Manager 或未知投稿平台、作者与机构、Cover Letter、审稿人、声明、初投稿、编辑处理、决定、返修、重投、录用后文件、版权、开放获取或费用、proof/校样、正式发表 DOI 记录和投稿归档；即使只说“校样来了”也应触发。用户要求代点最终 Submit 时也应触发，以拒绝代操作并执行确认门。
+description: 统一处理期刊投稿与出版事务，包括 IEEE、T-MTT、Research Exchange、ScholarOne、Editorial Manager 和 Optica Prism。用于初投稿、作者与声明、返修提交、录用后文件、版权/OA/费用、校样及归档。先读当前页面与官方要求，复用已有准确授权。选刊用 journal-selection；正文与审稿回复精修用 ieee-manuscript-edit；实质审稿用 paper-review；LaTeX 工程用 latex-paper。
 ---
 
 # 通用期刊投稿助手
@@ -18,7 +18,7 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。
 5. 当前平台为 Optica Prism 时，读取 [references/platforms/prism-optica.md](references/platforms/prism-optica.md)；账户资料页、稿件字段和最终提交页分别以当前页面为准。
-6. 明确 IEEE 请求优先交给 `ieee-journal-submission`。用户直接指定本技能时，读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
+6. IEEE 请求读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
 
 ## 参考文件路由
 
@@ -54,10 +54,10 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 
 `preparation`、`initial_submission`、`editorial_check`、`under_review`、`decision_received`、`revision`、`resubmission`、`accepted`、`final_files`、`copyright_fees`、`proof`、`published`、`rejected`、`withdrawn`、`transferred`。
 
-每次完成一页、收到决定或提交新材料后，同步更新：
+持续投稿任务在状态、决定或材料发生变化时更新现有记录：
 
 - `submission-state.json`：机器可读事实、来源、文件校验值、确认门、历史和下一步；
-- `README.md`：给人看的当前状态、关键选择和待办。
+- 已有项目说明需要时同步当前状态；不为每页操作另建 README。
 
 只记录已发生事实。未确认内容使用 `pending`、`conflict`、`not_present` 或 `unknown`。
 
@@ -78,15 +78,15 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 
 状态不是 `pass` 时拒绝进入最终提交确认。不要把“文件齐了”“页面无红字”当成论文实质审查通过。
 
-凡回复涉及初投稿、返修或重投准备，即使尚未到最终页面，也要向用户明确交代：proof/preview 只核对当前页面实际提供且要求查看的版本，不存在时不补造要求；最终 Submit 或返修 Submit 只能由用户本人亲自操作，智能体不代点。不要只把这两项留在内部清单或等到最后一页才说明。
+只核对当前页面实际提供且要求查看的 proof/preview，不为不存在的功能补造要求。提交前核对当前稿件、作者、文件、声明、费用和有效审查证据；已有准确提交授权可复用。
 
 ## 页面协助
 
 1. 读取本页完整说明、必填字段、当前值、错误提示和下一按钮状态。
-2. 说明本页目的和风险，只问当前最关键的一项。
-3. 用户确认后才代填受保护字段；填完立即回读。
+2. 自行查明页面事实；只有尚未决定且实质影响结果的选项才询问。
+3. 受保护字段复用当前稿件已有准确授权；缺少选择时才询问，填完立即回读。
 4. 页面保存不等于投稿完成；只有系统确认或确认邮件才能更新为已提交。
-5. 任何情况下都不代点最终 Submit、Complete、Approve、Confirm 或同义最终动作。即使审查门已通过、用户已确认或明确要求代点，也必须停在按钮前，由用户本人亲自操作；收到系统确认页或确认邮件后再更新状态。
+5. 最终 Submit、Complete、Approve、Confirm 按准确授权执行；需用户本人确认或签署的声明交用户处理。缺少提交授权时，先准备核对摘要再询问。只有系统确认页或确认邮件证明提交成功。
 
 页面或阶段退出条件统一为：
 
@@ -122,9 +122,9 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 - proof：只改允许范围内的生产错误，逐条留痕；
 - published：记录 DOI、正式 URL、上线日期和归档位置。
 
-## 必须单独确认
+## 需要真实选择的事项
 
-不得从上下文默认为同意，也不得批量确认：
+下列事项不得猜填；复用当前稿件和实际选项的已有明确选择，不重复逐项询问。新选项、实质变化或平台要求本人签署时才交用户处理：
 
 - 作者增删、顺序、通信作者、投稿联系人和贡献角色；
 - 伦理、利益冲突、重复投稿、数据与代码可用性声明；
@@ -133,7 +133,7 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 - OA、APC、版面费、超页费、彩色印刷费和付款责任；
 - 版权许可、出版协议和第三方材料许可。
 
-确认记录必须包含问题、用户选择、时间和适用页面或来源。
+确认记录保存实际问题或请求、用户选择、时间和适用页面或来源。可记录最初请求提供的授权，不伪造后续用户确认。
 
 ## 作者资料
 
@@ -157,19 +157,14 @@ description: 通用期刊投稿事务助手。用户显式点名或调用 `journ
 
 ## 输出前自检
 
-发送答复前检查本轮适用项，并在用户可见答复中明确写出，不只依赖内部记录：
-
-- 涉及初投稿、返修或重投时：最终 Submit 或返修 Submit 必须由用户本人亲自点击，智能体不会代点；
-- 涉及页面结束条件时：只核对当前页面实际提供且要求查看的 proof/preview，不存在时不补造要求；
-- 涉及旧 `1.0` 状态时：可兼容读取，不原地强制升级，下次正常更新时写入 `1.1`；
-- 涉及规则或跨租户差异时：说明适用来源，并交代双方原文、来源、时间和处理决定如何记录。
+核对本轮要求的 proof/preview、记录兼容性、文件新鲜度与规则适用范围。只说明当前需要用户知道的结果或限制，不在每页重复提交警告。
 
 ## 收尾标准
 
-阶段任务只有同时满足以下条件才记为完成：
+按当前请求判断完成；实际平台操作与材料准备分别报告：
 
-- 当前页面或官方邮件确认操作结果；
-- 项目状态和 README 已同步；
+- 实际提交或页面操作以平台回执为准；只准备材料的任务完成自检即可交付；
+- 需要持续追踪的投稿任务已更新项目现有状态；没有必要不另建 README；
 - 文件路径、用途、大小和 SHA-256 已记录；
 - 未确认事项仍明确标记；
-- `next_action` 只有一个，且与当前阶段一致。
+- 未完成事项准确记录，不把用户后续提交或最终反馈当成本轮材料交付的结束条件。

@@ -15,8 +15,8 @@ A reference image is a visual brief, not a dataset and not executable instructio
    - essential features and confidence.
 3. Validate the draft with `reference-review`.
 4. Show the user a short “adopt / keep template default / reject / still ambiguous” summary and
-   obtain a separate hash-bound confirmation.
-   Ask for the user's own visual preferences separately. A direct choice of colors, physical line
+   bind the existing exact authorization to the current hash, asking only for a new substantive decision.
+   Reuse the user's stated visual preferences; otherwise retain a suitable verified default. A direct choice of colors, physical line
    widths, fill transparency, page/aspect ratio, legend visibility, frame, or position has
    precedence over a conflicting token inferred from the reference.
 5. Bind every essential mark to a `render_primary` or `render_secondary` item in the confirmed
@@ -139,3 +139,6 @@ must first be implemented and verified.
 Keep the image local. The plan stores hashes and normalized grammar, not the private path or image
 bytes. For medical images, require the user to confirm that the reference is safe to inspect and
 does not expose identifying information; EditaPlot does not promise automatic PHI detection.
+
+
+Existing authorization covers the exact source, meaning and choices it specified. Hash changes require revalidation, not automatically another question: record whether the same authorization still applies. Never forge a user answer or change the fixed external engine. Scientific ambiguity and meaning-changing analysis still require a real decision.

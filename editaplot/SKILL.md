@@ -70,7 +70,7 @@ rendering, exporting, and readback.
    and the smallest scientific decision still required. Do not dump an
    `inspect → recommend → understand → plan` pipeline or raw JSON unless they ask for technical
    detail.
-9. Ask the user to confirm both a one-sentence scientific purpose and the concise element checklist.
+9. Reuse the scientific purpose and element choices already explicit in the request. Ask only for unresolved scientific choices.
    Freeze the exact `proposal_hash`, approved derived-item IDs, and resolved ambiguity choices in
    `--semantic-confirmation-json`. Never reuse a confirmation after the source, mapping, purpose, or
    proposal hash changes. When confidence is low, candidate margins are small, roles or units are
@@ -79,21 +79,18 @@ rendering, exporting, and readback.
 10. If the user supplies a reference figure, first run `reference-inspect`. Codex may then describe
    only its panel/mark/encoding/layout/style grammar in the strict ReferenceFigureSpec JSON and run
    `reference-review`; the runtime performs no OCR or model inference. Show the adopted and rejected
-   features, bind every essential mark to confirmed renderable user data, and obtain a separate
-   hash-bound confirmation. Never copy reference values, labels, fits, phase assignments, author
+   features, bind every essential mark to confirmed renderable user data, and record the existing
+   exact request as authorization when it covers the selected features; ask only for new decisions. Never copy reference values, labels, fits, phase assignments, author
    text, logos, watermarks, or the bitmap into the Origin project. Prefer verified
    `template_adaptation`; keep `controlled_composition` blocked until that exact composition has
    passed the full Origin evidence gate. A reference cannot add missing evidence or change the
    confirmed scientific element list.
-   Treat style inferred from the reference as a suggestion, not as the user's instruction. Ask
-   the user to choose one of three modes: keep the verified template default; use a confirmed,
-   allow-listed approximation suggested by the reference; or provide exact custom values. For the
-   exact mode, ask separately for colors, physical line width, fill transparency, page size, and
-   legend visibility, frame, or position. An explicit user choice has precedence over a conflicting
-   reference token. Freeze each reference suggestion as `applied`,
-   `retained_template_default`, or `rejected`; never claim a request was applied unless the selected
-   template has the same verified preview/Origin route and the required Origin object readback.
-11. When color is user-selectable, run `editaplot.cmd palettes`, show
+   Reuse explicit palette, reference and style choices. With no preference, use the verified template
+   default; ask only for a material visual or scientific tradeoff. Record the actual request in the
+   existing confirmation interface, never invent a later user answer. Mark supported requests as
+   `applied`, `retained_template_default` or `rejected` and verify object readback.
+
+11. When the user needs palette options, run `editaplot.cmd palettes`, show
    `assets/palettes/palette-selector-public.zh-CN.png`, and recommend no more than two compatible
    `palette_id` values. Read `references/palettes.md` before freezing one.
 12. Internally freeze the confirmed choice with `editaplot.cmd plan`; never hand-edit a plan or write
@@ -136,9 +133,9 @@ rendering, exporting, and readback.
     a shared global output folder. Use `--output-dir` only when the user explicitly requests another
     location.
 16. Run `editaplot.cmd verify <output-directory>` against that source-adjacent folder and perform
-    human visual QA. If smoke or render fails, a Python preview or standalone PNG/PDF/SVG is only
+    agent visual QA. If smoke or render fails, a Python preview or standalone PNG/PDF/SVG is only
     a preview and must not be presented as completed Origin work. Formal success requires the
-    editable OPJU, PNG, PDF, TIF, object readback, and human visual QA together.
+    editable OPJU, PNG, PDF, TIF, object readback, and agent visual QA together.
 
 Before any render, read `references/origin-safety.md`, `references/figure-contract.md`, and
 `references/verification.md`. For a new table or chart decision, read
@@ -172,7 +169,7 @@ figures remain in PPT/SVG workflows.
 5. Return `review-report.json` and the export paths. The report records snapshot and baseline
    integrity, Origin version and instance ownership, Graph Page/object inventory, and export hashes.
    Export success means only “the snapshot can be read back and viewed”; inspect PNG/TIF for
-   scientific meaning and visual quality and keep `human_visual_qa.status=pending` until inspected.
+   scientific meaning and visual quality and keep `human_visual_qa.status=pending` until the agent actually inspects the images.
    V1 never writes changes back into the user's OPJU.
 
 ## Keep scientific decisions with the user
@@ -261,7 +258,7 @@ technical paths after the concise outcome.
 - `references/semantic-understanding.md`: per-column use, element checklist, derived-data lineage,
   and the hash-bound confirmation gate.
 - `references/reference-figures.md`: safe reference grammar, bindings, adaptation limits, and
-  separate confirmation.
+  recording of the existing exact authorization.
 - `references/figure-contract.md`: evidence logic, visual hierarchy, typography, and color rules.
 - `references/origin-safety.md`: local Automation and verified-API guardrails.
 - `references/verification.md`: mandatory artifacts, readback, and visual QA.

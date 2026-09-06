@@ -120,8 +120,8 @@ class SkillContractTests(unittest.TestCase):
             }.issubset(categories)
         )
         tmtt = next(item for item in self.trigger_cases if item["id"] == "tmtt-revision")
-        self.assertEqual(tmtt["expected_route"], "ieee-journal-submission")
-        self.assertFalse(tmtt["should_trigger"])
+        self.assertEqual(tmtt["expected_route"], "journal-submission")
+        self.assertTrue(tmtt["should_trigger"])
 
     def test_real_routes_replace_nonexistent_names(self):
         files = [
@@ -138,14 +138,13 @@ class SkillContractTests(unittest.TestCase):
         for route in (
             "ask-first",
             "journal-submission",
-            "ieee-journal-submission",
             "paper-review",
             "ieee-manuscript-edit",
             "latex-paper",
         ):
             self.assertIn(route, combined)
 
-    def test_generic_and_ieee_routes_are_both_documented(self):
+    def test_unified_submission_route_is_documented(self):
         for relative in (
             "writing-router/SKILL.md",
             "journal-selection/SKILL.md",
@@ -156,7 +155,6 @@ class SkillContractTests(unittest.TestCase):
             with self.subTest(skill=relative):
                 text = (SKILLS_ROOT / relative).read_text(encoding="utf-8")
                 self.assertIn("journal-submission", text)
-                self.assertIn("ieee-journal-submission", text)
 
     def test_review_gate_and_manual_actions_are_explicit(self):
         safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
@@ -166,10 +164,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("checked_at", contracts)
         self.assertIn("evidence", contracts)
         self.assertIn("可定位的 `evidence`", self.skill_text)
-        self.assertIn("任何情况下都不代点", self.skill_text)
-        self.assertIn("不要只把这两项留在内部清单", self.skill_text)
+        self.assertIn("已有准确提交授权可复用", self.skill_text)
         self.assertIn("## 输出前自检", self.skill_text)
-        self.assertIn("最终动作始终由用户亲自完成", template)
+        self.assertIn("本人签署事项", template)
         for phrase in ("最终 Submit", "作者增删", "OA、APC", "版权许可"):
             self.assertIn(phrase, safety)
 
@@ -186,15 +183,10 @@ class SkillContractTests(unittest.TestCase):
     def test_author_library_path_is_preserved(self):
         self.assertIn("local-assets/ieee-journal-submission/authors.json", self.skill_text)
 
-    def test_ieee_specialized_entry_remains_independent(self):
-        ieee_skill = (SKILLS_ROOT / "ieee-journal-submission" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("IEEE 期刊投稿全生命周期助手", ieee_skill)
-        self.assertTrue((SKILLS_ROOT / "ieee-journal-submission" / "scripts").is_dir())
-        self.assertTrue(
-            (SKILLS_ROOT / "ieee-journal-submission" / "references" / "tmtt-profile.md").exists()
-        )
+    def test_ieee_extension_is_available_in_unified_entry(self):
+        self.assertIn("IEEE", self.skill_text)
+        for relative in ("references/publishers/ieee.md", "references/journals/tmtt.md", "references/platforms/research-exchange.md"):
+            self.assertTrue((ROOT / relative).is_file())
 
 
 if __name__ == "__main__":

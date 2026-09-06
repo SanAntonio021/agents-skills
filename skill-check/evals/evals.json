@@ -315,7 +315,7 @@
     },
     {
       "id": 26,
-      "prompt": "我已经自己在 CC Switch 里卸载并从 main 分支重装了 `markdown-docx-workflow`，也重新启用了 Claude 和 Codex。我不允许你控制鼠标、打开技能页面或再点一次更新。现在怎样在后台确认它真的装对了？",
+      "prompt": "我已经自己在 CC Switch 里卸载并从 main 分支重装了 `docx`，也重新启用了 Claude 和 Codex。我不允许你控制鼠标、打开技能页面或再点一次更新。现在怎样在后台确认它真的装对了？",
       "expected_output": "把用户手动完成且拒绝 UI 自动化识别为无界面验收分流，不再运行会进入界面的完整同步 helper。固定同一远端提交、完整 Skill 集合、范围参数和本机文件声明，连续执行两次纯后台 `-VerifyOnly`；两次都退出 0、返回 `runtime_active`、元数据有效且四层文件集合与 SHA-256 一致，才确认当前运行时稳定对齐。预检或网络中断的调用不计入两次验收，最终一致性也不用于推断是哪次手动操作使其生效。",
       "files": [],
       "expectations": [

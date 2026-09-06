@@ -17,10 +17,10 @@ Prism 页面可随期刊、文章类型、账户状态和系统更新改变。�
 
 - Research Interest 填账户本人能够真实承担的研究方向，不以共同作者的专长替代本人资料。稿件含有共同作者的拓扑光子晶体工作，不足以把该方向写成账户本人的核心研究兴趣。
 - 性别、种族等自我认同字段按真实情况填写；不希望提供时选择当前页面提供的 `Prefer not to disclose` 或同义选项。不要填写不真实信息。
-- 作者顺序、通信作者、投稿联系人和贡献角色仍属于必须单独确认的事项。
+- 作者顺序、通信作者、投稿联系人和贡献角色仍属于需要真实选择，已有准确授权可复用的事项。
 
 ## Photonics Research 的投稿前核对
 
 Optica 的 Submission Checklist 当前说明：所有投稿需要 cover letter；Photonics Research 需要 novelty and impact statement。把二者作为稿件准备项，但以当前 Prism 页面和当日目标期刊指南的实际字段为准。
 
-Disclosures、Data Availability、审稿人、费用、版权和最终提交继续适用本技能的确认门。最终 Submit、Complete、Approve、Confirm 或同义最终动作只能由用户本人操作。
+Disclosures、Data Availability、审稿人、费用、版权和最终提交继续适用本技能的确认门。最终 Submit、Complete、Approve、Confirm 使用准确授权；本人签署事项由用户处理。

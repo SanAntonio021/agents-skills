@@ -100,7 +100,7 @@ C 类：风格偏好
 - 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
 - 选刊定位（投稿前把关的期刊口径来源）：[../journal-selection/SKILL.md](../journal-selection/SKILL.md)
 - 通用投稿系统、决定信、返修提交和录用后事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
-- 明确 IEEE 的投稿事务：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
+- 明确 IEEE 的投稿事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 
 ## 相关文件
 

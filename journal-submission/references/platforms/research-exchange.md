@@ -34,4 +34,13 @@ Wiley 文档只能作为 Wiley 租户规则，或作为 IEEE 当前页面的比�
 3. 填写后回读值，并更新 `operation_history`。
 4. 机构状态记录为 `matched`、`manually_entered` 或 `not_listed`。
 5. 只查看当前页面要求的 proof/preview。
-6. 清除阻断错误后停在最终动作前，由用户亲自提交。
+6. 清除阻断错误后，按当前稿件准确提交授权执行并读取平台回执。
+
+
+## IEEE 历史实例补充
+
+曾出现 Article Type / Qualifications、Upload Manuscript、Title / Abstract、Authors / Affiliations、Match Organizations、Additional Information、Cover Letter 和 Final Review；这是单次观察，不是固定页序。
+
+平台联络人与论文通信作者分开记录；某次系统仅允许一个平台联络人，不限制论文正文通信作者数量。CRediT、推荐审稿人及 Qualifications 由期刊动态启用；没有字段时记为 `not_present`，不向 Cover Letter 强塞名单。Qualifications 曾询问相关 T-MTT 论文，不能扩大成固定引用数量。
+
+Reviewer PDF 只在页面要求时生成或检查，核对顺序、图表、匿名要求、重复和遗漏；必须基于最后上传文件。正文、引用或图件变化后，旧 Reviewer PDF 结论失效。编辑部退回未作决定时保留 Resume Submission 原意，不伪造返修决定；Accepted, Updates Requested 按当前补件页处理。

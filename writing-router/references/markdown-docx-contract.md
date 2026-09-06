@@ -1,40 +1,13 @@
-# Markdown 到 DOCX 交接契约
+# Markdown 到 Word 交接
 
-这份契约是内容技能进入 Word 格式阶段的唯一交接入口。内容技能先完成 Markdown 主稿、审阅和用户确认；`docx` 只接收交接清单，负责模板、样式、结构、分页和 Office 验收。
+内容技能完成本轮正文与必要审校，`docx` 承接格式、结构、分页和成品检查。用户要求导出 Word 就是导出授权，不再询问是否定稿；用户明确要求先讨论或等其确认正文时遵守该限制。
 
-## 内容阶段
+- 重新读取当前 Markdown、指定模板和图片；保留用户手工修改。Markdown 是本轮内容来源，格式阶段不自行改写正文，不重复通用风格审校。
+- 复用当前文件、模板或预设、输出路径及真实排版约束。格式参考已明确时直接采用；无指定时使用受管默认值。仅在多个候选会实质改变结果时询问。
+- 默认生成新 Word；保护源稿、模板和已有交付物。页数、字号、行距或图片尺寸约束必须来自当前请求、模板或提交要求，不为自定页数压缩内容。
+- 检查包结构、样式、内容及源文件不变，再使用一个适合目标应用的真实渲染器，由智能体逐页检查。Word 为目标时优先安全调用 Word；不能隔离时使用可满足当前要求的文件级或 LibreOffice 路径并说明验证范围。
+- OfficeCLI 的结构验证不证明版式。保留静态检查与实际 Word/LibreOffice 渲染的真实结果；不要求双渲染器串联、批准的栅格基线、固定口令或用户逐页签字。
+- 图片按 [图片引用与图题检查](../../docx/references/figure-integration-gate.md) 核对。PDF 按用户请求从本轮已检查的 Word 导出，无须用户再宣布 Word 为最终版本。
+- 明确要求的原生验证尚未完成时标为未验证；交付已完成部分，不宣称该项通过。历史 manifest 和回执只作为历史证据，不自动升级状态，也不继续六阶段审批状态机。
 
-- Markdown 是内容唯一主稿。内容技能默认只创建或修改 `.md`，不在内容尚未闭合时反复导出 Word。
-- `content_status` 依次使用 `draft`、`reviewed`、`frozen`；正式导出必须为 `frozen`。
-- `content_open_items` 必须为空；“需要继续修改”或 agent 自行判断不等于用户确认。
-- `content_confirmed=true` 只能由当前任务中的用户完整回复“确认内容并导出 Word”产生，并写入同一 `artifact_id` 与 `revision` 的确认记录。
-- 未满足正式条件时只能走显式 `preview`，预览记录不得标为正式交付。
-
-## 清单与路径
-
-交接清单为 UTF-8 无 BOM、LF 换行的 JSON，字段由 `docx/scripts/markdown_docx_delivery.py` 校验。至少包括：`artifact_id`、`template_id`、`source_markdown`、`source_sha256`、内容状态与确认字段、`revision`、`format_source`、`template_path`、`template_sha256`、`output_docx`、`output_sha256`、`toolchain_versions`、四层 `acceptance`、`evidence_paths`、`source_unchanged`、`failure_code` 和 `failure_detail`。`toolchain_versions` 中每个实际使用的 Pandoc、OfficeCLI、`libreoffice-runner`、LibreOffice、Word、Poppler 和 MCP 都记录精确版本或 commit，未使用项写 `null`，禁止 `latest`。
-
-源稿、模板、输出和证据路径都必须是项目根相对的正斜杠路径；禁止绝对路径、`..`、符号链接、目录冒充文件和项目根外写入。源 Markdown 必须保持原始 UTF-8/LF 字节；哈希校验器不补换行、不去 BOM、不 trim，也不改写源文件。
-
-## Word 阶段
-
-正式 DOCX 默认写入新路径，既不覆盖 Markdown、原 DOCX，也不覆盖既有交付物。已有输出只有在固定 manifest 身份和完整输出哈希完全一致时才允许幂等重用，否则返回 `OUTPUT_COLLISION`。
-
-四层验收顺序固定为：
-
-1. `STATIC_PASS`：OOXML/package、样式、内容和源哈希检查；OfficeCLI 只能作为结构诊断。
-2. `LO_RENDER_PASS`：经 `libreoffice-runner`、独立 `UserInstallation` 转 PDF，使用固定 Poppler 参数并逐页检查。
-3. `NATIVE_OPEN_PASS`：获得本次任务明确许可后，Word 原生隔离副本打开并计算页数。
-4. `NATIVE_RENDER_PASS`：Word 导出 PDF，并用同一固定 Poppler 参数栅格化；Word 页数、导出 PDF 页数和编号连续的 PNG 页数必须为相同正整数。缺任一独立页数证据记 `UNVERIFIED`，不一致记 `FAIL`；还必须有匹配的批准基准和逐页人工检查清单。
-
-任一层为 `FAIL`、`UNVERIFIED`、`ENV_UNVERIFIED` 或 `NOT_RUN` 都停止正式交付，保留失败证据，不写 `delivered`。任务 PID 未观测、任务创建的 Office 实例未能证明退出，或隔离临时目录未能证明清理完成时，保留此前结果但整体降为 `UNVERIFIED`。OfficeCLI HTML/native 预览和任何 MCP 的“成功”都不能替代后三层。
-
-Word 原生门的许可记录必须绑定当前 `run_id` 和 `artifact_id`，并且用户完整回复“允许本次 Word 验收”；许可不跨任务、artifact 或 revision。栅格基准必须绑定模板哈希、Word 主版本、完整 Poppler 版本和固定命令 `pdftoppm -r 150 -png -aa yes -aaVector yes`，逐页哈希和 `user:<slug>` 审批身份缺一不可；没有匹配的 `approved` 基准只能记 `UNVERIFIED`。
-
-Word 权威验收项目见 [`docx/references/word-acceptance-checklist.md`](../../docx/references/word-acceptance-checklist.md)。正式 `DocxAcceptanceReport` 还需记录 Word 路径及 SHA-256、按固定顺序排列的四层结果，以及字体与回退、段落格式、表格格式、页眉页脚几何、分页、Word 原生打开和 Word 原生渲染七个项目。每个项目都要写责任层、对比基线、比较规则、结果、严重级别和证据路径；缺失或失败项目阻断，警告项目须在用户确认 Word 前展示。
-
-Word 阶段完成后由 `markdown-docx-workflow` 维护状态：`DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED`。Markdown、模板、Word、验收报告和 PDF 均以 SHA-256 绑定；任一源稿修改或 Word 指纹变化会使后续状态失效并要求重新生成或验收。
-
-## 安全边界
-
-见 `docx` 技能内的 [Office security boundary](../../docx/references/office-security-boundary.md)。Windows 上禁止直接启动 `soffice`；Word COM 只能在本次任务收到完整回复“允许本次 Word 验收”、且检测不到既有 `WINWORD.EXE` 时运行，只读打开隔离副本，不连接、保存或关闭用户实例。
+不强制新建交接 JSON。需要跨阶段恢复时，在项目已有记录中保存文件、检查结果和必要哈希；`loaded_refs` 沿用实际读取记录，不伪造用户确认。

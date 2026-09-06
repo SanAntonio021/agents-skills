@@ -84,7 +84,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 4. 问题与判断
 5. 下一步
 
-删除内容为空的页面职责；当天工作较少时压缩为两至三页。请用户确认或修正提纲。用户确认前不得渲染最终文件。
+删除内容为空的页面职责；工作较少时压缩为两至三页。已有目标和听众明确时直接按提纲生成并自检；用户明确要求先看提纲时才等待其决定。
 
 ## 实验素材
 
@@ -102,7 +102,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 
 ## Deck JSON 与渲染
 
-提纲获批后，在 skill 目录外写入一个小型 deck JSON 文件。渲染器要求以下结构：
+提纲按当前目标确定后，在 skill 目录外写入一个小型 deck JSON 文件。渲染器要求以下结构：
 
 ```json
 {

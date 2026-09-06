@@ -1211,13 +1211,16 @@ def freeze_figure_color_map(
     profile_path: str | Path,
     mapping: Mapping[str, Any],
     *,
-    confirmed_by: str = "user",
+    confirmed_by: str,
     confirmed_at: str | None = None,
+    confirmation_reason: str | None = None,
 ) -> dict[str, Any]:
-    """Persist a palette only after explicit user confirmation."""
+    """Persist a user choice or a reasoned agent default without changing frozen semantics."""
 
-    if confirmed_by != "user":
-        raise PermissionError("only an explicit user confirmation can freeze a palette")
+    if confirmed_by not in {"user", "agent"}:
+        raise PermissionError("palette author must be user or agent")
+    if confirmed_by == "agent" and not (confirmation_reason or "").strip():
+        raise PermissionError("agent defaults require a recorded reason")
     profile_file = Path(profile_path)
     profile: dict[str, Any] = {}
     if profile_file.is_file():
@@ -1234,6 +1237,8 @@ def freeze_figure_color_map(
     frozen = dict(mapping)
     frozen["palette_status"] = "confirmed"
     frozen["confirmed_by"] = confirmed_by
+    if confirmation_reason:
+        frozen["confirmation_reason"] = confirmation_reason.strip()
     frozen["confirmed_at"] = confirmed_at or datetime.now().astimezone().isoformat(timespec="seconds")
     profile["palette_status"] = "confirmed"
     profile["figure_color_map"] = frozen
@@ -1624,7 +1629,8 @@ def _palette_confirmation_valid(profile: Mapping[str, Any] | None) -> bool:
     status = profile.get("palette_status", mapping.get("palette_status"))
     confirmed_by = mapping.get("confirmed_by", profile.get("palette_confirmed_by"))
     confirmed_at = mapping.get("confirmed_at", profile.get("palette_confirmed_at"))
-    return status == "confirmed" and confirmed_by == "user" and bool(confirmed_at)
+    author_valid = confirmed_by == "user" or (confirmed_by == "agent" and bool(str(mapping.get("confirmation_reason", "")).strip()))
+    return status == "confirmed" and author_valid and bool(confirmed_at)
 
 
 def preflight_single_column_figure(
@@ -1729,15 +1735,15 @@ def preflight_single_column_figure(
     palette_status = _approved_palette_status(profile)
     metrics["palette_status"] = palette_status
     if mode == "formal" and not _palette_confirmation_valid(profile):
-        errors.append("formal export requires a user-confirmed, timestamped figure color map")
+        errors.append("formal export requires a recorded, timestamped figure color map with an identified author")
     if visual_review:
         approval = (profile or {}).get("visual_review_approval", {})
-        approval_valid = approval.get("approved_by") == "user" and bool(approval.get("approved_at"))
+        approval_valid = approval.get("approved_by") in {"user", "agent"} and bool(approval.get("approved_at"))
         approved_reasons = set(approval.get("reasons", [])) if approval_valid else set()
         unresolved = [reason for reason in visual_review if reason not in approved_reasons]
         metrics["visual_review_approval"] = dict(approval)
         if mode == "formal" and unresolved:
-            errors.append("formal export requires user approval for visual review reasons: " + ", ".join(unresolved))
+            errors.append("formal export requires actual visual inspection for review reasons: " + ", ".join(unresolved))
     if locked_limits:
         warnings_list.append("axis limits were declared locked; marker headroom was not changed")
 

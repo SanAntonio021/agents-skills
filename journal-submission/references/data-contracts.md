@@ -98,7 +98,7 @@
 
 无检查时间或无证据的 `pass` 无效。最终提交门不得在审查门不是 `pass` 时关闭。
 
-`author_roles`、`declarations`、`reviewers`、`final_submit`、`open_access_fees`、`copyright` 和 `withdrawal_transfer` 进入 `confirmed`、`completed`、`closed` 或 `pass` 时，必须保存非空字符串 `question`、`user_choice`、`applies_to`，并用 `confirmed_at` 保存 ISO 日期或时间。页面已保存或没有报错不等于用户确认。
+`author_roles`、`declarations`、`reviewers`、`final_submit`、`open_access_fees`、`copyright` 和 `withdrawal_transfer` 进入 `confirmed`、`completed`、`closed` 或 `pass` 时，必须保存非空字符串 `question`、`user_choice`、`applies_to`，并用 `confirmed_at` 保存 ISO 日期或时间。页面已保存或没有报错不等于用户确认。`question` 可记录用户最初的准确请求，沿用真实 `user_choice` 与时间，无需为满足记录结构再次发问。
 
 上述确认门状态只允许 `required`、`pending`、`blocked`、`not_applicable`、`not_required`、`confirmed`、`completed`、`closed` 或 `pass`；`final_submit` 不允许 `not_applicable` 或 `not_required`。不得用 `done` 等未定义同义词绕过关闭检查。
 

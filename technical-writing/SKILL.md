@@ -13,7 +13,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 - `mode=technical_scheme|technical_exchange|system_description|test_result_analysis`
 - `edit_scope`、`language`、`loaded_refs`
 
-读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整草稿、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
+读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
 私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `technical` 样稿获批时才加载对应文件。
 
@@ -94,7 +94,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 
 ## 文件边界
 
-实际写入 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。需要 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 冻结已审校正文，再交给 `docx`；导出阶段不重新改写内容。
+实际写入 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。需要 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 使用当前已审校正文，再交给 `docx`；导出阶段不重新改写内容。
 
 ## 完成条件
 

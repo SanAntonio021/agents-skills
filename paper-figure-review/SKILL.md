@@ -84,8 +84,8 @@ description: 审查、规范化和重画 IEEE 论文图件。Use when 用户要�
 2. Times New Roman 优先从本机查找并进程级注册；四个字形文件不完整时使用技能内固定 SHA-256 的 Liberation Serif 2.1.5，不修改系统字体目录，不静默回退。
 3. 数据、标签、图例和坐标范围设置完成后，在完整横纵主网格 `major_xy` 与无网格 `none` 之间显式选择，再调用 `repair_single_column_figure()`；它修字体、框线、刻度、语义网格、纵轴显示坐标对齐、面板标签间距、上下堆叠面板的 `4 pt` 内容安全间距、3 pt 可见墨迹留白和未锁定坐标的 marker 留量。
 4. 调用 `preflight_single_column_figure()` 检查字体完整性、mathtext 无回退配置、尺寸、所选网格模式、文字碰撞、裁切、越界 marker、锁定坐标冲突和最终视觉确认状态；导出后继续检查 PDF/SVG 实际字体名。复杂图无法在不改变数据语义的前提下修复时，保留结构化冲突报告。
-5. `export_ieee_single_column(mode="draft")` 只写入 `drafts/`；未确认配色、未完成人工复核或未验证 Matplotlib 版本都可以先出 draft。
-6. `mode="formal"` 只在预检通过、配色已由用户确认并冻结、字体已解析，且 plot profile 记录了最终尺寸视觉确认原因和时间后写入正式目录。PDF/SVG/PNG 始终使用 `bbox_inches=None`、`pad_inches=0.0`，并在 manifest 中记录物理尺寸和 SHA-256。
+5. `export_ieee_single_column(mode="draft")` 只写入 `drafts/`；未记录配色、未完成智能体视觉复核或未验证 Matplotlib 版本都可以先出 draft。
+6. `mode="formal"` 只在预检通过、配色已依据用户要求或合理默认记录并冻结、字体已解析，且 plot profile 记录了最终尺寸视觉确认原因和时间后写入正式目录。PDF/SVG/PNG 始终使用 `bbox_inches=None`、`pad_inches=0.0`，并在 manifest 中记录物理尺寸和 SHA-256。
 
 ### 固定 Python 运行时与双草稿
 
@@ -151,9 +151,9 @@ figure_id: Fig. X
 
 1. 读取原始数据，不手动改数据点。
 2. 单栏图使用 `use_ieee_single_column_style()`、`repair_single_column_figure()`、`preflight_single_column_figure()` 和 `export_ieee_single_column()`；`use_ieee_style()`、`save_ieee_figure()` 只为旧通用脚本保留。
-3. 第一次为一篇论文出图时，用 `propose_figure_color_map()` 按数据角色给出候选，再由用户确认一次并用 `freeze_figure_color_map()` 冻结全文映射。
+3. 第一次为一篇论文出图时，用 `propose_figure_color_map()` 按数据角色给出候选，复用已有配色或采用合适默认，用 `freeze_figure_color_map()` 冻结全文映射。
 4. 无序类别使用 Tol high-contrast、bright 或 muted，并配合线型和 marker；连续量使用 `cividis` 或 `viridis`；阈值、参考线和普通 Delta 标注默认黑色。
-5. 先生成 draft 并按最终 `3.5 in` 尺寸检查；只有 profile 中记录配色确认和视觉确认后才生成 formal PDF/SVG/PNG。
+5. 先生成 draft 并按最终 `3.5 in` 尺寸检查；只有 profile 中记录配色依据和实际视觉检查后才生成 formal PDF/SVG/PNG。
 6. 保留重画脚本、数据来源说明、plot profile 和导出 manifest，保证论文修改时可复现；manifest 至少记录
    `runtime`（运行时路径、Python/Matplotlib/SciencePlots 版本和 `draft_variant`）以及
    `formal_style_source=ieee_plot_style.py`。
@@ -205,7 +205,7 @@ figure_id: Fig. X
 | 多子图共享变量 | 同一变量同一颜色/线型/marker | 沿用全篇色表 | 不因某个子图曲线数量不同而重新排序颜色 |
 | 双 Y 轴图 | 轴题、刻度、对应 spine 和数据关联 | 可让左右轴颜色跟对应数据一致 | 上下边框通常保持黑色，避免图框过花 |
 
-缺少项目色表时，调用 `propose_figure_color_map()` 建立候选 `figure color map`。候选未确认只能出 draft；用户确认一次后调用 `freeze_figure_color_map()`，同一物理变量的颜色、线型和 marker 在全文保持不变。
+缺少项目色表时，调用 `propose_figure_color_map()` 建立候选 `figure color map`。采用已明确配色或合理默认后调用 `freeze_figure_color_map()`，同一物理变量的颜色、线型和 marker 在全文保持不变。
 
 出图前检查：转灰度后能区分；色盲场景不依赖红绿差异；最终单栏/双栏尺寸下线型和 marker 仍可见；图例只负责识别数据类别，拟合方法、`R^2` 和实验条件优先放图注或正文。
 
@@ -233,7 +233,7 @@ figure_id: Fig. X
 5. 保留 Google attribution 和数据来源标注，不裁掉、不遮挡。若目标期刊或机构有额外版权要求，按 Google Geo Guidelines 和期刊说明复核。
 6. 图内文字要严格区分已完成实验和计划链路，例如 `measured 350 m link`、`planned 1 km link` 或 `prospective 1 km link`。不要把未实测距离写成 measured。
 7. 双栏 composite figure 中，先定总画布和各 panel 的信息量；地图底图只占其中一块时，不要为了导出整张图而提前改 PPT 或覆盖用户源文件。
-8. 如果需要帮用户继续出图，先确认可编辑源文件、目标页/子图、是否允许生成新副本。没有确认前，只给步骤或审查建议。
+8. 用户要求继续出图时，读取已指定源文件和目标页，默认生成新副本；仅目标不明或科学含义存在歧义时询问。
 
 ## RF/THz 系统示意图
 
@@ -309,3 +309,6 @@ figure_id: Fig. X
 - Liberation Serif 2.1.5 是 Times New Roman 缺失时的固定备用字体，来源提交 `49e1358e4017577429c9f8c39a3e6e879093264e`，按 SIL OFL 1.1 分发；详情见 `THIRD_PARTY_NOTICES.md` 和 `assets/fonts/manifest.json`。
 - Galaxy-Dawn `claude-scholar` 的 paper-self-review 审计思路（主张与证据对齐、避免超出证据强度的措辞、结构化核验记录）吸收进「数据溯源与图-表-文一致性」一节。
 - 不吸收自由生成型 `generate-image` / `infographics` 风格作为论文图默认风格。
+
+
+配色冻结的 `confirmed_by` 如实记录：用户明确选择用 `user`；智能体采用合理默认用 `agent` 并传 `confirmation_reason`。已有全文映射保持稳定，科学语义或数据映射改变时才询问；不伪造用户确认。普通新副本与已指定样式无需重复批准。

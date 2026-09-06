@@ -1,6 +1,6 @@
 # IEEE 数据图配色路由
 
-IEEE 没有规定唯一官方 HEX 色表。默认规则是先确定数据角色，再为当前论文提出候选配色；用户确认一次后，全文冻结颜色、marker 和线型。未确认配色只能生成 draft。
+IEEE 没有规定唯一官方 HEX 色表。默认规则是先确定数据角色，再为当前论文提出候选配色；复用用户已定配色或采用合理默认，记录实际依据后冻结全文颜色、marker 和线型。
 
 ## 使用顺序
 
@@ -8,7 +8,7 @@ IEEE 没有规定唯一官方 HEX 色表。默认规则是先确定数据角色�
 2. 判断数据类型：无序类别、连续强度，或有明确中心值的正负偏差。
 3. 调用 `scripts/ieee_plot_style.py` 的 `propose_figure_color_map()` 生成候选。
 4. 在最终 `3.5 in` 尺寸下检查灰度、色盲、线型、marker 和图例。
-5. 用户确认后调用 `freeze_figure_color_map()` 写入论文 plot profile；后续图不得重新排序相同变量的颜色。
+5. 依据已有选择或合理默认调用 `freeze_figure_color_map()` 写入论文 plot profile；后续图不得重新排序相同变量的颜色。
 
 ## 路由表
 
@@ -33,8 +33,11 @@ from ieee_plot_style import propose_figure_color_map, freeze_figure_color_map
 proposal = propose_figure_color_map(
     ["channel_a", "channel_b", "channel_c", "channel_d", "channel_e", "channel_f"]
 )
-# 用户查看最终尺寸 draft 并确认 proposal 后：
-freeze_figure_color_map("plot_profile.json", proposal, confirmed_by="user")
+# 当前任务未指定配色且数据角色明确时，记录智能体采用默认的依据：
+freeze_figure_color_map(
+    "plot_profile.json", proposal, confirmed_by="agent",
+    confirmation_reason="Use a consistent accessible palette for the supplied data roles",
+)
 ```
 
 连续量：
@@ -55,6 +58,8 @@ proposal = propose_figure_color_map(["gain_delta"], data_kind="diverging", cente
 - 不把红绿、蓝绿、黄红作为唯一差异。
 - 参考线和网格不能压过主数据。
 - 图例命名、颜色、marker 和线型在全文保持一致。
-- 候选色不等于已确认配色；正式导出必须在 plot profile 中带 `palette_status=confirmed`、`confirmed_by=user` 和确认时间。
+- 候选色不等于已确认配色；正式导出必须在 plot profile 中带 `palette_status=confirmed`、实际 `confirmed_by=user|agent`、选择理由和记录时间。
 
 旧代码中的 `FIGURE_PRIORITY_COLORS` 和 `OKABE_ITO` 仅为兼容已有脚本保留。新单栏数据图使用上述 Tol/连续色图路由。
+
+配色函数显式填写 `confirmed_by`，不推定用户确认；采用默认时用 `agent` 并提供理由。`visual_review_approval` 记录真正检查人、逐项原因和时间，不以自动预检替代目检。

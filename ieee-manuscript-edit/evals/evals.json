@@ -93,7 +93,7 @@
     {
       "id": 13,
       "prompt": "T-MTT 的 12 条审稿意见已经编号并确定修改位置。请只把 Response Letter 正文润色成正式英文，不处理上传。",
-      "expected_output": "由 ieee-manuscript-edit 精修逐条回复正文，保持意见编号、事实、修改位置和证据不变；返修状态、文件版本和页面上传仍由 ieee-journal-submission 负责。",
+      "expected_output": "由 ieee-manuscript-edit 精修逐条回复正文，保持意见编号、事实、修改位置和证据不变；返修状态、文件版本和页面上传仍由 journal-submission 负责。",
       "files": []
     },
     {

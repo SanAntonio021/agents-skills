@@ -106,7 +106,7 @@ export_ieee_single_column(
 | line_marker | 线宽、线型、marker、marker 大小 |
 | color_map | 每种数据角色对应颜色 |
 | palette_status | `proposed` 或 `confirmed`；formal 必须为 `confirmed` |
-| palette_confirmation | `confirmed_by=user` 和 `confirmed_at` |
+| palette_confirmation | `confirmed_by=user|agent`、`confirmed_at`，agent 默认另记 `confirmation_reason` |
 | axis_range_ticks | `xlim`、`ylim`、major/minor ticks |
 | axis_spacing | `labelpad`、tick pad、tick direction |
 | stacked_spacing | 上下相邻面板的 `axes_box_gap_pt`、`content_clearance_pt` 和 `4 pt` 目标；不要只记录初始 `hspace` |
@@ -115,7 +115,7 @@ export_ieee_single_column(
 | grid | `mode`、主网格参数；旧图启用次网格时同时记录理由和次网格参数 |
 | export | 格式、dpi、fonttype、是否 exact-size |
 | assembly_check | 插入 PPT/PDF 后的有效 dpi 和物理尺寸 |
-| visual_review_approval | 用户在最终尺寸预览后确认的 `reasons`、`approved_by=user` 和 `approved_at` |
+| visual_review_approval | 实际目检后的 `reasons`、`approved_by=user|agent` 和 `approved_at` |
 
 Matplotlib `>=3.5,<4.0` 是已验证范围。范围外版本允许生成 draft；用户检查最终尺寸预览后，在 `visual_review_approval.reasons` 中同时记录 `final_size_preview` 和 `unvalidated_matplotlib_version`，才允许 formal。
 
@@ -157,3 +157,5 @@ top_margin_in = (1 - top) * figure_height_in
 - 实验方法段对测量条件、拟合区间、数据状态的说明。
 
 不要让旧图号、旧曲线命名或旧结论留在正文里。
+
+配色函数显式填写 `confirmed_by`，不推定用户确认；采用默认时用 `agent` 并提供理由。`visual_review_approval` 记录真正检查人、逐项原因和时间，不以自动预检替代目检。

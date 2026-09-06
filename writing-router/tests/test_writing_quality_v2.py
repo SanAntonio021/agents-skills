@@ -74,7 +74,7 @@ class WritingQualityV2Tests(unittest.TestCase):
             self.assertTrue(case["expected_loaded_refs"])
         for relative in [
             "writing-router/SKILL.md",
-            "humanizer-zh/SKILL.md",
+            "writing-router/SKILL.md",
             "project-writing/SKILL.md",
             "technical-writing/SKILL.md",
             "research-report/SKILL.md",
@@ -86,10 +86,10 @@ class WritingQualityV2Tests(unittest.TestCase):
 
     def test_docx_delivery_consumes_the_reviewed_text_once(self):
         delivery = (
-            REPO_ROOT / "markdown-docx-workflow" / "SKILL.md"
+            REPO_ROOT / "docx" / "SKILL.md"
         ).read_text(encoding="utf-8")
         self.assertIn("不自行改写正文", delivery)
-        self.assertIn("不再次调用 `humanizer-zh`", delivery)
+        self.assertIn("No mandatory second renderer", delivery)
         self.assertIn("loaded_refs", delivery)
 
     def test_router_contains_complete_mode_matrix(self):
@@ -117,7 +117,7 @@ class WritingQualityV2Tests(unittest.TestCase):
     def test_smell_catalog_has_conditions_exceptions_blocks_and_actions(self):
         catalog = (
             REPO_ROOT
-            / "humanizer-zh"
+            / "writing-router"
             / "references"
             / "ai-smell-catalog.md"
         ).read_text(encoding="utf-8")

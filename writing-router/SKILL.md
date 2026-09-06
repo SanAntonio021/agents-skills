@@ -1,6 +1,6 @@
 ---
 name: writing-router
-description: 中文正式写作的默认总路由。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，以及无法直接归类的中文材料；也用于确定写作模式、修改范围、语言和实际加载规则。投稿事务、论文停稿审查、文献检索和单纯文件排版仍转给对应专门技能。
+description: 中文写作与通用编辑的默认入口。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，普通中文去 AI 味、删废话，以及无法直接归类的中文材料；也用于确定写作模式、修改范围、语言和实际加载规则。投稿事务、论文停稿审查、文献检索和单纯文件排版仍转给对应专门技能。
 ---
 
 # 中文正式写作总路由
@@ -27,7 +27,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 - `structural`：允许调整章节、段落职责和信息顺序。
 - `bounded`：只改用户指定章节、段落或问题。
 - `in_place`：保留结构和作者声音，只做必要的原位修改。
-- `audit_only`：只审不改；必须建立“论点—证据—章节功能”表。
+- `audit_only`：只审不改。完整文稿审查按需建立“论点—证据—章节功能”表；局部问题直接给位置和依据。
 
 ## 两级路由
 
@@ -38,7 +38,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 | `research_report` | `evidence_report`、`decision_report`、`final_audit` | [research-report](../research-report/SKILL.md) |
 | `meeting_notes` | `discussion`、`action`、`mixed` | [meeting-notes](../meeting-notes/SKILL.md) |
 | `paper` | `zh_paper`、`en_paper`、`final_audit` | [ieee-manuscript-edit](../ieee-manuscript-edit/SKILL.md) |
-| `general` | `general_edit` | [humanizer-zh](../humanizer-zh/SKILL.md) |
+| `general` | `general_edit` | 本技能的通用编辑流程 |
 
 判断顺序：
 
@@ -48,7 +48,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 
 会前方案讨论稿、技术交流材料或待讨论问题清单，目标是区分已有条件、会上决定和另行工作时，使用 `document_type=technical`、`mode=technical_exchange`。会议已经结束，任务是整理实际发言、结论和行动项时，使用 `meeting_notes`。
 
-项目书、技术文档、调研报告、会议纪要和论文都属于正式文稿。直接调用 `humanizer-zh` 处理这些材料时，也要回到本路由，再进入对应文体技能。
+正式文稿进入对应文体技能；普通中文直接在本技能完成，不递归路由。
 
 ## 规则优先级
 
@@ -56,7 +56,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 
 1. 用户要求、权威源材料、指定模板和受保护事实；
 2. 当前文体与 `mode` 的规则；
-3. [共同质量规则](../humanizer-zh/references/common-quality.md)；
+3. [共同质量规则](../writing-router/references/common-quality.md)；
 4. 已批准的个人样稿。
 
 个人样稿只用于句子密度、信息顺序和语气。样稿不能覆盖事实、模板、术语、证据边界或当前任务的文体规则。
@@ -65,10 +65,10 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 
 ## 最小加载规则
 
-1. 只加载路由表中的一个主技能。
-2. 五类正式文稿的主技能都读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。形成完整草稿、结构重写、终稿审校或 `audit_only` 时，再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
+1. 只加载当前文体对应的一个主技能；`general_edit` 不加载另一个写作入口。
+2. 五类正式文稿的主技能都读取 [共同质量规则](../writing-router/references/common-quality.md)。形成完整草稿、结构重写、终稿审校或 `audit_only` 时，再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 3. 个人样稿入口固定为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`。只有入口和对应样稿都标为 `approved` 时才读取；一次只读当前文体的样稿。未读取的文件不能写入 `loaded_refs`。
-4. 完整正式文稿交付前使用 `style-vocab` 检查术语和个人用词。若当前文体技能已经完成共同质量与 AI 气味审校，向 `style-vocab` 传递这一状态，不再调用 `humanizer-zh` 做第二遍通用改写。
+4. 完整正式文稿交付前使用 `style-vocab` 检查术语和个人用词。若当前文体技能已经完成共同质量与 AI 气味审校，向 `style-vocab` 传递这一状态，不再重复通用改写。
 5. 中文论文不加载英文写作细则；英文论文不加载中文写作细则。`final_audit` 只加载当前稿件语言对应的细则和终稿规则。
 
 ## 通用流程
@@ -80,22 +80,23 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 5. 用共同质量规则检查事实漂移、段落职责、信息推进、全文重复和停笔条件；需要时再按气味目录复核。
 6. 完整正式稿再做术语与个人用词检查。修改理由只说一次；正文、审计记录和交付说明分开。
 7. 实际写入工作区内的 `.md` 或 `.tex` 时，读取 [文稿版本保护](references/document-version-protection.md)。只读审查和聊天内改句不触发。
-8. 需要 Word 时，正文先完成审校和冻结，再按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 交给 `docx`。交付流程不再自行运行第二遍通用风格改写。
+8. 需要 Word 时，正文先完成本轮内容审校，再按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 交给 `docx`。交付流程不再自行运行第二遍通用风格改写。
 
-## 样稿更新提醒
+## 普通中文编辑
 
-个人样稿允许随正式文稿迭代，但不能自动吸收新稿。
+`general_edit` 默认 `in_place`：保留结构、含义和作者声音；用户要求重搭结构才使用 `structural`。只看问题时使用 `audit_only`，不顺手改稿。清楚自然的原文可以不改。
 
-1. 只有用户明确表示“这版可以”“定稿”“可以交付”或给出同义确认后，才对照当前文体已经批准的样稿。是否达到可交付状态由用户确定；审校通过、文件已保存或已经导出都不能代替用户确认。
-2. 用户确认可交付后，如果新稿中有一段明显更清楚、更紧凑，或补上了现有样稿没有覆盖的写法，必须单独问用户是否用它替换现有样稿。明确指出新段落、建议替换的旧段落和一条具体理由，不笼统询问“是否更新样稿”。
-3. 用户说“先作为候选”时，只在私有样稿记录中标为 `candidate`；运行时仍只读取 `approved` 内容。
-4. 只有用户明确同意替换，才能修改 `approved` 样稿。用户拒绝、没有回答或只同意列为候选时，保留原样稿。
-5. 每类维持两至三个短段落和一个结构小样。新段落更好时优先替换较弱的旧段落，不整篇收录，也不持续累加相同写法。
-6. 新样稿只提供表达参考；其中的项目名称、事实、数字、结论和证据不能迁移到其他文稿。
+读取 [共同质量规则](references/common-quality.md)，需要完整审校时再读 [AI 气味目录](references/ai-smell-catalog.md)。先保护事实、数字、单位、公式、引用、因果、比较、否定和完成状态；优先删无信息句、合并重复，再修句式。关键词命中只能帮助定位，不能单独判错。不注入虚构细节、第一人称、情绪或幽默，不把专业术语当 AI 词替换。
+
+默认给本轮请求范围内的修改文本；只有事实缺口或实质取舍需要决定时再附简短说明。继续改写不能带来明确收益时停止。
+
+## 私有样稿
+
+仅在用户要求维护样稿时更新，不在业务交付后自动追问。运行时只读取 `approved` 样稿；候选与批准内容分开，用户已明确的替换范围和选择可复用。样稿只提供表达参考，事实必须重新取证。
 
 ## `audit_only` 的最低产物
 
-五类正式文稿一律先列内部审计表：
+完整稿件需要逐项追踪论证时使用下表；局部审查直接给出位置、问题和依据：
 
 | 字段 | 含义 |
 |---|---|
@@ -111,7 +112,7 @@ description: 中文正式写作的默认总路由。Use when 用户要撰写、�
 - 指标是否可实现：`target-feasibility`。
 - 研究取样和补证据：`baseline-research`。
 - 论文整体停稿审查或最终 Submit 门：`paper-review`。
-- 投稿系统与返修事务：`journal-submission` 或 `ieee-journal-submission`。
+- 投稿系统与返修事务：`journal-submission`。
 - 文献检索、下载和总结：`paper-search`、`paper-download`、`paper-summary`。
 - Word、PDF、LaTeX 工程：`docx`、`pdf`、`latex-paper`。
 

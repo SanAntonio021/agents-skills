@@ -76,7 +76,7 @@
     {
       "id": "route-generic-versus-ieee-submission",
       "prompt": "期刊已经选定。一个是非 IEEE 的 Editorial Manager 投稿，另一个是 T-MTT 返修，这两类事务分别该走哪个技能？",
-      "expected_output": "非 IEEE 投稿事务路由到 journal-submission；明确 IEEE/T-MTT 投稿事务优先路由到 ieee-journal-submission；不把两个入口合并，也不要求旧 IEEE 入口依赖通用技能。"
+      "expected_output": "所有期刊投稿事务统一进入 journal-submission；IEEE/T-MTT 按需读取出版商和期刊参考，不加载旧入口。"
     },
     {
       "id": "route-final-submit-review-gate",
@@ -87,6 +87,92 @@
       "id": "route-pre-meeting-technical-exchange",
       "prompt": "我要把一份射频方案改成会前技术交流材料，里面既有已知接口、三种器件结构，也有会上要选的方案和会后才能测出的参数。",
       "expected_output": "路由到 technical-writing 的 technical_exchange 模式，区分已有条件、会上决定和另行计算或测试；不按会议纪要整理，也不只做通用去 AI 味改写。"
+    }
+  ],
+  "general_edit_trigger_cases": [
+    {
+      "id": "general-chinese-ai-tone",
+      "query": "把这段普通中文材料改自然，删掉空话和重复，但不要补事实。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "general-chinese-audit-only",
+      "query": "只审查这段中文哪里像 AI 写的，不要改正文。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "project-redirect",
+      "query": "这段工程项目申请书 AI 味重，帮我重写建设内容。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> project-writing",
+      "synthetic": true
+    },
+    {
+      "id": "technical-redirect",
+      "query": "把系统接口说明里的套话删掉，参数和状态不能变。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> technical-writing",
+      "synthetic": true
+    },
+    {
+      "id": "research-report-redirect",
+      "query": "这份调研报告重复很多，请按证据型报告重构。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> research-report",
+      "synthetic": true
+    },
+    {
+      "id": "meeting-notes-redirect",
+      "query": "这份会议纪要模板味太重，还补了很多空栏目，请重整。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> meeting-notes",
+      "synthetic": true
+    },
+    {
+      "id": "zh-paper-redirect",
+      "query": "中文论文结果段太像 AI 写的，保留所有实验数字后精修。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:zh_paper",
+      "synthetic": true
+    },
+    {
+      "id": "en-paper-redirect",
+      "query": "Tighten this engineering paper paragraph without changing the measurements.",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:en_paper",
+      "synthetic": true
+    },
+    {
+      "id": "english-general",
+      "query": "Remove the AI tone from this general English paragraph.",
+      "should_trigger": false,
+      "expected_route": "humanizer",
+      "synthetic": true
+    },
+    {
+      "id": "word-layout",
+      "query": "只修这份中文 Word 的目录、页眉和样式。",
+      "should_trigger": false,
+      "expected_route": "docx",
+      "synthetic": true
+    },
+    {
+      "id": "fact-check",
+      "query": "核实这段文字的技术事实和论文来源，不做风格修改。",
+      "should_trigger": false,
+      "expected_route": "paper-search",
+      "synthetic": true
+    },
+    {
+      "id": "grammar-only",
+      "query": "只修这句话的语法错误，不改变写法。",
+      "should_trigger": false,
+      "expected_route": "none",
+      "synthetic": true
     }
   ]
 }

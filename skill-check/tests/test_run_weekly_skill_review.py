@@ -345,7 +345,7 @@ class WeeklySkillReviewTests(unittest.TestCase):
         missing = [
             "check",
             "learn",
-            "markdown-docx-workflow",
+            "docx",
             "product-research-workbook",
             "research-report",
             "steelman",

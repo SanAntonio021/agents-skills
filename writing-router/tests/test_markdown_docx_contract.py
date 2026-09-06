@@ -7,42 +7,6 @@ from pathlib import Path
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_shared_markdown_docx_contract_is_referenced_by_content_skills() -> None:
-    contract = SKILLS_ROOT / "writing-router" / "references" / "markdown-docx-contract.md"
-    assert contract.is_file()
-    text = contract.read_text(encoding="utf-8")
-    for fragment in (
-        "content_status",
-        "content_open_items",
-        "content_confirmed",
-        "STATIC_PASS",
-        "LO_RENDER_PASS",
-        "NATIVE_OPEN_PASS",
-        "NATIVE_RENDER_PASS",
-        "OUTPUT_COLLISION",
-        "OfficeCLI",
-        "MCP",
-    ):
-        assert fragment in text
-
-    for skill_name in ("writing-router", "research-report", "meeting-notes", "ieee-manuscript-edit", "project-writing", "markdown-docx-workflow"):
-        skill_text = (SKILLS_ROOT / skill_name / "SKILL.md").read_text(encoding="utf-8")
-        assert "markdown-docx-contract.md" in skill_text
-
-
-def test_markdown_docx_workflow_routes_word_and_pdf_gates() -> None:
-    skill = (SKILLS_ROOT / "markdown-docx-workflow" / "SKILL.md").read_text(encoding="utf-8")
-    for fragment in (
-        "DRAFT -> CONTENT_FROZEN -> DOCX_GENERATED -> DOCX_ACCEPTED -> WORD_CONFIRMED -> PDF_RELEASED",
-        "确认内容并导出 Word",
-        "Word 可以作为最终版本",
-        "DocxAcceptanceReport",
-        "_validation.pdf",
-        "workflow_state.py",
-    ):
-        assert fragment in skill
-
-
 def test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named() -> None:
     boundary = SKILLS_ROOT / "docx" / "references" / "office-security-boundary.md"
     raw = boundary.read_bytes()
@@ -52,7 +16,7 @@ def test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named()
     for fragment in (
         "unique `UserInstallation`",
         "Direct launch of `soffice`",
-        "允许本次 Word 验收",
+        "standing task authorization",
         "UNSAFE_OFFICE_PROCESS",
         "%TEMP%/codex-docx-gates",
         "Reject symbolic links",

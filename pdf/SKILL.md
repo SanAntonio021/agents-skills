@@ -392,7 +392,7 @@ Use this workflow when a reference PDF already defines how several source pages 
 - Render every composed page at high resolution, normally 180-300 dpi, and inspect placement, clipping, whitespace, border continuity, and readability.
 - For copied scan pages, render the standalone source and appended page with the same renderer, DPI, RGB colorspace, background, and alpha setting at two DPIs. Require equal pixel dimensions and equal raw-pixel hashes; a PDF-file hash is not useful because object numbering and compression may change.
 - Compare the result with the reference layout. Any difference outside expected source-content regions must be zero or explicitly explained.
-- Automated geometry and pixel checks cannot prove that typography looks identical. Keep the output provisional when the user has not accepted font, spacing, and overall layout.
+- Automated geometry and pixel checks cannot prove that typography looks identical. Inspect the final rendered output yourself; report unresolved font, spacing or layout differences. User sign-off is required only when explicitly requested.
 
 ### Add Watermark
 ```python
@@ -460,4 +460,7 @@ Use the resolved `.exe` paths from the Windows Toolchain section. For example:
 
 ## Provenance
 
-Derived from the upstream `anthropics/skills` pdf skill (last upstream content update ~2025-10). Local adaptations: explicit Poppler 24.08.0 executable paths, queued Office-to-PDF conversion through `libreoffice-runner`, deterministic OCRmyPDF/Tesseract routing for scanned, mixed, and damaged-text PDFs, complete post-OCR text extraction, input/output hashes and multi-engine validation, scanned PDF reading via fitz render-to-PNG, precise existing-PDF edits with original-font checks, high-resolution residue checks, a user visual-acceptance gate, vector multi-source composition with reference-geometry recovery, whole-page scan attachment, multi-DPI rendered-hash verification, and Windows path conventions. Upstream Proprietary files (LICENSE.txt, forms.md, reference.md, scripts/) are not included; refer to the upstream skill if those features are needed.
+Derived from the upstream `anthropics/skills` pdf skill (last upstream content update ~2025-10). Local adaptations: explicit Poppler 24.08.0 executable paths, queued Office-to-PDF conversion through `libreoffice-runner`, deterministic OCRmyPDF/Tesseract routing for scanned, mixed, and damaged-text PDFs, complete post-OCR text extraction, input/output hashes and multi-engine validation, scanned PDF reading via fitz render-to-PNG, precise existing-PDF edits with original-font checks, high-resolution residue checks, agent visual inspection, vector multi-source composition with reference-geometry recovery, whole-page scan attachment, multi-DPI rendered-hash verification, and Windows path conventions. Upstream Proprietary files (LICENSE.txt, forms.md, reference.md, scripts/) are not included; refer to the upstream skill if those features are needed.
+
+
+Office 隔离与已有授权遵循共享规则。现有守护程序能证明隔离时，可由智能体传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

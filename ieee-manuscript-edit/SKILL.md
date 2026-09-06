@@ -1,6 +1,6 @@
 ---
 name: ieee-manuscript-edit
-description: 中文或英文科学与工程论文的起草、精修和终稿文字审校，也处理摘要、引言、方法、结果、结论、图注、Cover Letter 与 Response Letter 的正文。Use when 用户要改中文论文、英文 SCI/IEEE 论文、中文改英文、删论文套话、保护实验事实，或做终稿规范检查；先区分 zh_paper、en_paper、final_audit，只加载当前语言规则。整体投稿前停稿审查转 paper-review，LaTeX 工程转 latex-paper，投稿事务转 journal-submission 或 ieee-journal-submission。
+description: 中文或英文科学与工程论文的起草、精修和终稿文字审校，也处理摘要、引言、方法、结果、结论、图注、Cover Letter 与 Response Letter 的正文。Use when 用户要改中文论文、英文 SCI/IEEE 论文、中文改英文、删论文套话、保护实验事实，或做终稿规范检查；先区分 zh_paper、en_paper、final_audit，只加载当前语言规则。整体投稿前停稿审查转 paper-review，LaTeX 工程转 latex-paper，投稿事务转 journal-submission 或 journal-submission。
 metadata:
   version: "2.0.0"
 ---
@@ -15,7 +15,7 @@ metadata:
 - `mode=zh_paper|en_paper|final_audit`
 - `edit_scope`、`language`、`loaded_refs`
 
-所有模式读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整草稿、结构重写、终稿审校和 `audit_only` 再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
+所有模式读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
 | 模式 | 必读 |
 |---|---|

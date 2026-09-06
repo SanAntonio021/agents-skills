@@ -37,7 +37,7 @@ the user named; prefixes and similar formatting do not make styles interchangeab
 Word localizes built-in style names. A style displayed as `正文` in Chinese Word can be stored as
 `w:name="Normal"`; headings and captions can likewise use English OOXML names. If the requested UI
 name is not explicit in OOXML, report the built-in mapping separately or, with current-task Office
-COM permission, confirm `NameLocal` through the shared guard. Never choose a prefixed custom style
+COM isolation, inspect `NameLocal` through the shared guard. Never choose a prefixed custom style
 merely because its XML name is easier to recognize.
 
 ## Explicit identity remap

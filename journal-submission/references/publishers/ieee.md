@@ -1,6 +1,6 @@
 # IEEE 出版方扩展
 
-本扩展让 `journal-submission` 在用户直接指定通用入口时处理 IEEE。自然语言明确 IEEE 请求仍优先路由到独立的 `ieee-journal-submission`。
+所有 IEEE 投稿事务统一由 `journal-submission` 处理；本扩展保留 IEEE 专项知识。
 
 最后核对：`2026-07-25`。官方入口见 [../official-source-index.md](../official-source-index.md)。
 
@@ -14,7 +14,7 @@
 
 ## 人工确认
 
-作者角色、声明、审稿人、最终 Submit、返修 Submit、eCF、OA/费用、撤稿和转投必须单独确认。最终动作由用户亲自操作。
+作者角色、声明、审稿人、提交、eCF、OA/费用、撤稿和转投使用当前稿件的真实选择与准确授权；实质变化才重问。需要本人确认或签署的协议由用户处理。
 
 ## 平台选择
 

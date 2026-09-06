@@ -28,7 +28,7 @@ support-only or retained.
    - what the drawing layer will not calculate;
    - any focused unresolved scientific questions.
 4. If an item is uncertain, obtain a corrected mapping and return to step 2.
-5. Ask the user to confirm the concise summary.
+5. Reuse an already explicit scientific purpose and exact choices; ask only for unresolved meaning. Record the actual request in the existing confirmation fields.
 6. Pass the exact proposal hash, approved helper IDs, and ambiguity resolutions to `plan`.
 
 A different source hash, mapping, or proposal hash invalidates the confirmation. Never edit a
@@ -64,3 +64,6 @@ should be retained without display, then regenerate the proposal.
 Keep the first response compact. The full JSON is audit evidence for Codex and advanced users, not
 the default beginner explanation. Ask only questions that can change the scientific meaning or
 visible elements.
+
+
+Existing authorization covers the exact source, meaning and choices it specified. Hash changes require revalidation, not automatically another question: record whether the same authorization still applies. Never forge a user answer or change the fixed external engine. Scientific ambiguity and meaning-changing analysis still require a real decision.

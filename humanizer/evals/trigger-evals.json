@@ -9,7 +9,7 @@
   {"id": "english-email-natural", "category": "email", "query": "Edit this English email so it is direct and human, not overly polished.", "should_trigger": true, "expected_route": "humanizer"},
   {"id": "english-document-review", "category": "document", "query": "Review this English document for AI-like wording and return the edited prose only.", "should_trigger": true, "expected_route": "humanizer"},
   {"id": "english-voice-sample", "category": "voice", "query": "Use my English writing sample to match the voice while humanizing this draft.", "should_trigger": true, "expected_route": "humanizer"},
-  {"id": "chinese-general", "category": "near-miss", "query": "去掉这段中文里的 AI 味，保持原意。", "should_trigger": false, "expected_route": "humanizer-zh"},
+  {"id": "chinese-general", "category": "near-miss", "query": "去掉这段中文里的 AI 味，保持原意。", "should_trigger": false, "expected_route": "writing-router"},
   {"id": "ieee-abstract", "category": "near-miss", "query": "Rewrite this IEEE abstract in formal academic English and preserve the technical claims.", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
   {"id": "sentence-only", "category": "near-miss", "query": "Check these three English sentences for redundancy only; do not rewrite the content.", "should_trigger": false, "expected_route": "ieee-manuscript-edit"},
   {"id": "engineering-proposal", "category": "near-miss", "query": "把工程申报书的研究内容写得更正式，按申报口径收紧。", "should_trigger": false, "expected_route": "project-writing"},

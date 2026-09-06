@@ -1,6 +1,6 @@
 ---
 name: latex-paper
-description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `ieee-journal-submission`；图件找 `paper-figure-review`，Word 版式找 `docx`。
+description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `journal-submission`；图件找 `paper-figure-review`，Word 版式找 `docx`。
 ---
 
 # Markdown 转 LaTeX 投稿工程
@@ -16,7 +16,7 @@ description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工�
 
 这份 skill 管"从现有稿子到能编译、能投稿的 LaTeX 工程"这一段，不动科学内容。转换中发现内容层面的疑问（术语不一致、引用缺失、结论表述问题），列成清单交给用户或转给对应技能，不要自行改写。
 
-它只在当前期刊指南或当前投稿页面明确要求时生成并验证 source 包。页面只要求 PDF 或 Word 时，不额外生成 ZIP。不负责在投稿系统选择文件类型、填写表单或点击提交；未指定或非 IEEE 投稿事务转给 `journal-submission`，明确 IEEE 转给 `ieee-journal-submission`。
+它只在当前期刊指南或当前投稿页面明确要求时生成并验证 source 包。页面只要求 PDF 或 Word 时，不额外生成 ZIP。不负责在投稿系统选择文件类型、填写表单或点击提交；未指定或非 IEEE 投稿事务转给 `journal-submission`，明确 IEEE 转给 `journal-submission`。
 
 ## 工作流
 
@@ -87,5 +87,5 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 - Word 版式交付：[../docx/SKILL.md](../docx/SKILL.md)
 - 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
 - 通用投稿页面、文件类型确认和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
-- 明确 IEEE 的投稿页面和生命周期记录：[../ieee-journal-submission/SKILL.md](../ieee-journal-submission/SKILL.md)
+- 明确 IEEE 的投稿页面和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 - 一个请求同时涉及转换和内容修改时，先完成转换得到可编译工程，再把内容问题清单转给 ieee-manuscript-edit，不要边转边改内容。

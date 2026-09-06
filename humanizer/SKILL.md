@@ -4,7 +4,7 @@ description: |
   Remove signs of AI-generated writing from general English prose. Use when
   editing or reviewing general English text to make it sound more natural and
   human-written. Do not use for Chinese text, IEEE/SCI manuscript delivery, or
-  engineering proposal delivery; route those to humanizer-zh,
+  engineering proposal delivery; route those to writing-router,
   ieee-manuscript-edit, or project-writing. Based on Wikipedia's comprehensive
   "Signs of AI writing" guide. Detects and fixes patterns including:
   inflated symbolism, promotional language, superficial -ing analyses, vague
@@ -20,7 +20,7 @@ metadata:
 ## Local routing and editing stance
 
 This local fork handles general English prose. Chinese prose goes to the
-separate `humanizer-zh` skill; IEEE or SCI manuscript delivery goes first to
+separate `writing-router` skill; IEEE or SCI manuscript delivery goes first to
 `ieee-manuscript-edit`, and engineering proposal delivery goes first to
 `project-writing`. Those formal delivery skills own terminology, evidence,
 and register, so this skill must not add personality or first-person claims to

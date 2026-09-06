@@ -60,7 +60,7 @@ Times New Roman 可用时，普通文字和 mathtext 的正体、斜体、粗体
 4. 在 `major_xy` 与 `none` 之间选择 `grid_mode`，调用 `repair_single_column_figure()`。未声明 `locked_limits=True` 时，它可以为贴边 marker 增加安全留量。
 5. 调用 `preflight_single_column_figure(mode="draft")`，读取 `errors`、`visual_review_required` 和 `metrics`。
 6. 调用 `export_ieee_single_column(mode="draft")`。draft 只能写入 `drafts/`。
-7. 用户查看最终尺寸预览，确认当前论文配色；调用 `freeze_figure_color_map()`，并在 profile 中写入视觉确认。
+7. 智能体查看最终尺寸预览，核对本轮配色依据；调用 `freeze_figure_color_map()`，并在 profile 中写入视觉确认。
 8. 调用 `export_ieee_single_column(mode="formal")`。正式导出 manifest 记录字体文件和 SHA-256、确认时间、修复动作、预检、文件尺寸和文件 SHA-256。
 
 ## Formal profile 最小确认字段
@@ -71,11 +71,12 @@ Times New Roman 可用时，普通文字和 mathtext 的正体、斜体、粗体
   "palette_status": "confirmed",
   "figure_color_map": {
     "palette_status": "confirmed",
-    "confirmed_by": "user",
+    "confirmed_by": "agent",
+    "confirmation_reason": "采用当前数据角色对应的可读默认配色",
     "confirmed_at": "2026-08-14T12:00:00+08:00"
   },
   "visual_review_approval": {
-    "approved_by": "user",
+    "approved_by": "agent",
     "approved_at": "2026-08-14T12:05:00+08:00",
     "reasons": ["final_size_preview"]
   }
@@ -91,3 +92,5 @@ Matplotlib 不在 `>=3.5,<4.0` 时，draft 继续生成；formal 的 `reasons` �
 阻止 formal：字体文件不完整或 SHA-256 不符、mathtext 允许回退、PDF/SVG 出现未批准字体、明确锁定坐标导致数据/marker 越界、无法安全消除的文字碰撞或裁切、可见边界无法达到容差、未确认配色，或缺少必要视觉确认。
 
 图例和数据可能重叠时保留 `legend_data_overlap` 视觉复核原因，不用像素级基线比较替代人工判断。
+
+配色函数显式填写 `confirmed_by`，不推定用户确认；采用默认时用 `agent` 并提供理由。`visual_review_approval` 记录真正检查人、逐项原因和时间，不以自动预检替代目检。

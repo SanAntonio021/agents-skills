@@ -13,9 +13,9 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 - `mode=proposal|expert_reply|final_audit`
 - `edit_scope`、`language`、`loaded_refs`
 
-读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整草稿、结构重写、终稿审校和只审不改任务再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
+读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和只审不改任务再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
-私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `project` 样稿获批时才加载对应文件。公开的本技能不保存个人项目样稿。
+私有样稿为 `D:\BaiduSyncdisk\.agents\writing-samples\project-writing.md`；只读取 `status: approved` 的正文，候选区不作为写作依据。公开的本技能不保存个人项目样稿。
 
 ## `proposal`
 
@@ -71,7 +71,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 
 ## 文件边界
 
-实际写入 `.md` 或 `.tex` 前，执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 交付先执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md)，在正文审校、冻结并确认后交给 `docx`，默认另存新文件；不在导出时再做通用风格改写。
+实际写入 `.md` 或 `.tex` 前，执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 交付先执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md)，在本轮正文审校后交给 `docx`，默认另存新文件；不在导出时再做通用风格改写。
 
 ## 完成条件
 

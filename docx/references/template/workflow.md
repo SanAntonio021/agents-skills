@@ -14,11 +14,11 @@ existing document, stay in the main `docx` editing workflow and preserve the ori
 ## Suggested operating pattern
 
 1. Keep the user's template document unchanged.
-2. Before any Word COM call, obtain explicit permission for this operation and confirm that no Word document needs protection.
-3. Pass `--allow-office-com` or `-AllowOfficeCom` only after that confirmation. If `WINWORD.EXE` already exists, stop without connecting to or closing it.
+2. Before Word COM, use the shared standing authorization only when the existing guard proves an exclusive task-owned instance and no impact on user documents. Otherwise continue file-level work and ask only for the necessary native action.
+3. Pass `--allow-office-com` or `-AllowOfficeCom` under that proven isolation and existing authorization. If `WINWORD.EXE` already exists, stop without connecting to or closing it.
 4. Write the extracted profile next to the template for auditability.
 5. Save formatted output into a new file.
-6. Only with separate permission to open Word, spot-check the output once:
+6. With proven instance isolation, inspect the rendered output:
    - title
    - Heading 1 and Heading 2
    - normal body paragraph

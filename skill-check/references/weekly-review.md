@@ -58,7 +58,7 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 - `批准`：记录当前 fingerprint 的批准；
 - `不批准`：记录拒绝，不自动删除、归档或降级；
 - `解释一下`：只返回证据和建议，不推进队列；
-- 其他自然语言：按调整意见或事实回答处理。
+- 其他自然语言：依据语义映射批准、拒绝、调整或事实回答，不要求固定用词。
 
 证据不足的 finding 最多逐条问两次事实。每次回答后重新调用 `next-question`；达到上限后必须关闭、
 形成修订建议，或标为 `waiting_evidence`，不能无限追问。纯“历史内未见使用”只有连续四个相邻、完整、
@@ -66,7 +66,7 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 统计语义升级或该技能的激活宿主范围变化会重置连续计数。一次全局范围 fingerprint 变化不会无差别
 清零所有未受影响技能。严重问题可插队，单周最多新增三条中低优先级 finding，但旧队列必须保留。
 
-## 最终确认和执行
+## 复用批准并执行
 
 所有队列项完成逐条决定后：
 
@@ -74,8 +74,7 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 python scripts/run_weekly_skill_review.py prepare-execution --json
 ```
 
-只有存在已批准项时才创建 `awaiting_confirmation` 批次。重复读取同一批次会返回相同的一次确认，
-而不是创建第二个批次。非 `ask` 的决定必须同时提供 `--batch-id` 和
+只有存在已批准项时才创建批次。`awaiting_confirmation` 是兼容接口状态；当前准确逐项授权已覆盖执行时，由智能体复用该授权继续 `--decision approve`，不再次向用户提问。非 `ask` 的决定必须同时提供 `--batch-id` 和
 `--expected-batch-fingerprint`；fingerprint 不匹配时拒绝写入。
 
 实际修改由当前任务在隔离候选副本完成，并遵守：
@@ -102,7 +101,7 @@ python scripts/run_weekly_skill_review.py record-execution `
   --remote-sha <40-hex-sha> --sync-status verified --synced-skill <skill-name> --json
 ```
 
-失败项写入 `retry_pending` 并在下一轮优先询问“是否按相同输入重试”；漂移项只退回该项。helper 身份
+失败项写入 `retry_pending`；同范围、同输入且已有重试授权时直接记录原授权继续，不再次询问；漂移项只退回该项。helper 身份
 变化会使旧批次失效并允许重建确认批次，不会把项目留在无法恢复的等待状态。
 helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现模块 `CcSwitchSkillSync.psm1`；只改模块
 也必须让旧确认批次失效，不能把未审查的新实现藏在相同入口文件后面。
@@ -118,7 +117,7 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 `next-question`；`explain` 不推进队列，调整意见先让旧方案和批次失效，展示修订方案后再问批准。
 如果调整意见出现在最终执行确认阶段，先定位它涉及的 finding，再用该 finding 的当前 fingerprint 调用
 `record-decision --classification adjust`，不能把调整意见当作批次批准。
-全部问题完成后只问一次最终执行确认。无批准项时只输出：
+全部决定完成后，已有准确执行授权直接使用，不追加最终执行确认。无批准项时只输出：
 
 ```text
 本周没有需要决定的修改。
@@ -126,3 +125,5 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 
 不要把完整周报作为用户必须阅读的交付物；默认给出离线 dashboard 的稳定路径，报告路径只作为证据
 引用保留在状态和最终摘要中。
+
+内部 fingerprint 用于发现变化。变化后重新核实当前内容、工具来源和授权范围；若实质动作未变，可依据原准确授权重建批次，不向用户要求粘贴哈希。

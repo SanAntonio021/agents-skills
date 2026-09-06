@@ -15,7 +15,7 @@ description: 将会议转写和用户补充整理成讨论型、行动型或混�
 
 读取 [共同质量规则](../humanizer-zh/references/common-quality.md)。完整纪要、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../humanizer-zh/references/ai-smell-catalog.md)。
 
-私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `meeting_notes` 样稿获批时才加载。
+私有样稿为 `D:\BaiduSyncdisk\.agents\writing-samples\meeting-notes.md`；只读取 `status: approved` 的正文，候选区不作为写作依据。
 
 ## 事实边界
 

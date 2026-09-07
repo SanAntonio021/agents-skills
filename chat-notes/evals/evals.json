@@ -331,6 +331,30 @@
         "保留准确提交、完整目标集合、历史失败和继续复查所需依据，不擅自缩小目标或删除失败证据。",
         "修改只限原记录，没有另建强制报告、实际重试或报告真实恢复成功。"
       ]
+    },
+    {
+      "id": 65,
+      "prompt": "请用 chat-notes 收尾并清理本任务生成的过程文件，清理已获授权。合成隔离目录中，用户已确认 final-v5.docx 和对应 source-v5.md 为最终交付，明确保留 v2.docx 用于对比；v1.docx 曾确认但已被替代，v3.docx 和 final-v6-unconfirmed.docx 未确认。目录还有计时用 source-copy.docx、output-copy.docx、edits.json、check.json、preview.png；检查结论已写入现有 notes.md，过程文件无最终成果依赖。用户原始 input.docx 和另一个任务的 draft.docx 也在目录中。请实际完成授权范围内的清场，不再询问。",
+      "expected_output": "保留最终交付及指定对比版本，主动清除其余本任务过程产物，保护原始输入和其他任务文件。",
+      "files": [],
+      "expectations": [
+        "保留 final-v5.docx、source-v5.md、明确指定对比的 v2.docx 和已有 notes.md。",
+        "清除 v1.docx、v3.docx、final-v6-unconfirmed.docx 及五份计时和预览产物，不以曾确认、版本号较新或必要验证材料为由保留。",
+        "input.docx 和另一个任务的 draft.docx 保持原样；不把其他任务的未确认稿纳入清理。",
+        "实际完成并核对清理，不仅列建议，不再要求重复授权，也不通过新建归档目录保留全部过程文件。"
+      ]
+    },
+    {
+      "id": 66,
+      "prompt": "已授权清理本轮中间材料，最终交付是已确认的 report.md 和它引用的 figures/final.png。notes.md 记录了检查通过，但还链接本轮临时 render.pdf、page-01.png 和 draft.check.json；这三份文件仅用于生成阶段的过程检查，不属于最终交付，也未指定对比保留。原始测量 data.csv 是用户提供的输入。请用 chat-notes 收尾，文件工具可用。",
+      "expected_output": "保留最终成果依赖及原始输入，摘录历史检查结果后清除过程证据文件，并修正过程记录引用。",
+      "files": [],
+      "expectations": [
+        "report.md、figures/final.png 和 data.csv 保持完整可用。",
+        "清除 render.pdf、page-01.png 和 draft.check.json，不因 notes.md 有链接就把它们列为永久保留证据。",
+        "在已有 notes.md 中保留实际检查结论、修正失效链接，并说明详细过程材料已清理、原检查记录不再可直接复用。",
+        "不另建重复报告或转存整套过程材料。"
+      ]
     }
   ]
 }

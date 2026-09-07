@@ -6,10 +6,12 @@ description: >
   "生成本周组会汇报", "生成组会 PPT", or asks to turn recent AI-assisted experiments,
   code, instrument tests, plots, or results into a presentation. Read local session JSONL,
   merge child-agent work into parent tasks, filter AI boilerplate, find referenced experiment
-  images, check whether the work is worth presenting to an advisor, require a short outline
-  approval, and export HTML, PDF, and image-only PPTX.
+  images and relevant platform photos, check whether the work is worth presenting to an advisor,
+  and create an image-led PPTX with editable text and independent pictures. Render the actual PPTX
+  to PDF/PNG for inspection. Reuse a clear audience and goal; wait for an outline decision only
+  when the user explicitly asks to review the outline first.
   Do not use for paper-to-slides work when the source is a paper PDF or DOI; use a paper-slide skill.
-compatibility: Requires Python 3.10+, `python-pptx`, and Microsoft Edge or Google Chrome for headless HTML rendering.
+compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoffice-runner and Poppler. SVG input uses the existing Node.js/sharp runtime.
 ---
 
 # 实验工作汇报幻灯片
@@ -30,6 +32,10 @@ compatibility: Requires Python 3.10+, `python-pptx`, and Microsoft Edge or Googl
 python scripts/collect_sessions.py --mode today --out <brief.json>
 python scripts/collect_sessions.py --mode week --out <brief.json>
 ```
+
+指定项目时加 `--project-root <project>`，包含其子目录，不混入名称前缀相似的其他项目。
+素材在其他已知目录时加可重复的 `--asset-root <directory>`；已知台架照片可用
+`--context-image <photo>` 明确提供。优先自行从项目记录确定这些路径，不要求用户每次重新指定。
 
 默认来源：
 
@@ -74,9 +80,9 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 
 如果当天没有第一或第二优先级结果，只剩常规支撑工作，则在生成提纲前停止。直接告诉用户，现有记录缺少适合向导师汇报的实质性进展，并且只问一个问题：停止，还是改为生成私人工作记录。
 
-## 提纲确认
+## 提纲与页面
 
-汇报价值检查通过后，在对话中生成简短提纲。提纲不得超过五个页面标题，每页包含一至两个证据要点。按需使用以下默认页面职责：
+汇报价值检查通过后，按实际材料组织简短提纲，每页围绕一个结果或问题。默认采用短篇汇报，按需使用以下页面职责：
 
 1. 总览
 2. 主要工作
@@ -84,19 +90,25 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 4. 问题与判断
 5. 下一步
 
-删除内容为空的页面职责；工作较少时压缩为两至三页。已有目标和听众明确时直接按提纲生成并自检；用户明确要求先看提纲时才等待其决定。
+删除空页，素材较多时按实验拆页，不为固定页数挤小图件。已有目标和听众明确时直接生成并自检；用户明确要求先看提纲时才等待其决定。
+
+先为每项实验匹配实际曲线、仪器截图或现场照片，再写页面文字。图件占主要空间，文字只说明关键条件、数值和结论；单图配短说明，对比图并排展示。文字过多时整理或拆页，不缩成难读小字。
 
 ## 实验素材
 
-采集器首先使用所选会话事件中明确引用的图片和图表文件。如果没有得到可用素材，则在所选项目目录中扫描同一日期窗口内修改的图片。跳过 `.git`、`.venv`、`node_modules`、`.codex` 和 `.claude`。回退扫描默认最多运行 5 秒、检查 2,000 个文件，避免同步盘阻塞日报。结果图片重要时，传入更窄的项目范围。
+采集器先读取会话引用，再按项目有界补充扫描；找到一张图不会跳过其他项目或实验。默认将 5 秒、2,000 个文件的预算分配给各目录，排除代码依赖、技能资源和符号链接。扫描不足时缩小到已知产物目录，不默认遍历整个同步盘。
+
+`assets` 中的 `role`、`period` 只是候选分类，`status=unverified` 表示尚未核对内容。逐张查看并结合任务记录确定用途：近期文件不自动等于新实验结果；较早的台架照片可作为背景，但需确认仍对应本次装置。旧曲线仅用于明确标注的历史对照，不写成当前成果。
+
+图片若嵌在既有 PPT、PDF 或实验报告中，使用相应文档技能提取，并保留原文件、页码或幻灯片来源。缺少必要图件时先定位材料，明确缺哪项；不以长段文字或虚构图片代替实验素材。
 
 按以下优先级选择：
 
 1. 实验对话直接引用的结果图片或图表。
 2. 匹配项目下、在所选时间窗口内创建或修改的结果图片。
-3. 不使用图片，并用清晰文字说明未找到结果图片。
+3. 对应当前装置的台架照片，或标注来源和时期的历史对照材料。
 
-绝不能为了填补空白区域而插入旧图片或无关图片。在 manifest 中保留文件路径，使用户能够追溯每项插入素材。
+每张图必须服务于当前页的问题，不用无关图片填空。在 manifest 中保留文件路径、内容哈希、角色及来源，便于复查。
 
 忽略 agent runtime 或 skill 目录中的图标、logo 和其他素材。它们是界面资源，不是实验证据；除非用户明确指出其中某项是结果图片。
 
@@ -113,10 +125,11 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
     {
       "kicker": "实验进展",
       "title": "1 km 光纤链路引入低频噪声峰",
+      "type": "result",
       "status": "已完成",
       "blocks": [
         {"type": "text", "heading": "观察", "text": "..."},
-        {"type": "image", "path": "<IMAGE_PATH>", "caption": "频谱仪 CH2"}
+        {"type": "image", "path": "<IMAGE_PATH>", "caption": "频谱仪 CH2", "role": "result", "period": "current", "source": "<RUN_OR_DOCUMENT_REFERENCE>"}
       ]
     }
   ]
@@ -129,13 +142,15 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 python scripts/render_deck.py --deck <deck.json> --output-dir "D:\\BaiduSyncdisk\\组会" --base-name <YYYYMMDD-or-YYYYMMDD组会>
 ```
 
+`type=result/setup/comparison` 的页面必须有真实图片。每页最多放两张主图，其余拆页。只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；缺图和空材料会报错，不生成占位成品。
+
 渲染器生成：
 
-- `<name>.html`：自包含 HTML 源文件。
-- `<name>.pdf`：每页一张幻灯片。
-- `<name>.pptx`：每张幻灯片都是全页 PNG，以保持视觉版式。
-- `<name>_01.png`、`<name>_02.png`、...：渲染后的幻灯片图片。
-- `<name>.manifest.json`：输出路径、幻灯片数量和来源记录。
+- `<name>.pptx`：文字为原生文本框，曲线图和照片为独立图片，可分别移动、缩放、替换。图片内部的数据和文字仍是像素，不宣称可编辑图表数据。
+- `<name>.pdf`：由实际 PPTX 经隔离 LibreOffice 渲染。
+- `<name>_01.png`、`<name>_02.png`、...：从该 PDF 生成的页面图片。
+- `<name>.html`：使用这些页面图片的自包含预览，不另做一套版式。
+- `<name>.manifest.json`：输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明。
 
 使用 `D:\\BaiduSyncdisk\\组会\\20260506.pptx` 作为视觉参考：16:9、白色背景、等线/Microsoft YaHei fallback、蓝色标题强调、实验图片和克制的文字量。不得把 42 MB 模板复制到 skill 中。当前样式配置记录在 `references/template-profile.json`。
 
@@ -151,8 +166,9 @@ python scripts/render_deck.py --deck <deck.json> --output-dir "D:\\BaiduSyncdisk
 
 1. 确认 HTML、PDF、PPTX、PNG 和 manifest 文件存在且非空。
 2. 确认 PPTX 是有效的 ZIP/Office 包，并且幻灯片数量符合预期。
-3. 确认每张 PNG 均为 1600x900，每张引用图片均可正常渲染，或已标记为 `[MISSING: ...]`。
-4. 检查日报不超过五页、文字在 16:9 版式下清晰可读，并且没有残留占位符或缺乏依据的论断。
+3. 确认每张 PNG 均为 1600x900，每张引用图片均正常显示；缺图必须补齐或调整页面内容后再交付。
+4. 逐页检查实际 PPTX 的渲染：图件够大、曲线和照片与文字对应、无裁切和重叠、无缺图占位符；页数符合本次要求。
 5. 报告准确的输出路径和所有 `未验证` 项。
+6. 用 `pptx` 的可编辑性检查确认有原生文字及独立图片，不能以整页截图充当可编辑交付。
 
-不得仅为验证纯图片演示文稿而通过 COM 启动或关闭 PowerPoint。如果已有 PowerPoint 实例处于打开状态，改用生成的 PDF/PNG 文件和包级检查。
+原生 PowerPoint 验证使用 `pptx` 的既有守护程序和隔离副本，保留实际打开与导出结果；不能接管或关闭用户实例。应用被占用时先交付可检查的候选并说明原生验证范围，不把 LibreOffice 渲染冒充 PowerPoint 原生结果。

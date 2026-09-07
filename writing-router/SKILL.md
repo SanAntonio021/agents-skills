@@ -81,6 +81,7 @@ description: 中文写作与通用编辑的默认入口。Use when 用户要撰�
 6. 完整正式稿再做术语与个人用词检查。修改理由只说一次；正文、审计记录和交付说明分开。
 7. 实际写入工作区内的 `.md` 或 `.tex` 时，读取 [文稿版本保护](references/document-version-protection.md)。只读审查和聊天内改句不触发。
 8. 需要 Word 时，正文先按当前协作方式完成本轮内容处理与审校，再按 [Markdown 到 DOCX 交接契约](references/markdown-docx-contract.md) 交给 `docx`。飞书主稿直接回读，不额外维护本地副本；交付流程不再自行运行第二遍通用风格改写。
+   恢复交付或复用检查结果时，由 Word 工具核对主稿、模板、图片和 Word 版本；变化后的材料重新检查，保留用户手工修改。
 
 ## 普通中文编辑
 

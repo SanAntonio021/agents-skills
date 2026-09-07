@@ -53,9 +53,18 @@ confirmation phrase, delivery state machine or user per-page signature is requir
 Prefer the guarded Word gate when Word is the target:
 
 ```powershell
-python <skill-root>\scripts\office_native_gate.py check input.docx `
+python <skill-root>\scripts\document_versions.py run-check input.docx `
+  --record input.docx.check.json --kind word-native -- `
+  python <skill-root>\scripts\office_native_gate.py check input.docx `
   --format docx --json --allow-office-com --require-render
 ```
+
+Use [document version checks](references/document-version-checks.md) before resuming a Word delivery
+or reusing a previous check. The export wrapper records the actual source, template/profile, images
+and generated Word; `run-check` binds the existing checker's JSON result to those versions. Only a
+successful result for unchanged files and the same check command is reused. Source changes require
+an updated output; hand-edited Word is checked as it is, never silently regenerated. Without a valid
+record, check the current document again. Version equality is not a new content or visual inspection.
 
 Pass `--allow-office-com` under the shared standing authorization only when the existing guard can
 prove isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
@@ -176,6 +185,12 @@ powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_wor
   -TemplatePath "$env:APPDATA\Microsoft\Templates\Normal.dotm" `
   -AllowOfficeCom
 ```
+
+The export wrapper creates `<output>.check.json`, or uses an explicit `-CheckRecordPath`. This is
+the corresponding document's check record, not an approval workflow. Generation is `UNCHECKED`.
+Default output-name collisions select a new numbered file; an existing explicit `-OutputPath` is
+refused unless `-OverwriteExisting` was explicitly authorized. Inputs and templates are protected
+even with that switch.
 
 `--allow-template-style-import` is required for `apply` and `apply-native-template`; without it,
 the command must fail before starting Word. `--allow-office-com` and `-AllowOfficeCom` record only

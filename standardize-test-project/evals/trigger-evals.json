@@ -52,6 +52,10 @@
     "should_trigger": true
   },
   {
+    "query": "通信仿真每次保存的波形和DSP中间结果太大，我一般只看图。请修改未来运行的输出程序，保留重绘数据和可复现参数，支持完整排错模式，但历史数据和真实采集不能精简。",
+    "should_trigger": true
+  },
+  {
     "query": "我们 Web 服务的 tests 目录太乱了，帮我把 pytest unit、integration、e2e 和 fixtures 重新分层，CI 继续跑。",
     "should_trigger": false
   },

@@ -13,12 +13,13 @@ description: Windows 命令急救卡。仅在 Windows / PowerShell 高风险命�
 
 ## 必须触发
 
-- PowerShell / 外部 CLI 命令已经失败，需要换命令形态继续。
+- PowerShell / 外部 CLI 命令已经失败，需要判断原因并修正调用或执行权限。
 - 路径含中文、空格、很深目录，且要写入、移动、复制、删除、压缩或调用外部程序。
 - 出现乱码、GBK/UTF-8、BOM、PowerShell here-string、`python -c` 编码问题。
 - 运行现成 Python helper 或校验脚本时，脚本读取已知 UTF-8 中文文件并按 Windows 默认编码报 `UnicodeDecodeError`。
 - **目录移动/删除报 “Device or resource busy” / “Permission denied” / “另一个程序正在使用此文件”**（进程占用、MCP 僵尸、IDE/Office 锁文件）。
 - Codex 在 Windows 上写入时报 `windows sandbox failed`、`setup refresh had errors`、`read ACL run had errors` 或 `SetNamedSecurityInfoW failed`。
+- 工具返回 `Rejected: blocked by policy`，或用户更改批准许可后要求重试受限命令。
 - 需要判断或修复规则文件同步、软链、旧副本。
 - 要拼 `%USERPROFILE%` 下的绝对路径，尤其是把对话里显示过的用户目录路径交给 Edit/Write 或 .NET 文件 API，出现 `EPERM`、假目录树、同一条 `Test-Path` 前后结果不一致。
 - 要引用本机插件或运行时源码的行号和行为，而同一份东西在磁盘上可能并存多个版本副本，先得判定哪一份真正加载。
@@ -59,6 +60,7 @@ description: Windows 命令急救卡。仅在 Windows / PowerShell 高风险命�
 - 写入、移动、删除、覆盖前先检查目标路径和父目录。
 - 不跨 shell 组合破坏性文件操作。
 - 命令语法、参数或路径错误先修正调用方式；临时联网错误按 `web-access` 的[临时连接失败规则](../web-access/SKILL.md#临时连接失败)做有间隔的有限重试。
+- 策略拒绝先核对当前执行权限；只使用工具支持且当前允许的审批入口，不靠更换 shell 或 API 绕过。
 - 文本编辑优先 `apply_patch`；批量机械重写才用命令。
 
 ## Reference 路由
@@ -76,7 +78,7 @@ description: Windows 命令急救卡。仅在 Windows / PowerShell 高风险命�
 - **目录移动/删除被占用**：`mv: Device or resource busy` / Permission denied、进程 cwd 压住目录、MCP 僵尸残留、删掉的目录几秒后被重建、Office/VS Code 锁文件：`references/directory-move-locked.md`
 - 规则文件同步、软链、临时复制对齐：`references/rule-file-sync-and-symlink.md`
 - WindowsApps / AppX packaged app 启动锁、`0x80070020`、Claude 更新后”另一程序正在使用此文件”：`references/windows-appx-packaged-app-lock.md`
-- Codex Windows sandbox、`:slash_tmp`、`C:\tmp` / `D:\tmp` ACL 刷新失败：`references/codex-windows-sandbox.md`
+- Codex 策略拒绝、批准许可变更后的重试、Windows sandbox、`:slash_tmp`、`C:\tmp` / `D:\tmp` ACL 刷新失败：`references/codex-windows-sandbox.md`
 - Codex 自动任务在 `heartbeat` / `project cron` 间迁移，或名称、提示从 PowerShell / Python 等子进程传给自动任务 API 后出现乱码：`references/codex-automation-utf8.md`
 - MATLAB batch / desktop / 写 .m 带 BOM 让 -batch 报错：`references/matlab-batch-logfile.md`
 - MATLAB figure 中文显示 / 字体方框 / GUI 坑（modal→normal 销毁、batch GUI env var 旁路）：`references/matlab-figure-chinese.md`

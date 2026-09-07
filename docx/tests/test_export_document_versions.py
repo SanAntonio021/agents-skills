@@ -32,6 +32,8 @@ class ExportVersionTests(unittest.TestCase):
         self.exporter = template_scripts / "export_markdown_to_word.ps1"
         shutil.copy2(SCRIPTS / "template" / self.exporter.name, self.exporter)
         shutil.copy2(SCRIPTS / "document_versions.py", scripts / "document_versions.py")
+        for helper in ('reference_fields.py', 'style_guard.py', 'styles_normalizer.py'):
+            shutil.copy2(SCRIPTS / helper, scripts / helper)
         (template_scripts / "OfficeComGuard.psm1").write_text(
             "function Assert-WordComPermission { param([switch]$AllowOfficeCom) }\n",
             encoding="utf-8",

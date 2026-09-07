@@ -64,7 +64,7 @@ verifyEqual(test_case, info.code.version, 'test-version');
 verifyTrue(test_case, all(isfield(info.code, ...
     {'git_commit', 'git_dirty', 'entry_file_sha256'})));
 verifyEqual(test_case, info.runtime.name, 'MATLAB');
-verifyEqual(test_case, info.runtime.version, 'R2023b');
+verifyEqual(test_case, info.runtime.version, ['R', version('-release')]);
 verifyEqual(test_case, info.primary_variable.unit, '-');
 verifyEqual(test_case, info.counts.planned, 11);
 verifyEqual(test_case, info.counts.executed, 0);

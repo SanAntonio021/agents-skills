@@ -66,8 +66,8 @@ successful result for unchanged files and the same check command is reused. Sour
 an updated output; hand-edited Word is checked as it is, never silently regenerated. Without a valid
 record, check the current document again. Version equality is not a new content or visual inspection.
 
-Pass `--allow-office-com` under the shared standing authorization only when the existing guard can
-prove isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
+Pass `--allow-office-com` for the Word operation covered by the current user request, only when the
+existing guard proves isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
 copy, checks the source hash, and quits only its own empty instance. Keep all these protections.
 The Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
 Never attach to or end a user's instance. If isolation is unavailable, continue with suitable
@@ -158,7 +158,7 @@ governed default when the user requests a Word export but leaves the format sour
 Template commands are relative to this skill directory:
 
 ```powershell
-# Inspect or extract a template/profile after standing Office authorization with proven isolation.
+# Inspect or extract a template/profile for the current request with proven isolation.
 python scripts/template/word_template_formatter.py extract `
   --template C:\path\template.docx `
   --profile C:\path\template.style-profile.json `
@@ -294,7 +294,7 @@ When existing captions are plain text (`图1 ...`, `Figure 1 ...`) and the user 
 - Add `<w:updateFields w:val="true"/>` in `word/settings.xml` when useful, but still tell the user `Ctrl+A` + `F9` is the reliable refresh step.
 - Preserve formatting by copying the original caption run's `<w:rPr>` into the new field and text runs. Do not touch drawings, relationships, or media unless the user asked to change images.
 - If revising caption wording, extract `word/media/*`, build contact sheets, and make only conservative evidence-based fixes. Do not add claims that are not visible in the image or supplied by the user.
-- Validate with `zipfile.testzip()`, count `SEQ` instructions, count caption paragraphs, and inspect first/middle/last captions. On Windows, Word COM verification needs explicit current-task user approval and must follow the global Office-process rules.
+- Validate with `zipfile.testzip()`, count `SEQ` instructions, count caption paragraphs, and inspect first/middle/last captions. On Windows, Word COM verification must be covered by the current user request and follow this skill's [Office security boundary](references/office-security-boundary.md).
 
 **Tracked changes:** when redlining, validate with `--author "<the name you redlined under>"` (needs `--original`) — it reports any text you changed without a `<w:ins>`/`<w:del>` around it, which is easy to do by accident and invisible in the accepted view. Wrap runs in `<w:ins>`/`<w:del>` with `w:id`, `w:author`, `w:date` attributes. Inside `<w:del>`, the text element is `<w:delText>`, not `<w:t>`. A deleted paragraph mark (`<w:pPr><w:rPr><w:del w:id=".." w:author=".." w:date=".."/></w:rPr></w:pPr>`) means "merge this paragraph into the next" — so deleting a paragraph outright is that plus a `<w:del>` around every run. The `<w:del/>` must come before the rPr's other children; their order is schema-enforced.
 

@@ -121,6 +121,18 @@
         "明确路由到 spreadsheets:excel-live-control",
         "实时读写使用连接文档工具而非本地文件工具"
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "仅作流程判断，不操作真实 Excel。共享全局规则没有 Office 隔离条款。用户先只要求生成独立 XLSX 和 PDF，没有要求 Excel 原生检查；随后追加 Excel 兼容性检查，但 EXCEL.EXE 已经运行。请按 xlsx 技能分别说明路线和保护要求。",
+      "expected_output": "普通文件与 PDF 交付不自动启动 Excel；明确需要原生检查时使用本技能的 gate，并由当前请求和技能内的进程、隔离副本及清理规则决定，不读取缺失的全局 Office 授权。",
+      "files": [],
+      "assertions": [
+        "普通 XLSX/PDF 请求采用文件级检查和受控 LibreOffice 路径，不自动追加 Excel 原生操作。",
+        "原生检查仅在本次请求需要时进行，--allow-office-com 不能替代隔离证明。",
+        "已有 EXCEL.EXE 不连接、不关闭，原生检查受阻如实记录。",
+        "源文件保持不变，仅可退出经确认由本任务创建且 Workbooks.Count 为零的实例。"
+      ]
     }
   ]
 }

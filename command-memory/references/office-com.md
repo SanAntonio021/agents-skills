@@ -6,13 +6,13 @@
 
 - 能用文件级检查就别启动 Office：PPTX/DOCX/XLSX 先按 zip/XML 结构检查。
 - 只处理本次生成或用户明确指定的文件。
-- 如果桌面可能已有未保存 Office 文档，先说明风险，再启动 COM。
+- 相关 Office 已在运行或归属不明时，不连接用户实例；先用文件级路径。需要用户退出应用时，由用户保存并退出。
 
 ## 最小护栏
 
-- 启动前检查相关进程：`Get-Process POWERPNT,WINWORD,EXCEL -ErrorAction SilentlyContinue`。
-- 如果连接到已有 Office 实例，只关闭自己打开的 document/presentation/workbook。
-- 不确定是否独占实例时，不调用 `Quit()`。
+- 启动前检查目标应用的相关进程：`Get-Process POWERPNT,WINWORD,EXCEL -ErrorAction SilentlyContinue`。进程列表只用于排查，不证明隔离。
+- 本次请求需要 COM 时，使用对应文档技能的现有守护工具确认任务归属；不能仅凭新建 COM 对象认定独占实例。
+- 只关闭本任务打开的 document/presentation/workbook；仅在守护工具确认实例属于本任务且文档集合为空时退出该实例。不能证明时，不连接或关闭用户实例，继续文件级处理。
 - 导出预览或 PDF 后，先验证输出文件存在且非零长度，再考虑关闭对象。
 
 ## PowerPoint 导出预览

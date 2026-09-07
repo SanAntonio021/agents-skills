@@ -14,7 +14,7 @@ existing document, stay in the main `docx` editing workflow and preserve the ori
 ## Suggested operating pattern
 
 1. Keep the user's template document unchanged.
-2. Before Word COM, use the shared standing authorization only when the existing guard proves an exclusive task-owned instance and no impact on user documents. Otherwise continue file-level work and ask only for the necessary native action.
+2. Before Word COM, confirm the operation is covered by the current document request and follow [Office Security Boundary](../office-security-boundary.md). The existing guard must prove an exclusive task-owned instance and no impact on user documents. Otherwise continue file-level work and ask only if the remaining native action needs a user decision.
 3. Pass `--allow-office-com` or `-AllowOfficeCom` under that proven isolation and existing authorization. If `WINWORD.EXE` already exists, stop without connecting to or closing it.
 4. Write the extracted profile next to the template for auditability.
 5. Save formatted output into a new file.

@@ -66,6 +66,18 @@
         "Final PDF opens with PyMuPDF, Poppler, and strict pypdf.",
         "Failure leaves no official output names."
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "仅分析路线，不运行 Office。共享全局没有 Office 隔离条款。用户要求把已保存的 source.docx 转成 PDF，此时 Word 正打开其他文档。随后用户额外要求 Word 原生打开证据。分别说明 PDF 转换和原生检查如何处理，源文件不能覆盖。",
+      "expected_output": "默认 PDF 转换使用 libreoffice-runner，不接管 Word；额外原生证据由 pdf 自有 gate 和技能内的任务归属规则约束，现有 Word 或归属不明时不执行接管，保留可完成的文件级工作。",
+      "files": [],
+      "expectations": [
+        "PDF 转换本身不触发 Microsoft Office 原生操作。",
+        "需要原生检查时依据本技能的隔离、归属和退出规则，不引用全局 Office 授权。",
+        "不连接或关闭用户实例，隔离副本和源文件保护保持。",
+        "缺少进程归属或退出证据时记录未验证，不把权限开关当隔离证据。"
+      ]
     }
   ]
 }

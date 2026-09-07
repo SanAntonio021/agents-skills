@@ -1,13 +1,14 @@
 {
-  "source": "D:\\BaiduSyncdisk\\组会\\20260506.pptx",
+  "source": "D:\\BaiduSyncdisk\\组会\\20260715近期进展.pptx",
   "slide_size": "16:9",
-  "slide_count_sample": 7,
+  "slide_count_sample": 30,
+  "reference_pages": [3, 4, 8],
   "background": "#FFFFFF",
-  "font_family": ["等线", "Microsoft YaHei", "Arial"],
+  "font_family": ["微软雅黑", "Microsoft YaHei", "Arial"],
   "theme_colors": {
-    "heading": "#24364B",
-    "primary_blue": "#4472C4",
-    "secondary_blue": "#5B9BD5",
+    "heading": "#000000",
+    "primary_blue": "#0B3041",
+    "secondary_blue": "#002060",
     "muted": "#6B7280",
     "panel": "#F3F6FA",
     "border": "#D9E2F0"
@@ -18,7 +19,16 @@
     "原因判断",
     "下一步"
   ],
-  "media_pattern": "实验截图、频谱图、曲线图及相关台架照片优先；单图主导或双图对照，文字仅解释条件和结论",
+  "layout": {
+    "slide_size_emu": [12192000, 6858000],
+    "title": {"box": [0.1, 0.04, 13.05, 0.68], "font_size": 40, "color": "000000"},
+    "divider": {"box": [0, 0.774, 13.333333, 0.156], "color": "0B3041"},
+    "subtitle": {"box": [0, 0.95, 13.333333, 0.508], "font_size": 20, "color": "002060", "fill": "FF9999"},
+    "content": {"box": [0.12, 1.55, 13.09, 5.12]},
+    "conclusion": {"box": [0.1, 6.85, 13.09, 0.56], "font_size": 24, "color": "000000"},
+    "caption": {"font_size": 18, "height": 0.4}
+  },
+  "media_pattern": "大面积图件；支持单图、双图、左侧双图加右侧大图、宽图加照片条。实验说明居中，结论放页底",
   "pptx_objects": "editable_text_and_independent_pictures",
   "preview_source": "rendered_pptx"
 }

@@ -25,7 +25,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import MSO_ANCHOR
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
@@ -36,6 +36,7 @@ FONT = "Microsoft YaHei"
 INK = "263344"
 BLUE = "4472C4"
 MUTED = "64748B"
+PROFILE_PATH = Path(__file__).resolve().parents[1] / "references/template-profile.json"
 
 
 def choose_stem(output_dir: Path, requested: str) -> str:
@@ -83,7 +84,7 @@ def text_rows(block: dict[str, Any]) -> list[tuple[str, bool]]:
 
 
 def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum: int) -> int:
-    for size in (value for value in (28, 24, 20, 18) if value <= maximum):
+    for size in (value for value in (40, 36, 32, 28, 24, 20, 18) if value <= maximum):
         capacity = max(1, width * 72 / size * 1.65)
         lines = sum(max(1, math.ceil(sum(2 if unicodedata.east_asian_width(c) in {"W", "F"} else 1
                                        for c in text) / capacity)) for text, _ in rows)
@@ -92,7 +93,8 @@ def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum
     raise ValueError("Slide text does not fit at a readable size; shorten it or split the slide")
 
 
-def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False):
+def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False,
+             font=FONT, centered=False):
     if not rows:
         return
     if fit:
@@ -101,20 +103,22 @@ def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False)
     frame = box.text_frame
     frame.word_wrap = True
     frame.margin_left = frame.margin_right = frame.margin_top = frame.margin_bottom = 0
-    frame.vertical_anchor = MSO_ANCHOR.TOP
+    frame.vertical_anchor = MSO_ANCHOR.MIDDLE if centered else MSO_ANCHOR.TOP
     for index, (text, bold) in enumerate(rows):
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
         paragraph.space_before = Pt(0)
         paragraph.space_after = Pt(8 if index < len(rows) - 1 else 0)
         paragraph.line_spacing = 1.15
+        if centered:
+            paragraph.alignment = PP_ALIGN.CENTER
         run = paragraph.add_run()
         run.text = re.sub(r"(?<=\d) (?=(?:GHz|MHz|kHz|Hz|dBm|dB|km|mm|ms|ns|Gbit/s|Gbps)\b)", "\u00a0", text)
-        run.font.name = FONT
+        run.font.name = font
         run.font.size = Pt(size)
         run.font.bold = bold
         run.font.color.rgb = RGBColor.from_string(color)
         east_asian = OxmlElement("a:ea")
-        east_asian.set("typeface", FONT)
+        east_asian.set("typeface", font)
         run._r.get_or_add_rPr().append(east_asian)
 
 
@@ -142,9 +146,9 @@ def raster_bytes(path: Path) -> bytes:
         return buffer.getvalue()
 
 
-def add_image(slide, block, data, x, y, width, height):
+def add_image(slide, block, data, x, y, width, height, caption_size=18, caption_space=0.4, font=FONT):
     caption = str(block.get("caption") or "")
-    caption_height = 0.55 if caption else 0
+    caption_height = caption_space if caption else 0
     image_height = height - caption_height
     with Image.open(io.BytesIO(data)) as image:
         scale = min(width / image.width, image_height / image.height)
@@ -154,7 +158,8 @@ def add_image(slide, block, data, x, y, width, height):
                                        width=Inches(actual_width), height=Inches(actual_height))
     picture.name = f"Research image: {Path(block['path']).name}"
     if caption:
-        add_text(slide, [(caption, False)], x, y + image_height + 0.08, width, caption_height - 0.08, 14, MUTED)
+        add_text(slide, [(caption, False)], x, y + image_height + 0.04, width, caption_height - 0.04,
+                 caption_size, INK, font=font, centered=True)
 
 
 def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]]:
@@ -182,8 +187,8 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
                     raise ValueError(f"Missing research image: {path}")
                 block["path"] = str(path)
                 pictures += 1
-        if pictures > 2:
-            raise ValueError("Use at most two main images per slide; place additional figures on another slide")
+        if pictures > 6:
+            raise ValueError("Use at most six images in a template layout; place additional figures on another slide")
         if slide.get("type") in {"result", "setup", "comparison"} and not pictures:
             raise ValueError(f"This experimental slide needs its actual image: {slide.get('title', '')}")
         slide["blocks"] = blocks
@@ -194,56 +199,88 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
     return slides
 
 
+def image_boxes(count, area, layout):
+    if count <= 0:
+        return []
+    x, y, width, height = area
+    gap = 0.15
+    if count == 1:
+        return [tuple(area)]
+    if layout == "wide-strip" and count >= 3:
+        top_height = height * 0.62
+        bottom_height = height - top_height - gap
+        item_width = (width - gap * (count - 2)) / (count - 1)
+        return [(x, y, width, top_height)] + [
+            (x + index * (item_width + gap), y + top_height + gap, item_width, bottom_height)
+            for index in range(count - 1)]
+    if layout == "stacked-left" and count == 3:
+        half_width = (width - gap) / 2
+        half_height = (height - gap) / 2
+        return [(x, y, half_width, half_height), (x, y + half_height + gap, half_width, half_height),
+                (x + half_width + gap, y, half_width, height)]
+    columns = 2 if count <= 4 else 3
+    rows = math.ceil(count / columns)
+    item_width = (width - gap * (columns - 1)) / columns
+    item_height = (height - gap * (rows - 1)) / rows
+    return [(x + (index % columns) * (item_width + gap), y + (index // columns) * (item_height + gap),
+             item_width, item_height) for index in range(count)]
+
+
 def make_pptx(deck, slides, output_path):
     if output_path.exists():
         raise FileExistsError(output_path)
+    profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
+    profile = json.loads(profile_path.read_text(encoding="utf-8-sig"))
+    layout = profile["layout"]
+    font = profile["font_family"][0]
     presentation = Presentation()
-    presentation.slide_width = 12192000
-    presentation.slide_height = 6858000
+    presentation.slide_width, presentation.slide_height = layout["slide_size_emu"]
     assets = []
     for index, content in enumerate(slides, 1):
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         slide.background.fill.solid()
         slide.background.fill.fore_color.rgb = RGBColor(255, 255, 255)
-        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, presentation.slide_width, Inches(0.055))
+        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *[Inches(v) for v in layout["divider"]["box"]])
         line.fill.solid()
-        line.fill.fore_color.rgb = RGBColor.from_string(BLUE)
+        line.fill.fore_color.rgb = RGBColor.from_string(layout["divider"]["color"])
         line.line.fill.background()
-        kicker = str(content.get("kicker") or content.get("section") or "")
-        if kicker:
-            add_text(slide, [(kicker, False)], 0.55, 0.26, 10.7, 0.25, 11, BLUE)
         title = str(content.get("title") or f"Slide {index}")
-        add_text(slide, [(title, True)], 0.55, 0.57, 11.25, 0.8, 28, INK, fit=True)
-        status = str(content.get("status") or "")
-        if status:
-            add_text(slide, [(status, False)], 11.8, 0.64, 1.0, 0.55, 12, BLUE)
-        footer = str(deck.get("footer") or deck.get("date") or "")
-        add_text(slide, [(footer, False)], 0.55, 7.16, 11.2, 0.2, 9, MUTED)
-        add_text(slide, [(f"{index} / {len(slides)}", False)], 12.0, 7.16, 0.8, 0.2, 9, MUTED)
+        chapter = str(content.get("section") or content.get("kicker") or title)
+        spec = layout["title"]
+        add_text(slide, [(chapter, True)], *spec["box"], spec["font_size"], spec["color"], fit=True, font=font)
+        subtitle = str(content.get("subtitle") or (title if title != chapter else ""))
+        if subtitle:
+            spec = layout["subtitle"]
+            strip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *[Inches(v) for v in spec["box"]])
+            strip.fill.solid()
+            strip.fill.fore_color.rgb = RGBColor.from_string(spec["fill"])
+            strip.line.fill.background()
+            add_text(slide, [(subtitle, True)], *spec["box"], spec["font_size"], spec["color"], fit=True, font=font, centered=True)
         pictures = [block for block in content["blocks"] if block["type"] == "image"]
-        rows = [(str(content["subtitle"]), False)] if content.get("subtitle") else []
+        rows = []
         for block in content["blocks"]:
             if block["type"] != "image":
                 rows.extend(text_rows(block))
-        if len(pictures) == 1:
-            boxes = [(0.55, 1.55, 8.3 if rows else 12.23, 5.35)]
-            if rows:
-                add_text(slide, rows, 9.15, 1.75, 3.63, 4.9, 20, fit=True)
-        elif len(pictures) == 2:
-            height = 4.15 if rows else 5.35
-            boxes = [(0.55, 1.55, 5.96, height), (6.82, 1.55, 5.96, height)]
-            if rows:
-                add_text(slide, rows, 0.7, 5.95, 11.9, 0.95, 18, fit=True)
+        summary_rows = [(str(content["summary"]), True)] if content.get("summary") else []
+        if pictures:
+            summary_rows.extend(rows)
         else:
-            boxes = []
-            add_text(slide, rows, 0.75, 1.65, 11.83, 5.2, 24, fit=True)
+            add_text(slide, rows, *layout["content"]["box"], 24, font=font, fit=True)
+        spec = layout["conclusion"]
+        add_text(slide, summary_rows, *spec["box"], spec["font_size"], spec["color"], fit=True, font=font, centered=True)
+        boxes = image_boxes(len(pictures), layout["content"]["box"], content.get("layout"))
+        slide.notes_slide.notes_text_frame.text = "\n".join(filter(None, [
+            str(deck.get("footer") or deck.get("date") or ""), str(content.get("status") or ""),
+            str(content.get("source") or ""),
+            *[str(block.get("source") or block["path"]) for block in pictures]]))
         for block, box in zip(pictures, boxes):
             path = Path(block["path"])
             source_hash = hashlib.sha256(path.read_bytes()).hexdigest()
             raster = raster_bytes(path)
             if hashlib.sha256(path.read_bytes()).hexdigest() != source_hash:
                 raise ValueError(f"Research image changed while rendering: {path}")
-            add_image(slide, block, raster, *box)
+            add_image(slide, block, raster, *box, caption_size=layout["caption"]["font_size"],
+                      caption_space=layout["caption"]["height"], font=font)
             assets.append({"slide": index, "path": str(path), "sha256": source_hash,
                            "embedded_sha256": hashlib.sha256(raster).hexdigest(),
                            "caption": block.get("caption", ""), "role": block.get("role", "unverified"),
@@ -304,6 +341,10 @@ def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem):
                 "render_source": "pptx", "editable_text": True, "independent_images": True,
                 "assets": assets, "source_deck": str(deck_path),
                 "files": {"html": str(html_path), "pdf": str(pdf_path), "pptx": str(pptx_path), "png": [str(path) for path in slide_paths]}}
+    profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
+    manifest["template"] = {"mode": "style_profile", "path": str(profile_path),
+                            "sha256": hashlib.sha256(profile_path.read_bytes()).hexdigest(),
+                            "source": json.loads(profile_path.read_text(encoding="utf-8-sig"))["source"]}
     (output_dir / f"{stem}.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 

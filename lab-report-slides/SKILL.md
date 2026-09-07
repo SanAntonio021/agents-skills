@@ -142,7 +142,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 python scripts/render_deck.py --deck <deck.json> --output-dir "D:\\BaiduSyncdisk\\组会" --base-name <YYYYMMDD-or-YYYYMMDD组会>
 ```
 
-`type=result/setup/comparison` 的页面必须有真实图片。每页最多放两张主图，其余拆页。只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；缺图和空材料会报错，不生成占位成品。
+`type=result/setup/comparison` 的页面必须有真实图片。每页支持一至六张图片，按可读性决定是否拆页。`section`（兼容 `kicker`）为章节标题，`title` 为实验副标题，`subtitle` 可显式覆盖副标题，`summary` 为页底结论。`layout=wide-strip` 将首图放上方、其余照片放下方；`layout=stacked-left` 将三张图排为左侧上下两图、右侧大图；其他情况使用单图或网格。旧文字块在有图页进入结论区，过长时报错，应精简或拆页。来源、日期与状态写入备注，历史示例仍须在可见文字中标明。只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；缺图和空材料会报错，不生成占位成品。
 
 渲染器生成：
 
@@ -152,7 +152,7 @@ python scripts/render_deck.py --deck <deck.json> --output-dir "D:\\BaiduSyncdisk
 - `<name>.html`：使用这些页面图片的自包含预览，不另做一套版式。
 - `<name>.manifest.json`：输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明。
 
-使用 `D:\\BaiduSyncdisk\\组会\\20260506.pptx` 作为视觉参考：16:9、白色背景、等线/Microsoft YaHei fallback、蓝色标题强调、实验图片和克制的文字量。不得把 42 MB 模板复制到 skill 中。当前样式配置记录在 `references/template-profile.json`。
+默认采用 `D:\\BaiduSyncdisk\\组会\\20260715近期进展.pptx` 第 3、4、8 页提取的样式：16:9、白底、微软雅黑、左上黑色大标题、深色分隔带、粉底居中实验副标题、大面积图件及页底加粗结论。渲染器实际读取 `references/template-profile.json` 的尺寸、坐标、字体与颜色；deck 可用绝对 `profile_path` 选择其他配置。这里复用样式参数，不复制原文件的母版、业务文字和私有实验图片。manifest 记录样式来源及配置哈希。
 
 文件命名：
 

@@ -1,6 +1,6 @@
 # Publisher Download Playbook
 
-更新时间：2026-05-13
+更新时间：2026-09-07
 
 ## 用途
 
@@ -53,6 +53,8 @@
 - 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
 - 登录页出现扫码、验证码、账号密码或二次确认时，只让用户本人完成这一步；不要替用户输入凭据，也不要绕过权限。
 - 授权中断时保留 MCP checkpoint，用户完成授权后用 `retry_authorized_download` 继续，不要重新搜索导致下载到错误版本。
+- `download_with_authorization` 或浏览器代理返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以已登录浏览器页面的 `Access provided by <institution>` 和 PDF 入口可见性判断授权状态。
+- 若浏览器 PDF viewer、CDP 或下载按钮卡住，但已登录页面能访问内层 `stampPDF/getPDF.jsp`，可以只在本次下载中导出临时会话文件给 `curl.exe --http1.1 --ssl-no-revoke --cookie <jar> --referer <stamp-url>` 使用；不要把 Cookie 内容写入日志、索引或回复，下载后验证 `%PDF-` 并立即删除临时会话文件和脚本。
 
 ## ScienceDirect / Elsevier
 

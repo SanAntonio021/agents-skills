@@ -23,6 +23,7 @@ $OutputEncoding = [Console]::OutputEncoding
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $formatterScriptPath = Join-Path $scriptRoot "word_template_formatter.py"
 $versionScriptPath = Join-Path (Split-Path -Parent $scriptRoot) "document_versions.py"
+$referenceScriptPath = Join-Path (Split-Path -Parent $scriptRoot) "reference_fields.py"
 $officeComGuardPath = Join-Path $scriptRoot "OfficeComGuard.psm1"
 $defaultWordTemplatePath = Join-Path $env:APPDATA "Microsoft\Templates\Normal.dotm"
 $defaultPresetName = "qiye-shenbao"
@@ -273,10 +274,13 @@ foreach ($sourcePath in $resolvedInputs) {
 
 foreach ($job in $jobs) {
     $sourcePath = $job.SourcePath
-    $outputPath = $job.OutputPath
-    if ((Test-Path -LiteralPath $outputPath) -and -not $OverwriteExisting) {
-        throw "Output appeared after preflight; preserve it and choose a new path: $outputPath"
+    $finalOutputPath = $job.OutputPath
+    if ((Test-Path -LiteralPath $finalOutputPath) -and -not $OverwriteExisting) {
+        throw "Output appeared after preflight; preserve it and choose a new path: $finalOutputPath"
     }
+    $outputPath = Join-Path (Split-Path -Parent $finalOutputPath) (([IO.Path]::GetFileNameWithoutExtension($finalOutputPath)) + ".export-stage.docx")
+    $exportStagePath = $outputPath
+    if (Test-Path -LiteralPath $outputPath) { throw "Export stage exists; choose a new output path: $outputPath" }
     Invoke-PandocExport -SourcePath $sourcePath -OutputPath $outputPath
 
     if ($templateMode -eq "native-template") {
@@ -295,6 +299,21 @@ foreach ($job in $jobs) {
             -AllowOfficeCom:$AllowOfficeCom
     }
 
+    $referenceOutput = $finalOutputPath
+    if (Test-Path -LiteralPath $finalOutputPath) {
+        $referenceOutput = $finalOutputPath + '.reference-candidate.docx'
+    }
+    $referenceRecord = $job.RecordPath + '.references.json'
+    $referenceArgs = @('-X', 'utf8', $referenceScriptPath, 'finalize', $outputPath, $referenceOutput,
+        '--mode', 'full', '--record', $referenceRecord, '--markdown-source', $sourcePath, '--pandoc', $PandocPath)
+    if ($AllowOfficeCom) { $referenceArgs += '--allow-office-com' }
+    $referenceText = @(& $pythonPath @referenceArgs) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw "Reference finalization is incomplete; candidate and stages are preserved: $referenceText" }
+    if ($referenceOutput -ne $finalOutputPath) {
+        # Explicit overwrite remains supported; the checked candidate is retained with its own record.
+        Copy-Item -LiteralPath $referenceOutput -Destination $finalOutputPath -Force
+    }
+    $outputPath = $finalOutputPath
     $recordResult = $job.InputSnapshot | & $pythonPath -X utf8 $versionScriptPath record-generation $outputPath --record $job.RecordPath
     if ($LASTEXITCODE -ne 0) { throw "Cannot record generated document versions: $recordResult" }
 
@@ -305,5 +324,8 @@ foreach ($job in $jobs) {
         AppliedPreset       = $Preset
         AppliedTemplatePath = $resolvedTemplatePath
         CheckRecordPath    = $job.RecordPath
+        ReferenceRecordPath = $referenceRecord
+        ReferenceCheckedOutputPath = $referenceOutput
+        ExportStagePath     = $exportStagePath
     }
 }

@@ -13,6 +13,20 @@ surrounding text and layout, and a rendered document with no clipped formula row
 - Limit package changes to the parts required by the task. Replacing formula text in an existing
   body normally changes only `word/document.xml`.
 
+## Equation numbers and references
+
+Use [numbering and cross-references](numbering-references.md) for the common finalizer. Whole-document
+creation/export gives every intended numbered equation a separate equation `SEQ`, stable number-only
+bookmark and `REF` references. Keep the number outside formula math, preserve parentheses and
+chapter/appendix numbering, and never infer a label from numeric math content. Inline and display
+equations without intended numbers remain unnumbered.
+
+Local prose edits refresh existing relevant internal fields throughout the document without changing
+OMML or converting unrelated literal references. Missing, duplicate or ambiguous targets require
+resolution, not inferred matches. Equation conversion/layout checks below remain required for math
+changes; refreshing number/reference fields alone does not require rendering. LibreOffice can supply
+layout evidence but cannot replace native Word field evaluation and saved-result evidence.
+
 ## Conversion workflow
 
 ### 1. Inspect and collect

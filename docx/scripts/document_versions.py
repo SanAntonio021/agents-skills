@@ -329,7 +329,7 @@ def run_check(
     document: Path, record_path: Path, command: list[str], *, kind: str,
     inputs: dict[str, Any] | None = None, timeout: float | None = None, refresh: bool = False,
 ) -> dict[str, Any]:
-    office_entrypoints = {"office_native_gate.py", "word_template_formatter.py", "libreoffice_run.py"}
+    office_entrypoints = {"office_native_gate.py", "word_template_formatter.py", "libreoffice_run.py", "reference_word.py"}
     office_command = any(Path(token).name.lower() in office_entrypoints for token in command)
     if timeout is not None and (kind in {"word-native", "libreoffice-render"} or office_command):
         raise ValueError("Office checks manage their own timeout and cleanup; pass timeout options to the existing checker")

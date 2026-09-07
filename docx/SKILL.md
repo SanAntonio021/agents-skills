@@ -10,9 +10,10 @@ Use `$docx` as the sole explicit Word skill entrypoint.
 
 ## OfficeCLI route
 
-For ordinary paragraph inspection and edits, use the fast paragraph workflow below. It does not
-depend on OfficeCLI or start Office. For other text extraction, element queries, validation, and
-small structural edits, this skill's bridge gives Codex and Claude the same pinned OfficeCLI:
+For ordinary paragraph inspection and edits, use the fast paragraph workflow below. Its strict
+paragraph stage needs neither OfficeCLI nor Office; field finalization is separate. For other text
+extraction, element queries, validation and small structural edits, this skill's bridge gives Codex
+and Claude the same pinned OfficeCLI:
 
 ```powershell
 python <skill-root>\scripts\officecli_bridge.py view input.docx text
@@ -47,9 +48,14 @@ repeat a general writing pass. Existing `loaded_refs` records describe only refe
 Reuse rules, templates and scripts already read in this task when they have no relevant changes;
 do not reload the entire workflow for each accepted paragraph.
 
-Check the OOXML/package, styles, affected content and unchanged source. Ordinary paragraph updates
-default to the fast workflow: after these checks pass, deliver without rendering, PDF/PNG generation
-or an Office launch. Record "content and styles checked; layout not checked". Render for initial
+Check the OOXML/package, styles, affected content and unchanged source. Read
+[Numbering and cross-references](references/numbering-references.md) for the common finalizer:
+whole generation establishes `SEQ`/`REF` for intended numbered figures, tables and equations;
+local edits refresh all existing relevant internal fields without converting unrelated literal refs.
+Do not number unnumbered objects. That reference defines the approved source CLI, not runtime publication.
+Ordinary paragraph updates use the strict paragraph stage followed by field finalization, without
+rendering or PDF/PNG by default. No relevant fields means no Office launch. Record content/style,
+reference and native-refresh results separately, with "layout not checked". Render for initial
 full-document creation, template or layout changes (including figure/table layout), or an explicit
 layout-check request. Inspect the affected pages and their pagination boundaries; inspect the whole
 document for a new full document or changes with document-wide impact. When the affected scope
@@ -80,9 +86,11 @@ for a small update.
 Pass `--allow-office-com` for the Word operation covered by the current user request, only when the
 existing guard proves isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
 copy, checks the source hash, and quits only its own empty instance. Keep all these protections.
-The Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
-Never attach to or end a user's instance. If isolation is unavailable, continue with suitable
-file-level checks or `libreoffice-runner`; ask only if the remaining native action requires it.
+When rendering, Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
+Never attach to or end a user's instance. The common reference finalizer has a narrowly scoped
+writable temporary-copy exception described in [Office security](references/office-security-boundary.md).
+If isolation is unavailable, continue file-level checks or suitable `libreoffice-runner` layout work;
+LibreOffice cannot substitute for native field refresh, which remains unfinished.
 
 Record actual evidence: static validation does not establish rendering; LibreOffice rendering does
 not establish Word-native behavior. A failed OfficeCLI native diagnostic does not establish that
@@ -103,7 +111,7 @@ tool; use a trustworthy available file library or existing tool instead of block
 | Task | Approach |
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |
-| **Edit** ordinary paragraphs | Use `scripts/edit_paragraphs.py` (`inspect`, `apply`, `check`); no render by default |
+| **Edit** ordinary paragraphs | Use `scripts/edit_paragraphs.py` (`inspect`, `finalize`); `apply`/`check` are strict lower-level stages; no render by default |
 | **Edit** complex existing content | Freeze style identities and use the existing specialized OOXML tool |
 | **Repair** parallel or renamed styles | Audit and explicitly remap with `scripts/style_guard.py` |
 | **Apply** a template to a new or whole document | Use `scripts/template/word_template_formatter.py` with both safety gates |
@@ -129,7 +137,7 @@ tool; use a trustworthy available file library or existing tool instead of block
 
 ## Verify the output
 
-For ordinary paragraph updates, use the fast checks below and stop when they pass. When rendering
+For ordinary paragraph updates, complete the paragraph and reference finalization checks below. When rendering
 is required by the content and layout rules above, render and inspect the affected scope:
 
 ```bash
@@ -200,7 +208,10 @@ powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_wor
 ```
 
 The export wrapper creates `<output>.check.json`, or uses an explicit `-CheckRecordPath`. This is
-the corresponding document's check record, not an approval workflow. Generation is `UNCHECKED`.
+the corresponding document's check record, not an approval workflow. The approved export integration
+runs the common reference finalizer after formatting and before final generation/hash recording;
+see [Numbering and cross-references](references/numbering-references.md) for completion evidence.
+Generation alone is `UNCHECKED`.
 Default output-name collisions select a new numbered file; an existing explicit `-OutputPath` is
 refused unless `-OverwriteExisting` was explicitly authorized. Inputs and templates are protected
 even with that switch.
@@ -223,8 +234,10 @@ remain distinct identities.
 
 Use the fixed `scripts/edit_paragraphs.py` tool for whole-paragraph replacement, insertion before or
 after an existing paragraph, and deletion. `inspect` lists complete text and stable source paragraph
-indices; `apply` accepts the original DOCX, a UTF-8 JSON edit list and a new output path; `check`
-verifies the candidate against the original and the same edit list. See
+indices. The high-level `finalize source edits output --allow-office-com` retains a strict paragraph
+output/record, then creates a separately refreshed deliverable/record. Lower-level `apply` accepts
+the original DOCX, a UTF-8 JSON edit list and a new output path; `check` verifies that strict stage
+against the original and the same edit list, not the later field-refreshed output. See
 [Paragraph editing](references/paragraph-editing.md) for the exact commands and JSON format.
 
 Match complete original text uniquely. If it occurs more than once, use the paragraph index returned
@@ -236,9 +249,10 @@ existing specialized tool; do not flatten them into plain text.
 The tool validates the entire batch before publishing a new output, then reuses `style_guard.py`
 and `document_versions.py` to check text, unchanged parts and source preservation. Match failures,
 unsupported targets and conflicting edits produce no partial deliverable. The check record explicitly
-distinguishes passed content/style checks from layout not checked. Do not write a project-specific
-script, start Office, regenerate the full document or create a new snapshot/report collection for
-these small edits. Already accepted text is inserted exactly as approved.
+distinguishes passed content/style checks from layout not checked. Existing fields require the
+separate common finalization stage before final passed delivery. Do not write a project-specific
+script, regenerate the full document or create a snapshot/report collection for these small edits.
+Only guarded native field finalization needs Word; accepted text is inserted exactly as approved.
 
 ### Preserve style identity by default
 
@@ -318,18 +332,13 @@ conversion, Unicode spacing diagnosis, known Pandoc schema repairs, multiline-eq
 semantic equivalence checks, and rendered-page inspection. Do not represent a structured fraction,
 matrix, piecewise function, or equation array as one plain `m:t` run.
 
-### Auto-numbering existing captions
+### Numbering and reference finalization
 
-When existing captions are plain text (`图1 ...`, `Figure 1 ...`) and the user wants Word automatic numbering, edit the OpenXML directly. `python-docx` and `docx-js` do not reliably convert existing caption paragraphs in place.
-
-- Work on a new output file; never overwrite the original.
-- Identify captions by visible text, not by "the paragraph after an image". Images and captions can share one paragraph, and a reused image relationship can appear more than once.
-- Replace only the fixed label/number prefix with a complex field: `begin` field char with `w:dirty="true"`, `instrText` containing ` SEQ 图 \* ARABIC `, `separate`, cached result text (`1`, `2`, ...), and `end`.
-- Keep the caption body as ordinary text after the field so the document is readable before field refresh.
-- Add `<w:updateFields w:val="true"/>` in `word/settings.xml` when useful, but still tell the user `Ctrl+A` + `F9` is the reliable refresh step.
-- Preserve formatting by copying the original caption run's `<w:rPr>` into the new field and text runs. Do not touch drawings, relationships, or media unless the user asked to change images.
-- If revising caption wording, extract `word/media/*`, build contact sheets, and make only conservative evidence-based fixes. Do not add claims that are not visible in the image or supplied by the user.
-- Validate with `zipfile.testzip()`, count `SEQ` instructions, count caption paragraphs, and inspect first/middle/last captions. On Windows, Word COM verification must be covered by the current user request and follow this skill's [Office security boundary](references/office-security-boundary.md).
+For full generation, local edits or explicit reference repair, use
+[Numbering and cross-references](references/numbering-references.md). It defines construction,
+all-story native refresh, protected writeback, CLI and saved-output evidence. Manual `Ctrl+A` + `F9`
+is fallback advice when native refresh is unfinished, never proof of completion. For caption identity,
+image selection and wording checks also read [Figure integration](references/figure-integration-gate.md).
 
 **Tracked changes:** when redlining, validate with `--author "<the name you redlined under>"` (needs `--original`) — it reports any text you changed without a `<w:ins>`/`<w:del>` around it, which is easy to do by accident and invisible in the accepted view. Wrap runs in `<w:ins>`/`<w:del>` with `w:id`, `w:author`, `w:date` attributes. Inside `<w:del>`, the text element is `<w:delText>`, not `<w:t>`. A deleted paragraph mark (`<w:pPr><w:rPr><w:del w:id=".." w:author=".." w:date=".."/></w:rPr></w:pPr>`) means "merge this paragraph into the next" — so deleting a paragraph outright is that plus a `<w:del>` around every run. The `<w:del/>` must come before the rPr's other children; their order is schema-enforced.
 

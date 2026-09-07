@@ -286,25 +286,56 @@ def apply_edits(source: Path, edits_path: Path, output: Path, record: Path | Non
             temporary.unlink(missing_ok=True)
 
 
+def finalize_edits(source: Path, edits_path: Path, output: Path, record: Path | None = None,
+                   *, allow_office_com: bool = False) -> dict:
+    """Keep the exact paragraph-stage evidence, then finalize a distinct deliverable."""
+    import reference_fields
+
+    output = output.resolve()
+    record = (record or Path(str(output) + '.check.json')).resolve()
+    inputs = versions.capture_inputs([source, edits_path])
+    versions.protect_output_path(output, inputs)
+    versions.protect_record_path(record, output, inputs)
+    if output.exists() or record.exists():
+        raise ValueError('Final output or record exists; choose new paths')
+    stage = output.with_name(output.stem + '.paragraphs.docx')
+    stage_record = Path(str(stage) + '.check.json')
+    paragraph_check = apply_edits(source, edits_path, stage, stage_record)
+    if not paragraph_check.get('ok'):
+        return paragraph_check
+    result = reference_fields.finalize(stage, output, mode='local', record=record,
+                                       allow_office_com=allow_office_com)
+    if versions.changed_files(inputs['files']):
+        result.update(ok=False, status='FILES_CHANGED_DURING_FINALIZATION')
+    result['paragraph_stage'] = {'output': str(stage), 'record': str(stage_record), 'ok': True}
+    versions.save_record(record, result)
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="operation", required=True)
     inspect = commands.add_parser("inspect")
     inspect.add_argument("source", type=Path)
     inspect.add_argument("--contains")
-    for operation in ("apply", "check"):
+    for operation in ("apply", "check", "finalize"):
         child = commands.add_parser(operation)
         child.add_argument("source", type=Path)
         child.add_argument("edits", type=Path)
         child.add_argument("output", type=Path)
-        if operation == "apply":
+        if operation in {"apply", "finalize"}:
             child.add_argument("--record", type=Path)
+        if operation == 'finalize':
+            child.add_argument('--allow-office-com', action='store_true')
     args = parser.parse_args(argv)
     try:
         if args.operation == "inspect":
             result = inspect_document(args.source, args.contains)
         elif args.operation == "apply":
             result = apply_edits(args.source, args.edits, args.output, args.record)
+        elif args.operation == 'finalize':
+            result = finalize_edits(args.source, args.edits, args.output, args.record,
+                                    allow_office_com=args.allow_office_com)
         else:
             result = check_edits(args.source, args.edits, args.output)
     except (OSError, ValueError, KeyError, TypeError, etree.Error, zipfile.BadZipFile, guard.StyleGuardError) as exc:

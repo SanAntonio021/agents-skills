@@ -38,6 +38,9 @@ if isfolder(dataDir)
     if isfile(figurePath)
         error('TestProject:Plot:OutputExists', 'Replot figure already exists: %s', figurePath);
     end
+    setappdata(fig,'TestProjectOriginalGeometry',struct('Units',fig.Units, ...
+        'Position',fig.Position,'PaperUnits',fig.PaperUnits, ...
+        'PaperPosition',fig.PaperPosition,'PaperPositionMode',fig.PaperPositionMode));
     savefig(fig, figurePath, 'compact');
 end
 exportgraphics(fig, outputPath, ...

@@ -178,6 +178,9 @@ verifyFalse(testCase, isfield(stats.Metrics, 'Mean'));
 verifyTrue(testCase, isfile(fullfile(runRoot, 'data', 'overview.fig')));
 fig = openfig(fullfile(runRoot, 'data', 'overview.fig'), 'invisible');
 closeFig = onCleanup(@() close(fig));
+verifyTrue(testCase, isappdata(fig,'TestProjectOriginalGeometry'));
+geometry = getappdata(fig,'TestProjectOriginalGeometry');
+verifyTrue(testCase, all(isfield(geometry,{'Units','Position','PaperPosition'})));
 points = findobj(fig, 'Type', 'scatter');
 verifyEqual(testCase, sort(points(1).YData(:)), [10; 12]);
 end

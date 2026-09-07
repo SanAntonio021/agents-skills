@@ -161,7 +161,7 @@ def validate_file_references(
         if len(row) != len(headers):
             continue
         status = row[indexes["状态"]] if "状态" in indexes else ""
-        if status and status not in {"成功", "无效", "失败", "通过", "success", "invalid", "failed", "pass", "pending", "未执行"}:
+        if status and status.lower() not in {"成功", "无效", "失败", "通过", "success", "invalid", "failed", "fail", "pass", "skip", "pending", "未执行"}:
             report.error(f"{run_dir / 'summary.csv'}: row {row_number} has invalid 状态={status!r}")
         for column in ("原始数据文件", "单次图片文件"):
             if column not in indexes:
@@ -325,7 +325,10 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
             lines = [line for line in sources.read_text(encoding="utf-8").splitlines() if line]
             if not lines:
                 report.error(f"{sources}: analysis needs at least one source")
-            if len(info["source_runs"]) != len(lines):
+            source_runs = info["source_runs"]
+            if isinstance(source_runs, dict):
+                source_runs = [source_runs]  # MATLAB encodes scalar struct as an object.
+            if len(source_runs) != len(lines):
                 report.error(f"{info_path}: source_runs and sources.txt differ in length")
 
 

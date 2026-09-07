@@ -161,8 +161,8 @@ def validate_file_references(
         if len(row) != len(headers):
             continue
         status = row[indexes["状态"]] if "状态" in indexes else ""
-        if status and status.lower() not in {"成功", "无效", "失败", "通过", "success", "invalid", "failed", "fail", "pass", "skip", "pending", "未执行"}:
-            report.error(f"{run_dir / 'summary.csv'}: row {row_number} has invalid 状态={status!r}")
+        if "状态" in indexes and not status.strip():
+            report.error(f"{run_dir / 'summary.csv'}: row {row_number} has empty 状态")
         for column in ("原始数据文件", "单次图片文件"):
             if column not in indexes:
                 continue
@@ -315,8 +315,8 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
         dpi = png_dpi(overview)
         if dpi is None:
             report.error(f"{overview}: PNG lacks readable physical resolution metadata")
-        elif not 285 <= dpi <= 315:
-            report.error(f"{overview}: expected 300 dpi, found {dpi:.1f}")
+        elif dpi < 150:
+            report.warning(f"{overview}: low export resolution ({dpi:.1f} dpi); inspect readability")
     if category == "analysis":
         sources = record_dir / "sources.txt"
         if not sources.is_file():

@@ -40,7 +40,7 @@ measurement/20260907_143025_双通道电回环/
 
 ## 3. 指标、精度和记录
 
-summary.csv 使用 UTF-8 BOM 和 CSV 转义，第一行名称、第二行单位、第三行起逐次观测；多 Channel 分行。显示必要条件、序号、Channel、方案、当前实验指标和状态，不强制所有实验采用通信指标。路径、时间、重试、错误详情放 data/observations.csv 与日志。失败行保留，缺失数值空白，实际 BER=0 保留零。
+summary.csv 使用 UTF-8 BOM 和 CSV 转义，第一行名称、第二行单位、第三行起逐次观测；多 Channel 分行。显示必要条件、序号、Channel、方案、当前实验指标和状态，不强制所有实验采用通信指标。观测状态可沿用程序的明确名称，如 decoded、capture_failed；不与整轮运行状态的枚举混用。路径、时间、重试、错误详情放 data/observations.csv 与日志。失败行保留，缺失数值空白，实际 BER=0 保留零。
 
 完整记录 data/observations.csv 保存所有列和原数值，Python 用浮点可回读表示，MATLAB double 用 17 位有效数字。计算与分析通过统一接口读取完整记录，旧版缺失时才回退旧 summary。显示表连续量默认两位小数、计数整数、BER/BLER/FER 三位有效数字科学计数；非零小值不得舍成零。控制参数通过 exact 或 fixed:N 显式保留设置分辨率。MATLAB SummaryFormats 按 matlab.lang.makeValidName(header) 设置，Python formats 按原表头。
 
@@ -57,7 +57,7 @@ data/run_info.json 使用 schema_version=2.0，包含 run_id、project_name、te
 
 ## 4. 自动绘图与重绘
 
-浏览图默认白底 300 dpi PNG；字体 Microsoft YaHei，回退 Noto Sans CJK SC、SimHei。刻度 10 pt、轴名 11 pt、标题 12 pt、轴线 1 pt、曲线 1.5 pt，浅灰网格。物理量/单位明确，不裁切文字。推荐 #0072B2、#D55E00、#009E73、#CC79A7，结合标记区分 Channel/方案。正式投稿矢量图按明确请求导出。
+浏览图默认白底 300 dpi PNG；已有专用渲染器可以保留适合屏幕查看的分辨率，检查文字与曲线清晰度，不以恰好 300 dpi 作为通用门槛。字体 Microsoft YaHei，回退 Noto Sans CJK SC、SimHei。刻度 10 pt、轴名 11 pt、标题 12 pt、轴线 1 pt、曲线 1.5 pt，浅灰网格。物理量/单位明确，不裁切文字。推荐 #0072B2、#D55E00、#009E73、#CC79A7，结合标记区分 Channel/方案。正式投稿矢量图按明确请求导出。
 
 - 总览默认逐次原始观测，不计算/叠加均值、最值、标准差，不跨失败/缺失连线。显式 ShowStatistics/show_statistics 才启用跨观测统计。必要 BER/MER 算法不属于禁止统计。
 - 星座保留全部有效点、明显理想点、多个 Channel 相同 1:1 范围，标 N 和存在的指标。只有导出负担不可接受时才可重复均匀抽样并说明显示/实际点数，精简保存不能额外抽稀。超范围点标数量，不删除事实。

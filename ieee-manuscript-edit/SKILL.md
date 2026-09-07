@@ -15,6 +15,8 @@ metadata:
 - `mode=zh_paper|en_paper|final_audit`
 - `edit_scope`、`language`、`loaded_refs`
 
+建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。
+
 所有模式读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
 | 模式 | 必读 |
@@ -74,14 +76,14 @@ metadata:
 
 ## 输出
 
-- 文件任务：在用户指定范围内修改文件，回复只写修改位置、关键变化和仍需确认的事实。
+- 文件任务：按当前协作方式在指定范围内写回主稿。直接处理时简述修改位置、关键变化和待确认事实；分批协作时展示待确认正文，写入后直接给出后续正文。
 - 局部文本：给修改稿；理由只保留会影响事实、术语或作者选择的项目。
 - 对比审查：按位置给原文、建议和事实风险，不为展示工作量列纯偏好修改。
 - `TRACE_WRITING_CONTEXT=1` 时附实际 `loaded_refs`；普通交付不展示内部加载记录。
 
 ## 文件与投稿边界
 
-实际写入 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 在执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 后交给 `docx`；LaTeX 模板、BibTeX 和编译交给 `latex-paper`。整体投稿前审查和最终 Submit 门交给 `paper-review`；投稿系统操作交给对应投稿技能。
+正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 使用本轮按协作方式处理并审校的正文，在执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 后交给 `docx`；LaTeX 模板、BibTeX 和编译交给 `latex-paper`。整体投稿前审查和最终 Submit 门交给 `paper-review`；投稿系统操作交给对应投稿技能。
 
 ## 完成条件
 

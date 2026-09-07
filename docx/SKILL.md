@@ -37,7 +37,9 @@ terminates an existing Word process.
 
 ## Content and layout checks
 
-For Markdown input, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
+For new prose or substantive content changes, use [writing-router](../writing-router/SKILL.md)
+before document creation. Small text edits and formatting-only work keep the existing direct route.
+For prose handoff, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
 Use the current source, specified template and requested output. Do not rewrite reviewed prose or
 repeat a general writing pass. Existing `loaded_refs` records describe only references actually read.
 用户要求导出即复用本轮授权；格式阶段不自行改写正文。

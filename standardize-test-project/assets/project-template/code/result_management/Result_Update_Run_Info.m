@@ -24,6 +24,11 @@ updates = normalize_updates(updates);
 info = merge_recursive(info, updates);
 info = remove_legacy_fields(info);
 if ~isempty(fieldnames(updates))
+    for name = {'planned_run_kind', 'finished_at', 'primary_variable'}
+        if isfield(info, name{1}) && isempty(info.(name{1}))
+            info.(name{1}) = string(missing);
+        end
+    end
     Result_Atomic_Write_Json(path, info);
 end
 

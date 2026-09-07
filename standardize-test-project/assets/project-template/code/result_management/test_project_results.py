@@ -631,7 +631,8 @@ def finalize_run(
     log(run_dir, "INFO", "finish", f"最终状态：{status}")
     if check_flat(run_dir):
         raise ValueError("run contains unexpected nested directories")
-    files = sorted(item for item in run_dir.rglob("*") if item.is_file())
+    files = sorted(item for item in run_dir.rglob("*") if item.is_file()
+                   and not item.name.endswith((".baiduyun.uploading.cfg", ".tmp")))
     artifacts = []
     for file in files:
         artifact = {"file": file.relative_to(run_dir).as_posix(), "role": _artifact_role(file.name)}

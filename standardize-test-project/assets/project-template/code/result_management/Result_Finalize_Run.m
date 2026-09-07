@@ -12,10 +12,10 @@ current_info = Result_Update_Run_Info(run_or_path, struct());
 existing_artifacts = artifact_records(current_info.artifacts, 'run_artifact');
 if nargin < 4 || isempty(artifacts)
     listing = dir(output_dir);
-    listing = listing(~[listing.isdir]);
+    listing = listing(~[listing.isdir] & ~endsWith({listing.name}, {'.baiduyun.uploading.cfg', '.tmp'}));
     artifacts = artifact_records({listing.name}, 'run_artifact');
     data_listing = dir(fullfile(output_dir, 'data'));
-    data_listing = data_listing(~[data_listing.isdir]);
+    data_listing = data_listing(~[data_listing.isdir] & ~endsWith({data_listing.name}, {'.baiduyun.uploading.cfg', '.tmp'}));
     artifacts = [artifacts, artifact_records(strcat('data/', {data_listing.name}), 'run_artifact')];
 else
     artifacts = artifact_records(artifacts, 'run_artifact');

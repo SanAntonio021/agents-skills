@@ -333,6 +333,11 @@ before = dir(first.RunInfoPath);
 Result_Update_Run_Info(first.OutputDir, struct());
 after = dir(first.RunInfoPath);
 verifyEqual(test_case, before.datenum, after.datenum);
+Result_Atomic_Write_Json(fullfile(first.DataDir, 'observations.csv.baiduyun.uploading.cfg'), struct('upload', true));
+final = Result_Finalize_Run(first, 'completed');
+verifyFalse(test_case, any(contains(string({final.artifacts.file}), 'baiduyun')));
+verifyNotEmpty(test_case, regexp(read_text_utf8(first.RunInfoPath), ...
+    '"planned_run_kind"\s*:\s*null', 'once'));
 nested = fullfile(first.DataDir, 'nested');
 mkdir(nested);
 verifyFalse(test_case, Result_Check_Flat_Directory(first).IsFlat);

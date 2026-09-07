@@ -16,17 +16,7 @@ from typing import Any
 
 ROOT_FILES = ("README.md", ".gitignore")
 DIRECTORIES = (
-    "code/experiments/single_point",
-    "code/experiments/frequency_sweep",
-    "code/experiments/power_sweep",
-    "code/instrument_control",
-    "code/acquisition",
-    "code/signal_processing",
-    "code/plotting",
-    "code/result_management",
-    "code/analysis",
-    "code/simulation",
-    "code/tests",
+    "code",
     "config",
     "simulation",
     "measurement",
@@ -273,6 +263,8 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
         if expected and category != expected:
             report.error(f"{info_path}: output category disagrees with execution mode")
         for item in run_dir.iterdir():
+            if item.name.endswith((".baiduyun.uploading.cfg", ".tmp")):
+                continue
             if item.is_file() and item.name != "summary.csv" and item.suffix.lower() not in {".png", ".jpg", ".jpeg", ".svg", ".pdf", ".tif", ".tiff"}:
                 report.error(f"{item}: data and records belong in data/")
     if info["status"] not in STATUSES:

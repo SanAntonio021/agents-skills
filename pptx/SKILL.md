@@ -500,4 +500,4 @@ ls -1 "$PWD"/slide-*.jpg
 `pptxgenjs` (npm, preinstalled — install only if `require('pptxgenjs')` fails) · `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml`, `python-pptx` (the runtime preflight checks the imports used by validation) · LibreOffice (`soffice`, auto-configured for sandboxed environments via `scripts/office/soffice.py`) · `pdftoppm` (Poppler)
 
 
-Office 隔离与已有授权遵循共享规则。现有守护程序能证明隔离时，可由智能体传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。
+当前用户请求已覆盖本次 PowerPoint 原生检查、且现有守护程序能证明隔离时，可传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。按本技能的原生 gate 要求核对进程归属和源文件，只清理本任务的空实例。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

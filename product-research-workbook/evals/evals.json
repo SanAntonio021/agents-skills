@@ -33,6 +33,18 @@
         "区分组件/整机、参数来源/采购来源和过程/正式工作簿",
         "不复述任何历史人工前缀，也不建立旧号到新编号或型号的映射"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "仅分析交付流程，不操作真实 Office。全局没有 Office 隔离条款。正式产品表已通过业务校验，用户先只要 PDF，随后额外要求 Excel 原生兼容性检查。请说明本技能、xlsx 和 libreoffice-runner 各自负责什么，以及 Excel 已运行时如何处理。",
+      "expected_output": "PDF 使用 libreoffice-runner，不直接控制 Office；明确的 Excel 原生检查交给 xlsx 的现有 gate，按 xlsx 技能自己的进程归属、隔离副本和空实例清理规则执行，不依赖全局 Office 条款。",
+      "files": [],
+      "expectations": [
+        "PDF 转换不自动触发 Excel 原生检查。",
+        "本技能不直接启动或接管 Microsoft Office。",
+        "需要原生检查时明确交给 xlsx 的 gate，而非不存在的共享 Office 规则。",
+        "已有 Excel 或归属不明时不接管或关闭，未完成的原生检查如实记录。"
+      ]
     }
   ]
 }

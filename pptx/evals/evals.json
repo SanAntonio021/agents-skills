@@ -163,6 +163,18 @@
         "The next iteration repairs the owning source rather than patching an installed runtime or the distribution-only Fork adapter.",
         "Any later user approval is bound to the exact PPTX and reviewed PNG hashes and becomes stale after either changes."
       ]
+    },
+    {
+      "id": 14,
+      "prompt": "仅分析流程，不启动或关闭 PowerPoint。全局没有 Office 保护条款。用户要求对 PPTX 做原生验收，POWERPNT.EXE 已运行且用户正在编辑。请按本技能说明能否连接该实例，以及用户自行保存退出后、守护程序能证明本任务实例时怎样检查和收尾。",
+      "expected_output": "PowerPoint 已运行时不调用 COM、不接管或结束进程，原生检查记录未验证；用户自行退出后才由既有 gate 验证新实例归属、源文件和输出，并只关闭本任务的空实例。",
+      "files": [],
+      "expectations": [
+        "独立依据 pptx 的原生 gate 说明，不借助全局 Office 条款。",
+        "保留 powerpoint_already_running 的受阻行为，不用 --allow-office-com 绕过预检。",
+        "不修改源 PPTX，只在本任务实例及空文档集合得到证明后退出。",
+        "不把静态或 LibreOffice 检查通过冒充 PowerPoint 原生通过。"
+      ]
     }
   ]
 }

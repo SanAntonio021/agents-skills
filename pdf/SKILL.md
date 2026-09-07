@@ -57,6 +57,11 @@ gate 返回 `PASS`、`FAIL_OPEN`、`FAIL_RENDER`、`APP_UNAVAILABLE`、`UNVERIFI
 `UNSAFE_PROCESS`，并保留真实阶段和异常。纯 PDF 的验收链不因 OfficeCLI native 状态改变；
 Office 转 PDF 继续以 `libreoffice-runner` 为主。
 
+原生检查须由当前用户请求覆盖，并经本技能的 gate 证明实例属于本任务。已有相关 Office 进程或
+归属不明时，不连接、不关闭用户实例，继续文件级或 LibreOffice 路径。原生工具只打开隔离副本，
+保护源文件与用户窗口，仅关闭自己打开的文档及本任务的空实例；缺少归属或退出证据时记录未验证。
+`--allow-office-com` 只表示本次操作获准，不代替隔离检查，也不要求额外口令或逐页签字。
+
 ## Windows Toolchain
 
 本机 Poppler 程序位于 `%USERPROFILE%\poppler\poppler-24.08.0\Library\bin`，包括 `pdftoppm.exe`、`pdftocairo.exe`、`pdftotext.exe` 和 `pdfinfo.exe`。
@@ -463,4 +468,4 @@ Use the resolved `.exe` paths from the Windows Toolchain section. For example:
 Derived from the upstream `anthropics/skills` pdf skill (last upstream content update ~2025-10). Local adaptations: explicit Poppler 24.08.0 executable paths, queued Office-to-PDF conversion through `libreoffice-runner`, deterministic OCRmyPDF/Tesseract routing for scanned, mixed, and damaged-text PDFs, complete post-OCR text extraction, input/output hashes and multi-engine validation, scanned PDF reading via fitz render-to-PNG, precise existing-PDF edits with original-font checks, high-resolution residue checks, agent visual inspection, vector multi-source composition with reference-geometry recovery, whole-page scan attachment, multi-DPI rendered-hash verification, and Windows path conventions. Upstream Proprietary files (LICENSE.txt, forms.md, reference.md, scripts/) are not included; refer to the upstream skill if those features are needed.
 
 
-Office 隔离与已有授权遵循共享规则。现有守护程序能证明隔离时，可由智能体传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。
+工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

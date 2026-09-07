@@ -5,7 +5,7 @@
 1. 用 `validate_product_workbooks.py` 校验过程表和正式表；保存新的 JSON 报告，不能覆盖旧报告。
 2. 用 `xlsx/scripts/verify_xlsx.py` 做 ZIP/OOXML、公式和对象检查。正式工作簿不含公式时，验收结论应为公式数 `0`，不为制造缓存而重算。
 3. 对每张正式工作表进行视觉验收：整体检查，再抽查长表首、中、末区。检查字段和单位、冻结窗格、换行、列宽、裁切、重叠、空白页、链接显示和采购筛选。
-4. 如需 PDF，只按 `libreoffice-runner` 的调用契约生成新的隔离输出。禁止直接运行 `soffice`，禁止启动、连接或控制 Microsoft Office。
+4. 如需 PDF，只按 `libreoffice-runner` 的调用契约生成新的隔离输出，不直接运行 `soffice` 或控制 Microsoft Office。若当前任务明确要求 Excel 原生检查，单独交给 `xlsx` 的原生 gate，遵循其技能内的进程归属、隔离副本和自有空实例清理要求；PDF 转换本身不触发该检查。
 5. 记录过程/正式文件 SHA-256、产品和渠道数量、校验报告路径、OOXML 超链接关系结论和视觉结论。
 
 ## 历史表只读审计

@@ -40,7 +40,7 @@ Get-Process python | Where-Object {$_.CommandLine -like '*mcp*'}
 ```powershell
 Get-Process | Where-Object {$_.Name -match 'POWERPNT|WINWORD|EXCEL'}
 ```
-→ 退出应用（不能强杀，会丢未保存内容）
+→ 若是用户正在使用的 Office，由用户保存并退出；不要为解除目录占用而代为关闭或强杀用户实例。仅按现有守护工具清理本任务的空实例。
 
 ### 4. 查 VS Code
 ```powershell

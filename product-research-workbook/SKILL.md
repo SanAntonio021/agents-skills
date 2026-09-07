@@ -41,7 +41,7 @@ python <skill-root>\scripts\validate_product_workbooks.py <process.xlsx> --forma
 
 初版省略 `--previous-formal`，但仍必须通过 `1..N` 连续编号检查。所有输出路径必须不存在，命令拒绝覆盖。
 
-8. 正式表通过本技能业务校验后，交给 `xlsx` 做 `verify_xlsx.py` 包级检查、公式数为 `0` 的检查和逐表视觉验收。无公式时不重算。需要 PDF 时只通过 `libreoffice-runner` 的隔离 runner，不直接运行 `soffice`，需要 Excel 原生检查时按共享 Office 隔离规则执行。
+8. 正式表通过本技能业务校验后，交给 `xlsx` 做 `verify_xlsx.py` 包级检查、公式数为 `0` 的检查和逐表视觉验收。无公式时不重算。需要 PDF 时只通过 `libreoffice-runner` 的隔离 runner，不直接运行 `soffice`。当前任务要求 Excel 原生检查时，交给 `xlsx` 的原生 gate，按其技能内的进程归属、隔离副本和自有空实例清理要求执行；本技能不直接控制 Office。
 9. 若本项目明确要求删除历史编号，使用 `scan_legacy_identifiers.py` 对新输出检查；不把该特殊净化流程套到普通产品表。汇报当前工作簿、校验和实际视觉检查结果。
 
 ## 确认门与数据规则

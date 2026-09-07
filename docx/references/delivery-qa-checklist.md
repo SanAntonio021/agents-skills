@@ -24,6 +24,7 @@ redaction, or metadata cleanup. It is an optional final pass, not a second docum
 - Remove or normalize author, company, template, revision, and custom properties only when the user
   requested metadata cleanup or the delivery policy requires it.
 - Check comments, tracked changes, hidden text, and unused embedded objects before release.
-- Render the final output again after cleanup and verify the filename, page count, and requested output
-  format.
+- Verify the final filename, requested output format and package after cleanup. Render again only
+  when cleanup affects layout or the user requested layout checks; inspect the affected scope and
+  verify page count when it is part of the request. Metadata-only cleanup does not trigger rendering.
 - Report any check that could not be performed instead of claiming a clean delivery.

@@ -12,7 +12,9 @@
 默认输出已存在时另存编号文件；明确指定的输出已存在时，选择新路径，只有用户明确允许覆盖才使用
 `-OverwriteExisting`。两种情况都保护源稿、模板和图片。
 
-其他制作路径可以复用同一工具，输入快照应在生成前捕获：
+普通段落小改使用 `scripts/edit_paragraphs.py` 的固定入口，自动复用本记录工具和样式检查，
+不临时编写项目脚本。它记录原 Word 和 UTF-8 JSON 修改列表的版本，只维护对应文档的检查记录。
+这里的输入快照是内容指纹，不要求复制整套材料。其他制作路径可复用同一工具，在生成前捕获指纹：
 
 ```powershell
 $snapshot = python <skill-root>\scripts\document_versions.py capture-inputs `
@@ -28,7 +30,10 @@ $snapshot | python <skill-root>\scripts\document_versions.py record-generation o
 
 ## 复用与重查
 
-将原有、只读的 JSON 检查命令放在 `run-check` 的 `--` 后。命令只来自本次调用，不从记录中执行：
+按本次改动选择检查类型。普通段落小改核对内容、样式、包完整性及原文件，不自动渲染；
+首次制作整稿、模板或图表等版式变化、明确要求排版检查时才执行渲染，目检范围按实际影响确定。
+将原有、只读的 JSON 检查命令放在 `run-check` 的 `--` 后。命令只来自本次调用，不从记录中执行。
+以下命令仅示范需要 Word 原生渲染的情况，普通段落小改使用[段落编辑工具](paragraph-editing.md)：
 
 ```powershell
 python <skill-root>\scripts\document_versions.py run-check output.docx `
@@ -41,7 +46,7 @@ python <skill-root>\scripts\document_versions.py run-check output.docx `
 - 主稿、模板/profile 或图片变化：返回 `INPUTS_CHANGED`。更新受影响的 Word 产出并重新检查；
   如同时存在 Word 手改，保留手改，只有真实内容冲突无法自行处理时才询问。
 - 只有 Word 变化：对当前 Word 重查，不自动重新套模板或覆盖。
-- 记录缺失或不完整：重新检查当前 Word；有当前输入材料时用 `--source/--template/--image` 指定。
+- 记录缺失或不完整：按本次改动范围重新检查当前 Word，不因缺记录自动渲染；有当前输入材料时用 `--source/--template/--image` 指定。
 - 检查期间文件变化、检查器失败、报告对象或哈希不符：不记录通过。
 - 明确需要再次执行同一检查时使用 `--refresh`。无法判断变更影响哪些页时，重新检查完整相关内容。
 
@@ -58,5 +63,8 @@ python <skill-root>\scripts\document_versions.py verify output.docx --record out
 ```
 
 `verify` 不写文件、不调用检查器；可复用退出 `0`，需要重查退出 `2`。
-记录仅代表 `check_kind` 标明的那项检查。LibreOffice 转换和原生打开/导出仍分别表述，真实渲染和
-智能体逐页目检继续执行；版本一致不证明整份文档已验收。原生检查器清理的临时图也不作为可用交付物。
+记录仅代表 `check_kind` 标明的那项检查。普通段落小改明确记录“内容和样式已检查；未检查排版”，
+不因通过内容检查而声称分页或原生渲染通过。需要渲染时继续分别表述 LibreOffice 与 Word 原生结果，
+并检查受影响范围；版本一致不证明整份文档已验收。原生检查器清理的临时图也不作为可用交付物。
+同一任务中已读取且没有相关变化的规则、模板和脚本直接复用；除检查记录和必要的当前版本指向外，
+不因更新 Word 自动创建整套快照、页面图片或多份说明。

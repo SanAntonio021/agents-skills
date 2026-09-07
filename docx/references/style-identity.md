@@ -83,6 +83,10 @@ relationships, and non-style XML structure stayed unchanged. It also reports whe
 changed. For a job that requires numbering to remain byte-identical, treat
 `numbering_unchanged=false` as a hard failure.
 
-After structural checks, render both documents through `libreoffice-runner` and inspect every page.
+Ordinary paragraph updates use the fast content/style checks in `SKILL.md` and do not automatically
+render. For remaps that change typography, template layout or pagination, or an explicit layout-check
+request, render through a suitable guarded renderer and inspect the affected pages and pagination
+boundaries. Inspect all pages for document-wide changes; render the baseline as well only when needed
+for comparison. On Windows, LibreOffice rendering must use `libreoffice-runner`.
 If the user approved Word COM for the current task, test `NameLocal`, Enter-key inheritance, and style
 count in an isolated copy through the shared COM guard. Never connect to an existing Word process.

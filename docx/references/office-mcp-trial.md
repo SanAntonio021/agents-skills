@@ -1,6 +1,6 @@
 # Office MCP 隔离试验说明
 
-当前结论：公开的 `Office-Word-MCP-Server` 不进入生产依赖。按当前核对记录，该仓库已归档；现有内容、结构与目标应用真实渲染检查仍是 DOCX 交付依据，不能以 MCP 试验结果代替。
+当前结论：公开的 `Office-Word-MCP-Server` 不进入生产依赖。按当前核对记录，该仓库已归档；DOCX 交付仍按主技能的改动范围执行内容、结构及必要的目标应用渲染检查，不能以 MCP 试验结果代替。
 
 离线确定性检查由 `scripts/office_mcp_trial.py compare --lock <trial-input.lock.json>` 执行。锁文件是调用方放在临时隔离试验根中的输入，不提交到技能仓库；它必须明确候选、40 位 commit、生成器、输入 SHA-256 和恰好三轮；每轮重复记录这些身份字段并与顶层一致，DOCX SHA-256 也必须与实际文件一致。三轮的 `round_id`、`run_root`、DOCX 路径必须互不相同，且每个 DOCX 必须位于自己的隔离根内。比较器使用 `mcp-determinism-allowlist.json`，默认拒绝未知候选和未知差异；白名单值类型只允许固定长度、全字符串匹配的 `rfc3339_utc`、`uuid`、`rsid_hex8`。包成员数量、名称、正文、样式、媒体、关系等任何未登记差异都返回 `MCP_NONDETERMINISTIC`。
 
@@ -18,4 +18,4 @@
 %TEMP%/office-mcp-trials/<candidate>/<commit>/<run_id>/trial-report.json
 ```
 
-正式交付使用 docx 的内容、结构与真实渲染检查，由智能体逐页检查；不使用已退役的审批状态机。
+正式交付按 docx 主技能选择检查路径：普通段落小改默认检查内容、样式及文件完整性，不自动渲染；需要排版检查时执行真实渲染并检查受影响范围。不使用已退役的审批状态机。以上 MCP 候选试验本身仍执行规定的完整渲染对照。

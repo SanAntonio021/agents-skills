@@ -13,6 +13,8 @@ description: 将会议转写和用户补充整理成讨论型、行动型或混�
 - `mode=discussion|action|mixed`
 - `edit_scope`、`language`、`loaded_refs`
 
+建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。会议转写整理属于直接处理，沿用本技能流程整篇交付。
+
 读取 [共同质量规则](../writing-router/references/common-quality.md)。完整纪要、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
 私有样稿为 `D:\BaiduSyncdisk\.agents\writing-samples\meeting-notes.md`；只读取 `status: approved` 的正文，候选区不作为写作依据。
@@ -66,7 +68,7 @@ description: 将会议转写和用户补充整理成讨论型、行动型或混�
 
 ## 输出
 
-默认输出 Markdown。用户要求 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 完成正文审校和确认，再交给 `docx` 生成新文件。材料足够时直接交付第一版；只有缺失信息会改变决定、任务或文稿用途时才问一个问题，不固定要求用户再回复“无补充”。
+默认输出 Markdown；用户指定飞书文档时直接写回该主稿，无须额外维护本地副本。用户要求 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 完成正文审校，再交给 `docx` 生成新文件。材料足够时直接交付第一版；只有缺失信息会改变决定、任务或文稿用途时才问一个问题，不固定要求用户再回复“无补充”。
 
 ## 完成条件
 

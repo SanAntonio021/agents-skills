@@ -15,6 +15,8 @@ description: 将已完成取证的行业、市场、技术、竞品或政策材�
 - `mode=evidence_report|decision_report|final_audit`
 - `edit_scope`、`language`、`loaded_refs`
 
+建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。
+
 读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
 再按 [工作模式](references/modes.md) 读取最少参考文件。私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `research_report` 样稿获批时才加载。
@@ -95,7 +97,7 @@ python scripts/audit_report.py research-ledger.md --mode internal-ledger --json
 
 ## 文件边界
 
-实际写入 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Markdown 正文按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 完成本轮审校后再交给 `docx`；导出阶段不重新改写内容。
+正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 交付按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 使用本轮按协作方式处理并审校的正文，再交给 `docx`；导出阶段不重新改写内容。
 
 ## 完成条件
 

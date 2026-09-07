@@ -9,7 +9,7 @@
       "edit_scope": "draft",
       "language": "zh",
       "case_kind": "normal_writing",
-      "prompt": "以下材料均为合成。请写一段项目申请书的建设内容：对象为港区巡检链路；拟研发双频点微波回传终端；目标是在遮挡出现时于 200 ms 内切换链路；验证方式为 3 个固定点位各连续运行 8 小时。目前只有实验室样机，不得写成已部署。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。请写一段项目申请书的建设内容：对象为港区巡检链路；拟研发双频点微波回传终端；目标是在遮挡出现时于 200 ms 内切换链路；验证方式为 3 个固定点位各连续运行 8 小时。目前只有实验室样机，不得写成已部署。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "正文直接说明任务、能力、适配场景、指标和验证条件，不使用固定三段式，不把样机写成已部署。",
       "expectations": [
         "保留 200 ms、3 个点位和 8 小时。",
@@ -49,7 +49,7 @@
       "edit_scope": "bounded",
       "language": "zh",
       "case_kind": "fact_formula_protection",
-      "prompt": "以下材料均为合成。专家问“为什么目标速率写 8 Gbit/s”。材料只给出估算式 C=B log2(1+SNR)，其中 B=2 GHz、SNR=15 dB；该值是链路预算阶段的计算结果，尚未实测。请写答复并解释变量的工程含义。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。专家问“为什么目标速率写 8 Gbit/s”。材料只给出估算式 C=B log2(1+SNR)，其中 B=2 GHz、SNR=15 dB；该值是链路预算阶段的计算结果，尚未实测。请写答复并解释变量的工程含义。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "先直接回答估算依据，解释 C、B、SNR 和单位，明确这是计算结果而非实测，不改公式。",
       "expectations": [
         "公式 C=B log2(1+SNR) 原样保留。",
@@ -89,7 +89,7 @@
       "edit_scope": "draft",
       "language": "zh",
       "case_kind": "normal_writing",
-      "prompt": "以下材料均为合成。写一段系统说明：采集模块通过千兆以太网向处理模块发送 UDP 数据；处理模块每 10 ms 汇总一次；告警模块只接收处理结果，不读取原始采样。设备版本为 TX-4A v0.7。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。写一段系统说明：采集模块通过千兆以太网向处理模块发送 UDP 数据；处理模块每 10 ms 汇总一次；告警模块只接收处理结果，不读取原始采样。设备版本为 TX-4A v0.7。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "写清模块关系、接口、数据流和边界，不重复系统目标，不混淆原始采样与处理结果。",
       "expectations": [
         "保留 UDP、10 ms 和 TX-4A v0.7。",
@@ -129,7 +129,7 @@
       "edit_scope": "bounded",
       "language": "zh",
       "case_kind": "fact_formula_protection",
-      "prompt": "以下材料均为合成。改写结果段：接收功率按 Pr=Pt+Gt+Gr-L 计算，Pt=10 dBm、Gt=12 dBi、Gr=12 dBi、L=78 dB；计算值为 -44 dBm。台架尚未搭建。说明变量和结果含义，不得写成实测。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。改写结果段：接收功率按 Pr=Pt+Gt+Gr-L 计算，Pt=10 dBm、Gt=12 dBi、Gr=12 dBi、L=78 dB；计算值为 -44 dBm。台架尚未搭建。说明变量和结果含义，不得写成实测。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "保持公式、输入、单位和 -44 dBm，明确结果来自计算并说明台架尚未搭建。",
       "expectations": [
         "保护所有公式变量和数值。",
@@ -169,7 +169,7 @@
       "edit_scope": "draft",
       "language": "zh",
       "case_kind": "normal_writing",
-      "prompt": "以下材料均为合成。写一段证据型报告：A 公告称 2025 年建成 4 个监测站；B 年报称 2026 年新增 2 个站；统计口径均为投入运行的站点。报告只回答站点数量变化，不给建设建议。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。写一段证据型报告：A 公告称 2025 年建成 4 个监测站；B 年报称 2026 年新增 2 个站；统计口径均为投入运行的站点。报告只回答站点数量变化，不给建设建议。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "区分来源事实和综合判断，得出站点由 4 个增至 6 个；不加入行动建议。",
       "expectations": [
         "保留 2025 年、4 个、2026 年和新增 2 个。",
@@ -209,7 +209,7 @@
       "edit_scope": "bounded",
       "language": "zh",
       "case_kind": "fact_formula_protection",
-      "prompt": "以下材料均为合成。事实：方案甲单价 18 万元，交付期 3 个月；方案乙单价 12 万元，交付期 7 个月。预算上限 40 万元，必须在 4 个月内完成两套设备联调。请写采购建议，不改变数值。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。事实：方案甲单价 18 万元，交付期 3 个月；方案乙单价 12 万元，交付期 7 个月。预算上限 40 万元，必须在 4 个月内完成两套设备联调。请写采购建议，不改变数值。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "先比较成本和交付条件，再建议方案甲；写清两套共 36 万元和 4 个月约束，不把建议写成已采购。",
       "expectations": [
         "保留 18 万元、3 个月、12 万元、7 个月、40 万元和 4 个月。",
@@ -329,7 +329,7 @@
       "edit_scope": "bounded",
       "language": "zh",
       "case_kind": "normal_writing",
-      "prompt": "以下材料均为合成。把结果写成中文论文段落：在 20 °C、输入功率 -8 dBm 条件下，算法 A 的均方误差由 0.032 降至 0.019；只测试了 12 组数据。不要写普遍优越。TRACE_WRITING_CONTEXT=1",
+      "prompt": "以下材料均为合成。把结果写成中文论文段落：在 20 °C、输入功率 -8 dBm 条件下，算法 A 的均方误差由 0.032 降至 0.019；只测试了 12 组数据。不要写普遍优越。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
       "expected_output": "先写条件和观察结果，再给受 12 组数据范围约束的解释；不加载英文论文细则。",
       "expectations": [
         "保留 20 °C、-8 dBm、0.032、0.019 和 12 组。",
@@ -369,7 +369,7 @@
       "edit_scope": "bounded",
       "language": "en",
       "case_kind": "fact_formula_protection",
-      "prompt": "All material is synthetic. Edit this for an English paper without changing facts: 'The gain was calculated as G=10log10(Pout/Pin). With Pout=4 mW and Pin=1 mW, G=6.02 dB. The value has not been measured.' Explain the variables briefly. TRACE_WRITING_CONTEXT=1",
+      "prompt": "All material is synthetic. Edit this for an English paper without changing facts: 'The gain was calculated as G=10log10(Pout/Pin). With Pout=4 mW and Pin=1 mW, G=6.02 dB. The value has not been measured.' Explain the variables briefly. Give the complete requested text directly in this turn; do not use staged drafting. TRACE_WRITING_CONTEXT=1",
       "expected_output": "Produce concise technical English, preserve the formula and values, and keep the result explicitly calculated rather than measured.",
       "expectations": [
         "G=10log10(Pout/Pin), 4 mW, 1 mW, and 6.02 dB remain unchanged.",

@@ -3,7 +3,7 @@
 
 The collector deliberately emits structured evidence rather than attempting to
 write the report itself. The calling skill can then summarize the evidence
-with the current model and ask the user to approve a short outline.
+with the current model and reuse an already agreed report scope.
 """
 
 from __future__ import annotations
@@ -55,13 +55,15 @@ IGNORED_ASSET_SEQUENCES = (
     (".codex", "plugins"),
 )
 PATH_RE = re.compile(
-    r"(?:(?:[A-Za-z]:\\|\\\\)[^\"<>|;\r\n]{1,500}\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm))",
+    r"(?:(?:[A-Za-z]:[\\/]|\\\\)[^\"<>|;\r\n]{1,500}?\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm))(?=$|[\s\"'<>`,;:!?\])}。，；：）])",
     re.IGNORECASE,
 )
 POSIX_PATH_RE = re.compile(
     r"(?<![\w./-])/(?:[^\s\"<>|/]{1,120}/){1,20}[^\s\"<>|/]{1,240}\.(?:png|jpg|jpeg|svg|gif|webp|bmp|pdf|csv|xlsx|xls|mat|fig|html|pptx|mp4|webm)",
     re.IGNORECASE,
 )
+MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]\r\n]*\]\(\s*(<[^>\r\n]+>|[^)\r\n]+)\s*\)")
+HTTP_URL_RE = re.compile(r"https?://[^\s<>\"\r\n]+", re.IGNORECASE)
 REDACTIONS = [
     (re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"), "[REDACTED_API_KEY]"),
     (re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"), "[REDACTED_TOKEN]"),
@@ -88,6 +90,7 @@ INJECTED_BLOCK_RE = re.compile(
 )
 INJECTED_HEADING_RE = re.compile(r"(?im)^\s*#\s*AGENTS\.md instructions(?:\s+for\s+.*)?\s*$")
 SKILL_DUMP_RE = re.compile(r"(?im)^\s*Base directory for this skill:\s*.+$")
+CONTEXT_IMAGE_RE = re.compile(r"(?:^|[\\/_. -])(?:photos?|setup|bench|apparatus)(?:$|[\\/_. -])|台架|照片|实验平台", re.IGNORECASE)
 
 
 def parse_timestamp(value: Any) -> datetime | None:
@@ -181,12 +184,24 @@ def iter_strings(value: Any) -> Iterable[str]:
 def candidate_paths(value: Any) -> list[str]:
     found: list[str] = []
     for item in iter_strings(value):
-        normalized = item.replace("\\\\", "\\")
-        matches = PATH_RE.findall(normalized) + POSIX_PATH_RE.findall(normalized)
+        matches = []
+        for link in MARKDOWN_LINK_RE.finditer(item):
+            target = link.group(1).strip()
+            if target.startswith("<") and target.endswith(">"):
+                target = target[1:-1]
+            else:
+                target = re.sub(r'\s+[\"\'][^\"\']*[\"\']\s*$', "", target)
+            if not re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", target) and Path(target).suffix.lower() in ARTIFACT_EXTENSIONS:
+                matches.append(target)
+        # JSON has already decoded backslashes. Preserve UNC prefixes and keep
+        # remote URLs/Markdown targets out of the bare local-path scan.
+        bare = HTTP_URL_RE.sub("", MARKDOWN_LINK_RE.sub("", item))
+        matches.extend(PATH_RE.findall(bare) + POSIX_PATH_RE.findall(bare))
         for match in matches:
             cleaned = match.rstrip(".,;:)]}\u3002，；：）")
             if not cleaned.lower().startswith(("http://", "https://")):
-                found.append(cleaned)
+                if cleaned not in found:
+                    found.append(cleaned)
     return found
 
 
@@ -265,7 +280,7 @@ def parse_codex_file(
                 if timestamp is None or not (start <= timestamp < end):
                     continue
                 if has_artifact:
-                    record["artifact_candidates"].extend(candidate_paths(strip_injected_text(line)))
+                    record["artifact_candidates"].extend(clean_artifact_paths(payload))
                 role = ""
                 text = ""
                 if event_type == "event_msg":
@@ -309,7 +324,7 @@ def parse_claude_file(
                 if timestamp is None or not (start <= timestamp < end):
                     continue
                 if has_artifact:
-                    record["artifact_candidates"].extend(candidate_paths(strip_injected_text(line)))
+                    record["artifact_candidates"].extend(clean_artifact_paths(event.get("message", {})))
                 event_type = event.get("type")
                 if event_type not in {"user", "assistant"}:
                     continue
@@ -375,6 +390,32 @@ def is_ignored_scan_root(path: Path) -> bool:
     return path.name.casefold() in IGNORED_SCAN_ROOTS or is_ignored_asset_path(path)
 
 
+def clean_artifact_paths(value: Any) -> list[str]:
+    return [path for text in iter_strings(value)
+            for path in candidate_paths(redact(strip_injected_text(text)))
+            if "[REDACTED" not in path]
+
+
+def asset_candidate(path: Path, source: str, project: str, start: datetime,
+                    end: datetime, force_context: bool = False) -> dict[str, Any] | None:
+    if is_ignored_asset_path(path) or path.suffix.lower() not in IMAGE_EXTENSIONS:
+        return None
+    try:
+        if not path.is_file():
+            return None
+        modified = datetime.fromtimestamp(path.stat().st_mtime, LOCAL_TZ)
+    except OSError:
+        return None
+    context = force_context or bool(CONTEXT_IMAGE_RE.search(str(path)))
+    current = start <= modified < end
+    if source == "scanned" and not current and not context:
+        return None
+    return {"path": str(path), "source": source, "project": project,
+            "role": "platform_context" if context else "result_candidate",
+            "period": "context" if context else ("current" if current else "unknown"),
+            "status": "unverified", "modified_at": modified.isoformat()}
+
+
 def discover_assets(
     records: list[dict[str, Any]],
     start: datetime,
@@ -382,57 +423,60 @@ def discover_assets(
     scan_fallback: bool,
     scan_seconds: float,
     scan_files: int,
+    asset_roots: Iterable[str] = (),
+    context_images: Iterable[str] = (),
 ) -> list[dict[str, Any]]:
     assets: dict[str, dict[str, Any]] = {}
     for record in records:
         cwd = record.get("cwd")
         for raw in record.get("artifact_candidates", []):
             path = normalize_path(raw, cwd)
-            if (
-                not path
-                or is_ignored_asset_path(path)
-                or path.suffix.lower() not in IMAGE_EXTENSIONS
-                or not path.exists()
-                or not path.is_file()
-            ):
+            item = asset_candidate(path, "referenced", record["project"], start, end) if path else None
+            if item:
+                assets[str(path)] = item
+    for raw in context_images:
+        path = normalize_path(raw, None)
+        project = next((record["project"] for record in records if record.get("cwd")
+                        and path.is_relative_to(Path(record["cwd"]).resolve())), path.parent.name)
+        item = asset_candidate(path, "explicit_context", project, start, end, True)
+        if item:
+            assets[str(path)] = item
+    if scan_fallback and scan_files > 0 and scan_seconds > 0:
+        roots = {str(Path(record["cwd"]).resolve()): record["project"]
+                 for record in records if record.get("cwd")}
+        for raw in asset_roots:
+            root = Path(raw).expanduser().resolve()
+            roots.setdefault(str(root), root.name)
+        roots = {root: project for root, project in sorted(roots.items())
+                 if Path(root).is_dir() and not is_ignored_scan_root(Path(root))}
+        # Each root gets its own share: a busy first project cannot consume the
+        # whole budget. Referenced images never disable discovery elsewhere.
+        count = len(roots)
+        for index, (root, project) in enumerate(roots.items()):
+            budget = scan_files // count + (index < scan_files % count)
+            asset_budget = 80 // count + (index < 80 % count)
+            deadline = time.monotonic() + scan_seconds / count
+            scanned = found = 0
+            if not budget or not asset_budget:
                 continue
-            key = str(path)
-            assets[key] = {"path": key, "source": "referenced", "project": record["project"]}
-    # The fallback is intentionally opt-in after referenced assets fail. A full
-    # recursive scan of a synced drive is too expensive for a daily command.
-    if scan_fallback and not assets:
-        roots = {
-            str(root.resolve())
-            for record in records
-            if record.get("cwd")
-            and (root := Path(record["cwd"])).is_dir()
-            and not is_ignored_scan_root(root)
-        }
-        deadline = time.monotonic() + max(0.1, scan_seconds)
-        scanned_files = 0
-        for root in roots:
             for current, dirs, files in os.walk(root):
-                dirs[:] = [name for name in dirs if name not in SKIP_DIRS]
-                for name in files:
-                    scanned_files += 1
-                    if scanned_files > scan_files or time.monotonic() >= deadline:
-                        return list(assets.values())
-                    path = Path(current) / name
-                    if path.suffix.lower() not in IMAGE_EXTENSIONS:
-                        continue
-                    try:
-                        modified = datetime.fromtimestamp(path.stat().st_mtime, LOCAL_TZ)
-                    except OSError:
-                        continue
-                    if not (start <= modified < end) or str(path) in assets:
-                        continue
-                    assets[str(path)] = {"path": str(path), "source": "scanned", "project": Path(root).name}
-                    if len(assets) >= 80:
-                        break
-                if len(assets) >= 80:
+                dirs[:] = sorted(name for name in dirs if name.casefold() not in SKIP_DIRS
+                                 and not (Path(current) / name).is_symlink())
+                if time.monotonic() >= deadline:
                     break
-            if len(assets) >= 80:
-                break
+                for name in sorted(files):
+                    if scanned >= budget or found >= asset_budget or time.monotonic() >= deadline:
+                        break
+                    scanned += 1
+                    path = Path(current) / name
+                    if path.is_symlink() or str(path) in assets:
+                        continue
+                    item = asset_candidate(path, "scanned", project, start, end)
+                    if item:
+                        assets[str(path)] = item
+                        found += 1
+                if scanned >= budget or found >= asset_budget or time.monotonic() >= deadline:
+                    break
     return list(assets.values())
 
 
@@ -525,7 +569,11 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
 
     known = dict(sessions)
     records: list[dict[str, Any]] = []
+    project_root = getattr(args, "project_root", None)
+    project_root = Path(project_root).expanduser().resolve() if project_root else None
     for record in sessions.values():
+        if project_root and (not record.get("cwd") or not Path(record["cwd"]).resolve().is_relative_to(project_root)):
+            continue
         if not record["events"] and not record["artifact_candidates"]:
             continue
         record["root_id"] = root_id_for(record, known)
@@ -539,6 +587,8 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
         getattr(args, "scan_fallback", True),
         getattr(args, "scan_seconds", 5.0),
         getattr(args, "scan_files", 2000),
+        getattr(args, "asset_root", []),
+        getattr(args, "context_image", []),
     )
     project_names = sorted({record["project"] for record in records})
     return {
@@ -569,6 +619,9 @@ def main() -> None:
     parser.add_argument("--include-archived", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--scan-seconds", type=float, default=5.0)
     parser.add_argument("--scan-files", type=int, default=2000)
+    parser.add_argument("--project-root", help="Include sessions in this project and its subdirectories only")
+    parser.add_argument("--asset-root", action="append", default=[], help="Additional explicit directory for bounded image discovery")
+    parser.add_argument("--context-image", action="append", default=[], help="Explicit platform/context image; remains an unverified candidate")
     parser.add_argument("--out", required=True, help="Output JSON path")
     args = parser.parse_args()
     result = collect(args)

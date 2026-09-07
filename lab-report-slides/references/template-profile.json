@@ -18,5 +18,7 @@
     "原因判断",
     "下一步"
   ],
-  "media_pattern": "实验截图、频谱图、曲线图优先"
+  "media_pattern": "实验截图、频谱图、曲线图及相关台架照片优先；单图主导或双图对照，文字仅解释条件和结论",
+  "pptx_objects": "editable_text_and_independent_pictures",
+  "preview_source": "rendered_pptx"
 }

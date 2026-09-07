@@ -1,257 +1,320 @@
 #!/usr/bin/env python3
-"""Render a structured lab-report deck to HTML, PDF, PNG slides, and image-only PPTX."""
+"""Create editable lab-report PPTX slides and render that PPTX for inspection."""
 
 from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import html
+import io
 import json
-import mimetypes
+import math
 import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
-import zipfile
+import unicodedata
 from pathlib import Path
 from typing import Any
+from contextlib import contextmanager
+
+from PIL import Image
+from pptx import Presentation
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_ANCHOR
+from pptx.oxml.xmlchemy import OxmlElement
+from pptx.util import Inches, Pt
 
 
 SLIDE_WIDTH = 1600
 SLIDE_HEIGHT = 900
-BASE_CSS = """
-@page { size: 16in 9in; margin: 0; }
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #e8edf3; }
-body { font-family: "DengXian", "等线", "Microsoft YaHei", Arial, sans-serif; color: #1f2937; }
-.deck { width: 1600px; margin: 0 auto; }
-.slide { width: 1600px; height: 900px; position: relative; overflow: hidden; page-break-after: always; background: #fff; border-top: 8px solid #4472c4; padding: 58px 76px 52px; }
-.slide:last-child { page-break-after: auto; }
-.kicker { color: #5b9bd5; font-size: 20px; line-height: 1.2; font-weight: 700; margin: 0 0 14px; }
-h1 { color: #24364b; font-size: 42px; line-height: 1.16; margin: 0; font-weight: 700; letter-spacing: 0; }
-.subtitle { color: #6b7280; font-size: 21px; line-height: 1.35; margin-top: 14px; }
-.header { min-height: 104px; }
-.content { height: 670px; margin-top: 24px; display: flex; gap: 30px; align-items: stretch; }
-.content.single { display: block; }
-.column { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
-.column.wide { flex: 1.55; }
-.block { min-width: 0; }
-.block h2 { color: #24364b; font-size: 25px; line-height: 1.2; margin: 0 0 8px; }
-.block p, .block li { font-size: 23px; line-height: 1.42; margin: 0; }
-.block ul { margin: 0; padding-left: 28px; }
-.block li + li { margin-top: 9px; }
-.callout { border-left: 7px solid #5b9bd5; background: #f3f6fa; padding: 20px 24px; }
-.status { position: absolute; right: 76px; top: 64px; color: #4472c4; font-size: 19px; font-weight: 700; }
-.metric-row { display: flex; gap: 18px; flex-wrap: wrap; }
-.metric { flex: 1 1 190px; border: 2px solid #d9e2f0; padding: 16px 20px; min-height: 110px; }
-.metric .value { color: #1f4e79; font-size: 36px; line-height: 1.05; font-weight: 700; }
-.metric .label { color: #6b7280; font-size: 18px; margin-top: 8px; }
-figure { margin: 0; min-width: 0; height: 100%; display: flex; flex-direction: column; }
-figure img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; background: #fbfcfe; border: 1px solid #d9e2f0; }
-figcaption { color: #6b7280; font-size: 16px; line-height: 1.25; margin-top: 8px; }
-.image-block { flex: 1; min-height: 0; }
-.image-block figure { height: 100%; }
-.image-block img { max-height: 590px; }
-.missing { border: 2px dashed #c96b6b; color: #a33b3b; min-height: 180px; display: grid; place-items: center; padding: 20px; font-size: 20px; text-align: center; }
-.footer { position: absolute; left: 76px; right: 76px; bottom: 22px; display: flex; justify-content: space-between; color: #8a94a3; font-size: 15px; }
-@media print { html, body { background: #fff; } .slide { box-shadow: none; } }
-"""
-
-
-def esc(value: Any) -> str:
-    return html.escape(str(value or ""), quote=True)
-
-
-def data_uri(path_value: str | None) -> str | None:
-    if not path_value:
-        return None
-    path = Path(path_value).expanduser()
-    if not path.exists() or not path.is_file():
-        return None
-    mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-    try:
-        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    except OSError:
-        return None
-    return f"data:{mime};base64,{encoded}"
-
-
-def lines_html(text: str) -> str:
-    rows = [line.strip() for line in str(text or "").splitlines() if line.strip()]
-    if not rows:
-        return ""
-    if len(rows) == 1:
-        return f"<p>{esc(rows[0])}</p>"
-    return "<ul>" + "".join(f"<li>{esc(row.lstrip('-* '))}</li>" for row in rows) + "</ul>"
-
-
-def render_block(block: dict[str, Any]) -> str:
-    kind = str(block.get("type") or block.get("kind") or "text")
-    heading = block.get("heading") or block.get("title")
-    if kind == "image":
-        src = data_uri(block.get("path"))
-        caption = esc(block.get("caption") or block.get("source") or "")
-        if not src:
-            body = f"<div class=\"missing\">[MISSING: {esc(block.get('path'))}]</div>"
-        else:
-            body = f"<figure><img src=\"{src}\" alt=\"{caption}\"><figcaption>{caption}</figcaption></figure>"
-        return f"<div class=\"block image-block\">{body}</div>"
-    if kind == "metric":
-        return f"<div class=\"metric\"><div class=\"value\">{esc(block.get('value'))}</div><div class=\"label\">{esc(block.get('label'))}</div></div>"
-    body = lines_html(block.get("text") or block.get("body") or "")
-    if kind == "callout":
-        return f"<div class=\"block callout\">{f'<h2>{esc(heading)}</h2>' if heading else ''}{body}</div>"
-    return f"<div class=\"block\">{f'<h2>{esc(heading)}</h2>' if heading else ''}{body}</div>"
-
-
-def slide_html(slide: dict[str, Any], index: int, total: int, footer: str) -> str:
-    title = slide.get("title") or f"Slide {index}"
-    kicker = slide.get("kicker") or slide.get("section") or ""
-    subtitle = slide.get("subtitle") or ""
-    status = slide.get("status") or ""
-    blocks = list(slide.get("blocks") or [])
-    if not blocks and slide.get("body"):
-        blocks = [{"type": "text", "text": slide["body"]}]
-    images = [block for block in blocks if str(block.get("type") or block.get("kind")) == "image"]
-    non_images = [block for block in blocks if block not in images]
-    if images and non_images:
-        left = "".join(render_block(block) for block in non_images)
-        right = "".join(render_block(block) for block in images)
-        content = f'<div class="column wide">{left}</div><div class="column">{right}</div>'
-    else:
-        content = "".join(render_block(block) for block in blocks)
-        content = f'<div class="column">{content}</div>'
-    return (
-        f'<section class="slide" data-slide="{index}">'
-        f'<div class="header"><div class="kicker">{esc(kicker)}</div><h1>{esc(title)}</h1>'
-        f'{f"<div class=\"subtitle\">{esc(subtitle)}</div>" if subtitle else ""}</div>'
-        f'{f"<div class=\"status\">{esc(status)}</div>" if status else ""}'
-        f'<div class="content">{content}</div>'
-        f'<div class="footer"><span>{esc(footer)}</span><span>{index} / {total}</span></div>'
-        "</section>"
-    )
-
-
-def deck_html(deck: dict[str, Any], slides: list[dict[str, Any]] | None = None) -> str:
-    selected = slides if slides is not None else list(deck.get("slides") or [])
-    if not selected:
-        selected = [{"title": "暂无可汇报内容", "body": "未找到当天的有效工作记录。请检查会话范围或先完成提纲确认。"}]
-    footer = deck.get("footer") or deck.get("date") or deck.get("target_date") or "科研工作汇报"
-    body = "".join(slide_html(slide, idx, len(selected), footer) for idx, slide in enumerate(selected, 1))
-    title = deck.get("title") or "科研工作汇报"
-    return f'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=1600, initial-scale=1"><title>{esc(title)}</title><style>{BASE_CSS}</style></head><body><main class="deck">{body}</main></body></html>'
-
-
-def find_browser() -> str:
-    candidates = [
-        os.environ.get("BROWSER_PATH"),
-        shutil.which("msedge"),
-        shutil.which("chrome"),
-        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        str(Path.home() / r"AppData\Local\Microsoft\Edge\Application\msedge.exe"),
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    ]
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return str(candidate)
-    raise RuntimeError("未找到 Edge 或 Chrome。请设置 BROWSER_PATH。")
-
-
-def browser_args(browser: str, profile: Path) -> list[str]:
-    return [
-        browser,
-        "--headless=new",
-        "--disable-gpu",
-        "--disable-extensions",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--allow-file-access-from-files",
-        "--run-all-compositor-stages-before-draw",
-        "--virtual-time-budget=1200",
-        f"--user-data-dir={profile}",
-    ]
-
-
-def export_browser(html_path: Path, pdf_path: Path, slide_paths: list[Path], slides: list[dict[str, Any]], deck: dict[str, Any], temp_dir: Path) -> None:
-    browser = find_browser()
-    profile = temp_dir / "browser-profile"
-    uri = html_path.resolve().as_uri()
-    subprocess.run(browser_args(browser, profile) + [f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header", uri], check=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=90)
-    for index, target in enumerate(slide_paths, 1):
-        single = temp_dir / f"slide-{index}.html"
-        single.write_text(deck_html(deck, [slides[index - 1]]), encoding="utf-8")
-        subprocess.run(browser_args(browser, profile) + [f"--window-size={SLIDE_WIDTH},{SLIDE_HEIGHT}", f"--screenshot={target}", single.resolve().as_uri()], check=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+FONT = "Microsoft YaHei"
+INK = "263344"
+BLUE = "4472C4"
+MUTED = "64748B"
 
 
 def choose_stem(output_dir: Path, requested: str) -> str:
-    pattern = re.compile(rf"^{re.escape(requested)}(?:_v(\d+))?$")
-    existing: list[int] = []
+    if not requested.strip() or requested in {".", ".."} or any(char in requested for char in '<>:"/\\|?*'):
+        raise ValueError("base-name must be a file name, without a directory")
+    pattern = re.compile(rf"^{re.escape(requested)}(?:_v(\d+))?(?:\.(?:pptx|pdf|html|manifest\.json|reserve)|_\d+\.png)$", re.IGNORECASE)
+    existing = []
     for path in output_dir.iterdir() if output_dir.exists() else []:
-        match = pattern.match(path.stem)
+        match = pattern.match(path.name)
         if match:
             existing.append(int(match.group(1) or 1))
-    if not existing:
-        return requested
-    return f"{requested}_v{max(existing) + 1}"
+    return requested if not existing else f"{requested}_v{max(existing) + 1}"
 
 
-def make_pptx(slide_paths: list[Path], output_path: Path) -> None:
+@contextmanager
+def reserve_stem(output_dir: Path, requested: str):
+    while True:
+        stem = choose_stem(output_dir, requested)
+        reservation = output_dir / f"{stem}.reserve"
+        try:
+            with reservation.open("x", encoding="utf-8"):
+                pass
+            break
+        except FileExistsError:
+            continue
     try:
-        from pptx import Presentation
-        from pptx.util import Inches
-    except ImportError as exc:
-        raise RuntimeError("缺少 python-pptx。请安装 python-pptx 后重试。") from exc
+        yield stem
+    finally:
+        reservation.unlink(missing_ok=True)
+
+
+def text_rows(block: dict[str, Any]) -> list[tuple[str, bool]]:
+    rows = []
+    heading = block.get("heading") or block.get("title")
+    if heading:
+        rows.append((str(heading), True))
+    if block.get("type", block.get("kind")) == "metric":
+        rows.append((f"{block.get('value', '')}  {block.get('label', '')}".strip(), True))
+    else:
+        for line in str(block.get("text") or block.get("body") or "").splitlines():
+            line = line.strip()
+            if line:
+                rows.append((line[2:] if line.startswith(("- ", "* ")) else line, False))
+    return rows
+
+
+def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum: int) -> int:
+    for size in (value for value in (28, 24, 20, 18) if value <= maximum):
+        capacity = max(1, width * 72 / size * 1.65)
+        lines = sum(max(1, math.ceil(sum(2 if unicodedata.east_asian_width(c) in {"W", "F"} else 1
+                                       for c in text) / capacity)) for text, _ in rows)
+        if (lines * size * 1.3 + max(0, len(rows) - 1) * 8) / 72 <= height:
+            return size
+    raise ValueError("Slide text does not fit at a readable size; shorten it or split the slide")
+
+
+def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False):
+    if not rows:
+        return
+    if fit:
+        size = text_size(rows, width, height, size)
+    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(width), Inches(height))
+    frame = box.text_frame
+    frame.word_wrap = True
+    frame.margin_left = frame.margin_right = frame.margin_top = frame.margin_bottom = 0
+    frame.vertical_anchor = MSO_ANCHOR.TOP
+    for index, (text, bold) in enumerate(rows):
+        paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
+        paragraph.space_before = Pt(0)
+        paragraph.space_after = Pt(8 if index < len(rows) - 1 else 0)
+        paragraph.line_spacing = 1.15
+        run = paragraph.add_run()
+        run.text = re.sub(r"(?<=\d) (?=(?:GHz|MHz|kHz|Hz|dBm|dB|km|mm|ms|ns|Gbit/s|Gbps)\b)", "\u00a0", text)
+        run.font.name = FONT
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = RGBColor.from_string(color)
+        east_asian = OxmlElement("a:ea")
+        east_asian.set("typeface", FONT)
+        run._r.get_or_add_rPr().append(east_asian)
+
+
+def raster_bytes(path: Path) -> bytes:
+    if path.suffix.lower() == ".svg":
+        node = shutil.which("node")
+        bundled = Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp"
+        sharp = os.environ.get("SHARP_MODULE") or (str(bundled) if bundled.is_dir() else "sharp")
+        if not node:
+            raise ValueError("SVG input requires the existing Node.js/sharp runtime or a PNG export")
+        with tempfile.TemporaryDirectory(prefix="lab-svg-") as temporary:
+            output = Path(temporary) / "image.png"
+            completed = subprocess.run(
+                [node, "-e", "require(process.argv[1])(process.argv[2],{density:180}).png().toFile(process.argv[3]).catch(e=>{console.error(e.message);process.exit(1)})",
+                 sharp, str(path), str(output)], capture_output=True, text=True, encoding="utf-8", timeout=45,
+            )
+            if completed.returncode or not output.is_file():
+                raise ValueError(f"Cannot render SVG image: {path.name}")
+            return output.read_bytes()
+    with Image.open(path) as image:
+        image.seek(0)
+        image.thumbnail((3200, 3200), Image.Resampling.LANCZOS)
+        buffer = io.BytesIO()
+        image.convert("RGBA" if "A" in image.getbands() else "RGB").save(buffer, format="PNG")
+        return buffer.getvalue()
+
+
+def add_image(slide, block, data, x, y, width, height):
+    caption = str(block.get("caption") or "")
+    caption_height = 0.55 if caption else 0
+    image_height = height - caption_height
+    with Image.open(io.BytesIO(data)) as image:
+        scale = min(width / image.width, image_height / image.height)
+        actual_width, actual_height = image.width * scale, image.height * scale
+    picture = slide.shapes.add_picture(io.BytesIO(data), Inches(x + (width - actual_width) / 2),
+                                       Inches(y + (image_height - actual_height) / 2),
+                                       width=Inches(actual_width), height=Inches(actual_height))
+    picture.name = f"Research image: {Path(block['path']).name}"
+    if caption:
+        add_text(slide, [(caption, False)], x, y + image_height + 0.08, width, caption_height - 0.08, 14, MUTED)
+
+
+def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]]:
+    if not isinstance(deck.get("slides"), list) or not deck["slides"]:
+        raise ValueError("No report material; provide actual findings and visual assets before rendering")
+    slides = []
+    total_images = 0
+    for raw in deck["slides"]:
+        slide = dict(raw)
+        blocks = [dict(block) for block in slide.get("blocks", [])]
+        if not blocks and slide.get("body"):
+            blocks = [{"type": "text", "text": slide["body"]}]
+        pictures = 0
+        for block in blocks:
+            kind = block.get("type") or block.get("kind") or "text"
+            if kind not in {"image", "text", "metric", "callout"}:
+                raise ValueError(f"Unsupported slide block: {kind}")
+            block["type"] = kind
+            if kind == "image":
+                if not block.get("path"):
+                    raise ValueError("An image block is missing its source path")
+                path = Path(block["path"]).expanduser()
+                path = (source_dir / path).resolve() if not path.is_absolute() else path.resolve()
+                if not path.is_file():
+                    raise ValueError(f"Missing research image: {path}")
+                block["path"] = str(path)
+                pictures += 1
+        if pictures > 2:
+            raise ValueError("Use at most two main images per slide; place additional figures on another slide")
+        if slide.get("type") in {"result", "setup", "comparison"} and not pictures:
+            raise ValueError(f"This experimental slide needs its actual image: {slide.get('title', '')}")
+        slide["blocks"] = blocks
+        slides.append(slide)
+        total_images += pictures
+    if total_images == 0 and deck.get("allow_text_only") is not True:
+        raise ValueError("No experimental plots or photos selected; locate assets before making a text-only deck")
+    return slides
+
+
+def make_pptx(deck, slides, output_path):
+    if output_path.exists():
+        raise FileExistsError(output_path)
     presentation = Presentation()
-    presentation.slide_width = Inches(13.333333)
-    presentation.slide_height = Inches(7.5)
-    blank = presentation.slide_layouts[6]
-    for image_path in slide_paths:
-        slide = presentation.slides.add_slide(blank)
-        slide.shapes.add_picture(str(image_path), 0, 0, width=presentation.slide_width, height=presentation.slide_height)
+    presentation.slide_width = 12192000
+    presentation.slide_height = 6858000
+    assets = []
+    for index, content in enumerate(slides, 1):
+        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        slide.background.fill.solid()
+        slide.background.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, presentation.slide_width, Inches(0.055))
+        line.fill.solid()
+        line.fill.fore_color.rgb = RGBColor.from_string(BLUE)
+        line.line.fill.background()
+        kicker = str(content.get("kicker") or content.get("section") or "")
+        if kicker:
+            add_text(slide, [(kicker, False)], 0.55, 0.26, 10.7, 0.25, 11, BLUE)
+        title = str(content.get("title") or f"Slide {index}")
+        add_text(slide, [(title, True)], 0.55, 0.57, 11.25, 0.8, 28, INK, fit=True)
+        status = str(content.get("status") or "")
+        if status:
+            add_text(slide, [(status, False)], 11.8, 0.64, 1.0, 0.55, 12, BLUE)
+        footer = str(deck.get("footer") or deck.get("date") or "")
+        add_text(slide, [(footer, False)], 0.55, 7.16, 11.2, 0.2, 9, MUTED)
+        add_text(slide, [(f"{index} / {len(slides)}", False)], 12.0, 7.16, 0.8, 0.2, 9, MUTED)
+        pictures = [block for block in content["blocks"] if block["type"] == "image"]
+        rows = [(str(content["subtitle"]), False)] if content.get("subtitle") else []
+        for block in content["blocks"]:
+            if block["type"] != "image":
+                rows.extend(text_rows(block))
+        if len(pictures) == 1:
+            boxes = [(0.55, 1.55, 8.3 if rows else 12.23, 5.35)]
+            if rows:
+                add_text(slide, rows, 9.15, 1.75, 3.63, 4.9, 20, fit=True)
+        elif len(pictures) == 2:
+            height = 4.15 if rows else 5.35
+            boxes = [(0.55, 1.55, 5.96, height), (6.82, 1.55, 5.96, height)]
+            if rows:
+                add_text(slide, rows, 0.7, 5.95, 11.9, 0.95, 18, fit=True)
+        else:
+            boxes = []
+            add_text(slide, rows, 0.75, 1.65, 11.83, 5.2, 24, fit=True)
+        for block, box in zip(pictures, boxes):
+            path = Path(block["path"])
+            source_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+            raster = raster_bytes(path)
+            if hashlib.sha256(path.read_bytes()).hexdigest() != source_hash:
+                raise ValueError(f"Research image changed while rendering: {path}")
+            add_image(slide, block, raster, *box)
+            assets.append({"slide": index, "path": str(path), "sha256": source_hash,
+                           "embedded_sha256": hashlib.sha256(raster).hexdigest(),
+                           "caption": block.get("caption", ""), "role": block.get("role", "unverified"),
+                           "source": block.get("source", ""), "period": block.get("period", "unknown")})
     presentation.save(output_path)
+    return assets
+
+
+def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> None:
+    runner = Path(__file__).resolve().parents[2] / "libreoffice-runner/scripts/libreoffice_run.py"
+    if not runner.is_file():
+        raise RuntimeError("The existing libreoffice-runner is required to render the actual PPTX")
+    result = subprocess.run([sys.executable, "-X", "utf8", str(runner), "pdf", str(pptx_path), str(pdf_path),
+                             "--queue-timeout", "60", "--run-timeout", "120"],
+                            capture_output=True, text=True, encoding="utf-8")
+    report = json.loads(result.stdout)
+    if result.returncode or report.get("ok") is not True:
+        raise RuntimeError(f"PPTX rendering failed: {report.get('error')}: {report.get('message')}")
+    poppler = shutil.which("pdftoppm")
+    if not poppler:
+        raise RuntimeError("pdftoppm is required for page inspection")
+    with tempfile.TemporaryDirectory(prefix="lab-pages-") as temporary:
+        prefix = Path(temporary) / "page"
+        subprocess.run([poppler, "-png", "-scale-to-x", str(SLIDE_WIDTH), "-scale-to-y", str(SLIDE_HEIGHT),
+                        "-aa", "yes", "-aaVector", "yes", str(pdf_path), str(prefix)],
+                       check=True, capture_output=True, timeout=120)
+        pages = sorted(Path(temporary).glob("page-*.png"), key=lambda path: int(path.stem.rsplit("-", 1)[1]))
+        if len(pages) != len(slide_paths):
+            raise RuntimeError("PPTX and rendered page counts differ")
+        for source, target in zip(pages, slide_paths):
+            with Image.open(source) as page:
+                if page.size != (SLIDE_WIDTH, SLIDE_HEIGHT):
+                    raise RuntimeError("Unexpected rendered page dimensions")
+            if target.exists():
+                raise FileExistsError(target)
+            shutil.copyfile(source, target)
 
 
 def render(deck_path: Path, output_dir: Path, requested_stem: str) -> dict[str, Any]:
+    deck_path, output_dir = deck_path.resolve(), output_dir.resolve()
     deck = json.loads(deck_path.read_text(encoding="utf-8-sig"))
+    slides = validate_deck(deck, deck_path.parent)
     output_dir.mkdir(parents=True, exist_ok=True)
-    stem = choose_stem(output_dir, requested_stem)
+    with reserve_stem(output_dir, requested_stem) as stem:
+        return render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem)
+
+
+def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem):
+    pptx_path, pdf_path = output_dir / f"{stem}.pptx", output_dir / f"{stem}.pdf"
+    assets = make_pptx(deck, slides, pptx_path)
+    slide_paths = [output_dir / f"{stem}_{index:02d}.png" for index in range(1, len(slides)+1)]
+    export_pptx(pptx_path, pdf_path, slide_paths)
     html_path = output_dir / f"{stem}.html"
-    pdf_path = output_dir / f"{stem}.pdf"
-    pptx_path = output_dir / f"{stem}.pptx"
-    manifest_path = output_dir / f"{stem}.manifest.json"
-    slides = list(deck.get("slides") or [])
-    if not slides:
-        slides = [{"title": "暂无可汇报内容", "body": "未找到当天的有效工作记录。"}]
-    html_path.write_text(deck_html(deck, slides), encoding="utf-8")
-    slide_paths = [output_dir / f"{stem}_{index:02d}.png" for index in range(1, len(slides) + 1)]
-    with tempfile.TemporaryDirectory(prefix="lab-report-slides-") as temp:
-        export_browser(html_path, pdf_path, slide_paths, slides, deck, Path(temp))
-    make_pptx(slide_paths, pptx_path)
-    if not pdf_path.exists() or pdf_path.stat().st_size == 0:
-        raise RuntimeError("PDF 导出失败或文件为空。")
-    if not pptx_path.exists() or not zipfile.is_zipfile(pptx_path):
-        raise RuntimeError("PPTX 导出失败或不是有效的 Office 文件。")
-    manifest = {
-        "schema_version": 1,
-        "requested_stem": requested_stem,
-        "stem": stem,
-        "slide_count": len(slides),
-        "files": {"html": str(html_path), "pdf": str(pdf_path), "pptx": str(pptx_path), "png": [str(path) for path in slide_paths]},
-    }
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    images = "".join(f'<img alt="{html.escape(str(slide.get("title", "")), quote=True)}" src="data:image/png;base64,{base64.b64encode(path.read_bytes()).decode()}" />'
+                     for slide, path in zip(slides, slide_paths))
+    html_path.write_text('<!doctype html><meta charset="utf-8"><title>Lab report</title><style>body{margin:0;background:#ddd}img{display:block;width:min(100%,1600px);height:auto;margin:0 auto 16px}</style>' + images, encoding="utf-8")
+    manifest = {"schema_version": 2, "requested_stem": requested_stem, "stem": stem, "slide_count": len(slides),
+                "render_source": "pptx", "editable_text": True, "independent_images": True,
+                "assets": assets, "source_deck": str(deck_path),
+                "files": {"html": str(html_path), "pdf": str(pdf_path), "pptx": str(pptx_path), "png": [str(path) for path in slide_paths]}}
+    (output_dir / f"{stem}.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--deck", required=True, help="Structured deck JSON")
+    parser.add_argument("--deck", required=True)
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--base-name", required=True, help="YYYYMMDD or YYYYMMDD组会")
+    parser.add_argument("--base-name", required=True)
     args = parser.parse_args()
-    result = render(Path(args.deck), Path(args.output_dir), args.base_name)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(render(Path(args.deck), Path(args.output_dir), args.base_name), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

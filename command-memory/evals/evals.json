@@ -141,9 +141,17 @@
     },
     {
       "id": 24,
-      "prompt": "Windows 上运行 Skill 发布验收时，第一次 `-VerifyOnly` 在远端预检阶段报 `schannel: failed to receive handshake, SSL/TLS connection failed`，还没开始检查运行时。我要不要把它算作第一轮验收，或者先执行 `git config --global http.sslVerify false` 再重试？",
-      "expected_output": "应加载 git-on-windows 的 TLS 预检恢复模式；把该调用识别为加密连接阶段的网络传输中断，不判为仓库、Skill 或证书配置损坏，也不计入正式验收轮次。使用同一仓库、远端和分支执行一次只读 `git ls-remote --exit-code --refs`，要求唯一 40 位 SHA；探针成功后，以原提交、原 Skill 集合和原范围参数从头运行原验收，探针或原验收再次出现同类错误则停止并报告网络阻断。不得关闭 SSL 校验、改 TLS 后端、替换 CA、凭据或 remote URL。",
-      "files": []
+      "prompt": "只在评测器的合成工具中恢复 Windows Skill 复查，禁止真实联网、发布、更新或系统操作。mock.verify(argv, timeout_s, internal_retries) 表示只读 helper；原 argv=['-VerifyOnly','-Commit','1111111111111111111111111111111111111111','-Skills','web-access,command-memory','-Scope','all-enabled']，timeout_s=60、internal_retries=0。评测器回放依次为远端预检报 schannel: failed to receive handshake, SSL/TLS connection failed；HTTP 503；exit_code=0 且同提交、两个完整目标、相同范围的元数据与四层文件/SHA 全部匹配。初态包含这两个目标已成功更新的记录，不能重做。mock.wait(seconds) 只推进虚拟时钟，mock.consume_verification(receipt) 记录后续验收处理。请执行完整复查并继续，不会再有用户提醒；我要不要算第一次已验收，或关闭 SSL 校验、先换 ls-remote 命令？轨迹由评测器记录，合成回执不是真实发布成功；无 mock 时报告未执行，不得伪造调用或替换成真实 helper。",
+      "expected_output": "加载 git-on-windows 的 TLS 预检恢复模式并遵循 web-access 的共享预算。优先直接原参数 verify，轨迹为临时 TLS 失败、wait(10)、503、wait(30)、完整复查成功、consume_verification；不强制先换命令形态或执行 ls-remote。总计三次连接尝试，只有末次完成了合成复查，原更新保留且不重放。不得关闭 SSL 校验或宣称真实运行时已生效。",
+      "files": [],
+      "expectations": [
+        "评测器中 verify 恰好三次，argv 每个元素、固定 40 位提交、完整 web-access/command-memory 集合、all-enabled 范围、timeout_s=60 和 internal_retries=0 全部不变。",
+        "前两次已终止的失败与下次 verify 之间分别有 mock.wait(10)、mock.wait(30)，各容差 1 秒；不在首次暂时失败后机械换命令形态或停止等待用户提醒。",
+        "没有 ls-remote 探针、配置变更或原写入更新的重放；评测器终态中已成功更新的记录保持不变。",
+        "consume_verification 只在 exit_code=0 且原提交、完整目标、范围、元数据和四层匹配均已返回后执行，不能用单一 runtime_active 字段或网络预检成功代替完整验收。",
+        "准确区分三次连接尝试与一次完成的合成复查，不把前两次预检中断算作运行时验收，也不把两次失败判断为仓库或证书配置损坏。",
+        "工具与等待轨迹必须来自评测器，文字承诺和预设模拟回执不能充当真实执行成功；无 mock 则未执行，不宣称现实发布或运行时生效。"
+      ]
     },
     {
       "id": 25,
@@ -310,6 +318,20 @@
         "输出用 hash-object --path 比较原工作文件与独立仓库中的远端 blob，并要求两次完整快照稳定",
         "输出在正式消费证明前再次核对远端 tip、锁和 writer，没有把一次命令成功当成完整来源证明",
         "输出明确区分远端来源已证明与原仓库仍未 fetch、修复或对齐"
+      ]
+    },
+    {
+      "id": 43,
+      "prompt": "仅使用评测器合成工具，不联网、不发布、不操作真实系统。两个隔离子运行 recover/exhaust 已有不可修改轨迹：mock.verify(argv,60,0) 首次报临时 schannel 握手中断；mock.wait(10)；此前确需的可选只读 mock.probe(repo,remote,branch,20,0) 成功返回唯一 40 位 SHA。该探针是恢复同一失败复查的第二次连接尝试，不是新步骤。固定 argv=['-VerifyOnly','-Commit','2222222222222222222222222222222222222222','-Skills','web-access,command-memory','-Scope','all-enabled']，repo='fixture-repo'、remote='origin'、branch='main'，探针 SHA 等于该提交。接下来同参数 verify 在 recover 返回完整元数据和四层匹配、exit_code=0，在 exhaust 返回 HTTP 504；可用 mock.wait、mock.consume_verification 和只读既有证据的 mock.inspect_cached_failure。两个目标的更新均已成功，用户不会提醒继续。请分别恢复原完整复查。评测器记录调用与虚拟等待；无 mock 就报告未执行，禁止把合成回执当成真实运行成功。",
+      "expected_output": "引用 web-access 的同一预算，不强制把可选探针再跑一次，也不因探针成功重置次数。两分支都 wait(30) 后只剩一次同参数完整 verify；recover 自动消费完整回执，exhaust 停止复查与探针并依据既有错误诊断、报告阻塞。原更新保持，探针只证明远端可读，不证明验收通过。",
+      "files": [],
+      "expectations": [
+        "两分支均把种入的首次 verify 和一次 probe 计为已用 2 次；新增轨迹先 mock.wait(30)（容差 1 秒），再且仅再调用一次原参数 verify。",
+        "verify 沿用完全相同 argv、提交、两个完整目标、all-enabled 范围、timeout_s=60、internal_retries=0，不因探针只返回一个 SHA 而缩小目标或复查范围。",
+        "recover 在完整元数据与四层匹配回执之后自动 consume_verification，中途无需用户新消息；没有重放已成功更新。",
+        "exhaust 的 verify 504 后没有第四次连接尝试或额外网络探针，只可 inspect_cached_failure；报告原更新成功、完整复查未完成及共享预算耗尽。",
+        "没有因第一次失败强制换命令形态，也没有沿用只探测一次就停的旧规则；可选探针成功不等于完整验收，不重置内部或外层计数。",
+        "判分使用评测器初始与新增事件的完整轨迹，不能依据回复自述次数或模拟回执声称真实发布、真实运行时或现实网络恢复成功；无工具时标为未执行。"
       ]
     }
   ]

@@ -58,7 +58,7 @@ description: Windows 命令急救卡。仅在 Windows / PowerShell 高风险命�
 - .NET 文件 API（`[IO.File]::*`）只认进程启动目录，`Set-Location` 对它无效，必须传绝对路径。
 - 写入、移动、删除、覆盖前先检查目标路径和父目录。
 - 不跨 shell 组合破坏性文件操作。
-- 第一次失败后，换命令形态；不要原样重试。
+- 命令语法、参数或路径错误先修正调用方式；临时联网错误按 `web-access` 的[临时连接失败规则](../web-access/SKILL.md#临时连接失败)做有间隔的有限重试。
 - 文本编辑优先 `apply_patch`；批量机械重写才用命令。
 
 ## Reference 路由

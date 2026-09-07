@@ -4,6 +4,8 @@ param(
 
     [string]$OutputPath,
 
+    [string]$CheckRecordPath,
+
     [switch]$OverwriteExisting,
 
     [string]$Preset,
@@ -16,11 +18,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $formatterScriptPath = Join-Path $scriptRoot "word_template_formatter.py"
+$versionScriptPath = Join-Path (Split-Path -Parent $scriptRoot) "document_versions.py"
 $officeComGuardPath = Join-Path $scriptRoot "OfficeComGuard.psm1"
 $defaultWordTemplatePath = Join-Path $env:APPDATA "Microsoft\Templates\Normal.dotm"
 $defaultPresetName = "qiye-shenbao"
+$hasExplicitOutputPath = $PSBoundParameters.ContainsKey("OutputPath")
+$requestedOutputPath = $OutputPath
 
 Import-Module $officeComGuardPath -Force
 Assert-WordComPermission -AllowOfficeCom:$AllowOfficeCom
@@ -76,15 +83,21 @@ function Invoke-PandocExport {
         [Parameter(Mandatory = $true)][string]$OutputPath
     )
 
-    & $PandocPath `
-        $SourcePath `
-        "--from=markdown" `
-        "--to=docx" `
-        "--standalone" `
-        "--output=$OutputPath"
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Pandoc failed for $SourcePath"
+    Push-Location -LiteralPath (Split-Path -Parent $SourcePath)
+    try {
+        & $PandocPath `
+            $SourcePath `
+            "--from=markdown" `
+            "--to=docx" `
+            "--standalone" `
+            "--resource-path=." `
+            "--output=$OutputPath"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Pandoc failed for $SourcePath"
+        }
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -162,6 +175,7 @@ if (-not (Test-Path -LiteralPath $PandocPath)) {
     }
     $PandocPath = $pandocCommand.Source
 }
+$PandocPath = Resolve-ExistingPath -Path $PandocPath
 
 if (-not (Test-Path -LiteralPath $formatterScriptPath)) {
     throw "word_template_formatter.py was not found: $formatterScriptPath"
@@ -214,10 +228,17 @@ foreach ($inputPath in $InputPaths) {
 if ($resolvedInputs.Count -gt 1 -and $OutputPath) {
     throw "OutputPath can only be used with a single Markdown input."
 }
+if ($resolvedInputs.Count -gt 1 -and $CheckRecordPath) {
+    throw "CheckRecordPath can only be used with a single Markdown input."
+}
+if (@($resolvedInputs | Sort-Object -Unique).Count -ne $resolvedInputs.Count) {
+    throw "Duplicate Markdown inputs are not allowed."
+}
 
+$jobs = @()
 foreach ($sourcePath in $resolvedInputs) {
-    if ($OutputPath) {
-        $outputPath = Resolve-OutputPath -Path $OutputPath
+    if ($hasExplicitOutputPath) {
+        $outputPath = Resolve-OutputPath -Path $requestedOutputPath
     }
     elseif ($OverwriteExisting) {
         $outputPath = [System.IO.Path]::ChangeExtension($sourcePath, ".docx")
@@ -228,6 +249,34 @@ foreach ($sourcePath in $resolvedInputs) {
         $outputPath = Join-Path $directory ($stem + ".formatted.docx")
     }
 
+    if ([System.IO.Path]::GetExtension($outputPath) -ne ".docx") {
+        throw "OutputPath must end in .docx."
+    }
+    if ((Test-Path -LiteralPath $outputPath) -and -not $OverwriteExisting) {
+        if ($hasExplicitOutputPath) {
+            throw "Output already exists. Choose a new OutputPath to preserve edits: $outputPath"
+        }
+        $suffix = 1
+        do {
+            $outputPath = Join-Path $directory ($stem + ".formatted-" + $suffix + ".docx")
+            $suffix++
+        } while (Test-Path -LiteralPath $outputPath)
+    }
+    $recordPath = if ($CheckRecordPath) { Resolve-OutputPath -Path $CheckRecordPath } else { $outputPath + ".check.json" }
+    $versionArgs = @("-X", "utf8", $versionScriptPath, "capture-inputs", "--source", $sourcePath, "--pandoc", $PandocPath, "--output", $outputPath, "--record", $recordPath)
+    if ($resolvedTemplatePath) { $versionArgs += @("--template", $resolvedTemplatePath) }
+    else { $versionArgs += @("--preset", $Preset) }
+    $inputSnapshot = @(& $pythonPath @versionArgs) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw "Cannot capture document inputs: $inputSnapshot" }
+    $jobs += [PSCustomObject]@{SourcePath=$sourcePath;OutputPath=$outputPath;RecordPath=$recordPath;InputSnapshot=$inputSnapshot}
+}
+
+foreach ($job in $jobs) {
+    $sourcePath = $job.SourcePath
+    $outputPath = $job.OutputPath
+    if ((Test-Path -LiteralPath $outputPath) -and -not $OverwriteExisting) {
+        throw "Output appeared after preflight; preserve it and choose a new path: $outputPath"
+    }
     Invoke-PandocExport -SourcePath $sourcePath -OutputPath $outputPath
 
     if ($templateMode -eq "native-template") {
@@ -246,11 +295,15 @@ foreach ($sourcePath in $resolvedInputs) {
             -AllowOfficeCom:$AllowOfficeCom
     }
 
+    $recordResult = $job.InputSnapshot | & $pythonPath -X utf8 $versionScriptPath record-generation $outputPath --record $job.RecordPath
+    if ($LASTEXITCODE -ne 0) { throw "Cannot record generated document versions: $recordResult" }
+
     [PSCustomObject]@{
         SourcePath          = $sourcePath
         OutputPath          = $outputPath
         AppliedMode         = $templateMode
         AppliedPreset       = $Preset
         AppliedTemplatePath = $resolvedTemplatePath
+        CheckRecordPath    = $job.RecordPath
     }
 }

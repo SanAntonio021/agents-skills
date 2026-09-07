@@ -18,6 +18,10 @@ existing document, stay in the main `docx` editing workflow and preserve the ori
 3. Pass `--allow-office-com` or `-AllowOfficeCom` under that proven isolation and existing authorization. If `WINWORD.EXE` already exists, stop without connecting to or closing it.
 4. Write the extracted profile next to the template for auditability.
 5. Save formatted output into a new file.
+   The Markdown exporter selects a new numbered default output when a file already exists and
+   refuses an existing explicit output without `-OverwriteExisting`. It captures actual input
+   versions before conversion and writes an `UNCHECKED` document record after generation;
+   [version checks](../document-version-checks.md) bind subsequent checks to these files.
 6. With proven instance isolation, inspect the rendered output:
    - title
    - Heading 1 and Heading 2

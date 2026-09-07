@@ -10,8 +10,9 @@ Use `$docx` as the sole explicit Word skill entrypoint.
 
 ## OfficeCLI route
 
-For ordinary Word inspection, text extraction, element queries, validation, and small structural
-edits, route through this skill's bridge so Codex and Claude use the same pinned OfficeCLI:
+For ordinary paragraph inspection and edits, use the fast paragraph workflow below. It does not
+depend on OfficeCLI or start Office. For other text extraction, element queries, validation, and
+small structural edits, this skill's bridge gives Codex and Claude the same pinned OfficeCLI:
 
 ```powershell
 python <skill-root>\scripts\officecli_bridge.py view input.docx text
@@ -43,14 +44,21 @@ For prose handoff, read [Markdown to Word handoff](../writing-router/references/
 Use the current source, specified template and requested output. Do not rewrite reviewed prose or
 repeat a general writing pass. Existing `loaded_refs` records describe only references actually read.
 用户要求导出即复用本轮授权；格式阶段不自行改写正文。
+Reuse rules, templates and scripts already read in this task when they have no relevant changes;
+do not reload the entire workflow for each accepted paragraph.
 
-Check the OOXML/package, styles, content, figure references and unchanged source. Render with one
-renderer suited to the target application and inspect every page yourself. Use the existing
-[Word checklist](references/word-acceptance-checklist.md) for fonts, paragraphs, tables,
-headers/footers and pagination. No mandatory second renderer, approved raster baseline, fixed
-confirmation phrase, delivery state machine or user per-page signature is required.
+Check the OOXML/package, styles, affected content and unchanged source. Ordinary paragraph updates
+default to the fast workflow: after these checks pass, deliver without rendering, PDF/PNG generation
+or an Office launch. Record "content and styles checked; layout not checked". Render for initial
+full-document creation, template or layout changes (including figure/table layout), or an explicit
+layout-check request. Inspect the affected pages and their pagination boundaries; inspect the whole
+document for a new full document or changes with document-wide impact. When the affected scope
+cannot be established, expand inspection to the complete relevant content. Use one renderer suited
+to the target application and the [Word checklist](references/word-acceptance-checklist.md).
+No mandatory second renderer, approved raster baseline, fixed confirmation phrase, delivery state
+machine or user per-page signature is required.
 
-Prefer the guarded Word gate when Word is the target:
+When rendering is required and Word is the target, prefer the guarded Word gate:
 
 ```powershell
 python <skill-root>\scripts\document_versions.py run-check input.docx `
@@ -64,7 +72,10 @@ or reusing a previous check. The export wrapper records the actual source, templ
 and generated Word; `run-check` binds the existing checker's JSON result to those versions. Only a
 successful result for unchanged files and the same check command is reused. Source changes require
 an updated output; hand-edited Word is checked as it is, never silently regenerated. Without a valid
-record, check the current document again. Version equality is not a new content or visual inspection.
+record, check the current document again using the applicable fast or layout path. Version equality
+is not a new content or visual inspection. Maintain the document's check record and any necessary
+current-version pointer; do not automatically create full snapshots, page images or multiple reports
+for a small update.
 
 Pass `--allow-office-com` for the Word operation covered by the current user request, only when the
 existing guard proves isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
@@ -92,7 +103,8 @@ tool; use a trustworthy available file library or existing tool instead of block
 | Task | Approach |
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |
-| **Edit** an existing document | Freeze existing style identities, then `unzip` → edit OOXML → `zip` |
+| **Edit** ordinary paragraphs | Use `scripts/edit_paragraphs.py` (`inspect`, `apply`, `check`); no render by default |
+| **Edit** complex existing content | Freeze style identities and use the existing specialized OOXML tool |
 | **Repair** parallel or renamed styles | Audit and explicitly remap with `scripts/style_guard.py` |
 | **Apply** a template to a new or whole document | Use `scripts/template/word_template_formatter.py` with both safety gates |
 | **Read** content | `pandoc -t markdown file.docx` |
@@ -117,12 +129,13 @@ tool; use a trustworthy available file library or existing tool instead of block
 
 ## Verify the output
 
-After writing a `.docx`, render it and look at it:
+For ordinary paragraph updates, use the fast checks below and stop when they pass. When rendering
+is required by the content and layout rules above, render and inspect the affected scope:
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.docx
 pdftoppm -r 150 -png -aa yes -aaVector yes output.pdf page
-ls page-*.png   # then inspect every page
+ls page-*.png   # inspect affected pages; all pages for a new full document
 ```
 
 On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
@@ -138,7 +151,7 @@ switch to JPEG, a different DPI, or default anti-aliasing for release evidence.
 
 Only when the task explicitly involves accessibility, privacy/redaction, or document metadata,
 read [references/delivery-qa-checklist.md](references/delivery-qa-checklist.md). It supplements the
-render-and-inspect gate above and does not replace style, OOXML, or visual validation.
+checks selected above and does not replace style, OOXML, or required visual validation.
 
 ## Reusing Word templates and presets
 
@@ -206,6 +219,27 @@ remain distinct identities.
 
 ## Editing existing documents
 
+### Fast paragraph updates
+
+Use the fixed `scripts/edit_paragraphs.py` tool for whole-paragraph replacement, insertion before or
+after an existing paragraph, and deletion. `inspect` lists complete text and stable source paragraph
+indices; `apply` accepts the original DOCX, a UTF-8 JSON edit list and a new output path; `check`
+verifies the candidate against the original and the same edit list. See
+[Paragraph editing](references/paragraph-editing.md) for the exact commands and JSON format.
+
+Match complete original text uniquely. If it occurs more than once, use the paragraph index returned
+by `inspect` and validate the original text again; never choose the first match silently. Retain the
+target's paragraph style and run formatting. Insertions inherit the specified adjacent paragraph's
+formatting. Formula, field, hyperlink, revision and mixed-character-formatting targets require an
+existing specialized tool; do not flatten them into plain text.
+
+The tool validates the entire batch before publishing a new output, then reuses `style_guard.py`
+and `document_versions.py` to check text, unchanged parts and source preservation. Match failures,
+unsupported targets and conflicting edits produce no partial deliverable. The check record explicitly
+distinguishes passed content/style checks from layout not checked. Do not write a project-specific
+script, start Office, regenerate the full document or create a new snapshot/report collection for
+these small edits. Already accepted text is inserted exactly as approved.
+
 ### Preserve style identity by default
 
 Content editing and template replacement are different operations. For an existing DOCX content
@@ -214,7 +248,8 @@ inserted or rewritten paragraphs. Do not create a second body, heading, caption,
 reference style just to reproduce formatting. If formatting itself must change, update the existing
 style definition and authorize that exact style ID in the audit.
 
-Take a baseline copy or hash before editing, then run the strict audit after the edit:
+Retain the original and capture its hash before editing. The fast paragraph tool includes the strict
+style audit; other editing paths run it after the edit:
 
 ```bash
 python scripts/style_guard.py audit \

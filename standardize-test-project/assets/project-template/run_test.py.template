@@ -10,9 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "result_management"))
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "plotting"))
 
-from test_project_plots import plot_plan_overview
 from test_project_results import (
     create_run,
+    append_summary,
     finalize_run,
     initialize_summary,
     log,
@@ -25,7 +25,7 @@ def main() -> None:
     run = create_run(
         PROJECT_ROOT,
         "dry_run",
-        ["Point1-3", "step1"],
+        ["计划检查"],
         project_name="{{PROJECT_NAME}}",
         test_name="计划检查",
         purpose="validation",
@@ -60,14 +60,8 @@ def main() -> None:
         ["-", "-", "-", "-", "-", "-", "-", "-", "-"],
     )
     log(run, "INFO", "plan", f"已检查 {point_index.size} 个计划点，未访问仪器")
-    plot_plan_overview(
-        run.run_dir / "overview.png",
-        point_index,
-        title="dry-run 计划检查",
-        x_name="计划点序号",
-        x_unit="-",
-        planned_observations=point_index.size,
-    )
+    for index in point_index:
+        append_summary(run, [int(index), "成功", 1, 1, "", "", "", "", ""])
     counts = {
         "planned": int(point_index.size),
         "executed": 0,

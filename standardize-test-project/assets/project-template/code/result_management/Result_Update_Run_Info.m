@@ -23,7 +23,9 @@ info = jsondecode(text);
 updates = normalize_updates(updates);
 info = merge_recursive(info, updates);
 info = remove_legacy_fields(info);
-Result_Atomic_Write_Json(path, info);
+if ~isempty(fieldnames(updates))
+    Result_Atomic_Write_Json(path, info);
+end
 
 end
 
@@ -60,7 +62,7 @@ if isstruct(value) && isfield(value, 'RunInfoPath')
 elseif ischar(value) || (isstring(value) && isscalar(value))
     path = char(value);
     if isfolder(path)
-        path = fullfile(path, 'run_info.json');
+        path = Result_Artifact_Path(path, 'run_info.json');
     end
 else
     error('Result_Update_Run_Info:BadTarget', ...

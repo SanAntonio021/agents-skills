@@ -14,6 +14,9 @@ if nargin < 4 || isempty(artifacts)
     listing = dir(output_dir);
     listing = listing(~[listing.isdir]);
     artifacts = artifact_records({listing.name}, 'run_artifact');
+    data_listing = dir(fullfile(output_dir, 'data'));
+    data_listing = data_listing(~[data_listing.isdir]);
+    artifacts = [artifacts, artifact_records(strcat('data/', {data_listing.name}), 'run_artifact')];
 else
     artifacts = artifact_records(artifacts, 'run_artifact');
 end
@@ -47,6 +50,8 @@ elseif ischar(value) || (isstring(value) && isscalar(value))
         output_dir = path;
     else
         output_dir = fileparts(path);
+        [~, leaf] = fileparts(output_dir);
+        if strcmp(leaf, 'data'), output_dir = fileparts(output_dir); end
     end
 else
     error('Result_Finalize_Run:BadTarget', ...

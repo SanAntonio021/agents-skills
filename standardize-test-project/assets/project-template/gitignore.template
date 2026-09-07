@@ -1,5 +1,9 @@
 # Generated run artifacts
 results/**
+simulation/**
+measurement/**
+analysis/**
+checks/**
 
 # Local instrument or GUI state
 config/*.mat

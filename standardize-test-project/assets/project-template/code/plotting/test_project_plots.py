@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from functools import wraps
+import inspect
+import json
 from typing import Any, Mapping, Sequence
 
 import matplotlib
@@ -15,6 +18,60 @@ import numpy as np
 COLORS = ("#0072B2", "#D55E00", "#009E73", "#CC79A7")
 MARKERS = ("o", "s", "^", "D")
 FONT_FAMILY = ("Microsoft YaHei", "Noto Sans CJK SC", "SimHei", "DejaVu Sans")
+
+
+def _replot_archive(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        arguments = inspect.signature(function).bind(*args, **kwargs)
+        arguments.apply_defaults()
+        output = Path(arguments.arguments["output"])
+        archive = output.parent / "data" / f"{output.stem}.replot.npz"
+        if archive.exists():
+            raise FileExistsError(archive)
+        result = function(*args, **kwargs)
+        if archive.parent.is_dir():
+            arrays = {}
+            def encode(value):
+                if isinstance(value, np.ndarray):
+                    key = f"array_{len(arrays)}"
+                    arrays[key] = value
+                    return {"array": key}
+                if isinstance(value, np.generic):
+                    return encode(value.item())
+                if isinstance(value, complex):
+                    return {"complex": [value.real, value.imag]}
+                if isinstance(value, Mapping):
+                    return {str(k): encode(v) for k, v in value.items()}
+                if isinstance(value, (list, tuple)):
+                    return [encode(v) for v in value]
+                return value
+            params = {k: encode(v) for k, v in arguments.arguments.items() if k != "output"}
+            arrays["metadata"] = np.array(json.dumps({"version": 1, "function": function.__name__, "parameters": params}))
+            with archive.open("xb") as file:
+                np.savez_compressed(file, **arrays)
+        return result
+    return wrapped
+
+
+def replot(archive: str | Path, output: str | Path):
+    """Replay safe NPZ inputs without simulation, hardware, or source writes."""
+    with np.load(archive, allow_pickle=False) as saved:
+        meta = json.loads(str(saved["metadata"]))
+        if meta.get("version") != 1 or meta["function"] not in {"plot_constellation", "plot_spectrum", "plot_scan_summary", "plot_plan_overview"}:
+            raise ValueError("unsupported replot archive")
+        def decode(value):
+            if isinstance(value, dict) and set(value) == {"array"}:
+                return saved[value["array"]].copy()
+            if isinstance(value, dict) and set(value) == {"complex"}:
+                return complex(*value["complex"])
+            if isinstance(value, dict):
+                return {k: decode(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [decode(v) for v in value]
+            return value
+        params = decode(meta["parameters"])
+    return globals()[meta["function"]](output=output, **params)
 
 
 def apply_style() -> None:
@@ -54,6 +111,7 @@ def _finish(fig: plt.Figure, output: str | Path) -> Path:
     return output
 
 
+@_replot_archive
 def plot_constellation(
     output: str | Path,
     received: Sequence[Sequence[complex] | np.ndarray],
@@ -163,6 +221,7 @@ def plot_constellation(
     }
 
 
+@_replot_archive
 def plot_spectrum(
     output: str | Path,
     frequency: Sequence[float] | np.ndarray,
@@ -213,6 +272,7 @@ def plot_spectrum(
     return {"trace_count": y.shape[1], "valid_point_count": counts, "resolution_dpi": 300}
 
 
+@_replot_archive
 def plot_scan_summary(
     output: str | Path,
     scan_values: Sequence[float] | np.ndarray,
@@ -223,6 +283,7 @@ def plot_scan_summary(
     title: str,
     x_name: str,
     x_unit: str,
+    show_statistics: bool = False,
 ) -> dict[str, Any]:
     apply_style()
     x = np.asarray(scan_values, dtype=float).reshape(-1)
@@ -290,7 +351,7 @@ def plot_scan_summary(
         means = np.full(unique_x.shape, np.nan)
         deviations = np.full(unique_x.shape, np.nan)
         counts = np.zeros(unique_x.shape, dtype=int)
-        for group_index, value in enumerate(unique_x):
+        for group_index, value in enumerate(unique_x if show_statistics else []):
             group = stats_valid & np.isclose(x, value, rtol=0, atol=1e-12)
             group_values = values[group]
             counts[group_index] = group_values.size
@@ -301,7 +362,8 @@ def plot_scan_summary(
         plot_means = means.copy()
         if y_scale == "log":
             plot_means[plot_means <= 0] = np.nan
-        axis.plot(unique_x, plot_means, color=color, marker="o", label="均值", zorder=4)
+        if show_statistics:
+            axis.plot(unique_x, plot_means, color=color, marker="o", label="均值", zorder=4)
         deviation_mask = np.isfinite(deviations) & np.isfinite(plot_means)
         if np.any(deviation_mask):
             y_error: np.ndarray | Sequence[np.ndarray] = deviations[deviation_mask]
@@ -337,6 +399,9 @@ def plot_scan_summary(
                 "zero_count": int(np.count_nonzero(zero_mask)),
             }
         )
+        if not show_statistics:
+            for field in ("mean", "sample_std", "valid_count"):
+                results[-1].pop(field)
     axes[-1, 0].set_xlabel(_axis_label(x_name, x_unit))
     successful_count = int(np.count_nonzero(success))
     fig.suptitle(title)
@@ -358,6 +423,7 @@ def plot_scan_summary(
     }
 
 
+@_replot_archive
 def plot_plan_overview(
     output: str | Path,
     planned_values: Sequence[float] | np.ndarray,
@@ -414,6 +480,7 @@ def plot_plan_overview(
 
 
 __all__ = [
+    "replot",
     "apply_style",
     "plot_constellation",
     "plot_plan_overview",

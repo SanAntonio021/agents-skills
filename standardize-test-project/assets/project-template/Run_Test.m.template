@@ -9,7 +9,7 @@ cfg = struct();
 cfg.ProjectRoot = project_root;
 cfg.RunType = 'dry_run';
 cfg.PlannedRunKind = 'scan';
-cfg.NameParts = {'Point1-3', 'step1'};
+cfg.NameParts = {'计划检查'};
 cfg.ProjectName = '{{PROJECT_NAME}}';
 cfg.TestName = '计划检查';
 cfg.RunPurpose = 'validation';
@@ -32,11 +32,9 @@ Result_Summary_Initialize(run, headers, units);
 Result_Log_Stage(run, 'INFO', 'plan', ...
     'Validated %d planned points without instrument access.', numel(point_index));
 
-options = struct('Title', 'dry-run 计划检查', 'XName', '计划点序号', ...
-    'XUnit', '-', ...
-    'PlannedCount', numel(point_index));
-Test_Project_Plot_Plan(fullfile(run.OutputDir, 'overview.png'), ...
-    point_index, options);
+for point = point_index
+    Result_Summary_Append(run, {point, '成功', 1, 1, '', '', '', '', ''});
+end
 
 counts = struct('planned', numel(point_index), 'executed', 0, ...
     'succeeded', 0, 'failed', 0, 'invalid', 0);

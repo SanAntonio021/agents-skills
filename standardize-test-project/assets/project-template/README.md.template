@@ -1,28 +1,15 @@
 # {{PROJECT_NAME}}
 
-本项目用于实验、仪器测试、参数扫描、科研仿真及其离线分析。
+实验、仪器测试、参数扫描、科研仿真及其离线分析。
 
-## 从哪里开始
+- 入口：根目录 Run_Test.m 或 run_test.py，示例只做无硬件检查。
+- 六个目录：code 代码、config 配置、simulation 仿真、measurement 实测、analysis 数据分析、checks 程序自检。
+- 自动创建 `分类/YYYYMMDD_HHMMSS_实验名称/`，同秒重名追加序号，不覆盖。
+- 图片、overview.png 和逐次 summary.csv 留在运行目录；完整数据、配置、日志、重绘输入放单层 data/。
+- summary 第一行名称、第二行单位，显示精简数值；计算读取 data/observations.csv。
+- 仿真默认 compact，显式 full 保存完整波形；实测始终保留原始采集。实验保存者落实策略，创建目录不执行数据裁剪。
+- 分析/重绘新建 analysis 运行并引用原记录。Python replot 读取 .replot.npz；MATLAB 打开 data/*.fig 后在新目录导出，不重跑算法。
+- lab.md 是唯一人工记录，只写重要变化和判断，引用运行目录。
+- 真实仪器操作沿用已明确模式、接线、角色和安全收尾；未知实质变化先澄清。dry-run 不访问仪器或测量收件箱。
 
-- 人工运行：打开根目录的 `Run_Test.m` 或 `run_test.py`。
-- 查看一轮结果：先看 `overview.png`，再看 `summary.csv`。
-- 查运行配置和异常：读取同一运行目录的 `run_info.json` 与 `run_log.txt`。
-
-## 目录
-
-- `code/experiments/`：单点、扫频、扫功率等完整测试流程。
-- `code/instrument_control/`：仪器发现、连接、查询、写入与安全收尾。
-- `code/acquisition/`：数据采集。
-- `code/signal_processing/`：处理与指标计算。
-- `code/result_management/`：运行目录、命名、JSON、CSV 和日志。
-- `code/plotting/`：星座图、频谱图和扫描总览图。
-- `code/analysis/`：单运行复盘与跨运行分析代码。
-- `code/simulation/`：仿真代码。
-- `results/`：新规范下的全部运行结果。
-- `archive/`：退役代码与旧说明，不放正式结果。
-
-结果分为 `single_point`、`scan`、`dry_run`、`simulation` 和 `analysis`。一轮运行只建立一个扁平目录，不在里面建立参数点或重复次数子目录。
-
-## 当前状态
-
-项目脚手架已建立。真实仪器运行前，需要在项目规则和配置中补齐仪器角色、物理接线、允许写入的参数与安全收尾要求。
+历史结果保持原位。禁止落盘同时约束正常和异常路径。

@@ -3,34 +3,34 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "在一个空目录建立 MATLAB 仪器扫描测试项目。要求人工入口在根目录，未来单点、扫描、dry-run、仿真和跨运行分析分开；每轮运行目录扁平；提供无硬件自检。不要连接仪器。",
-      "expected_output": "生成标准目录、规则文件、MATLAB helper 和可通过的无硬件校验；不产生仪器 I/O。",
+      "prompt": "在空目录建立 MATLAB 仪器扫描项目。六个根目录 code/config/simulation/measurement/analysis/checks；每轮图片和简表在外，记录放单层 data。提供无硬件自检，不连接仪器。",
+      "expected_output": "生成六个主目录、说明与唯一主记录、MATLAB helper；无硬件校验通过，不默认新建平台规则。",
       "files": [],
       "assertions": [
-        "根目录包含 README.md、AGENTS.md、CLAUDE.md、GEMINI.md 和人工入口",
-        "results 具有五个固定类别且没有按扫描变量继续分层",
+        "根目录包含 README.md、lab.md 和人工入口，不默认新建平台规则",
+        "四类输出直接在根目录，单点和扫描仅为方法",
         "dry-run 在硬件对象创建前短路，且不连接、不查询、不写入仪器"
       ]
     },
     {
       "id": 2,
       "prompt": "重构一个已有 Python 实验工程的未来结果保存方式。旧 results_legacy 目录必须保持字节不变。新扫描每个点重复 3 次，失败允许重试，用户先看 overview.png 和 summary.csv。",
-      "expected_output": "只改未来默认路径，保留旧结果哈希；生成 repeat/attempt/FAILED_ 命名和两行表头 CSV。",
+      "expected_output": "只改未来默认路径，保留旧结果；每次尝试递增观测序号，多 Channel 共用采集序号；表格两行表头。",
       "files": [],
       "assertions": [
         "没有移动、改名、覆盖或删除历史结果",
-        "参数点文件使用 repeatNN 和 attemptNN，失败产物使用 FAILED_",
-        "summary.csv 的指标在前，固定追溯字段在后"
+        "失败与重试各自保留观测序号，多 Channel 共用同次采集序号",
+        "summary.csv 只显示条件与指标，完整精度与追溯字段在 data/observations.csv"
       ]
     },
     {
       "id": 3,
-      "prompt": "为两轮实验建立离线复盘和联合比较流程。单轮重跑处理参数时结果应直接回写源 run 但不能覆盖；联合比较要有 sources.txt、run_info.json、summary.csv 和 overview.png。",
-      "expected_output": "单运行派生文件使用 replay_ 时间戳前缀并保持扁平；跨运行分析建立独立 analysis run 和来源记录。",
+      "prompt": "为一轮和两轮实验建立离线复盘及联合比较流程，保留源数据不变，保存来源并能重绘。",
+      "expected_output": "单源与多源均建立新的 analysis 运行，来源记录在 data，不复制整套源波形。",
       "files": [],
       "assertions": [
-        "单运行复盘未创建子目录且未覆盖原始文件",
-        "跨运行 analysis run 的 sources.txt 至少有两行",
+        "单源复盘也新建 analysis 运行，未修改原始文件",
+        "data/sources.txt 至少有一行，与实际来源一致",
         "run_info.json 的 source_runs 与 sources.txt 对应"
       ]
     },

@@ -2,17 +2,20 @@ function path = Result_Write_Sources(run_or_path, sources)
 %RESULT_WRITE_SOURCES Write source run directories for cross-run analysis.
 
 output_dir = resolve_output_dir(run_or_path);
-path = fullfile(output_dir, 'sources.txt');
+path = Result_Artifact_Path(output_dir, 'sources.txt');
 if exist(path, 'file')
     error('Result_Write_Sources:SourcesExist', ...
         'sources.txt already exists and will not be overwritten: %s', path);
 end
 sources = normalize_sources(sources);
-if numel(sources) < 2
+if isempty(sources)
     error('Result_Write_Sources:TooFewSources', ...
-        'Cross-run analysis requires at least two source run directories.');
+        'Analysis requires at least one source run directory.');
 end
 for k = 1:numel(sources)
+    if strcmpi(char(java.io.File(sources{k}).getCanonicalPath()), char(java.io.File(output_dir).getCanonicalPath()))
+        error('Result_Write_Sources:SameRun', 'Analysis must use a new output directory.');
+    end
     if ~isfolder(sources{k})
         error('Result_Write_Sources:MissingSource', ...
             'Source directory does not exist: %s', sources{k});
@@ -30,12 +33,12 @@ for k = 1:numel(display_sources)
     fprintf(fid, '%s\n', display_sources{k});
 end
 
-run_info_path = fullfile(output_dir, 'run_info.json');
+run_info_path = Result_Artifact_Path(output_dir, 'run_info.json');
 if exist(run_info_path, 'file')
     info = Result_Update_Run_Info(run_info_path, struct());
     artifacts = normalize_artifacts(info);
     artifacts = merge_artifacts(artifacts, ...
-        artifact_record('sources.txt', 'source_list'));
+        artifact_record(strrep(erase(path, [output_dir, filesep]), '\', '/'), 'source_list'));
     source_runs = build_source_runs(sources, display_sources);
     updates = struct();
     updates.source_runs = source_runs;
@@ -105,7 +108,8 @@ end
 function records = build_source_runs(sources, display_sources)
 records = repmat(struct('run_id', '', 'path', ''), 1, numel(sources));
 for k = 1:numel(sources)
-    [~, records(k).run_id] = fileparts(sources{k});
+    [~, base, suffix] = fileparts(sources{k});
+    records(k).run_id = [base, suffix];
     records(k).path = display_sources{k};
 end
 end

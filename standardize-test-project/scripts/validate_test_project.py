@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT_FILES = ("README.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md", ".gitignore")
+ROOT_FILES = ("README.md", ".gitignore")
 DIRECTORIES = (
     "code/experiments/single_point",
     "code/experiments/frequency_sweep",
@@ -28,16 +28,13 @@ DIRECTORIES = (
     "code/simulation",
     "code/tests",
     "config",
-    "data",
-    "docs",
-    "results/single_point",
-    "results/scan",
-    "results/dry_run",
-    "results/simulation",
-    "results/analysis",
-    "archive",
+    "simulation",
+    "measurement",
+    "analysis",
+    "checks",
 )
 RUN_KINDS = ("single_point", "scan", "dry_run", "simulation", "analysis")
+OUTPUT_CATEGORIES = ("simulation", "measurement", "analysis", "checks")
 PURPOSES = {"formal", "validation", "debug"}
 MODES = {
     "hardware",
@@ -142,8 +139,6 @@ def load_summary(path: Path, report: Report) -> tuple[list[str], list[str], list
         return [], [], []
     if len(rows[0]) != len(rows[1]) or not rows[0]:
         report.error(f"{path}: header and unit rows have different widths")
-    if tuple(rows[0][-len(TRACE_TAIL) :]) != TRACE_TAIL:
-        report.error(f"{path}: fixed traceability columns are missing or out of order")
     for index, row in enumerate(rows[2:], start=3):
         if len(row) != len(rows[0]):
             report.error(f"{path}: row {index} has {len(row)} columns, expected {len(rows[0])}")
@@ -172,24 +167,27 @@ def validate_file_references(
     if not headers:
         return
     indexes = {name: headers.index(name) for name in TRACE_TAIL if name in headers}
-    missing = [name for name in TRACE_TAIL if name not in indexes]
-    if missing:
-        return
     for row_number, row in enumerate(rows, start=3):
         if len(row) != len(headers):
             continue
-        status = row[indexes["状态"]]
-        if status not in {"成功", "无效", "失败"}:
+        status = row[indexes["状态"]] if "状态" in indexes else ""
+        if status and status not in {"成功", "无效", "失败", "通过", "success", "invalid", "failed", "pass", "pending", "未执行"}:
             report.error(f"{run_dir / 'summary.csv'}: row {row_number} has invalid 状态={status!r}")
         for column in ("原始数据文件", "单次图片文件"):
+            if column not in indexes:
+                continue
             value = row[indexes[column]].strip()
             for filename in filter(None, (item.strip() for item in value.split(";"))):
-                if Path(filename).name != filename:
-                    report.error(f"{run_dir}: row {row_number} file reference is not flat: {filename}")
+                relative = Path(filename)
+                if relative.is_absolute() or ".." in relative.parts or not (len(relative.parts) == 1 or len(relative.parts) == 2 and relative.parts[0] == "data"):
+                    report.error(f"{run_dir}: row {row_number} file reference escapes root/data: {filename}")
                     continue
-                if not (run_dir / filename).is_file():
+                target = run_dir / relative
+                if len(relative.parts) == 1 and not target.is_file():
+                    target = run_dir / "data" / relative
+                if not target.is_file():
                     report.error(f"{run_dir}: row {row_number} references missing file: {filename}")
-                if status == "失败" and not filename.startswith("FAILED_"):
+                if not (run_dir / "data").is_dir() and status == "失败" and not filename.startswith("FAILED_"):
                     report.error(f"{run_dir}: failed row artifact needs FAILED_ prefix: {filename}")
 
 
@@ -202,8 +200,9 @@ def validate_artifacts(run_dir: Path, artifacts: Any, report: Report) -> None:
             report.error(f"{run_dir}: each artifact needs file and role")
             continue
         filename = item["file"]
-        if Path(filename).name != filename:
-            report.error(f"{run_dir}: artifact is not a flat file: {filename}")
+        relative = Path(filename)
+        if relative.is_absolute() or ".." in relative.parts or not (len(relative.parts) == 1 or len(relative.parts) == 2 and relative.parts[0] == "data"):
+            report.error(f"{run_dir}: artifact must be in root or flat data/: {filename}")
         elif not (run_dir / filename).is_file():
             report.error(f"{run_dir}: registered artifact is missing: {filename}")
 
@@ -233,18 +232,22 @@ def validate_log(path: Path, run_kind: str, report: Report) -> None:
 
 def validate_run(run_dir: Path, category: str, allow_running: bool, report: Report) -> None:
     report.run_count += 1
-    if any(item.is_dir() for item in run_dir.iterdir()):
+    modern = (run_dir / "data" / "run_info.json").is_file()
+    record_dir = run_dir / "data" if modern else run_dir
+    if any(item.is_dir() and not (modern and item.name == "data") for item in run_dir.iterdir()):
         report.error(f"{run_dir}: run directory contains a forbidden subdirectory")
-    if not TIMESTAMP_SUFFIX.search(run_dir.name):
-        report.error(f"{run_dir}: run name lacks YYYYMMDD_HHMMSS suffix")
+    if modern and any(item.is_dir() for item in record_dir.iterdir()):
+        report.error(f"{record_dir}: data directory must be flat")
+    if not (re.match(r"^\d{8}_\d{6}_.+", run_dir.name) if modern else TIMESTAMP_SUFFIX.search(run_dir.name)):
+        report.error(f"{run_dir}: run name lacks a valid timestamp")
     if re.search(r"\d+p\d+", run_dir.name, re.IGNORECASE):
         report.error(f"{run_dir}: use a real decimal point, not p")
     for reserved in RUN_KINDS:
         if re.search(rf"(?:^|_){re.escape(reserved)}(?:_|$)", run_dir.name, re.IGNORECASE):
             report.error(f"{run_dir}: run name repeats result category {reserved}")
 
-    info_path = run_dir / "run_info.json"
-    log_path = run_dir / "run_log.txt"
+    info_path = record_dir / "run_info.json"
+    log_path = record_dir / "run_log.txt"
     for path in (info_path, log_path):
         if not path.is_file():
             report.error(f"{run_dir}: missing {path.name}")
@@ -259,10 +262,19 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
     if missing:
         report.error(f"{info_path}: missing fields: {', '.join(missing)}")
         return
-    if info["run_id"] != run_dir.name or info["run_kind"] != category:
+    if info["run_id"] != run_dir.name or info.get("output_category", info["run_kind"]) != category:
         report.error(f"{info_path}: run_id or run_kind does not match its directory")
     if info["purpose"] not in PURPOSES or info["execution_mode"] not in MODES:
         report.error(f"{info_path}: invalid purpose or execution_mode")
+    if modern:
+        if info.get("schema_version") != "2.0" or info.get("retention_mode") not in {"compact", "full"}:
+            report.error(f"{info_path}: invalid schema or retention mode")
+        expected = {"hardware": "measurement", "hardware_query": "measurement", "dry_run": "checks", "offline_replay": "analysis", "offline_analysis": "analysis"}.get(info["execution_mode"])
+        if expected and category != expected:
+            report.error(f"{info_path}: output category disagrees with execution mode")
+        for item in run_dir.iterdir():
+            if item.is_file() and item.name != "summary.csv" and item.suffix.lower() not in {".png", ".jpg", ".jpeg", ".svg", ".pdf", ".tif", ".tiff"}:
+                report.error(f"{item}: data and records belong in data/")
     if info["status"] not in STATUSES:
         report.error(f"{info_path}: invalid status={info['status']!r}")
     if info["status"] == "running" and not allow_running:
@@ -273,10 +285,10 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
         report.error(f"{info_path}: final run has invalid stop_reason")
     if info["status"] != "running" and not info["finished_at"]:
         report.error(f"{info_path}: final run lacks finished_at")
-    if category == "dry_run":
+    if info["execution_mode"] == "dry_run":
         if info["execution_mode"] != "dry_run" or info["instruments"]:
             report.error(f"{info_path}: dry_run has unsafe mode or instrument records")
-        if info["planned_run_kind"] not in {"single_point", "scan"}:
+        if info["run_kind"] == "dry_run" and info["planned_run_kind"] not in {"single_point", "scan"}:
             report.error(f"{info_path}: dry_run lacks planned_run_kind")
     elif info["planned_run_kind"] is not None:
         report.error(f"{info_path}: planned_run_kind is only valid for dry_run")
@@ -285,17 +297,27 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
         report.error(f"{info_path}: counts object is incomplete")
     validate_artifacts(run_dir, info["artifacts"], report)
     if log_path.is_file():
-        validate_log(log_path, category, report)
+        validate_log(log_path, info["execution_mode"], report)
 
     if info["status"] == "running" and allow_running:
         return
-    for filename in ("overview.png", "summary.csv"):
+    required = ["summary.csv"]
+    if category not in {"checks", "dry_run"} and info["status"] in {"completed", "completed_with_failures"}:
+        required.append("overview.png")
+    if modern:
+        required.append("data/observations.csv")
+    for filename in required:
         if not (run_dir / filename).is_file():
             report.error(f"{run_dir}: final run is missing {filename}")
     summary_path = run_dir / "summary.csv"
     if summary_path.is_file():
         headers, _, rows = load_summary(summary_path, report)
         validate_file_references(run_dir, headers, rows, report)
+        if modern and (record_dir / "observations.csv").is_file():
+            full_headers, _, full_rows = load_summary(record_dir / "observations.csv", report)
+            validate_file_references(run_dir, full_headers, full_rows, report)
+            if len(full_rows) != len(rows):
+                report.error(f"{run_dir}: display and full observation row counts differ")
     overview = run_dir / "overview.png"
     if overview.is_file():
         dpi = png_dpi(overview)
@@ -304,13 +326,13 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
         elif not 285 <= dpi <= 315:
             report.error(f"{overview}: expected 300 dpi, found {dpi:.1f}")
     if category == "analysis":
-        sources = run_dir / "sources.txt"
+        sources = record_dir / "sources.txt"
         if not sources.is_file():
             report.error(f"{run_dir}: cross-run analysis lacks sources.txt")
         else:
             lines = [line for line in sources.read_text(encoding="utf-8").splitlines() if line]
-            if len(lines) < 2:
-                report.error(f"{sources}: cross-run analysis needs at least two sources")
+            if not lines:
+                report.error(f"{sources}: analysis needs at least one source")
             if len(info["source_runs"]) != len(lines):
                 report.error(f"{info_path}: source_runs and sources.txt differ in length")
 
@@ -335,9 +357,10 @@ def validate_project(project: Path, allow_running: bool = False) -> Report:
     ]
     if not root_entries:
         report.error("project root lacks a human-run entry script")
-    results = project / "results"
-    if results.is_dir():
-        for category in RUN_KINDS:
+    for results, categories in ((project, OUTPUT_CATEGORIES), (project / "results", RUN_KINDS)):
+        if not results.is_dir():
+            continue
+        for category in categories:
             category_dir = results / category
             if not category_dir.is_dir():
                 continue

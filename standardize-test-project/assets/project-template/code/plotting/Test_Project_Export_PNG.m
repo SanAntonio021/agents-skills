@@ -32,6 +32,14 @@ end
 
 set(fig, 'Color', style.FigureColor, 'InvertHardcopy', 'off');
 drawnow();
+dataDir = fullfile(outputDir, 'data');
+if isfolder(dataDir)
+    figurePath = fullfile(dataDir, [baseName, '.fig']);
+    if isfile(figurePath)
+        error('TestProject:Plot:OutputExists', 'Replot figure already exists: %s', figurePath);
+    end
+    savefig(fig, figurePath, 'compact');
+end
 exportgraphics(fig, outputPath, ...
     'Resolution', style.ResolutionDPI, ...
     'BackgroundColor', style.FigureColor);

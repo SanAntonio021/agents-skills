@@ -1,5 +1,5 @@
 function file_name = Result_Build_Point_Filename(name_parts, repeat_index, ...
-        attempt_index, extension, failed)
+        attempt_index, extension, failed, observation_index, channel)
 %RESULT_BUILD_POINT_FILENAME Build a flat parameter-point file name.
 
 if nargin < 5 || isempty(failed)
@@ -25,6 +25,16 @@ if contains(extension, {'/', '\'}) || count(extension, '.') ~= 1
         'Extension must contain one leading period and no path separator.');
 end
 
+if nargin >= 6 && ~isempty(observation_index)
+    validateattributes(observation_index, {'numeric'}, {'scalar', 'integer', 'positive'});
+    if nargin >= 7 && ~isempty(channel)
+        parts{end + 1} = ['Channel', char(string(channel))];
+        parts = normalize_name_parts(parts);
+    end
+    if failed, parts{end + 1} = 'FAILED'; end
+    file_name = sprintf('%03d_%s%s', observation_index, strjoin(parts, '_'), extension);
+    return;
+end
 base_name = sprintf('%s_repeat%02d_attempt%02d%s', ...
     strjoin(parts, '_'), repeat_index, attempt_index, extension);
 if logical(failed)

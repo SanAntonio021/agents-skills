@@ -21,21 +21,15 @@ DIRECTORIES = (
     "code/simulation",
     "code/tests",
     "config",
-    "data",
-    "docs",
-    "results/single_point",
-    "results/scan",
-    "results/dry_run",
-    "results/simulation",
-    "results/analysis",
-    "archive",
+    "simulation",
+    "measurement",
+    "analysis",
+    "checks",
 )
 
 TEXT_TEMPLATES = {
     "README.md.template": "README.md",
-    "AGENTS.md.template": "AGENTS.md",
-    "CLAUDE.md.template": "CLAUDE.md",
-    "GEMINI.md.template": "GEMINI.md",
+    "lab.md.template": "lab.md",
     "gitignore.template": ".gitignore",
 }
 

@@ -38,7 +38,7 @@ class RenderDeckTests(unittest.TestCase):
             self.assertTrue(any(shape.has_text_frame and "完成测试" in shape.text for shape in slide.shapes))
             pictures = [shape for shape in slide.shapes if shape.shape_type == 13]
             self.assertEqual(1, len(pictures))
-            self.assertLess(pictures[0].width, presentation.slide_width * 0.8)
+            self.assertLess(pictures[0].height, presentation.slide_height * 0.8)
             self.assertEqual(manifest["render_source"], "pptx")
             self.assertTrue(manifest["editable_text"])
             self.assertEqual(manifest["assets"][0]["path"], str(image.resolve()))
@@ -52,6 +52,31 @@ class RenderDeckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "Missing research image"):
                 render_deck.validate_deck({"slides": [{"title": "Result", "blocks": [{"type": "image", "path": "missing.png"}]}]}, Path(temp))
+
+    def test_profile_controls_layout_and_six_images_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            picture = root / "photo.png"
+            Image.new("RGB", (300, 200), "white").save(picture)
+            profile = json.loads(render_deck.PROFILE_PATH.read_text(encoding="utf-8"))
+            profile["layout"]["title"].update(box=[0.3, 0.04, 12.5, 0.68], color="123456", font_size=36)
+            profile_path = root / "profile.json"
+            profile_path.write_text(json.dumps(profile), encoding="utf-8")
+            deck = {"profile_path": str(profile_path), "slides": [{"section": "Chapter", "title": "Experiment",
+                "layout": "wide-strip", "summary": "Result", "blocks": [{"type": "image", "path": str(picture)} for _ in range(6)]}]}
+            render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), root / "out.pptx")
+            slide = Presentation(root / "out.pptx").slides[0]
+            title = next(s for s in slide.shapes if s.has_text_frame and s.text == "Chapter")
+            self.assertAlmostEqual(title.left / 914400, 0.3)
+            run = title.text_frame.paragraphs[0].runs[0]
+            self.assertEqual(run.font.size.pt, 36)
+            self.assertEqual(str(run.font.color.rgb), "123456")
+            pictures = [s for s in slide.shapes if s.shape_type == 13]
+            self.assertEqual(len(pictures), 6)
+            self.assertTrue(all(p.top > pictures[0].top for p in pictures[1:]))
+            boxes = render_deck.image_boxes(3, [0, 0, 12, 5], "stacked-left")
+            self.assertGreater(boxes[2][3], boxes[0][3])
+            self.assertEqual(render_deck.image_boxes(0, [0, 0, 12, 5], None), [])
 
     def test_text_only_requires_an_explicit_choice(self):
         deck = {"slides": [{"title": "Summary", "body": "Text"}]}

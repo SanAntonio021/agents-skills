@@ -20,7 +20,13 @@ listing = listing(~is_special);
 report = struct();
 report.OutputDir = output_dir;
 report.Files = {listing(~[listing.isdir]).name};
-report.Subdirectories = {listing([listing.isdir]).name};
+report.Subdirectories = setdiff({listing([listing.isdir]).name}, {'data'});
+data = fullfile(output_dir, 'data');
+if isfolder(data)
+    children = dir(data);
+    nested = children([children.isdir] & ~ismember({children.name}, {'.', '..'}));
+    report.Subdirectories = [report.Subdirectories, strcat('data/', {nested.name})];
+end
 report.IsFlat = isempty(report.Subdirectories);
 
 end

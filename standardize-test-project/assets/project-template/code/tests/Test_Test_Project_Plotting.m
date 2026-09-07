@@ -145,7 +145,7 @@ options = struct( ...
     'XName', '控制变量', ...
     'XUnit', '-', ...
     'SuccessMask', successMask, ...
-    'PlannedCount', numel(controlValue));
+    'PlannedCount', numel(controlValue), 'ShowStatistics', true);
 outputPath = fullfile(testCase.TestData.OutputDir, 'scan_summary_control.png');
 
 stats = Test_Project_Plot_Scan_Summary( ...
@@ -165,6 +165,21 @@ verifyEqual(testCase, stats.Metrics(3).Mean(zeroIndex), 0, 'AbsTol', 0);
 verifyEqual(testCase, stats.Metrics(3).ZeroCount, 4);
 verifyEqual(testCase, stats.Metrics(3).YScale, 'log');
 verifyReadableImage(testCase, outputPath, 1500, 1500);
+end
+
+function testRawDefaultAndLosslessFigure(testCase)
+runRoot = fullfile(testCase.TestData.OutputDir, 'raw_only');
+mkdir(fullfile(runRoot, 'data'));
+path = fullfile(runRoot, 'overview.png');
+metrics = struct('Name', 'MER', 'Unit', 'dB', 'Values', [10; 11; 12]);
+options = struct('SuccessMask', [true; false; true], 'PlannedCount', 3);
+stats = Test_Project_Plot_Scan_Summary(path, [1; 1; 2], metrics, options);
+verifyFalse(testCase, isfield(stats.Metrics, 'Mean'));
+verifyTrue(testCase, isfile(fullfile(runRoot, 'data', 'overview.fig')));
+fig = openfig(fullfile(runRoot, 'data', 'overview.fig'), 'invisible');
+closeFig = onCleanup(@() close(fig));
+points = findobj(fig, 'Type', 'scatter');
+verifyEqual(testCase, sort(points(1).YData(:)), [10; 12]);
 end
 
 function verifyReadableImage(testCase, path, minimumWidth, minimumHeight)

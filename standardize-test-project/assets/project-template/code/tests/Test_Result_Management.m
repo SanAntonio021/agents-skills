@@ -37,10 +37,10 @@ cfg.Counts = struct('planned', 11);
 cfg.Safety = struct('preflight', 'passed');
 run = Result_Create_Run(cfg);
 
-expected_name = 'X1.0-2.0_step0.1_fixed2.0_20260715_143000';
+expected_name = '20260715_143000_X1.0-2.0_step0.1_fixed2.0';
 verifyEqual(test_case, run.RunName, expected_name);
 verifyEqual(test_case, run.OutputDir, ...
-    fullfile(test_case.TestData.TestRoot, 'results', 'scan', expected_name));
+    fullfile(test_case.TestData.TestRoot, 'measurement', expected_name));
 verifyTrue(test_case, isfile(run.RunInfoPath));
 verifyTrue(test_case, isfile(run.LogPath));
 
@@ -87,9 +87,10 @@ Result_Summary_Append(run, row);
 lines = readlines(run.SummaryPath, 'EmptyLineRule', 'skip');
 verifyEqual(test_case, numel(lines), 3);
 verifyEqual(test_case, lines(1), ...
-    "控制变量,实验指标,BER,EVM,MER,状态,repeat,attempt,原始数据文件,错误信息");
-verifyEqual(test_case, lines(2), "-,-,-,%,dB,-,-,-,-,-");
-verifyTrue(test_case, startsWith(lines(3), "1.0,2.5,"));
+    "控制变量,实验指标,BER,EVM,MER,状态");
+verifyEqual(test_case, lines(2), "-,-,-,%,dB,-");
+verifyTrue(test_case, startsWith(lines(3), "1.0,2.50,"));
+verifyTrue(test_case, isfile(run.FullSummaryPath));
 
 Result_Log(run, 'WARNING', 'Synthetic warning %d.', 1);
 Result_Log_Stage(run, 'ERROR', 'acquisition', ...
@@ -119,6 +120,7 @@ end
 
 function testRunTypesAndAnalysisSources(test_case)
 types = {'single_point', 'dry_run', 'simulation', 'analysis'};
+categories = {'measurement', 'checks', 'simulation', 'analysis'};
 runs = cell(size(types));
 for k = 1:numel(types)
     cfg = base_config(test_case.TestData.TestRoot, types{k}, ...
@@ -129,15 +131,15 @@ for k = 1:numel(types)
     end
     runs{k} = Result_Create_Run(cfg);
     verifyTrue(test_case, isfolder(fullfile(test_case.TestData.TestRoot, ...
-        'results', types{k})));
+        categories{k})));
 end
 
 sources_path = Result_Write_Sources(runs{4}, ...
     {runs{1}.OutputDir, runs{2}.OutputDir});
 verifyTrue(test_case, isfile(sources_path));
 source_lines = readlines(sources_path, 'EmptyLineRule', 'skip');
-expected_sources = string({fullfile('results', 'single_point', runs{1}.RunName); ...
-    fullfile('results', 'dry_run', runs{2}.RunName)});
+expected_sources = string({fullfile('measurement', runs{1}.RunName); ...
+    fullfile('checks', runs{2}.RunName)});
 expected_sources = replace(expected_sources, '\', '/');
 verifyEqual(test_case, source_lines, expected_sources);
 analysis_info = read_json(runs{4}.RunInfoPath);
@@ -151,6 +153,9 @@ verifyTrue(test_case, Result_Check_Flat_Directory(runs{4}).IsFlat);
 end
 
 function testPointNamesAndFormatting(test_case)
+verifyEqual(test_case, ...
+    Result_Build_Point_Filename('TxPower-10dBm', 1, 1, 'png', false, 7, 2), ...
+    '007_TxPower-10dBm_Channel2.png');
 verifyEqual(test_case, Result_Format_Value(1, 1), '1.0');
 verifyEqual(test_case, Result_Format_Value(-0.0001, 2), '0.00');
 verifyEqual(test_case, ...
@@ -183,8 +188,8 @@ cfg = base_config(test_case.TestData.TestRoot, 'dry_run', '20260715_155500');
 cfg.NameParts = {'invalid_dry'};
 cfg.PlannedRunKind = 'scan';
 cfg.ExecutionMode = 'hardware';
-expected = fullfile(test_case.TestData.TestRoot, 'results', 'dry_run', ...
-    'invalid_dry_20260715_155500');
+expected = fullfile(test_case.TestData.TestRoot, 'measurement', ...
+    '20260715_155500_invalid_dry');
 verifyError(test_case, @() Result_Create_Run(cfg), ...
     'Result_Create_Run:UnsafeDryRun');
 verifyFalse(test_case, isfolder(expected));
@@ -225,8 +230,8 @@ cfg.ResultsRoot = custom_root;
 cfg.NameParts = {'custom_root'};
 run = Result_Create_Run(cfg);
 verifyEqual(test_case, run.ResultsRoot, custom_root);
-verifyEqual(test_case, run.OutputDir, fullfile(custom_root, 'scan', ...
-    'custom_root_20260715_160500'));
+verifyEqual(test_case, run.OutputDir, fullfile(custom_root, 'measurement', ...
+    '20260715_160500_custom_root'));
 verifyTrue(test_case, isfolder(run.OutputDir));
 end
 
@@ -236,7 +241,7 @@ cfg.NameParts = {'csv_escape'};
 run = Result_Create_Run(cfg);
 Result_Summary_Initialize(run, {'指标', '状态', '错误信息'}, {'dB', '-', '-'});
 Result_Summary_Append(run, {1.25, '失败,重试', '包含"引号"'});
-text = fileread(run.SummaryPath);
+text = read_text_utf8(run.FullSummaryPath);
 fid = fopen(run.SummaryPath, 'r');
 bom = fread(fid, 3, '*uint8').';
 fclose(fid);
@@ -292,10 +297,64 @@ for executed = 1:20
     Result_Update_Run_Info(run, struct('counts', struct('executed', executed)));
     verifyEqual(test_case, read_json(run.RunInfoPath).counts.executed, executed);
 end
-listing = dir(run.OutputDir);
+listing = dir(run.DataDir);
 listing = listing(~[listing.isdir]);
 verifyEqual(test_case, sort({listing.name}), ...
     sort({'run_info.json', 'run_log.txt'}));
+end
+
+function testV2CollisionPrecisionAndReadOnly(test_case)
+verifyEqual(test_case, Result_Display_Value(12, 'pre_fec_bit_error_count'), '12');
+verifyEqual(test_case, Result_Display_Value(1, '序号'), '1');
+verifyEqual(test_case, Result_Display_Value(1.125, 'bit_count', 'fixed:3'), '1.125');
+cfg = base_config(test_case.TestData.TestRoot, 'simulation', '20260907_143025');
+cfg.NameParts = {'双通道仿真'};
+cfg.OutputCategory = 'checks';
+cfg.DisplayColumns = {'Observation', 'Channel', 'TxPower', 'MER', 'BER', 'Status'};
+cfg.SummaryFormats = struct('TxPower', 'fixed:3', 'Observation', 'integer');
+first = Result_Create_Run(cfg);
+second = Result_Create_Run(cfg);
+verifyNotEqual(test_case, first.OutputDir, second.OutputDir);
+verifyTrue(test_case, endsWith(second.RunName, '_02'));
+verifyEqual(test_case, first.RetentionMode, 'compact');
+columns = [cfg.DisplayColumns, {'Error'}];
+Result_Summary_Initialize(first, columns, repmat({'-'}, size(columns)));
+exact = 1.2345678901234567;
+Result_Summary_Append(first, {1, 1, -10.125, exact, 1.23456e-8, 'success', ''; ...
+    1, 2, -10.125, exact, 0, 'success', ''; ...
+    2, 1, -10.125, nan, nan, 'failed', 'details'});
+display = readlines(first.SummaryPath);
+verifyTrue(test_case, contains(display(3), '1,1,-10.125,1.23,1.23e-08,success'));
+full = Result_Read_Summary(first);
+verifyEqual(test_case, full{3, 4}, exact);
+verifyEqual(test_case, size(full, 1), 5);
+verifyEqual(test_case, Result_Artifact_Path(first.OutputDir, 'run_info.json'), first.RunInfoPath);
+before = dir(first.RunInfoPath);
+Result_Update_Run_Info(first.OutputDir, struct());
+after = dir(first.RunInfoPath);
+verifyEqual(test_case, before.datenum, after.datenum);
+nested = fullfile(first.DataDir, 'nested');
+mkdir(nested);
+verifyFalse(test_case, Result_Check_Flat_Directory(first).IsFlat);
+rmdir(nested);
+end
+
+function testV2SingleSourceAndLegacyRead(test_case)
+legacy = fullfile(test_case.TestData.TestRoot, 'legacy');
+mkdir(legacy);
+standalone = fullfile(legacy, 'standalone.csv');
+Result_Summary_Initialize(standalone, {'MER', 'attempt'}, {'dB', '-'});
+Result_Summary_Append(standalone, {1.2345678901234567, 1});
+verifyTrue(test_case, contains(read_text_utf8(standalone), '1.2345678901234567,1'));
+Result_Atomic_Write_Json(fullfile(legacy, 'run_info.json'), struct('schema_version', '1.0', 'run_id', 'legacy'));
+verifyEqual(test_case, Result_Artifact_Path(legacy, 'run_info.json'), fullfile(legacy, 'run_info.json'));
+cfg = base_config(test_case.TestData.TestRoot, 'analysis', '20260907_143030');
+cfg.NameParts = {'单源分析'};
+run = Result_Create_Run(cfg);
+before = read_text_utf8(fullfile(legacy, 'run_info.json'));
+path = Result_Write_Sources(run, {legacy});
+verifyTrue(test_case, isfile(path));
+verifyEqual(test_case, read_text_utf8(fullfile(legacy, 'run_info.json')), before);
 end
 
 function cfg = base_config(project_root, run_type, timestamp)

@@ -17,6 +17,7 @@ successfulCount = nnz(successMask);
 scanName = optionText(options, 'XName', '扫描变量');
 scanUnit = optionText(options, 'XUnit', '-');
 figureTitle = optionText(options, 'Title', '扫描汇总');
+showStatistics = isfield(options, 'ShowStatistics') && isequal(options.ShowStatistics, true);
 
 finiteScan = isfinite(scanValues);
 groupValues = unique(scanValues(finiteScan), 'sorted');
@@ -60,8 +61,13 @@ for metricIndex = 1:metricCount
         valid = valid & displayValues > 0;
     end
 
-    [means, deviations, counts] = groupedStatistics( ...
-        scanValues, values, groupValues, statsValid);
+    means = nan(size(groupValues));
+    deviations = nan(size(groupValues));
+    counts = zeros(size(groupValues));
+    if showStatistics
+        [means, deviations, counts] = groupedStatistics( ...
+            scanValues, values, groupValues, statsValid);
+    end
     metricStats(metricIndex).Name = metric.Name;
     metricStats(metricIndex).Unit = metric.Unit;
     metricStats(metricIndex).X = groupValues;
@@ -91,7 +97,10 @@ for metricIndex = 1:metricCount
     if strcmp(yScale, 'log')
         plotMeans(plotMeans <= 0) = nan;
     end
-    meanHandle = plotContiguousMeans(ax, groupValues, plotMeans, meanColor, style);
+    meanHandle = gobjects(1);
+    if showStatistics
+        meanHandle = plotContiguousMeans(ax, groupValues, plotMeans, meanColor, style);
+    end
     meanValid = isfinite(plotMeans);
     errorValid = meanValid & isfinite(deviations);
     negativeError = deviations(errorValid);
@@ -165,6 +174,10 @@ stats.OutputPath = outputPath;
 stats.SuccessfulCount = successfulCount;
 stats.PlannedCount = plannedCount;
 stats.Metrics = metricStats;
+stats.ShowStatistics = showStatistics;
+if ~showStatistics
+    stats.Metrics = rmfield(stats.Metrics, {'Mean', 'Std', 'ValidCount'});
+end
 stats.ResolutionDPI = style.ResolutionDPI;
 end
 

@@ -10,7 +10,7 @@ end
 cfg = merge_struct(default_config(), user_cfg);
 cfg.ProjectRoot = required_directory_text(cfg.ProjectRoot, 'ProjectRoot');
 cfg.RunType = lower(strtrim(char(string(cfg.RunType))));
-valid_types = {'single_point', 'scan', 'dry_run', 'simulation', 'analysis'};
+valid_types = {'single_point', 'scan', 'dry_run', 'simulation', 'analysis', 'measurement', 'checks'};
 if ~ismember(cfg.RunType, valid_types)
     error('Result_Create_Run:BadRunType', ...
         'RunType must be single_point, scan, dry_run, simulation, or analysis.');
@@ -23,39 +23,55 @@ if isempty(name_parts)
     error('Result_Create_Run:MissingNameParts', ...
         'Parameters or NameParts must describe the run directory.');
 end
-run_name = [strjoin(name_parts, '_'), '_', timestamp];
+run_name = [timestamp, '_', strjoin(name_parts, '_')];
+mode = normalize_execution_mode(cfg.ExecutionMode, cfg.RunType);
+category = Result_Output_Category(mode, cfg.OutputCategory);
+if ~ismember(cfg.RetentionMode, {'compact', 'full'})
+    error('Result_Create_Run:RetentionMode', 'RetentionMode must be compact or full.');
+end
 
 if isempty(cfg.OutputDir)
     if isempty(cfg.ResultsRoot)
-        results_root = fullfile(cfg.ProjectRoot, 'results');
+        results_root = cfg.ProjectRoot;
     else
         results_root = path_text(cfg.ResultsRoot, 'ResultsRoot');
     end
-    category_root = fullfile(results_root, cfg.RunType);
+    category_root = fullfile(results_root, category);
     output_dir = fullfile(category_root, run_name);
 else
     output_dir = char(string(cfg.OutputDir));
     if isempty(cfg.ResultsRoot)
-        results_root = fullfile(cfg.ProjectRoot, 'results');
+        results_root = cfg.ProjectRoot;
     else
         results_root = path_text(cfg.ResultsRoot, 'ResultsRoot');
     end
     category_root = fileparts(output_dir);
-    [~, run_name] = fileparts(output_dir);
+    [~, run_name, name_suffix] = fileparts(output_dir);
+    run_name = [run_name, name_suffix];
 end
-if exist(output_dir, 'dir')
+if ~isempty(cfg.OutputDir) && exist(output_dir, 'dir')
     error('Result_Create_Run:OutputExists', ...
         'Run directory already exists and will not be overwritten: %s', output_dir);
 end
-if exist(output_dir, 'file')
+if ~isempty(cfg.OutputDir) && exist(output_dir, 'file')
     error('Result_Create_Run:OutputIsFile', ...
         'OutputDir points to a file: %s', output_dir);
 end
-[ok, message] = mkdir(output_dir);
+[ok, message] = mkdir(category_root);
 if ~ok
-    error('Result_Create_Run:CreateFailed', ...
-        'Cannot create run directory: %s (%s)', output_dir, message);
+    error('Result_Create_Run:CreateFailed', '%s', message);
 end
+base_dir = output_dir;
+collision = 1;
+while ~java.io.File(output_dir).mkdir()
+    if ~isempty(cfg.OutputDir) || ~exist(output_dir, 'file')
+        error('Result_Create_Run:CreateFailed', 'Cannot exclusively create %s.', output_dir);
+    end
+    collision = collision + 1;
+    output_dir = sprintf('%s_%02d', base_dir, collision);
+end
+[~, run_name, name_suffix] = fileparts(output_dir);
+run_name = [run_name, name_suffix];
 try
 
 run = struct();
@@ -66,19 +82,28 @@ run.RunType = cfg.RunType;
 run.RunTimestamp = timestamp;
 run.RunName = run_name;
 run.OutputDir = output_dir;
-run.RunInfoPath = fullfile(output_dir, 'run_info.json');
+run.DataDir = fullfile(output_dir, 'data');
+mkdir(run.DataDir);
+run.OutputCategory = category;
+run.RetentionMode = cfg.RetentionMode;
+run.DisplayColumns = cfg.DisplayColumns;
+run.SummaryFormats = cfg.SummaryFormats;
+run.RunInfoPath = fullfile(run.DataDir, 'run_info.json');
 run.SummaryPath = fullfile(output_dir, 'summary.csv');
-run.LogPath = fullfile(output_dir, 'run_log.txt');
+run.FullSummaryPath = fullfile(run.DataDir, 'observations.csv');
+run.LogPath = fullfile(run.DataDir, 'run_log.txt');
 
 info = cfg.RunInfo;
-info.schema_version = '1.0';
+info.schema_version = '2.0';
+info.output_category = category;
+info.retention_mode = cfg.RetentionMode;
 info.run_id = run_name;
 info.project_name = default_text(cfg.ProjectName, project_name(cfg.ProjectRoot));
 info.test_name = default_text(cfg.TestName, info.project_name);
 info.run_kind = cfg.RunType;
 info.planned_run_kind = nullable_run_kind(cfg.PlannedRunKind);
 info.purpose = normalize_purpose(cfg.RunPurpose);
-info.execution_mode = normalize_execution_mode(cfg.ExecutionMode, cfg.RunType);
+info.execution_mode = mode;
 info.status = 'running';
 info.stop_reason = '';
 info.stop_detail = '';
@@ -99,14 +124,14 @@ if isempty(source_runs)
 end
 info.source_runs = normalize_source_runs(source_runs);
 initial_artifacts = artifact_records(cfg.Artifacts, 'run_artifact');
-required_artifacts = artifact_records({'run_info.json', 'run_log.txt'}, 'run_record');
+required_artifacts = artifact_records({'data/run_info.json', 'data/run_log.txt'}, 'run_record');
 info.artifacts = merge_artifacts(required_artifacts, initial_artifacts);
 info = remove_legacy_fields(info);
 validate_run_contract(info);
 
 Result_Atomic_Write_Json(run.RunInfoPath, info);
 Result_Log_Stage(run, 'INFO', 'startup', 'Run initialized: %s', run.RunName);
-if strcmp(info.run_kind, 'dry_run')
+if strcmp(info.execution_mode, 'dry_run')
     Result_Log_Stage(run, 'INFO', 'safety', ...
         'dry-run: no instrument connection, query, or write was performed.');
 end
@@ -127,7 +152,8 @@ cfg = struct('ProjectRoot', '', 'RunType', '', 'RunTimestamp', '', ...
     'Counts', struct(), 'Safety', struct(), 'ResultsRoot', '', ...
     'OutputDir', '', 'Inputs', {{}}, 'Instruments', struct([]), ...
     'SourceRuns', struct([]), 'Sources', {{}}, 'Artifacts', struct([]), ...
-    'RunInfo', struct());
+    'RunInfo', struct(), 'OutputCategory', '', 'RetentionMode', 'compact', ...
+    'DisplayColumns', {{}}, 'SummaryFormats', struct());
 end
 
 function text = path_text(value, label)
@@ -288,7 +314,7 @@ function mode = normalize_execution_mode(value, run_kind)
 mode = lower(strtrim(char(string(value))));
 if isempty(mode) || strcmp(mode, 'unspecified')
     switch run_kind
-        case 'dry_run'
+        case {'dry_run', 'checks'}
             mode = 'dry_run';
         case 'simulation'
             mode = 'simulation';
@@ -309,6 +335,9 @@ end
 end
 
 function validate_run_contract(info)
+if strcmp(info.execution_mode, 'dry_run') && ~isempty(info.instruments)
+    error('Result_Create_Run:UnsafeDryRun', 'dry_run cannot contain instruments.');
+end
 if strcmp(info.run_kind, 'dry_run')
     if ~strcmp(info.execution_mode, 'dry_run') || ~isempty(info.instruments)
         error('Result_Create_Run:UnsafeDryRun', ...

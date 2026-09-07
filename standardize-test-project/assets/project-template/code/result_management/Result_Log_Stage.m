@@ -32,7 +32,7 @@ if isstruct(value) && isfield(value, 'LogPath')
 elseif ischar(value) || (isstring(value) && isscalar(value))
     path = char(value);
     if isfolder(path)
-        path = fullfile(path, 'run_log.txt');
+        path = Result_Artifact_Path(path, 'run_log.txt');
     else
         [parent, ~, extension] = fileparts(path);
         if strcmpi(extension, '.json')

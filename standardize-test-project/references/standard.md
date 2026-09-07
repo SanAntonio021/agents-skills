@@ -1,296 +1,85 @@
-# 测试项目目录与结果规范
+# 实验与仿真输出规范
 
-本文件是 `standardize-test-project` 的实施契约。项目自己的规则可以更严格，不能更宽松地绕过硬件安全、原始数据保护和结果追溯要求。
+统一以后脚本和程序的输出。一次完整执行称为一轮，固定条件重复采集和多点扫描都可以是一轮。沿用项目仪器保护与已有授权，不改变科学算法或历史结果。
 
-## 目录
+## 1. 项目与运行目录
 
-1. 适用目标与基本原则
-2. 标准目录与职责
-3. 结果分类
-4. 运行和参数点命名
-5. 单运行复盘与跨运行分析
-6. `run_info.json`
-7. `summary.csv` 与日志
-8. 自动绘图
-9. 旧结果与无硬件验收
-10. 输出保留与存储验收
+根目录采用六个主要目录：`code/`、`config/`、`simulation/`、`measurement/`、`analysis/`、`checks/`。人工入口、README 和唯一实验主记录留在根目录；代码内部沿用既有职责，不默认新增每轮 Markdown 报告或平台规则副本。
 
-## 1. 适用目标与基本原则
+- simulation：模型计算、合成数据和离线波形生成。
+- measurement：真实采集，包括硬件诊断及只读预检。
+- analysis：已有数据重新处理、重绘和对比，单源与多源均建立新运行。
+- checks：程序自检、纯软件验证、无硬件试跑。
 
-用于仪器测试、通信实验、器件测试、参数扫描、科研仿真及其离线复盘。一次完整执行任务称为一轮运行：固定参数重复采集 10 次是一轮，112.0 GHz 到 125.0 GHz 扫频也是一轮。
+`output_category` 与 `execution_mode`、单点/扫描方法分开。真正 dry-run 在创建硬件对象前短路，禁止连接、查询、写入仪器，也不探测旧收件箱、UNC、映射网络盘或测量输入的 exists/stat/open。允许记录计划路径和读取明确提供的本地配置。纯软件仿真自检可以是 category=checks、execution_mode=simulation，访问硬件的验证不能归为无硬件。
 
-下述运行目录和产物要求适用于启用落盘的运行。显式禁止落盘时，不创建结果目录或文件，包括异常路径；与正式采集记录要求的冲突按第10节处理。
-
-- 人工直接启动的入口脚本放项目根目录。
-- 内部流程、仪器控制、采集、处理、绘图和结果管理放 `code/`。
-- 所有采用新规范的运行放 `results/`。
-- 一轮运行只建立一个目录，目录内部保持扁平。
-- 测试形态由结果分类目录区分；`formal`、`validation`、`debug` 等用途写元数据，不再建组合目录。
-- 用户优先看 `overview.png` 和 `summary.csv`；程序读取 JSON、CSV、日志和原始数据。
-- 文件名、表格、图片和元数据必须能相互反查。
-- 原始数据不得被复盘、重绘或跨运行分析覆盖。
-
-## 2. 标准目录与职责
+程序自动创建 `分类/YYYYMMDD_HHMMSS_实验名称/`，时间是本轮开始的本地时间。中文实验名、简单英文及专业缩写均可，完整参数写数据记录。并发同秒重名时独占创建并追加 `_02`、`_03`，不捏造未来时间。显式输出目录保持精确含义，已存在则拒绝覆盖。
 
 ```text
-测试项目/
-├── README.md
-├── AGENTS.md
-├── CLAUDE.md
-├── GEMINI.md
-├── .gitignore
-├── 人工入口脚本.m / .py
-├── code/
-│   ├── experiments/{single_point,frequency_sweep,power_sweep}/
-│   ├── instrument_control/
-│   ├── acquisition/
-│   ├── signal_processing/
-│   ├── plotting/
-│   ├── result_management/
-│   ├── analysis/
-│   ├── simulation/
-│   └── tests/
-├── config/
-├── data/
-├── docs/
-├── results/{single_point,scan,dry_run,simulation,analysis}/
-└── archive/
+measurement/20260907_143025_双通道电回环/
+├── overview.png
+├── 001_TxPower-10dBm_Channel1_星座图.png
+├── 001_TxPower-10dBm_Channel2_星座图.png
+├── summary.csv
+└── data/
+    ├── run_info.json
+    ├── run_log.txt
+    ├── observations.csv
+    └── 本轮原始数据、参考、配置和重绘输入
 ```
 
-- `code/experiments/` 放完整实验流程，可按温度、延时等变量扩展代码子目录。
-- `code/instrument_control/` 只放发现、连接、查询、写入和安全收尾。
-- `code/acquisition/` 放波形、频谱和功率采集。
-- `code/signal_processing/` 放解调、滤波和指标计算。
-- `code/plotting/` 放自动浏览图的公共样式，不放人工挑选后的正式投稿图。
-- `code/result_management/` 负责建目录、命名、JSON、CSV、日志和产物登记。
-- `code/analysis/` 与 `code/simulation/` 放代码，结果仍放 `results/`。
-- `config/` 不保存密码、令牌或不应提交的本机隐私配置。
-- `data/` 放外部输入、参考序列、校准和样例，不放本项目运行结果。
-- `archive/` 放退役代码和旧说明，不作为正式结果根目录。
+所有有用图片直接可见，data 内不再分层，不建 plots、参数点或重复次数子目录。无图可画的自检不制造占位总览。禁止落盘的选项约束正常和异常路径；实时观察不强制保存。
 
-## 3. 结果分类
+## 2. 观测与命名
 
-| 目录 | 判定 |
-|---|---|
-| `results/single_point/` | 主要控制参数固定，可有多次计划内重复采集 |
-| `results/scan/` | 至少一个物理变量按计划改变；短扫和完整扫描均在这里 |
-| `results/dry_run/` | 仅计划检查；禁止连接、查询或写入仪器 |
-| `results/simulation/` | 模型或合成数据，不依赖本轮真实仪器采集 |
-| `results/analysis/` | 同时使用两个或更多源运行 |
+序号代表一次实际采集/尝试，从 001 开始；同次采集的多个 Channel 共用序号、分别记录，重试是下一序号。计划重复和重试次数仍可保存在详细记录。采集前失败不创建空波形，但保留失败行及错误详情。
 
-离线复盘不放 `dry_run/`。用途单独写入 `purpose=formal|validation|debug`。
+文件名采用 `序号_主要控制条件_Channel_类型`；控制条件可以省略，来自本次配置，不反推测量值。TxPower/RxPower 区分发射/接收功率；SNR、MER、EVM、BER 及单位保留常用写法。使用真实小数点、负号和设置分辨率。失败诊断可标 FAILED；失败或缺失不补成正常测量。
 
-`dry_run` 的“仅计划检查”还包括不探测旧结果收件箱：可以计算并记录将来需要的文件路径，但不得对旧收件箱、UNC 路径、映射网络盘或测量文件执行 `exists`、`stat`、`open` 等操作。读取本轮明确提供的本地配置和代码版本信息不属于测量输入读取。
+旧 repeatNN_attemptNN API 参数仍兼容；新增调用传 observation/observation_index 才采用逐次序号，不从重复与重试索引猜测全局顺序。
 
-## 4. 运行和参数点命名
+## 3. 指标、精度和记录
 
-运行目录格式：
+summary.csv 使用 UTF-8 BOM 和 CSV 转义，第一行名称、第二行单位、第三行起逐次观测；多 Channel 分行。显示必要条件、序号、Channel、方案、当前实验指标和状态，不强制所有实验采用通信指标。路径、时间、重试、错误详情放 data/observations.csv 与日志。失败行保留，缺失数值空白，实际 BER=0 保留零。
 
-```text
-主要变量或范围_主要固定条件_YYYYMMDD_HHMMSS
-```
+完整记录 data/observations.csv 保存所有列和原数值，Python 用浮点可回读表示，MATLAB double 用 17 位有效数字。计算与分析通过统一接口读取完整记录，旧版缺失时才回退旧 summary。显示表连续量默认两位小数、计数整数、BER/BLER/FER 三位有效数字科学计数；非零小值不得舍成零。控制参数通过 exact 或 fixed:N 显式保留设置分辨率。MATLAB SummaryFormats 按 matlab.lang.makeValidName(header) 设置，Python formats 按原表头。
 
-要求：
+data/run_info.json 使用 schema_version=2.0，包含 run_id、project_name、test_name、run_kind、output_category、retention_mode、planned_run_kind、purpose、execution_mode、status、stop_reason、stop_detail、started_at、finished_at、entry_point、code、runtime、primary_variable、parameters、inputs、instruments、counts、safety、source_runs、artifacts。artifact 相对运行目录，只允许根目录文件与 data/文件。
 
-- 不重复上级已有的 `scan`、`single_point`、`dry_run` 等名称。
-- 目录只保留有助人工识别的主要条件，完整参数进入 JSON。
-- 时间戳固定为本地时间 `YYYYMMDD_HHMMSS`。
-- 使用 ASCII 真小数点和与分辨率一致的小数位数，例如 `112.0`，不用 `112p0`。
-- 单位紧跟数值，例如 `115.0GHz`、`4.0dBm`、`20.0ns`。
-- 负数保留减号；范围含负数时用 `_to_`，如 `P-10.0_to_4.0dBm`。
-- 不使用空格、冒号、斜杠或只靠大小写区分的名称。
-- 同名目录存在时失败，不覆盖；同秒冲突应重新取时间戳。
-- 同秒冲突后必须等待或重新读取当前真实时间，不能用人为增加的未来时间戳冒充实际开始时间。
+- purpose=formal|validation|debug；执行模式 hardware|hardware_query|dry_run|simulation|offline_replay|offline_analysis。
+- status=running|completed|completed_with_failures|failed|stopped；退出后仍 running 表示未正常收尾。
+- stop_reason：normal_completion、user_stop、preflight_failed、instrument_connection_failed、instrument_read_failed、instrument_write_failed、acquisition_failed、processing_failed、safety_stop、unhandled_exception。
+- counts 区分计划、实际尝试、成功、失败、无效。多个 Channel 的行数不是采集数，重试可使实际尝试超过计划。
+- 保存有效配置、随机种子、代码版本/脏状态、环境；Git 不适用时提供实际源码线索。未提交算法代码需对应补丁/快照或说明重跑限制，不逐轮打包仓库。
+- JSON 无法无损表达的数组、复数、NaN/Inf 等用语言原生结构化数据保存，JSON 只引用。
 
-示例：
+日志格式 `ISO8601 | LEVEL | stage | message`，记录必要执行与保存异常、观测序号、来源、仪器状态及安全收尾，禁止密钥。只读读取不刷新/重写源记录。
 
-```text
-results/single_point/RF115.0GHz_P4.0dBm_20260715_151500/
-results/scan/RF112.0-125.0GHz_step0.1GHz_P4.0dBm_20260715_143000/
-results/scan/P-10.0_to_4.0dBm_step1.0dB_RF115.0GHz_20260715_160000/
-results/dry_run/RF112.0-125.0GHz_step0.1GHz_20260715_141000/
-results/simulation/SNR0.0-30.0dB_step1.0dB_20260715_170000/
-```
+## 4. 自动绘图与重绘
 
-参数点基础名：
+浏览图默认白底 300 dpi PNG；字体 Microsoft YaHei，回退 Noto Sans CJK SC、SimHei。刻度 10 pt、轴名 11 pt、标题 12 pt、轴线 1 pt、曲线 1.5 pt，浅灰网格。物理量/单位明确，不裁切文字。推荐 #0072B2、#D55E00、#009E73、#CC79A7，结合标记区分 Channel/方案。正式投稿矢量图按明确请求导出。
 
-```text
-<变量><数值><单位>_repeatNN_attemptNN
-```
+- 总览默认逐次原始观测，不计算/叠加均值、最值、标准差，不跨失败/缺失连线。显式 ShowStatistics/show_statistics 才启用跨观测统计。必要 BER/MER 算法不属于禁止统计。
+- 星座保留全部有效点、明显理想点、多个 Channel 相同 1:1 范围，标 N 和存在的指标。只有导出负担不可接受时才可重复均匀抽样并说明显示/实际点数，精简保存不能额外抽稀。超范围点标数量，不删除事实。
+- 频谱区分 dBm 与 dBm/Hz，默认不平滑/插值。Peak、ChannelPower、MarkerBandPower 不互换。
+- BER 对数图真实零可显示在 1/N_bits 并以空心三角注明位置，数据仍为零。
 
-- `repeat01` 是计划内第 1 次重复；`attempt01` 是该重复的第 1 次执行尝试。
-- 重试只增加 `attempt`，不增加 `repeat`。
-- 序号至少两位，从 `01` 开始，超过 99 自然扩展。
-- 多变量按扫描设计顺序写，如 `RF112.0GHz_P-4.0dBm_repeat01_attempt01.mat`。
-- 失败后已取得的诊断数据保留，并加 `FAILED_`。采集前失败且没有数据时不创建空原始文件，但 CSV 和日志仍记录失败。
-- 运行目录禁止 `traces/`、`figures/`、`repeat01/`、参数点目录等子目录。
+Python helper 保存安全 NPZ 重绘输入和版本化参数，不使用 pickle；MATLAB PNG helper 在 data 保存原生 .fig，含图形数据、轴与注记。重绘只读取保存输入，不运行仿真/DSP，在新 analysis 目录导出。PNG 存在不能替代视觉检查。
 
-## 5. 单运行复盘与跨运行分析
+## 5. 分析、兼容与安全
 
-只使用一个原始运行时，派生文件仍放源运行目录，不建子目录，不覆盖原文件：
+单源/多源分析均新建 analysis 运行，data/sources.txt 每行一个源路径，元数据对应 run_id、实际文件/哈希与处理参数。相对路径优先，外部源可绝对路径；不移动/补写源数据，不复制整套波形。读取先 data，回退 schema 1 根目录。
 
-```text
-replay_YYYYMMDD_HHMMSS_run_info.json
-replay_YYYYMMDD_HHMMSS_summary.csv
-replay_YYYYMMDD_HHMMSS_overview.png
-analysis_YYYYMMDD_HHMMSS_power_comparison.png
-```
+历史不移动、改名、删除、压缩、重写。旧显式输出、输入收件箱和 resume 参数兼容；新默认目录不是历史迁移。可选绘图库按需加载，不破坏原本无绘图库的 CLI 导入。真实仪器模式、接线、角色与安全收尾沿用有效授权，只有未知实质变化才澄清。
 
-同一轮派生文件使用相同时间戳前缀。复盘 JSON 至少记录原 `run_id`、源文件、代码版本、配置变化和派生产物。
+## 6. 保留策略与验收
 
-使用两个或更多运行时，新建 `results/analysis/<run>/`。目录仍扁平，并包含 `sources.txt`。`sources.txt` 为 UTF-8，每行一个源运行目录的项目相对路径，顺序等于读取顺序。外部来源可写绝对路径，但 JSON 同时保存来源文件哈希。不得修改源运行。
+可重建普通仿真默认 compact：图片、完整逐次指标、全部无损绘图输入、有效参数/种子及必要记录。显式 full 再保存完整波形和中间数组；不可重建输入、断点续算单独保留。helper retention_mode 是策略标记，实际保存者必须据此决定 payload，不能只改元数据。
 
-## 6. `run_info.json`
+实测始终保留原始采集、必要参考、逐次配置/仪器状态；相同且不可变参考按实际数组内容核对后同轮只存一份，相对引用，不同内容分开。搬移整轮可读，缺失/损坏引用报错。正式实测与禁止保存冲突时在 I/O 前拒绝；实时观察沿用既有语义。
 
-UTF-8，键名使用稳定英文 `snake_case`，路径优先项目相对路径。创建运行目录后立即原子写入，状态为 `running`；关键状态变化后更新；正常或异常收尾时更新完成时间和最终状态。禁止记录密钥。
+异常保留已取得的数据及失败现场。普通非零 BER/预期解调失败不升级 full。自检使用自有隔离目录，成功清理自有临时产物，失败保留，不清理共享目录或其他任务数据。
 
-必需字段：
+测试四类与模式区别、中文/同秒并发、显式路径防覆盖、多 Channel 同序号、失败重试、表头/显示/完整精度、旧读取及源不改。真正 dry-run 不探测仪器或历史收件箱；已有阶段锁/冻结使用隔离状态测试，并只读核对当前保护。
 
-```text
-schema_version, run_id, project_name, test_name,
-run_kind, planned_run_kind, purpose, execution_mode,
-status, stop_reason, stop_detail, started_at, finished_at,
-entry_point, code, runtime, primary_variable, parameters,
-inputs, instruments, counts, safety, source_runs, artifacts
-```
-
-固定取值：
-
-- `run_kind`: `single_point|scan|dry_run|simulation|analysis`
-- `purpose`: `formal|validation|debug`
-- `execution_mode`: `hardware|hardware_query|dry_run|simulation|offline_replay|offline_analysis`；`hardware_query` 仅用于只读仪器预检
-- `status`: `running|completed|completed_with_failures|failed|stopped`
-- `stop_reason`: 运行中为空；结束后为 `normal_completion|user_stop|preflight_failed|instrument_connection_failed|instrument_read_failed|instrument_write_failed|acquisition_failed|processing_failed|safety_stop|unhandled_exception`
-
-`dry_run` 必须同时写 `planned_run_kind`、`execution_mode=dry_run`、空 `instruments`，日志明确说明未连接、未查询、未写入仪器。
-
-`counts.planned/executed/succeeded/failed/invalid` 按计划重复及其最终结果计数，满足
-`executed = succeeded + failed + invalid` 且 `executed <= planned`。每次实际
-attempt 仍各占 `summary.csv` 一行；存在重试时增加 `attempted`、
-`attempt_succeeded`、`attempt_failed`、`attempt_invalid`，避免把失败重试和最终重复结果混为一层。
-
-最小对象结构：
-
-```json
-{
-  "code": {"git_commit": null, "git_dirty": null, "entry_file_sha256": null},
-  "runtime": {"name": "Python", "version": "3.x", "os": "Windows"},
-  "counts": {"planned": 0, "executed": 0, "succeeded": 0, "failed": 0, "invalid": 0},
-  "safety": {"preflight": "pending", "shutdown": "pending"},
-  "source_runs": [],
-  "artifacts": [{"file": "summary.csv", "role": "detail_table"}]
-}
-```
-
-`status=running` 留到程序退出表示未正常收尾，不能解释成完成。
-
-## 7. `summary.csv` 与日志
-
-`summary.csv` 使用 UTF-8 with BOM 和标准 CSV 转义：
-
-1. 第 1 行是指标名。
-2. 第 2 行是单位，无单位写 `-`。
-3. 第 3 行起每次实际尝试占一行，失败和成功重试都保留。
-
-指标列放最前。固定追溯尾部为：
-
-```text
-状态,repeat,attempt,采集时间,原始数据文件,单次图片文件,错误代码,错误信息
--,-,-,-,-,-,-,-
-```
-
-行状态只用 `成功|无效|失败`。缺失数值留空，真实 `BER=0` 保留 0。失败和无效不进入均值与标准差。样本标准差仅在至少 2 个有效观测时计算；一个观测不能用 0 冒充未知波动。
-
-`run_log.txt` 每条一行：
-
-```text
-ISO8601时间 | INFO|WARNING|ERROR|DEBUG | 阶段 | 消息
-```
-
-日志必须记录入口、用途、运行目录、每个 repeat/attempt、重试、停止、保存异常、硬件读回与安全收尾。`DEBUG` 只用于 `purpose=debug`。dry-run 必须明确记录未访问仪器。
-
-## 8. 自动绘图
-
-自动图片用于日常浏览、检查和筛选，默认只导出白底 300 dpi PNG。正式投稿图在选定数据后另行生成。
-
-通用样式：
-
-- 中文字体优先 `Microsoft YaHei`，回退 `Noto Sans CJK SC`、`SimHei`。
-- 刻度 10 pt，坐标名称 11 pt，标题 12 pt，图例和注释 9 pt。
-- 坐标轴 1.0 pt，主曲线 1.5 pt，误差条 1.2 pt，标记 5 至 6 pt。
-- 主网格浅灰 `#D9D9D9`；不使用装饰渐变、三维效果或只靠颜色区分曲线。
-- 推荐颜色：蓝 `#0072B2`、橙红 `#D55E00`、绿 `#009E73`、紫红 `#CC79A7`。
-- 坐标名称使用 `物理量 (单位)`，不得裁切标题、刻度、图例或最长中文标签。
-
-星座图：
-
-- 多通道放一张图的左右子图，所有通道使用相同的 1:1 坐标范围。
-- 接收符号使用高对比度、不透明深色点；理想点使用更大的黑色空心方框或黑色十字。
-- 默认绘制全部有效符号并标 `N`。仅在导出失败或耗时、体积不可接受时使用固定间隔的可重复均匀抽样，同时标显示数和实际数并写日志；禁止随机抽样美化分布。
-- 显示 `BER`、`EVM`、`MER` 和 `N`，缺失指标不伪造。超范围符号不删除，图中标超出数量。
-
-频谱图：
-
-- 明确区分 `功率 (dBm)` 与 `功率谱密度 (dBm/Hz)`。
-- 默认保留原始采样点，不平滑、不插值。处理方法和参数必须写 JSON。
-- `Peak`、`ChannelPower`、`MarkerBandPower` 不得互相替代。
-- 同轮点图使用相同频率和功率范围；无效诊断图加 `FAILED_` 且不进入统计。
-
-扫描汇总图：
-
-- 文件固定为 `overview.png`；不同单位使用共享横轴的独立子图。
-- 每个变量值画有效原始散点、均值和可用时的 `±1` 样本标准差。
-- 无有效观测处留缺口，不跨缺口连线，不在图上堆失败红叉。
-- 右上角动态显示 `成功采集：有效次数/计划次数`，具体失败留 CSV 和日志。
-- dry-run 总览只显示计划点、阶段和计划观测数，不画伪测量值，也不显示 `成功采集：0/N`。
-- BER 跨数量级时用对数轴。真实 BER 0 可画在 `1/N_bits` 并使用空心向下三角，图例说明显示位置；CSV 仍为 0。
-
-## 9. 旧结果与无硬件验收
-
-- 只改变未来运行默认值。旧结果不移动、不改名、不删除、不补写、不压缩、不改内部字段。
-- 显式旧路径保持兼容；发现旧目录不能自动迁移或清理。
-- 现有项目的旧输出目录、输入收件箱和 `resume` 状态目录可以继续作为显式兼容入口；新标准结果根目录单独引入。真实硬件输出只有在测量字段、原始文件、单次图片和安全收尾完成审核后才能切换。
-- 迁移历史前先建立清单、哈希基线、dry-run 和回滚方案。
-- 无硬件测试使用隔离临时目录和合成数据，覆盖五类结果、扁平目录、JSON 解析、CSV BOM/两行表头、日志、点图、总览图、单运行复盘和跨运行 `sources.txt`。
-- 本规范不要求项目新增验收状态。项目已经存在验收冻结、发布锁、`resume` 或其他阶段限制时，测试过去阶段必须建立一套受控状态：可以在临时项目副本中准备该阶段对应的清单、冻结文件和运行目录，也可以通过明确 mock 同时替换阶段判断会读取的全部状态输入；不得从真实项目的当前状态推断过去状态。
-- 同一项过去阶段测试使用的清单、冻结文件和运行目录必须来自同一套受控状态，不能把临时文件、mock 输入与真实项目状态混用。
-- 另设只读的当前最终状态测试，确认阶段限制会在创建运行目录、写入结果、执行模型或访问仪器之前阻止不允许的操作；该测试不得修改真实冻结文件和历史结果。
-- dry-run 测试不得建立仪器连接，也不得执行 SCPI 查询或写入。
-- 在隔离夹具模拟的旧收件箱中放入故意损坏的 JSON 或其他哨兵文件，标准 dry-run 仍应完成，且不得对该收件箱调用路径存在性检查；这用于发现 UNC 或映射网络盘被意外访问的问题，不向真实历史收件箱写测试文件。
-- 连续执行两次相同 dry-run，必须生成两个不同运行目录；两个目录均完整，第一次的文件集合、字节数和哈希不变。
-- 旧 CLI 若原本不依赖绘图库或标准结果库，标准化后仍必须能在缺少这些可选依赖时导入和解析；把绘图等可选依赖延迟到标准结果路径实际执行时再导入。
-- 验收同时运行项目原有测试、语言 helper 测试和 `validate_test_project.py`；不能只验证新 helper 而跳过旧流程回归。
-- 验收前比较旧结果文件集合、字节数和 SHA256，确认不变。
-
-## 10. 输出保留与存储验收
-
-### 保留策略
-
-新增或调整输出程序前，区分人工浏览、重绘、重新处理和原始证据的需要。优先沿用项目的统一保存接口和已确认策略；已有明确决定时直接落实，只有会改变数据可恢复性的未知需求才需要澄清。只改变未来运行，不据此精简历史文件。
-
-- 对参数和随机种子足以重跑的普通仿真，默认建议 `compact`：保留现有有用图片、指标、完整有效配置、随机种子、代码版本及脏状态、运行环境、必要日志和带版本的重绘数据。专项排错可显式选择 `full`，保存重新处理所需的仿真原始数据和完整中间结果。不可重建的输入、断点续算和正式证据按项目需要保留，不一律按普通仿真处理。
-- 实际字段名和保存格式沿用项目；新增时可用 `output_level='compact'|'full'`。保留已有 `save_raw` 等显式选项的兼容语义并写清优先级。已有禁止落盘选项同时约束正常和异常路径，不能在异常处理中偷偷落盘。
-- 真实硬件采集始终保留原始数据、必要参考、每次执行的配置与回执、仪器状态。精简模式不能关闭它；若禁止落盘与正式采集的记录要求冲突，在仪器I/O前明确拒绝该组合。
-- 有效配置应来自所有默认值和覆盖合并后的结果。JSON不能无损表达的类型、NaN/Inf和数组应另以适合该语言的结构化格式保留，并在记录中引用；不得把不可逆的JSON转换当成可复现配置。
-- 提交号、脏状态和入口哈希只提供追溯线索，不足以恢复未提交的算法修改。宣称重新计算可复现时，应能取得对应源码；依赖未提交代码时保留相关补丁/快照或其不可变引用，否则明确重跑限制。不要为此逐轮打包整个仓库。
-- 开启落盘的运行异常退出时，保留当时已取得的数据、错误与来源，不覆盖此前结果。扫描中预期的非零BER、解调不通过或保护拒绝按观测结果记录，不因这些预期结果自动升级完整保存。
-- 人工记录沿用项目的单一主记录；自动程序使用JSON、CSV和日志追溯，不为每次重复执行新增Markdown报告。
-
-### 重绘、重新处理与共享数据
-
-- 重绘只读取保存的曲线、星座点、指标、坐标、注记和绘图配置，不重新运行仿真或信号处理。首次绘图和重绘使用同一份数据；精简存储不能额外抽稀、降精度或丢弃现有图组。保存格式带版本，记录所需运行环境；旧记录通过既有读取接口兼容。
-- 重新处理需要原始输入。精简记录缺少这些输入时明确提示重跑仿真，不能把重绘当成重新处理成功。重跑创建独立运行，记录源运行、配置变化及种子，不覆盖原运行；单纯重绘继续遵守第5节的派生命名约定。
-- 同轮重复实验若共享波形或参考，按实际数组内容校验，不能仅比较文件名、大小、配置或带有易变元数据的容器字节。只共享相同且不可变的数据，配置、回执及仪器状态逐次保留。不同内容分开保存。
-- 共享文件放在同一轮扁平目录中，引用使用轮次内相对路径，读取接口校验内容完整性并对缺失或损坏明确报错。整轮搬移后仍可读，不默认引入跨轮缓存。已有实测的离线分析记录来源路径、哈希与派生结果，避免再次打包源波形；外部源仍是需要保留的输入依赖。
-
-### 验收
-
-存储实现改变时，按受影响路径执行下列检查。模板脚手架本身不提供精简存储、重绘或共享数据实现，不能以模板创建成功代替项目接入验收。
-
-- 相同有效参数和随机种子分别运行精简与完整模式，比较关键指标、现有图组及所有绘图输入；确有浮点容差时说明理由。统计实际文件数、总字节数和节省比例，不预设通用节省目标。
-- 在不访问原始波形、不运行DSP的条件下独立重绘，检查图片数量、尺寸、非空和坐标/文字完整；同环境确定性绘图可增加逐像素比较。跨版本差异需说明，不能仅凭PNG存在就算通过。
-- 验证旧记录读取、显式完整保存、禁止落盘、异常保留，以及精简记录重新处理的明确提示和重跑来源关系。仿真期望的失败观测不会自动生成完整中间文件。
-- 有共享数据时，用mock验证相同数组只存一份、不同数组分开、整轮搬移后可读，及引用缺失、内容损坏会报错。真实采集的原始数据保留规则通过mock验证，不为存储验收连接仪器。
-- 自动测试使用本用例拥有的隔离临时目录。成功后清理；失败保留已有排错数据和失败报告，仓库只留必要套件汇总。清理以用例最终状态为依据，避免无条件退出回调提前删除失败现场，也不清理共享临时目录或其他任务数据。
-- 元数据测试与实际运行环境比较，例如MATLAB版本使用 `['R', version('-release')]`；只有显式注入了固定运行环境的夹具才断言固定版本字符串。
-- 同步README中的默认值、完整模式、重绘/重新处理入口；在现有主记录中记录验证命令、进程退出状态、PASS/FAIL/SKIP、实测空间变化及既有规范问题。未来新增脚本复用同一输出接口。
+相同种子小仿真比较 compact/full 指标、全部绘图输入、实际文件数/体积；独立重绘逐图检查，采集保存与异常收尾使用模拟仪器。运行项目相关原测试，核对历史/无关工作不变，发布与本机生效分别验证。

@@ -10,30 +10,30 @@ Apply one stable contract to experimental code, run artifacts, replay, and autom
 ## Workflow
 
 1. Read the target project's `AGENTS.md`, related rules, existing entry points, result paths, and representative outputs before editing.
-2. Read [references/standard.md](references/standard.md) completely. Treat it as the canonical directory, naming, metadata, table, replay, plotting, and retention contract. Section 10 distinguishes replotting from reprocessing and covers compact/full output, shared inputs, and storage acceptance.
+2. Read [references/standard.md](references/standard.md) completely. It defines directory, naming, metadata, display/full tables, replay, plotting, and retention. Section 6 covers compact/full output, shared inputs, and storage acceptance.
 3. Classify the target as a new project or an existing project:
    - New project: run `scripts/scaffold_test_project.py` with the project path, project name, and language.
    - Existing project: inventory first. Change future defaults only. Do not move, rename, rewrite, or delete historical results.
-4. Keep human-run entry scripts at project root. Put implementation under `code/` and generated runs under `results/`.
-5. Reuse the project's compatible output helpers, or the deterministic helpers in `assets/project-template/code/` where none exist, instead of duplicating naming, JSON, CSV, log, and plotting logic. Establish the retention policy before adding writers; document it at the human entry points so new scripts follow it. The template helpers do not themselves implement compact/full storage or replot archives.
+4. Keep human-run entry scripts at project root. Use six top-level directories: `code/`, `config/`, `simulation/`, `measurement/`, `analysis/`, `checks/`. Existing history stays where it is.
+5. Reuse the project's compatible output helpers, or the helpers in `assets/project-template/code/`. All new writers share automatic timestamp-first directories, exclusive suffix allocation, visible images/display CSV and flat `data/` records. Helpers expose retention mode; experiment writers decide which payloads belong to compact/full. Plot helpers save lossless replot inputs automatically when the run has `data/`.
 6. Integrate one dry-run path before any hardware path. Short-circuit before creating or initializing hardware objects. A plan-only dry-run may construct and record expected input paths, but it must not call `exists`, `stat`, `open`, or equivalent operations on a legacy inbox, UNC path, mapped network drive, or measurement file. Side-effect-free shared imports are allowed; imports with hardware side effects, connections, queries, and writes are not. Keep optional plotting or result dependencies lazy when eager imports would break an existing CLI that does not use the standard-result path.
 7. Run `scripts/validate_test_project.py <project>`, the project's existing tests, and the language-specific helper tests. Use isolated temporary result roots during validation. If the project already has acceptance freezes, publication locks, resume states, or other lifecycle state, tests for earlier or transitional stages must establish one controlled state in either a temporary project copy or explicit mocks that replace every manifest, freeze file, and run-inventory input used for stage decisions; do not infer an earlier state from the live project's current files. Keep a separate read-only test of the live final state when that state is a safety gate, and verify that it blocks before run creation or model/hardware execution. Put malformed sentinel files in an isolated fixture representing the legacy inbox and verify that standard dry-run neither reads nor probes them; run the same persisted dry-run twice and verify that it creates two distinct directories without overwriting.
 8. Report the resulting structure, validation evidence, unchanged-history check, and any project-specific gaps.
 
 ## Required Result Contract
 
-- With persistence enabled, one complete run creates one folder under exactly one of `results/single_point`, `scan`, `dry_run`, `simulation`, or `analysis`. A no-write run creates no result directory or artifacts, including on failure.
-- Keep each run folder flat. Store repeats, attempts, raw data, point plots, replay files, and summaries as files, never point subfolders.
-- Use real decimal points and units: `RF112.0GHz`, not `RF112p0GHz`. Use `repeat01` for planned repetition, `attempt01` for retry, and `FAILED_` for retained failed artifacts.
+- With persistence enabled, one complete run creates `category/YYYYMMDD_HHMMSS_experiment/` directly under the project. Categories are `simulation`, `measurement`, `analysis`, `checks`; single-point and scan remain methods, not directory categories. A no-write run creates nothing, including on failure.
+- Keep useful images and display `summary.csv` in the run root. Put raw/derived data, full observations, configuration, sources, replot inputs, and logs in one flat `data/` directory.
+- Use a capture/attempt sequence such as `001_TxPower-10dBm_Channel1_星座图.png`. Same capture across Channels shares the sequence; retries increment it and failed observations remain recorded. Conditions come from configured controls, not measured results. Chinese and familiar English/acronyms are acceptable.
 - Give the user `overview.png` for browsing and `summary.csv` for details. Put metric names in CSV row 1, units in row 2, and observations from row 3.
-- Maintain `run_info.json` and `run_log.txt` for machine traceability. Never substitute Markdown for these records.
-- For reproducible simulations, prefer compact output that preserves existing plots, metrics, effective configuration, seeds, code/environment provenance, and versioned replot data. Keep explicit full output and existing no-write options; real acquisitions retain raw data regardless of compact mode. Validate equivalence and measured storage savings using section 10 of the standard.
-- Put one-run replay files back in the source run with a timestamped `replay_` or `analysis_` prefix. Put multi-run analysis in `results/analysis/<run>/` with `sources.txt`.
+- Maintain `data/run_info.json`, `data/run_log.txt`, and full-precision `data/observations.csv`. Display summaries contain only required conditions, Channel, metrics and status. Do not automatically calculate cross-observation statistics. Explicit requested statistics are separate from necessary DSP calculations.
+- For reproducible simulations, prefer compact output preserving existing plots, metrics, effective configuration, seeds, provenance, and versioned replot data. Keep full output and no-write options; real acquisitions retain raw data. Validate equivalence and measured storage savings using section 6 of the standard.
+- Create a new `analysis/` run for single-source or multi-source analysis/replot and record sources in `data/sources.txt`; never write into source runs or copy their whole raw dataset.
 - Export automatic plots as readable 300 dpi PNG files with Chinese professional labels and the common paper-style settings. Do not auto-export publication vector files.
 
 ## Safety Gates
 
-- Stop before real instrument I/O unless the user has confirmed the current hardware mode, physical wiring, role mapping, and applicable shutdown behavior.
+- Before real instrument I/O, apply the project's current authorized hardware mode, wiring, role mapping and shutdown policy. Reuse established authorization; clarify only unresolved changes that affect operation or safety.
 - Never treat dry-run or synthetic data as hardware measurement.
 - Never overwrite a run directory or raw artifact.
 - Never migrate history as a side effect of standardizing future runs. Historical migration is a separate inventory, dry-run, and rollback task.

@@ -7,6 +7,12 @@ import importlib.util
 import subprocess
 import sys
 import tempfile
+import csv
+import hashlib
+import json
+import shutil
+from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -80,7 +86,7 @@ def write_measurement_run(
         success[index - 1] = not failed
         point = f"X{results.format_value(float(control), 1)}"
         raw_name = results.point_filename(point, index, 1, "csv", failed=failed)
-        raw_path = run.run_dir / raw_name
+        raw_path = run.data_dir / raw_name
         raw_path.write_text(
             "control_value,metric\n" f"{control:.1f},{metric:.6f}\n",
             encoding="utf-8",
@@ -274,6 +280,7 @@ def test_plot_and_naming_contracts(results, plots, project: Path, temporary: Pat
         title="BER 零值格式自检",
         x_name="控制变量",
         x_unit="-",
+        show_statistics=True,
     )
     metric = scan_stats["metrics"][0]
     if metric["mean"][0] != 0 or metric["zero_count"] != 2:
@@ -323,8 +330,90 @@ def test_plot_and_naming_contracts(results, plots, project: Path, temporary: Pat
         raise AssertionError("invalid run configuration left a directory behind")
 
 
+def test_schema_two(results, plots, project: Path, temporary: Path) -> None:
+    def create(index):
+        return results.create_run(project, "simulation", ["双通道同秒"],
+            project_name="test", test_name="concurrent", timestamp="20260907_143025",
+            retention_mode="full" if index else "compact", output_category="checks")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        runs = list(pool.map(create, range(4)))
+    assert len({r.run_dir for r in runs}) == 4
+    assert all(r.run_dir.parent == project / "checks" for r in runs)
+    value = 1.2345678901234567
+    for run in runs:
+        results.initialize_summary(run, ["Observation", "Channel", "TxPower", "MER", "BER", "状态", "错误信息"],
+            ["-", "-", "dBm", "dB", "-", "-", "-"],
+            formats={"TxPower": "exact"})
+        results.append_summary(run, [1, 1, -10.125, value, 1.23456e-8, "成功", ""])
+        results.append_summary(run, [1, 2, -10.125, value, 0.0, "成功", ""])
+        results.append_summary(run, [2, 1, -10.125, None, None, "失败", 'bad,"quoted"'])
+        full = results.read_summary(run)
+        assert float(full[2][3]) == value
+        with run.summary.open(encoding="utf-8-sig", newline="") as stream:
+            display = list(csv.reader(stream))
+        assert "错误信息" not in display[0]
+        assert display[2][2:5] == ["-10.125", "1.23", "1.23e-08"]
+        assert display[4][3:5] == ["", ""]
+        assert results.point_filename("TxPower-10dBm", 1, 1, "png", observation=1, channel=2).startswith("001_TxPower-10dBm_Channel2")
+        before = run.run_info.read_bytes()
+        results.read_run_info(run.run_dir)
+        assert run.run_info.read_bytes() == before
+        results.finalize_run(run, "completed_with_failures", "normal_completion")
+    try:
+        results.create_run(project, "checks", ["unsafe"], project_name="test", test_name="unsafe", instruments=[{"name": "never"}])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("checks dry-run allowed instrument records")
+    source = runs[0]
+    plot = source.run_dir / "spectrum.png"
+    plots.plot_spectrum(plot, np.array([1., 2., 3.]), np.array([-12., -11.123456789, -14.]))
+    archive = source.data_dir / "spectrum.replot.npz"
+    assert archive.exists()
+    hashes = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in source.run_dir.rglob("*") if p.is_file()}
+    destination = temporary / "replot.png"
+    plots.replot(archive, destination)
+    assert destination.read_bytes() == plot.read_bytes()
+    assert hashes == {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in source.run_dir.rglob("*") if p.is_file()}
+    scan = plots.plot_scan_summary(temporary / "raw_only.png", [1, 1, 2],
+        [{"name": "MER", "values": [10, 12, 14], "unit": "dB"}],
+        success_mask=[True, False, True], planned_count=3, title="Raw", x_name="SNR", x_unit="dB")
+    assert "mean" not in scan["metrics"][0]
+    legacy = temporary / "legacy"
+    legacy.mkdir()
+    standalone = legacy / "standalone.csv"
+    results.initialize_summary(standalone, ["MER", "attempt"], ["dB", "-"])
+    results.append_summary(standalone, [value, 1])
+    assert str(value) in standalone.read_text(encoding="utf-8-sig")
+    assert results.display_value(12., "pre_fec_bit_error_count") == "12"
+    assert results.display_value(1.125, "bit_count", "fixed:3") == "1.125"
+    (legacy / "run_info.json").write_text(json.dumps({"schema_version": "1.0", "run_id": "legacy"}), encoding="utf-8")
+    (legacy / "summary.csv").write_text("value\n-\n1.25\n", encoding="utf-8-sig")
+    assert results.read_run_info(legacy)["run_id"] == "legacy"
+    assert results.read_summary(legacy)[2] == ["1.25"]
+    assert results.artifact_path(legacy, "run_info.json") == legacy / "run_info.json"
+    try:
+        results.reserve_derived_path(source, "analysis", "bad", "csv")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("reanalysis wrote into original simulation")
+
+
+@contextmanager
+def successful_fixture():
+    temporary = tempfile.mkdtemp(prefix="standardize_test_project_")
+    try:
+        yield temporary
+    except BaseException:
+        print(f"Failed test artifacts retained: {temporary}")
+        raise
+    else:
+        shutil.rmtree(temporary)
+
+
 def run_test() -> None:
-    with tempfile.TemporaryDirectory(prefix="standardize_test_project_") as temporary:
+    with successful_fixture() as temporary:
         project = Path(temporary) / "project"
         subprocess.run(
             [
@@ -351,7 +440,12 @@ def run_test() -> None:
             "test_project_plots",
             project / "code" / "plotting" / "test_project_plots.py",
         )
+        validator = load_module("output_validator", VALIDATOR)
+        bad = validator.Report()
+        validator.validate_file_references(project, ["状态", "原始数据文件"], [["失败", "missing.mat"]], bad)
+        assert any("missing file" in error for error in bad.errors)
         test_plot_and_naming_contracts(results, plots, project, Path(temporary))
+        test_schema_two(results, plots, project, Path(temporary))
         single = write_measurement_run(
             results,
             plots,
@@ -387,21 +481,20 @@ def run_test() -> None:
         analysis = write_analysis(results, plots, project, [single, scan])
 
         replay = results.reserve_derived_path(
-            single,
+            analysis,
             "replay",
             "summary",
             "csv",
             timestamp="20260715_130000",
         )
         replay.write_text("metric\n1.0\n", encoding="utf-8")
-        results.register_artifact(single, replay.name, "replay_summary")
+        results.register_artifact(analysis, replay, "replay_summary")
         if results.check_flat(single):
             raise AssertionError("single-run replay created a subdirectory")
-        if len((analysis.run_dir / "sources.txt").read_text(encoding="utf-8").splitlines()) != 2:
+        if len((analysis.data_dir / "sources.txt").read_text(encoding="utf-8").splitlines()) != 2:
             raise AssertionError("analysis source linkage is incomplete")
 
-        try:
-            results.create_run(
+        collision = results.create_run(
                 project,
                 "dry_run",
                 ["Point1-3", "step1"],
@@ -410,10 +503,11 @@ def run_test() -> None:
                 planned_run_kind="scan",
                 timestamp="20260715_120200",
             )
-        except FileExistsError:
-            pass
-        else:
-            raise AssertionError("existing run directory was overwritten")
+        if collision.run_dir == dry.run_dir or not collision.run_id.endswith("_02"):
+            raise AssertionError("collision must reserve a separate suffixed run")
+        results.initialize_summary(collision, ["Check", "Status"], ["-", "-"])
+        results.append_summary(collision, ["collision", "pass"])
+        results.finalize_run(collision, "completed", "normal_completion")
 
         validation = subprocess.run(
             [sys.executable, str(VALIDATOR), str(project)],
@@ -425,8 +519,9 @@ def run_test() -> None:
             raise AssertionError(validation.stdout + validation.stderr)
         print(validation.stdout.strip())
         print(
-            "Self-test passed: scaffold, five result kinds, flat runs, replay linkage, "
-            "analysis sources, CSV/JSON/log/PNG contracts, and no-overwrite guard."
+            "Self-test passed: four categories, concurrent collision allocation, "
+            "display/full precision, legacy reads, raw plots, lossless replot, "
+            "sources, and no-overwrite protection."
         )
         _ = (dry, simulation)
 

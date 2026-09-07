@@ -6,13 +6,40 @@ if ~exist(summary_path, 'file')
     error('Result_Summary_Append:MissingSummary', ...
         'Initialize summary.csv before appending rows: %s', summary_path);
 end
-expected_count = header_column_count(summary_path);
+root = fileparts(summary_path);
+full_path = Result_Artifact_Path(root, 'observations.csv');
+source_path = summary_path;
+if isfile(full_path), source_path = full_path; end
+expected_count = header_column_count(source_path);
 rows = normalize_rows(rows);
 if size(rows, 2) ~= expected_count
     error('Result_Summary_Append:ColumnCountMismatch', ...
         'Expected %d columns but received %d.', expected_count, size(rows, 2));
 end
 
+if ~strcmp(source_path, summary_path)
+    full_fid = fopen(full_path, 'a', 'n', 'UTF-8');
+    if full_fid < 0, error('Result_Summary_Append:OpenFailed', 'Cannot append full observations.'); end
+    close_full = onCleanup(@() fclose(full_fid));
+    for row_index = 1:size(rows, 1)
+        encoded = cellfun(@csv_text, rows(row_index, :), 'UniformOutput', false);
+        fprintf(full_fid, '%s\n', strjoin(encoded, ','));
+    end
+    clear close_full;
+    info = Result_Update_Run_Info(root, struct());
+    spec = info.summary;
+    headers = cellstr(string(spec.headers));
+    selected = spec.display_indices;
+    rows = rows(:, selected);
+    for row_index = 1:size(rows, 1)
+        for column = 1:numel(selected)
+            mode = '';
+            key = matlab.lang.makeValidName(headers{selected(column)});
+            if isfield(spec.formats, key), mode = spec.formats.(key); end
+            rows{row_index, column} = Result_Display_Value(rows{row_index, column}, headers{selected(column)}, mode);
+        end
+    end
+end
 fid = fopen(summary_path, 'a', 'n', 'UTF-8');
 if fid < 0
     error('Result_Summary_Append:OpenFailed', ...
@@ -102,7 +129,7 @@ elseif isnumeric(value)
     if ~isfinite(value)
         text = '';
     else
-        text = sprintf('%.15g', value);
+        text = sprintf('%.17g', value);
     end
 elseif islogical(value)
     validateattributes(value, {'logical'}, {'scalar'});

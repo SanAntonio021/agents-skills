@@ -285,17 +285,17 @@ def backup_worktree(
     staged = command_capture(
         worktree,
         output / "staged.patch",
-        ("diff", "--cached", "--binary", "--full-index", "--no-ext-diff"),
+        ("diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-textconv"),
     ).stdout
     unstaged = command_capture(
         worktree,
         output / "unstaged.patch",
-        ("diff", "--binary", "--full-index", "--no-ext-diff"),
+        ("diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv"),
     ).stdout
     index_raw = command_capture(worktree, output / "ls-files-stage.z", ("ls-files", "--stage", "-z")).stdout
     command_capture(worktree, output / "ls-files-stage.txt", ("ls-files", "--stage"))
-    command_capture(worktree, output / "diff-summary.txt", ("diff", "--summary"))
-    command_capture(worktree, output / "diff-cached-summary.txt", ("diff", "--cached", "--summary"))
+    command_capture(worktree, output / "diff-summary.txt", ("diff", "--summary", "--no-textconv"))
+    command_capture(worktree, output / "diff-cached-summary.txt", ("diff", "--cached", "--summary", "--no-textconv"))
 
     untracked_roots = status_roots(status_v1, b"?? ")
     ignored_roots = status_roots(status_v1, b"!! ")
@@ -304,8 +304,8 @@ def backup_worktree(
 
     modified_paths = set()
     for command in [
-        ("diff", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRTUXB"),
-        ("diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRTUXB"),
+        ("diff", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRTUXB", "--no-textconv"),
+        ("diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRTUXB", "--no-textconv"),
     ]:
         modified_paths.update(parse_nul_paths(git(worktree, *command).stdout))
     tracked_roots = []
@@ -372,8 +372,8 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
     comparisons = [
         (("status", "--porcelain=v2", "--untracked-files=all", "-z"), "status-v2-no-branch.z"),
         (("ls-files", "--stage", "-z"), "ls-files-stage.z"),
-        (("diff", "--cached", "--binary", "--full-index", "--no-ext-diff"), "staged.patch"),
-        (("diff", "--binary", "--full-index", "--no-ext-diff"), "unstaged.patch"),
+        (("diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-textconv"), "staged.patch"),
+        (("diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv"), "unstaged.patch"),
     ]
     for command, filename in comparisons:
         actual = git(worktree, *command).stdout
@@ -491,8 +491,8 @@ def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> 
             "stage": decode(git(worktree, "ls-files", "--stage", "-z").stdout),
             "status": decode(status),
             "statusAll": decode(git(worktree, "status", "--porcelain=v2", "--untracked-files=all", "-z").stdout),
-            "stagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--cached", "--binary", "--full-index", "--no-ext-diff").stdout).hexdigest(),
-            "unstagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--binary", "--full-index", "--no-ext-diff").stdout).hexdigest(),
+            "stagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-textconv").stdout).hexdigest(),
+            "unstagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv").stdout).hexdigest(),
             "tracked": [current_entry(path_within(worktree, name), name) for name in tracked],
             "untracked": manifest_for_roots(worktree, untracked),
             "ignored": manifest_for_roots(worktree, ignored),

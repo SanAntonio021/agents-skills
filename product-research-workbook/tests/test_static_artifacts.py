@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -26,17 +27,55 @@ class StaticArtifactTests(unittest.TestCase):
         self.assertTrue((SKILL_ROOT / "scripts" / "scan_legacy_identifiers.py").is_file())
         self.assertTrue((SKILL_ROOT / "scripts" / "inspect_product_samples.py").is_file())
 
-    def test_evals_cover_three_real_tasks_and_balanced_trigger_boundaries(self) -> None:
+    def test_evals_are_well_formed_and_cover_routing_boundaries(self) -> None:
         evals = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
         self.assertEqual(evals["skill_name"], "product-research-workbook")
-        self.assertEqual(len(evals["evals"]), 3)
-        self.assertTrue(all(item["expectations"] for item in evals["evals"]))
+        self.assertIn("临时", evals["execution_note"])
+        cases = evals["evals"]
+        self.assertEqual(len({item["id"] for item in cases}), len(cases))
+        for item in cases:
+            with self.subTest(eval_id=item["id"]):
+                self.assertIsInstance(item["id"], int)
+                for field in ("prompt", "expected_output"):
+                    self.assertIsInstance(item[field], str)
+                    self.assertTrue(item[field].strip())
+                self.assertIsInstance(item["expectations"], list)
+                self.assertTrue(item["expectations"])
+                self.assertTrue(all(isinstance(text, str) and text.strip() for text in item["expectations"]))
+        scenarios = {item["scenario"] for item in cases if "scenario" in item}
+        self.assertTrue({
+            "one_off_comparison", "one_off_procurement", "small_maintained_catalog",
+            "readonly_catalog_audit", "format_only", "existing_catalog_update",
+            "material_ambiguity",
+        }.issubset(scenarios))
+        # Explicit historical task instructions remain special cases, not defaults.
+        original = {item["id"]: item for item in cases}
+        self.assertIn("用户已说明历史人工前缀序号没有必要保留", original[2]["prompt"])
+        self.assertIn("必须等待用户确认字段和证据标准", original[3]["prompt"])
+        self.assertIn("Excel 原生兼容性检查", original[4]["prompt"])
+
+    def test_trigger_evals_are_well_formed_with_both_decisions(self) -> None:
         trigger_evals = json.loads(
             (SKILL_ROOT / "evals" / "trigger-evals.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(len(trigger_evals), 20)
-        self.assertEqual(sum(item["should_trigger"] for item in trigger_evals), 10)
-        self.assertEqual(sum(not item["should_trigger"] for item in trigger_evals), 10)
+        self.assertTrue(trigger_evals)
+        self.assertEqual(len({item["query"] for item in trigger_evals}), len(trigger_evals))
+        for item in trigger_evals:
+            self.assertIsInstance(item["query"], str)
+            self.assertTrue(item["query"].strip())
+            self.assertIs(type(item["should_trigger"]), bool)
+        self.assertEqual({item["should_trigger"] for item in trigger_evals}, {True, False})
+
+    def test_local_markdown_references_resolve(self) -> None:
+        # Documentation changes must not leave broken skill-local links.
+        for document in [SKILL_ROOT / "SKILL.md", *(SKILL_ROOT / "references").glob("*.md")]:
+            for target in re.findall(r"\]\(([^)]+)\)", document.read_text(encoding="utf-8")):
+                if "://" in target or target.startswith("#"):
+                    continue
+                relative = target.split("#", 1)[0].strip("<>")
+                if relative:
+                    with self.subTest(document=document.name, target=target):
+                        self.assertTrue((document.parent / relative).exists())
 
 
 if __name__ == "__main__":

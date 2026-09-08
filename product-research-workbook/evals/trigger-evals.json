@@ -18,5 +18,13 @@
   {"query": "把项目排期表改成甘特图，增加负责人、开始日期和完成百分比。", "should_trigger": false},
   {"query": "读取 forecast.xlsx 的一个单元格，解释现金余额为什么下降，不要修改工作簿。", "should_trigger": false},
   {"query": "整理实验结果 CSV，计算 BER、EVM 的均值和置信区间，不需要长期产品库。", "should_trigger": false},
-  {"query": "把论文里的器件参数表转成 Markdown，最终只交 md，不要生成产品采购工作簿。", "should_trigger": false}
+  {"query": "把论文里的器件参数表转成 Markdown，最终只交 md，不要生成产品采购工作簿。", "should_trigger": false},
+  {"query": "比较三款示波器的带宽、采样率和价格，核实来源后给我一份 Excel，本次选型结束就不再维护。", "should_trigger": false},
+  {"query": "比较 60 款射频设备的参数并附来源，做一次性选型表，不建立产品库。", "should_trigger": false},
+  {"query": "帮我比较这款设备五家采购渠道的价格、交期、来源和联系方式，一张表即可，不需要长期编号或过程账本。", "should_trigger": false},
+  {"query": "产品库.xlsx 只是临时文件名，内容是三款模块的一次性比较，只统一单位、补来源，不建立持续维护的库。", "should_trigger": false},
+  {"query": "现有产品库已经有过程表、正式表和稳定编号，只把正式表的行高、列宽和颜色调整一下，不改变数据与契约。", "should_trigger": false},
+  {"query": "现在只有两款产品，但以后每月更新，建立分类产品库并维护稳定编号、来源及一对多采购记录。", "should_trigger": true},
+  {"query": "对比表.xlsx 是我们持续维护的双工作簿产品库之一，请补充一款新型号，沿用已确认字段和编号规则，不重排旧号。", "should_trigger": true},
+  {"query": "按现有工程产品库契约只读审计这份表的编号、来源和采购关联。没有要求迁移或删除历史编号。", "should_trigger": true}
 ]

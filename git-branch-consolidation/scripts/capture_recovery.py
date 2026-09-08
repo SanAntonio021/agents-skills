@@ -16,6 +16,13 @@ import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+from recovery_fs import (
+    LINK_KINDS, canonical_path, canonical_rel, current_entry, inventory_tree,
+    io_path, manifest_for_roots, package_files, path_within, plain_path, sha256_file,
+)
+from recovery_fs import create_payload_tar, walk_paths
+import time
+
 UTF8 = "utf-8"
 BACKUP_NAMESPACE = "refs/backup/branch-consolidation"
 
@@ -25,9 +32,11 @@ def log(message: str) -> None:
 
 
 def run(args, cwd=None, check=True, input_bytes=None):
+    if os.name == "nt" and str(args[0]) == "git":
+        args = [args[0], "-c", "core.longpaths=true", *args[1:]]
     process = subprocess.run(
-        [str(value) for value in args],
-        cwd=str(cwd) if cwd else None,
+        [plain_path(value) if isinstance(value, Path) else str(value) for value in args],
+        cwd=plain_path(cwd) if cwd else None,
         input=input_bytes,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -71,10 +80,6 @@ def write_json(path: Path, value) -> None:
     write_text(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
-def canonical_path(path) -> str:
-    return os.path.normcase(os.path.realpath(os.path.abspath(str(path))))
-
-
 def is_within(candidate, parent) -> bool:
     candidate = canonical_path(candidate)
     parent = canonical_path(parent)
@@ -82,33 +87,6 @@ def is_within(candidate, parent) -> bool:
         return os.path.commonpath([candidate, parent]) == parent
     except ValueError:
         return False
-
-
-def canonical_rel(value) -> str:
-    value = str(value).replace("\\", "/").rstrip("/")
-    if not value or value.startswith("/") or re.match(r"^[A-Za-z]:", value):
-        raise RuntimeError(f"Expected a repository-relative path, got {value!r}")
-    parts = value.split("/")
-    if any(part in ("", ".", "..") for part in parts):
-        raise RuntimeError(f"Unsafe repository-relative path: {value!r}")
-    return value
-
-
-def path_within(root, relative: str) -> Path:
-    relative = canonical_rel(relative)
-    root_abs = os.path.abspath(str(root))
-    candidate = os.path.abspath(os.path.join(root_abs, relative.replace("/", os.sep)))
-    if os.path.commonpath([canonical_path(root_abs), canonical_path(candidate)]) != canonical_path(root_abs):
-        raise RuntimeError(f"Unsafe relative path {relative!r} for {root}")
-    return Path(candidate)
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while block := handle.read(1024 * 1024):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def parse_ref_lines(raw: bytes) -> dict[str, str]:
@@ -177,7 +155,7 @@ def parse_nul_paths(raw: bytes) -> list[str]:
 def load_ignored_dispositions(path: str | None) -> dict[str, dict[str, list[str]]]:
     if path is None:
         return {}
-    payload = json.loads(Path(path).read_text(encoding=UTF8))
+    payload = json.loads(io_path(path).read_text(encoding=UTF8))
     if payload.get("schemaVersion") != 1 or not isinstance(payload.get("worktrees"), dict):
         raise RuntimeError("Ignored disposition must use schemaVersion 1 and a worktrees object")
     result = {}
@@ -201,66 +179,6 @@ def load_ignored_dispositions(path: str | None) -> dict[str, dict[str, list[str]
             "reproducible": sorted(reproducible, key=str.casefold),
         }
     return result
-
-
-def current_entry(path: Path, logical: str) -> dict | None:
-    if not path.exists() and not path.is_symlink():
-        return None
-    status = path.lstat()
-    if path.is_symlink():
-        kind = "symlink"
-        target = os.readlink(path)
-        encoded = target.encode(UTF8, "surrogateescape")
-        digest = hashlib.sha256(encoded).hexdigest()
-        size = len(encoded)
-    elif path.is_file():
-        kind, target, digest, size = "file", None, sha256_file(path), status.st_size
-    elif path.is_dir():
-        kind, target, digest, size = "directory", None, None, 0
-    else:
-        kind, target, digest, size = "other", None, None, status.st_size
-    return {
-        "path": logical.replace("\\", "/"),
-        "kind": kind,
-        "size": size,
-        "sha256": digest,
-        "mode": stat.S_IMODE(status.st_mode),
-        "linkTarget": target,
-    }
-
-
-def inventory_tree(root: Path, logical_prefix: str) -> list[dict]:
-    if not root.exists() and not root.is_symlink():
-        return []
-    paths = [root]
-    if root.is_dir() and not root.is_symlink():
-        paths.extend(sorted(root.rglob("*"), key=lambda value: str(value).casefold()))
-    entries = []
-    for path in paths:
-        relative = path.relative_to(root)
-        logical = Path(logical_prefix) / relative
-        entries.append(current_entry(path, str(logical).replace("\\", "/")))
-    return entries
-
-
-def manifest_for_roots(worktree: Path, roots: list[str]) -> list[dict]:
-    entries = []
-    for relative in roots:
-        source = path_within(worktree, relative)
-        if not source.exists() and not source.is_symlink():
-            raise RuntimeError(f"Payload path disappeared: {source}")
-        entries.extend(inventory_tree(source, relative))
-    return entries
-
-
-def create_payload_tar(source_root: Path, relative_paths: list[str], archive_path: Path) -> None:
-    archive_path.parent.mkdir(parents=True, exist_ok=True)
-    with tarfile.open(archive_path, "w", format=tarfile.PAX_FORMAT, dereference=False) as archive:
-        for relative in relative_paths:
-            source = path_within(source_root, relative)
-            if not source.exists() and not source.is_symlink():
-                raise RuntimeError(f"Payload path disappeared: {source}")
-            archive.add(source, arcname=relative, recursive=True)
 
 
 def command_capture(repo, destination: Path, args, check=True):
@@ -329,7 +247,7 @@ def backup_worktree(
     output_root: Path,
     ignored_dispositions: dict[str, dict[str, list[str]]],
 ) -> dict:
-    worktree = Path(worktree_record["worktree"])
+    worktree = io_path(worktree_record["worktree"])
     output = output_root / f"{index:03d}"
     output.mkdir(parents=True, exist_ok=False)
     metadata = dict(worktree_record)
@@ -413,6 +331,14 @@ def backup_worktree(
     write_json(output / "tracked-current-manifest.json", tracked_manifest)
     write_json(output / "ignored-preserved-manifest.json", preserved_manifest)
     write_json(output / "ignored-reproducible-manifest.json", reproducible_manifest)
+    write_json(output / "links.json", {
+        "schemaVersion": 1,
+        "entries": [dict(item, payload=category)
+                    for category, manifest in [("tracked-current", tracked_manifest),
+                        ("untracked", untracked_manifest), ("ignored-preserved", preserved_manifest),
+                        ("ignored-reproducible", reproducible_manifest)]
+                    for item in manifest if item["kind"] in LINK_KINDS],
+    })
     metadata.update(
         {
             "statusBytes": len(status_no_branch),
@@ -489,10 +415,8 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
 
 def package_manifest(root: Path) -> int:
     lines = []
-    for path in sorted(root.rglob("*"), key=lambda value: str(value).casefold()):
-        if path.is_file() and path.name != "package-manifest.sha256":
-            relative = path.relative_to(root).as_posix()
-            lines.append(f"{sha256_file(path)}  {path.stat().st_size}  {relative}")
+    for relative, path in sorted(package_files(root).items(), key=lambda item: item[0].casefold()):
+        lines.append(f"{sha256_file(path)}  {path.stat().st_size}  {relative}")
     write_text(root / "package-manifest.sha256", "\n".join(lines) + "\n")
     return len(lines)
 
@@ -503,12 +427,11 @@ def verify_package(root: Path) -> int:
     for line in manifest.read_text(encoding=UTF8).splitlines():
         if line:
             digest, size, relative = line.split("  ", 2)
+            relative = canonical_rel(relative)
+            if relative in expected:
+                raise RuntimeError(f"Duplicate package manifest path: {relative}")
             expected[relative] = (digest, int(size))
-    actual = {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file() and path.name != manifest.name
-    }
+    actual = package_files(root)
     if set(actual) != set(expected):
         raise RuntimeError(
             f"Package file set differs for {root}: "
@@ -535,6 +458,59 @@ def assert_output_paths(repo: Path, worktrees: list[dict], primary: Path, mirror
                 raise RuntimeError(f"Recovery output {output} overlaps repository worktree {protected}")
 
 
+def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> dict:
+    """Read every protected state, including payload bytes and clean tracked files."""
+    worktrees_raw = git(repo, "worktree", "list", "--porcelain", "-z").stdout
+    result = {
+        "liveRemote": live_remote(repo, remote),
+        "refs": local_refs(repo, "refs", excluded_prefix=refbase),
+        "worktreesRaw": decode(worktrees_raw),
+        "stash": decode(git(repo, "stash", "list", "--format=%gd%x09%H%x09%gs").stdout),
+        "reflog": decode(filtered_reflog(repo, refbase)),
+        "config": decode(git(repo, "config", "--list", "--show-origin").stdout),
+        "worktrees": [],
+    }
+    for record in parse_worktrees(worktrees_raw):
+        worktree = io_path(record["worktree"])
+        operations = active_operations(worktree)
+        if operations or git(worktree, "ls-files", "--unmerged", "-z").stdout:
+            raise RuntimeError(f"Git operation or unmerged index during full snapshot: {worktree}")
+        status = git(worktree, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
+        untracked, ignored = status_roots(status, b"?? "), status_roots(status, b"!! ")
+        disposition = dispositions.get(canonical_path(worktree), {"preserve": [], "reproducible": []})
+        validate_disposition(worktree, ignored, disposition)
+        tracked = sorted(set(parse_nul_paths(git(worktree, "ls-files", "-z").stdout)))
+        index_path = Path(git_text(worktree, "rev-parse", "--git-path", "index"))
+        if not index_path.is_absolute():
+            index_path = worktree / index_path
+        item = {
+            "record": record,
+            "head": git_text(worktree, "rev-parse", "HEAD"),
+            "branch": git_text(worktree, "symbolic-ref", "-q", "HEAD", check=False),
+            "indexSha256": sha256_file(index_path),
+            "stage": decode(git(worktree, "ls-files", "--stage", "-z").stdout),
+            "status": decode(status),
+            "statusAll": decode(git(worktree, "status", "--porcelain=v2", "--untracked-files=all", "-z").stdout),
+            "stagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--cached", "--binary", "--full-index", "--no-ext-diff").stdout).hexdigest(),
+            "unstagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--binary", "--full-index", "--no-ext-diff").stdout).hexdigest(),
+            "tracked": [current_entry(path_within(worktree, name), name) for name in tracked],
+            "untracked": manifest_for_roots(worktree, untracked),
+            "ignored": manifest_for_roots(worktree, ignored),
+            "disposition": disposition,
+        }
+        result["worktrees"].append(item)
+    return result
+
+
+def stable_snapshot(reader, sleeper=time.sleep) -> dict:
+    first = reader()
+    sleeper(2.0)
+    second = reader()
+    if first != second:
+        raise RuntimeError("Full frozen snapshots differ across the 2-second interval")
+    return second
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
@@ -545,9 +521,9 @@ def main() -> None:
     parser.add_argument("--ignored-disposition")
     arguments = parser.parse_args()
 
-    repo = Path(arguments.repo).resolve()
-    primary = Path(arguments.primary).resolve()
-    mirror = Path(arguments.mirror).resolve()
+    repo = io_path(Path(arguments.repo).resolve())
+    primary = io_path(Path(arguments.primary).resolve())
+    mirror = io_path(Path(arguments.mirror).resolve())
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}", arguments.stamp):
         raise RuntimeError("Stamp must be a safe 1-81 character Git ref segment")
     refbase = f"{BACKUP_NAMESPACE}/{arguments.stamp}"
@@ -575,15 +551,15 @@ def main() -> None:
     common_dir = Path(common_dir_raw)
     if not common_dir.is_absolute():
         common_dir = repo / common_dir
-    common_dir = common_dir.resolve()
+    common_dir = io_path(common_dir.resolve())
     for output in (primary, mirror):
         if is_within(output, common_dir) or is_within(common_dir, output):
             raise RuntimeError(f"Recovery output {output} overlaps Git common directory {common_dir}")
-    pollution = sorted(str(path) for path in common_dir.rglob("*.baiduyun.uploading.cfg"))
+    pollution = sorted(str(path) for path in (path for path in walk_paths(common_dir) if path.name.endswith(".baiduyun.uploading.cfg")))
     if pollution:
         raise RuntimeError(f"Cloud-sync Git metadata pollution is present: {pollution}")
     for record in worktrees:
-        worktree = Path(record["worktree"])
+        worktree = io_path(record["worktree"])
         if not worktree.exists():
             raise RuntimeError(f"Registered worktree is missing: {worktree}")
         operations = active_operations(worktree)
@@ -608,6 +584,10 @@ def main() -> None:
     log(f"fetching {arguments.remote} and reading live refs")
     fetch = git(repo, "fetch", "--prune", arguments.remote)
     live_before = live_remote(repo, arguments.remote)
+    log("reading two complete frozen snapshots, separated by at least 2 seconds")
+    frozen = stable_snapshot(lambda: full_snapshot(repo, arguments.remote, refbase, dispositions))
+    if frozen["liveRemote"] != live_before or frozen["worktreesRaw"] != decode(worktrees_raw):
+        raise RuntimeError("Remote or worktrees changed before the stable snapshot")
 
     primary.mkdir(parents=True)
     snapshot_dir = primary / "snapshot"
@@ -616,6 +596,8 @@ def main() -> None:
     write_bytes(snapshot_dir / "fetch.stderr", fetch.stderr)
     write_json(snapshot_dir / "live-remote-before-pin.json", live_before)
     write_json(snapshot_dir / "ignored-dispositions.json", dispositions)
+    write_json(snapshot_dir / "full-frozen-state.json", frozen)
+    write_json(snapshot_dir / "stability-check.json", {"snapshotsMatch": True, "minimumIntervalSeconds": 2})
 
     all_refs_before = local_refs(repo, "refs", excluded_prefix=refbase)
     local_heads = local_refs(repo, "refs/heads")
@@ -626,6 +608,8 @@ def main() -> None:
     root_symbolic_process = git(repo, "symbolic-ref", "-q", "HEAD", check=False)
     root_symbolic = decode(root_symbolic_process.stdout).strip() if root_symbolic_process.returncode == 0 else None
     root_head = git_text(repo, "rev-parse", "HEAD")
+    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+        raise RuntimeError("Full frozen state drifted before pinning protected refs")
 
     log("pinning every protected object under temporary backup refs")
     backup_map = {}
@@ -761,10 +745,12 @@ def main() -> None:
         raise RuntimeError("Reflog changed before package sealing")
     if git(repo, "config", "--list", "--show-origin").stdout != config_snapshot:
         raise RuntimeError("Git configuration changed before package sealing")
-    if list(common_dir.rglob("*.baiduyun.uploading.cfg")):
+    if list((path for path in walk_paths(common_dir) if path.name.endswith(".baiduyun.uploading.cfg"))):
         raise RuntimeError("Cloud-sync Git metadata pollution appeared before package sealing")
     for index, record in enumerate(worktrees):
-        verify_worktree_unchanged(Path(record["worktree"]), worktree_root / f"{index:03d}")
+        verify_worktree_unchanged(io_path(record["worktree"]), worktree_root / f"{index:03d}")
+    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+        raise RuntimeError("Full frozen state changed before package sealing")
 
     default_ref = live_before["symbolicHead"]
     summary = {
@@ -803,6 +789,8 @@ def main() -> None:
     mirror_verify = git(repo, "bundle", "verify", mirror_bundle, check=False)
     if mirror_verify.returncode != 0 or sha256_file(mirror_bundle) != summary["bundleSha256"]:
         raise RuntimeError("Mirror bundle verification failed")
+    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+        raise RuntimeError("Full frozen state changed while copying/verifying the mirror")
 
     log("dual recovery packages are sealed and verified")
     print(json.dumps(summary, ensure_ascii=False), flush=True)

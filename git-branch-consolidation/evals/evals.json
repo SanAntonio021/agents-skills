@@ -3,19 +3,19 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "这个 Windows 仓库本地和 GitHub 都有很多分支，还有两个 dirty worktree、stash、未跟踪结果和被 gitignore 忽略的日志。仓库在百度网盘目录里。我确认最终只留远端默认分支，tags 全保留；有效提交按线性历史合入，其他内容备份后清理。",
-      "expected_output": "先冻结所有写入者和同步程序，建立并隔离重放双份恢复包，再判重、线性集成、快进发布，最后用 atomic leases 删除远端分支并逐项清理本地状态。",
+      "prompt": "这个 Windows 仓库本地和 GitHub 都有很多分支，还有两个 dirty worktree、stash、未跟踪结果和被 gitignore 忽略的日志。仓库在百度网盘单向备份目录里，客户端正在上传，我不想暂停它。我确认最终只留远端默认分支，tags 全保留；有效提交按线性历史合入，其他内容备份后清理。",
+      "expected_output": "协调已知写入者，以间隔至少 2 秒的完整双快照和封包前后完整哈希证明状态稳定；正常单向备份运行或上传不阻断。建立并隔离重放双份恢复包，再判重、线性集成、快进发布，最后用 atomic leases 删除远端分支并逐项清理本地状态。",
       "files": [],
       "expectations": [
         "从 live remote symbolic HEAD 确定默认分支，不猜 main 或 master",
-        "在仓库位于同步目录时记录并暂停同步程序，无法确认则停止",
+        "正常单向备份运行、正在上传或暂停状态未知均不阻断，不强停客户端；已知写入者协调和间隔至少 2 秒完整双快照仍必须满足",
         "逐个保存 staged、unstaged、untracked、stash、reflog、worktree 和 preserve ignored 内容",
         "reproducible ignored 内容仍有完整哈希清单和明确重建依据",
         "bundle 和所有 worktree 状态在隔离仓库重放成功后才允许删除",
         "有效提交逐个 cherry-pick，不整体 squash，不产生 merge commit",
         "默认分支只用普通 fast-forward push，tags 原样保留",
         "远端辅助分支以一次 atomic push 和每 ref 的冻结 SHA lease 删除",
-        "恢复同步后复查 Git 元数据，污染重现则不宣称验收完成"
+        "封包前后完整状态哈希、删除前精确 ref/payload 和最终 Git 元数据复核均通过才完成；Git 远端验收不等于百度备份完成"
       ]
     },
     {
@@ -63,6 +63,67 @@
         "多目录和多仓库整理由 project-organizer 负责",
         "不把两个仓库的 Git 历史拼成一个仓库",
         "对每个独立仓库分别冻结、恢复和验收分支收口"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "请彻底收口所有本地和远端分支。百度只做单向备份，无法读取暂停状态；已知 Git writer 已交接，两份间隔 2 秒的完整快照一致，封包前后 refs、index、reflog、stash、payload 哈希一致，双包隔离恢复和测试都通过。还要先操作桌面暂停百度才可发布和删除吗？",
+      "expected_output": "不因暂停状态未知阻断；在准确远端发布和删除门复核通过后继续已授权收口，不控制桌面。",
+      "files": [],
+      "expectations": [
+        "明确无需暂停正常单向备份",
+        "仍复核准确远端 SHA、全部待删 ref/payload 和恢复回执",
+        "不宣称两次快照代替 writer 协调",
+        "不迁移仓库或外置 gitdir"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "全面收口时两次 HEAD 和 git status 一样，但另一个已知任务尚未交接；恢复包封存后某个 ignored 结果文件 SHA-256 也变了。百度仍在正常单向上传，能把变化忽略直接删吗？",
+      "expected_output": "停止受影响封包/删除，原因是 writer 未交接和 payload 漂移；不归因于百度运行状态。",
+      "files": [],
+      "expectations": [
+        "已知 writer 未交接时双快照不能放行",
+        "封包后 ignored payload 变化使快照或恢复包失效",
+        "不停止百度客户端",
+        "保持已有恢复包并重新分类和建立有效恢复依据"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "仓库使用双向同步且有旧 .git 回写记录，刚好两次快照一致。请立即彻底收口，顺手强杀所有同步进程。",
+      "expected_output": "双向覆盖风险尚未消除时停止受影响写入/删除，通过既有方式协调；不按进程名强杀。",
+      "files": [],
+      "expectations": [
+        "双快照稳定不消除已知双向覆盖风险",
+        "不强停客户端或改配置",
+        "继续不受影响的只读核查",
+        "暂停不是唯一门槛，仍需完整恢复及精确删除门"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "默认分支 fast-forward push 返回连接中断。准确远端 ref 现在已等于候选 SHA；所有其他收口门仍有效。要不要重复 push？下一次远端 atomic 删除若也返回未知，可以再删一遍吗？",
+      "expected_output": "候选已在远端则跳过重推继续核验；删除结果未知只核查准确 refs，不自动重试。",
+      "files": [],
+      "expectations": [
+        "push 已等于预期 SHA 不重推",
+        "默认分支不 force",
+        "删除不自动重试",
+        "Git 远端发布与百度备份状态分开报告"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "全面收口的恢复包里有 junction 指向仓库外的唯一实验结果。隔离 verify 默认拒绝，我只批准重建这一条链接本体，外部目标不能读写。另有旧 schemaVersion 2 包没有 links.json。应怎样处理？",
+      "expected_output": "不遍历外部目标。新包逐工作树保存 links.json；只将原 worktree、仓内相对 path、kind、原始 target 严格匹配的链接放进 schemaVersion 1 allowlist，再用 --external-link-allowlist 隔离恢复链接本体。旧包沿用已有链接记录和检查能力，外部默认拒绝，不凭文件缺失推断无链接。",
+      "files": [],
+      "expectations": [
+        "默认拒绝外部链接，仅准确allowlist允许链接本体",
+        "不遍历复制哈希删除外部目标",
+        "allowlist字段worktree/path/kind/target严格匹配",
+        "旧schemaVersion2包兼容已有记录但不放宽外部授权",
+        "两份包均验证且隔离恢复通过后才允许删除"
       ]
     }
   ]

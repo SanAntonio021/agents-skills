@@ -30,5 +30,17 @@
   {
     "query": "删除已经合并的一个远端 feature 分支，不处理本地其他分支。",
     "should_trigger": false
+  },
+  {
+    "query": "仓库在百度单向备份目录，客户端正在上传。只提交并推送这三个批准文件，不做分支清理。",
+    "should_trigger": false
+  },
+  {
+    "query": "git fetch 报 FETCH_HEAD Permission denied，百度备份还在上传，只要恢复这次抓取，不清理分支。",
+    "should_trigger": false
+  },
+  {
+    "query": "百度单向备份不用暂停，请把全部分支、stash 和旧 worktree 可恢复地收口到远端默认分支。",
+    "should_trigger": true
   }
 ]

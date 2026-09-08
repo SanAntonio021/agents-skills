@@ -13,6 +13,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from recovery_fs import package_files, canonical_rel
+
 UTF8 = "utf-8"
 BACKUP_NAMESPACE = "refs/backup/branch-consolidation"
 BUNDLE_NAME = "repository-recovery.bundle"
@@ -125,12 +127,11 @@ def verify_package(root: Path) -> tuple[bool, str]:
         for line in manifest.read_text(encoding=UTF8).splitlines():
             if line:
                 digest, size, relative = line.split("  ", 2)
+                relative = canonical_rel(relative)
+                if relative in expected:
+                    raise RuntimeError(f"Duplicate package manifest path: {relative}")
                 expected[relative] = (digest, int(size))
-        actual = {
-            path.relative_to(root).as_posix(): path
-            for path in root.rglob("*")
-            if path.is_file() and path.name != manifest.name
-        }
+        actual = package_files(root)
         if set(actual) != set(expected):
             return False, "package file set differs from manifest"
         for relative, (digest, size) in expected.items():

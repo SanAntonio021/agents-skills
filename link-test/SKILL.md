@@ -1,30 +1,27 @@
 ---
 name: link-test
-description: 面向高速链路台架的 AWG、示波器、DUT 和 LeCroy 前处理控制工作流，覆盖 `SMOKE/FULL`、`AWG OFF/ON` 配对、单次与重复测试、超时分级、收尾保护、中文测试报告、链路台账，以及 `Interpolation`、`Averaging`、`Enhance Resolution`、`Optimize` 等示波器 Pre-processing 项。Use when 用户要运行、续跑、排查或汇总台架测试，例如“先跑 smoke”“测一轮功率加解调”“做 AWG OFF/ON 配对”“确认示波器 linear/sinx/x”“检查 averaging/enhance resolution”“生成测试报告”或“补台账”。
+description: 操作和排查高速链路台架的 AWG、示波器与 DUT，负责 SMOKE/FULL、AWG OFF/ON 配对、单次与重复测试、LeCroy 前处理控制、读回验证、超时处理和安全收尾。用户要实际运行、续跑或诊断台架测试时使用。补链路器件台账时仅核对资料，不进入测试流程。仅整理已有实验记录或编写报告时不触发；边测边记时结合 lab-notebook。
 ---
 
 # 高速链路台架测试
 
 ## 作用
 
-这份 skill 把高速链路台架测试、LeCroy 前处理控制、结果汇总和台账补录收成一个稳定流程，减少每轮都从头决定“怎么测、怎么记、怎么报告”。
+负责仪器怎么操作、测试怎么执行、结果怎么判断，以及异常怎么收尾。人工实验记录由 `lab-notebook` 负责。
 
 默认目标是先拿到可解释的功率、底噪和解调结果，再决定要不要进入更长的扫描。
 
+仅补链路器件台账时，直接按 [台架结果与台账核对](references/report-and-ledger-checklist.md) 核对已有资料；不执行下方测试流程、不连接仪器，也不改变 AWG 输出。
+
 ## 流程
 
-1. 先确认本轮测试类型：
+1. 根据本轮目标和已有决定选择测试类型，要求已明确时直接继续：
    - 单点 `SMOKE`
    - 多点扫描
    - `AWG OFF/ON` 配对功率
    - 功率加解调联合验证
    - 仅调整或确认 LeCroy `Pre-processing`
-2. 测前固定基线：
-   - `OFFSET = 0 mV`
-   - `Interpolation = Linear`
-   - `AverageSweeps = 1`
-   - `EnhanceResType = None`
-   - `OptimizeGroupDelay = Flatness`
+2. 测前沿用本轮已确认的条件和项目配置，并读回实际状态。两者都未指定时，先读回并记录现状；设置会实质影响本轮测量含义、且不能从已有要求判断如何处理时，再询问是否调整。设置与已确认条件不一致时，在已有授权范围内纠正并验证，不重复确认。
 3. 如果用户要改示波器前处理项，先判断目标属于哪一类：
    - `Interpolation`
    - `Averaging`
@@ -34,14 +31,8 @@ description: 面向高速链路台架的 AWG、示波器、DUT 和 LeCroy 前处
 5. 如果某个前处理项无法稳定读回，只能降级成 best-effort，并说明它不应作为最终性能基线。
 6. 目标是看原始质量对比时，优先做 `AWG OFF/ON` 配对，而不是只看 `MER`。
 7. 目标只是快速确认链路通不通时，优先单次 `SMOKE`，不默认多轮重试。
-8. 记录结果时，优先抽取：
-   - `noise_table.csv`
-   - `signal_sweep.csv`
-   - `validation_summary.csv`
-   - 对应图片路径
-9. 需要汇总时，生成中文 Markdown 报告，至少包含测试条件、链路描述、关键功率结果、解调结果和对比结论。
-10. 需要补台账时，先查现有台账；有精确条目就引用精确条目，没有精确条目时才写“最近似”，仍不确定就标成待人工确认。
-11. 结束时默认关闭 `AWG`，除非用户明确要求保持输出开启。
+8. 保存实际采集、必要配置和读回状态，检查本轮相关的功率、底噪与解调指标，保留失败结果。指标选取见 [台架结果与台账核对](references/report-and-ledger-checklist.md)。
+9. 结束时默认关闭 `AWG`，除非用户明确要求保持输出开启；按项目已有保护完成异常收尾。
 
 ## 判断规则
 
@@ -56,36 +47,31 @@ description: 面向高速链路台架的 AWG、示波器、DUT 和 LeCroy 前处
 - `EnhanceResType` 会用带宽换噪声，不应作为默认性能基线。
 - `OptimizeGroupDelay` 才是 `PulseResponse / Flatness` 对应的可用控制量。
 
-## 报告与台账
+## 输出与协作
 
-- 默认产物是中文 `.md`，不是只留一堆 CSV。
-- 报告里要区分“原始功率”和“解调指标”。
-- 没有同量程 noise 参考时，不硬写严格 `On/Off Ratio`。
-- 报告文件名优先中文，链路描述尽量写全。
-- 不伪造缺失数据。
-- 不把未经核对的器件型号直接补进台账。
-- 不把单次实验结论写成永久规范。
-- 字段清单见 [references/report-and-ledger-checklist.md](references/report-and-ledger-checklist.md)。
+- 数据目录、逐次指标表和图片沿用项目已采用的 [standardize-test-project](../standardize-test-project/SKILL.md) 规范；不再指定另一套 CSV 文件名，也不迁移历史结果。需要修改保存程序时才加载其实现说明。
+- 用户要求边测边记，或当前任务已约定维护记录时，使用 [lab-notebook](../lab-notebook/SKILL.md) 续写同一份人工主记录，不另生成一份测试日志或默认报告。只整理旧记录时使用 `lab-notebook`，不进入仪器操作流程。
+- 测试完成后直接说明关键结果与产物位置。正式报告仅按用户请求生成，复用已有数据与记录；报告不是每轮测试结束的前提。
+- 仪器、线缆、模块和 DUT 台账只在用户要求补录时核对更新；具体字段和识别规则见 [台架结果与台账核对](references/report-and-ledger-checklist.md)。
 
 ## 边界
 
 - 不负责决定 DUT 最终工作点，只负责把测试过程跑干净。
 - 不把某次实验里的最佳 `AWG` 幅度或最佳 `V/div` 固化成永久规则。
-- 不把前面板残留状态当默认可信；每次测试前都显式写关键信息。
-- 不把 `Averaging` 纳入默认高速链路性能基线。
-- 不把 `EnhanceResType != None` 纳入默认高速链路性能基线。
+- 读回并记录实际状态，不把前面板残留设置当成本轮已确认条件，也不为套用默认值覆盖实验设置。
+- 使用 `Averaging` 或 `EnhanceResType != None` 时说明对噪声、带宽和可比性的影响，不把处理后的结果当作未处理的原始性能；用户已明确要求的对比实验可以保留这些设置。
 - 对无法稳定读回的旧路径，不再假定它已经生效。
-- 不把测试后报告或台账补录拆成独立 skill；它们是本流程的收尾阶段。
+- 不伪造缺失数据，不把单次最佳设置或结论固化成永久规范。
 
 ## 参考文件
 
 - 执行护栏与常用判断：[references/bench-checklist.md](references/bench-checklist.md)
-- 报告与台账字段清单：[references/report-and-ledger-checklist.md](references/report-and-ledger-checklist.md)
+- 台架结果与台账核对：[references/report-and-ledger-checklist.md](references/report-and-ledger-checklist.md)
 - LeCroy 前处理变量映射：[references/preprocessing-mapping.md](references/preprocessing-mapping.md)
 
 ## 维护
 
 - 如果台架默认配置变化，优先更新 `references/bench-checklist.md`，不要不断往正文堆例外。
-- 新增结果表字段时，优先更新 `references/report-and-ledger-checklist.md`。
+- 台架指标含义变化时，更新 `references/report-and-ledger-checklist.md`；通用输出与记录要求维护在承接技能中。
 - 新增或证伪 LeCroy 前处理变量时，优先更新 `references/preprocessing-mapping.md`，并写清最后验证日期和失效现象。
 - 新增测试模式时，先补“什么情况下用它”的判断，不先写长背景。

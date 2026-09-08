@@ -1,13 +1,11 @@
 # 台架测试执行清单
 
-## 测前固定项
+## 测前核对
 
-- `AWG OFFSET = 0 mV`
-- `Scope Interpolation = Linear`
-- `AverageSweeps = 1`
-- `EnhanceResType = None`
-- `OptimizeGroupDelay = Flatness`
-- 记录当前链路文字描述
+- 沿用本轮已确认的条件和项目配置，读回 AWG OFFSET、示波器插值、平均次数、增强分辨率与 OptimizeGroupDelay。
+- 未指定设置时先记录现状；只有影响本轮测量含义且无法从已有要求确定做法时才询问。不自动重置成固定基线。
+- 对应参数路径与可选参考设置见 [LeCroy 前处理映射](preprocessing-mapping.md)。
+- 核对当前链路、仪器和通道，必要信息随本轮数据保存。
 
 ## 测试类型选择
 
@@ -16,7 +14,9 @@
 - 看可解调性：功率 + full demod
 - 看长期稳定性：固定工作点重复多轮
 
-## 必记结果
+## 按测试目标选取的指标
+
+只选本轮实际测量或计算的指标，区分功率、解调结果与采集状态；不为补齐清单虚构数值。
 
 - `InBandNoisePower`
 - `InBandOnPower`

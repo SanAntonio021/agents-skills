@@ -2,14 +2,15 @@
 
 ## Purpose and trust boundary
 
-Use the official `ppt-master` author workflow through the audited CC Switch distribution at
+When the shared workflow selects PPT Master, use its upstream author workflow through the audited CC Switch distribution at
 `SanAntonio021/ppt-master:main`. The Fork changes only the distribution layer: loose icon assets
 are stored in deterministic local shards, and runtime access remains offline. The local `pptx` skill
 owns routing, the external pin, deterministic file operations, and final acceptance.
 
-These are cooperating skills, not two authoring implementations. Do not copy the upstream workflow
-into `pptx`, edit an installed runtime directory, or execute a source-review mirror as a skill. The
-bundled/system presentation skills are outside this route and are never a silent fallback.
+This reference governs the PPT Master route only. Do not copy the upstream workflow into `pptx`,
+edit an installed runtime directory, or execute a source-review mirror as a skill. Official
+Presentations is a separate supported route selected by the shared workflow, not a silent fallback
+from a failed PPT Master run.
 
 ## External pin before handoff
 
@@ -39,16 +40,10 @@ returns `status=PASS`. Keep the full JSON report as task evidence.
 
 ## Routing decision
 
-Apply the first matching rule:
-
-1. If the user explicitly names or invokes `ppt-master`, verify the pin and route to the active skill.
-2. Route new-deck authoring, substantial redesign or beautification, image-to-PPTX reconstruction,
-   Brand/Style/Layout/Deck workspace creation, native template filling or enhancement, and
-   presentation narration, animation, or self-running video work to `ppt-master`.
-3. Keep content reading and extraction, element inspection, structural validation, combining or
-   splitting files, and small deterministic edits in local `pptx`.
-4. For a mixed task, let `ppt-master` complete the authoring route first, then use local `pptx` only
-   for acceptance and formal release packaging. Never run two competing generation pipelines.
+Use the ordered rules in [presentation-workflow.md](presentation-workflow.md); do not maintain a
+second routing table here. Ordinary new decks, template reuse and beautification are not by
+themselves reasons to force PPT Master. Once selected, PPT Master owns authoring and local `pptx`
+owns acceptance and release packaging.
 
 ## Handoff to the author workflow
 
@@ -83,21 +78,23 @@ acceptance policy:
 - inspect every centered-but-top-anchored text item reported by the audit in the rendered pages;
 - record `STATIC_PASS` independently;
 - use `libreoffice-runner` for `LO_RENDER_PASS` and inspect the full-slide render;
-- obtain task-specific Office authorization before running the native gate;
+- use the native gate only within the current task's Office authorization and isolation checks;
 - keep `NATIVE_OPEN_PASS` and `NATIVE_RENDER_PASS` separate;
 - for beautification or other high-design work, render the candidate beside the supplied source or
   mature template when that artifact is the quality target. A technically valid package does not
   establish equal-or-better design quality;
-- use the formal release bundle workflow with `--require-design-acceptance` when the user calls a
-  high-design output final or formal. Internal full-page `visual_qa` and explicit user
-  `design_acceptance` are separate gates.
+- follow the main skill's formal release workflow; add `--require-design-acceptance` only when the
+  user explicitly requests personal visual sign-off. Agent full-page `visual_qa` and user
+  `design_acceptance` are separate records, not substitutes for one another.
 
-The returned file remains a candidate until the user reviews the rendered pages and explicitly
-accepts that exact version. Record the verdict with `release_bundle.py record-design-acceptance`;
+When personal sign-off is requested, the returned file remains a candidate until the user reviews
+the rendered pages and accepts that exact version. Record the verdict with `release_bundle.py record-design-acceptance`;
 the receipt binds the statement to raw SHA-256 identities of the PPTX and all reviewed PNG pages.
 `PENDING`, `REJECTED`, or `STALE` design acceptance blocks `COMPLETE`. Any change to the PPTX or a
 reviewed render invalidates the prior approval. If the user rejects the candidate or asks for a
 change, revise the owning source, regenerate, and present the new candidate for a new verdict.
+Otherwise complete the agent's rendered-page inspection and report the actual acceptance layers;
+do not add an unsolicited user-signature gate merely because the output is called final.
 
 Do not patch the installed runtime, official author workflow, or distribution-only Fork adapter to
 make a local gate appear green. Repair the owning project source, regenerate the candidate, and rerun
@@ -107,11 +104,10 @@ the affected acceptance layers.
 
 Stop and report the exact blocker when the trusted distribution is absent, disabled for the current
 client, cannot resolve its root, fails the external pin, or fails its own integrity guard. Preserve
-all inputs. An explicit `ppt-master` request always fails closed. For an implicit route, ask whether
-the user accepts the narrower local `pptx` pipeline; never switch silently.
-
-Do not substitute a bundled/system presentation skill, an ad hoc generator, or
-`D:/BaiduSyncdisk/.agents/upstream/hugohe3-ppt-master`. The mirror is source-review evidence only.
+all inputs. An explicit `ppt-master` request always fails closed. Explain the affected requirement
+and any feasible alternative under the shared workflow's failure rules. A different authoring
+engine requires the user's agreement unless that exact fallback was already authorized; never
+switch silently. An upstream review mirror is source-review evidence only, never a runtime source.
 
 ## Ownership and updates
 

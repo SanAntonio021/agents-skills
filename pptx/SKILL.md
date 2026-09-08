@@ -5,39 +5,32 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 # PPTX creation, editing, and analysis
 
-## Route design work through PPT Master
+## Choose one authoring route
 
-Keep this skill as the local PowerPoint entry and acceptance owner. Before choosing a local
-implementation, read [references/ppt-master-integration.md](references/ppt-master-integration.md)
-when the request creates a new presentation, substantially redesigns one, reconstructs slides from
-images, fills or enhances a template, adds narration or animation, or explicitly names
-`ppt-master`.
+Keep this skill as the local PowerPoint entry, routing and acceptance owner. For creation,
+redesign, template reuse, reconstruction or multi-agent slide work, first read
+[references/presentation-workflow.md](references/presentation-workflow.md). Its ordered routing
+rules honor explicit tools and existing authoring projects, retain the simple `lab-report-slides`
+route, use PPT Master for its specialist workflows, and otherwise prefer available official
+Presentations for new authoring. This is an operating default, not a design-quality ranking.
 
-- Route those authoring and high-design tasks to the active, pin-verified `ppt-master` skill. The
-  runtime skill must come from the trusted Fork's default `main` branch while retaining the official
-  author workflow. Once routed, let that skill own its integrity guard, route selection, workflow,
-  and blocking confirmations. Do not duplicate or partially reimplement its generation procedure
-  here.
-- Keep reading, extraction, inspection, validation, combining/splitting, and small deterministic edits
-  in this local `pptx` skill.
-- After `ppt-master` produces a candidate, return here for package editability audit, rendered
-  comparison, independent gates, and exact-candidate user visual acceptance. Upstream workflow
-  completion is not local release evidence.
-- If an explicitly requested `ppt-master` is unavailable or its integrity guard fails, report the
-  blocker and stop. Do not silently replace it with a system skill, an ad hoc generator, or the
-  zero-exposure upstream mirror.
+Keep reading, extraction, inspection, validation, combining/splitting and small deterministic edits
+here. Announce the chosen authoring route once, then let it own generation; do not run competing
+generators or silently switch after a failure. Asset preparation and local merge/QA are supporting
+stages, not a second authoring route.
 
-Before reading or executing the active `ppt-master`, resolve the actual installed skill root and run:
+Only when choosing `ppt-master`, read
+[references/ppt-master-integration.md](references/ppt-master-integration.md) and run its external
+pin verification against the actual installed root before reading or executing the upstream skill.
+Require `status=PASS`; `--pin-only` does not prove an installation. Preserve the version, integrity
+guard and failure protections in that reference. Follow the selected skill's own workflow without
+copying it here. After any authoring route returns a candidate, apply this skill's editability,
+rendering and formal-release checks; generation success alone is not acceptance.
 
-```powershell
-python <pptx-skill-root>\scripts\verify_ppt_master_pin.py `
-  --skill-root <active-ppt-master-root> --json-out <task-evidence>\ppt-master-pin.json
-```
-
-Require `status=PASS`. `--pin-only` validates the state machine but never proves an installation.
-Pin failure, an unknown install root, a residual file, or any raw size/SHA-256 difference is a hard
-stop before the upstream attribution guard. Keep the pin state (`bootstrap`, `transition`, or
-`stable`), accepted Fork commit, tag, and manifest digest with the task evidence.
+The supplied template and approved sample govern this deck's design. Generic design suggestions
+later in this file apply only where those sources leave a choice open; they do not override existing
+fonts, colors, separators, image repetition or required engineering/UI layouts. Preserve visual
+quality through layered assets instead of simplifying a complex scene merely to use native shapes.
 
 ## Manual text paste into PowerPoint
 
@@ -137,8 +130,8 @@ is an interface and does not replace the visual QA or source-hash checks below.
 
 | Task | Approach |
 |---|---|
-| **Create** a new deck retained on the local route | Write a `pptxgenjs` script — see gotchas below |
-| **Edit** an existing deck, or build from a template | unzip → edit `ppt/slides/slideN.xml` → zip |
+| **Create** using an explicitly selected local implementation or continue its existing project | Use the owning source; for `pptxgenjs`, see gotchas below. This is not an automatic fallback |
+| **Edit** deterministic elements of an existing deck or template | unzip → edit `ppt/slides/slideN.xml` → zip; substantial authoring follows the routing rules above |
 | **Read** content | `markitdown deck.pptx` (one block per slide under `<!-- Slide number: N -->` markers); visual grid: `python scripts/thumbnail.py deck.pptx` |
 
 ## Scripts

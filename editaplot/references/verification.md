@@ -2,6 +2,11 @@
 
 Do not report success from a rendered preview or PNG alone.
 
+Keep the delivery message short: what was drawn or reviewed, usable artifact links, and unresolved
+issues affecting use. Store the complete checks below in the existing process records; list their
+paths only when useful or requested. A shorter message does not reduce these checks or permit a
+claim that unperformed native or visual validation passed.
+
 ## Live connection smoke
 
 Doctor discovery is never connection evidence. Before the first render in an environment, or after

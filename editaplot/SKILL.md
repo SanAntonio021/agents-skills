@@ -62,10 +62,12 @@ rendering, exporting, and readback.
    local source/output folder before rendering; never guess an unrelated workspace destination.
 7. After selecting a candidate template, run `editaplot.cmd understand <data-file>
    --template-id <id>` with the same confirmed mapping that will be used for planning. Group its
-   result into a short checklist: data type; columns to draw; columns used only for support or
+   result into an internal checklist: data type; columns to draw; columns used only for support or
    validation; columns retained but not drawn; proposed figure elements; and calculations that
    will **not** be performed. Every source column must appear exactly once. If any item is
-   `uncertain`, ask for a corrected mapping and run `understand` again; do not confirm or plan it.
+   `uncertain`, first check the supplied material; ask only about meaning still unresolved, then run
+   `understand` again. Do not confirm or plan unresolved items. Tell the user only what will be drawn
+   and any material question, unless they request the full column breakdown.
 8. Tell a beginner only: what was recognized, the best one to three chart choices, why they fit,
    and the smallest scientific decision still required. Do not dump an
    `inspect → recommend → understand → plan` pipeline or raw JSON unless they ask for technical
@@ -73,8 +75,13 @@ rendering, exporting, and readback.
 9. Reuse the scientific purpose and element choices already explicit in the request. Ask only for unresolved scientific choices.
    Freeze the exact `proposal_hash`, approved derived-item IDs, and resolved ambiguity choices in
    `--semantic-confirmation-json`. Never reuse a confirmation after the source, mapping, purpose, or
-   proposal hash changes. When confidence is low, candidate margins are small, roles or units are
-   ambiguous, or a display transformation is proposed, ask only the additional focused questions
+   proposal hash changes: regenerate the proposal and confirmation payload after revalidation.
+   A changed hash alone does not require another user answer. Reuse the existing decision when
+   the current request covers the updated data and its purpose, column roles, units, and authorized
+   transformations still match; ask only about an unresolved change in meaning. Internal
+   `awaiting_*_confirmation` states request a valid payload, not a mandatory extra conversation turn.
+   When confidence is low, candidate margins are small, roles or units are
+   ambiguous, or a new, unauthorized meaning-changing display transformation is proposed, ask only the additional focused questions
    needed.
 10. If the user supplies a reference figure, first run `reference-inspect`. Codex may then describe
    only its panel/mark/encoding/layout/style grammar in the strict ReferenceFigureSpec JSON and run
@@ -166,7 +173,8 @@ figures remain in PPT/SVG workflows.
    using `readonly=True`, enumerates every Graph Page, and exports PNG/PDF/TIF below that review
    directory. It must never attach to or save the user's Origin project; the session may initialize
    its own empty EditaPlot-owned instance, and it closes only that instance.
-5. Return `review-report.json` and the export paths. The report records snapshot and baseline
+5. Briefly report the reviewed figures, usable export paths, and any unresolved issue affecting use;
+   keep `review-report.json` as a detailed record and link it only when useful or requested. It records snapshot and baseline
    integrity, Origin version and instance ownership, Graph Page/object inventory, and export hashes.
    Export success means only “the snapshot can be read back and viewed”; inspect PNG/TIF for
    scientific meaning and visual quality and keep `human_visual_qa.status=pending` until the agent actually inspects the images.
@@ -244,11 +252,12 @@ figures remain in PPT/SVG workflows.
 
 ## Report the result in plain language
 
-Return the recognized data shape and roles, selected chart and alternatives, confidence and confirmed
-transformations, source-adjacent output folder, copied plan, OPJU/PNG/PDF/TIF paths,
-validation/readback paths, and any remaining human check. For a beginner, translate internal
-identifiers into natural language, summarize environment state in one to three sentences, and put
-technical paths after the concise outcome.
+Default to a short Chinese result: what was drawn, links to the editable figure and useful exports,
+and any unresolved issue that affects use. If required validation is incomplete, say which part
+remains unverified. Do not list every alternative, confidence score, internal hash, plan or check file
+unless it helps the user decide or they request details. Keep data roles, authorized transformations,
+the render plan, provenance and full validation records in the existing workflow's process files.
+Concise delivery does not remove any required artifact, object readback or agent visual QA.
 
 ## Load detailed references only as needed
 

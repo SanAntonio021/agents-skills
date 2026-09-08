@@ -20,19 +20,27 @@ support-only or retained.
 
 1. Prepare the selected template with the proposed or corrected column mapping.
 2. Run `understand` using that exact mapping.
-3. Summarize in natural language:
+3. Record internally:
    - what kind of experiment/table this appears to be;
    - what will be drawn;
    - what is retained or used only as support;
    - what approved display helpers are proposed;
    - what the drawing layer will not calculate;
    - any focused unresolved scientific questions.
-4. If an item is uncertain, obtain a corrected mapping and return to step 2.
+   Tell the user only what will be drawn and unresolved questions; give the full breakdown on request.
+4. If an item is uncertain, check the supplied material first. Ask only if meaning remains unresolved,
+   then obtain the corrected mapping and return to step 2.
 5. Reuse an already explicit scientific purpose and exact choices; ask only for unresolved meaning. Record the actual request in the existing confirmation fields.
 6. Pass the exact proposal hash, approved helper IDs, and ambiguity resolutions to `plan`.
 
-A different source hash, mapping, or proposal hash invalidates the confirmation. Never edit a
-confirmed JSON plan by hand.
+A different source hash, mapping, or proposal hash invalidates the old machine payload. Rerun
+inspection and `understand`, then compare the current purpose, column roles, units and authorized
+transformations with the existing user decision. When the current request covers the updated data
+and those choices still apply, generate a new payload with the current proposal hash and matching
+helper/ambiguity IDs; retain the actual earlier authorization rather than inventing a new answer.
+Ask only when a material change is unresolved. Never reuse a stale payload, edit a confirmed plan
+by hand, or change the fixed external engine to bypass validation. Internal confirmation states
+do not by themselves require another user question.
 
 ## Derived data
 
@@ -51,9 +59,13 @@ overwrite source values.
 
 ## GSAS/GSAS-II Rietveld example
 
-A suitable short confirmation is:
+A suitable focused question, when a source column's meaning cannot be established, is:
 
-> 我理解这是 XRD Rietveld 精修结果。要画：2θ、实测点、计算线、文件中已提供的背景/差值和两组物相刻线。只保留不画：weight、Q、Used、diff/sigma 与轴控制列。不会自动计算背景、差值、Rwp、χ²、物相或峰归属。Publication Diff 将按源值直接绘制，不再偏移。这个理解是否正确？
+> 这里的 `Diff` 已经包含展示偏移了吗？这会决定是否直接按原值绘制，避免重复偏移。
+
+If the file or existing decision already establishes a Publication `Diff`, preserve it exactly
+without asking again. Keep the full column classification and any calculations in the internal
+record; do not turn it into a mandatory checklist for the user to approve.
 
 If a numeric column such as Temperature is not part of a recognized contract, do not guess. Ask
 whether it is a plotted condition, support metadata, an alternative coordinate, or a column that
@@ -66,4 +78,5 @@ the default beginner explanation. Ask only questions that can change the scienti
 visible elements.
 
 
-Existing authorization covers the exact source, meaning and choices it specified. Hash changes require revalidation, not automatically another question: record whether the same authorization still applies. Never forge a user answer or change the fixed external engine. Scientific ambiguity and meaning-changing analysis still require a real decision.
+Existing authorization applies only within the scope it specified. Scientific ambiguity and a new
+meaning-changing analysis require a real decision; a byte-level change alone does not.

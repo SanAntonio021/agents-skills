@@ -2,6 +2,8 @@
 
 本文件说明 `product-research-workbook` 的稳定数据契约。机器可执行定义在 `scripts/workbook_contract.py` 和 `scripts/validate_product_workbooks.py`；发生差异时以校验器的版本化规则为准。
 
+本契约仅用于已选择产品库流程的建库、业务更新和明确要求的契约审计。普通对比表及仅改格式的任务由 `xlsx` 处理，不因读取本文件而自动迁移已有工作簿或新增过程表。
+
 ## 1. 两份独立工作簿
 
 | 工作簿 | 受众 | 版本规则 | 是否出现证据过程字段 |

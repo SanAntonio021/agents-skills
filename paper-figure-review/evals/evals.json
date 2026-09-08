@@ -4,12 +4,12 @@
     {
       "id": "review-existing-ieee-figure",
       "prompt": "这张图是准备放进 IEEE 论文里的 Fig. 3，你帮我审一下是不是像论文图，哪些地方必须改。",
-      "expected_output": "先判断图件类型和目标尺寸，再按 IEEE 图件清单输出总体结论、必须改、建议改、可保留和导出建议；不要只给泛泛美化意见。"
+      "expected_output": "先判断图件类型和目标尺寸，再按 IEEE 图件清单输出总体结论、必须改、建议改、可保留和导出建议；不要只给泛泛美化意见。请求仅为审查，即使有原始数据也不自动重画、修改源文件或导出修改版。"
     },
     {
       "id": "redraw-data-plot-from-csv",
       "prompt": "CSV 里有 CH1/CH2 两路 BER 随 SNR 的数据，纵轴要用 log scale，还要画 2e-2 的 SD-FEC 阈值。请重画成 IEEE 单栏图，先给我最终尺寸预览，再导出 PDF/SVG/PNG。",
-      "expected_output": "读取原始数据后使用 scripts/ieee_plot_style.py 的 use_ieee_single_column_style、repair_single_column_figure、preflight_single_column_figure 和 export_ieee_single_column；采用 3.5 in、8 pt 衬线字体、四边 0.7 pt 黑框、向内刻度和 3 pt 可见墨迹留白；SNR 是连续物理横轴，因此显式选择 grid_mode=major_xy，只画横纵主网格，对数 BER 轴不画次网格和次刻度；CH1/CH2 先按当前论文角色生成候选配色并用 marker/线型冗余区分，2e-2 阈值用黑色，并用 place_reference_line_label 在框内右端贴线标注而不占用图例；先写 drafts/，用户确认配色与最终尺寸预览后才冻结 color map 并 formal 导出；保留脚本、profile 和 manifest。"
+      "expected_output": "读取原始数据后使用 scripts/ieee_plot_style.py 的 use_ieee_single_column_style、repair_single_column_figure、preflight_single_column_figure 和 export_ieee_single_column；采用 3.5 in、8 pt 衬线字体、四边 0.7 pt 黑框、向内刻度和 3 pt 可见墨迹留白；SNR 是连续物理横轴，因此显式选择 grid_mode=major_xy，只画横纵主网格，对数 BER 轴不画次网格和次刻度；CH1/CH2 先按当前论文角色生成候选配色并用 marker/线型冗余区分，2e-2 阈值用黑色，并用 place_reference_line_label 在框内右端贴线标注而不占用图例；先写 drafts/，沿用已明确的配色或合理默认，完成智能体最终尺寸视觉检查后冻结 color map 并 formal 导出；只有用户明确要求选稿或先等待确认时才暂停；保留脚本、profile 和 manifest。"
     },
     {
       "id": "multi-panel-exact-size-plot-profile",
@@ -19,12 +19,12 @@
     {
       "id": "stacked-threshold-delta-single-column",
       "prompt": "请把一个阈值曲线面板和一个 Delta-MER 分布面板上下堆叠成 IEEE 单栏图。(a)(b) 放在各面板下方居中，两个纵轴刻度数字和轴题要对齐，端点 marker 不能跑到框外。",
-      "expected_output": "使用唯一单栏 helper，不再复制旧 SCIS 模板；采集序号仍是数值坐标，因此显式选择 grid_mode=major_xy，同时画横纵主网格且不画次网格，不能只保留一个方向的主网格；若上下轴属于同一量纲族但刻度字符串宽度差异明显，统一提出显示倍率并写进轴题，刻度使用短数字且保持右边缘对齐，不用前导零补宽；先设置数据、标签和必要坐标约束，再由 repair_single_column_figure 自动统一字体、四边框、向内刻度、显示坐标中的纵轴刻度与轴题对齐、面板标签间距、按显示坐标收敛到 4 pt 的上下内容安全间距、3 pt 外边界和未锁定坐标的 marker 留量，不把某个 hspace 当作跨图固定值；阈值和 Delta 默认黑色；明确锁定坐标且 marker 无法完整显示时输出结构化冲突并阻止 formal；先生成 draft，人工检查最终尺寸后再 formal。"
+      "expected_output": "使用唯一单栏 helper，不再复制旧 SCIS 模板；采集序号仍是数值坐标，因此显式选择 grid_mode=major_xy，同时画横纵主网格且不画次网格，不能只保留一个方向的主网格；若上下轴属于同一量纲族但刻度字符串宽度差异明显，统一提出显示倍率并写进轴题，刻度使用短数字且保持右边缘对齐，不用前导零补宽；先设置数据、标签和必要坐标约束，再由 repair_single_column_figure 自动统一字体、四边框、向内刻度、显示坐标中的纵轴刻度与轴题对齐、面板标签间距、按显示坐标收敛到 4 pt 的上下内容安全间距、3 pt 外边界和未锁定坐标的 marker 留量，不把某个 hspace 当作跨图固定值；阈值和 Delta 默认黑色；明确锁定坐标且 marker 无法完整显示时输出结构化冲突并阻止 formal；先生成 draft，智能体完成最终尺寸视觉检查后再 formal，不增加用户逐图验收关口。"
     },
     {
       "id": "data-plot-visual-encoding-priority",
       "prompt": "我有 6 条 BER 曲线、2 条阈值线和一块置信区间，想画成 IEEE 单栏图。配色和线型应该怎么定？",
-      "expected_output": "读取 references/data-plot-color-priority.md，并用 propose_figure_color_map 为六个无序类别提出 Tol bright 候选；六条曲线同时分配不同 marker/线型，阈值线用黑色并在框内空白端贴线标注、不列入图例，置信区间用对应主线同色低 alpha；不声称 IEEE 有唯一官方 HEX 色表；先生成最终 3.5 in draft 做灰度、色盲和图例复核，用户确认一次后用 freeze_figure_color_map 冻结全文映射，未确认不能 formal。"
+      "expected_output": "读取 references/data-plot-color-priority.md，为六个无序类别提出 Tol bright 候选；六条曲线同时建议不同 marker/线型，阈值线用黑色并在框内空白端贴线标注、不列入图例，置信区间用对应主线同色低 alpha；不声称 IEEE 有唯一官方 HEX 色表。用户仅询问配色和线型做法，直接给出建议，不自动生成草稿、冻结项目配色或导出文件；后续明确要求实施或已有授权时再继续绘图，不重复确认同一授权。"
     },
     {
       "id": "system-diagram-technical-review",
@@ -64,12 +64,12 @@
     {
       "id": "git-track-reproducible-figure-source",
       "prompt": "请修改 plot_ber.py、对应 CSV 和 plot-profile.json，重新生成论文 Fig. 5。项目已经有 Git，目录里还有很多中间 PNG 和 PDF。",
-      "expected_output": "只把绘图脚本、必要 CSV 和 plot profile 纳入本轮 Git 文件清单；中间 PNG/PDF 不逐轮提交。重绘和检查通过后创建一个本地 commit，不暂存无关文件、不 push；最终投稿导出件只有在被选定后才长期保留。",
+      "expected_output": "读取当前脚本、CSV 和 profile，保留用户手工修改；有合适的项目 Git 就按当前请求或项目约定处理本轮准确文件，仅仓库存在不代表需要提交。中间 PNG/PDF 不逐轮提交，不自动创建标签或 push；Git 不适用时用新副本或已有备份保护原稿，继续完成重绘和检查。",
       "files": [],
       "expectations": [
-        "可复现图源进入 Git。",
+        "沿用合适的项目 Git 和已有版本约定，保护当前图源与用户手工修改。",
         "普通中间 PNG/PDF 不逐轮提交。",
-        "重绘验证通过后每轮创建一个本地 commit。",
+        "只有当前请求或项目约定要求时才提交，不默认增加标签；Git 不适用时通过副本或备份继续工作。",
         "不使用宽泛暂存命令，不 push。"
       ]
     },
@@ -96,7 +96,17 @@
     {
       "id": "system-diagram-keeps-runtime-boundary",
       "prompt": "这是太赫兹实验平台系统框图，帮我改成 IEEE 论文图。",
-      "expected_output": "按 system_diagram 路由处理技术链路、模块命名、信号流和可编辑矢量源，不调用固定 Python 数据图运行时或 SciencePlots；应保持系统图与 data_plot 的边界。"
+      "expected_output": "按科研示意图路线处理，沿用现有可编辑源或 PPT/SVG 等工具，通过构图、配色、功能分组和线条层级增强表达；核对技术链路、模块含义和箭头方向，在最终尺寸下检查可读性。不得把 SciencePlots 当作示意图绘制路线，也不套用 data_plot 坐标模板。"
+    },
+    {
+      "id": "default-results-single-style",
+      "prompt": "用这些实测 CSV 给论文画 BER 曲线和星座图，按现有论文规范直接完成。",
+      "expected_output": "按测试结果图路线采用现有规范模板，每张图默认一套样式，保留草稿与正式导出检查；不因首次绘图自动生成 SciencePlots 候选，不追加 A/B 选稿关口。核对数据、坐标、单位、字体、尺寸、线宽和最终可读性，不改变测量值。"
+    },
+    {
+      "id": "mixed-results-and-schematic",
+      "prompt": "把实验平台系统框图和实测 BER 曲线拼成一张论文图，框图要有层次、好看，曲线保持规范。",
+      "expected_output": "框图按科研示意图路线使用可编辑源，优化构图、分组和配色并保持技术关系；BER 面板按测试结果图模板保留精确数据、坐标和单位。分别检查面板后统一字体、颜色含义、编号、尺寸和对齐，不给同一 CSV 默认做两套风格，不将 SciencePlots 误用于框图，也不为拼版改变数据尺度。"
     },
     {
       "id": "runtime-failure-no-python-fallback",

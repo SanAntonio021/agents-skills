@@ -9,11 +9,11 @@
 
 - `Averaging`
   - 变量：`app.Acquisition.<Ch>.AverageSweeps`
-  - 默认基线：`1`
+  - 未平均的参考值：`1`
 
 - `Enhance Resolution`
   - 变量：`app.Acquisition.<Ch>.EnhanceResType`
-  - 默认基线：`None`
+  - 未增强的参考值：`None`
   - 风险：会牺牲有效带宽
 
 - `PulseResponse / Flatness`
@@ -31,7 +31,9 @@
 - `C<Ch>:OPTIMAL_FILTER_SETUP ...`
   - 曾表现为发送不报错，但仪器并未真正接受
 
-## 默认性能基线
+## 未处理性能的参考设置
+
+以下用于判断设置含义或按已确认目标配置，不是每次测试都要写入的固定值。沿用本轮已确认条件；未指定时先读回现状，实质歧义再询问。AWG 零偏置参考值为 `OFFSET = 0 mV`，同样不覆盖已确认偏置。
 
 - `InterpolateType = Linear`
 - `AverageSweeps = 1`

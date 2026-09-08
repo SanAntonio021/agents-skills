@@ -1,4 +1,4 @@
 interface:
   display_name: "高速链路台架测试"
-  short_description: "执行台架测试、示波器前处理控制、报告与台账补录"
-  default_prompt: "Use $link-test to run, debug, summarize, or log a bench test, including LeCroy preprocessing controls, clear OFF/ON pairing, timeout handling, reporting, ledger updates, and safe shutdown."
+  short_description: "执行台架测试、示波器前处理控制、读回验证与安全收尾"
+  default_prompt: "Use $link-test to run or diagnose a bench test, including LeCroy preprocessing, AWG OFF/ON pairing, readback verification, timeout handling, and safe shutdown. Reuse confirmed settings. For a component-ledger-only request, check existing records without entering the test workflow or accessing instruments. Use lab-notebook only when maintaining an experiment record is requested or already agreed."

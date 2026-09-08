@@ -1,13 +1,15 @@
-# 科研配色选择合同
+# 科研配色选择
 
-配色是绘图合同的一部分，不是渲染后的装饰。先运行：
+沿用用户已明确的配色或项目约定；没有要求时采用适合图型、系列数量及语义的已验证模板默认配色。
+配色仍须满足下列兼容与可读性要求，不增加固定确认。只有用户想挑选或确有需要权衡的问题时，再运行：
 
 ```powershell
 python scripts/editaplot.py palettes --engine-home <root>
 ```
 
-向中文用户展示 `assets/palettes/palette-selector-public.zh-CN.png`，让用户回复稳定的
-`palette_id`。需要完整目录时才运行 `palettes --all` 并展示
+向中文用户展示 `assets/palettes/palette-selector-public.zh-CN.png`，推荐不超过两套适用配色。
+用户可以用中文名称或自然语言选择，由智能体映射为 `palette_id`，不要求用户填写内部编号。
+需要完整目录时才运行 `palettes --all` 并展示
 `assets/palettes/palette-selector-all.zh-CN.png`。
 
 ## 首发推荐

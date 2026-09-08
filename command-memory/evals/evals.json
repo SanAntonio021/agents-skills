@@ -76,7 +76,7 @@
     {
       "id": 13,
       "prompt": "怪事：我这个仓库昨天明明提交到很新了，今天 git log 显示最新提交是三天前的，git push 报 non-fast-forward 说本地 behind。目录里还多了好几个带\"冲突文件\"字样的副本，连上周删掉改名的旧文件夹都原样回来了。仓库在百度网盘同步目录里。怎么回事，怎么恢复？",
-      "expected_output": "应加载 git-on-windows reference 的坑 3；识别为云同步客户端用云端旧快照回滚仓库（含 .git）的回滚四联征；恢复顺序：先杀同步客户端止血 → git fetch 确认远端完整（远端是唯一可靠基准，本地 reflog 也被覆盖不可信）→ 抢救冲突副本中未推送内容 → git reset --hard origin/<branch> → 冲突副本和复活目录归档不直删 → 必须把双向同步改成单向备份或把仓库移出同步范围，否则必复发。",
+      "expected_output": "应加载 git-on-windows 坑 3；把历史倒退、冲突副本和旧目录复活视为回写调查证据，先区分双向同步与单向备份。停止本任务受影响写入并协调已知回写者，不强杀客户端。核实 Git 远端及独立恢复基准，保全未推送内容；本地 reflog 和远端均不能假定包含全部新内容。只有恢复授权及保全条件满足才按准确基准恢复；副本先比较归档，配置变更或迁移另行授权。不声称正常单向备份必然回滚。",
       "files": []
     },
     {
@@ -124,7 +124,7 @@
     {
       "id": 21,
       "prompt": "Windows 上 git fetch 先报 fatal: bad object refs/heads/main.baiduyun.uploading.cfg，检查时这个临时文件已经消失；代码 push 成功后再次 fetch，又报 cannot open '.git/FETCH_HEAD': Permission denied。我现在只需要确认 GitHub main 是否等于本地 HEAD，再调用发布 helper。要不要删 .git 里的文件、停百度网盘或 reset？",
-      "expected_output": "应加载 git-on-windows reference 的坑 5；把单个短暂上传 ref 或 FETCH_HEAD 锁识别为外部写入干扰，不直接判定仓库回滚，也不删除 .git 文件、停止同步客户端或 reset。先解析真实 git dir，检查准确临时 ref/FETCH_HEAD 元数据和本地 HEAD；临时 ref 消失后可用 git fsck --no-reflogs --connectivity-only 检查对象，只有 dangling 不算损坏，missing/bad object 才升级排查。仅需确认远端 tip 时，用 git ls-remote --exit-code --refs origin refs/heads/<branch>，要求唯一结果和完整 40 位 SHA。明确 ls-remote 不更新 origin/<branch>、不写 FETCH_HEAD、不下载对象，不能替代 merge/rebase/对象检查前的 fetch；只有临时文件消失或锁状态变化且确实需要对象时才重试一次 fetch，仍失败则停止。",
+      "expected_output": "应加载 git-on-windows reference 的坑 5；把单个短暂上传 ref 或 FETCH_HEAD 锁识别为外部写入干扰，不直接判定仓库回滚，也不删除 .git 文件、停止同步客户端或 reset。先解析真实 git dir，检查准确临时 ref/FETCH_HEAD 元数据和本地 HEAD；临时 ref 消失后可用 git fsck --no-reflogs --connectivity-only 检查对象，只有 dangling 不算损坏，missing/bad object 才升级排查。仅需确认远端 tip 时，用 git ls-remote --exit-code --refs origin refs/heads/<branch>，要求唯一结果和完整 40 位 SHA。明确 ls-remote 不更新 origin/<branch>、不写 FETCH_HEAD、不下载对象，不能替代 merge/rebase/对象检查前的 fetch；失败后依次等 2、5、10、20 秒最多 4 次只读复查，共 37 秒；状态未变只观察。准确临时 ref 消失或占用解除、writer 已协调且仓库状态符合预期后，才补一次必要 fetch；恢复成功须退出 0、准确目标 SHA/commit 对象可解析且 connectivity 检查通过，仍失败则停止依赖步骤。",
       "files": []
     },
     {
@@ -380,6 +380,66 @@
         "检查当前 turn、失败路径、owner 和 WRITE_DAC，沿用现有版本适用条件。",
         "不将 require_escalated 成功等同管理员权限或清理成功。",
         "不直接递归 takeown、icacls 或启用 Windows Sandbox 虚拟机。"
+      ]
+    },
+    {
+      "id": 48,
+      "prompt": "只用合成工具 mock，不执行真实 Git 或系统动作。已有一次 fetch 因准确临时 ref 报 bad object；mock.wait(seconds) 推进虚拟时间，mock.inspect() 四次都返回同一临时 ref 存在、HEAD/index/status 不变、无其他 writer。mock.fetch() 可执行一次抓取。请恢复。没有 mock 时只报告未执行。",
+      "expected_output": "依次 wait(2)/inspect、wait(5)/inspect、wait(10)/inspect、wait(20)/inspect；37 秒观察内临时 ref 未消失，不调用 fetch，报告依赖对象的步骤未恢复。",
+      "files": [],
+      "expectations": [
+        "恰好四次只读复查且等待总计37秒",
+        "不在未变状态调用fetch",
+        "不删临时ref/未知锁或强停客户端",
+        "没有mock时不伪造轨迹或用真实操作替代"
+      ]
+    },
+    {
+      "id": 49,
+      "prompt": "只用合成工具：已有 fetch 因 FETCH_HEAD 占用失败；mock.inspect() 第一次仍占用，第二次准确占用解除、HEAD/index/status 符合基线且 writer 已交接。随后 mock.fetch() 退出0并取得目标SHA，mock.verify_object() 返回该准确提交可解析，mock.connectivity() 退出0仅有dangling。请继续依赖对象的核查；mock.wait 只推进虚拟时间，无mock报告未执行。",
+      "expected_output": "wait(2)复查、wait(5)复查后只补一次 fetch；核实准确目标 SHA、对象与连接检查后继续，dangling 本身不阻断。",
+      "files": [],
+      "expectations": [
+        "条件满足后无需等满37秒",
+        "fetch最多补一次",
+        "退出0、准确目标SHA、对象可解析和连接检查缺一不可",
+        "成功后继续已授权依赖步骤"
+      ]
+    },
+    {
+      "id": 50,
+      "prompt": "fetch 占用已消失，补一次 fetch 返回0，但 FETCH_HEAD 不是预期目标 SHA，或 cat-file 仍不能解析目标提交。ls-remote 却有正确目标 SHA。现在可以 merge 吗？",
+      "expected_output": "不能进入 merge；抓取验收不完整，ls-remote 不替代对象和准确目标验证，不追加 fetch 重试。",
+      "files": [],
+      "expectations": [
+        "不以fetch退出0单独宣称恢复",
+        "不以ls-remote成功代替fetch",
+        "不自动重跑merge或继续抓取",
+        "只暂停依赖对象的步骤"
+      ]
+    },
+    {
+      "id": 51,
+      "prompt": "一次普通 push 返回连接中断。请分别处理三种只读回查：准确远端 ref 已是候选 SHA、仍是原 SHA且候选和发布条件未变、已是第三个 SHA。不要控制百度，它只是单向备份。",
+      "expected_output": "分别跳过重推；最多补一次普通 push；停止受影响步骤。正常单向备份运行不阻断，禁止force。",
+      "files": [],
+      "expectations": [
+        "已是候选SHA时不重复push",
+        "仅原SHA且本地门未变允许一次正常push",
+        "第三SHA或读取失败停止",
+        "区分Git远端与百度备份"
+      ]
+    },
+    {
+      "id": 52,
+      "prompt": "Windows 上 commit、merge、checkout、worktree remove 各有一次失败。等2秒后文件占用消失，当前状态尚未查清。能否全部自动重跑一次？",
+      "expected_output": "不能；先只读核对每个操作是否部分完成和进行中状态。commit/merge/checkout不自动重跑，删除不自动重试；37秒观察仅是复查预算。",
+      "files": [],
+      "expectations": [
+        "不把占用消失当整个写命令幂等",
+        "分别保全并核实HEAD/index/status/操作状态",
+        "删除仅核查不自动重试",
+        "不删除未知锁或绕过hooks"
       ]
     }
   ]

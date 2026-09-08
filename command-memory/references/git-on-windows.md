@@ -1,5 +1,17 @@
 # Git on Windows 命令坑
 
+## 单向备份与失败恢复边界
+
+本节适用于下列所有 Git pattern。先区分 Git 远端和百度等文件备份：正常单向备份不会因客户端正在运行、上传或暂停状态未知而阻断普通 Git 操作，也不因此启动全面分支收口。双向覆盖风险、真实回写或并发 Git 写入才阻断受影响步骤；只读核查和其他不受影响的工作继续。不得强停客户端、删除未知锁、改备份模式或绕过 hooks/签名要求来制造成功。
+
+- **只在真实失败后观察**：记录失败命令/退出码、准确 git/common dir、目标 ref/锁、HEAD、index、完整工作树状态和已知 writer。依次等待 2、5、10、20 秒，最多 4 次只读复查，累计等待 37 秒；可在条件满足时提前退出。这里复查不包含重跑失败的写操作，状态未变时只观察，不循环提交或抓取。
+- **fetch 只补一次**：准确临时 ref 已自行消失或占用已解除，已知 writer 已协调且 HEAD/index/工作树等状态符合预期，后续确需对象时，才补一次同一目标的正常 fetch；仅时间流逝、文件时间戳变化或单次未见进程不足以放行。恢复成功必须同时满足 fetch 退出 0、准确目标 ref/FETCH_HEAD 对应预期完整 SHA、`cat-file -e <sha>^{commit}` 可解析、`git fsck --no-reflogs --connectivity-only` 退出 0 且无 missing/bad object。仅 dangling 不算对象损坏。失败后停止依赖对象的步骤，不扩大重试预算。
+- **push 结果不明先读远端**：读取准确 ref 的唯一 live SHA。已等于预期候选 SHA 则跳过重推；仍等于操作前原 SHA，且候选/本地状态/发布门未变，才最多补一次正常 push；其他 SHA 或读取失败则停止。不得用 force 消除不确定性。
+- **其他写操作不自动重跑**：commit、merge、checkout 失败后先核对是否部分完成、是否存在进行中的操作，再按对应恢复流程处理；删除失败或结果不明仅复核，不自动重试。后面的对象层或隔离模式是另行满足前提的恢复方案，不能作为跳过 hooks、并发协调或审批拒绝的手段。
+- **只读比较不是抓取成功**：`ls-remote` 只证明 Git 服务器的 ref，不下载对象、不更新 remote-tracking refs/FETCH_HEAD，不替代依赖远端对象步骤的 fetch。Git push/fetch/验收成功也不证明百度备份完成。
+
+全面收口还须依靠已知 writer 协调、间隔至少 2 秒的完整双快照、封包前后完整状态哈希、双份包隔离恢复和删除前精确 ref/payload 复核；具体合同见 git-branch-consolidation。暂停客户端不是这些验证的替代或唯一门槛。
+
 ## 这份说明管什么
 
 在 Windows（PowerShell / git bash / MSYS2）上跑 git 时，有十类坑会让命令失败或越过提交范围：
@@ -161,7 +173,7 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 
 ## 坑 3：同步客户端用云端旧快照回滚整个仓库
 
-双向同步的云盘（百度网盘"同步空间"、OneDrive、Dropbox、坚果云）把云端滞后的旧快照当"新状态"下发，整个仓库——包括 `.git`——被覆盖回几天前。这不是锁文件那种"挡路"，是数据被静默改写，比坑 2 致命。
+配置为双向同步的云盘可能把云端滞后的旧快照下发，覆盖整个仓库及 `.git`；这类回写风险与正常单向备份不同，不能由客户端品牌或进程存在推断。这不是锁文件那种"挡路"，是数据被静默改写，比坑 2 致命。
 
 ### Pattern: git-recover-from-cloud-sync-rollback
 - scenario: 云同步客户端把仓库（含 `.git`）回滚成云端旧快照，需要识别症状并恢复到真实最新状态
@@ -173,24 +185,24 @@ merge / checkout 碰到被锁文件就崩。两种绕法，按需要选。
 - shell: bash + PowerShell
 - validated_shape:
   ```bash
-  # 0. 止血：先杀同步客户端，防止恢复过程中再次被覆盖
-  #    PowerShell: Get-Process | Where-Object { $_.ProcessName -match '<SYNC_CLIENT_PATTERN>' } | Stop-Process -Force
+  # 0. 暂停本任务对受影响仓库的写入，按现有机制协调真实回写者；
+  #    未确认回写风险消除前不恢复，不按进程名强杀客户端。
   # 1. 确认远端是完整基准（分叉点 + 远端领先的提交都认识 = 远端完整）
   git fetch origin
   git log --oneline -5 origin/<BRANCH>
   git merge-base HEAD origin/<BRANCH>
   # 2. 抢救：reset 前把未推送的本地新内容（冲突副本里可能有）另存
-  # 3. 恢复到远端最新
+  # 3. 仅在恢复目标已核实、独有内容已保全且现有授权覆盖此破坏性恢复时，恢复到远端最新
   git reset --hard origin/<BRANCH>
   # 4. 残留清理：冲突副本、复活的旧目录移入归档区（不直接删），
   #    移动被 Permission denied 挡住时按 directory-move-locked.md 扫进程 cwd
-  # 5. 根因必须消除：把同步模式改成单向备份，或把仓库移出同步范围；
-  #    否则客户端重启后必然复发
+  # 5. 报告双向回写风险及单向备份/移出同步范围的长期选项；
+  #    改配置或迁移另需授权，不能在本次命令修复中自动执行。
   ```
-- substitute_only: `<BRANCH>`, `<SYNC_CLIENT_PATTERN>`（如 `baidu`、`onedrive`、`dropbox`、`nutstore`）
-- preflight: 恢复基准必须是**远端**（GitHub 等），不能用本地 reflog——`.git` 整个被旧快照覆盖时 reflog 也是旧的；远端若也不完整，先从冲突副本和归档抢内容再说
+- substitute_only: `<BRANCH>`；准确 Git 远端和恢复目标须来自已核实现场
+- preflight: 从 Git 远端（GitHub 等）及其他独立证据核实恢复基准；`.git` 被覆盖时本地 reflog 可能也是旧的，不可单独作为最新依据。Git 远端也未必包含未推送内容，恢复前先保全冲突副本、工作树和归档中的独有内容，不能把百度备份当成 Git 远端
 - env: none
-- avoid: 先修工作区文件再管 `.git`（历史不对，改了也会乱）；直接删冲突副本（里面可能有未推送的独有内容，先 diff 再归档）；恢复后不改同步模式（100% 复发）；把 `.git` 留在任何双向同步目录里
+- avoid: 先修工作区文件再管 `.git`（历史不对，改了也会乱）；直接删冲突副本（里面可能有未推送的独有内容，先 diff 再归档）；未处理已证实的双向覆盖风险就继续写入；把正常单向备份误判成双向同步；未获授权改配置或迁移
 - success_signal: `git log` 回到最新提交、`git status` 干净、`git push` 正常 fast-forward；再无新冲突副本生成
 - capture_rule: 2026-07-10 百度网盘实战沉淀（回滚 18 个提交，reset --hard origin/main 全量恢复）。新确认的同步客户端症状形态（临时文件后缀、冲突副本命名）补进四联征清单
 
@@ -426,7 +438,7 @@ index 的 stat cache，让文件哈希在没有内容改动时变化。所有用
   ```
 - substitute_only: `<REPO_ROOT>`, `<BRANCH>`；远端名不是 `origin` 时必须使用已核实的实际 remote，不从报错文本猜
 - diagnosis: 先检查报错指向的准确临时 ref 或 `FETCH_HEAD`，再核对真实 `HEAD`、目标远端 SHA 和当前 Git 状态；临时 ref 消失后可运行 `git fsck --no-reflogs --connectivity-only`，只有 dangling 对象不等于损坏，出现 missing/bad object 才停止并升级排查；只有同时出现历史倒退、冲突副本、旧目录复活等“坑 3”迹象时，才升级为云同步回滚处理
-- retry_boundary: 临时 ref 已自行消失或锁状态已经变化，且后续确实需要远端对象时，可以重新执行一次 `fetch`；同一状态下不原样重试。重试仍失败时，写入、合并或修复原仓库的任务必须停止；只有纯只读来源证明可按下一模式在独立裸仓库取对象
+- retry_boundary: 遵循开头的 2、5、10、20 秒有界观察（最多 4 次，累计 37 秒），同一状态只观察。准确临时 ref 消失或占用解除、已知 writer 已协调且仓库状态符合预期后，才补一次必要的正常 fetch；要求退出 0、准确目标 SHA/对象可解析和连接检查全部通过。仍失败时停止依赖对象的写入、合并或修复；只有纯只读来源证明可按下一模式在独立裸仓库取对象
 - scope_limit: `ls-remote` 只读取服务器端 ref，不更新本地 `origin/<BRANCH>`、不写 `FETCH_HEAD`、不下载对象；它只适合 push 后确认远端 tip、发布 helper 前核对 SHA 等只读门槛，不能替代 merge、rebase、checkout 或对象完整性检查前的 `fetch`
 - avoid: 不因单个临时文件就停止同步客户端、删除 `.git` 内文件、清理 refs、reset 仓库或宣称发生回滚；不把 `ls-remote` 的成功说成本地远端跟踪分支已更新；不在未知并发 Git 操作仍运行时继续写仓库
 - success_signal: 唯一远端分支返回完整 40 位 SHA，只读核验结论明确，本地 Git 元数据未被该命令修改；需要在原仓库消费对象时仍须等正常 `fetch` 恢复

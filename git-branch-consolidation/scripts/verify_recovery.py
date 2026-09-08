@@ -14,6 +14,12 @@ import tarfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
+from recovery_fs import (
+    LINK_KINDS, canonical_path, canonical_rel, current_entry, inventory_tree,
+    io_path, manifest_for_roots, package_files, path_within, plain_path, sha256_file,
+)
+from recovery_fs import kind_at, load_external_link_allowlist, safe_extract_tar, validate_link, validate_link_plan
+
 UTF8 = "utf-8"
 BUNDLE_NAME = "repository-recovery.bundle"
 
@@ -23,9 +29,11 @@ def log(message: str) -> None:
 
 
 def run(args, cwd=None, check=True, input_bytes=None):
+    if os.name == "nt" and str(args[0]) == "git":
+        args = [args[0], "-c", "core.longpaths=true", *args[1:]]
     process = subprocess.run(
-        [str(value) for value in args],
-        cwd=str(cwd) if cwd else None,
+        [plain_path(value) if isinstance(value, Path) else str(value) for value in args],
+        cwd=plain_path(cwd) if cwd else None,
         input=input_bytes,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -49,14 +57,10 @@ def git(repo, *args, check=True, input_bytes=None):
 
 def git_bare(git_dir, *args, check=True, input_bytes=None):
     return run(
-        ["git", "--no-optional-locks", f"--git-dir={git_dir}", *args],
+        ["git", "--no-optional-locks", f"--git-dir={plain_path(git_dir)}", *args],
         check=check,
         input_bytes=input_bytes,
     )
-
-
-def canonical_path(path) -> str:
-    return os.path.normcase(os.path.realpath(os.path.abspath(str(path))))
 
 
 def is_within(candidate, parent) -> bool:
@@ -66,26 +70,17 @@ def is_within(candidate, parent) -> bool:
         return False
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while block := handle.read(1024 * 1024):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def verify_package(root: Path) -> dict[str, tuple[str, int]]:
     manifest = root / "package-manifest.sha256"
     expected = {}
     for line in manifest.read_text(encoding=UTF8).splitlines():
         if line:
             digest, size, relative = line.split("  ", 2)
+            relative = canonical_rel(relative)
+            if relative in expected:
+                raise RuntimeError(f"Duplicate package manifest path: {relative}")
             expected[relative] = (digest, int(size))
-    actual = {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file() and path.name != manifest.name
-    }
+    actual = package_files(root)
     if set(actual) != set(expected):
         raise RuntimeError(
             f"Package file-set mismatch for {root}: "
@@ -96,92 +91,6 @@ def verify_package(root: Path) -> dict[str, tuple[str, int]]:
         if path.stat().st_size != size or sha256_file(path) != digest:
             raise RuntimeError(f"Package hash mismatch: {path}")
     return expected
-
-
-def safe_extract_tar(tar_path: Path, destination: Path) -> None:
-    destination = destination.resolve()
-    with tarfile.open(tar_path, "r") as archive:
-        members = archive.getmembers()
-        member_paths = []
-        symlink_paths = []
-        for member in members:
-            if not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
-                raise RuntimeError(f"Unsupported tar member type: {member.name}")
-            logical = PurePosixPath(member.name)
-            if logical.is_absolute() or any(part in ("", ".", "..") for part in logical.parts):
-                raise RuntimeError(f"Unsafe tar member path: {member.name}")
-            member_paths.append(logical)
-            if member.issym():
-                symlink_paths.append(logical)
-            target = (destination / member.name.replace("/", os.sep)).resolve()
-            if os.path.commonpath([canonical_path(destination), canonical_path(target)]) != canonical_path(destination):
-                raise RuntimeError(f"Unsafe tar member: {member.name}")
-            if member.issym():
-                link_target = (target.parent / member.linkname.replace("/", os.sep)).resolve()
-                if os.path.commonpath([canonical_path(destination), canonical_path(link_target)]) != canonical_path(destination):
-                    raise RuntimeError(f"Unsafe tar link: {member.name} -> {member.linkname}")
-            if member.islnk():
-                link_target = (destination / member.linkname.replace("/", os.sep)).resolve()
-                if os.path.commonpath([canonical_path(destination), canonical_path(link_target)]) != canonical_path(destination):
-                    raise RuntimeError(f"Unsafe tar hard link: {member.name} -> {member.linkname}")
-        for logical in member_paths:
-            for symlink in symlink_paths:
-                if logical != symlink and logical.parts[: len(symlink.parts)] == symlink.parts:
-                    raise RuntimeError(f"Tar member descends through a symlink: {logical}")
-        try:
-            archive.extractall(destination, members=members, filter="fully_trusted")
-        except TypeError:
-            archive.extractall(destination, members=members)
-
-
-def current_entry(path: Path, logical: str) -> dict | None:
-    if not path.exists() and not path.is_symlink():
-        return None
-    status = path.lstat()
-    if path.is_symlink():
-        kind = "symlink"
-        target = os.readlink(path)
-        encoded = target.encode(UTF8, "surrogateescape")
-        digest = hashlib.sha256(encoded).hexdigest()
-        size = len(encoded)
-    elif path.is_file():
-        kind, target, digest, size = "file", None, sha256_file(path), status.st_size
-    elif path.is_dir():
-        kind, target, digest, size = "directory", None, None, 0
-    else:
-        kind, target, digest, size = "other", None, None, status.st_size
-    return {
-        "path": logical.replace("\\", "/"),
-        "kind": kind,
-        "size": size,
-        "sha256": digest,
-        "mode": stat.S_IMODE(status.st_mode),
-        "linkTarget": target,
-    }
-
-
-def inventory_tree(root: Path, logical_prefix: str) -> list[dict]:
-    if not root.exists() and not root.is_symlink():
-        return []
-    paths = [root]
-    if root.is_dir() and not root.is_symlink():
-        paths.extend(sorted(root.rglob("*"), key=lambda value: str(value).casefold()))
-    entries = []
-    for path in paths:
-        relative = path.relative_to(root)
-        logical = Path(logical_prefix) / relative
-        entries.append(current_entry(path, str(logical).replace("\\", "/")))
-    return entries
-
-
-def manifest_for_roots(worktree: Path, roots: list[str]) -> list[dict]:
-    entries = []
-    for relative in roots:
-        candidate = worktree / Path(relative)
-        if not candidate.exists() and not candidate.is_symlink():
-            raise RuntimeError(f"Restored payload root is missing: {candidate}")
-        entries.extend(inventory_tree(candidate, relative))
-    return entries
 
 
 def verify_manifest(worktree: Path, state_source: Path, roots_file: str, manifest_file: str) -> int:
@@ -211,8 +120,8 @@ def refresh_clean_index_entries(worktree: Path, state_source: Path) -> None:
     """Refresh stat data only where the restored worktree already equals the index."""
     roots = json.loads((state_source / "tracked-current-roots.json").read_text(encoding=UTF8))
     for relative in roots:
-        candidate = worktree / Path(relative)
-        if not candidate.is_file() and not candidate.is_symlink():
+        candidate = path_within(worktree, relative)
+        if kind_at(candidate)[0] != "file":
             continue
         index_object = git(worktree, "rev-parse", "--verify", f":{relative}", check=False)
         if index_object.returncode != 0:
@@ -238,11 +147,13 @@ def main() -> None:
     parser.add_argument("--source", required=True)
     parser.add_argument("--mirror", required=True)
     parser.add_argument("--restore", required=True)
+    parser.add_argument("--external-link-allowlist", help="JSON schemaVersion=1: links with exact original worktree, relative path, kind and literal target")
     arguments = parser.parse_args()
 
-    source = Path(arguments.source).resolve()
-    mirror = Path(arguments.mirror).resolve()
-    restore = Path(arguments.restore).resolve()
+    source = io_path(Path(arguments.source).resolve())
+    mirror = io_path(Path(arguments.mirror).resolve())
+    restore = io_path(Path(arguments.restore).resolve())
+    allowed_links = load_external_link_allowlist(arguments.external_link_allowlist)
     if canonical_path(source) == canonical_path(mirror):
         raise RuntimeError("Source and mirror resolve to the same path")
     if restore.exists():
@@ -328,6 +239,26 @@ def main() -> None:
         state_source = source / "worktrees" / f"{index:03d}"
         state_destination = states_root / f"{index:03d}"
         head = metadata["head"]
+        link_manifest = state_source / "links.json"
+        if link_manifest.exists():
+            recorded = json.loads(link_manifest.read_text(encoding=UTF8))
+            expected_links = []
+            for category in ("tracked-current", "untracked", "ignored-preserved", "ignored-reproducible"):
+                entries = json.loads((state_source / f"{category}-manifest.json").read_text(encoding=UTF8))
+                expected_links.extend(dict(item, payload=category) for item in entries if item["kind"] in LINK_KINDS)
+            if recorded != {"schemaVersion": 1, "entries": expected_links}:
+                raise RuntimeError(f"Independent link manifest differs for worktree {index}")
+        # Checkout also creates unchanged tracked symlinks, which may not appear in
+        # a dirty payload. Enforce the same external-link policy before checkout.
+        tree = git_bare(bare, "ls-tree", "-r", "-z", head).stdout
+        for row in tree.split(b"\0"):
+            if not row:
+                continue
+            header, name = row.split(b"\t", 1)
+            mode, _, blob = header.split()
+            if mode == b"120000":
+                target = git_bare(bare, "cat-file", "blob", blob.decode("ascii")).stdout.decode(UTF8, "surrogateescape")
+                validate_link(state_destination, name.decode(UTF8, "surrogateescape"), "symlink", target, allowed_links, metadata["worktree"])
         log(f"restore {index + 1}/{len(summaries)} at {head[:12]}")
         add = git_bare(bare, "worktree", "add", "--detach", state_destination, head, check=False)
         write_log(logs, f"worktree-{index:03d}-add", add)
@@ -347,9 +278,10 @@ def main() -> None:
             if process.returncode != 0:
                 raise RuntimeError(f"Unstaged patch replay failed for worktree {index}")
 
-        safe_extract_tar(state_source / "tracked-current.tar", state_destination)
-        safe_extract_tar(state_source / "untracked-payload.tar", state_destination)
-        safe_extract_tar(state_source / "ignored-preserved-payload.tar", state_destination)
+        for filename in ("tracked-current.tar", "untracked-payload.tar", "ignored-preserved-payload.tar"):
+            safe_extract_tar(state_source / filename, state_destination,
+                             allowed=allowed_links, source_worktree=metadata["worktree"])
+        validate_link_plan(state_destination, allowed=allowed_links, source_worktree=metadata["worktree"])
         refresh_clean_index_entries(state_destination, state_source)
 
         expected_status = (state_source / "status-v2-no-branch.z").read_bytes()
@@ -415,6 +347,8 @@ def main() -> None:
         "protectedCommitCount": len(commit_ids),
         "worktreeReplays": results,
         "fsckExitCode": fsck.returncode,
+        "externalLinkAllowlistEntries": len(allowed_links),
+        "externalLinkAllowlistSha256": sha256_file(arguments.external_link_allowlist) if arguments.external_link_allowlist else None,
     }
     (restore / "restore-verification.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",

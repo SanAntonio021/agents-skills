@@ -38,12 +38,12 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 
 1. 读取仓库及上级 AGENTS.md、项目规则和测试入口。
 2. 用 git ls-remote --symref &lt;remote&gt; HEAD 确定默认分支；不要凭 main、master 或当前分支名猜测。
-3. 列出正在写这个仓库的任务、进程、IDE 和同步程序。等待已知写入者结束。
-4. 仓库位于百度网盘、OneDrive、Dropbox 等同步目录时，记录同步程序原状态并暂停它。无法确认已暂停就停止。
+3. 按现有协作方式确认已知 Git 写入者、会改工作树的任务/IDE 和自动化已结束或交接；单次进程快照不能代替协调。
+4. 区分单向备份与双向同步。正常单向备份仅因客户端运行、正在上传或暂停状态未知，不阻断收口；双向覆盖风险、真实回写或并发 Git 写入则阻断受影响的封包、集成或删除步骤。记录模式、监控范围及实际干扰证据，不自动暂停或强停客户端，暂停也不是冻结的唯一门槛。
 5. 检查每个 worktree 是否存在 merge、rebase、cherry-pick、revert、bisect、sequencer 或 unmerged index。任一存在就停止。
-6. 记录 live remote heads/tags、全部本地 refs、HEAD、reflog、stash、worktrees 和各工作树状态。连续两次读取不一致时，现场未冻结。
+6. 按恢复合同采集完整状态与哈希，两次快照间隔至少 2 秒；live remote heads/tags、全部本地 refs、HEAD、reflog、stash、worktrees、index、工作树及 ignored/payload 任一不一致时，现场未冻结。两次一致只是必要证据，不能覆盖已知写入者尚未交接的事实。
 
-冻结之后只允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、文件、index、worktree、remote 或同步状态变化会使恢复包失效。
+冻结之后只允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、文件、index、worktree 或 remote 变化会使恢复包失效；客户端上传进度、运行或暂停状态本身不算仓库漂移。Git 失败按 command-memory 的有界观察规则处理，不用控制客户端代替复核。
 
 ## 2. 明确 ignored 内容的归口
 
@@ -74,13 +74,15 @@ python <skill>\scripts\capture_recovery.py --repo <repo> --remote <remote> --pri
 - 保存二进制 staged/unstaged patch、index、tracked 当前字节、untracked payload 和需保留的 ignored payload；
 - 保存 refs、reflog、stash、worktree、Git 元数据、文件模式和 SHA-256；
 - 从明确 backup refs 创建 repository-recovery.bundle，校验后复制成字节一致的第二份包；
-- 封包前重新核对 remote、refs、reflog、stash、worktrees、index、状态和所有 payload。
+- 封包前后重新核对 remote、refs、reflog、stash、worktrees、index、状态和所有 payload 的完整状态与哈希；除已记录的本流程预期变化外必须一致。
 
 随后在全新路径演练：
 
 ~~~powershell
 python <skill>\scripts\verify_recovery.py --source <primary-package> --mirror <mirror-package> --restore <new-isolated-restore-dir>
 ~~~
+
+存在指向工作树外的 junction/symlink 时默认拒绝隔离恢复；仅按恢复合同的准确 `--external-link-allowlist` 恢复获授权链接本体，不跟随目标。旧包兼容与逐工作树 `links.json` 说明见恢复合同。
 
 隔离重放顺序固定为 staged patch、unstaged patch、tracked 当前字节、untracked payload、需保留的 ignored payload。只有两份 package manifest、两份 bundle、所有受保护对象、每个 worktree 的状态/index/模式/哈希和 git fsck --full 全部通过，才进入集成。
 
@@ -115,13 +117,13 @@ python <skill>\scripts\verify_recovery.py --source <primary-package> --mirror <m
 git -C <integration-worktree> push <remote> <candidate-40-sha>:refs/heads/<default>
 ~~~
 
-默认分支禁止 --force 和 --force-with-lease。推送成功后立即用 ls-remote 读取 live SHA；源码已推送只代表历史发布，不代表运行时部署或激活。
+默认分支禁止 --force 和 --force-with-lease。推送成功后立即用 ls-remote 读取准确 ref 的 live SHA。结果不明时先查远端：已等于候选 SHA 就跳过重推；仍等于原冻结 SHA，且本地候选和发布门均未变化时，最多补一次普通 push；其他 SHA 或读取失败则停止受影响步骤。commit、merge、checkout 失败不自动重跑，删除不自动重试。源码已推送只代表 Git 历史发布，不代表运行时部署、激活或百度备份完成。
 
 ## 7. 条件删除
 
 第一个删除动作前重新检查：
 
-- 同步程序仍暂停，Git 元数据没有新污染；
+- 已知写入者协调仍有效，没有双向覆盖风险、真实回写或并发 Git 写入；正常单向备份运行/上传/暂停未知不阻断；
 - 两份 package manifest、bundle 和隔离恢复回执仍有效；
 - 所有冻结 refs、tags、worktrees、stash、index、工作树 payload 与删除计划一致；
 - live remote 的每个待删分支仍处于冻结 SHA。
@@ -142,7 +144,7 @@ git push --atomic --force-with-lease=refs/heads/<branch-a>:<frozen-a-40-sha> --f
 4. stash 当前列表与冻结清单逐字一致时，按索引从大到小 drop，或一次 clear；不一致就停止。
 5. 删除本次 refs/backup/branch-consolidation/&lt;stamp&gt;/ 临时 refs。保留 tags、两份恢复包和隔离恢复仓库。
 
-## 8. 最终验收与同步恢复
+## 8. 最终验收与备份状态复核
 
 运行只读验收：
 
@@ -152,7 +154,7 @@ python <skill>\scripts\verify_acceptance.py --repo <repo> --remote <remote> --sn
 
 用户要求连 ignored 产物一起清空时增加 --require-no-ignored。验收必须全部为 ok=true。
 
-恢复同步程序原运行状态，再观察 Git 公共目录是否出现临时 ref、锁或历史倒退。污染重现就保留恢复包并报告验收未完成。清理后按项目要求复跑关键测试。
+保持客户端原状；只有本任务曾另获授权改变其状态时，才按该授权恢复原状态。复核 Git 公共目录是否出现临时 ref、锁或历史倒退；真实污染重现则保留恢复包并报告受影响验收未完成。正常上传本身不影响 Git 验收。清理后按项目要求复跑关键测试。
 
 ## 9. 回滚边界
 
@@ -163,4 +165,4 @@ python <skill>\scripts\verify_acceptance.py --repo <repo> --remote <remote> --sn
 - worktree 按隔离演练的固定顺序重建 staged、unstaged、untracked 和 preserved ignored 内容。
 - 根工作树原 dirty 状态恢复到独立 recovered/pre-consolidation-default worktree，避免覆盖已发布默认分支。
 
-完成汇报区分：Git 历史发布、refs/worktree/工作区清理、测试、运行时部署和同步程序复核。只报告已有证据覆盖的状态。
+完成汇报区分：Git 历史发布、refs/worktree/工作区清理、测试、运行时部署和百度等备份客户端状态复核；Git 远端验证不证明百度备份完成。只报告已有证据覆盖的状态。

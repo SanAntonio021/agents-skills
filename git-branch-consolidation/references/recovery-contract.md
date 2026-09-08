@@ -18,9 +18,13 @@
 | 工作树 | unstaged binary patch、当前 tracked 字节、untracked payload |
 | ignored | 根路径、preserve/reproducible 分类、逐项大小、模式和 SHA-256 |
 | Git 健康 | active operations、unmerged index、fsck --full、log --all |
-| 同步状态 | 同步进程名称、PID、原状态、暂停证据和恢复时间 |
+| 备份/同步状态 | 单向备份或双向同步模式、监控范围、已知写入者协调、真实回写/占用证据；仅在另获授权改变客户端状态时记录原状态和恢复时间 |
 
-所有 Git 读取使用 --no-optional-locks，避免 index 刷新被误判为并发写入。冻结前允许一次明确的 fetch --prune；冻结后任何非预期变化都作废快照。
+所有 Git 读取使用 --no-optional-locks，避免 index 刷新被误判为并发写入；每条命令退出 0 后才消费结果。确认已知写入者已按现有机制交接后，间隔至少 2 秒采集两份完整快照，逐项比较上表的 refs、HEAD、reflog、stash、worktree、index、文件清单/类型/模式/大小/链接目标/哈希；不是只比较 HEAD 或普通 status。封包前后再核对完整状态与哈希，删除前精确复核待删 ref 与 payload。除本流程记录的预期变化外，任何漂移都作废快照。
+
+正常单向备份的运行、上传或暂停状态未知不是失败条件；双向覆盖风险、真实回写和并发 Git 写入只阻断受影响步骤。稳定双快照不能代替已知写入者协调，也不要求一律暂停客户端。不得强停客户端、删除未知锁或绕过 hooks。
+
+冻结前允许一次明确的 fetch --prune。失败后按 command-memory/references/git-on-windows.md 的规则，在 2、5、10、20 秒后最多复查 4 次（累计 37 秒）；状态未变只观察，准确临时 ref 或占用消失且仓库状态符合预期后，才最多补一次必要的 fetch。fetch 恢复需退出 0、准确目标 SHA 和对象可解析、连接检查通过；ls-remote 不是 fetch 的替代。失败后 commit/merge/checkout 不自动重跑，删除不自动重试。
 
 ## 2. ignored disposition
 
@@ -79,6 +83,7 @@ snapshot/
   fsck-result.json
 worktrees/000/
   metadata.json
+  links.json
   status-v2-no-branch.z
   ls-files-stage.z
   staged.patch
@@ -90,7 +95,7 @@ worktrees/000/
 git-metadata/git-metadata.tar
 ~~~
 
-package-manifest.sha256 覆盖包内除自身之外的每个文件，并记录 SHA-256、字节数和相对路径。两份包应从同一已封存目录复制，manifest 及所有文件字节一致。
+package-manifest.sha256 覆盖包内除自身之外的每个文件，并记录 SHA-256、字节数和相对路径。两份包应从同一已封存目录复制，manifest 及所有文件字节一致。封包前后完整状态和哈希不一致时，不得以两份副本相同代替源状态稳定；两份包都须验证，并通过隔离恢复演练。
 
 Git 官方文档说明 bundle 只打包可达 Git 对象和 refs，不包含工作树、index、stash 的工作区语义、配置或 hooks。因此 bundle 不能替代 patch、payload 和状态清单：
 
@@ -135,6 +140,35 @@ bundle verify、bundle list-heads 与 backup-refs.json 必须一致。隔离 mir
 
 reproducible ignored 内容不在恢复工作树创建，只核对其冻结清单仍存在于包内。隔离 bare repo 最后运行 fsck --full。任一步失败都不允许开始删除。
 
+### 链接与外部目标
+
+每个新恢复包的 `worktrees/<id>/links.json` 记录该工作树的链接本体，包括仓内相对路径、链接种类和原始 target。捕获和重放均不跟随 junction/symlink 去遍历、复制、哈希或删除目标目录；目标中的文件不能冒充仓库 payload。需要保全目标内容时，应作为另一个明确授权对象处理。
+
+隔离恢复默认拒绝指向恢复工作树外的链接。只有已获授权的准确链接，才通过下列参数允许恢复链接本体：
+
+~~~powershell
+python <skill>\scripts\verify_recovery.py --source <primary-package> --mirror <mirror-package> --restore <new-isolated-restore-dir> --external-link-allowlist <external-link-allowlist.json>
+~~~
+
+allowlist 使用 `schemaVersion: 1` 和 `links` 数组；每项的 `worktree`（冻结的原工作树）、`path`（仓内相对路径）、`kind`、`target`（原始链接目标文本）须与冻结记录严格匹配，不按名称相似或解析后位置放宽。以下占位值必须从现场记录取得，不写入本机固定路径：
+
+~~~json
+{
+  "schemaVersion": 1,
+  "links": [
+    {
+      "worktree": "<original-worktree>",
+      "path": "<repository-relative-link-path>",
+      "kind": "<recorded-link-kind>",
+      "target": "<original-target-text>"
+    }
+  ]
+}
+~~~
+
+授权只覆盖创建所列链接本体，不覆盖读写外部目标。旧版 schemaVersion 2 恢复包缺少 `links.json` 时，沿用旧包中已有的链接记录和验证能力，不仅因新文件缺失拒绝旧包；不得推断未记录的 junction 或把未知目标当成已授权，外部链接仍默认拒绝。两份包和隔离恢复必须使用相同的准确 allowlist。
+
+
 ## 6. 提交判重记录
 
 每个待判断提交应有一条记录：
@@ -161,19 +195,21 @@ reproducible ignored 内容不在恢复工作树创建，只核对其冻结清�
 4. 所有测试通过；
 5. 普通 fast-forward push，不带任何 force 选项。
 
+push 返回失败或结果不明时，先读取准确远端 ref：等于预期候选 SHA 则跳过重推；仍等于原冻结 SHA 且候选、测试和发布条件未变，才可补一次普通 push；其他 SHA 或读取失败均停止受影响步骤。Git 远端成功不代表百度备份成功。
+
 远端辅助分支删除条件：
 
 1. live remote 默认分支已经等于最终 SHA；
 2. 每个待删 ref 仍存在且 tip 等于冻结 SHA；
 3. tags 清单未变化；
-4. 同步程序仍暂停；
+4. 已知写入者协调仍有效，间隔至少 2 秒的完整双快照稳定、封包前后完整哈希相符，且没有双向覆盖风险、真实回写或并发 Git 写入；正常单向备份运行、上传或暂停状态未知不阻断；
 5. 两份恢复包与隔离演练回执仍有效。
 
 删除必须是一次 atomic push，每个分支带独立 lease。Git 官方 push 文档说明 force-with-lease 只有在期望 ref 值匹配时才允许更新；本合同把它用于保护“冻结 tip 未变化才删除”的条件，不用于默认分支：
 
 - https://git-scm.com/docs/git-push
 
-服务器拒绝 atomic 时保持全部远端分支，不逐项重试。删除命令的 stdout、stderr、退出码和删除前后 ls-remote 均写入执行记录。
+服务器拒绝 atomic 时保持全部远端分支，不逐项重试。删除结果不明时仅核查每个准确 ref，不自动重放删除；任何异常停止剩余删除。删除命令的 stdout、stderr、退出码和删除前后 ls-remote 均写入执行记录。
 
 ## 8. 本地清理
 
@@ -235,7 +271,7 @@ verify_acceptance.py 检查：
 4. 远端同名 ref 不存在且原授权覆盖恢复时，以普通 create push 重建；名字已被他人使用时停止。
 5. 用隔离演练目录中的恢复顺序重建 worktrees。
 6. 原根工作树 dirty 状态恢复到独立 recovered/pre-consolidation-default worktree。
-7. 同步程序只恢复到冻结时记录的原状态，随后重新检查 Git 元数据。
+7. 客户端默认保持原状；只有本任务另获授权改变过状态时才按原授权恢复，随后重新检查 Git 元数据。不得把暂停状态或备份进度代替 Git 恢复验证。
 
 两份包位于同一物理盘时，只能防单路径误删或同步污染，不能防整盘故障。把这个边界写入执行记录，不把双目录描述成异盘灾备。
 

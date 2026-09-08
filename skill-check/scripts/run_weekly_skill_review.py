@@ -2552,7 +2552,21 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     "question": question_payload(finding),
                 }, 0
 
-            if status == "facts":
+            resolve_queued_facts = (
+                status in {"deferred", "queued"}
+                and args.facts_outcome in {"close", "wait"}
+            )
+            if resolve_queued_facts and not (
+                finding.get("needs_facts") is True
+                and finding.get("proposal") is None
+                and finding.get("proposal_fingerprint") is None
+            ):
+                return {
+                    "status": "invalid_state",
+                    "error": "direct fact resolution requires a facts-only finding without a proposal",
+                }, 2
+
+            if status == "facts" or resolve_queued_facts:
                 answer_summary = compact_text(args.reason or args.answer)
                 if args.facts_outcome is None and classification in {"approve", "reject"}:
                     if classification == "approve" and finding.get("proposal_fingerprint") is None:

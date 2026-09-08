@@ -5,7 +5,7 @@
 ## 分层
 
 - `<agents-root>/upstream/repo-mirrors.toml`：上游仓库镜像配置。
-- `<agents-root>/upstream/skill-sources.toml`：全部已纳入源仓库的自建技能与已确认上游 `skill` 的机器可读关系。
+- `<agents-root>/upstream/skill-sources.toml`：公开源码的自建技能与已确认上游 `skill` 的机器可读关系；私有源码使用独立的 `private-skill-sources.toml`。
 - `<agents-root>/skills/<name>/references/upstream-sources.md`：给人查看的单技能来源说明，由集中登记表生成。
 - `<agents-root>/reports/skill-upstream/`：周检报告、隔离候选、测试结果和审核状态；该目录不进入 Git。
 
@@ -20,7 +20,10 @@
 3. 本地文件明确写明“已吸收”“fork”“本地落点”时，才可登记为 `confirmed`。
 4. 只有功能相似、没有吸收证据的来源写进审查报告，状态是候选；候选至少记录仓库 URL、仓内路径、提交或 tag、许可证、吸收证据、已吸收内容和不吸收边界。用户逐来源确认前不进入正式来源关系。
 5. 没有确认来源的技能也必须登记，状态为 `none`。
-6. 首次调查完成后，不再周期性寻找新来源；周检只处理已确认来源。
+6. 周检持续检查已确认来源；用户反馈、评测暴露的能力缺口或来源待查可触发定向发现。默认每周最多研究三个技能、每个深入比较两个候选，其余顺延。新来源只进入现有问题队列，不自动登记为 confirmed，不自动吸收；同一候选没有新证据不重复询问。
+
+本地删减后，对照登记的已吸收能力和文件变化复核：有意删除时更新来源说明，疑似退化进入人工审核。
+文件摘要只说明内容变了，不能证明能力退化；无上游的自创技能仍可保持 `none`，不为补齐来源而强配仓库。
 
 ## 周检
 
@@ -54,6 +57,25 @@ python <script> weekly-run `
 ```
 
 `<script>` 是 `<agents-root>/skills/agent-rules/scripts/skill_upstream_maintenance.py`。
+
+公开和私有源码各用独立登记、报告根和状态运行同一入口。私有调用将 `--skills-root` 指向
+`<agents-root>/private-skills`，`--registry` 指向 `<agents-root>/upstream/private-skill-sources.toml`，
+`--reports-root` 使用公开上游报告根下的 `private/`，并传 `--source-scope private`。公开默认
+`--source-scope public`；两者可复用镜像登记。统一周检汇总时按 `public:<name>` / `private:<name>` 区分，
+不能因同名覆盖状态。私有源码、来源说明和候选材料留在私有工作区，第三方安装套件不纳入改写。
+
+报告分别记录最近成功检查 `last_successful_check_at/commit`、最近审核
+`last_reviewed_commit/at` 与 `last_disposition`、实际接受基线 `accepted_commit`。
+成功检查时间只在本次远端刷新成功且来源比较未失败时推进；失败只保留本次尝试及原始错误，
+旧成功记录保持不变。`report` 只检查本地镜像，更新 `last_local_check_at`，不能证明远端已检查。
+最近远端尝试另存 `last_remote_check_attempt_at` 与 `last_remote_check_status`，本地 `report` 不覆盖它们。
+同日成功后重生成报告可沿用原成功证据；后续远端失败或旧状态缺少远端证据时，周检不得计为完整。
+登记页日期和 `last_seen_at` 都不能代替成功检查时间。旧状态缺少这些字段时显示未知，保留原有历史与决定。
+
+`summary.json` 的 `local_skills` 包含已登记的 confirmed 和 none 技能及当前 `local_digest`；
+每个来源列出 `adopted`、`excluded`、`accepted_commit` 和可选 `accepted_local_digest`，供技能周检做人工复核。
+摘要忽略自动生成的来源页和工具缓存。旧来源未保存已接受本地摘要时保持未知；不把首次扫描摘要冒充接受记录。
+`complete-review` 通过批准后复测时，在原有可恢复事务内保存 `accepted_local_digest`。
 
 `weekly-run` 每次先写 `preflight-validation.json`。登记表或镜像表存在结构性错误时，保存预检错误并阻止镜像刷新；
 只有“本地技能尚未登记”这类覆盖缺口时，继续刷新镜像和检查全部既有 confirmed 来源，完整写出
@@ -208,5 +230,6 @@ python <script> record-review --state <reports-root>/state.json `
 `../../skill-check/references/weekly-review.md`。
 
 任务必须先读全局规则、`skill-check`、`agent-rules`、`skill-creator` 和 `web-access`。它可以在日期报告
-目录中准备、评估和测试隔离候选，但用户逐项批准以及最终执行确认前，不得应用、提交、推送或同步。
+目录中准备、评估和测试隔离候选；具体来源确认、改动和发布沿用当前任务已有明确授权，尚未授权的事项逐项确认。
+没有新证据、实质变化或用户待办时保持安静，不为重复报告而重复询问。
 每次只展示一项问题；用户不需要阅读完整周报，报告路径只保留为可核验证据。

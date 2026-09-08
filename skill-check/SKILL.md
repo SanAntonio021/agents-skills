@@ -225,6 +225,13 @@ python scripts/run_weekly_skill_review.py scan --date <YYYY-MM-DD> --json
 python scripts/run_weekly_skill_review.py next-question --json
 ```
 
+周检覆盖公开、私有维护源码，以 `public:<name>` / `private:<name>` 隔离同名身份。
+明确用户反馈、评测缺口或来源待查可用 `scan --discovery-input <JSON>` 纳入定向研究：
+每周最多三个技能，每技能最多两个候选，未入选持久顺延；零收益或受阻结论保留到出现新证据。
+本地内容变化后，对登记的已吸收能力只生成待人工复核项，不用字符匹配断言行为退化。
+候选来源、收益和复核结论复用现有状态与问题队列，不自动登记或改写；输入示例、私有报告位置及
+复核关闭方法见上述参考文件。
+
 周检状态写入 `<reports-root>/weekly-review-state.json`，采用跨进程锁、临时文件和原子替换。
 状态损坏、未知 `schema_version` 或锁冲突只报告严重问题，保留原文件，不自动重建。finding ID
 按“类型、技能、独立修改目的”稳定生成；证据、方案和源码基线 fingerprint 未变时不重复问，
@@ -273,10 +280,10 @@ python scripts/run_weekly_skill_review.py next-question --json
 - 不把源文件目录直接当成“当前已加载技能列表”。
 - 不把 cc-switch 面板显示名直接当成磁盘目录名。
 - 不再按旧的分层目录判断技能来源；如果发现旧目录，只当作需要人工复核的历史残留。
-- 不自动跑市场搜索，也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
+- 不无目标地跑市场搜索；周检只按明确缺口定向研究。也不替代 [../agent-rules/SKILL.md](../agent-rules/SKILL.md) 的规则说明角色。
 - 不替代 `skill-creator` 的创建和改写工作。
 - 这里保留市场安装检查脚本，但不把自己改成“自动更新器”；默认仍以只读审计为主。
-- 不启动 daemon、实时 watcher 或常驻 dashboard 服务，不联网，不修改 transcript、技能或运行时目录；
+- 历史使用审计不启动 daemon、实时 watcher 或常驻 dashboard 服务，不联网，不修改 transcript、技能或运行时目录；
   周检只生成可直接打开的离线 dashboard 文件。
 - 不根据一次低频或无记录结论自动降级、合并、归档或删除技能。
 - 周检脚本只维护观察、决定和执行批次状态；它不替用户批准、修改、提交、推送或同步技能。

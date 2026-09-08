@@ -127,3 +127,106 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 引用保留在状态和最终摘要中。
 
 内部 fingerprint 用于发现变化。变化后重新核实当前内容、工具来源和授权范围；若实质动作未变，可依据原准确授权重建批次，不向用户要求粘贴哈希。
+
+## 本地维护范围、定向发现与能力复核
+
+公开根默认沿用 `--skills-root`，私有根默认读取 `--agents-root/private-skills`（存在才启用），也可用
+`--private-skills-root` 显式指定。只盘点这些自建源码根下真实 `SKILL.md`，不进入已安装第三方套件。
+公开、私有上游与目录检查分别运行；私有登记默认是 `--agents-root/upstream/private-skill-sources.toml`，
+可用 `--private-registry` 改向。私有上游的状态和报告写到 `<reports-root>/private/`，镜像登记复用
+当前项目的 `upstream/repo-mirrors.toml`。缺私有登记会报告受阻，公开检查仍继续；不推测来源补登记。
+
+研究任务的身份是 `public:<name>` / `private:<name>`，同名也不合并。旧公开 finding ID 和决定保持兼容；
+新增私有 finding 使用独立身份，先作为人工事实复核，不把私有目标送入公开源码的执行批次。私有候选
+仍在私有源码、登记及隔离工作区中按既有流程审核发布，材料不得复制进公开技能仓库。
+
+`scan` 同时返回 `discovery`，并把相同内容写入本轮 `weekly-review.json`。它包括维护清单、
+`research_tasks`（本周可研究的问题）、`admitted_skills`、限额、顺延任务和已有研究结论。
+状态复用 `weekly-review-state.json` 的可选 `discovery` 字段，旧 schema 1 和历史决定不重建。
+
+定向研究只接受明确用户反馈、评测缺口、来源待查，优先级依次降低；低频或零调用不触发。
+同一上海日期所属的周六至下周五共享最多三个技能的额度，每技能最多深入比较两个独立仓库/路径候选；
+同周重跑不重置额度，未入选的问题持久顺延。来源登记为 `none` 可以正常保留；若其含义只是尚无已确认
+来源，而且确有待查依据，使用显式 `source_unknown` 输入，不能把全部 `none` 技能强制送去找源。
+
+脚本只安排和记录研究，不自行联网。当前任务按 `web-access` 研究 `research_tasks`；实际深入比较也须
+遵守返回限额，不能先超额研究再只登记两个。作者归属、仓库路径、版本与许可证需分别核实；转载相同文本
+不能证明原作者身份。研究产物只是待审核来源与收益证据，不自动登记上游、改源码或推进接受基线。
+
+先把明确触发依据保存为过程目录中的 UTF-8 JSON，再导入：
+
+```json
+{
+  "schema_version": 1,
+  "triggers": [
+    {
+      "skill_key": "private:pdf",
+      "trigger": "source_unknown",
+      "purpose": "resolve-provenance",
+      "evidence": "本地说明提到参考来源，但尚未核实准确仓库路径、版本和许可证。"
+    }
+  ]
+}
+```
+
+```powershell
+python scripts/run_weekly_skill_review.py scan --date <YYYY-MM-DD> --discovery-input <input.json> --json
+```
+
+从 `discovery.research_tasks` 取真实 `id` 与 `evidence_fingerprint`，完成研究后按原值回填。下例的候选
+字段均必填；`revision` 和 `license` 尚未核实时明确写 `未核实`，不能省略并暗示已核实。`source_evidence`
+说明作者与来源证据，`upstream_improvement`、`local_gap`、`expected_benefit`、`conflicts` 分别写具体改进、
+本地缺口、预期收益及兼容冲突，不只写“值得吸收”。
+
+```json
+{
+  "schema_version": 1,
+  "results": [
+    {
+      "task_id": "从 research_tasks 复制的 id",
+      "expected_evidence_fingerprint": "从该任务复制的 evidence_fingerprint",
+      "outcome": "candidates",
+      "evidence": "说明本轮比较方法，并引用实际研究记录。",
+      "candidates": [
+        {
+          "repo_url": "https://example.invalid/owner/repo",
+          "upstream_path": "skills/example",
+          "revision": "未核实",
+          "license": "未核实",
+          "source_evidence": "实际仓库或作者页面及证据位置；此示例地址不可当作真实来源。",
+          "upstream_improvement": "新增前提检查及回答后的假设更新。",
+          "local_gap": "本地目前缺少对应检查。",
+          "expected_benefit": "发现表面问题与真实目标之间的偏差。",
+          "conflicts": "保留本地显式调用边界，避免变成固定问卷。"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```powershell
+python scripts/run_weekly_skill_review.py scan --date <同轮日期> --reuse-reports --discovery-input <results.json> --json
+```
+
+没有值得吸收的内容时用 `outcome: "no_benefit"`；联网、访问或证据受阻时用 `outcome: "blocked"`。
+这两类保留 `task_id`、`expected_evidence_fingerprint`、具体 `evidence`，省略 `candidates` 或给空列表。
+同一问题、同一触发证据不再重复研究；新事实或明确恢复依据作为同一 `skill_key/trigger/purpose` 的新
+`evidence` 输入，旧结果进入历史，再按本周额度重开。输入无效或超限不写入部分研究状态，其他审计仍继续。
+
+本地能力复核比较每个维护技能的内容指纹，排除工具缓存和自动生成的来源页。首次无可核验接受指纹时只建
+观察快照，不声称已通过语义审核。此后内容变化且登记曾包含已吸收能力时，生成 `local_capability_review`
+事实复核项：人工比较正文、触发条件、完成路径和必要评测。有意删除更新登记说明；疑似退化先评测，不自动
+补回。上游扫描失败保留上次已吸收内容，不把空报告解释为能力消失。
+
+研究候选和本地复核复用 `next-question` 逐项入口。已有授权足以完成只读语义复核时，由当前任务记录真实
+证据，不让用户代读代码。确认无需修改可复用既有事实关闭接口：
+
+```powershell
+python scripts/run_weekly_skill_review.py record-decision --finding-id <finding-id> `
+  --expected-evidence-fingerprint <本项当前值> --expected-proposal-fingerprint none `
+  --classification auto --facts-outcome close --answer "具体人工核对结论和评测证据；无需修改。" --json
+```
+
+未问清用 `--facts-outcome wait` 并记录缺少的证据。需要修改则进入既有来源确认、隔离候选和逐项批准流程，
+不能把人工复核项直接解释成批准修改。关闭或等待状态遇到相同证据不重问，证据变化才重新排队。

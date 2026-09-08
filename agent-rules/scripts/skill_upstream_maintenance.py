@@ -89,6 +89,8 @@ class SourceRecord:
     evidence_files: tuple[str, ...]
     adopted: tuple[str, ...]
     excluded: tuple[str, ...]
+    accepted_local_digest: str = ""
+    accepted_at: str = ""
 
 
 @dataclass(frozen=True)
@@ -141,6 +143,7 @@ def parse_args() -> argparse.Namespace:
         report.add_argument("--reports-root", required=True, type=Path)
         report.add_argument("--date", required=True)
         report.add_argument("--state", type=Path)
+        report.add_argument("--source-scope", choices=("public", "private"), default="public")
         report.add_argument("--json", action="store_true")
 
     prepare = subparsers.add_parser("prepare-review", help="Create an isolated review workspace.")
@@ -275,6 +278,8 @@ def load_sources(path: Path) -> list[SkillRecord]:
                 evidence_files=tuple(str(value).strip("/") for value in source.get("evidence_files", [])),
                 adopted=tuple(str(value) for value in source.get("adopted", [])),
                 excluded=tuple(str(value) for value in source.get("excluded", [])),
+                accepted_local_digest=str(source.get("accepted_local_digest", "")).lower(),
+                accepted_at=str(source.get("accepted_at", "")),
             )
             )
         sources = tuple(sources_list)
@@ -464,6 +469,10 @@ def validate_registry(
                 errors.append(f"{skill.name}/{source.id}: mirror exposure_policy must be zero")
             if not SHA_PATTERN.fullmatch(source.accepted_commit):
                 errors.append(f"{skill.name}/{source.id}: accepted_commit must be a full 40-character SHA")
+            if source.accepted_local_digest and not SHA256_PATTERN.fullmatch(source.accepted_local_digest):
+                errors.append(f"{skill.name}/{source.id}: accepted_local_digest must be a SHA-256 digest")
+            if source.accepted_at and review_timestamp(source.accepted_at) is None:
+                errors.append(f"{skill.name}/{source.id}: accepted_at must be an ISO timestamp with timezone")
             if not is_safe_repo_path(source.upstream_path, allow_root=True):
                 errors.append(f"{skill.name}/{source.id}: upstream_path must be a safe repository-relative path")
             if not is_safe_repo_path(source.accepted_upstream_path, allow_root=True):
@@ -709,6 +718,7 @@ def render_skill_reference(skill: SkillRecord) -> str:
                 f"- 接受时上游路径：`{source.accepted_upstream_path}`",
                 f"- 技能入口：`{source_skill_entry_path(source)}`",
                 f"- 已接受提交：`{source.accepted_commit}`",
+                *([f"- 实际接受时间：`{source.accepted_at}`"] if source.accepted_at else []),
                 f"- 已接受版本：`{source.accepted_version or '未提供'}`",
                 f"- 基线类型：`{source.baseline_kind}`",
                 f"- 更新策略：`{source.update_policy}`",
@@ -1783,6 +1793,36 @@ def markdown_report_text(value: Any) -> str:
     return compact_report_text(value).replace("`", "'") or "-"
 
 
+def review_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed.astimezone(timezone.utc) if parsed.tzinfo is not None else None
+
+
+def latest_review_metadata(source: SourceRecord, source_state: dict[str, Any]) -> dict[str, Any]:
+    metadata = {key: source_state.get(key) for key in (
+        "last_reviewed_commit", "last_reviewed_at", "last_disposition",
+        "reviewed_against_accepted_commit",
+    )}
+    accepted_time = review_timestamp(source.accepted_at)
+    reviewed_time = review_timestamp(metadata["last_reviewed_at"])
+    # Preserve an undated historical decision instead of guessing its order.
+    uncertain = bool(accepted_time and metadata["last_reviewed_commit"] and reviewed_time is None)
+    metadata["review_order_uncertain"] = uncertain
+    if accepted_time and not uncertain and (reviewed_time is None or accepted_time >= reviewed_time):
+        metadata.update({
+            "last_reviewed_commit": source.accepted_commit,
+            "last_reviewed_at": source.accepted_at,
+            "last_disposition": "accepted",
+            "reviewed_against_accepted_commit": source.accepted_commit,
+        })
+    return metadata
+
+
 def build_report(
     skills: list[SkillRecord],
     mirrors: dict[str, MirrorRecord],
@@ -1793,7 +1833,11 @@ def build_report(
     mirror_refresh_exit_code: int | None = None,
     mirror_manager_error: str | None = None,
     preflight_validation: dict[str, Any] | None = None,
+    skills_root: Path | None = None,
+    source_scope: str = "public",
 ) -> dict[str, Any]:
+    if source_scope not in {"public", "private"}:
+        raise ValueError("source_scope must be public or private")
     if mirror_manager_error:
         mirror_results, _ = normalize_mirror_refresh_results(
             {
@@ -1807,8 +1851,29 @@ def build_report(
     state = read_state(state_path)
     candidates, candidate_conflicts = finalized_candidate_index(reports_root, skills, mirrors)
     rows: list[dict[str, Any]] = []
+    local_skills: list[dict[str, Any]] = []
     now = datetime.now(timezone.utc).isoformat()
     for skill in skills:
+        local_digest = (
+            local_skill_digest(skills_root / skill.name)
+            if skills_root is not None and (skills_root / skill.name / "SKILL.md").is_file()
+            else None
+        )
+        local_skills.append({
+            "name": skill.name,
+            "skill": skill.name,
+            "skill_key": f"{source_scope}:{skill.name}",
+            "source_scope": source_scope,
+            "status": skill.status,
+            "local_digest": local_digest,
+            "adopted": [{
+                "source": source.id,
+                "adopted": list(source.adopted),
+                "excluded": list(source.excluded),
+                "accepted_commit": source.accepted_commit,
+                "accepted_local_digest": source.accepted_local_digest or None,
+            } for source in skill.sources],
+        })
         for source in skill.sources:
             mirror = mirrors[source.mirror_id]
             source_state = state["sources"].setdefault(source.id, {})
@@ -1901,6 +1966,37 @@ def build_report(
             if isinstance(observed_commit, str) and SHA_PATTERN.fullmatch(observed_commit.lower()):
                 source_state["last_seen_commit"] = observed_commit.lower()
                 source_state["last_seen_at"] = now
+            source_state["last_check_attempt_at"] = now
+            source_state["last_check_status"] = row["status"]
+            if mirror_results is not None or mirror_refresh_exit_code is not None:
+                source_state["last_remote_check_attempt_at"] = now
+                source_state["last_remote_check_status"] = row["status"] if refresh_result else "mirror_blocked"
+            # A local report cannot establish that the remote was successfully checked.
+            if row["status"] not in CHECK_ERROR_STATUSES:
+                source_state["last_local_check_at"] = now
+                if refresh_result and refresh_result.get("status") in SUCCESSFUL_MIRROR_REFRESH_STATUSES:
+                    source_state["last_successful_check_at"] = now
+                    source_state["last_successful_check_commit"] = observed_commit
+            row.update({
+                "skill_key": f"{source_scope}:{skill.name}",
+                "source_scope": source_scope,
+                "accepted_commit": source.accepted_commit,
+                "accepted_upstream_path": source.accepted_upstream_path,
+                "upstream_path": source.upstream_path,
+                "registry_review_date": skill.last_review_date,
+                "accepted_at": source.accepted_at or None,
+                "last_check_attempt_at": now,
+                "last_remote_check_attempt_at": source_state.get("last_remote_check_attempt_at"),
+                "last_remote_check_status": source_state.get("last_remote_check_status"),
+                "last_successful_check_at": source_state.get("last_successful_check_at"),
+                "last_successful_check_commit": source_state.get("last_successful_check_commit"),
+                "last_local_check_at": source_state.get("last_local_check_at"),
+                **latest_review_metadata(source, source_state),
+                "adopted": list(source.adopted),
+                "excluded": list(source.excluded),
+                "local_digest": local_digest,
+                "accepted_local_digest": source.accepted_local_digest or None,
+            })
             rows.append(row)
 
     referenced_mirror_ids = {
@@ -1978,6 +2074,8 @@ def build_report(
         "registry_missing_skills": missing_skills,
         "counts": counts,
         "sources": rows,
+        "source_scope": source_scope,
+        "local_skills": local_skills,
         "unreferenced_mirror_failure_count": len(unreferenced_mirror_failures),
         "unreferenced_mirror_failures": unreferenced_mirror_failures,
     }
@@ -2016,6 +2114,20 @@ def build_report(
     for row in rows:
         current = row.get("current_commit") or "-"
         md.append(f"| `{row['skill']}` | `{row['source']}` | `{row['status']}` | `{current[:12]}` | {len(row.get('changed', []))} |")
+
+    md.extend(["", "## 检查、审核与接受基线", "",
+               "成功检查时间只来自远端刷新及来源比较成功；本地快照检查不推进该时间。旧状态没有记录时显示未知。", "",
+               "| 来源 | 最近成功检查（UTC） | 最近审核提交 / 结论 / 时间 | 实际接受提交 |",
+               "| --- | --- | --- | --- |"])
+    for row in rows:
+        review = " / ".join(str(row.get(key) or "未知") for key in
+                            ("last_reviewed_commit", "last_disposition", "last_reviewed_at"))
+        if row.get("review_order_uncertain"):
+            review += "（历史审核时间未知，先后待核）"
+        acceptance = row["accepted_commit"] + " / " + (row.get("accepted_at") or "接受时间未知")
+        md.append(f"| `{row['source']}` | {row['last_successful_check_at'] or '未知'} | {review} | {acceptance} |")
+    md.extend(["", f"- 本地覆盖：{source_scope}，已登记技能 {len(local_skills)} 个；其中无确认上游 {sum(item['status'] == 'none' for item in local_skills)} 个。",
+               "- 已吸收说明、当前本地摘要和已接受本地摘要见 summary.json；摘要变化只供人工复核，不自动判定能力退化。"])
 
     awaiting_rows = [row for row in rows if row["status"] == "awaiting_approval"]
     if awaiting_rows:
@@ -2163,6 +2275,20 @@ def tree_hash(root: Path) -> str:
     for path in sorted(item for item in root.rglob("*") if item.is_file()):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def local_skill_digest(root: Path) -> str:
+    """Stable review signal, excluding generated provenance pages and tool caches."""
+    digest = hashlib.sha256()
+    for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        relative = path.relative_to(root)
+        if any(part in {".git", "__pycache__", ".pytest_cache", ".mypy_cache"} for part in relative.parts):
+            continue
+        if relative.as_posix() == "references/upstream-sources.md" or path.suffix in {".pyc", ".pyo"}:
+            continue
+        digest.update(relative.as_posix().encode("utf-8") + b"\0")
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
 
 
@@ -2700,6 +2826,15 @@ def update_registry_acceptance_text(
                     update["accepted_version"],
                     insert_after="accepted_commit",
                 )
+            if "accepted_at" in update:
+                source_lines = update_toml_string_field(
+                    source_lines, "accepted_at", update["accepted_at"], insert_after="accepted_commit",
+                )
+            if "accepted_local_digest" in update:
+                source_lines = update_toml_string_field(
+                    source_lines, "accepted_local_digest", update["accepted_local_digest"],
+                    insert_after="accepted_commit",
+                )
             for redundant_key in (
                 "accepted_upstream_path",
                 "path_migration_commit",
@@ -2917,6 +3052,8 @@ def complete_review(
             current_source = current_sources.get(current_source_id)
             if current_source is None:
                 raise ValueError(f"Completed source is no longer registered: {current_source_id}")
+            if accepted_entry.get("accepted_at") and current_source.accepted_at != accepted_entry["accepted_at"]:
+                raise ValueError(f"Completed source acceptance time drifted: {current_source_id}")
             expected_identity = accepted_entry.get("source_identity")
             if not isinstance(expected_identity, dict):
                 raise ValueError(f"Completed source identity is missing: {current_source_id}")
@@ -2963,6 +3100,8 @@ def complete_review(
 
     source_updates: dict[str, dict[str, str]] = {}
     updated_source_records: list[SourceRecord] = []
+    accepted_local_digest = local_skill_digest(skills_root / skill_name)
+    accepted_at = datetime.now(timezone.utc).isoformat()
     for current_source in skill.sources:
         source_context = source_context_by_id.get(current_source.id)
         if source_context is None:
@@ -2971,7 +3110,8 @@ def complete_review(
         accepted_commit = str(source_context.get("current_upstream_commit", "")).lower()
         if not SHA_PATTERN.fullmatch(accepted_commit):
             raise ValueError(f"Invalid reviewed commit for {current_source.id}.")
-        source_update = {"accepted_commit": accepted_commit}
+        source_update = {"accepted_commit": accepted_commit, "accepted_local_digest": accepted_local_digest,
+                         "accepted_at": accepted_at}
         accepted_version = current_source.accepted_version
         if current_source.id in versions:
             accepted_version = versions[current_source.id]
@@ -2982,6 +3122,8 @@ def complete_review(
                 current_source,
                 accepted_commit=accepted_commit,
                 accepted_version=accepted_version,
+                accepted_local_digest=accepted_local_digest,
+                accepted_at=accepted_at,
                 accepted_upstream_path=current_source.upstream_path,
                 path_migration_commit="",
                 path_migration_evidence=(),
@@ -3015,6 +3157,7 @@ def complete_review(
             "source": current_source.id,
             "accepted_commit": current_source.accepted_commit,
             "accepted_version": current_source.accepted_version,
+            "accepted_at": current_source.accepted_at,
             "accepted_upstream_path": current_source.accepted_upstream_path,
             "source_identity": source_identity_payload(current_source),
         }
@@ -3025,7 +3168,7 @@ def complete_review(
     completed_context.update(
         {
             "candidate_status": "completed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": accepted_at,
             "completed_review_date": review_date,
             "retest_confirmed": True,
             "accepted_sources": accepted_entries,
@@ -3259,6 +3402,8 @@ def main() -> int:
                 ),
                 mirror_manager_error=mirror_manager_error,
                 preflight_validation=validation,
+                skills_root=skills_root,
+                source_scope=args.source_scope,
             )
             emit(payload, args.json)
             refresh_failed = bool(refresh_payload and refresh_payload["exit_code"] != 0)

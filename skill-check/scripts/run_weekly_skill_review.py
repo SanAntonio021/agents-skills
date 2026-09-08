@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -11,7 +12,10 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from datetime import datetime, timedelta
+from contextvars import ContextVar
+from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
@@ -66,6 +70,9 @@ TERMINAL_FINDING_STATUSES = {
 }
 
 SCRIPT_PATH = Path(__file__).resolve()
+_discovery_spec = importlib.util.spec_from_file_location("weekly_discovery", SCRIPT_PATH.with_name("weekly_discovery.py"))
+DISCOVERY = importlib.util.module_from_spec(_discovery_spec)
+_discovery_spec.loader.exec_module(DISCOVERY)
 SKILL_ROOT = SCRIPT_PATH.parent.parent
 DEFAULT_SKILLS_ROOT = SKILL_ROOT.parent
 DEFAULT_AGENTS_ROOT = DEFAULT_SKILLS_ROOT.parent
@@ -195,6 +202,22 @@ def tree_fingerprint(path: Path) -> str:
     return fingerprint(rows)
 
 
+# A scan is one observation snapshot. Reuse its tree hashes only while building
+# that snapshot; approvals, execution checks and later scans must hash afresh.
+_SCAN_TREE_CACHE: ContextVar[dict[str, str] | None] = ContextVar("weekly_scan_tree_cache", default=None)
+
+
+def with_scan_tree_cache(function):
+    @wraps(function)
+    def scoped(*args, **kwargs):
+        token = _SCAN_TREE_CACHE.set({})
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _SCAN_TREE_CACHE.reset(token)
+    return scoped
+
+
 def source_fingerprint(skills_root: Path, targets: Iterable[str]) -> str:
     normalized = normalize_targets(targets)
     rows = []
@@ -205,7 +228,15 @@ def source_fingerprint(skills_root: Path, targets: Iterable[str]) -> str:
         except ValueError:
             rows.append({"target": target, "fingerprint": "outside-skills-root"})
             continue
-        rows.append({"target": target, "fingerprint": tree_fingerprint(candidate)})
+        cache = _SCAN_TREE_CACHE.get()
+        key = str(candidate)
+        if cache is None:
+            tree_value = tree_fingerprint(candidate)
+        else:
+            if key not in cache:
+                cache[key] = tree_fingerprint(candidate)
+            tree_value = cache[key]
+        rows.append({"target": target, "fingerprint": tree_value})
     return fingerprint(rows)
 
 
@@ -576,6 +607,11 @@ def new_state() -> dict[str, Any]:
 
 
 def validate_state(state: Any) -> dict[str, Any]:
+    if isinstance(state, dict) and "discovery" in state:
+        try:
+            DISCOVERY.validate_extension(state["discovery"])
+        except ValueError as exc:
+            raise StateError(str(exc)) from exc
     if not isinstance(state, dict):
         raise StateError("state root must be an object")
     if state.get("schema_version") != SCHEMA_VERSION:
@@ -798,6 +834,73 @@ def summary_is_valid(payload: Any, audit: str, date: str) -> tuple[bool, str | N
     return True, None
 
 
+def upstream_check_evidence(summary: dict[str, Any]) -> dict[str, Any]:
+    """Separate a readable report from successful source checks, including reuse."""
+    checked_statuses = {
+        "up_to_date", "no_relevant_change", "already_reviewed", "provenance_only",
+        "review_required", "awaiting_approval", "license_review_required",
+    }
+    reasons: list[str] = []
+    source_checks: list[dict[str, Any]] = []
+    for index, row in enumerate(summary.get("sources", [])):
+        if not isinstance(row, dict):
+            reasons.append(f"source row {index} is invalid")
+            source_checks.append({"source": str(index), "remote_checked": False})
+            continue
+        source = str(row.get("source") or row.get("skill") or index)
+        status = row.get("status")
+        checked_at = row.get("last_successful_check_at")
+        remote_attempt = row.get("last_remote_check_attempt_at")
+        remote_status = row.get("last_remote_check_status")
+        # A later local report may retain this day's successful refresh.
+        # Require the same observed commit and a timestamp within that report's
+        # requested Shanghai date; generated_at is a rendering time, not a check.
+        same_day_success = False
+        try:
+            successful_at = datetime.fromisoformat(str(checked_at).replace("Z", "+00:00"))
+            generated_at = datetime.fromisoformat(str(summary.get("generated_at")).replace("Z", "+00:00"))
+            remote_at = datetime.fromisoformat(str(remote_attempt).replace("Z", "+00:00"))
+            same_day_success = bool(
+                successful_at.tzinfo is not None and generated_at.tzinfo is not None
+                and successful_at.astimezone(ZoneInfo(DEFAULT_USAGE_TIMEZONE)).date().isoformat() == summary.get("date")
+                and successful_at <= generated_at
+                and remote_at == successful_at
+            )
+        except (TypeError, ValueError):
+            pass
+        remote_checked = bool(
+            status in checked_statuses and remote_status in checked_statuses and same_day_success
+            and row.get("last_successful_check_commit")
+            and row.get("last_successful_check_commit") == row.get("current_commit")
+        )
+        if status in checked_statuses and not (remote_attempt and remote_status):
+            remote_checked = None  # Older reports cannot establish latest remote-attempt outcome.
+        source_checks.append({"source": source, "status": status, "remote_checked": remote_checked})
+        if status not in checked_statuses:
+            reasons.append(f"{source}: source check incomplete ({status})")
+        elif remote_checked is None:
+            reasons.append(f"{source}: latest remote check evidence is unknown")
+        elif not remote_checked:
+            reasons.append(f"{source}: no successful remote check evidence for this report (latest remote status: {remote_status})")
+    error_count = summary.get("check_error_count", 0)
+    if error_count:
+        reasons.append(f"upstream report records {error_count} check errors")
+    if summary.get("unreferenced_mirror_failures") and not error_count:
+        reasons.append("unreferenced mirror checks failed")
+    if summary.get("registry_coverage_gaps") and not error_count:
+        reasons.append("source registry coverage is incomplete")
+    if summary.get("candidate_conflicts") and not error_count:
+        reasons.append("candidate validation is incomplete")
+    return {
+        "checks_complete": not reasons,
+        "remote_checked": (False if any(row["remote_checked"] is False for row in source_checks)
+                           else None if not source_checks or any(row["remote_checked"] is None for row in source_checks)
+                           else True),
+        "check_reasons": reasons,
+        "source_checks": source_checks,
+    }
+
+
 def run_process(name: str, command: list[str], cwd: Path, summary_path: Path) -> dict[str, Any]:
     before = file_sha256(summary_path) if summary_path.is_file() else None
     environment = os.environ.copy()
@@ -848,12 +951,17 @@ def run_audits(
     usage_window_end: str,
     usage_timezone: str,
     reuse_reports: bool,
+    private_skills_root: Path | None = None,
+    private_registry: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Path]]:
     paths = {
         "upstream": reports_root / date / "summary.json",
         "hygiene": reports_root / "manifests" / date / "summary.json",
         "usage": reports_root / "usage" / "manifests" / date / "summary.json",
     }
+    if private_skills_root is not None:
+        paths["upstream_private"] = reports_root / "private" / date / "summary.json"
+        paths["hygiene_private"] = reports_root / "private" / "manifests" / date / "summary.json"
     if reuse_reports:
         return {
             name: {
@@ -921,9 +1029,56 @@ def run_audits(
         ],
     }
     results: dict[str, Any] = {}
-    for name in ("upstream", "hygiene", "usage"):
+    if private_skills_root is not None:
+        private_command = "weekly-run"
+        try:
+            registry_data = tomllib.loads(private_registry.read_text(encoding="utf-8"))
+            entries = registry_data.get("skill", [])
+            if (registry_data.get("schema_version") == 1 and isinstance(entries, list)
+                    and all(isinstance(row, dict) and row.get("status") == "none" for row in entries)):
+                private_command = "report"
+        except (OSError, UnicodeError, tomllib.TOMLDecodeError):
+            pass  # The upstream command retains authoritative validation/errors.
+        commands["upstream_private"] = [
+            python, str(skills_root / "agent-rules" / "scripts" / "skill_upstream_maintenance.py"),
+            private_command, "--registry", str(private_registry),
+            "--mirrors-registry", str(agents_root / "upstream" / "repo-mirrors.toml"),
+            "--skills-root", str(private_skills_root), "--source-scope", "private",
+            "--reports-root", str(reports_root / "private"), "--date", date, "--json",
+        ]
+        commands["hygiene_private"] = [
+            python, str(skills_root / "skill-check" / "scripts" / "audit_skill_tree.py"),
+            "scan", "--root", str(private_skills_root), "--reports-root", str(reports_root / "private"),
+            "--date", date, "--json",
+        ]
+    for name in paths:
         results[name] = run_process(name, commands[name], agents_root, paths[name])
     return results, paths
+
+
+def private_observations(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep private findings visible without targeting the public execution root."""
+    for item in items:
+        item["subject"] = "private:" + item["subject"]
+        item["id"] = stable_finding_id(item["kind"], item["subject"], item["purpose"])
+        item["source"] += "_private"
+        item["title"] = "私有 / " + item["title"]
+        item["proposal"] = None
+        item["proposal_fingerprint"] = None
+        item["needs_facts"] = True
+        item["fact_questions"] = ["请在私有源码及登记中核对这项证据，确定是否需要形成私有候选；此项不授权公开源码修改。"]
+    return items
+
+
+def discovery_observations(report: dict[str, Any], skills_root: Path) -> list[dict[str, Any]]:
+    return [make_observation(
+        kind=row["kind"], source="discovery", subject=row["skill_key"], purpose=row["id"],
+        severity="medium", title=f"{row['skill_key']} 待人工复核",
+        evidence_summary=row["summary"], evidence=row["evidence"], suggested_proposal=None,
+        report_refs=[], needs_facts=True,
+        fact_questions=["请核对来源、收益及本地行为证据；若需修改，先按现有来源确认与隔离候选流程形成具体建议。"],
+        skills_root=skills_root,
+    ) for row in report.get("reviews", [])]
 
 
 def scan_failure_observation(
@@ -1623,6 +1778,16 @@ def merge_observations(
                 "proposal_fingerprint": previous.get("proposal_fingerprint"),
                 "source_fingerprint": previous.get("source_fingerprint"),
             }
+            # Keep the rationale and facts attached to their old evidence before
+            # invalidating the active decision. Hashes alone cannot recover it.
+            previous_review = {
+                key: copy.deepcopy(previous[key])
+                for key in (
+                    "decision", "execution", "facts", "status", "proposal",
+                    "pending_revision", "requested_adjustment", "evidence_summary",
+                )
+                if key in previous
+            }
             preserved = {
                 key: copy.deepcopy(previous.get(key))
                 for key in (
@@ -1646,7 +1811,7 @@ def merge_observations(
                     {
                         "event": "fingerprint_changed",
                         "date": date,
-                        "previous": previous_fingerprints,
+                        "previous": {**previous_fingerprints, **previous_review},
                     }
                 )
                 invalidated.extend(
@@ -1764,11 +1929,15 @@ def build_scan_report(
     }
 
 
+@with_scan_tree_cache
 def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     agents_root = args.agents_root.resolve()
     skills_root = args.skills_root.resolve()
     reports_root = args.reports_root.resolve()
     state_path = args.state.resolve()
+    private_root = (args.private_skills_root or agents_root / "private-skills").resolve()
+    if not args.private_skills_root and not private_root.is_dir():
+        private_root = None
     usage_window_start, usage_window_end = usage_window_for_date(
         args.date,
         timezone_name=args.usage_timezone,
@@ -1783,6 +1952,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         usage_window_end=usage_window_end,
         usage_timezone=args.usage_timezone,
         reuse_reports=args.reuse_reports,
+        private_skills_root=private_root,
+        private_registry=args.private_registry or agents_root / "upstream" / "private-skill-sources.toml",
     )
     summaries: dict[str, dict[str, Any] | None] = {}
     validation: dict[str, Any] = {}
@@ -1790,14 +1961,15 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     completeness_reasons: list[str] = []
     dashboard_result: dict[str, Any] = {"valid": False, "error": "usage summary unavailable"}
 
-    for audit in ("upstream", "hygiene", "usage"):
+    for audit in summary_paths:
+        audit_type = audit.split("_")[0]
         payload, read_error = load_json_file(summary_paths[audit])
-        valid, validation_error = summary_is_valid(payload, audit, args.date)
+        valid, validation_error = summary_is_valid(payload, audit_type, args.date)
         if not args.reuse_reports:
             result = command_results[audit]
             exit_code = result.get("exit_code")
             upstream_partial = (
-                audit == "upstream"
+                audit_type == "upstream"
                 and exit_code == 2
                 and bool(result.get("summary_changed"))
             )
@@ -1834,6 +2006,10 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             summaries[audit] = None
         else:
             summaries[audit] = payload
+            if audit_type == "upstream":
+                check_evidence = upstream_check_evidence(payload)
+                validation[audit].update(check_evidence)
+                completeness_reasons.extend(f"{audit}: {reason}" for reason in check_evidence["check_reasons"])
 
     if summaries["upstream"]:
         observations.extend(
@@ -1848,12 +2024,21 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             )
         )
 
+    if private_root is not None:
+        for audit, extractor in (("upstream_private", extract_upstream_observations),
+                                 ("hygiene_private", extract_hygiene_observations)):
+            if summaries.get(audit):
+                observations.extend(private_observations(extractor(
+                    summaries[audit], validation[audit]["report_ref"], private_root)))
+
     usage_complete = False
     usage_reasons: list[str] = []
     if summaries["usage"]:
         usage_complete, usage_reasons = usage_evidence_complete(summaries["usage"])
         completeness_reasons.extend(f"usage: {reason}" for reason in usage_reasons)
-    complete = all(summaries.values()) and usage_complete
+    complete = all(summaries.values()) and usage_complete and all(
+        entry.get("checks_complete", True) for entry in validation.values()
+    )
     scope_value = None
     if all(summaries.values()):
         scope_value = evidence_scope_fingerprint(
@@ -1861,9 +2046,33 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         )
 
     report_path = reports_root / args.date / "weekly-review.json"
+    discovery_result: dict[str, Any] = {}
     try:
         with StateLock(state_path, args.lock_timeout):
             state, _ = load_state(state_path)
+            roots = {"public": skills_root}
+            if private_root is not None:
+                roots["private"] = private_root
+            inventory, inventory_errors = DISCOVERY.read_inventory(
+                roots, {"public": summaries.get("upstream"), "private": summaries.get("upstream_private")},
+                DISCOVERY.local_content_digest)
+            try:
+                intake = None
+                if args.discovery_input:
+                    intake, intake_error = load_json_file(args.discovery_input)
+                    if intake_error:
+                        raise ValueError(intake_error)
+                discovery_result = DISCOVERY.update_discovery(
+                    state, inventory=inventory, date_value=args.date, intake=intake)
+                discovery_result["inventory_errors"] = inventory_errors
+                observations.extend(discovery_observations(discovery_result, skills_root))
+            except (ValueError, KeyError, TypeError) as exc:
+                discovery_result = {"error": str(exc), "inventory_errors": inventory_errors}
+            if discovery_result.get("error") or inventory_errors:
+                complete = False
+                detail = compact_text(discovery_result.get("error") or inventory_errors)
+                completeness_reasons.append("discovery: " + detail)
+                observations.append(scan_failure_observation("discovery", detail, "", skills_root))
             unseen_counts, streak_reset_reason = update_unseen_streaks(
                 state,
                 summaries["usage"],
@@ -1881,7 +2090,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                     )
                 )
             authoritative_sources = {
-                audit for audit in ("upstream", "hygiene") if summaries[audit] is not None
+                audit for audit in summaries if audit != "usage" and summaries[audit] is not None
+                and validation[audit].get("checks_complete", True)
             }
             if summaries["usage"] is not None and usage_complete:
                 authoritative_sources.add("usage")
@@ -1956,6 +2166,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         merge_result=merge_result,
         dashboard=dashboard_result,
     )
+    report["discovery"] = discovery_result
     atomic_write_json(report_path, report)
     return {
         "status": "scanned",
@@ -1966,6 +2177,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "state": relative_report_ref(state_path, reports_root),
         "merge": merge_result,
         "dashboard": dashboard_result,
+        "discovery": discovery_result,
     }, 0 if complete else 2
 
 
@@ -2098,6 +2310,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scan.add_argument("--date", default=today_local())
     scan.add_argument("--agents-root", type=Path, default=DEFAULT_AGENTS_ROOT)
     scan.add_argument("--skills-root", type=Path, default=DEFAULT_SKILLS_ROOT)
+    scan.add_argument("--private-skills-root", type=Path, help="Defaults to agents-root/private-skills when present.")
+    scan.add_argument("--private-registry", type=Path, help="Defaults to agents-root/upstream/private-skill-sources.toml.")
+    scan.add_argument("--discovery-input", type=Path, help="Optional offline research triggers/results JSON; see weekly-review.md.")
     scan.add_argument("--reports-root", type=Path, default=DEFAULT_REPORTS_ROOT)
     scan.add_argument(
         "--usage-window-end",

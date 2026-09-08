@@ -160,6 +160,171 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
     def load(self):
         return MODULE.load_sources(self.registry), MODULE.load_mirrors(self.mirrors)
 
+    def test_check_review_and_acceptance_are_separate_and_legacy_state_survives(self) -> None:
+        skills, mirrors = self.load()
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        MODULE.write_json(state_path, {
+            "schema_version": 1, "custom_legacy": {"keep": True},
+            "sources": {"example-source": {"last_seen_at": "old-observation"}},
+            "history": [{"old_decision": "keep"}],
+        })
+        local = MODULE.build_report(skills, mirrors, reports, "2026-07-23", state_path,
+                                    skills_root=self.skills)
+        self.assertIsNone(local["sources"][0]["last_successful_check_at"])
+        successful = MODULE.build_report(
+            skills, mirrors, reports, "2026-07-24", state_path,
+            mirror_results={"example": {"status": "already_up_to_date"}},
+            skills_root=self.skills,
+        )
+        row = successful["sources"][0]
+        self.assertEqual(row["accepted_commit"], self.baseline)
+        self.assertEqual(row["last_successful_check_commit"], self.baseline)
+        self.assertTrue(row["last_successful_check_at"])
+        self.assertIsNone(row["last_reviewed_commit"])
+        MODULE.record_review(state_path, "example-source", self.baseline, self.baseline, "rejected", True)
+        failed = MODULE.build_report(
+            skills, mirrors, reports, "2026-07-25", state_path,
+            mirror_results={"example": {"status": "fetch_failed", "local_head": self.baseline,
+                                         "error": "offline fixture"}},
+            skills_root=self.skills,
+        )
+        blocked = failed["sources"][0]
+        self.assertEqual(blocked["last_successful_check_at"], row["last_successful_check_at"])
+        self.assertEqual(blocked["last_disposition"], "rejected")
+        self.assertEqual(blocked["last_reviewed_commit"], self.baseline)
+        self.assertEqual(blocked["accepted_commit"], self.baseline)
+        state = MODULE.read_state(state_path)
+        self.assertEqual(state["custom_legacy"], {"keep": True})
+        self.assertEqual(state["history"][0], {"old_decision": "keep"})
+        self.assertIn("最近成功检查", (reports / "2026-07-25" / "summary.md").read_text(encoding="utf-8"))
+
+    def test_legacy_local_report_keeps_remote_attempt_unknown(self) -> None:
+        skills, mirrors = self.load()
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        MODULE.write_json(state_path, {"sources": {"example-source": {
+            "last_check_attempt_at": "2026-07-24T00:00:00+00:00", "last_check_status": "up_to_date"
+        }}, "history": [{"keep": True}]})
+        result = MODULE.build_report(skills, mirrors, reports, "2026-07-24", state_path)
+        row = result["sources"][0]
+        self.assertIsNone(row["last_remote_check_attempt_at"])
+        self.assertIsNone(row["last_remote_check_status"])
+        self.assertEqual(MODULE.read_state(state_path)["history"], [{"keep": True}])
+
+    def test_same_day_success_then_review_and_report_preserve_remote_success(self) -> None:
+        skills, mirrors = self.load()
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        successful_time = MODULE.datetime.fromisoformat("2026-07-24T01:00:00+00:00")
+        local_time = MODULE.datetime.fromisoformat("2026-07-24T02:00:00+00:00")
+        with patch.object(MODULE, "datetime", wraps=MODULE.datetime) as clock:
+            clock.now.return_value = successful_time
+            first = MODULE.build_report(skills, mirrors, reports, "2026-07-24", state_path,
+                                        mirror_results={"example": {"status": "already_up_to_date"}})
+        MODULE.record_review(state_path, "example-source", self.baseline, self.baseline, "no-impact", True)
+        with patch.object(MODULE, "datetime", wraps=MODULE.datetime) as clock:
+            clock.now.return_value = local_time
+            result = MODULE.build_report(skills, mirrors, reports, "2026-07-24", state_path)
+        row = result["sources"][0]
+        self.assertEqual(row["last_remote_check_attempt_at"], successful_time.isoformat())
+        self.assertEqual(row["last_remote_check_status"], "up_to_date")
+        self.assertEqual(row["last_successful_check_at"], first["sources"][0]["last_successful_check_at"])
+        self.assertEqual(row["last_check_attempt_at"], local_time.isoformat())
+        self.assertNotEqual(row["last_remote_check_attempt_at"], result["generated_at"])
+
+    def test_same_day_failure_is_not_erased_by_later_local_report(self) -> None:
+        skills, mirrors = self.load()
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        times = [MODULE.datetime.fromisoformat(f"2026-07-24T0{hour}:00:00+00:00") for hour in (1, 2, 3)]
+        receipts = [{"example": {"status": "already_up_to_date"}},
+                    {"example": {"status": "fetch_failed", "local_head": self.baseline, "error": "offline fixture"}},
+                    None]
+        rows = []
+        for checked_at, receipt in zip(times, receipts):
+            with patch.object(MODULE, "datetime", wraps=MODULE.datetime) as clock:
+                clock.now.return_value = checked_at
+                result = MODULE.build_report(skills, mirrors, reports, "2026-07-24", state_path,
+                                             mirror_results=receipt)
+                rows.append(result["sources"][0])
+        latest = rows[-1]
+        self.assertEqual(latest["status"], "up_to_date")
+        self.assertEqual(latest["last_remote_check_status"], "mirror_blocked")
+        self.assertEqual(latest["last_remote_check_attempt_at"], times[1].isoformat())
+        self.assertEqual(latest["last_successful_check_at"], times[0].isoformat())
+        self.assertEqual(latest["last_local_check_at"], times[2].isoformat())
+        stored = MODULE.read_state(state_path)["sources"]["example-source"]
+        self.assertEqual(stored["last_remote_check_status"], "mirror_blocked")
+        self.assertEqual(stored["last_check_status"], "up_to_date")
+
+    def test_latest_review_orders_acceptance_and_preserves_unknown_legacy_dates(self) -> None:
+        skills, _ = self.load()
+        original_source = skills[0].sources[0]
+        accepted_source = MODULE.replace(original_source, accepted_at="2026-08-01T12:00:00+00:00")
+        older = {"last_reviewed_commit": "1" * 40, "last_reviewed_at": "2026-08-01T19:00:00+08:00",
+                 "last_disposition": "rejected", "reviewed_against_accepted_commit": self.baseline}
+        latest = MODULE.latest_review_metadata(accepted_source, older)
+        self.assertEqual(latest["last_disposition"], "accepted")
+        self.assertEqual(latest["last_reviewed_commit"], self.baseline)
+        self.assertEqual(older["last_disposition"], "rejected")
+        newer = {**older, "last_reviewed_at": "2026-08-02T00:00:00+00:00", "last_disposition": "no-impact"}
+        self.assertEqual(MODULE.latest_review_metadata(accepted_source, newer)["last_disposition"], "no-impact")
+        unknown = {"last_reviewed_commit": "2" * 40, "last_disposition": "rejected"}
+        uncertain = MODULE.latest_review_metadata(accepted_source, unknown)
+        self.assertTrue(uncertain["review_order_uncertain"])
+        self.assertEqual(uncertain["last_reviewed_commit"], "2" * 40)
+        self.assertIsNone(MODULE.latest_review_metadata(original_source, {})["last_reviewed_at"])
+        self.assertEqual(MODULE.latest_review_metadata(accepted_source, {})["last_disposition"], "accepted")
+        self.assertIsNone(MODULE.review_timestamp("2026-08-01"))
+        self.assertIsNone(MODULE.review_timestamp("invalid"))
+
+    def test_failed_diff_after_refresh_does_not_advance_success(self) -> None:
+        (self.mirror / "skills/source-skill/SKILL.md").write_text("# changed\n", encoding="utf-8")
+        commit_all(self.mirror, "new behavior")
+        skills, mirrors = self.load()
+        reports = self.root / "reports"
+        with patch.object(MODULE, "source_diff", return_value={"status": "diff_failed", "changed": [], "error": "fixture"}):
+            result = MODULE.build_report(
+                skills, mirrors, reports, "2026-07-24", reports / "state.json",
+                mirror_results={"example": {"status": "synced"}},
+            )
+        self.assertIsNone(result["sources"][0]["last_successful_check_at"])
+
+    def test_private_root_reports_none_and_adopted_without_touching_public_files(self) -> None:
+        private = self.root / "private-skills"
+        write_skill(private, "alpha")
+        write_skill(private, "beta")
+        before = MODULE.tree_hash(self.skills)
+        skills, mirrors = self.load()
+        reports = self.root / "reports/private"
+        result = MODULE.build_report(skills, mirrors, reports, "2026-07-24", reports / "state.json",
+                                     skills_root=private, source_scope="private")
+        self.assertEqual(result["check_error_count"], 0)
+        self.assertEqual(result["source_count"], 1)
+        locals_by_key = {item["skill_key"]: item for item in result["local_skills"]}
+        self.assertEqual(locals_by_key["private:beta"]["status"], "none")
+        self.assertEqual(locals_by_key["private:beta"]["adopted"], [])
+        alpha = locals_by_key["private:alpha"]
+        self.assertEqual(alpha["adopted"][0]["adopted"], ["workflow"])
+        self.assertIsNone(alpha["adopted"][0]["accepted_local_digest"])
+        self.assertEqual(result["sources"][0]["local_digest"], alpha["local_digest"])
+        self.assertEqual(MODULE.tree_hash(self.skills), before)
+
+    def test_local_digest_ignores_generated_sources_and_caches_but_detects_deletion(self) -> None:
+        skill = self.skills / "alpha"
+        before = MODULE.local_skill_digest(skill)
+        (skill / "references").mkdir()
+        (skill / "references/upstream-sources.md").write_text("generated source dates", encoding="utf-8")
+        (skill / "__pycache__").mkdir()
+        (skill / "__pycache__/script.pyc").write_bytes(b"cache")
+        self.assertEqual(MODULE.local_skill_digest(skill), before)
+        (skill / "references/guide.md").write_text("a real adopted behavior", encoding="utf-8")
+        changed = MODULE.local_skill_digest(skill)
+        self.assertNotEqual(changed, before)
+        (skill / "references/guide.md").unlink()
+        self.assertEqual(MODULE.local_skill_digest(skill), before)
+
     def add_second_source(self, skills, mirrors):
         second_mirror = self.root / "second-mirror"
         second_git_dir = self.external_git_root / "second.git"
@@ -1470,6 +1635,23 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertEqual((self.skills / "beta" / "SKILL.md").read_text(encoding="utf-8"), unrelated_content)
         context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
         self.assertEqual(context["candidate_status"], "completed")
+        self.assertEqual(source.accepted_at, context["completed_at"])
+        self.assertIsNotNone(MODULE.review_timestamp(source.accepted_at))
+        self.assertIn(source.accepted_at, rendered)
+        reports = self.root / "reports"
+        old_review = {"last_reviewed_commit": self.baseline, "last_reviewed_at": "2020-01-01T00:00:00+00:00",
+                      "last_disposition": "rejected", "reviewed_against_accepted_commit": self.baseline}
+        MODULE.write_json(reports / "state.json", {"sources": {"example-source": old_review},
+                                                  "history": [{"historical_decision": "keep"}]})
+        report = MODULE.build_report(reloaded, mirrors, reports, "2026-07-25", reports / "state.json")
+        row = report["sources"][0]
+        self.assertEqual(row["last_disposition"], "accepted")
+        self.assertEqual(row["last_reviewed_commit"], head)
+        self.assertEqual(row["last_reviewed_at"], source.accepted_at)
+        self.assertEqual(row["accepted_commit"], head)
+        stored_state = MODULE.read_state(reports / "state.json")
+        self.assertEqual(stored_state["sources"]["example-source"]["last_disposition"], "rejected")
+        self.assertEqual(stored_state["history"], [{"historical_decision": "keep"}])
 
         repeated = MODULE.complete_review(
             reloaded,

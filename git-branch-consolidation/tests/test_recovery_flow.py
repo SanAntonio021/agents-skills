@@ -113,6 +113,52 @@ class TemporaryGitCase(unittest.TestCase):
 
 
 class RecoveryFlowTests(TemporaryGitCase):
+    def test_capture_and_replay_ignore_failing_textconv(self):
+        repo, _, _ = self.create_repository(feature=False)
+        write(repo / ".gitattributes", "*.pdf diff=recovery-test\n")
+        (repo / "document.pdf").write_bytes(b"\x00base\xff\n")
+        removed = repo / "__MACOSX" / "._IEEEtran_HOWTO.pdf"
+        removed.parent.mkdir()
+        removed.write_bytes(b"\x00removed\xfe\n")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "binary diff fixtures")
+
+        marker = self.root / "textconv-invoked"
+        converter = self.root / "failing-textconv.py"
+        write(converter, "from pathlib import Path\n"
+              f"Path({str(marker)!r}).write_text('invoked')\nraise SystemExit(97)\n")
+        command = f'"{Path(sys.executable).as_posix()}" "{converter.as_posix()}"'
+        git(repo, "config", "diff.recovery-test.textconv", command)
+        git(repo, "config", "diff.recovery-test.cachetextconv", "false")
+        staged_bytes = b"\x00staged\xff\x81\n"
+        current_bytes = b"\x00current\xfe\x82\n"
+        (repo / "document.pdf").write_bytes(staged_bytes)
+        git(repo, "add", "document.pdf")
+        (repo / "document.pdf").write_bytes(current_bytes)
+        removed.unlink()
+
+        # Prove the fixture actually invokes the failing driver before testing capture.
+        control = git(repo, "diff", "--binary", "--full-index", "--no-ext-diff", check=False)
+        self.assertNotEqual(control.returncode, 0)
+        self.assertTrue(marker.is_file(), control.stderr)
+        marker.unlink()
+        primary, mirror = self.root / "primary", self.root / "mirror"
+        captured = self.capture(repo, primary, mirror, stamp="no-textconv")
+        self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
+        self.assertFalse(marker.exists(), "Capture invoked the textconv driver")
+        for patch in ("staged.patch", "unstaged.patch"):
+            self.assertIn(b"GIT binary patch", (primary / "worktrees/000" / patch).read_bytes())
+        restore = self.root / "restore"
+        verified = run([sys.executable, VERIFY, "--source", primary, "--mirror", mirror,
+                        "--restore", restore], check=False)
+        self.assertEqual(verified.returncode, 0, verified.stderr + verified.stdout)
+        self.assertFalse(marker.exists(), "Replay invoked the textconv driver")
+        state = restore / "states/000"
+        self.assertEqual((state / "document.pdf").read_bytes(), current_bytes)
+        self.assertFalse((state / "__MACOSX/._IEEEtran_HOWTO.pdf").exists())
+        index_bytes = subprocess.check_output(["git", "-C", str(state), "show", ":document.pdf"])
+        self.assertEqual(index_bytes, staged_bytes)
+
     def test_capture_and_isolated_replay_preserve_every_worktree_state(self):
         repo, _, _ = self.create_repository(feature=True)
         git(repo, "switch", "-c", "local-only")

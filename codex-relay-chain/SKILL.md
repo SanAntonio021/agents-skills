@@ -18,9 +18,26 @@ description: >
   同时区分 Codex Desktop 的新任务默认值与任务级覆盖，或遇到完全访问已开启但命令仍被
   `blocked by policy`、自动审批没有出现、`approval_policy` 与桌面权限模式互相冲突，并把 watcher
   限制为桌面权限恢复、退出审计和启动后漂移记录时，优先使用本技能。
+  需要通过 CC Switch CLI 后台维护 Codex 供应商配置、Common Config 或技能启停规则，
+  要求不占用焦点并验证重新生成配置后字段保留时，也使用本技能。
 ---
 
 # Codex 中转链维护
+
+## CC Switch 后台配置入口
+
+先读取启动用户主目录下 `.agent-rules/local.md` 的“规则维护目录”字段，再读取该目录下
+`automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
+使用已经展开并核验的绝对路径；字段、组件或固定 CLI 校验缺失时报告不可用，不猜路径、不从 PATH
+替换同名程序。步骤以共用指南为准，此处不复制配置维护实现。
+
+供应商配置、Common Config 或通过 CC Switch 保存 Codex 技能启停规则时，使用共用入口先 Inspect、
+再 Preview，核对候选和基线后按已有授权 Apply；操作状态用 Verify 核验，Rollback 仅恢复授权范围
+且仍符合条件的本次操作。Inspect 只证明固定工具就绪，不证明配置或请求链路已验收。
+保留本技能的认证、代理、Responses 和任务级设置排障职责；只修改该入口实际支持的 Codex 配置字段，
+认证修改、供应商切换及其他未覆盖动作不得伪装成 apply-config。后台入口不支持时报告具体缺口。
+全过程不切换窗口、不模拟键鼠、不驱动交互式终端；不能因为 CLI 失败而转用旧界面脚本。
+配置保存、非目标字段保留、动态连接和实际请求分项验证；旧动态管道和临时连接信息不从备份恢复。
 
 ## 目标
 

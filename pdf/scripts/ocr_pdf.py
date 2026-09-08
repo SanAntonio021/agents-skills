@@ -829,7 +829,7 @@ def finalize(
             if targets[key].exists():
                 os.rename(targets[key], staged[key])
         raise
-    shutil.rmtree(temporary_dir, ignore_errors=True)
+    # Keep validation renders and diagnostics until explicit ChatNote cleanup.
 
 
 def process(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:

@@ -33,7 +33,7 @@
 
 ## 项目状态 1.1
 
-默认路径：`<project-root>/outputs/submission/submission-state.json`。
+新任务默认路径：`<project-root>/过程文件/<投稿任务>/submission-state.json`。已有旧路径 `outputs/submission/submission-state.json` 或项目明确指定状态时，原位续做，不迁移、不双写。下列 evidence 路径是项目根相对路径；正式成果使用实际根目录文件名，过程证据使用本任务过程目录。
 
 最小结构：
 
@@ -89,7 +89,7 @@
   "evidence": [
     {
       "type": "paper_review_report",
-      "path": "outputs/reviews/pre-submission-review.md",
+      "path": "过程文件/投稿任务/pre-submission-review.md",
       "summary": "Nine-dimension precheck passed; no open blockers."
     }
   ]
@@ -127,7 +127,7 @@
   "required": true,
   "status": "viewed",
   "viewed_at": "2026-07-26T15:45:00+08:00",
-  "evidence": [{"path": "outputs/submission/final-review-proof.pdf"}]
+  "evidence": [{"path": "过程文件/投稿任务/final-review-proof.pdf"}]
 }
 ```
 

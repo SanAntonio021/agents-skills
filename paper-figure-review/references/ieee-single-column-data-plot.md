@@ -59,7 +59,7 @@ Times New Roman 可用时，普通文字和 mathtext 的正体、斜体、粗体
 3. 调用 `propose_figure_color_map()`；候选状态为 `proposed`。
 4. 在 `major_xy` 与 `none` 之间选择 `grid_mode`，调用 `repair_single_column_figure()`。未声明 `locked_limits=True` 时，它可以为贴边 marker 增加安全留量。
 5. 调用 `preflight_single_column_figure(mode="draft")`，读取 `errors`、`visual_review_required` 和 `metrics`。
-6. 调用 `export_ieee_single_column(mode="draft")`。draft 只能写入 `drafts/`。
+6. 调用 `export_ieee_single_column(mode="draft")`。draft 只能写入任务过程目录下的 `drafts/`；调用时显式传入 `过程文件/<任务>/` 作为 output_dir，正式导出检查后再自动交付到项目根目录。
 7. 智能体查看最终尺寸预览，核对本轮配色依据；调用 `freeze_figure_color_map()`，并在 profile 中写入视觉确认。
 8. 调用 `export_ieee_single_column(mode="formal")`。正式导出 manifest 记录字体文件和 SHA-256、确认时间、修复动作、预检、文件尺寸和文件 SHA-256。
 

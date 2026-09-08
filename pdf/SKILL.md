@@ -7,6 +7,13 @@ description: Use this skill whenever the user wants to read, create, inspect, co
 
 本地维护的 PDF 处理技能，针对 Windows 环境做了适配。当前机器已安装 Poppler 24.08.0、隔离的 OCRmyPDF/PyMuPDF 环境和 Tesseract 中文/英文语言包。扫描检测、OCR 路由、全文提取和结果验证统一由 `scripts/ocr_pdf.ps1` 完成。
 
+## 文件存放与交付
+
+- 项目根目录只放正式成果；候选、脚本、预览、核验记录和工具内部工程统一放在 `项目/过程文件/任务主题/`。同一任务续做及跨技能协作复用该目录；独立同名任务追加 `_YYYYMMDD`，仍重名追加 `_02`。只创建实际需要的目录，不搬动已有项目文件。
+- 沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。生成并通过必要检查后，由智能体在最终回复前自动复制正式成果到根目录，复核复制后的哈希、可打开性及必要依赖，并给出正式路径链接。需要用户挑选时，选定后再交付；不另设确认环节。
+- 使用工具的显式输出参数或将工作目录设到任务过程目录，保留工具所需内部结构；正文命令中的相对输出路径均以该目录为基准，技能脚本及输入路径使用绝对路径。不修改上游插件缓存。可编辑源、正式工程及原始数据保留其用途，不一律当作临时文件。
+- 普通任务结束后保留过程材料，只有用户显式触发 ChatNote（`chat-notes`）才进入可恢复清理；不自动清空过程目录。工具用于进程隔离、安全回滚的内部暂存清理不等于任务清场，仍遵守原有保护门。
+
 ## Office source route
 
 当输入实际是 `.pptx`、`.docx` 或 `.xlsx`，且目标是读取、结构检查或受限新副本编辑时，先经
@@ -293,6 +300,7 @@ When searchable output or reliable full-document text is needed, resolve `script
 ```powershell
 & $ocrWrapper `
     -InputPdf 'C:\path\document.pdf' `
+    -OutputDirectory 'C:\项目\过程文件\文档识别' `
     -Languages 'chi_sim' `
     -Mode auto
 ```
@@ -312,14 +320,14 @@ Automatic routing uses page text quality and image coverage:
 
 Use `-Deskew` only when the user requests it or a rendered page shows clear skew. Deskew changes page pixels and requires stronger visual comparison. Override `-Mode` only when the automatic decision is known to be wrong and record why.
 
-The wrapper never overwrites the input or an existing output. It stages work in a unique directory and publishes only after SHA-256, page count, dimensions, rotation, PyMuPDF rendering, Poppler rendering, `pdfinfo`, and strict pypdf checks pass. Successful outputs are:
+The wrapper never overwrites the input or an existing output. It stages work in a unique directory and publishes only after SHA-256, page count, dimensions, rotation, PyMuPDF rendering, Poppler rendering, `pdfinfo`, and strict pypdf checks pass. Always pass `-OutputDirectory` inside the task process directory. Successful process outputs are:
 
 - `<name>_ocr.pdf`
 - `<name>_ocr.txt`, extracted from the completed PDF with `pdftotext -layout`; OCRmyPDF sidecar text is not the full document
 - `<name>_ocr.log`
 - `<name>_ocr.status.json`
 
-On failure, no official output names are created. Diagnostic files remain in the reported `.pdf-ocr-run-*` directory.
+After validation, automatically copy the requested PDF and/or full text to versioned project-root filenames and verify their hashes; logs, status records and render diagnostics stay in the process directory. On failure, no successful output names are created. Diagnostics remain in the reported `.pdf-ocr-run-*` directory on both success and failure, until explicit ChatNote cleanup.
 
 For visual reading or review of tables, formulas, stamps, handwriting, and complex layouts, render representative pages even after OCR. OCR preserves the page image in the PDF but plain text does not preserve table structure or formula semantics. Use Poppler or PyMuPDF:
 
@@ -327,7 +335,8 @@ For visual reading or review of tables, formulas, stamps, handwriting, and compl
 import fitz, os, tempfile
 
 doc = fitz.open('scanned.pdf')
-out_dir = tempfile.mkdtemp(prefix='pdf-pages-')
+out_dir = os.path.join(task_process_dir, 'pdf-pages')  # task_process_dir is the resolved task directory
+os.makedirs(out_dir, exist_ok=True)
 
 for i in range(len(doc)):
     pix = doc[i].get_pixmap(dpi=120)

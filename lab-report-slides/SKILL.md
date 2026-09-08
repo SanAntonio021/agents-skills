@@ -35,13 +35,17 @@ compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoff
 - `生成本周组会汇报` 或 `生成组会汇报`：收集截至所请求本地日期的最近七个日历日。
 - 用户指定项目时，只保留匹配的 `cwd`/项目记录和素材。否则，纳入所选时间窗口内发现的全部项目，并在提纲中显示项目名。
 
+## 文件存放
+
+沿用共享规则解析项目根目录和 `过程文件/<任务>/`；续做及跨技能共用该任务目录。采集摘要、deck JSON、渲染 PDF、页面 PNG、HTML 和 manifest 均放任务过程目录，按需创建；实验原始数据和现有素材保持原位。渲染检查通过后，自动将 PPTX 无覆盖复制到项目根目录，复核可打开、大小及 SHA-256，并在过程 manifest 记录交付路径与摘要。PDF/HTML 仅在用户要求时作为成果交付；HTML 交付前确认自包含。根目录同名时沿用下文版本规则，不覆盖旧成果。普通任务结束保留过程材料，清理由用户显式触发 ChatNote。
+
 ## 数据采集
 
 运行随附的采集器。它只使用本地文件和 Python 标准库：
 
 ```text
-python scripts/collect_sessions.py --mode today --out <brief.json>
-python scripts/collect_sessions.py --mode week --out <brief.json>
+python scripts/collect_sessions.py --mode today --out "<project-root>/过程文件/<任务>/brief.json"
+python scripts/collect_sessions.py --mode week --out "<project-root>/过程文件/<任务>/brief.json"
 ```
 
 指定项目时加 `--project-root <project>`，包含其子目录，不混入名称前缀相似的其他项目。
@@ -125,7 +129,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 
 ## Deck JSON 与渲染
 
-提纲按当前目标确定后，在 skill 目录外写入一个小型 deck JSON 文件。渲染器要求以下结构：
+提纲按当前目标确定后，在任务过程目录写入一个小型 deck JSON 文件。渲染器要求以下结构：
 
 ```json
 {
@@ -150,7 +154,7 @@ python scripts/collect_sessions.py --mode week --out <brief.json>
 使用以下命令渲染：
 
 ```text
-python scripts/render_deck.py --deck <deck.json> --output-dir "D:\\BaiduSyncdisk\\组会" --base-name <YYYYMMDD-or-YYYYMMDD组会>
+python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.json" --output-dir "<project-root>/过程文件/<任务>" --base-name <YYYYMMDD-or-YYYYMMDD组会>
 ```
 
 `type=result/setup/comparison` 的页面必须有真实图片。每页支持一至六张图片，按可读性决定是否拆页。`section`（兼容 `kicker`）为章节标题，`title` 为实验副标题，`subtitle` 可显式覆盖副标题，`summary` 为页底结论。`layout=wide-strip` 将首图放上方、其余照片放下方；`layout=stacked-left` 将三张图排为左侧上下两图、右侧大图；其他情况使用单图或网格。旧文字块在有图页进入结论区，过长时报错，应精简或拆页。来源、日期与状态写入备注，历史示例仍须在可见文字中标明。只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；缺图和空材料会报错，不生成占位成品。

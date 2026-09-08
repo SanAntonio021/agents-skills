@@ -14,7 +14,9 @@
       "expectations": [
         "保留 200 ms、3 个点位和 8 小时。",
         "状态保持为拟研发和实验室样机。",
-        "加载 project-writing 与共同质量规则，不加载其他文体细则。"
+        "加载 project-writing 与共同质量规则，不加载其他文体细则。",
+        "不从目标或场景反推出材料未给出的具体遮挡来源、功能模块、实现步骤或评价项。",
+        "正文直接写准确状态，不把“不得写成已部署”这条写作约束复述为尾句。"
       ],
       "protected_literals": ["200 ms", "3 个固定点位", "8 小时", "实验室样机"],
       "forbidden_claims": ["已部署", "已规模应用"],
@@ -50,11 +52,13 @@
       "language": "zh",
       "case_kind": "fact_formula_protection",
       "prompt": "以下材料均为合成。专家问“为什么目标速率写 8 Gbit/s”。材料只给出估算式 C=B log2(1+SNR)，其中 B=2 GHz、SNR=15 dB；该值是链路预算阶段的计算结果，尚未实测。请写答复并解释变量的工程含义。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
-      "expected_output": "先直接回答估算依据，解释 C、B、SNR 和单位，明确这是计算结果而非实测，不改公式。",
+      "expected_output": "解释给定估算式、变量和单位，核对 dB 换算与计算值；指出计算值到 8 Gbit/s 目标之间缺少的取值关系，不补造折减依据。保持原公式和尚未实测状态。",
       "expectations": [
         "公式 C=B log2(1+SNR) 原样保留。",
         "保留 B=2 GHz、SNR=15 dB。",
-        "不得把计算结果升级为实测或验收结果。"
+        "不得把计算结果升级为实测或验收结果。",
+        "核对 dB 与线性值的换算；若计算值与 8 Gbit/s 目标缺少取值关系，指出具体缺口，不凭比例或差值补造裕量、协议开销或目标依据。",
+        "解释变量和计算关系时保留原公式写法；排版调整不得改变符号、数值、精度、单位或运算关系。"
       ],
       "protected_literals": ["C=B log2(1+SNR)", "B=2 GHz", "SNR=15 dB", "尚未实测"],
       "forbidden_claims": ["实测达到", "已经通过验收"],
@@ -134,7 +138,8 @@
       "expectations": [
         "保护所有公式变量和数值。",
         "计算与实测状态分开。",
-        "说明该结果用于判断接收功率预算。"
+        "说明该结果用于判断接收功率预算。",
+        "保留台架尚未搭建这一原稿状态事实，不因简洁而删除；交代计算来源后，不再追加同义的计算与实测状态说明。"
       ],
       "protected_literals": ["Pr=Pt+Gt+Gr-L", "Pt=10 dBm", "Gt=12 dBi", "Gr=12 dBi", "L=78 dB", "-44 dBm", "台架尚未搭建"],
       "forbidden_claims": ["实测为 -44 dBm", "测试表明"],
@@ -154,7 +159,12 @@
       "expectations": [
         "不以同义改写掩盖重复。",
         "识别 CAN 与 RS-485 的跨节矛盾。",
-        "不生成修订后的完整文档。"
+        "不生成修订后的完整文档。",
+        "重复与接口矛盾各集中说明，不把同一矛盾再拆成泛泛风险。",
+        "不因 CAN 出现次数更多或较早就认定它正确。",
+        "材料未给出核对来源时，只要求确认实际接口，不虚构原始设计、测试记录或接口表。",
+        "建议保持对称：同一连接统一名称，不同连接补清对象和关系；不偏向 CAN 或 RS-485。",
+        "沿用关键词分点输出，说明具体位置和必要改动；不为各节补造展开内容。"
       ],
       "protected_literals": ["CAN", "RS-485"],
       "forbidden_claims": [],
@@ -170,11 +180,13 @@
       "language": "zh",
       "case_kind": "normal_writing",
       "prompt": "以下材料均为合成。写一段证据型报告：A 公告称 2025 年建成 4 个监测站；B 年报称 2026 年新增 2 个站；统计口径均为投入运行的站点。报告只回答站点数量变化，不给建设建议。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
-      "expected_output": "区分来源事实和综合判断，得出站点由 4 个增至 6 个；不加入行动建议。",
+      "expected_output": "区分 A 公告的 4 个站、B 年报发布的新增 2 个站和由两者综合计算的共 6 个；保持同一统计对象，不重复同一数量关系，不加入行动建议。",
       "expectations": [
         "保留 2025 年、4 个、2026 年和新增 2 个。",
         "说明统计口径一致。",
-        "不生成采购或建设建议。"
+        "不生成采购或建设建议。",
+        "B 年报只发布新增 2 个，共 6 个应写为综合计算结果，不能写成 B 年报直接发布总数。",
+        "同一数量关系只表达一次，不在已经说明起点、增量和总量后重复同一差值。"
       ],
       "protected_literals": ["2025 年", "4 个监测站", "2026 年", "新增 2 个站"],
       "forbidden_claims": ["建议", "应立即"],
@@ -210,11 +222,14 @@
       "language": "zh",
       "case_kind": "fact_formula_protection",
       "prompt": "以下材料均为合成。事实：方案甲单价 18 万元，交付期 3 个月；方案乙单价 12 万元，交付期 7 个月。预算上限 40 万元，必须在 4 个月内完成两套设备联调。请写采购建议，不改变数值。本轮直接给出请求范围内的完整文本，不做分段讨论。TRACE_WRITING_CONTEXT=1",
-      "expected_output": "先比较成本和交付条件，再建议方案甲；写清两套共 36 万元和 4 个月约束，不把建议写成已采购。",
+      "expected_output": "比较甲两套共 36 万元、3 个月交付与乙两套共 24 万元、7 个月交付。乙超过 4 个月总时限；甲交付后最多剩 1 个月联调，联调用时未知，建议须以能在剩余时间内完成联调为条件，不写成已采购或必然满足总期限。",
       "expectations": [
         "保留 18 万元、3 个月、12 万元、7 个月、40 万元和 4 个月。",
         "建议依据能回指事实。",
-        "状态保持为建议而非已批准。"
+        "状态保持为建议而非已批准。",
+        "写出方案甲两套共 36 万元、方案乙两套共 24 万元；即使乙的交付期不符合要求，也保留价格与工期的完整比较。",
+        "甲交付后最多只剩 1 个月联调；联调用时未知，不能直接断言甲满足 4 个月总期限。",
+        "建议甲时应以能在剩余 1 个月内完成联调为条件，不补造责任方或合同条款。"
       ],
       "protected_literals": ["18 万元", "3 个月", "12 万元", "7 个月", "40 万元", "4 个月"],
       "forbidden_claims": ["已经采购", "已经批准"],
@@ -374,7 +389,9 @@
       "expectations": [
         "G=10log10(Pout/Pin), 4 mW, 1 mW, and 6.02 dB remain unchanged.",
         "Pout and Pin are explained.",
-        "The wording does not upgrade calculation to measurement."
+        "The wording does not upgrade calculation to measurement.",
+        "Preserve the original statement that the value has not been measured; do not remove nonredundant state information for brevity.",
+        "Keep the original formula and variable assignments when editing wording; formatting changes must not change symbols, values, units, precision, or mathematical relationships."
       ],
       "protected_literals": ["G=10log10(Pout/Pin)", "Pout=4 mW", "Pin=1 mW", "G=6.02 dB", "has not been measured"],
       "forbidden_claims": ["was measured", "experimental gain"],

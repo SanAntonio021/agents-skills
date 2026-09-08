@@ -66,7 +66,7 @@ repair_single_column_figure(fig, [ax], grid_mode="major_xy")
 export_ieee_single_column(
     fig,
     "figure_panel",
-    output_dir="exports",
+    output_dir="过程文件/论文图件",
     mode="draft",
     profile_path="plot_profile.json",
     grid_mode="major_xy",

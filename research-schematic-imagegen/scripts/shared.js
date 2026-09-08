@@ -4,7 +4,7 @@ import os from "node:os";
 import process from "node:process";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 
-export const DEFAULT_OUTPUT_ROOT = process.env.RESEARCH_IMAGE_OUTPUT_ROOT || "research-schematic-imagegen";
+export const DEFAULT_OUTPUT_ROOT = process.env.RESEARCH_IMAGE_OUTPUT_ROOT || path.join("过程文件", "科研示意图");
 export const DEFAULT_WORKING_DIR = path.join(DEFAULT_OUTPUT_ROOT, "working");
 export const DEFAULT_PROMPT_DIR = path.join(DEFAULT_OUTPUT_ROOT, "prompt");
 export const DEFAULT_MODEL = "gpt-image-2";

@@ -40,7 +40,7 @@
     {
       "id": 7,
       "prompt": "我临时要兼容一个只支持 /v1/images/generations 和 /v1/images/edits 的 OpenAI 兼容接口。私有配置已放在 research-schematic-imagegen 的 image-api.env，请用它生科研示意图，但不要切换 CC Switch 的聊天 provider，也不要把 key 写进技能或项目。",
-      "expected_output": "仅在用户明确要求时用 --backend direct；此模式可读取显式 RESEARCH_IMAGE_ENV_FILE 或私有 image-api.env，不自动读取 hangzhale.env；先运行 check-mode 和经授权的真实小规模图像调用；不切换聊天 provider，不打印或写入 API key；生成结果仍按 prompt/working/final/record.md 整理。",
+      "expected_output": "仅在用户明确要求时用 --backend direct；此模式可读取显式 RESEARCH_IMAGE_ENV_FILE 或私有 image-api.env，不自动读取 hangzhale.env；先运行 check-mode 和经授权的真实小规模图像调用；不切换聊天 provider，不打印或写入 API key；提示词、候选、记录和 manifest 留在过程文件/任务主题/；检查并选定后自动非覆盖复制成果到项目根目录，保留过程材料待用户触发 ChatNote。",
       "files": []
     },
     {

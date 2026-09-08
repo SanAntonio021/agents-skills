@@ -8,6 +8,13 @@ description: "Use this skill whenever the user wants to create, read, edit, repa
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 Use `$docx` as the sole explicit Word skill entrypoint.
 
+## 文件存放与交付
+
+- 项目根目录只放正式成果；候选、脚本、预览、核验记录和工具内部工程统一放在 `项目/过程文件/任务主题/`。同一任务续做及跨技能协作复用该目录；独立同名任务追加 `_YYYYMMDD`，仍重名追加 `_02`。只创建实际需要的目录，不搬动已有项目文件。
+- 沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。生成并通过必要检查后，由智能体在最终回复前自动复制正式成果到根目录，复核复制后的哈希、可打开性及必要依赖，并给出正式路径链接。需要用户挑选时，选定后再交付；不另设确认环节。
+- 使用工具的显式输出参数或将工作目录设到任务过程目录，保留工具所需内部结构；正文命令中的相对输出路径均以该目录为基准，技能脚本及输入路径使用绝对路径。不修改上游插件缓存。可编辑源、正式工程及原始数据保留其用途，不一律当作临时文件。
+- 普通任务结束后保留过程材料，只有用户显式触发 ChatNote（`chat-notes`）才进入可恢复清理；不自动清空过程目录。工具用于进程隔离、安全回滚的内部暂存清理不等于任务清场，仍遵守原有保护门。
+
 ## OfficeCLI route
 
 For ordinary paragraph inspection and edits, use the fast paragraph workflow below. Its strict
@@ -206,6 +213,8 @@ powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_wor
   -TemplatePath "$env:APPDATA\Microsoft\Templates\Normal.dotm" `
   -AllowOfficeCom
 ```
+
+Always pass `-OutputPath` and `-CheckRecordPath` inside `项目/过程文件/任务主题/` to the export wrapper; its intermediate DOCX and adjacent records therefore stay together. After checks pass, copy the selected DOCX to the project root and verify the delivered bytes. Preserve the original check record as evidence for the identical source hash; perform any new path-bound check against the delivered path and write its record back into the process directory. Do not rewrite old evidence to pretend it checked another path.
 
 The export wrapper creates `<output>.check.json`, or uses an explicit `-CheckRecordPath`. This is
 the corresponding document's check record, not an approval workflow. The approved export integration

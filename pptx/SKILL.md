@@ -5,6 +5,13 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 # PPTX creation, editing, and analysis
 
+## 文件存放与交付
+
+- 项目根目录只放正式成果；候选、脚本、预览、核验记录和工具内部工程统一放在 `项目/过程文件/任务主题/`。同一任务续做及跨技能协作复用该目录；独立同名任务追加 `_YYYYMMDD`，仍重名追加 `_02`。只创建实际需要的目录，不搬动已有项目文件。
+- 沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。生成并通过必要检查后，由智能体在最终回复前自动复制正式成果到根目录，复核复制后的哈希、可打开性及必要依赖，并给出正式路径链接。需要用户挑选时，选定后再交付；不另设确认环节。
+- 使用工具的显式输出参数或将工作目录设到任务过程目录，保留工具所需内部结构；正文命令中的相对输出路径均以该目录为基准，技能脚本及输入路径使用绝对路径。不修改上游插件缓存。可编辑源、正式工程及原始数据保留其用途，不一律当作临时文件。
+- 普通任务结束后保留过程材料，只有用户显式触发 ChatNote（`chat-notes`）才进入可恢复清理；不自动清空过程目录。工具用于进程隔离、安全回滚的内部暂存清理不等于任务清场，仍遵守原有保护门。
+
 ## Choose one authoring route
 
 Keep this skill as the local PowerPoint entry, routing and acceptance owner. For creation,
@@ -206,15 +213,16 @@ python scripts/office/validate.py out.pptx --original deck.pptx
 Use this workflow only when the task explicitly calls the output a formal deliverable, final candidate,
 or release. Temporary drafts may continue to use ordinary new-output filenames.
 
-1. **Start a formal release in a fresh directory.** Before generating the PPTX, run:
+1. **Start a formal release inside the task process directory.** Before generating the PPTX, run:
 
    ```powershell
-   python scripts/release_bundle.py init --output-root <outputs> --topic <topic> `
+   python scripts/release_bundle.py init --output-root <project>/过程文件/<task-topic> --topic <topic> `
      --pptx-name final.pptx --pdf-name final.pdf --png-dir png --evidence-dir evidence
    ```
 
    The command creates `<topic>_YYYYMMDD_vNN` and refuses to reuse an existing directory. Keep the
-   manifest, PPTX, PDF, PNGs, and QA evidence inside that directory. Do not append `fixed`, `final2`,
+   manifest, working PPTX/PDF, PNGs, and QA evidence inside that process directory. The release
+   bundle is internal working structure, not an extra project-root deliverable folder. Do not append `fixed`, `final2`,
    or similar parallel names after rendering has started. Only when the user explicitly requests a personal visual sign-off, append
    `--require-design-acceptance`. Otherwise inspect rendered pages yourself and deliver the checked result.
 
@@ -222,10 +230,10 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    snapshot using the same canonical root and exclusion for the after snapshot:
 
    ```powershell
-   python scripts/release_bundle.py snapshot --root <outputs> `
-     --exclude <release-dir> --output <release-dir>/evidence/integrity-before.json
-   python scripts/release_bundle.py snapshot --root <outputs> `
-     --exclude <release-dir> --output <release-dir>/evidence/integrity-after.json
+   python scripts/release_bundle.py snapshot --root <project> `
+     --exclude <project>/过程文件 --output <release-dir>/evidence/integrity-before.json
+   python scripts/release_bundle.py snapshot --root <project> `
+     --exclude <project>/过程文件 --output <release-dir>/evidence/integrity-after.json
    python scripts/release_bundle.py compare-snapshots `
      <release-dir>/evidence/integrity-before.json <release-dir>/evidence/integrity-after.json
    ```
@@ -257,6 +265,12 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    Use `REJECTED` when that is the verdict; never infer approval. Any later PPTX or PNG change makes
    the receipt `STALE`. The manifest records hashes, acceptance layers, visual scope, and `COMPLETE`,
    `PARTIAL_ACCEPTANCE`, or `INCOMPLETE`. The helper never starts PowerPoint or LibreOffice.
+
+5. **Deliver automatically to the project root.** After the required gates pass, copy the selected
+   PPTX (and PDF only when requested) to non-existing, clearly versioned root filenames. Recheck
+   hashes and opening from those paths, then link them. Keep the internal bundle and manifests in
+   the task process directory for continued editing and later explicit ChatNote cleanup. Take the
+   after snapshot before this intended publication; do not classify the new deliverables as unrelated changes.
 
 When filling in a template:
 

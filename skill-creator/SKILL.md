@@ -166,7 +166,7 @@ For Chinese writing-style or AI-style-removal evaluations, first read [Chinese s
 
 This section is one continuous sequence — don't stop partway through. Do NOT use `/skill-test` or any other testing skill.
 
-Put results in `<skill-name>-workspace/` as a sibling to the skill directory. Within the workspace, organize results by iteration (`iteration-1/`, `iteration-2/`, etc.) and within that, each test case gets a directory (`eval-0/`, `eval-1/`, etc.). Don't create all of this upfront — just create directories as you go.
+Put evaluation results in `<project-root>/过程文件/<task-topic>/`, reusing the same task directory across iterations and skills. Do not create a new sibling `<skill-name>-workspace/`. Keep existing projects and formal skill source directories in place. Within the task directory, organize results by iteration (`iteration-1/`, `iteration-2/`, etc.) and test case (`eval-0/`, `eval-1/`, etc.); create directories only as needed. Independent tasks with the same topic use `<task-topic>_YYYYMMDD`, then `_02`, `_03` if needed. Review HTML, snapshots and packaging stages also belong here; examples using `/tmp/` below mean this task process directory when the location is configurable. Deliver requested packaged artifacts automatically to the project root after validation, using descriptive versioned filenames without overwriting existing files. Preserve process materials until the user explicitly invokes `chat-notes` or requests cleanup; ordinary tool lock release and transactional rollback are unchanged.
 
 ### Step 1: Spawn all runs (with-skill AND baseline) in the same turn
 

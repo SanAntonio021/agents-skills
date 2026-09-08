@@ -99,6 +99,23 @@ def create_traditional_scan(path: Path) -> None:
     image.save(path, format="PDF", resolution=200.0)
 
 
+class PublicationRetentionTests(unittest.TestCase):
+    def test_finalize_keeps_validation_evidence_until_explicit_cleanup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            work = root / "过程文件" / "识别任务" / ".pdf-ocr-run-test"
+            work.mkdir(parents=True)
+            evidence = work / "poppler-render-1.png"
+            evidence.write_bytes(b"validation-render")
+            staged = {key: work / key for key in ("pdf", "txt", "log", "status")}
+            targets = {key: work.parent / (key + ".published") for key in staged}
+            for key, path in staged.items():
+                path.write_bytes(key.encode())
+            ROUTER.finalize(staged, targets, work)
+            self.assertEqual(evidence.read_bytes(), b"validation-render")
+            self.assertTrue(all(path.is_file() for path in targets.values()))
+
+
 class ClassificationTests(unittest.TestCase):
     def test_page_classification_thresholds(self) -> None:
         cases = [

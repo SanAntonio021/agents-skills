@@ -111,7 +111,7 @@ node <skill-dir>/scripts/discover-ccswitch-image-providers.js --provider-id <id>
 | `RESEARCH_IMAGE_ENV_FILE` | 仅 `direct` 模式使用的私有 env 文件 |
 | `RESEARCH_IMAGE_API_KEY`、`RESEARCH_IMAGE_BASE_URL` | 仅 `direct` 模式使用的 OpenAI 兼容接口配置 |
 | `ENABLE_RESEARCH_IMAGEGEN` | `direct` 模式中启用本地 API 调用；Cici Switch 在已选 alias 后由脚本在进程内设置 |
-| `RESEARCH_IMAGE_OUTPUT_ROOT` | 默认输出根目录 `research-schematic-imagegen` |
+| `RESEARCH_IMAGE_OUTPUT_ROOT` | 任务过程目录；从项目根目录运行，默认 `过程文件/科研示意图`。代理应设为已选定的 `过程文件/<任务主题>`，续做和跨技能复用同一路径 |
 
 ### 2. 建立技术表达合同
 
@@ -214,7 +214,7 @@ node <skill-dir>/scripts/edit.js --image <source.png> --promptfile <edit-prompt.
 node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --promptfile <edit-prompt.md> --output <working.png> --input-fidelity high
 ```
 
-所有生成和编辑结果先进入工作目录，不直接写入 `final/`。
+所有生成和编辑结果先进入任务过程目录中的 `working/`，不直接写入项目根目录。本文相对路径 `prompt/`、`working/`、`record.md` 和 manifest 均以该任务过程目录为基准；运行脚本时显式传入完整路径，或设置 `RESEARCH_IMAGE_OUTPUT_ROOT`。
 
 #### 原始返回图与尺寸适配
 
@@ -265,7 +265,7 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 
 先读 [references/output-ownership.md](references/output-ownership.md)。科研图目录常混有历史定稿和其他课题图；目录名是 `final` 不表示当前任务拥有其中所有文件。
 
-同一项目有多张图、多个对话或多个 `final` 版本时，必须维护一份项目级最终清单。跨对话选择图片、更新 Markdown 引用或准备回填 Word，只能读取这份清单中 `status=confirmed` 的当前路径；不得按文件名后缀、修改时间、目录位置或某个旧 `record.md` 猜测版本。用户确认新版本后，先更新清单并复核文件哈希，再更新 Markdown；Word、PPT 等载体仍按各自授权和工作流处理。
+同一项目有多张图、多个对话或多个 `final` 版本时，必须在 `过程文件/` 中维护一份项目级最终清单（复用已有权威清单，不新建根目录清单）。跨对话选择图片、更新 Markdown 引用或准备回填 Word，只能读取这份清单中 `status=confirmed` 的当前路径；不得按文件名后缀、修改时间、目录位置或某个旧 `record.md` 猜测版本。用户确认新版本后，先更新清单并复核文件哈希，再更新 Markdown；Word、PPT 等载体仍按各自授权和工作流处理。
 
 - 写入前只读列出目标目录已有文件。任务开始前已存在的文件一律视为用户资产。
 - 未经用户明确授权，不移动、删除、重命名、覆盖或归档既有文件。
@@ -273,20 +273,28 @@ node <skill-dir>/scripts/edit.js --image <source.png> --mask <mask.png> --prompt
 - “用户要求 N 张图”约束本轮交付清单，不约束一个已存在目录中的历史文件总数。
 - 发现目录中有非本轮文件时，保留原位并在检查结果中报告；需要物理隔离时，新建任务级子目录，或先征得用户同意。
 
-默认目录：
+默认目录（按需创建，不预建空目录）：
 
 ```text
-research-schematic-imagegen/
-├── prompt/       最终使用的生成和编辑提示词
-├── working/      原图、版本图、遮罩和诊断裁剪
-├── final/        当前选定、可交付的图片
-└── record.md     文件映射、技术边界、已知问题和生成路径
+项目/
+├── 系统示意图_v01.png             选定并检查通过的成果
+└── 过程文件/
+    ├── 图件最终清单.json          仅多图项目需要；路径相对项目根目录
+    └── 系统示意图/                同一任务和跨技能协作复用
+        ├── prompt/               使用的生成和编辑提示词
+        ├── working/              原图、候选、遮罩和诊断裁剪
+        ├── manifest.json         本轮交付清单，文件名指向项目根目录
+        └── record.md             来源映射、技术边界、问题和生成路径
 ```
+
+先根据用户目标选定任务主题，复用同一任务的已有过程目录；独立同名任务追加 `_YYYYMMDD`，仍重名追加 `_02`。脚本缺省目录 `过程文件/科研示意图` 是兜底路径，不能把多个独立任务都塞进去。最终文件沿用项目命名习惯；无约定时用“内容主题_v01”，同名递增版本，不覆盖原文件。
+
+需要选图时，在对话中展示过程目录的候选，用户选定后由代理自动非覆盖复制到项目根目录；无确认环节时，在必要检查通过后、最终回复前自动复制。复制后核对来源与交付文件 SHA-256、可解码性、实际尺寸和清单路径，再提供根目录成果链接；不要求用户手动复制。过程材料全部保留，不在任务结束时清理；用户手动触发 ChatNote 后按其可恢复清理流程处理。正式源码、原始实验数据、文献库及 LaTeX 工程保持其原有用途和位置。
 
 在 `record.md` 中记录本轮文件映射，并生成独立 JSON manifest 供验证脚本读取；验证只覆盖 manifest 中的图片：
 
 ```powershell
-node <skill-dir>/scripts/verify-output.js --dir <final-dir> --manifest <manifest.json> --expected-count 4 --width 1536 --height 1024 --json
+node <skill-dir>/scripts/verify-output.js --dir <project-root> --manifest <过程文件/任务主题/manifest.json> --expected-count 4 --width 1536 --height 1024 --json
 ```
 
 `verify-output.js` 在 manifest 模式下把其他 PNG 报告为 `extra_files`，但不移动它们，也不把它们计入本轮交付数量。只有用户明确要求清理目录时，才可以在列明文件和目标路径并获得确认后执行移动。
@@ -299,7 +307,7 @@ node <skill-dir>/scripts/verify-output.js --dir <final-dir> --manifest <manifest
 
 最终回复只需说明：
 
-- 当前应使用的最终目录和图片数量
+- 项目根目录中当前应使用的成果链接和图片数量
 - 已完成的技术、文字和尺寸检查
 - 仍存在的技术含义风险
 - 实际使用的图像路径或渠道，不回显凭据

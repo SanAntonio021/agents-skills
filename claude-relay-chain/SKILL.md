@@ -7,10 +7,24 @@ description: >
   API、/v1/messages、/v1/models、127.0.0.1:15721、Claude Desktop 模型发现、CC Switch
   直连模式或本地路由/模型映射模式、OpenAI/Gemini 接口转换、配置能回复但另一入口失败，
   或要求导入/切换/排查 Claude 中转供应商时，优先使用本技能。
+  需要核对 CC Switch 的 Claude 后台工具就绪状态并继续只读链路诊断时，也使用本技能。
 compatibility: Windows PowerShell 5.1 or later; Python 3 is optional for read-only CC Switch database inspection.
 ---
 
 # Claude 中转链排障
+
+## CC Switch 后台入口与现有诊断
+
+先读取启动用户主目录下 `.agent-rules/local.md` 的“规则维护目录”字段，再读取该目录下
+`automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
+使用已经展开并核验的绝对路径；字段、组件或固定 CLI 校验缺失时报告不可用，不猜路径、不从 PATH
+替换同名程序。步骤以共用指南为准，此处不复制配置维护实现。
+
+共用入口本轮仅支持 `-App claude -Mode Inspect`，用于确认固定后台工具就绪；不提供 Claude 配置
+写入能力，也不代替下文 `audit-claude-relay.ps1` 的供应商、双入口、模型映射及请求链路审计。
+保留现有诊断和已授权配置维护职责；不能把 Codex 的 Preview/Apply 用于 Claude 配置。
+CC Switch 操作全程不切换窗口、不模拟键鼠、不驱动交互式终端。未覆盖的修改先查受支持后台接口；
+后台无法完成时报告缺口，不自动降级为前台操作，确需前台时等待用户明确同意。
 
 ## 目标
 

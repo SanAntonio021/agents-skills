@@ -1,4 +1,9 @@
 [
+  {"query":"去技能市场找科研写作的上游参考，与现有 ieee-manuscript-edit 比较，只看差异。","should_trigger":true},
+  {"query":"看看 skills.sh 和作者仓库里有没有更好的 Word 修订处理办法，不安装。","should_trigger":true},
+  {"query":"这份市场条目和 GitHub 仓库是不是同一个技能来源？帮我去重核对。","should_trigger":true},
+  {"query":"帮我把已有 Word 文档中的表格对齐，保留内容。","should_trigger":false},
+  {"query":"这篇论文的滤波器为什么要放在混频器后面？核对原图。","should_trigger":false},
   {"query":"监测一下本地技能的触发情况，我感觉下载了很多 skill 但一直没有用过。","should_trigger":true},
   {"query":"统计 Codex 和 Claude 历史里哪些技能真的调用过，哪些半年内没看到使用证据。","should_trigger":true},
   {"query":"帮我找可能应该触发 skill 却漏触发的历史请求，只读分析，不要自动改 description。","should_trigger":true},

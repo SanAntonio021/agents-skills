@@ -85,6 +85,8 @@ description: 维护当前本地智能体的底层规则、系统提示词、技�
 
 ## 维护脚本
 
+技能市场、仓库和作者来源的定向发现由 `skill-check` 承接；搜索、来源去重和实际内容比较方法集中在 [上游维护说明](references/skill-upstream-maintenance.md#市场发现与内容比较)。普通业务请求不因此触发技能搜索。
+
 - 上游镜像检查与同步：[scripts/manage_repo_mirrors.py](scripts/manage_repo_mirrors.py)
 - 自建技能上游来源登记、周检、隔离审核和状态记录：[scripts/skill_upstream_maintenance.py](scripts/skill_upstream_maintenance.py)
 - 完整来源分层与批准门：[references/skill-upstream-maintenance.md](references/skill-upstream-maintenance.md)

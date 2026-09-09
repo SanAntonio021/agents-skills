@@ -95,7 +95,7 @@ Desktop 自己维护的新任务默认值和任务级设置不属于 watcher 接
 不用本技能处理：
 
 - Clash Verge、Mihomo、系统网络代理链路；走 `clash-verge-chain-proxy`。
-- 单纯 PowerShell 编码、路径或命令失败；走 `command-memory`。
+- 单纯 PowerShell 编码、路径或命令失败；按当前报错直接修正。
 - skill 目录、AGENTS/CLAUDE/GEMINI 维护；走对应维护 skill。
 
 ## 默认本机约定
@@ -198,7 +198,7 @@ Codex Desktop 26.831 的内置权限模式映射为：
 `danger-full-access + on-request + auto_review`，再用一个原先会触发审批的窄范围动作确认审批器确实
 接管。动作成功本身不是自动审批证据：如果 `turn_context` 仍是 `never + user`，或没有任何 reviewer
 介入证据，只能说明动作被当前策略允许。若当前旧任务仍拒绝删除任务自产生的无害临时文件，保留并报告
-准确路径，按 `command-memory/references/archive-and-file-ops.md` 处理，不换 `cmd`、.NET 或其他 API
+准确路径，继续不依赖该清理的工作，不换 `cmd`、.NET 或其他 API
 绕过宿主策略。
 
 #### 区分 Common Config、新任务默认值和任务级覆盖

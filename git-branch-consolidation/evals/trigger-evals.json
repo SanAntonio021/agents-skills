@@ -1,4 +1,6 @@
 [
+  {"query":"Git fetch 被云盘临时 ref 挡住，只核对远端提交，不整理分支。","should_trigger":false},
+  {"query":"PowerShell 命令参数写错了，帮我修正并继续原任务。","should_trigger":false},
   {
     "query": "把这个仓库所有本地和远端分支都收口到默认分支，最后只留一个 branch，worktree 和 stash 也清干净，但 tags 要保留。",
     "should_trigger": true

@@ -9,9 +9,24 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILL = (ROOT / "SKILL.md").read_text()
-README = (ROOT / "README.md").read_text()
-PLUGIN = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+def read_package_file(relative_path: str) -> str:
+    try:
+        return (ROOT / relative_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise SystemExit(f"Cannot read {relative_path} as UTF-8: {error}") from None
+
+
+SKILL = read_package_file("SKILL.md")
+README = read_package_file("README.md")
+try:
+    PLUGIN = json.loads(read_package_file(".claude-plugin/plugin.json"))
+except json.JSONDecodeError as error:
+    raise SystemExit(
+        f"Invalid JSON in .claude-plugin/plugin.json at line {error.lineno}, "
+        f"column {error.colno}: {error.msg}"
+    ) from None
+if not isinstance(PLUGIN, dict):
+    raise SystemExit(".claude-plugin/plugin.json must contain a JSON object")
 
 
 def require(match: re.Match[str] | None, message: str) -> re.Match[str]:
@@ -25,7 +40,7 @@ frontmatter = require(
     "SKILL.md must start with YAML frontmatter",
 ).group(1)
 
-for nonportable_key in ("compatibility:", "allowed-tools:"):
+for nonportable_key in ("version:", "compatibility:", "allowed-tools:"):
     if re.search(rf"(?m)^{re.escape(nonportable_key)}", frontmatter):
         raise SystemExit(f"Remove nonportable frontmatter key: {nonportable_key[:-1]}")
 
@@ -49,11 +64,11 @@ pattern_numbers = [
 if pattern_numbers != list(range(1, 34)):
     raise SystemExit(f"Expected patterns 1-33, found {pattern_numbers}")
 
-readme_numbers = {
+readme_numbers = [
     int(number) for number in re.findall(r"(?m)^\| ([0-9]+) \|", README)
-}
-if readme_numbers != set(range(1, 34)):
-    raise SystemExit("README pattern table must contain patterns 1-33")
+]
+if sorted(readme_numbers) != pattern_numbers:
+    raise SystemExit("README pattern table must contain patterns 1-33 exactly once each")
 
 if len(SKILL.splitlines()) > 500:
     raise SystemExit("SKILL.md exceeds the 500-line portability budget")

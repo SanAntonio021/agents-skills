@@ -1,6 +1,6 @@
 ---
 name: research-report
-description: 将已完成取证的行业、市场、技术、竞品或政策材料写成证据型报告、决策建议报告，或做终稿审校。Use when 用户要写、重构或审查调研报告；先区分 evidence_report、decision_report、final_audit。持续取样与补证据转 baseline-research，单篇论文总结转 paper-summary，单纯 Word 排版转 docx。
+description: 将已完成取证的行业、市场、技术、竞品或政策材料写成证据型报告、决策建议报告，或做终稿审校。Use when 用户要写、重构或审查调研报告；先区分 evidence_report、decision_report、final_audit。持续取样与补证据转 baseline-research，单篇论文按请求直接整理，原文核对转 paper-review，Zotero 笔记读写用现有 Zotero 插件，单纯 Word 排版转 docx。
 ---
 
 # 调研报告

@@ -1,5 +1,30 @@
 [
   {
+    "id": "source-check-local-technical-question",
+    "query": "这篇论文笔记说衰减器在功放后，究竟是哪一级功放？请核对原文图 2 和正文，先不要修改笔记。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "source_check: inspect relevant text and figure, distinguish stages, answer with location; no note write, ABC or submission gate",
+    "reason": "具体原文核对只处理当前疑问，Zotero 插件按需读取笔记。"
+  },
+  {
+    "id": "source-check-authorized-note-correction",
+    "query": "刚才已经核实这段把单通道速率写成了总速率。请直接修正 Zotero 当前笔记，保留我刚加的其他内容，不用整篇重跑。",
+    "should_trigger": true,
+    "expected_primary_skill": "paper-review",
+    "expected_behavior": "source_check with Zotero plugin: read latest note, apply only authorized correction, verify saved content; no repeat approval or paid rerun",
+    "reason": "已授权的局部修订由原文核对支持，笔记操作交给 Zotero。"
+  },
+  {
+    "id": "routine-zotero-summary-not-review",
+    "query": "把 Zotero 里这篇论文按现有提示词解读，保存成它的子笔记。",
+    "should_trigger": false,
+    "expected_primary_skill": "zotero",
+    "expected_not_primary_skill": "paper-review",
+    "expected_behavior": "use existing Zotero workflow; no full review, local summary template or publication gate",
+    "reason": "普通解读不等于核对具体技术疑问或审稿。"
+  },
+  {
     "id": "should-trigger-stopline-review-clear",
     "query": "这份文稿我已经反复改了四轮。请不要直接替我润色，先按 A 类必须修改、B 类建议优化、C 类风格偏好分类审查。如果没有新增 A 类问题，请明确告诉我是否建议停稿。",
     "should_trigger": true,

@@ -13,7 +13,7 @@
 | 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `ask-first` 或 `baseline-research` |
 | 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-research` |
 | 文献下载 | 下载论文、补 PDF、维护 `paper_index.md` 论文索引 | `paper-download` |
-| 单篇论文总结 | 读已有 PDF、整理单篇文献笔记、提取术语和关键信息 | `paper-summary` |
+| 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，Zotero 使用现有插件，局部核对用 `paper-review` |
 | 指标论证 | 这个指标站不站得住、口径怎么写 | `target-feasibility` |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |

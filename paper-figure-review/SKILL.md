@@ -167,7 +167,7 @@ figure_id: Fig. X
 
 ## 重画数据图
 
-有原始数据时，优先用 Python/Matplotlib 重画：
+已按任务要求选用 Python/Matplotlib 且有原始数据时：
 
 1. 读取原始数据，不手动改数据点。
 2. 单栏图使用 `use_ieee_single_column_style()`、`repair_single_column_figure()`、`preflight_single_column_figure()` 和 `export_ieee_single_column()`；`use_ieee_style()`、`save_ieee_figure()` 只为旧通用脚本保留。

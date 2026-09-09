@@ -9,6 +9,8 @@ description: 单独科研数据绘图优先生成可手工微调的 Origin OPJU�
 
 单独提出科研数据绘图请求时，在当前 Origin 路线能满足要求的前提下优先使用本技能，交付用户可继续手工微调的原生 OPJU；无需用户明确说 Origin。论文结果图由 `paper-figure-review` 确定技术含义、坐标单位和投稿排版要求，本技能负责导入、制作、保存和导出，再按该要求检查实际输出。
 
+论文任务已确定的字体、字号、尺寸等要求优先于下文及参考资料的 Origin 模板默认值；当前路线不能实现或回读验证时，报告缺口。跨技能继承已确定的任务输出目录，用现有输出参数传入，无需再次询问目录。
+
 科研示意图走 PPT、SVG 等设计路线。仿真、实验程序运行时的自动出图保留现有实现；用户指定 Python/MATLAB 或沿用既有图源时遵循指定，不自动迁移。仅审查时给意见，不生成修改版。
 
 两个技能复用同一任务的数据含义、样式和授权，不各问一轮确认。用户保存后的当前 OPJU 是后续读取依据，按现有副本审查流程导出，不覆盖其手工调整；这不代表已提供任意 OPJU 原位编辑接口。
@@ -24,8 +26,8 @@ rendering, exporting, and readback.
 - Read the configured versioned runtime, selected table, and optional local reference image. Read the
   complete repository only when working from an explicitly selected clone or approved source update.
 - Write only to the configured runtime's `.editaplot-venv`, an approved source repository during a
-  separately authorized update, and the selected source file's parent folder for source-adjacent
-  deliverables. Never patch `.cc-switch`, `.codex`, or `.claude` Skill copies directly.
+  separately authorized update, and the established task output folder (defaulting to the selected
+  source file's parent folder). Never patch `.cc-switch`, `.codex`, or `.claude` Skill copies directly.
 - Run the local launcher, PowerShell/Python subprocesses, and an EditaPlot-owned Origin instance in
   the same active interactive Windows user session.
 - Use network access only for repository download/update and locked dependency retrieval. Treat a
@@ -147,9 +149,9 @@ rendering, exporting, and readback.
     the user requests otherwise. By default, let the runtime create a direct sibling of the source
     file named `<source_stem>_EditaPlot_YYYYMMDD_HHMMSS`; keep all formal artifacts in that folder.
     Do not redirect ordinary runs to the repository, Skill directory, current working directory, or
-    a shared global output folder. Use `--output-dir` only when the user explicitly requests another
-    location.
-16. Run `editaplot.cmd verify <output-directory>` against that source-adjacent folder and perform
+    a shared global output folder. Use `--output-dir` for an established task output folder or a
+    location explicitly requested by the user.
+16. Run `editaplot.cmd verify <output-directory>` against the selected output folder and perform
     agent visual QA. If smoke or render fails, a Python preview or standalone PNG/PDF/SVG is only
     a preview and must not be presented as completed Origin work. Formal success requires the
     editable OPJU, PNG, PDF, TIF, object readback, and agent visual QA together.

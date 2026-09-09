@@ -30,7 +30,7 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 - 本技能处理一个 Git 仓库内部的全面收口。
 - 普通一两个分支的合并直接走项目常规 Git 流程。
 - 两个以上目录或仓库的迁移、归组和入口整理使用 project-organizer。
-- Windows 出现 FETCH_HEAD 锁、*.baiduyun.uploading.cfg、长路径或 worktree 半删除时，读取 command-memory/references/git-on-windows.md，不要在本技能重复发明修复命令。
+- Windows 出现云盘临时 ref、FETCH_HEAD 锁或并发写入时，可直接读取 [Windows Git 局部排错](references/recovery-contract.md#windows-git-局部排错)；普通排错不触发全面收口。
 
 执行破坏性步骤前读取 [references/recovery-contract.md](references/recovery-contract.md)。其中定义恢复包、ignored 分类、远端删除和回滚字段。
 
@@ -43,7 +43,7 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 5. 检查每个 worktree 是否存在 merge、rebase、cherry-pick、revert、bisect、sequencer 或 unmerged index。任一存在就停止。
 6. 按恢复合同采集完整状态与哈希，两次快照间隔至少 2 秒；live remote heads/tags、全部本地 refs、HEAD、reflog、stash、worktrees、index、工作树及 ignored/payload 任一不一致时，现场未冻结。两次一致只是必要证据，不能覆盖已知写入者尚未交接的事实。
 
-冻结之后只允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、文件、index、worktree 或 remote 变化会使恢复包失效；客户端上传进度、运行或暂停状态本身不算仓库漂移。Git 失败按 command-memory 的有界观察规则处理，不用控制客户端代替复核。
+冻结之后只允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、文件、index、worktree 或 remote 变化会使恢复包失效；客户端上传进度、运行或暂停状态本身不算仓库漂移。Git 失败按恢复合同的有界观察规则处理，不用控制客户端代替复核。
 
 ## 2. 明确 ignored 内容的归口
 

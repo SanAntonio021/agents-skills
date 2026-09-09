@@ -41,7 +41,7 @@
       "prompt": "首轮 peer 已完成，作者重读后没有改主文件。",
       "expected_output": "调用 v3_author_checkpoint；author_modified=false 时不再调用模型，直接向用户呈现最新文件和结论。",
       "files": [],
-      "expectations": ["needs_changes 或 disagreement 也交给用户。"]
+      "expectations": ["不因 needs_changes 或 disagreement 标签自动要求用户裁决；有依据不采纳时说明理由。"]
     },
     {
       "id": 10,
@@ -59,10 +59,10 @@
     },
     {
       "id": 13,
-      "prompt": "对端要递归删除 results/cache 目录，bridge 已返回待审批项。",
-      "expected_output": "一次只向用户展示完整 action、targets、approval ID、fingerprint 和到期时间；决定后原样调用 v3_resolve_approval。",
+      "prompt": "用户已授权清理本轮产生的 results/cache，目标已核对且可恢复；对端准备递归删除该目录。",
+      "expected_output": "执行模型按任务授权、实际目标和文件保护规则处理；新任务不因递归或目录形式产生桥接器审批记录，不调用 v3_resolve_approval。",
       "files": [],
-      "expectations": ["批准只覆盖精确目标且 24 小时有效。", "拒绝或超时取消动作。"]
+      "expectations": ["不进入 awaiting_approval。", "不执行真实破坏操作来验证审批取消。"]
     },
     {
       "id": 14,
@@ -118,7 +118,7 @@
       "prompt": "同时提交两个同项目 v3 job 和一个不同项目 v3 job。",
       "expected_output": "同一 realpath projectRoot 串行排队；不同项目可在全局并发上限内并行。",
       "files": [],
-      "expectations": ["等待审批也占用该项目锁。"]
+      "expectations": ["旧任务等待审批仍占用该项目锁；新任务不产生审批。"]
     },
     {
       "id": 33,
@@ -132,7 +132,7 @@
       "prompt": "作者任务仍在运行，首轮 peer 返回 needs_changes。",
       "expected_output": "作者在当前任务内重读、修改并调用 checkpoint；正常流程不需要 continuation。",
       "files": [],
-      "expectations": ["作者没有修改时直接交给用户。"]
+      "expectations": ["作者没有修改时不再调用模型；依据证据处理技术意见，不机械交给用户。"]
     },
     {
       "id": 36,
@@ -143,7 +143,7 @@
     },
     {
       "id": 37,
-      "prompt": "v3 对端想删除项目外的临时文件，用户拒绝了这项精确审批；审查本身仍可不执行删除而完成。",
+      "prompt": "恢复发布前旧 v3 job：对端曾请求删除项目外临时文件，已有待审批记录，用户现在明确拒绝；审查本身仍可完成。",
       "expected_output": "原样调用 v3_resolve_approval(decision=deny)，随后继续查询同一 job；bridge 在同一会话中取消该动作并让对端继续，不能把拒绝本身写成终态失败或另开任务。",
       "files": [],
       "expectations": ["只有对端随后明确无法完成并返回失败，才按最终失败报告。"]
@@ -158,16 +158,16 @@
     {
       "id": 39,
       "prompt": "启用跨模型科研循环，审查者要能读写整个项目、跑脚本、联网，危险删除再问我。",
-      "expected_output": "进入科研分支，复用通用 v3 完整工具和直接修改流程；不传正文、白名单或 sandbox，高风险动作按精确 targets 审批。",
+      "expected_output": "进入科研分支，复用通用 v3 完整工具和直接修改流程；不传正文、白名单或 sandbox。执行模型遵守用户危险删除先问的明确约束，新任务不创建 bridge 逐项审批记录。",
       "files": [],
-      "expectations": ["不创建另一套审批或调度协议。"]
+      "expectations": ["不创建另一套审批或调度协议。", "用户约束仍然有效。"]
     },
     {
       "id": 40,
-      "prompt": "跨模型里程碑审查时对端想删项目外临时文件，我拒绝这项审批，但审查可以继续。",
+      "prompt": "恢复旧跨模型里程碑审查，已有项目外删除的待审批记录；我明确拒绝该动作，但审查可以继续。",
       "expected_output": "原样拒绝该精确动作后继续查询同一 v3 job，不把拒绝本身当作终态，也不另开任务。",
       "files": [],
-      "expectations": ["科研分支与通用互审使用相同审批语义。"]
+      "expectations": ["历史审批沿用通用兼容语义，不自动批准旧动作。"]
     },
     {
       "id": 41,
@@ -200,9 +200,9 @@
     {
       "id": 45,
       "prompt": "科研里程碑的终审仍然 needs_changes，要不要再新建一个 series 反复改到通过？",
-      "expected_output": "保留当前结果和分歧，交给用户决定；只暂停依赖该结论的步骤，不另建 series 绕过终审。",
+      "expected_output": "不另建 series 或增加对端轮次。主模型重读结果，依据证据修正、验证或不采纳意见；验证满足判据且在已有授权内可继续。只有目标、范围或重要取舍需要用户决定时询问。",
       "files": [],
-      "expectations": ["可继续其他独立的已授权工作。"]
+      "expectations": ["分别报告对端结论与主模型验证；主模型改后旧哈希结论失效。", "验证未通过只暂停依赖步骤，可继续其他独立已授权工作。"]
     },
     {
       "id": 46,
@@ -217,6 +217,41 @@
       "expected_output": "按普通批量仿真任务执行；后台、多轮或参数扫描本身不触发跨模型科研循环。",
       "files": [],
       "expectations": ["不能把未提及其他模型参与的任务升级为跨模型调度。"]
+    },
+    {
+      "id": 48,
+      "prompt": "终审 needs_changes 只指出单位笔误，范围已批准，请收尾。",
+      "expected_output": "主模型重读后修正笔误、核对单位及相关结果；查询旧结论失效情况，分别报告对端结论与主模型修正验证，不再问用户或调用对端。",
+      "files": [],
+      "expectations": ["不新增轮次或 series。", "不把主模型修正写成对端通过。"]
+    },
+    {
+      "id": 49,
+      "prompt": "终审 disagreement 建议改成另一算法，但当前算法已满足验收，复现测试支持现有实现。",
+      "expected_output": "主模型核对结果及证据，有依据地不采纳该技术意见并说明理由，完成相关验证；不因技术分歧标签机械请用户裁决。",
+      "files": [],
+      "expectations": ["保留真实 disagreement，不伪造 peer pass。"]
+    },
+    {
+      "id": 50,
+      "prompt": "终审建议把已批准的离线仿真改为采购硬件开展实测，才能满足新目标。",
+      "expected_output": "识别目标、范围和投入的重要变化，向用户说明取舍并询问；暂停依赖该决定的步骤，继续其他独立已授权工作。",
+      "files": [],
+      "expectations": ["不自行扩大授权。", "不增加互审轮次。"]
+    },
+    {
+      "id": 51,
+      "prompt": "终审后我修正了数据转换，相关测试仍失败，能否宣布通过继续依赖它的下一里程碑？",
+      "expected_output": "不能宣布通过；保留验证失败与旧哈希结论失效，排查已授权问题，未满足判据前暂停依赖步骤，不把主模型收尾冒充对端验收。",
+      "files": [],
+      "expectations": ["验证失败不是成功。", "继续独立已授权工作。"]
+    },
+    {
+      "id": 52,
+      "prompt": "升级后读取一个旧 awaiting_approval 记录，要不要自动批准让它结束以便切换版本？",
+      "expected_output": "保留历史记录和接口，不自动批准旧动作；等待活动任务按已有语义结束后切换。",
+      "files": [],
+      "expectations": ["不改写历史审批目标。", "新任务不产生桥接器审批。"]
     }
   ]
 }

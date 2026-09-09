@@ -103,27 +103,29 @@ v3_review_peer(完整 v3 请求)
 }
 ```
 
-- `author_modified=false`：不再调用模型，呈现最新文件和首轮结论；已授权科研里程碑按科研分支继续，
-  非 pass 交给用户。
+- `author_modified=false`：不再调用模型，呈现最新文件和首轮结论，按下述主模型收尾规则处理意见；
+  已授权科研里程碑按科研分支继续。
 - `author_modified=true`：用首轮完全相同的身份、任务、验收、约束和路由字段，加 checkpoint
   返回的 `seriesId/seriesVersion/latestJobId` 再调用 `v3_review_peer`。
 
 第二次 peer job 的 stage 为 `final_check`，只能检查，不能修改。主文件在终审中变化时 job 失败。
-终审后不追加审查阶段；科研里程碑通过时按科研分支继续，needs_changes 或 disagreement 交给用户。
+终审后不追加审查阶段，也不另开 series。原作者重读最新文件和结果，依据证据采纳、修正或不采纳
+needs_changes 或 disagreement 中的意见，完成相关验证。小问题和技术分歧自行处理；只有目标、范围
+或重要取舍需要用户决定时暂停依赖步骤。科研里程碑按科研分支继续条件处理。
 
 bridge 在可交付结论上保存 `conclusion_sha256`。每次 `v3_peer_result` 都重读主文件：
-`conclusion_valid=true` 才能引用旧结论；文件变化或消失时 `stale=true`，旧结论失效。
+`conclusion_valid=true` 才能引用旧结论；文件变化或消失时 `stale=true`，旧结论失效。主模型收尾后
+再次读取结果，分别报告“对端结论”和“主模型修正及验证结果”，不得把旧哈希的通过写成对端对新文件
+通过。验证失败或证据不足如实保留，不能强行宣布完成。
 
-## 高风险动作批准
+## 权限与历史审批兼容
 
-普通可见工具调用自动允许，包括删除项目内一个普通文件。以下明确动作暂停：
+新任务不产生桥接器审批记录，不按删除数量、递归、目录、远程操作、Git 丢弃修改或数据库清空等
+命令形式触发 `awaiting_approval`。执行模型依据任务授权、实际目标和文件保护规则行动，超出授权时
+自行询问用户。认证、项目路径检查、终审只读、并发和会话清理约束继续生效。
 
-- 多目标、递归、通配符、目录、项目外删除；
-- 远程删除；
-- `git reset --hard`、`git clean`、`git restore`、`git checkout --`、清空 stash 等丢弃修改；
-- DROP、TRUNCATE 或无条件 DELETE 等数据库清空。
-
-public job 在 `awaiting_approval` 时返回：
+历史审批记录、类型和 `v3_resolve_approval` 接口保留；下面只描述旧任务兼容，不是新任务流程。
+发布前等待活动任务结束，不自动批准旧的待审批动作。旧 public job 在 `awaiting_approval` 时返回：
 
 ```text
 approval_id
@@ -141,8 +143,7 @@ state
 或过期时绕过该动作继续。只有对端随后返回终态失败，整轮才失败。相同 job 内再次出现相同规范化
 action+targets 才可复用批准。
 
-该门只覆盖 hook 或 App Server 事件中明确的工具名和参数。普通程序内部未显式暴露的删除不在保证
-范围内，报告中不得声称已检测。
+历史接口不用于给新任务另建逐项审批、审批例外清单或宽松模式。
 
 ## 稳定性、会话和并发
 
@@ -150,10 +151,10 @@ action+targets 才可复用批准。
 保留前次已完成修改，并要求重新读取最新文件。调用方不叠加重试或切供应商。
 
 同一个 realpath `projectRoot` 同时只运行一个 v3 job；其他项目可并行，总活动 job 不超过 bridge
-全局限制。排队、运行和等待批准都纳入 health/status 的 v3 activity，并阻止停机、token 轮换和路由
+全局限制。排队、运行和旧任务等待批准都纳入 health/status 的 v3 activity，并阻止停机、token 轮换和路由
 配置变更。
 
-Claude session 或 Codex ephemeral App Server process 保留到本轮、审批和单次外层重试结束。bridge
+Claude session 或 Codex ephemeral App Server process 保留到本轮和单次外层重试结束，旧任务还包括历史审批。bridge
 先清理会话和 transient session ID，再发布 terminal job。daemon 重启会把未终态 job 标为失败并清理
 已记录的精确 Claude session ID。
 
@@ -187,13 +188,13 @@ v2_await_peer -> v2_peer_result
 
 v2 inline 固定 zero-tool 和只读，继续使用 `completion_receipt`。旧 v2 workspace、
 `v2_review_repair_peer`、CAS、同步和批准工具保持兼容，但保存文件的新流程不得默认使用。v3 失败
-不能自动回退 v2，也不能通过旧协议绕过高风险审批。
+不能自动回退 v2，不得扩大旧协议的执行能力。
 
 ## 用户门与失败
 
 互审结果只是用户决策材料。向用户报告 peer 是否修改、作者是否修改、终审是否运行、最终主文件
 SHA-256 是否仍有效，以及 pass、未决问题或分歧；正式计划执行复用已有授权，未授权时再交给用户确认。
 
-路径无效、MCP 不可达、精确模型缺失、结果 schema 错误、会话清理失败、审批拒绝/过期或终审写入
+路径无效、MCP 不可达、精确模型缺失、结果 schema 错误、会话清理失败、旧审批拒绝/过期或终审写入
 都保留原 job/series 和清理后的错误。pending 不是失败也不是最终答复。不得伪造 completion、扫描
-其他 job、降低模型、创建重复 job 或替用户裁决。
+其他 job、降低模型、创建重复 job 或替用户决定目标、范围及重要取舍。

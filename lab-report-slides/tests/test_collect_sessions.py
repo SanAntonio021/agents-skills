@@ -12,6 +12,53 @@ import collect_sessions  # noqa: E402
 
 
 class CollectSessionsTests(unittest.TestCase):
+    def test_resumed_old_codex_sessions_use_index_or_mtime_then_event_window(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            start, end, _ = collect_sessions.local_window("today", "2026-09-09")
+            paths = {}
+            for session_id, modified, timestamp in (
+                ("indexed-old", 1, start.isoformat()),
+                ("unindexed-old", end.timestamp() + 60, start.isoformat()),
+                ("stale-old", 1, "2026-09-07T00:00:00Z"),
+                ("recent-mtime-only", end.timestamp(), end.isoformat()),
+            ):
+                path = base / "sessions" / "2026" / "09" / "07" / f"rollout-{session_id}.jsonl"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                lines = [
+                    {"type": "session_meta", "payload": {"id": session_id}},
+                    {"type": "event_msg", "timestamp": timestamp,
+                     "payload": {"type": "agent_message", "message": "完成功率测试"}},
+                ]
+                path.write_text("\n".join(json.dumps(line) for line in lines), encoding="utf-8")
+                os.utime(path, (modified, modified))
+                paths[session_id] = path
+            (base / "session_index.jsonl").write_text(json.dumps(
+                {"id": "indexed-old", "updated_at": start.isoformat()}), encoding="utf-8")
+            candidates = collect_sessions.codex_session_files(base, start, end)
+            self.assertEqual(set(candidates), {paths[key] for key in (
+                "indexed-old", "unindexed-old", "recent-mtime-only")})
+            args = type("Args", (), {"mode": "today", "date": "2026-09-09",
+                                     "codex_root": str(base), "claude_root": str(base / "missing"),
+                                     "scan_fallback": False})()
+            result = collect_sessions.collect(args)
+            self.assertEqual({record["id"] for record in result["sessions"]},
+                             {"indexed-old", "unindexed-old"})
+
+    def test_incomplete_index_does_not_exclude_previous_day_codex_session(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            start, end, _ = collect_sessions.local_window("today", "2026-09-09")
+            path = base / "sessions" / "2026" / "09" / "08" / "rollout-missing-index.jsonl"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({"type": "event_msg", "timestamp": start.isoformat(),
+                                       "payload": {"type": "user_message", "message": "继续实验测试"}}),
+                            encoding="utf-8")
+            os.utime(path, (start.timestamp(), start.timestamp()))
+            (base / "session_index.jsonl").write_text(json.dumps(
+                {"id": "another-session", "updated_at": start.isoformat()}), encoding="utf-8")
+            self.assertEqual(collect_sessions.codex_session_files(base, start, end), [path])
+
     def test_powershell_quoted_image_paths_are_individual_candidates(self):
         self.assertEqual(collect_sessions.candidate_paths(r"'D:\work\plot one.png' and 'D:\work\photo.jpg'"),
                          [r"D:\work\plot one.png", r"D:\work\photo.jpg"])

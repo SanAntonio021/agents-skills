@@ -520,26 +520,22 @@ def session_index_ids(root: Path, start: datetime, end: datetime) -> set[str]:
 
 
 def codex_session_files(root: Path, start: datetime, end: datetime, include_archived: bool = True) -> list[Path]:
-    """Visit only date directories and index entries that can contain recent events."""
+    """Select by filename/index and metadata before parsing any rollout content."""
     session_root = root / "sessions"
     if not session_root.exists():
         return []
     index_ids = session_index_ids(root, start, end)
     result: list[Path] = []
-    current = start.date() - timedelta(days=1)
-    last = end.date() - timedelta(days=1)
-    while current <= last:
-        directory = session_root / f"{current.year:04d}" / f"{current.month:02d}" / f"{current.day:02d}"
-        if directory.exists():
-            entries = (item for item in directory.iterdir() if item.is_file() and item.name.startswith("rollout-") and item.suffix.lower() == ".jsonl")
-            if current == start.date() - timedelta(days=1):
-                if index_ids:
-                    result.extend(item for item in entries if any(session_id in item.name for session_id in index_ids))
-                else:
-                    result.extend(recent_files(entries, start, end))
-            else:
-                result.extend(entries)
-        current += timedelta(days=1)
+    # Rollouts stay in their creation-date directory when an old task resumes.
+    # The index is only a hint: missing/stale entries must not suppress files
+    # updated during or after the requested window. The parser filters events.
+    for path in sorted(session_root.rglob("rollout-*.jsonl")):
+        if not path.is_file():
+            continue
+        if any(session_id in path.name for session_id in index_ids):
+            result.append(path)
+        else:
+            result.extend(recent_files([path], start, end, include_date_dirs=True))
     if include_archived:
         archived = root / "archived_sessions"
         if archived.exists() and index_ids:

@@ -10,6 +10,8 @@ import sys
 import tempfile
 import time
 import tomllib
+import urllib.request
+from urllib.parse import urlsplit
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -85,11 +87,50 @@ def apply_git_configs(args: list[str], configs: list[tuple[str, str]] | None = N
     return command
 
 
+def windows_system_proxy_environment(
+    repo_url: str | None, environ: dict[str, str] | None = None,
+) -> dict[str, str] | None:
+    """Use an enabled static Windows proxy only as a child-process fallback.
+
+    Git's http.proxy and remote.<name>.proxy still override these environment
+    variables. Do not inspect, print, or overwrite those explicit settings.
+    """
+    if sys.platform != "win32" or not repo_url:
+        return None
+    child_env = dict(os.environ if environ is None else environ)
+    environment = {key.lower(): value for key, value in child_env.items()}
+    # Preserve explicit environment choices, including an intentionally empty one.
+    if any(key in environment for key in ("http_proxy", "https_proxy", "all_proxy")):
+        return None
+    try:
+        target = urlsplit(repo_url)
+        if target.scheme not in {"http", "https"} or not target.hostname:
+            return None
+        if urllib.request.proxy_bypass_environment(target.netloc, {"no": environment.get("no_proxy", "")}):
+            return None
+        if urllib.request.proxy_bypass_registry(target.netloc):
+            return None
+        proxy = urllib.request.getproxies_registry().get(target.scheme)
+        if not isinstance(proxy, str) or not proxy or any(char.isspace() or ord(char) < 32 for char in proxy):
+            return None
+        parsed = urlsplit(proxy)
+        if (parsed.scheme not in {"http", "https", "socks4", "socks4a", "socks5", "socks5h"}
+                or not parsed.hostname or parsed.username is not None or parsed.password is not None
+                or parsed.path not in {"", "/"} or parsed.query or parsed.fragment):
+            return None
+        parsed.port  # Reject malformed ports without displaying the proxy value.
+    except (AttributeError, OSError, ValueError, TypeError):
+        return None
+    child_env[f"{target.scheme}_proxy"] = proxy
+    return child_env
+
+
 def run_git(
     args: list[str],
     cwd: Path | None = None,
     configs: list[tuple[str, str]] | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     command = apply_git_configs(args, configs)
     # Keep existing human/JSON command representation for compatibility.
@@ -99,6 +140,7 @@ def run_git(
             process = subprocess.Popen(
                 command,
                 cwd=str(cwd) if cwd else None,
+                env=env,
                 stdin=subprocess.DEVNULL,
                 stdout=stdout_file,
                 stderr=stderr_file,
@@ -204,13 +246,16 @@ def run_git_with_remote_fallback(
     configs: list[tuple[str, str]] | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     allow_retries: bool = True,
+    repo_url: str | None = None,
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
+    child_env = windows_system_proxy_environment(repo_url)
     active_configs = list(configs or [])
     result = run_git(
         args,
         cwd=cwd,
         configs=active_configs,
+        env=child_env,
         timeout_seconds=remaining_timeout(deadline),
     )
     if result["exit_code"] == 0 or not allow_retries:
@@ -221,6 +266,7 @@ def run_git_with_remote_fallback(
             args,
             cwd=cwd,
             configs=active_configs,
+            env=child_env,
             timeout_seconds=remaining_timeout(deadline),
         )
         if result["exit_code"] == 0:
@@ -230,6 +276,7 @@ def run_git_with_remote_fallback(
             args,
             cwd=cwd,
             configs=active_configs,
+            env=child_env,
             timeout_seconds=remaining_timeout(deadline),
         )
     return result
@@ -281,12 +328,14 @@ def run_local_git(
     configs = [("safe.directory", safe_directory_value(mirror.local_path))]
     command = ["git", "-C", str(mirror.local_path), *args]
     if allow_remote_fallback:
-        return run_git_with_remote_fallback(command, configs=configs, timeout_seconds=timeout_seconds)
+        return run_git_with_remote_fallback(command, configs=configs, timeout_seconds=timeout_seconds,
+                                            repo_url=mirror.repo_url)
     return run_git(command, configs=configs, timeout_seconds=timeout_seconds)
 
 
-def run_remote_git(args: list[str], timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
-    return run_git_with_remote_fallback(["git", *args], timeout_seconds=timeout_seconds)
+def run_remote_git(args: list[str], timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+                   repo_url: str | None = None) -> dict[str, Any]:
+    return run_git_with_remote_fallback(["git", *args], timeout_seconds=timeout_seconds, repo_url=repo_url)
 
 
 def require_fields(raw: dict[str, Any], path: Path) -> MirrorConfig:
@@ -458,6 +507,7 @@ def get_remote_head(
     remote = run_remote_git(
         ["ls-remote", mirror.repo_url, f"refs/heads/{mirror.branch}"],
         timeout_seconds=timeout_seconds,
+        repo_url=mirror.repo_url,
     )
     if remote["exit_code"] != 0:
         return {
@@ -671,6 +721,7 @@ def sync_one(
             clone_command,
             timeout_seconds=remaining_timeout(deadline),
             allow_retries=False,
+            repo_url=mirror.repo_url,
         )
         if clone["exit_code"] != 0:
             return sync_failure(

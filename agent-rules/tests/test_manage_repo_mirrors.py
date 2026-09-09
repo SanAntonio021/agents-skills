@@ -105,6 +105,75 @@ custom_wrappers = ["local-skill"]
 
 
 class MirrorManagerTests(unittest.TestCase):
+    def test_windows_proxy_uses_https_mapping_without_mutating_parent(self) -> None:
+        original = {"PATH": "unchanged"}
+        with (patch.object(mirror_manager.sys, "platform", "win32"),
+              patch.object(mirror_manager.urllib.request, "getproxies_registry", return_value={"http": "http://proxy.test:80", "https": "http://proxy.test:8123"}, create=True),
+              patch.object(mirror_manager.urllib.request, "proxy_bypass_registry", return_value=False, create=True)):
+            child = mirror_manager.windows_system_proxy_environment("https://example.test/repo.git", original)
+        self.assertEqual(child["https_proxy"], "http://proxy.test:8123")
+        self.assertEqual(original, {"PATH": "unchanged"})
+        self.assertNotIn("http_proxy", child)
+
+    def test_windows_proxy_preserves_explicit_environment_including_empty(self) -> None:
+        with (patch.object(mirror_manager.sys, "platform", "win32"),
+              patch.object(mirror_manager.urllib.request, "getproxies_registry", create=True) as read):
+            for name in ("HTTP_PROXY", "https_proxy", "ALL_PROXY", "hTtPs_PrOxY"):
+                for value in ("", "http://configured.test:80"):
+                    self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://example.test", {name: value}))
+            read.assert_not_called()
+
+    def test_windows_proxy_honors_environment_and_registry_bypass(self) -> None:
+        with (patch.object(mirror_manager.sys, "platform", "win32"),
+              patch.object(mirror_manager.urllib.request, "getproxies_registry", create=True) as read,
+              patch.object(mirror_manager.urllib.request, "proxy_bypass_registry", return_value=False, create=True) as bypass):
+            self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://git.example.test/repo", {"NO_PROXY": ".example.test"}))
+            bypass.assert_not_called()
+            bypass.return_value = True
+            self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://intranet/repo", {}))
+            read.assert_not_called()
+
+    def test_windows_proxy_rejects_credentials_malformed_and_disabled_settings(self) -> None:
+        with (patch.object(mirror_manager.sys, "platform", "win32"),
+              patch.object(mirror_manager.urllib.request, "getproxies_registry", create=True) as read,
+              patch.object(mirror_manager.urllib.request, "proxy_bypass_registry", return_value=False, create=True)):
+            for value in (None, "http://user:secret@proxy.test:80", "http://user@proxy.test:80", "http://proxy.test:bad", "http://proxy.test:80/path", "http://bad host:80"):
+                read.return_value = {} if value is None else {"https": value}
+                self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://example.test", {}))
+            read.side_effect = OSError("unavailable")
+            self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://example.test", {}))
+
+    def test_system_proxy_does_not_apply_to_non_windows_or_non_http_targets(self) -> None:
+        with patch.object(mirror_manager.sys, "platform", "linux"):
+            self.assertIsNone(mirror_manager.windows_system_proxy_environment("https://example.test", {}))
+        with (patch.object(mirror_manager.sys, "platform", "win32"),
+              patch.object(mirror_manager.urllib.request, "getproxies_registry", create=True) as read):
+            for target in (None, "git@example.test:repo", "C:/local/repo", "ssh://example.test/repo"):
+                self.assertIsNone(mirror_manager.windows_system_proxy_environment(target, {}))
+            read.assert_not_called()
+
+    def test_remote_fallback_keeps_explicit_git_proxy_and_reuses_child_environment(self) -> None:
+        child = {"https_proxy": "http://system-proxy.test:80"}
+        configs = [("http.proxy", "http://explicit-proxy.test:80")]
+        with (patch.object(mirror_manager, "windows_system_proxy_environment", return_value=child),
+              patch.object(mirror_manager, "run_git", side_effect=[{"exit_code": 1, "output": "TLS connect error"}, {"exit_code": 0, "output": "ok"}]) as run):
+            mirror_manager.run_git_with_remote_fallback(["git", "fetch"], configs=configs, repo_url="https://example.test/repo")
+        self.assertEqual(len(run.call_args_list), 2)
+        for call in run.call_args_list:
+            self.assertIs(call.kwargs["env"], child)
+            self.assertEqual(call.kwargs["configs"], configs)
+        self.assertEqual(configs, [("http.proxy", "http://explicit-proxy.test:80")])
+
+    def test_child_proxy_is_not_added_to_command_or_result(self) -> None:
+        process = unittest.mock.Mock()
+        process.wait.return_value = 0
+        child = {"https_proxy": "http://system-proxy.test:80"}
+        with patch.object(mirror_manager.subprocess, "Popen", return_value=process) as popen:
+            result = mirror_manager.run_git(["git", "ls-remote", "https://example.test"], env=child)
+        self.assertIs(popen.call_args.kwargs["env"], child)
+        self.assertNotIn("system-proxy", json.dumps(result))
+        self.assertNotIn("http.proxy", result["command"])
+
     def test_git_timeout_defaults_to_twenty_seconds(self) -> None:
         class TimedOutProcess:
             pid = 1234

@@ -13,12 +13,12 @@
     },
     {
       "id": "multi-panel-exact-size-plot-profile",
-      "prompt": "我要把 IEEE 双栏图里的一行放 3 个数据子图，每个子图需要保持真实物理宽度，后面还要在 PPT 里拼版。你帮我重画时顺便把图的大小、坐标轴区域、轴题距离、刻度数字距离、图例位置和导出 dpi 都记录下来。",
+      "prompt": "请沿用已有 Python/Matplotlib 图源。我要把 IEEE 双栏图里的一行放 3 个数据子图，每个子图需要保持真实物理宽度，后面还要在 PPT 里拼版。你帮我重画时顺便把图的大小、坐标轴区域、轴题距离、刻度数字距离、图例位置和导出 dpi 都记录下来。",
       "expected_output": "应先说明单张子图尺寸要由目标双栏宽度、子图数量、间距和高宽比反推，不能把某一次的三联图尺寸当作通用 IEEE 标准；使用或建议使用 scripts/ieee_plot_style.py 中的 compute_panel_size、apply_axes_box、apply_compact_axis_spacing、带显式 grid_mode 的 apply_ieee_grid 和 save_exact_size_figure；明确 exact-size 导出应使用 bbox_inches=None 和 pad_inches=0.0；要求在项目内保存 plot profile，记录 figsize、subplots_adjust、labelpad、tick pad、legend anchor、字体、线宽、坐标范围、grid mode、源脚本、数据文件、输出文件和导出后有效 dpi。"
     },
     {
       "id": "stacked-threshold-delta-single-column",
-      "prompt": "请把一个阈值曲线面板和一个 Delta-MER 分布面板上下堆叠成 IEEE 单栏图。(a)(b) 放在各面板下方居中，两个纵轴刻度数字和轴题要对齐，端点 marker 不能跑到框外。",
+      "prompt": "请沿用已有 Python/Matplotlib 图源。请把一个阈值曲线面板和一个 Delta-MER 分布面板上下堆叠成 IEEE 单栏图。(a)(b) 放在各面板下方居中，两个纵轴刻度数字和轴题要对齐，端点 marker 不能跑到框外。",
       "expected_output": "使用唯一单栏 helper，不再复制旧 SCIS 模板；采集序号仍是数值坐标，因此显式选择 grid_mode=major_xy，同时画横纵主网格且不画次网格，不能只保留一个方向的主网格；若上下轴属于同一量纲族但刻度字符串宽度差异明显，统一提出显示倍率并写进轴题，刻度使用短数字且保持右边缘对齐，不用前导零补宽；先设置数据、标签和必要坐标约束，再由 repair_single_column_figure 自动统一字体、四边框、向内刻度、显示坐标中的纵轴刻度与轴题对齐、面板标签间距、按显示坐标收敛到 4 pt 的上下内容安全间距、3 pt 外边界和未锁定坐标的 marker 留量，不把某个 hspace 当作跨图固定值；阈值和 Delta 默认黑色；明确锁定坐标且 marker 无法完整显示时输出结构化冲突并阻止 formal；先生成 draft，智能体完成最终尺寸视觉检查后再 formal，不增加用户逐图验收关口。"
     },
     {

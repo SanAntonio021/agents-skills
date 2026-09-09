@@ -1,16 +1,16 @@
 ---
 name: paper-review
 description: >-
-  对现有文稿做三类审查：A/B/C 停稿审查、作者投稿前的 9 维预检与模拟审稿，以及受邀审稿人依据会议或期刊表单完成真实外部同行评审。Use whenever 用户要按严重程度审稿、判断是否继续润色、投稿前预判审稿意见，或明确说“我是审稿人”“帮我审这篇投稿”“填写 EDAS/审稿表”“给出 TPC 意见”“先写中文审稿意见再翻译英文”。外部审稿模式负责评分依据、作者可见意见、保密意见、政策字段和可直接粘贴的英文稿；作者回复审稿意见或操作投稿系统不属于本 skill。最终 Submit 前的作者侧审查仍必须在这里得到有时间和证据的 `pre_submission_review: pass`。
+  核对论文原文中的具体技术疑问及笔记表述，也负责 A/B/C 停稿审查、作者投稿前预检与模拟审稿，以及受邀审稿人的外部同行评审。用户问“这段总结准确吗”“这个指标对应哪里”“图表或公式是什么意思”时，按 source_check 只核对相关内容；普通论文总结和 Zotero 笔记读写由现有 Zotero 插件承接。用户要求按严重程度审稿、判断是否继续润色、投稿前预判审稿意见，或填写 EDAS/审稿表时进入对应完整审查模式。作者回复审稿意见或操作投稿系统不属于本 skill。最终 Submit 前的作者侧审查仍需可定位的 `pre_submission_review: pass`。
 ---
 
 # 论文审查
 
 ## 作用
 
-这份 skill 根据用户当前角色回答三个不同问题：文稿还要不要继续改，作者现在投稿会遇到什么问题，或受邀审稿人应怎样给出有依据且不过度要求作者的评审意见。
+根据当前请求选择局部原文核对、停稿审查、投稿前把关或外部同行评审。
 
-它会先把问题分成三类，再给出是否继续修改的结论：
+只有停稿审查把问题分成三类，再给出是否继续修改的结论：
 
 - `A 类`：必须修改
 - `B 类`：建议优化
@@ -18,8 +18,9 @@ description: >-
 
 ## 流程
 
-1. 先确认对象是“已有文稿”，不是从零起草。
-2. 先判断用户角色和模式，不能把真实外部审稿当成作者侧模拟审稿：
+1. 先读取请求和已有材料，确定是论文局部疑问还是完整文稿审查。
+2. 判断用户角色和模式，不能把真实外部审稿当成普通原文核对或作者侧模拟审稿：
+   - 原文核对（`source_check`）：用户要解释或核实论文中的技术关系、图表、公式、数值，或校正已有阅读笔记时，读取 [references/source-check.md](references/source-check.md)。直接回答相关问题；跳过第 3-6 步、A/B/C 输出和投稿审查门。需要 Zotero 读写时使用现有 Zotero 插件。
    - 日常审查（默认）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。
    - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人，或投稿技能请求 `pre_submission_review` 时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。
    - 外部同行评审：用户是受邀审稿人，要评价他人投稿、填写 EDAS/评审表或生成作者可见与 TPC 意见时，读取 [references/external-peer-review.md](references/external-peer-review.md)，按会务表单和评分说明完成真实审稿草稿。
@@ -50,7 +51,7 @@ description: >-
 
 ## 输出结构
 
-默认按下面结构输出：
+停稿审查按下面结构输出；`source_check` 按问题给出简短结论、原文位置及必要的修订句：
 
 ```text
 A 类：必须修改
@@ -87,10 +88,11 @@ C 类：风格偏好
 
 - 不用于从零起草文稿。
 - 不把“还能更顺”都算成继续修改的理由。
-- 不用这份 skill 取代专业事实核查、证据核查、合规核查或代理师审阅。
+- 原文核对说明论文实际写了什么及其适用条件；独立科学论证按需转 `rigor-check`，合规或代理师审阅仍由相应专业流程承担。
 - 用户如果只要求直接改稿，不强制先做长篇审查；这时做一个简短分级后即可进入改写。
 - 作者收到审稿意见后要写 rebuttal 或 response letter 时，转到 `ieee-manuscript-edit`；处理投稿页面、决定信或返修提交时转到对应投稿 skill。
 - 外部审稿意见始终是供用户本人核验的草稿；不代替用户的独立专业判断，不代填独立性声明，也不代为提交审稿表。
+- 日常论文解读沿用 Zotero 工作流，不自动开展完整审稿、生成本地总结或整篇付费重跑。局部核对完成即可交付。
 
 ## 相关技能
 
@@ -104,6 +106,7 @@ C 类：风格偏好
 
 ## 相关文件
 
+- 论文原文与笔记核对：[references/source-check.md](references/source-check.md)
 - 停稿清单：[references/stopline-checklist.md](references/stopline-checklist.md)
 - 投稿前把关（预检+模拟审稿）：[references/submission-gauntlet.md](references/submission-gauntlet.md)
 - 外部同行评审：[references/external-peer-review.md](references/external-peer-review.md)

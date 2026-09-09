@@ -111,7 +111,7 @@ description: 中文写作与通用编辑的默认入口。Use when 用户要撰�
 - 研究取样和补证据：`baseline-research`。
 - 论文整体停稿审查或最终 Submit 门：`paper-review`。
 - 投稿系统与返修事务：`journal-submission`。
-- 文献检索、下载和总结：`paper-search`、`paper-download`、`paper-summary`。
+- 文献检索和下载：`paper-search`、`paper-download`；原文及笔记准确性核对：`paper-review`；Zotero 笔记读写：现有 Zotero 插件。
 - Word、PDF、LaTeX 工程：`docx`、`pdf`、`latex-paper`。
 
 需要判断完整学术流程时，按需读取 [学术流程地图](references/academic-workflow-map.md)，不要因此加载所有下游技能。

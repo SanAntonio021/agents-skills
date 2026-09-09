@@ -1,6 +1,6 @@
 ---
 name: paper-download
-description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when 用户给出题名、DOI、论文 URL、出版社页、作者主页、论文列表或 paper-search 结果，要求下载正式版 PDF、判断正式版/预印本、继续机构授权下载，或为 SCI 润色和术语核查提供正式论文原文证据。总结已有 PDF 时用 `paper-summary`。
+description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when 用户给出题名、DOI、论文 URL、出版社页、作者主页、论文列表或 paper-search 结果，要求下载正式版 PDF、判断正式版/预印本、继续机构授权下载，或为 SCI 润色和术语核查提供正式论文原文证据。已有论文的技术疑问核对用 `paper-review`；Zotero 笔记读写用现有 Zotero 插件。
 ---
 
 # 论文 PDF 下载
@@ -15,8 +15,8 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 
 - 用户还在问“有哪些论文”“哪些方向重要”“帮我筛代表作”时，先走 `paper-search`。
 - 用户已经给出题名、DOI、URL、作者主页、出版社页面、论文列表或检索结果时，进入下载流程。
-- 用户要“下载并总结”时，先用本技能获取 PDF，再用 `paper-summary` 总结。
-- 用户给的是本地 PDF，并且要读懂或总结时，转 `paper-summary`。
+- 用户要“下载并总结”时，先获取 PDF，再按请求整理；Zotero 笔记使用现有 Zotero 插件，技术疑问核对使用 `paper-review`。
+- 用户已有本地 PDF 并要总结时，按请求直接整理；需要核对技术内容时转 `paper-review`，不默认生成本地文档。
 
 ## 输出
 
@@ -148,7 +148,7 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 
 - 多篇文献综述、代表作筛选：先用 `paper-search`。
 - 投稿文章、引言综述、申报书材料：转 `writing-router` 或 `project-writing`。
-- 本地 PDF 总结、文献卡片、术语摘录：转 `paper-summary`。
+- 论文技术内容、图表公式和笔记准确性核对：转 `paper-review`；Zotero 笔记读写使用现有 Zotero 插件。
 
 ## 会用到的工具
 
@@ -157,7 +157,7 @@ description: 获取论文 PDF，并维护统一的 `paper_index.md`。Use when �
 - 网页访问和动态页面：`web-access`
 - 浏览器协作：`browser-use` 或当前可用的浏览器工具
 - PDF 后处理：`pdf`
-- 本地 PDF 总结：`paper-summary`
+- 原文核对：`paper-review`；Zotero 笔记：现有 Zotero 插件
 - SCI 论文精修和术语核查：`ieee-manuscript-edit`
 
 ## 以后怎么维护

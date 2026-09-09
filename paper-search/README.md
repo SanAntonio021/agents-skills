@@ -9,7 +9,7 @@
 - 默认在对话中交付；只有用户指定文件类型时才生成文件。
 - 正式引用模式核对正式版本、作者、刊名或会议名、卷期、页码或文章号、日期和标识符；缺的信息留空，并直接说明没查到什么。
 - 支持 IEEE 引用输出、BibTeX 对照和已有引用清单纠错；修正清单时保持原编号和输入顺序。
-- 已知论文下载交给 `paper-download`；全文总结交给 `paper-summary`；审稿交给 `paper-review`；成文报告交给 `research-report`；产品调研交给 `product-research-workbook`。
+- 已知论文下载交给 `paper-download`；全文总结按请求整理，Zotero 笔记读写使用现有 Zotero 插件；原文核对和审稿交给 `paper-review`；成文报告交给 `research-report`；产品调研交给 `product-research-workbook`。
 - 整篇稿件的漏引、错引和正文编号覆盖检查交给相应论文编辑或审查技能；飞书写回按实际载体交给 `lark-doc` 或 `lark-base`，本技能只提供核验结果。
 
 ## 证据整理工具

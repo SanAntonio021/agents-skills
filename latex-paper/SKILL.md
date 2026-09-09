@@ -1,28 +1,28 @@
 ---
 name: latex-paper
-description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，并负责 LaTeX 工程层事务：模板选择与套用、md 转 tex 结构映射、公式/图/表环境、BibTeX、交叉引用、浮动体、编译排错，以及当前期刊指南或页面明确要求时的 source 打包。Use when 用户说"转 LaTeX""md 转 tex""IEEEtran""套期刊模板""从已投稿稿件迁移到其他期刊模板""LaTeX 编译报错""Overleaf""BibTeX""引用编号""交叉引用坏了"，或抱怨图表位置问题，或要把现有论文稿变成投稿版 LaTeX。只管格式与工程：内容润色找 `ieee-manuscript-edit`；未指定或非 IEEE 投稿事务找 `journal-submission`，明确 IEEE 找 `journal-submission`；图件找 `paper-figure-review`，Word 版式找 `docx`。
+description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工程，负责模板、公式图表、BibTeX 接入、交叉引用、浮动体、编译排错及按投稿要求打包。Use when 用户说“转 LaTeX”“md 转 tex”“IEEEtran”“套期刊模板”“迁移投稿模板”“LaTeX 编译报错”“Overleaf”“BibTeX”“引用编号”“交叉引用坏了”或要求调整图表位置。文字修改结合 `ieee-manuscript-edit`，文献核实交给 `paper-search`，投稿事务交给 `journal-submission`，图件交给 `paper-figure-review`，Word 版式交给 `docx`。
 ---
 
 # Markdown 转 LaTeX 投稿工程
 
 ## 本地文稿版本保护
 
-实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)。后续出现明确里程碑确认或旧版本查找、比较、恢复请求时也读取。新建 LaTeX 工程先确认准确项目根目录；编译验证通过后按用户本轮修改创建一个本地 commit，不 push。只读排错和方案说明不触发。
+实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)，核对当前文件、项目目录和已有改动。已有 Git 按项目约定使用；Git 不适用时通过新副本或已有备份继续，不默认提交或增加 baseline、WIP 确认。只读排错和方案说明保持只读。
 
 如果输入是已经投稿、已经打包或明确冻结的稿件，先读取并执行
-[references/journal-template-migration.md](references/journal-template-migration.md)。该流程把原稿当作只读科学内容基线，要求目标期刊使用独立工程、独立图件版本和独立输出文件；模板迁移中发现的内容问题只列清单，不自行改写。
+[references/journal-template-migration.md](references/journal-template-migration.md)。保留原始提交版本，在独立目标工程中适配模板、制作图件版本并实施已授权的文字修改；新发现的科学内容疑问单独讨论。
 
 ## 定位
 
-这份 skill 管"从现有稿子到能编译、能投稿的 LaTeX 工程"这一段，不动科学内容。转换中发现内容层面的疑问（术语不一致、引用缺失、结论表述问题），列成清单交给用户或转给对应技能，不要自行改写。
+这份 skill 管"从现有稿子到能编译、能投稿的 LaTeX 工程"这一段。纯转换保留科学内容；用户同时授权改文时，结合 `ieee-manuscript-edit` 一并完成，复用已确认的修改要求。新出现且无法自行查明的科学含义歧义单独讨论，只暂停依赖该问题的修改。
 
-它只在当前期刊指南或当前投稿页面明确要求时生成并验证 source 包。页面只要求 PDF 或 Word 时，不额外生成 ZIP。不负责在投稿系统选择文件类型、填写表单或点击提交；未指定或非 IEEE 投稿事务转给 `journal-submission`，明确 IEEE 转给 `journal-submission`。
+它只在当前期刊指南或当前投稿页面明确要求时生成并验证 source 包。页面只要求 PDF 或 Word 时，不额外生成 ZIP。投稿系统的文件类型、表单和提交事务交给 `journal-submission`。
 
 ## 工作流
 
 ### 1. 确认目标模板
 
-先问清或确认目标期刊，并以该期刊当前官方模板为准。明确 IEEE 时，优先使用本仓已有缓存：
+先读取当前任务、已有工程和项目约定，复用已确定的目标期刊与模板；仅影响模板选择的信息缺失、冲突且无法自行查明时询问。以该期刊当前官方模板为准。明确 IEEE 时，优先使用本仓已有缓存：
 
 - IEEE Transactions / Letters（IEEEtran.cls + bare_jrnl 样例）：`../ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/`
 - IEEE Access：`../ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/`
@@ -57,16 +57,16 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 
 ### 4. 参考文献
 
-- md 里的引用逐条落进 `refs.bib`；有 DOI 的用 DOI 反查 BibTeX 并核对字段，没有 DOI 的按 `paper_index.md`（paper-download 维护）或原文核对。
-- BibTeX 条目统一小写 key 约定 `firstauthor-year-keyword`，页码、卷期、月份补全；IEEE 风格由 `IEEEtran.bst` 负责，不要手工排引用格式。
-- 引用元数据可疑（预印本当正式版、会议/期刊混淆）时标注出来，需要正式版 PDF 证据时转 `paper-download`。
+- 将稿件引用和已核实的文献条目接入 `refs.bib`；缺失或可疑的元数据、DOI 及版本核实交给 `paper-search`，复用其结果。
+- 保留已有 BibTeX key，新增条目沿用工程约定；无约定时使用 `firstauthor-year-keyword`。引用样式遵循目标模板，IEEEtran 工程使用 `IEEEtran.bst`。
+- 检查正文引用与条目对应、样式及编译结果；需要取得原文时由 `paper-search` 协调 `paper-download`。
 
 ### 5. 双源同步校验
 
-当 Markdown 阅读稿与 LaTeX 投稿工程并存时，先由用户或现有项目规则明确哪一份是权威源；不得根据文件时间戳、README 声明或其中一份能够成功编译来推断。将 PDF 称为 final 前，按已确认修改清单逐项进行语义核对，至少覆盖术语、数值、图表标题、论断和结论。
+当 Markdown 阅读稿与 LaTeX 投稿工程并存时，复用当前任务或有效项目约定已确定的主稿和同步方向，并读取当前文件。文件时间戳或编译成功不足以决定主稿；实际内容冲突且主稿关系无法查明时才询问。将 PDF 称为 final 前，按已确认修改清单逐项进行语义核对，至少覆盖术语、数值、图表标题、论断和结论。
 
 - 已确认修改造成的差异，按声明的权威关系同步源稿或派生稿后，再执行编译。
-- 差异会新增或改变未经确认的科学表述时，停止同步，交给用户或 `ieee-manuscript-edit` 处理；不要自行推断哪一稿应覆盖另一稿。
+- 差异涉及尚未解决的科学含义歧义时，只暂停相关同步并讨论，继续独立的工程工作；已授权的文字修改结合 `ieee-manuscript-edit` 完成。
 - 编译通过只说明 LaTeX 工程可生成 PDF，不能证明双源已经同步。例如，Markdown 写作 `digital signal processing (DSP)`，而 `main.tex` 仍写作 `DSP`；两份文件都可通过编译，但该 PDF 不能称为已同步的最终版本。
 
 ### 6. 编译验证
@@ -82,10 +82,8 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 ## 边界
 
 - 内容精修（术语、图注文字、结论强度、中改英）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-- 纯英文句子质量：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)（已并入 ieee-manuscript-edit）
 - 图件绘制与 IEEE 图规范：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
 - Word 版式交付：[../docx/SKILL.md](../docx/SKILL.md)
 - 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
-- 通用投稿页面、文件类型确认和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
-- 明确 IEEE 的投稿页面和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
-- 一个请求同时涉及转换和内容修改时，先完成转换得到可编译工程，再把内容问题清单转给 ieee-manuscript-edit，不要边转边改内容。
+- 文献检索与元数据核实：[../paper-search/SKILL.md](../paper-search/SKILL.md)
+- 投稿页面、文件类型和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)

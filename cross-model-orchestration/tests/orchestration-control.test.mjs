@@ -788,7 +788,7 @@ test("cmdLaunch: review claim persists artifact state and job ID", () => {
   }
 });
 
-test("published v3 contract uses real project tools, exact approvals, and one final check", () => {
+test("published v3 contract uses real project tools, legacy approvals, and author closure", () => {
   const skillRoot = path.join(process.cwd(), "cross-model-orchestration");
   const skill = fs.readFileSync(path.join(skillRoot, "SKILL.md"), "utf8");
   const contract = fs.readFileSync(path.join(skillRoot, "references", "workflow-contract.md"), "utf8");
@@ -798,12 +798,18 @@ test("published v3 contract uses real project tools, exact approvals, and one fi
   assert.match(skill, /完整原生工具/u);
   assert.match(skill, /可直接修改真实项目/u);
   assert.match(skill, /不传 `artifactContent`/u);
-  assert.match(skill, /一个普通文件/u);
+  assert.match(skill, /新任务不产生/u);
+  assert.match(skill, /不因批量删除、目录删除等命令形式进入/u);
+  assert.match(skill, /不自动批准旧的待审批动作/u);
   assert.match(skill, /action、完整 targets、approval ID、fingerprint/u);
   assert.match(skill, /审批拒绝或过期本身不是 job 终态/u);
   assert.match(skill, /继续查询同一 job/u);
   assert.match(skill, /author_modified=true/u);
   assert.match(skill, /只检查/u);
+  assert.match(skill, /小问题和\n   技术分歧自行处理/u);
+  assert.match(skill, /分别报告“对端结论”和“主模型修正及验证结果”/u);
+  assert.match(skill, /验证失败如实保留/u);
+  assert.doesNotMatch(skill, /仍有问题或双方分歧交给用户/u);
   assert.match(contract, /Codex 使用 bundled App Server/u);
   assert.match(contract, /批准有效期 24 小时/u);
   assert.match(contract, /只有对端随后返回终态失败，整轮才失败/u);
@@ -815,11 +821,29 @@ test("published v3 contract uses real project tools, exact approvals, and one fi
 
   const ids = evals.map((entry) => entry.id);
   assert.equal(new Set(ids).size, ids.length, "eval IDs must be unique");
-  for (const requiredId of [1, 2, 4, 8, 9, 10, 11, 13, 14, 16, 19, 25, 26, 27, 28, 29, 33, 35, 36, 37]) {
+  for (const requiredId of [1, 2, 4, 8, 9, 10, 11, 13, 14, 16, 19, 25, 26, 27, 28, 29, 33, 35, 36, 37, 48, 49, 50, 51, 52]) {
     assert.ok(ids.includes(requiredId), `missing reliability eval ${requiredId}`);
   }
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 25)), /额外重试一次/u);
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 29)), /不同项目/u);
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 36)), /完整权限/u);
   assert.match(JSON.stringify(evals.find((entry) => entry.id === 37)), /不能把拒绝本身写成终态失败/u);
+});
+
+
+test("closure evals preserve independent decisions and truthful verification", () => {
+  const root = path.join(process.cwd(), "cross-model-orchestration");
+  const evals = JSON.parse(fs.readFileSync(path.join(root, "evals", "evals.json"), "utf8")).evals;
+  const cases = new Map(evals.map((entry) => [entry.id, JSON.stringify(entry)]));
+  assert.match(cases.get(48), /修正笔误/u);
+  assert.match(cases.get(48), /不把主模型修正写成对端通过/u);
+  assert.match(cases.get(49), /有依据地不采纳/u);
+  assert.match(cases.get(50), /询问/u);
+  assert.match(cases.get(51), /保留验证失败/u);
+  assert.match(cases.get(52), /不自动批准旧动作/u);
+  for (const relative of ["SKILL.md", "references/workflow-contract.md", "references/research-loop.md"]) {
+    const body = fs.readFileSync(path.join(root, relative), "utf8");
+    assert.doesNotMatch(body, /(?:needs_changes 或 disagreement|仍有问题或双方分歧)交给用户/u);
+    assert.match(body, /主模型/u);
+  }
 });

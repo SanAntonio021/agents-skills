@@ -36,7 +36,7 @@ pandoc 能做结构转换，但论文投稿级别的 tex 需要在它的输出�
 
 - 单栏 `\columnwidth`，通栏用 `figure*` + `\textwidth`。
 - 图源优先 PDF/EPS 矢量；位图最低 600 dpi（曲线图）/ 300 dpi（照片），与 paper-figure-review 的导出约定一致。
-- md 的 `![caption](path)` 里 caption 往往过短，转换时对照正文补成完整图注（这一步如涉及内容措辞，列清单转 ieee-manuscript-edit）。
+- md 的 `![caption](path)` 转为图注时保留已确认内容；已授权补写图注则结合 `ieee-manuscript-edit` 对照正文完成。纯转换中发现图注不完整时列出问题。
 
 ## 表
 

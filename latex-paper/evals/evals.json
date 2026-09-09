@@ -4,13 +4,13 @@
     {
       "id": 1,
       "prompt": "我有一篇写好的论文初稿 D:\\Papers\\thz-link\\draft.md，图都在 figures 目录里是 paper-figure-review 导出的 PDF。目标投 IEEE Transactions on Terahertz Science and Technology，帮我把它变成能编译的 LaTeX 投稿工程。",
-      "expected_output": "先确认用 IEEEtran（Transactions 系）模板并优先使用 ieee-manuscript-edit 的本地模板缓存；新建独立 paper-tex 工程目录，模板 cls/bst 随工程；用 pandoc 或手工映射转换正文，公式图表全部加 label，引用改 cite；从 md 引用生成 refs.bib；跑通编译并按残留清单检查；内容层面的疑问列清单而不是自行改写。",
+      "expected_output": "复用已给定的目标期刊，不再询问，核对适用的 IEEEtran 模板并优先使用本地缓存；新建独立工程，模板随工程；转换公式图表和引用，接入已核实的 refs.bib，缺失元数据交给 paper-search；编译并检查转换残留；未授权的科学内容问题单独列出。",
       "files": [],
       "expectations": [
         "输出选择 IEEEtran 模板并说明优先使用本地模板缓存而不是重新下载。",
         "输出新建独立的 LaTeX 工程目录，模板文件随工程走。",
         "输出把公式、图、表转成带 \\label 的标准环境，引用用 \\cite/\\ref。",
-        "输出建立 refs.bib 并说明 DOI 反查或 paper_index.md 核对来源。",
+        "输出建立 refs.bib，复用已核实条目，缺失元数据交给 paper-search。",
         "输出包含编译验证步骤和通过标准（零 error、引用类警告清零）。",
         "输出对 Unicode 残留、中文标点等做了转换后检查。",
         "输出不改写科学内容；内容疑问以清单形式列出或转给 ieee-manuscript-edit。"
@@ -18,7 +18,7 @@
     },
     {
       "id": 2,
-      "prompt": "latexmk 编译我的 main.tex 报了一堆 Citation undefined 和一个 Missing $ inserted，帮我查。",
+      "prompt": "latexmk 编译我的 main.tex 报了一堆 Citation undefined 和一个 Missing $ inserted，帮我查明、修复并重新编译。",
       "expected_output": "按编译排错对照表处理：Citation undefined 先核对 bib key 拼写和完整编译链（pdflatex→bibtex→pdflatex×2）；Missing $ 定位报错行，检查裸下划线、上标或希腊字母是否没进数学环境；修完重新编译确认警告清零。",
       "files": [],
       "expectations": [
@@ -51,34 +51,34 @@
     {
       "id": 5,
       "prompt": "请修改本地 paper-tex/main.tex 和 refs.bib，修复引用并编译。目标稿当前已经有我没提交的修改，仓库里 figures/raw.pptx 也有变化。",
-      "expected_output": "写入前询问是否把 main.tex 和 refs.bib 当前状态保存为 baseline；raw.pptx 不进入 baseline，也不被暂存或提交。编译通过后只为本轮相关 tex/bib 创建一个本地 commit，不 push。",
+      "expected_output": "先读取当前 main.tex、refs.bib 和已有差异，保护用户改动后完成引用修复与编译；沿用项目版本约定，无提交要求时不自动 commit，不追加 baseline 确认；无关 raw.pptx 不处理。",
       "files": [],
       "expectations": [
-        "目标稿脏时先询问 baseline。",
-        "大型 PPTX 不进入普通 Git。",
-        "编译通过后只提交显式 tex/bib 文件。",
-        "默认不配置远程、不 push。"
+        "读取并保护用户当前改动，不从旧快照覆盖。",
+        "无关 PPTX 不处理。",
+        "无提交要求时不自动 commit，也不增加 baseline 确认。",
+        "完成引用修复和编译检查。"
       ]
     },
     {
       "id": 6,
       "prompt": "latexmk 失败了，外部字体包也暂时装不上。任务今天必须停在这里。",
-      "expected_output": "不创建正常 commit；先说明验证失败和阻塞，再询问是否把本轮相关文件保存为 wip。未经同意不提交，也不丢弃修改。",
+      "expected_output": "遵循用户停止要求，保留当前修改及失败日志，说明字体依赖和未完成验证；不增加 WIP 确认或自动提交，不宣称完成。",
       "files": [],
       "expectations": [
-        "验证失败时不创建正常 commit。",
-        "必须中止时才询问是否保存 wip。",
-        "未经同意不提交或丢弃修改。"
+        "保留修改及必要失败信息。",
+        "不增加 WIP 确认或自动提交。",
+        "说明未完成验证并按用户要求停止。"
       ]
     },
     {
       "id": 7,
       "prompt": "我想找回 main.tex 最早那版 Results，但先别改文件。",
-      "expected_output": "先按日期、中文提交说明和文件 diff 给出 2-5 个候选，不直接恢复；用户选定后才恢复目标文件并以新 commit 记录，不使用 reset 或 checkout 回退。",
+      "expected_output": "只读查找已有提交或备份，展示能定位早期 Results 的候选及差异；不恢复文件，不自动延伸为提交或其他版本操作。",
       "files": [],
       "expectations": [
         "先展示候选提交和 diff，不直接改文件。",
-        "恢复通过新 commit 完成。",
+        "本次不执行恢复或创建提交。",
         "不使用 git reset --hard 或 git checkout --。"
       ]
     },
@@ -119,6 +119,36 @@
         "输出把不需要 source 记录为 not_required。",
         "输出不操作最终 Submit。"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "目标模板和主稿已在当前任务里确定，按确认的三条措辞修改把 draft.md 转成 LaTeX。目录没有 Git，不用另外建仓库。",
+      "expected_output": "读取当前稿件并复用模板、主稿及三条修改授权；以新工程或已有备份保护原稿，结合 ieee-manuscript-edit 完成文字修改与转换后编译。不重复确认、不初始化 Git、不强制分两轮。",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "只读检查 main.tex 的引用报错，告诉我原因，先不要修改或编译。",
+      "expected_output": "只读源码、bib 和现有日志，定位引用键和编译链问题并提出修复建议；不改文件、不运行编译、不创建提交。",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "把两份稿件同步好。Markdown 的结论是 80 Gbps，tex 写 100 Gbps；现有说明没有指定主稿，我也还没说明哪个正确。其他引用报错可以先修。",
+      "expected_output": "不按时间戳或可编译性选择数值，询问正确结论或主稿；只暂停依赖该科学冲突的同步，继续已授权且独立的引用修复，保留用户改动。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "已提交的期刊 A 源包保持原样，按已确认的摘要修改清单换成期刊 B 模板，生成新工程。",
+      "expected_output": "以提交源包为基线创建独立目标工程，保留原稿原图；结合 ieee-manuscript-edit 一并应用已确认摘要修改和模板适配，检查差异及编译，不再询问是否允许改摘要。",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "项目 README 明确 draft.md 是主稿，我刚手工更新了它。请按这份当前主稿更新 tex 并编译，refs.bib 已核实。",
+      "expected_output": "读取当前 README、draft.md 和 tex，复用有效主稿约定，保留手工修改并同步；复用已核实参考文献及现有 key，完成编译和语义检查，不重新追问主稿或重新检索全部文献。",
+      "files": []
     }
   ]
 }

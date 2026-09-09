@@ -1,9 +1,19 @@
 ---
 name: editaplot
-description: Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64; and prepare or review user-edited Origin OPJU files. Use for beginner “drop in a file and draw it” requests; “我用 Origin 改过图了”, “审阅 OPJU”, “重新导出 OPJU”, “prepare-opju-review”, or “review-opju” requests; XPS, XRD, XAS, PL/TRPL, DSC, NMR, FTIR/IR, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
+description: 单独科研数据绘图优先生成可手工微调的 Origin OPJU，无需点名 Origin；仿真实验自动出图和指定图源保持原方式。 Analyze local scientific CSV, TXT, XLS, or XLSX data; recommend publication-informed charts and Chinese scientific palettes; freeze a reproducible plan; automate editable figures through a callable local Origin/OriginPro installation on physical Windows 10/11 x64; and prepare or review user-edited Origin OPJU files. Use for beginner “drop in a file and draw it” requests; “我用 Origin 改过图了”, “审阅 OPJU”, “重新导出 OPJU”, “prepare-opju-review”, or “review-opju” requests; XPS, XRD, XAS, PL/TRPL, DSC, NMR, FTIR/IR, UV-Vis, electrochemistry, medical/AI evidence, distribution, relationship, error-bar, bar, stacked, pie, Sankey, radar, heatmap, or verified 3D workflows; project-local Python setup; palette selection; and OPJU/PNG/PDF/TIF verification. Do not use on macOS, Linux, WSL, Wine/CrossOver, Parallels, or other VMs; to install or modify Origin; to redistribute reference images; or to claim an unverified Origin route.
 ---
 
 # EditaPlot
+
+## 与论文图件规范的分工
+
+单独提出科研数据绘图请求时，在当前 Origin 路线能满足要求的前提下优先使用本技能，交付用户可继续手工微调的原生 OPJU；无需用户明确说 Origin。论文结果图由 `paper-figure-review` 确定技术含义、坐标单位和投稿排版要求，本技能负责导入、制作、保存和导出，再按该要求检查实际输出。
+
+科研示意图走 PPT、SVG 等设计路线。仿真、实验程序运行时的自动出图保留现有实现；用户指定 Python/MATLAB 或沿用既有图源时遵循指定，不自动迁移。仅审查时给意见，不生成修改版。
+
+两个技能复用同一任务的数据含义、样式和授权，不各问一轮确认。用户保存后的当前 OPJU 是后续读取依据，按现有副本审查流程导出，不覆盖其手工调整；这不代表已提供任意 OPJU 原位编辑接口。
+
+制作前核对必要坐标尺度、阈值线、标记、版面与导出格式是否被当前路线支持；仅模板名匹配或 Origin 可启动不算满足。能力不足时说明具体缺口和可行替代，不静默把对数轴换成线性轴，也不把不符合要求的试图标为完成。
 
 Turn a scientific question and a read-only table into an auditable, editable Origin figure. Keep
 the beginner experience conversational; use the deterministic engine for inspection, planning,

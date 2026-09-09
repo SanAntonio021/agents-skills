@@ -9,7 +9,7 @@
     {
       "id": "redraw-data-plot-from-csv",
       "prompt": "CSV 里有 CH1/CH2 两路 BER 随 SNR 的数据，纵轴要用 log scale，还要画 2e-2 的 SD-FEC 阈值。请重画成 IEEE 单栏图，先给我最终尺寸预览，再导出 PDF/SVG/PNG。",
-      "expected_output": "读取原始数据后使用 scripts/ieee_plot_style.py 的 use_ieee_single_column_style、repair_single_column_figure、preflight_single_column_figure 和 export_ieee_single_column；采用 3.5 in、8 pt 衬线字体、四边 0.7 pt 黑框、向内刻度和 3 pt 可见墨迹留白；SNR 是连续物理横轴，因此显式选择 grid_mode=major_xy，只画横纵主网格，对数 BER 轴不画次网格和次刻度；CH1/CH2 先按当前论文角色生成候选配色并用 marker/线型冗余区分，2e-2 阈值用黑色，并用 place_reference_line_label 在框内右端贴线标注而不占用图例；先写 drafts/，沿用已明确的配色或合理默认，完成智能体最终尺寸视觉检查后冻结 color map 并 formal 导出；只有用户明确要求选稿或先等待确认时才暂停；保留脚本、profile 和 manifest。"
+      "expected_output": "先核对 Origin 当前路线是否支持对数 BER、2e-2 阈值线、IEEE 单栏尺寸及所需 PDF/SVG/PNG。满足时用 editaplot 生成可编辑 OPJU 并按论文规范检查实际导出；不能满足时说明具体缺口和可用 Python 规范路线，不静默改成线性轴或漏掉阈值、格式。复用已确认配色和授权，不重复确认。"
     },
     {
       "id": "multi-panel-exact-size-plot-profile",
@@ -112,6 +112,36 @@
       "id": "runtime-failure-no-python-fallback",
       "prompt": "固定科研绘图运行时提示缺少 Python，但我电脑上还有 C:\\Python313\\python.exe。请继续帮我出图。",
       "expected_output": "应明确报告固定运行时缺失/损坏并硬失败，不回退 C:\\Python313\\python.exe，不静默安装或切换解释器；给出修复运行时的具体提示后停止 Python 数据图执行。"
+    },
+    {
+      "id": "standalone-origin",
+      "prompt": "给这个 CSV 画两路曲线，我想自己微调图例。",
+      "expected_output": "Origin 支持时由 editaplot 制作原生可编辑 OPJU，无需用户点名 Origin；不强制论文审查。"
+    },
+    {
+      "id": "automatic-simulation",
+      "prompt": "现有 MATLAB 仿真每轮输出频谱预览，继续跑。",
+      "expected_output": "沿用自动出图，不启动 Origin、不迁移程序。"
+    },
+    {
+      "id": "explicit-python",
+      "prompt": "请沿用这个 Python 图源修改线宽。",
+      "expected_output": "沿用指定图源，不转 Origin。"
+    },
+    {
+      "id": "saved-opju",
+      "prompt": "我已保存修改好的 OPJU，请重新导出。",
+      "expected_output": "用当前文件的快照审查导出，保护手工修改，不从旧计划重建覆盖。"
+    },
+    {
+      "id": "shared-authorization",
+      "prompt": "已确认数据、配色和尺寸，继续生成论文结果图。",
+      "expected_output": "复用授权，规范技能交给 Origin 实现后检查，不各问一轮。"
+    },
+    {
+      "id": "origin-missing-log",
+      "prompt": "要复刻对数 BER 图，但当前 Origin 模板仅支持线性轴。",
+      "expected_output": "制作前报告缺口与替代，不输出线性图冒充完成。"
     }
   ]
 }

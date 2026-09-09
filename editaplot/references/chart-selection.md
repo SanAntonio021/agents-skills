@@ -10,6 +10,8 @@ is the current fully verified baseline.
 
 ## Verified V1 routes
 
+For standalone scientific plotting, prefer an editable Origin delivery when the selected route satisfies the full request. Check required axis scales, reference lines, markers, panels, and export formats before rendering. Route verification is not proof that every option is implemented. Report unsupported requirements rather than substituting linear axes or dropping elements. Simulation/measurement automatic plots and explicitly selected Python/MATLAB sources keep their existing implementation.
+
 The registry exposes 40 public plotting routes. Some table rows group closely related candidates,
 so the number of rows is not the route count.
 我已验证 `density_ridgeline3d` 的完整 Origin 路线；它仍只接受冻结的六角色表，并遵守下面的

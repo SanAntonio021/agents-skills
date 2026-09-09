@@ -8,8 +8,9 @@ description: >
   merge child-agent work into parent tasks, filter AI boilerplate, find referenced experiment
   images and relevant platform photos, check whether the work is worth presenting to an advisor,
   and create an image-led PPTX with editable text and independent pictures. Render the actual PPTX
-  to PDF/PNG for inspection. Reuse a clear audience and goal; wait for an outline decision only
-  when the user explicitly asks to review the outline first.
+  to PDF/PNG for inspection. Exclude non-research tool maintenance from advisor reports.
+  Present verified candidate work items for user selection before making slides; reuse an
+  already confirmed selection without asking again.
   Do not use for paper-to-slides work when the source is a paper PDF or DOI; use a paper-slide skill.
 compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoffice-runner and Poppler. SVG input uses the existing Node.js/sharp runtime.
 ---
@@ -27,13 +28,13 @@ compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoff
 用户指定其他制作工具或已有制作工程时，本技能可提供证据和提纲，由选定工具负责生成，
 不同时运行 `render_deck.py` 再做一套稿。
 
-普通日报、组会沿用下文的模板配置和目标明确后直接生成规则，不额外要求先确认样页。
+普通日报、组会先确认入选内容，再沿用下文的模板配置制作；不额外要求先确认样页。
 工程模板的字体、配色和构图不反向覆盖简单组会模板；跨页分工时共用本次配置和素材清单。
 复杂场景的生图不能替代真实曲线、仪器截图或实验照片。
 
 - `生成今日汇报`、`生成当天汇报` 或 `生成每日汇报`：收集 `Asia/Shanghai` 时区对应的本地日历日。
 - `生成本周组会汇报` 或 `生成组会汇报`：收集截至所请求本地日期的最近七个日历日。
-- 用户指定项目时，只保留匹配的 `cwd`/项目记录和素材。否则，纳入所选时间窗口内发现的全部项目，并在提纲中显示项目名。
+- 用户指定项目时，只采集匹配的 `cwd`/项目记录和素材。否则，采集所选时间窗口内发现的全部项目；采集范围不等于汇报范围，须经过科研筛选和用户选择。
 
 ## 文件存放
 
@@ -91,13 +92,23 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 2. 对目标导师有价值、已经完成且有可追溯文件或评审结果的科研或项目交付物。
 3. 直接解除当前科研阻塞且结果已经验证的支撑工作。
 
-常规登录修复、AI 配置、磁盘清理、一般软件维护和元技能工作通常应写入私人工作记录。常规行政表格也不纳入，除非它对该听众代表实质性项目里程碑。计入某项内容前，先判断导师是否需要它来理解当前科研进展。只有用户要求，或支撑工作直接影响所汇报的里程碑时，才将其纳入。不得用这些任务填充演示文稿来制造当天很忙的印象。
+给导师的日报和组会汇报排除科研无关内容，包括常规登录修复、AI 配置、代理设置、磁盘清理、一般软件排障和技能维护。这些内容不进入科研候选清单，也不以“工具与工作流”等页面、附录或改名后的条目进入 PPT；需要私人工作记录时另按该目标处理。常规行政表格也不纳入，除非它对该听众代表实质性项目里程碑。
+
+科研实验自动化、数据处理和测试程序按其实际科研作用与验证结果判断，不因涉及程序就排除。只有直接服务于当前实验、结果分析或科研里程碑，且有可追溯证据的工作才可列为候选；说明具体科研进展及尚未验证的部分，不展示通用工具维护过程。不得用支撑任务填充页数。
 
 如果当天没有第一或第二优先级结果，只剩常规支撑工作，则在生成提纲前停止。直接告诉用户，现有记录缺少适合向导师汇报的实质性进展，并且只问一个问题：停止，还是改为生成私人工作记录。
 
+## 确认入选内容
+
+通过汇报价值检查后，先向用户给出编号候选清单。每项写明项目或工作名称、进展状态、当期主要结果及可用图件；没有结果或图件时如实注明，不把任务标题、模型计划或旧成果写成当期完成项。清单依据实际会话和产物核实，并允许用户补充未记录的线下工作。
+
+请用户按编号选择、删减或补充，等待明确回答后再制作 PPT。只确认听众、目标、日期、项目目录或模板，不等于确认入选内容；泛称“生成今日汇报”也不跳过此步骤。未选定前可以继续核实证据和寻找素材，但不制作页面或 PPT 文件。
+
+用户已经明确指定要讲的具体工作，或已确认本轮候选清单时，沿用该选择，不重复询问。确认后只围绕入选内容组织页面和制作、自检；不加入未选项目。新发现的其他候选若值得补充，先单独询问，不擅自扩充。用户只改正某项状态时更新状态，不能据此推断其他候选也已入选。
+
 ## 提纲与页面
 
-汇报价值检查通过后，按实际材料组织简短提纲，每页围绕一个结果或问题。默认采用短篇汇报，按需使用以下页面职责：
+入选内容确认后，按实际材料组织简短提纲，每页围绕一个结果或问题。默认采用短篇汇报，按需使用以下页面职责：
 
 1. 总览
 2. 主要工作
@@ -105,7 +116,7 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 4. 问题与判断
 5. 下一步
 
-删除空页，素材较多时按实验拆页，不为固定页数挤小图件。已有目标和听众明确时直接生成并自检；用户明确要求先看提纲时才等待其决定。
+删除空页，素材较多时按实验拆页，不为固定页数挤小图件。入选内容确认后直接制作并自检；只有用户另外明确要求先审提纲时，才在提纲处等待，不重复确认已选范围。
 
 先为每项实验匹配实际曲线、仪器截图或现场照片，再写页面文字。图件占主要空间，文字只说明关键条件、数值和结论；单图配短说明，对比图并排展示。文字过多时整理或拆页，不缩成难读小字。
 

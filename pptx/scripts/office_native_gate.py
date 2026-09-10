@@ -11,6 +11,7 @@ the shared behavior for other formats.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -18,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -152,6 +154,63 @@ def default_dispatch_ex(progid: str) -> Any:
     return DispatchEx(progid)
 
 
+def _require_unique_powerpoint_process(process: Any) -> None:
+    result = subprocess.run(
+        ["tasklist.exe", "/FI", "IMAGENAME eq POWERPNT.EXE", "/FO", "CSV", "/NH"],
+        capture_output=True, check=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    if result.returncode != 0:
+        raise OwnershipFailure("unable to enumerate PowerPoint processes")
+    output = result.stdout or b""
+    if isinstance(output, bytes):
+        output = output.decode("utf-8", errors="replace")
+    pids = [int(row[1]) for row in csv.reader(output.splitlines())
+            if row and row[0].lower() == "powerpnt.exe"]
+    if pids != [process.pid] or process.poll() is not None:
+        raise OwnershipFailure("task-created PowerPoint is not the sole live PowerPoint process")
+
+
+def launch_microsoft_powerpoint(executable: Path) -> tuple[Any, Any]:
+    """Explicitly launch Microsoft Office and bind its COM object to that PID."""
+    import win32api
+    from win32com.client import GetActiveObject
+
+    executable = executable.resolve(strict=True)
+    if executable.name.lower() != "powerpnt.exe":
+        raise OwnershipFailure("expected an explicit POWERPNT.EXE path")
+    translations = win32api.GetFileVersionInfo(str(executable), r"\VarFileInfo\Translation")
+    companies = [win32api.GetFileVersionInfo(str(executable),
+                 rf"\StringFileInfo\{lang:04x}{page:04x}\CompanyName")
+                 for lang, page in translations]
+    if "Microsoft Corporation" not in companies:
+        raise OwnershipFailure("explicit executable does not identify Microsoft Office")
+    if process_present("POWERPNT.EXE"):
+        raise OwnershipFailure("PowerPoint appeared before explicit launch")
+    startup = subprocess.STARTUPINFO()
+    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startup.wShowWindow = 0
+    process = subprocess.Popen([str(executable), "/AUTOMATION"], startupinfo=startup,
+                               creationflags=subprocess.CREATE_NO_WINDOW)
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise OwnershipFailure(f"task-created PowerPoint {process.pid} exited before binding")
+        time.sleep(0.5)
+        try:
+            application = GetActiveObject("PowerPoint.Application")
+        except Exception:
+            continue
+        if Path(application.Path).resolve() != executable.parent:
+            del application
+            continue
+        # PowerPoint.Application has no HWND. Require the matching application
+        # path and the original child to be the only live PowerPoint process.
+        _require_unique_powerpoint_process(process)
+        return application, process
+    raise OwnershipFailure(f"task-created PowerPoint {process.pid} did not expose a verified object in time")
+
+
 def default_com_runtime() -> Any:
     import pythoncom
 
@@ -221,6 +280,30 @@ class OwnedApplication:
     exclusive_at_start: bool = False
     quit_performed: bool = False
     metadata: dict[str, Any] = field(default_factory=dict)
+    process: Any = None
+    identity_verified: bool = False
+    operation_completed: bool = False
+
+
+def _completed_process_self_exited(owner: OwnedApplication, error: BaseException) -> bool:
+    if not (owner.operation_completed and owner.identity_verified and owner.process is not None):
+        return False
+    current: BaseException | None = error
+    disconnected = False
+    while current is not None:
+        disconnected |= getattr(current, "hresult", None) == -2147417848
+        current = current.__cause__
+    if not disconnected:
+        return False
+    try:
+        exit_code = owner.process.wait(timeout=3)
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    if exit_code != 0:
+        return False
+    owner.metadata["cleanup"] = "self_exited"
+    owner.created_by_task = False
+    return True
 
 
 def quit_owned_application(owner: OwnedApplication) -> None:
@@ -230,7 +313,12 @@ def quit_owned_application(owner: OwnedApplication) -> None:
         raise OwnershipFailure(
             "Office instance ownership is not proven; Application.Quit() is refused"
         )
-    count = _collection_count(owner.application, owner.collection_name)
+    try:
+        count = _collection_count(owner.application, owner.collection_name)
+    except OwnershipFailure as exc:
+        if _completed_process_self_exited(owner, exc):
+            return
+        raise
     if count != 0:
         raise OwnershipFailure(
             f"{owner.collection_name} still contains {count} document(s); Application.Quit() is refused"
@@ -238,9 +326,12 @@ def quit_owned_application(owner: OwnedApplication) -> None:
     try:
         owner.application.Quit()
     except Exception as exc:
+        if _completed_process_self_exited(owner, exc):
+            return
         raise OwnershipFailure("Application.Quit() failed; instance ownership is no longer safe") from exc
     owner.quit_performed = True
     owner.created_by_task = False
+    owner.metadata["cleanup"] = "quit"
 
 
 @contextmanager
@@ -249,6 +340,7 @@ def owned_application(
     *,
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
+    powerpoint_executable: Path | None = None,
 ) -> Iterator[tuple[Any, OwnedApplication]]:
     """Create one isolated COM instance and fail closed on cleanup ambiguity."""
 
@@ -259,10 +351,17 @@ def owned_application(
     operation_error: BaseException | None = None
     try:
         try:
-            application = dispatch(spec["progid"])
+            if powerpoint_executable is not None:
+                application, process = launch_microsoft_powerpoint(powerpoint_executable)
+            else:
+                application, process = dispatch(spec["progid"]), None
         except Exception as exc:
             raise ActivationFailure(_exception_text(exc)) from exc
-        owner = OwnedApplication(application, spec["collection"])
+        owner = OwnedApplication(application, spec["collection"], process=process,
+                                 identity_verified=process is not None)
+        if process is not None:
+            owner.metadata.update({"launch": "explicit_microsoft_executable", "pid": process.pid,
+                                   "application_path": str(application.Path), "version": str(application.Version)})
         initial_count = _collection_count(application, spec["collection"])
         if initial_count != 0:
             raise OwnershipFailure(
@@ -285,23 +384,26 @@ def owned_application(
             _set_optional(application, "EnableEvents", False)
             _set_optional(application, "Calculation", -4135)  # xlCalculationManual
         yield application, owner
+        owner.operation_completed = True
     except BaseException as exc:
         operation_error = exc
         raise
     finally:
-        if owner is not None and owner.exclusive_at_start:
+        try:
+            if owner is not None and owner.exclusive_at_start:
+                try:
+                    quit_owned_application(owner)
+                except Exception as cleanup_error:
+                    if operation_error is None:
+                        raise
+                    _add_note(operation_error, f"Office COM cleanup also failed: {_exception_text(cleanup_error)}")
+        finally:
             try:
-                quit_owned_application(owner)
+                runtime.CoUninitialize()
             except Exception as cleanup_error:
                 if operation_error is None:
-                    raise
-                _add_note(operation_error, f"Office COM cleanup also failed: {_exception_text(cleanup_error)}")
-        try:
-            runtime.CoUninitialize()
-        except Exception as cleanup_error:
-            if operation_error is None:
-                raise OwnershipFailure(f"COM uninitialization failed: {_exception_text(cleanup_error)}") from cleanup_error
-            _add_note(operation_error, f"COM uninitialization also failed: {_exception_text(cleanup_error)}")
+                    raise OwnershipFailure(f"COM uninitialization failed: {_exception_text(cleanup_error)}") from cleanup_error
+                _add_note(operation_error, f"COM uninitialization also failed: {_exception_text(cleanup_error)}")
 
 
 def _new_output(path: Path) -> Path:
@@ -555,6 +657,7 @@ def check_file(
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
+    powerpoint_executable: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run a native gate; dependency injection keeps tests off real COM."""
 
@@ -587,6 +690,11 @@ def check_file(
         result["source_sha256_after"] = before
         return result
 
+    if powerpoint_executable is not None and (format_name != "pptx" or dispatch_ex is not None):
+        result["error"] = "explicit PowerPoint executable is PPTX-only and cannot be combined with dispatch injection"
+        result["source_sha256_after"] = before
+        return result
+
     probe = process_probe or process_present
     try:
         if probe(spec["process"]):
@@ -608,6 +716,7 @@ def check_file(
         return result
 
     workspace: Path | None = None
+    _owner: OwnedApplication | None = None
     try:
         workspace = Path(tempfile.mkdtemp(prefix="office-native-gate-"))
         isolated = workspace / source.name
@@ -624,6 +733,7 @@ def check_file(
             spec,
             dispatch_ex=dispatch_ex,
             com_runtime=com_runtime,
+            powerpoint_executable=Path(powerpoint_executable) if powerpoint_executable is not None else None,
         ) as (application, _owner):
             if format_name == "pptx":
                 details = _check_pptx(application, isolated, exports, require_render)
@@ -631,6 +741,9 @@ def check_file(
                 details = _check_docx(application, isolated, exports, require_render, rasterizer or rasterize_pdf)
             else:
                 details = _check_xlsx(application, isolated, exports, require_render)
+            result["details"] = details
+            result["phase"] = "cleanup"
+        details["application_lifecycle"] = dict(_owner.metadata)
         result.update({"ok": True, "status": "PASS", "phase": "render" if require_render else "open", "details": details})
     except ActivationFailure as exc:
         if _is_app_unavailable(exc.__cause__ or exc):
@@ -638,8 +751,11 @@ def check_file(
         result["phase"] = "activate"
         result["error"] = str(exc)
     except OwnershipFailure as exc:
-        result["phase"] = "ownership"
+        if result["phase"] != "cleanup":
+            result["phase"] = "ownership"
         result["error"] = _exception_text(exc)
+        if exc.__cause__ is not None:
+            result["cause"] = _exception_text(exc.__cause__)
     except GateFailure as exc:
         result["status"] = exc.status
         result["phase"] = exc.phase
@@ -652,6 +768,8 @@ def check_file(
         result["phase"] = "activate"
         result["error"] = _exception_text(exc)
     finally:
+        if _owner is not None:
+            result["details"]["application_lifecycle"] = dict(_owner.metadata)
         try:
             result["source_sha256_after"] = sha256(source)
         except OSError as exc:
@@ -678,6 +796,7 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--json", action="store_true", help="emit one machine-readable JSON result")
     check.add_argument("--allow-office-com", action="store_true")
     check.add_argument("--require-render", action="store_true")
+    check.add_argument("--powerpoint-exe", help="explicit Microsoft POWERPNT.EXE for this PPTX check only")
     return parser
 
 
@@ -688,6 +807,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.format,
         allow_office_com=args.allow_office_com,
         require_render=args.require_render,
+        powerpoint_executable=args.powerpoint_exe,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))

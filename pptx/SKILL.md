@@ -128,8 +128,25 @@ The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIF
 `--allow-office-com`. If `POWERPNT.EXE` already exists, the PPTX gate does not call COM, returns
 `UNVERIFIED` in `preflight` with reason `powerpoint_already_running`, and its non-JSON output is
 exactly `请关闭 PowerPoint 后重试。` It never attaches to, closes, or kills that process. Otherwise
-it uses `DispatchEx` plus an isolated copy, checks the source SHA-256 before and after, never saves
-the source, and quits only a task-created instance whose presentation collection is empty. For a
+it defaults to `DispatchEx` plus an isolated copy and checks the source SHA-256 before and after.
+When WPS or another installation interferes with that activation route, use the installed Microsoft
+PowerPoint executable explicitly for the current PPTX check:
+
+```powershell
+python <skill-root>\scripts\office_native_gate.py check input.pptx `
+  --format pptx --json --allow-office-com --require-render `
+  --powerpoint-exe "<verified absolute path to Microsoft POWERPNT.EXE>"
+```
+
+Discover the actual local installation and verify its Microsoft signature before choosing that path;
+do not hard-code another machine's path or change system registration. The explicit route requires
+matching application path, the task-created process as the sole live PowerPoint process, and an
+initially hidden, empty instance. The gate never saves the source or force-terminates an application.
+It quits only its own empty instance. If document open, requested export and document Close have
+all completed, a disconnected COM object during application cleanup is accepted only when the
+original verified child process exits normally within three seconds. Unknown ownership, a running
+or abnormally exited child, and any earlier failure remain unverified. The receipt records this as
+`application_lifecycle.cleanup=self_exited`; it does not establish that default COM activation is repaired. For a
 PPTX release, require `STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and
 `NATIVE_RENDER_PASS`; a blocked native check is not a completed delivery.
 

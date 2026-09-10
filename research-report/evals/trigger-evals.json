@@ -49,6 +49,26 @@
   },
   {
     "query": "这个长期调研项目还没开始，请先建任务池和设计单，做三个厂商的 sample-first 取样，等我确认后再扩展。",
+    "should_trigger": true
+  },
+  {
+    "query": "调研高速太赫兹通信的近期进展，先用项目已有资料，缺的再查，做成给导师汇报的 PPT。",
+    "should_trigger": true
+  },
+  {
+    "query": "给领导写一份低空通信技术 Word 调研报告，目前只有主题，资料需要你查。",
+    "should_trigger": true
+  },
+  {
+    "query": "继续昨天的厂商调研，比较口径已经定了，补齐来源后完成报告，不用重新做样本给我确认。",
+    "should_trigger": true
+  },
+  {
+    "query": "更新既有双工作簿产品库的三个产品参数，核对来源并保留编号，不需要报告。",
+    "should_trigger": false
+  },
+  {
+    "query": "给这篇文章找五篇相关论文并加入 Zotero 任务分类，不用另写报告。",
     "should_trigger": false
   },
   {

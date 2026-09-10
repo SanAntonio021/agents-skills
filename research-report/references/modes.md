@@ -12,20 +12,20 @@
 
 ## 与 `edit_scope` 的组合
 
-- `draft`：从已闭合证据生成新稿。
+- `draft`：复用已有资料、补齐必要来源，再据已核实内容生成新稿。
 - `structural`：先做内容清单和旧段落映射，再重排。
 - `bounded`：只处理指定章节。
 - `in_place`：保持章节，只压缩重复、修复混写和表达问题。
 - `audit_only`：保持只读，按共同质量规则在对话中分点报告位置、问题、原因和必要的修改建议。
 
-只有主题、读者或研究问题而没有闭合证据时，不生成正式报告。先建立 [内部调研台账](research-ledger.md)，持续取样转 `baseline-research`。
+只有主题、读者或研究问题时，从本技能的调研流程开始，不新增模式。先复用已有资料并定向检索，明确口径直接扩展，必要样本无实质歧义就继续；内部记录按需使用，不把建台账当成报告交付。材料不足不编造结论，也不阻止其他已授权部分的分析和交付。
 
 ## 最小参考文件
 
 | 任务 | 读取 |
 |---|---|
-| `evidence_report` | [report-contract.md](report-contract.md)、[research-ledger.md](research-ledger.md) |
-| `decision_report` | 上述两份 + [decision-report.md](decision-report.md) |
+| `evidence_report` | [report-contract.md](report-contract.md)；需要复杂问题追踪时再读 [research-ledger.md](research-ledger.md) |
+| `decision_report` | 上述规则 + [decision-report.md](decision-report.md) |
 | 结构重写 | 再读 [restructure-existing.md](restructure-existing.md) |
 | `final_audit` | 只读与当前报告模式对应的文件 |
 

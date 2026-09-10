@@ -10,8 +10,8 @@
 
 | 阶段 | 用户常见说法 | 推荐去向 |
 |---|---|---|
-| 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | `ask-first` 或 `baseline-research` |
-| 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-research` |
+| 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | 按当前任务澄清关键问题；显式调用 `ask-first` 时用它，为报告调研时由 `research-report` 连续处理 |
+| 调研到报告 | 为报告找材料、做比较、补来源并形成 Word 或 PPT | `research-report`；论文检索用 `paper-search`，文件制作按格式转 `docx` 或 `pptx` |
 | 文献下载 | 下载论文、补 PDF、维护 `paper_index.md` 论文索引 | `paper-download` |
 | 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，Zotero 使用现有插件，局部核对用 `paper-review` |
 | 指标论证 | 这个指标能否做到、需要什么条件、申报中怎么写 | 申报用 `project-writing`，技术方案或独立工程指标用 `technical-writing`，按需共用指标参考资料 |
@@ -72,7 +72,7 @@
 | 上游模块 | 可吸收内容 | 本地承接 |
 |---|---|---|
 | `academic-pipeline` | 阶段门控、完整性检查、审稿-修改-复审闭环 | `writing-router` 做路由；必要时分发到下游 |
-| `deep-research` | Socratic 问题澄清、source verification、gap analysis | `baseline-research` |
+| `deep-research` | Socratic 问题澄清、source verification、gap analysis | `research-report` 的调研流程；功能映射不代表调用或安装独立 deep-research 插件 |
 | `academic-paper` | 先大纲再成文、引用/图表一致性、修改回应 | `ieee-manuscript-edit` |
 | `academic-paper-reviewer` | 多视角审稿、Devil's Advocate、re-review | `paper-review` |
 
@@ -96,7 +96,7 @@
 | `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
 | `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | 可参考的功能映射：`rigor-check`、`lab-notebook`；不表示已吸收该上游 |
 | `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`ieee-manuscript-edit` |
-| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-download`、`baseline-research` |
+| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-search`；下载用 `paper-download`，形成调研报告由 `research-report` 统筹 |
 | `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `ieee-manuscript-edit` |
 | `research-grants` | significance / innovation / feasibility 框架 | `project-writing`，需改成国内工程申报口径 |
 | `matlab`、`matplotlib`、`statistical-analysis` | 实验数据处理、绘图、统计报告模板 | 暂存，等有太赫兹实验数据处理 skill 时再用 |
@@ -134,7 +134,7 @@
 
 后续按真实任务触发：
 
-- 调研收敛差：改 `baseline-research`
+- 调研收敛差：完善 `research-report` 的问题、比较范围和资料补齐流程。
 - 审稿不够狠：改 `paper-review`
 - 英文论文精修不够稳：改 `ieee-manuscript-edit`
 - 指标论证不清：完善 `project-writing`、`technical-writing` 共用的指标参考；实验记录或解释不清：按实际问题看 `lab-notebook`、`rigor-check`。

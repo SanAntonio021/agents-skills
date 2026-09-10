@@ -108,7 +108,7 @@ description: 中文写作与通用编辑的默认入口。Use when 用户要撰�
 ## 相邻任务
 
 - 指标是否可实现：申报指标由 `project-writing` 处理，技术方案和独立工程指标问题由 `technical-writing` 处理；两者按需共用[指标可行性判断](../technical-writing/references/metric-feasibility.md)。仅问可行性时直接回答，未要求写稿不启动文稿流程。
-- 研究取样和补证据：`baseline-research`。
+- 为报告开展调研、资料比较和来源补齐：`research-report` 连续完成调研与报告内容；Word 交 `docx`，PPT 交 `pptx` 的现有制作路由。仅检索论文用 `paper-search`，持续产品库用 `product-research-workbook`；不因调用专业工具自动扩大为报告任务。
 - 论文全文技术内容、论证和结论审查，以及明确要求的模拟审稿：`paper-review`；终稿文字和语言审校仍用 `ieee-manuscript-edit`。
 - 投稿格式、材料合规、投稿系统与返修事务：`journal-submission`，按实际文件交给 `latex-paper`、`docx` 或 `paper-figure-review` 处理格式。准备投稿或点击 Submit 不自动触发全文审稿；同时要求内容与格式检查时分别完成并复用当前稿件和已有检查结果。结合上下文判断，只有范围无法确定且会明显改变工作量时才询问。
 - 文献检索和下载：`paper-search`、`paper-download`；原文及笔记准确性核对：`paper-review`；Zotero 笔记读写：现有 Zotero 插件。

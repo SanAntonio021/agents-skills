@@ -3,9 +3,29 @@
   "fixture_policy": "synthetic-only",
   "evals": [
     {
+      "id": "research-to-word",
+      "prompt": "为已经明确的技术方向查资料、比较方案，最后形成 Word 调研报告。已有一份提纲和部分来源，先沿用。",
+      "expected_output": "research-report 复用提纲和来源，补足当前问题所需资料并形成报告内容，按既有文稿协作完成后交 docx 制作与验收；不要求用户先准备全部材料，不创建固定任务池或样本审核关口，不只交检索清单就结束。"
+    },
+    {
+      "id": "research-to-ppt",
+      "prompt": "调研这个行业的技术路线，最后做成 PPT 汇报，已有模板和已确认的比较维度。",
+      "expected_output": "research-report 从资料比较推进到适合汇报的结论、图表和来源，pptx 按现有路由制作并检查；复用模板与维度，不先强制做 Word 报告，不重复确认样本或选择相互竞争的制作工具。"
+    },
+    {
+      "id": "paper-search-no-report-expansion",
+      "prompt": "只找几篇相关论文放进已有 Zotero 任务分类，别写报告。",
+      "expected_output": "paper-search 完成专业检索和 Zotero 归类，沿用已有分类，不因具有调研性质调用研究报告写作、创建 Word 或 PPT。"
+    },
+    {
+      "id": "product-library-no-report-expansion",
+      "prompt": "继续维护既有产品库，只补缺失规格和来源，别另外写报告。",
+      "expected_output": "product-research-workbook 复用产品库结构补资料并校验，联网使用现有工具；不再调用旧基线调研入口，不自动创建研究报告、任务池或设计单。"
+    },
+    {
       "id": "route-complex-paper-workflow",
       "prompt": "我现在有一篇太赫兹通信系统论文的中文草稿，还有一些实验图和参考文献，但不知道下一步应该先调研、先改英文，还是先审一遍。你帮我判断当前该走哪一步。",
-      "expected_output": "先判断当前阶段，不一次带上所有相关 skill；如果事实、证据或图文关系未定，先路由到 baseline-research 或 paper-review；若草稿和事实边界已清楚，再路由到 ieee-manuscript-edit。"
+      "expected_output": "先判断当前阶段，不一次带上所有相关 skill；论文来源缺口用 paper-search，图文或论证问题用 paper-review；若草稿和事实边界已清楚，再路由到 ieee-manuscript-edit。用户要论文工作，不自动扩成独立调研报告。"
     },
     {
       "id": "route-engineering-proposal-metric",

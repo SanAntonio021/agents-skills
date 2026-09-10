@@ -97,6 +97,31 @@ class TemplateDeckTests(unittest.TestCase):
         self.assertEqual(len(assets), 1)
         self.assertEqual(Path(assets[0]["path"]), self.new_image)
 
+    def test_project_topic_title_preserves_template_size_and_separate_styles(self):
+        deck = copy.deepcopy(self.deck)
+        deck["slides"][0].update(project="双向通信项目", title="功率扫描")
+        self.make(deck=deck)
+        title_id = self.spec["layouts"]["result"]["slots"]["title"]
+        title = next(s for s in Presentation(self.output).slides[0].shapes if s.shape_id == title_id)
+        self.assertEqual(title.text, "双向通信项目   功率扫描")
+        self.assertEqual([(r.text, r.font.size.pt, r.font.bold) for r in title.text_frame.paragraphs[0].runs],
+                         [("双向通信项目", 24, True), ("   功率扫描", 20, False)])
+        self.assertEqual(len(title.text_frame.paragraphs), 1)
+        self.assertFalse(title.text_frame.word_wrap)
+        self.assertEqual(self.digest(self.source), self.source_hash)
+
+    def test_project_title_requires_an_explicit_template_size(self):
+        prs = Presentation(self.source)
+        title_id = self.spec["layouts"]["result"]["slots"]["title"]
+        title = next(s for s in prs.slides[0].shapes if s.shape_id == title_id)
+        title.text_frame.paragraphs[0].runs[0].font.size = None
+        prs.save(self.source)
+        deck = copy.deepcopy(self.deck)
+        deck["slides"][0]["project"] = "Project"
+        with self.assertRaisesRegex(ValueError, "explicit title font size"):
+            self.make(deck=deck)
+        self.assertFalse(self.output.exists())
+
     def test_removes_old_private_text_notes_other_slides_and_images(self):
         self.make()
         with zipfile.ZipFile(self.output) as package:

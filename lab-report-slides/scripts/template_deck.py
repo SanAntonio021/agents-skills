@@ -132,6 +132,47 @@ def replace_text(shape, text):
             paragraph.append(copy.deepcopy(end_props))
 
 
+def replace_project_title(shape, project, topic):
+    from render_deck import topic_font_size
+
+    replace_text(shape, project)
+    paragraph = shape.find("p:txBody/a:p", NS)
+    run = paragraph.find("a:r", NS)
+    props = run.find("a:rPr", NS)
+    if props is None:
+        props = ET.Element(f"{{{NS['a']}}}rPr")
+        run.insert(0, props)
+    size = props.get("sz")
+    if size is None:
+        default = paragraph.find("a:pPr/a:defRPr", NS)
+        size = default.get("sz") if default is not None else None
+    if size is None:
+        raise ValueError("Set an explicit title font size in the local template copy before adding a project/topic title")
+    props.set("sz", size)
+    props.set("b", "1")
+    props.set("baseline", "0")
+    subtitle = ET.Element(f"{{{NS['a']}}}r")
+    subtitle_props = copy.deepcopy(props)
+    subtitle_props.set("b", "0")
+    subtitle_props.set("sz", str(round(topic_font_size(int(size) / 100) * 100)))
+    subtitle.append(subtitle_props)
+    text = ET.SubElement(subtitle, f"{{{NS['a']}}}t")
+    text.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    text.text = "   " + topic
+    paragraph.insert(list(paragraph).index(run) + 1, subtitle)
+    body_props = shape.find("p:txBody/a:bodyPr", NS)
+    if body_props is not None:
+        body_props.set("wrap", "none")
+        for child in list(body_props):
+            if ET.QName(child).localname in {"noAutofit", "normAutofit", "spAutoFit"}:
+                body_props.remove(child)
+        no_autofit = ET.Element(f"{{{NS['a']}}}noAutofit")
+        # noAutofit precedes 3-D and extension children in CT_TextBodyProperties.
+        insertion = next((i for i, child in enumerate(body_props)
+                          if ET.QName(child).localname in {"scene3d", "sp3d", "flatTx", "extLst"}), len(body_props))
+        body_props.insert(insertion, no_autofit)
+
+
 def clean_xml(root):
     # Extensions, animations and hidden payloads can reference old report data.
     for element in list(root.iter()):
@@ -210,7 +251,7 @@ def prune(parts):
 
 
 def make_template_pptx(deck, slides, output_path, template_spec_path: Path) -> list:
-    from render_deck import raster_bytes, text_rows
+    from render_deck import project_title, raster_bytes, text_rows
 
     output_path = Path(output_path)
     if output_path.exists():
@@ -285,7 +326,11 @@ def make_template_pptx(deck, slides, output_path, template_spec_path: Path) -> l
                  "body": "\n".join(row[0] for row in rows)}
         for name, value in texts.items():
             if name in slots:
-                replace_text(shapes[slots[name]], value)
+                title_parts = project_title(content) if name == "title" else None
+                if title_parts:
+                    replace_project_title(shapes[slots[name]], *title_parts)
+                else:
+                    replace_text(shapes[slots[name]], value)
             elif value and name in {"summary", "body", "title"}:
                 raise ValueError(f"Template layout {key} has no {name} slot for supplied content")
         pictures = [b for b in content["blocks"] if b["type"] == "image"]

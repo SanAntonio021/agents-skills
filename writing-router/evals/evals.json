@@ -137,6 +137,16 @@
       "id": "route-pre-meeting-technical-exchange",
       "prompt": "我要把一份射频方案改成会前技术交流材料，里面既有已知接口、三种器件结构，也有会上要选的方案和会后才能测出的参数。",
       "expected_output": "路由到 technical-writing 的 technical_exchange 模式，区分已有条件、会上决定和另行计算或测试；不按会议纪要整理，也不只做通用去 AI 味改写。"
+    },
+    {
+      "id": "concrete-revision",
+      "prompt": "润色进展：修订了测试方法。材料说明改为每档重复采集三次并取中位数。",
+      "expected_output": "说明具体采集与统计方法，不只宣告修订，不补造性能提升。"
+    },
+    {
+      "id": "preserve-natural-status",
+      "prompt": "原位润色：完成接口开发并通过离线测试。操作步骤为先关闭输出，再换线，最后恢复输出。",
+      "expected_output": "原句清楚且有实际状态和必要顺序，保持原样，不因完成一词或步骤列表判为AI味，不升级为实测。"
     }
   ],
   "general_edit_trigger_cases": [

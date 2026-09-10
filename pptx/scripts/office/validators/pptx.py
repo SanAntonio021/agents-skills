@@ -49,6 +49,9 @@ class PPTXSchemaValidator(BaseSchemaValidator):
         if not self.validate_slide_shape_ids():
             all_valid = False
 
+        if not self.validate_text_format_singletons():
+            all_valid = False
+
         if not self.validate_non_negative_extents():
             all_valid = False
 
@@ -92,6 +95,52 @@ class PPTXSchemaValidator(BaseSchemaValidator):
         if not isinstance(tag, str):
             return ""
         return tag.rsplit("}", 1)[-1]
+
+    def validate_text_format_singletons(self):
+        """Reject repeated direct text-format children, independent of XSD baselines.
+
+        Inspect raw package XML (including chart, layout, master and notes text).
+        Schema filtering and --original must never suppress these structural defects.
+        This method is read-only; it deliberately does not choose a format to keep.
+        """
+        import lxml.etree
+
+        ns = f"{{{self.DRAWINGML_NAMESPACE}}}"
+        allowed = {
+            "p": ("pPr", "endParaRPr"),
+            "r": ("rPr",),
+            "br": ("rPr",),
+            "fld": ("rPr", "pPr"),
+            **{name: ("defRPr",) for name in (
+                "pPr", "defPPr", *(f"lvl{i}pPr" for i in range(1, 10))
+            )},
+        }
+        parents = {ns + name: children for name, children in allowed.items()}
+        problems = []
+        for part in sorted((self.unpacked_dir / "ppt").rglob("*.xml")):
+            relative = part.relative_to(self.unpacked_dir).as_posix()
+            try:
+                tree = lxml.etree.parse(str(part))
+            except (lxml.etree.XMLSyntaxError, OSError) as exc:
+                problems.append(f"{relative}: could not inspect text formats: {exc}")
+                continue
+            for parent in tree.iter():
+                for name in parents.get(parent.tag, ()):
+                    children = parent.findall(ns + name)
+                    if len(children) > 1:
+                        locations = ", ".join(tree.getpath(child) for child in children)
+                        problems.append(
+                            f"{relative}: duplicate a:{name} ({len(children)} direct "
+                            f"children; maximum 1); XPath: {locations}"
+                        )
+        if problems:
+            print(f"FAILED - Found {len(problems)} duplicate text-format problem(s):")
+            for problem in problems:
+                print(f"  {problem}")
+            return False
+        if self.verbose:
+            print("PASSED - Text-format singleton children are unique")
+        return True
 
     def _slide_object_type(self, non_visual_property) -> str:
         owner = next(

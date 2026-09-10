@@ -4,13 +4,14 @@
     {
       "id": 1,
       "prompt": "我的 Windows 11 电脑 C 盘只剩 8 GB，D 盘还有 60 GB，本地装了 WizTree。请先检查哪些内容占空间，保护正在运行的 VS Code、Claude 和实验原始数据。没有我确认不要实际删除。",
-      "expected_output": "A read-only audit plan and grouped candidate review that protects active work and research data, validates WizTree exports, and asks one decision at a time before cleanup.",
+      "expected_output": "A read-only audit and concrete grouped candidate list that protects active work and research data and validates WizTree exports. A future cleanup batch can be confirmed once; scanning itself does not authorize removal or application cleanup prepare.",
       "files": [],
       "expectations": [
         "The response starts with read-only evidence collection and does not execute cleanup.",
         "Active VS Code, Claude, and original experiment data are protected.",
         "WizTree CSV existence and parseability are checked instead of trusting only the exit code.",
-        "Candidates are grouped by source and purpose with size, risk, evidence, and proposed action."
+        "Candidates are grouped by source and purpose with size, supporting facts, proposed action, and recovery method.",
+        "No application cleanup prepare or business-file change is performed during this read-only scan; any scan artifacts stay in the task process directory."
       ]
     },
     {
@@ -40,14 +41,14 @@
     {
       "id": 4,
       "prompt": "我只想先排查 C 盘占满原因。你发现 %LOCALAPPDATA%\\claude-codex-bridge 里有历史记录，而且 bridge daemon 正在跑同行审查。先列可清理项，别打断当前审查。",
-      "expected_output": "A read-only disk audit that treats bridge history cleanup as a separately approved application-maintenance step and never stops the daemon to obtain its cleanup lock.",
+      "expected_output": "A read-only disk audit that reports the bridge history candidate and continues scanning other approved locations. It does not invoke application prepare, purge, or stop, and does not treat the busy daemon as a reason to block the whole audit.",
       "files": [],
       "expectations": [
         "The discovery pass does not invoke bridge cleanup prepare, cleanup purge, or bridge stop.",
-        "Bridge history cleanup is presented as a separate approval from the disk scan.",
+        "The scan authorization is not expanded to application-history maintenance.",
         "If application-history review is later approved, cleanup prepare is run online without stopping the daemon.",
         "Any active, queued, locked, or shutdown-blocked state is reported as skipped_busy and is not bypassed by stopping a service or task.",
-        "Purge requires a separate explicit approval and a fresh idle-state check."
+        "Prepare is not purge authorization; a later exact purge authorization may be given with the same batch or reused from the current task, with a fresh idle-state and scope check."
       ]
     },
     {
@@ -59,16 +60,16 @@
         "ONLYOFFICE is not labeled residual until uninstall registrations, packages, install locations, processes, services, tasks, shortcuts, associations, recovery data, and user documents are checked.",
         "The Logitech directory is protected because an active installed companion application owns it.",
         ".NET 6 is preserved because installed applications declare a dependency on net6.0 even though no process is active.",
-        "Any verified uninstall residual is proposed for explicit approval and recoverable Recycle Bin staging rather than direct permanent deletion."
+        "The current request only asks for judgment, so no deletion is performed. A verified uninstall residual is listed with its exact proposed cleanup method; the skill does not require Recycle Bin staging when a later accurate batch explicitly authorizes direct removal."
       ]
     },
     {
       "id": 6,
       "prompt": "回收站里有一个已经核验过的 C:\\Videos\\meeting.mp4，原文件 8 GB；回收站里还有很多其他文件。我现在只同意永久删除这个视频，直接帮我释放空间，不要动其他条目。",
-      "expected_output": "A narrowly scoped permanent deletion that requires separate approval evidence, matches one exact Recycle Bin metadata/payload pair to the original path and size, preserves unrelated entries, and never clears the whole Recycle Bin.",
+      "expected_output": "Reuse the user's explicit approval to permanently remove this exact video after matching and rechecking its Recycle Bin entry. Do not ask for another confirmation; preserve every unrelated entry and verify the actual freed space.",
       "files": [],
       "expectations": [
-        "Staging approval and permanent-deletion approval are treated as separate decisions.",
+        "Permanent deletion has already been explicitly authorized for this exact item, so no second approval, fixed phrase, or pasted internal hash is requested.",
         "One exact $I metadata record is matched by decoded original path, byte count, and deletion time to one $R payload with the same suffix.",
         "The response does not use Clear-RecycleBin, wildcards, or any whole-bin emptying operation.",
         "Unrelated Recycle Bin entries are snapshotted and verified unchanged after the exact pair is removed.",
@@ -84,7 +85,8 @@
         "Stable rather than temporary reclaimed space is treated as the success criterion.",
         "Unused applications and obsolete versions are considered before verified uninstall residuals and one-time duplicates or backups.",
         "Regenerating caches are last, clearly labeled as recurrent, and excluded from stable-reclaim totals.",
-        "The review stops when remaining candidates are only a few hundred MB, recurrent, or materially riskier."
+        "The review stops when remaining candidates are only a few hundred MB, recurrent, or materially riskier.",
+        "A preference for stable reclaimed space does not itself authorize ongoing retention rules, scheduled cleanup, or cache-location changes."
       ]
     },
     {
@@ -109,6 +111,84 @@
         "The WizTree banner and required path, size, allocated, modified, file-count, and folder-count columns are validated.",
         "Only direct children are summarized, and descendant rows under an aggregate directory row are not added again.",
         "Output is capped at 15 items per requested root and includes direct-item and allocated-byte totals."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "刚才的清单我确认了：D:\\Downloads\\capture-old.zip 已核实有可读保留副本；先把它移入回收站，再永久删除本批产生的对应回收站条目。只做这一批，回收站以前的文件不动，直接完成。",
+      "expected_output": "Recheck the approved archive and retained copy, record existing Recycle Bin entries, recycle the archive, match the newly produced metadata/payload pair, and permanently delete only that pair under the same authorization. Verify other entries and actual drive space, then finish the approved batch.",
+      "files": [],
+      "expectations": [
+        "One accurate batch approval covers both the stated recycling and exact permanent-deletion steps; the workflow does not insert a second confirmation after staging.",
+        "The newly generated Recycle Bin pair is matched to the approved original path, size, deletion time, and other recorded identity checks before removal.",
+        "An ambiguous or changed match is skipped without affecting previously existing Recycle Bin entries.",
+        "No whole-bin emptying or wildcard deletion is used.",
+        "The response reports completion or the concrete skipped item and ends without automatically creating long-term cleanup settings."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "按刚才确认的清单清理：一份已核验重复的实验导出文件移入回收站，两个 uv 缓存目录直接删除。执行前发现第一个缓存正在使用，实验导出文件的哈希也变了，第二个缓存仍可重建且没有变化。继续完成能做的部分，不要打断我的程序。",
+      "expected_output": "Skip the changed experiment export and busy cache, preserve both, and directly remove only the unchanged approved rebuildable cache. Report these outcomes without force-stopping applications, repeatedly asking about the same batch, or claiming the skipped items were completed.",
+      "files": [],
+      "expectations": [
+        "The changed export is not deleted or recycled under the stale file identity.",
+        "The busy cache is skipped; no process, daemon, service, or scheduled task is stopped to unlock it.",
+        "The unaffected second cache is rechecked and cleaned using the already approved direct-deletion method.",
+        "A locked or changed item does not stop independent authorized actions or trigger a replacement cleanup target.",
+        "Final reporting distinguishes completed, skipped_busy, and changed items and does not automatically request another decision merely to close the task."
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "清单里的 C:\\Users\\Public\\ToolCache\\build-cache 和 C:\\Program Files\\OldTool-remnant 都已经检查过。缓存可重建；残留已确认没有安装归属、共享依赖、用户文件或活动进程。我批准按清单直接删除这两个目录，只清理这次，不改以后怎么保存。",
+      "expected_output": "Recheck the exact two approved paths and their ownership/rebuildability facts, perform the approved cleanup method, verify results, and stop. No mandatory Recycle Bin detour or extra confirmation is introduced for these verified categories, and no future-growth configuration is changed.",
+      "files": [],
+      "expectations": [
+        "Existing accurate authorization is reused for the two named items and their direct-removal method.",
+        "Rebuildability and residual ownership are freshly checked rather than inferred from names or inactive processes alone.",
+        "The cleanup does not extend to sibling vendor directories, shared runtimes, or personal files.",
+        "The batch ends after suitable verification, even if further space could be recovered.",
+        "No cache relocation, automatic retention policy, scheduled task, or recurring maintenance is configured."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "现在明确请你审查 Bridge 的历史材料，看看哪些能清理；可以用它的在线 prepare 接口，但这次不批准 purge。其他应用不用检查。",
+      "expected_output": "Use the authorized application-history review interface to prepare a scoped candidate list while the daemon remains running. Inspect and report the candidates; do not pass the returned token to purge and do not scan unrelated applications.",
+      "files": [],
+      "expectations": [
+        "Explicit application-history review authorizes online prepare and its documented task-local artifacts; no redundant permission request is added.",
+        "The response distinguishes application prepare from a general read-only disk scan.",
+        "No purge occurs because this request explicitly withholds that authorization.",
+        "An active or locked response is reported and left intact rather than bypassed through shutdown.",
+        "The result is a useful candidate review, not a fabricated successful cleanup report."
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "上一轮 Bridge prepare 列出的已完成历史任务 A、B，我已经明确批准 purge，授权仍然有效。刚才因为运行中跳过，现在重新检查空闲状态并继续；候选变化了就保留变化的部分，不增加新的任务。",
+      "expected_output": "Reuse the exact purge authorization, recheck current idle state and candidate identities with the supported interface, and purge only unchanged authorized A/B records if the interface can keep that scope. Preserve changed or new records; if the interface cannot exclude them, skip the affected purge and report the limitation without stopping the service.",
+      "files": [],
+      "expectations": [
+        "A prior skipped_busy result does not invalidate unchanged, accurately scoped purge authorization or require a repeated approval.",
+        "Purge is preceded by a fresh idle-state and candidate-scope check, with supported prepare/status refresh if needed.",
+        "A refreshed token is not treated as permission to include new or changed candidates.",
+        "If the application interface cannot preserve the approved subset, the affected purge is skipped rather than broadening the deletion or forcing the daemon to stop.",
+        "The final result distinguishes performed purge from skipped work and does not impose unrelated long-term storage management."
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "确认刚才的清单：把已核验保留副本的 D:\\Paper\\old-export.csv 和 D:\\Videos\\old-recording.mp4 移入回收站就行，永久删除以后再说。完成后告诉我回收站和空间情况。",
+      "expected_output": "Reuse the approved list, recheck both personal/research files and retained copies, recycle them, and verify their entries. Report that this staging has not yet released their physical disk space and finish without asking for immediate permanent deletion.",
+      "files": [],
+      "expectations": [
+        "The explicit authorization allows the named personal and research candidates to be recycled after their identities and retained copies are verified.",
+        "Personal/research files default to recoverable removal; neither direct permanent deletion nor automatic emptying follows.",
+        "The assistant does not ask the user to repeat the already clear batch authorization.",
+        "The report distinguishes recycled bytes from actual free-space change rather than claiming staging freed the full file sizes.",
+        "The task ends after the requested verification, without a mandatory follow-up asking to empty the Recycle Bin."
       ]
     }
   ]

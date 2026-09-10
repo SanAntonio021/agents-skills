@@ -59,7 +59,9 @@ Before moving anything:
 - record the retained copy and recovery method;
 - handle each approved item independently so one failure does not broaden the action.
 
-Emptying the Recycle Bin is a separate, potentially broad action. Obtain separate approval or leave it to the user.
+The cleanup list may cover staging and permanent removal of the same exact batch in one approval. Staging alone
+does not authorize permanent removal. Clearing the whole Recycle Bin requires an explicit scope covering all its
+contents; an approved batch never implies that scope.
 
 ### Reporting One Drive's Recycle Bin State
 
@@ -74,8 +76,9 @@ entry on the target drive.
 
 ### Permanently Removing One Staged Candidate
 
-Approval to stage an item in the Recycle Bin does not approve permanent deletion. When the user later approves only
-one staged candidate, preserve every unrelated Recycle Bin entry:
+For an exact staged candidate, use the existing authorization if its permanent removal was explicitly included in
+the approved list or a later request. Do not ask again merely because staging has finished. Preserve every unrelated
+Recycle Bin entry:
 
 1. Resolve the candidate's drive-specific `$Recycle.Bin\<SID>` directory and enumerate its metadata without changing
    it.
@@ -88,8 +91,9 @@ one staged candidate, preserve every unrelated Recycle Bin entry:
 5. Verify that the original path and exact `$I`/`$R` pair are absent, unrelated entries are unchanged, and actual free
    space changed by a plausible amount. Record any partial deletion as a failure instead of broadening the cleanup.
 
-If the metadata path, size, suffix pair, file count, or staged audit does not match exactly, stop. A request to empty
-the entire Recycle Bin is a separate broad approval and must not be inferred from approval of one candidate.
+If the metadata path, size, suffix pair, file count, or staged audit does not match exactly, preserve that candidate
+and continue other verified approved items. Do not fall back to whole-bin deletion. A request to empty the entire
+Recycle Bin is a distinct scope and must not be inferred from approval of one candidate or batch.
 
 ## Pagefile Inspection
 

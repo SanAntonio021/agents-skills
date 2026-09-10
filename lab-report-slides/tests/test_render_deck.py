@@ -17,6 +17,34 @@ import render_deck  # noqa: E402
 
 
 class RenderDeckTests(unittest.TestCase):
+    def test_project_title_keeps_distinct_native_runs_and_three_spaces(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = {"allow_text_only": True, "slides": [{
+                "project": "多流项目", "title": "采集窗口对比", "font_sizes": {"title": 36},
+                "body": "完成三组模拟波形的离线对比。"}, {
+                "type": "next_steps", "project": "ignored", "title": "下一步工作",
+                "next_steps": ["开展实测"]}]}
+            path = root / "title-test.pptx"
+            render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), path)
+            prs = Presentation(path)
+            title = next(s for s in prs.slides[0].shapes if s.has_text_frame and s.text == "多流项目   采集窗口对比")
+            paragraph = title.text_frame.paragraphs[0]
+            self.assertEqual(len(title.text_frame.paragraphs), 1)
+            self.assertEqual([(r.text, r.font.size.pt, r.font.bold) for r in paragraph.runs],
+                             [("多流项目", 36, True), ("   采集窗口对比", 28, False)])
+            self.assertFalse(title.text_frame.word_wrap)
+            self.assertFalse(any(s.has_text_frame and "ignored" in s.text for s in prs.slides[1].shapes))
+
+    def test_project_title_size_uses_two_stops_and_rejects_multiline_labels(self):
+        for size, expected in [(36, 28), (44, 36), (24, 20), (31, 26)]:
+            self.assertEqual(render_deck.topic_font_size(size), expected)
+        with self.assertRaises(ValueError):
+            render_deck.topic_font_size(14)
+        for project, title in [("", "Topic"), ("A\nB", "Topic"), ("Project", "A\tB")]:
+            with self.assertRaises(ValueError):
+                render_deck.project_title({"project": project, "title": title})
+
     def test_native_manifest_rejects_inputs_changed_during_export(self):
         for changed in ('template', 'spec'):
             with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temp:

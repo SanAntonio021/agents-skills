@@ -26,7 +26,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
@@ -38,6 +38,30 @@ INK = "263344"
 BLUE = "4472C4"
 MUTED = "64748B"
 PROFILE_PATH = Path(__file__).resolve().parents[1] / "references/template-profile.json"
+FONT_STEPS = (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96)
+
+
+def topic_font_size(project_size: float) -> float:
+    """Two smaller PowerPoint font-size stops, not two points."""
+    smaller = [size for size in FONT_STEPS if size < project_size]
+    if len(smaller) < 2 or smaller[-2] < 12:
+        raise ValueError("Project title needs two smaller readable font-size stops")
+    return smaller[-2]
+
+
+def project_title(content):
+    """Keep legacy title-only decks and the final shared next-steps page."""
+    if content.get("type") == "next_steps":
+        return None
+    project = content.get("project")
+    if project is None:
+        return None
+    topic = content.get("title")
+    if not isinstance(project, str) or not project.strip() or not isinstance(topic, str) or not topic.strip():
+        raise ValueError("Project titles require nonempty project and title strings")
+    if any(c in project + topic for c in "\r\n\t\v\f\u2028\u2029"):
+        raise ValueError("Project and topic must stay on one title line")
+    return project.strip(), topic.strip()
 
 
 def choose_stem(output_dir: Path, requested: str) -> str:
@@ -124,6 +148,23 @@ def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False,
         east_asian = OxmlElement("a:ea")
         east_asian.set("typeface", font)
         run._r.get_or_add_rPr().append(east_asian)
+    return box
+
+
+def add_project_title(slide, project, topic, spec, size, font):
+    box = add_text(slide, [(project, True)], *spec["box"], size, spec["color"], font=font)
+    box.text_frame.word_wrap = False
+    box.text_frame.auto_size = MSO_AUTO_SIZE.NONE
+    run = box.text_frame.paragraphs[0].add_run()
+    run.text = "   " + topic
+    run.font.name = font
+    run.font.size = Pt(topic_font_size(size))
+    run.font.bold = False
+    run.font.color.rgb = RGBColor.from_string(spec["color"])
+    east_asian = OxmlElement("a:ea")
+    east_asian.set("typeface", font)
+    run._r.get_or_add_rPr().append(east_asian)
+    return box
 
 
 def raster_bytes(path: Path) -> bytes:
@@ -173,6 +214,7 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
     total_images = 0
     for index, raw in enumerate(deck["slides"]):
         slide = dict(raw)
+        project_title(slide)
         if slide.get("type") == "next_steps":
             if index != len(deck["slides"]) - 1:
                 raise ValueError("Next steps must be on the final slide")
@@ -271,8 +313,12 @@ def make_pptx(deck, slides, output_path):
         title = str(content.get("title") or f"Slide {index}")
         chapter = str(content.get("section") or content.get("kicker") or title)
         spec = layout["title"]
-        add_text(slide, [(chapter, True)], *spec["box"], fonts.get("title", spec["font_size"]), spec["color"], fit=True, font=font)
-        subtitle = str(content.get("summary") or content.get("subtitle") or (title if title != chapter else ""))
+        title_parts = project_title(content)
+        if title_parts:
+            add_project_title(slide, *title_parts, spec, fonts.get("title", spec["font_size"]), font)
+        else:
+            add_text(slide, [(chapter, True)], *spec["box"], fonts.get("title", spec["font_size"]), spec["color"], fit=True, font=font)
+        subtitle = str(content.get("summary") or content.get("subtitle") or (title if title != chapter and not title_parts else ""))
         if subtitle:
             spec = layout["subtitle"]
             strip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *[Inches(v) for v in spec["box"]])

@@ -1,0 +1,368 @@
+{
+  "skill_name": "writing-router",
+  "fixture_policy": "synthetic-only",
+  "provenance": "六组材料独立编造，不取自真实对话、真实项目或私有样稿，也不由私有样稿改写。",
+  "run_policy": {
+    "models": ["Codex", "Claude"],
+    "variants": ["old", "candidate"],
+    "delivery": "one-user-prompt-per-turn",
+    "visible_turn_fields": ["prompt"],
+    "future_turns_visible": false,
+    "expectations_visible": false,
+    "history": "same-case-same-model-same-variant-only",
+    "material_access": "synthetic-fixtures-and-isolated-public-skills-only",
+    "style_judgment": "semantic-human-review-not-keyword-count",
+    "evidence": "保留每轮实际输入、完整输出和工具读取回执；不向模型提供整份用例文件或评分字段，不追加风格提醒或 TRACE 提示。"
+  },
+  "evals": [
+    {
+      "id": "unnecessary-defense-project",
+      "synthetic": true,
+      "document_type": "project",
+      "entry_skill": "writing-router",
+      "case_kind": "unnecessary_defense",
+      "expected_loaded_refs": [
+        "project-writing/SKILL.md",
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "请润色以下项目申请书的一段正文，只在对话中给出这一段。读者是熟悉仓储调度的评审，这一段交代拟解决的问题、拟形成的能力和当前进展。原文：本项目不是简单增加车辆数量，也不是为了追求功能堆叠，而是拟开发货架搬运任务分配软件，解决同一巷道内任务冲突造成的等待问题。软件拟接收12台搬运车的位置和任务队列，每500 ms更新一次分配结果。当前已完成调度接口设计，尚未开展联机验证。",
+          "expectations": [
+            "直接写拟开发的软件、等待问题和能力，不保留材料中无人提出的车辆数量或功能堆叠辩解",
+            "保护12台、500 ms和调度接口术语，不把拟接收写成已实现",
+            "保留已完成接口设计与尚未联机验证的区别，不补背景、路线优劣或验收指标"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "货架搬运任务分配软件", "source_turn": 1},
+            {"kind": "number", "text": "12台", "source_turn": 1},
+            {"kind": "number", "text": "500 ms", "source_turn": 1},
+            {"kind": "status", "text": "当前已完成调度接口设计，尚未开展联机验证", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "把第一句改成以需要解决的等待问题开头，再给我这一段的修改稿。其余技术内容沿用。",
+          "expectations": [
+            "实际展示再次修改后的整段正文，不只报告已调整或给修改思路",
+            "按新要求调整开头，不重新插入之前删掉的辩解或重复上一轮的修改理由",
+            "数字、术语和完成状态均与首轮一致"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "货架搬运任务分配软件", "source_turn": 1},
+            {"kind": "number", "text": "12台", "source_turn": 1},
+            {"kind": "number", "text": "500 ms", "source_turn": 1},
+            {"kind": "status", "text": "当前已完成调度接口设计，尚未开展联机验证", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "再给这一段拟一个小标题，正文沿用刚才的版本，不另写说明。",
+          "expectations": [
+            "给出小标题并沿用上一轮正文，不重讲修改过程",
+            "标题不把设计或拟开发升级为已经完成的系统成果"
+          ],
+          "protected_facts": [
+            {"kind": "status", "text": "当前已完成调度接口设计，尚未开展联机验证", "source_turn": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "necessary-negation-paper",
+      "synthetic": true,
+      "document_type": "paper",
+      "entry_skill": "writing-router",
+      "case_kind": "necessary_negation",
+      "expected_loaded_refs": [
+        "ieee-manuscript-edit/SKILL.md",
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "请润色这段中文论文结果讨论，只在对话里返回该段。合作者把丢弃率误读成了缓存占用率，这里需要让指标含义明确。原文：本实验统计的不是缓存占用率，而是帧丢弃率，定义为p_drop = N_drop / N_sent，其中N_drop为丢弃帧数，N_sent为发送帧数。在256 B定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。",
+          "expectations": [
+            "保留帧丢弃率与缓存占用率的必要区分，可改为正面定义但不能丢失误读纠正功能",
+            "保留公式、变量定义、256 B、单发送端和0.002的计算关系",
+            "保留不能外推至多发送端及测试尚未开展的限制，不以出现否定或转折判为冗余"
+          ],
+          "protected_facts": [
+            {"kind": "formula", "text": "p_drop = N_drop / N_sent", "source_turn": 1},
+            {"kind": "definition", "text": "N_drop为丢弃帧数，N_sent为发送帧数", "source_turn": 1},
+            {"kind": "number", "text": "256 B", "source_turn": 1},
+            {"kind": "number", "text": "N_sent = 80000，N_drop = 160", "source_turn": 1},
+            {"kind": "number", "text": "p_drop = 0.002", "source_turn": 1},
+            {"kind": "condition", "text": "单个发送端条件下", "source_turn": 1},
+            {"kind": "limitation", "text": "该结果不能说明多发送端竞争时的性能", "source_turn": 1},
+            {"kind": "status", "text": "多发送端测试尚未开展", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "把这个结果的适用范围单独放成最后一句，给出调整后的整段。指标定义和数据继续保留。",
+          "expectations": [
+            "展示整段新稿，将单发送端适用范围和多发送端未测试状态放在末句或相连限制句中",
+            "不把限制改成一般性免责声明，不把计算值写成缓存占用率"
+          ],
+          "protected_facts": [
+            {"kind": "formula", "text": "p_drop = N_drop / N_sent", "source_turn": 1},
+            {"kind": "definition", "text": "N_drop为丢弃帧数，N_sent为发送帧数", "source_turn": 1},
+            {"kind": "number", "text": "256 B", "source_turn": 1},
+            {"kind": "number", "text": "N_sent = 80000，N_drop = 160", "source_turn": 1},
+            {"kind": "number", "text": "p_drop = 0.002", "source_turn": 1},
+            {"kind": "status", "text": "多发送端测试尚未开展", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "最后一句可以。请给这段加一个结果讨论小标题，其他内容不动。",
+          "expectations": [
+            "只增加对应的小标题，沿用当前正文",
+            "标题不得引入普适性能结论，正文的必要限制不因前轮确认而省略"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "帧丢弃率", "source_turn": 1},
+            {"kind": "status", "text": "多发送端测试尚未开展", "source_turn": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "empty-common-sense-report",
+      "synthetic": true,
+      "document_type": "research_report",
+      "entry_skill": "writing-router",
+      "case_kind": "empty_common_sense",
+      "expected_loaded_refs": [
+        "research-report/SKILL.md",
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "请修改这段采购调研报告，供熟悉采购流程的设备主管阅读。只在对话中给出修改稿。原文：供应商各有特点，采购应综合考虑多方面因素，合适的产品才能满足实际需要。本次在同一含税、含运费口径下收到3份书面报价：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货。因此，在已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。",
+          "expectations": [
+            "删去未增加采购条件的开头常识，保留三份报价与5天期限支持的判断",
+            "保留同一含税含运费口径，不补质量、售后、市场代表性或性价比结论",
+            "不将满足交期写成已经通过样机验收或已经下单"
+          ],
+          "protected_facts": [
+            {"kind": "condition", "text": "同一含税、含运费口径", "source_turn": 1},
+            {"kind": "number", "text": "甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天", "source_turn": 1},
+            {"kind": "condition", "text": "必须在5天内到货", "source_turn": 1},
+            {"kind": "status", "text": "报价已经核对，样机验收尚未进行", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "把三种型号的价格和交期改成三条列表，判断句放在列表前。展示这一部分的完整修改稿。",
+          "expectations": [
+            "按真实的三种型号列三条，保持判断、比较数据和验收状态齐全",
+            "不为避免机械并列而破坏有比较功能的列表，也不再添加采购常识收尾"
+          ],
+          "protected_facts": [
+            {"kind": "condition", "text": "同一含税、含运费口径", "source_turn": 1},
+            {"kind": "number", "text": "甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天", "source_turn": 1},
+            {"kind": "condition", "text": "必须在5天内到货", "source_turn": 1},
+            {"kind": "status", "text": "报价已经核对，样机验收尚未进行", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "根据刚才的材料，另给我一句可放在报告摘要中的结论，不附其他内容。",
+          "expectations": [
+            "用一句话保留5天期限、现有报价中仅丙型满足交期的比较范围；不强制复述核对过程和与交期判断无关的验收状态",
+            "摘要承担新功能，允许压缩复述交期结论，不要求逐项重报全部价格",
+            "不把合格交期扩大为已完成采购或综合最优，不新增建议采购、建议验证或暂缓采购的安排"
+          ],
+          "protected_facts": [
+            {"kind": "condition", "text": "必须在5天内到货", "source_turn": 1},
+            {"kind": "limitation", "text": "在已收到的报价中仅丙型满足交期要求", "source_turn": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "necessary-explanation-technical",
+      "synthetic": true,
+      "document_type": "technical",
+      "entry_skill": "technical-writing",
+      "case_kind": "necessary_explanation",
+      "expected_loaded_refs": [
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "按 technical-writing 润色下面的系统说明段，在对话中给出正文。读者是首次接触环形缓存、会看日志但不熟悉缓存计算的值班人员。原文：记录器使用环形缓存保存定长记录。缓存容量C = 9600条，写入速率r = 80条/s，保留时长按T = C / r计算，T以秒计。在缓存已写满且写入速率恒定时，T = 120 s，表示缓存中最旧的记录约为120 s前写入；新记录写入会覆盖最旧记录。这个时长表示可回看的记录跨度，不是单条记录的处理延迟。上述数值由容量与速率计算得到，断电后的数据保留尚未测试。",
+          "expectations": [
+            "直接技术入口读取共同质量与协作规则，不要求先改走路由入口",
+            "保留变量单位、公式和记录跨度的解释，使首次接触缓存的读者能理解120 s",
+            "保留已写满且恒速的计算条件、覆盖机制及与处理延迟的区分，不以解释属于基础知识而删除",
+            "保持计算得到及断电保留未测试的状态"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "环形缓存", "source_turn": 1},
+            {"kind": "formula", "text": "T = C / r", "source_turn": 1},
+            {"kind": "definition", "text": "缓存容量C = 9600条，写入速率r = 80条/s", "source_turn": 1},
+            {"kind": "definition", "text": "T以秒计", "source_turn": 1},
+            {"kind": "number", "text": "T = 120 s", "source_turn": 1},
+            {"kind": "condition", "text": "缓存已写满且写入速率恒定", "source_turn": 1},
+            {"kind": "limitation", "text": "不是单条记录的处理延迟", "source_turn": 1},
+            {"kind": "status", "text": "上述数值由容量与速率计算得到，断电后的数据保留尚未测试", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "将刚才这一段拆成计算关系和读数含义两段，公式放在第一段，断电测试状态放在第二段末尾，给我两段正文。",
+          "expectations": [
+            "展示修改后的两段，第一段保留计算与条件，第二段解释回看跨度及覆盖机制",
+            "拆段后不漏变量单位、处理延迟区分或断电未测试状态",
+            "不附环形缓存发展背景或重复上一轮的修改理由"
+          ],
+          "protected_facts": [
+            {"kind": "formula", "text": "T = C / r", "source_turn": 1},
+            {"kind": "definition", "text": "缓存容量C = 9600条，写入速率r = 80条/s", "source_turn": 1},
+            {"kind": "definition", "text": "T以秒计", "source_turn": 1},
+            {"kind": "number", "text": "T = 120 s", "source_turn": 1},
+            {"kind": "condition", "text": "缓存已写满且写入速率恒定", "source_turn": 1},
+            {"kind": "limitation", "text": "不是单条记录的处理延迟", "source_turn": 1},
+            {"kind": "status", "text": "断电后的数据保留尚未测试", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "第一段沿用。第二段先说明新记录覆盖旧记录，再说明120 s的含义。只展示第二段的新稿。",
+          "expectations": [
+            "只展示再次修改后的第二段，不重新打印第一段或公式推导",
+            "解释顺序按要求调整，仍保留读数不是处理延迟及断电保留未测试的区别",
+            "不以用户要求少展示为由删掉当前段必要解释"
+          ],
+          "protected_facts": [
+            {"kind": "number", "text": "120 s", "source_turn": 1},
+            {"kind": "definition", "text": "新记录写入会覆盖最旧记录", "source_turn": 1},
+            {"kind": "limitation", "text": "不是单条记录的处理延迟", "source_turn": 1},
+            {"kind": "status", "text": "断电后的数据保留尚未测试", "source_turn": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cross-turn-repetition-minutes",
+      "synthetic": true,
+      "document_type": "meeting_notes",
+      "entry_skill": "writing-router",
+      "case_kind": "cross_turn_repetition",
+      "expected_loaded_refs": [
+        "meeting-notes/SKILL.md",
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "我们分两次整理一份会议纪要，只在对话里给正文。完整会议记录如下：主持人确认，入口闸机日志已导出，共420条；陈岚说，其中7条缺少设备编号，已定位到接线检查期间，但尚未查明缺失原因；主持人决定先暂停合并这7条记录，其余413条照常归档；杜衡确认，由他在周四16:00前核对这7条记录的设备编号并把结果发给陈岚；是否补录由陈岚收到结果后决定。先给“情况与决定”这一部分，行动项下一轮再写。",
+          "expectations": [
+            "直接整理情况与决定，保留420条、7条、413条及缺失原因未明的状态",
+            "不提前写下一轮行动项，不把接线检查期间定位解释成已查明原因",
+            "只暂停合并7条，不扩大成全部归档暂停",
+            "需要注明发言人时使用陈岚，不改写为同音或形近姓名；不强制为客观事实添加发言人"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "陈岚", "source_turn": 1},
+            {"kind": "number", "text": "共420条", "source_turn": 1},
+            {"kind": "number", "text": "7条缺少设备编号", "source_turn": 1},
+            {"kind": "status", "text": "已定位到接线检查期间，但尚未查明缺失原因", "source_turn": 1},
+            {"kind": "decision", "text": "先暂停合并这7条记录，其余413条照常归档", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "这一部分可以。继续给“行动项”正文，前一部分沿用。",
+          "expectations": [
+            "只推进到行动项，不再次讲述420条导出及413条归档的已确认段落",
+            "必要复述7条缺失设备编号的对象，给出杜衡、周四16:00、核对并发给陈岚及补录决定条件",
+            "行动项不添加会议未明确的排查负责人、根因报告或补录期限"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "设备编号", "source_turn": 1},
+            {"kind": "number", "text": "7条", "source_turn": 1},
+            {"kind": "decision", "text": "由他在周四16:00前核对这7条记录的设备编号并把结果发给陈岚", "source_turn": 1},
+            {"kind": "term", "text": "杜衡", "source_turn": 1},
+            {"kind": "condition", "text": "是否补录由陈岚收到结果后决定", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "行动项改成两条：第一条是核对和反馈，第二条是收到结果后的补录决定。只给修改后的行动项。",
+          "expectations": [
+            "展示修改后的两条行动项，不只说已经拆分，也不再重述情况与决定",
+            "保留主体、对象、周四16:00与收到结果后再决定的先后关系",
+            "不把补录决定写成已决定补录，不给第二条编造截止时间"
+          ],
+          "protected_facts": [
+            {"kind": "term", "text": "杜衡", "source_turn": 1},
+            {"kind": "number", "text": "7条", "source_turn": 1},
+            {"kind": "number", "text": "周四16:00", "source_turn": 1},
+            {"kind": "condition", "text": "是否补录由陈岚收到结果后决定", "source_turn": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "natural-prose-general",
+      "synthetic": true,
+      "document_type": "general",
+      "entry_skill": "writing-router",
+      "case_kind": "natural_prose",
+      "expected_loaded_refs": [
+        "writing-router/references/common-quality.md",
+        "writing-router/references/ai-smell-catalog.md",
+        "style-vocab/SKILL.md",
+        "writing-router/references/collaborative-writing.md"
+      ],
+      "turns": [
+        {
+          "prompt": "帮我看看这段发给社区阅览室志愿者的通知，有表达不清的地方就改一下，在对话中给通知正文。原文：周六14:00至16:00整理二楼书架。已经登记的志愿者直接到二楼集合，不用重复报名。借阅台照常开放，未归还的书不计入本次整理。新标签已经印好，旧标签等核对书号后再换。",
+          "expectations": [
+            "原文职责清楚且信息充分，允许原样交付或只做有明确理解收益的局部调整",
+            "保留不用重复报名与未归还书不计入的实际范围，不因否定句式强行改写",
+            "不添加活动意义、劝勉、注意事项或虚构联系人，保持通知语气"
+          ],
+          "protected_facts": [
+            {"kind": "number", "text": "周六14:00至16:00", "source_turn": 1},
+            {"kind": "term", "text": "二楼书架", "source_turn": 1},
+            {"kind": "limitation", "text": "已经登记的志愿者直接到二楼集合，不用重复报名", "source_turn": 1},
+            {"kind": "condition", "text": "借阅台照常开放，未归还的书不计入本次整理", "source_turn": 1},
+            {"kind": "status", "text": "新标签已经印好，旧标签等核对书号后再换", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "给通知加个标题，正文沿用刚才的版本。",
+          "expectations": [
+            "只增加对应标题并沿用正文，不为了新一轮请求重新换词或重排",
+            "不省略必要范围和标签更换条件，不重复解释原文为何可以保留"
+          ],
+          "protected_facts": [
+            {"kind": "number", "text": "周六14:00至16:00", "source_turn": 1},
+            {"kind": "status", "text": "新标签已经印好，旧标签等核对书号后再换", "source_turn": 1}
+          ]
+        },
+        {
+          "prompt": "补充一条新安排：当天15:00送到的还书箱先放值班室，周日再整理。把这条放在通知最后，展示完整通知，其他内容不动。",
+          "expectations": [
+            "在末尾加入新安排并展示完整通知，标题和原有正文保持不变",
+            "该句新增对象、时间和安排，不因已有整理安排就误判为跨轮重复",
+            "保留周六书架整理与周日还书箱整理的区别，不升级成已经完成"
+          ],
+          "protected_facts": [
+            {"kind": "number", "text": "周六14:00至16:00", "source_turn": 1},
+            {"kind": "status", "text": "新标签已经印好，旧标签等核对书号后再换", "source_turn": 1},
+            {"kind": "decision", "text": "当天15:00送到的还书箱先放值班室，周日再整理", "source_turn": 3}
+          ]
+        }
+      ]
+    }
+  ]
+}

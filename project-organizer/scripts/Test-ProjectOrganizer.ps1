@@ -269,7 +269,7 @@ namespace ProjectOrganizer {
     Assert-True (@($layoutTree|Where-Object relative_path -eq 'migration/audit/runs/inventory.csv').Count -eq 1) 'audit_keeps_necessary_internal_depth'
     Assert-True (@($layoutTree|Where-Object{$_.relative_path -like 'LegacyWrapper*' -or $_.relative_path -like 'LegacyShared*'}).Count -eq 0) 'wrapper_only_directories_removed_from_design'
     $unapprovedLayout=Invoke-WorkflowScript 'Build-OrganizationPlan.ps1' @('-Config',$layoutConfig,'-OutputDir',$layoutRun) -ExpectFailure
-    Assert-True (($unapprovedLayout.output -join "`n") -match 'not been approved') 'unapproved_target_tree_blocks_plan'
+    Assert-True (($unapprovedLayout.output -join "`n") -match 'not been approved|not been bound') 'unapproved_target_tree_blocks_plan'
     $approvedLayoutHash=Approve-TestLayout -Config $layoutConfig -Run $layoutRun
     Assert-True ($approvedLayoutHash -match '^[0-9A-F]{64}$') 'approved_tree_sha256_recorded'
     Invoke-WorkflowScript 'Build-OrganizationPlan.ps1' @('-Config',$layoutConfig,'-OutputDir',$layoutRun)|Out-Null

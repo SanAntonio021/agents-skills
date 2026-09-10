@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "mode": "merge",
   "search_roots": [
     "C:\\Projects",
@@ -24,7 +24,8 @@
     }
   ],
   "target_root": "D:\\Projects\\example-project",
-  "audit_root": "D:\\ProjectOrganizerAudit\\example-project",
+  "audit_root": "D:\\Projects\\example-project\\过程文件\\本次整理",
+  "integration_manifest": "D:\\Projects\\example-project\\过程文件\\本次整理\\integration.json",
   "canonical_source_id": "active",
   "mapping_rules": [],
   "layout_decisions": {
@@ -37,13 +38,14 @@
     "deep_structure_prefixes": [
       "code",
       "papers",
-      "experiments",
-      "data/raw",
-      "results",
-      "migration"
+      "simulation",
+      "measurement",
+      "analysis",
+      "checks",
+      "过程文件"
     ],
     "independent_subprojects": [],
-    "version_policy": "preserve_all",
+    "version_policy": "integrate",
     "keep_empty_directories": [],
     "forbidden_target_paths": [],
     "exceptions": [],

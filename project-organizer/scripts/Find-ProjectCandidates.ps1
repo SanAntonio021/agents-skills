@@ -10,6 +10,7 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 
 $settings = Read-POConfig -Path $Config
 $output = Resolve-POFullPath -Path $OutputDir -AllowMissing
+Assert-POAuditPath -Config $settings -OutputDir $output
 [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $output))
 $maxDepth = if ($null -ne $settings.max_discovery_depth) { [int]$settings.max_discovery_depth } else { 4 }
 if ($maxDepth -lt 0 -or $maxDepth -gt 12) { throw 'max_discovery_depth must be between 0 and 12.' }

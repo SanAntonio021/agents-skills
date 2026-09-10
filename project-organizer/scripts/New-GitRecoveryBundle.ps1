@@ -23,6 +23,7 @@ function Invoke-GitRaw {
 
 $settings = Read-POConfig -Path $Config -RequireSources
 $output = Resolve-POFullPath -Path $OutputDir -AllowMissing
+Assert-POAuditPath -Config $settings -OutputDir $output
 $external = Resolve-POFullPath -Path $settings.external_git_root -AllowMissing
 foreach ($syncRoot in @($settings.sync_roots)) {
     if (Test-POPathWithin -Path $external -Parent ([string]$syncRoot) -AllowEqual) {

@@ -10,6 +10,8 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 
 $settings = Read-POConfig -Path $Config -RequireSources -ForExecution
 $output = Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
 $planHash = (Get-Content -LiteralPath (Join-Path $output 'plan.sha256') -Encoding UTF8 -Raw).Trim().ToUpperInvariant()
 $manifest = Join-Path $output 'plan-files.sha256'
 if ((Get-POStableSha256 -Path $manifest) -ne $planHash) { throw 'Plan hash changed before acceptance.' }
@@ -26,6 +28,14 @@ foreach ($action in $actions) {
     $evidence = ''
     try {
         switch ([string]$action.action) {
+            'install_integrated_file' {
+                if((Get-POStableSha256 -Path $action.target_path) -ne $action.sha256){throw 'integrated_output_hash_mismatch'}
+                $evidence='final_output_hash_verified'
+            }
+            'integrated_input' {
+                [void](Assert-POExpectedFile -Path $action.source_path -SizeBytes ([int64]$action.size_bytes) -LastWriteUtc $action.last_write_utc -Sha256 $action.sha256)
+                $evidence='integration_input_unchanged'
+            }
             'create_directory' {
                 $passed = [IO.Directory]::Exists((ConvertTo-POExtendedPath ([string]$action.target_path)))
                 $evidence = if ($passed) { 'target_directory_exists' } else { 'target_directory_missing' }
@@ -88,16 +98,24 @@ foreach ($gitRecord in @($state.active_git)) {
     if (-not $passed) { $errors.Add([pscustomobject][ordered]@{ item=$gitRecord.source_id; stage='active_git'; reason=$evidence }) }
 }
 
+if($null -ne $integration){
+    $passed=$true;$evidence='integration_outputs_recovery_and_use_checks_verified'
+    try{[void](Assert-POIntegrationFiles -Integration $integration -Phase Installed -RequireChecks -OutputDir $output)}catch{$passed=$false;$evidence=$_.Exception.Message;$errors.Add([pscustomobject]@{item='integration';stage='integration';reason=$evidence})}
+    $checks.Add([pscustomobject]@{check_type='integration';item='all_groups';passed=$passed;evidence=$evidence})
+}
 $treePassed=$true;$treeEvidence=''
 try{
     $treePath=Join-Path $output 'target-tree.csv';$treeHashPath=Join-Path $output 'target-tree.sha256'
     $treeHash=(Get-Content -LiteralPath $treeHashPath -Encoding UTF8 -Raw).Trim().ToUpperInvariant()
     if((Get-POStableSha256 -Path $treePath) -ne $treeHash){throw 'approved_target_tree_hash_changed'}
-    if([string]$settings.mode -eq 'merge' -and ([string]$settings.layout_decisions.approved_tree_sha256).ToUpperInvariant() -ne $treeHash){throw 'approved_target_tree_no_longer_matches_config'}
+    if([string]$settings.mode -eq 'merge'){
+        $bound=([string]$settings.layout_decisions.approved_tree_sha256).ToUpperInvariant()
+        if((([string]$settings.schema_version -eq '1.0') -or $bound) -and $bound -ne $treeHash){throw 'approved_target_tree_no_longer_matches_config'}
+    }
     $expectedRows=@(Import-Csv -LiteralPath $treePath -Encoding UTF8)
     if(@($expectedRows|Where-Object{[string]$_.state -like 'hold*'}).Count -gt 0){throw 'approved_target_tree_contains_hold_entries'}
     $expected=@{};foreach($row in $expectedRows){$expected[([string]$row.relative_path).ToLowerInvariant()]=$row}
-    $actualScan=Get-POSourceEntries -Root $settings.target_root
+    $actualScan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
     foreach($scanError in @($actualScan.Errors)){$errors.Add([pscustomobject][ordered]@{item=$scanError.path;stage='target_tree_scan';reason=$scanError.error});$treePassed=$false}
     $actual=@{}
     foreach($entry in @($actualScan.Entries)){
@@ -147,7 +165,7 @@ $report = @(
     "- 完成动作：$($completedIds.Count)",
     "- 检查：$($checkRows.Count)",
     "- 错误：$($errorRows.Count)",'',
-    '通过只表示新目标和现役 Git 已验收，不代表旧路径获准退役。',''
+    '通过表示新目标与必要使用检查已验收；后续清理按已有准确授权继续，执行前仍复核当前文件。',''
 )
 Write-POText -Path (Join-Path $output 'acceptance.md') -Text (($report -join "`n") + "`n")
 if (-not $accepted) { throw "Organization acceptance failed with $($errorRows.Count) error(s)." }

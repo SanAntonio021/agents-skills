@@ -10,6 +10,9 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 
 $settings=Read-POConfig -Path $Config -RequireSources -ForExecution -AllowMissingSources
 $output=Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
+if($null -ne $integration){[void](Assert-POIntegrationFiles -Integration $integration -Phase Retired -RequireChecks -OutputDir $output)}
 $retirementHash=(Get-Content -LiteralPath (Join-Path $output 'retirement.sha256') -Encoding UTF8 -Raw).Trim().ToUpperInvariant()
 $manifest=Join-Path $output 'retirement-files.sha256'
 if((Get-POStableSha256 -Path $manifest) -ne $retirementHash){throw 'Retirement hash changed before final acceptance.'}
@@ -35,11 +38,35 @@ foreach($source in @($settings.sources)){
     if(-not $absent){$errors.Add([pscustomobject][ordered]@{item=[string]$source.path;stage='source_retired';reason='source_path_still_exists'})}
 }
 
-foreach($action in @($actions|Where-Object{$_.action -in @('move_file_verify','copy_file_verify','skip_exact_duplicate','skip_target_duplicate')})){
+foreach($action in @($actions|Where-Object{$_.action -in @('move_file_verify','copy_file_verify','skip_exact_duplicate','skip_target_duplicate','install_integrated_file')})){
     $passed=$true;$evidence='target_hash_verified'
     try{if((Get-POStableSha256 -Path ([string]$action.target_path)) -ne ([string]$action.sha256).ToUpperInvariant()){throw 'target_hash_mismatch'}}catch{$passed=$false;$evidence=$_.Exception.Message}
     $checks.Add([pscustomobject][ordered]@{check='target_file';item=[string]$action.action_id;passed=$passed;evidence=$evidence})
     if(-not $passed){$errors.Add([pscustomobject][ordered]@{item=[string]$action.target_path;stage='target_file';reason=$evidence})}
+}
+
+if([string]$settings.schema_version -eq '1.1'){
+    $treePassed=$true;$treeEvidence='final_tree_verified'
+    try{
+        $expected=@{}
+        foreach($entry in @(Import-Csv -LiteralPath (Join-Path $output 'target-tree.csv') -Encoding UTF8)){
+            $expected[([string]$entry.relative_path).ToLowerInvariant()]=$entry
+        }
+        $scan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
+        if(@($scan.Errors).Count){throw 'final_target_scan_failed'}
+        $seen=@{}
+        foreach($entry in @($scan.Entries)){
+            if(Test-POGitMetadataPath -RelativePath ([string]$entry.relative_path)){continue}
+            $key=([string]$entry.relative_path).ToLowerInvariant()
+            if(-not $expected.ContainsKey($key)){throw "unplanned_final_path: $key"}
+            if($entry.is_name_surrogate -or $entry.is_cloud_placeholder -or [string]$entry.reparse_tag -ne '0x00000000'){throw "unsupported_final_path: $key"}
+            if([string]$entry.entry_type -ne [string]$expected[$key].entry_type){throw "final_path_type_changed: $key"}
+            if([string]$entry.entry_type -eq 'file' -and (Get-POStableSha256 -Path $entry.full_path) -ne ([string]$expected[$key].sha256).ToUpperInvariant()){throw "final_file_changed: $key"}
+            $seen[$key]=$true
+        }
+        foreach($key in $expected.Keys){if(-not $seen.ContainsKey($key)){throw "final_path_missing: $key"}}
+    }catch{$treePassed=$false;$treeEvidence=$_.Exception.Message;$errors.Add([pscustomobject][ordered]@{item='target-tree';stage='final_tree';reason=$treeEvidence})}
+    $checks.Add([pscustomobject][ordered]@{check='final_tree';item='target-tree';passed=$treePassed;evidence=$treeEvidence})
 }
 
 foreach($gitRecord in @($executionState.active_git)){
@@ -73,7 +100,7 @@ $accepted=($errorRows.Count -eq 0 -and @($checkRows|Where-Object{-not $_.passed}
 $result=[ordered]@{
     schema_version='1.0';retirement_sha256=$retirementHash;accepted=$accepted
     checks=$checkRows;errors=$errorRows;target_free_bytes=(Get-PODriveFreeSpace -Path $settings.target_root)
-    recycle_bin_emptied_by_tool=$false;manual_empty_confirmation_required=$true
+    recycle_bin_emptied_by_tool=$false;manual_empty_confirmation_required=$false
 }
 Write-POJson -Path (Join-Path $output 'final-acceptance.json') -Value $result
 Write-POCsv -Path (Join-Path $output 'final-acceptance-errors.csv') -Rows $errorRows -Columns @('item','stage','reason')
@@ -83,7 +110,7 @@ $report=@(
     "- 检查：$($checkRows.Count)",
     "- 错误：$($errorRows.Count)",
     "- 目标盘当前可用字节：$($result.target_free_bytes)",'',
-    '工具未清空整个回收站。用户手动清空后，可再次运行本脚本复核来源、目标和 Git 恢复包。',''
+    '旧入口退役与目标使用检查完成即可交付；无需清空回收站或等待用户最终签字。',''
 )
 Write-POText -Path (Join-Path $output 'final-acceptance.md') -Text (($report -join "`n")+"`n")
 if(-not $accepted){throw "Final retirement acceptance failed with $($errorRows.Count) error(s)."}

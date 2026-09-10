@@ -11,6 +11,10 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 $settings = Read-POConfig -Path $Config -RequireSources
 $configPath = Resolve-POFullPath -Path $Config -AllowNetwork
 $output = Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
+if($null -ne $integration){[void](Assert-POIntegrationFiles -Integration $integration -Phase Preflight)}
+$modern=[string]$settings.schema_version -eq '1.1'
 $inventoryManifest = Join-Path $output 'inventory-files.sha256'
 $inventoryHashPath = Join-Path $output 'inventory.sha256'
 if (-not (Test-Path -LiteralPath $inventoryManifest) -or -not (Test-Path -LiteralPath $inventoryHashPath)) { throw 'Inventory artifacts are missing.' }
@@ -38,7 +42,7 @@ $layoutViolations=@(Import-Csv -LiteralPath $layoutViolationsPath -Encoding UTF8
 if($layoutViolations.Count -gt 0){throw "Target layout has unresolved violations: $($layoutViolations.Count)"}
 if([string]$settings.mode -eq 'merge'){
     $approvedTree=([string]$settings.layout_decisions.approved_tree_sha256).ToUpperInvariant()
-    if(-not $approvedTree -or $approvedTree -ne $targetTreeHash){throw 'The readable target tree has not been approved, or its SHA256 changed.'}
+    if(((-not $modern) -and -not $approvedTree) -or ($approvedTree -and $approvedTree -ne $targetTreeHash)){throw 'The readable target tree has not been bound, or its SHA256 changed.'}
 }
 $gitArchivesPath = Join-Path $output 'git_archives.json'
 $gitArchives = @()
@@ -57,7 +61,9 @@ $conflictTargets = @{}
 foreach ($row in $conflicts) { $conflictTargets[([string]$row.proposed_target_path).ToLowerInvariant()] = $true }
 $selectedByHash = @{}
 if ([string]$settings.mode -eq 'merge') {
-    foreach ($row in @($duplicates | Where-Object { [string]$_.selected -eq 'True' })) { $selectedByHash[[string]$row.sha256] = $row }
+    foreach ($row in @($duplicates | Where-Object { [string]$_.selected -eq 'True' })) {
+        $key=[string]$row.sha256;if($modern){$key+='|'+$row.proposed_target_path.ToLowerInvariant()};$selectedByHash[$key]=$row
+    }
 }
 
 $draftActions = New-Object Collections.Generic.List[object]
@@ -66,6 +72,8 @@ foreach ($row in $files) {
     $sourcePath = Join-POPath -Root ([string]$row.source_root) -RelativePath ([string]$row.relative_path)
     $targetPath = [string]$row.proposed_target_path
     $status = [string]$row.scan_status
+    if($modern -and $row.entry_type -eq 'directory' -and $status -eq 'directory'){continue}
+    $dedupKey=[string]$row.sha256;if($modern){$dedupKey+='|'+$row.proposed_target_path.ToLowerInvariant()}
     $action = ''
     $reason = [string]$row.reason
     if ([string]$row.entry_type -eq 'directory') {
@@ -79,13 +87,19 @@ foreach ($row in $files) {
             $action='create_directory'
         }
     }
+    elseif ($status -eq 'integrated_input') {
+        if($null -eq $integration -or -not $integration.InputByPath.ContainsKey($sourcePath.ToLowerInvariant())){throw 'Unbound integration input.'}
+        $inputRecord=$integration.InputByPath[$sourcePath.ToLowerInvariant()]
+        $group=@($integration.Groups|Where-Object id -eq $inputRecord.group_id)[0]
+        $action='integrated_input';$reason=$group.id;$targetPath=$group.outputs[0].target_path
+    }
     elseif ($conflictTargets.ContainsKey($targetPath.ToLowerInvariant())) { $action='hold_conflict'; $reason='same_target_different_sha256' }
     elseif ($status -eq 'hold' -or $status -eq 'error') { $action='hold_unsupported' }
     elseif ($status -eq 'preserve_git_metadata') { $action='preserve_git_metadata' }
     elseif ($status -eq 'excluded') { $action='exclude_cache' }
     elseif ($status -eq 'target_duplicate') { $action='skip_target_duplicate' }
-    elseif ([string]$settings.mode -eq 'merge' -and $selectedByHash.ContainsKey([string]$row.sha256)) {
-        $selected = $selectedByHash[[string]$row.sha256]
+    elseif ([string]$settings.mode -eq 'merge' -and $selectedByHash.ContainsKey($dedupKey)) {
+        $selected = $selectedByHash[$dedupKey]
         $isSelected = ([string]$selected.source_id -eq [string]$row.source_id -and [string]$selected.relative_path -eq [string]$row.relative_path)
         if (-not $isSelected) { $action='skip_exact_duplicate'; $targetPath=[string]$selected.selected_target_path; $reason='merge_sha256_duplicate' }
     }
@@ -99,12 +113,24 @@ foreach ($row in $files) {
     })
 }
 
-$priority = @{ create_directory=10; move_file_verify=20; copy_file_verify=20; skip_exact_duplicate=30; skip_target_duplicate=30; exclude_cache=40; preserve_git_metadata=50; hold_conflict=90; hold_unsupported=90 }
+if($modern){
+    foreach($directory in @(Import-Csv -LiteralPath $targetTreePath -Encoding UTF8|Where-Object entry_type -eq 'directory')){
+        $draftActions.Add([pscustomobject][ordered]@{action_id='';action='create_directory';source_id='__layout__';source_path='';relative_path=$directory.relative_path;target_path=(Join-POPath -Root $settings.target_root -RelativePath $directory.relative_path);size_bytes=[int64]0;last_write_utc='';sha256='';reason='final_layout';state='planned'})
+    }
+}
+if($null -ne $integration){
+    foreach($item in @($integration.OutputByPath.Values)){
+        $prepared=Get-Item -LiteralPath $item.prepared_path
+        $draftActions.Add([pscustomobject][ordered]@{action_id='';action='install_integrated_file';source_id='__integration__';source_path=$item.prepared_path;relative_path=$item.relative_path;target_path=$item.target_path;size_bytes=[int64]$prepared.Length;last_write_utc=$prepared.LastWriteTimeUtc.ToString('o');sha256=$item.sha256;reason=$item.group_id;state='planned'})
+    }
+}
+$priority = @{ create_directory=10; move_file_verify=20; copy_file_verify=20; install_integrated_file=20; integrated_input=30; skip_exact_duplicate=30; skip_target_duplicate=30; exclude_cache=40; preserve_git_metadata=50; hold_conflict=90; hold_unsupported=90 }
 $orderedActions = @($draftActions.ToArray() | Sort-Object { $priority[[string]$_.action] }, { $_.target_path.ToLowerInvariant() }, { $_.source_id.ToLowerInvariant() }, { $_.relative_path.ToLowerInvariant() })
 for ($index=0; $index -lt $orderedActions.Count; $index++) { $orderedActions[$index].action_id = ('A{0:D8}' -f ($index + 1)) }
 
 $copyBytes = [int64]0
 foreach ($copyAction in @($orderedActions | Where-Object action -eq 'copy_file_verify')) { $copyBytes += [int64]$copyAction.size_bytes }
+foreach ($copyAction in @($orderedActions | Where-Object action -eq 'install_integrated_file')) { $copyBytes += [int64]$copyAction.size_bytes }
 $requiredBytes = [int64][Math]::Ceiling($copyBytes * 1.2)
 $minimumProperty = $settings.PSObject.Properties['minimum_free_bytes']
 if ($null -ne $minimumProperty -and [int64]$minimumProperty.Value -gt $requiredBytes) { $requiredBytes = [int64]$minimumProperty.Value }
@@ -146,11 +172,12 @@ $review = @(
     "- 含 20% 余量需求：$requiredBytes",
     "- 当前可用空间：$availableBytes",
     "- 错误：$($planErrors.Count)",'',
-    '只有 errors 和 hold 都为零时才可批准完整计划 SHA256。迁移批准不包含旧路径退役。',''
+    '只有 errors 和 hold 都为零时才可执行完整计划。目录树、整合及退役复用本轮准确授权；工具哈希由智能体绑定。',''
 )
 Write-POText -Path (Join-Path $output 'review.md') -Text (($review -join "`n") + "`n")
 
 $boundPaths = @($configPath,$inventoryManifest,$inventoryHashPath,$targetTreePath,$targetTreeHashPath,$targetTreeReviewPath,$layoutViolationsPath,$actionsPath,$spacePath,$planErrorsPath,(Join-Path $output 'review.md'))
+if($null -ne $integration){$boundPaths+=@($integration.BoundPaths)}
 if (Test-Path -LiteralPath $gitArchivesPath) { $boundPaths += $gitArchivesPath }
 $planManifest = Join-Path $output 'plan-files.sha256'
 [void](New-POHashManifest -Paths $boundPaths -OutputPath $planManifest)

@@ -295,8 +295,8 @@ function Get-POAlternateStreamCount {
 }
 
 function Get-POFileSnapshot {
-    param([Parameter(Mandatory = $true)][string]$Root)
-    $scan = Get-POSourceEntries -Root $Root
+    param([Parameter(Mandatory = $true)][string]$Root,[string]$ExcludeRoot)
+    $scan = Get-POSourceEntries -Root $Root -ExcludeRoot $ExcludeRoot
     $files = @($scan.Entries | Where-Object { $_.entry_type -eq 'file' })
     return [pscustomobject][ordered]@{
         file_count = [int64]$files.Count
@@ -475,8 +475,14 @@ function Copy-PODirectoryVerified {
 }
 
 function Get-POSourceEntries {
-    param([Parameter(Mandatory = $true)][string]$Root)
+    param([Parameter(Mandatory = $true)][string]$Root,[string]$ExcludeRoot)
     $rootFull = Resolve-POFullPath -Path $Root -AllowNetwork
+    $excluded = ''
+    if ($ExcludeRoot -and (Test-POPathWithin -Path $ExcludeRoot -Parent $rootFull -AllowEqual)) {
+        $excluded = Resolve-POFullPath -Path $ExcludeRoot -AllowMissing
+        if ($excluded.Equals($rootFull,[StringComparison]::OrdinalIgnoreCase)) { throw 'Cannot exclude the scan root.' }
+        Assert-POSafePath -Path $excluded
+    }
     $entries = New-Object Collections.Generic.List[object]
     $errors = New-Object Collections.Generic.List[object]
     $pending = New-Object Collections.Generic.Stack[string]
@@ -493,6 +499,7 @@ function Get-POSourceEntries {
         }
         foreach ($child in $children) {
             try {
+                if ($excluded -and (Test-POPathWithin -Path $child -Parent $excluded -AllowEqual)) { continue }
                 $attributes = [IO.File]::GetAttributes((ConvertTo-POExtendedPath $child))
                 $isDirectory = (($attributes -band [IO.FileAttributes]::Directory) -ne 0)
                 $reparse = Get-POReparseInfo -Path $child -Attributes $attributes -File:(-not $isDirectory)
@@ -520,6 +527,15 @@ function Get-POSourceEntries {
             }
             catch {
                 $errors.Add([pscustomobject][ordered]@{ path=$child; stage='metadata'; error=$_.Exception.Message })
+            }
+        }
+    }
+    # Do not count otherwise-empty ancestors introduced only by this run's audit subtree.
+    if ($excluded) {
+        foreach ($entry in @($entries.ToArray() | Where-Object { $_.entry_type -eq 'directory' } | Sort-Object { $_.full_path.Length } -Descending)) {
+            if ((Test-POPathWithin -Path $excluded -Parent $entry.full_path) -and
+                @($entries.ToArray() | Where-Object { Test-POPathWithin -Path $_.full_path -Parent $entry.full_path }).Count -eq 0) {
+                [void]$entries.Remove($entry)
             }
         }
     }
@@ -588,7 +604,7 @@ function Read-POConfig {
     )
     $configPath = Resolve-POFullPath -Path $Path -AllowNetwork
     $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ([string]$config.schema_version -ne '1.0') { throw 'Unsupported schema_version.' }
+    if ([string]$config.schema_version -notin @('1.0','1.1')) { throw 'Unsupported schema_version.' }
     if ([string]$config.mode -notin @('merge','group')) { throw 'mode must be merge or group.' }
     foreach ($required in @('search_roots','target_root','audit_root','external_git_root','sync_roots','active_repo_policy')) {
         if ($null -eq $config.PSObject.Properties[$required] -or [string]::IsNullOrWhiteSpace([string]$config.$required)) {
@@ -606,17 +622,21 @@ function Read-POConfig {
     }
     if((Test-POPathWithin -Path $config.external_git_root -Parent $config.target_root -AllowEqual) -or
         (Test-POPathWithin -Path $config.target_root -Parent $config.external_git_root -AllowEqual)){throw 'external_git_root overlaps target_root.'}
-    if((Test-POPathWithin -Path $config.audit_root -Parent $config.target_root -AllowEqual) -or
-        (Test-POPathWithin -Path $config.target_root -Parent $config.audit_root -AllowEqual)){throw 'audit_root overlaps target_root.'}
+    if ([string]$config.schema_version -eq '1.0') {
+        if((Test-POPathWithin -Path $config.audit_root -Parent $config.target_root -AllowEqual) -or
+            (Test-POPathWithin -Path $config.target_root -Parent $config.audit_root -AllowEqual)){throw 'audit_root overlaps target_root.'}
+    }
     if ($ForExecution) {
         [void](Resolve-POFullPath -Path $config.target_root -AllowMissing)
         [void](Resolve-POFullPath -Path $config.audit_root -AllowMissing)
     }
-    if ($RequireSources -and @($config.sources).Count -lt 2) { throw 'At least two confirmed sources are required.' }
+    $minimumSources = if ([string]$config.schema_version -eq '1.1') { 1 } else { 2 }
+    if ($RequireSources -and @($config.sources).Count -lt $minimumSources) { throw "At least $minimumSources confirmed sources are required." }
     $ids = @{}
     $sourcePaths = New-Object Collections.Generic.List[string]
     foreach ($source in @($config.sources)) {
         $id = [string]$source.id
+        if ([string]$config.schema_version -eq '1.1' -and $id -eq '__target__') { throw '__target__ is reserved for existing target inputs.' }
         if ($id -notmatch '^[A-Za-z0-9._-]+$') { throw "Invalid source id: $id" }
         if ($ids.ContainsKey($id.ToLowerInvariant())) { throw "Duplicate source id: $id" }
         $ids[$id.ToLowerInvariant()] = $true
@@ -652,7 +672,9 @@ function Read-POConfig {
         }
         if([string]$layout.category_language -notin @('en','zh','preserve')){throw 'category_language must be en, zh, or preserve.'}
         if([int]$layout.max_general_depth -lt 0){throw 'max_general_depth must be zero or greater.'}
-        if([string]$layout.version_policy -notin @('preserve_all','approved_selection')){throw 'Unsupported version_policy.'}
+        $versionPolicies = @('preserve_all','approved_selection')
+        if ([string]$config.schema_version -eq '1.1') { $versionPolicies += 'integrate' }
+        if([string]$layout.version_policy -notin $versionPolicies){throw 'Unsupported version_policy.'}
         $approvedTree=[string]$layout.approved_tree_sha256
         if($approvedTree -and $approvedTree -notmatch '^[0-9A-Fa-f]{64}$'){throw 'approved_tree_sha256 must be empty or contain 64 hexadecimal characters.'}
         foreach($rootFile in @($layout.root_files)){
@@ -712,7 +734,381 @@ function Read-POConfig {
         if (-not $ids.ContainsKey($canonical.ToLowerInvariant())) { throw 'canonical_source_id is not a confirmed source.' }
         if([string]$config.active_repo_policy -ne ('source:'+$canonical)){throw 'active_repo_policy source must match canonical_source_id.'}
     }
+    if ([string]$config.schema_version -eq '1.1') {
+        Assert-POAuditPath -Config $config
+        if ($null -ne $config.PSObject.Properties['integration_manifest'] -and $config.integration_manifest) {
+            if ([string]$config.mode -ne 'merge' -or [string]$config.layout_decisions.version_policy -ne 'integrate') {
+                throw 'integration_manifest requires merge mode and version_policy integrate.'
+            }
+            $config.integration_manifest = Resolve-POFullPath -Path ([string]$config.integration_manifest)
+            if (-not (Test-POPathWithin -Path $config.integration_manifest -Parent $config.audit_root)) { throw 'integration_manifest must be inside audit_root.' }
+        }
+    }
+    elseif ($null -ne $config.PSObject.Properties['integration_manifest'] -and $config.integration_manifest) {
+        throw 'integration_manifest requires config schema_version 1.1.'
+    }
     return $config
+}
+
+function Assert-POSafePath {
+    param([Parameter(Mandatory = $true)][string]$Path,[switch]$File)
+    $full = Resolve-POFullPath -Path $Path -AllowMissing
+    $cursor = $full
+    while ($cursor) {
+        if ([IO.File]::Exists((ConvertTo-POExtendedPath $cursor)) -or [IO.Directory]::Exists((ConvertTo-POExtendedPath $cursor))) {
+            $attributes = [IO.File]::GetAttributes((ConvertTo-POExtendedPath $cursor))
+            $isFile = ($attributes -band [IO.FileAttributes]::Directory) -eq 0
+            $info = Get-POReparseInfo -Path $cursor -Attributes $attributes -File:$isFile
+            if ($info.is_name_surrogate -or $info.is_cloud_placeholder -or
+                ($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Unsafe path component: $cursor" }
+            if ($isFile -and (-not $cursor.Equals($full,[StringComparison]::OrdinalIgnoreCase) -or $info.link_count -gt 1)) {
+                throw "Unsafe file or ancestor: $cursor"
+            }
+        }
+        $parent = [IO.Path]::GetDirectoryName($cursor)
+        if ($parent -eq $cursor) { break }
+        $cursor = $parent
+    }
+    if ($File) {
+        if (-not [IO.File]::Exists((ConvertTo-POExtendedPath $full))) { throw "Expected regular file: $full" }
+        if ((Get-POAlternateStreamCount -Path $full) -ne 1) { throw "Unsupported file streams: $full" }
+    }
+}
+
+function Assert-POAuditPath {
+    param([Parameter(Mandatory = $true)]$Config,[string]$OutputDir)
+    if ([string]$Config.schema_version -ne '1.1') { return }
+    $audit = Resolve-POFullPath -Path ([string]$Config.audit_root) -AllowMissing
+    if (Test-POPathWithin -Path ([string]$Config.target_root) -Parent $audit -AllowEqual) { throw 'audit_root cannot equal or contain target_root.' }
+    foreach ($source in @($Config.sources)) {
+        if ((Test-POPathWithin -Path $audit -Parent ([string]$source.path) -AllowEqual) -or
+            (Test-POPathWithin -Path ([string]$source.path) -Parent $audit -AllowEqual)) { throw 'audit_root overlaps a source.' }
+    }
+    Assert-POSafePath -Path $audit
+    if ($OutputDir) {
+        if (-not (Test-POPathWithin -Path $OutputDir -Parent $audit -AllowEqual)) { throw 'OutputDir must belong to audit_root.' }
+        Assert-POSafePath -Path $OutputDir
+    }
+}
+
+function Assert-POAuditContents {
+    param([Parameter(Mandatory = $true)]$Config,[Parameter(Mandatory = $true)][string]$OutputDir,
+        [Parameter(Mandatory = $true)][string]$ConfigPath,$Integration)
+    if ([string]$Config.schema_version -ne '1.1' -or
+        -not (Test-POPathWithin -Path ([string]$Config.audit_root) -Parent ([string]$Config.target_root))) { return }
+    Assert-POAuditPath -Config $Config -OutputDir $OutputDir
+    if (-not [IO.Directory]::Exists((ConvertTo-POExtendedPath ([string]$Config.audit_root)))) { return }
+    $allowed = @{}
+    $allowed[(Resolve-POFullPath -Path $ConfigPath).ToLowerInvariant()] = $true
+    if ($null -ne $Integration) {
+        foreach ($path in @($Integration.BoundPaths)) { $allowed[([string]$path).ToLowerInvariant()] = $true }
+    }
+    # Exact files owned by the existing workflow. No directory is trusted recursively.
+    $artifactNames = @(
+        'candidates.csv','candidate_evidence.json','files.csv','duplicates.csv','conflicts.csv','errors.csv',
+        'source_state.json','git_state.json','target-state.csv','target-state.json','layout-violations.csv','target-tree.csv',
+        'target-tree.md','target-tree.sha256','summary.md','inventory-files.sha256','inventory.sha256',
+        'git_archives.json','git-errors.csv','git-review.md','actions.csv','space.json','plan-errors.csv',
+        'review.md','plan-files.sha256','plan.sha256','execution-state.json','execution.jsonl','execution-summary.json',
+        'organization-acceptance.json','acceptance-errors.csv','acceptance.md','retirement.csv',
+        'retirement-errors.csv','retirement-review.md','retirement-files.sha256','retirement.sha256',
+        'retirement-execution-state.json','retirement-execution.jsonl','retirement-execution-summary.json',
+        'final-acceptance.json','final-acceptance-errors.csv','final-acceptance.md','integration-checks.json'
+    )
+    foreach ($name in $artifactNames) { $allowed[(Join-Path $OutputDir $name).ToLowerInvariant()] = $true }
+    $repositoryIds = New-Object Collections.Generic.List[string]
+    foreach ($source in @($Config.sources)) {
+        $repositoryIds.Add([string]$source.id)
+        if ($null -ne $source.PSObject.Properties['git_paths']) {
+            for ($i=1;$i -le @($source.git_paths).Count;$i++) { $repositoryIds.Add(([string]$source.id)+'-extra-'+$i) }
+        }
+    }
+    foreach ($id in $repositoryIds) {
+        $allowed[(Join-Path $OutputDir ('git-bundles/'+$id+'.bundle')).ToLowerInvariant()] = $true
+        foreach ($name in @('source-fsck.txt','working-tree.diff','index.diff','untracked.txt','ignored.txt',
+            'git-state.json','bundle-verify.txt','restore-fsck.txt','recovery-files.sha256')) {
+            $allowed[(Join-Path $OutputDir ('git-recovery/'+$id+'/'+$name)).ToLowerInvariant()] = $true
+        }
+    }
+    $receiptPath = Join-Path $OutputDir 'integration-checks.json'
+    if ($null -ne $Integration -and [IO.File]::Exists((ConvertTo-POExtendedPath $receiptPath))) {
+        Assert-POSafePath -Path $receiptPath -File
+        $receipt = Get-Content -LiteralPath $receiptPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ([string]$receipt.schema_version -ne '1.0' -or [string]$receipt.manifest_sha256 -ne $Integration.ManifestSha256) { throw 'Audit check receipt belongs to another integration.' }
+        foreach ($check in @($receipt.checks)) {
+            $reportPath = Resolve-POFullPath -Path ([string]$check.report_path)
+            if (-not (Test-POPathWithin -Path $reportPath -Parent ([string]$Config.audit_root))) { throw 'Audit check report is outside audit_root.' }
+            Assert-POSafePath -Path $reportPath -File
+            Assert-POIntegrationHash -Hash ([string]$check.report_sha256) -Label 'audit check report'
+            if ((Get-POStableSha256 -Path $reportPath) -ne [string]$check.report_sha256) { throw 'Audit check report changed.' }
+            $allowed[$reportPath.ToLowerInvariant()] = $true
+        }
+    }
+    $scan = Get-POSourceEntries -Root ([string]$Config.audit_root)
+    if ($scan.Errors.Count -gt 0) { throw 'Cannot inventory existing audit contents safely.' }
+    foreach ($entry in @($scan.Entries)) {
+        Assert-POSafePath -Path ([string]$entry.full_path) -File:([string]$entry.entry_type -eq 'file')
+        if ([string]$entry.entry_type -eq 'file') {
+            if (-not $allowed.ContainsKey(([string]$entry.full_path).ToLowerInvariant())) { throw "Audit root contains unrecognized existing content: $($entry.full_path)" }
+        }
+        elseif (@($allowed.Keys | Where-Object { Test-POPathWithin -Path $_ -Parent ([string]$entry.full_path) }).Count -eq 0) {
+            throw "Audit root contains an unrecognized directory: $($entry.full_path)"
+        }
+    }
+}
+
+function ConvertTo-POIntegrationRelativePath {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if ([IO.Path]::IsPathRooted($Path) -or $Path -match '[:*?"<>|]' -or $Path -match '(^|[\\/])\.\.?([\\/]|$)') {
+        throw "Invalid integration relative path: $Path"
+    }
+    $relative = ConvertTo-PORelativePath $Path
+    if (-not $relative) { throw 'Integration file path cannot be empty.' }
+    foreach ($part in $relative.Split('/')) {
+        if ($part.EndsWith('.') -or $part.EndsWith(' ') -or $part -match '^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)') {
+            throw "Ambiguous integration path component: $part"
+        }
+    }
+    if (Test-POGitMetadataPath -RelativePath $relative) { throw 'Integration cannot rewrite Git metadata.' }
+    return $relative
+}
+
+function Assert-POIntegrationHash {
+    param([string]$Hash,[string]$Label)
+    if ($Hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "Invalid SHA256 for $Label" }
+}
+
+function Read-POIntegrationManifest {
+    param([Parameter(Mandatory = $true)]$Config)
+    if ($null -eq $Config.PSObject.Properties['integration_manifest'] -or -not $Config.integration_manifest) { return $null }
+    if ([string]$Config.schema_version -ne '1.1' -or [string]$Config.mode -ne 'merge' -or
+        [string]$Config.layout_decisions.version_policy -ne 'integrate') { throw 'Integration requires merge config 1.1 and version_policy integrate.' }
+    Assert-POAuditPath -Config $Config
+    $manifestPath = Resolve-POFullPath -Path ([string]$Config.integration_manifest)
+    if (-not (Test-POPathWithin -Path $manifestPath -Parent ([string]$Config.audit_root))) { throw 'Manifest must belong to audit_root.' }
+    Assert-POSafePath -Path $manifestPath -File
+    $manifestHash = Get-POStableSha256 -Path $manifestPath
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([string]$manifest.schema_version -ne '1.0' -or @($manifest.groups).Count -eq 0) { throw 'Invalid or empty integration manifest.' }
+    $groups = New-Object Collections.Generic.List[object]
+    $inputMap = @{}; $outputMap = @{}; $ids = @{}; $bound = @{}
+    $bound[$manifestPath] = $manifestHash
+    foreach ($group in @($manifest.groups)) {
+        $id = [string]$group.id
+        if ($id -notmatch '^[A-Za-z0-9._-]+$' -or $ids.ContainsKey($id)) { throw "Invalid or duplicate integration group: $id" }
+        $ids[$id] = $true
+        if (@($group.inputs).Count -eq 0 -or @($group.outputs).Count -eq 0 -or @($group.required_checks).Count -eq 0) {
+            throw "Integration group requires inputs, outputs and checks: $id"
+        }
+        $checkIds = @{}
+        foreach ($checkIdValue in @($group.required_checks)) {
+            $checkId = [string]$checkIdValue
+            if ($checkId -notmatch '^[A-Za-z0-9._-]+$' -or $checkIds.ContainsKey($checkId)) { throw "Invalid or duplicate required check: $id/$checkId" }
+            $checkIds[$checkId] = $true
+        }
+        $inputs = New-Object Collections.Generic.List[object]
+        foreach ($inputItem in @($group.inputs)) {
+            $sourceId = [string]$inputItem.source_id
+            $relative = ConvertTo-POIntegrationRelativePath -Path ([string]$inputItem.relative_path)
+            $inputHash = ([string]$inputItem.sha256).ToUpperInvariant()
+            Assert-POIntegrationHash -Hash $inputHash -Label "$id input"
+            if ($sourceId -eq '__target__') { $sourceRoot = [string]$Config.target_root }
+            else {
+                $sources = @($Config.sources | Where-Object { [string]$_.id -eq $sourceId })
+                if ($sources.Count -ne 1) { throw "Unknown integration source: $sourceId" }
+                $sourceRoot = [string]$sources[0].path
+            }
+            $sourcePath = Join-POPath -Root $sourceRoot -RelativePath $relative
+            Assert-POSafePath -Path $sourcePath
+            if (Test-POPathWithin -Path $sourcePath -Parent ([string]$Config.audit_root) -AllowEqual) { throw 'Integration input overlaps audit_root.' }
+            $key = $sourcePath.ToLowerInvariant()
+            if ($inputMap.ContainsKey($key)) { throw "Integration input is used more than once: $sourcePath" }
+            $recovery = Resolve-POFullPath -Path ([string]$inputItem.recovery_path)
+            if (-not (Test-POPathWithin -Path $recovery -Parent ([string]$Config.audit_root))) { throw 'Recovery copy must belong to audit_root.' }
+            Assert-POSafePath -Path $recovery -File
+            if ((Get-POStableSha256 -Path $recovery) -ne $inputHash) { throw "Recovery copy differs from input: $sourcePath" }
+            if ($bound.ContainsKey($recovery) -and $bound[$recovery] -ne $inputHash) { throw 'Conflicting bound hashes.' }
+            $bound[$recovery] = $inputHash
+            $inputNormalized = [pscustomobject][ordered]@{group_id=$id;source_id=$sourceId;relative_path=$relative;source_path=$sourcePath;sha256=$inputHash;recovery_path=$recovery}
+            $inputs.Add($inputNormalized); $inputMap[$key] = $inputNormalized
+        }
+        $outputs = New-Object Collections.Generic.List[object]
+        foreach ($outputItem in @($group.outputs)) {
+            $relative = ConvertTo-POIntegrationRelativePath -Path ([string]$outputItem.relative_path)
+            $target = Join-POPath -Root ([string]$Config.target_root) -RelativePath $relative
+            Assert-POSafePath -Path $target
+            if ((Test-POPathWithin -Path $target -Parent ([string]$Config.audit_root) -AllowEqual) -or
+                (Test-POPathWithin -Path ([string]$Config.audit_root) -Parent $target -AllowEqual)) { throw 'Integration output overlaps audit_root.' }
+            $key = $target.ToLowerInvariant()
+            if ($outputMap.ContainsKey($key)) { throw "Multiple integration writers for target: $target" }
+            foreach ($other in $outputMap.Values) {
+                if ((Test-POPathWithin -Path $target -Parent $other.target_path) -or (Test-POPathWithin -Path $other.target_path -Parent $target)) {
+                    throw 'Integration outputs have file/ancestor conflicts.'
+                }
+            }
+            $outputHash = ([string]$outputItem.sha256).ToUpperInvariant()
+            Assert-POIntegrationHash -Hash $outputHash -Label "$id output"
+            $expected = [string]$outputItem.expected_target_sha256
+            if ($expected -ne 'absent') { Assert-POIntegrationHash -Hash $expected -Label "$id expected target"; $expected = $expected.ToUpperInvariant() }
+            $prepared = Resolve-POFullPath -Path ([string]$outputItem.prepared_path)
+            if (-not (Test-POPathWithin -Path $prepared -Parent ([string]$Config.audit_root))) { throw 'Prepared output must belong to audit_root.' }
+            Assert-POSafePath -Path $prepared -File
+            if ((Get-POStableSha256 -Path $prepared) -ne $outputHash) { throw "Prepared output changed: $prepared" }
+            if ($bound.ContainsKey($prepared) -and $bound[$prepared] -ne $outputHash) { throw 'Conflicting bound hashes.' }
+            $bound[$prepared] = $outputHash
+            $recovery = ''
+            if ($expected -ne 'absent') {
+                $oldTarget = @($inputs.ToArray() | Where-Object { $_.source_id -eq '__target__' -and $_.source_path -eq $target })
+                if ($oldTarget.Count -ne 1 -or $oldTarget[0].sha256 -ne $expected) { throw "Existing target needs matching protected input: $target" }
+                $recovery = [string]$oldTarget[0].recovery_path
+            }
+            $outputNormalized = [pscustomobject][ordered]@{group_id=$id;relative_path=$relative;target_path=$target;prepared_path=$prepared;sha256=$outputHash;expected_target_sha256=$expected;recovery_path=$recovery}
+            $outputs.Add($outputNormalized); $outputMap[$key] = $outputNormalized
+        }
+        foreach ($inputNormalized in @($inputs.ToArray() | Where-Object { $_.source_id -eq '__target__' })) {
+            if (@($outputs.ToArray() | Where-Object { $_.target_path -eq $inputNormalized.source_path -and $_.expected_target_sha256 -eq $inputNormalized.sha256 }).Count -ne 1) {
+                throw 'Existing target input must have an output at the same path.'
+            }
+        }
+        $coveragePath = Resolve-POFullPath -Path ([string]$group.coverage.path)
+        $coverageHash = ([string]$group.coverage.sha256).ToUpperInvariant()
+        Assert-POIntegrationHash -Hash $coverageHash -Label "$id coverage"
+        if (-not (Test-POPathWithin -Path $coveragePath -Parent ([string]$Config.audit_root))) { throw 'Coverage report must belong to audit_root.' }
+        Assert-POSafePath -Path $coveragePath -File
+        if ((Get-Item -LiteralPath $coveragePath).Length -eq 0 -or (Get-POStableSha256 -Path $coveragePath) -ne $coverageHash) { throw 'Coverage report missing, empty or changed.' }
+        $covered = @{}
+        foreach ($coverageItem in @($group.coverage.inputs)) {
+            $coverageKey = ([string]$coverageItem.source_id) + '|' + (ConvertTo-POIntegrationRelativePath ([string]$coverageItem.relative_path))
+            if ($covered.ContainsKey($coverageKey) -or [string]::IsNullOrWhiteSpace([string]$coverageItem.reason)) { throw 'Duplicate or unexplained coverage input.' }
+            if (@($inputs.ToArray() | Where-Object { ($_.source_id + '|' + $_.relative_path) -eq $coverageKey }).Count -ne 1) { throw 'Coverage names an unknown input.' }
+            if (@($coverageItem.destination_paths).Count -eq 0) { throw 'Coverage requires an output destination.' }
+            foreach ($destination in @($coverageItem.destination_paths)) {
+                $destinationRelative = ConvertTo-POIntegrationRelativePath ([string]$destination)
+                if (@($outputs.ToArray() | Where-Object { $_.relative_path -eq $destinationRelative }).Count -ne 1) { throw 'Coverage destination is not a group output.' }
+            }
+            $covered[$coverageKey] = $true
+        }
+        if ($covered.Count -ne $inputs.Count) { throw "Coverage omits an input: $id" }
+        if ($bound.ContainsKey($coveragePath) -and $bound[$coveragePath] -ne $coverageHash) { throw 'Conflicting bound hashes.' }
+        $bound[$coveragePath] = $coverageHash
+        $groups.Add([pscustomobject][ordered]@{id=$id;inputs=@($inputs.ToArray());outputs=@($outputs.ToArray());coverage=$group.coverage;required_checks=@($group.required_checks)})
+    }
+    if ((Get-POStableSha256 -Path $manifestPath) -ne $manifestHash) { throw 'Integration manifest changed while being read.' }
+    return [pscustomobject][ordered]@{SchemaVersion='1.0';ManifestPath=$manifestPath;ManifestSha256=$manifestHash;Groups=@($groups.ToArray());InputByPath=$inputMap;OutputByPath=$outputMap;BoundPaths=@($bound.Keys | Sort-Object);BoundHashes=$bound;AuditRoot=[string]$Config.audit_root}
+}
+
+function Assert-POIntegrationFiles {
+    param([Parameter(Mandatory = $true)]$Integration,
+        [ValidateSet('Preflight','Installed','Retired')][string]$Phase='Preflight',
+        [switch]$RequireChecks,[string]$OutputDir,[string[]]$InstalledPaths=@())
+    $checkBound = @{}
+    $installed = @{}
+    foreach ($path in $InstalledPaths) {
+        $key = (Resolve-POFullPath -Path $path -AllowMissing).ToLowerInvariant()
+        if (-not $Integration.OutputByPath.ContainsKey($key)) { throw 'Resume path is not an integration output.' }
+        $installed[$key] = $true
+    }
+    foreach ($path in @($Integration.BoundPaths)) {
+        Assert-POSafePath -Path $path -File
+        if ((Get-POStableSha256 -Path $path) -ne [string]$Integration.BoundHashes[$path]) { throw "Integration bound file changed: $path" }
+    }
+    foreach ($group in @($Integration.Groups)) {
+        foreach ($inputItem in @($group.inputs)) {
+            if ($Phase -eq 'Retired' -or ($Phase -eq 'Installed' -and $inputItem.source_id -eq '__target__')) { continue }
+            Assert-POSafePath -Path $inputItem.source_path -File
+            $actual = Get-POStableSha256 -Path $inputItem.source_path
+            $key = $inputItem.source_path.ToLowerInvariant()
+            if ($Phase -eq 'Preflight' -and $inputItem.source_id -eq '__target__' -and $installed.ContainsKey($key) -and
+                $actual -eq $Integration.OutputByPath[$key].sha256) { continue }
+            if ($actual -ne $inputItem.sha256) { throw "Integration input changed: $($inputItem.source_path)" }
+        }
+        foreach ($outputItem in @($group.outputs)) {
+            Assert-POSafePath -Path $outputItem.target_path
+            if ($Phase -eq 'Preflight' -and $installed.ContainsKey($outputItem.target_path.ToLowerInvariant()) -and
+                [IO.File]::Exists((ConvertTo-POExtendedPath $outputItem.target_path)) -and
+                (Get-POStableSha256 -Path $outputItem.target_path) -eq $outputItem.sha256) { continue }
+            if ($Phase -eq 'Preflight' -and $outputItem.expected_target_sha256 -eq 'absent') {
+                if (Test-Path -LiteralPath $outputItem.target_path) { throw "Unexpected integration target: $($outputItem.target_path)" }
+            }
+            else {
+                $expected = if ($Phase -eq 'Preflight') { $outputItem.expected_target_sha256 } else { $outputItem.sha256 }
+                Assert-POSafePath -Path $outputItem.target_path -File
+                if ((Get-POStableSha256 -Path $outputItem.target_path) -ne $expected) { throw "Integration target changed: $($outputItem.target_path)" }
+            }
+        }
+    }
+    if ($RequireChecks) {
+        if ($Phase -eq 'Preflight') { throw 'Post-installation checks cannot satisfy preflight.' }
+        if (-not $OutputDir -or -not (Test-POPathWithin -Path $OutputDir -Parent $Integration.AuditRoot -AllowEqual)) { throw 'Checks OutputDir must belong to audit_root.' }
+        $receiptPath = Join-Path $OutputDir 'integration-checks.json'
+        Assert-POSafePath -Path $receiptPath -File
+        $receiptHash = Get-POStableSha256 -Path $receiptPath
+        $receipt = Get-Content -LiteralPath $receiptPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ([string]$receipt.schema_version -ne '1.0' -or [string]$receipt.manifest_sha256 -ne $Integration.ManifestSha256) { throw 'Integration check receipt belongs to another manifest.' }
+        foreach ($group in @($Integration.Groups)) {
+            foreach ($id in @($group.required_checks)) {
+                $checks = @($receipt.checks | Where-Object { [string]$_.group_id -eq $group.id -and [string]$_.id -eq $id })
+                if ($checks.Count -ne 1 -or [string]$checks[0].status -ne 'passed') { throw "Required check not passed: $($group.id)/$id" }
+                $check = $checks[0]; $checkedAt = [DateTimeOffset]::MinValue
+                if (-not [DateTimeOffset]::TryParse([string]$check.checked_at,[ref]$checkedAt)) { throw 'Check timestamp is missing or invalid.' }
+                if (@($check.outputs).Count -ne @($group.outputs).Count) { throw 'Check receipt must cover every group output.' }
+                foreach ($outputItem in @($group.outputs)) {
+                    $checkedOutput = @($check.outputs | Where-Object { [string]$_.relative_path -eq $outputItem.relative_path -and [string]$_.sha256 -eq $outputItem.sha256 })
+                    if ($checkedOutput.Count -ne 1) { throw 'Check receipt output hash is outdated or missing.' }
+                }
+                $reportPath = Resolve-POFullPath -Path ([string]$check.report_path)
+                if (-not (Test-POPathWithin -Path $reportPath -Parent $Integration.AuditRoot)) { throw 'Check report must belong to audit_root.' }
+                Assert-POSafePath -Path $reportPath -File
+                $reportHash = ([string]$check.report_sha256).ToUpperInvariant()
+                Assert-POIntegrationHash -Hash $reportHash -Label 'check report'
+                if ((Get-Item -LiteralPath $reportPath).Length -eq 0 -or (Get-POStableSha256 -Path $reportPath) -ne $reportHash) { throw 'Check report missing, empty or changed.' }
+                $checkBound[$reportPath] = $reportHash
+            }
+        }
+        if ((Get-POStableSha256 -Path $receiptPath) -ne $receiptHash) { throw 'Check receipt changed while reading.' }
+        $checkBound[$receiptPath] = $receiptHash
+    }
+    if ($RequireChecks) { return [pscustomobject]@{Valid=$true;BoundPaths=@($checkBound.Keys | Sort-Object);BoundHashes=$checkBound} }
+}
+
+function Install-POIntegrationOutput {
+    param([Parameter(Mandatory = $true)]$Output,[switch]$Resume)
+    Assert-POSafePath -Path ([string]$Output.prepared_path) -File
+    if ((Get-POStableSha256 -Path $Output.prepared_path) -ne $Output.sha256) { throw 'Prepared integration output changed.' }
+    $target = Resolve-POFullPath -Path ([string]$Output.target_path) -AllowMissing
+    Assert-POSafePath -Path $target
+    if ($Output.expected_target_sha256 -ne 'absent') {
+        Assert-POSafePath -Path ([string]$Output.recovery_path) -File
+        if ((Get-POStableSha256 -Path $Output.recovery_path) -ne $Output.expected_target_sha256) { throw 'Target recovery copy changed.' }
+    }
+    if ($Resume -and [IO.File]::Exists((ConvertTo-POExtendedPath $target)) -and (Get-POStableSha256 -Path $target) -eq $Output.sha256) { return $target }
+    if ($Output.expected_target_sha256 -eq 'absent') {
+        return Copy-POFileAtomicVerified -Source $Output.prepared_path -Target $target -ExpectedSha256 $Output.sha256
+    }
+    Assert-POSafePath -Path $target -File
+    if ((Get-POStableSha256 -Path $target) -ne $Output.expected_target_sha256) { throw 'Existing target changed before integration.' }
+    $temporary = $target + '.po-partial-' + [Guid]::NewGuid().ToString('N')
+    $rollback = $target + '.po-replaced-' + [Guid]::NewGuid().ToString('N')
+    try {
+        [void](Copy-POFileAtomicVerified -Source $Output.prepared_path -Target $temporary -ExpectedSha256 $Output.sha256)
+        Assert-POSafePath -Path $target -File
+        if ((Get-POStableSha256 -Path $target) -ne $Output.expected_target_sha256) { throw 'Existing target changed before replacement.' }
+        [IO.File]::Replace((ConvertTo-POExtendedPath $temporary),(ConvertTo-POExtendedPath $target),(ConvertTo-POExtendedPath $rollback))
+        if ((Get-POStableSha256 -Path $rollback) -ne $Output.expected_target_sha256) {
+            if ((Get-POStableSha256 -Path $target) -eq $Output.sha256) {
+                $displaced = $target + '.po-displaced-' + [Guid]::NewGuid().ToString('N')
+                [IO.File]::Replace((ConvertTo-POExtendedPath $rollback),(ConvertTo-POExtendedPath $target),(ConvertTo-POExtendedPath $displaced))
+                # Retain the displaced copy for diagnosis; do not delete a concurrent writer's content.
+            }
+            throw "Concurrent target change detected; recovery artifacts retained near $target"
+        }
+        if ((Get-POStableSha256 -Path $target) -ne $Output.sha256) { throw 'Installed integration target changed; captured original retained.' }
+        [IO.File]::Delete((ConvertTo-POExtendedPath $rollback))
+    }
+    finally {
+        if ([IO.File]::Exists((ConvertTo-POExtendedPath $temporary))) { [IO.File]::Delete((ConvertTo-POExtendedPath $temporary)) }
+    }
+    return $target
 }
 
 function Invoke-POGit {
@@ -791,5 +1187,6 @@ Export-ModuleMember -Function @(
     'Test-POExcludedPath','Get-POProposedRelativePath','Read-POConfig','Invoke-POGit','Get-POGitState',
     'New-POHashManifest','Get-PODriveFreeSpace','Get-POFileSnapshot','Get-POPathVolume','Test-POSameVolume',
     'Test-POSyncPath','Test-POHashManifest','Assert-POExpectedFile','Copy-POFileAtomicVerified',
-    'Move-POFileVerified','Copy-PODirectoryVerified'
+    'Move-POFileVerified','Copy-PODirectoryVerified','Assert-POSafePath','Assert-POAuditPath',
+    'Read-POIntegrationManifest','Assert-POIntegrationFiles','Install-POIntegrationOutput','Assert-POAuditContents'
 )

@@ -14,10 +14,13 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 
 ## 先读
 
-1. 读取上级规则，确认用户允许本次转换和输出路径不存在。
+1. 读取当前任务和文件，复用已经明确的转换、重算或接受修订授权；只读检查不启动转换。
+   普通交付按项目命名选择尚不存在的新版本路径；用户明确指定固定路径时保留该要求，冲突处理见下文。
 2. 读取 [调用契约](references/call-contract.md)。需要判断现有脚本能否迁移时读取
    [调用盘点](references/call-inventory.md)。
-3. 任务涉及用户当前打开的 LibreOffice 或不确定会否影响编辑中的文件时，先停下询问。
+3. 按实际操作判断影响：处理已保存文件的副本，且独立 profile、Job Object 和新输出路径能隔离
+   本轮操作时，自主执行。需要未保存的编辑内容时先说明所需版本；确需操作用户窗口或隔离归属
+   无法查明时才询问，只暂停相关步骤。现有集成测试的“无用户进程”前提不扩大为日常转换限制。
 
 ## 调用
 
@@ -42,6 +45,9 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 
 输出路径已存在时 runner 会失败，不会覆盖。CLI 的 stdout 始终是一行 UTF-8 JSON（含行末换行，
 不受 Windows 控制台代码页影响）；`--json-out` 也写入 UTF-8 JSON。成功退出码为 `0`。
+普通交付遇到重名时，由调用方选择新的版本名后继续；runner 的不覆盖行为保持不变。
+固定输出路径发生冲突时先读取当前文件并核对已有授权，不能擅自换路径或删除旧文件来绕过保护。
+需要替换时沿用对应文档技能的原稿保护流程，runner 仍写入新路径；无法确定取舍时才询问。
 
 ## 运行规则
 
@@ -57,7 +63,17 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 读取 JSON 的 `error`、`message`、`stdout`、`stderr`、`owned_pids` 与 `diagnostics`。失败默认保存
 最小诊断 JSON，不保留输入副本；`--keep-diagnostics-on-error` 才保留整个隔离任务目录。
 
-不要根据任何报错替换 `bootstrap.ini`。先确认是否共享 profile、队列超时、输出已存在或格式验证失败。
+先按错误原因处理：队列繁忙时等待后重试；运行超时先查诊断，确有耗时依据时调整本轮时限；
+普通输出重名改用新版本名；输入或格式问题交给对应文档技能修正已授权内容。复用当前授权完成
+必要重试，检查修正后的结果；相同失败且没有新线索时报告具体缺口，继续不依赖该转换的工作。
+进程归属建立失败时保留失败结果。排障沿用隔离机制，不替换 `bootstrap.ini`、绕过 runner
+或结束用户进程。
+
+## 完成与交接
+
+转换成功并通过 runner 文件校验后，把实际输出和检查结果交回 `docx`、`xlsx`、`pptx` 等调用方，
+由其完成任务所需的内容、版面或计算检查。文件可解析不等于排版正确，LibreOffice 转换不代替
+明确要求的 Word、Excel 或 PowerPoint 原生验证。完成适用检查即可交付；未完成的明确检查如实说明。
 
 ## 维护和测试
 
@@ -75,5 +91,5 @@ $env:RUN_LIBREOFFICE_INTEGRATION='1'
 & 'C:\Python313\python.exe' -m unittest discover -s .\tests -p 'test_integration.py' -v
 ```
 
-不要修改 `.cc-switch`、`.claude`、`.codex` 或 bundled cache 中的第三方实现。更新源码后提交
-`agents-skills` 仓库、推送，再通过 cc-switch 同步运行时。
+源码修改和定向发布复用 [agent-rules](../agent-rules/SKILL.md) 的后台流程，核对源码与运行副本；
+不手工修改分发目录或第三方实现。

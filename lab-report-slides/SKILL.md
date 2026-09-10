@@ -1,25 +1,22 @@
 ---
 name: lab-report-slides
 description: >
-  Generate a concise Chinese lab-work presentation from the user's Codex and Claude Code sessions.
-  Use this skill whenever the user says "生成今日汇报", "生成当天汇报", "生成每日汇报",
-  "生成本周组会汇报", "生成组会 PPT", or asks to turn recent AI-assisted experiments,
-  code, instrument tests, plots, or results into a presentation. Read local session JSONL,
-  merge child-agent work into parent tasks, filter AI boilerplate, find referenced experiment
-  images and relevant platform photos, check whether the work is worth presenting to an advisor,
-  and create an image-led PPTX with editable text and independent pictures. Render the actual PPTX
-  to PDF/PNG for inspection. Exclude non-research tool maintenance from advisor reports.
-  Present verified candidate work items for user selection before making slides; reuse an
-  already confirmed selection without asking again.
-  Explain each selected project's motivation, approach, current progress and next steps;
-  retrieve earlier context when needed and polish Chinese slide prose before rendering.
-  Do not use for paper-to-slides work when the source is a paper PDF or DOI; use a paper-slide skill.
+  Generate concise Chinese advisor daily/weekly research PPTs from local Codex and Claude
+  sessions. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报, 生成组会 PPT,
+  or turning recent experiments, instrument tests, plots and results into slides.
+  Verify research candidates and obtain the user's content selection before making slides;
+  reuse confirmed choices and exclude non-research tool maintenance. Inventory all substantive
+  work and outputs within selected projects before choosing representative real figures.
+  Explain current progress with background where needed, collect confirmed next steps on the
+  final slide, and polish Chinese prose. Create editable text and independent pictures with
+  short titles, one result summary per page and flexible typography; inspect actual PPTX renders.
+  Do not use for paper PDF/DOI-to-slides work.
 compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoffice-runner and Poppler. SVG input uses the existing Node.js/sharp runtime.
 ---
 
 # 实验工作汇报幻灯片
 
-该技能用于用户反复开展的日报和周组会工作流。让未参与具体工作的导师看懂每项工作为什么做、采取了什么办法、目前做到哪一步、下一步准备做什么。将本地会话与项目记录作为证据；绝不能把模型计划、推测或套话当成已完成工作。
+该技能用于用户反复开展的日报和周组会工作流。让未参与具体工作的导师看懂每项工作做了什么、目前做到哪一步、下一步准备做什么；需要背景时解释为什么做。将本地会话与项目记录作为证据；绝不能把模型计划、推测或套话当成已完成工作。
 
 ## 触发与模式
 
@@ -77,14 +74,16 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 
 编写提纲前先统一状态。后续证据优先于早期中间结论。用户当前明确说明某项已完成时，可以覆盖早期审计中列出的未决问题。该说明只用于更新状态；不得编造缺失的技术细节。从 `遇到问题` 和 `下一步` 中删除已经解决的问题。
 
-每个入选项目先从相关讨论和实验记录中补齐以下关系，再组织图件：
+每个入选项目先盘点当期实际做过的各项科研工作，再组织图件。在过程记录中建立“工作项—当前结果/状态—对应文件与图件—计划页码”的覆盖清单；未展示的独立成果说明理由。按科研事项归并重复运行，不把一个项目标题、几张醒目的图或末次运行当成全部工作。
+
+根据相关讨论和实验记录，梳理以下信息：
 
 1. 原来遇到什么问题或限制，为什么要做这项工作。
 2. 这次采取了什么办法，为什么安排这组实验或比较。
 3. 得到什么结果，目前能作出什么判断，尚未完成什么。
 4. 下一步做什么，用来解决哪个尚未回答的问题。
 
-按项目形成连贯叙述，可以跨页表达，不要求每页套用四个栏目。当天采集摘要不是背景的全部来源：起因不在当天记录中时，按入选项目、关联会话及引用文件定向回溯此前记录，查到足以解释当前工作即可；历史原因只作背景，不能计作当天新进展。关键动机或后续安排查不到时，只询问该缺口，继续其他已明确项目；不能从技术名称或常见用途猜原因，也不能擅自安排下一步。
+按项目形成连贯叙述，可以跨页表达。正文不强制每页写起因：直接说明做了什么就能理解时，不为填栏目补背景；动机影响理解时，才按项目、关联会话及引用文件定向回溯此前记录。历史原因只作背景，不能计作当天新进展。查不到必要动机或关键后续安排时，只询问该缺口，继续其他已明确项目；不能从技术名称或常见用途猜原因，也不能擅自安排下一步。
 
 只有代码本身就是科研结果时才展示代码。其他情况下，报告任务、方法和观测结果，不要复制代码块。
 
@@ -112,17 +111,20 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 
 ## 提纲与页面
 
-入选内容确认后，按实际材料组织简短提纲，每页围绕一个结果或问题。默认采用短篇汇报，按需使用以下页面职责：
+入选内容确认后，先逐项核对覆盖清单，再按实际材料组织页面。每页围绕一个结果或问题；项目较多或图件较密时拆页，不用固定页数压缩独立成果。确认后直接制作并自检；只有用户另外明确要求先审提纲时才等待，不重复确认已选范围。
 
-1. 总览
-2. 主要工作
-3. 实验/测试结果
-4. 问题与判断
-5. 下一步
+页面沿用以下职责：
 
-删除空页，素材较多时按实验拆页，不为固定页数挤小图件。入选内容确认后直接制作并自检；只有用户另外明确要求先审提纲时，才在提纲处等待，不重复确认已选范围。
+- 左上大标题用简短项目名或主题短语，如“多流系统”，不把整句结论塞进标题。
+- 红色/粉色横条只写一句话，总结这一页实际完成了什么或得到什么结果。前面的进展页不写“还需实测”等下一步安排。
+- 正文与图件交代当前工作、比较条件和实际进展；必要时补背景，不机械套用起因栏目。不显示右上日期/页码角标，不设置页底重复总结。
+- 当前工作全部讲完后，以最后一页“下一步工作”收束。把已确认的后续行动写在一个原生文本框中，按 1、2、3 编号；未确定的安排不写成确定计划。
 
-先讲清入选项目的起因和进展，再匹配实际曲线、仪器截图或现场照片。每组图件回答一个具体问题：图前或相邻页面交代为何验证、各组比较什么，图后解释结果支持的判断及尚缺的工作。必要背景、当前进展和下一步要出现在可见页面，不能只放备注或依赖口头补充。保持图件清楚、文字简短，但不为图大删掉因果关系；内容较多时按项目拆页，不缩成难读小字。
+每组图回答一个具体问题：说明各组比较什么、结果支持什么判断。当前完成程度与影响判断的限制可在进展页说明，未来行动统一末页表达。必要背景不能只放备注或依赖口头补充，也不为图大删掉理解所需的文字。
+
+在盘点完整输出后再选代表图。完整运行总览说明处理链路跑到哪一步，局部结果或多条件对比说明性能差异，二者不能自动互相替代。频谱分析、滤波调整等若构成独立且入选的科研进展，应有相应结果表达；同一结论的重复总览不必全放。总体图过密时另页展示关键区域并保留完整图来源，不能裁掉会改变判断的条件。
+
+字号按每页内容密度、图件和可用空间调整；模板字号仅是起点，可逐页覆盖。保持标题、总结、正文和图注的层级与全稿协调，不为填满空白放大短句，也不为塞进内容不断缩字。调整后检查实际渲染，必要时改布局或拆页。
 
 ## 逐页中文润色
 
@@ -130,7 +132,7 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 
 像向导师说明工作一样写具体问题、行动和结果，减少“取证、核实、验证范围”等检查报告式栏目和机械状态标签；专业术语确有必要时保留，不作批量替换。影响判断的限制集中说清一次，跨页容易误解时保留必要提示。润色不改变数字、单位、比较条件、因果关系或完成状态，也不额外重复已确认的内容选择。
 
-逐项目通读可见页面，检查未参与工作的人能否回答“为什么做、做了什么、做到哪里、接下来做什么”，并核对每组图是否承接前面的具体问题。在任务过程记录中留下逻辑与自然表达检查结果、词表检查结果及需保留的例外；有关键事实缺口时如实保留，不用顺口的句子补造。
+逐项目通读可见页面，检查未参与工作的人能否理解“做了什么、做到哪里、接下来做什么”，以及需要背景时能否理解为什么做，并核对每组图是否承接前面的具体问题。在任务过程记录中留下逻辑与自然表达检查结果、词表检查结果及需保留的例外；有关键事实缺口时如实保留，不用顺口的句子补造。
 
 ## 实验素材
 
@@ -161,8 +163,8 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
   "footer": "2026-07-15",
   "slides": [
     {
-      "kicker": "实验进展",
-      "title": "1 km 光纤链路引入低频噪声峰",
+      "title": "光纤链路",
+      "summary": "完成 1 km 光纤链路测试，发现低频噪声峰。",
       "type": "result",
       "status": "已完成",
       "blocks": [
@@ -180,7 +182,11 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.json" --output-dir "<project-root>/过程文件/<任务>" --base-name <YYYYMMDD-or-YYYYMMDD组会>
 ```
 
-`type=result/setup/comparison` 的页面必须有真实图片。每页支持一至六张图片，按可读性决定是否拆页。`section`（兼容 `kicker`）为章节标题，`title` 为实验副标题，`subtitle` 可显式覆盖副标题，`summary` 为页底结论。`layout=wide-strip` 将首图放上方、其余照片放下方；`layout=stacked-left` 将三张图排为左侧上下两图、右侧大图；其他情况使用单图或网格。旧文字块在有图页进入结论区，过长时报错，应精简或拆页。来源、日期与状态写入备注，历史示例仍须在可见文字中标明。只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；缺图和空材料会报错，不生成占位成品。
+`type=result/setup/comparison` 的页面必须有真实图片。每页支持一至六张图片，按可读性决定是否拆页。`title` 是简短主题标题（兼容旧 `section`/`kicker`），`summary` 是红条的一句当页结果总结；旧 `subtitle` 仅作红条兼容输入，不再生成页底结论。有图页的文字块进入独立正文区，不压入页底；`body_fraction` 可调正文占内容区的比例。`layout=wide-strip` 将首图放上方、其余图放下方；`layout=stacked-left` 将三张图排为左侧上下两图、右侧大图；其他情况使用单图或网格。
+
+逐页用 `font_sizes` 覆盖 `title`、`summary`、`body`、`caption` 的起始字号；`layout_overrides` 可覆盖各区域配置，先调整布局再决定是否拆页。拟合只用于避免溢出，不能代替逐页阅读和排版判断。最终页用 `type=next_steps`、`next_steps=["行动一", "行动二"]`，渲染成一个编号原生文本框；该类型不允许出现在中间页。日期、来源和状态保留在备注，不生成角标。历史示例仍须在可见文字中标明。
+
+只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；含真实图件的汇报允许最后一页为纯文字下一步。缺图和空材料会报错，不生成占位成品。
 
 渲染器生成：
 
@@ -190,7 +196,7 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 - `<name>.html`：使用这些页面图片的自包含预览，不另做一套版式。
 - `<name>.manifest.json`：输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明。
 
-默认采用 `D:\\BaiduSyncdisk\\组会\\20260715近期进展.pptx` 第 3、4、8 页提取的样式：16:9、白底、微软雅黑、左上黑色大标题、深色分隔带、粉底居中实验副标题、大面积图件及页底加粗结论。渲染器实际读取 `references/template-profile.json` 的尺寸、坐标、字体与颜色；deck 可用绝对 `profile_path` 选择其他配置。这里复用样式参数，不复制原文件的母版、业务文字和私有实验图片。manifest 记录样式来源及配置哈希。
+默认采用 `D:\\BaiduSyncdisk\\组会\\20260715近期进展.pptx` 第 3、4、8 页提取的样式：16:9、白底、微软雅黑、左上黑色大标题、深色分隔带、粉底居中一句结果总结、大面积图件及按需安排的正文。渲染器实际读取 `references/template-profile.json` 的尺寸、坐标、字体与颜色；deck 可用绝对 `profile_path` 选择其他配置。这里复用样式参数，不复制原文件的母版、业务文字和私有实验图片。manifest 记录样式来源及配置哈希。
 
 文件命名：
 
@@ -205,7 +211,7 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 1. 确认 HTML、PDF、PPTX、PNG 和 manifest 文件存在且非空。
 2. 确认 PPTX 是有效的 ZIP/Office 包，并且幻灯片数量符合预期。
 3. 确认每张 PNG 均为 1600x900，每张引用图片均正常显示；缺图必须补齐或调整页面内容后再交付。
-4. 逐页检查实际 PPTX 的渲染：图件够大、曲线和照片与文字对应、无裁切和重叠、无缺图占位符；页数符合本次要求。
+4. 对照覆盖清单，确认入选项目的独立成果均已表达，未用少量局部图替代完整工作；核对短标题、红条单句当前总结、按需背景及末页编号下一步。逐页检查实际 PPTX 的渲染：图件够大、曲线和照片与文字对应、无裁切和重叠、无缺图占位符；页数符合本次要求。
 5. 报告准确的输出路径和所有 `未验证` 项。
 6. 用 `pptx` 的可编辑性检查确认有原生文字及独立图片，不能以整页截图充当可编辑交付。
 

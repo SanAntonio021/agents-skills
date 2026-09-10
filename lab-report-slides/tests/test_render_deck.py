@@ -17,6 +17,45 @@ import render_deck  # noqa: E402
 
 
 class RenderDeckTests(unittest.TestCase):
+    def test_native_manifest_rejects_inputs_changed_during_export(self):
+        for changed in ('template', 'spec'):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                source = root / 'template.pptx'
+                source.write_bytes(b'original fixture')
+                spec = root / 'template-spec.json'
+                spec.write_text(json.dumps({'template_path': str(source)}), encoding='utf-8')
+                def export(pptx, pdf, pages):
+                    for page in pages:
+                        Image.new('RGB', (1600, 900), 'white').save(page)
+                    target = source if changed == 'template' else spec
+                    target.write_bytes(b'changed while exporting')
+                with patch.object(render_deck, 'make_pptx', return_value=[]), patch.object(render_deck, 'export_pptx', side_effect=export):
+                    with self.assertRaisesRegex(ValueError, 'changed during report rendering'):
+                        render_deck.render_outputs({'template_spec': str(spec)}, [{'title': 'Test'}], root / 'deck.json', root, 'report', 'report')
+                self.assertFalse((root / 'report.manifest.json').exists())
+
+    def test_non_widescreen_preview_preserves_aspect_ratio(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            presentation = Presentation()
+            presentation.slide_width = 9144000
+            presentation.slide_height = 6858000
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+            pptx = root / 'four-by-three.pptx'
+            presentation.save(pptx)
+            runner = root / 'runner.py'
+            runner.write_text('# mock', encoding='utf-8')
+            def run(command, **kwargs):
+                if command[0] == 'fake-pdftoppm':
+                    self.assertEqual(command[command.index('-scale-to-y') + 1], '1200')
+                    Image.new('RGB', (1600, 1200), 'white').save(command[-1] + '-1.png')
+                return SimpleNamespace(returncode=0, stdout='{"ok": true}')
+            with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(runner), 'LAB_REPORT_PDFTOPPM': 'fake-pdftoppm'}), patch.object(render_deck.subprocess, 'run', side_effect=run):
+                render_deck.export_pptx(pptx, root / 'out.pdf', [root / 'out.png'])
+            with Image.open(root / 'out.png') as rendered:
+                self.assertEqual(rendered.size, (1600, 1200))
+
     def test_missing_explicit_runner_does_not_fall_back(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

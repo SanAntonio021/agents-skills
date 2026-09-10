@@ -11,21 +11,20 @@ description: >
   final slide, and polish Chinese prose. Create editable text and independent pictures with
   short titles, one result summary per page and flexible typography; inspect actual PPTX renders.
   Do not use for paper PDF/DOI-to-slides work.
-compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoffice-runner and Poppler. SVG input uses the existing Node.js/sharp runtime.
+compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, requirements.txt, LibreOffice, Poppler and the sibling libreoffice-runner skill. Node.js/sharp is optional for SVG input.
 ---
 
 # 实验工作汇报幻灯片
+
+首次使用读取 [安装与使用说明](README.md)，运行 `python scripts/check_dependencies.py`。当前完整渲染流程支持 Windows，默认按北京时间采集；依赖检查通过不等于实际 PPT 已验证。
 
 该技能用于用户反复开展的日报和周组会工作流。让未参与具体工作的导师看懂每项工作做了什么、目前做到哪一步、下一步准备做什么；需要背景时解释为什么做。将本地会话与项目记录作为证据；绝不能把模型计划、推测或套话当成已完成工作。
 
 ## 触发与模式
 
-本技能保留实验记录采集、证据筛选和简单组会模板的直接制作流程。需要确定制作工具、
-复用其他模板、制作复杂场景或按页分工时，读取 `pptx` 的
-[共同制作流程](../pptx/references/presentation-workflow.md)。跨技能链接若不能解析，按当前宿主
-技能目录找到已安装的 `pptx` 根目录，再读取其 `references/presentation-workflow.md`，不猜私有路径。
-用户指定其他制作工具或已有制作工程时，本技能可提供证据和提纲，由选定工具负责生成，
-不同时运行 `render_deck.py` 再做一套稿。
+本技能内置实验记录采集、证据筛选和简单组会模板，不要求安装整套写作或 PPT 技能。
+用户需要复杂版式、其他模板或指定工具时，可使用已安装的 `pptx` 或其他制作工具；仍沿用本技能的内容选择和证据要求。相应工具未安装时不读取失效的跨技能链接。
+用户指定已有制作工程时，由该工程生成，不同时运行 `render_deck.py` 再做一套稿。
 
 普通日报、组会先确认入选内容，再沿用下文的模板配置制作；不额外要求先确认样页。
 工程模板的字体、配色和构图不反向覆盖简单组会模板；跨页分工时共用本次配置和素材清单。
@@ -37,11 +36,11 @@ compatibility: Requires Python 3.10+, python-pptx, Pillow, the existing libreoff
 
 ## 文件存放
 
-沿用共享规则解析项目根目录和 `过程文件/<任务>/`；续做及跨技能共用该任务目录。采集摘要、deck JSON、渲染 PDF、页面 PNG、HTML 和 manifest 均放任务过程目录，按需创建；实验原始数据和现有素材保持原位。渲染检查通过后，自动将 PPTX 无覆盖复制到项目根目录，复核可打开、大小及 SHA-256，并在过程 manifest 记录交付路径与摘要。PDF/HTML 仅在用户要求时作为成果交付；HTML 交付前确认自包含。根目录同名时沿用下文版本规则，不覆盖旧成果。普通任务结束保留过程材料，清理由用户显式触发 ChatNote。
+项目根目录以用户指定的汇报目录为准；未指定时采用当前项目目录。过程材料放在 `过程文件/<任务>/`，续做及跨技能共用该目录；用户或项目另有文件约定时沿用。采集摘要、deck JSON、渲染 PDF、页面 PNG、HTML 和 manifest 均放任务过程目录，按需创建；实验原始数据和现有素材保持原位。渲染检查通过后，自动将 PPTX 无覆盖复制到项目根目录，复核可打开、大小及 SHA-256，并在过程 manifest 记录交付路径与摘要。PDF/HTML 仅在用户要求时作为成果交付；HTML 交付前确认自包含。根目录同名时沿用下文版本规则，不覆盖旧成果。普通任务结束保留过程材料，清理须由用户明确提出。
 
 ## 数据采集
 
-运行随附的采集器。它只使用本地文件和 Python 标准库：
+运行随附的采集器。它只读取本地文件，不主动联网；Windows 需安装 `tzdata` 以提供时区数据。命令从本技能目录运行：
 
 ```text
 python scripts/collect_sessions.py --mode today --out "<project-root>/过程文件/<任务>/brief.json"
@@ -131,7 +130,9 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 
 ## 逐页中文润色
 
-页面内容整理后、渲染前，使用 [writing-router](../writing-router/SKILL.md) 的中文编辑流程检查逻辑和自然表达，再按 [style-vocab](../style-vocab/SKILL.md) 运行个人词表检查。两步各有目的：逐页润色检查整句与前后页是否好懂，词表检查个人用词；不能只读规则或仅凭词表无命中就声称润色完成。
+写提纲和页面正文前，读取随附的 [中文表达规则与通用词表](references/chinese-style.md)。逐批展示前和渲染前，先检查整句与前后页是否好懂，再结合词表及例外检查用词；不能只读规则或仅凭词表无命中就声称润色完成。
+
+个人词表是可选增强：用户提供文件或项目根目录存在 `汇报词表.md` 时读取；已安装并配置好 `writing-router`、`style-vocab` 时，可沿用其检查流程。不依赖作者的私人词表和本机路径；没有个人词表时仍完整执行随附规则。
 
 像向导师说明工作一样写具体问题、行动和结果，减少“取证、核实、验证范围”等检查报告式栏目和机械状态标签；专业术语确有必要时保留，不作批量替换。影响判断的限制集中说清一次，跨页容易误解时保留必要提示。润色不改变数字、单位、比较条件、因果关系或完成状态，也不额外重复已确认的内容选择。
 
@@ -199,7 +200,7 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 - `<name>.html`：使用这些页面图片的自包含预览，不另做一套版式。
 - `<name>.manifest.json`：输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明。
 
-默认采用 `D:\\BaiduSyncdisk\\组会\\20260715近期进展.pptx` 第 3、4、8 页提取的样式：16:9、白底、微软雅黑、左上黑色大标题、深色分隔带、粉底居中一句结果总结、大面积图件及按需安排的正文。渲染器实际读取 `references/template-profile.json` 的尺寸、坐标、字体与颜色；deck 可用绝对 `profile_path` 选择其他配置。这里复用样式参数，不复制原文件的母版、业务文字和私有实验图片。manifest 记录样式来源及配置哈希。
+默认采用随附的简洁科研汇报样式：16:9、白底、微软雅黑、左上黑色大标题、深色分隔带、粉底居中一句结果总结、大面积图件及按需安排的正文。渲染器实际读取 `references/template-profile.json` 的尺寸、坐标、字体与颜色；deck 可用绝对 `profile_path` 选择其他配置。只复用样式参数，不需要原始样稿，也不包含私人实验图片。字体未安装时先在配置副本中选择已安装的中文字体，再检查渲染。manifest 记录样式来源及配置哈希。
 
 文件命名：
 
@@ -216,8 +217,8 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 3. 确认每张 PNG 均为 1600x900，每张引用图片均正常显示；缺图必须补齐或调整页面内容后再交付。
 4. 对照覆盖清单，确认入选项目的独立成果均已表达，未用少量局部图替代完整工作；核对短标题、红条单句当前总结、按需背景及末页编号下一步。逐页检查实际 PPTX 的渲染：图件够大、曲线和照片与文字对应、无裁切和重叠、无缺图占位符；页数符合本次要求。
 5. 报告准确的输出路径和所有 `未验证` 项。
-6. 用 `pptx` 的可编辑性检查确认有原生文字及独立图片，不能以整页截图充当可编辑交付。
+6. 用 `python-pptx` 读取文件，检查各页有非空原生文本框、预期数量的独立图片且图片不是整页截图。结合实际渲染确认对象与内容一致；安装了 `pptx` 技能时可复用它的检查工具。
 
-原生 PowerPoint 验证使用 `pptx` 的既有守护程序和隔离副本，保留实际打开与导出结果；不能接管或关闭用户实例。应用被占用时先交付可检查的候选并说明原生验证范围，不把 LibreOffice 渲染冒充 PowerPoint 原生结果。
+原生 PowerPoint 验证是单独的验收项。有已安装的 `pptx` 守护程序或其他受控验证工具时，在隔离副本上验证，保留实际打开与导出结果；不能接管或关闭用户实例。没有工具或应用被占用时，交付已经检查的候选并标明“PowerPoint 原生打开与导出未验证”，不把 LibreOffice 渲染冒充原生验证。
 
-修改已有 PPT 的文字时，遵循 `pptx` 的安全文字替换方法，并对最终文件运行包含重复格式节点检测的结构检查；渲染成功不能代替此检查。交付分别记录结构检查、兼容渲染、PowerPoint 实际打开及导出结果；原生启动失败或未完成时明确标为未验证，不称文件已确认可正常打开。已知结构错误必须修复后再交付。
+修改已有 PPT 时先保留原文件，沿用用户指定的制作工具；使用 `python-pptx` 或 XML 编辑时检查有效 OOXML、重复格式节点及可编辑对象，并重新渲染。已安装 `pptx` 技能时可复用安全替换和结构检查工具；没有相应检查能力时明确报告未验证项，已知结构错误必须修复后再交付。

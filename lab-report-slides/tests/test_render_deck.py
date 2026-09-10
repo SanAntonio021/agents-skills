@@ -4,6 +4,8 @@ import tempfile
 import unittest
 import zipfile
 import shutil
+from unittest.mock import patch
+from types import SimpleNamespace
 from pathlib import Path
 
 from PIL import Image
@@ -15,6 +17,25 @@ import render_deck  # noqa: E402
 
 
 class RenderDeckTests(unittest.TestCase):
+    def test_missing_explicit_runner_does_not_fall_back(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(root / 'missing.py')}):
+                with self.assertRaisesRegex(RuntimeError, 'Install libreoffice-runner'):
+                    render_deck.export_pptx(root / 'in.pptx', root / 'out.pdf', [])
+
+    def test_custom_office_path_is_forwarded_and_bad_runner_json_is_clear(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            runner = root / 'runner.py'
+            runner.write_text('# fake test entry', encoding='utf-8')
+            custom_office = str(root / 'custom office' / 'soffice.com')
+            with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(runner), 'LAB_REPORT_SOFFICE': custom_office}):
+                with patch.object(render_deck.subprocess, 'run', return_value=SimpleNamespace(stdout='not JSON', returncode=1)) as run:
+                    with self.assertRaisesRegex(RuntimeError, 'check_dependencies.py'):
+                        render_deck.export_pptx(root / 'in.pptx', root / 'out.pdf', [])
+                    self.assertEqual(run.call_args.args[0][-2:], ['--soffice', custom_office])
+
     def test_exports_actual_pptx_renders_and_preserves_editable_objects(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)

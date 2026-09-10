@@ -4,38 +4,38 @@
     {
       "id": 1,
       "prompt": "我用 CC Switch 把 Codex provider 切到 aijws 以后，CodexCont 还能不能正常跑？帮我检查 8787/15721、本地 Codex 配置和 Responses SSE。",
-      "expected_output": "应按 Codex -> CodexCont -> CC Switch -> 当前 provider 的顺序检查监听端口、Codex base_url、CodexCont upstream、当前 provider 和真实 stream=true /v1/responses SSE，并用 reasoning、encrypted_content、reasoning_tokens、proxy_rounds 作为通过信号。",
+      "expected_output": "应先确认实际链路模式，再检查对应入口、当前 provider 和用户明确要求的真实 stream=true /v1/responses SSE。full 模式检查 8787 -> 15721 -> provider 及 CodexCont proxy_rounds；ccswitch-only 模式检查 15721 -> provider，8787 未监听和缺少 proxy_rounds 均可正常，不启动旧链路。SSE 验收还应核对完成事件、增量与终态文本一致性及目标模型所需 reasoning、encrypted_content、reasoning_tokens。 新增请求复用已确定的模型、次数和费用上限；缺少必要测试授权时只暂停收费验证，继续已授权的独立检查。",
       "files": []
     },
     {
       "id": 2,
       "prompt": "切到 aijws 后测试返回 Invalid API key，但网页余额充足。你帮我判断是 CodexCont 挂了还是 CC Switch 配置问题。",
-      "expected_output": "应先判断 401 多半不是 CodexCont 本体故障，而是 provider key 或 CC Switch live backup 覆盖；应检查 providers、proxy_live_backup 和 .codex/config.toml，不打印完整 key。",
+      "expected_output": "应先根据失败 URL、时间、当前 provider 和同一时段转发日志区分 provider 认证、live backup 覆盖与旧任务上下文，不凭网页余额或 401 单独归因。仅按问题只读检查相关 providers、proxy_live_backup 与最终配置，不打印完整 key；没有发请求授权时不自动重试或对其他 provider 发探针。",
       "files": []
     },
     {
       "id": 3,
       "prompt": "CodexCont 装好了，怎么判断它有没有正常运行？不要只说看进程，帮我给可验证标准。",
-      "expected_output": "应给出可验证标准：8787/15721 监听、Codex base_url 指向 8787、CodexCont upstream 指向 15721、hook.log 有 hooked/already hooked、codexcont.out.log 有 POST /v1/responses 200 OK，并用 Responses SSE 字段确认。",
+      "expected_output": "应说明 full 模式下 CodexCont 正常运行的标准：8787/15721 监听、Codex base_url 指向 8787、CodexCont upstream 指向 15721，hook 与请求日志相符，最终以真实 Responses SSE 和 CodexCont 扩展验证。仅进程、端口或日志 200 不足以证明端到端可用；若当前是 ccswitch-only，CodexCont 停用符合模式。用户此处要求判断标准，不自动启动服务或发送探针。",
       "files": []
     },
     {
       "id": 4,
       "prompt": "帮我把 Codex 改成直连中转站，先别走本地那条链路，我改了 base_url 但保存后又变回 127.0.0.1，改不掉。",
-      "expected_output": "应先确认当前配置所有权，再只读排查两类独立来源：(a) 外部 watcher/计划任务及孤儿进程；(b) CC Switch 自身的本地代理接管。在 ccswitch-owned 下，直连上游应通过 CC Switch 选择或创建 provider，不直接写 proxy_config、providers、proxy_live_backup 或 config.toml；若用户实际要完全绕过 CC Switch，应说明这是另一个架构变更并重新确认。验证至少等待 60 秒比较 config.toml 哈希，auth.json 按 OAuth 结构语义复核。",
+      "expected_output": "应先结合已有授权确定配置所有权和目标；仅当保留 CC Switch 管理与完全绕过 CC Switch 的关键歧义仍无法查明时提问，不对已明确授权的架构重复确认。只读排查外部 watcher/计划任务及孤儿进程，以及 CC Switch 本地代理接管两类独立来源。在 ccswitch-owned 下使用实际支持的 CC Switch 入口，不直接写 proxy_config、providers、proxy_live_backup 或 config.toml；后台不支持所需切换或认证动作时报告具体缺口，不转界面或 SQL。针对改回去的问题，至少观察 60 秒比较 config.toml 哈希，auth.json 按 OAuth 结构语义复核。",
       "files": [],
       "expectations": [
         "先区分 ccswitch-owned 与完全绕过 CC Switch 两种目标",
         "同时检查外部 writer/孤儿进程和 CC Switch 本地代理接管，但不把后者误判为 watcher",
         "在 ccswitch-owned 下通过 CC Switch 配置直连 provider，不直接写数据库或 config.toml",
-        "完全绕过 CC Switch 时视为新的架构变更并重新取得用户确认",
+        "复用已有准确架构授权；只有目标仍有关键歧义时才问，不把完全绕过 CC Switch 一律变成重复确认",
         "至少等待 60 秒比较 config.toml 哈希，auth.json 变化时按 OAuth 结构复核"
       ]
     },
     {
       "id": 5,
       "prompt": "CC Switch 里的聪明 AI 能选，但一点启用 Codex 就 504。数据库里这个 provider 的地址看起来是 127.0.0.1:8787/v1，帮我查清楚并修好。",
-      "expected_output": "应从 providers.settings_config 的 JSON 和内嵌 config TOML 中只读解析真实 base_url，不假设存在独立 base_url 列，并识别 8787 -> 15721 -> 8787 的代理回环。在 ccswitch-owned 下应通过 CC Switch 修正目标 provider，保留认证和其他 provider；不得直接写数据库、proxy_live_backup 或 config.toml。完成后核对 currentProviderCodex、providers.is_current、端口、最终配置哈希和真实 Responses SSE。",
+      "expected_output": "应从 providers.settings_config 的 JSON 和内嵌 config TOML 中只读解析真实 base_url，不假设存在独立 base_url 列，并识别 8787 -> 15721 -> 8787 的代理回环。在 ccswitch-owned 下通过实际支持该字段的 CC Switch 后台入口修正目标 provider，保留认证和其他 provider；不得直接写数据库、proxy_live_backup 或 config.toml。后台不支持则报告具体缺口，不转 provider 页面或 SQL 恢复。完成受支持的修改后核对当前 provider、相关端口、最终配置和真实 Responses SSE；受阻时不宣称修复通过。 新增请求复用已确定的模型、次数和费用上限；缺少必要测试授权时只暂停收费验证，继续已授权的独立检查。",
       "files": [],
       "expectations": [
         "从 settings_config 的 JSON 和内嵌 TOML 解析 base_url，不猜数据库列",
@@ -48,13 +48,13 @@
     {
       "id": 6,
       "prompt": "切到一个 Codex 中转站后本地 /v1/responses 返回 503。不要只看端口，帮我判断是本地代理坏了还是中转站上游断了；如果上游坏了别把 Codex 留在不可用状态。",
-      "expected_output": "应使用同一最小 Responses 请求分别测试 8787 完整链路和 provider 远端直连，不输出完整 key 或 SSE body；两边同为 503 才判断上游故障，远端正常而本地失败则继续排查 CodexCont/CC Switch；上游故障时切回最后一个通过完整 SSE 验证的 provider，并再次核对 currentProviderCodex、is_current、Codex base_url 和完整 SSE 字段。",
+      "expected_output": "用户已要求实际故障定位和恢复可用，可使用同一最小 Responses 请求对照当前模式入口与该 provider 远端直连；仅 full 模式使用 8787，ccswitch-only 使用 15721，不启动旧链路，不输出完整 key 或 SSE body。结合相同时段响应与代理日志定位 503，远端正常而本地失败则查本地层，两边同类 503 支持上游归因但不只凭状态码断言根因。上游故障时在已有恢复授权内，经实际支持的入口切回最后一个通过 SSE 验证的 provider 并复验；入口不支持则报告阻塞，不直接写数据库。不得无限重试或扩大为其他供应商审计。 新增请求复用已确定的模型、次数和费用上限；缺少必要测试授权时只暂停收费验证，继续已授权的独立检查。",
       "files": []
     },
     {
       "id": 7,
       "prompt": "本地 Codex 偶尔报 524，但过一会儿又能正常对话。请用证据判断是 8787、15721 还是远端 provider，并注意 CC Switch 可能启用了自动故障转移。",
-      "expected_output": "应记录测试前后 8787/15721 的 PID，使用同一最小 stream=true 请求交替测试 8787、15721 和远端 provider；读取 auto_failover_enabled、in_failover_queue 和 proxy_request_logs 识别实际 provider；看到 Cloudflare HTML、Server=cloudflare、接近 120 秒的 524 时，应判断为远端源站间歇性超时，而不是把它归因于本地配置；本地 200 不足以否定远端偶发 524。",
+      "expected_output": "应先读取失败时段日志与实际链路模式，记录相关端口 PID，通过 auto_failover_enabled、in_failover_queue 和 proxy_request_logs 识别真实转发 provider。需要主动对照时须处于请求验证授权范围，使用同一最小 stream=true 请求；必要重试计入原次数和费用范围，不固定追加多轮。full 模式可对照 8787、15721 与远端，ccswitch-only 只测相关两层，不启动 8787。Cloudflare HTML、Server=cloudflare 和接近 120 秒的 524 支持远端源站超时；本地 200 不足以否定远端偶发 524，也不能忽略故障转移。",
       "files": []
     },
     {
@@ -66,7 +66,7 @@
     {
       "id": 9,
       "prompt": "CodexCont Chain 已经不需要了。帮我取消 CodexCont，但保留 CC Switch 继续管理 provider；不要删除安装文件，也不要把计划任务彻底注销。请说明执行顺序、复查时间和最终验收标准。",
-      "expected_output": "应先记录源码、计划任务 XML、进程命令行、端口和配置哈希，再把 relay-chain.mode 设为 ccswitch-only；禁用而非注销 CodexCont Chain，停止现存 CodexCont 并保留安装文件；不修改 provider、认证数据库、config.toml 或 CodexAutoContinue，保持 CodexCapabilityCheck Disabled。确认 8787 不监听、15721 监听、CC Switch 输出的 base_url 指向 http://127.0.0.1:15721/v1；至少等待 60 秒复查无 writer 或 CodexCont 重启；对 15721 做真实 SSE。缺少 proxy_rounds 是预期结果。",
+      "expected_output": "应先记录源码、计划任务 XML、进程命令行、端口和配置哈希，再把 relay-chain.mode 设为 ccswitch-only；禁用而非注销 CodexCont Chain，停止现存 CodexCont 并保留安装文件；不修改 provider、认证数据库、config.toml 或 CodexAutoContinue，保持 CodexCapabilityCheck Disabled。确认 8787 不监听、15721 监听、CC Switch 输出的 base_url 指向 http://127.0.0.1:15721/v1；至少等待 60 秒复查无 writer 或 CodexCont 重启；对 15721 做真实 SSE。缺少 proxy_rounds 是预期结果。 新增请求复用已确定的模型、次数和费用上限；缺少必要测试授权时只暂停收费验证，继续已授权的独立检查。",
       "files": [],
       "expectations": [
         "将 relay-chain.mode 设为 ccswitch-only，而不是 disabled 或直连远端 provider",
@@ -95,13 +95,13 @@
     {
       "id": 11,
       "prompt": "我恢复 ChatGPT OAuth 后，旧对话的错误先从 access token could not be refreshed 变成了 401 INVALID_API_KEY，错误 URL 还是聪明 AI；但 CC Switch 当前选中 JBB，新对话能正常回复。是不是应该马上把聪明 AI 的 key 换掉？",
-      "expected_output": "不应立刻改 key。应读取旧任务或 session JSONL 的失败时间和错误 URL，对照当前 config.toml、currentProviderCodex、providers.is_current 以及同一时段 CC Switch 的真实转发目标；再用聪明 AI 当前已保存 key 做最小 Responses 直连，并用新任务或 codex exec 验证当前线路。若聪明 AI key 直连 200、JBB 当前线路 200、只有旧任务报旧 URL 401，则判为旧任务认证/provider 上下文失效，不覆盖 providers、proxy_live_backup 或 config.toml。",
+      "expected_output": "不应立刻改 key。应只读对齐旧任务或 session JSONL 的失败时间与 URL、当前 provider、最终配置及同一时段真实转发目标；现有新任务成功证据应复用。仅回答是否换 key 不自动对聪明 AI 或 JBB 发请求，也不自动建新任务；若获准进一步验证，可用已保存 key 做最小直连并检查当前线路。若已有证据显示目标 key 直连和当前线路均通过而只有旧任务失败，支持旧任务上下文失效；缺少主动验证则说明证据边界，不覆盖 providers、proxy_live_backup 或 config.toml。",
       "files": [],
       "expectations": [
         "先比较旧任务错误 URL 与当前 provider 和同一时段代理日志，而不是仅凭 401 修改 key",
-        "用已保存 key 做最小 Responses 直连，但只输出掩码或指纹和状态",
-        "用新任务或 codex exec 验证当前线路并检查 CC Switch HTTP 200 日志",
-        "当前 key 直连正常且只有旧任务失败时，明确判为旧任务上下文失效",
+        "不因只读认证问答自动发模型请求；仅在验证授权内使用已保存 key，且只输出掩码或指纹和状态",
+        "复用已有新任务与代理日志证据，不自动创建新任务或反复验证其他 provider",
+        "当前 key 直连正常且只有旧任务失败时支持旧任务上下文失效；证据不足时保留边界",
         "不修改 providers、proxy_live_backup、auth.json 或 config.toml"
       ]
     },
@@ -129,7 +129,7 @@
         "按 provider_id + app_type 检查 provider_health，不能用同站点 Claude 或官网状态代替 Codex 记录",
         "使用 proxy_request_logs 对齐实际 request_model/model、HTTP 状态、失败时间和熔断状态",
         "说明没有固定 Luna/Terra 后台探测模型证据，HalfOpen 是自动恢复机制",
-        "区分 404 model_not_found 与 429/502/503/504/524/超时，并用真实 stream=true Responses SSE 复核",
+        "区分 404 model_not_found 与 429/502/503/504/524/超时；建议授权范围内的真实 SSE 复核，不因解释熔断机制自动发送模型探针",
         "不建议直接改数据库或把 Terra low 当作可配置的探测模型"
       ]
     },
@@ -149,10 +149,10 @@
     {
       "id": 15,
       "prompt": "我的贾维斯用 medium 探针跑 8 并发是 0/8，有人说就是并发太高或探针题目有问题。请给出最小控制实验和可以下结论的边界。",
-      "expected_output": "应先保持端点、模型、prompt、reasoning effort、include、stream、store、超时等请求形态不变，关闭重试并用 worker=1 重复取样。单 worker 仍稳定复现同类错误时，不能归因于 8 并发；只有单 worker 通过而提高并发后可重复失败，且限流、连接重置或超时等证据随并发变化时，才把并发容量列为候选。随后可只替换为简单固定回显来检查探针内容；其他字段保持不变，若仍出现同类终态/增量冲突，则不能归因于原探针题目。",
+      "expected_output": "应给出最小控制实验设计，不因用户要求方案自动执行付费测试。设计保持端点、模型、prompt、reasoning effort、include、stream、store、超时等请求形态不变，关闭重试并用 worker=1 在授权样本数和费用范围内重复取样。单 worker 仍稳定复现同类错误时，不能归因于 8 并发；只有单 worker 通过而提高并发后可重复失败，且限流、连接重置或超时等证据随并发变化时，才把并发容量列为候选。随后可只替换为简单固定回显来检查探针内容；其他字段保持不变，若仍出现同类终态/增量冲突，则不能归因于原探针题目。",
       "files": [],
       "expectations": [
-        "先用完全相同的请求形态做 worker=1 且关闭重试的控制实验",
+        "设计完全相同请求形态、worker=1 且关闭重试的控制实验；执行须在已有测试与费用授权内，不把给方案当作执行授权",
         "单 worker 稳定复现时明确否定把失败归因于 8 并发限制",
         "只有单 worker 通过且失败随并发可重复变化时，才把并发容量列为候选",
         "检查探针内容时只替换 prompt 为简单固定回显，其他字段保持不变",
@@ -176,7 +176,7 @@
     {
       "id": 17,
       "prompt": "我已经确认当前 Codex 模型支持 272000 上下文。请通过 CC Switch 的 Common Config 配置它，并判断 model_auto_compact_* 两个字段要不要一起加；保存后要确认 provider、127.0.0.1:15721/v1、真实 Responses SSE 和配置是否会被改回去。",
-      "expected_output": "应说明 Common Config 只写 model_context_window = 272000；model_auto_compact_* 改变自动压缩触发时机，不是扩容参数，除非有明确目的不添加。所有修改通过 CC Switch 保存并重新渲染，不直接改 config.toml、Common Config 文件或数据库；保存后核对 currentProviderCodex、providers.is_current、远端 base_url、Codex 最终入口和 ccswitch-only 模式，用真实 stream=true Responses SSE 验证，并在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口至少等待 60 秒比较 config.toml 哈希。",
+      "expected_output": "应说明 Common Config 只写 model_context_window = 272000；model_auto_compact_* 改变自动压缩触发时机，不是扩容参数，除非有明确目的不添加。所有修改通过 CC Switch 保存并重新渲染，不直接改 config.toml、Common Config 文件或数据库；保存后核对 currentProviderCodex、providers.is_current、远端 base_url、Codex 最终入口和 ccswitch-only 模式，用真实 stream=true Responses SSE 验证，并在没有 provider 切换、Common Config 重渲染或新任务草稿设置变化的受控空闲窗口至少等待 60 秒比较 config.toml 哈希。 新增请求复用已确定的模型、次数和费用上限；缺少必要测试授权时只暂停收费验证，继续已授权的独立检查。",
       "files": [],
       "expectations": [
         "只在已确认模型上限时设置 model_context_window，并给出 272000 的准确 TOML 写法",
@@ -215,12 +215,12 @@
     {
       "id": 20,
       "prompt": "Codex Desktop 已经开了完全访问，但删除一个由当前任务创建的临时 Git 索引时仍提示 blocked by policy，PowerShell 根本没有启动，也没有出现自动审批。现在配置同时有 approval_policy=never、approvals_reviewer=auto_review 和 sandbox_mode=danger-full-access。请判断原因并修好，不能控制鼠标、不能直接写 CC Switch 数据库或生成的 config.toml，也不要换 cmd 或 .NET 强删。",
-      "expected_output": "应识别 danger-full-access 只决定底层访问范围，approval_policy=never 会关闭审批交接，使需要审批的命令在 shell 启动前失败，auto_review 无法接管。应通过 CC Switch 支持的后台入口把 Common Config 调整为 approval_policy=on-request、approvals_reviewer=auto_review，并保留 sandbox_mode=danger-full-access；确认当前 provider 的 commonConfigEnabled 已启用，最终 config.toml 正确生成，并把 Desktop 当前权限模式与 permission selection 设为 custom。还应说明 full-access 内置映射为 danger-full-access+never+user，guardian-approvals 映射为 workspace-write+on-request+guardian_subagent；旧任务可能缓存原策略，必须在新任务首个 turn_context 中验证实际三元组。旧任务中的无害残留应报告路径并保留，不能换 shell 或 API 绕过策略。",
+      "expected_output": "应识别 danger-full-access 只决定底层访问范围，approval_policy=never 会关闭审批交接，使需要审批的命令在 shell 启动前失败，auto_review 无法接管。应先确认受支持后台入口的字段范围，在支持范围内把 Common Config 调整为 approval_policy=on-request、approvals_reviewer=auto_review，并保留 sandbox_mode=danger-full-access；核对 commonConfigEnabled 和最终生成配置。显式三元组还需 Desktop 当前权限模式与 permission selection 为 custom；若后台不支持桌面模式切换，报告该步骤未完成，不转界面或直接写库。说明 full-access 映射为 danger-full-access+never+user，guardian-approvals 映射为 workspace-write+on-request+guardian_subagent；旧任务可能缓存原策略，新任务首个 turn_context 才能验证实际三元组。无害残留报告路径并保留，不换 shell 或 API 绕过策略，不把磁盘配置正确当作运行态通过。",
       "files": [],
       "expectations": [
         "区分 sandbox_mode 的访问范围与 approval_policy 的审批交接，指出 never 会让 auto_review 无法接管",
-        "通过 CC Switch 支持的后台入口修改 Common Config，不直接写数据库或生成的 config.toml",
-        "采用 on-request、auto_review、danger-full-access 与桌面 custom 的兼容组合，并区分 full-access 和 guardian-approvals 的内置映射",
+        "先确认后台入口实际支持本次 Common Config 字段；支持才修改，不支持则报告缺口，不转界面或直接写数据库、生成配置",
+        "采用 on-request、auto_review、danger-full-access 与桌面 custom 的兼容组合，并区分 full-access 和 guardian-approvals 的内置映射；若无受支持的后台方式切换桌面模式则报告这一剩余步骤，不模拟键鼠",
         "确认当前 provider 启用 commonConfigEnabled，并核对最终生成配置",
         "说明任务启动时会缓存审批策略，必须以新任务首个 turn_context 做运行态验收",
         "策略拒绝后不改用 cmd、.NET 或其他 API 强删，只报告并保留无害残留"
@@ -238,6 +238,61 @@
         "输出要求显式 danger-full-access、on-request、auto_review 组合使用 Desktop custom 和 custom permission selection",
         "输出把新任务首个 turn_context 作为实际运行态依据",
         "输出不把 never+user 下的命令成功当作 auto-review 证据，并把验收保持为未通过"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "仅根据以下虚构片段做静态规则推演，不访问真实配置或联网：Common Config 中只有 model_context_window = 272000；模型上限已确认是 272000。用户只问这个字段写法是否正确，并明确不要调用模型。",
+      "expected_output": "应确认给定 TOML 字段与数值正确，仅检查局部配置语义；不添加 model_auto_compact_*，不读真实配置、数据库、端口或日志，不发送 Responses 探针，不要求整套 Preview/Apply/Verify 或 60 秒观察。结论限于提供片段的静态检查，不声称真实配置已保存或链路可用。",
+      "files": [],
+      "expectations": [
+        "只使用给定虚构片段，不读取真实配置或联网",
+        "回答局部语义并保留静态检查的结论边界",
+        "不扩展成全链路报告、模型请求或无关配置审计"
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "仅根据虚构资料给出处理步骤，不执行：上一轮我已明确授权 full 切换为 ccswitch-only，禁用 CodexCont Chain 但不注销任务，保留 CC Switch provider 管理和安装文件；允许对已确定的目标 provider 和当前模型做一次实际 SSE 验收，总费用不超过 0.10 元，已有可靠计费上界满足该限制。现在相关检查已完成且没有新冲突，请继续。",
+      "expected_output": "应复用已有准确架构与验证授权，直接推进对应切换步骤，不再次询问是否保留 CC Switch。按授权禁用而非注销 CodexCont 任务、停止其进程并保留文件，核对 8787 不监听、15721 监听和最终入口；针对重启源至少观察 60 秒，再对目标入口做授权的一次 SSE。ccswitch-only 下不要求 proxy_rounds，不启用旧 writer、CodexCapabilityCheck 或无关任务，不把拟定步骤说成已执行。",
+      "files": [],
+      "expectations": [
+        "准确复用先前架构授权，不重复确认",
+        "保留模式差异、至少 60 秒重启源复查和目标入口实际 SSE 验收要求",
+        "只做虚构步骤推演，不访问或修改真实配置"
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "仅根据虚构资料判断下一步，不执行：我已授权切换供应商并更新认证，只允许后台操作。固定后台工具 Inspect 正常，但其 README 明确只支持指定 provider 字段和 Common Config，不支持供应商切换或认证更新。有人建议打开 provider 页面、临时拼接 invoke，或者直接改数据库后恢复。",
+      "expected_output": "应指出授权充分但后台能力不足，Inspect 成功不代表支持切换或认证更新；报告缺少哪两个动作的受支持入口，不把它们伪装为 apply-config，不猜 invoke、不打开 provider 页面、不模拟键鼠、不直接写 SQL 或恢复旧数据库。可继续整理已给资料中的候选和必要信息，但切换、认证更新及其验收保持未完成，不要求用户重复同一授权。",
+      "files": [],
+      "expectations": [
+        "区分用户授权与工具实际支持范围",
+        "禁止页面、猜接口和 SQL 恢复退路",
+        "具体报告未支持动作与未完成状态，不宣称已修改"
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "仅根据以下虚构记录判断，不执行：relay-chain.mode = ccswitch-only，Codex base_url = http://127.0.0.1:15721/v1，15721 正常监听，8787 未监听，CodexCont 任务已禁用。用户只要求核对配置是否符合该模式，没有授权模型请求。旧检查清单把 8787、hooked 和 proxy_rounds 全列为必需。",
+      "expected_output": "应判定给定记录符合 ccswitch-only 的静态模式要求，8787 未监听和 CodexCont 停用属于预期；hooked 和 proxy_rounds 不是该模式必需信号。不启动 CodexCont、不启用旧 writer、不改成 full，不自动发送模型请求。当前只能确认给定配置和模式相符；真实请求可用性仍需授权范围内的实际 Responses SSE。",
+      "files": [],
+      "expectations": [
+        "按 ccswitch-only 判断，不套用 full 检查清单",
+        "不为凑齐旧信号启用停用组件或发送未授权请求",
+        "静态模式符合不等于端到端可用"
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "仅根据以下虚构验收结果判断，不执行：后台 Apply 和 Verify 均成功，目标 Common Config 字段已生成、非目标字段未变，当前模式入口监听正常；本次只获准保存配置，没有发送模型请求，也没有配置漂移或重启问题。能否说本次改动完成、整条 Codex 链路已经验证通过？",
+      "expected_output": "应分别判断：给定证据足以确认本次配置保存和局部验证完成，但不足以声称整条 Codex 链路通过。无需为普通局部修改追加 60 秒漂移观察或自动发请求；若后续要求真实链路可用验收，仍需对当前入口实际发送 stream=true Responses 请求并验证完整 SSE、终态与增量一致及相关模式字段。Verify、端口监听和 HTTP 200 都不能单独替代端到端 SSE。",
+      "files": [],
+      "expectations": [
+        "允许按授权范围完成局部配置任务，不强制扩展全链路验收",
+        "不把 Apply/Verify 或监听正常升级为端到端通过",
+        "需要真实链路验收时仍保留实际 SSE 标准，普通局部改动不机械要求 60 秒观察"
       ]
     }
   ]

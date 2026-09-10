@@ -1,4 +1,6 @@
 [
+  {"query":"所有有效工作合入默认分支，本地和 origin 最后各留一个分支，正常 merge commit 保留。","should_trigger":true},
+  {"query":"只是确认 node_modules 有没有重建命令，不整理分支或 worktree。","should_trigger":false},
   {"query":"Git fetch 被云盘临时 ref 挡住，只核对远端提交，不整理分支。","should_trigger":false},
   {"query":"PowerShell 命令参数写错了，帮我修正并继续原任务。","should_trigger":false},
   {

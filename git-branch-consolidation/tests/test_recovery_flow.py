@@ -264,6 +264,9 @@ class RecoveryFlowTests(TemporaryGitCase):
         captured = self.capture(repo, primary, mirror, stamp="acceptance")
         self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
 
+        git(repo, "merge", "--no-ff", "feature", "-m", "retain feature work")
+        git(repo, "push", "origin", "main")
+
         git(
             repo,
             "push",

@@ -3,7 +3,7 @@ name: git-branch-consolidation
 description: >
   把单个 Git 仓库彻底收口到远端默认分支，并可恢复地清理本地与远端辅助分支、worktree、stash 和未提交内容。
   用户说“所有分支合到 main/master”“本地远端只留一个分支”“旧分支、worktree、stash 全部清掉”
-  “把整个仓库彻底收口”时必须使用。流程覆盖冻结现场、双份恢复包、bundle 隔离重放、提交判重、线性集成、
+  “把整个仓库彻底收口”时必须使用。流程覆盖冻结现场、双份恢复包、bundle 隔离重放、有效工作集成、
   带 lease 的原子远端删除和最终验收。普通单分支 merge/rebase/PR 合并不触发；多个目录或多个仓库的整理
   使用 project-organizer。
 compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require PowerShell 5.1+.
@@ -11,7 +11,7 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 
 # Git Branch Consolidation
 
-把一个仓库收口到它的远端默认分支。先证明所有状态可恢复，再形成线性历史，最后按冻结清单删除。任何现场漂移、冲突、恢复失败或测试失败都会停止删除。
+把一个仓库的有效工作收口到选定远端的默认分支，最后本地和该远端各只留这个分支。先保护现场并演练恢复，再按代码关系集成和测试，最后精确清理。普通 merge commit 可以保留；仅用户或项目要求时采用线性历史。
 
 ## 完成合同
 
@@ -20,7 +20,7 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 - 根工作树检出远端默认分支，本地默认分支、远端跟踪分支和 live remote 指向同一提交。
 - 本地与远端 branch heads 只剩默认分支，只保留根工作树，stash 和普通 git status 为空。
 - 所有冻结时存在的 tags 原样保留。
-- 冻结时默认分支是最终提交的祖先，新增区间没有 merge commit。
+- 冻结时默认分支是最终提交的祖先，各分支、stash 和未提交内容中的有效工作已纳入最终版本；仅留在恢复包不等于完成集成。
 - 两份恢复包哈希有效，bundle 可读，所有 worktree 的 staged、unstaged、untracked 和需保存的 ignored 内容已在隔离仓库重放。
 
 用户明确要求保留某个长期分支、worktree、stash 或本地生成物时，把它写入例外清单，并相应修改完成合同。不要把“只留一个分支”解释成删除 tags。
@@ -37,17 +37,17 @@ compatibility: Git 2.39+, Python 3.10+; Windows PowerShell examples require Powe
 ## 1. 确定默认分支并冻结写入者
 
 1. 读取仓库及上级 AGENTS.md、项目规则和测试入口。
-2. 用 git ls-remote --symref &lt;remote&gt; HEAD 确定默认分支；不要凭 main、master 或当前分支名猜测。
+2. 沿用任务及项目已确定的发布远端，用 git ls-remote --symref &lt;remote&gt; HEAD 确定默认分支；不猜 main/master。多个远端归属不清且影响删除范围时才询问；未纳入的远端保持原状，完成说明写明实际范围。
 3. 按现有协作方式确认已知 Git 写入者、会改工作树的任务/IDE 和自动化已结束或交接；单次进程快照不能代替协调。
 4. 区分单向备份与双向同步。正常单向备份仅因客户端运行、正在上传或暂停状态未知，不阻断收口；双向覆盖风险、真实回写或并发 Git 写入则阻断受影响的封包、集成或删除步骤。记录模式、监控范围及实际干扰证据，不自动暂停或强停客户端，暂停也不是冻结的唯一门槛。
-5. 检查每个 worktree 是否存在 merge、rebase、cherry-pick、revert、bisect、sequencer 或 unmerged index。任一存在就停止。
-6. 按恢复合同采集完整状态与哈希，两次快照间隔至少 2 秒；live remote heads/tags、全部本地 refs、HEAD、reflog、stash、worktrees、index、工作树及 ignored/payload 任一不一致时，现场未冻结。两次一致只是必要证据，不能覆盖已知写入者尚未交接的事实。
+5. 检查活动 merge、rebase、cherry-pick、revert、bisect、sequencer、unmerged index，以及子模块、LFS、稀疏检出或特殊 index 标志等普通快照未必覆盖的状态。先核对其内容能否保全；不能证明时保留现场，仅阻塞依赖它的封包或清理，不擅自重置，也不为此新建一套处理引擎。
+6. 按恢复合同采集快照，两次间隔至少 2 秒；比较 live remote heads/tags、全部本地 refs、HEAD、reflog、stash、worktrees、index 和受保护 payload。已确认的纯可重建 ignored 缓存只比较根元数据及重建依据，不遍历其内部文件。两次一致不能覆盖已知写入者尚未交接的事实。
 
-冻结之后只允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、文件、index、worktree 或 remote 变化会使恢复包失效；客户端上传进度、运行或暂停状态本身不算仓库漂移。Git 失败按恢复合同的有界观察规则处理，不用控制客户端代替复核。
+冻结之后允许本流程预期的临时 backup refs 和集成 worktree 变化。其他 ref、受保护文件、index、worktree 或 remote 漂移使相关快照失效；纯忽略缓存内部变化按上述例外处理，客户端上传进度不算仓库漂移。
 
 ## 2. 明确 ignored 内容的归口
 
-git bundle 不包含 index、工作树、stash、配置、hooks 或未跟踪文件。对每个 worktree 运行：
+git bundle 不能单独恢复 index、工作树、stash 各层状态、配置、hooks 或未跟踪文件。对每个 worktree 运行：
 
 ~~~powershell
 git -C <worktree> status --porcelain=v1 --untracked-files=normal --ignored=matching -z
@@ -56,9 +56,9 @@ git -C <worktree> status --porcelain=v1 --untracked-files=normal --ignored=match
 所有 !! 根路径必须逐项归为：
 
 - preserve：唯一日志、结果、旧二进制、归档、凭据外的本地配置或其他不能重建的内容；写入哈希清单并复制到恢复包。
-- reproducible：依赖缓存、构建目录和可由锁文件或固定命令重建的内容；只记录完整哈希清单和重建依据。
+- reproducible：已确认整根只含可重建缓存或构建产物，并有锁文件或固定命令等重建依据；记录根元数据和依据，不在备份、冻结比较或恢复验证中遍历、复制或逐文件哈希。
 
-无法判断就停止。不要因为路径被 .gitignore 命中便认定可以删除，也不要临时扩大 .gitignore。
+无法判断时按 preserve 保存并继续；只有实际无法保存或恢复时阻塞相关清理。不因 .gitignore 命中就认定可删，不临时扩大忽略范围。tracked、untracked 和不可重建数据不适用缓存例外。
 
 ## 3. 建立并演练双份恢复包
 
@@ -72,9 +72,9 @@ python <skill>\scripts\capture_recovery.py --repo <repo> --remote <remote> --pri
 
 - 显式取回 live remote heads/tags，并在 refs/backup/branch-consolidation/&lt;stamp&gt;/ 下固定所有需保存对象；
 - 保存二进制 staged/unstaged patch、index、tracked 当前字节、untracked payload 和需保留的 ignored payload；
-- 保存 refs、reflog、stash、worktree、Git 元数据、文件模式和 SHA-256；
+- 保存 refs、reflog、stash、worktree、Git 元数据，以及受保护文件的模式和 SHA-256；纯可重建缓存只保存根记录与重建依据；
 - 从明确 backup refs 创建 repository-recovery.bundle，校验后复制成字节一致的第二份包；
-- 封包前后重新核对 remote、refs、reflog、stash、worktrees、index、状态和所有 payload 的完整状态与哈希；除已记录的本流程预期变化外必须一致。
+- 封包前后重新核对 remote、refs、reflog、stash、worktrees、index 和受保护 payload；缓存按根记录比较，除本流程预期变化外必须一致。
 
 随后在全新路径演练：
 
@@ -86,26 +86,26 @@ python <skill>\scripts\verify_recovery.py --source <primary-package> --mirror <m
 
 隔离重放顺序固定为 staged patch、unstaged patch、tracked 当前字节、untracked payload、需保留的 ignored payload。只有两份 package manifest、两份 bundle、所有受保护对象、每个 worktree 的状态/index/模式/哈希和 git fsck --full 全部通过，才进入集成。
 
-## 4. 对分支提交分类
+## 4. 判断哪些工作需要集成
 
-从执行时最新的远端默认分支建立唯一临时集成 worktree。对每个非默认分支按原提交顺序分类：
+从再次核实的远端默认分支建立临时集成 worktree。结合分支提交、stash 和各工作树未提交内容判断：
 
 1. **已是祖先**：git merge-base --is-ancestor 成功，跳过。
 2. **补丁等价**：用 git cherry 和稳定 patch-id 证明等价，跳过并记录等价提交。
 3. **内容已覆盖**：只有路径、语义和相关测试共同证明后续版本完整覆盖时，标为仅备份。
-4. **唯一有效提交**：按拓扑与原顺序进入候选 cherry-pick 队列。
-5. **冲突、失败或产物类内容**：只保留在恢复包，等待用户或项目规则决定。
+4. **唯一有效工作**：按依赖关系用普通合并、选择提交或应用未提交改动纳入候选；保留必要提交关系。
+5. **无效或仅产物内容**：明确理由后留在恢复包；仍有效的改动不能因冲突就归为放弃。
 
-标题相同、作者相同、日期相近或最终 tree 相似都不能单独证明重复。不要自动选择冲突一侧，不整体 squash，不制造 merge commit。
+标题、作者、日期或 tree 相似不能单独证明重复。冲突先读双方改动、调用关系和测试；能够明确处理则自主解决，仅无法自行确定的功能、数据或科研含义取舍才询问，不机械选择 ours/theirs。
 
-## 5. 线性集成并测试
+## 5. 集成并测试
 
 1. 候选从冻结后再次确认的 &lt;remote&gt;/&lt;default&gt; 创建。
-2. 按记录顺序逐个 cherry-pick 唯一有效提交。
-3. 每次遇到冲突立即 cherry-pick --abort，保留证据并停止；不要自行选 ours/theirs。
-4. 新出现的未跟踪项只能成为通过测试的规范源码提交，或进入恢复包后从候选移除。
-5. 运行项目全部必需测试，以及各被收口分支回执中声明的测试。
-6. 运行 git diff --check、冲突标记扫描，并证明冻结默认提交是候选祖先、冻结区间没有 merge commit。
+2. 采用能保全有效工作的合并方式；默认允许 merge commit，线性历史仅按明确要求执行。
+3. 自主解决能由代码关系和测试确定的冲突；有实质语义歧义时保留现场，只暂停相关集成和依赖它的删除，继续独立工作。
+4. 有效源码、stash 和未提交改动经检查后纳入最终版本；数据与产物按用途保留，不能只为工作树干净而丢弃。辅助 worktree 中的不可重建数据在移除前还须有可直接使用的存续副本，恢复包只负责兜底。
+5. 运行项目要求及改动影响范围内的测试，结合旧分支测试记录判断必要补测，不机械重跑每份历史回执。
+6. 运行 git diff --check、冲突标记扫描并证明冻结默认提交是候选祖先；明确要求线性时再检查新增区间无 merge commit。
 
 治理规则、迁移说明或其他流程性修改应作为独立提交，便于审查和回滚。
 
@@ -123,10 +123,13 @@ git -C <integration-worktree> push <remote> <candidate-40-sha>:refs/heads/<defau
 
 第一个删除动作前重新检查：
 
+- 每个待删分支、stash 和工作区中的有效改动已合入或经实际比较确认覆盖；仅有恢复包或分类标签不能放行；
 - 已知写入者协调仍有效，没有双向覆盖风险、真实回写或并发 Git 写入；正常单向备份运行/上传/暂停未知不阻断；
 - 两份 package manifest、bundle 和隔离恢复回执仍有效；
 - 所有冻结 refs、tags、worktrees、stash、index、工作树 payload 与删除计划一致；
 - live remote 的每个待删分支仍处于冻结 SHA。
+
+在干净的候选工作区先运行下文验收命令，并增加 `--check-integration-only`；它检查当前候选的工作归并，允许尚待清理的分支和 stash 存在，不执行删除。需保留内容比较或数据存续位置时，用 `--integration-records` 接入已有分类记录，字段见恢复合同。通过后仍须核对上述现场和恢复条件。
 
 远端临时分支必须一次原子删除，并为每个 ref 指定冻结 tip：
 
@@ -139,9 +142,9 @@ git push --atomic --force-with-lease=refs/heads/<branch-a>:<frozen-a-40-sha> --f
 远端确认只剩默认分支后，才清理本地：
 
 1. 根工作树切到默认分支并快进到最终 SHA。
-2. 每个辅助 worktree 先核对路径、HEAD、dirty 状态和恢复清单；只移除清单中的 exact 路径，再用不带 --force 的 git worktree remove。
-3. 只删除已备份、已分类且仍处于冻结 SHA 的本地分支。禁止通配符批量猜测。
-4. stash 当前列表与冻结清单逐字一致时，按索引从大到小 drop，或一次 clear；不一致就停止。
+2. 每个辅助 worktree 先核对路径、HEAD、dirty 状态和恢复清单，确认有效工作已集成、不可重建数据已有可直接使用的存续副本；只移除清单中的 exact 路径，再用不带 --force 的 git worktree remove。
+3. 只删除有效改动已归并且仍处于冻结 SHA 的本地分支。禁止通配符批量猜测。
+4. stash 的 staged、unstaged、untracked 改动均已归并，且当前列表与冻结清单逐字一致时，按索引从大到小 drop，或一次 clear；不一致就停止。
 5. 删除本次 refs/backup/branch-consolidation/&lt;stamp&gt;/ 临时 refs。保留 tags、两份恢复包和隔离恢复仓库。
 
 ## 8. 最终验收与备份状态复核
@@ -152,7 +155,7 @@ git push --atomic --force-with-lease=refs/heads/<branch-a>:<frozen-a-40-sha> --f
 python <skill>\scripts\verify_acceptance.py --repo <repo> --remote <remote> --snapshot <primary-package> --expected-commit <final-40-sha> --output <acceptance.json>
 ~~~
 
-用户要求连 ignored 产物一起清空时增加 --require-no-ignored。验收必须全部为 ok=true。
+用户要求连 ignored 产物一起清空时增加 --require-no-ignored；用户或项目要求线性历史时增加 --require-linear-history。默认允许普通 merge commit，验收仍检查冻结默认提交是最终提交的祖先。所有适用检查必须为 ok=true。
 
 保持客户端原状；只有本任务曾另获授权改变其状态时，才按该授权恢复原状态。复核 Git 公共目录是否出现临时 ref、锁或历史倒退；真实污染重现则保留恢复包并报告受影响验收未完成。正常上传本身不影响 Git 验收。清理后按项目要求复跑关键测试。
 

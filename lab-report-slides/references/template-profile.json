@@ -24,11 +24,12 @@
     "title": {"box": [0.1, 0.04, 13.05, 0.68], "font_size": 40, "color": "000000"},
     "divider": {"box": [0, 0.774, 13.333333, 0.156], "color": "0B3041"},
     "subtitle": {"box": [0, 0.95, 13.333333, 0.508], "font_size": 20, "color": "002060", "fill": "FF9999"},
-    "content": {"box": [0.12, 1.55, 13.09, 5.12]},
-    "conclusion": {"box": [0.1, 6.85, 13.09, 0.56], "font_size": 24, "color": "000000"},
-    "caption": {"font_size": 18, "height": 0.4}
+    "content": {"box": [0.12, 1.55, 13.09, 5.75]},
+    "caption": {"font_size": 18, "height": 0.4},
+    "body": {"font_size": 22}
   },
-  "media_pattern": "大面积图件；支持单图、双图、左侧双图加右侧大图、宽图加照片条。实验说明居中，结论放页底",
+  "media_pattern": "大面积图件与独立正文；红条仅一句当前结果总结，无页底重复结论；下一步集中末页",
   "pptx_objects": "editable_text_and_independent_pictures",
-  "preview_source": "rendered_pptx"
+  "preview_source": "rendered_pptx",
+  "font_policy": "Font sizes are starting values; choose per-slide sizes and layout for readability."
 }

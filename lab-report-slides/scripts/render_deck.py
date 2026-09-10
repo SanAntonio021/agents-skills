@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import copy
 import hashlib
 import html
 import io
@@ -84,7 +85,10 @@ def text_rows(block: dict[str, Any]) -> list[tuple[str, bool]]:
 
 
 def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum: int) -> int:
-    for size in (value for value in (40, 36, 32, 28, 24, 20, 18) if value <= maximum):
+    if maximum <= 0:
+        raise ValueError("Font size must be positive")
+    candidates = sorted({maximum, *(size for size in (40, 36, 32, 28, 24, 22, 20, 18) if size <= maximum)}, reverse=True)
+    for size in candidates:
         capacity = max(1, width * 72 / size * 1.65)
         lines = sum(max(1, math.ceil(sum(2 if unicodedata.east_asian_width(c) in {"W", "F"} else 1
                                        for c in text) / capacity)) for text, _ in rows)
@@ -167,8 +171,17 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
         raise ValueError("No report material; provide actual findings and visual assets before rendering")
     slides = []
     total_images = 0
-    for raw in deck["slides"]:
+    for index, raw in enumerate(deck["slides"]):
         slide = dict(raw)
+        if slide.get("type") == "next_steps":
+            if index != len(deck["slides"]) - 1:
+                raise ValueError("Next steps must be on the final slide")
+            steps = slide.get("next_steps")
+            if not isinstance(steps, list) or not steps or any(not isinstance(step, str) or not step.strip() for step in steps):
+                raise ValueError("Next steps require a nonempty list of confirmed actions")
+            if slide.get("blocks") or slide.get("body"):
+                raise ValueError("Use next_steps only for the final numbered textbox")
+            slide["blocks"] = [{"type": "text", "text": "\n".join(f"{i}. {step}" for i, step in enumerate(steps, 1))}]
         blocks = [dict(block) for block in slide.get("blocks", [])]
         if not blocks and slide.get("body"):
             blocks = [{"type": "text", "text": slide["body"]}]
@@ -231,12 +244,18 @@ def make_pptx(deck, slides, output_path):
         raise FileExistsError(output_path)
     profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
     profile = json.loads(profile_path.read_text(encoding="utf-8-sig"))
-    layout = profile["layout"]
+    base_layout = profile["layout"]
     font = profile["font_family"][0]
     presentation = Presentation()
-    presentation.slide_width, presentation.slide_height = layout["slide_size_emu"]
+    presentation.slide_width, presentation.slide_height = base_layout["slide_size_emu"]
     assets = []
     for index, content in enumerate(slides, 1):
+        layout = copy.deepcopy(base_layout)
+        for key, override in content.get("layout_overrides", {}).items():
+            if key not in layout or not isinstance(layout[key], dict) or not isinstance(override, dict):
+                raise ValueError(f"Invalid layout override: {key}")
+            layout[key].update(override)
+        fonts = content.get("font_sizes", {})
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         slide.background.fill.solid()
         slide.background.fill.fore_color.rgb = RGBColor(255, 255, 255)
@@ -247,28 +266,32 @@ def make_pptx(deck, slides, output_path):
         title = str(content.get("title") or f"Slide {index}")
         chapter = str(content.get("section") or content.get("kicker") or title)
         spec = layout["title"]
-        add_text(slide, [(chapter, True)], *spec["box"], spec["font_size"], spec["color"], fit=True, font=font)
-        subtitle = str(content.get("subtitle") or (title if title != chapter else ""))
+        add_text(slide, [(chapter, True)], *spec["box"], fonts.get("title", spec["font_size"]), spec["color"], fit=True, font=font)
+        subtitle = str(content.get("summary") or content.get("subtitle") or (title if title != chapter else ""))
         if subtitle:
             spec = layout["subtitle"]
             strip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *[Inches(v) for v in spec["box"]])
             strip.fill.solid()
             strip.fill.fore_color.rgb = RGBColor.from_string(spec["fill"])
             strip.line.fill.background()
-            add_text(slide, [(subtitle, True)], *spec["box"], spec["font_size"], spec["color"], fit=True, font=font, centered=True)
+            add_text(slide, [(subtitle, True)], *spec["box"], fonts.get("summary", spec["font_size"]), spec["color"], fit=True, font=font, centered=True)
         pictures = [block for block in content["blocks"] if block["type"] == "image"]
         rows = []
         for block in content["blocks"]:
             if block["type"] != "image":
                 rows.extend(text_rows(block))
-        summary_rows = [(str(content["summary"]), True)] if content.get("summary") else []
-        if pictures:
-            summary_rows.extend(rows)
-        else:
-            add_text(slide, rows, *layout["content"]["box"], 24, font=font, fit=True)
-        spec = layout["conclusion"]
-        add_text(slide, summary_rows, *spec["box"], spec["font_size"], spec["color"], fit=True, font=font, centered=True)
-        boxes = image_boxes(len(pictures), layout["content"]["box"], content.get("layout"))
+        image_area = list(layout["content"]["box"])
+        if rows:
+            body_area = list(image_area)
+            if pictures:
+                fraction = float(content.get("body_fraction", 0.27))
+                if not 0.1 <= fraction <= 0.6:
+                    raise ValueError("body_fraction must be between 0.1 and 0.6")
+                body_area[2] = image_area[2] * fraction
+                image_area[0] += body_area[2] + 0.2
+                image_area[2] -= body_area[2] + 0.2
+            add_text(slide, rows, *body_area, fonts.get("body", layout.get("body", {}).get("font_size", 22)), font=font, fit=True)
+        boxes = image_boxes(len(pictures), image_area, content.get("layout"))
         slide.notes_slide.notes_text_frame.text = "\n".join(filter(None, [
             str(deck.get("footer") or deck.get("date") or ""), str(content.get("status") or ""),
             str(content.get("source") or ""),
@@ -279,7 +302,7 @@ def make_pptx(deck, slides, output_path):
             raster = raster_bytes(path)
             if hashlib.sha256(path.read_bytes()).hexdigest() != source_hash:
                 raise ValueError(f"Research image changed while rendering: {path}")
-            add_image(slide, block, raster, *box, caption_size=layout["caption"]["font_size"],
+            add_image(slide, block, raster, *box, caption_size=fonts.get("caption", layout["caption"]["font_size"]),
                       caption_space=layout["caption"]["height"], font=font)
             assets.append({"slide": index, "path": str(path), "sha256": source_hash,
                            "embedded_sha256": hashlib.sha256(raster).hexdigest(),

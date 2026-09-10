@@ -48,6 +48,41 @@ class RenderDeckTests(unittest.TestCase):
             self.assertEqual(second["stem"], "20260715_v2")
             self.assertTrue((output / "20260715_v2.pptx").exists())
 
+    def test_summary_body_and_numbered_next_steps_use_separate_editable_regions(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            image = root / "result.png"
+            Image.new("RGB", (800, 400), "white").save(image)
+            deck = {"date": "20260909", "slides": [
+                {"title": "多流系统", "summary": "完成三组软件译码。", "font_sizes": {"title": 31, "body": 19},
+                 "blocks": [{"type": "text", "text": "三组均同步通过"}, {"type": "image", "path": str(image)}]},
+                {"title": "下一步工作", "type": "next_steps", "next_steps": ["开展实测对比", "补充结果记录"]}]}
+            render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), root / "out.pptx")
+            slides = Presentation(root / "out.pptx").slides
+            texts = [shape for shape in slides[0].shapes if shape.has_text_frame and shape.text]
+            self.assertEqual(sum(shape.text == "完成三组软件译码。" for shape in texts), 1)
+            self.assertTrue(all("20260909" not in shape.text for shape in texts))
+            summary = next(shape for shape in texts if shape.text == "完成三组软件译码。")
+            body = next(shape for shape in texts if shape.text == "三组均同步通过")
+            picture = next(shape for shape in slides[0].shapes if shape.shape_type == 13)
+            self.assertLess(summary.top, body.top)
+            self.assertLessEqual(body.left + body.width, picture.left)
+            self.assertEqual(body.text_frame.paragraphs[0].runs[0].font.size.pt, 19)
+            title = next(shape for shape in texts if shape.text == "多流系统")
+            self.assertEqual(title.text_frame.paragraphs[0].runs[0].font.size.pt, 31)
+            numbered = [shape for shape in slides[1].shapes if shape.has_text_frame and shape.text.startswith("1.")]
+            self.assertEqual(len(numbered), 1)
+            self.assertEqual(numbered[0].text, "1. 开展实测对比\n2. 补充结果记录")
+
+    def test_next_steps_cannot_be_intermediate_or_mixed_with_body(self):
+        for slides in [
+            [{"type": "next_steps", "next_steps": ["Action"]}, {"body": "Result"}],
+            [{"type": "next_steps", "next_steps": []}],
+            [{"type": "next_steps", "next_steps": ["Action"], "body": "Extra"}],
+        ]:
+            with self.assertRaises(ValueError):
+                render_deck.validate_deck({"allow_text_only": True, "slides": slides}, Path.cwd())
+
     def test_missing_image_is_rejected_instead_of_creating_a_placeholder(self):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "Missing research image"):
@@ -94,6 +129,13 @@ class RenderDeckTests(unittest.TestCase):
     def test_negative_measurements_are_not_stripped_as_bullets(self):
         rows = render_deck.text_rows({"type": "text", "text": "-44 dBm\n- condition\n* another condition"})
         self.assertEqual(rows, [("-44 dBm", False), ("condition", False), ("another condition", False)])
+
+    def test_font_fit_uses_standard_steps_and_preserves_explicit_small_size(self):
+        self.assertEqual(render_deck.text_size([("Title", True)], 12, 0.7, 31), 31)
+        self.assertEqual(render_deck.text_size([("Title", True)], 12, 0.5, 31), 24)
+        self.assertEqual(render_deck.text_size([("Caption", False)], 5, 0.4, 17), 17)
+        with self.assertRaisesRegex(ValueError, "does not fit"):
+            render_deck.text_size([("Caption", False)], 5, 0.2, 17)
 
     def test_long_text_requires_rewriting_instead_of_silent_overflow(self):
         with self.assertRaisesRegex(ValueError, "does not fit"):

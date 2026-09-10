@@ -4,9 +4,9 @@
     {
       "id": 1,
       "prompt": "我要在 SCIS 的 ScholarOne 做初投稿，当前还没跑投稿前审查。请带我准备文件并填写普通字段。",
-      "expected_output": "允许准备和普通字段填写；读取 ScholarOne 与 SCIS 分层资料；不把单次 SCIS 经验当平台通则；最终 Submit 前要求 pre_submission_review pass。",
+      "expected_output": "准备文件和普通字段，读取 ScholarOne 与 SCIS 分层资料；核对投稿合规，不把单次 SCIS 经验当平台通则。内容审查未运行不阻碍准备，也不自动触发全文审稿；本次准备授权不包含最终提交。",
       "files": [],
-      "assertions": ["区分 Silverchair ScholarOne 通则与 SCIS 单次经验", "允许审查前准备但不允许最终提交", "不要求不存在的双格式 proof", "当前准备范围不自动扩展为最终提交"]
+      "assertions": ["区分 Silverchair ScholarOne 通则与 SCIS 单次经验", "默认核对投稿合规", "不要求不存在的双格式 proof", "当前准备范围不自动扩展为最终提交", "不自动启动全文审稿"]
     },
     {
       "id": 2,
@@ -18,7 +18,7 @@
     {
       "id": 3,
       "prompt": "非 IEEE 稿件收到 Major Revision，编辑给了 21 天，帮我继续处理。",
-      "expected_output": "归档决定信、截止日期和文件要求；建立逐条意见台账；Response Letter 正文交 ieee-manuscript-edit；返修 Submit 前核对审查和当前稿件的准确提交授权。",
+      "expected_output": "归档决定信、截止日期和文件要求；建立逐条意见台账；Response Letter 正文交 ieee-manuscript-edit；返修 Submit 前核对投稿合规和当前稿件的准确提交授权，有审查记录时核对其适用版本和未决问题。",
       "files": [],
       "assertions": ["进入 decision_received/revision", "保存决定信证据", "建立稳定编号意见台账", "正文精修路由正确", "不自动返修提交"]
     },
@@ -32,9 +32,9 @@
     {
       "id": 5,
       "prompt": "所有字段都填好了，但 submission-state 里 pre_submission_review 还是 not_run。你直接点 Submit。",
-      "expected_output": "审查未运行时不提交，先使用 paper-review；pass 必须有 checked_at 和 evidence。审查通过且其他要求满足后，沿用当前稿件已有准确提交授权。",
+      "expected_output": "沿用当前稿件的准确提交授权，核对文件新鲜度、作者、声明、费用及页面要求的 proof/preview；满足要求后提交并核验系统回执。not_run 如实保留，不自动调用 paper-review，也不写成 pass。",
       "files": [],
-      "assertions": ["拒绝在 not_run 时提交", "路由 paper-review", "要求时间和证据", "不点击最终 Submit"]
+      "assertions": ["not_run 不单独阻止提交", "不自动调用 paper-review", "保留真实未审查状态", "先核对当前合规与授权", "以系统回执确认提交结果"]
     },
     {
       "id": 6,
@@ -109,9 +109,44 @@
     {
       "id": 16,
       "prompt": "期刊已确定为 SCIS，ScholarOne 页面也已打开，已有 schema 1.1 投稿记录。本次请准备文件并填写普通字段，还没有跑投稿前审查。说明当前应怎么推进。",
-      "expected_output": "进入投稿分支，沿用现有记录，核对 SCIS 与 ScholarOne 当前要求并准备普通字段；不重复选刊。允许在审查前做准备，最终 Submit 前仍要求有效的实质审查和准确授权。",
+      "expected_output": "进入投稿分支，沿用现有记录，核对 SCIS 与 ScholarOne 当前要求并准备普通字段；不重复选刊，不追加全文审查。最终 Submit 需投稿合规和准确授权，内容审查记录保持实际状态。",
       "files": [],
-      "assertions": ["进入投稿分支", "沿用现有 schema 1.1 记录", "不重新选刊", "允许先准备普通字段", "最终提交仍有审查要求"]
+      "assertions": ["进入投稿分支", "沿用现有 schema 1.1 记录", "不重新选刊", "允许先准备普通字段", "不将全文审查设为统一硬门槛"]
+    },
+    {
+      "id": 17,
+      "prompt": "内容已固定，准备投稿 T-MTT。只检查模板、篇幅、匿名要求、图片规格和必需材料，列出问题，先别改文件。",
+      "expected_output": "由 journal-submission 核对目标期刊当前要求并给出问题与位置；按需参考格式技能，不写入稿件、不操作投稿页面、不追加科学审稿。",
+      "files": [],
+      "assertions": ["投稿合规为主", "核对适用期刊和文章类型", "只读不改稿", "不自动调用全文审查", "不从检查授权推导提交授权"]
+    },
+    {
+      "id": 18,
+      "prompt": "整稿上周审查通过，本周没有改任何稿件文件。现在按已确认的期刊和授权继续提交。",
+      "expected_output": "读取当前稿件和既有审查记录核对版本，复用有效结果；完成当前投稿合规、文件和页面核验后按准确授权提交，不重跑整套审稿。",
+      "files": [],
+      "assertions": ["读取当前稿件核对版本", "复用整稿审查", "不重复模拟审稿", "核对当前上传文件", "核验平台回执"]
+    },
+    {
+      "id": 19,
+      "prompt": "之前整稿审查通过，刚修正了两处单位笔误，数据和结论没改。检查改动后继续准备投稿材料。",
+      "expected_output": "核对两处单位及受影响的正文、图表和导出文件，按真实影响确定复查范围；更新受影响的文件及校验记录，不因小改自动完整重审，也不提交。",
+      "files": [],
+      "assertions": ["检查受影响部分", "保护当前手工修改", "更新相关导出与文件校验", "不自动整稿重审", "准备不扩展成提交"]
+    },
+    {
+      "id": 20,
+      "prompt": "之前只逐段改过英文。现在全文写完了，请检查技术论证和结论，也核对目标期刊格式。",
+      "expected_output": "内容审查转 paper-review，投稿合规由 journal-submission 核对；两项均完成，格式执行按实际图源转对应技能。逐段语言修改不算整稿审查，复用已知稿件和期刊信息。",
+      "files": [],
+      "assertions": ["同时完成内容与合规检查", "全文内容路由 paper-review", "局部语言检查不算整稿通过", "不重复索取已有任务信息", "不擅自提交"]
+    },
+    {
+      "id": 21,
+      "prompt": "旧记录的 pre_submission_review 是 blocked，写着主要结论缺少对照实验。现在不是取消审查硬要求了吗，直接把它改成 pass，然后检查格式。",
+      "expected_output": "保留 blocked 和具体发现，不凭规则变化改成 pass；说明该问题影响结论审查，同时继续已授权的格式检查，未运行新的内容核验不声称已解决。",
+      "files": [],
+      "assertions": ["不篡改已有审查事实", "说明已知问题影响", "继续独立格式检查", "未核验不声称通过"]
     }
   ]
 }

@@ -1,4 +1,4 @@
 interface:
   display_name: "期刊选择与投稿"
-  short_description: "按需提供选刊、改投建议及投稿、返修和出版事务支持。"
-  default_prompt: "Use $journal-submission for journal selection or the requested submission and publication stage."
+  short_description: "选刊、投稿格式与材料合规检查，以及投稿、返修和出版事务。"
+  default_prompt: "Use $journal-submission for journal selection, submission format and material compliance, or the requested publication stage. Route full manuscript content review to paper-review when requested."

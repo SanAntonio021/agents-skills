@@ -47,7 +47,7 @@ Sincerely,
 推荐 / 回避审稿人：
 机构匹配状态：
 当前页面要求的 proof / preview：
-pre_submission_review：pass / checked_at / evidence
+已有内容审查（可选）：实际状态 / 适用版本 / checked_at / evidence / 未决问题
 费用 / OA / 版权：不适用、未到阶段或已单独确认
 阻断错误：无
 仍待确认：

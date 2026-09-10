@@ -2,6 +2,30 @@
   "skill_name": "paper-review",
   "evals": [
     {
+      "id": "local-check-is-not-full-review",
+      "prompt": "之前你只帮我改了摘要并检查图注，现在论文写完，请检查全文科学内容。",
+      "expected_output": "读取当前完整稿件，检查全文技术内容、论证、结果和结论；以前局部检查仅作参考，不宣称整稿已审，也不自动进行投稿操作。",
+      "files": []
+    },
+    {
+      "id": "review-after-small-change",
+      "prompt": "有可定位的完整审查记录，之后只统一了一个术语。请确认修改是否影响原审查结论。",
+      "expected_output": "读取当前版本及差异，核对术语出现位置及相关技术含义；确属小改则只检查受影响部分并复用其他结论，不重新跑整套模拟审稿。",
+      "files": []
+    },
+    {
+      "id": "review-after-method-change",
+      "prompt": "已有整稿审查报告，但之后换了主算法、重算数据并修改主要结论，请再检查论文。",
+      "expected_output": "将旧报告作为历史参考，按当前稿件重新进行整稿科学审查，覆盖方法、数据、图文与结论联系；不把旧 pass 直接沿用，不覆盖或删除旧报告。",
+      "files": []
+    },
+    {
+      "id": "format-only-route",
+      "prompt": "准备投稿了，只核对格式和必需附件，内容固定，不要模拟审稿。",
+      "expected_output": "转 journal-submission 检查目标刊要求和材料，需要时读取排版图件技能，不执行 submission-gauntlet，不自动改正文或填写审查通过记录。",
+      "files": []
+    },
+    {
       "id": 10,
       "prompt": "请只核对这段笔记，不修改 Zotero。原文 Sec. II 写：IF 功放之后接可调衰减器，再接 THz 上变频混频器；混频器 IF 输入应低于 -20 dBm，由此得到 -15 dBm 的发射输出。图 2 的 RF 功放位于 THz 混频器之后。笔记把它写成‘将衰减器输出设为 -15 dBm’。这准确吗？",
       "expected_output": "指出 -15 dBm 属于发射输出而非衰减器输出，区分 IF 与 RF 功放，并保留原文得到而非设定的含义；仅给局部修订句。",

@@ -1,6 +1,6 @@
 ---
 name: ieee-manuscript-edit
-description: 中文或英文科学与工程论文的起草、精修和终稿文字审校，也处理摘要、引言、方法、结果、结论、图注、Cover Letter 与 Response Letter 的正文。Use when 用户要改中文论文、英文 SCI/IEEE 论文、中文改英文、删论文套话、保护实验事实，或做终稿规范检查；先区分 zh_paper、en_paper、final_audit，只加载当前语言规则。整体投稿前停稿审查转 paper-review，LaTeX 工程转 latex-paper，投稿事务转 journal-submission 或 journal-submission。
+description: 中文或英文科学与工程论文的起草、精修和终稿文字审校，也处理摘要、引言、方法、结果、结论、图注、Cover Letter 与 Response Letter 的正文。Use when 用户要改中文论文、英文 SCI/IEEE 论文、中文改英文、删论文套话、保护实验事实，或做终稿文字规范检查；先区分 zh_paper、en_paper、final_audit，只加载当前语言规则。全文科学内容审查转 paper-review，LaTeX 工程转 latex-paper，投稿合规检查和事务转 journal-submission。
 metadata:
   version: "2.0.0"
 ---
@@ -63,7 +63,7 @@ metadata:
 
 ## `audit_only`
 
-保持只读，按共同质量规则分点报告问题。至少检查：
+保持只读，按共同质量规则分点报告问题。按用户授权范围选用下列检查；纯语言、术语审校只核对表达及事实含义是否漂移，不自动扩成科学论证或引用全文核验。明确要求整稿科学审查时转 `paper-review`，已发现的明显事实问题仍指出：
 
 - 摘要、正文和结论是否无理由重复整段内容；
 - 方法条件是否足以支撑结果和比较；
@@ -83,7 +83,7 @@ metadata:
 
 ## 文件与投稿边界
 
-正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 使用本轮按协作方式处理并审校的正文，在执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 后交给 `docx`；LaTeX 模板、BibTeX 和编译交给 `latex-paper`。整体投稿前审查和最终 Submit 门交给 `paper-review`；投稿系统操作交给对应投稿技能。
+正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 使用本轮按协作方式处理并审校的正文，在执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 后交给 `docx`；LaTeX 模板、BibTeX 和编译交给 `latex-paper`。终稿文字审校不等于整稿科学审查；用户要求全文技术内容、论证或结论审查时交给 `paper-review`。投稿格式、材料要求和最终提交核对交给 `journal-submission`，不因准备投稿自动重审科学内容。
 
 ## 完成条件
 

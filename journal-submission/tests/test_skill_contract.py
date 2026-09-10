@@ -176,7 +176,7 @@ class SkillContractTests(unittest.TestCase):
                 text = (SKILLS_ROOT / relative).read_text(encoding="utf-8")
                 self.assertIn("journal-submission", text)
 
-    def test_review_gate_and_manual_actions_are_explicit(self):
+    def test_optional_review_and_manual_actions_are_explicit(self):
         safety = (ROOT / "references" / "evidence-and-safety.md").read_text(encoding="utf-8")
         contracts = (ROOT / "references" / "data-contracts.md").read_text(encoding="utf-8")
         template = (ROOT / "references" / "material-templates.md").read_text(encoding="utf-8")
@@ -184,6 +184,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("checked_at", contracts)
         self.assertIn("evidence", contracts)
         self.assertIn("可定位的 `evidence`", self.skill_text)
+        self.assertIn("可选的内容审查记录", self.skill_text)
+        self.assertIn("缺失或 `not_run` 不自动阻止", self.skill_text)
+        self.assertIn("局部修改和检查，不宣称整稿已审查", self.skill_text)
         self.assertIn("已有准确提交授权可复用", self.skill_text)
         self.assertIn("## 输出前自检", self.skill_text)
         self.assertIn("本人签署事项", template)

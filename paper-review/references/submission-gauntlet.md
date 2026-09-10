@@ -1,6 +1,6 @@
 # 投稿前把关：预检清单 + 模拟审稿
 
-适用范围：即将投稿的论文稿。这是 `paper-review` 的投稿前模式，区别于日常停稿审查（stopline-checklist.md）：停稿审查回答"还要不要继续改"，本文件回答"现在投出去会在哪一环被打死"。
+适用范围：用户明确要求预判审稿意见、模拟审稿或相应完整把关的论文稿。普通全文科学审查使用日常审查；单纯投稿格式、材料检查交给 `journal-submission`，不因稿件即将投稿自动进入本流程。
 
 先跑预检（便宜、机械），预检过了再跑模拟审稿（贵、实质）。
 
@@ -8,7 +8,7 @@
 
 ## 第一层：投稿预检（机械/结构性）
 
-逐维打分 `PASS / FLAG / FAIL / UNKNOWN`，每个 FLAG/FAIL 必须引用稿件的具体章节/图表/页码，不许凭印象打分；无法核验的维度标 `UNKNOWN`，不许假绿。用于最终 Submit 审查门时，关键维度的 `UNKNOWN` 与 `FAIL` 同样阻断提交。
+逐维打分 `PASS / FLAG / FAIL / UNKNOWN`，每个 FLAG/FAIL 必须引用稿件的具体章节/图表/页码，不许凭印象打分；无法核验的维度标 `UNKNOWN`，不许假绿。关键维度的 `UNKNOWN` 与 `FAIL` 均不能给出审查通过结论；这份审查不作为所有投稿的默认前置步骤。
 
 | # | 维度 | PASS 标准 |
 |---|---|---|
@@ -24,7 +24,7 @@
 
 **Go/No-go**：维度 1、3、7 任一 `FAIL` 或 `UNKNOWN` 即 no-go（范围、证据、硬机制是经典桌面拒稿源）；其他维度 `FAIL` 属投前必修。存在未关闭的投前必修项时，审查门仍为 `blocked`。
 
-输出：逐维状态（带定位引用）→ go/no-go → 按危害排序的阻塞项（各配修复去向：内容改 `ieee-manuscript-edit`，图件改 `paper-figure-review`，格式改 `latex-paper`）→ 桌面拒稿风险（低/中/高+原因）→ `pre_submission_review` 状态。状态为 `pass` 时必须写 `checked_at` 和非空 `evidence`；否则写 `blocked` 及阻断项。
+输出：逐维状态（带定位引用）→ go/no-go → 按危害排序的问题（内容改 `ieee-manuscript-edit`，图件改 `paper-figure-review`；期刊格式要求由 `journal-submission` 核对，LaTeX 或 Word 修改分别交给 `latex-paper` 或 `docx`）→ 桌面拒稿风险（低/中/高+原因）。需对接投稿记录时使用可选 `pre_submission_review`；状态为 `pass` 时必须写 `checked_at` 和非空 `evidence`，否则写 `blocked` 及未解决问题，不用格式通过替代科学审查。
 
 ## 第二层：模拟审稿（实质性）
 

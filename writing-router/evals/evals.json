@@ -79,9 +79,39 @@
       "expected_output": "所有期刊投稿事务统一进入 journal-submission；IEEE/T-MTT 按需读取出版商和期刊参考，不加载旧入口。"
     },
     {
-      "id": "route-final-submit-review-gate",
+      "id": "route-final-submit-compliance",
       "prompt": "ScholarOne 普通字段和文件都准备好了，现在想点最终 Submit。下一步先做什么？",
-      "expected_output": "先路由 paper-review 完成投稿前把关并生成有 checked_at 和 evidence 的 pre_submission_review=pass；此前可准备文件和普通字段，但不能进入最终提交确认。"
+      "expected_output": "路由 journal-submission，核对目标期刊要求、实际上传文件、作者声明、费用及准确提交授权，再按平台回执判断完成；不自动调用全文审查，不为获得 pass 虚构审查结果。"
+    },
+    {
+      "id": "route-submission-format-only",
+      "prompt": "稿件内容已固定，只检查投稿格式、页数、匿名要求和附件，不要改正文。",
+      "expected_output": "journal-submission 核对目标刊要求并检查现有文件；需要读取排版或图件时调用对应技能，只报告差异，不自动改稿、模拟审稿或提交。"
+    },
+    {
+      "id": "route-full-scientific-review",
+      "prompt": "论文写完了，全文检查技术内容、论证、结果与结论有没有问题。",
+      "expected_output": "paper-review 执行完整内容审查，不把局部文字校对当整稿审查，不因尚未选刊而阻止一般科学内容检查，不自动进入投稿系统或增加模拟审稿。"
+    },
+    {
+      "id": "route-final-language-audit",
+      "prompt": "只做终稿语言和术语审校，技术内容不变。",
+      "expected_output": "ieee-manuscript-edit 按文字审校范围处理，保护技术事实，不启动 paper-review 整稿科学审查或投稿流程。"
+    },
+    {
+      "id": "route-template-and-figures",
+      "prompt": "已给定目标刊模板和图件要求，把现有 LaTeX 套模板，并检查图片字号；正文不动。",
+      "expected_output": "latex-paper 处理模板与编译，paper-figure-review 检查图件；复用明确要求和当前图源，不重做选刊或全文科学审查，仅授权检查的图片不自动重画。"
+    },
+    {
+      "id": "route-content-and-compliance",
+      "prompt": "全面检查论文论证，并核对目标期刊投稿格式和必需材料，只审不改。",
+      "expected_output": "paper-review 完成全文内容审查，journal-submission 完成投稿合规检查，共享同一当前稿件和目标刊要求；分别报告发现，不改文件、不提交、不把格式通过当内容通过。"
+    },
+    {
+      "id": "route-existing-review-reuse",
+      "prompt": "这个完整版本已经审过且通过，文件和期刊要求都没变，现在继续检查投稿材料。",
+      "expected_output": "复用可定位的既有整稿审查结果，由 journal-submission 检查当前材料与要求，不重新模拟审稿，不把旧文件误作实际上传文件。"
     },
     {
       "id": "route-pre-meeting-technical-exchange",

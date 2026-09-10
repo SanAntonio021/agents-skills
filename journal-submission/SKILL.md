@@ -1,6 +1,6 @@
 ---
 name: journal-submission
-description: 处理期刊选择、改投建议及投稿出版事务。用户问“这篇投哪”“TTST 还是 TMTT”、分区口径或拒稿后投哪时，按需读取选刊资料并给出比较建议；初投稿、作者与声明、返修、录用后文件、版权/OA/费用和校样按当前请求处理。支持 IEEE、T-MTT、Research Exchange、ScholarOne、Editorial Manager 和 Optica Prism。正文精修用 ieee-manuscript-edit，实质审稿用 paper-review，LaTeX 工程用 latex-paper。
+description: 处理期刊选择、改投建议、投稿格式与材料合规检查及投稿出版事务。用户问“这篇投哪”“TTST 还是 TMTT”、分区口径或拒稿后投哪时，按需读取选刊资料并给出比较建议；准备投稿、检查目标期刊格式要求、作者与声明、返修、录用后文件、版权/OA/费用和校样按当前请求处理。支持 IEEE、T-MTT、Research Exchange、ScholarOne、Editorial Manager 和 Optica Prism。正文精修用 ieee-manuscript-edit，全文内容审查用 paper-review，格式修改按需转对应工具技能。
 ---
 
 # 期刊选择与投稿
@@ -14,12 +14,12 @@ description: 处理期刊选择、改投建议及投稿出版事务。用户问�
 ## 任务分流
 
 - **选刊与改投建议**：读取 [选刊流程](references/journal-selection.md)，需要时再读 [期刊画像](references/journal-profiles.md)。只交付当前要求的比较、建议或选刊材料；不进入下方投稿操作流程，不初始化 `submission-state.json`、索取作者声明或启动投稿前审查。
-- **投稿与出版操作**：用户要求准备投稿文件、处理平台页面、返修提交或录用后事项时，继续下方流程。选刊建议本身不构成实际投稿授权。
-- **相邻任务**：正文精修、实质审稿、LaTeX 工程和文献检索分别使用 `ieee-manuscript-edit`、`paper-review`、`latex-paper` 和 `paper-search`。
+- **投稿合规与出版操作**：准备投稿、检查格式时，默认核对目标期刊的模板、篇幅、文件格式、匿名要求和必需材料；平台操作、返修提交和录用后事项按当前请求处理。只读检查给出问题和建议，明确授权修改则完成对应修改。选刊或材料检查本身不构成实际投稿授权。
+- **相邻任务**：全文技术内容、论证与结论审查或模拟审稿使用 `paper-review`；正文起草、修改和终稿文字审校使用 `ieee-manuscript-edit`。LaTeX、Word 和图件格式修改分别使用 `latex-paper`、`docx`、`paper-figure-review`，由本技能提供适用的投稿要求，共用当前稿件和已有授权。文献检索使用 `paper-search`。同时要求内容与格式检查时完成两项；仅在上下文仍有实质歧义时询问，不因“投稿”一词自动扩大成全文审稿。
 
 ## 开始前
 
-1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态沿用原位置，不搬动、不另建双份。新任务的状态、截图和过程证据统一放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用该目录。已有 `submission-state.json` 时先读；没有时按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录。遇到旧 `1.0` 时，向用户明确说明它可兼容读取、不原地强制升级，并在下次正常更新项目状态时写入 `1.1`。
+1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态沿用原位置，不搬动、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；状态、截图和过程材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
 2. 确认目标期刊、文章类型、当前生命周期阶段和平台。信息不足时只问最阻塞的一项。
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。
@@ -69,24 +69,21 @@ description: 处理期刊选择、改投建议及投稿出版事务。用户问�
 
 只记录已发生事实。未确认内容使用 `pending`、`conflict`、`not_present` 或 `unknown`。
 
-## 投稿准备与审查门
+## 投稿合规与内容审查
 
-允许在投稿前审查完成前：
+默认按当前期刊指南和页面检查格式、材料与字段。发现明显内容问题时指出并保留具体问题；用户要求全文内容审查时再调用 `paper-review`，不自动启动完整模拟审稿。
 
-- 核对期刊指南和页面；
-- 准备文件；
-- 填写不涉及声明、作者角色、审稿人、费用和法律选择的普通字段。
-
-任何最终 Submit 或返修 Submit 前，必须调用 `paper-review` 的投稿前把关模式，并在
-`confirmation_gates` 中保存 `pre_submission_review`：
+`confirmation_gates` 中的 `pre_submission_review` 是可选的内容审查记录，兼容保留已有条目：
 
 - `not_run`：尚未执行；
 - `blocked`：有阻断项或关键维度无法核验；
 - `pass`：已通过，且包含 `checked_at` 和非空、可定位的 `evidence`；证据至少给出文件路径、稳定 URL、页面名或邮件标识之一。
 
-状态不是 `pass` 时拒绝进入最终提交确认。不要把“文件齐了”“页面无红字”当成论文实质审查通过。
+缺失或 `not_run` 不自动阻止已准确授权的提交，也不表示内容审查通过。已有 `blocked` 问题如实保留并说明影响，按具体问题处理；不为通过校验删除问题或改写成 `pass`。不要把“文件齐了”“页面无红字”当成论文实质审查通过。
 
-只核对当前页面实际提供且要求查看的 proof/preview，不为不存在的功能补造要求。提交前核对当前稿件、作者、文件、声明、费用和有效审查证据；已有准确提交授权可复用。
+整稿审查已完成且稿件未变时复用结果；后续小改检查受影响部分，方法、数据、主要结论或整体结构发生实质变化时再评估是否需要整稿重审。仅做过局部修改和检查，不宣称整稿已审查。
+
+只核对当前页面实际提供且要求查看的 proof/preview，不为不存在的功能补造要求。提交前核对当前稿件、作者、文件、声明、费用与投稿合规；有内容审查记录时核对其适用版本和未决问题。已有准确提交授权可复用。
 
 ## 页面协助
 
@@ -156,9 +153,10 @@ description: 处理期刊选择、改投建议及投稿出版事务。用户问�
 ## 职责边界
 
 - 选刊和拒稿后的改投建议：[选刊流程](references/journal-selection.md)。
-- 投稿前实质审查和模拟审稿：`paper-review`。
+- 用户要求的全文内容审查和模拟审稿：`paper-review`。
 - 正文、摘要、图注、Cover Letter 和 Response Letter 语言精修：`ieee-manuscript-edit`。
 - LaTeX 模板、编译和按需 source 打包：`latex-paper`。
+- Word 排版和格式修改：`docx`。
 - 图件规范、重画和 graphical abstract：`paper-figure-review`。
 
 未经用户授权，不修改主稿、作者列表、图表或参考文献。

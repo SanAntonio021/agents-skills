@@ -94,7 +94,7 @@
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
     "expected_behavior": "write-not_run-blocked-or-evidenced-pass",
-    "reason": "最终提交前的实质审查门由 paper-review 负责；pass 必须有时间和可定位证据。"
+    "reason": "用户明确请求完整内容审查及记录，因此由 paper-review 执行；pass 必须有时间和可定位材料，并非所有最终提交的默认前置步骤。"
   },
   {
     "id": "should-not-trigger-portal-form-preparation",

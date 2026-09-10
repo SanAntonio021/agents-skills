@@ -7,7 +7,7 @@
 - 终稿精修可处理本技能原有的 Markdown、Word 和 LaTeX 文稿。
 - “终稿规范化”确定性审计 v1 只处理英文 Markdown 和单文件 LaTeX。
 - 多文件 LaTeX、Word/PDF 解析、中文论文和图像语义自动识别不在审计脚本 v1 范围内。
-- `paper-review` 负责投稿前审查门；`latex-paper` 负责模板、工程转换和编译；`style-vocab` 负责词级偏好。
+- 终稿文字审校不等于全文科学审查。`paper-review` 负责用户要求的全文内容审查或模拟审稿；`journal-submission` 负责投稿合规检查与提交；`latex-paper` 负责模板、工程转换和编译；`style-vocab` 负责词级偏好。
 
 ## 固定处理顺序
 

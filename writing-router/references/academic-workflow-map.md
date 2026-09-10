@@ -19,7 +19,8 @@
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
 | 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `ieee-manuscript-edit`（已并入） |
 | 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
-| 投稿前把关 | 投稿检查、预判审稿意见、模拟审稿人、最终 Submit 前审查门 | `paper-review`（submission-gauntlet 模式） |
+| 全文内容审查 | 全文技术内容、论证、结果和结论是否一致；明确预判审稿意见或模拟审稿人 | `paper-review`；明确模拟审稿时用 submission-gauntlet 模式 |
+| 投稿合规检查 | 投稿格式、篇幅、匿名要求、文件材料、投稿页面和最终提交核对 | `journal-submission`；格式修改按实际图源及文件类型转 `paper-figure-review`、`latex-paper` 或 `docx` |
 | 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-submission` 的选刊分支 |
 | 通用期刊投稿事务 | 未指定或非 IEEE 的投稿系统、作者、声明、状态、返修、录用后、版权、费用、校样和归档 | `journal-submission` |
 | IEEE 期刊投稿事务 | 明确 IEEE 的投稿系统、作者、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `journal-submission` |
@@ -37,7 +38,7 @@
 - "这段英文太冗余，帮我精简句子" → `ieee-manuscript-edit`（纯句子质量时按需读取 `references/sainani-sentence-review.md`）
 - "这段英文太冗余，而且术语也要校准" → `ieee-manuscript-edit`（内容 + 句子同时有问题，优先大粒度）
 
-若一句话同时命中多个阶段，优先选最阻塞阶段。通常顺序是：事实和证据未定先调研，指标不清先论证，已有稿件先审查，再进入精修。
+若一句话同时命中多个阶段，按当前请求和实际依赖选择，复用已确认事实与已有检查。明确要求精修时直接处理授权范围，不因已有稿件自动追加前置科学审查；同时要求内容与格式检查时分别完成，共用当前稿件和期刊要求。
 
 ## brycewang-stanford/Awesome-Journal-Skills
 

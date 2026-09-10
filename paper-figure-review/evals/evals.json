@@ -2,6 +2,16 @@
   "skill_name": "paper-figure-review",
   "evals": [
     {
+      "id": "complex-scene-editable-overlay",
+      "prompt": "沿用已经确定的设备场景图和配色，为论文补上文字、箭头及分区框，后面我还要手动微调。这次已经授权改图，请直接做完。",
+      "expected_output": "复用现有场景及授权，不重新确认配色或样图；用 PPT/SVG 等独立对象添加文字、箭头和框线，保留底图原件和可编辑源，核对实际导出后的技术关系、字体及论文尺寸。只有底图确实需要改变才衔接 research-schematic-imagegen，不把设备位图本体或整张导出 PNG 宣称为可编辑对象。"
+    },
+    {
+      "id": "simple-diagram-native-objects",
+      "prompt": "按我已给出的三个模块及连接关系画一张简单系统框图，用于论文，文字和连线都要能改。",
+      "expected_output": "直接用已有 PPT/SVG 等矢量能力表达三个模块及已给定连接，保留可编辑源并核对最终尺寸；不因是科研示意图就调用付费生图，也不再索要已明确的技术关系或风格批准。"
+    },
+    {
       "id": "review-existing-ieee-figure",
       "prompt": "这张图是准备放进 IEEE 论文里的 Fig. 3，你帮我审一下是不是像论文图，哪些地方必须改。",
       "expected_output": "先判断图件类型和目标尺寸，再按 IEEE 图件清单输出总体结论、必须改、建议改、可保留和导出建议；不要只给泛泛美化意见。请求仅为审查，即使有原始数据也不自动重画、修改源文件或导出修改版。"

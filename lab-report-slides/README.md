@@ -8,13 +8,26 @@
 
 在 **Windows 本机的 Codex** 中发送本发布页链接，并说“请按页面流程完成安装”即可。下面是给执行安装的 Codex 的完整步骤；使用者无需另外下载目录、安装 CC Switch 或复制多段命令。
 
+### 默认安装：PPT + 完整中文润色
+
+把本页交给 Codex 安装，默认同时安装以下四个技能，不要求使用者逐个点名：
+
+| 技能 | 用途 |
+|---|---|
+| `lab-report-slides` | 科研内容整理、页面组织与 PPT 生成 |
+| `libreoffice-runner` | 转换及渲染检查，基本生成流程所需 |
+| `writing-router` | 完整中文质量规则与去 AI 味检查 |
+| `style-vocab` | 个人词表加载与用词检查；词表由使用者提供 |
+
+只有用户明确选择精简安装时，才只装前两个并使用 PPT 自带的基础润色。默认完整安装不额外安装英文 `humanizer`、整套文体技能或整个仓库。
+
 ### Codex 安装流程
 
-用户要求按本页安装后，连续完成以下步骤；不要只返回教程或缺项清单。只安装本技能、配套转换技能和缺少的必要软件。遇到管理员授权、网络访问限制或已有同名文件冲突时，说明具体问题，再请用户配合。
+用户要求按本页安装后，连续完成以下步骤；不要只返回教程或缺项清单。默认安装上表四个技能及缺少的必要软件，已有可用依赖直接复用。遇到管理员授权、网络访问限制或已有同名文件冲突时，说明具体问题，再请用户配合。
 
 1. **确认本机环境和安装位置。** 确认任务在 Windows 本机执行，能够访问网络和运行命令；不要装进远端 Linux 或 WSL 后声称 Windows 已安装。解析启动用户的实际主目录。已有技能管理器时沿用其受支持安装入口；否则优先使用可用的 `skill-installer`，或将完整技能目录安装到该用户的 `.agents/skills`。先检查同名技能，保留已有修改，不把整个仓库安装成技能。目录发现方式见 [Codex 官方说明](https://learn.chatgpt.com/docs/build-skills)。
 
-2. **取得两个技能。** 从本发布页下载 `lab-report-slides` 压缩包，核对页面给出的 SHA-256 后解压；从同仓库的 [已验证版本](https://github.com/SanAntonio021/agents-skills/tree/5e5c988a6e02c91d1ceb6fb4f9647694af67fa80/libreoffice-runner) 取得完整 `libreoffice-runner` 目录，包含其整个 `scripts` 子目录。可下载该固定提交的仓库归档到临时目录，再只取需要的目录。两个技能保持同级；若使用管理器导致实际路径不同，按下文配置 `LAB_REPORT_LO_RUNNER`。不要求用户手工下载依赖技能。
+2. **取得四个技能。** 从同一仓库 `SanAntonio021/agents-skills` 的 `main` 解析一次当前提交 SHA，或沿用发布页指定的固定提交；从该提交取得 `lab-report-slides`、`libreoffice-runner`、`writing-router`、`style-vocab` 四个完整目录。可以下载该提交归档后只取这四项，不把整个仓库安装成技能，不混用旧附件与新依赖。记录提交和实际安装目录；使用技能管理器时沿用其受支持入口。四个目录保持同级；目录不同时按实际安装位置解析共用参考文件，并配置 `LAB_REPORT_LO_RUNNER`。全部下载与依赖安装由 Codex 执行，不要求用户手工补齐。
 
 3. **补齐软件和 Python 库。** 先发现并复用已有的 Python、LibreOffice 和 `pdftoppm`。Python 需 3.10+；缺失时可选 Python 3.13 的稳定补丁版本。优先使用本机已有的软件包管理器，先查询并核对软件名称、发布者及安装来源，再安装缺项；没有包管理器时，从 [Python 官方 Windows 下载页](https://www.python.org/downloads/windows/)、[LibreOffice 官网](https://www.libreoffice.org/download/) 和 [Poppler Windows 构建发布页](https://github.com/oschwartz10612/poppler-windows/releases) 获取与本机架构匹配的安装包。Poppler 链接是社区 Windows 构建。不要安装预发布版本或把包管理器当成额外必装依赖。使用实际选定的同一个 Python 执行下文 `pip install -r requirements.txt`。
 
@@ -22,15 +35,15 @@
 
 5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
 
-6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 SKILL.md 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现 `lab-report-slides`；未发现时核对安装位置，确需重启时提示用户完成后复查。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
+6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 SKILL.md 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。个人词表未配置时如实说明，不能声称通过个人词表审计；未发现时核对安装位置，确需重启时提示用户完成后复查。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
 
 完成后，使用者可以说：“生成今日汇报，先列出可汇报的科研进展让我选择。”
 
 ## 安装命令与配置参考
 
-从本仓库下载并安装以下两个目录，保持同级关系。使用 CC Switch 时，添加仓库 `SanAntonio021/agents-skills`、分支 `main`，选择这两个技能并启用 Codex。
+从本仓库下载并安装以下四个目录，保持同级关系。使用 CC Switch 时，添加仓库 `SanAntonio021/agents-skills`、分支 `main`，选择这四个技能并启用 Codex。
 
-单技能下载包只包含 `lab-report-slides`；配套的 [libreoffice-runner](https://github.com/SanAntonio021/agents-skills/tree/main/libreoffice-runner) 需另外安装。该依赖目录内的作者本机命令示例无需照抄，以本说明的 Python 与路径配置为准。
+旧单技能下载包只包含当时版本的 `lab-report-slides`，不代表当前完整配置。默认按上方流程从同一提交安装四项。依赖技能中的作者本机路径仅作作者环境记录，使用时按本机实际配置解析，不创建作者同名目录。
 
 ```text
 <技能目录>/
@@ -38,6 +51,12 @@
     SKILL.md
     scripts/
     references/
+  writing-router/
+    SKILL.md
+    references/
+  style-vocab/
+    SKILL.md
+    scripts/
   libreoffice-runner/
     SKILL.md
     scripts/libreoffice_run.py
@@ -97,7 +116,11 @@ PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 shar
 
 每次生成还会主动检查多余的术语释义、图中标签解释和读图提示：删除不影响理解、图文对应和结论的补充，有口头讲解价值时放备注；防止误读所必需的解释留在页面，无需每次单独提醒。
 
-个人词表可放在当前汇报项目的 `汇报词表.md`，或在对话中指定文件。使用“不建议、建议、例外”三列；个人偏好优先于通用措辞建议。已配置 `style-vocab` 的使用者仍可沿用原流程。不必额外安装 `writing-router`、`style-vocab` 或 `pptx` 才能使用基本工作流。
+个人词表可放在当前汇报项目的 `汇报词表.md`，或在对话中指定文件。使用“不建议、建议、例外”三列；个人偏好优先于通用措辞建议。默认安装已包含 `writing-router` 和 `style-vocab`，生成时自动调用，无需另发润色指令。没有个人词表时仍执行共用规则与随附基础用词检查，不凭空生成个人偏好。精简安装可完成基本工作流，不强制安装 `pptx`。
+
+## 本机个性化配置
+
+模板、项目名称、交付目录和个人词表不随公开技能分发。安装时使用用户提供的配置；没有模板则按首次使用流程选择，没有交付目录则沿用当前汇报项目目录，没有个人词表则用通用规则。不要复制作者的用户名、磁盘路径、私人样稿或词表；`writing-router` 中的私人样稿路径不可用时跳过该增强，不阻断 PPT 流程。四个技能齐全代表检查能力配置齐全，不保证未经本机验证的字体、模板和输出与作者电脑逐像素相同。
 
 ## 产物与资料保护
 
@@ -124,4 +147,4 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 
 完整测试包含真实 LibreOffice 转换，首次运行前确认没有正在编辑的 LibreOffice 文件；不结束用户进程。测试临时图仅供软件验证，不是科研结果。测试通过不代表已在同学电脑或 PowerPoint 中验收。
 
-更新只替换这两个技能的对应目录；私人词表留在项目内。首次分享建议先让同学运行依赖检查，再用自己的一个小项目完成“选择内容—生成—打开检查”。
+更新只处理这四个技能的对应目录并保留本机修改；私人词表留在项目内。首次分享建议先让同学运行依赖检查，再用自己的一个小项目完成“选择内容—生成—打开检查”。

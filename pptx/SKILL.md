@@ -81,6 +81,26 @@ The bridge never quits or terminates Office.
 
 ## Acceptance layers
 
+### Safe text replacement in an existing PPTX
+
+For python-pptx edits, reuse `scripts/safe_text_replace.py` instead of copying paragraph/run
+property nodes with ad hoc XML insertion. Its API and style policy are documented in the module.
+Replace existing properties rather than appending a second `a:pPr` or `a:rPr`. For a local edit
+that must retain mixed styles, edit the intended existing run's text instead of rebuilding the
+whole paragraph. Do not silently flatten mixed formatting or automatically repair malformed input.
+Save to a new path and validate the final saved package after every modification pass.
+
+Import `replace_text` from that module and call `replace_text(shape_or_text_frame, text)`.
+The function changes only the target in memory; it does not save files. Whole-text replacement
+uses each corresponding paragraph's first-run style (new paragraphs reuse the last original
+paragraph), replacing mixed runs and fields intentionally. Use it only when this style policy
+matches the edit; for mixed-style local changes, retain the existing runs. Malformed duplicate
+format nodes raise `UnsafeTextStructureError` without changing the target.
+
+The PPTX validator checks duplicate DrawingML text-format properties separately from XSD and
+original-template comparisons. A duplicate-format failure must identify the part and node and
+must block delivery even when `--original` is supplied or compatibility rendering succeeds.
+
 Keep these records separate:
 
 - `STATIC_PASS`: `validate.py`, OOXML/package checks, typography and source-hash checks.

@@ -1,6 +1,6 @@
 ---
 name: project-writing
-description: 中文工程项目书、申请书正文、专家答复和终稿审校。Use when 任务涉及工程申报、工程建设、产业化应用、研发需求、技术指标、专家意见回复或项目书定稿；根据 proposal、expert_reply、final_audit 三种模式处理，不把固定三段式当作默认模板。
+description: 中文工程项目书、申请书正文、专家答复和终稿审校，也负责申报指标的可行性及考核条件判断。Use when 任务涉及工程申报、工程建设、产业化应用、研发需求、技术指标、专家意见回复或项目书定稿；根据 proposal、expert_reply、final_audit 三种模式处理，不把固定三段式当作默认模板。
 ---
 
 # 工程项目写作
@@ -13,7 +13,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 - `mode=proposal|expert_reply|final_audit`
 - `edit_scope`、`language`、`loaded_refs`
 
-建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。
+仅判断指标是否可行时，直接按下方指标资料回答，不触发写稿、建账本或主稿写入。需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。
 
 读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和只审不改任务再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 
@@ -61,7 +61,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 
 公式旁边说明每个变量、单位和取值来源，并用一句话解释公式在工程上用来判断什么。计算值要区分输入、假设、计算方法和结果；仿真、台架测试、外场实测不得混写。
 
-核心任务是论证指标是否可行时转 `target-feasibility`。本技能负责把核验后的结论放回正确栏目。
+涉及申报指标可行性时，按需读取共用的[指标可行性判断](../technical-writing/references/metric-feasibility.md)，复用当前定义和数据。中立评估可实现条件，不默认降低指标或修改表述；根据申报表区分装备性能和考核方式，已授权改稿时将结论放回对应栏目。
 
 ## 用词与样式
 

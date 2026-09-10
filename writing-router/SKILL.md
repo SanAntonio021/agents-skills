@@ -107,7 +107,7 @@ description: 中文写作与通用编辑的默认入口。Use when 用户要撰�
 
 ## 相邻任务
 
-- 指标是否可实现：`target-feasibility`。
+- 指标是否可实现：申报指标由 `project-writing` 处理，技术方案和独立工程指标问题由 `technical-writing` 处理；两者按需共用[指标可行性判断](../technical-writing/references/metric-feasibility.md)。仅问可行性时直接回答，未要求写稿不启动文稿流程。
 - 研究取样和补证据：`baseline-research`。
 - 论文全文技术内容、论证和结论审查，以及明确要求的模拟审稿：`paper-review`；终稿文字和语言审校仍用 `ieee-manuscript-edit`。
 - 投稿格式、材料合规、投稿系统与返修事务：`journal-submission`，按实际文件交给 `latex-paper`、`docx` 或 `paper-figure-review` 处理格式。准备投稿或点击 Submit 不自动触发全文审稿；同时要求内容与格式检查时分别完成并复用当前稿件和已有检查结果。结合上下文判断，只有范围无法确定且会明显改变工作量时才询问。

@@ -101,7 +101,7 @@ C 类：风格偏好
 - 学术协作总控：[../writing-router/SKILL.md](../writing-router/SKILL.md)
 - 工程申报写作：[../project-writing/SKILL.md](../project-writing/SKILL.md)
 - SCI/IEEE 论文精修与初稿收口：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-- 指标论证：[../target-feasibility/SKILL.md](../target-feasibility/SKILL.md)
+- 工程指标可行性：按需参考[指标可行性判断](../technical-writing/references/metric-feasibility.md)；申报指标由 `project-writing` 承接，技术方案指标由 `technical-writing` 承接。
 - 选刊定位（投稿前把关的期刊口径参考）：[../journal-submission/references/journal-selection.md](../journal-submission/references/journal-selection.md)
 - 通用投稿系统、决定信、返修提交和录用后事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
 - 明确 IEEE 的投稿事务：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)

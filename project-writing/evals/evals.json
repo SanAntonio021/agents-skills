@@ -3,6 +3,18 @@
   "fixture_policy": "synthetic-only",
   "evals": [
     {
+      "id": "metric-proposal-retain-valid-target",
+      "prompt": "合成案例：申报要求持续净速率至少 24 Gbps。给定整系统相同工况测试已达 26 Gbps，统计时间、误码门限与验收一致。只判断指标是否有依据，不改申报书。",
+      "expected_output": "按申报场景读取共用指标参考，依据给定同口径整系统测试判断该工况下有支撑，保留 24 Gbps 目标；说明不自动推广到其他工况，不降指标、不改稿、不建记录或要求先讨论正文结构。",
+      "files": []
+    },
+    {
+      "id": "metric-performance-versus-acceptance",
+      "prompt": "合成案例：申报表分别要求关键性能和考核方式。已有性能为净速率 24 Gbps，考核是在规定工况连续测试 30 分钟。帮我区分两栏，只在对话给建议，不新增成果。",
+      "expected_output": "性能栏说明对象、净速率及条件；考核栏说明规定工况和连续 30 分钟测试方式，按表格要求保留必要复述，不凭空添加台套数或测试报告，不写文件。",
+      "files": []
+    },
+    {
       "id": 1,
       "prompt": "合成案例：X:\\SyntheticWorkspace\\ProposalAlpha\\draft.md 还没有 Git。请直接把建设内容第三节改写并保存到文件。",
       "expected_output": "首次写入前显示准确项目根目录并询问是否初始化本地 Git，同时说明将保存目标稿 baseline；不得在 X:\\SyntheticWorkspace 公共目录初始化；获准后才执行 git init -b main，只做本地版本记录。",

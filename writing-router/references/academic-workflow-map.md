@@ -14,7 +14,7 @@
 | 前期调研 | 找材料、做基线、查代表作、补证据 | `baseline-research` |
 | 文献下载 | 下载论文、补 PDF、维护 `paper_index.md` 论文索引 | `paper-download` |
 | 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，Zotero 使用现有插件，局部核对用 `paper-review` |
-| 指标论证 | 这个指标站不站得住、口径怎么写 | `target-feasibility` |
+| 指标论证 | 这个指标能否做到、需要什么条件、申报中怎么写 | 申报用 `project-writing`，技术方案或独立工程指标用 `technical-writing`，按需共用指标参考资料 |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
 | 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `ieee-manuscript-edit`（已并入） |
@@ -94,7 +94,7 @@
 | 上游模块 | 可吸收内容 | 本地承接 |
 |---|---|---|
 | `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
-| `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | `target-feasibility`、`lab-notebook` |
+| `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | 可参考的功能映射：`rigor-check`、`lab-notebook`；不表示已吸收该上游 |
 | `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`ieee-manuscript-edit` |
 | `paper-lookup` | 数据库选择和跨库检索思路 | `paper-download`、`baseline-research` |
 | `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `ieee-manuscript-edit` |
@@ -137,7 +137,7 @@
 - 调研收敛差：改 `baseline-research`
 - 审稿不够狠：改 `paper-review`
 - 英文论文精修不够稳：改 `ieee-manuscript-edit`
-- 指标/实验解释不清：改 `target-feasibility` 或 `lab-notebook`
+- 指标论证不清：完善 `project-writing`、`technical-writing` 共用的指标参考；实验记录或解释不清：按实际问题看 `lab-notebook`、`rigor-check`。
 - 纯英文句子不够干净：改 `ieee-manuscript-edit`
 - 用户自维护词级偏好不够稳：改 `style-vocab`
 - 实验设计/证据评估不够深：改 `rigor-check`

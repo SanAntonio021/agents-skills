@@ -10,7 +10,7 @@
     {
       "id": "route-engineering-proposal-metric",
       "prompt": "合成案例：工程申报书里要求把 24Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
-      "expected_output": "判断核心阻塞是指标口径和可行性，先路由到 target-feasibility；指标站稳后再回到 project-writing 改正文。"
+      "expected_output": "由 project-writing 按需读取共用指标参考，核对 24Gbps 的对象、条件和依据，合理则保留；需要技术计算时直接完成，不切换到独立指标技能，也不为更有说服力虚构支撑。改正文仍遵循当前授权。"
     },
     {
       "id": "upstream-absorption-map",

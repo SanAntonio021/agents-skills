@@ -313,16 +313,23 @@ def make_pptx(deck, slides, output_path):
 
 
 def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> None:
-    runner = Path(__file__).resolve().parents[2] / "libreoffice-runner/scripts/libreoffice_run.py"
+    default_runner = Path(__file__).resolve().parents[2] / "libreoffice-runner/scripts/libreoffice_run.py"
+    runner = Path(os.environ.get("LAB_REPORT_LO_RUNNER") or default_runner).expanduser().resolve()
     if not runner.is_file():
-        raise RuntimeError("The existing libreoffice-runner is required to render the actual PPTX")
-    result = subprocess.run([sys.executable, "-X", "utf8", str(runner), "pdf", str(pptx_path), str(pdf_path),
-                             "--queue-timeout", "60", "--run-timeout", "120"],
+        raise RuntimeError("Install libreoffice-runner alongside lab-report-slides, or set LAB_REPORT_LO_RUNNER to its scripts/libreoffice_run.py")
+    command = [sys.executable, "-X", "utf8", str(runner), "pdf", str(pptx_path), str(pdf_path),
+               "--queue-timeout", "60", "--run-timeout", "120"]
+    if os.environ.get("LAB_REPORT_SOFFICE"):
+        command.extend(["--soffice", os.environ["LAB_REPORT_SOFFICE"]])
+    result = subprocess.run(command,
                             capture_output=True, text=True, encoding="utf-8")
-    report = json.loads(result.stdout)
+    try:
+        report = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("LibreOffice runner did not return JSON; run check_dependencies.py with the same Python interpreter") from exc
     if result.returncode or report.get("ok") is not True:
         raise RuntimeError(f"PPTX rendering failed: {report.get('error')}: {report.get('message')}")
-    poppler = shutil.which("pdftoppm")
+    poppler = os.environ.get("LAB_REPORT_PDFTOPPM") or shutil.which("pdftoppm")
     if not poppler:
         raise RuntimeError("pdftoppm is required for page inspection")
     with tempfile.TemporaryDirectory(prefix="lab-pages-") as temporary:

@@ -1,0 +1,5 @@
+python-pptx>=1.0,<2
+Pillow>=10,<13
+tzdata>=2024.1
+pywin32>=306; sys_platform == "win32"
+PyPDF2>=3,<4

@@ -19,6 +19,7 @@ from recovery_fs import (
     io_path, manifest_for_roots, package_files, path_within, plain_path, sha256_file,
 )
 from recovery_fs import kind_at, load_external_link_allowlist, safe_extract_tar, validate_link, validate_link_plan
+from recovery_fs import validate_rebuild_disposition, validate_reproducible_roots_metadata
 
 UTF8 = "utf-8"
 BUNDLE_NAME = "repository-recovery.bundle"
@@ -102,6 +103,45 @@ def verify_manifest(worktree: Path, state_source: Path, roots_file: str, manifes
     return len(expected)
 
 
+def ignored_records(state_source: Path, snapshot_version: int) -> tuple[dict, list, bool]:
+    """Read the sealed representation; never consult a new external disposition.
+
+    A restore must also work after the original worktree has disappeared. Root
+    identities are therefore validated as recorded data, not compared to the
+    original filesystem or recreated by running an arbitrary rebuild command.
+    """
+    disposition = json.loads((state_source / "ignored-disposition.json").read_text(encoding=UTF8))
+    validate_rebuild_disposition(disposition)
+    version = disposition.get("schemaVersion", 1)
+    if snapshot_version not in (2, 3) or (snapshot_version == 2 and version != 1):
+        raise RuntimeError("Incompatible snapshot and ignored disposition versions")
+    lightweight = version == 2
+    filename = "ignored-reproducible-roots.json" if lightweight else "ignored-reproducible-manifest.json"
+    forbidden = "ignored-reproducible-manifest.json" if lightweight else "ignored-reproducible-roots.json"
+    if (state_source / forbidden).exists():
+        raise RuntimeError("Ambiguous reproducible cache representation")
+    entries = json.loads((state_source / filename).read_text(encoding=UTF8))
+    if lightweight:
+        validate_reproducible_roots_metadata(entries, disposition)
+        # Check the captured Git index and protected payloads, not the cache's
+        # contents. Ignored exclusions cannot hide a protected file.
+        protected = []
+        for row in (state_source / "ls-files-stage.z").read_bytes().split(b"\0"):
+            if row:
+                protected.append(row.split(b"\t", 1)[1].decode(UTF8, "surrogateescape"))
+        for category in ("tracked-current", "untracked", "ignored-preserved"):
+            manifest = json.loads((state_source / f"{category}-manifest.json").read_text(encoding=UTF8))
+            protected.extend(item["path"] for item in manifest)
+        for root in disposition["reproducible"]:
+            folded = canonical_rel(root).casefold()
+            if any((name := canonical_rel(path).casefold()) == folded or name.startswith(folded + "/")
+                   for path in protected):
+                raise RuntimeError(f"Lightweight cache covers a protected path: {root}")
+    elif not isinstance(entries, list):
+        raise RuntimeError("Invalid legacy reproducible manifest")
+    return disposition, entries, lightweight
+
+
 def read_bundle_heads(repo: Path, bundle: Path) -> dict[str, str]:
     process = git(repo, "bundle", "list-heads", bundle)
     heads = {}
@@ -175,7 +215,7 @@ def main() -> None:
 
     summary = json.loads((source / "snapshot-summary.json").read_text(encoding=UTF8))
     mirror_summary = json.loads((mirror / "snapshot-summary.json").read_text(encoding=UTF8))
-    if summary != mirror_summary or summary.get("schemaVersion") != 2:
+    if summary != mirror_summary or summary.get("schemaVersion") not in (2, 3):
         raise RuntimeError("Package summaries differ or use an unsupported schema")
     refbase = summary["refbase"]
     source_bundle = source / BUNDLE_NAME
@@ -239,15 +279,23 @@ def main() -> None:
         state_source = source / "worktrees" / f"{index:03d}"
         state_destination = states_root / f"{index:03d}"
         head = metadata["head"]
+        disposition, reproducible_expected, lightweight = ignored_records(state_source, summary["schemaVersion"])
         link_manifest = state_source / "links.json"
         if link_manifest.exists():
             recorded = json.loads(link_manifest.read_text(encoding=UTF8))
             expected_links = []
-            for category in ("tracked-current", "untracked", "ignored-preserved", "ignored-reproducible"):
+            for category in ("tracked-current", "untracked", "ignored-preserved"):
                 entries = json.loads((state_source / f"{category}-manifest.json").read_text(encoding=UTF8))
                 expected_links.extend(dict(item, payload=category) for item in entries if item["kind"] in LINK_KINDS)
+            expected_links.extend(dict(item, payload="ignored-reproducible") for item in reproducible_expected
+                                  if item["kind"] in LINK_KINDS)
             if recorded != {"schemaVersion": 1, "entries": expected_links}:
                 raise RuntimeError(f"Independent link manifest differs for worktree {index}")
+        if lightweight:
+            for item in reproducible_expected:
+                if item["kind"] in LINK_KINDS:
+                    validate_link(state_destination, item["path"], item["kind"], item["linkTarget"],
+                                  allowed_links, metadata["worktree"])
         # Checkout also creates unchanged tracked symlinks, which may not appear in
         # a dirty payload. Enforce the same external-link policy before checkout.
         tree = git_bare(bare, "ls-tree", "-r", "-z", head).stdout
@@ -308,14 +356,12 @@ def main() -> None:
             "tracked-current-roots.json",
             "tracked-current-manifest.json",
         )
-        disposition = json.loads((state_source / "ignored-disposition.json").read_text(encoding=UTF8))
         preserved_expected = json.loads((state_source / "ignored-preserved-manifest.json").read_text(encoding=UTF8))
         preserved_actual = manifest_for_roots(state_destination, disposition["preserve"])
         if preserved_actual != preserved_expected:
             raise RuntimeError(f"Preserved ignored payload mismatch for worktree {index}")
-        reproducible_expected = json.loads((state_source / "ignored-reproducible-manifest.json").read_text(encoding=UTF8))
         for relative in disposition["reproducible"]:
-            if (state_destination / Path(relative)).exists():
+            if kind_at(path_within(state_destination, relative))[0] is not None:
                 raise RuntimeError(f"Reproducible ignored payload was unexpectedly restored: {relative}")
         results.append(
             {
@@ -326,7 +372,9 @@ def main() -> None:
                 "untrackedManifestEntries": untracked_count,
                 "trackedManifestEntries": tracked_count,
                 "ignoredPreservedManifestEntries": len(preserved_expected),
-                "ignoredReproducibleManifestEntriesRecorded": len(reproducible_expected),
+                "ignoredReproducibleManifestEntriesRecorded": 0 if lightweight else len(reproducible_expected),
+                "ignoredReproducibleRootEntriesRecorded": len(reproducible_expected) if lightweight else 0,
+                "reproducibleRepresentation": "roots" if lightweight else "full-manifest",
             }
         )
 
@@ -337,7 +385,8 @@ def main() -> None:
         raise RuntimeError("Isolated restore git fsck --full failed")
 
     result = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
+        "snapshotSchemaVersion": summary["schemaVersion"],
         "verifiedUtc": datetime.now(timezone.utc).isoformat(),
         "primaryPackageFiles": len(source_manifest),
         "mirrorPackageFiles": len(mirror_manifest),
@@ -360,6 +409,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding=UTF8)
+    sys.stderr.reconfigure(encoding=UTF8)
     try:
         main()
     except Exception as error:

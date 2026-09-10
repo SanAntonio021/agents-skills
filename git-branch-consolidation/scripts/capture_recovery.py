@@ -19,6 +19,7 @@ from pathlib import Path
 from recovery_fs import (
     LINK_KINDS, canonical_path, canonical_rel, current_entry, inventory_tree,
     io_path, manifest_for_roots, package_files, path_within, plain_path, sha256_file,
+    kind_at, reproducible_roots_metadata, validate_rebuild_disposition,
 )
 from recovery_fs import create_payload_tar, walk_paths
 import time
@@ -152,12 +153,13 @@ def parse_nul_paths(raw: bytes) -> list[str]:
     return [canonical_rel(decode(item)) for item in raw.split(b"\0") if item]
 
 
-def load_ignored_dispositions(path: str | None) -> dict[str, dict[str, list[str]]]:
+def load_ignored_dispositions(path: str | None) -> dict:
     if path is None:
         return {}
     payload = json.loads(io_path(path).read_text(encoding=UTF8))
-    if payload.get("schemaVersion") != 1 or not isinstance(payload.get("worktrees"), dict):
-        raise RuntimeError("Ignored disposition must use schemaVersion 1 and a worktrees object")
+    version = payload.get("schemaVersion")
+    if version not in (1, 2) or not isinstance(payload.get("worktrees"), dict):
+        raise RuntimeError("Ignored disposition must use schemaVersion 1 or 2 and a worktrees object")
     result = {}
     for worktree, disposition in payload["worktrees"].items():
         if not isinstance(disposition, dict):
@@ -178,6 +180,9 @@ def load_ignored_dispositions(path: str | None) -> dict[str, dict[str, list[str]
             "preserve": sorted(preserve, key=str.casefold),
             "reproducible": sorted(reproducible, key=str.casefold),
         }
+        if version == 2:
+            result[key].update(schemaVersion=2, rebuild=disposition.get("rebuild"))
+        validate_rebuild_disposition(result[key])
     return result
 
 
@@ -226,6 +231,7 @@ def validate_disposition(
     ignored_roots: list[str],
     disposition: dict[str, list[str]],
 ) -> None:
+    validate_rebuild_disposition(disposition)
     expected = {value.casefold(): value for value in ignored_roots}
     declared = {
         value.casefold(): value
@@ -238,6 +244,75 @@ def validate_disposition(
             f"Ignored disposition is incomplete for {worktree}: "
             f"missing={[expected[key] for key in missing]}, extra={[declared[key] for key in extra]}"
         )
+
+
+def assert_supported_worktree(worktree: Path) -> None:
+    """Stop before destructive use when the package cannot replay Git state."""
+    if active_operations(worktree) or git(worktree, "ls-files", "--unmerged", "-z").stdout:
+        raise RuntimeError(f"Git operation or unmerged index in {worktree}")
+    flags = git(worktree, "ls-files", "-v", "-z").stdout.split(b"\0")
+    if any(item and (item[:1].islower() or item[:1] == b"S") for item in flags):
+        raise RuntimeError(f"assume-unchanged/skip-worktree entries require separate recovery: {worktree}")
+    if git_text(worktree, "config", "--bool", "core.sparseCheckout", check=False) == "true":
+        raise RuntimeError(f"Sparse checkout requires separate recovery: {worktree}")
+    stages = git(worktree, "ls-files", "--stage", "-z").stdout.split(b"\0")
+    if any(item.startswith(b"160000 ") for item in stages):
+        raise RuntimeError(f"Submodule state requires separate recovery: {worktree}")
+
+
+def protection_snapshot(worktree: Path, disposition: dict) -> dict:
+    """Re-enumerate using Git; never reuse a stale ignored classification."""
+    assert_supported_worktree(worktree)
+    status = git(worktree, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
+    ignored = status_roots(status, b"!! ")
+    validate_disposition(worktree, ignored, disposition)
+    tracked = sorted(set(parse_nul_paths(git(worktree, "ls-files", "-z").stdout)))
+    others = sorted(set(parse_nul_paths(git(worktree, "ls-files", "--others", "--exclude-standard", "-z").stdout)))
+    lightweight = disposition.get("schemaVersion", 1) == 2
+    if lightweight:
+        for root in disposition["reproducible"]:
+            folded = root.casefold()
+            if any(name.casefold() == folded or name.casefold().startswith(folded + "/")
+                   or folded.startswith(name.casefold() + "/") for name in tracked + others):
+                raise RuntimeError(f"Reproducible root overlaps a protected Git path: {root}")
+    # Git reports a nested repository as a directory rather than its contents.
+    for name in others:
+        path = path_within(worktree, name)
+        if kind_at(path)[0] == "directory" and (
+                kind_at(path / ".git")[0] is not None
+                or (kind_at(path / "HEAD")[0] == "file" and kind_at(path / "objects")[0] == "directory")):
+            raise RuntimeError(f"Nested repository requires separate recovery: {path}")
+    rules = {}
+    # All potentially active ignore files outside excluded cache interiors.
+    for name in tracked + others:
+        if name.rsplit("/", 1)[-1] == ".gitignore":
+            rules[name] = current_entry(path_within(worktree, name), name)
+    exclude = Path(git_text(worktree, "rev-parse", "--git-path", "info/exclude"))
+    if not exclude.is_absolute():
+        exclude = worktree / exclude
+    external = [exclude]
+    global_exclude = git_text(worktree, "config", "--path", "--get", "core.excludesFile", check=False)
+    if global_exclude:
+        global_path = Path(global_exclude).expanduser()
+        external.append(global_path if global_path.is_absolute() else worktree / global_path)
+    else:
+        external.append(Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "git" / "ignore")
+    for index, path in enumerate(external):
+        rules[f"external-{index}"] = {"path": plain_path(path), "entry": current_entry(path, "ignore-rule")}
+    # Ancestor .gitignore files can themselves be ignored; capture their bytes.
+    for root in disposition["reproducible"]:
+        parts = root.split("/")
+        for end in range(len(parts)):
+            name = "/".join(parts[:end] + [".gitignore"])
+            rules[name] = current_entry(path_within(worktree, name), name)
+    return {"tracked": tracked, "untracked": others if lightweight else status_roots(status, b"?? "),
+            "ignored": ignored, "rules": rules,
+            "reproducibleRoots": reproducible_roots_metadata(worktree, disposition) if lightweight else None}
+
+
+def reject_nested_payload(manifest: list[dict]) -> None:
+    if any(".git" in item["path"].split("/") for item in manifest):
+        raise RuntimeError("Nested repository in protected payload requires separate recovery")
 
 
 def backup_worktree(
@@ -297,10 +372,12 @@ def backup_worktree(
     command_capture(worktree, output / "diff-summary.txt", ("diff", "--summary", "--no-textconv"))
     command_capture(worktree, output / "diff-cached-summary.txt", ("diff", "--cached", "--summary", "--no-textconv"))
 
-    untracked_roots = status_roots(status_v1, b"?? ")
     ignored_roots = status_roots(status_v1, b"!! ")
     disposition = ignored_dispositions.get(canonical_path(worktree), {"preserve": [], "reproducible": []})
-    validate_disposition(worktree, ignored_roots, disposition)
+    protection = protection_snapshot(worktree, disposition)
+    write_json(output / "protection-state.json", protection)
+    untracked_roots = protection["untracked"]
+    lightweight = disposition.get("schemaVersion", 1) == 2
 
     modified_paths = set()
     for command in [
@@ -317,7 +394,10 @@ def backup_worktree(
     untracked_manifest = manifest_for_roots(worktree, untracked_roots)
     tracked_manifest = manifest_for_roots(worktree, tracked_roots)
     preserved_manifest = manifest_for_roots(worktree, disposition["preserve"])
-    reproducible_manifest = manifest_for_roots(worktree, disposition["reproducible"])
+    reproducible_manifest = (protection["reproducibleRoots"] if lightweight
+                             else manifest_for_roots(worktree, disposition["reproducible"]))
+    for manifest in (untracked_manifest, tracked_manifest, preserved_manifest):
+        reject_nested_payload(manifest)
 
     create_payload_tar(worktree, untracked_roots, output / "untracked-payload.tar")
     create_payload_tar(worktree, tracked_roots, output / "tracked-current.tar")
@@ -330,7 +410,7 @@ def backup_worktree(
     write_json(output / "untracked-manifest.json", untracked_manifest)
     write_json(output / "tracked-current-manifest.json", tracked_manifest)
     write_json(output / "ignored-preserved-manifest.json", preserved_manifest)
-    write_json(output / "ignored-reproducible-manifest.json", reproducible_manifest)
+    write_json(output / ("ignored-reproducible-roots.json" if lightweight else "ignored-reproducible-manifest.json"), reproducible_manifest)
     write_json(output / "links.json", {
         "schemaVersion": 1,
         "entries": [dict(item, payload=category)
@@ -389,7 +469,11 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
         "--ignored=matching",
         "-z",
     ).stdout
-    if status_roots(status_v1, b"?? ") != json.loads((state_dir / "untracked-roots.json").read_text(encoding=UTF8)):
+    disposition = json.loads((state_dir / "ignored-disposition.json").read_text(encoding=UTF8))
+    protection = protection_snapshot(worktree, disposition)
+    if (state_dir / "protection-state.json").exists() and protection != json.loads((state_dir / "protection-state.json").read_text(encoding=UTF8)):
+        raise RuntimeError(f"Git protection/classification changed while freezing {worktree}")
+    if protection["untracked"] != json.loads((state_dir / "untracked-roots.json").read_text(encoding=UTF8)):
         raise RuntimeError(f"Untracked roots changed while freezing {worktree}")
     if status_roots(status_v1, b"!! ") != json.loads((state_dir / "ignored-roots.json").read_text(encoding=UTF8)):
         raise RuntimeError(f"Ignored roots changed while freezing {worktree}")
@@ -398,7 +482,6 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
         ("untracked-roots.json", "untracked-manifest.json"),
         ("tracked-current-roots.json", "tracked-current-manifest.json"),
     ]
-    disposition = json.loads((state_dir / "ignored-disposition.json").read_text(encoding=UTF8))
     for roots_file, manifest_file in root_manifest_pairs:
         roots = json.loads((state_dir / roots_file).read_text(encoding=UTF8))
         expected = json.loads((state_dir / manifest_file).read_text(encoding=UTF8))
@@ -408,6 +491,11 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
         ("preserve", "ignored-preserved-manifest.json"),
         ("reproducible", "ignored-reproducible-manifest.json"),
     ]:
+        if key == "reproducible" and disposition.get("schemaVersion", 1) == 2:
+            expected = json.loads((state_dir / "ignored-reproducible-roots.json").read_text(encoding=UTF8))
+            if protection["reproducibleRoots"] != expected:
+                raise RuntimeError(f"Reproducible roots changed while freezing {worktree}")
+            continue
         expected = json.loads((state_dir / manifest_file).read_text(encoding=UTF8))
         if manifest_for_roots(worktree, disposition[key]) != expected:
             raise RuntimeError(f"{manifest_file} changed while freezing {worktree}")
@@ -472,14 +560,12 @@ def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> 
     }
     for record in parse_worktrees(worktrees_raw):
         worktree = io_path(record["worktree"])
-        operations = active_operations(worktree)
-        if operations or git(worktree, "ls-files", "--unmerged", "-z").stdout:
-            raise RuntimeError(f"Git operation or unmerged index during full snapshot: {worktree}")
         status = git(worktree, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
         untracked, ignored = status_roots(status, b"?? "), status_roots(status, b"!! ")
         disposition = dispositions.get(canonical_path(worktree), {"preserve": [], "reproducible": []})
-        validate_disposition(worktree, ignored, disposition)
-        tracked = sorted(set(parse_nul_paths(git(worktree, "ls-files", "-z").stdout)))
+        protection = protection_snapshot(worktree, disposition)
+        tracked, untracked = protection["tracked"], protection["untracked"]
+        ignored_manifest_roots = (disposition["preserve"] if disposition.get("schemaVersion", 1) == 2 else ignored)
         index_path = Path(git_text(worktree, "rev-parse", "--git-path", "index"))
         if not index_path.is_absolute():
             index_path = worktree / index_path
@@ -495,9 +581,12 @@ def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> 
             "unstagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv").stdout).hexdigest(),
             "tracked": [current_entry(path_within(worktree, name), name) for name in tracked],
             "untracked": manifest_for_roots(worktree, untracked),
-            "ignored": manifest_for_roots(worktree, ignored),
+            "ignored": manifest_for_roots(worktree, ignored_manifest_roots),
             "disposition": disposition,
+            "protection": protection,
         }
+        for manifest in (item["untracked"], item["ignored"]):
+            reject_nested_payload(manifest)
         result["worktrees"].append(item)
     return result
 
@@ -542,6 +631,14 @@ def main() -> None:
         raise RuntimeError("No registered worktree was found")
     assert_output_paths(repo, worktrees, primary, mirror)
     dispositions = load_ignored_dispositions(arguments.ignored_disposition)
+    disposition_hash = sha256_file(arguments.ignored_disposition) if arguments.ignored_disposition else None
+
+    def current_snapshot():
+        if arguments.ignored_disposition and (
+                sha256_file(arguments.ignored_disposition) != disposition_hash
+                or load_ignored_dispositions(arguments.ignored_disposition) != dispositions):
+            raise RuntimeError("Ignored disposition changed during capture")
+        return full_snapshot(repo, arguments.remote, refbase, dispositions)
     registered = {canonical_path(item["worktree"]) for item in worktrees}
     unknown_dispositions = sorted(set(dispositions) - registered)
     if unknown_dispositions:
@@ -579,13 +676,13 @@ def main() -> None:
             canonical_path(worktree),
             {"preserve": [], "reproducible": []},
         )
-        validate_disposition(worktree, status_roots(ignored_status, b"!! "), disposition)
+        protection_snapshot(worktree, disposition)
 
     log(f"fetching {arguments.remote} and reading live refs")
     fetch = git(repo, "fetch", "--prune", arguments.remote)
     live_before = live_remote(repo, arguments.remote)
     log("reading two complete frozen snapshots, separated by at least 2 seconds")
-    frozen = stable_snapshot(lambda: full_snapshot(repo, arguments.remote, refbase, dispositions))
+    frozen = stable_snapshot(current_snapshot)
     if frozen["liveRemote"] != live_before or frozen["worktreesRaw"] != decode(worktrees_raw):
         raise RuntimeError("Remote or worktrees changed before the stable snapshot")
 
@@ -608,7 +705,7 @@ def main() -> None:
     root_symbolic_process = git(repo, "symbolic-ref", "-q", "HEAD", check=False)
     root_symbolic = decode(root_symbolic_process.stdout).strip() if root_symbolic_process.returncode == 0 else None
     root_head = git_text(repo, "rev-parse", "HEAD")
-    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+    if current_snapshot() != frozen:
         raise RuntimeError("Full frozen state drifted before pinning protected refs")
 
     log("pinning every protected object under temporary backup refs")
@@ -749,13 +846,15 @@ def main() -> None:
         raise RuntimeError("Cloud-sync Git metadata pollution appeared before package sealing")
     for index, record in enumerate(worktrees):
         verify_worktree_unchanged(io_path(record["worktree"]), worktree_root / f"{index:03d}")
-    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+    if current_snapshot() != frozen:
         raise RuntimeError("Full frozen state changed before package sealing")
 
     default_ref = live_before["symbolicHead"]
     summary = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "createdUtc": datetime.now(timezone.utc).isoformat(),
+        "primary": plain_path(primary),
+        "mirror": plain_path(mirror),
         "repo": str(repo),
         "remote": arguments.remote,
         "stamp": arguments.stamp,
@@ -797,6 +896,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding=UTF8)
+    sys.stderr.reconfigure(encoding=UTF8)
     try:
         main()
     except Exception as error:

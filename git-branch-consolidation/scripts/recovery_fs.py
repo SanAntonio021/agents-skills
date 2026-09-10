@@ -148,6 +148,88 @@ def manifest_for_roots(worktree, roots: list[str]) -> list[dict]:
     return entries
 
 
+def validate_rebuild_disposition(disposition: dict) -> None:
+    """Validate the lightweight contract without consulting the original source."""
+    version = disposition.get("schemaVersion", 1)
+    if version not in (1, 2):
+        raise RuntimeError("Unknown ignored disposition version")
+    roots = []
+    for key in ("preserve", "reproducible"):
+        values = disposition.get(key)
+        if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+            raise RuntimeError(f"Ignored disposition {key} must be a path list")
+        roots.extend(canonical_rel(value) for value in values)
+    folded = [value.casefold() for value in roots]
+    for index, root in enumerate(folded):
+        if any(other == root or other.startswith(root + "/") or root.startswith(other + "/")
+               for other in folded[index + 1:]):
+            raise RuntimeError("Ignored disposition roots overlap")
+    if version == 2:
+        rebuild = disposition.get("rebuild")
+        if (not isinstance(rebuild, dict) or set(rebuild) != set(disposition["reproducible"])
+                or any(not isinstance(value, str) or not value.strip() for value in rebuild.values())):
+            raise RuntimeError("Each reproducible root requires a nonempty rebuild description")
+
+
+def root_fingerprint(path, logical: str) -> dict:
+    """Identity/type only: never hash, open, or descend into a cache root."""
+    kind, info = kind_at(path)
+    if kind is None:
+        raise RuntimeError(f"Reproducible root or ancestor disappeared: {path}")
+    return {"path": logical, "kind": kind, "mode": stat.S_IMODE(info.st_mode),
+            "device": info.st_dev, "inode": info.st_ino,
+            "linkTarget": os.readlink(io_path(path)) if kind in LINK_KINDS else None}
+
+
+def reproducible_roots_metadata(worktree, disposition: dict) -> list[dict]:
+    validate_rebuild_disposition(disposition)
+    if disposition.get("schemaVersion", 1) != 2:
+        raise RuntimeError("Lightweight roots require disposition version 2")
+    entries = []
+    worktree = io_path(worktree)
+    for relative in disposition["reproducible"]:
+        source = path_within(worktree, relative)
+        item = root_fingerprint(source, relative)
+        ancestors = [root_fingerprint(worktree, ".")]
+        parts = relative.split("/")
+        for end in range(1, len(parts)):
+            name = "/".join(parts[:end])
+            ancestors.append(root_fingerprint(path_within(worktree, name), name))
+        if any(parent["kind"] != "directory" for parent in ancestors):
+            raise RuntimeError("Cache ancestor is not a regular directory")
+        item.update(ancestors=ancestors, rebuild=disposition["rebuild"][relative])
+        entries.append(item)
+    return entries
+
+
+def validate_reproducible_roots_metadata(entries: list, disposition: dict) -> None:
+    """Validate sealed root metadata; source may already have been removed."""
+    validate_rebuild_disposition(disposition)
+    if disposition.get("schemaVersion", 1) != 2 or not isinstance(entries, list):
+        raise RuntimeError("Invalid lightweight root metadata")
+    if [entry.get("path") for entry in entries] != disposition["reproducible"]:
+        raise RuntimeError("Lightweight root metadata differs from disposition")
+    fields = {"path", "kind", "mode", "device", "inode", "linkTarget"}
+    for entry in entries:
+        if set(entry) != fields | {"ancestors", "rebuild"}:
+            raise RuntimeError("Invalid lightweight root descriptor fields")
+        parts = canonical_rel(entry["path"]).split("/")
+        names = ["."] + ["/".join(parts[:end]) for end in range(1, len(parts))]
+        ancestors = entry["ancestors"]
+        if not isinstance(ancestors, list) or [x.get("path") for x in ancestors] != names:
+            raise RuntimeError("Invalid lightweight root ancestors")
+        if entry["rebuild"] != disposition["rebuild"][entry["path"]]:
+            raise RuntimeError("Rebuild description differs from disposition")
+        for item in [entry, *ancestors]:
+            if item is not entry and (set(item) != fields or item["kind"] != "directory"):
+                raise RuntimeError("Invalid cache ancestor descriptor")
+            if (item["kind"] not in {"file", "directory", *LINK_KINDS}
+                    or any(type(item[k]) is not int or item[k] < 0 for k in ("mode", "device", "inode"))
+                    or (item["kind"] in LINK_KINDS and (not isinstance(item["linkTarget"], str) or not item["linkTarget"] or "\0" in item["linkTarget"]))
+                    or (item["kind"] not in LINK_KINDS and item["linkTarget"] is not None)):
+                raise RuntimeError("Invalid lightweight root identity")
+
+
 def package_files(root) -> dict[str, Path]:
     result = {}
     root = io_path(root)

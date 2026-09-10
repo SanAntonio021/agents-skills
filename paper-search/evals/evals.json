@@ -45,7 +45,9 @@
       "id": 4,
       "prompt": "我这里有 8 条论文记录，能找到的都带题名和 DOI。请逐篇核验正式发表信息，按原顺序给我 IEEE 参考文献；有的可能只有 Early Access、预印本或元数据不全，查不到卷期页码就直说，别猜。默认直接在聊天里给结果。",
       "expected_output": "识别为正式引用完整核验；通过 web-access 逐篇读取出版商或正式论文页并用 DOI 注册记录、权威索引交叉核对。正式版优先于预印本但保留版本关系，按输入顺序在聊天中输出 IEEE 引用，并逐条说明未查到或冲突的字段，不因缺字段删除论文，也不自动生成文件。",
-      "files": ["evals/files/ieee-records.json"],
+      "files": [
+        "evals/files/ieee-records.json"
+      ],
       "expectations": [
         "请求自动进入完整核验，不把快速检索阶段的摘要或未核实元数据直接用于正式引用。",
         "每篇先核对出版商或正式论文页，再按需交叉核对 DOI 注册记录或权威索引。",
@@ -59,7 +61,10 @@
       "id": 5,
       "prompt": "帮我检查 references.bib。按 DOI 优先、题名兜底，把它和我已核实的论文清单逐项对照，指出题名、作者、年份、刊名、卷期、页码或文章号、DOI 的问题；能安全修的给修订版，复杂宏看不懂的别硬改，顺序和 citation key 都保留。",
       "expected_output": "识别为 BibTeX 一致性核验；按 DOI 后题名匹配，在不联网补造字段的前提下区分缺字段、值不一致、来源冲突、未匹配和解析提醒。仅修改有来源支持的字段，复杂条目保留原文并说明，保持输入顺序和 citation key。",
-      "files": ["evals/files/references.bib", "evals/files/verified-records.json"],
+      "files": [
+        "evals/files/references.bib",
+        "evals/files/verified-records.json"
+      ],
       "expectations": [
         "条目先按规范化 DOI 匹配，没有 DOI 时才按规范化题名匹配。",
         "逐项检查题名、作者、年份、期刊或会议名、卷、期、页码或文章号和 DOI。",
@@ -73,7 +78,9 @@
       "id": 6,
       "prompt": "这个飞书 Wiki 里的参考文献有重复项，也有几条 DOI 和页码写错了。先逐篇核验，给我一份完整 IEEE 清单；然后只改参考文献这一节，正文别动，改完再读一遍确认条数和顺序。",
       "expected_output": "paper-search 负责逐篇来源核验、正式版/预印本合并、重复对应和 IEEE 结果；先识别 Wiki 节点的实际载体，文档写回转 lark-doc，多维表格写回转 lark-base。写前记录版本，只窄范围替换指定参考文献区块或记录字段，回读核对条目数量、顺序、题名和 DOI；任何未查到的字段留空并说明。",
-      "files": ["evals/files/feishu-wiki-snapshot.json"],
+      "files": [
+        "evals/files/feishu-wiki-snapshot.json"
+      ],
       "expectations": [
         "论文元数据核验与飞书写回分工明确：paper-search 生成核验结果；根据 Wiki 实际载体由 lark-doc 或 lark-base 执行修改。",
         "重复项按 DOI、题名和版本关系保守判断，并报告原编号之间的对应关系。",
@@ -82,6 +89,54 @@
         "写回后重新读取目标区块，核对条目数量、顺序、题名和 DOI。",
         "不能可靠确认的字段留空并说明，不为了完成写回而猜测。"
       ]
+    },
+    {
+      "id": "task-collection-first",
+      "prompt": "为我的“对称双向链路论文”开展持续文献调研，先复用库内文献再补新的。",
+      "expected_output": "查询已有任务分类，复用或以任务名建立一个；核对库内相关条目后添加归类，保留原分类和附件，再围绕缺口外搜、查重入库。不建默认状态子分类。",
+      "files": []
+    },
+    {
+      "id": "task-resume",
+      "prompt": "继续给同一篇文章找文献，上轮的资料库和 collection key 已确定。",
+      "expected_output": "复用同一分类和检索条件，查已有条目及已返回结果，补缺口；不再建分类或询问归属。",
+      "files": []
+    },
+    {
+      "id": "shared-source",
+      "prompt": "这篇 Zotero 文献已在任务 A 中，也适合任务 B。",
+      "expected_output": "给同一条目增加 B 分类，保留 A、原 PDF、批注和笔记；不复制文献或附件，不把它自动标为文章 B 已引用。",
+      "files": []
+    },
+    {
+      "id": "ambiguous-collection",
+      "prompt": "库里有两个同名任务分类且属于不同项目，现在的信息不能确定这篇文章对应哪个。",
+      "expected_output": "说明可区分的项目或分类信息并询问准确归属，不任选当前选中项，不建第三个重复分类；继续独立的只读检索。",
+      "files": []
+    },
+    {
+      "id": "readonly-once",
+      "prompt": "只快速查几篇相关论文，在对话里给我，别修改 Zotero 或本地文件。",
+      "expected_output": "可只读检索已有文献并外搜补充，按实际核实状态返回；不建分类、不入库、不写笔记或账本。",
+      "files": []
+    },
+    {
+      "id": "notes-separation",
+      "prompt": "这篇文献已有可靠精读笔记。帮我判断适不适合当前文章引言，必要判断写进现有提纲。",
+      "expected_output": "复用笔记并按需要查原文，当前文章的引用用途写入授权提纲；不把章节安排写入 Zotero 通用笔记，不重做整篇精读。",
+      "files": []
+    },
+    {
+      "id": "new-reading",
+      "prompt": "阅读任务分类里这篇尚未读的论文，补一份 Zotero 阅读笔记。",
+      "expected_output": "围绕原文方法、结果、局限和位置整理笔记，复用已有有效部分；不写当前文章的任务进度或章节安排，不顺手批量重读其他文献。",
+      "files": []
+    },
+    {
+      "id": "citation-versus-collection",
+      "prompt": "这个分类有 30 篇候选，检查当前稿件最终引用了哪些。",
+      "expected_output": "由当前稿件和对应论文编辑或审查流程核对实际引用及论述匹配；不把分类 30 篇都当已引用，不自动建立已引用子分类或新账本。",
+      "files": []
     }
   ]
 }

@@ -242,6 +242,11 @@ def image_boxes(count, area, layout):
 def make_pptx(deck, slides, output_path):
     if output_path.exists():
         raise FileExistsError(output_path)
+    if deck.get("template_spec"):
+        if deck.get("profile_path"):
+            raise ValueError("Choose template_spec or profile_path, not both")
+        from template_deck import make_template_pptx
+        return make_template_pptx(deck, slides, output_path, Path(deck["template_spec"]))
     profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
     profile = json.loads(profile_path.read_text(encoding="utf-8-sig"))
     base_layout = profile["layout"]
@@ -329,12 +334,15 @@ def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> Non
         raise RuntimeError("LibreOffice runner did not return JSON; run check_dependencies.py with the same Python interpreter") from exc
     if result.returncode or report.get("ok") is not True:
         raise RuntimeError(f"PPTX rendering failed: {report.get('error')}: {report.get('message')}")
+    presentation = Presentation(pptx_path)
+    page_width = SLIDE_WIDTH
+    page_height = round(page_width * presentation.slide_height / presentation.slide_width)
     poppler = os.environ.get("LAB_REPORT_PDFTOPPM") or shutil.which("pdftoppm")
     if not poppler:
         raise RuntimeError("pdftoppm is required for page inspection")
     with tempfile.TemporaryDirectory(prefix="lab-pages-") as temporary:
         prefix = Path(temporary) / "page"
-        subprocess.run([poppler, "-png", "-scale-to-x", str(SLIDE_WIDTH), "-scale-to-y", str(SLIDE_HEIGHT),
+        subprocess.run([poppler, "-png", "-scale-to-x", str(page_width), "-scale-to-y", str(page_height),
                         "-aa", "yes", "-aaVector", "yes", str(pdf_path), str(prefix)],
                        check=True, capture_output=True, timeout=120)
         pages = sorted(Path(temporary).glob("page-*.png"), key=lambda path: int(path.stem.rsplit("-", 1)[1]))
@@ -342,7 +350,7 @@ def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> Non
             raise RuntimeError("PPTX and rendered page counts differ")
         for source, target in zip(pages, slide_paths):
             with Image.open(source) as page:
-                if page.size != (SLIDE_WIDTH, SLIDE_HEIGHT):
+                if page.size != (page_width, page_height):
                     raise RuntimeError("Unexpected rendered page dimensions")
             if target.exists():
                 raise FileExistsError(target)
@@ -352,6 +360,9 @@ def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> Non
 def render(deck_path: Path, output_dir: Path, requested_stem: str) -> dict[str, Any]:
     deck_path, output_dir = deck_path.resolve(), output_dir.resolve()
     deck = json.loads(deck_path.read_text(encoding="utf-8-sig"))
+    if deck.get("template_spec"):
+        spec_path = Path(deck["template_spec"]).expanduser()
+        deck["template_spec"] = str((deck_path.parent / spec_path).resolve() if not spec_path.is_absolute() else spec_path.resolve())
     slides = validate_deck(deck, deck_path.parent)
     output_dir.mkdir(parents=True, exist_ok=True)
     with reserve_stem(output_dir, requested_stem) as stem:
@@ -360,6 +371,17 @@ def render(deck_path: Path, output_dir: Path, requested_stem: str) -> dict[str, 
 
 def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem):
     pptx_path, pdf_path = output_dir / f"{stem}.pptx", output_dir / f"{stem}.pdf"
+    template_record = None
+    if deck.get("template_spec"):
+        spec_path = Path(deck["template_spec"])
+        spec_bytes = spec_path.read_bytes()
+        spec = json.loads(spec_bytes.decode("utf-8-sig"))
+        template_path = Path(spec["template_path"]).expanduser()
+        if not template_path.is_absolute():
+            template_path = (spec_path.parent / template_path).resolve()
+        template_record = {"mode": "native_template", "spec_path": str(spec_path),
+                           "spec_sha256": hashlib.sha256(spec_bytes).hexdigest(),
+                           "source": str(template_path), "sha256": hashlib.sha256(template_path.read_bytes()).hexdigest()}
     assets = make_pptx(deck, slides, pptx_path)
     slide_paths = [output_dir / f"{stem}_{index:02d}.png" for index in range(1, len(slides)+1)]
     export_pptx(pptx_path, pdf_path, slide_paths)
@@ -371,10 +393,16 @@ def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem):
                 "render_source": "pptx", "editable_text": True, "independent_images": True,
                 "assets": assets, "source_deck": str(deck_path),
                 "files": {"html": str(html_path), "pdf": str(pdf_path), "pptx": str(pptx_path), "png": [str(path) for path in slide_paths]}}
-    profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
-    manifest["template"] = {"mode": "style_profile", "path": str(profile_path),
-                            "sha256": hashlib.sha256(profile_path.read_bytes()).hexdigest(),
-                            "source": json.loads(profile_path.read_text(encoding="utf-8-sig"))["source"]}
+    if template_record:
+        if (hashlib.sha256(spec_path.read_bytes()).hexdigest() != template_record["spec_sha256"]
+                or hashlib.sha256(template_path.read_bytes()).hexdigest() != template_record["sha256"]):
+            raise ValueError("Template or template spec changed during report rendering; review the inputs and regenerate")
+        manifest["template"] = template_record
+    else:
+        profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
+        manifest["template"] = {"mode": "style_profile", "path": str(profile_path),
+                                "sha256": hashlib.sha256(profile_path.read_bytes()).hexdigest(),
+                                "source": json.loads(profile_path.read_text(encoding="utf-8-sig"))["source"]}
     (output_dir / f"{stem}.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 

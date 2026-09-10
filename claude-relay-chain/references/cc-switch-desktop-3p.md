@@ -95,11 +95,11 @@ CC Switch 3.18 本地二进制暴露：
 ### 当前 provider 不一致
 
 - `settings.json.currentProviderClaudeDesktop` 与 DB `is_current = 1` 不同。
-- 判断：切换未完整落盘或状态漂移；用户批准后重新应用目标 provider，再复查。
+- 判断：切换未完整落盘或状态漂移；已有准确修复授权且后台接口支持时重新应用目标 provider，再复查；只读请求只给建议。
 
 ## 版本相关已知问题
 
 - [CC Switch #4540](https://github.com/farion1231/cc-switch/issues/4540)：2026-07-24 仍为 `Open`。Claude Desktop model discovery 与根 `/v1/models`、`/claude-desktop/v1/models` 的返回格式或 namespace 可能不一致；`/v1/messages` 可用时，Code 仍可能无模型。
 - [CC Switch #4415](https://github.com/farion1231/cc-switch/issues/4415)：2026-07-24 为 `Closed`，标记为 `Duplicate of #4353`。涉及 proxy 模型列表合成、空列表和 `supports1m` 到 1M context/model variant 的转换。关闭或出现修复提交不证明当前安装版本已修复。
 
-模型发现症状出现时，必须分别判断两个 issue 与本机证据是否吻合。完整检查项见 [verification-and-known-issues.md](verification-and-known-issues.md)。
+症状吻合且本地资料不足以定位时，按需查对应历史候选；不把两个编号设为每次必查项。检查方法见 [verification-and-known-issues.md](verification-and-known-issues.md)。

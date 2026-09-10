@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "我在 Claude Desktop 里手动配置第三方中转后，Cowork 能正常回复；但 VS Code 里的 Claude Code 仍然报连接错误。请帮我查，不要直接改配置，也不要让我重复提供已经能从本机检查到的信息。",
-      "expected_output": "应先区分 Desktop 3P 与独立 Claude Code/VS Code 的配置表面，运行只读脱敏审计，检查 currentProviderClaude/currentProviderClaudeDesktop、Desktop applied profile、.claude/settings.json 和扩展旧环境；不能因 Cowork 成功断言 Claude Code 成功；给出修改方案后停在明确批准门。",
+      "expected_output": "应区分 Desktop 3P 与独立 Claude Code/VS Code 的配置表面，围绕失败的 VS Code 检查 Claude 当前 provider、.claude/settings.json、相关日志和扩展旧环境；只有线索指向 Desktop 时才扩查，不强制全量双入口审计。不能因 Cowork 成功断言 Claude Code 成功。遵从只读要求，交付原因及具体建议，不执行修改或重启，也不默认发计费请求；诊断和建议完成即可结束。",
       "files": [],
       "expectations": [
         "明确区分 Claude Desktop 3P 与独立 Claude Code/VS Code 配置，不把两者视为同一入口",
-        "默认只读并建议运行脱敏审计，不修改配置、不重启、不发带凭据的验证请求",
-        "检查 currentProviderClaude、currentProviderClaudeDesktop、Desktop applied profile 和 .claude/settings.json",
-        "指出 VS Code 扩展进程可能保留旧环境，需要在批准修改后用新会话或重载扩展验证",
-        "修改方案包含备份、改动、重启、验证和回滚，并等待用户明确同意"
+        "遵从用户只读范围，不修改配置、不重启、不发计费请求；必要且受支持的非计费只读检查不因需要进程内认证而额外索取授权",
+        "优先检查 currentProviderClaude、对应 provider、.claude/settings.json 和相关日志；没有跨入口线索时不强制检查全部 Desktop 配置或运行全量审计",
+        "指出 VS Code 扩展进程可能保留旧环境，建议按影响选择新会话或必要的重载，并保护运行任务和未保存工作",
+        "完成原因和具体建议后结束，只读请求不转成修改任务，不附加等待最终签字的固定模板"
       ]
     },
     {
@@ -30,14 +30,14 @@
     {
       "id": 3,
       "prompt": "CC Switch 选了模型映射模式，Claude Desktop 普通聊天能回复，但内置 Code 页面没有模型，配置页提示 Invalid: Model list。请定位原因并给修复步骤。你可以检查本机，但没经过我确认不要备份、改文件、重启或发送计费请求。",
-      "expected_output": "应识别 Messages 成功与 model discovery 失败可同时存在，检查 applied profile 是否使用 /claude-desktop namespace、/claude-desktop/v1/models 与根 /v1/models 的格式差异、显式 inferenceModels、CC Switch #4540/#4415 和当前版本；只读检查后给单一推荐方案，等待确认；批准后再备份、重启和分别验证模型列表、streaming Messages、tool use、内置 Code。",
+      "expected_output": "应识别 Messages 成功与 model discovery 失败可同时存在，检查 applied profile 的 /claude-desktop namespace、模型列表路径和格式差异、显式 inferenceModels 及相关版本；本地证据不足且症状吻合时才定向核对 #4540 或 #4415，不把两者当必填。遵从用户明确禁止备份、修改、重启及计费请求的限制，交付定位结果和具体修复步骤。后续菜单修复按影响验证对应映射、列表和目标选择器，不强制流式、工具调用等完整计费验收。",
       "files": [],
       "expectations": [
         "明确普通聊天成功只证明 /v1/messages 路径，不证明 /v1/models 或内置 Code 模型发现",
         "检查 /claude-desktop namespace、模型列表格式、inferenceModels 和当前 CC Switch/Claude Desktop 版本",
-        "引用或概括 CC Switch #4540 和 #4415 的已知问题，但重新核对当前版本而非直接套用旧结论",
-        "用户确认前不备份、不修改、不重启、不发送带凭据或可能计费的请求",
-        "批准后的验证分开覆盖模型列表、streaming Messages、tool use 和 Desktop 内置 Code 端到端"
+        "只有现有资料不足且症状吻合时定向核对 #4540 或 #4415；实际引用时核对适用版本和当前状态，不强制查询或填报两个编号",
+        "用户确认前不备份、不修改、不重启、不发送可能计费的请求；必要且受支持的非计费只读检查仍须保护凭据",
+        "修复步骤按目标包含相应备份与恢复依据、受支持后台入口和模型菜单验证，不把菜单故障自动扩成 streaming Messages、tool use 与完整 Code 链路计费验收"
       ]
     },
     {
@@ -65,6 +65,84 @@
         "以审计开始时间区分审计前历史与审计窗口新增事件",
         "即使 provider 已切回原值，也报告窗口内发生过的 [FO-001] 切换",
         "全程只读、脱敏，不发送请求、不切换 provider、不修改配置；缺失证据标为未验证"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "仅用以下虚构资料推演，不读取真实配置或发送请求：VS Code /model 里的 Opus 显示名是 Opus 4.6，当前 app_type=claude 的 provider 和渲染配置都写 ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-5，ANTHROPIC_MODEL=claude-opus-4-6；已有日志 request_model=opus、实际 model=claude-opus-5。只回答为什么显示和实际调用不同，是否有漂移，不修改。",
+      "expected_output": "仅依据给定的 Claude Code 局部映射证据解释显示名与请求模型不同：Opus 角色实际映射为 claude-opus-5，兜底 4.6 不覆盖明确角色。provider、渲染配置和日志相符，没有这些层面发生配置漂移的证据。完成局部解释即可，不读取 Desktop、不运行全量脚本、不增加联网或测试。",
+      "files": [],
+      "expectations": [
+        "区分菜单显示名、ANTHROPIC_DEFAULT_OPUS_MODEL 与 ANTHROPIC_MODEL，明确给定日志实际调用 claude-opus-5",
+        "说明给定三层证据一致，不能仅因显示名不同就声称运行配置漂移",
+        "限定 app_type=claude 的局部问题，不强制检查 Desktop、自动故障转移、历史 issue 或全量审计",
+        "只分析虚构资料，不读真实配置、不修改、不发请求，也不追加与问题无关的验收流程"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "以下是虚构演练，只说明应采取的动作，不操作本机：我前面已授权将 provider A 的 Opus 角色改为 claude-opus-4-6，保留 Fable 和其他字段，允许相应备份。演练明确给定另一个经核验的 CC Switch 受支持后台写入接口确实能完成这项变更；它不是 Claude Inspect，也不是 Codex Preview/Apply。目标对象复读无变化，无运行任务，接口支持正常应用。已授权用同一模型做一次最小流式验证，最多 0.10 元。现在继续落实，不要重复问我。",
+      "expected_output": "复用准确修改和收费验证授权，简短说明具体变更与影响后，按演练条件复读目标、备份并核验恢复依据，通过给定受支持后台接口只改 Opus 角色，再核对保存与应用结果并执行一次已授权范围内的流式验证。保留 Fable 等无关配置，不再次索要确认，不擅自扩大模型、次数或费用上限。不得把假设接口宣称为本机当前已经具备。",
+      "files": [],
+      "expectations": [
+        "准确继承已给出的目标、模型、备份许可、验证次数和费用上限，不重复生成批准模板或询问同范围授权",
+        "动作顺序包含复读、备份及恢复依据核验、经给定受支持后台接口最小修改、按影响验证",
+        "保留 Fable、其他角色和无关 provider，不改数据库、生成配置或运行时副本",
+        "区分给定写入接口与只读 Claude Inspect，不借用 Codex Preview/Apply，也不将演练能力当成本机事实",
+        "同范围必要修正可继续；不能把一次流式验证授权扩展为额外工具调用、1M 边界或完整应用收费测试",
+        "仅推演步骤和有条件的结论，不真正执行本机操作或计费请求，不宣称演练中的变更已真实完成"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "以下是虚构演练，不操作本机：我已授权修复 Desktop profile 的 namespace，但核验结果是后台组件只提供 -App claude -Mode Inspect；本轮没有其他受支持的 Claude 配置写入接口。已给定 profile 指向 http://127.0.0.1:15721，provider 为 proxy，应使用 /claude-desktop。继续把能做的完成。",
+      "expected_output": "明确已定位 namespace 不一致，正确地址为 http://127.0.0.1:15721/claude-desktop；已有授权不等于接口具备写入能力。Inspect 只能检查就绪状态，不能完成修复。完成已有证据分析与具体变更建议，只暂停依赖写入接口的动作，不索要重复授权、不转 GUI、SQL、手写生成 profile 或 Codex Apply。结果须明确配置尚未修改、运行态尚未验证。",
+      "files": [],
+      "expectations": [
+        "指出缺少 /claude-desktop namespace 并给出准确目标地址，不把 Inspect 成功说成配置修复成功",
+        "将阻碍定位为后台写入能力缺失而非用户授权不足，不要求用户重复批准既定修改",
+        "只暂停依赖该接口的修改，继续给定资料可完成的诊断和建议",
+        "不转用界面脚本、交互式终端、SQL 写入、直接覆盖生成配置或 Codex Preview/Apply",
+        "明确未修改和未验证的实际状态，演练中不运行真实审计、不读取真实配置、不发请求"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "只按虚构验收记录判断，不读本机、不发请求：本轮目标仅修复 Desktop 模型菜单为空；已授权修改已经通过受支持接口完成，provider/profile/route 一致，正确 namespace 的非计费 GET /v1/models 返回兼容的非空 data 数组，目标 Desktop 选择器已显示预期完整 Claude 模型 ID。没有其他故障，本轮没有授权计费测试。可以收尾了吗？",
+      "expected_output": "可按给定证据确认本轮模型菜单修复与验收完成，直接收尾。无需为局部菜单目标追加 Messages、流式、tool use 或完整 Code 计费测试，也不要求历史 issue 编号或最终签字。结论只覆盖菜单，不扩大为整条 Code 链路可用。",
+      "files": [],
+      "expectations": [
+        "将通过结论限定为给定的模型菜单目标，依据包含配置一致、实际发现结构和目标选择器显示",
+        "复用已有适用验证，不重复检查，不把 streaming、tool use、完整 Code 或付费请求作为局部目标收尾前置条件",
+        "不要求额外收费授权、历史 issue 必填或最终签字，完成当前请求即可结束",
+        "不声称整条 Code 链路或真实 1M 上下文已通过，不操作本机或发送请求"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "只用以下虚构记录判断，不做真实检查：我的目标是验收 Desktop 内置 Code 整条链路。配置已保存，端口监听正常，模型列表正常，拿到过一次 stream=false 的普通文本回复 RELAY_OK；尚无流式、工具调用或 Desktop 内置 Code 新会话记录。尚未提供收费测试的模型、次数和费用上限。能说全部通过了吗？",
+      "expected_output": "不能说完整链路通过。给定证据仅支持配置、本地监听、模型发现及一次非流式文本请求成功；完整 Code 目标还缺有效 SSE、tool_use/tool_result 往返及流式工具增量、目标 Desktop 内置 Code 新会话成功。继续整理可完成的证据和具体最小测试安排，只暂停缺少必要收费授权的测试，不伪造通过、不用 CLI 或 Cowork 成功替代目标应用。",
+      "files": [],
+      "expectations": [
+        "明确完整链路尚未通过，配置保存、监听、模型列表、单次非流式文本均不足以证明完整 Code 可用",
+        "指出缺少 streaming、结构化 tool_use/tool_result 往返和目标 Desktop 内置 Code 验证，必要时包含流式工具增量检查",
+        "不以独立 CLI、Cowork 或无关接口成功代替目标应用实际成功",
+        "收费授权缺失时只暂停该测试，列清所需目标、模型、次数和费用上限，不默认收费也不阻止独立证据整理",
+        "保持已证实层级与未验证项分开，不真正读取配置或发起测试"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "以下是虚构演练，不操作本机：Desktop profile 的已授权最小修复通过受支持后台接口保存，静态核对一致；应用只在启动时加载。此前只授权了配置修复，刚发现 Desktop 正在跑一个不能中断的长任务，还有未保存工作，正常退出也会中断任务。我没同意终止任务。请完成当前能完成的部分。",
+      "expected_output": "保护正在运行的任务和未保存工作，不重载、不正常退出或强停来强行完成验收。完成已授权且不依赖重载的保存结果与静态一致性核验，说明变更已保存、旧进程是否加载尚未验证，只暂停重载及依赖新运行态的验证。如确需用户决策，只询问任务完成后安全重载的具体时机，不重新询问已经授权的配置修改，也不擅自安排自动化。",
+      "files": [],
+      "expectations": [
+        "识别本次新发现的运行任务和未保存工作会改变重载影响，已有配置修复授权不等于允许中断任务",
+        "不重载、不退出、不强停受影响应用，不触及无关应用",
+        "继续独立的静态核验，只暂停重载和依赖重载的运行态验证",
+        "明确区分变更已保存与目标应用已加载，不能声称链路修复或运行态验收全部通过",
+        "必要问题只针对安全重载时机，不要求再次批准已有配置修改，不未经请求创建定时任务",
+        "只按虚构资料推演，不读取真实配置、不执行真实重载或发送请求"
       ]
     }
   ]

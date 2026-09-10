@@ -33,7 +33,7 @@ Windows 本地 profile：
 
 - `_meta.json` 保存配置条目与 `appliedId`。
 - `<id>.json` 保存一份 profile。
-- 配置只在启动时读取；变更后完整退出并重开应用。
+- 配置在启动时加载；需要应用变更时，按技能入口核对运行任务、未保存工作及已有授权，再正常退出重开。暂不能重载时先核对保存结果，说明运行态未验证。
 
 Windows managed policy：
 
@@ -67,7 +67,7 @@ HKCU\SOFTWARE\Policies\ClaudeCode    ← 用户级（HKCU\SOFTWARE\Policies 受 
 
 `defaultMode` 合法值：`default`（别名 `manual`）/ `acceptEdits` / `plan` / `auto` / `dontAsk` / `bypassPermissions`。
 
-**CC Switch 渲染边界**：CC Switch 全量渲染 `~/.claude/settings.json`，但实测只保留 `env` 块，其余字段（`permissions`、`enabledPlugins`、`extraKnownMarketplaces`、`$schema`、`effortLevel`、`model`）一律被裁掉。往 `common_config_claude` 加新字段不会渲染进文件。要全局持久化 Claude Code 设置，用 managed policy 键而不是直改 `settings.json`（2026-08-11 实测）。
+**CC Switch 渲染边界**：2026-08-11 实测中，全量渲染 `~/.claude/settings.json` 只保留 `env` 块，其余字段（`permissions`、`enabledPlugins`、`extraKnownMarketplaces`、`$schema`、`effortLevel`、`model`）被裁掉，往 `common_config_claude` 加新字段未渲染进文件。managed policy 是需单独核对的配置来源；这条历史记录不授权直接写注册表。当前持久化方式应核对版本、配置归属和受支持后台能力，沿用技能入口的执行边界。
 
 ### CC Switch 双入口
 
@@ -92,7 +92,7 @@ Help -> Troubleshooting -> Enable Developer Mode
 Developer -> Configure Third-Party Inference...
 ```
 
-配置窗口负责字段校验、endpoint 测试、`Apply locally` 和 `.reg` 导出。单机配置优先使用 `Apply locally`，不手写注册表或整份 profile。
+配置窗口提供字段校验、endpoint 测试、`Apply locally` 和 `.reg` 导出。这里仅说明产品入口，便于解释用户已有操作；智能体维护沿用技能入口的后台流程，不因该菜单存在而改用界面自动化或手写注册表、profile。
 
 ## Gateway 关键字段
 

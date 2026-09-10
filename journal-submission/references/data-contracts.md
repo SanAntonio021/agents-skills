@@ -73,7 +73,7 @@
 
 ### pre_submission_review
 
-只允许：
+可选记录，沿用现有 `confirmation_gates` 结构，不升级格式或迁移历史记录。缺失或 `not_run` 不构成最终提交的校验错误。存在时只允许：
 
 - `not_run`：未执行；
 - `blocked`：存在阻断项或关键维度无法核验；
@@ -96,7 +96,7 @@
 }
 ```
 
-无检查时间或无证据的 `pass` 无效。最终提交门不得在审查门不是 `pass` 时关闭。
+无检查时间或无证据的 `pass` 无效。`blocked` 保留原始问题，校验器提示警告，按具体影响处理；不作为无条件禁止最终提交的程序门槛。规则变更不改变已有审查结论，也不把未运行记录补成通过。
 
 `author_roles`、`declarations`、`reviewers`、`final_submit`、`open_access_fees`、`copyright` 和 `withdrawal_transfer` 进入 `confirmed`、`completed`、`closed` 或 `pass` 时，必须保存非空字符串 `question`、`user_choice`、`applies_to`，并用 `confirmed_at` 保存 ISO 日期或时间。页面已保存或没有报错不等于用户确认。`question` 可记录用户最初的准确请求，沿用真实 `user_choice` 与时间，无需为满足记录结构再次发问。
 

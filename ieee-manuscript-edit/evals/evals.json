@@ -99,7 +99,7 @@
     {
       "id": 14,
       "prompt": "非 IEEE 期刊的稿件正文已经润色完，现在要填写 Editorial Manager 并最终提交。",
-      "expected_output": "正文精修已经完成；平台事务路由到 journal-submission。最终 Submit 前先由 paper-review 生成有时间和证据的 pre_submission_review=pass，且最终操作由用户亲自确认。",
+      "expected_output": "正文精修已经完成；投稿合规与平台事务路由到 journal-submission，核对当前材料和准确提交授权后执行；不自动启动全文审稿，不重复要求已有授权，不把文字精修视为整稿科学审查通过。",
       "files": []
     },
     {

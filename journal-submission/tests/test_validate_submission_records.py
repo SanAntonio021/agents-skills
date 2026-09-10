@@ -93,11 +93,11 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertTrue(any("supported for compatibility" in item for item in warnings))
 
-    def test_schema_1_1_requires_review_gate(self):
+    def test_schema_1_1_accepts_missing_review_record(self):
         state = make_state()
         state["confirmation_gates"] = state["confirmation_gates"][1:]
         errors, _ = MODULE.validate_state(state)
-        self.assertTrue(any("pre_submission_review" in item for item in errors))
+        self.assertEqual(errors, [])
 
     def test_review_gate_allows_three_statuses(self):
         for status in ("not_run", "blocked", "pass"):
@@ -153,13 +153,33 @@ class ValidationTests(unittest.TestCase):
         errors, _ = MODULE.validate_state(make_state(schema_version="2.0"))
         self.assertTrue(any("unsupported" in item for item in errors))
 
-    def test_final_submit_cannot_close_without_review_pass(self):
-        state = make_state(review_status="blocked")
-        next(item for item in state["confirmation_gates"] if item["action"] == "final_submit")[
-            "status"
-        ] = "completed"
+    def test_authorized_submit_accepts_optional_review_without_rewriting_it(self):
+        for status in (None, "not_run", "blocked", "pass"):
+            with self.subTest(status=status):
+                state = make_state(review_status=status or "not_run")
+                if status is None:
+                    state["confirmation_gates"] = state["confirmation_gates"][1:]
+                elif status == "blocked":
+                    state["confirmation_gates"][0]["findings"] = ["Conclusion scope unresolved"]
+                final_gate = next(item for item in state["confirmation_gates"] if item["action"] == "final_submit")
+                final_gate.update(
+                    status="completed",
+                    question="Submit this manuscript version to the selected journal.",
+                    user_choice="confirmed",
+                    confirmed_at="2026-09-10T16:00:00+08:00",
+                    applies_to="Current manuscript and Final Review page",
+                )
+                before = json.dumps(state, sort_keys=True)
+                errors, warnings = MODULE.validate_state(state)
+                self.assertEqual(errors, [])
+                self.assertEqual(json.dumps(state, sort_keys=True), before)
+                self.assertEqual(any("remains blocked" in item for item in warnings), status == "blocked")
+
+    def test_not_run_still_requires_submit_authorization(self):
+        state = make_state(review_status="not_run")
+        next(item for item in state["confirmation_gates"] if item["action"] == "final_submit")["status"] = "completed"
         errors, _ = MODULE.validate_state(state)
-        self.assertTrue(any("cannot be closed" in item for item in errors))
+        self.assertTrue(any("final_submit.user_choice" in item for item in errors))
 
     def test_closed_gate_requires_user_confirmation_record(self):
         state = make_state(review_status="pass")

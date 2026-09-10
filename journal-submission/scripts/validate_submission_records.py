@@ -39,7 +39,7 @@ LEGACY_REQUIRED_GATES = {
     "copyright",
     "withdrawal_transfer",
 }
-CURRENT_REQUIRED_GATES = LEGACY_REQUIRED_GATES | {"pre_submission_review"}
+CURRENT_REQUIRED_GATES = LEGACY_REQUIRED_GATES.copy()
 REVIEW_STATUSES = {"not_run", "blocked", "pass"}
 FINAL_SUBMIT_CLOSED_STATUSES = {"confirmed", "completed", "closed", "pass"}
 FRESHNESS_STATUSES = {"verified", "stale", "unknown"}
@@ -370,10 +370,6 @@ def validate_confirmation_gates(
                             f"pre_submission_review.evidence[{index}] must be a locatable object"
                         )
 
-        final_gate = by_action.get("final_submit", {})
-        if final_gate.get("status") in FINAL_SUBMIT_CLOSED_STATUSES and status != "pass":
-            errors.append("final_submit cannot be closed before pre_submission_review passes")
-
     return errors, by_action
 
 
@@ -506,6 +502,10 @@ def validate_state(data: Any, known_profiles: set[str] | None = None) -> tuple[l
             data.get("confirmation_gates", []), schema_version
         )
         errors.extend(gate_errors)
+        if gates_by_action.get("pre_submission_review", {}).get("status") == "blocked":
+            warnings.append(
+                "pre_submission_review remains blocked; preserve and assess its recorded findings"
+            )
         if schema_version == "1.1":
             errors.extend(validate_final_submit_exit(data, gates_by_action))
 

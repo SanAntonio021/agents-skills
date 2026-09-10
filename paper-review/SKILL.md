@@ -1,7 +1,7 @@
 ---
 name: paper-review
 description: >-
-  核对论文原文中的具体技术疑问及笔记表述，也负责 A/B/C 停稿审查、作者投稿前预检与模拟审稿，以及受邀审稿人的外部同行评审。用户问“这段总结准确吗”“这个指标对应哪里”“图表或公式是什么意思”时，按 source_check 只核对相关内容；普通论文总结和 Zotero 笔记读写由现有 Zotero 插件承接。用户要求按严重程度审稿、判断是否继续润色、投稿前预判审稿意见，或填写 EDAS/审稿表时进入对应完整审查模式。作者回复审稿意见或操作投稿系统不属于本 skill。最终 Submit 前的作者侧审查仍需可定位的 `pre_submission_review: pass`。
+  核对论文原文中的具体技术疑问及笔记表述，也负责全文技术内容、论证、结果与结论的一致性审查、A/B/C 停稿审查、明确要求的模拟审稿，以及受邀审稿人的外部同行评审。用户问“这段总结准确吗”“这个指标对应哪里”“图表或公式是什么意思”时，按 source_check 只核对相关内容；普通论文总结和 Zotero 笔记读写由现有 Zotero 插件承接。全文审查、按严重程度审稿、预判审稿意见或填写 EDAS/审稿表进入对应模式。投稿格式和材料合规检查转 journal-submission；准备投稿或最终 Submit 不自动触发全文审稿，终稿文字审校用 ieee-manuscript-edit。
 ---
 
 # 论文审查
@@ -22,7 +22,7 @@ description: >-
 2. 判断用户角色和模式，不能把真实外部审稿当成普通原文核对或作者侧模拟审稿：
    - 原文核对（`source_check`）：用户要解释或核实论文中的技术关系、图表、公式、数值，或校正已有阅读笔记时，读取 [references/source-check.md](references/source-check.md)。直接回答相关问题；跳过第 3-6 步、A/B/C 输出和投稿审查门。需要 Zotero 读写时使用现有 Zotero 插件。
    - 日常审查（默认）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。
-   - 投稿前把关：用户提到投稿检查、预判审稿、模拟审稿人，或投稿技能请求 `pre_submission_review` 时，改走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。
+   - 模拟审稿：用户明确要求预判审稿意见、模拟审稿人或相应完整把关时，走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。仅要求投稿格式或材料检查时转 `journal-submission`；普通全文内容审查使用日常审查，不自动增加模拟审稿。
    - 外部同行评审：用户是受邀审稿人，要评价他人投稿、填写 EDAS/评审表或生成作者可见与 TPC 意见时，读取 [references/external-peer-review.md](references/external-peer-review.md)，按会务表单和评分说明完成真实审稿草稿。
 3. 先按独立根因聚类，再做 `A/B/C` 分类，避免同一问题重复记多次。
 4. 优先识别 `A 类`，不要把单纯措辞偏好包装成严重问题，也不要把同一根因拆成多个新 `A`。
@@ -35,7 +35,9 @@ description: >-
 [references/reader-test.md](references/reader-test.md)。这是审查方法，不是自动阻断项；不把
 用户材料发送到外部服务，也不把读者测试结果伪装成事实核查或投稿通过。
 
-投稿前把关另输出机器可记录的审查门结果：存在阻断项或必要维度无法核验时为 `blocked`；只有全部阻断项关闭后才为 `pass`。`pass` 必须同时给出 `checked_at` 和能定位到稿件、报告或官方要求的非空 `evidence`，不得输出无证据的通过结论。
+完整把关需要与投稿记录衔接时，可使用现有可选 `pre_submission_review` 记录：存在阻断项或必要维度无法核验时为 `blocked`；只有全部阻断项关闭后才为 `pass`。`pass` 必须同时给出 `checked_at` 和能定位到稿件、报告或官方要求的非空 `evidence`。保留已有记录及未解决问题；该记录不是所有投稿必须取得的通行证，未做审查不记为通过。
+
+复用当前稿件已有审查：整稿已审且版本和适用要求未变时沿用；小改检查受影响部分，方法、数据、主要结论或结构实质变化时评估整稿重审。只有局部检查时不宣称整稿已审；用户要求全文审查时完成全文范围。结合请求和上下文选择范围，只有无法区分且会明显改变工作量时才询问。
 
 外部同行评审不使用 `A/B/C` 停稿结论，也不输出作者侧 `pre_submission_review`。先核对审稿授权、会务的 AI/保密政策、实际评分说明和可用材料；政策不允许 AI 辅助或尚未确认时，在读取或分析未公开稿件前停止。默认只在本地处理稿件，不把未公开内容、公式或可识别片段发送到搜索引擎或其他外部服务。
 

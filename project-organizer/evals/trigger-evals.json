@@ -1,4 +1,8 @@
 [
+  {"query":"两个旧工程和新目录属于同一项目，目录结构已经确认。把有效代码与 Markdown 合起来，修正所有相关路径，验证后清理旧入口，不再保留一套历史版本。","should_trigger":true},
+  {"query":"只有一个旧目录需要合入正在用的新项目，新项目 README 有我今天的修改。请比较并保留双方独有内容，检查新入口再退役旧目录。","should_trigger":true},
+  {"query":"本轮项目整合已获授权，最终文件部署完成，但新路径的图片链接和代码运行检查还失败。请修复整合结果再完成旧入口清理。","should_trigger":true},
+  {"query":"项目整理过程材料放目标内的过程文件/本次整理，上次测试的记录保持原位。请完成多个来源归拢和验收。","should_trigger":true},
   {"query":"D:\\Work\\Project-A 保存代码，D:\\Paper\\Project-A 保存论文和图件，两处实际属于同一个长期项目，而且都可能有重复文件和 Git 状态。请先只读盘点、比较 SHA256 和冲突，设计一个统一入口并展示最终目录树；目录树和迁移计划分别批准后再搬，旧路径另做退役清单。","should_trigger":true},
   {"query":"C:\\Projects\\alpha、D:\\Archive\\beta 和 E:\\Portable\\gamma 是三个独立但同类的工程。我想把它们归到 D:\\Engineering 下面，每个项目保留自己的目录结构和 Git 历史。先检查跨盘空间、重复项和恢复包，不要把三个项目文件混在一起。","should_trigger":true},
   {"query":"我找到 D:\\Legacy\\App、D:\\Backup\\App-old 和 E:\\LaptopCopy\\App 三个旧代码目录，不确定哪个最完整。请先生成稳定文件清单，找出完全重复和同名异内容冲突，保留各仓库 Git 历史，再给出迁移计划；没有独立退役批准前不要删除旧入口。","should_trigger":true},

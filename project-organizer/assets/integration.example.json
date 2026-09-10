@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "groups": [
+    {
+      "id": "docs",
+      "inputs": [
+        {
+          "source_id": "active",
+          "relative_path": "README.md",
+          "sha256": "<active README 的实际 SHA256>",
+          "recovery_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\originals\\active-README.md"
+        },
+        {
+          "source_id": "legacy",
+          "relative_path": "README.md",
+          "sha256": "<legacy README 的实际 SHA256>",
+          "recovery_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\originals\\legacy-README.md"
+        }
+      ],
+      "outputs": [
+        {
+          "relative_path": "README.md",
+          "prepared_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\prepared\\README.md",
+          "sha256": "<整合后 README 的实际 SHA256>",
+          "expected_target_sha256": "absent"
+        }
+      ],
+      "coverage": {
+        "path": "D:\\Projects\\example-project\\过程文件\\本次整理\\coverage.md",
+        "sha256": "<逐项覆盖报告的实际 SHA256>",
+        "inputs": [
+          {
+            "source_id": "active",
+            "relative_path": "README.md",
+            "destination_paths": ["README.md"],
+            "reason": "<实际检查：当前使用说明与代码入口分别保留到哪里>"
+          },
+          {
+            "source_id": "legacy",
+            "relative_path": "README.md",
+            "destination_paths": ["README.md"],
+            "reason": "<实际检查：独有实验条件与历史结论分别保留到哪里>"
+          }
+        ]
+      },
+      "required_checks": ["links", "run"]
+    }
+  ]
+}

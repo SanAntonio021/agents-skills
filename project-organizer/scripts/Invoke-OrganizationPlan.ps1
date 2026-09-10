@@ -85,6 +85,36 @@ function Assert-GitArchives {
     return $archives
 }
 
+function Assert-TargetStateFresh {
+    param($Settings,[string]$RunDirectory,$Actions,$Started)
+    if([string]$Settings.schema_version -ne '1.1'){return}
+    $original=@(Import-Csv -LiteralPath (Join-Path $RunDirectory 'target-state.csv') -Encoding UTF8)
+    $expected=@{}
+    foreach($row in $original){$expected[$row.relative_path.ToLowerInvariant()]=[pscustomobject]@{entry_type=$row.entry_type;sha256=$row.sha256}}
+    foreach($action in $Actions){
+        if(-not $Started.ContainsKey([string]$action.action_id)){continue}
+        if($action.action -notin @('create_directory','move_file_verify','copy_file_verify','install_integrated_file')){continue}
+        $key=(Get-PORelativePath -Root $Settings.target_root -Path $action.target_path).ToLowerInvariant()
+        $expected[$key]=[pscustomobject]@{entry_type=$(if($action.action -eq 'create_directory'){'directory'}else{'file'});sha256=$action.sha256}
+    }
+    if(-not [IO.Directory]::Exists((ConvertTo-POExtendedPath $Settings.target_root))){if($original.Count -gt 0){throw 'Existing target disappeared.'};return}
+    $scan=Get-POSourceEntries -Root $Settings.target_root -ExcludeRoot $Settings.audit_root
+    if($scan.Errors.Count -gt 0){throw 'Target rescan failed.'}
+    $actual=@{}
+    foreach($entry in $scan.Entries){
+        if(Test-POGitMetadataPath -RelativePath $entry.relative_path){continue}
+        $key=$entry.relative_path.ToLowerInvariant();$actual[$key]=$true
+        if(-not $expected.ContainsKey($key)){throw "Unplanned target entry appeared: $($entry.full_path)"}
+        if($entry.is_name_surrogate -or $entry.is_cloud_placeholder -or $entry.reparse_tag -ne '0x00000000'){throw "Unsupported target entry: $($entry.full_path)"}
+        if($expected[$key].entry_type -ne $entry.entry_type){throw "Target entry type changed: $($entry.full_path)"}
+        if($entry.entry_type -eq 'file' -and (Get-POStableSha256 -Path $entry.full_path) -ne $expected[$key].sha256){
+            $old=@($original|Where-Object{$_.relative_path.ToLowerInvariant() -eq $key})
+            if($old.Count -ne 1 -or (Get-POStableSha256 -Path $entry.full_path) -ne $old[0].sha256){throw "Target content changed: $($entry.full_path)"}
+        }
+    }
+    foreach($row in $original){if(-not $actual.ContainsKey($row.relative_path.ToLowerInvariant())){throw "Existing target disappeared: $($row.relative_path)"}}
+}
+
 function Install-ActiveGitStore {
     param($Settings,[string]$RunDirectory,$State)
     $results = New-Object Collections.Generic.List[object]
@@ -164,6 +194,8 @@ if ($ApprovedPlanSha256 -notmatch '^[0-9A-Fa-f]{64}$') { throw 'ApprovedPlanSha2
 $approved = $ApprovedPlanSha256.ToUpperInvariant()
 $settings = Read-POConfig -Path $Config -RequireSources -ForExecution
 $output = Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
 $planHashPath = Join-Path $output 'plan.sha256'
 $planManifest = Join-Path $output 'plan-files.sha256'
 if (-not (Test-Path -LiteralPath $planHashPath) -or -not (Test-Path -LiteralPath $planManifest)) { throw 'Plan artifacts are missing.' }
@@ -196,6 +228,17 @@ else {
 }
 Assert-SourceInventorySet -RunDirectory $output -Settings $settings -ExecutionState $state
 
+$started=@{};foreach($id in @($state.completed_action_ids)){$started[[string]$id]=$true}
+if($Resume -and (Test-Path -LiteralPath $logPath)){
+    foreach($line in @(Get-Content -LiteralPath $logPath -Encoding UTF8)){
+        $event=$line|ConvertFrom-Json
+        if($event.event -in @('start','complete')){$started[[string]$event.action_id]=$true}
+    }
+}
+Assert-TargetStateFresh -Settings $settings -RunDirectory $output -Actions $actions -Started $started
+$installedPaths=@($actions|Where-Object{$_.action -eq 'install_integrated_file' -and $started.ContainsKey([string]$_.action_id)}|ForEach-Object target_path)
+if($null -ne $integration){[void](Assert-POIntegrationFiles -Integration $integration -Phase Preflight -InstalledPaths $installedPaths)}
+
 if (-not $Execute) {
     Write-Output "Preflight passed for plan $approved. No files changed because -Execute was not supplied."
     return
@@ -215,11 +258,20 @@ foreach ($action in $actions) {
     $source = [string]$action.source_path
     $target = [string]$action.target_path
     $sourceConfig = @($settings.sources | Where-Object { [string]$_.id -eq [string]$action.source_id })
-    if ($sourceConfig.Count -ne 1 -or -not (Test-POPathWithin -Path $source -Parent ([string]$sourceConfig[0].path))) { throw "Action source is outside confirmed root: $id" }
+    $synthetic=([string]$settings.schema_version -eq '1.1' -and (($action.action -eq 'create_directory' -and $action.source_id -eq '__layout__') -or ($action.action -eq 'install_integrated_file' -and $action.source_id -eq '__integration__')))
+    if (-not $synthetic -and ($sourceConfig.Count -ne 1 -or -not (Test-POPathWithin -Path $source -Parent ([string]$sourceConfig[0].path)))) { throw "Action source is outside confirmed root: $id" }
     if ($target -and -not (Test-POPathWithin -Path $target -Parent $settings.target_root -AllowEqual)) { throw "Action target is outside target_root: $id" }
     Add-POJsonLine -Path $logPath -Value ([ordered]@{ event='start'; action_id=$id; action=$action.action; source=$source; target=$target })
     try {
         switch ([string]$action.action) {
+            'install_integrated_file' {
+                if($null -eq $integration -or -not $integration.OutputByPath.ContainsKey($target.ToLowerInvariant())){throw 'Integration output is not bound.'}
+                $item=$integration.OutputByPath[$target.ToLowerInvariant()]
+                Install-POIntegrationOutput -Output $item -Resume:($Resume -and $started.ContainsKey($id))
+            }
+            'integrated_input' {
+                [void](Assert-POExpectedFile -Path $source -SizeBytes ([int64]$action.size_bytes) -LastWriteUtc $action.last_write_utc -Sha256 $action.sha256)
+            }
             'create_directory' {
                 if ([IO.File]::Exists((ConvertTo-POExtendedPath $target))) { throw "File blocks target directory: $target" }
                 [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $target))

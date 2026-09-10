@@ -12,6 +12,11 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 $settings = Read-POConfig -Path $Config -RequireSources
 $configPath = Resolve-POFullPath -Path $Config -AllowNetwork
 $output = Resolve-POFullPath -Path $OutputDir -AllowMissing
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration = Read-POIntegrationManifest -Config $settings
+Assert-POAuditContents -Config $settings -OutputDir $output -ConfigPath $configPath -Integration $integration
+if ($null -ne $integration) { [void](Assert-POIntegrationFiles -Integration $integration -Phase Preflight) }
+$modern = [string]$settings.schema_version -eq '1.1'
 [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $output))
 $previous = @{}
 $previousPath = Join-Path $output 'files.csv'
@@ -96,6 +101,15 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
             }
         }
 
+        if ($null -ne $integration -and $integration.InputByPath.ContainsKey(([string]$entry.full_path).ToLowerInvariant())) {
+            if ($entry.entry_type -ne 'file' -or ($status -notin @('stable','target_duplicate') -and $reason -ne 'target_sha256_differs')) {
+                throw "Integration input is not a supported stable file: $($entry.full_path)"
+            }
+            $status='integrated_input'; $reason='declared_integration'
+        }
+        if ($modern -and (Test-POPathWithin -Path $target -Parent $settings.audit_root -AllowEqual)) {
+            throw "Business mapping enters the process directory: $target"
+        }
         $fileRows.Add([pscustomobject][ordered]@{
             source_id=$sourceId; source_root=$root; relative_path=$relative; entry_type=$entry.entry_type
             size_bytes=[int64]$entry.size_bytes; last_write_utc=$entry.last_write_utc; attributes=$entry.attributes
@@ -123,7 +137,7 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
 $targetState = [ordered]@{ target_root=$settings.target_root; exists=$false; before=$null; after=$null; changed=$false }
 if ([IO.Directory]::Exists((ConvertTo-POExtendedPath $settings.target_root))) {
     $targetState.exists = $true
-    $targetScan = Get-POSourceEntries -Root $settings.target_root
+    $targetScan = Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
     $targetFiles = @($targetScan.Entries | Where-Object entry_type -eq 'file')
     $targetBefore = [ordered]@{
         file_count=[int64]$targetFiles.Count
@@ -154,7 +168,7 @@ if ([IO.Directory]::Exists((ConvertTo-POExtendedPath $settings.target_root))) {
             last_write_utc=$entry.last_write_utc;sha256=$hash;scan_status=$status;reason=$reason
         })
     }
-    $targetAfter=Get-POFileSnapshot -Root $settings.target_root
+    $targetAfter=Get-POFileSnapshot -Root $settings.target_root -ExcludeRoot $settings.audit_root
     $targetState.after=$targetAfter
     $targetState.changed=($targetBefore.file_count -ne $targetAfter.file_count -or $targetBefore.directory_count -ne $targetAfter.directory_count -or
         $targetBefore.total_bytes -ne $targetAfter.total_bytes -or $targetBefore.error_count -ne $targetAfter.error_count)
@@ -164,7 +178,7 @@ if ([IO.Directory]::Exists((ConvertTo-POExtendedPath $settings.target_root))) {
 $files = @($fileRows.ToArray() | Sort-Object { $_.source_id.ToLowerInvariant() }, { $_.relative_path.ToLowerInvariant() }, { $_.relative_path })
 $duplicateRows = New-Object Collections.Generic.List[object]
 $duplicateIndex = 0
-foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sha256 -match '^[0-9A-F]{64}$' } | Group-Object sha256 | Where-Object Count -gt 1 | Sort-Object Name)) {
+foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.scan_status -ne 'integrated_input' -and $_.sha256 -match '^[0-9A-F]{64}$' } | Group-Object { if($modern){$_.sha256+'|'+$_.proposed_target_path.ToLowerInvariant()}else{$_.sha256} } | Where-Object Count -gt 1 | Sort-Object Name)) {
     $duplicateIndex++
     $members = @($group.Group | Sort-Object {
         if ([string]$settings.mode -eq 'merge' -and [string]$_.source_id -eq [string]$settings.canonical_source_id) { 0 } else { 1 }
@@ -172,7 +186,7 @@ foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sh
     $selectedTarget = if ([string]$settings.mode -eq 'merge') { [string]$members[0].proposed_target_path } else { '' }
     foreach ($member in $members) {
         $duplicateRows.Add([pscustomobject][ordered]@{
-            duplicate_group_id=('D{0:D6}' -f $duplicateIndex); sha256=$group.Name; source_id=$member.source_id
+            duplicate_group_id=('D{0:D6}' -f $duplicateIndex); sha256=$member.sha256; source_id=$member.source_id
             relative_path=$member.relative_path; proposed_target_path=$member.proposed_target_path
             selected_target_path=$selectedTarget; selected=([string]$settings.mode -eq 'merge' -and $member -eq $members[0])
             dedup_scope=if ([string]$settings.mode -eq 'merge') { 'merge' } else { 'evidence_only_group' }
@@ -182,7 +196,7 @@ foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sh
 
 $conflictRows = New-Object Collections.Generic.List[object]
 $conflictIndex = 0
-foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sha256 } | Group-Object { $_.proposed_target_path.ToLowerInvariant() } |
+foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sha256 -and $_.scan_status -ne 'integrated_input' } | Group-Object { $_.proposed_target_path.ToLowerInvariant() } |
     Where-Object { @($_.Group.sha256 | Sort-Object -Unique).Count -gt 1 } | Sort-Object Name)) {
     $conflictIndex++
     foreach ($member in @($group.Group | Sort-Object { $_.source_id.ToLowerInvariant() }, { $_.relative_path.ToLowerInvariant() })) {
@@ -192,7 +206,7 @@ foreach ($group in @($files | Where-Object { $_.entry_type -eq 'file' -and $_.sh
         })
     }
 }
-foreach($member in @($files|Where-Object{$_.entry_type -eq 'file' -and $_.target_status -eq 'hash_conflict'})){
+foreach($member in @($files|Where-Object{$_.entry_type -eq 'file' -and $_.scan_status -ne 'integrated_input' -and $_.target_status -eq 'hash_conflict'})){
     $conflictIndex++
     $conflictRows.Add([pscustomobject][ordered]@{
         conflict_group_id=('C{0:D6}' -f $conflictIndex);proposed_target_path=$member.proposed_target_path
@@ -204,7 +218,9 @@ $conflictTargets=@{}
 foreach($row in @($conflictRows.ToArray())){$conflictTargets[([string]$row.proposed_target_path).ToLowerInvariant()]=$true}
 $selectedByHash=@{}
 if([string]$settings.mode -eq 'merge'){
-    foreach($row in @($duplicateRows.ToArray()|Where-Object{[string]$_.selected -eq 'True'})){$selectedByHash[[string]$row.sha256]=$row}
+    foreach($row in @($duplicateRows.ToArray()|Where-Object{[string]$_.selected -eq 'True'})){
+        $key=[string]$row.sha256;if($modern){$key+='|'+$row.proposed_target_path.ToLowerInvariant()};$selectedByHash[$key]=$row
+    }
 }
 $treeIndex=@{}
 function Add-TargetTreeEntry {
@@ -232,16 +248,22 @@ function Add-TargetTreeEntry {
 }
 
 foreach($row in @($targetRows.ToArray())){
+    $existingPath=Join-POPath -Root $settings.target_root -RelativePath $row.relative_path
+    if($null -ne $integration -and $integration.OutputByPath.ContainsKey($existingPath.ToLowerInvariant())){continue}
     Add-TargetTreeEntry -RelativePath $row.relative_path -EntryType $row.entry_type -Origin 'target_existing' `
         -State $(if([string]$row.scan_status -in @('hold','error')){'hold_unsupported'}else{'target_existing'}) -Sha256 $row.sha256 -SourceId '__target__'
 }
 foreach($row in $files){
     $status=[string]$row.scan_status
-    if($status -in @('excluded','preserve_git_metadata')){continue}
+    if($status -in @('excluded','preserve_git_metadata','integrated_input')){continue}
     $targetPath=[string]$row.proposed_target_path
     $treeState=if($status -in @('hold','error')){'hold_unsupported'}elseif($conflictTargets.ContainsKey($targetPath.ToLowerInvariant())){'hold_conflict'}else{'planned'}
-    if([string]$row.entry_type -eq 'file' -and [string]$settings.mode -eq 'merge' -and $selectedByHash.ContainsKey([string]$row.sha256)){
-        $selected=$selectedByHash[[string]$row.sha256]
+    if($null -ne $integration -and $integration.OutputByPath.ContainsKey($targetPath.ToLowerInvariant())){
+        throw "Integration output also has an undeclared business input: $targetPath"
+    }
+    $dedupKey=[string]$row.sha256;if($modern){$dedupKey+='|'+$row.proposed_target_path.ToLowerInvariant()}
+    if([string]$row.entry_type -eq 'file' -and [string]$settings.mode -eq 'merge' -and $selectedByHash.ContainsKey($dedupKey)){
+        $selected=$selectedByHash[$dedupKey]
         $isSelected=([string]$selected.source_id -eq [string]$row.source_id -and [string]$selected.relative_path -eq [string]$row.relative_path)
         if(-not $isSelected){continue}
     }
@@ -249,6 +271,18 @@ foreach($row in $files){
         -State $treeState -Sha256 $row.sha256 -SourceId $row.source_id
 }
 
+if($null -ne $integration){
+    foreach($item in $integration.OutputByPath.Values){
+        Add-TargetTreeEntry -RelativePath $item.relative_path -EntryType 'file' -Origin 'integration' -State 'planned' -Sha256 $item.sha256 -SourceId $item.group_id
+    }
+    # A removed source wrapper is not a required empty target directory.
+    foreach($key in @($treeIndex.Keys)){
+        $entry=$treeIndex[$key]
+        if($entry.entry_type -ne 'directory' -or $entry.origin -match 'target_existing' -or $entry.state -like 'hold*'){continue}
+        $keep=@($settings.layout_decisions.keep_empty_directories|Where-Object{([string]$_).ToLowerInvariant() -eq $key}).Count -gt 0
+        if(-not $keep -and @($treeIndex.Values|Where-Object{$_.entry_type -eq 'file' -and $_.relative_path.ToLowerInvariant().StartsWith($key+'/')}).Count -eq 0){$treeIndex.Remove($key)}
+    }
+}
 foreach($entry in @($treeIndex.Values)){
     $parts=@(([string]$entry.relative_path).Split('/'))
     for($index=1;$index -lt $parts.Count;$index++){
@@ -349,7 +383,7 @@ if([string]$settings.mode -eq 'merge'){
         "- 版本策略：$($settings.layout_decisions.version_policy)",''
     )
     if($treeApproved){$treeLines+=@('目录树批准记录与当前哈希一致，可以进入 Git 恢复归档和正式迁移计划阶段。','')}
-    else{$treeLines+=@('用户确认目录树后，把上面的 SHA256 写入 layout_decisions.approved_tree_sha256，重新盘点，再生成正式迁移计划。','')}
+    else{$treeLines+=@('目录树随完整计划展示；智能体依据已有准确授权绑定工具哈希，不要求用户复制哈希或重复确认。','')}
 }
 Write-POText -Path (Join-Path $output 'target-tree.md') -Text (($treeLines-join "`n")+"`n")
 Write-POCsv -Path (Join-Path $output 'errors.csv') -Rows $errors -Columns @('source_id','path','stage','reason')
@@ -372,12 +406,14 @@ $summary = @(
 )
 Write-POText -Path (Join-Path $output 'summary.md') -Text (($summary -join "`n") + "`n")
 $manifestPath = Join-Path $output 'inventory-files.sha256'
-[void](New-POHashManifest -Paths @(
+$inventoryBound = @(
     $configPath,(Join-Path $output 'files.csv'),(Join-Path $output 'duplicates.csv'),(Join-Path $output 'conflicts.csv'),
     (Join-Path $output 'source_state.json'),(Join-Path $output 'git_state.json'),(Join-Path $output 'target-state.csv'),
     (Join-Path $output 'target-state.json'),$targetTreePath,(Join-Path $output 'target-tree.sha256'),
     (Join-Path $output 'target-tree.md'),(Join-Path $output 'layout-violations.csv'),(Join-Path $output 'errors.csv')
-) -OutputPath $manifestPath)
+)
+if($null -ne $integration){$inventoryBound+=@($integration.BoundPaths)}
+[void](New-POHashManifest -Paths $inventoryBound -OutputPath $manifestPath)
 $inventoryHash = Get-POStableSha256 -Path $manifestPath
 Write-POText -Path (Join-Path $output 'inventory.sha256') -Text ($inventoryHash + "`n")
 

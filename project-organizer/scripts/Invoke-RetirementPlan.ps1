@@ -46,8 +46,10 @@ function Send-POFileToRecycleBin {
 
 if ($ApprovedRetirementSha256 -notmatch '^[0-9A-Fa-f]{64}$') { throw 'ApprovedRetirementSha256 must contain exactly 64 hexadecimal characters.' }
 $approved=$ApprovedRetirementSha256.ToUpperInvariant()
-$settings=Read-POConfig -Path $Config -RequireSources -ForExecution
+$settings=Read-POConfig -Path $Config -RequireSources -ForExecution -AllowMissingSources:$Resume
 $output=Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
 $hashPath=Join-Path $output 'retirement.sha256'
 $manifest=Join-Path $output 'retirement-files.sha256'
 if (-not (Test-Path -LiteralPath $hashPath) -or -not (Test-Path -LiteralPath $manifest)) { throw 'Retirement plan artifacts are missing.' }
@@ -60,6 +62,18 @@ $rows=@(Import-Csv -LiteralPath (Join-Path $output 'retirement.csv') -Encoding U
 $errors=@(Import-Csv -LiteralPath (Join-Path $output 'retirement-errors.csv') -Encoding UTF8)
 $holds=@($rows | Where-Object { $_.action -like 'hold_*' })
 if ($errors.Count -gt 0 -or $holds.Count -gt 0) { throw "Retirement is not executable: hold=$($holds.Count), errors=$($errors.Count)." }
+$actions=@(Import-Csv -LiteralPath (Join-Path $output 'actions.csv') -Encoding UTF8)
+
+function Assert-LiveRetirementTargets {
+    param($Row=$null)
+    if($null -ne $integration -and ($null -eq $Row -or $Row.action -eq 'recycle_integrated_source')){[void](Assert-POIntegrationFiles -Integration $integration -Phase Retired -RequireChecks -OutputDir $output)}
+    $toCheck=@($actions|Where-Object{$_.action -in @('move_file_verify','copy_file_verify','skip_exact_duplicate','skip_target_duplicate','install_integrated_file')})
+    if($null -ne $Row){$toCheck=@($toCheck|Where-Object source_path -eq $Row.source_path)}
+    foreach($item in $toCheck){
+        if((Get-POStableSha256 -Path $item.target_path) -ne $item.sha256){throw "Target changed before retirement: $($item.target_path)"}
+    }
+}
+Assert-LiveRetirementTargets
 
 $gitArchivesPath=Join-Path $output 'git_archives.json'
 if (Test-Path -LiteralPath $gitArchivesPath) {
@@ -88,17 +102,32 @@ else {
     $state=[pscustomobject][ordered]@{ schema_version='1.0'; retirement_sha256=$approved; completed_retirement_ids=@(); failed_retirement_id=''; complete=$false }
 }
 
-if (-not $Recycle) {
-    foreach ($row in $rows) {
-        if ([string]$row.entry_type -eq 'file' -and [string]$row.action -ne 'already_moved') {
-            [void](Assert-POExpectedFile -Path ([string]$row.source_path) -SizeBytes ([int64]$row.size_bytes) -LastWriteUtc ([string]$row.last_write_utc) -Sha256 ([string]$row.sha256))
-        }
+$completed=@{}; foreach($id in @($state.completed_retirement_ids)){ $completed[[string]$id]=$true }
+$expectedSources=@{}
+foreach($row in $rows){
+    $path=[string]$row.source_path
+    $expectedSources[$path.ToLowerInvariant()]=$row
+    if($completed.ContainsKey([string]$row.retirement_id) -or $row.action -eq 'already_moved'){
+        if([IO.File]::Exists((ConvertTo-POExtendedPath $path)) -or [IO.Directory]::Exists((ConvertTo-POExtendedPath $path))){throw "Retired source reappeared: $path"}
+    }elseif([string]$row.entry_type -eq 'file'){
+        [void](Assert-POExpectedFile -Path $path -SizeBytes ([int64]$row.size_bytes) -LastWriteUtc ([string]$row.last_write_utc) -Sha256 ([string]$row.sha256))
     }
+}
+foreach($source in @($settings.sources)){
+    if(-not [IO.Directory]::Exists((ConvertTo-POExtendedPath ([string]$source.path)))){continue}
+    $scan=Get-POSourceEntries -Root ([string]$source.path)
+    if(@($scan.Errors).Count){throw "Source rescan failed before retirement: $($source.path)"}
+    foreach($entry in @($scan.Entries)){
+        if(-not $expectedSources.ContainsKey(([string]$entry.full_path).ToLowerInvariant())){throw "Unplanned source appeared before retirement: $($entry.full_path)"}
+        if($entry.is_name_surrogate -or $entry.is_cloud_placeholder -or [string]$entry.reparse_tag -ne '0x00000000'){throw "Unsupported source appeared before retirement: $($entry.full_path)"}
+    }
+}
+
+if (-not $Recycle) {
     Write-Output "Preflight passed for retirement $approved. No files changed because -Recycle was not supplied."
     return
 }
 
-$completed=@{}; foreach($id in @($state.completed_retirement_ids)){ $completed[[string]$id]=$true }
 foreach($row in $rows){
     $id=[string]$row.retirement_id
     if($completed.ContainsKey($id)){continue}
@@ -110,7 +139,8 @@ foreach($row in $rows){
             'already_moved' {
                 if([IO.File]::Exists((ConvertTo-POExtendedPath ([string]$row.source_path)))){throw 'Moved source reappeared.'}
             }
-            {$_ -in @('recycle_verified_copy_source','recycle_exact_duplicate','recycle_cache','recycle_git_metadata')} {
+            {$_ -in @('recycle_verified_copy_source','recycle_exact_duplicate','recycle_integrated_source','recycle_cache','recycle_git_metadata')} {
+                Assert-LiveRetirementTargets -Row $row
                 [void](Assert-POExpectedFile -Path ([string]$row.source_path) -SizeBytes ([int64]$row.size_bytes) -LastWriteUtc ([string]$row.last_write_utc) -Sha256 ([string]$row.sha256))
                 Send-POFileToRecycleBin -Path ([string]$row.source_path) -MockRoot $mock -SourceId ([string]$row.source_id) -RelativePath ([string]$row.relative_path)
                 if([IO.File]::Exists((ConvertTo-POExtendedPath ([string]$row.source_path)))){throw 'Recycle API returned but source still exists.'}

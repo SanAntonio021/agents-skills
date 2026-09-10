@@ -11,6 +11,12 @@ Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 $settings = Read-POConfig -Path $Config -RequireSources -ForExecution
 $configPath = Resolve-POFullPath -Path $Config
 $output = Resolve-POFullPath -Path $OutputDir
+Assert-POAuditPath -Config $settings -OutputDir $output
+$integration=Read-POIntegrationManifest -Config $settings
+$integrationChecks=$null
+if($null -ne $integration){$integrationChecks=Assert-POIntegrationFiles -Integration $integration -Phase Installed -RequireChecks -OutputDir $output}
+# Recheck live results; a saved earlier pass is not deletion authority for changed files.
+& (Join-Path $PSScriptRoot 'Test-OrganizationAcceptance.ps1') -Config $Config -OutputDir $output | Out-Null
 $acceptancePath = Join-Path $output 'organization-acceptance.json'
 if (-not (Test-Path -LiteralPath $acceptancePath)) { throw 'Organization acceptance is missing.' }
 $acceptance = Get-Content -LiteralPath $acceptancePath -Encoding UTF8 -Raw | ConvertFrom-Json
@@ -28,7 +34,11 @@ foreach ($archive in $gitArchives) {
 }
 
 $actionBySource = @{}
-foreach ($action in $actions) { $actionBySource[([string]$action.source_path).ToLowerInvariant()] = $action }
+foreach ($action in $actions) { if($action.source_id -notin @('__layout__','__integration__')){$actionBySource[([string]$action.source_path).ToLowerInvariant()] = $action} }
+$inventoryBySource=@{}
+foreach($item in @(Import-Csv -LiteralPath (Join-Path $output 'files.csv') -Encoding UTF8)){
+    $inventoryBySource[(Join-POPath -Root $item.source_root -RelativePath $item.relative_path).ToLowerInvariant()]=$item
+}
 $retirement = New-Object Collections.Generic.List[object]
 $errors = New-Object Collections.Generic.List[object]
 
@@ -53,7 +63,7 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
         $actionName=''; $target=''; $hash=''; $reason=''
         if ($entry.entry_type -eq 'directory') {
             if ($entry.is_name_surrogate -or $entry.is_cloud_placeholder) { $actionName='hold_changed'; $reason='unsupported_reparse_or_placeholder_directory' }
-            elseif ($null -eq $planned) { $actionName='hold_unplanned'; $reason='directory_not_in_approved_inventory' }
+            elseif ($null -eq $planned -and -not ([string]$settings.schema_version -eq '1.1' -and $inventoryBySource.ContainsKey($key) -and $inventoryBySource[$key].entry_type -eq 'directory')) { $actionName='hold_unplanned'; $reason='directory_not_in_approved_inventory' }
             else { $actionName='remove_empty_directory'; $reason='remove_only_after_manifest_files_are_recycled' }
         }
         elseif ($entry.is_name_surrogate -or $entry.is_cloud_placeholder -or ([string]$entry.attributes -match 'Encrypted|SparseFile') -or
@@ -67,6 +77,11 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
             catch { $actionName='hold_changed'; $reason=$_.Exception.Message; $errors.Add([pscustomobject][ordered]@{ source_id=$sourceId; path=$sourcePath; stage='retirement_hash'; reason=$reason }) }
             if (-not $actionName) {
                 switch ([string]$planned.action) {
+                    'integrated_input' {
+                        if($null -eq $integration -or -not $integration.InputByPath.ContainsKey($key)){ $actionName='hold_unplanned';$reason='integration_input_not_bound' }
+                        elseif($hash -ne ([string]$planned.sha256).ToUpperInvariant()){ $actionName='hold_changed';$reason='integration_source_changed' }
+                        else{$actionName='recycle_integrated_source';$reason='final_outputs_coverage_recovery_and_use_checks_verified'}
+                    }
                     'copy_file_verify' {
                         if ($hash -ne ([string]$planned.sha256).ToUpperInvariant() -or [int64]$entry.size_bytes -ne [int64]$planned.size_bytes -or
                             [string]$entry.last_write_utc -ne [string]$planned.last_write_utc) { $actionName='hold_changed'; $reason='source_changed_after_copy' }
@@ -111,7 +126,7 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
     })
 }
 
-$retirementPriority = @{ already_moved=5; recycle_verified_copy_source=10; recycle_exact_duplicate=10; recycle_cache=10; recycle_git_metadata=10; remove_empty_directory=50; hold_changed=90; hold_unplanned=90 }
+$retirementPriority = @{ already_moved=5; recycle_verified_copy_source=10; recycle_exact_duplicate=10; recycle_integrated_source=10; recycle_cache=10; recycle_git_metadata=10; remove_empty_directory=50; hold_changed=90; hold_unplanned=90 }
 $rows = @($retirement.ToArray() | Sort-Object { $retirementPriority[[string]$_.action] }, {
     if ([string]$_.entry_type -eq 'directory') { -([string]$_.source_path).Length } else { 0 }
 }, { ([string]$_.source_path).ToLowerInvariant() }, { [string]$_.source_path })
@@ -139,6 +154,8 @@ $review = @(
 )
 Write-POText -Path (Join-Path $output 'retirement-review.md') -Text (($review -join "`n") + "`n")
 $bound = @($configPath,$planHashPath,$acceptancePath,$retirementPath,$retirementErrorsPath)
+if($null -ne $integration){$bound+=@($integration.BoundPaths)+@($integrationChecks.BoundPaths)}
+$bound+=@((Join-Path $output 'actions.csv'),(Join-Path $output 'files.csv'),(Join-Path $output 'target-tree.csv'),(Join-Path $output 'target-tree.sha256'))
 if (Test-Path -LiteralPath $gitArchivesPath) { $bound += $gitArchivesPath }
 $retirementManifest = Join-Path $output 'retirement-files.sha256'
 [void](New-POHashManifest -Paths $bound -OutputPath $retirementManifest)

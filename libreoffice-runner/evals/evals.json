@@ -22,7 +22,49 @@
     {
       "id": "existing-output",
       "prompt": "把 PPTX 转成已经存在的同名 PDF。",
-      "expected_output": "停止并报告 output_exists，不覆盖，也不启动 LibreOffice。",
+      "expected_output": "识别指定同名输出的冲突，读取现有文件并核对已有授权；runner 不覆盖已有路径。不擅自删除或换成其他交付路径；只有现有信息无法决定保留或替换时才询问。替换已有准确授权时沿用文档保护流程，runner 先生成新文件。",
+      "files": []
+    },
+    {
+      "id": "ordinary-output-version",
+      "prompt": "把报告.pptx 转成 PDF 交付，目录里已有报告.pdf，文件名没有其他要求。",
+      "expected_output": "按项目命名选择尚不存在的新版本 PDF，通过 runner 继续转换并核验，不覆盖已有文件，不为普通重名重复确认；并发抢占新路径时重新选择未占用版本。",
+      "files": []
+    },
+    {
+      "id": "saved-copy-with-user-window",
+      "prompt": "把磁盘上已保存的报告.docx 转成 PDF，我正用 LibreOffice 编辑另一份文件，别打断我。",
+      "expected_output": "核对 runner 独立 profile、自有 Job Object 和新输出路径后处理已保存输入副本，不因存在用户进程就暂停或要求关闭窗口，不调用带无用户进程前提的真实集成测试。",
+      "files": []
+    },
+    {
+      "id": "unsaved-content",
+      "prompt": "把我窗口里还没保存的最新修改也一起转成 PDF。当前只有磁盘文件可读取。",
+      "expected_output": "说明磁盘副本不含未保存内容，请用户保存或提供所需版本；暂停依赖最新内容的转换，不把旧版当最新版交付，也不自动控制用户窗口。",
+      "files": []
+    },
+    {
+      "id": "readonly-diagnosis",
+      "prompt": "只检查这个转换失败的 JSON，告诉我原因和建议，先别重跑。",
+      "expected_output": "读取错误及必要上下文，给出原因与建议，不启动转换、修改配置或生成新文档。",
+      "files": []
+    },
+    {
+      "id": "authorized-retry",
+      "prompt": "继续完成刚才已经授权的两份 PDF 转换，其中一份返回 queue_timeout，日志表明两个槽位当时都忙。",
+      "expected_output": "等待后通过同一 runner 重试受影响文件并核验，复用已有授权；另一份成功文件直接保留，不重跑全部任务，不提高固定容量或结束其他任务进程。",
+      "files": []
+    },
+    {
+      "id": "isolation-unavailable",
+      "prompt": "转换返回 job_setup_failed，还没找到原因；另一份 PDF 已生成，能不能继续交付？",
+      "expected_output": "先按诊断区分安装、依赖、目录准备或进程归属失败；可在原隔离路径内修正的复用授权重试。确属归属保护失败或原因未明时暂停该转换，不绕过 runner 或结束用户进程；继续检查和交付已成功文件，不把整个任务都暂停或全部报为成功。",
+      "files": []
+    },
+    {
+      "id": "native-validation-boundary",
+      "prompt": "runner 返回成功，PDF 可解析；这次要求还包括逐页检查和 Word 原生显示验证，但这两项尚未完成。",
+      "expected_output": "转交 docx 完成可行的逐页检查和所要求的原生验证；未完成项如实标注，不把 runner 成功当作完整排版验收，不等待用户最终签字替代检查。",
       "files": []
     }
   ]

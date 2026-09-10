@@ -5,6 +5,14 @@ description: 承接明确的上游参考发现、技能市场搜索和候选内�
 
 # Skill 目录检查
 
+## 检查范围与授权
+
+- 单个技能未生效、名称不一致或引用失效时，只检查该技能及必要的源码、分发、运行副本和元数据，不默认扫描全库或会话历史。
+- 明确要求目录健康、全库盘点或历史使用统计时，才运行对应审计。既有周检继续按已确认的窗口与范围执行。
+- 日志或元数据表明同仓库其他条目影响当前更新时，可以只读扩大关联检查并说明原因；关联条目不自动纳入修复授权。
+- 只要求检查时给结论与建议。明确要求修复时，复用准确授权完成对应源码修改、后台修复和核验；接口不支持时只暂停相关项，说明具体缺口。
+- 源码改写结合 `skill-creator`，定向发布遵循 [agent-rules](../agent-rules/SKILL.md)。CC Switch 变更只走受支持后台接口，不控制界面、强关应用、手工修改数据库或删除运行目录。
+
 ## 作用
 
 这份 skill 用来查清本地技能目录，重点看这些问题：
@@ -67,24 +75,24 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
    - 查“当前真的加载了哪些 skill”时，优先看 Codex 实际读取的技能目录。
    - 查“面板里更新了，为什么没生效”时，再看 cc-switch 同步出来的目录和 `cc-switch.db`。
    - 查 CC Switch 安装红框 `Skill 不存在于 SSOT` 时，在 `cc-switch.db` 里对照 `skill_repos.branch`、`skills.repo_branch`、`skills.directory` 和远端默认分支；详细步骤见 [references/skill-hygiene.md](references/skill-hygiene.md)。
-   - 单个已安装技能的文件仍在，但 `repo_branch`、`readme_url` 或双端启用元数据残留在旧状态时，先完成只读定位；获得批准后，优先在 CC Switch 中只卸载并重新安装该技能，从当前真实分支恢复来源元数据并启用 Claude/Codex。存在未处理的本机私有文件、重装未能修复或 GUI 无法完成时，才进入最小数据库修复。由本任务执行恢复时，用同一远端 SHA 和 Skill 集合重跑完整同步与 `-VerifyOnly`；用户明确自行完成恢复且不授权 UI 自动化时，改走下方“两次后台 `-VerifyOnly`”验收。
-   - 目标技能本身已经指向当前分支，但 CC Switch 日志仍请求同仓库旧分支压缩包时，检查该仓库下全部已安装技能的 `repo_branch` 和 `readme_url`。CC Switch 的更新扫描以仓库为单位，任一兄弟技能残留旧分支都可能阻断目标更新；这类多技能范围先完整列出，再单独批准修复。
+   - 单个已安装技能的文件仍在，但来源或启用元数据陈旧时，只读定位具体字段及本机私有文件，再按已有准确授权使用受支持后台接口。更新不一定能修复元数据；接口缺少能力或无法保护私有文件时保留该项，不转入界面重装或数据库兜底。
+   - 目标技能已经指向当前分支，但日志仍请求同仓库旧分支压缩包时，只读检查该仓库相关已安装技能的 `repo_branch` 和 `readme_url`。完整列出实际阻断条目；修复沿用已明确范围，新增范围才需要用户决定。
    - 如果技能条目显示“已安装”但启动/同步时报 `Skill 不存在于 SSOT`，还要核对 SSOT 下 `<directory>\SKILL.md` 是否真实存在；这通常是数据库残留记录，不要直接改 Codex 运行时目录。
    - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、cc-switch 分发目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
    - 查“远端已推送，但 CC Switch 检查更新没有提示”时，先看提交是否只改了 `references/`、`scripts/` 或 `evals/` 等子文件。会改变运行行为的子文件必须在 `SKILL.md` 有对应语义入口；纯 eval 或不影响运行行为的说明不制造无意义入口。实证和诊断顺序见 [references/skill-hygiene.md](references/skill-hygiene.md)。
    - 查“CC Switch 同步后现在是否完整生效”时，按 [references/skill-hygiene.md](references/skill-hygiene.md) 的“源码到双端运行时验收”逐层检查；不能只看面板、软链接或单个 `SKILL.md`。
    - 查“以后该改哪一份”时，最后再回到源文件目录。
-2. 扫描目标根目录：
+2. 用户要求目录健康或全库盘点时，扫描指定根目录；局部诊断直接读取目标文件与记录，不为复用脚本而扫描整个根：
 
 ```powershell
 python scripts/audit_skill_tree.py scan --root <target-root> --reports-root <reports-root> --date <YYYY-MM-DD>
 ```
 
-3. 再读取本轮产物：
+3. 使用上述扫描后读取本轮产物；不以历史报告冒充当前检查：
    - `manifests/<date>/summary.json`
    - `weekly/<date>.md`
 4. 如果还要查市场安装清单、残留目录或全局安装情况，再调用补充脚本；不要把这一步默认塞进每次审计。
-5. 汇报时先给出：
+5. 全库报告按以下类别呈现；局部问题只报告检查范围、结论、必要依据和下一步：
    - 当前实际会用到的技能
    - 目录结构问题
    - 真的重复技能
@@ -106,7 +114,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
   --window-start <ISO-8601> --window-end <ISO-8601> --timezone Asia/Shanghai
 ```
 
-默认只读扫描全部可用历史：Codex 的 `sessions`、`archived_sessions`，Claude 的 `projects` 和
+仅在历史使用审计中，默认数据源为 Codex 的 `sessions`、`archived_sessions`，Claude 的 `projects` 和
 `telemetry`；技能清单覆盖源码、Codex/Claude 运行时、lark 实体层和 Codex 插件缓存。需要隔离测试或
 限定范围时，可重复传入 `--skills-root`、`--codex-sessions-root`、`--claude-projects-root` 和
 `--claude-telemetry-root`；一旦传入某一类自定义根，该类默认根就不再扫描。
@@ -148,7 +156,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 - `职责相近但不该直接合并`
   指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `源码和运行时目录没有同步`
-  指已提交源码已经更新，但 cc-switch 分发目录、Claude 运行时或 Codex 运行时仍是旧版本。结论要写明哪一层落后，例如“源码已修，当前 Claude/Codex 仍未加载新版本”，并提醒用户通过 cc-switch 检查更新；不要直接改 `.cc-switch`、`.claude` 或 `.codex`。
+  指已提交源码已经更新，但 cc-switch 分发目录、Claude 运行时或 Codex 运行时仍是旧版本。结论写明哪一层落后；只读任务给定向同步建议，已有修复授权则按 `agent-rules` 后台发布和验证，不手工修改运行副本。
 - `链接或路径失效`
   指绝对路径、相对链接、Related Skills 链接或工作流引用失效。
 - `空技能或坏技能`
@@ -160,8 +168,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 [references/skill-hygiene.md](references/skill-hygiene.md)，依次核对：
 
 1. 源码提交与远端目标分支一致；
-2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled`、同仓库全部已安装技能的
-   `repo_branch`/`readme_url`，以及目标技能的目录、仓库归属和 Claude/Codex 启用状态均与预期源码一致；
+2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 及目标技能的来源、目录和 Claude/Codex 启用状态一致；有仓库级阻断线索或现有 helper 要求时，只读核对关联条目，不扩大更新集合；
 3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
 4. 结构校验按目标运行时分开判断：Agent Skills / OpenAI 通用格式与 Claude Code 扩展分别验收；
    严格通用校验器拒绝已确认的 Claude 扩展时，不能把整个 Skill 直接判为无效，也不能把 Claude
@@ -172,12 +179,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
    元数据问题，第二次也返回退出码 `0`、`runtime_active`，四层文件集合和 SHA-256 仍一致，才写
    “运行时已生效”。
 
-当用户明确选择自己在 CC Switch 完成卸载、重装或定向更新，并明确不授权本任务控制鼠标或执行 UI
-自动化时，不再运行会进入界面的完整同步 helper。用户报告手动操作完成后，以完全相同的
-`ExpectedRemoteCommit`、`Skills`、历史/范围参数和本机文件声明，连续运行两次纯后台
-`-VerifyOnly`。两次都必须退出 `0`、返回 `runtime_active`，且 `cc_switch_metadata.valid == true`、
-元数据问题为空、四层文件集合和 SHA-256 一致；任何在运行时核验前因网络或预检失败而中止的调用都
-不计入这两次验收。该分流只证明手动操作后的当前运行时已经稳定对齐，不反推具体哪次手动操作使其生效。
+用户只要求核验、或已明确自行完成恢复时，固定提交、目标集合和本机文件声明，使用后台 `-VerifyOnly`；不为了获得更新回执再执行写入。通过只证明当前状态与目标提交一致，不反推是哪次历史操作使其生效。检查失败或实际状态发生变化后再针对性复核。
 
 工作区 SHA-256 不同不等于运行时陈旧。Windows 工作区可能是 CRLF，提交 blob 和运行时副本可能是
 LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化换行后再判断。
@@ -190,16 +192,7 @@ LF；先比较已提交 Git blob 与运行时文件字节，或明确归一化�
 认证、余额、中转或模型服务错误若发生在技能输出前，状态只能记为“运行时验收受环境阻断”。
 环境恢复后重跑同一用例；不得把这种错误记成技能失败，也不得在未重跑时记成通过。
 
-CC Switch 定向同步返回 `update_scan_timeout` 时，记录原始 JSON、目标 commit、Skill 集合和
-`clicked_skills`，状态写“更新扫描受环境阻断，运行时待验收”，不写成技能失败或同步成功。只有
-`clicked_skills` 明确为空、确认尚未点击任何目标 Skill 的“更新”按钮时，才允许用同一 commit 和
-同一 Skill 集合重新运行完整 helper；如果已经点击或无法确认，则不再触发 UI 更新，只做
-`-VerifyOnly`，或等待用户手动定向更新后按上述两次后台 `-VerifyOnly` 分流验收。完整判据见
-[references/skill-hygiene.md](references/skill-hygiene.md) 的“更新扫描超时与 UI 竞态恢复”。
-
-若 helper 返回 `skills_page_blocked_by_restore`，结论是“从备份中恢复”窗口阻塞了 Skills 页面，
-不能再归为网络错误或导航超时，也不能继续重试同步。不是当前流程打开的窗口只报告并停止；任何主动
-打开弹窗或覆盖层的诊断流程都必须在 `finally` 中关闭它，并确认回到操作前页面。
+后台同步失败或超时后保留原回执、提交、目标集合和失败阶段，先按相同范围只读核验实际状态。重试与恢复遵循 `agent-rules` 的当前发布流程，不根据旧 `clicked_skills` 字段重启界面流程；无法确认时保留“运行时待验收”。历史 UI 错误按历史事实说明，不操作用户窗口。具体见 [后台恢复与验收](references/skill-hygiene.md#8-后台恢复与验收)。
 
 ## 触发分层判断
 
@@ -282,7 +275,7 @@ python scripts/run_weekly_skill_review.py next-question --json
 
 ## 边界
 
-- 只读审计，不自动移动、归档、删除或改写任何 `SKILL.md`。
+- 检查请求默认只读，不自动移动、归档、删除或改写任何 `SKILL.md`；明确修复请求按准确范围执行，普通审计程序本身仍只读。
 - 不把源文件目录直接当成“当前已加载技能列表”。
 - 不把 cc-switch 面板显示名直接当成磁盘目录名。
 - 不再按旧的分层目录判断技能来源；如果发现旧目录，只当作需要人工复核的历史残留。
@@ -296,7 +289,7 @@ python scripts/run_weekly_skill_review.py next-question --json
 
 ## 输出
 
-固定输出到 `<reports-root>`：
+目录审计程序固定输出到 `<reports-root>`；局部诊断不强制生成全库报告。新增过程材料沿用共享规则的 `过程文件/任务主题/`，已有周检输出位置保持兼容：
 
 - `manifests/<date>/summary.json`
 - `weekly/<date>.md`

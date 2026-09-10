@@ -17,7 +17,8 @@ Use documented Windows cleanup, application settings, or the registered uninstal
 
 ## Low Risk After Preapproval
 
-Candidates can be handled in a delegated batch only when reproducible and inactive:
+Include verified candidates in the concrete cleanup list. Once the list and method are approved, execute without
+another confirmation; a safe official online cleanup may be used while its application runs:
 
 - package-manager download caches such as npm, pip, Bun, or uv;
 - stale installer download caches whose owning application documents them as disposable;
@@ -55,12 +56,14 @@ Examples of the decision boundary:
 - An inactive shared runtime referenced by another application's runtime configuration is a dependency and must be
   kept. “No process is using it now” is not sufficient evidence.
 
-Use the registered uninstaller when the application is still installed. Only the leftover directory enters the
-recoverable Recycle Bin workflow after uninstall verification and explicit approval.
+Use the registered uninstaller when the application is still installed. After verifying residual ownership and
+excluding user data and dependencies, use the approved list's method: official cleanup, direct deletion, or Recycle
+Bin staging. State any recovery limits before approval; do not add a second approval for unchanged residuals already
+included in that list.
 
 ## Confirm as a Group
 
-Group by source and purpose, then ask:
+Group by source and purpose in the list for one batch confirmation. Reuse an existing accurate authorization:
 
 - installers, ISO images, and extracted installation media;
 - old presentations, rendered videos, raw media, and project exports;
@@ -83,12 +86,14 @@ explicitly reviewed. Resolve their actual roots from local rules instead of hard
 
 ## Decision Test
 
-Before labeling a target low risk, answer all five questions:
+Before recommending a cleanup method, establish:
 
-1. Can the data be reproduced or restored?
-2. Has the retained copy been verified beyond name and size?
-3. Is the owning application inactive?
-4. Is the action recoverable?
-5. Does the user-approved group include this exact source and purpose?
+1. What owns the content, and does any current work or dependency need it?
+2. When removal relies on another copy, has that copy been verified beyond name and size? For disposable caches,
+   establish reproducibility instead of creating an unnecessary backup.
+3. Can the proposed method run safely now? A busy or locked item is skipped without stopping its application.
+4. What can be restored or regenerated, and what permanent loss must the list explain?
+5. Does the approved batch include this exact content and handling method?
 
-Any uncertain answer raises the item to confirmation or protected status.
+Resolve facts locally where possible. Preserve an uncertain item and continue the other approved items; ask only
+when the remaining uncertainty requires a consequential user decision. A risk label does not add approval rounds.

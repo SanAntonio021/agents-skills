@@ -1,6 +1,7 @@
 # Backup and Duplicate Verification
 
-Use this workflow for personal files, research material, archives, media, and project outputs.
+Use this workflow when removing personal files, research material, archives, media, or project outputs on the basis
+of a retained duplicate or backup. It does not require backup copies of verified reproducible caches.
 
 ## Evidence Levels
 
@@ -26,9 +27,12 @@ Strong evidence:
 2. Inspect archive contents or project structure before hashing.
 3. Hash both candidate and retained copy with SHA-256.
 4. For two folders or differently packaged archives, compare required members rather than only container hashes.
-5. Record unmatched members and stop if any required file lacks a verified replacement.
+5. Record unmatched members and retain that candidate if any required file lacks a verified replacement; continue
+   unrelated approved candidates.
 6. Recheck hashes immediately before moving the candidate.
-7. Move to the Recycle Bin and record both original and retained paths.
+7. Default to Recycle Bin staging and record both original and retained paths. If the approved list also names
+   permanent removal of these exact staged entries, follow the exact-entry procedure in windows-and-wiztree.md
+   without asking again. Staging-only approval remains staging-only.
 
 ## Cloud Backup Semantics
 
@@ -40,7 +44,8 @@ Distinguish:
 
 Confirm the product's actual mode and, when necessary, inspect the client's metadata database read-only. Database
 schemas can change; discover tables and columns before querying. If the database is locked, copy it to a temporary
-read-only location rather than stopping the sync client without approval.
+read-only location when a consistent supported snapshot is possible; otherwise defer that item's verification.
+Keep the sync client and user tasks running rather than stopping them for cleanup.
 
 For BaiduNetdisk clients seen on this machine, `filecache.db` and `upload.db` have been useful evidence sources, but
 table names and semantics must be rediscovered each time. A cloud record does not by itself justify deleting the only

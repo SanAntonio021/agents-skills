@@ -80,6 +80,24 @@
       "id": "ambiguous-library-match",
       "prompt": "按这个题名下载。库里有两个相似题名，DOI 和作者不同，现有资料不能区分。",
       "expected_output": "展示可区分信息并询问准确论文，不擅自合并条目、覆盖附件或任选一个补入。"
+    },
+    {
+      "id": "inherit-research-collection",
+      "prompt": "paper-search 已明确 libraryID、collection key 和已有条目，请补 PDF。",
+      "expected_output": "复用任务信息，补缺失附件并确认条目属于准确任务分类；不重复询问或新建条目、分类。",
+      "files": []
+    },
+    {
+      "id": "readable-pdf-new-membership",
+      "prompt": "论文已有可读正式 PDF，这次用于另一个明确的新任务分类。",
+      "expected_output": "只给原条目增加任务分类关系并回读，保留原归类、PDF 和笔记，不重新下载或复制附件。",
+      "files": []
+    },
+    {
+      "id": "article-specific-notes",
+      "prompt": "为当前文章下载并阅读这篇论文，精读写 Zotero，拟引用章节记到已有提纲。",
+      "expected_output": "在任务分类下复用或补齐论文；文献内容写通用阅读笔记，当前文章的章节及用途写现有提纲；不新建账本或默认状态子分类。",
+      "files": []
     }
   ]
 }

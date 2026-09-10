@@ -4,22 +4,82 @@
     {
       "id": "research-results-to-paper-index",
       "prompt": "paper-search 刚才找到了几篇太赫兹通信硬件相关论文，但结果是零散的标题、DOI 和链接。请把这些结果整理进 paper_index.md，并开始下载能下载的 PDF。",
-      "expected_output": "先从当前对话里的零散论文线索整理 paper_index.md，再用 paper-search-mcp 补元数据和版本线索，最后下载可公开或已授权访问的 PDF，并继续更新 paper_index.md。"
+      "expected_output": "复用检索结果，先查 Zotero 条目和附件，补缺少的 PDF 并验证入库；用户明确要求 paper_index.md，因此维护这份索引并关联实际 Zotero 条目，保留旧内容，不把此例推广成默认每次建索引。"
     },
     {
       "id": "published-version-first-preprint-temporary",
       "prompt": "这篇论文已经正式发表了，但现在正式版 PDF 似乎拿不到，arXiv 上有预印本。先帮我把能拿到的版本下载下来。",
-      "expected_output": "优先确认正式发表信息；正式版暂时无法通过公开或已授权渠道获取时允许下载预印本，但必须在文件名和 paper_index.md 中标为 temporary_preprint。"
+      "expected_output": "先查 Zotero 是否已有所需版本；正式版仍无法获取时下载预印本并补到已确认论文条目，附件标 temporary_preprint，保留现有附件及批注；不默认创建本地索引。"
     },
     {
       "id": "ieee-authorized-official-download",
       "prompt": "用 DOI 10.1109/mcom.001.1900411 下载 IEEE 正式版全文。如果需要学校授权，复用我当前浏览器里的电子科大登录状态；下载后校验别把登录页当 PDF。",
-      "expected_output": "优先调用 paper-search-mcp 的 download_with_authorization，走机构授权正式页，必要时等待用户本人完成扫码或验证码；成功后保存 official PDF，并校验文件头是 %PDF-。"
+      "expected_output": "先查 Zotero，缺 PDF 才进入下载；复用已有电子科大浏览器登录态，已自动填充且账号机构明确时继续点击登录，扫码或验证码才交接。检查实际正文 PDF 和版本，再存入准确条目并回读，不读取或导出密码、Cookie。"
     },
     {
       "id": "full-access-html-not-pdf",
       "prompt": "这个 Science 页面显示 FULL ACCESS，网页全文能读。请判断为什么还不能直接把它当正式 PDF 下载结果。",
-      "expected_output": "区分网页全文和 PDF 文件；继续检查 Download PDF、View Options、iframe/embed/pdfdirect 等入口，并用 %PDF- 文件头确认结果。若返回 HTML、登录页或补充材料，不能当正文 PDF 保存。"
+      "expected_output": "按只读问题解释网页全文与 PDF 的区别，必要时只读检查入口；指出需要 PDF 文件头、可读性及正文身份校验。此次未请求下载或入库，不写文件或 Zotero 条目。"
+    },
+    {
+      "id": "existing-readable-pdf",
+      "prompt": "下载这篇 DOI 对应的论文。Zotero 已有该论文的正式版可读 PDF。",
+      "expected_output": "核对 DOI、版本及附件可读性后直接返回已有条目；不重复下载、新建条目、附件或本地索引。"
+    },
+    {
+      "id": "existing-item-missing-pdf",
+      "prompt": "Zotero 里这篇只有文献信息，帮我补全文。",
+      "expected_output": "读取并确认已有父条目，在现有授权下下载、核验、补附件；不重新导入文献条目，完成后回读父子关系和文件。"
+    },
+    {
+      "id": "new-item-default-library",
+      "prompt": "帮我下载这篇明确 DOI 的论文，Zotero 查询确认还没有，收藏夹没有指定。",
+      "expected_output": "复用核实信息，在个人资料库建立条目并补已校验 PDF，不猜当前选中的收藏夹、不另问是否允许入库；不默认建 paper_index.md。"
+    },
+    {
+      "id": "browser-autofill",
+      "prompt": "已经到学校真实登录页，机构和账号已明确，浏览器已经自动填好了，继续下载。",
+      "expected_output": "仅核对填充就绪状态，继续点击登录、授权及 PDF 入口，不读取字段值或导出凭据；下载后验证 PDF 并补入 Zotero。此为期望流程，不宣称机构路径已实测。"
+    },
+    {
+      "id": "interactive-verification",
+      "prompt": "机构登录下一步要求手机扫码，再帮我把 PDF 存入 Zotero。",
+      "expected_output": "按浏览器交接流程暂停页面操作，让用户完成扫码；保留当前页面和已有 checkpoint，完成后继续原下载及入库，不从头重建条目。"
+    },
+    {
+      "id": "mcp-unavailable",
+      "prompt": "这次会话没有 paper-search-mcp，但网页有公开 PDF 链接，Zotero 可用，请下载。",
+      "expected_output": "先查 Zotero；需要下载时使用现有网页或公开请求工具取得 PDF 后原生入库，不要求重开窗口、安装 MCP 或维护技能。"
+    },
+    {
+      "id": "connector-unavailable",
+      "prompt": "浏览器装了 Zotero Connector，但当前工具没有调用扩展的入口，请继续下载并入库。",
+      "expected_output": "走网页定位真实 PDF、取得文件后添加到 Zotero 的备用路线；不宣称已调用扩展，不模拟点击错误入口，不因扩展调用缺失中止可行工作。"
+    },
+    {
+      "id": "uncertain-write",
+      "prompt": "PDF 已下好，添加附件时返回超时，不知道是否已经成功。",
+      "expected_output": "先按已确认父条目和已有写入信息回读附件及文件，成功则复用，不盲目重试；未完成时保留有效暂存 PDF 供续做，不删除或新建重复条目。"
+    },
+    {
+      "id": "zotero-offline",
+      "prompt": "请下载论文，但 Zotero 暂时不可连接，公开 PDF 可以取得。",
+      "expected_output": "继续下载核验并保留本次暂存，说明 PDF 已取得但待入库；不建立替代长期索引、不把暂存宣称为 Zotero 完成。"
+    },
+    {
+      "id": "project-export-history",
+      "prompt": "把 Zotero 里这篇 PDF 导出到本项目；目录里以前的 PDF 和 paper_index.md 都先别动。",
+      "expected_output": "复用库内附件，按指定目录及命名导出可用副本，保留历史文件和索引，不重下、不迁移旧库。"
+    },
+    {
+      "id": "local-only",
+      "prompt": "这篇只下载到我指定的目录，不要放 Zotero。",
+      "expected_output": "按明确例外本地交付，核验版本及文件，不写 Zotero、不默认生成索引，也不移动用户原有文件。"
+    },
+    {
+      "id": "ambiguous-library-match",
+      "prompt": "按这个题名下载。库里有两个相似题名，DOI 和作者不同，现有资料不能区分。",
+      "expected_output": "展示可区分信息并询问准确论文，不擅自合并条目、覆盖附件或任选一个补入。"
     }
   ]
 }

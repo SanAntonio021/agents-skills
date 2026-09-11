@@ -1,0 +1,126 @@
+{
+  "schema_version": "2.0",
+  "profile": "v2_traditional_wz",
+  "waveform": {
+    "architecture": "single_complex_stream",
+    "modulation_order": 16,
+    "master_sample_rate_hz": 65000000000,
+    "awg_sample_rate_hz": 16250000000,
+    "up_candidates": [31, 30, 29],
+    "selected_up": 31,
+    "rolloff": 0.15,
+    "rrc_span_symbols": 12,
+    "periodic_rrc": true,
+    "if_center_hz": 0,
+    "sync_length_symbols": 63,
+    "sync_repeats": 4,
+    "training_symbols": 2048,
+    "pilot_interval_symbols": 32,
+    "guard_symbols": 64,
+    "ldpc_blocks_per_frame": 1,
+    "frame_repetitions": 1,
+    "peak_scale": 0.8
+  },
+  "fec": {
+    "family": "DVB-S2",
+    "rate_numerator": 9,
+    "rate_denominator": 10,
+    "decoder_max_iterations": 20,
+    "llr_clip": 50
+  },
+  "receiver": {
+    "dual_equalizer": "rzf_2x2",
+    "diagnostic_equalizer": "augmented_rzf_4x4",
+    "single_equalizer": "wz_wl_fse_nlms",
+    "single_samples_per_symbol": 2,
+    "iq_coarse_gain_balance": true,
+    "rzf_regularization": 0.0001,
+    "wl_taps": 121,
+    "wl_step_size": 0.25,
+    "wl_passes": 10,
+    "wl_mu_decay": 0.75,
+    "wl_timing_offsets_samples": [-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4],
+    "joint_track_enabled": true,
+    "joint_track_step_size": 0.05,
+    "pll_alpha": 0.05,
+    "pll_beta": 0.00001,
+    "track_max_error_fraction": 0.55,
+    "track_pilot_acquire_count": 8,
+    "pilot_phase_smoothing": 3,
+    "sync_metric_min": 0.05,
+    "max_abs_sro_ppm": 2000,
+    "sro_interval_consistency_limit_samples": 1.25,
+    "sro_decision_policy": "conservative_ci",
+    "sro_observation_oversample_factor": 8,
+    "reference_payload_policy": "metrics_only"
+  },
+  "simulation": {
+    "payload_pair": "A",
+    "snr_db": 6,
+    "cfo_hz": 200000,
+    "sro_ppm": 40,
+    "channel_matrix": [[1, 0], [0, 1]],
+    "image_matrix": [[0.03, 0], [0, 0.02]],
+    "channel_skew_samples": 0.35,
+    "time_axis_skew_samples": 0.2,
+    "prepend_samples": 777,
+    "crop_start_samples": 0,
+    "clip_level": 1000000,
+    "rng_seed": 9001
+  },
+  "channels": {
+    "logical_labels": ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6"],
+    "ordering": "ascending_rf_frequency",
+    "scope_iq_pairs_per_capture": 2
+  },
+  "awg": {
+    "model": "M8195A_4ch",
+    "formal_dac_mode": "FOUR_EXT_DIV4",
+    "diagnostic_model": "M8195A_4ch_256k",
+    "diagnostic_max_samples": 262144,
+    "dac_mapping": ["DAC1=I_A", "DAC2=Q_A", "DAC3=I_B", "DAC4=Q_B"],
+    "connector_slots": ["A+", "B+", "A-", "B-"],
+    "smoke_tone_samples": 16384,
+    "amplitude_vpp": [0.2, 0.2, 0.2, 0.2],
+    "offset_v": [0, 0, 0, 0]
+  },
+  "scope": {
+    "interpolation": "Linear",
+    "average_sweeps": 1,
+    "enhance_resolution": "None",
+    "optimize_group_delay": "Flatness",
+    "offset_v": 0,
+    "vertical_divisions": 8,
+    "readback_required": true
+  },
+  "experiment": {
+    "formal_repeats": 10,
+    "support_repeats": 3,
+    "seed_values": [26072701, 26072702, 26072703, 26072704, 26072705],
+    "captures_per_seed": 2,
+    "qualification_up_order": [29, 30, 31],
+    "power_unit_dbm": null,
+    "power_modes": ["fixed_per_subband", "fixed_total"],
+    "require_off_on_pair": true,
+    "minimum_passing_repeats": 9
+  },
+  "results": {
+    "root": ".",
+    "retention_mode": "compact",
+    "purpose": "formal"
+  },
+  "safety": {
+    "default_execution_mode": "dry_run",
+    "hardware_enabled": false,
+    "interactive_confirmation": true,
+    "confirmation_phrase": "ENABLE V2 RF OUTPUT",
+    "awg_off_confirmation_phrase": "CONFIRM AWG OFF CHECK",
+    "smoke_confirmation_phrase": "ENABLE SINGLE DAC ELECTRICAL OUTPUT",
+    "require_power_unit": true,
+    "shutdown_awg": true,
+    "shutdown_signal_generator": true
+  },
+  "instrument": {
+    "local_config": "config/instruments.local.json"
+  }
+}

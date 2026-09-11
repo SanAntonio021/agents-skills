@@ -11,6 +11,7 @@ Apply one stable contract to experimental code, run artifacts, replay, and autom
 
 1. Read the target project's `AGENTS.md`, related rules, existing entry points, result paths, and representative outputs before editing.
 2. Read [references/standard.md](references/standard.md) completely. It defines directory, naming, metadata, display/full tables, replay, plotting, and retention. Section 6 covers compact/full output, shared inputs, and storage acceptance.
+   - Plot-only work: apply section 4 to the existing automatic plotting source. Preserve the project's layout and result contract; skip scaffolding, directory reorganization, output migration, and unrelated lifecycle tests. Inspect both normal and compact exports, not only automated bounds checks.
 3. Classify the target as a new project or an existing project:
    - New project: run `scripts/scaffold_test_project.py` with the project path, project name, and language.
    - Existing project: inventory first. Change future defaults only. Do not move, rename, rewrite, or delete historical results.
@@ -29,7 +30,7 @@ Apply one stable contract to experimental code, run artifacts, replay, and autom
 - Maintain `data/run_info.json`, `data/run_log.txt`, and full-precision `data/observations.csv`. Display summaries contain only required conditions, Channel, metrics and status. Do not automatically calculate cross-observation statistics. Explicit requested statistics are separate from necessary DSP calculations.
 - For reproducible simulations, prefer compact output preserving existing plots, metrics, effective configuration, seeds, provenance, and versioned replot data. Keep full output and no-write options; real acquisitions retain raw data. Validate equivalence and measured storage savings using section 6 of the standard.
 - Create a new `analysis/` run for single-source or multi-source analysis/replot and record sources in `data/sources.txt`; never write into source runs or copy their whole raw dataset.
-- Export automatic plots as readable 300 dpi PNG files with Chinese professional labels and the common paper-style settings. Do not auto-export publication vector files.
+- Export automatic plots as readable PNG files with Chinese professional labels. Section 4's font sizes and 300 dpi setting are defaults, not fixed requirements for screen dashboards; prioritize the data area and check the actual target sizes. Do not auto-export publication vector files.
 
 ## Safety Gates
 

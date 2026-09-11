@@ -1,0 +1,1710 @@
+diff --git a/code/+msiq/+instruments/capture_scope_raw.m b/code/+msiq/+instruments/capture_scope_raw.m
+index b09c50a..7f352fa 100644
+--- a/code/+msiq/+instruments/capture_scope_raw.m
++++ b/code/+msiq/+instruments/capture_scope_raw.m
+@@ -1,6 +1,12 @@
+-function raw = capture_scope_raw(session, requested_channels)
++function raw = capture_scope_raw(session, requested_channels, options)
+ %CAPTURE_SCOPE_RAW Read LeCroy WAVEFORM blocks without an IVI/MDD driver.
+ 
++if nargin<3, options=struct(); end
++observation=isfield(options,'mode') && strcmpi(options.mode,'observation');
++if isfield(options,'mode') && ~any(strcmpi(options.mode,{'observation','capture'}))
++    error('msiq:instrument:ScopeRawMode','Unknown raw capture mode.');
++end
++
+ if ~strcmpi(session.kind, 'scope')
+     error('msiq:instrument:ScopeRawSession', ...
+         'A scope session is required.');
+@@ -11,15 +17,23 @@ if isempty(channels) || numel(channels) > 4
+         'Capture needs one to four scope channels.');
+ end
+ msiq.instruments.io_audit('record_capture', session.kind);
+-restore = onCleanup(@() restore_auto(session));
+-msiq.instruments.write_scpi(session, 'COMM_HEADER OFF');
+-msiq.instruments.write_scpi(session, 'COMM_FORMAT DEF9,BYTE,BIN');
+-msiq.instruments.write_scpi(session, 'CORD LO');
+-msiq.instruments.write_scpi(session, 'STOP');
++if ~observation, restore = onCleanup(@() restore_auto(session)); end
++if ~observation
++    msiq.instruments.write_scpi(session, 'COMM_HEADER OFF');
++    msiq.instruments.write_scpi(session, 'COMM_FORMAT DEF9,BYTE,BIN');
++    msiq.instruments.write_scpi(session, 'CORD LO');
++end
++if ~observation, msiq.instruments.write_scpi(session, 'STOP'); end
+ 
+ if session.mock
+     fail_if_requested(session, 'raw_read');
+-    raw = mock_capture(session, channels);
++    raw = mock_capture(session, channels, observation);
++    if observation && isfield(options,'query_fn')
++        for k=1:numel(raw.channels)
++            raw.channels(k).descriptor=read_result_update(session,raw.channels(k).descriptor, ...
++                channels{k},options.query_fn);
++        end
++    end
+     clear restore;
+     return;
+ end
+@@ -33,7 +47,11 @@ for k = 1:numel(channels)
+     try
+         msiq.instruments.write_scpi(session, command);
+         payload = read_ieee488_block(session.interface);
+-        records(k) = decode_waveform(payload, channels{k});
++        records(k) = decode_waveform(payload, channels{k}, observation);
++        if observation
++            records(k).descriptor=read_result_update(session,records(k).descriptor, ...
++                channels{k},@msiq.instruments.query_scpi);
++        end
+     catch exception
+         identifier = exception.identifier;
+         if isempty(identifier), identifier = 'msiq:instrument:ScopeRead'; end
+@@ -46,9 +64,35 @@ end
+ raw = struct('schema_version', '1.0', 'channels', records, ...
+     'captured_at', char(datetime('now', 'TimeZone', 'local', ...
+     'Format', 'yyyy-MM-dd''T''HH:mm:ssXXX')));
++raw.observation_mode=observation;
++raw.channels_same_trigger_confirmed=false;
+ clear restore;
+ end
+ 
++function descriptor=read_result_update(session,descriptor,channel,query_fn)
++% Processing may continue after SWEEPS_PER_ACQ reaches its configured limit.
++for property={'UpdateTime','LastEventTime'}
++    command=sprintf('VBS? ''return=app.Acquisition.%s.Out.Result.%s''',channel,property{1});
++    try
++        reply=strtrim(char(string(query_fn(session,command))));
++    catch exception
++        if contains(lower(exception.identifier),'unsupported'), continue; end
++        error('RX_Workbench:Transport','回读 | %s | %s',command,exception.message);
++    end
++    if isempty(reply) || ~isempty(regexpi(reply, ...
++            'error|unsupported|unknown|invalid|does.?n.t support|does not support','once'))
++        continue;
++    end
++    reply=strtrim(regexprep(reply,'^VBS\s+','','ignorecase'));
++    reply=strrep(strrep(reply,'"',''),'''','');
++    % Require an instrument numeric time or a recognizable date/time value.
++    numeric=str2double(reply);
++    if ~(isfinite(numeric) || ~isempty(regexp(reply,'\d[/:\-]\d','once'))), continue; end
++    descriptor.result_update_id=[property{1} ':' reply];
++    return;
++end
++end
++
+ function restore_auto(session)
+ try
+     msiq.instruments.write_scpi(session, 'TRMD AUTO');
+@@ -56,7 +100,7 @@ catch
+ end
+ end
+ 
+-function raw = mock_capture(session, channels)
++function raw = mock_capture(session, channels, observation)
+ spec = session.specification;
+ if isfield(spec, 'mock_raw_capture')
+     source = spec.mock_raw_capture;
+@@ -80,7 +124,7 @@ elseif isfield(source, 'payloads')
+     end
+     records = repmat(empty_record(), 1, numel(channels));
+     for k = 1:numel(channels)
+-        records(k) = decode_waveform(uint8(payloads{k}), channels{k});
++        records(k) = decode_waveform(uint8(payloads{k}), channels{k}, observation);
+         records(k).descriptor.source = 'mock_binary_wavedesc';
+     end
+ else
+@@ -103,6 +147,8 @@ for k = 1:numel(records)
+ end
+ raw = struct('schema_version', '1.0', 'channels', records, ...
+     'captured_at', 'mock');
++raw.observation_mode=observation;
++raw.channels_same_trigger_confirmed=false;
+ end
+ 
+ function prepare_buffer(interface)
+@@ -145,7 +191,16 @@ if numel(payload) ~= payload_length
+ end
+ end
+ 
+-function record = decode_waveform(payload, channel)
++function record = decode_waveform(payload, channel, observation)
++% WAVEDESC COMM_ORDER is self-identifying (0=high first, 1=low first).
++big_endian=observation && numel(payload)>=36 && all(payload(35:36)==0);
++if big_endian
++    for entry=[32 2;34 2;36 4;40 4;44 4;48 4;52 4;56 4;60 4; ...
++            144 4;148 4;156 4;160 4;176 4;180 8;316 2;318 2].'
++        index=entry(1)+(1:entry(2));
++        if max(index)<=numel(payload), payload(index)=flip(payload(index)); end
++    end
++end
+ descriptor_length = number_at(payload, 36, 'uint32');
+ user_text = number_at(payload, 40, 'uint32');
+ reserved_1 = number_at(payload, 44, 'uint32');
+@@ -153,6 +208,11 @@ trigger_array = number_at(payload, 48, 'uint32');
+ ris_array = number_at(payload, 52, 'uint32');
+ reserved_2 = number_at(payload, 56, 'uint32');
+ wave_bytes = number_at(payload, 60, 'uint32');
++if observation && (number_at(payload,144,'uint32')>1 || ris_array>0 || ...
++        any(number_at(payload,316,'int16')==[1 7]))
++    error('RX_Workbench:UnsupportedMode', ...
++        'Observation supports real-time single-segment waveforms only; sequence/RIS record received.');
++end
+ data_start = double(descriptor_length) + double(user_text) + ...
+     double(reserved_1) + double(trigger_array) + double(ris_array) + ...
+     double(reserved_2) + 1;
+@@ -173,7 +233,9 @@ elseif comm_type == 1
+         error('msiq:instrument:WaveDescWordLength', ...
+             'WORD waveform data has an odd byte count.');
+     end
+-    raw_codes = double(typecast(uint8(data_bytes), 'int16'));
++    values=typecast(uint8(data_bytes), 'int16');
++    if big_endian, values=swapbytes(values); end
++    raw_codes = double(values);
+ else
+     error('msiq:instrument:WaveDescCommType', ...
+         'Unsupported WAVEDESC COMM_TYPE %d.', comm_type);
+@@ -185,6 +247,13 @@ descriptor = struct('wave_descriptor_bytes', double(descriptor_length), ...
+     'vertical_gain', double(gain), 'vertical_offset', double(offset), ...
+     'horizontal_interval_s', double(interval), ...
+     'horizontal_offset_s', double(time_offset));
++if descriptor_length>=322 && numel(payload)>=322
++    descriptor.trigger_time_bytes=uint8(payload(297:312));
++    descriptor.sweeps_per_acq=number_at(payload,148,'uint32');
++    descriptor.subarray_count=number_at(payload,144,'uint32');
++    descriptor.record_type=number_at(payload,316,'int16');
++    descriptor.processing_done=number_at(payload,318,'int16');
++end
+ record = struct('channel', channel, 'samples', samples, ...
+     'time_axis_s', time_axis, 'sample_rate_hz', 1/double(interval), ...
+     'descriptor', descriptor);
+diff --git a/code/+msiq/+instruments/mock_rx_scope_io.m b/code/+msiq/+instruments/mock_rx_scope_io.m
+index beec108..a88e74f 100644
+--- a/code/+msiq/+instruments/mock_rx_scope_io.m
++++ b/code/+msiq/+instruments/mock_rx_scope_io.m
+@@ -2,6 +2,28 @@ function io = mock_rx_scope_io(options)
+ %MOCK_RX_SCOPE_IO Process-local deterministic scope with controllable blocking I/O.
+ scale=[.015 .015 .03 .04]; offset=zeros(1,4); timebase=5e-6; drift_done=false;
+ trigger_delay=0;
++capture_id=0;
++values=containers.Map('KeyType','char','ValueType','any');
++ranges=containers.Map('KeyType','char','ValueType','any');
++for c=1:4
++    prefix=sprintf('app.Acquisition.C%d.',c);
++    define([prefix 'Coupling'],'D50',{'D50','GND'});
++    define([prefix 'BandwidthLimit'],'OFF',{'OFF','16GHZ','13GHZ','8GHZ','6GHZ','4GHZ','3GHZ','1GHZ','200MHZ','ON'});
++    define([prefix 'AverageSweeps'],1,[1 1e6 1]);
++    define([prefix 'InterpolateType'],'LINEAR',{'LINEAR','SINXX'});
++    define([prefix 'EnhanceResType'],'NONE',{'NONE','0.5BITS','1BITS','1.5BITS','2BITS','2.5BITS','3BITS'});
++    define([prefix 'OptimizeGroupDelay'],'FLATNESS',{'PULSERESPONSE','EYEDIAGRAM','FLATNESS'});
++end
++define('app.Acquisition.TriggerMode','AUTO',{'AUTO','NORM','SINGLE','STOP'});
++define('app.Acquisition.Trigger.Type','EDGE',{'EDGE','WIDTH'});
++define('app.Acquisition.Trigger.Edge.Source','C1',{'C1','C2','C3','C4','EXT','LINE','FE'});
++define('app.Acquisition.Trigger.Edge.Slope','POS',{'POS','NEG','EITHER'});
++define('app.Acquisition.Trigger.Edge.Level',0,[-.075 .075 .001]);
++define('app.Acquisition.Trigger.Edge.HoldoffType','OFF',{'OFF','TI','EV'});
++define('app.Acquisition.Trigger.Edge.HoldoffTime',1e-9,[1e-9 20 .5e-9]);
++define('app.Acquisition.Horizontal.MaxSamples',4e6,[500 32e6 25000]);
++define('app.Acquisition.Horizontal.SampleMode','REALTIME',{'REALTIME','SEQUENCE','RIS'});
++if isfield(options,'sample_mode'), values('app.Acquisition.Horizontal.SampleMode')=options.sample_mode; end
+ trace_states=repmat({'ON'},1,4);
+ if isfield(options,'timebase_s'), timebase=options.timebase_s; end
+ if isfield(options,'trace_states') && numel(options.trace_states)==4
+@@ -40,8 +62,42 @@ io=struct('open',@open_mock,'query',@query_mock,'write',@write_mock, ...
+             case '*IDN?', reply='LECROY,SDA845ZI-A,MOCK,8.1'; return;
+             case 'TDIV?', reply=sprintf('%.15g',timebase); return;
+             case 'TRDL?', reply=sprintf('TRDL %.15g S',trigger_delay); return;
+-            case 'MSIZ?', reply='4000000'; return;
+-            case 'BWL?', reply='C1,OFF,C2,OFF,C3,OFF,C4,OFF'; return;
++            case 'MSIZ?', reply=num2str(values('app.Acquisition.Horizontal.MaxSamples')); return;
++            case 'TRMD?', reply=values('app.Acquisition.TriggerMode'); return;
++            case 'BWL?'
++                parts=cell(1,4);
++                for b=1:4, parts{b}=sprintf('C%d,%s',b,values(sprintf('app.Acquisition.C%d.BandwidthLimit',b))); end
++                reply=strjoin(parts,','); return;
++        end
++        vb=regexp(command,'^VBS\? ''return=(app\.[^'']+)''$','tokens','once');
++        if ~isempty(vb)
++            path=vb{1}; method=regexp(path,'\.(Get\w+)$','tokens','once');
++            if ~isempty(method), path=extractBefore(path,strlength(path)-strlength(method{1})); end
++            path=char(path);
++            if isfield(options,'unsupported_setting') && contains(path,options.unsupported_setting)
++                reply='ERROR unsupported property'; return;
++            end
++            if isKey(values,path)
++                if isempty(method)
++                    reply=char(string(values(path)));
++                    if endsWith(path,'.BandwidthLimit') && strcmp(reply,'OFF'), reply='Full'; end
++                    return;
++                end
++                limits=ranges(path);
++                if strcmp(path,'app.Acquisition.Trigger.Edge.Level')
++                    src=values('app.Acquisition.Trigger.Edge.Source');
++                    if ~isempty(regexp(src,'^C[1-4]$','once')), span=5*scale(str2double(src(2))); else, span=1; end
++                    limits=[-span span .001];
++                end
++                switch method{1}
++                    case {'GetRangeStringRemote','GetRangeStringScreen'}, reply=strjoin(limits,',');
++                    case {'GetMin','GetMinValue'}, reply=num2str(limits(1),17);
++                    case {'GetMax','GetMaxValue'}, reply=num2str(limits(2),17);
++                    case {'GetGrain','GetGrainValue'}, reply=num2str(limits(3),17);
++                    otherwise, error('mock:Command','Unexpected metadata %s',command);
++                end
++                return;
++            end
+         end
+         token=regexp(command,'^C([1-4]):(VDIV|OFST|TRA|CPL)\?$','tokens','once');
+         if ~isempty(token)
+@@ -52,7 +108,7 @@ io=struct('open',@open_mock,'query',@query_mock,'write',@write_mock, ...
+                 case 'TRA'
+                     current_states=read_trace_states();
+                     reply=current_states{ch};
+-                case 'CPL', reply='D50';
++                case 'CPL', reply=values(sprintf('app.Acquisition.C%d.Coupling',ch));
+             end
+         elseif contains(command,'SampleRate'), reply='80000000000';
+         elseif contains(command,'InterpolateType'), reply='Linear';
+@@ -64,6 +120,23 @@ io=struct('open',@open_mock,'query',@query_mock,'write',@write_mock, ...
+     end
+     function write_mock(~,command)
+         record(['WRITE ' command]); fail(command);
++        vb=regexp(command,'^VBS ''(app\.[^=]+)\.Value=(.+)''$','tokens','once');
++        if ~isempty(vb) && isKey(values,vb{1})
++            token=vb{2};
++            if startsWith(token,'"'), values(vb{1})=strrep(token,'"','');
++            else, values(vb{1})=str2double(token); end
++            return;
++        end
++        token=regexp(command,'^C([1-4]):(TRA|CPL) (\S+)$','tokens','once');
++        if ~isempty(token)
++            target_channel=str2double(token{1});
++            if strcmp(token{2},'TRA'), trace_states{target_channel}=token{3};
++            else, values(sprintf('app.Acquisition.C%d.Coupling',target_channel))=token{3}; end
++            return;
++        end
++        token=regexp(command,'^BWL C([1-4]),(\S+)$','tokens','once');
++        if ~isempty(token), values(sprintf('app.Acquisition.C%s.BandwidthLimit',token{1}))=token{2}; return; end
++        if startsWith(command,'TRMD '), values('app.Acquisition.TriggerMode')=command(6:end); return; end
+         value=str2double(regexp(command,'[^ ]+$','match','once'));
+         if startsWith(command,'TDIV '), timebase=value;
+         elseif startsWith(command,'TRDL '), trigger_delay=value;
+@@ -74,23 +147,28 @@ io=struct('open',@open_mock,'query',@query_mock,'write',@write_mock, ...
+     end
+     function raw=capture_mock(~,channels)
+         record('CAPTURE BEGIN');
+-        guard=onCleanup(@() record('CAPTURE RESTORE AUTO'));
++        cleanup_label='CAPTURE RESTORE AUTO';
++        if isfield(options,'observation_mode') && options.observation_mode, cleanup_label='CAPTURE RELEASE'; end
++        guard=onCleanup(@() record(cleanup_label));
+         % Sleep blocks this MATLAB process without serving any GUI callbacks.
+         java.lang.Thread.sleep(round(options.capture_delay_s*1000));
+         fail('CAPTURE');
+         count=options.record_count;
++        if ~isfield(options,'no_new_frame') || ~options.no_new_frame || capture_id==0, capture_id=capture_id+1; end
+         t=(-count/2+(0:count-1)')/80e9-trigger_delay;
+         for k=1:numel(channels)
+             samples=.04*cos(2*pi*1e9*t+k*.3)+.003*cos(2*pi*11e9*t);
+             samples(round(count*.713))=.055;
+             records(k)=struct('channel',channels{k},'samples',samples, ...
+-                'time_axis_s',t,'sample_rate_hz',80e9); %#ok<AGROW>
++                'time_axis_s',t,'sample_rate_hz',80e9, ...
++                'descriptor',struct('trigger_time_bytes',[typecast(double(capture_id),'uint8') zeros(1,8,'uint8')], ...
++                'sweeps_per_acq',capture_id,'result_update_id',capture_id)); %#ok<AGROW>
+         end
+         if isfield(options,'calibration_offset_v')
+             for k=1:numel(records)
+                 ch=str2double(channels{k}(2));
+-                records(k).descriptor=struct('vertical_offset',offset(ch)+options.calibration_offset_v, ...
+-                    'horizontal_offset_s',t(1));
++                records(k).descriptor.vertical_offset=offset(ch)+options.calibration_offset_v;
++                records(k).descriptor.horizontal_offset_s=t(1);
+             end
+         end
+         raw=struct('channels',records);
+@@ -105,6 +183,9 @@ io=struct('open',@open_mock,'query',@query_mock,'write',@write_mock, ...
+     function close_mock(~)
+         record('CLOSE');
+     end
++    function define(path,value,range)
++        values(path)=value; ranges(path)=range;
++    end
+     function states=read_trace_states()
+         states=trace_states;
+         if ~isfield(options,'trace_state_path') || ~isfile(options.trace_state_path), return; end
+diff --git a/code/+msiq/+plotting/rx_dashboard.m b/code/+msiq/+plotting/rx_dashboard.m
+index 6b074ea..b2a1f13 100644
+--- a/code/+msiq/+plotting/rx_dashboard.m
++++ b/code/+msiq/+plotting/rx_dashboard.m
+@@ -32,17 +32,17 @@ fig=figure('Visible','off','Color','w','Units','pixels','Position',[20 20 W H],
+ cleanup=onCleanup(@() close_if_valid(fig));
+ setappdata(fig,'canvas_size',canvas);
+ label(fig,[24 H-43 W-48 37],figure_title,15,true);
+-margin=14; gap=12; bottom=10; top=H-49;
+-cw=(W-2*margin-3*gap)/4; rh=(top-bottom-2*gap)/3; panels=zeros(11,4);
++margin=10; gap=6; bottom=8; top=H-45;
++cw=(W-2*margin-3*gap)/4; heights=(top-bottom-2*gap)*[1 1 1]/3; panels=zeros(11,4);
+ for row=1:3
+     for col=1:4
+         index=(row-1)*4+col;
+         if row==2 && col>2, continue; end
+         if row==3, index=col+6; end
+-        panels(index,:)=[margin+(col-1)*(cw+gap),top-row*rh-(row-1)*gap,cw,rh];
++        panels(index,:)=[margin+(col-1)*(cw+gap),top-sum(heights(1:row))-(row-1)*gap,cw,heights(row)];
+     end
+ end
+-panels(11,:)=[panels(3,1),panels(5,2),2*cw+gap,rh];
++panels(11,:)=[panels(3,1),panels(5,2),2*cw+gap,heights(2)];
+ titles={'1 原始采集波形','2 通道信号频谱','3 重复ZC同步', ...
+     '4 训练窗口对齐搜索','5 均衡后训练星座','6 业务区相位跟踪', ...
+     '7 业务星座：均衡前','8 业务星座：固定均衡后', ...
+@@ -71,8 +71,8 @@ if isfinite(edge) && edge>0 && isfinite(center_hz)
+     spectrum_limit_hz=abs(center_hz)+2*edge;
+ end
+ for k=1:2
+-    [a,note]=split_axis(fig,panels(1,:),k);
+-    [b,spectrum_note]=split_axis(fig,panels(2,:),k);
++    a=split_axis(fig,panels(1,:),k);
++    b=split_axis(fig,panels(2,:),k);
+     if numel(records)<k || channels(k).sample_count<2
+         placeholder(a,'采集波形不可用'); placeholder(b,'通道频谱不可用'); continue;
+     end
+@@ -92,12 +92,13 @@ for k=1:2
+         placeholder(a,'缺少有效采集时间轴');
+     end
+     note_value=sprintf('%s  有效值 %.3g V  峰峰值 %.3g V',d.name,d.rms_v,d.vpp_v);
+-    label(fig,note,note_value,8.4,false); texts{1}{end+1}=note_value;
++    in_axes_note(a,d.name,'nw');
++    in_axes_note(a,sprintf('有效值 %.3g V\n峰峰值 %.3g V',d.rms_v,d.vpp_v),'ne');
++    texts{1}{end+1}=note_value;
+     if isfinite(d.sample_rate_hz) && d.sample_rate_hz>0 && isreal(values) && all(isfinite(values))
+         nfft=min(65536,2^floor(log2(numel(values))));
+         [voltage_density,freq]=pwelch(values,hann(nfft),floor(nfft/2),nfft,d.sample_rate_hz,'onesided');
+         [channels(k),power_label]=inband_power(channels(k),freq,voltage_density,edge,center_hz);
+-        label(fig,spectrum_note,[d.name '  ' power_label],7.6,false);
+         texts{2}{end+1}=[d.name '  ' power_label];
+         power=voltage_density;
+         unit='dB(V²/Hz)';
+@@ -122,6 +123,10 @@ for k=1:2
+         ylabel(b,unit,'Interpreter','none','FontSize',8);
+         if k==1, b.XTickLabel=[]; else, xlabel(b,'频率（GHz）'); end
+         grid(b,'on');
++        in_axes_note(b,d.name,'nw');
++        in_axes_note(b,power_label,'ne');
++        in_axes_note(b,sprintf('%.3g GSa/s',d.sample_rate_hz/1e9),'se');
++        if k==2 && ~isempty(band_edges), in_axes_note(b,'虚线：理论带边','sw'); end
+     else
+         placeholder(b,'缺少有效样点或采样率');
+         channels(k).inband_power_reason='缺少有效样点或采样率';
+@@ -131,13 +136,13 @@ rate_notes=arrayfun(@(d) sprintf('%s %.3g GSa/s',d.name,d.sample_rate_hz/1e9), .
+     channels,'UniformOutput',false);
+ rate_note=strjoin(rate_notes,'；');
+ power_note='50 Ω';
+-foot(fig,panels(1,:),power_note,7.5); texts{1}{end+1}=power_note;
++in_axes_note(a,power_note,'se'); texts{1}{end+1}=power_note;
+ spectrum_footer=strjoin({rate_note,'理论带边'},'；');
+ if isempty(band_edges), spectrum_footer=rate_note; end
+-foot(fig,panels(2,:),spectrum_footer,7.5); texts{2}{end+1}=spectrum_footer;
++texts{2}{end+1}=spectrum_footer;
+ stage_raw=struct('channels',records);
+ [stages,stage_info]=msiq.plotting.rx_constellation_stages(stage_raw,context,decoded);
+-p=panels(3,:); a=plot_axis(fig,p,78,44);
++p=panels(3,:); a=plot_axis(fig,p,44,28);
+ sync=field_or(decoded,'synchronization',struct()); metric=field_or(sync,'repeat_metric_trace',[]);
+ if ~isempty(metric) && stage_info.time_available && numel(metric)==numel(stage_info.time_us)
+     metric=metric(:); time=stage_info.time_us(:);
+@@ -153,15 +158,15 @@ if ~isempty(metric) && stage_info.time_available && numel(metric)==numel(stage_i
+         plot(a,time(peaks(chosen)),metric(peaks(chosen)),'o','Color',[.75 .1 .13], ...
+             'MarkerFaceColor',[.75 .1 .13],'MarkerSize',6);
+     end
+-    xlim(a,time_limits); ylim(a,[0 max(1.1,1.05*max(metric))]); grid(a,'on');
++    xlim(a,time_limits); ylim(a,[0 max(1.2,1.2*max(metric))]); grid(a,'on');
+     xlabel(a,'采集时间（μs）'); ylabel(a,'归一化相关度');
+     note=sprintf('同步峰 %d 个',numel(peaks));
+     if isfinite(chosen), note=sprintf('%s；选中第 %d 个',note,chosen); end
+-    foot(fig,p,note,9); texts{3}{end+1}=note;
++    in_axes_note(a,note,'ne'); texts{3}{end+1}=note;
+ else
+     placeholder(a,'同步曲线或采集时间映射不可用');
+ end
+-p=panels(4,:); a=plot_axis(fig,p,100,58);
++p=panels(4,:); a=plot_axis(fig,p,66,28);
+ offsets=field_or(eq,'training_timing_offsets_samples',[]); nmse=field_or(eq,'training_timing_nmse',[]);
+ if ~isempty(offsets) && numel(offsets)==numel(nmse)
+     offsets=offsets(:); nmse=nmse(:); valid=isfinite(offsets)&isfinite(nmse)&nmse>=0;
+@@ -179,7 +184,7 @@ if ~isempty(offsets) && numel(offsets)==numel(nmse)
+         xlabel(a,{'相对标称训练位置偏移','（接收处理采样点）'});
+         note=sprintf('选中 %+g 点',best); sps=field_or(eq,'processing_samples_per_symbol',NaN);
+         if isfinite(sps)&&sps>0, note=sprintf('%s；每点为 %.3g 个符号周期',note,1/sps); end
+-        foot(fig,p,note,8.5); texts{4}{end+1}=note;
++        in_axes_note(a,note,'ne'); texts{4}{end+1}=note;
+     else
+         placeholder(a,'没有有效训练窗口搜索结果');
+     end
+@@ -192,18 +197,18 @@ training_nmse_db=10*log10(field_or(eq,'training_nmse',NaN));
+ if ~isempty(training)
+     constellation(a,training,training_ideal,point_limit({training,training_ideal}),orange);
+     note=[number_text(training_nmse_db,'%.2f') ' dB'];
+-    note_rect=stage_note_rect(p);
+-    label(fig,[note_rect(1) p(2)+p(4)-62 note_rect(3) 18],['训练均方误差 ' note],stage_note_font(note_rect,7.4),true);
+-    label(fig,[note_rect(1) p(2)+p(4)-80 note_rect(3) 16],sprintf('训练符号 %d 个',numel(training)),stage_note_font(note_rect,7.1),false);
++    lines={['训练归一化均方误差 ' note],sprintf('训练符号 %d 个',numel(training))};
+     texts{5}{end+1}=['训练归一化均方误差 ' note];
+     if ~isempty(training_ideal)
+-        label(fig,[note_rect(1) p(2)+p(4)-96 note_rect(3) 16],'□ 理想符号',stage_note_font(note_rect,7.1),false);
++        lines{2}=[lines{2} '；□ 理想符号'];
+     end
++    h=in_axes_note(a,lines,'ne');
++    h.Position=[.5 .5 0]; h.HorizontalAlignment='center'; h.VerticalAlignment='middle';
+ else
+     placeholder(a,'训练星座不可用');
+ end
+ tracking=field_or(eq,'tracking',struct());
+-p=panels(6,:); a=plot_axis(fig,p,78,44); phase=field_or(tracking,'phase_log',[]);
++p=panels(6,:); a=plot_axis(fig,p,48,28); phase=field_or(tracking,'phase_log',[]);
+ if ~isempty(phase) && isfinite(rate) && rate>0 && field_or(tracking,'enabled',true)
+     time=(0:numel(phase)-1).'/rate*1e6;
+     plot(a,time,phase(:)*180/pi,'Color',blue,'LineWidth',.75);
+@@ -225,27 +230,21 @@ for k=1:4
+     texts{k+6}{end+1}=note;
+     if k==4 && ~isempty(decoded)
+         lines=final_metrics(stream);
+-        note_rect=stage_note_rect(p);
+-        % Keep the four-line metric block inside the reserved note area.
+-        label(fig,[note_rect(1) p(2)+p(4)-108 note_rect(3) 72],lines,stage_note_font(note_rect,6.8),false);
++        setappdata(a,'side_metrics',lines);
+         texts{10}=[texts{10} lines];
+     end
+ end
+ stats=msiq.plotting.rx_tracking_error_stats(tracking,frame,cfg,513);
+-p=panels(11,:); a=plot_axis(fig,p,78,72);
++p=panels(11,:); a=plot_axis(fig,p,58,30);
+ if stats.available
+     hold(a,'on');
+     h1=plot(a,stats.window_time_us,stats.window_rms,'Color',blue,'LineWidth',1.6);
+     h2=scatter(a,stats.window_peak_time_us,stats.window_peak,24,orange,'^','filled');
+-    xlim(a,[0 stats.duration_us]); ylim(a,[0 max(.02,1.12*max(stats.window_peak))]); grid(a,'on');
++    xlim(a,[0 stats.duration_us]); ylim(a,[0 max(.02,1.30*max(stats.window_peak))]); grid(a,'on');
+     xlabel(a,'业务区时间（μs）'); ylabel(a,'归一化误差幅度');
+-    lg=legend(a,[h1 h2],{'窗内均方根误差','窗内最大误差'}, ...
+-        'Orientation','horizontal','Box','off','FontSize',8.5,'Units','pixels');
+-    drawnow; legend_width=lg.Position(3); legend_gap=42; window_width=108;
+-    left=p(1)+(p(3)-legend_width-legend_gap-window_width)/2;
+-    lg.Units='normalized'; lg.Position=[left p(2)+p(4)-53 legend_width 22]./canvas([1 2 1 2]);
+-    label(fig,[left+legend_width+legend_gap p(2)+p(4)-53 window_width 22], ...
+-        sprintf('窗长 %.3f μs',stats.window_duration_us),8.5,false);
++    legend(a,[h1 h2],{'窗内均方根误差','窗内最大误差'}, ...
++        'Orientation','horizontal','Box','off','Color','w','FontSize',7,'Location','northeast');
++    in_axes_note(a,sprintf('窗长 %.3f μs',stats.window_duration_us),'se');
+ else
+     placeholder(a,stats.reason);
+ end
+@@ -255,6 +254,7 @@ if stats.rejection_visible
+     if isfinite(stats.rejected_fraction), notice=sprintf('%s（%.2f%%）',notice,100*stats.rejected_fraction); end
+ end
+ if ~isempty(notice)
++    setappdata(a,'footer_clearance',20);
+     h=label(fig,[p(1)+68 p(2)+1 p(3)-84 20],notice,8.5,false); h.HorizontalAlignment='left';
+     texts{11}{end+1}=notice;
+ end
+@@ -267,7 +267,7 @@ if all(payload_counts==payload_counts(1)) && payload_counts(1)>0
+ end
+ drawnow; axes_handles=findall(fig,'Type','axes');
+ set(axes_handles,'Box','on','TickDir','out','GridAlpha',.13,'Layer','top');
+-drawnow; issues=verify_layout(fig,panels);
++drawnow; fit_stage_axes(fig); place_side_metrics(fig); issues=verify_layout(fig,panels);
+ set(fig,'PaperUnits','inches','PaperPosition',[0 0 W/120 H/120],'PaperSize',[W/120 H/120]);
+ archive_dir=fullfile(output_dir,'data');
+ if ~isfolder(archive_dir), archive_dir=fullfile(output_dir,'diagnostics'); end
+@@ -417,53 +417,86 @@ end
+ a = axes(fig,'Units','normalized','Position', ...
+     [p(1)+68 p(2)+bottom p(3)-84 p(4)-bottom-top]./canvas([1 2 1 2]));
+ setappdata(a,'panel_rect',p);
++setappdata(a,'footer_clearance',4);
+ end
+ 
+ function a = stage_axis(fig,p,has_notes)
+ canvas = getappdata(fig,'canvas_size');
+ rect = stage_rect(p,has_notes);
+-a = axes(fig,'Units','normalized','Position',rect./canvas([1 2 1 2]));
++a = axes(fig,'Units','normalized','Position',rect./canvas([1 2 1 2]),'FontSize',7);
+ setappdata(a,'panel_rect',p);
++setappdata(a,'stage_has_notes',has_notes);
++if p(2)>20, setappdata(a,'footer_clearance',4); end
+ end
+ 
+-function rect = stage_rect(p,has_notes)
+-% Large canvases scale MATLAB's tick-label inset; reserve a little extra
+-% vertical clearance there while keeping the compact layout as large as it
+-% can be.
+-vertical_clearance = 97;
+-if p(3) > 400
+-    vertical_clearance = 105;
+-end
+-side = min(p(3)-80,p(4)-vertical_clearance);
+-left = p(1)+(p(3)-side)/2;
+-if has_notes, left = p(1)+44; end
+-% Reserve enough lower clearance for constellation tick labels and axis title.
+-rect = [left p(2)+70 side side];
++function fit_stage_axes(fig)
++% Fit the complete axes decoration, using MATLAB's measured font extents.
++canvas=getappdata(fig,'canvas_size');
++for pass=1:3
++    drawnow;
++    for a=reshape(findall(fig,'Type','axes'),1,[])
++        if strcmp(a.Visible,'off'), continue; end
++        p=getappdata(a,'panel_rect');
++        if isempty(p), continue; end
++        inset=a.TightInset.*canvas([1 2 1 2]);
++        lower=24;
++        if isappdata(a,'footer_clearance'), lower=getappdata(a,'footer_clearance')+4; end
++        if ~isappdata(a,'stage_has_notes')
++            box=a.Position.*canvas([1 2 1 2]);
++            lo=max(box(2),p(2)+lower+inset(2));
++            hi=min(box(2)+box(4),p(2)+p(4)-28-inset(4));
++            a.Position=[box(1) lo box(3) hi-lo]./canvas([1 2 1 2]);
++            continue;
++        end
++        top=28;
++        side=min(p(3)-sum(inset([1 3]))-6,p(4)-lower-top-sum(inset([2 4])));
++        left=p(1)+inset(1)+(p(3)-sum(inset([1 3]))-side)/2;
++        if isappdata(a,'side_metrics'), left=p(1)+inset(1)+3; end
++        a.Position=[left p(2)+lower+inset(2) side side]./canvas([1 2 1 2]);
++    end
++end
++drawnow;
+ end
+ 
+-function rect = stage_note_rect(p)
+-stage = stage_rect(p,true);
+-left = stage(1)+stage(3)+4;
+-rect = [left 0 max(1,p(1)+p(3)-left-4) 18];
++function rect = stage_rect(p,has_notes) %#ok<INUSD>
++% In-frame notes do not reserve any exterior area.
++top=36;
++side = min(p(3)-60,p(4)-56-top);
++left = p(1)+(p(3)-side)/2;
++rect = [left p(2)+56 side side];
+ end
+ 
+-function font_size = stage_note_font(rect,preferred)
+-font_size = max(6.2,min(preferred,preferred*rect(3)/164));
++function h=in_axes_note(a,value,corner,avoid_data)
++if nargin<4, avoid_data=false; end
++x=.98; y=.97; ha='right'; va='top';
++if contains(corner,'w'), x=.02; ha='left'; end
++if contains(corner,'s'), y=.03; va='bottom'; end
++h=text(a,x,y,value,'Units','normalized','HorizontalAlignment',ha, ...
++    'VerticalAlignment',va,'FontName','Microsoft YaHei UI','FontSize',6.5, ...
++    'Interpreter','none','BackgroundColor',[1 1 1],'Margin',1,'Clipping','on', ...
++    'Tag','rx_in_axes_note');
++setappdata(h,'avoid_data',avoid_data);
++canvas=getappdata(ancestor(a,'figure'),'canvas_size');
++if avoid_data && canvas(1)<1600, h.FontSize=5.5; end
+ end
+ 
+-function side_note(fig,p,lines,font_size)
+-side = min(p(3)-186,p(4)-116);
+-left = p(1)+60+side+12;
+-label(fig,[left p(2)+78 p(1)+p(3)-left side],lines,font_size,false);
++function place_side_metrics(fig)
++canvas=getappdata(fig,'canvas_size');
++for a=reshape(findall(fig,'Type','axes'),1,[])
++    if ~isappdata(a,'side_metrics'), continue; end
++    p=getappdata(a,'panel_rect'); box=a.Position.*canvas([1 2 1 2]);
++    left=box(1)+box(3)+8; width=p(1)+p(3)-left-3;
++    h=label(fig,[left box(2)+box(4)-74 width 72],getappdata(a,'side_metrics'),6.5,false);
++    h.HorizontalAlignment='left'; h.VerticalAlignment='top';
++end
+ end
+ 
+-function [a,note] = split_axis(fig,p,k)
+-height = (p(4)-168)/2;
+-y = p(2)+78+(2-k)*(height+30);
++function a = split_axis(fig,p,k)
++height = (p(4)-92)/2;
++y = p(2)+52+(2-k)*(height+10);
+ canvas = getappdata(fig,'canvas_size');
+ a = axes(fig,'Units','normalized','Position', ...
+-    [p(1)+78 y p(3)-101 height]./canvas([1 2 1 2]));
+-note = [p(1)+42 y+height+2 p(3)-45 18];
++    [p(1)+60 y p(3)-72 height]./canvas([1 2 1 2]));
+ setappdata(a,'panel_rect',p);
+ end
+ 
+@@ -478,7 +511,7 @@ xticks(a,ticks); yticks(a,ticks); a.XTickLabel=numeric_labels(a.XTick); a.YTickL
+ actual_position = getpixelposition(a);
+ if actual_position(3)<150 && limit<=2, xticks(a,-1:1); a.XTickLabel=numeric_labels(a.XTick); end
+ xtickangle(a,0); ytickangle(a,0);
+-xlabel(a,'同相分量 I'); ylabel(a,'正交分量 Q'); grid(a,'on');
++xlabel(a,'同相分量 I','FontSize',7); ylabel(a,'正交分量 Q','FontSize',7); grid(a,'on');
+ end
+ 
+ function problems = verify_layout(fig,panels)
+@@ -495,7 +528,9 @@ for k = 1:numel(axes_handles)
+         problems{end+1} = sprintf('Axes width: %s; extent=%s panel=%s', ...
+             string(a.YLabel.String),mat2str(extent),mat2str(p)); %#ok<AGROW>
+     end
+-    if extent(2)<p(2)+20 || sum(extent([2 4]))>sum(p([2 4]))-24
++    lower=20;
++    if isappdata(a,'footer_clearance'), lower=getappdata(a,'footer_clearance'); end
++    if extent(2)<p(2)+lower || sum(extent([2 4]))>sum(p([2 4]))-24
+         problems{end+1} = sprintf('Axes height: %s; extent=%s panel=%s', ...
+             string(a.YLabel.String),mat2str(extent),mat2str(p)); %#ok<AGROW>
+     end
+@@ -512,6 +547,12 @@ for k = 1:numel(annotations)
+     end
+     h.FitBoxToText = 'off'; h.Position = original;
+ end
++for h=reshape(findall(fig,'Tag','rx_in_axes_note'),1,[])
++    e=h.Extent;
++    if any(e(1:2)<-.005) || any(e(1:2)+e(3:4)>1.005)
++        problems{end+1}=sprintf('In-frame note outside axes: %s',strjoin(string(h.String),' ')); %#ok<AGROW>
++    end
++end
+ assert(size(panels,1)==11);
+ 
+ end
+diff --git a/code/+msiq/rx_scope_worker.m b/code/+msiq/rx_scope_worker.m
+index d4b6965..39be0a6 100644
+--- a/code/+msiq/rx_scope_worker.m
++++ b/code/+msiq/rx_scope_worker.m
+@@ -7,11 +7,14 @@ if file_only && isempty(data.factory)
+ elseif isempty(data.factory)
+     io = struct('open',@(s) msiq.instruments.open_session('scope',s,'raw'), ...
+         'query',@msiq.instruments.query_scpi,'write',@msiq.instruments.write_scpi, ...
+-        'capture',@msiq.instruments.capture_scope_raw,'close',@msiq.instruments.close_session);
++        'capture',@(s,c) msiq.instruments.capture_scope_raw(s,c,struct('mode','observation')), ...
++        'close',@msiq.instruments.close_session);
+ else
++    if ~file_only, data.factory_options.observation_mode=true; end
+     io = feval(data.factory,data.factory_options);
+ end
+ session = []; status = struct(); full_read = []; last_calibration = [];
++settings=struct(); previous_raw=struct(); previous_analysis=struct();
+ owner=containers.Map({'session'},{[]});
+ guard=onCleanup(@() close_owner(owner,io));
+ query_fn=@(s,c) progress_query(io,s,c,folder);
+@@ -39,18 +42,37 @@ while ~isfile(fullfile(folder,'close.flag')) && parent_alive(data.parent_pid)
+                 session = io.open(data.specification);
+                 owner('session')=session;
+                 status = msiq.instruments.rx_scope_state(session,query_fn);
++                settings=msiq.instruments.rx_scope_settings(session,query_fn,struct(),true);
++                status.settings=settings;
++                previous_raw=struct(); previous_analysis=struct();
+                 last_calibration = [];
+                 full_read = tic;
+             case 'status'
+                 status = msiq.instruments.rx_scope_state(session,query_fn);
++                if isfield(request,'extended_status') && request.extended_status
++                    settings=msiq.instruments.rx_scope_settings(session,query_fn,settings,false);
++                end
++                settings=sync_sample_mode(settings,read_sample_mode(session,query_fn));
++                status.settings=settings;
+                 full_read = tic;
+             case 'capture'
+                 if isempty(full_read) || toc(full_read)>=5
+                     status = msiq.instruments.rx_scope_state(session,query_fn);
++                    settings=msiq.instruments.rx_scope_settings(session,query_fn,settings,false);
+                     full_read = tic;
+                 else
+                     status = msiq.instruments.rx_scope_state(session,query_fn,status,request.channels);
+                 end
++                settings=sync_sample_mode(settings,read_sample_mode(session,query_fn));
++                status.settings=settings;
++                if isfield(settings,'sample_mode') && ...
++                        any(strcmpi(settings.sample_mode,{'SEQUENCE','SEQUENCE_MODE','RIS','RIS_MODE'}))
++                    response.raw=struct('channels',struct([]),'new_data',false, ...
++                        'capture_valid',false,'capture_reason','不支持当前采集模式，请选择实时模式', ...
++                        'unsupported_mode',true,'observation_status','不支持当前采集模式');
++                    response.read_s=toc(started);
++                    response.ok=true; response.status=status;
++                else
+                 active = status.channels(strcmp({status.channels.trace_state},'ON'));
+                 requested = request.channels(ismember(request.channels,{active.channel}));
+                 raw = struct('channels',struct([]));
+@@ -61,6 +83,7 @@ while ~isfile(fullfile(folder,'close.flag')) && parent_alive(data.parent_pid)
+                 end
+                 after=msiq.instruments.rx_scope_state(session,query_fn,status,request.channels);
+                 before=status; status=after;
++                status.settings=settings;
+                 raw.capture_consistency=msiq.rx_capture_consistency(raw,before,after,request.channels);
+                 if ~isequaln(raw.capture_consistency,last_calibration)
+                     for item=raw.capture_consistency
+@@ -70,11 +93,26 @@ while ~isfile(fullfile(folder,'close.flag')) && parent_alive(data.parent_pid)
+                     last_calibration=raw.capture_consistency;
+                 end
+                 raw = complete_channels(raw,request.channels);
++                raw=msiq.rx_observation_freshness(raw,previous_raw,status);
+                 response.read_s=toc(started);
+                 phase = '频谱分析';
+                 progress(folder,phase);
+                 analysis_started=tic;
+-                response.raw = msiq.plotting.rx_live_analysis(raw,status);
++                if ~raw.new_data && isfield(previous_analysis,'channels') && ...
++                        any(arrayfun(@(r) ~isempty(r.samples),raw.channels)) && ...
++                        isequal({raw.channels.channel},{previous_analysis.channels.channel}) && ...
++                        isequal(arrayfun(@(r) ~isempty(r.samples),raw.channels), ...
++                            arrayfun(@(r) ~isempty(r.samples),previous_analysis.channels))
++                    response.raw=previous_analysis;
++                    for name={'new_data','freshness_known','observation_status','observed_at'}
++                        if isfield(raw,name{1}), response.raw.(name{1})=raw.(name{1}); end
++                    end
++                    for n=1:numel(raw.channels)
++                        response.raw.channels(n).fresh=raw.channels(n).fresh;
++                    end
++                else
++                    response.raw = msiq.plotting.rx_live_analysis(raw,status);
++                end
+                 response.raw.capture_valid = any([response.raw.channels.wave_valid]);
+                 if response.raw.capture_valid
+                     response.raw.capture_reason = '';
+@@ -84,6 +122,8 @@ while ~isfile(fullfile(folder,'close.flag')) && parent_alive(data.parent_pid)
+                     response.raw.capture_reason = ['未收到有效波形：' strjoin(requested, '、')];
+                 end
+                 response.analysis_s=toc(analysis_started);
++                previous_raw=raw; previous_analysis=response.raw;
++                end
+             case 'setting'
+                 command = sprintf('%s %.15g',request.command,request.value);
+                 progress(folder,['写入 | ' command]);
+@@ -101,6 +141,19 @@ while ~isfile(fullfile(folder,'close.flag')) && parent_alive(data.parent_pid)
+                 end
+                 response.accepted = accepted;
+                 status = msiq.instruments.rx_scope_state(session,query_fn);
++                settings=msiq.instruments.rx_scope_settings(session,query_fn,settings,false);
++                status.settings=settings;
++                previous_raw=struct(); previous_analysis=struct();
++                full_read=tic;
++            case 'control'
++                command=request.key;
++                progress(folder,['写入 | ' command]);
++                response.accepted=msiq.instruments.apply_rx_scope_setting( ...
++                    session,request,query_fn,io.write);
++                status=msiq.instruments.rx_scope_state(session,query_fn);
++                settings=msiq.instruments.rx_scope_settings(session,query_fn,settings,false);
++                status.settings=settings;
++                previous_raw=struct(); previous_analysis=struct();
+                 full_read=tic;
+             case 'release'
+                 close_owner(owner,io); session=[];
+@@ -137,6 +190,27 @@ end
+ 
+ end
+ 
++function mode=read_sample_mode(session,query_fn)
++reply=strtrim(char(string(query_fn(session, ...
++    'VBS? ''return=app.Acquisition.Horizontal.SampleMode'''))));
++mode=regexp(upper(reply),'REALTIME|SEQUENCE|RIS','match','once');
++if isempty(mode)
++    error('RX_Workbench:Readback','无法确认采集模式：%s',reply);
++end
++end
++
++function settings=sync_sample_mode(settings,mode)
++settings.sample_mode=mode;
++if isfield(settings,'fields')
++    index=find(strcmp({settings.fields.key},'SAMPLEMODE'),1);
++    if ~isempty(index)
++        settings.fields(index).value=mode;
++        settings.fields(index).available=true;
++        settings.fields(index).error='';
++    end
++end
++end
++
+ function yes=should_disconnect(exception)
+ identifier=lower(char(string(exception.identifier)));
+ yes=strcmp(identifier,'rx_workbench:readback') || ...
+@@ -168,6 +242,7 @@ end
+ function yes = parent_alive(pid)
+ try
+     process = System.Diagnostics.Process.GetProcessById(pid);
++    cleanup = onCleanup(@() process.Dispose()); %#ok<NASGU>
+     yes = ~process.HasExited;
+ catch
+     yes = false;
+diff --git a/code/+msiq/rx_workbench_app.m b/code/+msiq/rx_workbench_app.m
+index 7ed5062..0696140 100644
+--- a/code/+msiq/rx_workbench_app.m
++++ b/code/+msiq/rx_workbench_app.m
+@@ -22,6 +22,9 @@ set([state.home.h_ch1 state.home.h_ch2], 'Callback', @on_channel);
+ for edit_handle = state.home.hardware_edits
+     set(edit_handle, 'Callback', @on_hardware_edit);
+ end
++for edit_handle = state.home.extended_edits
++    set(edit_handle,'Callback',@(~,~) submit_control_edit(fig,edit_handle));
++end
+ set([state.home.h_center state.home.h_bandwidth state.home.h_psd_min ...
+     state.home.h_psd_max], 'Callback', @on_display_edit);
+ set(state.home.h_auto_psd, 'Callback', @on_auto_psd);
+@@ -36,7 +39,16 @@ setappdata(fig, 'rx_workbench_startup', @on_startup);
+ layout_home(state.home, fig);
+ sync_display_controls(state);
+ msiq.plotting.rx_live_dashboard(state.home.axes, struct(), struct(), struct(), struct());
+-if options.visible, set(fig, 'Visible', 'on'); end
++if options.visible
++    % Materialize the same window's native settings widgets outside all
++    % monitors before showing the observation page; never flash settings.
++    destination=get(fig,'Position'); monitors=get(groot,'MonitorPositions');
++    staged=destination; staged(1)=max(monitors(:,1)+monitors(:,3))+100;
++    set(fig,'Position',staged);
++    set_page(fig,'settings'); set(fig,'Visible','on'); drawnow;
++    set_page(fig,'home'); drawnow;
++    set(fig,'Position',destination);
++end
+ if options.maximize && options.visible, set(fig, 'WindowState', 'maximized'); end
+ drawnow;
+ if options.synchronous_startup
+@@ -71,7 +83,10 @@ end
+ 
+     function on_play(~, ~)
+         current = get_state();
+-        if current.busy || ~ismember(current.page,["home","settings"]) || current.running, return; end
++        if ~ismember(current.page,["home","settings"]) || current.running || ...
++                current.close_requested || ~isempty(current.pending_page), return; end
++        if current.busy && (~current.asynchronous || ...
++                strcmp(field_or(current.worker_request,'action',''),'release')), return; end
+         current.capture_rejections = 0;
+         setappdata(fig,'rx_workbench_state',current);
+         if current.asynchronous
+@@ -162,7 +177,7 @@ end
+         names = get(src, 'String');
+         selected = names{get(src, 'Value')};
+         other = current.channels{3-index};
+-        if current.busy || ~isempty(current.pending) || strcmp(selected, other)
++        if current.busy || ~isempty(current.pending) || ~isempty(current.control_pending) || strcmp(selected, other)
+             set(src, 'Value', str2double(current.channels{index}(2)));
+             set_status(fig, ternary(strcmp(selected, other), ...
+                 '两路不能选择同一通道', '操作尚未完成，稍后切换通道'));
+@@ -209,6 +224,9 @@ end
+             if size_changed || current.plot_dirty, redraw_current(fig); end
+         else
+             set_page(fig,'settings');
++            current=get_state(); current.settings_refresh_pending=true;
++            setappdata(fig,'rx_workbench_state',current);
++            drain_settings(fig);
+         end
+     end
+ 
+@@ -262,6 +280,18 @@ end
+         try
+             status = msiq.instruments.rx_scope_state(current.session, ...
+                 @(s,c) monitored_query(fig,s,c));
++            if isempty(current.settings_last_read) || seconds(datetime('now')-current.settings_last_read)>=5
++                current.scope_status.settings=read_extended(current,current.session,false);
++                current.settings_last_read=datetime('now');
++                setappdata(fig,'rx_workbench_state',current);
++            end
++            settings=field_or(current.scope_status,'settings',struct());
++            if any(strcmpi(field_or(settings,'sample_mode',''),{'SEQUENCE','RIS'}))
++                current.busy=false; current.running=false; current.paused=true;
++                setappdata(fig,'rx_workbench_state',current);
++                set_status(fig,'不支持当前采集模式，请在设置中选择实时模式');
++                update_buttons(fig); return;
++            end
+             active = status.channels;
+             active = active(ismember({active.channel}, current.channels));
+             requested = current.channels(ismember(current.channels, {active(strcmp({active.trace_state},'ON')).channel}));
+@@ -272,16 +302,17 @@ end
+             end
+             after=msiq.instruments.rx_scope_state(current.session,current.io.query,status,current.channels);
+             before=status; status=after;
+-            current=get_state(); current.scope_status=after;
++            status.settings=field_or(current.scope_status,'settings',struct());
++            current=get_state(); current.scope_status=status;
+             setappdata(fig,'rx_workbench_state',current);
+             raw.capture_consistency=msiq.rx_capture_consistency(raw,before,after,current.channels);
+             raw = complete_channels(raw, current.channels);
+             current = get_state();
++            raw=msiq.rx_observation_freshness(raw,current.raw,status);
+             fresh_raw = msiq.plotting.rx_live_analysis(raw,status);
+             fresh_raw.capture_valid = any([fresh_raw.channels.wave_valid]);
+             if fresh_raw.capture_valid
+                 fresh_raw.capture_reason = '';
+-                fresh_raw.captured_at = datetime('now');
+             elseif isempty(requested)
+                 fresh_raw.capture_reason = ['所选通道未开启：' strjoin(current.channels, '、')];
+             else
+@@ -290,7 +321,7 @@ end
+             old_has_data = isfield(current.raw,'channels') && ...
+                 any(arrayfun(@(r) field_or(r,'wave_valid',false), ...
+                 field_or(current.raw,'channels',struct([]))));
+-            if fresh_raw.capture_valid || ~old_has_data
++            if fresh_raw.capture_valid || ~old_has_data || isempty(requested)
+                 current.raw = fresh_raw;
+                 current.raw_scope_status = status;
+             end
+@@ -308,7 +339,7 @@ end
+             sync_controls(current, false);
+             redraw_current(fig);
+             if fresh_raw.capture_valid
+-                set_status(fig,ternary(current.running,'观察中','已暂停'));
++                set_status(fig,ternary(current.running,field_or(fresh_raw,'observation_status','观察中'),'已暂停'));
+             else
+                 set_status(fig,['无有效波形 | ' current.stale_reason]);
+             end
+@@ -386,7 +417,7 @@ end
+             current.close_requested = true;
+             current.running = false;
+             setappdata(fig,'rx_workbench_state',current);
+-            set_status(fig,'正在结束当前读取并恢复触发');
++            set_status(fig,'正在结束当前读取');
+             return;
+         end
+         if ~isempty(current.timer) && isvalid(current.timer)
+@@ -418,7 +449,7 @@ if options.asynchronous && ~isempty(fieldnames(options.io)) && isempty(options.w
+ end
+ default_io = struct('open', @(spec) msiq.instruments.open_session('scope',spec,'raw'), ...
+     'query', @msiq.instruments.query_scpi, 'write', @msiq.instruments.write_scpi, ...
+-    'capture', @msiq.instruments.capture_scope_raw, 'close', @close_scope);
++    'capture', @(s,c) msiq.instruments.capture_scope_raw(s,c,struct('mode','observation')), 'close', @close_scope);
+ options.injected_io = ~isempty(fieldnames(options.io));
+ if isempty(fieldnames(options.io))
+     options.io = default_io;
+@@ -457,6 +488,8 @@ state = struct('figure',fig,'cfg',cfg,'session',[],'io',options.io,'connected',f
+     'reference_pending',false,'first_capture_complete',false,'stale_reason','', ...
+     'reference_worker',[],'reference_busy',false,'reference_request',struct(), ...
+     'pending',struct('handle',{},'command',{},'value',{},'revision',{}), ...
++    'control_pending',struct('handle',{},'key',{},'value',{},'revision',{}), ...
++    'settings_refresh_pending',false,'settings_last_read',[], ...
+     'revision',0,'pending_page','','close_requested',false, ...
+     'page',"home",'plot_dirty',false,'plot_state',struct('center_hz',0,'bandwidth_hz', ...
+     cfg.waveform.symbol_rate_hz*(1+cfg.waveform.rolloff), ...
+@@ -569,18 +602,22 @@ home.h_freshness = ui_text(home.panel,'尚无采集',[0 0 1 1]);
+ home.param_panel = uipanel(home.panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
+ home.groups = gobjects(1,3);
+ home.hardware_edits = gobjects(1,6);
++home.extended_edits=gobjects(1,0);
+ for k=1:3
+     p = uipanel(home.param_panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
+     home.groups(k)=p;
+     if k<=2
+         home.(['h_ch' num2str(k)])=uicontrol(p,'Style','popupmenu', ...
+             'String',{'C1','C2','C3','C4'},'Value',str2double(state.channels{k}(2)), ...
+-            'Position',[4 100 75 25]);
++            'Position',[4 104 52 25]);
++        home.(['h_trace' num2str(k)])=extended_row(p,'','TRA','',1,[178 104 72 25],k);
+     else
+         label=ui_text(p,'整机时基',[4 102 75 22]); set(label,'FontWeight','bold');
+     end
+-    label=ui_text(p,'回读',[92 102 68 22]); set(label,'HorizontalAlignment','right');
+-    label=ui_text(p,'输入',[178 102 72 22]); set(label,'HorizontalAlignment','center');
++    if k==3
++        label=ui_text(p,'回读',[92 102 68 22]); set(label,'HorizontalAlignment','right');
++        label=ui_text(p,'输入',[178 102 72 22]); set(label,'HorizontalAlignment','center');
++    end
+     if k<=2
+         home.(['h_vdiv' num2str(k)])=hardware_row(p,'量程','V/div',k,'VDIV',65);
+         home.(['h_off' num2str(k)])=hardware_row(p,'偏置','V',k,'OFST',20);
+@@ -593,8 +630,17 @@ for k=1:3
+         home.hardware_edits(6)=home.h_trdl;
+     end
+ end
++home.trigger_panel=uipanel(home.panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
++trigger_keys={'TRMD','TRSOURCE','TRSLOPE','TRLEVEL'};
++trigger_labels={'触发模式','触发源','边沿','触发电平'};
++home.trigger_groups=gobjects(1,4);
++for k=1:4
++    p=uipanel(home.trigger_panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
++    home.trigger_groups(k)=p;
++    extended_row(p,trigger_labels{k},trigger_keys{k},ternary(k==4,'V',''),1,[146 16 86 25],0);
++end
+ home.settings_panel=uipanel(home.panel,'Units','pixels','BorderType','none', ...
+-    'BackgroundColor',bg,'Visible','off');
++    'BackgroundColor',bg,'Visible','on');
+ home.content=uipanel(home.settings_panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
+ home.scroll=uicontrol(home.settings_panel,'Style','slider','Min',0,'Max',1,'Value',1);
+ p=home.content;
+@@ -610,7 +656,36 @@ home.h_band_source=ui_text(p,state.band_source,[16 99 340 26]);
+ set(home.h_band_source,'TooltipString',state.reference_bundle);
+ label=ui_text(p,'示波器回读',[400 450 260 24]); set(label,'FontWeight','bold','FontSize',10);
+ home.h_scope_info=ui_text(p,'尚未回读',[400 105 610 325]);
+-home.content_height=490;
++home.settings_groups=gobjects(1,0);
++for ch=1:2
++    x=16+(ch-1)*500; y=740;
++    group=uipanel(home.content,'Units','pixels','Title',[state.channels{ch} ' 通道'], ...
++        'Position',[x y 478 152],'BackgroundColor',bg);
++    set(group,'UserData',struct('index',ch,'label','通道'));
++    home.settings_groups(end+1)=group;
++    extended_row(group,'耦合 / 阻抗','CPL','',1,[278 90 150 25],ch);
++    extended_row(group,'带宽限制','BWL','',1,[278 48 150 25],ch);
++end
++for ch=1:2
++    x=16+(ch-1)*500; y=520;
++    group=uipanel(home.content,'Units','pixels','Title',[state.channels{ch} ' 信号处理'], ...
++        'Position',[x y 478 200],'BackgroundColor',bg);
++    set(group,'UserData',struct('index',ch,'label','信号处理'));
++    home.settings_groups(end+1)=group;
++    keys={'AVERAGE','INTERPOLATION','ERES','RESPONSE'}; labels={'连续平均','插值','增强分辨率','响应优化'};
++    for n=1:4
++        extended_row(group,labels{n},keys{n},ternary(n==1,'次',''),1,[278 150-(n-1)*40 150 25],ch);
++    end
++end
++group=uipanel(home.content,'Units','pixels','Title','触发与采集', ...
++    'Position',[16 920 978 156],'BackgroundColor',bg);
++home.settings_groups(end+1)=group;
++extended_row(group,'保持方式','HTYPE','',1,[278 88 150 25],0);
++extended_row(group,'保持时间','HTIME','ns',1e-9,[278 45 150 25],0);
++extended_row(group,'记录长度上限','MSIZ','点',1,[778 88 130 25],0);
++extended_row(group,'采集模式','SAMPLEMODE','',1,[778 45 130 25],0);
++ui_text(home.content,'参数 | 当前回读 | 目标输入 · 修改后写入并回读，打开设置不覆盖仪器',[16 1082 970 24]);
++home.content_height=1120;
+ home.plot_panel=uipanel(home.panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
+ home.axes=struct();
+ home.plot_frames=gobjects(1,4); home.plot_titles=gobjects(1,4); home.plot_metrics=gobjects(1,4);
+@@ -634,6 +709,11 @@ for k=1:2
+ end
+ home.h_wave_title=home.plot_titles([1 3]); home.h_spectrum_title=home.plot_titles([2 4]);
+ home.axes.wave_info=home.h_wave_info; home.axes.spectrum_info=home.h_spectrum_info;
++% Keep settings widgets laid out behind an opaque observation surface.
++% Switching pages must not materialize hundreds of native widget peers.
++home.observation_panel=uipanel(home.panel,'Units','pixels','BorderType','none','BackgroundColor',bg);
++set([home.param_panel home.trigger_panel home.plot_panel],'Parent',home.observation_panel);
++uistack(home.h_freshness,'top');
+ 
+     function h=hardware_row(parent,label,unit,index,command,y)
+         ui_text(parent,label,[4 y+3 64 22]);
+@@ -657,6 +737,47 @@ home.axes.wave_info=home.h_wave_info; home.axes.spectrum_info=home.h_spectrum_in
+         unit_handle=ui_text(p,unit,[282 y+3 110 22]);
+         setappdata(h,'rx_display_unit',unit_handle);
+     end
++    function h=extended_row(parent,label,key,unit,multiplier,position,index)
++        x=position(1); y=position(2); width=position(3);
++        if strcmp(key,'TRA')
++            current=ui_text(parent,'--',[92 y 68 22]);
++            error_position=[4 y-16 244 15];
++        else
++            label_x=max(4,x-270); current_x=max(80,x-125);
++            if x<200, label_x=4; current_x=72; end
++            setting_label(parent,label,[label_x y+2 max(62,current_x-label_x-8) 22]);
++            current=ui_text(parent,'--',[current_x y+2 x-current_x-10 22]);
++            error_position=[label_x y-16 x+width-label_x 15];
++        end
++        set(current,'HorizontalAlignment','right');
++        numeric=ismember(key,{'TRLEVEL','HTIME','MSIZ','AVERAGE'});
++        h=uicontrol(parent,'Style',ternary(numeric,'edit','popupmenu'),'String',{'--'}, ...
++            'Position',position,'BackgroundColor',[1 1 1],'HorizontalAlignment','right');
++        unit_h=gobjects(0); if ~isempty(unit), unit_h=setting_label(parent,unit,[x+width+4 y+2 32 22]); end
++        data=struct('key',key,'index',index,'multiplier',multiplier,'current',current,'unit',unit_h, ...
++            'error',gobjects(0),'retry',gobjects(0),'error_position',error_position, ...
++            'choices',{{}},'displayed','--','actual',[], ...
++            'numeric',numeric,'available',false,'writable',false);
++        suffix=''; if index>0, suffix=sprintf('_%d',index); end
++        set(h,'UserData',data,'Tag',['rx_setting_' strrep(key,':','_') suffix]);
++        home.extended_edits(end+1)=h;
++    end
++end
++
++function h=setting_label(parent,value,position)
++% Static labels share a graphics surface instead of separate native widgets.
++canvas=getappdata(parent,'rx_setting_labels');
++if isempty(canvas) || ~isgraphics(canvas)
++    canvas=axes('Parent',parent,'Units','normalized','Position',[0 0 1 1], ...
++        'XLim',[0 1],'YLim',[0 1],'Visible','off','HitTest','off', ...
++        'HandleVisibility','off','Color','none');
++    setappdata(parent,'rx_setting_labels',canvas);
++    uistack(canvas,'bottom');
++end
++h=text(canvas,0,0,value,'Units','pixels','Position',[position(1) position(2)+5 0], ...
++    'FontName',get(groot,'defaultUicontrolFontName'),'FontSize',9, ...
++    'Interpreter','none','VerticalAlignment','bottom','Color',[.16 .18 .21], ...
++    'HitTest','off','Clipping','on');
+ end
+ 
+ function h = ui_text(parent, value, position)
+@@ -673,6 +794,7 @@ if isequal(getappdata(home.panel,'rx_layout_size'),[w h])
+     return;
+ end
+ set(home.panel,'Position',[0 0 w h]);
++set(home.observation_panel,'Position',[0 0 w h-50]);
+ buttons=[home.h_pause home.h_play home.h_single home.h_repeat home.h_settings];
+ for k=1:5, set(buttons(k),'Position',[16+(k-1)*82 h-46 74 30]); end
+ set(home.h_status,'Position',[440 h-47 max(100,w-456) 32]);
+@@ -680,6 +802,8 @@ set(home.h_freshness,'Position',[16 0 max(100,w-32) 20],'FontSize',8);
+ set(home.param_panel,'Position',[12 h-190 w-24 132]);
+ column=(w-40)/3;
+ for k=1:3, set(home.groups(k),'Position',[(k-1)*column 0 column-12 132]); end
++set(home.trigger_panel,'Position',[12 h-238 w-24 46]);
++for k=1:4, set(home.trigger_groups(k),'Position',[(k-1)*(w-24)/4 0 (w-24)/4 46]); end
+ viewport=max(100,h-80);
+ set(home.settings_panel,'Position',[12 24 w-24 viewport]);
+ maximum=max(0,home.content_height-viewport);
+@@ -705,7 +829,7 @@ function layout_plots(home,fig)
+ if strcmp(get(home.plot_panel,'Visible'),'off'), return; end
+ pos=get(fig,'Position'); w=pos(3); h=pos(4);
+ if isequal(getappdata(home.plot_panel,'rx_layout_size'),[w h]), return; end
+-plot_h=max(200,h-214);
++plot_h=max(200,h-262);
+ set(home.plot_panel,'Position',[12 22 w-24 plot_h]);
+ gap_x=24; gap_y=12; column=(w-24-gap_x)/2; row=(plot_h-gap_y)/2;
+ axes_list=[home.axes.wave_top home.axes.spectrum_top home.axes.wave_bottom home.axes.spectrum_bottom];
+@@ -804,8 +928,8 @@ if state.busy
+         state.last_worker_error=response.error;
+         state.raw_stale=true;
+         state.stale_reason=ternary(disconnect,'读取失败','后台处理失败');
+-        if strcmp(request.action,'setting')
+-            field_error(request.handle,[request.command ' | ' response.error],true);
++        if ismember(request.action,{'setting','control'})
++            field_error(request.handle,[field_or(request,'command',field_or(request,'key','')) ' | ' response.error],true);
+         end
+         setappdata(fig,'rx_workbench_state',state);
+         set_status(fig,[ternary(disconnect,'连接失败','采集失败') ' | ' response.error]);
+@@ -813,6 +937,7 @@ if state.busy
+         switch request.action
+             case {'connect','status'}
+                 state.scope_status=response.status;
++                state.settings_refresh_pending=false;
+                 state.connected=true;
+                 setappdata(fig,'rx_workbench_state',state);
+                 sync_controls(state,false);
+@@ -824,7 +949,8 @@ if state.busy
+                     state.last_capture_elapsed_s=response.elapsed_s;
+                     state.last_analysis_s=response.analysis_s;
+                     valid=field_or(response.raw,'capture_valid',false);
+-                    if valid || ~isfield(state.raw,'channels') || isempty(field_or(state.raw,'channels',struct([])))
++                    all_off=startsWith(field_or(response.raw,'capture_reason',''),'所选通道未开启');
++                    if valid || all_off || ~isfield(state.raw,'channels') || isempty(field_or(state.raw,'channels',struct([])))
+                         state.raw=response.raw;
+                         state.raw_scope_status=response.status;
+                     end
+@@ -832,19 +958,27 @@ if state.busy
+                     state.stale_reason=field_or(response.raw,'capture_reason','');
+                     if valid
+                         state.first_capture_complete=true;
+-                        state.raw.captured_at=datetime('now');
+                     end
+                     setappdata(fig,'rx_workbench_state',state);
+                     sync_controls(state,false);
+                     redraw_current(fig);
+                     if valid
+-                        set_status(fig,ternary(state.running,'观察中','已暂停'));
++                        set_status(fig,ternary(state.running,field_or(response.raw,'observation_status','观察中'),'已暂停'));
+                     else
+                         set_status(fig,['无有效波形 | ' state.stale_reason]);
+                     end
+                 end
++            case 'control'
++                state.scope_status=response.status;
++                state.settings_refresh_pending=false;
++                state.raw_stale=true; state.stale_reason='参数已更新，图像尚未更新';
++                setappdata(fig,'rx_workbench_state',state);
++                accept_control(fig,request,response.accepted);
++                sync_controls(getappdata(fig,'rx_workbench_state'),false);
++                set_status(fig,['已回读 | ' request.key]);
+             case 'setting'
+                 state.scope_status=response.status;
++                state.settings_refresh_pending=false;
+                 state.raw_stale=true;
+                 state.stale_reason='参数已更新，图像尚未更新';
+                 data=get(request.handle,'UserData');
+@@ -978,10 +1112,12 @@ end
+ end
+ 
+ function update_freshness(state)
+-if isfield(state.raw,'captured_at')
+-    age=max(0,seconds(datetime('now')-state.raw.captured_at));
+-    stamp=state.raw.captured_at; stamp.Format='HH:mm:ss';
+-    message=sprintf('最近采集 %s | %.1f 秒前',char(stamp),age);
++stamp=field_or(state.raw,'last_new_data_at',[]);
++if ~isdatetime(stamp), stamp=field_or(state.raw,'captured_at',[]); end
++if isdatetime(stamp) && isscalar(stamp) && ~isnat(stamp)
++    age=max(0,seconds(datetime('now')-stamp));
++    stamp.Format='HH:mm:ss';
++    message=sprintf('最近读取 %s | %.1f 秒前',char(stamp),age);
+     if field_or(state,'raw_stale',false)
+         reason=field_or(state,'stale_reason','等待重新采集');
+         if contains(reason,'本帧未采用'), reason='新采集校验失败'; end
+@@ -991,6 +1127,7 @@ else
+     message='尚无采集';
+     if state.capture_rejections>0, message='尚无有效波形：采集校验失败'; end
+ end
++if isfield(state.raw,'observation_status'), message=[message ' | ' state.raw.observation_status]; end
+ if ~isempty(state.preference_error), message=[message ' | ' state.preference_error]; end
+ color=[.32 .35 .39];
+ if field_or(state,'raw_stale',false), color=[.68 .22 .06]; end
+@@ -1037,9 +1174,11 @@ try
+     specification.timeout_s = 3;
+     session = state.io.open(specification);
+     status = msiq.instruments.rx_scope_state(session,@(s,c) monitored_query(fig,s,c));
++    status.settings=read_extended(state,session,true);
+     state = getappdata(fig,'rx_workbench_state');
+     state.session = session;
+     state.scope_status = status;
++    state.settings_last_read=datetime('now');
+     state.connected = true;
+     state.plot_state.time_window_locked = false;
+     setappdata(fig,'rx_workbench_state',state);
+@@ -1070,13 +1209,14 @@ end
+ function refresh_status(fig)
+ state = getappdata(fig,'rx_workbench_state');
+ if state.asynchronous
+-    submit_worker(fig,struct('action','status'));
++    submit_worker(fig,struct('action','status','extended_status',true));
+     return;
+ end
+ state.busy = true;
+ setappdata(fig,'rx_workbench_state',state);
+ try
+     status = msiq.instruments.rx_scope_state(state.session,@(s,c) monitored_query(fig,s,c));
++    status.settings=read_extended(state,state.session,false);
+     state = getappdata(fig,'rx_workbench_state');
+     state.scope_status = status;
+ catch exception
+@@ -1128,7 +1268,19 @@ end
+ 
+ function drain_settings(fig)
+ state = getappdata(fig,'rx_workbench_state');
+-if state.busy || ~state.connected || isempty(state.pending), return; end
++if state.busy || ~state.connected, return; end
++if ~isempty(state.control_pending)
++    drain_control(fig); return;
++end
++if isempty(state.pending)
++    if state.settings_refresh_pending
++        state.settings_refresh_pending=false;
++        setappdata(fig,'rx_workbench_state',state);
++        refresh_status(fig);
++        if ~state.asynchronous, sync_controls(getappdata(fig,'rx_workbench_state'),false); end
++    end
++    return;
++end
+ if state.asynchronous
+     request=state.pending(1); state.pending(1)=[];
+     setappdata(fig,'rx_workbench_state',state);
+@@ -1166,6 +1318,7 @@ while true
+         field_error(request.handle,'',false);
+         state = getappdata(fig,'rx_workbench_state');
+         state.scope_status=msiq.instruments.rx_scope_state(state.session,state.io.query);
++        state.scope_status.settings=read_extended(state,state.session,false);
+         % Old samples retain the scale under which they were captured.
+         state.raw_stale = true;
+         state.stale_reason = '参数已更新，图像尚未更新';
+@@ -1192,21 +1345,196 @@ setappdata(fig,'rx_workbench_state',state);
+ update_buttons(fig);
+ end
+ 
++function settings=read_extended(state,session,refresh)
++cached=field_or(state.scope_status,'settings',struct());
++try
++    settings=msiq.instruments.rx_scope_settings(session,state.io.query,cached,refresh);
++catch exception
++    if ~strcmp(exception.identifier,'RX_Workbench:Unsupported'), rethrow(exception); end
++    settings=struct('fields',struct([]),'error',exception.message);
++end
++end
++
++function submit_control_edit(fig,handle,explicit_retry)
++if nargin<3, explicit_retry=false; end
++state=getappdata(fig,'rx_workbench_state'); data=get(handle,'UserData');
++if (~data.available || ~data.writable) && ~explicit_retry, return; end
++if data.numeric
++    value=str2double(get(handle,'String'))*data.multiplier;
++    if ~isfinite(value), field_error(handle,'请输入有效数值',false); return; end
++else
++    value=data.choices{get(handle,'Value')};
++end
++key=data.key;
++if data.index>0, key=[state.channels{data.index} ':' key]; end
++retry=~isempty(data.retry) && isgraphics(data.retry) && strcmp(get(data.retry,'Visible'),'on');
++if isequaln(value,data.actual) && ~retry, field_error(handle,'',false); return; end
++state.revision=state.revision+1;
++request=struct('handle',handle,'key',key,'value',value,'revision',state.revision);
++if ~isempty(state.control_pending)
++    state.control_pending(strcmp({state.control_pending.key},key))=[];
++end
++state.control_pending(end+1)=request;
++setappdata(fig,'rx_workbench_state',state);
++field_error(handle,ternary(state.connected,'待写入','待连接后写入'),false);
++if explicit_retry && ~state.connected && ~state.busy, connect_scope(fig); end
++drain_settings(fig);
++end
++
++function drain_control(fig)
++state=getappdata(fig,'rx_workbench_state');
++request=state.control_pending(1); state.control_pending(1)=[];
++setappdata(fig,'rx_workbench_state',state);
++if state.asynchronous
++    request.action='control'; submit_worker(fig,request); return;
++end
++state.busy=true; setappdata(fig,'rx_workbench_state',state);
++try
++    accepted=msiq.instruments.apply_rx_scope_setting(state.session,request,state.io.query,state.io.write);
++    status=msiq.instruments.rx_scope_state(state.session,state.io.query);
++    status.settings=read_extended(state,state.session,false);
++    state=getappdata(fig,'rx_workbench_state'); state.scope_status=status;
++    state.raw_stale=true; state.stale_reason='参数已更新，图像尚未更新';
++    setappdata(fig,'rx_workbench_state',state);
++    accept_control(fig,request,accepted);
++    set_status(fig,['已回读 | ' request.key]);
++catch exception
++    state=getappdata(fig,'rx_workbench_state');
++    field_error(request.handle,[request.key ' | ' exception.message],true);
++    if should_disconnect(exception)
++        state.connected=false; state.running=false; state.paused=true;
++        state.io.close(state.session); state.session=[];
++    end
++    setappdata(fig,'rx_workbench_state',state);
++    set_status(fig,['设置失败 | ' exception.message]);
++end
++state=getappdata(fig,'rx_workbench_state'); state.busy=false;
++setappdata(fig,'rx_workbench_state',state);
++sync_controls(state,false); update_buttons(fig);
++end
++
++function accept_control(fig,request,accepted)
++state=getappdata(fig,'rx_workbench_state'); data=get(request.handle,'UserData');
++newer=~isempty(state.control_pending) && any(strcmp({state.control_pending.key},request.key));
++if data.numeric, input=str2double(get(request.handle,'String'))*data.multiplier;
++else, input=data.choices{get(request.handle,'Value')}; end
++if newer || ~isequaln(input,request.value), return; end
++data.actual=accepted;
++if data.numeric
++    data.displayed=format_value(accepted/data.multiplier);
++    set(request.handle,'String',data.displayed);
++else
++    n=find(strcmp(data.choices,char(string(accepted))),1);
++    if ~isempty(n), set(request.handle,'Value',n); end
++    data.displayed=char(string(accepted));
++end
++set(request.handle,'UserData',data); field_error(request.handle,'',false);
++end
++
++function sync_extended(state,force)
++for group=state.home.settings_groups
++    info=get(group,'UserData');
++    if isstruct(info) && isfield(info,'index')
++        title=[state.channels{info.index} ' ' info.label];
++        if ~strcmp(get(group,'Title'),title), set(group,'Title',title); end
++    end
++end
++settings=field_or(state.scope_status,'settings',struct());
++fields=field_or(settings,'fields',struct([]));
++for handle=state.home.extended_edits
++    data=get(handle,'UserData'); key=data.key;
++    if data.index>0, key=[state.channels{data.index} ':' data.key]; end
++    n=[]; if ~isempty(fields), n=find(strcmp({fields.key},key),1); end
++    if ~state.connected || isempty(n) || ~fields(n).available
++        set(data.current,'String',ternary(state.connected,'不可用','--'));
++        set(handle,'Enable','off'); data.available=false; data.writable=false;
++        if ~isempty(n), set(handle,'TooltipString',fields(n).error); end
++        set(handle,'UserData',data); continue;
++    end
++    f=fields(n);
++    if ~force && data.available && isfield(data,'snapshot') && ...
++            isequaln(data.snapshot,f) && strcmp(field_or(data,'resolved_key',''),key)
++        continue;
++    end
++    data.available=true; data.writable=f.writable;
++    pending=~isempty(state.control_pending) && any([state.control_pending.handle]==handle);
++    if state.busy && isfield(state.worker_request,'handle')
++        pending=pending || state.worker_request.handle==handle;
++    end
++    if data.numeric
++        untouched=strcmp(get(handle,'String'),data.displayed);
++        display=format_value(f.value/data.multiplier);
++    else
++        previous='';
++        if ~isempty(data.choices) && get(handle,'Value')<=numel(data.choices)
++            previous=data.choices{get(handle,'Value')};
++        end
++        untouched=isempty(previous) || strcmp(previous,data.displayed);
++        choices=f.choices; labels=f.choice_labels;
++        if ~any(strcmp(choices,char(string(f.value))))
++            choices=[f.choices {char(string(f.value))}];
++            labels=[f.choice_labels {char(string(f.value))}];
++        end
++        % Do not rebuild choices while a user edit is awaiting readback.
++        if ~pending && (untouched || force)
++            set(handle,'String',labels,'Value',find(strcmp(choices,char(string(f.value))),1));
++            data.choices=choices;
++        end
++        display=char(string(f.value));
++        idx=find(strcmp(choices,display),1);
++        if ~isempty(idx), display=labels{idx}; end
++        if endsWith(key,':BWL')
++            if strcmpi(f.value,'OFF'), display='全带宽'; end
++            if strcmpi(f.value,'ON'), display='20 MHz'; end
++            if ~pending
++                labels(strcmp(choices,'OFF'))={'全带宽'}; labels(strcmp(choices,'ON'))={'20 MHz'};
++                set(handle,'String',labels);
++            end
++        end
++    end
++    set(data.current,'String',display,'TooltipString',[key ' | ' display]);
++    failed=~isempty(data.retry) && isgraphics(data.retry) && strcmp(get(data.retry,'Visible'),'on');
++    if (force || untouched) && ~pending && ~failed
++        if data.numeric, set(handle,'String',display); data.displayed=display;
++        else, data.displayed=char(string(f.value)); end
++        field_error(handle,'',false);
++    end
++    data.actual=f.value;
++    data.snapshot=f; data.resolved_key=key;
++    set(handle,'UserData',data,'Enable',ternary(f.writable,'on','off'));
++end
++end
++
+ function field_error(handle,message,retry)
+ data = get(handle,'UserData');
++if isfield(data,'key')
++    if isempty(message) && isempty(data.error), return; end
++    if isempty(data.error)
++        data.error=ui_text(get(handle,'Parent'),'',data.error_position);
++        set(data.error,'FontSize',8,'ForegroundColor',[.65 .12 .08]);
++    end
++    if retry && isempty(data.retry)
++        position=get(handle,'Position');
++        data.retry=uicontrol(get(handle,'Parent'),'Style','pushbutton','String','重试', ...
++            'Position',[position(1)+position(3)-36 position(2)-16 36 16], ...
++            'Callback',@(~,~) submit_control_edit(ancestor(handle,'figure'),handle,true));
++    end
++    set(handle,'UserData',data);
++end
+ visible_message = message;
+ if retry
+     pieces = strsplit(message,'|');
+     visible_message = [strtrim(pieces{1}) ' 失败'];
+ end
+ set(data.error,'String',visible_message,'TooltipString',message);
+-set(data.retry,'Visible',ternary(retry,'on','off'));
++if ~isempty(data.retry), set(data.retry,'Visible',ternary(retry,'on','off')); end
+ set(handle,'TooltipString',message);
+ if isempty(message), color = [1 1 1]; elseif retry, color = [1 .88 .86]; else, color = [1 .97 .85]; end
+ set(handle,'BackgroundColor',color);
+ end
+ 
+ function sync_controls(state, force)
++sync_extended(state,force);
+ if ~state.connected
+     if force
+         for handle = state.home.hardware_edits
+@@ -1267,11 +1595,8 @@ if ~isfield(state.scope_status,'channels'), return; end
+ status = state.scope_status;
+ lines = {status.idn; field_or(state.cfg.instrument.scope,'resource',''); ...
+     ['回读时间 ' char(string(field_or(status,'readback_at','未记录')))]; ...
+-    sprintf('采集率  %.6g GSa/s | 记录长度 %s',status.sample_rate_hz/1e9,format_value(status.memory_depth)); ...
+-    sprintf('C1 %s | C2 %s | C3 %s | C4 %s',status.channels.trace_state); ''};
++    sprintf('实际采样率  %.6g GSa/s',status.sample_rate_hz/1e9); ''};
+ for ch = state.channels
+-    row = status.channels(strcmp({status.channels.channel},ch{1}));
+-    lines{end+1} = sprintf('%s  %s | %s | 平均 %s',ch{1},row.trace_state,row.interpolation,format_value(row.average_sweeps)); %#ok<AGROW>
+     if isfield(state.raw,'channels')
+         records = state.raw.channels;
+         idx = find(strcmp({records.channel},ch{1}),1);
+@@ -1281,12 +1606,10 @@ for ch = state.channels
+                     numel(state.plot_state.last_sample_rate_hz)>=idx
+                 rate = state.plot_state.last_sample_rate_hz(idx);
+             end
+-            lines{end+1} = sprintf('回传 %s GSa/s | %d 点', ...
++            lines{end+1} = sprintf('%s 回传 %s GSa/s | %d 点',ch{1}, ...
+                 format_value(rate/1e9),field_or(records(idx),'original_count',numel(records(idx).samples))); %#ok<AGROW>
+         end
+     end
+-    lines{end+1} = sprintf('增强 %s | %s',row.enhance_resolution,row.optimize_group_delay); %#ok<AGROW>
+-    lines{end+1} = sprintf('带宽限制 %s',row.bandwidth_text); %#ok<AGROW>
+ end
+ set(state.home.h_scope_info,'String',lines,'TooltipString', ...
+     sprintf('%s\n%s\nBWL: %s / %s',status.idn, ...
+@@ -1379,6 +1702,7 @@ end
+ 
+ function update_buttons(fig)
+ state = getappdata(fig,'rx_workbench_state');
++sync_extended(state,false);
+ if ~state.connected
+     for handle = state.home.hardware_edits
+         data = get(handle,'UserData');
+@@ -1386,7 +1710,9 @@ if ~state.connected
+     end
+     set(state.home.h_scope_info,'String','未连接，当前硬件状态未知');
+ end
+-set(state.home.h_play,'Enable',ternary(~state.busy && ~state.running,'on','off'));
++can_start=~state.running && ~state.close_requested && isempty(state.pending_page) && ...
++    (~state.busy || (state.asynchronous && ~strcmp(field_or(state.worker_request,'action',''),'release')));
++set(state.home.h_play,'Enable',ternary(can_start,'on','off'));
+ set(state.home.h_pause,'Enable',ternary(state.running,'on','off'));
+ set([state.home.h_ch1 state.home.h_ch2 state.home.h_single state.home.h_repeat], ...
+     'Enable',ternary(~state.busy,'on','off'));
+@@ -1432,7 +1758,8 @@ function set_page(fig,page)
+ state = getappdata(fig,'rx_workbench_state');
+ set(state.home.panel,'Visible',ternary(ismember(string(page),["home","settings"]),'on','off'));
+ set([state.home.param_panel state.home.plot_panel],'Visible',ternary(strcmp(page,'home'),'on','off'));
+-set(state.home.settings_panel,'Visible',ternary(strcmp(page,'settings'),'on','off'));
++set(state.home.observation_panel,'Visible',ternary(strcmp(page,'home'),'on','off'));
++set(state.home.trigger_panel,'Visible',ternary(strcmp(page,'home'),'on','off'));
+ set(state.home.h_settings,'String',ternary(strcmp(page,'settings'),'返回观察','设置'));
+ for name = {'single','repeat','result'}
+     set(state.pages.(name{1}),'Visible',ternary(strcmp(page,name{1}),'on','off'));
+diff --git a/code/+msiq/validate_rx_async.m b/code/+msiq/validate_rx_async.m
+index ee8451d..e24d8d0 100644
+--- a/code/+msiq/validate_rx_async.m
++++ b/code/+msiq/validate_rx_async.m
+@@ -1,6 +1,14 @@
+-function report = validate_rx_async(output_dir)
++function report = validate_rx_async(output_dir, section)
+ %VALIDATE_RX_ASYNC Real process isolation, blocking mock reads, and large traces.
+ if nargin<1, output_dir=tempname; mkdir(output_dir); end
++if nargin<2, section='all'; end
++section=validatestring(section,{'all','reference'});
++if strcmp(section,'reference')
++    validate_reference_async(output_dir);
++    validate_empty_transport(output_dir);
++    report=struct('passed',true,'section',section);
++    return;
++end
+ mock_options=struct('capture_delay_s',2,'record_count',4000000, ...
+     'log_path',fullfile(output_dir,'async_audit.log'), ...
+     'failure_path',fullfile(output_dir,'async_failure.txt'));
+@@ -25,7 +33,10 @@ guard=onCleanup(@() finish(fig,worker));
+ assert(~isempty(worker),'The app did not create a background worker.');
+ % The GUI remains operable even during process startup and connection.
+ started=tic; invoke(state.home.h_settings); drawnow;
+-assert(toc(started)<.5 && current(fig).page=="settings");
++startup_page_s=toc(started);
++fprintf('RX startup page switch %.4fs\n',startup_page_s);
++assert(startup_page_s<.5 && current(fig).page=="settings", ...
++    'Startup settings switch took %.4fs (page %s).',startup_page_s,current(fig).page);
+ invoke(state.home.h_settings);
+ await(fig,@(s) s.connected,60);
+ log=fileread(mock_options.log_path);
+@@ -65,11 +76,11 @@ assert(state.raw_stale,'A setting applied after capture must mark the displayed
+ log=fileread(mock_options.log_path);
+ assert(count(log,'CAPTURE BEGIN')==1,'Pause queued another capture.');
+ assert(count(log,'WRITE ')==1 && contains(log,'WRITE C1:OFST 0.012'));
+-assert(strfind(log,'CAPTURE RESTORE AUTO')<strfind(log,'WRITE C1:OFST'));
++assert(strfind(log,'CAPTURE RELEASE')<strfind(log,'WRITE C1:OFST'));
+ assert(count(log,'QUERY *IDN?')==2,'Expect startup and one complete reread after the edit.');
+ before_capture=extractBefore(log,'CAPTURE BEGIN');
+ assert(count(before_capture,'QUERY *IDN?')==1,'Capture must reuse stable metadata.');
+-after_capture=extractBetween(log,'CAPTURE RESTORE AUTO','WRITE C1:OFST');
++after_capture=extractBetween(log,'CAPTURE RELEASE','WRITE C1:OFST');
+ for command={'TDIV?','MSIZ?','BWL?','C1:VDIV?','C1:OFST?','C1:CPL?','C2:VDIV?','C2:OFST?','C2:CPL?'}
+     assert(contains(after_capture,['QUERY ' command{1}]),'Missing post-capture readback: %s',command{1});
+ end
+@@ -138,7 +149,7 @@ await(fig,@(s) ~s.busy && isempty(s.pending),20);
+ state=current(fig); log=fileread(mock_options.log_path);
+ assert(state.connected && abs(state.scope_status.trigger_delay_s+2.5e-9)<1e-21);
+ assert(count(log,'WRITE ')==before_writes+1 && contains(log,'WRITE TRDL -2.5e-09'));
+-restored=strfind(log,'CAPTURE RESTORE AUTO'); written=strfind(log,'WRITE TRDL -2.5e-09');
++restored=strfind(log,'CAPTURE RELEASE'); written=strfind(log,'WRITE TRDL -2.5e-09');
+ assert(restored(end)<written(end) && count(log,'CAPTURE BEGIN')==before_captures+1);
+ old_x=get(findobj(state.home.axes.wave_top,'Tag','rx_waveform'),'XData');
+ invoke(state.home.h_play);
+@@ -224,7 +235,7 @@ invoke(state.home.h_play);
+ await(fig,@(s) ~s.busy && ~s.connected,15);
+ assert(contains(get(state.home.h_status,'String'),'CAPTURE'));
+ log=fileread(mock_options.log_path);
+-assert(endsWith(strtrim(log),sprintf('CAPTURE RESTORE AUTO\nCLOSE')));
++assert(endsWith(strtrim(log),sprintf('CAPTURE RELEASE\nCLOSE')));
+ delete(mock_options.failure_path);
+ 
+ warm_interaction_s=validate_warm_interaction(fig,mock_options.log_path);
+@@ -268,6 +279,7 @@ mock=struct('capture_delay_s',0,'record_count',100000, ...
+     'trace_state_path',state_path, ...
+     'log_path',fullfile(output_dir,'disabled_channels_audit.log'), ...
+     'failure_path',fullfile(output_dir,'disabled_channels_failure.txt'));
++fid=fopen(mock.log_path,'w'); fclose(fid);
+ preferences_path=fullfile(output_dir,'disabled_channels_preferences.mat');
+ msiq.rx_view_preferences('save',preferences_path,struct('channels',{{'C3','C4'}}));
+ fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
+@@ -334,8 +346,8 @@ set(state.home.h_center,'String','1.234567'); set(state.home.h_psd_min,'String',
+ writes=count(fileread(log_path),'WRITE ');
+ invoke(state.home.h_play);
+ for k=1:2
+-    stamp=current(fig).raw.captured_at;
+-    await(fig,@(s) ~isequal(s.raw.captured_at,stamp),15);
++    stamp=current(fig).raw.last_new_data_at;
++    await(fig,@(s) ~isequaln(s.raw.last_new_data_at,stamp),15);
+ end
+ invoke(state.home.h_pause); await(fig,@(s) ~s.busy,15);
+ assert(current(fig).plot_dirty && getappdata(fig,'rx_test_draw_count')==0, ...
+@@ -365,6 +377,7 @@ mock=struct('capture_delay_s',.05,'record_count',1600,'timebase_s',2e-9, ...
+     'calibration_offset_v',-2.7004480361941807e-5, ...
+     'log_path',fullfile(output_dir,'retry_audit.log'), ...
+     'failure_path',fullfile(output_dir,'retry_failure.txt'));
++fid=fopen(mock.log_path,'w'); fclose(fid);
+ fid=fopen(mock.failure_path,'w'); fprintf(fid,'DRIFT_ALWAYS'); fclose(fid);
+ fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
+     'synchronous_startup',true,'use_timer',false,'asynchronous',true, ...
+@@ -463,7 +476,9 @@ await(fig,@(~) isfile(mock.reference_log_path) && ...
+     contains(fileread(mock.reference_log_path),'REFERENCE BEGIN'),60);
+ log=fileread(mock.log_path);
+ capture_count=count(log,'CAPTURE END');
+-await(fig,@(~) count(fileread(mock.log_path),'CAPTURE END')>=capture_count+2,3);
++% The held file request proves independence; allow cold analysis and a full
++% settings refresh without imposing an unrelated two-frame throughput limit.
++await(fig,@(~) count(fileread(mock.log_path),'CAPTURE END')>=capture_count+2,10);
+ assert(current(fig).reference_busy,'File lookup did not overlap repeated acquisition.');
+ started=tic;
+ invoke(state.home.h_pause); invoke(state.home.h_settings);
+@@ -507,8 +522,10 @@ hold_reference(mock.reference_release_path);
+ reference_count=count(fileread(mock.reference_log_path),'REFERENCE BEGIN');
+ fid=fopen(mock.failure_path,'w'); fprintf(fid,'REFERENCE'); fclose(fid);
+ invoke(state.home.h_settings);
++await(fig,@(s) ~s.busy && ~s.settings_refresh_pending,10);
+ set(state.home.h_ch1,'Value',4); invoke(state.home.h_ch1);
+ await(fig,@(s) ~s.busy,10);
++assert(isequal(current(fig).channels,{'C4','C2'}));
+ invoke(state.home.h_play);
+ await(fig,@(s) s.first_capture_complete,10);
+ invoke(state.home.h_pause);
+@@ -531,8 +548,10 @@ assert(ready && ~response.ok && strcmp(response.error_id,'RX_Workbench:FileOnly'
+ assert(count(fileread(mock.log_path),'OPEN')==1,'The reference process opened an instrument session.');
+ % Change route while a matching old-route reference is still being loaded.
+ invoke(state.home.h_settings);
++await(fig,@(s) ~s.busy && ~s.settings_refresh_pending,10);
+ set(state.home.h_ch1,'Value',1); invoke(state.home.h_ch1);
+ await(fig,@(s) ~s.busy,10);
++assert(isequal(current(fig).channels,{'C1','C2'}));
+ invoke(state.home.h_play);
+ await(fig,@(s) s.first_capture_complete,10);
+ invoke(state.home.h_pause); await(fig,@(s) ~s.busy,10);
+@@ -596,6 +615,7 @@ mock=struct('capture_delay_s',.1,'record_count',100000, ...
+     'startup_warning',true, ...
+     'log_path',fullfile(output_dir,'default_startup_audit.log'), ...
+     'failure_path',fullfile(output_dir,'default_startup_failure.txt'));
++fid=fopen(mock.log_path,'w'); fclose(fid);
+ fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
+     'find_reference',false,'asynchronous',true, ...
+     'worker_factory','msiq.instruments.mock_rx_scope_io','worker_options',mock, ...
+diff --git a/code/+msiq/validate_rx_workbench.m b/code/+msiq/validate_rx_workbench.m
+index 524daf9..40b0791 100644
+--- a/code/+msiq/validate_rx_workbench.m
++++ b/code/+msiq/validate_rx_workbench.m
+@@ -12,12 +12,16 @@ if nargin < 1
+ end
+ if ~isfolder(output_dir), mkdir(output_dir); end
+ msiq.validate_rx_mock_config(output_dir);
++msiq.validate_rx_scope_settings(fullfile(output_dir,'settings_backend'));
++msiq.validate_rx_observation();
+ existing_figures=findall(0,'Type','figure');
+ figure_guard=onCleanup(@() close_new_figures(existing_figures));
+ note=validate_with_mock(output_dir);
++msiq.validate_rx_settings_gui(fullfile(output_dir,'settings_extended'));
+ msiq.validate_rx_consistency(output_dir);
+ msiq.validate_rx_preferences(output_dir);
+ msiq.validate_rx_async(output_dir);
++msiq.validate_rx_observation_worker();
+ end
+ 
+ function note=validate_with_mock(output_dir)
+@@ -505,8 +509,18 @@ end
+ 
+ function check_scroll(state)
+ content=get(state.home.content,'Position'); viewport=get(state.home.settings_panel,'Position');
+-assert(content(2)>=0 && content(2)+content(4)<=viewport(4)+2);
+-assert(strcmp(get(state.home.scroll,'Visible'),'off'),'These window sizes must not require scrolling.');
++slider=state.home.scroll;
++if state.home.content_height>viewport(4)
++    assert(strcmp(get(slider,'Visible'),'on'),'Long settings must remain reachable.');
++    assert(abs(content(2)+content(4)-viewport(4))<3,'Top slider must show top content.');
++    set(slider,'Value',get(slider,'Min')); invoke(slider);
++    bottom=get(state.home.content,'Position');
++    assert(abs(bottom(2))<3,'Bottom slider must show bottom content.');
++    set(slider,'Value',get(slider,'Max')); invoke(slider);
++else
++    assert(content(2)>=-2 && content(2)+content(4)<=viewport(4)+2);
++    assert(strcmp(get(slider,'Visible'),'off'));
++end
+ end
+ 
+ function snapshot(fig,path)

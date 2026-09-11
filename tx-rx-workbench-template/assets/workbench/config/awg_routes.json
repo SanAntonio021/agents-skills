@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "default_route": "pair_a_ch1_ch2",
+  "routes": [
+    {
+      "name": "pair_a_ch1_ch2",
+      "waveform_columns": [1, 2],
+      "awg_channels": [1, 2],
+      "scope_channels": ["C1", "C2"],
+      "labels": ["I_A", "Q_A"]
+    },
+    {
+      "name": "pair_b_ch3_ch4",
+      "waveform_columns": [3, 4],
+      "awg_channels": [3, 4],
+      "scope_channels": ["C3", "C4"],
+      "labels": ["I_B", "Q_B"]
+    },
+    {
+      "name": "all_four",
+      "waveform_columns": [1, 2, 3, 4],
+      "awg_channels": [1, 2, 3, 4],
+      "scope_channels": ["C1", "C2", "C3", "C4"],
+      "labels": ["I_A", "Q_A", "I_B", "Q_B"]
+    }
+  ]
+}

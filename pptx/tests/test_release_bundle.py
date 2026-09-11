@@ -46,12 +46,14 @@ def write_presentation(path: Path, slide_texts: list[str], *, global_text: str =
             package.writestr(name, data)
 
 
-def prepare_release(root: Path, *, require_design_acceptance: bool = True) -> tuple[Path, Path]:
+def prepare_release(root: Path, *, require_design_acceptance: bool = True,
+                    require_lo_render: bool = False) -> tuple[Path, Path]:
     bundle = release.initialize_release(
         root,
         "评审稿",
         date="20260828",
         require_design_acceptance=require_design_acceptance,
+        require_lo_render=require_lo_render,
     )
     (bundle / "final.pptx").write_bytes(b"candidate-v1")
     (bundle / "final.pdf").write_bytes(b"pdf-v1")
@@ -72,6 +74,70 @@ PASSING_STATUSES = {
 
 
 class ReleaseBundleTests(unittest.TestCase):
+    def test_native_release_completes_without_libreoffice(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, path = prepare_release(Path(temp_dir), require_design_acceptance=False)
+            statuses = {k: v for k, v in PASSING_STATUSES.items() if k != "lo_render"}
+            self.assertEqual(release.finalize_release(path, statuses)["status"], "COMPLETE")
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            self.assertIs(manifest["require_lo_render"], False)
+            self.assertEqual(manifest["acceptance"]["lo_render"]["status"], "NOT_REQUIRED")
+
+    def test_requested_and_legacy_compatibility_require_actual_lo_pass(self):
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy), tempfile.TemporaryDirectory() as temp_dir:
+                _, path = prepare_release(Path(temp_dir), require_design_acceptance=False,
+                                          require_lo_render=True)
+                if legacy:
+                    manifest = json.loads(path.read_text(encoding="utf-8"))
+                    del manifest["require_lo_render"]
+                    path.write_text(json.dumps(manifest), encoding="utf-8")
+                statuses = {k: v for k, v in PASSING_STATUSES.items() if k != "lo_render"}
+                for lo_status in ("PENDING", "FAIL", "SKIPPED", "UNVERIFIED", "NOT_REQUIRED"):
+                    statuses["lo_render"] = lo_status
+                    self.assertNotEqual(release.finalize_release(path, statuses)["status"], "COMPLETE")
+                statuses["lo_render"] = "PASS"
+                self.assertEqual(release.finalize_release(path, statuses)["status"], "COMPLETE")
+                saved = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual("require_lo_render" in saved, not legacy)
+
+    def test_optional_lo_cannot_replace_native_acceptance(self):
+        for native_key in ("native_open", "native_render"):
+            for status in ("PENDING", "FAIL_OPEN", "FAIL_RENDER", "UNVERIFIED", "SKIPPED"):
+                with self.subTest(key=native_key, status=status), tempfile.TemporaryDirectory() as temp_dir:
+                    _, path = prepare_release(Path(temp_dir), require_design_acceptance=False)
+                    statuses = dict(PASSING_STATUSES, **{native_key: status})
+                    self.assertNotEqual(release.finalize_release(path, statuses)["status"], "COMPLETE")
+
+    def test_requirement_cannot_be_downgraded_by_status_input(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, path = prepare_release(Path(temp_dir), require_design_acceptance=False,
+                                      require_lo_render=True)
+            statuses = dict(PASSING_STATUSES, lo_render="NOT_REQUIRED", require_lo_render=False)
+            self.assertEqual(release.finalize_release(path, statuses)["status"], "INCOMPLETE")
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            self.assertIs(manifest["require_lo_render"], True)
+
+    def test_invalid_requirement_is_rejected_without_rewriting_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, path = prepare_release(Path(temp_dir), require_design_acceptance=False)
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            manifest["require_lo_render"] = "false"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            before = path.read_bytes()
+            with self.assertRaises(release.ReleaseBundleError):
+                release.finalize_release(path, PASSING_STATUSES)
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_cli_defaults_and_opt_in(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = ["init", "--output-root", temp_dir, "--topic", "check"]
+            self.assertEqual(release.main(args), 0)
+            self.assertEqual(release.main(args + ["--require-lo-render"]), 0)
+            manifests = sorted(Path(temp_dir).glob("*/release_manifest.json"))
+            self.assertEqual([json.loads(p.read_text(encoding="utf-8"))["require_lo_render"]
+                              for p in manifests], [False, True])
+
     def test_initialize_creates_versioned_bundle_and_refuses_existing_version(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "outputs"

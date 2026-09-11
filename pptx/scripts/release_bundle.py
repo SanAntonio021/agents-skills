@@ -158,6 +158,7 @@ def initialize_release(
     parent: str | Path | None = None,
     changed_slides: Iterable[int] = (),
     require_design_acceptance: bool = False,
+    require_lo_render: bool = False,
 ) -> Path:
     root = _canonical_path(output_root)
     root.mkdir(parents=True, exist_ok=True)
@@ -195,9 +196,10 @@ def initialize_release(
         "artifacts": artifacts,
         "reference_template": template_identity,
         "changed_slides": sorted({int(value) for value in changed_slides}),
+        "require_lo_render": bool(require_lo_render),
         "acceptance": {
             "static": {"status": "PENDING"},
-            "lo_render": {"status": "PENDING"},
+            "lo_render": {"status": "PENDING" if require_lo_render else "NOT_REQUIRED"},
             "native_open": {"status": "PENDING"},
             "native_render": {"status": "PENDING"},
             "visual_qa": {"status": "PENDING", "scope": "FULL_DECK"},
@@ -592,9 +594,15 @@ def finalize_release(manifest_path: str | Path, statuses: Mapping[str, object] |
     manifest["png_verified"] = [_file_identity(item) for item in png_files]
     manifest["missing_artifacts"] = missing
     acceptance = manifest.get("acceptance", {})
-    required_statuses = [
-        acceptance.get(key, {}).get("status") for key in ("static", "lo_render", "visual_qa")
-    ]
+    # Records written before this option existed required a compatibility render.
+    # Keep that meaning; status input must not change the declared requirement.
+    require_lo_render = manifest.get("require_lo_render", True)
+    if not isinstance(require_lo_render, bool):
+        raise ReleaseBundleError("require_lo_render must be a boolean")
+    required_keys = ["static", "visual_qa"]
+    if require_lo_render:
+        required_keys.append("lo_render")
+    required_statuses = [acceptance.get(key, {}).get("status") for key in required_keys]
     native_statuses = [
         acceptance.get(key, {}).get("status") for key in ("native_open", "native_render")
     ]
@@ -662,6 +670,8 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--parent")
     init.add_argument("--changed-slide", type=int, action="append", default=[])
     init.add_argument("--require-design-acceptance", action="store_true")
+    init.add_argument("--require-lo-render", action="store_true",
+                      help="require LibreOffice compatibility rendering for this release")
 
     snapshot = sub.add_parser("snapshot", help="write a canonical external-output snapshot")
     snapshot.add_argument("--root", required=True)
@@ -714,6 +724,7 @@ def main(argv: Iterable[str] | None = None) -> int:
                 parent=args.parent,
                 changed_slides=args.changed_slide,
                 require_design_acceptance=args.require_design_acceptance,
+                require_lo_render=args.require_lo_render,
             )
             result: object = {"release_dir": _posix_path(release_dir)}
         elif args.command == "snapshot":

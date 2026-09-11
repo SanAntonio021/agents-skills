@@ -104,7 +104,9 @@ must block delivery even when `--original` is supplied or compatibility renderin
 Keep these records separate:
 
 - `STATIC_PASS`: `validate.py`, OOXML/package checks, typography and source-hash checks.
-- `LO_RENDER_PASS`: the required LibreOffice compatibility render and visual inspection.
+- `LO_RENDER_PASS`: an optional LibreOffice compatibility render and visual inspection, required only
+  when that compatibility check or a specific rendering-difference diagnosis is in scope. Keep its
+  actual status separate; an unrun check is not a pass.
 - `NATIVE_OPEN_PASS`: the independent gate opened an isolated copy with PowerPoint and read
   `Slides.Count`.
 - `NATIVE_RENDER_PASS`: the same gate exported every slide to a new non-empty PNG.
@@ -120,7 +122,8 @@ For native evidence, run the gate explicitly for the current task:
 python <skill-root>\scripts\office_native_gate.py check input.pptx `
   --format pptx --json --allow-office-com
 python <skill-root>\scripts\office_native_gate.py check input.pptx `
-  --format pptx --json --allow-office-com --require-render
+  --format pptx --json --allow-office-com --require-render `
+  --render-output-dir <new-task-owned-png-directory>
 ```
 
 The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or
@@ -135,6 +138,7 @@ PowerPoint executable explicitly for the current PPTX check:
 ```powershell
 python <skill-root>\scripts\office_native_gate.py check input.pptx `
   --format pptx --json --allow-office-com --require-render `
+  --render-output-dir <new-task-owned-png-directory> `
   --powerpoint-exe "<verified absolute path to Microsoft POWERPNT.EXE>"
 ```
 
@@ -147,8 +151,10 @@ all completed, a disconnected COM object during application cleanup is accepted 
 original verified child process exits normally within three seconds. Unknown ownership, a running
 or abnormally exited child, and any earlier failure remain unverified. The receipt records this as
 `application_lifecycle.cleanup=self_exited`; it does not establish that default COM activation is repaired. For a
-PPTX release, require `STATIC_PASS`, `LO_RENDER_PASS`, `NATIVE_OPEN_PASS`, and
-`NATIVE_RENDER_PASS`; a blocked native check is not a completed delivery.
+PowerPoint release, require `STATIC_PASS`, `NATIVE_OPEN_PASS`, `NATIVE_RENDER_PASS`, and inspection
+of the actual exported pages. LibreOffice is not a default additional gate. A blocked native check
+is not a completed delivery: finish independent file checks and state the specific unverified item
+without taking over a user window or promoting another renderer's output to native acceptance.
 
 ### Python runtime preflight
 
@@ -176,7 +182,7 @@ is an interface and does not replace the visual QA or source-hash checks below.
 |---|---|
 | **Create** using an explicitly selected local implementation or continue its existing project | Use the owning source; for `pptxgenjs`, see gotchas below. This is not an automatic fallback |
 | **Edit** deterministic elements of an existing deck or template | unzip → edit `ppt/slides/slideN.xml` → zip; substantial authoring follows the routing rules above |
-| **Read** content | `markitdown deck.pptx` (one block per slide under `<!-- Slide number: N -->` markers); visual grid: `python scripts/thumbnail.py deck.pptx` |
+| **Read** content | `markitdown deck.pptx` (one block per slide under `<!-- Slide number: N -->` markers); reuse existing current PowerPoint PNG previews for visual inspection |
 
 ## Scripts
 
@@ -184,7 +190,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 
 | Script | What it does |
 |---|---|
-| `scripts/thumbnail.py deck.pptx [prefix]` | Labeled grid of every slide, for picking template layouts. `.pptx` only. Pass `prefix` — it defaults to `thumbnails`, which overwrites the grids of any other deck done in the same directory |
+| `scripts/thumbnail.py deck.pptx [prefix]` | Optional LibreOffice-dependent template grid. Reuse existing PowerPoint PNGs first; this script accepts `.pptx`, not a PNG directory. Pass a unique `prefix` because the default `thumbnails` can overwrite another deck's grids |
 | `scripts/add_slide.py unpacked/ slide2.xml [--after slideN.xml]` | Duplicate a slide (or a `slideLayoutN.xml`) with all the package bookkeeping. Also takes a `.pptx` directly with `-o out.pptx` |
 | `scripts/clean.py unpacked/` | Delete slides, media, and rels no longer referenced. Run **after** `<p:sldIdLst>` is final |
 | `scripts/release_bundle.py` | Create non-overwriting formal release directories, canonical external-output snapshots, revision slide-difference proofs, and final artifact manifests |
@@ -192,7 +198,7 @@ Paths are relative to this skill's directory. Everything else is plain Python, `
 | `scripts/verify_ppt_master_pin.py --skill-root <path> [--json-out PATH]` | Verify the active CC Switch-installed `ppt-master` tree against the external bootstrap/transition/stable pin before handoff |
 | `scripts/python_runtime_preflight.py [--candidate PATH] [--json-out PATH]` | Select a verified Python runtime for static PPTX QA; import-checks `defusedxml`, `lxml`, and `python-pptx`, and never installs packages |
 | `scripts/office/validate.py deck.pptx [--original src.pptx]` | Schema, relationship, content-type, chart and slide checks; each failure names its fix. Pass `--original` for any template-derived deck — it baselines the schema checks against the template, so the template's own XSD errors don't read as yours |
-| `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | LibreOffice wrapper — bare `soffice` hangs in this sandbox |
+| `scripts/office/soffice.py --headless --convert-to pdf deck.pptx` | Optional LibreOffice compatibility conversion through the protected wrapper |
 
 On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
 conversion command above and delegates all LibreOffice launch, queue, profile, and process management
@@ -227,7 +233,18 @@ to the public `libreoffice-runner`; do not call `soffice` directly.
 
 ## Editing existing decks and templates
 
-Pick layouts first: `python scripts/thumbnail.py template.pptx template-thumbs` writes a labeled grid of every slide and prints the file(s) it created — `template-thumbs.jpg`, split into `template-thumbs-N.jpg` past 12 slides. **Always pass that second argument, named after the deck.** It defaults to `thumbnails`, so two decks thumbnailed in one directory silently overwrite each other's grids — the first deck's are simply gone (template analysis only — visual QA needs the full-resolution renders from [Converting to Images](#converting-to-images); it only accepts `.pptx`, so copy a `.potx` to a `.pptx` name first). Use it with `markitdown` to map each content section onto a template slide, and vary the layouts — don't put every section on the same title-and-bullets slide.
+Pick layouts first using existing PowerPoint page images that match the current template. Inspect them
+directly or assemble those images into a contact sheet without rerendering the deck. Pair them with
+`markitdown` to map each content section onto a template slide, and vary the layouts — don't put every
+section on the same title-and-bullets slide. If no current render exists, use the protected native
+export described in [Converting to Images](#converting-to-images).
+
+The retained optional `python scripts/thumbnail.py template.pptx template-thumbs` uses LibreOffice
+to produce a labeled grid (`template-thumbs.jpg`, split into `template-thumbs-N.jpg` past 12 slides).
+Use it only when LibreOffice rendering is in scope, not merely to obtain another preview. Always pass
+a unique deck-specific prefix; the default `thumbnails` can overwrite other grids. It accepts `.pptx`
+only, so a `.potx` requires a separate `.pptx` copy. Grids support layout selection; inspect full-size
+pages for visual QA.
 
 ```bash
 python3 -c "import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall('unpacked')" deck.pptx
@@ -262,6 +279,11 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    bundle is internal working structure, not an extra project-root deliverable folder. Do not append `fixed`, `final2`,
    or similar parallel names after rendering has started. Only when the user explicitly requests a personal visual sign-off, append
    `--require-design-acceptance`. Otherwise inspect rendered pages yourself and deliver the checked result.
+   New bundles do not require LibreOffice by default. Add `--require-lo-render` when compatibility
+   checking or a specific LibreOffice rendering diagnosis is required. Existing manifests retain
+   their recorded requirements; legacy manifests without `require_lo_render` still require it.
+   New unrequested LibreOffice checks are `NOT_REQUIRED`, not `PASS`. Do not rewrite old acceptance
+   history to remove a gate.
 
 2. **Snapshot the external output root consistently.** After the fresh bundle exists, create a before
    snapshot using the same canonical root and exclusion for the after snapshot:
@@ -281,10 +303,11 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
 
 3. **Revise a formal release in a new version directory.** Use the prior release as `--parent` and
    declare the pages intentionally changed. Regenerate all formal artifacts in the new directory, then
-   rerun content QA, structural validation, typography, canvas, and the LibreOffice full-document render.
+   rerun content QA, structural validation, typography, canvas, and PowerPoint opening and full-deck
+   export. Run the LibreOffice compatibility render only when required for this release.
    `scripts/release_bundle.py compare-slides` compares slide XML, relationship closures, shared parts,
    and global package parts. Only when it returns `UNCHANGED_SLIDES_PROVEN`, the parent manifest records
-   a full-deck visual pass, and all current static/LibreOffice gates pass may visual inspection be limited
+   a full-deck visual pass, and all currently required static/native/compatibility gates pass may visual inspection be limited
    to the declared changed pages. Any undeclared page, relationship, shared-resource, global-part, page
    count, or parent-evidence difference returns `FULL_VISUAL_QA_REQUIRED` and requires every page to be
    inspected. A partial or unverified native Office gate never becomes a complete release claim.
@@ -371,7 +394,11 @@ Choose colors that match your topic — don't default to generic blue. Use these
 
 ### Typography
 
-**Font names you write into the .pptx are rendered by the user's PowerPoint, not by this environment.** Your visual QA renders via LibreOffice, which substitutes fonts it doesn't have — and for some fonts the substitute has different widths, so your QA preview can show text overflow (or fit) that the real deck won't have. To keep your QA trustworthy:
+**Check typography in the actual PowerPoint export.** Fonts missing from the rendering machine may
+be substituted, so verify the chosen fonts and the rendered text fit. If an optional LibreOffice
+compatibility check is requested, its substitutions can have different widths: report those differences
+separately from PowerPoint results. The substitution cautions below concern that compatibility route;
+they do not require running it or treating an installed font's native preview as approximate.
 
 - **Use native PowerPoint font-size stops for every newly authored or model-resized text run.** Choose a point size exposed by PowerPoint's standard font-size control and reachable through its built-in Increase/Decrease Font Size commands (for example, `14 pt`, not a conversion residue such as `13.9 pt`). If an existing user-supplied template intentionally uses a nonstandard size, preserve it unless the user asks to normalize it; do normalize fractional residue introduced by our own authoring, scaling, import, or export path.
 - **Safe fonts** (render true-to-width in QA *and* ship with Office): **Arial, Calibri, Cambria, Times New Roman, Courier New, Bookman Old Style, Century Schoolbook**. Use these for body text and anything where fit matters.
@@ -500,7 +527,7 @@ passes them. Every failure names its fix. Fix it in the generator and rebuild.
 
 Convert the slides to images (see [Converting to Images](#converting-to-images)) and inspect every one as a complete 16:9 page. Text that becomes readable only after cropping or zooming in does not pass. After staring at the generating code you tend to see what you expect rather than what rendered, so look at the images fresh (a subagent works well for this if you have one). User-visible defects to look for:
 
-- **Text overflow or text cut off at a box or slide boundary — check this first.** It is the most common defect and always user-visible. (For a font the previewer renders unreliably per Typography, the preview is approximate: trust the ~10% slack you left, not its apparent fit.)
+- **Text overflow or text cut off at a box or slide boundary — check this first.** It is the most common defect and always user-visible. For optional compatibility previews with font substitution, inspect the native PowerPoint page as well; extra container slack does not prove correct rendering.
 - Overlapping elements (text through shapes, lines through words, stacked elements)
 - Source citations or footers colliding with content above
 - Elements too close (< 0.3" gaps) or cards/sections nearly touching
@@ -524,9 +551,18 @@ Convert presentations to individual slide images for visual inspection:
 
 Do not use OfficeCLI as a visual export path. Its HTML/SVG output is available only as an explicit
 non-fidelity diagnostic preview (`--render html --non-fidelity-preview` for screenshots) and cannot
-serve as final images or visual QA. For native acceptance, run `office_native_gate.py --require-render`;
-the gate owns the isolated PowerPoint export and records `NATIVE_RENDER_PASS`. Use the existing
-LibreOffice-runner adapter below for the visual compatibility render and human inspection.
+serve as final images or visual QA. Run `office_native_gate.py check <deck.pptx> --format pptx --json
+--allow-office-com --require-render --render-output-dir <new-task-owned-png-directory>` under the
+ownership and source-protection checks above. The gate
+owns the isolated PowerPoint export and records `NATIVE_RENDER_PASS`. Inspect every actual exported
+PNG at full-page size; successful export alone is not visual inspection. The optional output directory
+must not already exist and is valid only with `--require-render`; the receipt lists the retained images.
+Omitting it keeps the existing transient-export behavior. Reuse the retained PNGs for previews
+and contact sheets, verifying that they correspond to the current PPTX, rather than rerendering via
+LibreOffice. After a file changes, export the current version again.
+
+Only when LibreOffice compatibility or a specific rendering difference is being checked, use the
+existing protected adapter and inspect its output separately:
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.pptx
@@ -535,13 +571,21 @@ pdftoppm -jpeg -r 150 output.pdf slide
 ls -1 "$PWD"/slide-*.jpg
 ```
 
-**Pass the absolute paths printed above directly to the view tool.** The `rm` clears stale images from prior runs. `pdftoppm` zero-pads based on page count: `slide-1.jpg` for decks under 10 pages, `slide-01.jpg` for 10-99, `slide-001.jpg` for 100+.
+**Pass the absolute image paths directly to the view tool.** In the optional commands above, use a
+dedicated task-owned output directory; `rm` clears only its stale images. `pdftoppm` zero-pads based
+on page count: `slide-1.jpg` for decks under 10 pages, `slide-01.jpg` for 10-99, `slide-001.jpg` for 100+.
 
-**After fixes, rerun all four commands above** — the PDF must be regenerated from the edited `.pptx` before `pdftoppm` can reflect your changes.
+After fixes, repeat that optional conversion only when it remains required. Its PDF must come from
+the current PPTX before `pdftoppm` can reflect the changes. It does not replace native acceptance.
 
 ## Dependencies
 
-`pptxgenjs` (npm, preinstalled — install only if `require('pptxgenjs')` fails) · `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml`, `python-pptx` (the runtime preflight checks the imports used by validation) · LibreOffice (`soffice`, auto-configured for sandboxed environments via `scripts/office/soffice.py`) · `pdftoppm` (Poppler)
+Use dependencies for the selected work: `pptxgenjs` (npm, install only if the chosen route needs it
+and `require('pptxgenjs')` fails); `markitdown[pptx]`, `Pillow`, `defusedxml`, `lxml`, `python-pptx`
+(the runtime preflight checks validation imports). Native acceptance needs Microsoft PowerPoint and
+the protected gate's dependencies. LibreOffice is conditional for `thumbnail.py`, legacy conversion,
+and requested compatibility rendering through `scripts/office/soffice.py`; Poppler is needed when
+rasterizing PDFs with `pdftoppm`. Do not probe or install LibreOffice for an ordinary native-only check.
 
 
 当前用户请求已覆盖本次 PowerPoint 原生检查、且现有守护程序能证明隔离时，可传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。按本技能的原生 gate 要求核对进程归属和源文件，只清理本任务的空实例。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

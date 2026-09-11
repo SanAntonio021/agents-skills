@@ -208,6 +208,73 @@ class ClassNotRegisteredError(RuntimeError):
 
 
 class NativeGateTests(unittest.TestCase):
+    def test_retained_render_survives_cleanup_with_hashes(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "native-pages"
+            app = FakePowerPoint(slide_count=2)
+            result = self._check(source, "pptx", app, require_render=True, render_output_dir=output)
+            self.assertEqual(result["status"], "PASS")
+            self.assertEqual(app.quit_calls, 1)
+            saved = result["details"]["native_render"]["retained_files"]
+            self.assertEqual(len(saved), 2)
+            for record in saved:
+                self.assertEqual(Path(record["path"]).read_bytes(), b"PNG")
+                self.assertEqual(record["sha256"], native_gate.sha256(Path(record["path"])))
+            self.assertEqual(source.read_bytes(), b"valid-office-package")
+
+    def test_existing_render_directory_is_preserved_without_com(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "pages"
+            output.mkdir()
+            marker = output / "slide-0001.png"
+            marker.write_bytes(b"user image")
+            dispatch = unittest.mock.Mock()
+            result = native_gate.check_file(source, "pptx", allow_office_com=True,
+                require_render=True, render_output_dir=output, dispatch_ex=dispatch)
+            self.assertEqual(result["status"], "UNVERIFIED")
+            dispatch.assert_not_called()
+            self.assertEqual(marker.read_bytes(), b"user image")
+
+    def test_render_output_requires_pptx_render_and_existing_parent(self):
+        for extension, render, nested in ((".docx", True, False), (".pptx", False, False),
+                                           (".pptx", True, True)):
+            with self.subTest(extension=extension, render=render, nested=nested), tempfile.TemporaryDirectory() as temp_dir:
+                source = self._source(temp_dir, extension)
+                output = Path(temp_dir) / ("missing/pages" if nested else "pages")
+                dispatch = unittest.mock.Mock()
+                result = native_gate.check_file(source, extension[1:], allow_office_com=True,
+                    require_render=render, render_output_dir=output, dispatch_ex=dispatch)
+                self.assertEqual(result["status"], "UNVERIFIED")
+                dispatch.assert_not_called()
+                self.assertFalse(output.exists())
+
+    def test_failed_native_export_does_not_publish_images(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "pages"
+            app = FakePowerPoint(export_error=RuntimeError("export failed"))
+            result = self._check(source, "pptx", app, require_render=True, render_output_dir=output)
+            self.assertEqual(result["status"], "FAIL_RENDER")
+            self.assertFalse(output.exists())
+            self.assertEqual(app.quit_calls, 1)
+
+    def test_concurrent_render_directory_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "pages"
+            app = FakePowerPoint()
+            def quit_and_create():
+                app.quit_calls += 1
+                output.mkdir()
+                (output / "user.txt").write_text("keep", encoding="utf-8")
+            app.Quit = quit_and_create
+            result = self._check(source, "pptx", app, require_render=True, render_output_dir=output)
+            self.assertEqual(result["status"], "FAIL_RENDER")
+            self.assertEqual(result["phase"], "retain_render")
+            self.assertEqual([p.name for p in output.iterdir()], ["user.txt"])
+
     def _source(self, directory: str, extension: str) -> Path:
         path = Path(directory) / f"source{extension}"
         path.write_bytes(b"valid-office-package")

@@ -658,6 +658,7 @@ def check_file(
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
     powerpoint_executable: str | Path | None = None,
+    render_output_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run a native gate; dependency injection keeps tests off real COM."""
 
@@ -677,6 +678,19 @@ def check_file(
         result["error"] = f"cannot hash input: {_exception_text(exc)}"
         return result
     result["source_sha256_before"] = before
+    retained_exports: Path | None = None
+    if render_output_dir is not None:
+        requested_exports = Path(render_output_dir).expanduser().absolute()
+        retained_exports = requested_exports.resolve()
+        if format_name != "pptx" or not require_render:
+            result["error"] = "--render-output-dir requires PPTX --require-render"
+        elif os.path.lexists(requested_exports) or retained_exports.exists():
+            result["error"] = "render output directory already exists; choose a new directory"
+        elif not retained_exports.parent.is_dir():
+            result["error"] = "render output parent directory must already exist"
+        if result.get("error"):
+            result["source_sha256_after"] = before
+            return result
     if source.suffix.lower() not in spec["extensions"]:
         result["error"] = f"--format {format_name} does not match input extension {source.suffix.lower()}"
         result["source_sha256_after"] = before
@@ -782,6 +796,25 @@ def check_file(
             result["status"] = "UNVERIFIED"
             result["phase"] = "integrity"
             result["error"] = "source SHA-256 changed during native gate; result is unverified"
+        if result["ok"] and retained_exports is not None and workspace is not None:
+            try:
+                # Reserve a new directory after Office cleanup and source verification.
+                # Exclusive file creation also protects concurrently added user files.
+                retained_exports.mkdir(exist_ok=False)
+                saved = []
+                for rendered in sorted((workspace / "exports").glob("slide-*.png")):
+                    target = retained_exports / rendered.name
+                    with rendered.open("rb") as src, target.open("xb") as dst:
+                        shutil.copyfileobj(src, dst)
+                    if sha256(rendered) != sha256(target):
+                        raise OSError(f"render copy verification failed: {target}")
+                    saved.append({"path": str(target), "sha256": sha256(target)})
+                if not saved:
+                    raise OSError("no native slide images available to retain")
+                result["details"]["native_render"]["retained_files"] = saved
+            except OSError as exc:
+                result.update(ok=False, status="FAIL_RENDER", phase="retain_render",
+                              error=_exception_text(exc))
         if workspace is not None:
             shutil.rmtree(workspace, ignore_errors=True)
     return result
@@ -796,6 +829,7 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--json", action="store_true", help="emit one machine-readable JSON result")
     check.add_argument("--allow-office-com", action="store_true")
     check.add_argument("--require-render", action="store_true")
+    check.add_argument("--render-output-dir", help="retain PPTX slide PNGs in a new directory")
     check.add_argument("--powerpoint-exe", help="explicit Microsoft POWERPNT.EXE for this PPTX check only")
     return parser
 
@@ -808,6 +842,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         allow_office_com=args.allow_office_com,
         require_render=args.require_render,
         powerpoint_executable=args.powerpoint_exe,
+        render_output_dir=args.render_output_dir,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))

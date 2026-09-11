@@ -77,9 +77,11 @@ acceptance policy:
   decomposable PowerPoint elements;
 - inspect every centered-but-top-anchored text item reported by the audit in the rendered pages;
 - record `STATIC_PASS` independently;
-- use `libreoffice-runner` for `LO_RENDER_PASS` and inspect the full-slide render;
 - use the native gate only within the current task's Office authorization and isolation checks;
 - keep `NATIVE_OPEN_PASS` and `NATIVE_RENDER_PASS` separate;
+- inspect the actual PowerPoint PNGs and reuse them for previews; do not rerender with LibreOffice
+  merely for a contact sheet. Only when compatibility checking or a specific rendering-difference
+  diagnosis is required, use `libreoffice-runner` and record the separate `LO_RENDER_PASS` result;
 - for beautification or other high-design work, render the candidate beside the supplied source or
   mature template when that artifact is the quality target. A technically valid package does not
   establish equal-or-better design quality;

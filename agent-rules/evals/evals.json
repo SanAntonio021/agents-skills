@@ -65,7 +65,7 @@
     },
     {
       "id": 8,
-      "prompt": "weekly-run 预检发现新加的 pdf skill 还没写进 skill-sources.toml，但现有 rigor-check 和 chat-notes 来源都已正式确认。不要临时改脚本或补登记，继续完成本周检查。",
+      "prompt": "合成案例：weekly-run 预检发现新加的 pdf skill 还没写进 skill-sources.toml，但现有 technical-writing 和 chat-notes 来源都已正式确认。不要临时改脚本或补登记，继续完成本周检查。",
       "expected_output": "把来源登记覆盖缺口与结构性错误分开；保存 preflight-validation.json，继续刷新镜像并检查全部既有 confirmed 来源，完整生成 mirror-results.json、summary.json 和 summary.md，返回非零并准确说明未覆盖范围，不把结果表述为全部技能已检查。",
       "files": [],
       "expectations": [
@@ -77,8 +77,8 @@
     },
     {
       "id": 9,
-      "prompt": "rigor-check 候选已按我的逐技能批准应用，完整复测也通过了。请完成接受基线；当前仓库里另一个 skill 有我自己的未提交改动，不要碰。",
-      "expected_output": "只验证 rigor-check 与已应用候选一致、审核证据和全部来源仍有效；用 complete-review 通过恢复日志保护的可恢复事务更新候选涉及的所有 accepted_commit、可选版本和 last_review_date，清理已完成路径迁移的冗余元数据，定向生成 rigor-check 来源页并标记 completed；不修改无关脏文件，不自动提交或推送。",
+      "prompt": "合成案例：technical-writing 候选已按我的逐技能批准应用，完整复测也通过了。请完成接受基线；当前仓库里另一个 skill 有我自己的未提交改动，不要碰。",
+      "expected_output": "只验证 technical-writing 与已应用候选一致、审核证据和全部来源仍有效；用 complete-review 通过恢复日志保护的可恢复事务更新候选涉及的所有 accepted_commit、可选版本和 last_review_date，清理已完成路径迁移的冗余元数据，定向生成 technical-writing 来源页并标记 completed；不修改无关脏文件，不自动提交或推送。",
       "files": [],
       "expectations": [
         "显式要求复测通过确认并只接受 applied_pending_retest",

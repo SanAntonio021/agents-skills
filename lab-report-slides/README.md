@@ -27,7 +27,7 @@
 
 1. **确认本机环境和安装位置。** 确认任务在 Windows 本机执行，能够访问网络和运行命令；不要装进远端 Linux 或 WSL 后声称 Windows 已安装。解析启动用户的实际主目录。已有技能管理器时沿用其受支持安装入口；否则优先使用可用的 `skill-installer`，或将完整技能目录安装到该用户的 `.agents/skills`。先检查同名技能，保留已有修改，不把整个仓库安装成技能。目录发现方式见 [Codex 官方说明](https://learn.chatgpt.com/docs/build-skills)。
 
-2. **取得四个技能。** 从同一仓库 `SanAntonio021/agents-skills` 的 `main` 解析一次当前提交 SHA，或沿用发布页指定的固定提交；从该提交取得 `lab-report-slides`、`libreoffice-runner`、`writing-router`、`style-vocab` 四个完整目录。可以下载该提交归档后只取这四项，不把整个仓库安装成技能，不混用旧附件与新依赖。记录提交和实际安装目录；使用技能管理器时沿用其受支持入口。四个目录保持同级；目录不同时按实际安装位置解析共用参考文件，并配置 `LAB_REPORT_LO_RUNNER`。全部下载与依赖安装由 Codex 执行，不要求用户手工补齐。
+2. **取得四个技能。** 从同一仓库 `SanAntonio021/agents-skills` 的 `main` 解析一次当前提交 SHA，或沿用发布页指定的固定提交；从该提交取得 `lab-report-slides`、`libreoffice-runner`、`writing-router`、`style-vocab` 四个完整目录。可以下载该提交归档后只取这四项，不把整个仓库安装成技能，不混用旧附件与新依赖。记录提交和实际安装目录；使用技能管理器时沿用其受支持入口。另从同一提交取得 `ieee-manuscript-edit/scripts/audit_writing_memory.py`，保存到实际 `style-vocab/tools/audit_writing_memory.py`，记录来源与文件校验值；该脚本仅使用 Python 标准库，无需安装论文技能。个人词表审计时用此实际脚本路径和用户自己的 `--vocab-root`，覆盖技能文档中的作者路径示例。四个目录保持同级；目录不同时按实际安装位置解析共用参考文件，并配置 `LAB_REPORT_LO_RUNNER`。全部下载与依赖安装由 Codex 执行，不要求用户手工补齐。
 
 3. **补齐软件和 Python 库。** 先发现并复用已有的 Python、LibreOffice 和 `pdftoppm`。Python 需 3.10+；缺失时可选 Python 3.13 的稳定补丁版本。优先使用本机已有的软件包管理器，先查询并核对软件名称、发布者及安装来源，再安装缺项；没有包管理器时，从 [Python 官方 Windows 下载页](https://www.python.org/downloads/windows/)、[LibreOffice 官网](https://www.libreoffice.org/download/) 和 [Poppler Windows 构建发布页](https://github.com/oschwartz10612/poppler-windows/releases) 获取与本机架构匹配的安装包。Poppler 链接是社区 Windows 构建。不要安装预发布版本或把包管理器当成额外必装依赖。使用实际选定的同一个 Python 执行下文 `pip install -r requirements.txt`。
 
@@ -35,13 +35,13 @@
 
 5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
 
-6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 SKILL.md 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。个人词表未配置时如实说明，不能声称通过个人词表审计；未发现时核对安装位置，确需重启时提示用户完成后复查。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
+6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 SKILL.md 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
 
 完成后，使用者可以说：“生成今日汇报，先列出可汇报的科研进展让我选择。”
 
 ## 安装命令与配置参考
 
-从本仓库下载并安装以下四个目录，保持同级关系。使用 CC Switch 时，添加仓库 `SanAntonio021/agents-skills`、分支 `main`，选择这四个技能并启用 Codex。
+从本仓库下载并安装以下四个目录，保持同级关系。使用 CC Switch 时，添加仓库 `SanAntonio021/agents-skills`、分支 `main`，选择这四个技能并启用 Codex。若管理器只能跟随分支、不能固定提交，安装后逐项核对实际文件与目标提交一致；不一致时不能宣称完成本发布版本安装。
 
 旧单技能下载包只包含当时版本的 `lab-report-slides`，不代表当前完整配置。默认按上方流程从同一提交安装四项。依赖技能中的作者本机路径仅作作者环境记录，使用时按本机实际配置解析，不创建作者同名目录。
 
@@ -56,7 +56,7 @@
     references/
   style-vocab/
     SKILL.md
-    scripts/
+    tools/audit_writing_memory.py  # 安装时从同版本取得的独立脚本
   libreoffice-runner/
     SKILL.md
     scripts/libreoffice_run.py
@@ -65,7 +65,7 @@
 
 采用上面的 Codex 安装流程时，这些下载与目录整理都由 Codex 执行。已有同名技能先备份，保留用户修改。
 
-在当前技能目录中，用准备运行技能的同一个 Python 安装依赖：
+以下安装及测试命令均先进入实际的 `lab-report-slides` 目录，用准备运行技能的同一个 Python 执行：
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -145,6 +145,6 @@ python -m unittest discover -s tests -p test_collect_sessions.py -v
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-完整测试包含真实 LibreOffice 转换，首次运行前确认没有正在编辑的 LibreOffice 文件；不结束用户进程。测试临时图仅供软件验证，不是科研结果。测试通过不代表已在同学电脑或 PowerPoint 中验收。
+完整测试包含真实 LibreOffice 转换，使用 runner 的独立进程和新输出目录；保留用户打开的文件，不结束用户进程。测试临时图仅供软件验证，不是科研结果。测试通过不代表已在同学电脑或 PowerPoint 中验收。
 
 更新只处理这四个技能的对应目录并保留本机修改；私人词表留在项目内。首次分享建议先让同学运行依赖检查，再用自己的一个小项目完成“选择内容—生成—打开检查”。

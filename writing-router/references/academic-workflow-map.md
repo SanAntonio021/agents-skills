@@ -24,7 +24,7 @@
 | 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-submission` 的选刊分支 |
 | 通用期刊投稿事务 | 未指定或非 IEEE 的投稿系统、作者、声明、状态、返修、录用后、版权、费用、校样和归档 | `journal-submission` |
 | IEEE 期刊投稿事务 | 明确 IEEE 的投稿系统、作者、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `journal-submission` |
-| 实验设计/证据评估 | 实验设计有没有问题、证据够不够、结论说过头没 | `rigor-check` |
+| 实验设计与科学判断 | 实验设计是否合理、比较条件是否适用、结果能支持什么结论 | 独立实验与分析问题用 `technical-writing`，直接回答；论文方法与结论用 `paper-review`，按局部或全文范围检查 |
 | 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
 | 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
 | 用词表维护/交付前扫词 | 别用这个词、这个词太 AI、收录用词、检查用词 | `style-vocab` |
@@ -94,7 +94,7 @@
 | 上游模块 | 可吸收内容 | 本地承接 |
 |---|---|---|
 | `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
-| `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | 可参考的功能映射：`rigor-check`、`lab-notebook`；不表示已吸收该上游 |
+| `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | 可参考的功能映射：`technical-writing`、`lab-notebook`；不表示已吸收该上游 |
 | `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`ieee-manuscript-edit` |
 | `paper-lookup` | 数据库选择和跨库检索思路 | `paper-search`；下载用 `paper-download`，形成调研报告由 `research-report` 统筹 |
 | `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `ieee-manuscript-edit` |
@@ -137,7 +137,7 @@
 - 调研收敛差：完善 `research-report` 的问题、比较范围和资料补齐流程。
 - 审稿不够狠：改 `paper-review`
 - 英文论文精修不够稳：改 `ieee-manuscript-edit`
-- 指标论证不清：完善 `project-writing`、`technical-writing` 共用的指标参考；实验记录或解释不清：按实际问题看 `lab-notebook`、`rigor-check`。
+- 指标论证不清：完善 `project-writing`、`technical-writing` 共用的指标参考；实验记录或解释不清：按实际问题看 `lab-notebook`、`technical-writing`。
 - 纯英文句子不够干净：改 `ieee-manuscript-edit`
 - 用户自维护词级偏好不够稳：改 `style-vocab`
-- 实验设计/证据评估不够深：改 `rigor-check`
+- 实验设计与结果判断需要补充专业内容：完善 `technical-writing` 的工程科研检查参考，论文审查复用该参考。

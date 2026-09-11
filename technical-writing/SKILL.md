@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: 中文技术方案、会前技术交流稿、系统说明、测试方案、测试记录和结果分析的写作、重构与审校，也负责工程性能目标和技术指标的可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、会议要讨论什么、接口和参数是什么、测试如何开展、结果说明什么，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、test_result_analysis 四种模式。
+description: 中文技术方案、会前技术交流稿、系统说明、测试方案、测试记录和结果分析的写作、重构与审校，也负责独立的实验设计、比较方法、结果解释及工程指标可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、会议要讨论什么、接口和参数是什么、测试如何开展、比较是否公平、结果能支持什么结论，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、test_result_analysis 四种模式。
 ---
 
 # 技术文档写作
@@ -13,7 +13,9 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 - `mode=technical_scheme|technical_exchange|system_description|test_result_analysis`
 - `edit_scope`、`language`、`loaded_refs`
 
-仅判断技术指标是否可行时，按需读取[指标可行性判断](references/metric-feasibility.md)并直接回答，不触发写稿、建账本或主稿写入。需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。
+仅判断技术指标是否可行时，按需读取[指标可行性判断](references/metric-feasibility.md)。独立讨论实验设计、比较方法或结果解释时，按需读取[工程科研检查](references/engineering-validation.md)，直接回答当前问题，不触发写稿、建账本、改项目或连接仪器。论文中的方法与结论审查交给 `paper-review`，复用同一份专业参考。
+
+需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。
 
 读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
 

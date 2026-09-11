@@ -4,18 +4,18 @@
     {
       "id": 1,
       "prompt": "I have a normal digital PDF with selectable text. Produce a safe full-text copy beside it without changing the original.",
-      "expected_output": "The wrapper chooses mode none, creates the four output artifacts, and preserves the input hash.",
+      "expected_output": "The full-text workflow preserves the input and uses no OCR. If the wrapper is used, it selects mode none and retains its four artifacts in the task process directory; only the requested complete text is delivered beside the input under a non-conflicting name. Do not publish an unrequested PDF copy, log, or status report as an additional deliverable.",
       "files": [],
       "expectations": [
-        "Runs scripts/ocr_pdf.ps1 with an explicit language list.",
-        "Status reports selected_mode none.",
-        "The input PDF is not overwritten."
+        "Extracts full text without OCR; if scripts/ocr_pdf.ps1 is used, passes an explicit language list and checks selected_mode none.",
+        "Delivers only the requested complete text; wrapper PDF, log and status remain process artifacts.",
+        "The input PDF is not overwritten and its hash is preserved."
       ]
     },
     {
       "id": 2,
       "prompt": "This PDF is a one-page scan with simplified Chinese and English. Make it searchable and give me its complete text.",
-      "expected_output": "The wrapper chooses mode skip and returns a searchable PDF plus full text extracted from the completed PDF.",
+      "expected_output": "The wrapper chooses mode skip and returns the requested searchable PDF plus full text extracted from the completed PDF. Its log, status and diagnostic renders remain process artifacts, and the source is preserved.",
       "files": [],
       "expectations": [
         "Uses an explicit language list selected by a one-page sample; the current generated canary starts with chi_sim.",
@@ -26,7 +26,7 @@
     {
       "id": 3,
       "prompt": "Pages 1-2 are native digital text and page 3 is an image scan. Convert it to one searchable PDF without losing the original text pages.",
-      "expected_output": "The wrapper chooses mode skip and the output text contains known samples from both the original text pages and OCR page.",
+      "expected_output": "The wrapper chooses mode skip; internal full-text validation includes known samples from both the original text pages and OCR page. Deliver only the requested searchable PDF, with text, logs and status retained as process artifacts; preserve the input.",
       "files": [],
       "expectations": [
         "Document-level mixed content uses skip rather than redo.",
@@ -37,7 +37,7 @@
     {
       "id": 4,
       "prompt": "This page has a small visible header plus a large scanned document image. Rebuild its text layer safely.",
-      "expected_output": "The wrapper classifies the page as page_mixed and uses mode redo.",
+      "expected_output": "The wrapper classifies the page as page_mixed and uses mode redo, rather than treating a visible header as proof that the scanned body is searchable. Deliver the rebuilt PDF only after relevant validation; retain diagnostic artifacts internally and preserve the source.",
       "files": [],
       "expectations": [
         "Status reports selected_mode redo.",
@@ -48,18 +48,18 @@
     {
       "id": 5,
       "prompt": "This scanned PDF already has a good searchable text layer. Extract the full text but do not OCR it again.",
-      "expected_output": "The wrapper chooses mode none and publishes a copied PDF with extracted text.",
+      "expected_output": "Extract the complete text without running OCR again. If the wrapper is used it chooses mode none and its process PDF copy has the same hash as the input; publish only the requested text, not an extra copied PDF or diagnostic files.",
       "files": [],
       "expectations": [
-        "Status reports selected_mode none.",
-        "Output PDF hash equals the input PDF hash.",
-        "No OCRmyPDF engine call is needed."
+        "No OCRmyPDF engine call is needed; a wrapper run reports selected_mode none.",
+        "If a process PDF copy is produced, its hash equals the input PDF hash; the source remains unchanged.",
+        "Only complete extracted text is delivered; an unrequested PDF copy is not a deliverable."
       ]
     },
     {
       "id": 6,
       "prompt": "The PDF looks like a scan, but copied text is replacement characters and mojibake. Rebuild the damaged OCR layer.",
-      "expected_output": "The wrapper identifies the damaged layer and uses mode redo, then validates the final PDF.",
+      "expected_output": "The wrapper identifies the damaged layer and uses mode redo, then validates the final PDF and preserves the input. Deliver the repaired PDF only after validation; internal text, logs, status and diagnostics are not automatically additional deliverables.",
       "files": [],
       "expectations": [
         "Obvious replacement characters or control/private-use mappings route to redo.",
@@ -70,13 +70,69 @@
     {
       "id": 7,
       "prompt": "仅分析路线，不运行 Office。共享全局没有 Office 隔离条款。用户要求把已保存的 source.docx 转成 PDF，此时 Word 正打开其他文档。随后用户额外要求 Word 原生打开证据。分别说明 PDF 转换和原生检查如何处理，源文件不能覆盖。",
-      "expected_output": "默认 PDF 转换使用 libreoffice-runner，不接管 Word；额外原生证据由 pdf 自有 gate 和技能内的任务归属规则约束，现有 Word 或归属不明时不执行接管，保留可完成的文件级工作。",
+      "expected_output": "输入是 DOCX，应交由 docx 技能负责源文件与 Word 原生证据；默认兼容 PDF 转换通过 libreoffice-runner，PDF 技能检查产出的 PDF。原生检查遵循对应 Office 技能的当前隔离、归属和退出流程，不复制或默认调用 pdf 自有 Office gate；已有 Word 正打开其他文档时不接管、不关闭用户实例。保留源文件，能够完成的文件级转换与 PDF 检查继续，原生证据受阻则如实标为未验证。",
       "files": [],
       "expectations": [
-        "PDF 转换本身不触发 Microsoft Office 原生操作。",
-        "需要原生检查时依据本技能的隔离、归属和退出规则，不引用全局 Office 授权。",
+        "DOCX 源文件和原生检查交给 docx；兼容转换使用 libreoffice-runner，PDF 技能负责产物检查。",
+        "PDF 转换本身不触发 Word 原生操作；需要原生证据时读取对应 Office 技能当前流程，不把 PDF 自有 gate 当默认入口。",
         "不连接或关闭用户实例，隔离副本和源文件保护保持。",
         "缺少进程归属或退出证据时记录未验证，不把权限开关当隔离证据。"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "离线场景推演，不实际处理文件。用户只问可搜索 PDF 手册中的额定输入阻抗；已知相关文本可正常提取，命中第 12 页‘Input impedance: 50 ohm’，页面显示与文本一致。不要另存全文或生成新 PDF。请说明本轮如何回答和结束。",
+      "expected_output": "直接回答额定输入阻抗为 50 Ω，并注明给定第 12 页位置；使用已有文本和相关页的核对即可结束。不运行 OCR、不处理全书、不生成全文副本或新 PDF，也不为查询强制产出日志报告。结论限于给定可搜索资料，不声称完成真实文件编辑验收。",
+      "files": [],
+      "expectations": [
+        "可搜索 PDF 的局部查询直接提取或复用相关文本，并保留来源页。",
+        "不自动 OCR、导出全文或生成用户未请求的文件。",
+        "区分场景推演与真实文件处理。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "离线场景推演，不实际处理文件。用户只需读取扫描 PDF 第 7 页的一张接口表，页码已明确，其他页无关。该页复制文本只有页眉，正文确为扫描图。当前 ocr_pdf.ps1 只有 InputPdf、Languages、Mode、OutputDirectory、Deskew、Jobs、TimeoutSeconds 参数，没有页码或页范围参数。应怎样取得所需内容？",
+      "expected_output": "先渲染并阅读指定第 7 页，按需用局部图像识别或先抽取目标页到过程文件再交给现有 OCR 流程，仍须目视核对表格行列、单位和接口方向。页眉可复制不代表正文可搜索；不要对全书默认 OCR，不虚构 -Pages、-PageRange 等脚本参数。用户只要表格内容，直接给内容及第 7 页出处，不把中间页 PDF、OCR 日志或全文作为额外交付。",
+      "files": [],
+      "expectations": [
+        "已知页码时限定目标页，不因存在扫描内容默认处理整书。",
+        "渲染核对表格结构，不能把少量页眉文本当成完整正文。",
+        "不发明现有 OCR 脚本没有的页码参数；需要裁范围时先抽取页面。"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "离线场景推演，不实际处理文件。用户要找 80 页 PDF 中的保修排除条款，没有提供位置；书内部分页可搜索、部分页为扫描。一次文本搜索没有命中，目录提到‘服务条款’，抽样相关页仍不能确定条款是否存在。请说明如何继续，以及什么情况下可以说没有找到。",
+      "expected_output": "先用目录、同义关键词和可提取文本定位，再检查相关扫描页；线索不足时逐步扩大检查范围，必要时对尚未可检索的部分建立可靠文本或使用现有完整 OCR 流程。保持数字页与原书页码对应，不假定未知位置，不虚构脚本页范围参数。局部搜索失败只能说当前检查范围未找到；只有相关范围覆盖充分后才能报告该范围内未找到，未完成全书检查不能宣称全书不存在。用户要定位条款，不自动交付全文或额外 PDF。",
+      "files": [],
+      "expectations": [
+        "未知位置按线索逐步扩大，局部优先不等于只查一页就停止。",
+        "区分无文本命中与条款不存在，报告实际覆盖范围。",
+        "必要时允许扩大 OCR，但不虚构页范围参数或额外交付全文。"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "离线场景推演，不修改真实文件。用户明确要将 PDF 中一处金额改为已给定的新值，其他内容完全不变。当前该区域是扫描，旧字边缘与表格细线及印章重叠；同页另有可编辑文字，但缺少能可靠编码新字形的原字体。第一次候选只改对了文字数值，字体明显不同，蒙版还擦掉一段细线。有人建议自动重排整页或把候选直接当正式成果。应怎样继续？",
+      "expected_output": "候选未通过精确编辑要求，不能交付为正式成果。先在副本中检查是否有可验证的原字体编码、精确对象替换或不破坏线条印章的局部修复办法；不猜 CMap、不重排整页、不扩大蒙版或遮掉受保护图形。若这些限制仍无法满足，说明具体受阻区域并提供准确替换文字或供人工编辑的路径，保留原件与候选，不把失败说成完成。可行的新候选仍须核对关联金额、文字、受影响页及高分辨率局部渲染和区域外差异；不是只看提取文字相同。",
+      "files": [],
+      "expectations": [
+        "数值正确不能掩盖字体、细线或印章被破坏，失败候选不能作为正式成果。",
+        "在授权精确修改范围内检查可靠办法，不猜编码或自动重排整页。",
+        "无法满足时报告具体限制和替换文字，不覆盖原件、不宣称真实编辑验收。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "离线场景推演，不生成真实 PDF。用户提供参考拼版：两页可搜索的源 PDF 分别置于同一目标页的两个矩形中，随后附上一页原扫描签章页；参考页的 MediaBox、CropBox、旋转、顺序和目标矩形均可从对象取得。要求保持字体、表格线和签章，只交付最终拼版 PDF。应采用什么操作和验证范围？",
+      "expected_output": "从参考对象恢复已给版式参数，按明确顺序用页面放置 API 保留矢量内容、比例与必要裁剪，不截图重绘正文或表格；扫描签章页按整页复制追加，不重新编码成截图。核对最终页数、顺序、页面框和旋转，渲染拼版页检查文字、边线、裁剪及可读性；追加扫描页用相同渲染条件在两个 DPI 下比较像素尺寸和原始像素哈希，不能要求重组后的 PDF 文件哈希等于源文件。原件保留，仅最终拼版 PDF 为交付，预览与核验记录留在过程材料中；没有用户要求不追加签字门。",
+      "files": [],
+      "expectations": [
+        "按参考几何放置源页面，保留矢量文字表格和原扫描页，不栅格化重绘。",
+        "保持来源到附页配对、顺序、页面框和旋转，裁剪不伤淡线或签章。",
+        "采用对应拼版与复制扫描页的渲染验证，不以文件哈希相同代替内容验证。",
+        "仅交付用户请求的最终 PDF，不把预览、日志、全文一起发布。"
       ]
     }
   ]

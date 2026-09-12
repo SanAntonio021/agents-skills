@@ -38,9 +38,13 @@ def test_existing_scope_modes_have_workflow_mapping(mode):
 
 def test_router_loads_workflow_after_context_and_before_prose():
     text = (ROUTER / "SKILL.md").read_text(encoding="utf-8")
-    flow = text.split("## 通用流程", 1)[1].split("## 普通中文编辑", 1)[0]
-    assert flow.index("建立写作上下文") < flow.index("collaborative-writing.md")
-    assert flow.index("collaborative-writing.md") < flow.index("4. 按当前文体")
+    loading = text.split("## 最小加载规则", 1)[1].split("\n## ", 1)[0]
+    assert "建立写作上下文后、处理正文前" in loading
+    assert "collaborative-writing.md" in loading
+    assert "实际路径记入 `loaded_refs`" in loading
+    assert text.index("## 最小加载规则") < text.index("## 通用流程")
+    assert "不另建记录文件" in text
+    assert "同样适用于直接调用文体技能" in loading
     assert "本轮实际读取过的规则和样稿路径" in text
     assert "TRACE_WRITING_CONTEXT=1" in text
 

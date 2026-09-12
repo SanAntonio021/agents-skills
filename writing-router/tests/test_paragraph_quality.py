@@ -222,7 +222,7 @@ class ParagraphQualityTests(unittest.TestCase):
                             if "中文正文首次起草、续写、局部修改或审查前" in line)
                 self.assertIn("中文正文展示前检查", line)
                 self.assertIn("读取", line)
-                self.assertIn("英文仍", line)
+                self.assertIn("英文在" if genre == "writing-router" else "英文仍", line)
                 self.assertIn((SKILLS_ROOT / CATALOG).resolve(), linked_paths(path))
                 self.assertLess(text.index(line), text.index("## 完成条件"))
 
@@ -287,8 +287,10 @@ class ParagraphQualityTests(unittest.TestCase):
             self.assertIn(fragment, section)
         self.assertIn((SKILLS_ROOT / COMMON).resolve(), linked_paths(path))
         router_text = read_text(ROUTER / "SKILL.md")
-        self.assertIn("中文正文工作开始时按 `style-vocab` 读取适用词表", router_text)
-        self.assertIn("完整正式文稿交付前继续运行正式词表审计", router_text)
+        loading = router_text.split("## 最小加载规则", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("`style-vocab` 适用词表，逐批检查", loading)
+        self.assertIn("完整正式稿按 `style-vocab` 执行术语与正式词表审计", loading)
+        self.assertIn((SKILLS_ROOT / COMMON).resolve(), linked_paths(ROUTER / "SKILL.md"))
 
     def test_readme_keeps_full_evaluation_and_scopes_new_claims(self):
         text = read_text(ROUTER / "evals" / "README.md")
@@ -324,8 +326,8 @@ class ParagraphQualityTests(unittest.TestCase):
         self.assertIn('核对发言人与任务归属，不只沿用上一轮纪要', meeting)
         self.assertIn('只交付本轮所要的部分，不重发或改动已确认部分', meeting)
         router = read_text(ROUTER / 'SKILL.md')
-        self.assertIn('先实际读取上表对应主技能的 `SKILL.md`', router)
-        self.assertIn('只读共同质量规则不算完成正式文稿的加载', router)
+        self.assertIn('实际读取路由表选定的主技能及本轮所需参考', router)
+        self.assertIn('路由表不能代替文体规则', router)
         self.assertIn('先在原文中定位要概括的结论句', report)
         self.assertIn('不把单项满足改写成综合推荐', report)
         self.assertIn('用户只要摘要时只交付摘要', report)
@@ -351,7 +353,8 @@ class ParagraphQualityTests(unittest.TestCase):
         paper = read_text(SKILLS_ROOT / 'ieee-manuscript-edit/SKILL.md')
         report = read_text(SKILLS_ROOT / 'research-report/SKILL.md')
         vocab = read_text(SKILLS_ROOT / VOCAB)
-        self.assertIn('默认只交付本轮请求的正文，不附修改理由或检查记录', router)
+        self.assertIn('交付本轮请求的正文或审查意见', router)
+        self.assertIn('默认不附检查记录和改写理由', router)
         self.assertIn('完整正式稿才运行词表审计', paper)
         self.assertIn('局部文本：只给修改稿', paper)
         self.assertIn('不为这些操作启动完整报告审计', report)

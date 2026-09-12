@@ -1,7 +1,7 @@
 {
   "skill_name": "writing-router",
   "fixture_policy": "synthetic-only",
-  "run_policy": "旧版与新版使用相同合成材料、分别隔离主稿；逐轮发送用户消息，保留回复、实际写入和 loaded_refs。平台替身只记录操作，不替模型执行确认判断。",
+  "run_policy": "按当前修改选取相关场景，逐轮发送用户消息，后续消息及 expectations 留在控制端；保留回复、实际读取、文件变化和 loaded_refs，不以声明代替读取。新旧对照时使用相同合成材料、分别隔离主稿；平台替身只记录操作，不替模型执行确认判断。直接调用文体技能也须找到共同协作与质量参考，已读且未变的内容复用。",
   "evals": [
     {
       "id": "remote-authoring",

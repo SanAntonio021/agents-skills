@@ -1,5 +1,91 @@
 # CDP Proxy protocol v2
 
+## 按需操作指南
+
+只有本次任务选择此 CDP Proxy 时才读取启动细节。普通搜索、公开正文读取和不依赖浏览器状态的 API / CLI 不运行浏览器前检。联网方式选择与失败分流见 [技能入口](../SKILL.md)；本节说明现有浏览器操作，不改变端点或权限。
+
+### 启动与浏览器选择
+
+CDP 路径需要 Node.js 22+。沿用用户指定的浏览器；没有指定时使用已配置的默认浏览器，首次默认 Edge。用户指定的浏览器不可用时，先处理对应原因，不静默换成另一个浏览器。
+
+以下示例使用已核实的技能目录；若宿主没有提供 `CLAUDE_SKILL_DIR`，将其替换为实际技能路径，不把变量名当作已展开路径。
+
+```bash
+# 默认浏览器；首次默认 Edge
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
+# 本次明确使用 Chrome；不停止 Edge Proxy
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
+# 仅任务需要同时使用两个浏览器时检查两者
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
+```
+
+- `exit 0`：使用返回的 `proxyUrl`，核对 `protocolVersion: 2` 和所需能力后继续。
+- `exit 2`：生产配置或端口覆盖冲突，按输出处理，不以备用端口绕过。
+- `exit 1`：按输出的具体原因和“Agent 处理顺序”恢复；已有授权内能自行解决的步骤直接完成。需要用户开启调试开关或浏览器授权时才说明实际动作；仍不可用只暂停依赖浏览器的部分。
+
+所有生产副本读取 `%LOCALAPPDATA%\web-access\config.env`，缺失时由脚本原子创建。`WEB_ACCESS_BROWSER` 可为 `edge` 或 `chrome`；Edge、Chrome Proxy 端口分别固定为 `3456`、`3457`。同名环境变量只能重复相同端口值；临时端口仅用于脚本建立的隔离测试根和 `WEB_ACCESS_TEST_MODE=1`。
+
+脚本先绑定固定 Proxy 端口，再连接浏览器。并发调用只有端口胜者建立 CDP 连接，其他调用核验并复用兼容 Proxy。Edge 与 Chrome 可同时常驻；不要为切换浏览器或解决占用再建备用端口。
+
+浏览器需在 `edge://inspect/#remote-debugging` 或 `chrome://inspect/#remote-debugging` 开启相应远程调试开关。Edge 授权绑定当前浏览器实例和长期 Proxy 连接，两者持续运行时通常可复用；关闭、断线重连或迁移后可能再次出现提示。反复提示时先检查重复 Proxy，不默认重启浏览器。
+
+发现旧 Proxy 或 `protocol_mismatch` 时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口和 PID；`check-deps` 只报告，不自动结束旧进程。重启复用已覆盖准确对象与影响的授权，缺失或对象变化时才询问；保留用户浏览器窗口。
+
+### 页面观察与导航
+
+先用 [snapshot](#ax-snapshotref) 读取结构，再以最新 ref 调用 [action](#结构化-action)，动作后回读页面确认结果。导航、动态重绘、dialog 或 `resume` 后重新 snapshot；`STALE_REF` 不用旧 ref 反复重试。加载等待用 [wait](#wait-与-dialog) 的 selector、text、URL 或 load 条件。
+
+snapshot/ref 不足时使用 CSS `/click`，必要时才用 `/eval`。结构化交互可以执行页面脚本并保留会话上下文，但仍可能遇到站点检测、验证码或访问限制，不保证优于每一种直接读取方式。通过实际页面交互了解地址与参数，比猜测 URL 更可靠；保留观察到的完整 URL，不自行补造会话参数。
+
+连续浏览用 ref 点击；并行读取时，在同一 task 用 `POST /v2/tabs` 和完整 URL 新建自有 tab。Proxy 先创建空白页并初始化，再导航；popup 按 `openerId` 继承 task。带签名或会话参数的 URL 只在任务内部使用，不写入交付文本。
+
+折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；同源 Shadow DOM/iframe 必要时可用 CSS 或 `/eval`，不宣称可穿越所有 frame。页面显示“内容不存在”时结合实际地址和访问状态判断，不凭一句提示断定原内容已删除。
+
+### 文件与媒体资源入口
+
+- 公开 URL 或站点下载动作能返回目标资源时，保存服务器文件字节；登录资源优先用站点已有下载动作。
+- 自有 tab 已到达文件 URL、却未产生可用下载时，按 [同源服务器文件字节提取](#同源服务器文件字节提取) 取回完整响应并校验。此方法只用于公开或当前已授权内容。
+- 原件取不到而目标图片已完整加载时，按 [自然尺寸图片像素导出](#自然尺寸图片像素导出) 处理；canvas 重新编码与原始服务器字节分开标识。
+- 页面状态或视频当前帧用 `/screenshot`；必要时经鉴权的 `/eval` 操作 `<video>` 后取帧。截图不能冒充图片原件。截图端点仅返回字节，调用方选择保存位置，不向 Proxy 传任意本机路径。
+
+分块和总量边界、同源条件及完整性核验采用下方既有流程。交付按实际需要说明文件来源与限制，不把 Base64、token 或会话地址输出给用户。
+
+### 登录与用户接管
+
+复用浏览器已有会话，先判断目标内容是否已可读取；只有确实受登录或验证阻碍时才接管。密码、MFA、验证码、SSO consent 和歧义账号选择仍由用户操作。
+
+1. 调用 [handoff](#post-v2taskstaskidhandoff)，指定准确 `targetId`。Proxy 阻止新操作、取消 wait、等待在途操作结束，再激活该 tab。
+2. 告知用户需要完成的实际动作。handoff 期间不读取、截图或修改页面。
+3. 用户完成后调用 [resume](#post-v2taskstaskidresume)，重新 snapshot，验证目标内容是否可用。
+
+接管超时、激活结果不明和终态恢复按下方 Task 契约处理，不通过新 task 接管遗留的用户 tab。只需读取时，不因页面显示登录提示而自动发起与目标无关的登录。
+
+### 表单与外部写入
+
+已有准确授权时，核对目标、账号、动作及内容后执行并回读，不因进入表单或最终提交而再次确认。没有授权外发时，仅将用户提供的非敏感内容、且不存在 autosave、live chat 或输入即外发的填写作为普通草稿操作。敏感内容或即时外发按相应写入授权处理，缺失授权或实际要素变化时询问。
+
+JavaScript dialog 默认保持待处理，先读取实际提示，按同一授权判断选择 accept/dismiss；接口要求确认参数时依据真实请求填写，不伪造用户答复。处理后重新 snapshot。
+
+### 并行任务与收尾
+
+多个目标独立且分工有益时可交给子 Agent，说明所需结果、材料和约束，并要求加载 `web-access`；不为简单单页任务强行分工。每个对话或子 Agent 创建独立 task，只使用其 token、自有 tab 和 popup；同一浏览器复用专用 Proxy/CDP 连接，跨浏览器 token 不通用。单个 Proxy 最多同时保留 32 个非终态 task，避免密集创建无用页面。
+
+结束时调用 [complete](#post-v2taskstaskidcomplete)，默认 `keep:false` 关闭自有 tab；确需留给用户时用 `keep:true`。handoff 状态先按用户接管流程恢复，不能用 complete 绕开屏障。active task 30 分钟无操作后过期，自有 tab 闲置 15 分钟清理；具体超时和终态结果以下方协议为准。
+
+保留长期 Proxy，不把停止 Proxy 或关闭用户浏览器作为收尾步骤。Proxy 重启会失去 token、归属和 ref，遗留页面降为用户 tab，不能重新接管。
+
+### 本地历史与站点参考
+
+用户要找本人访问过的页面或公网不可检索的内部入口时，按目标关键词查询本地书签或历史；不为普通联网查询扫描无关浏览记录。
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks|history] [--browser chrome|edge] [--limit N] [--since 1d|7h|YYYY-MM-DD] [--sort recent|visits]
+```
+
+多词按 AND 匹配 title 与 URL，默认查询已安装 Chromium 系浏览器；`--browser` 限定来源。`--since` 与 `--sort` 只作用于历史，默认按最近访问倒序。
+
+目标站点存在 `site-patterns/{domain}.md` 时按需读取；前检也会列出已有站点参考。记录中的发现日期和条件保留，经验失效时重新判断。业务任务不自动回写站点经验；仅在用户要求维护时记录已验证事实。
+
 ## 连接与通用规则
 
 - Edge 默认地址：`http://127.0.0.1:3456`
@@ -247,7 +333,7 @@ JavaScript dialog 默认保持待处理，不自动接受：
 | POST | `/v2/tabs/{id}/scroll` | `{"direction":"bottom"}` 或 `{"y":3000}` |
 | POST | `/v2/tabs/{id}/set-files` | `{"selector":"input[type=file]","files":["C:\\\\path\\\\file.png"]}` |
 
-文件上传属于最终外部写操作，调用前必须按 SKILL.md 取得用户确认。
+文件上传属于外部写操作，调用前按 [技能入口](../SKILL.md) 核对准确授权、目标和文件；已有授权且范围一致时继续，缺少授权或实际范围变化时才询问。
 
 ## 主要错误码
 

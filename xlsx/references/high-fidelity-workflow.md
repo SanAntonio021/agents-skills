@@ -54,7 +54,7 @@ python <skill-root>\scripts\verify_xlsx.py source.xlsx --json-out <task-temp>\ba
 }
 ```
 
-允许范围必须来自用户要求或已批准整改清单。不要为了让检查通过而扩大范围。
+允许范围必须来自用户要求或已批准整改清单。不要为了让检查通过而扩大范围。示例中的缓存变化许可用于需要重算的任务；计算未变且缓存可靠时保持缓存原值，不为省略重算降低预期缓存数或忽略错误。
 
 ## 4. 修改
 
@@ -81,7 +81,9 @@ python <skill-root>\scripts\patch_ooxml.py source.xlsx <task-temp>\draft.xlsx --
 
 ## 5. 重算与缓存回填
 
-重算分三份文件：
+先按 [general-workflow.md](general-workflow.md) 第 8 节判断计算影响。公式和计算输入未变、已有缓存可靠且补丁后完整保留时，直接以 `draft.xlsx` 作为待核验候选，不生成重算副本或运行缓存合并。文字参与条件匹配或查找时也属于计算输入；缓存缺失、可能过期时不能据其声称结果准确。
+
+需要重算时分三份文件：
 
 - `<task-temp>\draft.xlsx`：权威内容和格式候选；
 - `<task-temp>\recalculated.xlsx`：LibreOffice 隔离重算副本；
@@ -102,6 +104,10 @@ python <skill-root>\scripts\merge_formula_caches.py <task-temp>\draft.xlsx <task
 
 公式签名不同意味着 LibreOffice 可能重写了语义，不继续合并。
 
+重算后核对受影响结果，不能仅凭退出码和缓存数量判定成功。现有转换式 `recalc` 可能保留旧缓存；发现输入已变而结果未刷新时，保留该结果记录，在新的专用计算副本中清除失效缓存后再调用同一隔离重算流程。保持公式文本、属性及组结构；简单独立公式可用现有定点补丁重写同一公式并省略 `cached`，共享或数组公式不能套用这种方式。权威候选和原稿保留原样，重算结果经公式签名、依赖结果及零错误检查后再回填；无法可靠刷新时标明计算未完成，不把旧值交付为新结果。
+
+重算副本只提供缓存，不作为高保真正式整包。以下命令中的 `candidate-final.xlsx` 表示实际待发布候选；省略重算时替换为 `draft.xlsx`，不为凑齐固定文件链而额外复制。
+
 ## 6. 包级复核
 
 ```powershell
@@ -119,6 +125,8 @@ python <skill-root>\scripts\verify_xlsx.py <task-temp>\candidate-final.xlsx --ba
 业务检查另写任务脚本或断言，不塞进通用包级工具。例如金额合计、编号序列、唯一资产、必填/留空字段和文本禁词。
 
 ## 7. PDF 与视觉复核
+
+文字、行列或其他呈现变化时检查受影响区域和周边；未影响呈现的数据处理不强制渲染。明确需要打印或 PDF 时，使用下面的导出及逐页流程；不要因采用高保真路线就默认追加 PDF。需要使用 PDF 作为局部版面检查工具时，生成的辅助文件留在过程目录，不成为额外交付物。
 
 ```powershell
 python <skill-root>\scripts\libreoffice_headless.py pdf <task-temp>\candidate-final.xlsx <task-temp>\candidate-final.pdf
@@ -138,11 +146,11 @@ python <skill-root>\scripts\verify_pdf.py <task-temp>\candidate-final.pdf `
 - 行高、换行、边框和分页是否使一条记录跨页或被裁切；
 - 页边距内是否有重叠、跨格和异常缩放。
 
-文本提取能发现缺字和空白页，但不能证明视觉无裁切。若 PDF 字体缺少可靠的 Unicode 映射，脚本会把中文关键词标为 `required_text_unverifiable` 警告，不误报为实际缺字；此时必须在渲染图中人工确认。最终始终查看全部渲染页。
+文本提取能发现缺字和空白页，但不能证明视觉无裁切。若 PDF 字体缺少可靠的 Unicode 映射，脚本会把中文关键词标为 `required_text_unverifiable` 警告，不误报为实际缺字；此时在相关渲染图中核对。打印或 PDF 交付查看全部页面；只作局部版面检查时查看受影响区域及周边。
 
 ## 8. 受控发布
 
-内容和视觉检查全部通过后，完整遵守 [output-lifecycle.md](output-lifecycle.md)。正式路径不存在时：
+内容及本次需要的计算、视觉检查通过后，完整遵守 [output-lifecycle.md](output-lifecycle.md)。必要检查受阻时明确未完成项，不把省略记录为通过。正式路径不存在时：
 
 ```powershell
 python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <formal-destination.xlsx>
@@ -160,12 +168,12 @@ python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <
 
 报告顺序：
 
-1. 正式 XLSX、PDF、复核记录路径；
+1. 用户需要的正式成果路径（PDF 仅在请求交付时列出）；
 2. 实际修改范围；
 3. 公式数、缓存数、错误数；
 4. 关键合计、数量、唯一性、空白字段；
 5. 包级未改对象；
-6. PDF 页数和逐页结论；
+6. 实际执行的区域检查或 PDF 页数与逐页结论；未要求的检查不冒充通过；
 7. 仍需人工确认的事实。
 
 正式文件自动发布到项目根目录并验证后，保留过程材料，等待用户显式触发 ChatNote 清理。第一次在最终回复链接正式路径后，该文件成为已交付、受保护文件。

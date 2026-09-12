@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
-- 最近来源登记审核：`2026-07-23`
-- 说明：四个上游分别提供经验信号、复盘字段、Git 变更扫描和文档收尾方法；本地保留人工判断与批准门。
+- 最近来源登记审核：`2026-09-12`
+- 说明：四个上游保留历史来源与接受基线。2026-09-12 对照现行正文及本地提交 13afdb76、4e578909 复核：经验判断、文档同步与可恢复清场仍在；固定分类和清场再次审批已由现行流程取代，来源记录不另设批准门。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -14,9 +14,11 @@
 - 仓库：https://github.com/blader/Claudeception.git
 - 当前上游路径：`.`
 - 接受时上游路径：`.`
+- 技能入口：`SKILL.md`
 - 已接受提交：`62dbb91d1183a866b5cf40079265c825b2695843`
 - 已接受版本：`3.0.0`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`blader-claudeception`
 
@@ -48,9 +50,11 @@
 - 仓库：https://github.com/accidentalrebel/claude-skill-session-retrospective.git
 - 当前上游路径：`.`
 - 接受时上游路径：`.`
+- 技能入口：`SKILL.md`
 - 已接受提交：`884ee05b086d107283eab18d9d0e9025527f4846`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT (README-only; no LICENSE file/full text)`
 - 镜像登记：`accidentalrebel-session-retrospective`
 
@@ -61,7 +65,7 @@
 
 ### 已吸收
 
-- 在复盘结果中显式记录错误、原因和避免方法。
+- 历史借鉴错误、原因和避免方法的复盘思路；当前按需要在已有记录中说明核实结果、影响与恢复依据，不固定要求一套复盘字段。
 
 ### 明确不吸收
 
@@ -81,9 +85,11 @@
 - 仓库：https://github.com/KKKKhazix/khazix-skills.git
 - 当前上游路径：`neat-freak`
 - 接受时上游路径：`neat-freak`
+- 技能入口：`neat-freak/SKILL.md`
 - 已接受提交：`2b4a645cfdc894156ae347d897723562f719ce95`
 - 已接受版本：`未提供`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`khazix-skills`
 
@@ -96,12 +102,12 @@
 
 ### 已吸收
 
-- 用 git diff 和 git status 判断哪些文档需要同步。
-- 清场前先完整汇报并取得报告后的再次明确批准；未核实事实保持 pending；宿主生成记忆只通过合规 correction input 修正。
+- 历史借鉴 git diff/status 的变更扫描方法；当前按实际改动与文件关系判断哪些已有说明需要同步，不固定要求某组命令。
+- 历史吸收过清场前完整汇报后再次审批、未核实事实保持 pending 和宿主记忆 correction input 约束；当前核实事实并保留未知项，记忆写入服从宿主入口，清场按 SKILL.md 的现行授权执行，不要求重复批准。
 
 ### 明确不吸收
 
-- 自动清理仓库和未经用户批准的批量文件修改。
+- 上游自动清理仓库的实现，以及未经用户授权的批量文件修改；本地可恢复清场沿用 SKILL.md 的现行授权和范围。
 
 ### 跟踪范围
 
@@ -117,9 +123,11 @@
 - 仓库：https://github.com/garrytan/gstack.git
 - 当前上游路径：`document-release`
 - 接受时上游路径：`document-release`
+- 技能入口：`document-release/SKILL.md`
 - 已接受提交：`a3259400a366593e0c909dd9ac3e59752efd2488`
 - 已接受版本：`1.0.0`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`gstack`
 
@@ -132,11 +140,11 @@
 ### 已吸收
 
 - 改文档前读取入口；区分事实修正与高风险改动；保护版本记录；给出修改摘要。
-- 对外接口按 Diátaxis 检查文档覆盖；ASCII/Mermaid 架构图按代码变化检查漂移并保持人工确认。
+- 保留按实际变化检查用法、配置、接口、名称路径、架构图和上下游说明；历史 Diátaxis 四分类不再作为固定步骤，不为补齐分类新建文档，修改沿用当前准确授权。
 
 ### 明确不吸收
 
-- telemetry、升级检查、自动提交、自动推送和 gstack 专用运行框架。
+- gstack 的 telemetry、升级检查、自动提交/推送实现和专用运行框架；本地已获准确授权后的受控发布按 skill-edit-followup.md 执行。
 
 ### 跟踪范围
 

@@ -25,7 +25,9 @@
   <a href="https://web-access.eze.is">🌐 官网</a> · <a href="https://mp.weixin.qq.com/s/rps5YVB6TchT9npAaIWKCw">📖 设计详解</a> · <a href="#安装">⚡ 快速安装</a>
 </p>
 
-AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏览器自动化能力。这个 Agent Skill 补上的是：**联网策略 + CDP 浏览器操作 + 站点经验积累**。兼容所有支持 SKILL.md 的 Agent（Claude Code、Cursor、Gemini CLI、Codex CLI 等）。
+这个 Skill 是统一联网入口，按当前任务选择搜索、正文读取或真实浏览器操作。普通读取被拦截、只有页面框架或缺少目标正文时，Agent 判断原因后自动转浏览器；已知需要登录状态、动态内容或交互时直接使用浏览器。普通搜索和不依赖浏览器的读取不检查或启动浏览器。
+
+它保留现有浏览器会话、CDP 操作及按需读取的站点经验，兼容支持 SKILL.md 的 Agent（Claude Code、Cursor、Gemini CLI、Codex CLI 等）。真实浏览器可以处理部分普通抓取无法访问的页面，仍可能遇到站点检测、验证码或权限限制；取得所需正文和核验实际操作结果才算完成。
 
 > **本地修订 dual-proxy.2**：在上游 v2.5.3 与 dual-proxy.1 基础上，保留 Edge（固定 3456）和 Chrome（固定 3457）双长期 Proxy，并新增唯一生产配置、单实例并发复用、task/token 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认。
 
@@ -37,19 +39,21 @@ AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏
 
 | 能力 | 说明 |
 |------|------|
-| 联网工具自动选择 | WebSearch / WebFetch / curl / Jina / CDP，按场景自主判断，可任意组合 |
+| 联网工具自动选择 | 选择当前可用的搜索、正文读取或浏览器工具；普通读取不足时自动转浏览器，已知动态或登录需求直接访问 |
 | 双长期 CDP Proxy | Edge 固定 3456、Chrome 固定 3457；所有生产副本复用同一配置和现有兼容进程，不使用备用端口 |
 | task/token 隔离 | 每个对话创建独立 task，只能看到和控制自己创建的 tab 及 popup；不列出或接管用户 tab |
 | AX snapshot/ref | 默认读取交互式可访问性树，以短 ref 定位元素；动态重绘后重新 snapshot |
 | 结构化交互 | 支持 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`，动作后回读验证 |
 | 等待与接管 | 等 selector/text/URL/load；密码、MFA、验证码和 SSO consent 交给用户完成，handoff 期间禁止页面访问 |
-| 安全确认 | 敏感信息首次输入及提交、发送、上传、付款、删除、授权、账号变更前确认 |
+| 授权复用 | 敏感信息及提交、发送、上传、付款、删除、授权、账号变更核对准确目标与已有授权，缺失或变化时才询问 |
 | 本地浏览器书签/历史检索 | `find-url.mjs` 跨 Chrome / Edge 查询公网搜不到的目标（内部系统）或用户访问过的页面，支持关键词/时间窗/访问频度排序 |
 | 并行分治 | 多目标可并行；同一浏览器共享 Proxy，但 task、token、tab 和 ref 互相隔离 |
-| 站点经验积累 | 按域名存储操作经验（URL 模式、平台特征、已知陷阱），跨 session 复用 |
+| 站点经验复用 | 按域名读取已有 URL 模式、平台特征与已知陷阱；只有用户要求维护时才更新 |
 | 媒体提取 | 从 DOM 直取图片/视频 URL，或对视频任意时间点截帧分析 |
 
 `dual-proxy.2` 使用 `/v2` API。旧无版本操作路由返回 `410 LEGACY_API_DISABLED`；迁移见 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md)。
+
+以下是上游历史更新；当前本地操作以 [技能入口](SKILL.md) 和 [浏览器参考](references/cdp-api.md) 为准。
 
 **v2.5.2 更新：**
 - **Microsoft Edge 支持** — CDP Proxy 不再绑定 Chrome，新增 Edge 适配（及 Chromium、Chrome Canary 等 Chromium 系，通过同一套自动发现机制接入）。在 `edge://inspect/#remote-debugging` 勾选 "Allow remote debugging for this browser instance" 即可
@@ -117,93 +121,17 @@ claude plugin install web-access@web-access --scope user
 git clone https://github.com/eze-is/web-access ~/.claude/skills/web-access
 ```
 
-## 前置配置（CDP 模式）
+## 浏览器配置与 API
 
-CDP 模式需要 **Node.js 22+** 和浏览器（Chrome / Edge）开启远程调试：
+选择 CDP Proxy 后才检查 Node.js 22+、浏览器调试开关与 `/v2` 协议。生产副本统一使用 `%LOCALAPPDATA%\web-access\config.env`，Edge / Chrome Proxy 端口固定为 `3456` / `3457`，复用现有兼容进程。
 
-1. 在你想用的浏览器地址栏打开对应 inspect 页面：
-   - Chrome：`chrome://inspect/#remote-debugging`
-   - Edge：`edge://inspect/#remote-debugging`
-2. 勾选 **Allow remote debugging for this browser instance**（可能需要重启浏览器）
+- [启动与浏览器选择](references/cdp-api.md#启动与浏览器选择)：前检命令、配置、固定端口和授权连接复用。
+- [页面观察与导航](references/cdp-api.md#页面观察与导航)：snapshot/ref、导航、等待和能力限制。
+- [文件与媒体资源入口](references/cdp-api.md#文件与媒体资源入口)：服务器字节、图片像素和截图的选择。
+- [登录与用户接管](references/cdp-api.md#登录与用户接管)、[并行任务与收尾](references/cdp-api.md#并行任务与收尾)：task 隔离与生命周期。
+- [完整端点协议](references/cdp-api.md#连接与通用规则) 和 [旧版本迁移](references/migration-dual-proxy.2.md)：请求、响应和恢复规则。
 
-### 唯一生产配置与固定端口
-
-源码、CC Switch、Claude 和 Codex 的技能副本统一读取 `%LOCALAPPDATA%\web-access\config.env`。首次运行会原子创建该文件；各技能目录中的 `config.env` 不再作为生产配置来源：
-
-```bash
-# 未显式指定时默认使用 Edge
-WEB_ACCESS_BROWSER=edge
-
-# 生产端口固定，防止不同技能副本各起一份 Proxy
-WEB_ACCESS_EDGE_PORT=3456
-WEB_ACCESS_CHROME_PORT=3457
-```
-
-`WEB_ACCESS_BROWSER` 合法值为 `chrome` / `edge`。生产配置中的端口必须保持 `3456/3457`；同名环境变量只有与固定值相等时才兼容，不能用于另起备用端口。临时端口仅供仓库测试脚本在系统临时目录下以 `WEB_ACCESS_TEST_MODE=1` 隔离使用。
-
-**本次使用 Chrome**（不修改默认浏览器，也不停止 Edge Proxy）：
-
-```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
-```
-
-**同时检查两个浏览器**：
-
-```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
-```
-
-两个浏览器会分别建立一个 Proxy/CDP WebSocket。Edge 的授权绑定当前浏览器实例和长期 Proxy 连接：Edge 与 `3456` 上的正式 Proxy 都保持存活时，所有技能副本和后续对话都会复用这条连接，每个对话只新建自己的 task，通常只需点击一次“允许对此浏览器实例进行远程调试”。关闭 Edge、停止正式 Proxy、迁移旧 Proxy 或连接断开重建后，才可能再次提示。
-
-若同一 Edge 实例中反复提示授权，先检查是否有第二个 Proxy 进程或备用端口也在连接同一个 Edge CDP。不要靠再分配端口“解决”端口占用；并发启动的输家应核验 `3456` 上现有 Proxy 的协议、浏览器和能力后直接退出并让调用方复用它。
-
-环境检查（Agent 运行时会自动完成前置检查，无需手动执行）：
-
-```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
-# $CLAUDE_SKILL_DIR 是 skill 加载时自动设置的环境变量
-# 手动运行请替换为实际路径，如 ~/.claude/skills/web-access
-```
-
-## CDP Proxy API
-
-Proxy 通过 WebSocket 直连浏览器（兼容 `chrome://inspect` / `edge://inspect` 方式，无需命令行参数启动），只绑定 `127.0.0.1`，提供 task-scoped `/v2` HTTP API：
-
-```bash
-# 启动/复用 Edge；Chrome 改用 --browser chrome
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
-
-# 使用 check-deps 输出的 proxy-url；Chrome 默认为 http://127.0.0.1:3457
-WEB_ACCESS_PROXY="http://127.0.0.1:3456"
-
-# 协议与能力
-curl -s "${WEB_ACCESS_PROXY}/health"
-curl -s "${WEB_ACCESS_PROXY}/capabilities"
-
-# 创建 task，保存响应中的 taskToken；不要回显
-curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tasks" \
-  -H "Content-Type: application/json" -H "Idempotency-Key: TASK_KEY" \
-  -d '{"label":"current-user-request"}'
-
-# 创建 task 自有 tab
-curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tabs" \
-  -H "Authorization: Bearer TASK_TOKEN" -H "Content-Type: application/json" \
-  -H "Idempotency-Key: TAB_KEY" -d '{"url":"https://example.com"}'
-
-# snapshot/ref 操作
-curl -s -H "Authorization: Bearer TASK_TOKEN" \
-  "${WEB_ACCESS_PROXY}/v2/tabs/TARGET_ID/snapshot?mode=interactive"
-curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tabs/TARGET_ID/action" \
-  -H "Authorization: Bearer TASK_TOKEN" -H "Content-Type: application/json" \
-  -H "Idempotency-Key: ACTION_KEY" \
-  -d '{"action":"click","ref":"r4"}'
-```
-
-每个 task 只能控制自己创建的 tab 和 popup。active task 30 分钟无操作后过期；自建 tab 闲置 15 分钟后自动关闭。Proxy 重启会清空 token、归属和 ref，但保留浏览器 tab并把它们降为用户 tab。完整契约见 [`references/cdp-api.md`](references/cdp-api.md)。
-
-## ⚠️ 使用前提醒
-
-通过浏览器自动化操作社交平台存在账号被限流或封禁的风险。敏感信息首次输入，以及最终提交、发送、发布、上传、付款、删除、授权和账号变更前必须确认；密码、MFA、验证码和 SSO consent 统一由用户接管输入。
+每个 task 只操作自己创建的 tab 和 popup；保留用户原有页面和正在运行的浏览器。密码、MFA、验证码、SSO consent 和歧义账号选择仍由用户接管。外部写入核对准确授权，已有授权范围内不重复确认；只说明当次需要用户了解的影响或需要其完成的动作，不照抄固定风险声明。
 
 ## 使用
 
@@ -219,7 +147,7 @@ curl -s -X POST "${WEB_ACCESS_PROXY}/v2/tabs/TARGET_ID/action" \
 
 > Skill = 哲学 + 技术事实，不是操作手册。讲清 tradeoff 让 AI 自己选，不替它推理。
 
-详见 [SKILL.md](./SKILL.md) 中的浏览哲学部分。
+按目标选择最短可行路径，并根据实际内容调整；详见 [联网工具选择](./SKILL.md#联网工具选择) 和 [页面观察与导航](references/cdp-api.md#页面观察与导航)。
 
 ## License
 

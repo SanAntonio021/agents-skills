@@ -3,61 +3,45 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-31`
-- 最近来源登记审核：`2026-09-01`
-- 说明：官方 ppt-master 保留作者工作流；受审计 Fork 只增加 CC Switch 分发适配。本地
-  pptx 保留路由、外部 pin、确定性文件操作和最终验收，系统 presentation skills 不进入
-  该路线。
+- 最近来源登记审核：`2026-08-31`
+- 说明：PPT Master 保留上游作者工作流，通过受审计的 CC Switch Fork 分发；本地 pptx 负责有序路由、外部 pin、确定性文件操作和最终验收，官方 Presentations 是独立支持的制作路线。本登记的 accepted_commit/accepted_version 是全局采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。沿用来源页既有发布边界：以后只处理官方正式 tag；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
 
 ## pptx-hugohe3-ppt-master
 
-- 官方仓库：https://github.com/hugohe3/ppt-master.git
-- 官方路径：`skills/ppt-master`
-- 官方接受提交：`c40bca58e168fcef2facdc7612cc352d1233679b`
-- 官方接受版本：`6.1.0`
-- 分发 Fork：https://github.com/SanAntonio021/ppt-master.git
-- CC Switch 默认安装分支：`main`
-- 分发提交：`87dc229407d558e6fc9e7e08c45e81c61769fc20`
-- 不可变 tag：`v6.1.0-ccswitch.2`
+- 仓库：https://github.com/hugohe3/ppt-master.git
+- 当前上游路径：`skills/ppt-master`
+- 接受时上游路径：`skills/ppt-master`
 - 技能入口：`skills/ppt-master/SKILL.md`
-- 基线类型：`exact + deterministic distribution adapter`
+- 已接受提交：`5da13a00db898c34edcd099b043ec56234755809`
+- 已接受版本：`4.8.0`
+- 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
 - 镜像登记：`hugohe3-ppt-master`
 
 ### 证据
 
-- 官方精确提交的真实 codeload inventory：13,180 个成员、13,015 个文件。
-- 五套图标库共 12,027 个 SVG，确定性分为 5 个 `ZIP_STORED` 分片；完整技能树由
-  `icons.manifest.json` 与 `distribution.manifest.json` 保护。
-- Fork 候选连续两次本机构建 raw 字节一致；GitHub Actions 在 `windows-2025`、Python
-  3.13.1、`core.autocrlf=false` 下从官方提交与 Fork 适配器重建并通过逐文件比较。
-- Fork 提交真实 codeload 为 1,171 个成员，SHA-256
-  `c2bc603f75e4a5f49e503a67a0e46a2b71bc3c05230a0dc69b782b73020dc773`。
-- 本地证据文件：`pptx/references/ppt-master-pin.json`
-- 本地证据文件：`pptx/scripts/verify_ppt_master_pin.py`
+- 2026-08-31 核对当前 CC Switch 安装版 4.8.0 的官方仓库元数据、入口路由和完整性门，并经用户明确批准采用官方基座加本地接入层。
+- 本地证据文件：`pptx/SKILL.md`
 - 本地证据文件：`pptx/references/ppt-master-integration.md`
 
 ### 已吸收
 
-- 把新建演示、重设计、美化、图片重建、模板填充或增强以及演示动画等设计型任务路由
-  给通过外部 pin 的 `ppt-master`。
-- 在运行上游工作流之前验证安装树；生成完成后继续执行本地静态和 PowerPoint 原生验收，
-  检查实际导出页面。此为本地验收定制：LibreOffice 仅用于明确需要的兼容检查或差异诊断，
-  不修改上游作者工作流或历史接受记录。
-- 明确区分官方基线、Fork 发布、pin 发布、CC Switch 安装和 Codex/Claude 运行时激活。
+- 按 presentation-workflow.md 的有序规则选择制作工具：尊重显式指令、已有工程与本地文件操作，保留 lab-report-slides；PPT Master 承接图片到可编辑 PPTX 重建、Brand/Style/Layout/Deck 工作区、旁白、动画和自运行视频等专门流程，其余新稿或重设计优先当前宿主可用的官方 Presentations。
+- 选中 PPT Master 后，在读取或执行上游技能前验证实际安装树的外部 pin 和完整性；开工前确认官方 Presentations 不可用时，可按共同路由使用通过检查的 PPT Master。
+- 生成完成后执行本地静态、PowerPoint 原生打开、原生渲染和实际页面视觉检查；LibreOffice 仅用于明确需要的兼容性检查或具体渲染差异诊断。源码接受、Fork 发布、pin 发布、CC Switch 安装与各客户端运行时激活分别取证。
 
 ### 明确不吸收
 
-- 不复制或改写官方作者工作流，不直接修改运行时技能目录，不让审查镜像进入运行时。
-- 不采用赞助或模型推荐，不绕过上游完整性检查和阻塞确认，不用系统 presentation
-  skills、临时生成器或镜像静默替代失败的显式调用。
+- 不复制或改写官方工作流，不直接修改官方安装目录，不让上游镜像进入运行时技能目录。
+- 不采用赞助或模型推荐，不绕过官方完整性检查和阻塞确认；开始制作后不静默更换工具，失败的显式调用不能由其他制作工具或镜像静默替代。
+- 不把普通新建、模板沿用、填入确认内容、重设计或美化本身视作必须选择 PPT Master，也不把 LibreOffice 作为所有候选都要执行的固定验收门。
 
 ### 跟踪范围
 
-- 官方正式 tag 与精确提交
 - `SKILL.md`
 - `.env.example`
 - `requirements.txt`
@@ -65,8 +49,9 @@
 - `references`
 - `scripts`
 - `templates`
-- `LICENSE`
-- Fork 默认 `main` 分支、发布 tag、真实 codeload 与两类 manifest
 
-以后只处理官方正式 tag；先构建隔离候选和 transition pin，双端验收完成后再收敛为
-stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
+### 许可证监控
+
+- `LICENSE`
+
+发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。

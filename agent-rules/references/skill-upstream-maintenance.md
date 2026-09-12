@@ -1,6 +1,7 @@
 # 自建技能上游维护
 
-本机制只追踪外部仓库中的上游 `skill`。论文、普通官方文档和模板仍按各业务技能的来源规则管理。
+上游维护只追踪外部仓库中的上游 `skill`；论文、普通官方文档和模板仍按各业务技能的来源规则管理。
+普通本地技能修改由 `skill-creator` 处理，需要发布时直接进入[技能定向发布](#技能定向发布)，不经过上游候选审核。
 
 ## 分层
 
@@ -32,7 +33,7 @@
 5. 没有确认来源的技能也必须登记，状态为 `none`。
 6. 周检持续检查已确认来源；用户反馈、评测暴露的能力缺口或来源待查可触发定向发现。默认每周最多研究三个技能、每个深入比较两个候选，其余顺延。新来源只进入现有问题队列，不自动登记为 confirmed，不自动吸收；同一候选没有新证据不重复询问。
 
-本地删减后，对照登记的已吸收能力和文件变化复核：有意删除时更新来源说明，疑似退化进入人工审核。
+本地改动涉及已吸收的上游能力时，结合 `skill-check` 对照已吸收说明、已接受本地摘要与当前摘要复核：有意删除时更新来源说明，疑似退化进入人工审核。
 文件摘要只说明内容变了，不能证明能力退化；无上游的自创技能仍可保持 `none`，不为补齐来源而强配仓库。
 
 ## 周检
@@ -207,20 +208,41 @@ python <script> complete-review `
 
 5. `complete-review` 不提交、不推送，也不修改无关脏文件。测试失败、目标技能偏离候选、来源过期或登记源范围不完整时，
 保持 `applied_pending_retest` 和旧接受基线，先修复或重新审核。
-6. 只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
-7. Skill 推送成功后取得 40 位远端提交 SHA，调用
-   `D:\BaiduSyncdisk\.agents\automation\ccswitch-skill-sync\Invoke-CcSwitchSkillSync.ps1`，只传本次提交
+6. 需要提交和发布时，按[技能定向发布](#技能定向发布)继续。
+
+## CC Switch 后台组件
+
+维护共用组件的定位或技能引用时，先读取已展开的启动用户主目录下 `.agent-rules/local.md` 的“规则维护目录”，
+再读取该目录下 `automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
+字段、组件或固定 CLI 校验缺失时报告不可用，不猜路径、不从 PATH 替换同名程序。具体步骤按共用指南执行。
+
+`agent-rules` 负责共用组件的定位、技能引用和发布边界；Codex 供应商、Common Config、技能启停配置及请求链路
+交给 `codex-relay-chain`，Claude 链路交给 `claude-relay-chain`。自建技能发布继续使用已验收的
+`ccswitch-skill-sync`，不因共用后台组件存在而替换后端。源码、CC Switch 保存、运行目录和实际生效分别验收；
+候选、测试通过或源码提交不代表已发布。后台失败不自动转向界面脚本或模拟键鼠。
+
+## 技能定向发布
+
+本节适用于普通本地技能修改及完成审核的上游候选。普通修改无需创建候选或运行 `apply-review`、`complete-review`。
+沿用当前任务已有的准确修改和发布授权；明确只改本地时止于源码和必要验证，尚未授权的发布再确认，不重复询问已决定事项。
+
+先按本机 `.agent-rules/local.md` 的“规则维护目录”读取 `automation/ccswitch-skill-sync/README.md`，
+使用该目录下已核验的 `Invoke-CcSwitchSkillSync.ps1`，具体参数和本机文件声明以同步程序说明为准。
+
+1. 检查本次修改和必要验证，只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。
+2. Skill 推送成功后取得 40 位远端提交 SHA，调用上述 helper，只传本次提交
    实际修改且仍存在的 Skill。该 helper 使用固定版本、固定哈希的隐藏命令行程序，先创建 CC Switch 数据库
    备份，再按准确名称更新或首次安装目标，并显式启用 Claude 和 Codex；不打开、查找、显示或激活 CC Switch
    桌面窗口，不建 watcher 或计划任务，也不提供“全部更新”。后台程序通过 CC Switch 服务层更新数据库登记、
    公共 Skill 副本和已启用运行目录，这种受控写入属于正式更新流程；仍禁止任务自行执行 SQL、手工复制运行时
    文件、替换 CC Switch EXE 或直接改配置。明确的临时下载、连接或数据库占用错误只在单条后台命令内部重试
    一次；其他错误直接停止，不切换到 UI Automation、鼠标或前台窗口。
-8. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且提交源码、`.cc-switch`、`.claude`、`.codex`
+3. 只有 helper 返回退出码 `0`、状态 `runtime_active`，且提交源码、`.cc-switch`、`.claude`、`.codex`
    四层全部目标文件集合和 SHA-256 完全一致，且 CC Switch 数据库完整性、仓库分支、目录归属和双端启用状态
    通过核验，才算运行时生效。`updated_background`、`installed_background` 或单条命令退出成功不能替代这个
    结论。后台更新或验收失败时，保留原 JSON 回执、失败阶段和差异，先用相同参数 `-VerifyOnly` 核对实际状态；
    未通过时按实际结果报告未生效或待验收，不把缺失回执当成未执行。删除或合并 Skill 产生的运行时残留不走该 helper，按准确清理授权处理。
+4. 完整同步成功后仍以相同提交、Skill 集合和本机文件声明运行 `-VerifyOnly`；两次均满足上述验收条件再交付生效结论。
 
 ### 发布失败后的恢复
 
@@ -248,7 +270,8 @@ python <script> record-review --state <reports-root>/state.json `
 历史使用和疑似漏用结果。完整队列、状态和一次一问协议见
 `../../skill-check/references/weekly-review.md`。
 
-任务必须先读全局规则、`skill-check`、`agent-rules`、`skill-creator` 和 `web-access`。它可以在日期报告
-目录中准备、评估和测试隔离候选；具体来源确认、改动和发布沿用当前任务已有明确授权，尚未授权的事项逐项确认。
+先读全局规则和 `skill-check` 的周检说明；上游检查按本参考的对应章节执行，联网时读取 `web-access`，
+准备或修改候选时读取 `skill-creator`，需要发布时进入[技能定向发布](#技能定向发布)。不预先加载无关阶段的技能和资料。
+任务可以在日期报告目录中准备、评估和测试隔离候选；具体来源确认、改动和发布沿用当前任务已有明确授权，尚未授权的事项逐项确认。
 没有新证据、实质变化或用户待办时保持安静，不为重复报告而重复询问。
 每次只展示一项问题；用户不需要阅读完整周报，报告路径只保留为可核验证据。

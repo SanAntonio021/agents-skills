@@ -4,7 +4,7 @@ description: >
   在 Windows 上执行 LibreOffice 无界面转换、XLSX 重算、DOCX 接受修订或 Office 转 PDF 时使用。
   只要任务需要启动 `soffice`、`soffice.com`、`soffice.exe`、LibreOffice UNO，或现有 helper
   因 profile/AF_UNIX/并发转换失败，就必须使用本 skill 的统一 runner；不要直接运行 soffice。
-compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin32 and PyPDF2.
+compatibility: Requires Windows, LibreOffice, Python 3.10+ with pywin32 and PyPDF2.
 ---
 
 # LibreOffice Runner
@@ -24,13 +24,14 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 
 ## 调用
 
-从 skill 根目录运行：
+从 skill 根目录运行；`python` 应为本机已验证安装了 pywin32 和 PyPDF2 的 Python 3.10+ 解释器，
+不要把示例机器的 `C:\Python313` 当作跨机固定路径：
 
 ```powershell
-& 'C:\Python313\python.exe' .\scripts\libreoffice_run.py pdf <source> <output>
-& 'C:\Python313\python.exe' .\scripts\libreoffice_run.py recalc <source.xlsx> <output.xlsx>
-& 'C:\Python313\python.exe' .\scripts\libreoffice_run.py convert <source> <output> --convert-to <filter>
-& 'C:\Python313\python.exe' .\scripts\libreoffice_run.py accept-changes <source.docx> <output.docx>
+python .\scripts\libreoffice_run.py pdf <source> <output>
+python .\scripts\libreoffice_run.py recalc <source.xlsx> <output.xlsx>
+python .\scripts\libreoffice_run.py convert <source> <output> --convert-to <filter>
+python .\scripts\libreoffice_run.py accept-changes <source.docx> <output.docx>
 ```
 
 常用参数：
@@ -41,6 +42,8 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 --soffice <absolute path>
 --json-out <report.json>
 --keep-diagnostics-on-error
+--work-root <project process directory>
+--diagnostics-root <project diagnostics directory>
 ```
 
 输出路径已存在时 runner 会失败，不会覆盖。CLI 的 stdout 始终是一行 UTF-8 JSON（含行末换行，
@@ -56,12 +59,20 @@ compatibility: Requires Windows, LibreOffice, C:\Python313\python.exe with pywin
 - 输入先复制到任务临时目录，LibreOffice 只写临时输出目录；格式验证成功后才原子发布。
 - 同一最终输出被竞争时，只有一个任务可发布，另一个返回 `output_exists`。
 - 容量固定为 `2`，调用方不能用参数提高它。入场票号保证等待者不会被后来任务反复抢占。
+- `--work-root` 只改变任务暂存、独立 profile 和子进程临时目录；`--diagnostics-root` 改变失败报告位置。
+  两者不移动共享锁。共享锁被拒绝时不启动 LibreOffice，报告原因并在获准访问的环境中重试，
+  不能为各项目建立独立容量锁。清理指定工作目录用 `cleanup --work-root <同一路径>`，仍检查归属及重解析点。
+- LibreOffice 缓存会追加很深的目录和长文件名。工作根绝对路径上限为 63 个 UTF-16 单元，
+  超出返回 `work_root_too_long`，不启动进程。选择项目过程目录中较浅的位置作为工作根；
+  不能静默改到配置外的位置。输入、最终输出及诊断目录不受这项工作根长度上限限制。
 - `accept-changes` 使用安装的 LibreOffice Python/UNO 公共接口，不使用第三方宏或脚本。
 
 ## 失败处理
 
 读取 JSON 的 `error`、`message`、`stdout`、`stderr`、`owned_pids` 与 `diagnostics`。失败默认保存
 最小诊断 JSON，不保留输入副本；`--keep-diagnostics-on-error` 才保留整个隔离任务目录。
+输入检查、共享容量获取及任务目录建立等早期失败也保存报告。诊断写入失败记入 `diagnostics_error`，
+收尾失败记入 `cleanup_error`，原始错误及执行回执保留；不能把诊断保存失败误报成转换失败原因。
 
 先按错误原因处理：队列繁忙时等待后重试；运行超时先查诊断，确有耗时依据时调整本轮时限；
 普通输出重名改用新版本名；输入或格式问题交给对应文档技能修正已授权内容。复用当前授权完成

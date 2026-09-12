@@ -4,6 +4,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
@@ -90,9 +91,25 @@ class DependencyTests(unittest.TestCase):
         result = {"ok": False, "required": {}, "missing": ["python"]}
         output = io.StringIO()
         with patch.object(deps, "check_dependencies", return_value=result), contextlib.redirect_stdout(output):
-            code = deps.main()
+            code = deps.main([])
         self.assertEqual(code, 1)
         self.assertEqual(json.loads(output.getvalue()), result)
+
+    def test_project_config_reports_effective_and_persistent_separately(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "lab-report.local.json"
+            path.write_text(json.dumps({"soffice": "中文程序.exe", "work_root": "过程文件"}), encoding="utf-8")
+            with self.simulated_environment():
+                with patch.dict(deps.load_config.__globals__, {"user_environment": lambda name: {"user": None, "user_status": "unavailable", "user_error": "denied"}}):
+                    result = deps.check_dependencies(path)
+        self.assertTrue(result["ok"])
+        config = result["configuration"]
+        self.assertEqual(config["persistence"]["soffice"]["source"], "project config")
+        self.assertEqual(config["persistence"]["soffice"]["effective"], str(Path(directory) / "中文程序.exe"))
+        self.assertEqual(config["persistence"]["soffice"]["user_status"], "unavailable")
+        self.assertIsNone(config["persistence"]["soffice"]["session"])
+        self.assertEqual(config["persistence"]["work_root"]["source"], "project config")
+        self.assertTrue(result["interpreter"])
 
 
 if __name__ == "__main__":

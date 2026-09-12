@@ -18,9 +18,13 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
+import uuid
 from pathlib import Path
 from typing import Any
 from contextlib import contextmanager
+from contextvars import ContextVar
+
+from runtime_config import load_config, emit_json, atomic_write_json
 
 from PIL import Image
 from pptx import Presentation
@@ -39,6 +43,7 @@ BLUE = "4472C4"
 MUTED = "64748B"
 PROFILE_PATH = Path(__file__).resolve().parents[1] / "references/template-profile.json"
 FONT_STEPS = (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96)
+WORK_ROOT = ContextVar("lab_report_work_root", default=None)
 
 
 def topic_font_size(project_size: float) -> float:
@@ -174,7 +179,7 @@ def raster_bytes(path: Path) -> bytes:
         sharp = os.environ.get("SHARP_MODULE") or (str(bundled) if bundled.is_dir() else "sharp")
         if not node:
             raise ValueError("SVG input requires the existing Node.js/sharp runtime or a PNG export")
-        with tempfile.TemporaryDirectory(prefix="lab-svg-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="lab-svg-", dir=WORK_ROOT.get()) as temporary:
             output = Path(temporary) / "image.png"
             completed = subprocess.run(
                 [node, "-e", "require(process.argv[1])(process.argv[2],{density:180}).png().toFile(process.argv[3]).catch(e=>{console.error(e.message);process.exit(1)})",
@@ -281,14 +286,16 @@ def image_boxes(count, area, layout):
              item_width, item_height) for index in range(count)]
 
 
-def make_pptx(deck, slides, output_path):
+def make_pptx(deck, slides, output_path, *, template_test=False):
     if output_path.exists():
         raise FileExistsError(output_path)
     if deck.get("template_spec"):
         if deck.get("profile_path"):
             raise ValueError("Choose template_spec or profile_path, not both")
         from template_deck import make_template_pptx
-        return make_template_pptx(deck, slides, output_path, Path(deck["template_spec"]))
+        return make_template_pptx(deck, slides, output_path, Path(deck["template_spec"]), template_test=template_test)
+    if template_test:
+        raise ValueError("--template-test requires template_spec")
     profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
     profile = json.loads(profile_path.read_text(encoding="utf-8-sig"))
     base_layout = profile["layout"]
@@ -363,48 +370,243 @@ def make_pptx(deck, slides, output_path):
     return assets
 
 
-def export_pptx(pptx_path: Path, pdf_path: Path, slide_paths: list[Path]) -> None:
+class RenderFailure(RuntimeError):
+    def __init__(self, message, manifest):
+        super().__init__(message)
+        self.manifest = manifest
+
+
+class ExportFailure(RuntimeError):
+    def __init__(self, message, stage, details=None):
+        super().__init__(message)
+        self.stage = stage
+        self.details = details or {}
+
+
+class ManifestWriteFailure(RuntimeError):
+    stage = "manifest"
+
+
+def file_hash(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def inspect_pptx(path, expected_count=None):
+    import zipfile
+    with zipfile.ZipFile(path) as archive:
+        bad = archive.testzip()
+        if bad:
+            raise ValueError(f"Corrupt PPTX part: {bad}")
+    presentation = Presentation(path)
+    count = len(presentation.slides)
+    if count < 1 or (expected_count is not None and count != expected_count):
+        raise ValueError("PPTX slide count does not match the requested deck")
+    return count
+
+
+def export_pptx(pptx_path, pdf_path, slide_paths, *, config=None, stage_callback=None):
+    config = config if config is not None else load_config(discovery_dir=pptx_path.parent)
+    values = config["values"]
     default_runner = Path(__file__).resolve().parents[2] / "libreoffice-runner/scripts/libreoffice_run.py"
-    runner = Path(os.environ.get("LAB_REPORT_LO_RUNNER") or default_runner).expanduser().resolve()
-    if not runner.is_file():
-        raise RuntimeError("Install libreoffice-runner alongside lab-report-slides, or set LAB_REPORT_LO_RUNNER to its scripts/libreoffice_run.py")
-    command = [sys.executable, "-X", "utf8", str(runner), "pdf", str(pptx_path), str(pdf_path),
-               "--queue-timeout", "60", "--run-timeout", "120"]
-    if os.environ.get("LAB_REPORT_SOFFICE"):
-        command.extend(["--soffice", os.environ["LAB_REPORT_SOFFICE"]])
-    result = subprocess.run(command,
-                            capture_output=True, text=True, encoding="utf-8")
+    runner = Path(values.get("lo_runner") or default_runner).resolve()
+    stage = "libreoffice"
+    details = {}
+    def signal(state):
+        if stage_callback:
+            stage_callback(stage, state, details)
     try:
-        report = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("LibreOffice runner did not return JSON; run check_dependencies.py with the same Python interpreter") from exc
-    if result.returncode or report.get("ok") is not True:
-        raise RuntimeError(f"PPTX rendering failed: {report.get('error')}: {report.get('message')}")
-    presentation = Presentation(pptx_path)
-    page_width = SLIDE_WIDTH
-    page_height = round(page_width * presentation.slide_height / presentation.slide_width)
-    poppler = os.environ.get("LAB_REPORT_PDFTOPPM") or shutil.which("pdftoppm")
-    if not poppler:
-        raise RuntimeError("pdftoppm is required for page inspection")
-    with tempfile.TemporaryDirectory(prefix="lab-pages-") as temporary:
-        prefix = Path(temporary) / "page"
-        subprocess.run([poppler, "-png", "-scale-to-x", str(page_width), "-scale-to-y", str(page_height),
-                        "-aa", "yes", "-aaVector", "yes", str(pdf_path), str(prefix)],
-                       check=True, capture_output=True, timeout=120)
-        pages = sorted(Path(temporary).glob("page-*.png"), key=lambda path: int(path.stem.rsplit("-", 1)[1]))
-        if len(pages) != len(slide_paths):
-            raise RuntimeError("PPTX and rendered page counts differ")
-        for source, target in zip(pages, slide_paths):
-            with Image.open(source) as page:
-                if page.size != (page_width, page_height):
-                    raise RuntimeError("Unexpected rendered page dimensions")
-            if target.exists():
-                raise FileExistsError(target)
-            shutil.copyfile(source, target)
+        signal("pending")
+        if not runner.is_file():
+            raise RuntimeError("Install libreoffice-runner alongside lab-report-slides, or set LAB_REPORT_LO_RUNNER")
+        work = Path(values["work_root"]) if values.get("work_root") else None
+        diagnostics = Path(values.get("diagnostics_root") or pdf_path.parent / "diagnostics")
+        if work is not None:
+            work.mkdir(parents=True, exist_ok=True)
+        command = [sys.executable, "-X", "utf8", str(runner), "pdf", str(pptx_path), str(pdf_path),
+                   "--queue-timeout", "60", "--run-timeout", "120",
+                   "--diagnostics-root", str(diagnostics)]
+        if work is not None:
+            command.extend(["--work-root", str(work)])
+        if values.get("soffice"):
+            command.extend(["--soffice", values["soffice"]])
+        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
+        details = {"command": command, "returncode": result.returncode,
+                   "stdout": result.stdout, "stderr": getattr(result, "stderr", "")}
+        try:
+            report = json.loads(result.stdout)
+            if not isinstance(report, dict):
+                raise ValueError("Expected a JSON object")
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise RuntimeError("LibreOffice runner did not return JSON; run check_dependencies.py with the same Python interpreter") from exc
+        details["runner"] = report
+        if result.returncode or report.get("ok") is not True:
+            raise RuntimeError(f"PPTX rendering failed: {report.get('error')}: {report.get('message')}")
+        if not pdf_path.is_file():
+            raise RuntimeError("Runner reported success but PDF is missing")
+        signal("passed")
+        stage, details = "png", {}
+        signal("pending")
+        presentation = Presentation(pptx_path)
+        page_height = round(SLIDE_WIDTH * presentation.slide_height / presentation.slide_width)
+        poppler = values.get("pdftoppm") or shutil.which("pdftoppm")
+        if not poppler:
+            raise RuntimeError("pdftoppm is required for page inspection")
+        with tempfile.TemporaryDirectory(prefix="lab-pages-", dir=work) as temporary:
+            prefix = Path(temporary) / "page"
+            command = [poppler, "-png", "-scale-to-x", str(SLIDE_WIDTH), "-scale-to-y", str(page_height),
+                       "-aa", "yes", "-aaVector", "yes", str(pdf_path), str(prefix)]
+            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", timeout=120)
+            details = {"command": command, "returncode": result.returncode,
+                       "stdout": getattr(result, "stdout", ""), "stderr": getattr(result, "stderr", "")}
+            if result.returncode:
+                raise RuntimeError(f"PDF page export failed: {details['stderr']}")
+            pages = sorted(Path(temporary).glob("page-*.png"), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+            if len(pages) != len(slide_paths):
+                raise RuntimeError("PPTX and rendered page counts differ")
+            for source, target in zip(pages, slide_paths):
+                with Image.open(source) as page:
+                    if page.size != (SLIDE_WIDTH, page_height):
+                        raise RuntimeError("Unexpected rendered page dimensions")
+                with target.open("xb") as destination:
+                    destination.write(source.read_bytes())
+        signal("passed")
+    except Exception as exc:
+        if isinstance(exc, (ExportFailure, ManifestWriteFailure)):
+            raise
+        raise ExportFailure(str(exc), stage, details) from exc
 
 
-def render(deck_path: Path, output_dir: Path, requested_stem: str) -> dict[str, Any]:
-    deck_path, output_dir = deck_path.resolve(), output_dir.resolve()
+def _template_record(deck):
+    if deck.get("template_spec"):
+        spec_path = Path(deck["template_spec"])
+        spec = json.loads(spec_path.read_text(encoding="utf-8-sig"))
+        source = Path(spec["template_path"]).expanduser()
+        if not source.is_absolute():
+            source = (spec_path.parent / source).resolve()
+        return {"mode": "native_template", "spec_path": str(spec_path),
+                "spec_sha256": file_hash(spec_path), "source": str(source), "sha256": file_hash(source)}
+    profile = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
+    return {"mode": "style_profile", "path": str(profile), "sha256": file_hash(profile),
+            "source": json.loads(profile.read_text(encoding="utf-8-sig"))["source"]}
+
+
+def _check_template(record):
+    if record["mode"] == "native_template":
+        pairs = [(record["spec_path"], record["spec_sha256"]), (record["source"], record["sha256"])]
+    else:
+        pairs = [(record["path"], record["sha256"])]
+    if any(file_hash(path) != expected for path, expected in pairs):
+        raise ValueError("Template or template spec changed during report rendering; review the inputs and regenerate")
+
+
+def _write_manifest(path, manifest, *, primary_error=None):
+    try:
+        atomic_write_json(path, manifest)
+        return True
+    except Exception as exc:
+        # Never turn an earlier conversion failure into only a diagnostic-write error.
+        message = f"Manifest write failed: {exc}. Previous manifest, if any, was not deliberately removed; recovery is not confirmed."
+        if primary_error is None:
+            raise ManifestWriteFailure(message) from exc
+        manifest["manifest_write_error"] = message
+        emit_json({"error": str(primary_error), "manifest_write_error": message}, stream=sys.stderr)
+        return False
+
+
+def _save_diagnostic(manifest, name, payload):
+    target = Path(manifest["files"]["manifest"]).parent / f"{manifest['stem']}.{name}.json"
+    try:
+        atomic_write_json(target, payload)
+        manifest.setdefault("diagnostics", {})[name] = str(target)
+    except Exception as exc:
+        manifest.setdefault("diagnostic_write_errors", []).append(str(exc))
+        manifest.setdefault("diagnostic_details", {})[name] = payload
+
+
+def _run_outputs(manifest, config, generate=None, template_check=None, expected_pptx_sha256=None):
+    path = Path(manifest["files"]["manifest"])
+    pptx = Path(manifest["files"]["pptx"])
+    stage = "pptx"
+    work = Path(config["values"]["work_root"]) if config["values"].get("work_root") else None
+    token = WORK_ROOT.set(work)
+    def signal(name, status, details):
+        nonlocal stage
+        stage = name
+        manifest["stages"][name] = status
+        if details:
+            _save_diagnostic(manifest, name, details)
+        if status == "passed":
+            paths = [manifest["files"]["pdf"]] if name == "libreoffice" else manifest["files"]["png"]
+            for item in paths:
+                manifest["file_hashes"][item] = file_hash(item)
+        _write_manifest(path, manifest)
+    try:
+        _write_manifest(path, manifest)
+        if work is not None:
+            work.mkdir(parents=True, exist_ok=True)
+        if generate:
+            manifest["assets"] = generate()
+        actual_hash = file_hash(pptx)
+        if expected_pptx_sha256 is not None and actual_hash != expected_pptx_sha256:
+            raise ValueError("PPTX changed after resume validation; regenerate before rendering")
+        manifest["pptx_sha256"] = actual_hash
+        manifest["file_hashes"][str(pptx)] = manifest["pptx_sha256"]
+        manifest["stages"]["pptx"] = "passed"
+        _write_manifest(path, manifest)
+        stage = "structure"
+        inspect_pptx(pptx, manifest["slide_count"])
+        manifest["stages"]["structure"] = "passed"
+        _write_manifest(path, manifest)
+        export_pptx(pptx, Path(manifest["files"]["pdf"]), [Path(p) for p in manifest["files"]["png"]],
+                    config=config, stage_callback=signal)
+        stage = "html"
+        images = "".join(f'<img alt="{html.escape(title, quote=True)}" src="data:image/png;base64,{base64.b64encode(Path(p).read_bytes()).decode()}" />'
+                         for title, p in zip(manifest["slide_titles"], manifest["files"]["png"]))
+        with Path(manifest["files"]["html"]).open("x", encoding="utf-8") as output:
+            output.write('<!doctype html><meta charset="utf-8"><title>Lab report</title><style>body{margin:0;background:#ddd}img{display:block;width:min(100%,1600px);height:auto;margin:0 auto 16px}</style>' + images)
+        manifest["file_hashes"][manifest["files"]["html"]] = file_hash(manifest["files"]["html"])
+        stage = "structure"
+        if file_hash(pptx) != manifest["pptx_sha256"]:
+            raise ValueError("PPTX changed during rendering; regenerate and inspect the new file")
+        if template_check:
+            template_check()
+        manifest["ok"] = True
+        manifest["status"] = "rendered_visual_pending"
+        _write_manifest(path, manifest)
+        return manifest
+    except Exception as exc:
+        stage = getattr(exc, "stage", stage)
+        manifest["ok"] = False
+        manifest["status"] = "failed"
+        manifest["failed_stage"] = stage
+        manifest["error"] = str(exc)
+        if stage in manifest["stages"]:
+            manifest["stages"][stage] = "failed"
+        if isinstance(exc, ExportFailure):
+            _save_diagnostic(manifest, stage, exc.details)
+        _save_diagnostic(manifest, "failure", {"stage": stage, "error": str(exc),
+                                             "pptx": str(pptx), "pptx_exists": pptx.is_file()})
+        _write_manifest(path, manifest, primary_error=exc)
+        raise RenderFailure(str(exc), manifest) from exc
+    finally:
+        WORK_ROOT.reset(token)
+
+
+def _new_manifest(output_dir, stem, requested_stem, count, titles, config):
+    return {"schema_version": 3, "ok": False, "status": "running", "requested_stem": requested_stem,
+            "stem": stem, "slide_count": count, "slide_titles": titles, "render_source": "pptx",
+            "editable_text": True, "independent_images": True, "assets": [], "file_hashes": {},
+            "config": config, "stages": {name: "not_run" for name in
+                       ("pptx", "structure", "libreoffice", "png", "visual", "powerpoint")},
+            "files": {"pptx": str(output_dir / f"{stem}.pptx"),
+                      "pdf": str(output_dir / f"{stem}.pdf"), "html": str(output_dir / f"{stem}.html"),
+                      "manifest": str(output_dir / f"{stem}.manifest.json"),
+                      "png": [str(output_dir / f"{stem}_{i:02d}.png") for i in range(1, count + 1)]}}
+
+
+def render(deck_path, output_dir, requested_stem, *, config_path=None, template_test=False):
+    deck_path, output_dir = Path(deck_path).resolve(), Path(output_dir).resolve()
+    config = load_config(config_path, discovery_dir=deck_path.parent)
     deck = json.loads(deck_path.read_text(encoding="utf-8-sig"))
     if deck.get("template_spec"):
         spec_path = Path(deck["template_spec"]).expanduser()
@@ -412,55 +614,88 @@ def render(deck_path: Path, output_dir: Path, requested_stem: str) -> dict[str, 
     slides = validate_deck(deck, deck_path.parent)
     output_dir.mkdir(parents=True, exist_ok=True)
     with reserve_stem(output_dir, requested_stem) as stem:
-        return render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem)
+        return render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem,
+                              config=config, template_test=template_test)
 
 
-def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem):
-    pptx_path, pdf_path = output_dir / f"{stem}.pptx", output_dir / f"{stem}.pdf"
-    template_record = None
-    if deck.get("template_spec"):
-        spec_path = Path(deck["template_spec"])
-        spec_bytes = spec_path.read_bytes()
-        spec = json.loads(spec_bytes.decode("utf-8-sig"))
-        template_path = Path(spec["template_path"]).expanduser()
-        if not template_path.is_absolute():
-            template_path = (spec_path.parent / template_path).resolve()
-        template_record = {"mode": "native_template", "spec_path": str(spec_path),
-                           "spec_sha256": hashlib.sha256(spec_bytes).hexdigest(),
-                           "source": str(template_path), "sha256": hashlib.sha256(template_path.read_bytes()).hexdigest()}
-    assets = make_pptx(deck, slides, pptx_path)
-    slide_paths = [output_dir / f"{stem}_{index:02d}.png" for index in range(1, len(slides)+1)]
-    export_pptx(pptx_path, pdf_path, slide_paths)
-    html_path = output_dir / f"{stem}.html"
-    images = "".join(f'<img alt="{html.escape(str(slide.get("title", "")), quote=True)}" src="data:image/png;base64,{base64.b64encode(path.read_bytes()).decode()}" />'
-                     for slide, path in zip(slides, slide_paths))
-    html_path.write_text('<!doctype html><meta charset="utf-8"><title>Lab report</title><style>body{margin:0;background:#ddd}img{display:block;width:min(100%,1600px);height:auto;margin:0 auto 16px}</style>' + images, encoding="utf-8")
-    manifest = {"schema_version": 2, "requested_stem": requested_stem, "stem": stem, "slide_count": len(slides),
-                "render_source": "pptx", "editable_text": True, "independent_images": True,
-                "assets": assets, "source_deck": str(deck_path),
-                "files": {"html": str(html_path), "pdf": str(pdf_path), "pptx": str(pptx_path), "png": [str(path) for path in slide_paths]}}
-    if template_record:
-        if (hashlib.sha256(spec_path.read_bytes()).hexdigest() != template_record["spec_sha256"]
-                or hashlib.sha256(template_path.read_bytes()).hexdigest() != template_record["sha256"]):
-            raise ValueError("Template or template spec changed during report rendering; review the inputs and regenerate")
-        manifest["template"] = template_record
+def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *, config=None, template_test=False):
+    config = config if config is not None else load_config(discovery_dir=Path(deck_path).parent)
+    manifest = _new_manifest(output_dir, stem, requested_stem, len(slides),
+                             [str(s.get("title", "")) for s in slides], config)
+    manifest.update(source_deck=str(deck_path), template_test=template_test)
+    # Read template metadata inside generation so failures still get a stage receipt.
+    def generate():
+        manifest["template"] = _template_record(deck)
+        return make_pptx(deck, slides, Path(manifest["files"]["pptx"]), template_test=template_test)
+    return _run_outputs(manifest, config, generate=generate,
+                        template_check=lambda: _check_template(manifest["template"]))
+
+
+def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config_path=None):
+    manifest_path = Path(manifest_path).resolve()
+    previous = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+    if previous.get("schema_version") != 3 or previous.get("failed_stage") not in {"libreoffice", "png", "html"}:
+        raise ValueError("--resume-manifest requires a version 3 rendering failure; regenerate or repeat the relevant manual check")
+    pptx = Path(previous["files"]["pptx"])
+    if previous.get("stages", {}).get("pptx") != "passed" or file_hash(pptx) != previous.get("pptx_sha256"):
+        raise ValueError("PPTX hash/state changed; regenerate before rendering")
+    count = inspect_pptx(pptx, previous["slide_count"])
+    explicit = config_path or previous.get("config", {}).get("path")
+    discovery = Path(previous.get("source_deck") or manifest_path).parent
+    config = load_config(explicit, discovery_dir=discovery)
+    root = Path(output_dir).resolve() if output_dir else manifest_path.parent
+    root.mkdir(parents=True, exist_ok=True)
+    # This is a durable project output, not a private OS temporary directory.
+    # Path.mkdir inherits project access on Windows; mkdtemp applies a private ACL.
+    for _ in range(20):
+        attempt = root / f"lab-render-{uuid.uuid4().hex}"
+        try:
+            attempt.mkdir()
+            break
+        except FileExistsError:
+            continue
     else:
-        profile_path = Path(deck.get("profile_path") or PROFILE_PATH).resolve()
-        manifest["template"] = {"mode": "style_profile", "path": str(profile_path),
-                                "sha256": hashlib.sha256(profile_path.read_bytes()).hexdigest(),
-                                "source": json.loads(profile_path.read_text(encoding="utf-8-sig"))["source"]}
-    (output_dir / f"{stem}.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-    return manifest
+        raise FileExistsError("Cannot reserve a unique rendering attempt directory")
+    stem = requested_stem or previous["requested_stem"]
+    stem = choose_stem(attempt, stem)
+    manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config)
+    manifest["files"]["pptx"] = str(pptx)
+    for key in ("source_deck", "template", "template_test", "assets"):
+        if key in previous:
+            manifest[key] = previous[key]
+    manifest["resumed_from"] = str(manifest_path)
+    return _run_outputs(manifest, config, expected_pptx_sha256=previous["pptx_sha256"])
 
 
-def main() -> None:
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--deck", required=True)
-    parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--base-name", required=True)
-    args = parser.parse_args()
-    print(json.dumps(render(Path(args.deck), Path(args.output_dir), args.base_name), ensure_ascii=False, indent=2))
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--deck")
+    inputs.add_argument("--resume-manifest")
+    parser.add_argument("--output-dir")
+    parser.add_argument("--base-name")
+    parser.add_argument("--config")
+    parser.add_argument("--template-test", action="store_true")
+    args = parser.parse_args(argv)
+    if args.deck and (not args.output_dir or not args.base_name):
+        parser.error("--deck requires --output-dir and --base-name")
+    if args.resume_manifest and args.template_test:
+        parser.error("--template-test is only valid with --deck")
+    try:
+        if args.resume_manifest:
+            result = resume_render(args.resume_manifest, args.output_dir, args.base_name, config_path=args.config)
+        else:
+            result = render(args.deck, args.output_dir, args.base_name,
+                            config_path=args.config, template_test=args.template_test)
+        emit_json(result)
+        return 0
+    except RenderFailure as exc:
+        emit_json(exc.manifest)
+        return 1
+    except Exception as exc:
+        emit_json({"ok": False, "error": str(exc), "failed_stage": "input"})
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

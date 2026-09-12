@@ -624,7 +624,11 @@ def main() -> None:
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(result["stats"], ensure_ascii=False))
+    # Keep redirected PowerShell output UTF-8 independently of its codepage.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from runtime_config import emit_json
+    emit_json(result["stats"])
 
 
 if __name__ == "__main__":

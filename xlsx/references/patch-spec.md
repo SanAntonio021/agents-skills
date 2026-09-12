@@ -80,6 +80,6 @@
 python <skill-root>\scripts\verify_xlsx.py <task-temp>\output.xlsx --baseline input.xlsx --policy <task-temp>\policy.json
 ```
 
-如改过公式，再完成隔离重算、缓存合并和零错误检查。
+如改过公式或其计算输入（包括参与条件匹配的文字、数值和引用范围），再完成隔离重算、缓存合并和零错误检查。补丁程序不会自动重算依赖公式；修改输入后仍保留的旧缓存不能算作最新结果。仅修改与计算无关的内容且已有缓存可靠时，检查公式与缓存保持即可；按实际呈现变化检查相关区域，打印或 PDF 交付再做逐页检查。
 
 全部检查通过后按 [output-lifecycle.md](output-lifecycle.md) 发布。目标不存在时创建新草稿；只有目标是当前任务尚未交付、未被用户接管且持有上次记录 SHA-256 的草稿时，才允许通过 `--replace-existing-if-sha256` 原路径更新。已交付或归属不明的文件使用递增版本。

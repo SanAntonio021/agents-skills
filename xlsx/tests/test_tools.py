@@ -493,6 +493,37 @@ class WorkbookToolTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             patch_workbook(self.source, output, spec, allow_new_cells=False)
 
+    def test_note_and_layout_patch_preserve_valid_formula_cache(self) -> None:
+        # The fixture formula is SUM(C2:D2), with unchanged inputs 1 and 2.
+        entries, _, _ = load_package(self.source)
+        part = resolve_sheet_parts(entries)["Template"]
+        xml = parse_xml(entries[part])
+        formula_cell = worksheet_cells(xml)["E2"]
+        formula_cell.find(qn(MAIN_NS, "v")).text = "3"
+        cached_source = self.root / "cached-source.xlsx"
+        write_package(self.source, cached_source, {part: serialize_xml(xml)})
+        before_bytes = cached_source.read_bytes()
+        output = self.root / "note-and-layout.xlsx"
+        patch_workbook(cached_source, output, {"sheets": {"Template": {
+            "cells": {"B2": {"kind": "string", "value": "Updated note"}},
+            "row_heights": {"2": 30},
+        }}}, allow_new_cells=False)
+        before = inspect_workbook(cached_source)
+        after = inspect_workbook(output)
+        self.assertEqual(before["sheets"]["Template"]["cells"]["E2"],
+                         after["sheets"]["Template"]["cells"]["E2"])
+        self.assertEqual(after["formula_count"], after["formula_cache_count"])
+        self.assertEqual(after["formula_error_count"], 0)
+        protected = [name for name in before["package_entries"] if name != part]
+        comparison = compare_workbooks(before, after, {
+            "allowed_cells": ["Template!B2"], "allowed_row_heights": ["Template!2"],
+            "required_unchanged_entries": protected, "allow_formula_cache_changes": False,
+        })
+        self.assertTrue(comparison["ok"], comparison)
+        completed, report = self._run_verify(output)
+        self.assertEqual(completed.returncode, 0, report)
+        self.assertEqual(cached_source.read_bytes(), before_bytes)
+
     def test_formula_cache_merge(self) -> None:
         recalc = self.root / "recalculated.xlsx"
         final = self.root / "final.xlsx"

@@ -23,7 +23,7 @@ from .win32_job import JobProcess, JobSetupError, launch_suspended_in_job
 from .win32_sync import CapacitySlots, FileLock, RUNNER_ID, current_process_identity, default_state_root
 
 
-RUNNER_VERSION = "0.1.0"
+RUNNER_VERSION = "0.2.0"
 _OFFICE_XML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _PDF_SOURCES = {
@@ -57,6 +57,8 @@ class RunRequest:
     run_timeout: float = 120.0
     convert_to: str | None = None
     keep_diagnostics_on_error: bool = False
+    work_root: Path | None = None
+    diagnostics_root: Path | None = None
 
 
 @dataclass
@@ -78,6 +80,8 @@ class RunReport:
     error: str | None = None
     message: str | None = None
     diagnostics: str | None = None
+    diagnostics_error: str | None = None
+    cleanup_error: str | None = None
     command: list[str] | None = None
     validation: dict[str, object] | None = None
 
@@ -118,6 +122,15 @@ def find_soffice(explicit: Path | None) -> Path:
 
 def run(request: RunRequest) -> RunReport:
     """Run one operation without using the default LibreOffice user profile."""
+
+    report = _run(request)
+    # Preparation, queue and directory setup can fail before a task root exists.
+    if not report.ok and report.diagnostics is None and report.diagnostics_error is None:
+        _save_failure_diagnostics(None, report, request)
+    return report
+
+
+def _run(request: RunRequest) -> RunReport:
 
     prepared: _PreparedRequest | None = None
     source_text = str(request.source.expanduser())
@@ -160,6 +173,9 @@ def convert(
     output: Path,
     soffice: Path | None = None,
     timeout: int = 120,
+    *,
+    work_root: Path | None = None,
+    diagnostics_root: Path | None = None,
 ) -> dict[str, object]:
     """Compatibility wrapper for the local xlsx skill's historical API."""
 
@@ -170,6 +186,8 @@ def convert(
             output=Path(output),
             soffice=Path(soffice) if soffice is not None else None,
             run_timeout=float(timeout),
+            work_root=work_root,
+            diagnostics_root=diagnostics_root,
         )
     )
     if not report.ok:
@@ -212,7 +230,7 @@ def _prepare(request: RunRequest) -> _PreparedRequest:
 
 def _run_owned(prepared: _PreparedRequest, soffice: Path, queue_seconds: float) -> RunReport:
     run_started = time.monotonic()
-    root = _new_task_root()
+    root = _new_task_root(prepared.request.work_root)
     task_id = root.name.removeprefix("sanan-lo-")
     active_lock: FileLock | None = None
     report: RunReport | None = None
@@ -338,13 +356,28 @@ def _run_owned(prepared: _PreparedRequest, soffice: Path, queue_seconds: float) 
     finally:
         if owner is not None and report is not None and not report.ok:
             owner.update({"state": "failed", "failed_at": _utc_now(), "error": report.error})
-            _write_json(root / "owner.json", owner)
+            try:
+                _write_json(root / "owner.json", owner)
+            except Exception as exc:
+                report.cleanup_error = f"Failed to update owner record: {exc}"
         if active_lock is not None:
-            active_lock.close()
-        if report is None or report.ok:
-            _remove_task_root(root)
-        else:
-            report.diagnostics = _retain_failure_diagnostics(root, report, prepared.request.keep_diagnostics_on_error)
+            try:
+                active_lock.close()
+            except Exception as exc:
+                if report is not None:
+                    report.cleanup_error = f"Failed to release task lock: {exc}"
+        if report is not None and not report.ok:
+            _save_failure_diagnostics(root, report, prepared.request)
+        if report is None or report.ok or not prepared.request.keep_diagnostics_on_error:
+            try:
+                _remove_task_root(root)
+            except Exception as exc:
+                if report is not None:
+                    report.cleanup_error = str(exc)
+                    if report.ok:
+                        report.ok = False
+                        report.error = "cleanup_failed"
+                        report.message = str(exc)
 
 
 def _conversion_command(
@@ -380,7 +413,7 @@ def _run_conversion(
     process = launch_suspended_in_job(
         command,
         cwd=root,
-        environment=dict(os.environ),
+        environment=_task_environment(root),
         stdout_path=diagnostics_dir / "stdout.txt",
         stderr_path=diagnostics_dir / "stderr.txt",
     )
@@ -440,7 +473,7 @@ def _accept_changes(
     server = launch_suspended_in_job(
         server_command,
         cwd=root,
-        environment=dict(os.environ),
+        environment=_task_environment(root),
         stdout_path=diagnostics_dir / "server-stdout.txt",
         stderr_path=diagnostics_dir / "server-stderr.txt",
     )
@@ -451,7 +484,7 @@ def _accept_changes(
         worker_process = launch_suspended_in_job(
             worker_command,
             cwd=root,
-            environment=dict(os.environ),
+            environment=_task_environment(root),
             stdout_path=diagnostics_dir / "worker-stdout.txt",
             stderr_path=diagnostics_dir / "worker-stderr.txt",
         )
@@ -657,8 +690,16 @@ def _visible_pptx_slides(path: Path) -> int:
         raise RunFailure("corrupt_output", f"Could not inspect PPTX slides: {exc}") from exc
 
 
-def _new_task_root() -> Path:
-    base = Path(tempfile.gettempdir()).resolve()
+def _new_task_root(work_root: Path | None = None) -> Path:
+    base = (work_root or Path(tempfile.gettempdir())).expanduser().resolve()
+    # Observed LibreOffice extension/cache names add up to 146 UTF-16 units.
+    # Reserve 150 so its non-long-path-aware components cannot receive MAX_PATH paths.
+    probe = base / ("sanan-lo-" + "0" * 36)
+    if len(str(probe).encode("utf-16-le")) // 2 + 150 >= 260:
+        raise RunFailure("work_root_too_long", f"LibreOffice work root is too long: {base}. "
+                         "Choose a shorter --work-root (at most 63 UTF-16 code units for the absolute base path); "
+                         "the runner reserves 150 units for LibreOffice profile/cache paths and will not relocate it silently.")
+    base.mkdir(parents=True, exist_ok=True)
     for _ in range(20):
         path = base / f"sanan-lo-{uuid.uuid4()}"
         try:
@@ -669,19 +710,35 @@ def _new_task_root() -> Path:
     raise RunFailure("job_setup_failed", "Could not create a unique LibreOffice task directory")
 
 
+def _task_environment(root: Path) -> dict[str, str]:
+    temporary = root / "temp"
+    temporary.mkdir(exist_ok=True)
+    return {**os.environ, "TEMP": str(temporary), "TMP": str(temporary), "TMPDIR": str(temporary)}
+
+
 def _remove_task_root(path: Path) -> None:
     if path.exists():
         _remove_without_reparse_points(path)
 
 
-def _retain_failure_diagnostics(root: Path, report: RunReport, keep_root: bool) -> str:
-    if keep_root:
-        return str(root)
-    destination = default_state_root() / "diagnostics" / f"{root.name}.json"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    _write_json(destination, report.to_dict())
-    _remove_task_root(root)
-    return str(destination)
+def _save_failure_diagnostics(root: Path | None, report: RunReport, request: RunRequest) -> None:
+    """Diagnostics are best effort and must never replace the primary failure."""
+    try:
+        if root is not None and request.keep_diagnostics_on_error:
+            report.diagnostics = str(root)
+            _write_json(root / "diagnostics" / "report.json", report.to_dict())
+        # An explicit diagnostic root also receives a report when retaining the task.
+        if root is None or not request.keep_diagnostics_on_error or request.diagnostics_root is not None:
+            base = (request.diagnostics_root or default_state_root() / "diagnostics").expanduser().resolve()
+            name = root.name if root is not None else f"sanan-lo-{uuid.uuid4()}"
+            destination = base / f"{name}.json"
+            if report.diagnostics is None:
+                report.diagnostics = str(destination)
+            _write_json(destination, report.to_dict())
+    except Exception as exc:
+        report.diagnostics_error = str(exc)
+        if root is None or not request.keep_diagnostics_on_error:
+            report.diagnostics = None
 
 
 def _failure(
@@ -738,10 +795,15 @@ def _read_capture(path: Path, maximum_bytes: int = 512 * 1024) -> str:
     if not path.exists():
         return ""
     data = path.read_bytes()
-    if len(data) > maximum_bytes:
+    truncated = len(data) > maximum_bytes
+    if truncated:
         data = data[-maximum_bytes:]
-        return "[truncated to final 512 KiB]\n" + data.decode("utf-8", errors="replace")
-    return data.decode("utf-8", errors="replace")
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        # LibreOffice's Windows console output can use the system ANSI code page.
+        text = data.decode("mbcs", errors="replace")
+    return ("[truncated to final 512 KiB]\n" if truncated else "") + text
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -851,14 +913,17 @@ def main(argv: Iterable[str] | None = None) -> int:
         child.add_argument("--run-timeout", type=float, default=120.0)
         child.add_argument("--json-out", type=Path)
         child.add_argument("--keep-diagnostics-on-error", action="store_true")
+        child.add_argument("--work-root", type=Path)
+        child.add_argument("--diagnostics-root", type=Path)
         if operation == "convert":
             child.add_argument("--convert-to", required=True)
     cleanup = subparsers.add_parser("cleanup")
     cleanup.add_argument("--older-than", type=float, default=24 * 60 * 60)
     cleanup.add_argument("--json-out", type=Path)
+    cleanup.add_argument("--work-root", type=Path)
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.operation == "cleanup":
-        payload = cleanup_abandoned(older_than=args.older_than)
+        payload = cleanup_abandoned(older_than=args.older_than, temp_root=args.work_root)
         _emit_json(payload, args.json_out)
         return 0
     report = run(
@@ -871,6 +936,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             run_timeout=args.run_timeout,
             convert_to=getattr(args, "convert_to", None),
             keep_diagnostics_on_error=args.keep_diagnostics_on_error,
+            work_root=args.work_root,
+            diagnostics_root=args.diagnostics_root,
         )
     )
     _emit_json(report.to_dict(), args.json_out)

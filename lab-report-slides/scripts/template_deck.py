@@ -250,13 +250,16 @@ def prune(parts):
     return result
 
 
-def make_template_pptx(deck, slides, output_path, template_spec_path: Path) -> list:
+def make_template_pptx(deck, slides, output_path, template_spec_path: Path, *, template_test=False) -> list:
     from render_deck import project_title, raster_bytes, text_rows
 
     output_path = Path(output_path)
     if output_path.exists():
         raise FileExistsError(output_path)
     spec = json.loads(Path(template_spec_path).read_text(encoding="utf-8-sig"))
+    from template_acceptance import add_test_marker, require_acceptance
+    if not template_test:
+        require_acceptance(spec, template_spec_path)
     source = Path(spec["template_path"]).expanduser()
     source = source.resolve() if source.is_absolute() else (Path(template_spec_path).resolve().parent / source).resolve()
     original = source.read_bytes()
@@ -398,6 +401,8 @@ def make_template_pptx(deck, slides, output_path, template_spec_path: Path) -> l
                            "embedded_sha256": hashlib.sha256(raster).hexdigest(),
                            "caption": block.get("caption", ""), "role": block.get("role", "unverified"),
                            "source": block.get("source", ""), "period": block.get("period", "unknown")})
+        if template_test:
+            add_test_marker(tree, page_width, page_height, key, minimum_id=max(shapes, default=0) + 1)
         output_parts[new_part] = dump(root)
         output_parts[relpath(new_part)] = dump(rels)
         new_relations.append(new_part)
@@ -435,17 +440,41 @@ def make_template_pptx(deck, slides, output_path, template_spec_path: Path) -> l
 
 
 def main():
+    from runtime_config import emit_json
+    from template_acceptance import prepare_template, record_acceptance
+
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     inspect = sub.add_parser("inspect")
     inspect.add_argument("--template", required=True)
     inspect.add_argument("--out", required=True)
+    prepare = sub.add_parser("prepare", help="Create a new template copy with resolved title sizes and an adapted mapping")
+    prepare.add_argument("--spec", required=True)
+    prepare.add_argument("--output-template", required=True)
+    prepare.add_argument("--output-spec", required=True)
+    prepare.add_argument("--title-size-pt", type=float, help="User-specified actual size for otherwise unresolved titles")
+    accept = sub.add_parser("accept", help="Record checked sample evidence for the exact template and mapping")
+    accept.add_argument("--spec", required=True)
+    accept.add_argument("--manifest", required=True)
+    accept.add_argument("--out")
+    accept.add_argument("--visual-inspected", action="store_true")
     args = parser.parse_args()
-    report = inspect_template(Path(args.template))
-    with Path(args.out).open("x", encoding="utf-8") as destination:
-        json.dump(report, destination, ensure_ascii=False, indent=2)
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    if args.command == "inspect":
+        report = inspect_template(Path(args.template))
+        with Path(args.out).open("x", encoding="utf-8") as destination:
+            json.dump(report, destination, ensure_ascii=False, indent=2)
+    elif args.command == "prepare":
+        report = prepare_template(args.spec, args.output_template, args.output_spec, args.title_size_pt)
+    else:
+        report = record_acceptance(args.spec, args.manifest, args.out, visual_inspected=args.visual_inspected)
+    emit_json(report)
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    from runtime_config import emit_json
+    try:
+        main()
+    except Exception as exc:
+        emit_json({"ok": False, "error": str(exc), "error_type": type(exc).__name__})
+        sys.exit(1)

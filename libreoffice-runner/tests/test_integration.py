@@ -9,6 +9,7 @@ import tempfile
 import time
 import unittest
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -44,7 +45,8 @@ class LibreOfficeIntegrationTests(WindowsOnlyTestCase):
         ]
 
     def setUp(self) -> None:
-        self.temp_dir = tempfile.TemporaryDirectory(prefix="lo-runner-integration-")
+        # Keep LibreOffice's deeply nested extension cache below Windows MAX_PATH.
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="i-")
         self.root = Path(self.temp_dir.name)
         self.inputs = self.root / "inputs"
         self.outputs = self.root / "outputs"
@@ -83,38 +85,45 @@ class LibreOfficeIntegrationTests(WindowsOnlyTestCase):
         ]
         processes = [
             subprocess.Popen(
-                [str(PYTHON), str(RUNNER_CLI), operation, str(source), str(output), "--run-timeout", "120"],
+                [str(PYTHON), str(RUNNER_CLI), operation, str(source), str(output), "--run-timeout", "120",
+                 "--work-root", str(self.root.parent / f"w{index}"),
+                 "--diagnostics-root", str(self.root / "diagnostics")],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
             )
-            for operation, source, output in jobs
+            for index, (operation, source, output) in enumerate(jobs)
         ]
         peak_soffice_bin = 0
-        while any(process.poll() is None for process in processes):
-            running = [
-                process
-                for process in self._libreoffice_processes()
-                if (process.info.get("name") or "").lower() == "soffice.bin"
-            ]
-            peak_soffice_bin = max(peak_soffice_bin, len(running))
-            time.sleep(0.05)
+        # Drain captures while monitoring: a detailed JSON failure can fill a Windows pipe.
+        with ThreadPoolExecutor(max_workers=len(processes)) as readers:
+            captures = [readers.submit(process.communicate, timeout=720) for process in processes]
+            while any(not capture.done() for capture in captures):
+                running = [
+                    process
+                    for process in self._libreoffice_processes()
+                    if (process.info.get("name") or "").lower() == "soffice.bin"
+                ]
+                peak_soffice_bin = max(peak_soffice_bin, len(running))
+                time.sleep(0.05)
         reports = []
-        for process in processes:
-            stdout, stderr = process.communicate(timeout=10)
+        for process, capture in zip(processes, captures):
+            stdout, stderr = capture.result()
             self.assertEqual(process.returncode, 0, f"stdout={stdout}\nstderr={stderr}")
             reports.append(json.loads(stdout))
         self.assertLessEqual(peak_soffice_bin, 2)
         self.assertEqual(len(reports), 6)
         self.assertTrue(all(report["ok"] for report in reports))
-        for report in reports:
+        for index, report in enumerate(reports):
             profile_argument = next(
                 argument for argument in report["command"] if argument.startswith("-env:UserInstallation=")
             )
             self.assertIn("file:///", profile_argument)
             self.assertIn("sanan-lo-", profile_argument)
+            self.assertTrue(profile_argument.startswith("-env:UserInstallation=" + (self.root.parent / f"w{index}").as_uri()))
+            self.assertEqual(list((self.root.parent / f"w{index}").iterdir()), [])
         self.assertIn(b"/Image", (self.outputs / "alpha.pdf").read_bytes())
         self.assertEqual(self._formula_cache(self.outputs / "formula-recalc.xlsx"), "5")
         self.assertEqual(reports[4]["validation"]["pages"], 2)

@@ -31,7 +31,7 @@
 
 3. **补齐软件和 Python 库。** 先发现并复用已有的 Python、LibreOffice 和 `pdftoppm`。Python 需 3.10+；缺失时可选 Python 3.13 的稳定补丁版本。优先使用本机已有的软件包管理器，先查询并核对软件名称、发布者及安装来源，再安装缺项；没有包管理器时，从 [Python 官方 Windows 下载页](https://www.python.org/downloads/windows/)、[LibreOffice 官网](https://www.libreoffice.org/download/) 和 [Poppler Windows 构建发布页](https://github.com/oschwartz10612/poppler-windows/releases) 获取与本机架构匹配的安装包。Poppler 链接是社区 Windows 构建。不要安装预发布版本或把包管理器当成额外必装依赖。使用实际选定的同一个 Python 执行下文 `pip install -r requirements.txt`。
 
-4. **配置可持续使用的实际路径。** 定位真实 `python.exe`、`soffice.com`/`soffice.exe` 和 `pdftoppm.exe`，不使用示例中的占位符或作者路径。优先沿用已有 PATH；需要补充时只追加必要的用户级路径，保留原值，并更新当前进程。非默认位置也可使用下文环境变量：同时设置当前进程与用户级值，供以后启动的 Codex 使用；先保存旧值，不覆盖与本任务无关的配置。仅设置本次终端的临时变量不算完成。记录实际使用的 Python 路径，确保后续命令使用装有依赖的同一解释器。PNG/JPG 安装验收不要求 Node.js/sharp。
+4. **配置可持续使用的实际路径。** 定位真实 `python.exe`、`soffice.com`/`soffice.exe` 和 `pdftoppm.exe`，不使用示例中的占位符或作者路径。优先沿用已有 PATH；需要补充时只追加必要的用户级路径，保留原值，并更新当前进程。非默认位置也可使用下文环境变量，同时设置当前进程与用户级值；先保存旧值，不覆盖无关配置。用户级写入被拒绝时，不把软件已安装判成全部失败：由执行安装的 Codex 保存下文项目配置文件，后续检查和生成明确传入其绝对路径。仅设置本次终端的临时变量不算持久配置完成。记录实际使用的 Python 路径，确保后续命令使用装有依赖的同一解释器。PNG/JPG 安装验收不要求 Node.js/sharp。
 
 5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
 
@@ -84,6 +84,31 @@ $env:LAB_REPORT_PDFTOPPM = '<Poppler程序目录>\pdftoppm.exe'
 
 以上值是占位符，须替换成实际已存在的路径。默认同级安装时不需要设置 `LAB_REPORT_LO_RUNNER`。预检通过只说明依赖可定位，首次生成仍须检查实际 PPT、PDF 和逐页图片。
 
+无法持久写入用户环境变量时，Codex 可在当前汇报项目保存 `lab-report.local.json`。这是一项安装操作，不是检查脚本自动安装或写配置；已有同名文件先保留并合并必要项。示例中的路径必须替换为实际值，使用默认发现的项目可以省略：
+
+```json
+{
+  "lo_runner": "<实际技能目录>/libreoffice-runner/scripts/libreoffice_run.py",
+  "soffice": "<实际LibreOffice目录>/program/soffice.com",
+  "pdftoppm": "<实际Poppler目录>/pdftoppm.exe",
+  "work_root": "过程文件/日报运行/work",
+  "diagnostics_root": "过程文件/日报运行/diagnostics"
+}
+```
+
+相对路径基于配置文件所在目录解析。优先级为已有 `LAB_REPORT_*` 环境变量、项目配置、自动发现；配置的程序路径必须存在，明确的错误路径不会被其他发现结果掩盖。目录配置分别对应 `LAB_REPORT_WORK_ROOT` 和 `LAB_REPORT_DIAGNOSTICS_ROOT`，目录可以尚未创建，运行时再创建。配置只保存在项目本机，不提交公开仓库。
+
+```powershell
+python scripts/check_dependencies.py --config '<项目配置绝对路径>'
+python scripts/render_deck.py --deck '<deck JSON绝对路径>' --output-dir '<过程目录绝对路径>' --base-name '<新文件名>' --config '<项目配置绝对路径>'
+```
+
+未传 `--config` 时，依赖检查仅查看当前目录，生成入口仅查看 deck JSON 同目录，不搜索父目录。使用安装回退配置后，后续始终显式传入其绝对路径。检查结果分别列出实际 Python、有效程序路径、来源、当前进程值、项目文件值和用户级持久值；用户级读取被拒绝时标为不可读取，不将其解释为已保存或不存在。所有 JSON 输出采用 UTF-8，不修改系统代码页。
+
+受限 Windows 环境可通过上述工作目录保存临时文件、独立用户配置与诊断；runner 也提供 `--work-root`、`--diagnostics-root`。共享并发锁保持统一位置，所有项目共用两个容量槽位；锁访问被拒绝时 LibreOffice 不启动，应在获准访问该锁的环境中重试，不能为每个项目另建锁以绕开限制。
+
+未配置 `work_root` 时保留系统临时目录默认值。LibreOffice 在深目录中可能因内部缓存路径过长而崩溃；runner 对工作根绝对路径进行长度预检，超过 63 个 UTF-16 单元时返回 `work_root_too_long`。此时由智能体在项目允许范围内选更浅的过程目录，写入本机项目配置后重试；不移动共享锁、不修改原稿。诊断目录不受这项 LibreOffice 工作根限制。
+
 PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 sharp；也可先从原绘图工具导出 PNG。已安装 sharp 但无法解析模块时，可用 `SHARP_MODULE` 指定其实际模块目录。
 
 ## 开始使用
@@ -106,7 +131,7 @@ PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 shar
 
 直接把本地 `.pptx`、带样页的 `.potx` 或以前做过的汇报路径交给 Codex，说：“以后按这份模板生成每日汇报。”Codex 会检查样页，复用页面尺寸、母版、Logo、字体和图文布局，替换旧报告内容，并在当前项目记住模板。
 
-原模板保持不动；原稿中的实验图和结论不会当作新成果。首次会生成一份适配样例检查效果，之后沿用项目配置。你不需要自己填对象编号或 JSON。具体执行见 [本地模板流程](references/local-template.md)；复杂图表、SmartArt、动画或纯空白母版可能需要先补充适用样页。
+原模板保持不动；原稿中的实验图和结论不会当作新成果。普通模板日报固定使用原生模板流程，失败不自动换内置样式或临时删页。首次、模板或映射改变、旧映射没有验收记录时，生成每页标明“模板适配测试，非科研结果”的样例；通过结构检查、实际渲染和逐页查看后，记录原模板、副本与映射哈希，正式生成才能继续。未变化的有效记录可以复用，不必每天重做。标题继承字号先解析，只在副本补齐可确定值；无法确定时由 Codex 询问该字号，用户无需清理缓存或填对象编号。具体执行见 [本地模板流程](references/local-template.md)；复杂图表、SmartArt、动画或纯空白母版可能需要单独适配或适用样页，用户指定的已有制作工具仍可继续使用。
 
 ## 中文表达和个人词表
 
@@ -130,6 +155,10 @@ PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 shar
 - 采集脚本不联网；Codex 本身如何处理材料取决于所用服务和账号设置。不要把“本地采集”理解为模型完全离线运行。
 - 采集摘要和来源清单包含本地内容及路径，仅用于本次任务，不提交到公开仓库。密钥遮盖只能识别部分常见格式，不能代替人工检查。
 - 实际 PPT 经 LibreOffice 渲染检查；PowerPoint 原生打开、字体替换和导出应另外验证，没有验证就明确说明。
+
+版本 3 的 manifest 分别记录 PPTX 生成、结构检查、LibreOffice 渲染、PNG、视觉检查及 PowerPoint 原生验证。自动生成完成的 `rendered_visual_pending` 只表示渲染流程完成，仍须逐页查看。若 PPTX 已生成但后续渲染失败，文件与诊断会保留，命令返回失败状态；报告应准确写成“PPTX 已生成，视觉验收未完成”。清单以临时文件刷新后原子替换，写入失败保留旧清单并报告原因；没有有效清单时不能据此恢复。
+
+修复 LibreOffice、PNG 或 HTML 阶段错误后，可使用 `python scripts/render_deck.py --resume-manifest '<失败清单绝对路径>' --config '<项目配置绝对路径>'`。恢复校验 PPTX 哈希和结构，在新的尝试目录重做 PDF、PNG 与 HTML，保留旧记录；没有项目配置可省略 `--config`。PPTX 生成失败须重新生成。视觉或 PowerPoint 检查失败须修正后重查，文件已改动则旧渲染与验收结果失效。
 
 ## 验证与更新
 

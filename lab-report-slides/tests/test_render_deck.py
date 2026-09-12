@@ -53,15 +53,23 @@ class RenderDeckTests(unittest.TestCase):
                 source.write_bytes(b'original fixture')
                 spec = root / 'template-spec.json'
                 spec.write_text(json.dumps({'template_path': str(source)}), encoding='utf-8')
-                def export(pptx, pdf, pages):
+                def make(deck, slides, path, **kwargs):
+                    presentation = Presentation()
+                    presentation.slides.add_slide(presentation.slide_layouts[6])
+                    presentation.save(path)
+                    return []
+                def export(pptx, pdf, pages, **kwargs):
+                    pdf.write_bytes(b'mock PDF')
                     for page in pages:
                         Image.new('RGB', (1600, 900), 'white').save(page)
                     target = source if changed == 'template' else spec
                     target.write_bytes(b'changed while exporting')
-                with patch.object(render_deck, 'make_pptx', return_value=[]), patch.object(render_deck, 'export_pptx', side_effect=export):
-                    with self.assertRaisesRegex(ValueError, 'changed during report rendering'):
+                with patch.object(render_deck, 'make_pptx', side_effect=make), patch.object(render_deck, 'export_pptx', side_effect=export):
+                    with self.assertRaisesRegex(render_deck.RenderFailure, 'changed during report rendering'):
                         render_deck.render_outputs({'template_spec': str(spec)}, [{'title': 'Test'}], root / 'deck.json', root, 'report', 'report')
-                self.assertFalse((root / 'report.manifest.json').exists())
+                manifest = json.loads((root / 'report.manifest.json').read_text(encoding='utf-8'))
+                self.assertEqual(manifest['stages']['structure'], 'failed')
+                self.assertFalse(manifest['ok'])
 
     def test_non_widescreen_preview_preserves_aspect_ratio(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -74,12 +82,16 @@ class RenderDeckTests(unittest.TestCase):
             presentation.save(pptx)
             runner = root / 'runner.py'
             runner.write_text('# mock', encoding='utf-8')
+            poppler = root / 'fake-pdftoppm.exe'
+            poppler.touch()
             def run(command, **kwargs):
-                if command[0] == 'fake-pdftoppm':
+                if command[0] == str(poppler):
                     self.assertEqual(command[command.index('-scale-to-y') + 1], '1200')
                     Image.new('RGB', (1600, 1200), 'white').save(command[-1] + '-1.png')
+                else:
+                    (root / 'out.pdf').write_bytes(b'mock PDF')
                 return SimpleNamespace(returncode=0, stdout='{"ok": true}')
-            with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(runner), 'LAB_REPORT_PDFTOPPM': 'fake-pdftoppm'}), patch.object(render_deck.subprocess, 'run', side_effect=run):
+            with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(runner), 'LAB_REPORT_PDFTOPPM': str(poppler)}), patch.object(render_deck.subprocess, 'run', side_effect=run):
                 render_deck.export_pptx(pptx, root / 'out.pdf', [root / 'out.png'])
             with Image.open(root / 'out.png') as rendered:
                 self.assertEqual(rendered.size, (1600, 1200))
@@ -88,7 +100,7 @@ class RenderDeckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(root / 'missing.py')}):
-                with self.assertRaisesRegex(RuntimeError, 'Install libreoffice-runner'):
+                with self.assertRaisesRegex(ValueError, 'LAB_REPORT_LO_RUNNER'):
                     render_deck.export_pptx(root / 'in.pptx', root / 'out.pdf', [])
 
     def test_custom_office_path_is_forwarded_and_bad_runner_json_is_clear(self):
@@ -97,6 +109,8 @@ class RenderDeckTests(unittest.TestCase):
             runner = root / 'runner.py'
             runner.write_text('# fake test entry', encoding='utf-8')
             custom_office = str(root / 'custom office' / 'soffice.com')
+            Path(custom_office).parent.mkdir()
+            Path(custom_office).touch()
             with patch.dict('os.environ', {'LAB_REPORT_LO_RUNNER': str(runner), 'LAB_REPORT_SOFFICE': custom_office}):
                 with patch.object(render_deck.subprocess, 'run', return_value=SimpleNamespace(stdout='not JSON', returncode=1)) as run:
                     with self.assertRaisesRegex(RuntimeError, 'check_dependencies.py'):

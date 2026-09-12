@@ -77,7 +77,7 @@ class TemplateDeckTests(unittest.TestCase):
         self.spec_path.write_text(json.dumps(spec or self.spec), encoding="utf-8")
         deck = deck or self.deck
         return template_deck.make_template_pptx(
-            deck, render_deck.validate_deck(deck, self.root), self.output, self.spec_path)
+            deck, render_deck.validate_deck(deck, self.root), self.output, self.spec_path, template_test=True)
 
     def test_preserves_size_native_logo_background_and_source(self):
         assets = self.make()

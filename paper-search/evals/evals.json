@@ -60,7 +60,7 @@
     {
       "id": 5,
       "prompt": "帮我检查 references.bib。按 DOI 优先、题名兜底，把它和我已核实的论文清单逐项对照，指出题名、作者、年份、刊名、卷期、页码或文章号、DOI 的问题；能安全修的给修订版，复杂宏看不懂的别硬改，顺序和 citation key 都保留。",
-      "expected_output": "识别为 BibTeX 一致性核验；按 DOI 后题名匹配，在不联网补造字段的前提下区分缺字段、值不一致、来源冲突、未匹配和解析提醒。仅修改有来源支持的字段，复杂条目保留原文并说明，保持输入顺序和 citation key。",
+      "expected_output": "识别为 BibTeX 出版事实一致性核验；复用来源可定位且未变化的已核实清单，按 DOI 后题名匹配，区分缺字段、值不一致、来源冲突、未匹配和解析提醒。已有证据不足或出现疑点时只补核相关条目，不因 BibTeX 关键词全库重查。仅修改有来源支持的字段，复杂条目保留原文并说明，保持输入顺序和 citation key。",
       "files": [
         "evals/files/references.bib",
         "evals/files/verified-records.json"
@@ -69,7 +69,7 @@
         "条目先按规范化 DOI 匹配，没有 DOI 时才按规范化题名匹配。",
         "逐项检查题名、作者、年份、期刊或会议名、卷、期、页码或文章号和 DOI。",
         "输出区分原条目缺字段、值不一致、来源冲突、无法匹配和无法保守解析。",
-        "只修订已有可靠来源支持的字段，不把未核实信息写入修订版。",
+        "只修订已有可靠来源支持的字段，不把未核实信息写入修订版；可定位且未变化的核验结果直接复用，不要求重新读取全部来源页面。",
         "复杂宏或无法解析的条目保持原文并说明，不强行改写。",
         "保持输入顺序和原 citation key。"
       ]
@@ -89,6 +89,30 @@
         "写回后重新读取目标区块，核对条目数量、顺序、题名和 DOI。",
         "不能可靠确认的字段留空并说明，不为了完成写回而猜测。"
       ]
+    },
+    {
+      "id": "bibtex-syntax-only",
+      "prompt": "这份 references.bib 已核验过出版信息，这次只修一个括号语法错误，换 IEEE 样式，并核对 citation key 和正文对应，让 LaTeX 编译成功。",
+      "expected_output": "交给 latex-paper 修复语法、样式、键对应和编译；保留出版字段，不因 IEEE/BibTeX 关键词重新核验全部论文。若实际发现具体事实疑点，只交 paper-search 核相关条目。",
+      "files": []
+    },
+    {
+      "id": "single-doi-doubt",
+      "prompt": "已有清单 30 篇里，第 7 条 DOI 可能对应另一篇，其余已核实且未变。只帮我核对第 7 条。",
+      "expected_output": "读取第 7 条及相关可靠来源核对题名与 DOI，对疑点所涉及的字段给出事实结论；复用其余可定位且未变化的核验结果，不重查另外 29 篇。重复读取 citation-workflow 不扩大范围。",
+      "files": []
+    },
+    {
+      "id": "ordinary-product-comparison",
+      "prompt": "把这三个厂商现成资料里的带宽、增益和两家渠道报价整理成一次性的 XLSX 对比表。",
+      "expected_output": "交给 xlsx 完成普通参数和多渠道比较表；不因厂商、采购或产品关键词启动持续产品库契约。",
+      "files": []
+    },
+    {
+      "id": "persistent-product-contract",
+      "prompt": "继续维护已有产品库，沿用稳定编号和来源追溯契约，并检查当前记录是否符合这个库的契约。",
+      "expected_output": "交给 product-research-workbook 处理持续库维护及明确的库契约审计，不退化成一次性 xlsx 格式整理。",
+      "files": []
     },
     {
       "id": "doi-miss-title-hit",

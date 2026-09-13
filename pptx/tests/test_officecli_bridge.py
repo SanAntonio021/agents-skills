@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import ExitStack, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -449,12 +449,117 @@ class OfficeCliBridgeTests(unittest.TestCase):
             candidate = skills_root / skill / "scripts" / "repair_officecli.py"
             self.assertEqual(candidate.read_bytes(), canonical, candidate)
 
-    def test_non_pptx_native_gate_runtime_copies_are_identical(self):
-        skills_root = MODULE.parents[2]
-        canonical = (skills_root / "docx" / "scripts" / "office_native_gate.py").read_bytes()
-        for skill in ("xlsx", "pdf"):
-            candidate = skills_root / skill / "scripts" / "office_native_gate.py"
-            self.assertEqual(candidate.read_bytes(), canonical, candidate)
+
+class NativeGateContractTests(unittest.TestCase):
+    """Native gates may specialize; their shared entry points must stay safe."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.gates = {}
+        for skill in ("docx", "xlsx", "pdf"):
+            path = MODULE.parents[2] / skill / "scripts" / "office_native_gate.py"
+            spec = importlib.util.spec_from_file_location(f"native_gate_contract_{skill}", path)
+            gate = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = gate
+            spec.loader.exec_module(gate)
+            cls.gates[skill] = gate
+
+    @classmethod
+    def tearDownClass(cls):
+        for gate in cls.gates.values():
+            sys.modules.pop(gate.__name__, None)
+
+    def test_common_cli_preserves_explicit_opt_in(self):
+        for skill, gate in self.gates.items():
+            for format_name in ("pptx", "docx", "xlsx"):
+                with self.subTest(skill=skill, format=format_name):
+                    command = ["check", f"source.{format_name}", "--format", format_name, "--json"]
+                    args = gate.build_parser().parse_args(command)
+                    self.assertEqual(args.operation, "check")
+                    self.assertEqual(args.format, format_name)
+                    self.assertTrue(args.json)
+                    self.assertFalse(args.allow_office_com)
+                    self.assertFalse(args.require_render)
+                    explicit = gate.build_parser().parse_args(command + ["--allow-office-com", "--require-render"])
+                    self.assertTrue(explicit.allow_office_com)
+                    self.assertTrue(explicit.require_render)
+
+    def test_invalid_or_unauthorized_requests_stop_before_office(self):
+        cases = [
+            (f".{fmt}", fmt, {}, "--allow-office-com") for fmt in ("pptx", "docx", "xlsx")
+        ] + [
+            (".pdf", "docx", {"allow_office_com": True}, "does not match"),
+            (".xlsx", "xlsx", {"allow_office_com": True, "require_render": True}, "open-only"),
+        ]
+        for skill, gate in self.gates.items():
+            for suffix, format_name, options, message in cases:
+                with self.subTest(skill=skill, format=format_name, options=options):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        source = Path(temporary) / f"source{suffix}"
+                        source.write_bytes(b"protected test input")
+                        before = bridge.sha256(source)
+                        with ExitStack() as stack:
+                            names = ["process_present", "default_dispatch_ex", "default_com_runtime"]
+                            if hasattr(gate, "_process_ids"):
+                                names.append("_process_ids")
+                            mocks = [stack.enter_context(patch.object(gate, name)) for name in names]
+                            result = gate.check_file(source, format_name, **options)
+                        for mock in mocks:
+                            mock.assert_not_called()
+                        self.assertFalse(result["ok"])
+                        self.assertEqual(result["status"], "UNVERIFIED")
+                        self.assertIn(message, result["error"])
+                        self.assertEqual(result["source_sha256_before"], before)
+                        self.assertEqual(result["source_sha256_after"], before)
+                        self.assertEqual(bridge.sha256(source), before)
+
+    def test_existing_office_process_is_never_adopted(self):
+        for skill, gate in self.gates.items():
+            for format_name in ("pptx", "docx", "xlsx"):
+                with self.subTest(skill=skill, format=format_name):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        source = Path(temporary) / f"source.{format_name}"
+                        source.write_bytes(b"protected test input")
+                        before = bridge.sha256(source)
+                        with ExitStack() as stack:
+                            stack.enter_context(patch.object(gate, "process_present", return_value=True))
+                            if hasattr(gate, "_process_ids"):
+                                stack.enter_context(patch.object(gate, "_process_ids", return_value=[4242]))
+                            dispatch = stack.enter_context(patch.object(gate, "default_dispatch_ex"))
+                            runtime = stack.enter_context(patch.object(gate, "default_com_runtime"))
+                            result = gate.check_file(source, format_name, allow_office_com=True)
+                        dispatch.assert_not_called()
+                        runtime.assert_not_called()
+                        self.assertFalse(result["ok"])
+                        self.assertEqual(result["status"], "UNSAFE_PROCESS")
+                        self.assertEqual(result["source_sha256_after"], before)
+                        self.assertEqual(bridge.sha256(source), before)
+
+    def test_invalid_target_pid_is_unverified_before_activation(self):
+        for skill, gate in self.gates.items():
+            for row in ('"WINWORD.EXE"', '"WINWORD.EXE","bad"', '"WINWORD.EXE","0"', '"WINWORD.EXE","-2"'):
+                with self.subTest(skill=skill, row=row):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        source = Path(temporary) / "source.docx"
+                        source.write_bytes(b"protected test input")
+                        listing = subprocess.CompletedProcess([], 0, row.encode(), b"")
+                        with patch.object(gate.subprocess, "run", return_value=listing):
+                            with patch.object(gate, "default_dispatch_ex") as dispatch:
+                                result = gate.check_file(source, "docx", allow_office_com=True)
+                        dispatch.assert_not_called()
+                        self.assertFalse(result["ok"])
+                        self.assertEqual(result["status"], "UNVERIFIED")
+                        self.assertIn("PID", result["error"])
+                        self.assertEqual(source.read_bytes(), b"protected test input")
+
+    def test_process_listing_accepts_only_exact_positive_target_pids(self):
+        for skill, gate in self.gates.items():
+            with self.subTest(skill=skill):
+                listing = subprocess.CompletedProcess(
+                    [], 0, b'"WINWORD.EXE","72"\n"WINWORD.EXE","72"\n"winword.exe","15"\n"other.exe","99"', b""
+                )
+                with patch.object(gate.subprocess, "run", return_value=listing):
+                    self.assertEqual(gate._process_ids("WINWORD.EXE"), [15, 72])
 
 
 if __name__ == "__main__":

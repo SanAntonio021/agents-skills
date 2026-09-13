@@ -41,14 +41,14 @@ python <skill-root>\scripts\officecli_bridge.py view source.pptx text
 python <skill-root>\scripts\officecli_bridge.py validate source.pptx
 ```
 
-桥接器固定使用 OfficeCLI `1.0.144`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
-PDF/Office 文档任务不会联网下载或自动修复；当前准确授权覆盖修复时可运行
+桥接器固定使用 OfficeCLI `1.0.149`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
+PDF/Office 文档任务不会联网下载或自动修复；当前授权覆盖修复或升级时可运行
 `python <skill-root>\scripts\repair_officecli.py --repair` 修复默认本机路径。设置
 `OFFICECLI_EXE` 时也必须通过相同校验，路径错误应自行修正或取消环境变量；修复脚本不会改写
 覆盖路径。
 
-桥接器会隔离输入副本并核对源文件 SHA-256。不要通过 OfficeCLI 导出 Office-to-PDF：固定的
-OfficeCLI `1.0.144` 没有 exporter plugin，bridge 会提前拒绝 `view ... pdf`。OfficeCLI
+桥接器会隔离输入副本并核对源文件 SHA-256。不要通过 OfficeCLI 导出 Office-to-PDF：
+当前本机 OfficeCLI `1.0.149` 未安装 exporter plugin（2026-09-13 核对），bridge 会提前拒绝 `view ... pdf`。OfficeCLI
 `--render native --allow-native` 只保留为诊断，失败会输出
 `officecli_native_diagnostic_failed`、原始 stderr 和退出码；它不证明 Office 未安装，也不
 提供发布证据。需要 Microsoft Office 原生打开/导出验证时，可沿用同构的

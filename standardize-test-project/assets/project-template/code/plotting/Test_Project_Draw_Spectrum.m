@@ -12,7 +12,6 @@ if isfield(spectrum,'display_x')
     xl=opt(options,'x_label',''); yl=opt(options,'y_label','');
 else
     x=spectrum.frequency_hz(:)/1e9; xl='频率 / GHz';
-    if isfield(spectrum,'bandwidth_known') && ~spectrum.bandwidth_known, xl='频率 / GHz（采样上限，模拟带宽未知）'; end
     if ~strcmp(opt(options,'unit','auto'),'voltage') && isfield(spectrum,'density_w_hz') && ~isempty(spectrum.density_w_hz) && all(isfinite(spectrum.density_w_hz))
         y=10*log10(max(spectrum.density_w_hz(:)*1000,realmin)); yl='功率谱密度 / (dBm/Hz)';
     elseif isfield(spectrum,'density_v2_hz')
@@ -43,12 +42,11 @@ elseif isfield(spectrum,'density_v2_hz') && isfield(spectrum,'available_limit_hz
 elseif max(x)>min(x), xlim(ax,[min(x) max(x)]); end
 ylimits=opt(options,'y_limits',[]); if ~isempty(ylimits), ylim(ax,ylimits); else, ylim(ax,'auto'); end
 if ~isfield(spectrum,'display_x')
-    note={sprintf('%.4g GSa/s | Δf %.4g MHz',spectrum.fs_hz/1e9,spectrum.df_hz/1e6)};
-    if isfield(spectrum,'stage_id'), note{end+1}=char(spectrum.stage_id); end
+    note={sprintf('采样率 %.4g GSa/s',spectrum.fs_hz/1e9), ...
+        sprintf('Δf %.4g MHz',spectrum.df_hz/1e6)};
     if isfield(spectrum,'band_power_w') && isfinite(spectrum.band_power_w)
         note{end+1}=sprintf('带内功率 %.3f dBm',10*log10(max(spectrum.band_power_w*1000,realmin)));
-    elseif isfield(spectrum,'power_band_hz') && ~isempty(spectrum.power_band_hz) && ~strcmp(opt(spectrum,'power_status',''),'ok')
-        note{end+1}='请求频段功率不可用';
+
     end
     Test_Project_Plot_Util('note',ax,note);
 end

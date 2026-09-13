@@ -24,7 +24,7 @@ single.samples=.06+.2*cos(2*pi*.65e9*time)+.015*randn(n,1);
 analysis=Test_Project_Analyze_Capture(single,struct('power_band_hz',[.5e9 .8e9]));
 source=struct('kind','synthetic','frame_id','synthetic-single-001','seed',20260913);
 pd=Test_Project_Make_Plot_Data(analysis,'single_channel',struct([]),source, ...
-    struct('title','合成示例：单通道原始电压与频谱'));
+    struct('title','单通道观察（仿真）'));
 outputs.single_channel=renderPair(outputRoot,'single_channel',pd);
 
 iq=repmat(base,1,2); iq(1).role='I'; iq(2).role='Q'; iq(2).id='CH2';
@@ -34,7 +34,7 @@ iq(2).samples=.19*sin(2*pi*.5e9*time)+.01+.02*randn(n,1);
 analysis=Test_Project_Analyze_Capture(iq,struct('power_band_hz',[.35e9 .65e9]));
 source.frame_id='synthetic-iq-001';
 pd=Test_Project_Make_Plot_Data(analysis,'iq_observation',struct([]),source, ...
-    struct('title','合成示例：I/Q 原始观察（未声明采集同步）'));
+    struct('title','IQ 观察（仿真）'));
 outputs.iq_observation=renderPair(outputRoot,'iq_observation',pd);
 
 % This fixture explicitly supplies DSP-aligned stage data; no DSP is hidden
@@ -48,22 +48,22 @@ dsp=struct('samples',repelem(after,4),'fs_hz',fs, ...
     'amplitude_unit','dimensionless');
 spectrum=Test_Project_Complex_Spectrum(dsp);
 panels=repmat(panelTemplate(),1,6);
-panels(1)=panel('complex_psd','spectrum','合成示例：均衡后复基带频谱',spectrum,{});
+panels(1)=panel('complex_psd','spectrum','均衡后复基带频谱',spectrum,{});
 lags=(-128:128)'; corr=.03+.95*exp(-.5*((lags-17)/3).^2);
-panels(2)=panel('synchronization','curve','合成示例：同步相关曲线', ...
+panels(2)=panel('synchronization','curve','同步相关曲线', ...
     struct('x',lags,'y',corr,'x_unit','候选延迟 / 样点','y_unit','相关幅度 / 1'),{});
-panels(3)=panel('before_equalization','constellation','合成示例：均衡前业务符号', ...
+panels(3)=panel('before_equalization','constellation','均衡前星座', ...
     struct('symbols',before,'ideal_symbols',ideal,'symbol_set_id','payload-001'),{'synchronization'});
-panels(4)=panel('after_equalization','constellation','合成示例：均衡后业务符号', ...
+panels(4)=panel('after_equalization','constellation','均衡后星座', ...
     struct('symbols',after,'ideal_symbols',ideal,'symbol_set_id','payload-001'),{'before_equalization'});
 panels(3).options.comparison_group='payload';
 panels(4).options.comparison_group='payload';
-panels(5)=panel('failed_tracking','curve','合成示例：跟踪失败',struct(),{'after_equalization'});
+panels(5)=panel('failed_tracking','curve','跟踪',struct(),{'after_equalization'});
 panels(5).status='failed'; panels(5).reason='人为注入的离线示例失败';
-panels(6)=panel('dependent_stage','constellation','合成示例：后续结果跳过',struct(),{'failed_tracking'});
+panels(6)=panel('dependent_stage','constellation','跟踪后星座',struct(),{'failed_tracking'});
 source.frame_id='synthetic-demod-001';
 pd=Test_Project_Make_Plot_Data(analysis,'demodulation',panels,source, ...
-    struct('title','合成示例：实际阶段数据驱动的解调诊断'));
+    struct('title','解调结果（仿真）'));
 outputs.demodulation=renderPair(outputRoot,'demodulation',pd);
 outputs.output_root=outputRoot;
 disp(outputs);

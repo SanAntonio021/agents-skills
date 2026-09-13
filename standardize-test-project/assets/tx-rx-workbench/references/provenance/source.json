@@ -1,0 +1,25 @@
+{
+  "source": "D:\\AWG\\WWP\\multistream_iq_SC",
+  "commit": "b3fa174535a8d5daa10ea4d9ef33a5fd7d8d81f1",
+  "captured_at": "2026-09-11T12:42:40.6814055+08:00",
+  "file_count": 204,
+  "dirty_status": [
+    " M README.md",
+    " M code/+msiq/+instruments/capture_scope_raw.m",
+    " M code/+msiq/+instruments/mock_rx_scope_io.m",
+    " M code/+msiq/+plotting/rx_dashboard.m",
+    " M code/+msiq/rx_scope_worker.m",
+    " M code/+msiq/rx_workbench_app.m",
+    " M code/+msiq/validate_rx_async.m",
+    " M code/+msiq/validate_rx_workbench.m",
+    " M lab.md",
+    "?? code/+msiq/+instruments/apply_rx_scope_setting.m",
+    "?? code/+msiq/+instruments/rx_scope_settings.m",
+    "?? code/+msiq/rx_observation_freshness.m",
+    "?? code/+msiq/validate_rx_observation.m",
+    "?? code/+msiq/validate_rx_observation_worker.m",
+    "?? code/+msiq/validate_rx_scope_settings.m",
+    "?? code/+msiq/validate_rx_settings_gui.m"
+  ],
+  "policy": "Snapshot of current files; no implicit hardware authorization; installed skills unchanged"
+}

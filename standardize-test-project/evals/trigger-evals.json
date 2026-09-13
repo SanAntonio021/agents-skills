@@ -56,6 +56,26 @@
     "should_trigger": true
   },
   {
+    "query": "用现成 MATLAB TX/RX 工作台新建一个实验工程，保留 M8195A 和 LeCroy 适配，先跑仿真和 mock 演示。",
+    "should_trigger": true
+  },
+  {
+    "query": "现有实验项目只复用收发工作台的 RX 诊断图及必要依赖，不替换我的算法和界面。",
+    "should_trigger": true
+  },
+  {
+    "query": "只读检查这套工程与现成收发工作台的接口差异，现在不复制或改文件。",
+    "should_trigger": true
+  },
+  {
+    "query": "现有工作台和台架条件已经确认，按当前配置连上仪器继续做一次 SMOKE，不需要改程序。",
+    "should_trigger": false
+  },
+  {
+    "query": "只整理昨天实验记录中的接线、数据和结论，已有程序和保存规则不变。",
+    "should_trigger": false
+  },
+  {
     "query": "我们 Web 服务的 tests 目录太乱了，帮我把 pytest unit、integration、e2e 和 fixtures 重新分层，CI 继续跑。",
     "should_trigger": false
   },

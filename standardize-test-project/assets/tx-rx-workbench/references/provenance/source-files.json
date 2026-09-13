@@ -1,0 +1,1022 @@
+[
+  {
+    "path": "code/+msiq/+bench/assert_flat.m",
+    "sha256": "DF6944B8D4BFD893BBC82C0A096D0A64C6595DE16EE6518AA975254ABEBD2BFD",
+    "bytes": 263
+  },
+  {
+    "path": "code/+msiq/+bench/audit_delta.m",
+    "sha256": "6329F37D36F4EDEFA9338047973ED98887A703F5CA50DCB29CAFFE3D77954C21",
+    "bytes": 246
+  },
+  {
+    "path": "code/+msiq/+bench/capture_metrics.m",
+    "sha256": "426128073B8116D12A835807DD3520F1766EEF94D4C8F8187B6C92188BEA4609",
+    "bytes": 1957
+  },
+  {
+    "path": "code/+msiq/+bench/classify_stop_reason.m",
+    "sha256": "87911CBFD8394F3F873FD5A54302F3744D4B5708EA2FEEAA429BED2B63F86325",
+    "bytes": 749
+  },
+  {
+    "path": "code/+msiq/+bench/create_run.m",
+    "sha256": "DDA9BEA3B33C210AC592BB46254A9CB13971ECDF7D234327E2BA9338F9EEBD36",
+    "bytes": 1168
+  },
+  {
+    "path": "code/+msiq/+bench/finalize_failure.m",
+    "sha256": "29991F6F2547EF6AE0BC5B057B1FCA415B358D2C28073C70F15D43FF450262C0",
+    "bytes": 1047
+  },
+  {
+    "path": "code/+msiq/+bench/hardware_gate.m",
+    "sha256": "B737AB162E87CAE7EDC51219E7ABAF9D502804163955CE896561146304C436F2",
+    "bytes": 3882
+  },
+  {
+    "path": "code/+msiq/+bench/instrument_metadata.m",
+    "sha256": "C2E41F43A790A3D2097E70FB94B53734973B14E100C7A514F21EE64D2EF3629B",
+    "bytes": 553
+  },
+  {
+    "path": "code/+msiq/+bench/instrument_specs.m",
+    "sha256": "F27E079C859A2A52E4D79B11C680B8AC5F123A12249C622E95670A74D120E881",
+    "bytes": 537
+  },
+  {
+    "path": "code/+msiq/+bench/plot_smoke_spectra.m",
+    "sha256": "30313D47451BD6E8BE44D34C17E241DB065F5EFFCB91FE55AF6CF3FE529BB837",
+    "bytes": 1967
+  },
+  {
+    "path": "code/+msiq/+bench/scope_channel.m",
+    "sha256": "08FFA9EF25BD889DF213C79494BBE039C9591F01665A59A9D8FA8B6D81D96867",
+    "bytes": 621
+  },
+  {
+    "path": "code/+msiq/+dsp/correct_raw_sro.m",
+    "sha256": "A5B1197B0590A98710AC0F28F6F158AD8D314B498A3ED254CCC8C85958F55765",
+    "bytes": 3613
+  },
+  {
+    "path": "code/+msiq/+dsp/equalize_dual.m",
+    "sha256": "67D3DC65A3EAB139A726D014BDE6F08855C89D3B93992F9E7056EC5DF2159208",
+    "bytes": 2798
+  },
+  {
+    "path": "code/+msiq/+dsp/equalize_single_wl.m",
+    "sha256": "2C2132759FD526A816158D52B748700A7068DDB7F0B888B4DF40CF7C07B9586C",
+    "bytes": 1530
+  },
+  {
+    "path": "code/+msiq/+dsp/equalize_single_wz.m",
+    "sha256": "E4D9D2D4CACF6736E27558A9222FA5D6D1F37F6B90A3116529115E9FB3590141",
+    "bytes": 10810
+  },
+  {
+    "path": "code/+msiq/+dsp/pilot_track.m",
+    "sha256": "73FA874EC445794C93364DAF0BB2BC52B83F561AB9C085824984285D29D55006",
+    "bytes": 1756
+  },
+  {
+    "path": "code/+msiq/+dsp/precompensate_tx_sro.m",
+    "sha256": "9124362CD8A299EB5EB37FF731ACC1EC05A5227D54624E83B29BAA6734389283",
+    "bytes": 3314
+  },
+  {
+    "path": "code/+msiq/+dsp/prepare_capture.m",
+    "sha256": "A86E5A46A1B14A4DB52C0C6DB672769CCE6B974440704699BB9E0051FA5AAC39",
+    "bytes": 7102
+  },
+  {
+    "path": "code/+msiq/+dsp/synchronize_single_wz.m",
+    "sha256": "26EA9AF7597CEC6AC875D8388F37EBEA93906F3F741163558CB45C89214FB136",
+    "bytes": 38982
+  },
+  {
+    "path": "code/+msiq/+dsp/synchronize.m",
+    "sha256": "A04880B12E260C33363F6024F1F591B5772F516E45493D1F818394D106FAE0DD",
+    "bytes": 7767
+  },
+  {
+    "path": "code/+msiq/+fec/apply_reference.m",
+    "sha256": "0CA75B6DD9271098ED818E21F98916D880CF587F3AA1E321F7F15286C12B48CC",
+    "bytes": 445
+  },
+  {
+    "path": "code/+msiq/+fec/build.m",
+    "sha256": "76E303118B8312129465B9436A138AB3C8E2B188DC607D2C760871B1E67B6E5A",
+    "bytes": 736
+  },
+  {
+    "path": "code/+msiq/+fec/decode_soft.m",
+    "sha256": "E0124982E8279B1EBD20F9396AE9D0AB83C5377D1AD2C82DC544CE884A801271",
+    "bytes": 6490
+  },
+  {
+    "path": "code/+msiq/+fec/encode_payload.m",
+    "sha256": "9D4BE9D227ADFA0504ABBE412A09E054BF8CA0B0AF070410DDCCE4F384965B33",
+    "bytes": 1500
+  },
+  {
+    "path": "code/+msiq/+fec/short_parity_check.m",
+    "sha256": "5ADC8D1DE1F23E918C076002D24B6F2997E9555010FA948012B6C8490C476EAA",
+    "bytes": 1176
+  },
+  {
+    "path": "code/+msiq/+fec/specification.m",
+    "sha256": "6F2CD9CB38948825CD9930C52037E48726958AB0D27DF6A033AB2D78CD9B7B2A",
+    "bytes": 874
+  },
+  {
+    "path": "code/+msiq/+instruments/apply_rx_scope_setting.m",
+    "sha256": "62B022C5EEE7936599CE3E22BCB1638E527C14AE55C3C790EF8BEDB676FBCB62",
+    "bytes": 2339
+  },
+  {
+    "path": "code/+msiq/+instruments/awg_memory_capacity.m",
+    "sha256": "4B672879A11ADD280D934522BF76D592CC2734821C29224EE37C153C692511FC",
+    "bytes": 7841
+  },
+  {
+    "path": "code/+msiq/+instruments/capture_scope_raw.m",
+    "sha256": "1956169ACD4F6B95497A80A34D9AE2DE02081876A212B43C2CE6BDDB8B8D866C",
+    "bytes": 12135
+  },
+  {
+    "path": "code/+msiq/+instruments/capture_scope.m",
+    "sha256": "6D172CE54A31650A42108ECB13C9A65FCB8976F02D5E22E08204209AFA8B106A",
+    "bytes": 1732
+  },
+  {
+    "path": "code/+msiq/+instruments/close_session.m",
+    "sha256": "C40806BCC78C4BCADB06EEA052C1418817E544DAC50A8C3470CDD10D55214D32",
+    "bytes": 583
+  },
+  {
+    "path": "code/+msiq/+instruments/configure_scope.m",
+    "sha256": "4470A06C15C7F56B23FC54EB1AAD124E166F12867CAF23925C752141D0F6D572",
+    "bytes": 4123
+  },
+  {
+    "path": "code/+msiq/+instruments/configure_source.m",
+    "sha256": "7E3AE6C476EFE4EB9C11358E3141B34F242C1FDCAAEB3E7B145E7B3BF86ECC5E",
+    "bytes": 828
+  },
+  {
+    "path": "code/+msiq/+instruments/download_awg_single_dac.m",
+    "sha256": "FA372BCE4C39BAE619CAE474F12FC19030CCB15BC98117AF489750D9C1529F26",
+    "bytes": 3224
+  },
+  {
+    "path": "code/+msiq/+instruments/download_awg.m",
+    "sha256": "3E54249DDD1F2500FD73A363E08FF3F2CD62A31ECCE7E3719C48F8ECB4195ECF",
+    "bytes": 3239
+  },
+  {
+    "path": "code/+msiq/+instruments/get_audit.m",
+    "sha256": "E01BA28C6B5E4857447CDD17CED42CFB5E02C21B89C33D5C18862A036196F2BD",
+    "bytes": 134
+  },
+  {
+    "path": "code/+msiq/+instruments/get_command_history.m",
+    "sha256": "742AF6A41E3A846203D2A70AF137727E5207CDE17FB2F8DD3B80D54D01283B70",
+    "bytes": 178
+  },
+  {
+    "path": "code/+msiq/+instruments/if_board_decode.m",
+    "sha256": "CD80087957E51DD1EEA458D0119ED0C18A854E3B2420A7D42CB107BCAD5B6706",
+    "bytes": 1115
+  },
+  {
+    "path": "code/+msiq/+instruments/if_board_encode.m",
+    "sha256": "BAF4B2D3000B95C08E153DEC7C61656692277895B41D5CBC2D004D9D1EBDEA83",
+    "bytes": 1338
+  },
+  {
+    "path": "code/+msiq/+instruments/IfBoard.m",
+    "sha256": "134ED5887CCE8360F36AC65BE6BB2A2EFDA2A2E9114A378A979ED336D20287D8",
+    "bytes": 9520
+  },
+  {
+    "path": "code/+msiq/+instruments/io_audit.m",
+    "sha256": "0B78E27B9E5D5E241AAE830E25C3FC7DD112DFF6E602ED927DB1E2160CBB0E51",
+    "bytes": 11864
+  },
+  {
+    "path": "code/+msiq/+instruments/mock_rx_scope_io.m",
+    "sha256": "87E2B48B3C77E00E7BD58450671A2F61E71E5E71A57C7D8FFC917E6D2B293F40",
+    "bytes": 11203
+  },
+  {
+    "path": "code/+msiq/+instruments/open_session.m",
+    "sha256": "32CF998C7C65D6CDAE43E43F997F567DBA5BB71E681F79A66713B19EB2F08E50",
+    "bytes": 3338
+  },
+  {
+    "path": "code/+msiq/+instruments/prepare_awg_download.m",
+    "sha256": "8005C830F3EDBCC60D13A88503DC9CFBE3B03CD47BCBC006626F6C6D71C80D40",
+    "bytes": 2579
+  },
+  {
+    "path": "code/+msiq/+instruments/query_idn.m",
+    "sha256": "31313B846FCAF218DC7A2BEE3F13BF32D7E67095BE7757D0AAB258803F8738D1",
+    "bytes": 540
+  },
+  {
+    "path": "code/+msiq/+instruments/query_scpi.m",
+    "sha256": "3341F2D77B4B0A0D35987C0622691EE1440AD459D9F93A29F1982AD0421111DE",
+    "bytes": 5293
+  },
+  {
+    "path": "code/+msiq/+instruments/read_awg_output_state.m",
+    "sha256": "9511007974B0E70C809ABFAAD768C03B0164E8B14B86CBD642E83F2F9650D833",
+    "bytes": 672
+  },
+  {
+    "path": "code/+msiq/+instruments/read_awg_public_state.m",
+    "sha256": "71A54143DBACC26C9EEF00DAF06AB2FA6D78D1664C222406702B1BCDE2946DD6",
+    "bytes": 2990
+  },
+  {
+    "path": "code/+msiq/+instruments/read_scope_preprocessing.m",
+    "sha256": "5C8DAF0E6A7CF3DC22B6BF203DC7B718ACC2EABB0628726009949889E13E6251",
+    "bytes": 6725
+  },
+  {
+    "path": "code/+msiq/+instruments/read_scope_vertical_scale.m",
+    "sha256": "974DCFBA6DD00E25FC5267E7204E2E75129041AF85DCE102635BB9E6B7FF0CC4",
+    "bytes": 617
+  },
+  {
+    "path": "code/+msiq/+instruments/reset_audit.m",
+    "sha256": "C0F33FB5A2F48949C70397BF6237E385D6A043E5575C171B71F553B73A9FA309",
+    "bytes": 139
+  },
+  {
+    "path": "code/+msiq/+instruments/rx_scope_settings.m",
+    "sha256": "31797F5654DEBB18C6784B0ABE6BAABD39902B3E6E51EA9A9403414A6A34C25B",
+    "bytes": 8249
+  },
+  {
+    "path": "code/+msiq/+instruments/rx_scope_state.m",
+    "sha256": "75A5949B65946EEBDDDD742D2096A2A3F72A497E3C0D55B3B98D838CF7DDA8CA",
+    "bytes": 5797
+  },
+  {
+    "path": "code/+msiq/+instruments/safe_shutdown.m",
+    "sha256": "08DED83319E7BCA2B2E6F6DA83088EADEC6EA82E8BDCE1B9C74FA506E5405897",
+    "bytes": 1597
+  },
+  {
+    "path": "code/+msiq/+instruments/SafetyGuard.m",
+    "sha256": "9B03ECB8054CA92D25E7F4AEC28C9E46F3CF6783D256561E4E1A1AD433BF5D47",
+    "bytes": 973
+  },
+  {
+    "path": "code/+msiq/+instruments/set_awg_channel_levels.m",
+    "sha256": "D039BDFE2C38BAE6B26DB4F5EE3EF612578502F1B44441ABBD25E94FB159DFAB",
+    "bytes": 1565
+  },
+  {
+    "path": "code/+msiq/+instruments/set_awg_channel_output.m",
+    "sha256": "2FA760DC4200BE5C789A853CE56660911830C7BA5C0E0167EBC7182AD968A53A",
+    "bytes": 658
+  },
+  {
+    "path": "code/+msiq/+instruments/set_awg_channels_output.m",
+    "sha256": "8DF1095B3EB94FE9A3FFF9DF0B71EFE95069C53EE830047819D92F68D4A66D65",
+    "bytes": 818
+  },
+  {
+    "path": "code/+msiq/+instruments/set_awg_output.m",
+    "sha256": "2F004E4410D71C3E5A4E3C2AF93BCCD0F93EE4133F901FE7F1B55833CE984134",
+    "bytes": 1024
+  },
+  {
+    "path": "code/+msiq/+instruments/set_awg_selected_outputs.m",
+    "sha256": "33D0B0C9A437D5882A816B268786FD841C8CE848662777907DFD9BDC9F8C8FB8",
+    "bytes": 794
+  },
+  {
+    "path": "code/+msiq/+instruments/set_mock_awg_state.m",
+    "sha256": "2CE7AF8C9F86B6F669A513683504069F7F25FDFE620A03F2CACE15E0BC501E64",
+    "bytes": 179
+  },
+  {
+    "path": "code/+msiq/+instruments/write_scpi.m",
+    "sha256": "59EEA7868226D49AF6D6B565DE13CB3D718D5905B872CA10E1737C12F76703AF",
+    "bytes": 807
+  },
+  {
+    "path": "code/+msiq/+plotting/demod_dashboard.m",
+    "sha256": "F8446A2823440DE64815A48C80EFD03D7D72992C2D77BDC41527FE3393B6DCF4",
+    "bytes": 18840
+  },
+  {
+    "path": "code/+msiq/+plotting/observation_overview.m",
+    "sha256": "D914F5DFAA49115F6A63349382CD48FB20443769E82226BEF4E67576BF665C89",
+    "bytes": 870
+  },
+  {
+    "path": "code/+msiq/+plotting/rdiv_compare_dashboard.m",
+    "sha256": "C6D7FE21AF611F1ADDC2A0D7006885E199D12593EAF76A98DD7EDD4A0CEC4B99",
+    "bytes": 8803
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_capture_channels.m",
+    "sha256": "8B44307D3046C440531F2F79AF30947ED0699A95DC04356176F209521E006AF2",
+    "bytes": 8474
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_constellation_stages.m",
+    "sha256": "9814D0FBF56990BA5E23B07D28939E8BBA2CB80974FAA8E4874ADF5ABFF57491",
+    "bytes": 14950
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_dashboard.m",
+    "sha256": "8E36A0B3497CCD5033C2EBEA698736EA225AA42C584356E09FAD69668E13234B",
+    "bytes": 28875
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_envelope_indices.m",
+    "sha256": "727FAD9A790E1CDC1498E52A65343A3845D70E7BD92BA58DA3F7817C9CD4E407",
+    "bytes": 653
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_live_analysis.m",
+    "sha256": "C722BB92E3BA1261D5A1181DDDCE64CE4DFA572CEE531F945D9CC9476C6AD1CB",
+    "bytes": 6277
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_live_dashboard.m",
+    "sha256": "6306093DAB4B1B9E78B18406334E7CB3DDBDF4EB98004DDF25F3FC18F6073C0F",
+    "bytes": 14927
+  },
+  {
+    "path": "code/+msiq/+plotting/rx_tracking_error_stats.m",
+    "sha256": "343DA59DBD5222DAEACE5A31D43D8C2FB732E43745AAD7E0C60083EB7E963BF2",
+    "bytes": 4706
+  },
+  {
+    "path": "code/+msiq/+plotting/save_replot_figure.m",
+    "sha256": "6597B62848435F991AC2B856598C67E6DEBFAFF9FF896B2563FAB76E5272F550",
+    "bytes": 659
+  },
+  {
+    "path": "code/+msiq/+plotting/simulation_plots.m",
+    "sha256": "52091F54C3AF450E49AD0C4EBFCF35F13F3121AAB5134666A89D6DF08E21A9EB",
+    "bytes": 3033
+  },
+  {
+    "path": "code/+msiq/+plotting/traditional_dashboard.m",
+    "sha256": "99B80586E6772F29EE6A5B5E1D367412057518CFF72F0D9A34A0EEC01A123CFD",
+    "bytes": 15200
+  },
+  {
+    "path": "code/+msiq/+plotting/tx_dashboard.m",
+    "sha256": "98C5EE1D18D2872A00F501911CF7BDB405108F8B61349251F3717C5B0C6B525B",
+    "bytes": 29591
+  },
+  {
+    "path": "code/+msiq/analysis_record.m",
+    "sha256": "C0E0C8CB93E18AFDB8993D3E22640B677FE58BDDDE86374C3AD4CD1581D362C6",
+    "bytes": 882
+  },
+  {
+    "path": "code/+msiq/apply_condition.m",
+    "sha256": "C1733F555740A58B7B56F77988EEFD88C71F66BBD8C7FF095D58724922A6C539",
+    "bytes": 1936
+  },
+  {
+    "path": "code/+msiq/artifact_path.m",
+    "sha256": "ADFD820FA12BAB2395D40680C2B6E9B0AB33082DC34DB9BF398D61CB39766478",
+    "bytes": 2963
+  },
+  {
+    "path": "code/+msiq/atomic_save.m",
+    "sha256": "35626AA60522509E7E018719370EC0B52D918759A3CDA169E99A04ED7FFC9279",
+    "bytes": 463
+  },
+  {
+    "path": "code/+msiq/audit_v1_golden.m",
+    "sha256": "D4E76FD621B98109B76C3CA1BC6CBE824F7014C3179874359768EF4A8A205B7A",
+    "bytes": 2226
+  },
+  {
+    "path": "code/+msiq/build_config.m",
+    "sha256": "363E2A9D06919CFD41DE5DF6F2AB697C4049701C8BF417C3266E7CA8803BC482",
+    "bytes": 4631
+  },
+  {
+    "path": "code/+msiq/build_experiment_matrix.m",
+    "sha256": "FD1F7F93CAAD61C63CC16E8F7EB4C0525373F3A5CF832FEBCF5CA6F3927E5D04",
+    "bytes": 10536
+  },
+  {
+    "path": "code/+msiq/code_provenance.m",
+    "sha256": "428A3FD35FB72F4148606FDCB6389850961DD0C65BF82A372DDE5693F6196939",
+    "bytes": 691
+  },
+  {
+    "path": "code/+msiq/create_output_run.m",
+    "sha256": "B7AB054260616DC6676F06C1BA80C1F092A15F13619A25981A6A2EFBADFF54CE",
+    "bytes": 1131
+  },
+  {
+    "path": "code/+msiq/decode_capture.m",
+    "sha256": "17BFC88EB1B867B0DB39CBB5095AA99C3F60EAC90540B72617CED4B1B4643C82",
+    "bytes": 24266
+  },
+  {
+    "path": "code/+msiq/file_sha256.m",
+    "sha256": "58E99C153E1F73FF62628AC199C8E9B6F064A5E657808F78EA491A56301916EA",
+    "bytes": 441
+  },
+  {
+    "path": "code/+msiq/generate_waveforms.m",
+    "sha256": "02BDB13558BB1C13689B6B14328D86372E5404D254EB44F314D2CC65F9E80FD5",
+    "bytes": 20126
+  },
+  {
+    "path": "code/+msiq/if_awg_action.m",
+    "sha256": "DCEC22B0249C08E69987603F81755ECCD34162C335A89DC98FBD77F5AE76B94B",
+    "bytes": 5043
+  },
+  {
+    "path": "code/+msiq/if_capture_observation.m",
+    "sha256": "DBF16A48BC33130884469BFAB7626FAE8749DD93CA6E4EC0F2DD3F39331ECE10",
+    "bytes": 3808
+  },
+  {
+    "path": "code/+msiq/if_compare_contract.m",
+    "sha256": "4FC3D146D1F2DA7F0F8BC65521039325F6D83C4F7DBD8EF2F02108493CE99468",
+    "bytes": 1582
+  },
+  {
+    "path": "code/+msiq/if_confirm_fresh.m",
+    "sha256": "860F013DCA03F1FABFF58FD17B872E4CDE23E0FF88153209E3FCC0F7B164B5C3",
+    "bytes": 1564
+  },
+  {
+    "path": "code/+msiq/if_ui_present.m",
+    "sha256": "8F8D55D1229CF9749CF1191AE2B566E7ED1E2BDA80230496ECCC9E71E1EC85C9",
+    "bytes": 9827
+  },
+  {
+    "path": "code/+msiq/if_workbench_app.m",
+    "sha256": "44451C37B2AE784B6079B9E51E2494A71687F7A77FFCF96F815630C6679544B9",
+    "bytes": 48505
+  },
+  {
+    "path": "code/+msiq/if_workbench_config.m",
+    "sha256": "0858F5074AAC847A4C80B6A71C8E05B59ECB7A75F6FB86C8D745CAE38E804943",
+    "bytes": 3145
+  },
+  {
+    "path": "code/+msiq/if_workbench_plan.m",
+    "sha256": "6BF4831C37E200889985E2582B33A6305D2B130353DD403844142C7C4460EE0C",
+    "bytes": 4213
+  },
+  {
+    "path": "code/+msiq/if_workbench_replay.m",
+    "sha256": "D7692F19FA5C0B946FE8EF3888465E055762B95069CBFCB04ABC01748E4FB098",
+    "bytes": 6798
+  },
+  {
+    "path": "code/+msiq/if_workbench_validate_profile.m",
+    "sha256": "FBB2165B8074DB356A87628AA7DE8B2D41A2E6B9D73B73E13140D677D5116FAA",
+    "bytes": 5817
+  },
+  {
+    "path": "code/+msiq/if_workbench.m",
+    "sha256": "5944D74F897D6DF91B3A291746737BE1E869B0A56074C381E1BEEA6B22AAE810",
+    "bytes": 1841
+  },
+  {
+    "path": "code/+msiq/if_write_summary.m",
+    "sha256": "01FA8A5F997DC474A740E923C96D3EFF573F9634DCEDA41FCF2BD47E364253CA",
+    "bytes": 923
+  },
+  {
+    "path": "code/+msiq/IfRun.m",
+    "sha256": "59C30C31A1E4B0EB4EE77AAC988CE960AB53820CFDF3E015BA047247990B6E22",
+    "bytes": 49095
+  },
+  {
+    "path": "code/+msiq/import_summary.m",
+    "sha256": "E536D838CA0A3F8AD4EEFADB35E216C4BD1113F222E5FDA45A462ADB8A4AD749",
+    "bytes": 986
+  },
+  {
+    "path": "code/+msiq/load_capture_validation.m",
+    "sha256": "501E5999C99E99670C6C602A80B63032AFA69F52502C35A03F0AA2AAB70B3618",
+    "bytes": 966
+  },
+  {
+    "path": "code/+msiq/load_reference_bundle.m",
+    "sha256": "8BDA4F6D59241038B8B94027C24BAAB91ABBFD202E481C8F44C9ACD7F19327BD",
+    "bytes": 246
+  },
+  {
+    "path": "code/+msiq/load_tx_manifest.m",
+    "sha256": "A9D0F693A8150796EA66AE9EABAE415AC2798772DCF23F706824229B3A7B848F",
+    "bytes": 733
+  },
+  {
+    "path": "code/+msiq/load_tx_reference.m",
+    "sha256": "F546F1CB287793C51C9A5B92664CE9F00F85C1EC8782A5EA92B9C44988723B3F",
+    "bytes": 212
+  },
+  {
+    "path": "code/+msiq/load_tx_waveform.m",
+    "sha256": "217F8CAC4152C2AFEFEB02B25F2908BFBC0917DF2B28D6BCB4CD1EDAE23104C8",
+    "bytes": 824
+  },
+  {
+    "path": "code/+msiq/output_path.m",
+    "sha256": "687B0FBDFBE2D4BB4F1BCD22CDFDF0CB9AEA68BAC56F42A87F5C01663D13F7CA",
+    "bytes": 420
+  },
+  {
+    "path": "code/+msiq/output_policy.m",
+    "sha256": "DE88018371A1EC031A05CAD18BB23663E4145A31E465CABD71A620F212BDD6B4",
+    "bytes": 1056
+  },
+  {
+    "path": "code/+msiq/plot_archive.m",
+    "sha256": "17043D06B5CF2D563F9B9ECDB30A7740C69DA1B9AF640C7B7BABD9EA977F7BE4",
+    "bytes": 6023
+  },
+  {
+    "path": "code/+msiq/preflight_waveform.m",
+    "sha256": "F5C32A973EBFACF572B1D72A7E25A25FEA26AF37479EF79294F3EFDC1323928A",
+    "bytes": 2282
+  },
+  {
+    "path": "code/+msiq/project_root.m",
+    "sha256": "496113C61C6BD128C13B83F58B91B6E4E35F10851BCD0746535CD8CC4E65D522",
+    "bytes": 155
+  },
+  {
+    "path": "code/+msiq/replay_run.m",
+    "sha256": "9ABA3A092C6C25A8C1A8692BDAC673BA64197ADAB61C31FD704E59C17213E08E",
+    "bytes": 8007
+  },
+  {
+    "path": "code/+msiq/replot_run.m",
+    "sha256": "C69AE0DF6DB346AB699CB43BDB9B37B428033B5DB524AF543E40B33AE2CAA89E",
+    "bytes": 9967
+  },
+  {
+    "path": "code/+msiq/rerun_simulation.m",
+    "sha256": "F564F811A3CE38CC6ECDC008303E2266574044E3E5A83FC5709E6A9119FD64F5",
+    "bytes": 1643
+  },
+  {
+    "path": "code/+msiq/resolve_awg_route.m",
+    "sha256": "567C2A68BFD2795E35CA48CDF287539390BB6A78AB86341AEDCDC83B700FF396",
+    "bytes": 2447
+  },
+  {
+    "path": "code/+msiq/run_awg_off_check.m",
+    "sha256": "175B530ADC6789A41976ACFA57F8383DEACFA3070782EB1CEEB396739002729B",
+    "bytes": 8513
+  },
+  {
+    "path": "code/+msiq/run_condition.m",
+    "sha256": "86F0914C79D18AFE4FD2642BD201E01451D89A35E83DACF000DE93098F3049D2",
+    "bytes": 35722
+  },
+  {
+    "path": "code/+msiq/run_equal_rate_comparison.m",
+    "sha256": "607179F9C3F073683DE1135670A9D4862DAC05E584E793B3C31B54C916A4D660",
+    "bytes": 49143
+  },
+  {
+    "path": "code/+msiq/run_iq_loopback.m",
+    "sha256": "182FA6A7F1FFB7D0FDBA495F858F579ADEEADCC67E8D8D7A4A731882B8308379",
+    "bytes": 318
+  },
+  {
+    "path": "code/+msiq/run_single_dac_smoke.m",
+    "sha256": "4012757D23DE368BA65E04496ABE65A76AC549DCED4788DD561AC99FC8FDCE0B",
+    "bytes": 20085
+  },
+  {
+    "path": "code/+msiq/run_wz_sro_case_examples.m",
+    "sha256": "BCB6B429B52D525D18E8BEAAC891A65FA1BFB3E3453BA883A0EE2DCF7F8576A0",
+    "bytes": 18005
+  },
+  {
+    "path": "code/+msiq/run_wz_sro_distortion_stress.m",
+    "sha256": "CDDADB889A964D15530510FD2CA76D7D1CD0DB998B1BA24BCF934AD1470FC555",
+    "bytes": 42315
+  },
+  {
+    "path": "code/+msiq/run_wz_sro_interval_scan.m",
+    "sha256": "FD14ED70C85E5063C4BF91A55B54F50BA74D71E35F2888CC278A05F0B0285007",
+    "bytes": 20272
+  },
+  {
+    "path": "code/+msiq/run_wz_sro_policy_comparison.m",
+    "sha256": "D40B420F276303C6B74C90715D314D6CF0F894A06E6C574CDBC99FF75099933F",
+    "bytes": 13278
+  },
+  {
+    "path": "code/+msiq/run_wz_sro_raw_input_regression.m",
+    "sha256": "CDB24A894E76BA02C5CF8F0D16BB93AF3A4FE8E797515D33FDEEA61F89218221",
+    "bytes": 17291
+  },
+  {
+    "path": "code/+msiq/rx_capture_consistency.m",
+    "sha256": "82259095155F814E6900AE29D1FBAA5E04C0D4A544B973A78D7CD28FF24A3C8D",
+    "bytes": 2587
+  },
+  {
+    "path": "code/+msiq/rx_mock_config.m",
+    "sha256": "7F6C9B596F526F2861D5CDAC8FFC24019D845C168F58CC4F211E58FC29087452",
+    "bytes": 341
+  },
+  {
+    "path": "code/+msiq/rx_observation_freshness.m",
+    "sha256": "3CC912EAF1FCC469E3EF0C3C319CD9C3E0861BDAABCCCC113CC4A537C695B6A8",
+    "bytes": 3108
+  },
+  {
+    "path": "code/+msiq/rx_reference_band.m",
+    "sha256": "D47472FDFCBCB35D1617A3987D5420D78A81F9F38D6FAF850DB95BFCB059A772",
+    "bytes": 2001
+  },
+  {
+    "path": "code/+msiq/rx_scope_worker.m",
+    "sha256": "03513DF75F0D479374D68FD6A307C45FD89D80398243BC2940E4E1558F5EC715",
+    "bytes": 13067
+  },
+  {
+    "path": "code/+msiq/rx_view_preferences.m",
+    "sha256": "5CE1031F711480B7AE19C3587646FD072277FE6C9C5A87E576CFFF0F9D0D9BE1",
+    "bytes": 2833
+  },
+  {
+    "path": "code/+msiq/rx_workbench_app.m",
+    "sha256": "9FF8B55A0D202F7DACEF64A9A07C4D7E21A74FAEFBA363B2FA916F7937ADC1C0",
+    "bytes": 91781
+  },
+  {
+    "path": "code/+msiq/rx_workbench_config.m",
+    "sha256": "EA853F1F2BCCFFA106AC8E5EFB8087FA9B2B20219FC593A045DEA25DBD984E4A",
+    "bytes": 1442
+  },
+  {
+    "path": "code/+msiq/RxScopeWorker.m",
+    "sha256": "6B1DF67B9B366FC572D8AE99596FCDF769C9D38E22D2A528469E3D71B21DD8B8",
+    "bytes": 4104
+  },
+  {
+    "path": "code/+msiq/save_failure.m",
+    "sha256": "6DDED9F8EF5D49806DCB46A40337810D3BD2AAF8874BC91D6EFC0C6673C7D4A3",
+    "bytes": 607
+  },
+  {
+    "path": "code/+msiq/save_reference_bundle.m",
+    "sha256": "004CF7E66CA90FC2E8F90F899D5297697D51925E060A90686F0BE835180006FB",
+    "bytes": 782
+  },
+  {
+    "path": "code/+msiq/save_tx_manifest.m",
+    "sha256": "913E1205C4F660FFE3660178A4D035BBE5F9584526450785E8FF97C9B8E10D70",
+    "bytes": 1041
+  },
+  {
+    "path": "code/+msiq/sha256_bytes.m",
+    "sha256": "9EDC209D0E450FCCD93E110C773A991DCC528CCDD4BF847C6B1D7A4D91A56624",
+    "bytes": 757
+  },
+  {
+    "path": "code/+msiq/shared_tx_data.m",
+    "sha256": "19B8EDD91E5BE4BE715A881D450963A892791CDC1A922D3715DF665F3E90136D",
+    "bytes": 2682
+  },
+  {
+    "path": "code/+msiq/short_frame_config.m",
+    "sha256": "472401FEB4017C056F2F1B34CF725F07FFC47975EA2D2350EB9F30674CD2F0E5",
+    "bytes": 545
+  },
+  {
+    "path": "code/+msiq/simulate_capture.m",
+    "sha256": "C27F3689A8E1B46E31A6A83D9B4CAEDCEA79EA604D943ABB1F972991EF65B79C",
+    "bytes": 4607
+  },
+  {
+    "path": "code/+msiq/traditional_rdiv_compare.m",
+    "sha256": "09B73084250BB1C66250EDAD1174583D6AEB3E7A6FA2D1AEC034FB9E4FBBB171",
+    "bytes": 46234
+  },
+  {
+    "path": "code/+msiq/traditional_rx.m",
+    "sha256": "2F29CC4638C857769F960DA865CAE6B9B528C3E4EA4D71F3451A3CC59547FC73",
+    "bytes": 38485
+  },
+  {
+    "path": "code/+msiq/traditional_tx.m",
+    "sha256": "128225360F0D139BA3ED3351F0115C6BA87B07BCCA8F0B3C373F1C5F906DE6EB",
+    "bytes": 70780
+  },
+  {
+    "path": "code/+msiq/tx_workbench_app.m",
+    "sha256": "459E1B7C1D4D75B9CD4F90FF73600A6DC0FE9A358855C8380071D003461BA5BA",
+    "bytes": 101118
+  },
+  {
+    "path": "code/+msiq/validate_if_awg.m",
+    "sha256": "2BF80CDD4C32C93EAF906737EB36DDCA8ED542D2C0FEC2A5299534E0B59064FF",
+    "bytes": 4554
+  },
+  {
+    "path": "code/+msiq/validate_if_board.m",
+    "sha256": "2914A2D95566281A7485871E64D3FCABC330E516C3F17CC37AE5C49CDDA3DCE2",
+    "bytes": 3494
+  },
+  {
+    "path": "code/+msiq/validate_if_boundaries.m",
+    "sha256": "6D11947F6EB24FC074FB46D515948687C71F024FD9B01A5D678EAC77EA6B8DCB",
+    "bytes": 3168
+  },
+  {
+    "path": "code/+msiq/validate_if_capture.m",
+    "sha256": "A85E298CA67AF105622A0BF3D55FBCF0D8FA317E8F46FF7BC9C766AE883BAA81",
+    "bytes": 1661
+  },
+  {
+    "path": "code/+msiq/validate_if_compatibility.m",
+    "sha256": "5ADFC69F25A8E000A04E283990620F63227FDA391C28336D6616956D7E17D52B",
+    "bytes": 1695
+  },
+  {
+    "path": "code/+msiq/validate_if_fresh.m",
+    "sha256": "FC137E31C22D3D02FA2F9EBEF78EDC76E07331CE522C4A50175F8F24D113C318",
+    "bytes": 1438
+  },
+  {
+    "path": "code/+msiq/validate_if_pre_fec.m",
+    "sha256": "BACC7DEBC5F0CCB552B1F13900674D150E33B1C5E951529AA13EC731B62C210F",
+    "bytes": 3885
+  },
+  {
+    "path": "code/+msiq/validate_if_replay.m",
+    "sha256": "F448F9DA5D8DA33136F15288143C1B3DBC8212F3C665AEA38AD59E5A751E9C0A",
+    "bytes": 5124
+  },
+  {
+    "path": "code/+msiq/validate_if_ui.m",
+    "sha256": "33DE11FE63CCCC01F03B3F3187128EE167FE25BC88087379CD4206E754BD484D",
+    "bytes": 8772
+  },
+  {
+    "path": "code/+msiq/validate_if_workbench.m",
+    "sha256": "D04EC52C8426799F92CBEC7565DAEB6DD861EEF67D73D9EBA8A4F4EF6FB373AD",
+    "bytes": 3948
+  },
+  {
+    "path": "code/+msiq/validate_output_storage.m",
+    "sha256": "723B55EFEBF8C49E1FAD4D147E6B99E572DC9C63A76180A9CDCDEA0FCE36AD06",
+    "bytes": 12519
+  },
+  {
+    "path": "code/+msiq/validate_plot_export_geometry.m",
+    "sha256": "77C817B188263B37318CFA1D5F5799C83D40B932878A68F35A65625C91336C60",
+    "bytes": 5172
+  },
+  {
+    "path": "code/+msiq/validate_rx_async.m",
+    "sha256": "9564836CE76BC0C392E7B4C8E61362EE16AD813CE89574FBE68555C28E76906E",
+    "bytes": 35663
+  },
+  {
+    "path": "code/+msiq/validate_rx_consistency.m",
+    "sha256": "B05D26AB07E54CC5DE4FB8F8331F4D8A7571FBE32EC047048908085491DC646B",
+    "bytes": 11337
+  },
+  {
+    "path": "code/+msiq/validate_rx_dashboard.m",
+    "sha256": "37B5EF3E1B429C4CD0B16829082946F1C6028D5F1CB23E9DC47DDBDE9766B21E",
+    "bytes": 15075
+  },
+  {
+    "path": "code/+msiq/validate_rx_mock_config.m",
+    "sha256": "DA1A69D19FD424FBF0D38AA20EDFD568FB9B120C6052307B742E91AF98AFBBB1",
+    "bytes": 4021
+  },
+  {
+    "path": "code/+msiq/validate_rx_observation_worker.m",
+    "sha256": "4B55C89FD0BD004F9A8BCE92B0067DD945F9C2D3C85F74E57ED479930CCC9DC7",
+    "bytes": 3921
+  },
+  {
+    "path": "code/+msiq/validate_rx_observation.m",
+    "sha256": "23A7AAD01919CC1C63CC337DB84FD4A20FF3C9E466649AE15B054CC865AA8339",
+    "bytes": 4918
+  },
+  {
+    "path": "code/+msiq/validate_rx_preferences.m",
+    "sha256": "FDAB4BCEE495193281119C5B7ECA5EF45DC41BDABF63A11EB78F24D143127EE0",
+    "bytes": 5772
+  },
+  {
+    "path": "code/+msiq/validate_rx_scope_settings.m",
+    "sha256": "AEEB09D6D97300FEB1FBC31103A6FBB0E705921F16D8CA86C53AFDCA692BF0C0",
+    "bytes": 3780
+  },
+  {
+    "path": "code/+msiq/validate_rx_settings_gui.m",
+    "sha256": "D58B4B2F373FB5EBA3CEF1A4C0BC88801516AF0875894D37E3A7AC297E482874",
+    "bytes": 6853
+  },
+  {
+    "path": "code/+msiq/validate_rx_workbench.m",
+    "sha256": "CDEE4CEC4241F3ED1BA2FF72F7E1519522CA0FE734F90974CA3C8F6964D00BA3",
+    "bytes": 29836
+  },
+  {
+    "path": "code/+msiq/validate_short_frame.m",
+    "sha256": "80579F3628AB49F5BA35896BBF4F8A4B969DA5301B7E5B7881B58C009D326A81",
+    "bytes": 15127
+  },
+  {
+    "path": "code/+msiq/validate_tx_sro_precomp.m",
+    "sha256": "699BDF052F41B169F9CF690EFADB10E319660590C48FB116F04D5B7E336DDFE8",
+    "bytes": 8612
+  },
+  {
+    "path": "code/+msiq/validation_artifacts.m",
+    "sha256": "9BCA5301775F8D8E4BB76FB7F1EC65D99B85C4D6170199F8CF8F0DE6E815B8B4",
+    "bytes": 1783
+  },
+  {
+    "path": "code/+msiq/validation_report.m",
+    "sha256": "365FB1F9AC358FCF957758B8C427A90DDCBDAD1D515A529EBE425797B6286005",
+    "bytes": 2463
+  },
+  {
+    "path": "code/+msiq/verify_historical_results.m",
+    "sha256": "9EBF5B2BE16494ED99CF48FCA17E2129D67CC78B376AECB02E9884C3E309D0D2",
+    "bytes": 5747
+  },
+  {
+    "path": "code/plotting/Test_Project_Apply_Axes_Style.m",
+    "sha256": "DEF2590B61FD0655E51F0518842CCF5669BBAABFFF2C27232434FB42FB0EB341",
+    "bytes": 597
+  },
+  {
+    "path": "code/plotting/Test_Project_Export_PNG.m",
+    "sha256": "3E0A95D5A8CECECBBA495B87D6F06F990EE7A53E2747E28AFA53734DD98A3B79",
+    "bytes": 2037
+  },
+  {
+    "path": "code/plotting/Test_Project_Plot_Constellation.m",
+    "sha256": "027F10FD44749DEC06853271A91E2C1C93C2125A76A8BBBE13EADF130A356D5F",
+    "bytes": 9583
+  },
+  {
+    "path": "code/plotting/Test_Project_Plot_Plan.m",
+    "sha256": "6B13E85A8F509321305BCB3DE776E22C88697E6CA1CC40957903B5A9175D7DBF",
+    "bytes": 4086
+  },
+  {
+    "path": "code/plotting/Test_Project_Plot_Scan_Summary.m",
+    "sha256": "C0CD586F808F893EE1BD44D16B7C9C60F9DD7625C85A2F3B6B5F3EF4828BAC62",
+    "bytes": 13319
+  },
+  {
+    "path": "code/plotting/Test_Project_Plot_Style.m",
+    "sha256": "94AA7674CAAD2145972147F44BB90D5308EEDF54287E4658D464D087B11CA207",
+    "bytes": 954
+  },
+  {
+    "path": "code/result_management/Result_Artifact_Path.m",
+    "sha256": "3D4CB431D76737B3D7EC64E6B19A5185725D42C14AE0E2EE236E61B3153A65D4",
+    "bytes": 620
+  },
+  {
+    "path": "code/result_management/Result_Atomic_Write_Json.m",
+    "sha256": "DA3E00C8F6BD44F19AEBB1FCC0885F22E226E78A43612F9E8F0DDCAE01FDE65C",
+    "bytes": 1251
+  },
+  {
+    "path": "code/result_management/Result_Check_Flat_Directory.m",
+    "sha256": "A698068D88A84BBD9CCBBAEBA6514E27AC411476A6F61091734E2636BBD09681",
+    "bytes": 1244
+  },
+  {
+    "path": "code/result_management/Result_Create_Run.m",
+    "sha256": "DD77D8F951746C4EC0E2595C20F7C5C115CD165841258C6737A39D5BB7EB19AF",
+    "bytes": 18766
+  },
+  {
+    "path": "code/result_management/Result_Display_Value.m",
+    "sha256": "AE176A145F3F16A34F9BADA7C4CB8B24C900417179168002393959A70FE6A535",
+    "bytes": 1298
+  },
+  {
+    "path": "code/result_management/Result_Finalize_Run.m",
+    "sha256": "F188A2BB479CC83B37E8C2CA8B1ABD084B20F2262D065340013D7AD3B44636CC",
+    "bytes": 5325
+  },
+  {
+    "path": "code/result_management/Result_Format_Parameter.m",
+    "sha256": "45DCDED6C2B173190C77CBF545D6683DAAB8EA22E2F65A0A11BDA93C9BBA83A4",
+    "bytes": 1404
+  },
+  {
+    "path": "code/result_management/Result_Format_Value.m",
+    "sha256": "14F866255ADA3EB3C05BA6933B940B0ADF6EC30A8768102D6D5FBCF59D98E0AF",
+    "bytes": 444
+  },
+  {
+    "path": "code/result_management/Result_Log_Stage.m",
+    "sha256": "88D0CA1C24A5B28C164281C7740A65227CD8841B0386B25D03349F4DCCD15975",
+    "bytes": 1684
+  },
+  {
+    "path": "code/result_management/Result_Open_File_Retry.m",
+    "sha256": "CD44E76806F0911779AFF5EF7B75500F83F6AEFA00ADD0547C56DC78D0A735F1",
+    "bytes": 861
+  },
+  {
+    "path": "code/result_management/Result_Output_Category.m",
+    "sha256": "C5C33E5C0E5CD694723265F0D2DAAE4609448AA1255D02D112D020E324BBC68D",
+    "bytes": 889
+  },
+  {
+    "path": "code/result_management/Result_Read_Summary.m",
+    "sha256": "B50D7A8267E97F2507A7D0ACBDE8282134956D38408721CD2DA19175FFEC9DD3",
+    "bytes": 418
+  },
+  {
+    "path": "code/result_management/Result_Summary_Append.m",
+    "sha256": "96EAD143368572A329A14D44BA4FB26AD25711B0DD63BBA371D89945342E7C7F",
+    "bytes": 4828
+  },
+  {
+    "path": "code/result_management/Result_Summary_Initialize.m",
+    "sha256": "49A15C10954B2AB5C76CB9C1951BC0FDB95F270424F88F2A0B499DC5836F6F0C",
+    "bytes": 5269
+  },
+  {
+    "path": "code/result_management/Result_Update_Run_Info.m",
+    "sha256": "B2D67BE355C42F9147F97A649E3132F37196827EDDD4811C9897E866F0665CF8",
+    "bytes": 2970
+  },
+  {
+    "path": "code/result_management/Result_Write_Sources.m",
+    "sha256": "52F83CD8C678F0A9DDEEBE706F034A4BBFF90B2E549995DE0CC47F47F334BE0F",
+    "bytes": 4489
+  },
+  {
+    "path": "compute_file_sha256.m",
+    "sha256": "01E4B7ED441A47190FB70205E9DC31FD825FB88D5D4E05E226AC6BB420F698DD",
+    "bytes": 859
+  },
+  {
+    "path": "config/awg_routes.json",
+    "sha256": "D30826AE4D5F308F1A005958377A652C6AEDC91DDE8CE3A5C39B1BB545938A38",
+    "bytes": 651
+  },
+  {
+    "path": "config/instruments.local.example.json",
+    "sha256": "12FD7AC32F042E0E26373B75723A4A1AE455BD18C5AE9C050F3E01AE555758C8",
+    "bytes": 684
+  },
+  {
+    "path": "config/v2_default.json",
+    "sha256": "9D440E5A52BA394A0796BBFC4BE93971DA922AA46B5DAC2B4F0140933CBB7663",
+    "bytes": 3217
+  },
+  {
+    "path": "config/v2_traditional_wz.json",
+    "sha256": "E946835D0A389E4E84AE24B9592185868D4C757C967532FE9A724B06EF585327",
+    "bytes": 3873
+  },
+  {
+    "path": "Multistream_Workbench.m",
+    "sha256": "F8E022A5FC9BE8D887DBF4B6870EAEB33EB60200C89AFC77CA666A63A6BA40A1",
+    "bytes": 6113
+  },
+  {
+    "path": "run_v2_validation.m",
+    "sha256": "DAA1114F2025231D68728A02744B341808CC486E0EB8385EA7026794B1854FC7",
+    "bytes": 162481
+  },
+  {
+    "path": "RX_Workbench.m",
+    "sha256": "31190B82A2633D223ABB60CD6F28E52FEC5D1763EE9EBF39916E64BA80061336",
+    "bytes": 1164
+  },
+  {
+    "path": "TX_Workbench.m",
+    "sha256": "C85BCA9415B4DD54FE11D1072D40CC48F0748F8FD66AB0AD35894ED0FDC7345C",
+    "bytes": 3040
+  }
+]

@@ -27,6 +27,7 @@ ids={p.id};
 if any(cellfun(@isempty,ids)) || numel(unique(ids))~=numel(ids)
     error('TestProject:Plot:PanelIds','Panel IDs must be nonempty and unique.');
 end
+Test_Project_Validate_Plot_Groups(plotData.view,p);
 for k=1:numel(p)
     if ~ismember(p(k).status,{'ok','failed','skipped'})
         error('TestProject:Plot:PanelStatus','Invalid panel status.');
@@ -59,7 +60,16 @@ for k=1:numel(p)
             case 'waveform'
                 check_pair(data.time_s,data.samples_v,false);
             case 'curve'
-                check_pair(data.x,data.y,true);
+                if ~isnumeric(data.x)||~isnumeric(data.y)||~isreal(data.x)||~isreal(data.y)|| ...
+                        isempty(data.x)||~ismatrix(data.x)||~ismatrix(data.y)|| ...
+                        (~isequal(size(data.x),size(data.y))&& ...
+                        ~(isvector(data.x)&&((isvector(data.y)&&numel(data.x)==numel(data.y))||size(data.y,1)==numel(data.x))))
+                    error('TestProject:Plot:CurveSize','曲线需要共用 x 向量或与 y 同形的 x 矩阵');
+                end
+                count=size(data.y,2); if isvector(data.y), count=1; end
+                if isfield(data,'series_labels')&&numel(data.series_labels)~=count
+                    error('TestProject:Plot:CurveLabels','曲线标签数与曲线数不一致');
+                end
             case 'constellation'
                 if ~isnumeric(data.symbols)||~isvector(data.symbols)||~any(isfinite(data.symbols))
                     error('TestProject:Plot:Symbols','星座缺少有效数值样点');

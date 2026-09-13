@@ -37,33 +37,84 @@ pd=Test_Project_Make_Plot_Data(analysis,'iq_observation',struct([]),source, ...
     struct('title','IQ 观察（仿真）'));
 outputs.iq_observation=renderPair(outputRoot,'iq_observation',pd);
 
-% This fixture explicitly supplies DSP-aligned stage data; no DSP is hidden
-% in a renderer. Both constellations contain the same synthetic payload set.
+% Each stage below is an explicit synthetic fixture, not a demodulator.
+% The same payload symbols are retained across all four displayed stages.
 levels=[-3 -1 1 3]; [re,im]=meshgrid(levels,levels);
-ideal=(re(:)+1i*im(:))/sqrt(10); tx=ideal(randi(16,4096,1));
-before=tx.*exp(1i*.15)+.11*(randn(size(tx))+1i*randn(size(tx)));
-after=tx+.035*(randn(size(tx))+1i*randn(size(tx)));
-dsp=struct('samples',repelem(after,4),'fs_hz',fs, ...
-    'alignment_basis','dsp_aligned','stage_id','synthetic_equalized', ...
-    'amplitude_unit','dimensionless');
-spectrum=Test_Project_Complex_Spectrum(dsp);
-panels=repmat(panelTemplate(),1,6);
-panels(1)=panel('complex_psd','spectrum','均衡后复基带频谱',spectrum,{});
-lags=(-128:128)'; corr=.03+.95*exp(-.5*((lags-17)/3).^2);
-panels(2)=panel('synchronization','curve','同步相关曲线', ...
-    struct('x',lags,'y',corr,'x_unit','候选延迟 / 样点','y_unit','相关幅度 / 1'),{});
-panels(3)=panel('before_equalization','constellation','均衡前星座', ...
-    struct('symbols',before,'ideal_symbols',ideal,'symbol_set_id','payload-001'),{'synchronization'});
-panels(4)=panel('after_equalization','constellation','均衡后星座', ...
-    struct('symbols',after,'ideal_symbols',ideal,'symbol_set_id','payload-001'),{'before_equalization'});
-panels(3).options.comparison_group='payload';
-panels(4).options.comparison_group='payload';
-panels(5)=panel('failed_tracking','curve','跟踪',struct(),{'after_equalization'});
-panels(5).status='failed'; panels(5).reason='人为注入的离线示例失败';
-panels(6)=panel('dependent_stage','constellation','跟踪后星座',struct(),{'failed_tracking'});
+ideal=(re(:)+1i*im(:))/sqrt(10); tx=ideal(randi(16,12288,1));
+phase=.22+.35*sin(linspace(0,2*pi,numel(tx))');
+noise=(randn(size(tx))+1i*randn(size(tx)));
+before=1.1*tx.*exp(1i*phase)+.15*noise;
+fixed=tx.*exp(1i*phase)+.075*noise;
+joint=tx.*exp(1i*.025)+.038*noise;
+final=tx+.025*noise;
+trainingIdeal=exp(1i*(pi/4+(0:3)'*pi/2));
+training=trainingIdeal(randi(4,2048,1))+.025*(randn(2048,1)+1i*randn(2048,1));
+demodIq=iq;
+demodRaw=repelem(before,2); demodTime=(0:numel(demodRaw)-1)'/fs;
+for k=1:2
+    demodIq(k).time_s=demodTime;
+    demodIq(k).time_limits_s=[0 demodTime(end)];
+    demodIq(k).voltage_limits_v=[-.4 .4];
+end
+demodIq(1).samples=.18*real(demodRaw); demodIq(2).samples=.18*imag(demodRaw);
+analysis=Test_Project_Analyze_Capture(demodIq,struct('power_band_hz',[0 2.3e9]));
+panels=repmat(panelTemplate(),1,9);
+syncTime=linspace(0,demodTime(end)*1e6,4096)'; syncMetric=.012*rand(4096,1);
+syncPeaks=[];
+for center=[.15 .92 1.69 2.46]
+    syncMetric=syncMetric+.97*exp(-.5*((syncTime-center)/.012).^2);
+    [~,peak]=min(abs(syncTime-center)); syncPeaks(end+1)=peak; %#ok<AGROW>
+end
+peakTrace=nan(size(syncMetric)); peakTrace(syncPeaks)=syncMetric(syncPeaks);
+selectedTrace=nan(size(syncMetric)); selectedTrace(syncPeaks(1))=syncMetric(syncPeaks(1));
+panels(1)=panel('synchronization','curve','重复 ZC 同步', ...
+    struct('x',syncTime,'y',[syncMetric peakTrace selectedTrace],'x_unit','采集时间（μs）','y_unit','相关度'),{});
+panels(1).options.series_styles=styles({'none','o','o'},{'-','none','none'},[0 114 178;213 85 0;190 25 35]/255);
+panels(1).options.series_styles(3).marker_face_color=[190 25 35]/255;
+panels(1).options.x_limits=[0 demodTime(end)*1e6];
+panels(1).options.y_limits=[0 1.2];
+offsets=(-8:8)'; nmseDb=-31+.11*(offsets-2).^2;
+selectedNmse=nan(size(nmseDb)); selectedNmse(offsets==2)=nmseDb(offsets==2);
+panels(2)=panel('training_search','curve','训练窗口对齐搜索', ...
+    struct('x',offsets,'y',[nmseDb selectedNmse],'x_unit','训练位置偏移（样点）','y_unit','训练 NMSE（dB）'),{'synchronization'});
+panels(2).options.series_styles=styles({'o','o'},{'none','none'},[0 114 178;190 25 35]/255);
+panels(2).options.series_styles(2).marker_face_color=[190 25 35]/255;
+panels(3)=panel('training','constellation','均衡后训练星座', ...
+    struct('symbols',training,'ideal_symbols',trainingIdeal,'symbol_set_id','training-fixture'),{'training_search'});
+panels(3).options.color=[213 85 0]/255;
+serviceTime=(0:numel(tx)-1)'/(fs/2)*1e6;
+panels(4)=panel('phase_tracking','curve','业务区相位跟踪', ...
+    struct('x',serviceTime,'y',phase*180/pi,'x_unit','业务区时间（μs）','y_unit','相位补偿（°）'),{'training'});
+error=abs(.038*noise); windows=ceil(numel(error)/512);
+windowTime=zeros(windows,1); windowRms=windowTime; windowPeak=windowTime; peakTime=windowTime;
+for k=1:windows
+    indices=(k-1)*512+1:min(k*512,numel(error));
+    windowTime(k)=mean(serviceTime(indices)); windowRms(k)=sqrt(mean(error(indices).^2));
+    [windowPeak(k),j]=max(error(indices)); peakTime(k)=serviceTime(indices(j));
+end
+panels(5)=panel('tracking_error','curve','业务区联合跟踪误差', ...
+    struct('x',[windowTime peakTime],'y',[windowRms windowPeak], ...
+    'series_labels',{{'窗内均方根误差','窗内最大误差'}}, ...
+    'x_unit','业务区时间（μs）','y_unit','误差幅度'),{'phase_tracking'});
+panels(5).options.series_styles=styles({'none','^'},{'-','none'},[0 114 178;213 85 0]/255);
+panels(5).options.series_styles(2).marker_face_color=[213 85 0]/255;
+panels(4).options.x_limits=[0 numel(tx)/(fs/2)*1e6];
+panels(5).options.x_limits=panels(4).options.x_limits;
+panels(5).options.y_limits=[0 max(windowPeak)*1.3];
+ids={'before_equalization','fixed_equalization','joint_tracking','final_pilot'};
+titles={'均衡前业务星座','固定均衡后业务星座','联合跟踪后业务星座','最终导频校正后业务星座'};
+stages={before,fixed,joint,final};
+for k=1:4
+    panels(k+5)=panel(ids{k},'constellation',titles{k}, ...
+        struct('symbols',stages{k},'ideal_symbols',ideal,'symbol_set_id','payload-fixture'),{});
+    panels(k+5).options.comparison_group='payload';
+end
+panels(9).data.metrics=struct('EVM_percent',100*sqrt(mean(abs(final-tx).^2)/mean(abs(tx).^2)));
 source.frame_id='synthetic-demod-001';
-pd=Test_Project_Make_Plot_Data(analysis,'demodulation',panels,source, ...
-    struct('title','解调结果（仿真）'));
+source.stage_data_origin='Explicitly constructed synthetic stage fixtures; no receiver DSP executed.';
+view=demodView('CH1','CH2'); view.title='16QAM 接收处理总览（仿真）';
+view.signal_band_hz=[0 2.3e9];
+pd=Test_Project_Make_Plot_Data(analysis,'demodulation',panels,source,view);
 outputs.demodulation=renderPair(outputRoot,'demodulation',pd);
 outputs.output_root=outputRoot;
 disp(outputs);
@@ -86,4 +137,27 @@ end
 function p=panel(id,kind,title,data,dependencies)
 p=panelTemplate(); p.id=id; p.kind=kind; p.title=title;
 p.data=data; p.depends_on=dependencies;
+end
+
+function view=demodView(i,q)
+titles={'1 原始采集波形','2 通道信号频谱','3 重复 ZC 同步','4 训练窗口对齐搜索', ...
+    '5 均衡后训练星座','6 业务区相位跟踪','11 业务区联合跟踪误差', ...
+    '7 业务星座：均衡前','8 业务星座：固定均衡后', ...
+    '9 业务星座：联合跟踪后','10 业务星座：最终导频校正后'};
+ids={{[i '_waveform'],[q '_waveform']},{[i '_spectrum'],[q '_spectrum']}, ...
+    {'synchronization'},{'training_search'},{'training'},{'phase_tracking'}, ...
+    {'tracking_error'},{'before_equalization'},{'fixed_equalization'},{'joint_tracking'},{'final_pilot'}};
+positions=[1 1 1 1;1 2 1 1;1 3 1 1;1 4 1 1;2 1 1 1;2 2 1 1;2 3 1 2; ...
+    3 1 1 1;3 2 1 1;3 3 1 1;3 4 1 1];
+groups=repmat(struct('id','','title','','panel_ids',{{}},'position',[]),1,11);
+for k=1:11
+    groups(k)=struct('id',sprintf('group_%d',k),'title',titles{k},'panel_ids',{ids{k}},'position',positions(k,:));
+end
+view=struct('grid_size',[3 4],'groups',groups);
+end
+function result=styles(markers,lines,colors)
+result=repmat(struct('marker','','line_style','','color',[]),1,numel(markers));
+for k=1:numel(markers)
+    result(k)=struct('marker',markers{k},'line_style',lines{k},'color',colors(k,:));
+end
 end

@@ -104,9 +104,9 @@ end
 function v=opt(s,k,d), v=Test_Project_Plot_Util('option',s,k,d); end
 function title=profile_title(p)
 switch p
-    case 'single_channel', title='单通道采集观察';
-    case 'iq_observation', title='IQ 双通道采集观察';
-    otherwise, title='接收解调过程总览';
+    case 'single_channel', title='单通道观察';
+    case 'iq_observation', title='IQ 观察';
+    otherwise, title='解调结果';
 end
 end
 function lim=common_constellation_limits(pd,selected)

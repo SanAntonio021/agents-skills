@@ -27,10 +27,8 @@ if isempty(vl), extent=max(1e-6,max(abs(y))*1.1); vl=[-extent extent]; end
 ylim(ax,vl); yticks(ax,linspace(vl(1),vl(2),9));
 xlabel(ax,['时间 / ' unit]); ylabel(ax,'电压 / V');
 stats=opt(options,'stats',struct()); note={};
-if isfield(stats,'rms_v'), note{end+1}=sprintf('有效值 %.4g V | 峰峰值 %.4g V',stats.rms_v,stats.vpp_v); end
-if strcmp(opt(waveform,'voltage_limits_source','data_adapted'),'scope')
-    note{end+1}='量程：已提供设置';
-else, note{end+1}='量程：按数据适配'; end
+if isfield(stats,'rms_v'), note{end+1}=sprintf('有效值 %.4g V',stats.rms_v); end
+if isfield(stats,'vpp_v'), note{end+1}=sprintf('峰峰值 %.4g V',stats.vpp_v); end
 Test_Project_Plot_Util('note',ax,note);
 state=struct('handle',h,'display_indices',idx,'status','ok');
 end

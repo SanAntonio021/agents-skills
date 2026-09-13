@@ -72,9 +72,10 @@ for channelIndex = 1:channelCount
     title(ax, channelNames(channelIndex), ...
         'FontSize', style.FontSize, 'FontWeight', 'normal');
     Test_Project_Apply_Axes_Style(ax, style);
-    Test_Project_Plot_Util('note', ax, ...
+    metricNote = Test_Project_Plot_Util('note', ax, ...
         metricTitleLines(metricList(channelIndex), validCounts(channelIndex), ...
         outsideCounts(channelIndex)));
+    set(metricNote, 'FontSize', 9);
 end
 
 legendHandle = legend(legendHandles, {'接收符号', '理想星座点'}, ...
@@ -188,7 +189,8 @@ extent = max([abs(real(allIdeal)); abs(imag(allIdeal))]);
 if ~isfinite(extent) || extent <= 0
     extent = 1;
 end
-extent = 1.25 * extent;
+% Leave room above the symbol clusters for the per-line metric annotation.
+extent = 1.8 * extent;
 axisLimits = [-extent extent -extent extent];
 end
 

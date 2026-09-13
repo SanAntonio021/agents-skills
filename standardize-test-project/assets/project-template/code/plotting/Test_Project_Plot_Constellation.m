@@ -69,12 +69,12 @@ for channelIndex = 1:channelCount
     ylim(ax, axisLimits(3:4));
     xlabel(ax, '同相分量', 'FontSize', style.AxisLabelFontSize);
     ylabel(ax, '正交分量', 'FontSize', style.AxisLabelFontSize);
-    titleLines = [channelNames(channelIndex), ...
-        metricTitleLines(metricList(channelIndex), validCounts(channelIndex), ...
-        outsideCounts(channelIndex))];
-    title(ax, titleLines, ...
+    title(ax, channelNames(channelIndex), ...
         'FontSize', style.FontSize, 'FontWeight', 'normal');
     Test_Project_Apply_Axes_Style(ax, style);
+    Test_Project_Plot_Util('note', ax, ...
+        metricTitleLines(metricList(channelIndex), validCounts(channelIndex), ...
+        outsideCounts(channelIndex)));
 end
 
 legendHandle = legend(legendHandles, {'接收符号', '理想星座点'}, ...
@@ -208,26 +208,17 @@ end
 end
 
 function lines = metricTitleLines(metric, validCount, outsideCount)
-line1 = sprintf('N = %d', validCount);
+lines = {sprintf('N = %d', validCount)};
 if isfield(metric, 'BER') && isfiniteScalar(metric.BER)
-    line1 = sprintf('%s    BER = %.3g', line1, metric.BER);
+    lines{end + 1} = sprintf('BER = %.3g', metric.BER);
 end
-line2 = '';
 evmValue = metricAlias(metric, {'EVM', 'EVMPercent'});
 if isfiniteScalar(evmValue)
-    line2 = sprintf('EVM = %.2f%%', evmValue);
+    lines{end + 1} = sprintf('EVM = %.2f%%', evmValue);
 end
 merValue = metricAlias(metric, {'MER', 'MERdB'});
 if isfiniteScalar(merValue)
-    if isempty(line2)
-        line2 = sprintf('MER = %.2f dB', merValue);
-    else
-        line2 = sprintf('%s    MER = %.2f dB', line2, merValue);
-    end
-end
-lines = {line1};
-if ~isempty(line2)
-    lines{end + 1} = line2;
+    lines{end + 1} = sprintf('MER = %.2f dB', merValue);
 end
 if outsideCount > 0
     lines{end + 1} = sprintf('超出显示范围 = %d', outsideCount);

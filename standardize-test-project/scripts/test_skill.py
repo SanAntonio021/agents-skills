@@ -26,6 +26,40 @@ SCAFFOLD = SCRIPT_DIR / "scaffold_test_project.py"
 VALIDATOR = SCRIPT_DIR / "validate_test_project.py"
 
 
+def test_workbench_capsule() -> None:
+    """The optional snapshot remains complete and copies without altering inputs."""
+    capsule = SCRIPT_DIR.parent / "assets" / "tx-rx-workbench"
+    source = capsule / "assets" / "workbench"
+    assert not list(capsule.rglob("SKILL.md")), "resources must not add a skill entry"
+    manifest = json.loads((capsule / "references/provenance/source-files.json").read_text(encoding="utf-8-sig"))
+    for entry in manifest:
+        file = source / entry["path"]
+        assert file.is_file(), entry["path"]
+        assert hashlib.sha256(file.read_bytes()).hexdigest().upper() == entry["sha256"].upper(), entry["path"]
+    shell = shutil.which("powershell.exe") or shutil.which("pwsh")
+    if not shell:
+        print("Workbench source hashes verified; PowerShell copy execution unavailable.")
+        return
+    before = {str(p.relative_to(source)): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in source.rglob("*") if p.is_file()}
+    with tempfile.TemporaryDirectory(prefix="workbench-copy-") as temporary:
+        target = Path(temporary) / "中文 收发工作台"
+        command = [shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(capsule / "scripts/copy_template.ps1"), "-Destination", str(target)]
+        copied = subprocess.run(command, capture_output=True)
+        assert copied.returncode == 0, copied.stderr.decode(errors="replace")
+        after = {str(p.relative_to(target)): hashlib.sha256(p.read_bytes()).hexdigest()
+                 for p in target.rglob("*") if p.is_file()}
+        assert before == after, "copied workbench differs from frozen source"
+        sentinel = target / "user-change.txt"
+        sentinel.write_text("保留用户修改", encoding="utf-8")
+        refused = subprocess.run(command, capture_output=True)
+        assert refused.returncode != 0, "copy must refuse an existing destination"
+        assert sentinel.read_text(encoding="utf-8") == "保留用户修改"
+        assert before == {str(p.relative_to(source)): hashlib.sha256(p.read_bytes()).hexdigest()
+                          for p in source.rglob("*") if p.is_file()}
+    print("Workbench snapshot and complete copy passed; existing destination preserved.")
+
+
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
@@ -527,4 +561,5 @@ def run_test() -> None:
 
 
 if __name__ == "__main__":
+    test_workbench_capsule()
     run_test()

@@ -1,4 +1,4 @@
 interface:
-  display_name: "测试项目标准化"
-  short_description: "统一实验、仪器测试与科研仿真项目的目录、结果和绘图"
-  default_prompt: "Use $standardize-test-project to scaffold and standardize this experimental test project."
+  display_name: "实验程序与输出"
+  short_description: "建设实验程序，按需复用收发工作台并统一输出"
+  default_prompt: "Use $standardize-test-project to build or modify this experimental program. Choose the relevant output rules, complete TX/RX workbench, or local modules from the requested scope, and validate the affected behavior without accessing instruments."

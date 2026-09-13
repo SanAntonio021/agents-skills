@@ -1,0 +1,3 @@
+# Preserve the frozen source bytes recorded in source-files.json.
+assets/workbench/** -text
+references/provenance/tracked-changes.patch -text

@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -108,18 +109,19 @@ class OfficeNativeGateTests(unittest.TestCase):
         word = application or FakeWordApplication()
         runtime = FakeComRuntime()
         timeline = ProcessTimeline(pid_responses)
-        result = native_gate.check_file(
-            self.source,
-            "docx",
-            allow_office_com=True,
-            require_render=require_render,
-            process_ids=timeline,
-            dispatch_ex=lambda progid: word,
-            com_runtime=runtime,
-            rasterizer=rasterizer,
-            pid_observation_timeout_seconds=0,
-            process_exit_timeout_seconds=0,
-        )
+        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)):
+            result = native_gate.check_file(
+                self.source,
+                "docx",
+                allow_office_com=True,
+                require_render=require_render,
+                process_ids=timeline,
+                dispatch_ex=lambda progid: word,
+                com_runtime=runtime,
+                rasterizer=rasterizer,
+                pid_observation_timeout_seconds=0,
+                process_exit_timeout_seconds=0,
+            )
         return result, word, runtime, timeline
 
     def test_word_uses_named_read_only_open_and_cleans_task_pid(self) -> None:
@@ -199,6 +201,24 @@ class OfficeNativeGateTests(unittest.TestCase):
         self.assertEqual(result["ownership"]["cleanup"]["status"], "RESIDUAL_PIDS")
         self.assertEqual(result["details"]["prior_result"]["status"], "PASS")
         self.assertEqual(result["details"]["cleanup_uncertainties"][0]["kind"], "office_process")
+
+    def test_unconfirmed_office_exit_preserves_isolated_document(self) -> None:
+        for after_quit in ([17], RuntimeError("PID observation failed")):
+            with self.subTest(after_quit=after_quit):
+                result, word, _runtime, _timeline = self.run_docx_gate([[], [], [17], after_quit])
+                self.assertFalse(result["ok"])
+                self.assertEqual(result["status"], "UNVERIFIED")
+                retained = Path(result["details"]["retained_workspace"])
+                self.assertTrue(retained.is_dir())
+                self.assertEqual((retained / self.source.name).read_bytes(), self.source.read_bytes())
+                self.assertEqual(word.quit_calls, 1)
+
+    def test_confirmed_office_exit_removes_isolated_workspace(self) -> None:
+        result, word, _runtime, _timeline = self.run_docx_gate([[], [], [17], []])
+        self.assertEqual(result["status"], "PASS")
+        self.assertNotIn("retained_workspace", result["details"])
+        isolated = Path(word.Documents.open_calls[0][1]["FileName"])
+        self.assertFalse(isolated.parent.exists())
 
     def test_word_pdf_and_png_page_count_mismatch_fails_render(self) -> None:
         result, word, _runtime, _timeline = self.run_docx_gate(

@@ -3,13 +3,15 @@
 
 The gate is deliberately separate from OfficeCLI.  OfficeCLI is useful for
 static inspection and diagnostic previews, but only this module can produce
-native-open/native-export evidence.  The same file is distributed with the
-pptx, docx, xlsx, and pdf skills.
+native-open/native-export evidence.  The Office skills share a baseline CLI
+and safety contract, with format-specific implementations.  This PDF copy
+retains the compatibility entry point for Office source documents.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -17,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -61,6 +64,11 @@ APP_UNAVAILABLE_HRESULTS = {
 }
 
 
+PID_OBSERVATION_TIMEOUT_SECONDS = 5.0
+PROCESS_EXIT_TIMEOUT_SECONDS = 10.0
+PROCESS_POLL_SECONDS = 0.1
+
+
 class GateFailure(RuntimeError):
     """A failure with an explicit stage and release-facing status."""
 
@@ -88,6 +96,11 @@ class ActivationFailure(RuntimeError):
 class OwnershipFailure(RuntimeError):
     """The task cannot prove exclusive ownership of an Office instance."""
 
+    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.details = details or {}
+
+
 
 class StageFailure(GateFailure):
     """A document open or native export failed."""
@@ -114,6 +127,13 @@ def _add_note(exc: BaseException, note: str) -> None:
 def process_present(image_name: str) -> bool:
     """Check the exact Office image without touching COM."""
 
+    return bool(_process_ids(image_name))
+
+
+
+def _process_ids(image_name: str) -> list[int]:
+    """Return PIDs for one exact image name without terminating anything."""
+
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
         result = subprocess.run(
@@ -136,13 +156,147 @@ def process_present(image_name: str) -> bool:
         raise RuntimeError(f"tasklist failed for {image_name}: {stderr.strip()}")
     stdout = result.stdout or b""
     if isinstance(stdout, str):
-        stdout = stdout.encode("utf-8", errors="replace")
-    wanted = image_name.lower().encode("ascii")
-    for line in stdout.splitlines():
-        first_field = line.strip().split(b",", 1)[0].strip(b'"').lower()
-        if first_field == wanted:
-            return True
-    return False
+        rows = stdout.splitlines()
+    else:
+        rows = stdout.decode("utf-8", errors="replace").splitlines()
+    wanted = image_name.lower()
+    pids: list[int] = []
+    for row in csv.reader(rows):
+        if not row or row[0].strip().lower() != wanted:
+            continue
+        if len(row) < 2:
+            raise RuntimeError(f"tasklist returned a missing PID for {image_name}")
+        try:
+            pid = int(row[1].strip())
+        except ValueError as exc:
+            raise RuntimeError(f"tasklist returned an invalid PID for {image_name}") from exc
+        if pid <= 0:
+            raise RuntimeError(f"tasklist returned a non-positive PID for {image_name}")
+        pids.append(pid)
+    return sorted(set(pids))
+
+
+
+def _safe_process_ids(
+    image_name: str,
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+) -> tuple[list[int] | None, str | None]:
+    try:
+        probe = process_ids or _process_ids
+        return sorted({int(pid) for pid in probe(image_name)}), None
+    except Exception as exc:
+        return None, _exception_text(exc)
+
+
+
+def _observe_owned_processes(
+    image_name: str,
+    pre_dispatch_pids: list[int],
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+    timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Identify PIDs created after DispatchEx without guessing from COM alone."""
+
+    started = time.monotonic()
+    deadline = started + timeout_seconds
+    last: list[int] = []
+    while True:
+        current, error = _safe_process_ids(image_name, process_ids=process_ids)
+        elapsed = time.monotonic() - started
+        if current is None:
+            return {
+                "status": "UNOBSERVED",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": last,
+                "owned_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+                "error": error,
+            }
+        last = current
+        owned = sorted(set(current) - set(pre_dispatch_pids))
+        if owned:
+            return {
+                "status": "OBSERVED",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": current,
+                "owned_pids": owned,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        if time.monotonic() >= deadline:
+            return {
+                "status": "NO_NEW_PID",
+                "image": image_name,
+                "pre_dispatch_pids": pre_dispatch_pids,
+                "observed_pids": current,
+                "owned_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        time.sleep(min(PROCESS_POLL_SECONDS, max(0.0, deadline - time.monotonic())))
+
+
+
+def _wait_for_owned_processes_exit(
+    image_name: str,
+    owned_pids: list[int] | None,
+    *,
+    process_ids: Callable[[str], list[int]] | None = None,
+    timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Wait for task-owned Office PIDs; never force-terminate residual PIDs."""
+
+    started = time.monotonic()
+    if not owned_pids:
+        return {
+            "status": "UNOBSERVED",
+            "image": image_name,
+            "owned_pids": [],
+            "residual_pids": [],
+            "wait_seconds": time.monotonic() - started,
+            "timeout_seconds": timeout_seconds,
+        }
+    deadline = started + timeout_seconds
+    last: list[int] = list(owned_pids)
+    while True:
+        current, error = _safe_process_ids(image_name, process_ids=process_ids)
+        elapsed = time.monotonic() - started
+        if current is None:
+            return {
+                "status": "UNOBSERVED",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": last,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+                "error": error,
+            }
+        last = sorted(set(current) & set(owned_pids))
+        if not last:
+            return {
+                "status": "CLEAN",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": [],
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        if time.monotonic() >= deadline:
+            return {
+                "status": "RESIDUAL_PIDS",
+                "image": image_name,
+                "owned_pids": owned_pids,
+                "residual_pids": last,
+                "wait_seconds": elapsed,
+                "timeout_seconds": timeout_seconds,
+            }
+        time.sleep(min(PROCESS_POLL_SECONDS, max(0.0, deadline - time.monotonic())))
+
 
 
 def default_dispatch_ex(progid: str) -> Any:
@@ -235,33 +389,99 @@ def owned_application(
     *,
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
+    process_ids: Callable[[str], list[int]] | None = None,
+    pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+    process_exit_timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
+    ownership_metadata: dict[str, Any] | None = None,
 ) -> Iterator[tuple[Any, OwnedApplication]]:
-    """Create one isolated COM instance and fail closed on cleanup ambiguity."""
+    """Create one isolated COM instance and retain PID ownership evidence."""
 
     runtime = com_runtime or default_com_runtime()
     dispatch = dispatch_ex or default_dispatch_ex
+    metadata = ownership_metadata if ownership_metadata is not None else {}
+    metadata.update(
+        {
+            "process_image": spec["process"],
+            "activation_attempted": False,
+            "activation_succeeded": False,
+        }
+    )
     runtime.CoInitialize()
     owner: OwnedApplication | None = None
     operation_error: BaseException | None = None
     try:
+        before_pids, before_error = _safe_process_ids(spec["process"], process_ids=process_ids)
+        metadata["pre_dispatch_pids"] = before_pids or []
+        if before_error:
+            metadata["pid_observation"] = {
+                "status": "UNOBSERVED",
+                "image": spec["process"],
+                "pre_dispatch_pids": [],
+                "owned_pids": [],
+                "error": before_error,
+            }
+            metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "PID probe failed before activation"}
+            raise OwnershipFailure(
+                f"cannot prove that {spec['process']} is absent before DispatchEx: {before_error}",
+                details={"ownership": metadata},
+            )
+        if before_pids:
+            metadata["pid_observation"] = {
+                "status": "PREEXISTING_PIDS",
+                "image": spec["process"],
+                "pre_dispatch_pids": before_pids,
+                "owned_pids": [],
+            }
+            metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "Office appeared before activation"}
+            raise OwnershipFailure(
+                f"{spec['process']} appeared before DispatchEx; exclusive ownership cannot be proven",
+                details={"ownership": metadata},
+            )
         try:
+            metadata["activation_attempted"] = True
             application = dispatch(spec["progid"])
         except Exception as exc:
             raise ActivationFailure(_exception_text(exc)) from exc
-        owner = OwnedApplication(application, spec["collection"])
+        metadata["activation_succeeded"] = True
+        owner = OwnedApplication(application, spec["collection"], metadata=metadata)
+        observation = _observe_owned_processes(
+            spec["process"],
+            before_pids,
+            process_ids=process_ids,
+            timeout_seconds=pid_observation_timeout_seconds,
+        )
+        metadata["pid_observation"] = observation
+        metadata["owned_pids"] = observation.get("owned_pids", [])
+        if observation["status"] != "OBSERVED":
+            metadata["cleanup"] = {
+                "status": "NOT_ATTEMPTED",
+                "reason": "task-owned Office PID was not observed",
+                "pid_exit": None,
+            }
+            raise OwnershipFailure(
+                "DispatchEx returned an Office object but task-owned process PID was not observed",
+                details={"ownership": metadata},
+            )
         initial_count = _collection_count(application, spec["collection"])
         if initial_count != 0:
+            metadata["cleanup"] = {
+                "status": "NOT_ATTEMPTED",
+                "reason": f"{spec['collection']} was not empty at activation",
+                "pid_exit": None,
+            }
             raise OwnershipFailure(
                 f"new {spec['progid']} instance already has {initial_count} open document(s); "
-                "exclusive ownership cannot be proven"
+                "exclusive ownership cannot be proven",
+                details={"ownership": metadata},
             )
         owner.exclusive_at_start = True
 
         _set_required(application, "Visible", False)
         _set_optional(application, "DisplayAlerts", 0)
         _set_optional(application, "ScreenUpdating", False)
-        if spec["progid"] == "Excel.Application":
+        if spec["progid"] in {"Excel.Application", "Word.Application"}:
             _set_optional(application, "AutomationSecurity", 3)
+        if spec["progid"] == "Excel.Application":
             _set_optional(application, "AskToUpdateLinks", False)
             _set_optional(application, "EnableEvents", False)
             _set_optional(application, "Calculation", -4135)  # xlCalculationManual
@@ -270,19 +490,45 @@ def owned_application(
         operation_error = exc
         raise
     finally:
-        if owner is not None and owner.exclusive_at_start:
-            try:
-                quit_owned_application(owner)
-            except Exception as cleanup_error:
-                if operation_error is None:
-                    raise
-                _add_note(operation_error, f"Office COM cleanup also failed: {_exception_text(cleanup_error)}")
+        if owner is not None:
+            if owner.exclusive_at_start:
+                quit_error: str | None = None
+                try:
+                    quit_owned_application(owner)
+                    owner.metadata["quit"] = {"status": "QUIT"}
+                except Exception as cleanup_error:
+                    quit_error = _exception_text(cleanup_error)
+                    owner.metadata["quit"] = {"status": "QUIT_FAILED", "error": quit_error}
+                    if operation_error is not None:
+                        _add_note(operation_error, f"Office COM cleanup also failed: {quit_error}")
+                owned_pids = owner.metadata.get("owned_pids")
+                pid_exit = _wait_for_owned_processes_exit(
+                    owner.metadata.get("process_image", "Office"),
+                    owned_pids if isinstance(owned_pids, list) else None,
+                    process_ids=process_ids,
+                    timeout_seconds=process_exit_timeout_seconds,
+                )
+                owner.metadata["cleanup"] = {
+                    "status": "QUIT_FAILED" if quit_error else pid_exit["status"],
+                    "quit": owner.metadata["quit"],
+                    "pid_exit": pid_exit,
+                }
+            elif "cleanup" not in owner.metadata:
+                owner.metadata["cleanup"] = {
+                    "status": "NOT_ATTEMPTED",
+                    "reason": "exclusive Office ownership was not proven",
+                }
         try:
             runtime.CoUninitialize()
         except Exception as cleanup_error:
+            metadata["com_uninitialize"] = {"status": "FAILED", "error": _exception_text(cleanup_error)}
             if operation_error is None:
-                raise OwnershipFailure(f"COM uninitialization failed: {_exception_text(cleanup_error)}") from cleanup_error
+                raise OwnershipFailure(
+                    f"COM uninitialization failed: {_exception_text(cleanup_error)}",
+                    details={"ownership": metadata},
+                ) from cleanup_error
             _add_note(operation_error, f"COM uninitialization also failed: {_exception_text(cleanup_error)}")
+
 
 
 def _new_output(path: Path) -> Path:
@@ -526,6 +772,28 @@ def _base_result(source: Path, format_name: str, before: str | None = None) -> d
     }
 
 
+def _record_cleanup_uncertainty(result: dict[str, Any], record: dict[str, Any]) -> None:
+    """Downgrade an activated Office run when cleanup cannot be proven complete."""
+
+    details = result.setdefault("details", {})
+    if "prior_result" not in details:
+        details["prior_result"] = {
+            "ok": result.get("ok"),
+            "status": result.get("status"),
+            "phase": result.get("phase"),
+            "error": result.get("error"),
+            "details": dict(details),
+        }
+    failures = details.setdefault("cleanup_uncertainties", [])
+    if isinstance(failures, list):
+        failures.append(record)
+    result["ok"] = False
+    result["status"] = "UNVERIFIED"
+    result["phase"] = "cleanup"
+    result["error"] = "Office native gate cleanup is not proven complete; result is unverified"
+
+
+
 def check_file(
     file_path: str | Path,
     format_name: str,
@@ -533,9 +801,12 @@ def check_file(
     allow_office_com: bool = False,
     require_render: bool = False,
     process_probe: Callable[[str], bool] | None = None,
+    process_ids: Callable[[str], list[int]] | None = None,
     dispatch_ex: Callable[[str], Any] | None = None,
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
+    pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
+    process_exit_timeout_seconds: float = PROCESS_EXIT_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
     """Run a native gate; dependency injection keeps tests off real COM."""
 
@@ -568,20 +839,42 @@ def check_file(
         result["source_sha256_after"] = before
         return result
 
-    probe = process_probe or process_present
-    try:
-        if probe(spec["process"]):
-            result["status"] = "UNSAFE_PROCESS"
-            result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
-            result["source_sha256_after"] = sha256(source)
-            return result
-    except Exception as exc:
-        result["error"] = f"cannot prove that {spec['process']} is absent: {_exception_text(exc)}"
-        result["source_sha256_after"] = sha256(source)
-        return result
-
+    ownership: dict[str, Any] = {"process_image": spec["process"], "activation_attempted": False, "activation_succeeded": False}
+    result["ownership"] = ownership
     workspace: Path | None = None
     try:
+        preflight_pids, preflight_error = _safe_process_ids(spec["process"], process_ids=process_ids)
+        if preflight_pids is None:
+            ownership["preflight"] = {
+                "status": "UNOBSERVED",
+                "process_image": spec["process"],
+                "pids": [],
+                "error": preflight_error,
+            }
+            result["error"] = f"cannot prove that {spec['process']} is absent: {preflight_error}"
+            return result
+        ownership["preflight"] = {
+            "status": "PREEXISTING_PIDS" if preflight_pids else "ABSENT",
+            "process_image": spec["process"],
+            "pids": preflight_pids,
+        }
+        if preflight_pids:
+            result["status"] = "UNSAFE_PROCESS"
+            result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
+            return result
+        if process_probe is not None:
+            try:
+                probe_present = bool(process_probe(spec["process"]))
+            except Exception as exc:
+                ownership["legacy_process_probe"] = {"status": "UNOBSERVED", "error": _exception_text(exc)}
+                result["error"] = f"cannot prove that {spec['process']} is absent: {_exception_text(exc)}"
+                return result
+            ownership["legacy_process_probe"] = {"status": "PRESENT" if probe_present else "ABSENT"}
+            if probe_present:
+                result["status"] = "UNSAFE_PROCESS"
+                result["error"] = f"{spec['process']} is already running; refusing to start, connect to, or close Office"
+                return result
+
         workspace = Path(tempfile.mkdtemp(prefix="office-native-gate-"))
         isolated = workspace / source.name
         exports = workspace / "exports"
@@ -597,6 +890,10 @@ def check_file(
             spec,
             dispatch_ex=dispatch_ex,
             com_runtime=com_runtime,
+            process_ids=process_ids,
+            pid_observation_timeout_seconds=pid_observation_timeout_seconds,
+            process_exit_timeout_seconds=process_exit_timeout_seconds,
+            ownership_metadata=ownership,
         ) as (application, _owner):
             if format_name == "pptx":
                 details = _check_pptx(application, isolated, exports, require_render)
@@ -613,6 +910,11 @@ def check_file(
     except OwnershipFailure as exc:
         result["phase"] = "ownership"
         result["error"] = _exception_text(exc)
+        if exc.details:
+            supplied_ownership = exc.details.get("ownership")
+            if isinstance(supplied_ownership, dict):
+                result["ownership"] = supplied_ownership
+            result["details"].update({key: value for key, value in exc.details.items() if key != "ownership"})
     except GateFailure as exc:
         result["status"] = exc.status
         result["phase"] = exc.phase
@@ -637,9 +939,39 @@ def check_file(
             result["status"] = "UNVERIFIED"
             result["phase"] = "integrity"
             result["error"] = "source SHA-256 changed during native gate; result is unverified"
-        if workspace is not None:
-            shutil.rmtree(workspace, ignore_errors=True)
+        ownership_record = result.get("ownership")
+        if isinstance(ownership_record, dict) and ownership_record.get("activation_succeeded") is True:
+            cleanup = ownership_record.get("cleanup")
+            cleanup_status = cleanup.get("status") if isinstance(cleanup, dict) else None
+            if cleanup_status != "CLEAN":
+                _record_cleanup_uncertainty(
+                    result,
+                    {
+                        "kind": "office_process",
+                        "cleanup": cleanup,
+                    },
+                )
+        # Do not remove files while an activated (or partly activated) Office
+        # process may still hold them. Retain the workspace as diagnostic evidence.
+        cleanup = ownership.get("cleanup")
+        cleanup_status = cleanup.get("status") if isinstance(cleanup, dict) else None
+        may_still_be_running = ownership.get("activation_attempted") and cleanup_status != "CLEAN"
+        if workspace is not None and may_still_be_running:
+            result["details"]["retained_workspace"] = str(workspace)
+        elif workspace is not None:
+            try:
+                shutil.rmtree(workspace)
+            except OSError as exc:
+                _record_cleanup_uncertainty(
+                    result,
+                    {
+                        "kind": "temporary_workspace",
+                        "workspace": str(workspace),
+                        "error": _exception_text(exc),
+                    },
+                )
     return result
+
 
 
 def build_parser() -> argparse.ArgumentParser:

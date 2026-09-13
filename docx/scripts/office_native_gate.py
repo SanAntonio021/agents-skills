@@ -3,8 +3,9 @@
 
 The gate is deliberately separate from OfficeCLI.  OfficeCLI is useful for
 static inspection and diagnostic previews, but only this module can produce
-native-open/native-export evidence.  The same file is distributed with the
-pptx, docx, xlsx, and pdf skills.
+native-open/native-export evidence.  The Office skills share a baseline CLI
+and safety contract, with format-specific implementations.  This DOCX copy
+adds process-ownership, cleanup, and independent export-page verification.
 """
 
 from __future__ import annotations
@@ -160,12 +161,17 @@ def _process_ids(image_name: str) -> list[int]:
     wanted = image_name.lower()
     pids: list[int] = []
     for row in csv.reader(rows):
-        if len(row) < 2 or row[0].strip().lower() != wanted:
+        if not row or row[0].strip().lower() != wanted:
             continue
+        if len(row) < 2:
+            raise RuntimeError(f"tasklist returned a missing PID for {image_name}")
         try:
-            pids.append(int(row[1].strip()))
-        except ValueError:
-            continue
+            pid = int(row[1].strip())
+        except ValueError as exc:
+            raise RuntimeError(f"tasklist returned an invalid PID for {image_name}") from exc
+        if pid <= 0:
+            raise RuntimeError(f"tasklist returned a non-positive PID for {image_name}")
+        pids.append(pid)
     return sorted(set(pids))
 
 
@@ -1196,7 +1202,18 @@ def check_file(
                         "cleanup": cleanup,
                     },
                 )
-        if workspace is not None:
+        if (
+            workspace is not None
+            and isinstance(ownership_record, dict)
+            and ownership_record.get("activation_attempted") is True
+            and (
+                not isinstance(ownership_record.get("cleanup"), dict)
+                or ownership_record["cleanup"].get("status") != "CLEAN"
+            )
+        ):
+            # An unconfirmed Office exit may still hold the isolated document.
+            result["details"]["retained_workspace"] = str(workspace)
+        elif workspace is not None:
             try:
                 shutil.rmtree(workspace)
             except OSError as exc:

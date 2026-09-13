@@ -195,6 +195,75 @@ fid=fopen(file,'w','n','UTF-8'); clean=onCleanup(@() fclose(fid)); %#ok<NASGU>
 fprintf(fid,'%s\n',jsonencode(report));
 end
 
+function testGroupedDemodulationAndIndependent(testCase)
+[pd,~]=fixture(4096,2); pd.profile='demodulation';
+p=pd.panels(1); p.id='tracking'; p.kind='curve'; p.title='跟踪误差'; p.data_ref=struct();
+p.data=struct('x',[(1:40)' (1:40)'+.25], ...
+    'y',[(1:40)'/40 sin((1:40)'/10).^2],'x_unit','时间（μs）','y_unit','误差', ...
+    'series_labels',{{'RMS','最大值'}}); p.options=struct();
+pd.panels(end+1)=p;
+g=struct('id','capture','title','原始采集波形','panel_ids',{{'CH1_waveform','CH2_waveform'}},'position',[1 1 1 1]);
+g(2)=struct('id','spectrum','title','通道频谱','panel_ids',{{'CH1_spectrum','CH2_spectrum'}},'position',[1 2 1 1]);
+g(3)=struct('id','tracking','title','跟踪误差','panel_ids',{{'tracking'}},'position',[2 1 1 2]);
+pd.view.grid_size=[2 2]; pd.view.groups=g;
+validated=Test_Project_Validate_Plot_Data(pd); verifyEqual(testCase,validated.panels(end).status,'ok');
+folder=fullfile(testCase.TestData.OutputDir,'grouped');
+large=Test_Project_Plot_Test(fullfile(folder,'overview.png'),pd,struct('target_size_px',[1920 1080]));
+small=Test_Project_Plot_Test(fullfile(folder,'compact.png'),pd,struct('target_size_px',[1440 810]));
+single=Test_Project_Plot_Test(fullfile(folder,'tracking.png'),pd,struct('panel_ids',{{'tracking'}}));
+verifyImage(testCase,large.OutputPaths{1},[1920 1080]); verifyImage(testCase,small.OutputPaths{1},[1440 810]);
+verifyEqual(testCase,numel(large.PanelStatus),5); verifyEqual(testCase,numel(single.PanelStatus),1);
+verifyEqual(testCase,Test_Project_Load_Plot_Data(large.ArchivePath),pd);
+bad=pd; bad.view.groups(2).position=[1 1 1 1];
+verifyError(testCase,@() Test_Project_Validate_Plot_Data(bad),'TestProject:Plot:GroupLayout');
+bad=pd; bad.view.groups(2).position=[1 2 1 2];
+verifyError(testCase,@() Test_Project_Validate_Plot_Data(bad),'TestProject:Plot:GroupLayout');
+bad=pd; bad.view.groups(3).panel_ids={'CH1_waveform'};
+verifyError(testCase,@() Test_Project_Validate_Plot_Data(bad),'TestProject:Plot:GroupLayout');
+bad=pd; bad.view.groups(3)=[];
+verifyError(testCase,@() Test_Project_Validate_Plot_Data(bad),'TestProject:Plot:GroupLayout');
+bad=pd; bad.view.groups(2).id='capture';
+verifyError(testCase,@() Test_Project_Validate_Plot_Data(bad),'TestProject:Plot:GroupLayout');
+end
+
+function testMultipleCurveHandlesAndTimeGrids(testCase)
+fig=figure('Visible','off'); clean=onCleanup(@() close(fig)); %#ok<NASGU>
+ax=axes(fig); d=struct('x',[(1:8)' (1:8)'+.2],'y',[(1:8)' (8:-1:1)'], ...
+    'x_unit','时间','y_unit','误差','series_labels',{{'RMS','峰值'}});
+a=Test_Project_Draw_Curve(ax,d); b=Test_Project_Draw_Curve(ax,d);
+verifyEqual(testCase,a.handle,b.handle);
+verifyEqual(testCase,a.handle(2).XData,d.x(:,2)');
+verifyEqual(testCase,a.handle(2).YData,d.y(:,2)');
+style=repmat(struct('marker','none','line_style','-','color',[],'marker_face_color','none'),1,2);
+style(2)=struct('marker','^','line_style','none','color',[.8 .2 .1],'marker_face_color',[.8 .2 .1]);
+styled=Test_Project_Draw_Curve(ax,d,struct('series_styles',style));
+verifyEqual(testCase,styled.handle(2).Marker,'^'); verifyEqual(testCase,styled.handle(2).LineStyle,'none');
+verifyEqual(testCase,styled.handle(2).MarkerFaceColor,[.8 .2 .1]);
+d.x=(1:8)'; c=Test_Project_Draw_Curve(ax,d);
+verifyEqual(testCase,c.handle(2).XData,d.x');
+verifyEqual(testCase,c.handle(2).Marker,'none'); verifyEqual(testCase,c.handle(2).LineStyle,'-');
+d.y=d.y(:,1); d.series_labels={'RMS'}; Test_Project_Draw_Curve(ax,d);
+verifyEqual(testCase,char(a.handle(2).Visible),'off');
+cla(ax); data=struct('symbols',[1+1i;1-1i;-1+1i], ...
+    'metrics',struct('EVM_percent',12.5,'NMSE_dB',-20,'pre_FEC_BER',.01,'post_FEC_BER',0));
+Test_Project_Draw_Constellation(ax,data); note=findobj(ax,'Tag','test_plot_note');
+verifyEqual(testCase,note.String,{'N = 3';'EVM 12.5 %';'训练NMSE -20 dB';'前BER 0.01';'后BER 0'});
+end
+
+function testGroupPaginationByLogicalGroups(testCase)
+[pd,~]=fixture(32,1); pd.profile='demodulation'; base=pd.panels(1);
+pd.panels=repmat(base,1,13);
+g=repmat(struct('id','','title','波形','panel_ids',{{}},'position',[1 1 1 1]),1,13);
+for k=1:13
+    pd.panels(k).id=sprintf('wave%d',k); g(k).id=sprintf('group%d',k);
+    g(k).panel_ids={pd.panels(k).id};
+    tile=mod(k-1,12); g(k).position=[floor(tile/4)+1 mod(tile,4)+1 1 1];
+end
+pd.view.grid_size=[3 4]; pd.view.groups=g;
+out=Test_Project_Plot_Test(fullfile(testCase.TestData.OutputDir,'group_pages','overview.png'),pd);
+verifyEqual(testCase,numel(out.OutputPaths),2); verifyEqual(testCase,numel(out.PanelStatus),13);
+end
+
 function [pd,channels]=fixture(n,count)
 channels=makeChannels(n,count);
 analysis=Test_Project_Analyze_Capture(channels,struct('power_band_hz',[.2e9 .8e9]));

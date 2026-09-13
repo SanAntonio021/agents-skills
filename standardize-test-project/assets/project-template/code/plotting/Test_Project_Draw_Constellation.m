@@ -19,7 +19,17 @@ outside=nnz(real(rx)<lims(1)|real(rx)>lims(2)|imag(rx)<lims(3)|imag(rx)>lims(4))
 note={sprintf('N = %d',numel(rx))}; metrics=opt(data,'metrics',struct());
 names=fieldnames(metrics);
 for k=1:numel(names)
-    v=metrics.(names{k}); if isnumeric(v)&&isscalar(v)&&isfinite(v), note{end+1}=sprintf('%s %.4g',names{k},v); end %#ok<AGROW>
+    v=metrics.(names{k});
+    if isnumeric(v)&&isscalar(v)&&isfinite(v)
+        switch names{k}
+            case 'EVM_percent', label=sprintf('EVM %.4g %%',v);
+            case 'NMSE_dB', label=sprintf('训练NMSE %.4g dB',v);
+            case 'pre_FEC_BER', label=sprintf('前BER %.4g',v);
+            case 'post_FEC_BER', label=sprintf('后BER %.4g',v);
+            otherwise, label=sprintf('%s %.4g',names{k},v);
+        end
+        note{end+1}=label; %#ok<AGROW>
+    end
 end
 if outside>0, note{end+1}=sprintf('超范围 %d',outside); end
 if ~opt(options,'suppress_note',false), Test_Project_Plot_Util('note',ax,note); end

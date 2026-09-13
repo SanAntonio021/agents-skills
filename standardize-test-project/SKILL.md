@@ -1,9 +1,11 @@
 ---
 name: standardize-test-project
-description: Build and modify experimental or scientific simulation programs, including reusable MATLAB single-channel waveform/spectrum, IQ observation and demodulation diagnostic plots, result directories, retention, replay, and hardware-free validation. Use for new tests, unified test plotting, future output changes, parameter sweeps, compact/full simulation storage, and offline run analysis. Also reuse the complete MATLAB TX/RX workbench and M8195A/LeCroy adapters when needed. Real instrument operation belongs to link-test. Do not use for ordinary software tests, standalone publication figures or analysis without experimental runs, documentation-only work, or historical-result migration that does not change future code or outputs.
+description: 实验规范：新建或修改实验/科研仿真程序，统一单通道波形与频谱、IQ 观察、解调图组及结果保存；用户说“按实验规范来做”“用实验规范”时使用。Build and modify experimental or scientific simulation programs, including reusable MATLAB single-channel waveform/spectrum, IQ observation and demodulation diagnostic plots, result directories, retention, replay, and hardware-free validation. Use for new tests, unified test plotting, future output changes, parameter sweeps, compact/full simulation storage, and offline run analysis. Also reuse the complete MATLAB TX/RX workbench and M8195A/LeCroy adapters when needed. Real instrument operation belongs to link-test. Do not use for ordinary software tests, standalone publication figures or analysis without experimental runs, documentation-only work, or historical-result migration that does not change future code or outputs.
 ---
 
-# Standardize Test Project
+# 实验规范（Standardize Test Project）
+
+中文调用名为“实验规范”。在本技能适用任务中，“按实验规范来做”或“用实验规范”表示加载本技能；内部标识仍为 `standardize-test-project`。
 
 Build or adapt experimental programs with a consistent output contract. Reuse the complete TX/RX workbench only when the task needs it. Preserve project-specific hardware safety rules and historical results.
 

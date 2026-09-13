@@ -5,43 +5,43 @@
     {
       "id": 1,
       "prompt": "请按 IEEE Transactions 的口气精修下面这段英文摘要，要求保留所有数值和实验条件，只提升表达、逻辑和结论强度控制。",
-      "expected_output": "输出修改稿、主要改动和待确认问题；主要改动最多 3 条；事实范围、数值和实验条件保持原文边界，有限实验对应克制结论。",
+      "expected_output": "直接输出修改稿；事实范围、数值和实验条件保持原文边界，有限实验对应克制结论。仅在存在影响本轮文字的真实歧义时询问，不默认附改写说明。",
       "files": []
     },
     {
       "id": 2,
       "prompt": "帮我审一下这个太赫兹通信系统实验结果段和图注是否适合 IEEE 风格。重点看图文对应、代表性指标选择依据、方法和结果边界。",
-      "expected_output": "先列最多 5 条必须处理的问题，再给必要的修改段落或图注；指出需要用户核验的数据或图中信息。",
+      "expected_output": "按审查范围分点列出实际位置、问题及必要建议，指出需要核实的数据或图中信息；只审查不生成替换稿，不按固定问题数凑项。",
       "files": []
     },
     {
       "id": 3,
       "prompt": "这段引言有点像中文直译，请按 SCI/IEEE 工程论文写法重新整理。文献范围以原来的 citation keys 为准。",
-      "expected_output": "输出更克制的引言段落，保留引用位置，并用最多 3 条说明主要结构调整。",
+      "expected_output": "按当前协作方式整理引言，保留引用位置和事实范围；结构改变先讨论受影响部分，已授权直接整段处理时直接交付，不默认附固定数量的改写说明。",
       "files": []
     },
     {
       "id": 4,
       "prompt": "请把下面这段中文实验结果说明改写成 IEEE 风格英文论文段落。按英文论文信息顺序组织句子，保留数值、频率、功率和实验条件；如果中文里有含混表达，请在待确认问题里指出。",
-      "expected_output": "输出英文论文版本、关键术语选择和待确认问题；以中文技术事实为准，实验结论限于原文信息。",
+      "expected_output": "输出英文论文版本，以中文技术事实为准，保留关键术语含义，实验结论限于原文信息；仅指出实际存在的含混表达，不固定增加术语说明。",
       "files": []
     },
     {
       "id": 5,
       "prompt": "这个论文目录里有很多 Maintext 相关文件，我准备把英文稿和中文稿发给共同作者。请告诉我根目录保留哪些、哪些先归档，解释保持简短。",
-      "expected_output": "给出短方案：根目录只保留合作者要看的 Word 文件和待确认问题说明；源文件、历史版本和中间文件建议移入归档目录；移动或删除前提醒需要用户确认。",
+      "expected_output": "只读检查当前文件和引用关系，给出适合交付的文件建议；保留源码和必要依赖，不默认迁移历史目录或新增待确认说明，不实际移动或删除文件。",
       "files": []
     },
     {
       "id": 6,
       "prompt": "请帮我把这篇稿子改到符合 IEEE Transactions on Terahertz Science and Technology 的投稿要求。",
-      "expected_output": "先说明具体期刊合规需要官方依据；要求使用用户提供的官方模板/作者指南，或先核验期刊官网、IEEE Author Center 等官方来源。核验完成前只做通用 SCI/IEEE 精修，并把目标期刊模板核对列为待确认问题。",
+      "expected_output": "journal-submission 提供已核实的目标期刊要求，按实际文件由对应技能处理格式；文字修改沿用已授权范围和当前主稿。能自行取得的官方要求直接核对，只暂停依赖未查明要求的部分，不自动启动全文科学审查。",
       "files": []
     },
     {
       "id": 7,
       "prompt": "这篇英文稿投刊目标待定，你先帮我做投稿前终稿精修吧。",
-      "expected_output": "先提醒可做一次选刊判断；说明选刊需要联网核验期刊官网、scope 和近期文章，并以核验结果推荐。若用户仍选择先精修，则明确这是通用 SCI/IEEE 精修，期刊适配状态标为待确认。",
+      "expected_output": "直接完成已要求的通用科学与工程论文终稿精修，不追加选刊或继续确认；没有目标期刊依据时不宣称具体期刊合规。",
       "files": []
     },
     {
@@ -53,30 +53,30 @@
     {
       "id": 9,
       "prompt": "我这段论文正文AI味太重了，'是……而非……''需要说明的是'到处都是，帮我去一去AI腔，但是数字和结论一个都不能动。",
-      "expected_output": "按学术模式边界清理：改写否定对比句式为正面陈述、删金句式总结、防御性表述改中性事实陈述；保留全部数值/术语/LaTeX命令，结论力度不减；不注入个性化或第一人称表达。",
+      "expected_output": "结合语境删无信息套话和重复，真实比较、否定及科学限定保持；保留全部数值、术语、LaTeX 命令和结论强度，不仅因句式命中改写，也不写入词表或候选记录。",
       "files": []
     },
     {
       "id": 10,
       "prompt": "请直接修改本地 main.tex 的 Results 小节。仓库里 notes.md 和另一个实验脚本有未提交改动，但和这次无关。改完请编译确认。",
-      "expected_output": "修改前记录状态并只锁定 main.tex 及本轮必要依赖；验证和编译通过后创建一个本地 commit，格式为“文稿：Results｜<修改目的>”；不得暂存、提交或取消暂存 notes.md 和无关脚本，不 push。",
+      "expected_output": "读取当前 main.tex 并保护原稿，只修改 Results 及必要依赖，完成要求的编译；保留 notes.md 和无关脚本及 Git 状态，不默认创建 commit 或 tag。",
       "files": [],
       "expectations": [
         "只处理显式相关文件，不使用 git add .、git add -A 或 git commit -am。",
-        "编译验证通过后每轮只创建一个本地 commit。",
-        "commit 使用中文可检索格式。",
+        "只在当前请求或项目约定要求时提交，不默认初始化仓库。",
+        "Git 不适用时通过副本或已有备份继续交付。",
         "不执行 git push。"
       ]
     },
     {
       "id": 11,
       "prompt": "刚才那轮已经改完并提交了，这版可以，作为投稿候选。",
-      "expected_output": "不给文件制造空改动或空 commit；在最近的相关 commit 上创建 annotated milestone tag，名称使用 milestone/YYYYMMDD-HHmmss-投稿候选，annotation 记录文件或章节和用户确认语义；若同秒重名则追加序号。",
+      "expected_output": "复用这份当前稿件作为投稿候选，不改动正文，不自动创建 commit、tag 或额外审批记录；后续按具体请求处理。",
       "files": [],
       "expectations": [
-        "识别用户明确的里程碑语义。",
-        "创建 annotated tag，不创建空 commit。",
-        "tag 指向最近的相关 commit。",
+        "识别用户选择的是当前投稿候选。",
+        "不自动创建 tag 或空 commit。",
+        "不修改文件或扩大成投稿操作。",
         "不 push tag。"
       ]
     },
@@ -165,7 +165,7 @@
     {
       "id": 20,
       "prompt": "请只读审计 evals/files/finalization-negation-chain.md 的否定链和间接否定。重点核对 cannot be ruled out、cannot be excluded 和 by no means 的人工复核噪音，同时检查 not without、not entirely without、not only 配对、neither/nor、No. 编号、无标点列表项和图注。所有结果只列人工复核候选，不自动改写科学限定，也不要把表格、代码、注释或参考文献中的文本算进去。",
-      "expected_output": "运行 convention audit，按完整句子合并 LANG_NEGATION_CHAIN；准确区分 fixed_indirect、coordination 和 atomic，报告 10 条否定链候选；用中文表格单列 by no means、cannot be ruled out、cannot be excluded 的人工处置与噪音统计（本 fixture 为建议改写 1 条、科学限定保留 2 条），并列出未触发及被屏蔽的正反例。",
+      "expected_output": "运行 convention audit，按完整句子合并 LANG_NEGATION_CHAIN；准确区分 fixed_indirect、coordination 和 atomic，报告 10 条否定链候选；分点说明 by no means、cannot be ruled out、cannot be excluded 的判断与噪音统计（本 fixture 为建议改写 1 条、科学限定保留 2 条），列出未触发及被屏蔽的正反例；不强制表格。",
       "files": ["evals/files/finalization-negation-chain.md"],
       "expectations": [
         "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现候选而不是脚本失败。",
@@ -173,8 +173,32 @@
         "by no means、cannot be ruled out、cannot be excluded 和直接 not without 被识别为 fixed_indirect；not entirely without 被识别为两个 atomic。",
         "not only 配对只屏蔽紧邻 only 的 not，第二个实际否定仍进入 evidence；neither/nor 合并为 coordination；No. A1/No. A2 只屏蔽编号 No.，同句其他否定仍正常计数。",
         "单独 without、cannot confirm、No packet loss 和单一 not statistically significant 不报告；表格、代码、注释、fenced code 和 References 内容不参与发现。",
-        "中文复核表把三个重点短语逐条标为建议改写或科学限定保留，并给出建议改写 1、保留 2、人工复核噪音 2/3；任何一项都不自动改写。"
+        "逐条说明三个重点短语建议改写或科学限定保留，并给出建议改写 1、保留 2、人工复核噪音 2/3；任何一项都不自动改写。"
       ]
+    },
+    {
+      "id": 21,
+      "prompt": "只润色这句论文文字：It should be noted that the measured suppression exceeded 18 dB under the tested conditions. 不修改其他内容，也不维护词表。",
+      "expected_output": "去掉空引导，保留 exceeded 18 dB 及测试条件，不推断是否达到 20 dB；不运行整稿审计，不写正式词表或待确认记录。",
+      "files": []
+    },
+    {
+      "id": 22,
+      "prompt": "用给定的临时词表只读检查这份完整中文论文的用词，给出有问题的位置即可。",
+      "expected_output": "读取适用中文表，使用词表脚本的 --file、--language zh、--document-kind paper 和指定词表目录，结合例外判断命中；原稿不变，不调用只支持英文的规范审计代替，不强制表格或展示哈希。",
+      "files": []
+    },
+    {
+      "id": 23,
+      "prompt": "以后中文论文统一用‘测试条件’替代‘测试情境’，请收录到这次给定的临时论文词表；含义不同的引文保留。",
+      "expected_output": "按 style-vocab 查重与冲突后直接维护已授权的论文词表并回读，保留引文例外，不要求重新填表，不改其他文体词表或项目文件。",
+      "files": []
+    },
+    {
+      "id": 24,
+      "prompt": "检查这段英文句子质量。各句长短相近，术语和条件完整、主谓关系清楚，若没有实际理解问题就保留。",
+      "expected_output": "把词数和句长当作复核线索，结合实际文字判断，无具体问题则保留，不为节奏调整或凑修改量。",
+      "files": []
     }
   ]
 }

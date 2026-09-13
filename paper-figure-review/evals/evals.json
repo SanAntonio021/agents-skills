@@ -64,7 +64,7 @@
     {
       "id": "bitmap-without-raw-data",
       "prompt": "我只有这张 PNG 截图，能不能帮我重画成 IEEE 风格的数据图？",
-      "expected_output": "先说明没有原始数据不能保证数据精确；除非用户接受 approximate_redraw，否则只做风格审查和重画所需数据清单。"
+      "expected_output": "先说明没有原始数据不能保证精确重画，精确重建曲线所依赖的数据列为待补；在已有授权内继续可独立完成的格式调整、风格审查及实际图检查，不要求完整批次或全文审计。只有用户接受近似复刻时才输出 approximate_redraw，不把近似数据称为实测数据。"
     },
     {
       "id": "google-earth-link-map-composite-figure",
@@ -136,17 +136,32 @@
     {
       "id": "explicit-python",
       "prompt": "请沿用这个 Python 图源修改线宽。",
-      "expected_output": "沿用指定图源，不转 Origin。"
+      "expected_output": "沿用指定 Python 图源修改线宽，不转 Origin；检查实际导出、最终可读性、单位和数据表达未变，不索要全部原始采集批次或重做样本数与全文数值审计。"
     },
     {
       "id": "saved-opju",
       "prompt": "我已保存修改好的 OPJU，请重新导出。",
-      "expected_output": "用当前文件的快照审查导出，保护手工修改，不从旧计划重建覆盖。"
+      "expected_output": "用当前文件的快照审查实际导出，保护手工修改，不从旧计划重建覆盖；仅重新导出不触发完整数据溯源，核对可读性、单位及数据表达未变。"
     },
     {
       "id": "shared-authorization",
       "prompt": "已确认数据、配色和尺寸，继续生成论文结果图。",
       "expected_output": "复用授权，规范技能交给 Origin 实现后检查，不各问一轮。"
+    },
+    {
+      "id": "format-only-missing-batches",
+      "prompt": "只把这张图字体改为 9 pt、图宽改为 3.5 in，保持原数据和图注。我有可编辑源，但这台电脑没有原始采集批次。",
+      "expected_output": "完成可独立执行的字体和尺寸调整，保留原稿，查看实际图和真实导出以核对可读性、单位及数据表达未变；不以缺少采集批次阻断格式交付，不宣称完成数据溯源。再次加载检查表也不扩大范围。"
+    },
+    {
+      "id": "selection-change-requires-provenance",
+      "prompt": "把 Fig. 4 的代表性样本换成这批采集中较差一路 BER 居中位的那一次，图注的样本数也更新，正文对应数值一起核对。",
+      "expected_output": "核验相关原始批次、筛选与排序规则、可复算样本数及所选 run，更新受影响图和图注并对齐正文相关数值；不把它当纯格式修改，也不重审未受影响图。缺少批次时只暂停样本选择与依赖数值更新，可继续独立格式工作。"
+    },
+    {
+      "id": "visible-fact-conflict-during-format",
+      "prompt": "只统一这张图的字体和线宽。源文件的轴题写 Frequency (GHz)，图注却把同一坐标说成 MHz，其他资料我还没给。",
+      "expected_output": "指出现有材料中 GHz/MHz 的明显矛盾，不凭空决定正确单位；继续独立字体和线宽调整，保持未确认的科学表达，单位修正标为待核；不扩展到全部实验批次、样本数或全文审计。"
     },
     {
       "id": "origin-missing-log",

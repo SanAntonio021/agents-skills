@@ -3,6 +3,16 @@
   "fixture_policy": "synthetic-only",
   "evals": [
     {
+      "id": "confirmed-paper-format-handoff",
+      "prompt": "本轮论文 Results 两段已确认写入 main.md，当前版本的用词检查已完成。请按已选模板导出 Word；正文不再修改。",
+      "expected_output": "回读当前主稿和已选模板，复用未变化的正文及检查，交 docx 完成格式和必要验证；不再次润色、询问是否导出或启动整稿科学审查。"
+    },
+    {
+      "id": "figure-return-bounded-paper",
+      "prompt": "Fig. 2 只调整了字体和尺寸，数据、单位、图例含义均未变，实际导出已检查。继续处理论文，只核对这幅图在当前稿中的引用，不改其他章节。",
+      "expected_output": "复用图件结果，读取当前稿件并只核对相关图引用；不重做绘图、批次溯源或全文科学审查，发现相关实际矛盾时指出。"
+    },
+    {
       "id": "research-to-word",
       "prompt": "为已经明确的技术方向查资料、比较方案，最后形成 Word 调研报告。已有一份提纲和部分来源，先沿用。",
       "expected_output": "research-report 复用提纲和来源，补足当前问题所需资料并形成报告内容，按既有文稿协作完成后交 docx 制作与验收；不要求用户先准备全部材料，不创建固定任务池或样本审核关口，不只交检索清单就结束。"

@@ -1,4 +1,0 @@
-interface:
-  display_name: "收发实验工作台模板"
-  short_description: "复用完整 TX/RX 工作台、诊断图和设备适配，先做无硬件验证"
-  default_prompt: "使用 $tx-rx-workbench-template 在目标项目中复用收发工作台；先读项目约定，保护现有文件，并从无硬件演示开始。"

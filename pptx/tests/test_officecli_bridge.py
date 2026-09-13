@@ -28,6 +28,18 @@ repair_spec.loader.exec_module(repair)
 
 
 class OfficeCliBridgeTests(unittest.TestCase):
+    def test_compact_query_uses_plain_text_protocol(self):
+        command = bridge.office_command(
+            Path("officecli.exe"), "query", Path("sample.pptx"), ["shape", "--compact"]
+        )
+        self.assertEqual(command, ["officecli.exe", "query", "sample.pptx", "shape", "--compact"])
+
+    def test_normal_query_keeps_json_protocol(self):
+        command = bridge.office_command(
+            Path("officecli.exe"), "query", Path("sample.pptx"), ["shape"]
+        )
+        self.assertEqual(command, ["officecli.exe", "--json", "query", "sample.pptx", "shape"])
+
     def test_sha256_is_stable(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / "sample.pptx"
@@ -293,7 +305,7 @@ class OfficeCliBridgeTests(unittest.TestCase):
             candidate = Path(temp_dir) / "officecli.exe"
             candidate.write_bytes(b"verified-binary")
             expected_hash = bridge.sha256(candidate)
-            version_result = subprocess.CompletedProcess([str(candidate), "--version"], 0, "1.0.144\n", "")
+            version_result = subprocess.CompletedProcess([str(candidate), "--version"], 0, "1.0.149\n", "")
             with patch.dict(os.environ, {}, clear=True):
                 with patch.object(bridge, "DEFAULT_EXE", candidate):
                     with patch.object(bridge, "OFFICECLI_SHA256", expected_hash):
@@ -331,7 +343,7 @@ class OfficeCliBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             override = Path(temp_dir) / "override.exe"
             override.write_bytes(b"verified-override")
-            result = subprocess.CompletedProcess([str(override), "--version"], 0, "1.0.144\n", "")
+            result = subprocess.CompletedProcess([str(override), "--version"], 0, "1.0.149\n", "")
             with patch.dict(os.environ, {"OFFICECLI_EXE": str(override)}, clear=True):
                 with patch.object(bridge, "OFFICECLI_SHA256", bridge.sha256(override)):
                     with patch.object(bridge, "run_process", return_value=result) as run_process:

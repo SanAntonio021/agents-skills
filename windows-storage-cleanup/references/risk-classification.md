@@ -81,8 +81,25 @@ Group by source and purpose in the list for one batch confirmation. Reuse an exi
 - active application data and locked files;
 - the only local working copy, even when a cloud backup exists.
 
-`Paper`, research paths under `Program`/`ProgramFile`, and active VS Code or Claude data remain protected unless
+`Paper`, research paths under `Program`/`ProgramFile`, and active VS Code, Claude, Office, Docker, browser, or research-tool data remain protected unless
 explicitly reviewed. Resolve their actual roots from local rules instead of hardcoding a private machine path.
+
+## Stable Reclaim and Recurring Growth
+
+Ordinary cleanup prioritizes large, verified disposable items. Do not require a preliminary choice between temporary
+relief and long-term management. Explain that caches regrow when relevant; only an explicit request to solve recurring
+space exhaustion calls for investigating growth and proposing cache locations or retention changes, under the
+appropriate authorization.
+
+When stable reclaimed space is the stated success criterion, review in this order:
+
+1. Rarely used applications and confirmed obsolete versions, using registered uninstallers.
+2. Verified residuals after completed uninstall and ownership checks.
+3. One-time backups, installation media, and verified duplicates.
+4. Regenerating caches last; exclude them from stable-reclaim totals.
+
+Stop extending the list when the remaining benefit is small relative to the task. Do not impose a universal MB
+threshold or automatically uninstall additional software or change settings to increase the reported benefit.
 
 ## Decision Test
 

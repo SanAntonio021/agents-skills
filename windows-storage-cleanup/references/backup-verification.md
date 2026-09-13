@@ -27,6 +27,7 @@ Strong evidence:
 2. Inspect archive contents or project structure before hashing.
 3. Hash both candidate and retained copy with SHA-256.
 4. For two folders or differently packaged archives, compare required members rather than only container hashes.
+   Confirm that the retained copy is readable and belongs to the intended project and version.
 5. Record unmatched members and retain that candidate if any required file lacks a verified replacement; continue
    unrelated approved candidates.
 6. Recheck hashes immediately before moving the candidate.

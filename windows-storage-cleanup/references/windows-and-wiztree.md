@@ -25,7 +25,7 @@ export, validate the artifact itself:
 Do not trust `$LASTEXITCODE` alone. WizTree 4.31 has produced a valid CSV while returning exit code `1` on this
 machine.
 
-For large exports, use `../scripts/Summarize-WizTreeCsv.ps1` instead of loading the complete file with `Import-Csv`
+For large exports, use [Summarize-WizTreeCsv.ps1](../scripts/Summarize-WizTreeCsv.ps1) instead of loading the complete file with `Import-Csv`
 or printing every match. The helper validates the banner and required columns, streams the rows with a structured CSV
 parser, selects only direct children of explicitly supplied roots, and caps each root at `-Top` results. Directory rows
 already contain WizTree's aggregate size, so descendants below a selected direct child must not be added again.
@@ -45,6 +45,28 @@ Official references:
 - [Clean up the WinSxS folder](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder)
 - [Determine the appropriate page file size](https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/how-to-determine-the-appropriate-page-file-size-for-64-bit-versions-of-windows)
 - [Windows memory dump file options](https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/memory-dump-file-options)
+
+## Application History Cleanup
+
+Read this section when a particular application's history review or cleanup is part of the task. Ordinary disk scans
+read directory sizes, file metadata, and existing audit material; they do not invoke even `cleanup prepare` merely
+because it generates a plan.
+
+1. For explicitly requested history review, use the application's supported online prepare/status interface and keep
+   its daemon or service running.
+2. Treat runtime locks, `daemon_already_running`, `shutdown_blocked`, HTTP `409`, or active/queued work as
+   `skipped_busy`. Preserve that item and continue independent approved work; do not stop processes, services, or
+   scheduled tasks, or restart them to obtain the lock.
+3. Prepare produces candidates. Its token is an interface parameter, not deletion authorization. Include the exact
+   history scope, method, and recovery limits in the existing cleanup list. Review-only tasks deliver that list.
+4. When accurate existing authorization covers purge, recheck that no active/queued work exists and use it without
+   another approval. A previous busy result does not revoke that unchanged authorization.
+5. After refreshing prepare or its token, compare the candidates with the approved scope. Preserve new or changed
+   items; if the interface cannot exclude them, defer that affected batch rather than broaden purge.
+
+For `claude-codex-bridge`, an ordinary C-drive scan invokes neither `bridge cleanup prepare`, `bridge cleanup purge`,
+nor `bridge stop`. Explicit Bridge history review may prepare online; an accurately authorized purge follows the
+checks above without stopping the bridge for its daemon lock.
 
 ## Recycle Bin Staging
 
@@ -105,9 +127,13 @@ $usage = Get-CimInstance Win32_PageFileUsage |
     Select-Object Name, AllocatedBaseSize, CurrentUsage, PeakUsage
 ```
 
-Also inspect RAM, system commit behavior, crash-dump mode, and drive free space. A tiny boot-volume pagefile can meet
+Also inspect RAM, system commit behavior, `CrashDumpEnabled`, and drive free space. A tiny boot-volume pagefile can meet
 some dump requirements, but that minimum is not a universal performance recommendation. System-managed sizing on a
 roomier drive is often the conservative choice; decide from live evidence.
+
+Give one internally consistent recommendation with machine-specific values. A C-drive pagefile is not a way to
+improve boot speed: the relevant considerations are crash dumps and commit limits. Distinguish the dump minimum
+from conservative operating headroom.
 
 Never remove `pagefile.sys` as a normal file. State whether a full Windows reboot is required for the new layout to
 become active, then verify both settings and usage after reboot.

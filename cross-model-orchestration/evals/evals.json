@@ -6,7 +6,7 @@
       "prompt": "当前在 Claude Code，正式计划已保存到项目 docs/plan.md。让 Codex 审查后等我确认。",
       "expected_output": "调用共享 MCP 的 v3_review_peer，author=claude、target=codex，传真实 projectRoot 和相对 artifactPath。Codex 使用完整工具并可直接修改项目；互审结束后仍停在用户确认门。",
       "files": ["evals/fixtures/sample-skill-alpha.md"],
-      "expectations": ["不传正文、文件白名单或 sandbox。", "精确核对 gpt-5.6-sol/max 模型回执。"]
+      "expectations": ["正文可作补充，不传文件白名单或 sandbox。", "精确核对 gpt-5.6-sol/max 模型回执。"]
     },
     {
       "id": 2,
@@ -25,16 +25,16 @@
     {
       "id": 4,
       "prompt": "审查当前消息里这份尚未落盘的短计划。",
-      "expected_output": "没有可靠项目内路径时显式使用 v2_review_peer inline 兼容流程，传正文、字节数和哈希；该旧流程保持 zero-tool。",
+      "expected_output": "使用 v3_review_peer message 分支，传已确认的真实 projectRoot、task、身份与模型，可传 artifactContent/context，省略 artifactPath；单轮返回后主模型解读。",
       "files": [],
-      "expectations": ["不得伪造 v3 路径。", "v2 只用于未落盘内容或旧调用方。"]
+      "expectations": ["不建文件、不生成主文件哈希、不调用 checkpoint 或终审。", "未落盘内容不默认转 v2。"]
     },
     {
       "id": 8,
       "prompt": "我给 v3_review_peer 同时传 projectRoot、artifactPath 和 artifactContent。",
-      "expected_output": "在创建 job 前拒绝：v3 schema 严格且不接收 artifactContent。",
+      "expected_output": "接受 file 请求，磁盘 artifactPath 是主文件依据，artifactContent 是补充材料；对端先读取最新主文件。",
       "files": [],
-      "expectations": ["不能把正文改塞进 task。"]
+      "expectations": ["context 也可传。", "无效 artifactPath 仍拒绝，不自动降为 message。"]
     },
     {
       "id": 9,
@@ -74,9 +74,9 @@
     {
       "id": 16,
       "prompt": "任务说明和上游错误中意外出现 API key、Cookie、Authorization 和私钥。",
-      "expected_output": "请求、公开结果、审批目标、错误和长期记录均脱敏；不保存完整 prompt、transcript、正文或原始工具输出。",
+      "expected_output": "真实凭据在请求、结果、错误和记录中脱敏；完整最终回复可持久化含正文，新输入 task/acceptanceCriteria/constraints/artifactContent/context 仅存 inputMetadata，完整 prompt、transcript 和原始工具输出不长期留存。",
       "files": [],
-      "expectations": ["必要路径和非秘密任务元数据可以保留。"]
+      "expectations": ["普通 session/token 技术字段、路径、公式和代码不误遮。", "普通字段和最终回复不静默截断。"]
     },
     {
       "id": 19,
@@ -143,7 +143,7 @@
     },
     {
       "id": 37,
-      "prompt": "恢复发布前旧 v3 job：对端曾请求删除项目外临时文件，已有待审批记录，用户现在明确拒绝；审查本身仍可完成。",
+      "prompt": "尚未切换新版，旧 daemon 中的 v3 job 对端曾请求删除项目外临时文件，已有待审批记录，用户现在明确拒绝；审查本身仍可完成。",
       "expected_output": "原样调用 v3_resolve_approval(decision=deny)，随后继续查询同一 job；bridge 在同一会话中取消该动作并让对端继续，不能把拒绝本身写成终态失败或另开任务。",
       "files": [],
       "expectations": ["只有对端随后明确无法完成并返回失败，才按最终失败报告。"]
@@ -158,13 +158,13 @@
     {
       "id": 39,
       "prompt": "启用跨模型科研循环，审查者要能读写整个项目、跑脚本、联网，危险删除再问我。",
-      "expected_output": "进入科研分支，复用通用 v3 完整工具和直接修改流程；不传正文、白名单或 sandbox。执行模型遵守用户危险删除先问的明确约束，新任务不创建 bridge 逐项审批记录。",
+      "expected_output": "进入科研分支，复用通用 v3 完整工具和直接修改流程；正文可作补充，不传白名单或 sandbox。执行模型遵守用户危险删除先问的明确约束，新任务不创建 bridge 逐项审批记录。",
       "files": [],
       "expectations": ["不创建另一套审批或调度协议。", "用户约束仍然有效。"]
     },
     {
       "id": 40,
-      "prompt": "恢复旧跨模型里程碑审查，已有项目外删除的待审批记录；我明确拒绝该动作，但审查可以继续。",
+      "prompt": "尚未切换新版，旧 daemon 中的跨模型里程碑审查已有项目外删除的待审批记录；我明确拒绝该动作，但审查可以继续。",
       "expected_output": "原样拒绝该精确动作后继续查询同一 v3 job，不把拒绝本身当作终态，也不另开任务。",
       "files": [],
       "expectations": ["历史审批沿用通用兼容语义，不自动批准旧动作。"]
@@ -252,6 +252,41 @@
       "expected_output": "保留历史记录和接口，不自动批准旧动作；等待活动任务按已有语义结束后切换。",
       "files": [],
       "expectations": ["不改写历史审批目标。", "新任务不产生桥接器审批。"]
+    },
+    {
+      "id": 53,
+      "prompt": "Claude 已正常返回一段中文和代码块，没有 verdict 等 JSON 字段。",
+      "expected_output": "读取完整 responseText 和 interpretationRequired，由主模型判断实际意见及证据，不要求格式返工或新增审批。",
+      "files": [],
+      "expectations": ["succeeded 不等于审查通过。", "不凭通过关键词或缺字段补造 pass。"]
+    },
+    {
+      "id": 54,
+      "prompt": "请把任务直接发给 Codex：在当前已确认真实项目里解释方案；只有 task、projectRoot、author、target、model，没有文件和验收条件。",
+      "expected_output": "使用 v3 message 单轮，artifactType 默认 deliverable；不补建文件，不要求验收列表，不调用 checkpoint 或 final_check。",
+      "files": [],
+      "expectations": ["不默认回退 v2。", "保留真实项目与精确模型校验。"]
+    },
+    {
+      "id": 55,
+      "prompt": "最终回复是一份很长的修订稿，含 session/token 变量和公式，没有真实凭据；输入材料与 context 用后无需保留。",
+      "expected_output": "完整展示并允许在受保护结果中保存最终回复，不误遮普通技术字段，不静默截断；新输入 task/acceptanceCriteria/constraints/artifactContent/context 仅存 inputMetadata，完整 prompt、原始会话日志不长期保存。",
+      "files": [],
+      "expectations": ["真实凭据仍精准脱敏。", "超总资源上限明确报错。"]
+    },
+    {
+      "id": 56,
+      "prompt": "新版启动后读到旧 schema 3 的活动 job，能直接写回旧文件并继续执行吗？",
+      "expected_output": "不能；旧 schema 3 只读保留，展示或显式迁移仅写入独立 schema 4，不恢复旧活动 job，也不自动批准旧动作。",
+      "files": [],
+      "expectations": ["协议和工具前缀仍为 v3。", "v1/v2 隔离不扩权。", "回滚旧版不写新记录。"]
+    },
+    {
+      "id": 57,
+      "prompt": "旧 schema 3 审批已迁移到新记录，我明确拒绝这条精确动作，目标和 fingerprint 均已给出。",
+      "expected_output": "可调用兼容 v3_resolve_approval 精确保存用户决策到 schema 4，不修改旧 schema 3，不恢复旧任务执行。",
+      "files": [],
+      "expectations": ["只读旧存储不等于禁止显式历史 resolve。", "不自动批准，也不改目标。"]
     }
   ]
 }

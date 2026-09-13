@@ -2,9 +2,8 @@
 
 ## 适用面
 
-已落盘的正式计划和用户明确要求审查的交付物使用 protocol v3。v3 让对端在真实项目中使用完整原生
-工具，自行按路径读取并可直接修改；bridge 不复制文件正文。未落盘内容和旧调用方继续使用 v2 inline
-兼容流程。
+文件与消息材料统一使用 protocol v3。对端在真实项目中使用完整原生工具：file 分支按路径读取并可
+直接修改，message 分支单轮交流，无须落盘。v2 inline 仅供明确指定旧协议或旧调用方兼容。
 
 正式计划通过后，尚未获得执行授权时交给用户确认；已有授权继续有效。普通执行、测试、提交和交付
 不自动追加互审。显式科研循环的里程碑继续条件见 [research-loop.md](research-loop.md)。
@@ -21,11 +20,13 @@
   "author": "codex | claude",
   "target": "claude | codex（必须与 author 不同）",
   "projectRoot": "现有绝对目录",
-  "artifactPath": "projectRoot 下现有普通文件的相对路径",
+  "artifactPath": "可选；projectRoot 下现有普通文件的相对路径",
+  "artifactContent": "可选；材料正文",
+  "context": "可选；补充上下文",
   "artifactId": "可选稳定标识",
-  "artifactType": "plan | deliverable",
+  "artifactType": "plan | deliverable；省略时 deliverable",
   "task": "本轮任务",
-  "acceptanceCriteria": ["至少一项"],
+  "acceptanceCriteria": [],
   "constraints": [],
   "taskProfile": "可选 profile",
   "model": "目标侧精确白名单模型",
@@ -33,9 +34,11 @@
 }
 ```
 
-`artifactContent`、`targetRoot`、`repairTargets`、`allowedPaths`、`testCommands`、sandbox 和工具
-列表不是 v3 字段。出现额外字段时在创建 job 前拒绝。bridge 对 `projectRoot` 取 realpath，并拒绝
-绝对 `artifactPath`、路径穿越、目录或不存在的主文件。
+`author/target/projectRoot/task/model` 必填；验收条件可省略或为空。`targetRoot`、`repairTargets`、
+`allowedPaths`、`testCommands`、sandbox 和工具列表不是 v3 字段，不通过未知字段扩大执行能力。
+bridge 对 `projectRoot` 取 realpath；有 `artifactPath` 即 file 分支，拒绝绝对路径、穿越、目录或
+不存在的主文件；`artifactContent/context` 是补充内容，磁盘文件仍为主文件依据。无 `artifactPath`
+即 message 分支，可直接传正文和上下文，也可只传完整任务，不因缺少文件、验收或类型而拒绝。
 
 ## 能力门
 
@@ -45,7 +48,7 @@
 protocol_version = 3
 active = true
 capabilities.pathReviews = true
-capabilities.artifactContentAccepted = false
+capabilities.artifactContentAccepted = true
 capabilities.realProjectCwd = true
 capabilities.fullNativeTools = true
 capabilities.directProjectWrites = true
@@ -69,8 +72,13 @@ v3_review_peer(完整 v3 请求)
 [v3_await_peer(job_id, timeout_ms <= 45000) -> v3_peer_result(job_id)] 循环
 ```
 
-对端先从磁盘读取最新主文件和必要项目上下文，可直接修改真实项目。bridge 在 dispatch 前后记录主
-文件 SHA-256，并要求结果符合：
+file 对端先读取最新主文件与必要项目上下文，可直接修改真实项目；bridge 在 dispatch 前后记录主文件
+SHA-256。message 不建主文件、不计算主文件哈希、不进入作者 checkpoint 和终审；单轮结果交主模型处理。
+
+两分支均接受普通文本、Markdown、代码块和不完整 JSON。公开结果返回完整、已脱敏的 `responseText`
+与 `interpretationRequired`；主模型读取实际意见并结合证据判断。`succeeded` 只表示交互成功，不表示
+审查通过。不得从“通过”等关键词、字段缺失或宽松解析自动推断 pass，也不为格式问题启动整理轮、
+返工、额外模型请求或审批。以下旧结构仅用于可提取时的兼容，不是回复的强制格式：
 
 ```json
 {
@@ -91,7 +99,7 @@ v3_review_peer(完整 v3 请求)
 
 ## 作者复查与终审
 
-首轮成功后 phase 为 `awaiting_author`。原作者必须重新读取最新主文件、检查对端改动和 review，
+仅 file 首轮成功后 phase 为 `awaiting_author`。原作者必须重新读取最新主文件、检查对端改动和回复，
 并可自行修改。随后调用：
 
 ```json
@@ -124,7 +132,8 @@ bridge 在可交付结论上保存 `conclusion_sha256`。每次 `v3_peer_result`
 命令形式触发 `awaiting_approval`。执行模型依据任务授权、实际目标和文件保护规则行动，超出授权时
 自行询问用户。认证、项目路径检查、终审只读、并发和会话清理约束继续生效。
 
-历史审批记录、类型和 `v3_resolve_approval` 接口保留；下面只描述旧任务兼容，不是新任务流程。
+历史审批记录、类型和 `v3_resolve_approval` 接口保留。迁移后的历史审批可接受用户明确的精确 resolve，
+只在 schema 4 保存决策，不改写 schema 3、不恢复执行。以下同会话继续语义仅用于切换前旧 daemon。
 发布前等待活动任务结束，不自动批准旧的待审批动作。旧 public job 在 `awaiting_approval` 时返回：
 
 ```text
@@ -160,16 +169,24 @@ Claude session 或 Codex ephemeral App Server process 保留到本轮和单次�
 
 ## 记录与秘密
 
-长期 v3 记录只保存清理后的任务、路径、模型、路由、各轮哈希、耗时、尝试/重试计数、审批元数据、
-结构化结果和错误。不得保存文件正文、完整 prompt、transcript、原始工具参数或工具输出。
+长期 v3 记录保存输入元数据、路径、模型、路由、file 各轮哈希、耗时、尝试/重试计数、审批元数据、
+结果和错误；完整最终回复可以保留，其中允许正文、代码和修订稿。新输入
+`task/acceptanceCriteria/constraints/artifactContent/context` 正文只在当前会话使用，长期仅存
+`inputMetadata`；完整 prompt、transcript、原始工具参数和输出不长期留存，旧记录原样保留。
 
 密码、API key、token、Cookie、session 值、私钥、认证头和设备登录值不得主动写入 prompt、日志或
 报告。输入任务、模型结果、错误和审批目标在持久化或公开前脱敏。bridge 长期 MCP token 不进入 peer
 环境；内部 hook 只收到本 job 临时 token。
+脱敏以真实凭据值和明确认证上下文为依据，不因普通 `session/token` 字段名遮盖技术文字、路径、公式或
+代码。普通字段与最终回复不静默截断；总请求及输出上限仍有效，超限必须明确报错。
+
+新 v3 记录使用独立的 schema 4 存储，协议和工具前缀仍为 v3。旧 schema 3 只读保留，读取、展示或
+显式迁移只在新存储建立记录，不原地更新旧记录、恢复旧活动任务或自动批准旧动作。切换前仍等待活动
+任务结束；回滚不能让旧程序写入新 schema 4 记录。
 
 ## v2 inline 兼容
 
-没有可靠落盘路径时，可调用：
+明确指定旧协议或兼容旧调用方时，可调用：
 
 ```text
 v2_review_peer(
@@ -192,9 +209,11 @@ v2 inline 固定 zero-tool 和只读，继续使用 `completion_receipt`。旧 v
 
 ## 用户门与失败
 
-互审结果只是用户决策材料。向用户报告 peer 是否修改、作者是否修改、终审是否运行、最终主文件
-SHA-256 是否仍有效，以及 pass、未决问题或分歧；正式计划执行复用已有授权，未授权时再交给用户确认。
+互审结果只是用户决策材料。file 报告 peer 是否修改、作者是否修改、终审是否运行、主文件 SHA-256
+是否仍有效；message 报告单轮回复与主模型解读，不虚构文件有效性。两者均保留真实意见、未决问题或
+分歧；正式计划执行复用已有授权，未授权时再交给用户确认。
 
-路径无效、MCP 不可达、精确模型缺失、结果 schema 错误、会话清理失败、旧审批拒绝/过期或终审写入
-都保留原 job/series 和清理后的错误。pending 不是失败也不是最终答复。不得伪造 completion、扫描
+路径无效、MCP 不可达、精确模型缺失、空回复、真实运行失败、会话清理失败或终审写入
+都保留原 job/series 和清理后的错误。普通格式差异不是失败；旧审批拒绝/过期只取消对应动作，不自行
+变成 job 终态。pending 不是失败也不是最终答复。不得伪造 completion、扫描
 其他 job、降低模型、创建重复 job 或替用户决定目标、范围及重要取舍。

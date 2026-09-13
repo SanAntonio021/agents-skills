@@ -3,6 +3,7 @@
   {"query":"当前在 Claude Code，把项目内 plan.md 交给 Codex v3 审查。","should_trigger":true},
   {"query":"这份交付物已落盘，请做一次 Claude-Codex 互审。","should_trigger":true},
   {"query":"计划还只在消息里，让 Opus 做一次旧版 inline 审查。","should_trigger":true},
+  {"query":"这段中文还没保存成文件，直接交给 Claude 看一轮，不要为了互审建文件。","should_trigger":true},
   {"query":"帮我修复这个 TypeScript 编译错误。","should_trigger":false},
   {"query":"运行测试并提交当前改动。","should_trigger":false},
   {"query":"解释 App Server 是什么。","should_trigger":false},

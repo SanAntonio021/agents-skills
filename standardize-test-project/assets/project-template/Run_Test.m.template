@@ -27,7 +27,7 @@ run = Result_Create_Run(cfg);
 
 headers = {'计划点序号', '状态', 'repeat', 'attempt', '采集时间', ...
     '原始数据文件', '单次图片文件', '错误代码', '错误信息'};
-units = {'-', '-', '-', '-', '-', '-', '-', '-', '-'};
+units = {'', '', '', '', '', '', '', '', ''};
 Result_Summary_Initialize(run, headers, units);
 Result_Log_Stage(run, 'INFO', 'plan', ...
     'Validated %d planned points without instrument access.', numel(point_index));

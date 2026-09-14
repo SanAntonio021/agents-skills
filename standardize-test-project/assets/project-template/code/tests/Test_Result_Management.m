@@ -89,7 +89,7 @@ verifyEqual(test_case, numel(lines), 3);
 verifyEqual(test_case, lines(1), ...
     "控制变量,实验指标,BER,EVM,MER,状态");
 verifyEqual(test_case, lines(2), "-,-,-,%,dB,-");
-verifyTrue(test_case, startsWith(lines(3), "1.0,2.50,"));
+verifyTrue(test_case, startsWith(lines(3), "1.0,2.5,"));
 verifyTrue(test_case, isfile(run.FullSummaryPath));
 
 Result_Log(run, 'WARNING', 'Synthetic warning %d.', 1);
@@ -303,6 +303,21 @@ verifyEqual(test_case, sort({listing.name}), ...
     sort({'run_info.json', 'run_log.txt'}));
 end
 
+function testMeasurementDisplayPrecision(test_case)
+verifyEqual(test_case, Result_Display_Value(0.125, 'AWG CH1 输出幅度设定值'), '0.125');
+original = 1.2345678901234567;
+verifyEqual(test_case, str2double(Result_Display_Value(original, '实测峰峰值')), original);
+verifyEqual(test_case, Result_Display_Value(0.1234, '示波器 C1 实测峰峰值', 'fixed:4'), '0.1234');
+verifyEqual(test_case, Result_Display_Value(0.12, '幅度设定值', 'fixed:3'), '0.120');
+verifyEqual(test_case, Result_Display_Value(0.0023, '译码前 BER'), '2.30e-03');
+verifyEqual(test_case, Result_Display_Value(int32(1), '译码前 BER'), '1.00e+00');
+verifyEqual(test_case, Result_Display_Value(0, '译码前 BER'), '0');
+verifyEqual(test_case, Result_Display_Value(12, '误码数'), '12');
+verifyEqual(test_case, Result_Display_Value(0.0023, '译码前误码率'), '2.30e-03');
+verifyNotEqual(test_case, Result_Display_Value(1e-12, '电压'), '0');
+verifyEqual(test_case, Result_Display_Value(nan, '实测峰峰值'), '');
+end
+
 function testV2CollisionPrecisionAndReadOnly(test_case)
 verifyEqual(test_case, Result_Display_Value(12, 'pre_fec_bit_error_count'), '12');
 verifyEqual(test_case, Result_Display_Value(1, '序号'), '1');
@@ -324,7 +339,7 @@ Result_Summary_Append(first, {1, 1, -10.125, exact, 1.23456e-8, 'success', ''; .
     1, 2, -10.125, exact, 0, 'success', ''; ...
     2, 1, -10.125, nan, nan, 'failed', 'details'});
 display = readlines(first.SummaryPath);
-verifyTrue(test_case, contains(display(3), '1,1,-10.125,1.23,1.23e-08,success'));
+verifyTrue(test_case, contains(display(3), ['1,1,-10.125,' sprintf('%.17g', exact) ',1.23e-08,success']));
 full = Result_Read_Summary(first);
 verifyEqual(test_case, full{3, 4}, exact);
 verifyEqual(test_case, size(full, 1), 5);

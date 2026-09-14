@@ -6,7 +6,8 @@
 - 六个目录：code 代码、config 配置、simulation 仿真、measurement 实测、analysis 数据分析、checks 程序自检。
 - 自动创建 `分类/YYYYMMDD_HHMMSS_实验名称/`，同秒重名追加序号，不覆盖。
 - 图片、overview.png 和逐次 summary.csv 留在运行目录；完整数据、配置、日志、重绘输入放单层 data/。
-- summary 第一行名称、第二行单位，显示精简数值；计算读取 data/observations.csv。
+- summary 第一行名称、第二行单位（无单位留空），第三行起逐次记录；表头写清设备或位置、具体量与设定／实测来源。设定值保留实际精度，测量值按分辨率或实验需要显示，BER 默认三位有效数字科学计数；计算读取 data/observations.csv。
+- 整轮总览的指标、坐标和布局在具体实验时确定，复用公共绘图程序。跨观测统计只在事先设计或取得逐次结果后另行讨论确定时生成。
 - 仿真默认 compact，显式 full 保存完整波形；实测始终保留原始采集。实验保存者落实策略，创建目录不执行数据裁剪。
 - 分析/重绘新建 analysis 运行并引用原记录。Python replot 读取 .replot.npz；MATLAB 新图组读取 data/test_plot_data.mat 数值数据，历史 .fig 沿用原读取器；在新目录导出，不重跑算法。
 - lab.md 是唯一人工记录，只写重要变化和判断，引用运行目录。

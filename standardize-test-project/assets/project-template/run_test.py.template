@@ -57,7 +57,7 @@ def main() -> None:
             "错误代码",
             "错误信息",
         ],
-        ["-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        [""] * 9,
     )
     log(run, "INFO", "plan", f"已检查 {point_index.size} 个计划点，未访问仪器")
     for index in point_index:

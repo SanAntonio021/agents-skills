@@ -12,15 +12,17 @@ elseif startsWith(mode, 'fixed:')
     precision = str2double(extractAfter(mode, 'fixed:'));
     validateattributes(precision, {'numeric'}, {'integer', 'scalar', '>=', 0, '<=', 15});
     value = sprintf('%.*f', precision, value);
-elseif strcmp(mode, 'integer') || isinteger(value) || ...
-        any(strcmpi(header, {'Channel', 'Observation', 'Sequence', 'Count', '序号', '计数'})) || ...
-        ~isempty(regexpi(header, '(^|_)(count|index)$|Count$|比特数|符号数|块数|次数|数量', 'once'))
+elseif strcmp(mode, 'integer')
     value = sprintf('%.0f', value);
-elseif strcmp(mode, 'probability') || ~isempty(regexpi(header, 'BER|BLER|FER', 'once'))
+elseif strcmp(mode, 'probability') || ~isempty(regexpi(header, 'BER|BLER|FER|误码|误块', 'once')) && ...
+        isempty(regexpi(header, 'count|比特数|符号数|块数|次数|数量|误码数|误块数', 'once'))
     if value == 0, value = '0'; else, value = sprintf('%.2e', value); end
-elseif value ~= 0 && abs(value) < 0.005
-    value = sprintf('%.2e', value);
+elseif isinteger(value) || ...
+        any(strcmpi(header, {'Channel', 'Observation', 'Sequence', 'Count', '序号', '观测序号', '计数'})) || ...
+        ~isempty(regexpi(header, '(^|_)(count|index)$|Count$|比特数|符号数|块数|次数|数量|误码数|误块数', 'once'))
+    value = sprintf('%.0f', value);
 else
-    value = sprintf('%.2f', value);
+    % No resolution was supplied: retain the value, do not invent precision.
+    value = sprintf('%.17g', value);
 end
 end

@@ -23,6 +23,8 @@ Build or adapt experimental programs with a consistent output contract. Reuse th
 
 Formal project content follows the shared global file policy: the six professional directories retain code, raw data, replot inputs and necessary run records. Agent-created drafts, temporary scripts and previews belong in `过程文件/任务主题/`. Explicit cleanup promotes adopted content and its dependencies into formal locations, updates references and verifies them before clearing only that task directory; ordinary completion does not clear it. Do not require a separate output directory.
 
+指标表按 [实验指标表](references/experiment-tables.md) 命名并分开名称与单位；显示精度按设置或测量依据选择。主表逐次记录，跨观测统计需已有实验设计或后续讨论依据。整轮总览在具体实验时设计，不将单次解调图组当作整轮固定模板。
+
 ## Shared MATLAB Test Plotting
 
 - Single-channel observation uses raw voltage waveform plus one-sided PSD. IQ observation uses I/Q rows with waveform/spectrum columns. Demodulation reuses those capture panels and adds actual processing stages, centered complex spectra and constellations; there is no fixed algorithm or panel count.

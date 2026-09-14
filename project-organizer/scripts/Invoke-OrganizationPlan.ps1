@@ -98,7 +98,7 @@ function Assert-TargetStateFresh {
         $expected[$key]=[pscustomobject]@{entry_type=$(if($action.action -eq 'create_directory'){'directory'}else{'file'});sha256=$action.sha256}
     }
     if(-not [IO.Directory]::Exists((ConvertTo-POExtendedPath $Settings.target_root))){if($original.Count -gt 0){throw 'Existing target disappeared.'};return}
-    $scan=Get-POSourceEntries -Root $Settings.target_root -ExcludeRoot $Settings.audit_root
+    $scan=Get-POSourceEntries -Root $Settings.target_root -ExcludeRoot (Get-POManagedExclusions -Config $Settings -OutputDir $RunDirectory)
     if($scan.Errors.Count -gt 0){throw 'Target rescan failed.'}
     $actual=@{}
     foreach($entry in $scan.Entries){

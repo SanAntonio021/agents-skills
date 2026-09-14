@@ -115,7 +115,7 @@ try{
     $expectedRows=@(Import-Csv -LiteralPath $treePath -Encoding UTF8)
     if(@($expectedRows|Where-Object{[string]$_.state -like 'hold*'}).Count -gt 0){throw 'approved_target_tree_contains_hold_entries'}
     $expected=@{};foreach($row in $expectedRows){$expected[([string]$row.relative_path).ToLowerInvariant()]=$row}
-    $actualScan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
+    $actualScan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot (Get-POManagedExclusions -Config $settings -OutputDir $output)
     foreach($scanError in @($actualScan.Errors)){$errors.Add([pscustomobject][ordered]@{item=$scanError.path;stage='target_tree_scan';reason=$scanError.error});$treePassed=$false}
     $actual=@{}
     foreach($entry in @($actualScan.Entries)){

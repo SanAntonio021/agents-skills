@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 if (-not ('ProjectOrganizer.NativeFile' -as [type])) {
@@ -295,7 +295,7 @@ function Get-POAlternateStreamCount {
 }
 
 function Get-POFileSnapshot {
-    param([Parameter(Mandatory = $true)][string]$Root,[string]$ExcludeRoot)
+    param([Parameter(Mandatory = $true)][string]$Root,[string[]]$ExcludeRoot)
     $scan = Get-POSourceEntries -Root $Root -ExcludeRoot $ExcludeRoot
     $files = @($scan.Entries | Where-Object { $_.entry_type -eq 'file' })
     return [pscustomobject][ordered]@{
@@ -475,13 +475,16 @@ function Copy-PODirectoryVerified {
 }
 
 function Get-POSourceEntries {
-    param([Parameter(Mandatory = $true)][string]$Root,[string]$ExcludeRoot)
+    param([Parameter(Mandatory = $true)][string]$Root,[string[]]$ExcludeRoot)
     $rootFull = Resolve-POFullPath -Path $Root -AllowNetwork
-    $excluded = ''
-    if ($ExcludeRoot -and (Test-POPathWithin -Path $ExcludeRoot -Parent $rootFull -AllowEqual)) {
-        $excluded = Resolve-POFullPath -Path $ExcludeRoot -AllowMissing
-        if ($excluded.Equals($rootFull,[StringComparison]::OrdinalIgnoreCase)) { throw 'Cannot exclude the scan root.' }
-        Assert-POSafePath -Path $excluded
+    $excluded = @()
+    foreach ($candidate in @($ExcludeRoot)) {
+        if ($candidate -and (Test-POPathWithin -Path $candidate -Parent $rootFull -AllowEqual)) {
+            $full = Resolve-POFullPath -Path $candidate -AllowMissing
+            if ($full.Equals($rootFull,[StringComparison]::OrdinalIgnoreCase)) { throw 'Cannot exclude the scan root.' }
+            Assert-POSafePath -Path $full
+            $excluded += $full
+        }
     }
     $entries = New-Object Collections.Generic.List[object]
     $errors = New-Object Collections.Generic.List[object]
@@ -499,7 +502,7 @@ function Get-POSourceEntries {
         }
         foreach ($child in $children) {
             try {
-                if ($excluded -and (Test-POPathWithin -Path $child -Parent $excluded -AllowEqual)) { continue }
+                if (@($excluded | Where-Object { Test-POPathWithin -Path $child -Parent $_ -AllowEqual }).Count -gt 0) { continue }
                 $attributes = [IO.File]::GetAttributes((ConvertTo-POExtendedPath $child))
                 $isDirectory = (($attributes -band [IO.FileAttributes]::Directory) -ne 0)
                 $reparse = Get-POReparseInfo -Path $child -Attributes $attributes -File:(-not $isDirectory)
@@ -533,7 +536,7 @@ function Get-POSourceEntries {
     # Do not count otherwise-empty ancestors introduced only by this run's audit subtree.
     if ($excluded) {
         foreach ($entry in @($entries.ToArray() | Where-Object { $_.entry_type -eq 'directory' } | Sort-Object { $_.full_path.Length } -Descending)) {
-            if ((Test-POPathWithin -Path $excluded -Parent $entry.full_path) -and
+            if ((@($excluded | Where-Object { Test-POPathWithin -Path $_ -Parent $entry.full_path }).Count -gt 0) -and
                 @($entries.ToArray() | Where-Object { Test-POPathWithin -Path $_.full_path -Parent $entry.full_path }).Count -eq 0) {
                 [void]$entries.Remove($entry)
             }
@@ -747,6 +750,16 @@ function Read-POConfig {
     elseif ($null -ne $config.PSObject.Properties['integration_manifest'] -and $config.integration_manifest) {
         throw 'integration_manifest requires config schema_version 1.1.'
     }
+    if ($null -eq $config.PSObject.Properties['recovery_root']) {
+        $config | Add-Member -NotePropertyName recovery_root -NotePropertyValue (Join-Path $config.target_root '恢复资料')
+    }
+    $config.recovery_root = Resolve-POFullPath -Path ([string]$config.recovery_root) -AllowMissing
+    Assert-POSafePath -Path $config.recovery_root
+    if (Test-POPathWithin -Path $config.target_root -Parent $config.recovery_root -AllowEqual) { throw 'recovery_root cannot equal or contain target_root.' }
+    foreach ($other in @($config.audit_root,$config.external_git_root) + @($config.sources | ForEach-Object { $_.path }) + @($config.protected_paths)) {
+        if ((Test-POPathWithin -Path $config.recovery_root -Parent $other -AllowEqual) -or (Test-POPathWithin -Path $other -Parent $config.recovery_root -AllowEqual)) { throw 'recovery_root overlaps audit, source, Git storage or protected path.' }
+    }
+    if ((Test-POPathWithin -Path $config.recovery_root -Parent $config.target_root) -and ((Get-PORelativePath -Root $config.target_root -Path $config.recovery_root) -match '(^|/)过程文件(/|$)')) { throw 'recovery_root cannot be a process directory.' }
     return $config
 }
 
@@ -791,6 +804,44 @@ function Assert-POAuditPath {
     }
 }
 
+function Get-PORecoveryRunRoot {
+    param($Config,[string]$OutputDir)
+    $output = Resolve-POFullPath -Path $OutputDir -AllowMissing
+    return Join-Path ([string]$Config.recovery_root) (Get-POStableId -Value $output)
+}
+
+function Assert-PORecoveryContents {
+    param($Config,[string]$OutputDir)
+    $root = Get-PORecoveryRunRoot -Config $Config -OutputDir $OutputDir
+    if (-not (Test-Path -LiteralPath $root)) { return }
+    Assert-POSafePath -Path $root
+    $manifest = Join-Path $root 'recovery.sha256'
+    Assert-POSafePath -Path $manifest -File
+    $allowed = @{}; $allowed[$manifest.ToLowerInvariant()] = $true
+    foreach ($line in @(Get-Content -LiteralPath $manifest -Encoding UTF8)) {
+        if ($line -notmatch '^([0-9A-Fa-f]{64})  (.+)$') { throw 'Invalid recovery manifest.' }
+        $relative = ConvertTo-POIntegrationRelativePath -Path $Matches[2]
+        $path = Join-POPath -Root $root -RelativePath $relative
+        Assert-POSafePath -Path $path -File
+        $allowed[$path.ToLowerInvariant()] = $true
+    }
+    $check = Test-POHashManifest -ManifestPath $manifest
+    if (-not $check.Valid) { throw "Recovery files changed: $($check.Errors -join '; ')" }
+    $scan = Get-POSourceEntries -Root $root
+    if ($scan.Errors.Count) { throw 'Cannot verify recovery tree.' }
+    foreach ($entry in @($scan.Entries)) {
+        Assert-POSafePath -Path $entry.full_path -File:($entry.entry_type -eq 'file')
+        if ($entry.entry_type -eq 'file' -and -not $allowed.ContainsKey($entry.full_path.ToLowerInvariant())) { throw 'Unregistered file in recovery tree.' }
+        if ($entry.entry_type -eq 'directory' -and @($allowed.Keys | Where-Object { Test-POPathWithin -Path $_ -Parent $entry.full_path }).Count -eq 0) { throw 'Unregistered directory in recovery tree.' }
+    }
+}
+
+function Get-POManagedExclusions {
+    param($Config,[string]$OutputDir)
+    Assert-PORecoveryContents -Config $Config -OutputDir $OutputDir
+    return @([string]$Config.audit_root,(Get-PORecoveryRunRoot -Config $Config -OutputDir $OutputDir))
+}
+
 function Assert-POAuditContents {
     param([Parameter(Mandatory = $true)]$Config,[Parameter(Mandatory = $true)][string]$OutputDir,
         [Parameter(Mandatory = $true)][string]$ConfigPath,$Integration)
@@ -816,6 +867,25 @@ function Assert-POAuditContents {
         'final-acceptance.json','final-acceptance-errors.csv','final-acceptance.md','integration-checks.json'
     )
     foreach ($name in $artifactNames) { $allowed[(Join-Path $OutputDir $name).ToLowerInvariant()] = $true }
+    $failedRegister = Join-Path $OutputDir 'failed-git-recovery.json'
+    if (Test-Path -LiteralPath $failedRegister) {
+        Assert-POSafePath -Path $failedRegister -File
+        $allowed[$failedRegister.ToLowerInvariant()] = $true
+        foreach ($attempt in @(Read-POJsonArray -Path $failedRegister)) {
+            $parked = Resolve-POFullPath -Path ([string]$attempt.destination_root)
+            if (-not (Test-POPathWithin -Path $parked -Parent (Join-Path $OutputDir 'failed-git-recovery'))) { throw 'Failed recovery record is outside its process directory.' }
+            Assert-POSafePath -Path $parked
+            $allowed[$parked.ToLowerInvariant()] = $true
+            foreach ($item in @($attempt.entries)) {
+                $path = Join-POPath -Root $parked -RelativePath (ConvertTo-POIntegrationRelativePath -Path ([string]$item.relative_path))
+                Assert-POSafePath -Path $path -File:([string]$item.entry_type -eq 'file')
+                if ([string]$item.entry_type -eq 'file') {
+                    if ((Get-POStableSha256 -Path $path) -ne [string]$item.sha256) { throw 'Preserved failed recovery file changed.' }
+                } elseif ([string]$item.entry_type -ne 'directory' -or -not [IO.Directory]::Exists($path)) { throw 'Preserved failed recovery directory changed.' }
+                $allowed[$path.ToLowerInvariant()] = $true
+            }
+        }
+    }
     $repositoryIds = New-Object Collections.Generic.List[string]
     foreach ($source in @($Config.sources)) {
         $repositoryIds.Add([string]$source.id)
@@ -851,7 +921,7 @@ function Assert-POAuditContents {
         if ([string]$entry.entry_type -eq 'file') {
             if (-not $allowed.ContainsKey(([string]$entry.full_path).ToLowerInvariant())) { throw "Audit root contains unrecognized existing content: $($entry.full_path)" }
         }
-        elseif (@($allowed.Keys | Where-Object { Test-POPathWithin -Path $_ -Parent ([string]$entry.full_path) }).Count -eq 0) {
+        elseif (-not $allowed.ContainsKey(([string]$entry.full_path).ToLowerInvariant()) -and @($allowed.Keys | Where-Object { Test-POPathWithin -Path $_ -Parent ([string]$entry.full_path) }).Count -eq 0) {
             throw "Audit root contains an unrecognized directory: $($entry.full_path)"
         }
     }
@@ -924,7 +994,7 @@ function Read-POIntegrationManifest {
             $key = $sourcePath.ToLowerInvariant()
             if ($inputMap.ContainsKey($key)) { throw "Integration input is used more than once: $sourcePath" }
             $recovery = Resolve-POFullPath -Path ([string]$inputItem.recovery_path)
-            if (-not (Test-POPathWithin -Path $recovery -Parent ([string]$Config.audit_root))) { throw 'Recovery copy must belong to audit_root.' }
+            if (-not (Test-POPathWithin -Path $recovery -Parent ([string]$Config.audit_root)) -and -not (Test-POPathWithin -Path $recovery -Parent ([string]$Config.recovery_root))) { throw 'Recovery copy must belong to recovery_root or legacy audit_root.' }
             Assert-POSafePath -Path $recovery -File
             if ((Get-POStableSha256 -Path $recovery) -ne $inputHash) { throw "Recovery copy differs from input: $sourcePath" }
             if ($bound.ContainsKey($recovery) -and $bound[$recovery] -ne $inputHash) { throw 'Conflicting bound hashes.' }
@@ -1188,5 +1258,6 @@ Export-ModuleMember -Function @(
     'New-POHashManifest','Get-PODriveFreeSpace','Get-POFileSnapshot','Get-POPathVolume','Test-POSameVolume',
     'Test-POSyncPath','Test-POHashManifest','Assert-POExpectedFile','Copy-POFileAtomicVerified',
     'Move-POFileVerified','Copy-PODirectoryVerified','Assert-POSafePath','Assert-POAuditPath',
-    'Read-POIntegrationManifest','Assert-POIntegrationFiles','Install-POIntegrationOutput','Assert-POAuditContents'
+    'Read-POIntegrationManifest','Assert-POIntegrationFiles','Install-POIntegrationOutput','Assert-POAuditContents',
+    'Get-PORecoveryRunRoot','Assert-PORecoveryContents','Get-POManagedExclusions'
 )

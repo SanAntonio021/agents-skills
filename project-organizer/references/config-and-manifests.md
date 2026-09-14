@@ -13,6 +13,7 @@
 | `sources` | 已确认来源，字段为 `id`、`path`、`role`；归组模式还需 `target_name` |
 | `target_root` | 唯一目标或共同父目录 |
 | `audit_root` | 本轮过程根目录；`1.1` 可为目标内的 `过程文件/整理主题/`，不得等于目标、成为目标祖先或进入来源。`1.0` 保持与目标不重叠 |
+| `recovery_root` | 可选正式恢复根目录，默认 `<target_root>/恢复资料`，按需创建；不得与过程目录、来源、保护路径或活动 Git 存储重叠，不得等于或包含目标 |
 | `integration_manifest` | `1.1/merge` 可选，指向 `audit_root` 内的整合 JSON；未使用时为空或省略 |
 | `canonical_source_id` | 合并模式必填；新仓库可使用空值并令 `active_repo_policy` 为 `new` |
 | `mapping_rules` | `merge` 中按顺序应用的 `source_id`、`from_prefix`、`to_prefix`；只表达已批准目录设计，默认空；`group` 禁止使用 |
@@ -24,6 +25,8 @@
 | `exclude_rules` | 显式目录名、扩展名和相对路径前缀 |
 
 来源 ID 和 `target_name` 只允许 ASCII 字母、数字、点、下划线和连字符。来源不得互相嵌套，来源与目标不得嵌套。`OutputDir` 位于本轮 `audit_root` 内。内部过程目录及祖先经过路径检查，只排除精确本轮子树，不排除整个 `过程文件/`。
+
+新生成 Git 恢复文件位于 `<recovery_root>/<run-id>/`，`run-id` 是规范化 `OutputDir` 的稳定哈希，避免不同整理任务复用来源 ID 时冲突。子树内保留 `git_archives.json`、bundle、恢复支持文件与 `recovery.sha256`，可独立核对；过程中的 `git_archives.json` 是运行接口副本。扫描只排除通过内容校验的本轮恢复子树，不排除整个 `recovery_root`。文件篡改、未登记文件及不安全路径阻止验收。未使用 Git 时不创建恢复目录。旧 `1.0/1.1` 配置可省略新字段，已有过程包读取路径保持不变。
 
 ### `layout_decisions`
 
@@ -57,7 +60,7 @@
 
 `coverage.inputs` 每份输入恰好一项：`source_id`、`relative_path`、`destination_paths`（本组输出路径）、`reason`（具体保留或替代判断）。报告逐项说明独有内容如何保留或为何被替代，不能只写“已合并”。程序核验对应关系和文件，智能体实际检查内容充分性。
 
-所有准备文件、恢复副本、覆盖报告均在本轮 `audit_root` 内。已有目标输入必须有同路径输出且预期原哈希一致。多个输入可对应同一输出；同一输入重复归组、多个组写同一目标、缺失输入、输出越界均不能执行。恢复副本须与各原件哈希相符，Git bundle 不能代替工作文件的整合恢复副本。
+准备文件与临时覆盖报告在本轮 `audit_root` 内。必要原件恢复副本优先在 `recovery_root` 内；兼容读取旧 `audit_root` 内的恢复副本，显式收尾前须归位并更新映射。已有目标输入必须有同路径输出且预期原哈希一致。多个输入可对应同一输出；同一输入重复归组、多个组写同一目标、缺失输入、输出越界均不能执行。恢复副本须与各原件哈希相符，Git bundle 不能代替工作文件的整合恢复副本。
 
 部署后实际检查新目录，将结果写入唯一的 `<OutputDir>/integration-checks.json`：
 
@@ -150,4 +153,6 @@ proposed_relative_path,proposed_target_path,target_status
 
 输出 `retirement.csv`、`retirement-errors.csv`、`retirement-review.md`、`retirement-files.sha256` 和 `retirement.sha256`。清理前重新枚举全部来源，核对待处理文件、已退役路径及新增条目；未计划文件、已清理路径重新出现或不支持的路径状态均停止清理。
 
-执行后输出追加日志和最终验收。`1.1` 最终验收重新比较完整业务目标树，包含已有目标保留内容的哈希、路径类型、缺失项和额外项；仅排除本轮专用过程子树，Git 元数据沿用独立检查。不提供清空整个回收站的命令。
+执行后输出追加日志和最终验收。`1.1` 最终验收重新比较完整业务目标树，包含已有目标保留内容的哈希、路径类型、缺失项和额外项；仅排除本轮专用过程子树和已单独校验的本轮恢复子树，其他任务的过程与恢复内容仍参加比较；Git 元数据沿用独立检查。不提供清空整个回收站的命令。
+
+生成中断的未封定恢复树通过 `Move-FailedGitRecovery.ps1` 原子保留到本轮 `failed-git-recovery/<attempt-id>/`，`failed-git-recovery.json` 记录确切条目和哈希。审计仅承认登记且未变化的失败材料；它们属于临时材料，不等同于已通过 Git 验收的正式恢复包。

@@ -31,10 +31,10 @@ foreach ($syncRoot in @($settings.sync_roots)) {
     }
 }
 [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $output))
-$bundleRoot = Join-Path $output 'git-bundles'
-$recoveryRoot = Join-Path $output 'git-recovery'
-[void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $bundleRoot))
-[void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $recoveryRoot))
+$formalRun = Get-PORecoveryRunRoot -Config $settings -OutputDir $output
+Assert-PORecoveryContents -Config $settings -OutputDir $output
+$bundleRoot = Join-Path $formalRun 'git-bundles'
+$recoveryRoot = Join-Path $formalRun 'git-recovery'
 [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $external))
 
 $archives = New-Object Collections.Generic.List[object]
@@ -64,6 +64,7 @@ foreach ($repositoryRecord in @($repositories.ToArray() | Sort-Object { $_.id.To
     $bare = Join-Path $temporaryRoot 'archive.git'
     $restore = Join-Path $temporaryRoot 'restore.git'
     $bundle = Join-Path $bundleRoot ($id + '.bundle')
+    [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $bundleRoot))
     $sourceRecovery = Join-Path $recoveryRoot $id
     [void][IO.Directory]::CreateDirectory((ConvertTo-POExtendedPath $sourceRecovery))
     try {
@@ -140,6 +141,12 @@ foreach ($repositoryRecord in @($repositories.ToArray() | Sort-Object { $_.id.To
 $archiveRows = @($archives.ToArray() | Sort-Object { $_.source_id.ToLowerInvariant() })
 $errorRows = @($errors.ToArray() | Sort-Object { $_.source_id.ToLowerInvariant() }, { $_.stage })
 Write-POJson -Path (Join-Path $output 'git_archives.json') -Value $archiveRows
+if ($archiveRows.Count -gt 0 -and $errorRows.Count -eq 0) {
+    Write-POJson -Path (Join-Path $formalRun 'git_archives.json') -Value $archiveRows
+    $files = @((Get-POSourceEntries -Root $formalRun).Entries | Where-Object { $_.entry_type -eq 'file' -and $_.relative_path -ne 'recovery.sha256' } | ForEach-Object { $_.full_path })
+    [void](New-POHashManifest -Paths $files -OutputPath (Join-Path $formalRun 'recovery.sha256'))
+    Assert-PORecoveryContents -Config $settings -OutputDir $output
+}
 Write-POCsv -Path (Join-Path $output 'git-errors.csv') -Rows $errorRows -Columns @('source_id','stage','path','reason')
 $review = @(
     '# Git 恢复包审查','',

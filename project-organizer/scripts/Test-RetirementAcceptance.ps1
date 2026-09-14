@@ -52,7 +52,7 @@ if([string]$settings.schema_version -eq '1.1'){
         foreach($entry in @(Import-Csv -LiteralPath (Join-Path $output 'target-tree.csv') -Encoding UTF8)){
             $expected[([string]$entry.relative_path).ToLowerInvariant()]=$entry
         }
-        $scan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
+        $scan=Get-POSourceEntries -Root $settings.target_root -ExcludeRoot (Get-POManagedExclusions -Config $settings -OutputDir $output)
         if(@($scan.Errors).Count){throw 'final_target_scan_failed'}
         $seen=@{}
         foreach($entry in @($scan.Entries)){
@@ -86,6 +86,10 @@ if(Test-Path -LiteralPath $gitArchivesPath){
     foreach($archive in @(Read-POJsonArray -Path $gitArchivesPath)){
         $passed=$true;$evidence='bundle_hash_and_heads_readable'
         try{
+            Assert-PORecoveryContents -Config $settings -OutputDir $output
+            Assert-POSafePath -Path ([string]$archive.bundle_path) -File
+            $support=Test-POHashManifest -ManifestPath ([string]$archive.recovery_manifest)
+            if(-not $support.Valid){throw 'recovery_support_changed'}
             if((Get-POStableSha256 -Path ([string]$archive.bundle_path)) -ne ([string]$archive.bundle_sha256).ToUpperInvariant()){throw 'bundle_hash_mismatch'}
             $bundleOutput=@(& git --no-optional-locks bundle list-heads ([string]$archive.bundle_path) 2>&1)
             if($LASTEXITCODE -ne 0){throw "bundle_list_heads_failed: $($bundleOutput -join ' ')"}

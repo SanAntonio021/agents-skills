@@ -19,14 +19,14 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 ## 开始前
 
-1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态沿用原位置，不搬动、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；状态、截图和过程材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
+1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态原位续用，不批量迁移、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；新状态和必要回执默认放 `<project-root>/投稿/<任务名>/`，用户指定位置和项目已有正式结构优先；临时截图和调试材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
 2. 确认目标期刊、文章类型、当前生命周期阶段和平台。信息不足时只问最阻塞的一项。
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。
 5. 当前平台为 Optica Prism 时，读取 [references/platforms/prism-optica.md](references/platforms/prism-optica.md)；账户资料页、稿件字段和最终提交页分别以当前页面为准。
 6. IEEE 请求读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
 
-投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后自动无覆盖交付到项目根目录，沿用项目命名、同名递增版本，并复核文件及依赖可用；状态中的路径指向实际交付文件。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；普通任务结束保留过程材料，用户触发 ChatNote 后再清理，保护投稿状态和必要证据。
+投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后按已加载的共享全局规则自动无覆盖交付到正式位置，沿用项目命名、同名递增版本，并复核文件及依赖可用；状态中的路径指向实际交付文件。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；普通任务结束保留过程材料，显式清理当前任务时，先将仍在过程目录的持续状态和必要证据归位、更新记录路径并校验，再清空本任务过程目录。
 
 ## 参考文件路由
 

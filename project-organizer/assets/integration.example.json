@@ -8,13 +8,13 @@
           "source_id": "active",
           "relative_path": "README.md",
           "sha256": "<active README 的实际 SHA256>",
-          "recovery_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\originals\\active-README.md"
+          "recovery_path": "D:\\Projects\\example-project\\恢复资料\\整合原件\\本次整理\\active-README.md"
         },
         {
           "source_id": "legacy",
           "relative_path": "README.md",
           "sha256": "<legacy README 的实际 SHA256>",
-          "recovery_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\originals\\legacy-README.md"
+          "recovery_path": "D:\\Projects\\example-project\\恢复资料\\整合原件\\本次整理\\legacy-README.md"
         }
       ],
       "outputs": [

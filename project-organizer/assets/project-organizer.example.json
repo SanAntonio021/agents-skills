@@ -24,6 +24,7 @@
     }
   ],
   "target_root": "D:\\Projects\\example-project",
+  "recovery_root": "D:\\Projects\\example-project\\恢复资料",
   "audit_root": "D:\\Projects\\example-project\\过程文件\\本次整理",
   "integration_manifest": "D:\\Projects\\example-project\\过程文件\\本次整理\\integration.json",
   "canonical_source_id": "active",
@@ -42,6 +43,7 @@
       "measurement",
       "analysis",
       "checks",
+      "恢复资料/整合原件",
       "过程文件"
     ],
     "independent_subprojects": [],

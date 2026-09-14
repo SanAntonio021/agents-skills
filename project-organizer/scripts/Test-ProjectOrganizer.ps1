@@ -1,15 +1,15 @@
 ﻿[CmdletBinding()]
-param([switch]$KeepWorkspace)
+param([switch]$KeepWorkspace,[string]$WorkspaceRoot)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
 
 $testId=[Guid]::NewGuid().ToString('N')
-$testRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-test-'+$testId)
-$externalRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-git-'+$testId)
-$missingExternalRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-organizer-git-'+[Guid]::NewGuid().ToString('N'))
-$secondVolumeRoot=if(Test-Path -LiteralPath 'D:\'){ 'D:\project-organizer-test-'+$testId }else{ '' }
+$testRoot=Join-Path $(if($WorkspaceRoot){[IO.Path]::GetFullPath($WorkspaceRoot)}else{[IO.Path]::GetTempPath()}) ('project-organizer-test-'+$testId)
+$externalRoot=Join-Path $(if($WorkspaceRoot){[IO.Path]::GetFullPath($WorkspaceRoot)}else{[IO.Path]::GetTempPath()}) $(if($WorkspaceRoot){'git-'+$testId.Substring(0,8)}else{'project-organizer-git-'+$testId})
+$missingExternalRoot=Join-Path $(if($WorkspaceRoot){[IO.Path]::GetFullPath($WorkspaceRoot)}else{[IO.Path]::GetTempPath()}) ('project-organizer-git-'+[Guid]::NewGuid().ToString('N'))
+$secondVolumeRoot=if(-not $WorkspaceRoot -and (Test-Path -LiteralPath 'D:\')){ 'D:\project-organizer-test-'+$testId }else{ '' }
 $results=New-Object Collections.Generic.List[object]
 
 function Add-TestResult{param([string]$Name,[bool]$Passed,[string]$Evidence)
@@ -219,7 +219,7 @@ namespace ProjectOrganizer {
     Assert-True (@($activeState.active_git|Where-Object{Test-POSyncPath $_.git_dir @($testRoot)}).Count -eq 0) 'active_git_databases_outside_sync_root'
     $archives=@(Read-POJsonArray -Path (Join-Path $groupRun 'git_archives.json'))
     Assert-True ($archives.Count -eq 2 -and @($archives|Where-Object{-not $_.references_verified}).Count -eq 0) 'git_bundle_restore_refs_stash_reflog_verified'
-    $savedGitState=Get-Content (Join-Path $groupRun 'git-recovery\one\git-state.json') -Encoding UTF8 -Raw|ConvertFrom-Json
+    $savedGitState=Get-Content (Join-Path (Get-PORecoveryRunRoot -Config (Read-POConfig -Path $groupConfig) -OutputDir $groupRun) 'git-recovery\one\git-state.json') -Encoding UTF8 -Raw|ConvertFrom-Json
     Assert-True ($savedGitState.dirty -and [int]$savedGitState.untracked -gt 0 -and @($savedGitState.remotes).Count -gt 0) 'git_dirty_untracked_remote_state_saved'
     Invoke-WorkflowScript 'Build-RetirementPlan.ps1' @('-Config',$groupConfig,'-OutputDir',$groupRun)|Out-Null
     $groupRetirement=(Get-Content (Join-Path $groupRun 'retirement.sha256') -Encoding UTF8 -Raw).Trim();$mockRecycle=Join-Path $testRoot 'mock-recycle'
@@ -227,6 +227,36 @@ namespace ProjectOrganizer {
     Invoke-WorkflowScript 'Test-RetirementAcceptance.ps1' @('-Config',$groupConfig,'-OutputDir',$groupRun)|Out-Null
     Assert-True (-not(Test-Path $g1)-and -not(Test-Path $g2)) 'retirement_removes_only_approved_source_paths'
     Assert-True (Test-Path $mockRecycle) 'mock_recycle_adapter_used'
+    $recoverySettings=Read-POConfig -Path $groupConfig -AllowMissingSources
+    $formal=Get-PORecoveryRunRoot -Config $recoverySettings -OutputDir $groupRun
+    Assert-True (Test-POPathWithin -Path $formal -Parent (Join-Path $groupTarget '恢复资料')) 'default_recovery_root_is_formal'
+    Assert-True (-not (Test-Path (Join-Path $groupRun 'git-bundles'))) 'new_bundles_do_not_depend_on_process_directory'
+    Assert-True (Test-Path (Join-Path $formal 'git_archives.json')) 'standalone_recovery_mapping_saved'
+    $formalArchives=@(Read-POJsonArray -Path (Join-Path $formal 'git_archives.json'))
+    Assert-True ($formalArchives.Count -eq 2 -and $formalArchives[0].bundle_path -eq $archives[0].bundle_path) 'formal_mapping_matches_workflow_interface'
+    $supportPath=Join-Path $formal 'git-recovery/one/git-state.json'
+    $originalSupport=[IO.File]::ReadAllBytes($supportPath)
+    Write-TestFile $supportPath 'tampered'
+    $refused=$false;try{Assert-PORecoveryContents -Config $recoverySettings -OutputDir $groupRun}catch{$refused=$true}
+    Assert-True $refused 'tampered_formal_recovery_blocks_acceptance'
+    [IO.File]::WriteAllBytes($supportPath,$originalSupport)
+    Assert-PORecoveryContents -Config $recoverySettings -OutputDir $groupRun
+    $other=Join-Path $groupTarget '过程文件/other-task/keep.txt';Write-TestFile $other 'other task'
+    $scan=Get-POSourceEntries -Root $groupTarget -ExcludeRoot (Get-POManagedExclusions -Config $recoverySettings -OutputDir $groupRun)
+    Assert-True (@($scan.Entries | Where-Object full_path -eq $other).Count -eq 1) 'other_task_process_files_not_excluded'
+    [IO.File]::Delete($other);[IO.Directory]::Delete((Split-Path -Parent $other));[IO.Directory]::Delete((Split-Path -Parent (Split-Path -Parent $other)))
+    $withoutAudit=$groupRun+'-parked';[IO.Directory]::Move($groupRun,$withoutAudit)
+    try{
+        Assert-PORecoveryContents -Config $recoverySettings -OutputDir $groupRun
+        $probe=Invoke-POGit -Repository ([string]$activeState.active_git[0].worktree) -Arguments @('bundle','verify',([string]$formalArchives[0].bundle_path))
+        Assert-True ($probe.ExitCode -eq 0) 'formal_recovery_usable_without_process_directory'
+    }finally{[IO.Directory]::Move($withoutAudit,$groupRun)}
+    $badSettings=Get-Content -LiteralPath $groupConfig -Encoding UTF8 -Raw | ConvertFrom-Json
+    $badSettings | Add-Member -NotePropertyName recovery_root -NotePropertyValue (Join-Path $groupRun 'recovery')
+    $badPath=Join-Path $groupRoot 'bad-recovery.json';Write-POJson $badPath $badSettings
+    $refused=$false;try{Read-POConfig -Path $badPath -AllowMissingSources | Out-Null}catch{$refused=$true}
+    Assert-True $refused 'recovery_root_cannot_overlap_audit'
+
 
     $layoutRoot=Join-Path $testRoot 'document-layout';$layoutA=Join-Path $layoutRoot 'materials';$layoutB=Join-Path $layoutRoot 'records';$layoutTarget=Join-Path $layoutRoot 'organized';$layoutRun=Join-Path $layoutRoot 'audit'
     [void][IO.Directory]::CreateDirectory($layoutA);[void][IO.Directory]::CreateDirectory($layoutB)
@@ -333,7 +363,7 @@ finally{
         foreach($path in @($testRoot,$externalRoot,$missingExternalRoot,$secondVolumeRoot)){
             if(-not $path){continue}
             $full=[IO.Path]::GetFullPath($path)
-            if($full -notmatch 'project-organizer-(test|git)-[0-9a-f]{32}'){throw "Refusing unsafe test cleanup: $full"}
+            if(($WorkspaceRoot -and -not (Test-POPathWithin -Path $full -Parent ([IO.Path]::GetFullPath($WorkspaceRoot)))) -or ($full -notmatch '(project-organizer-(test|git)-[0-9a-f]{32}|git-[0-9a-f]{8})$')){throw "Refusing unsafe test cleanup: $full"}
             try{
                 if([IO.Directory]::Exists((ConvertTo-POExtendedPath $full))){Remove-TestTreeSafe $full}
             }catch{Write-Warning "Test cleanup failed for $full : $($_.Exception.Message)"}

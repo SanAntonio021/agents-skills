@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT_FILES = ("README.md", ".gitignore")
+ROOT_FILES = ("README.md", ".gitignore")  # Legacy default remains compatible.
 DIRECTORIES = (
     "code",
     "config",
@@ -111,6 +111,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Allow run_info status=running during an active-run inspection",
     )
+    parser.add_argument("--delivery-manifest", type=Path, help="Explicit entry_points/dependencies JSON; probe declared delivery paths")
     return parser.parse_args()
 
 
@@ -332,6 +333,48 @@ def validate_run(run_dir: Path, category: str, allow_running: bool, report: Repo
                 report.error(f"{info_path}: source_runs and sources.txt differ in length")
 
 
+def validate_delivery(project: Path, manifest: Path, report: Report) -> None:
+    """Check explicitly declared delivery dependencies; never import experiment code."""
+    project = project.resolve()
+    def check(value: str, base: Path) -> None:
+        raw = Path(value)
+        candidate = raw if raw.is_absolute() else base / raw
+        resolved = candidate.resolve()
+        def temporary(path: Path) -> bool:
+            try:
+                parts = path.relative_to(project).parts
+            except ValueError:
+                parts = path.parts
+            return "过程文件" in parts
+        if temporary(candidate.absolute()) or temporary(resolved):
+            report.error(f"delivery depends on process files: {value}")
+        elif not resolved.exists():
+            report.error(f"delivery path is missing: {value}")
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8-sig"))
+        if not isinstance(data, dict):
+            raise ValueError("manifest must be an object")
+        for key in ("entry_points", "dependencies"):
+            values = data.get(key)
+            if not isinstance(values, list) or any(not isinstance(v, str) or not v.strip() for v in values):
+                raise ValueError(f"{key} must be a path array")
+            if key == "entry_points" and not values:
+                raise ValueError("entry_points must not be empty")
+            for value in values:
+                check(value, project)
+    except (OSError, ValueError) as exc:
+        report.error(f"delivery manifest: {exc}")
+        return
+    if not (project / "AGENTS.md").is_file():
+        report.error("delivery missing project file: AGENTS.md")
+    for pattern in ("analysis/*/data/sources.txt", "analysis/*/sources.txt", "results/analysis/*/sources.txt"):
+        for sources in project.glob(pattern):
+            base = sources.parent.parent if sources.parent.name == "data" else sources.parent
+            for line in sources.read_text(encoding="utf-8-sig").splitlines():
+                if line.strip():
+                    check(line.strip(), base)
+
+
 def validate_project(project: Path, allow_running: bool = False) -> Report:
     report = Report()
     project = project.resolve()
@@ -370,6 +413,8 @@ def validate_project(project: Path, allow_running: bool = False) -> Report:
 def main() -> int:
     args = parse_args()
     report = validate_project(args.project, allow_running=args.allow_running)
+    if args.delivery_manifest:
+        validate_delivery(args.project, args.delivery_manifest, report)
     print(f"Validated runs: {report.run_count}")
     for warning in report.warnings:
         print(f"WARNING: {warning}")

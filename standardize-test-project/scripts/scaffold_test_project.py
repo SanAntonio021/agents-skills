@@ -29,6 +29,7 @@ DIRECTORIES = (
 
 TEXT_TEMPLATES = {
     "README.md.template": "README.md",
+    "AGENTS.md.template": "AGENTS.md",
     "lab.md.template": "lab.md",
     "gitignore.template": ".gitignore",
 }

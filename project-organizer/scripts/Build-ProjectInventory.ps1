@@ -107,7 +107,7 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
             }
             $status='integrated_input'; $reason='declared_integration'
         }
-        if ($modern -and (Test-POPathWithin -Path $target -Parent $settings.audit_root -AllowEqual)) {
+        if (($modern -and (Test-POPathWithin -Path $target -Parent $settings.audit_root -AllowEqual)) -or (Test-POPathWithin -Path $target -Parent (Get-PORecoveryRunRoot -Config $settings -OutputDir $output) -AllowEqual)) {
             throw "Business mapping enters the process directory: $target"
         }
         $fileRows.Add([pscustomobject][ordered]@{
@@ -137,7 +137,7 @@ foreach ($source in @($settings.sources | Sort-Object { ([string]$_.id).ToLowerI
 $targetState = [ordered]@{ target_root=$settings.target_root; exists=$false; before=$null; after=$null; changed=$false }
 if ([IO.Directory]::Exists((ConvertTo-POExtendedPath $settings.target_root))) {
     $targetState.exists = $true
-    $targetScan = Get-POSourceEntries -Root $settings.target_root -ExcludeRoot $settings.audit_root
+    $targetScan = Get-POSourceEntries -Root $settings.target_root -ExcludeRoot (Get-POManagedExclusions -Config $settings -OutputDir $output)
     $targetFiles = @($targetScan.Entries | Where-Object entry_type -eq 'file')
     $targetBefore = [ordered]@{
         file_count=[int64]$targetFiles.Count
@@ -168,7 +168,7 @@ if ([IO.Directory]::Exists((ConvertTo-POExtendedPath $settings.target_root))) {
             last_write_utc=$entry.last_write_utc;sha256=$hash;scan_status=$status;reason=$reason
         })
     }
-    $targetAfter=Get-POFileSnapshot -Root $settings.target_root -ExcludeRoot $settings.audit_root
+    $targetAfter=Get-POFileSnapshot -Root $settings.target_root -ExcludeRoot (Get-POManagedExclusions -Config $settings -OutputDir $output)
     $targetState.after=$targetAfter
     $targetState.changed=($targetBefore.file_count -ne $targetAfter.file_count -or $targetBefore.directory_count -ne $targetAfter.directory_count -or
         $targetBefore.total_bytes -ne $targetAfter.total_bytes -or $targetBefore.error_count -ne $targetAfter.error_count)

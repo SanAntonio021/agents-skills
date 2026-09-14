@@ -1,12 +1,12 @@
 ﻿[CmdletBinding()]
-param([switch]$KeepWorkspace)
+param([switch]$KeepWorkspace,[string]$WorkspaceRoot)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
 $OutputEncoding=[Text.UTF8Encoding]::new($false)
 Import-Module (Join-Path $PSScriptRoot 'ProjectOrganizer.psm1') -Force
-$testRoot=Join-Path ([IO.Path]::GetTempPath()) ('project-integration-test-'+[guid]::NewGuid().ToString('N'))
+$testRoot=Join-Path $(if($WorkspaceRoot){[IO.Path]::GetFullPath($WorkspaceRoot)}else{[IO.Path]::GetTempPath()}) $(if($WorkspaceRoot){'i-'+[guid]::NewGuid().ToString('N').Substring(0,8)}else{'project-integration-test-'+[guid]::NewGuid().ToString('N')})
 $results=New-Object Collections.Generic.List[object]
 $success=$false
 
@@ -266,8 +266,8 @@ try{
     Write-Output "Integration test workspace: $testRoot"
     if($success){Write-Output "Project integration tests passed: $($results.Count)/$($results.Count)"}
     if($success -and -not $KeepWorkspace){
-        $resolved=[IO.Path]::GetFullPath($testRoot);$temporary=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-        if(-not $resolved.StartsWith($temporary,[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolved) -notmatch '^project-integration-test-[0-9a-f]{32}$'){throw 'Unsafe test cleanup target.'}
+        $resolved=[IO.Path]::GetFullPath($testRoot);$temporary=$(if($WorkspaceRoot){[IO.Path]::GetFullPath($WorkspaceRoot)}else{[IO.Path]::GetTempPath()})
+        if(-not $resolved.StartsWith($temporary,[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolved) -notmatch '^(project-integration-test-[0-9a-f]{32}|i-[0-9a-f]{8})$'){throw 'Unsafe test cleanup target.'}
         Remove-Item -LiteralPath $resolved -Recurse -Force
     }
 }

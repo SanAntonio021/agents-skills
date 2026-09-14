@@ -49,7 +49,9 @@ def test_workbench_capsule() -> None:
         assert copied.returncode == 0, copied.stderr.decode(errors="replace")
         after = {str(p.relative_to(target)): hashlib.sha256(p.read_bytes()).hexdigest()
                  for p in target.rglob("*") if p.is_file()}
-        assert before == after, "copied workbench differs from frozen source"
+        assert (target / "AGENTS.md").is_file()
+        assert "当前进展" in (target / "README.md").read_text(encoding="utf-8")
+        assert {k: v for k, v in before.items() if k != "README.md"} == {k: v for k, v in after.items() if k not in {"README.md", "AGENTS.md"}}, "copied runtime differs from frozen source"
         sentinel = target / "user-change.txt"
         sentinel.write_text("保留用户修改", encoding="utf-8")
         refused = subprocess.run(command, capture_output=True)
@@ -562,4 +564,6 @@ def run_test() -> None:
 
 if __name__ == "__main__":
     test_workbench_capsule()
+    from test_delivery import main as test_delivery
+    test_delivery()
     run_test()

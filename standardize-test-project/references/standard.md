@@ -42,9 +42,11 @@ measurement/20260907_143025_双通道电回环/
 
 ## 3. 指标、精度和记录
 
-summary.csv 使用 UTF-8 BOM 和 CSV 转义，第一行名称、第二行单位、第三行起逐次观测；多 Channel 分行。显示必要条件、序号、Channel、方案、当前实验指标和状态，不强制所有实验采用通信指标。观测状态可沿用程序的明确名称，如 decoded、capture_failed；不与整轮运行状态的枚举混用。路径、时间、重试、错误详情放 data/observations.csv 与日志。失败行保留，缺失数值空白，实际 BER=0 保留零。
+表头名称与示例遵循 [实验指标表](experiment-tables.md)。主表逐次列出实际观测；跨观测统计须在实验前设计，或在取得逐次结果后另行讨论确定，不因采集完成就自动生成。
 
-完整记录 data/observations.csv 保存所有列和原数值，Python 用浮点可回读表示，MATLAB double 用 17 位有效数字。计算与分析通过统一接口读取完整记录，旧版缺失时才回退旧 summary。显示表连续量默认两位小数、计数整数、BER/BLER/FER 三位有效数字科学计数；非零小值不得舍成零。控制参数通过 exact 或 fixed:N 显式保留设置分辨率。MATLAB SummaryFormats 按 matlab.lang.makeValidName(header) 设置，Python formats 按原表头。
+summary.csv 使用 UTF-8 BOM 和 CSV 转义，第一行名称、第二行单位、第三行起逐次观测；同次采集的多 Channel 使用相同观测序号、按通道分行。显示必要条件、序号、Channel、方案、当前实验指标和状态，不强制所有实验采用通信指标。观测状态可沿用程序的明确名称，如 decoded、capture_failed；不与整轮运行状态的枚举混用。路径、时间、重试、错误详情放 data/observations.csv 与日志。失败行保留，缺失数值空白，实际 BER=0 保留零。
+
+完整记录 data/observations.csv 保存所有列和原数值，Python 用浮点可回读表示，MATLAB double 用 17 位有效数字。计算与分析通过统一接口读取完整记录，旧版缺失时才回退旧 summary。显示精度按量确定：设定值保留实际设置精度，测量值按仪器分辨率或本实验判断需要选择；不把所有连续量统一保留两位小数。未指定显示精度时保留可回读数值，不猜仪器分辨率；需要保留末尾零时使用 fixed:N 或已有原始文本。计数显示整数，BER/BLER/FER 默认三位有效数字科学计数（如 2.30e-03），实际零显示 0。显式 exact 或 fixed:N 可用于已约定的精度。MATLAB SummaryFormats 按 matlab.lang.makeValidName(header) 设置，Python formats 按原表头。
 
 data/run_info.json 使用 schema_version=2.0，包含 run_id、project_name、test_name、run_kind、output_category、retention_mode、planned_run_kind、purpose、execution_mode、status、stop_reason、stop_detail、started_at、finished_at、entry_point、code、runtime、primary_variable、parameters、inputs、instruments、counts、safety、source_runs、artifacts。artifact 相对运行目录，只允许根目录文件与 data/文件。
 
@@ -60,6 +62,8 @@ data/run_info.json 使用 schema_version=2.0，包含 run_id、project_name、te
 ## 4. 自动绘图与重绘
 
 MATLAB 新增或修改单通道观察、IQ 观察及解调图组时，同时遵循 [测试绘图规范](test-plotting.md)。该文档与公共程序统一波形、PSD、阶段图及数值重绘契约；本节保留通用布局和结果保存原则。后续测试适配数据并复用公共程序，不各自复制一套频谱算法或绘图程序。已有 Python helper 继续使用其接口，首版不承诺 Python 与 MATLAB 的数值契约等价。
+
+整轮总览用于查看本轮不同观测或参数点，其指标、横纵轴、布局和图数在具体实验时按任务确定，不预设通用固定版式。它与单次采集的解调总览、同次采集的独立图不同；单通道、IQ 和已确认解调图组继续复用现有公共绘图程序和布局。
 
 浏览图默认白底 PNG。300 dpi、刻度 10 pt、轴名 11 pt、标题 12 pt、轴线 1 pt、曲线 1.5 pt 是独立图的参考默认值，不是屏幕诊断总览的固定验收门槛。已有专用渲染器保留适合屏幕查看的分辨率，按实际窗口尺寸调整字体和线宽。字体优先 Microsoft YaHei，回退 Noto Sans CJK SC、SimHei；使用浅灰网格。推荐 #0072B2、#D55E00、#009E73、#CC79A7，结合标记区分 Channel/方案。日常诊断图不机械套投稿样式，正式投稿矢量图按明确请求导出。
 
@@ -78,7 +82,7 @@ MATLAB 新增或修改单通道观察、IQ 观察及解调图组时，同时遵�
 
 使用项目正常和紧凑两种目标尺寸导出，记录像素尺寸；未指定时以 1920×1080、1440×810 为起点，不强制所有项目采用此比例。检查文件存在、尺寸正确且非空，再实际打开两张图核对文字越界、关键遮挡、坐标比例、刻度密度及图间空白。几何边界测试或 PNG 非空不能代替肉眼检查；发现问题继续修改源码并重绘。布局验收只证明所检查的数据与尺寸，不宣称任意未来数据均无遮挡。
 
-- 总览默认逐次原始观测，不计算/叠加均值、最值、标准差，不跨失败/缺失连线。显式 ShowStatistics/show_statistics 才启用跨观测统计。必要 BER/MER 算法不属于禁止统计。
+- 总览默认逐次原始观测，不计算/叠加均值、最值、标准差，不跨失败/缺失连线。只有统计方法已在实验前设计，或取得逐次结果后另行讨论确定，才显式设置 ShowStatistics/show_statistics 启用跨观测统计；选项存在不等于本次已获准统计。必要 BER/MER 算法不属于禁止统计。
 - 星座保留全部有效点、输入提供的理想点、I/Q 等比例范围，标 N 和存在的指标；同一业务符号集的可比较阶段共用坐标，训练与业务分开，不同幅度基准不强行共用范围。只有导出负担不可接受时才可重复均匀抽样并说明显示/实际点数，精简保存不能额外抽稀。超范围点标数量，不删除事实。
 - 频谱区分 dBm 与 dBm/Hz，默认不平滑/插值。Peak、ChannelPower、MarkerBandPower 不互换。
 - BER 对数图真实零可显示在 1/N_bits 并以空心三角注明位置，数据仍为零。

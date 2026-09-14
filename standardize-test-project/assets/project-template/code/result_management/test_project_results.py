@@ -534,11 +534,14 @@ def display_value(value: Any, header: str = "", mode: str | None = None) -> Any:
         return repr(value)
     if mode and mode.startswith("fixed:"):
         return f"{value:.{int(mode.split(':')[1])}f}"
-    if mode == "integer" or isinstance(value, int) or header in {"序号", "计数", "Channel", "Observation", "Sequence"} or re.search(r"(?i)(?:^|_)(?:count|index)$|Count$|比特数|符号数|块数|次数|数量", header):
+    if mode == "integer":
         return str(int(value))
-    if mode == "probability" or any(word in header.upper() for word in ("BER", "BLER", "FER", "误码", "误块")):
+    is_count = re.search(r"(?i)count|比特数|符号数|块数|次数|数量|误码数|误块数", header)
+    if mode == "probability" or not is_count and any(word in header.upper() for word in ("BER", "BLER", "FER", "误码", "误块")):
         return f"{value:.2e}" if value else "0"
-    return f"{value:.2e}" if value and abs(value) < 0.005 else f"{value:.2f}"
+    if isinstance(value, int) or header in {"序号", "观测序号", "计数", "Channel", "Observation", "Sequence"} or re.search(r"(?i)(?:^|_)(?:count|index)$|Count$|比特数|符号数|块数|次数|数量|误码数|误块数", header):
+        return str(int(value))
+    return repr(value)  # No supplied resolution: retain the value.
 
 
 def read_summary(run: RunPaths | str | Path) -> list[list[str]]:

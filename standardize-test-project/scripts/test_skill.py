@@ -388,7 +388,7 @@ def test_schema_two(results, plots, project: Path, temporary: Path) -> None:
         with run.summary.open(encoding="utf-8-sig", newline="") as stream:
             display = list(csv.reader(stream))
         assert "错误信息" not in display[0]
-        assert display[2][2:5] == ["-10.125", "1.23", "1.23e-08"]
+        assert display[2][2:5] == ["-10.125", repr(value), "1.23e-08"]
         assert display[4][3:5] == ["", ""]
         assert results.point_filename("TxPower-10dBm", 1, 1, "png", observation=1, channel=2).startswith("001_TxPower-10dBm_Channel2")
         before = run.run_info.read_bytes()
@@ -422,6 +422,18 @@ def test_schema_two(results, plots, project: Path, temporary: Path) -> None:
     results.append_summary(standalone, [value, 1])
     assert str(value) in standalone.read_text(encoding="utf-8-sig")
     assert results.display_value(12., "pre_fec_bit_error_count") == "12"
+    assert results.display_value(0.125, "AWG CH1 输出幅度设定值") == "0.125"
+    assert float(results.display_value(1.2345678901234567, "实测峰峰值")) == 1.2345678901234567
+    assert results.display_value(0.1234, "示波器 C1 实测峰峰值", "fixed:4") == "0.1234"
+    assert results.display_value(0.12, "幅度设定值", "fixed:3") == "0.120"
+    assert results.display_value(0.0023, "译码前 BER") == "2.30e-03"
+    assert results.display_value(1, "译码前 BER") == "1.00e+00"
+    assert results.display_value(0, "译码前 BER") == "0"
+    assert results.display_value(12., "误码数") == "12"
+    assert results.display_value(0.0023, "译码前误码率") == "2.30e-03"
+    assert results.display_value(1e-12, "电压") != "0"
+    assert results.display_value(float("nan"), "实测峰峰值") == ""
+
     assert results.display_value(1.125, "bit_count", "fixed:3") == "1.125"
     (legacy / "run_info.json").write_text(json.dumps({"schema_version": "1.0", "run_id": "legacy"}), encoding="utf-8")
     (legacy / "summary.csv").write_text("value\n-\n1.25\n", encoding="utf-8-sig")

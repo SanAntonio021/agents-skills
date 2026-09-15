@@ -25,6 +25,12 @@ Formal project content follows the shared global file policy: the six profession
 
 指标表按 [实验指标表](references/experiment-tables.md) 命名并分开名称与单位；显示精度按设置或测量依据选择。主表逐次记录，跨观测统计需已有实验设计或后续讨论依据。整轮总览在具体实验时设计，不将单次解调图组当作整轮固定模板。
 
+## 界面文案检查
+
+新建或修改 MATLAB 上位机、实验工作台或其他实验 GUI 时，生成可见文字前读取 [writing-router](../writing-router/SKILL.md) 的“界面文案”分支，按该分支实际加载 `style-vocab` 和适用词表。已有任务加载记录可复用；仅提到技能名不算完成调用。只改算法、数据保存或科研图数值且未涉及界面文字时，不增加 GUI 文案流程。
+
+界面交付分别核验：①可见文字的含义、术语一致性、必要性和操作指向；②目标窗口尺寸下的实际截图，包括文字截断、可读性及当前步骤和下一操作；③受影响的功能行为。功能测试或词表无命中均不能替代前两项。无法运行窗口时可以完成源码文案检查，但明确窗口视觉检查未验证，不宣称界面已验收。仅润色既有文字时不重建布局或扩大硬件测试。
+
 ## Shared MATLAB Test Plotting
 
 - Single-channel observation uses raw voltage waveform plus one-sided PSD. IQ observation uses I/Q rows with waveform/spectrum columns. Demodulation reuses those capture panels and adds actual processing stages, centered complex spectra and constellations; there is no fixed algorithm or panel count.

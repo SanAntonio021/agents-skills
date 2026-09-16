@@ -1,30 +1,23 @@
-# Template Presets
+# Word 模板目录
 
-- `tongyong-moren`
-  - Public asset: `assets/template/master-default-template.style-profile.json`
-  - Source policy: synthesized from `jishu-zongjie` body rules and `gongzuo-zongjie` cover conventions
-  - Intended use: long-term default formatting for general reports, acceptance materials, and reusable Word exports
+以下 10 套模板均可通过 `-Preset`（PowerShell）或 `--preset`（Python）用于导出。
+首次导出尚未确认模板时，按文稿用途和读者推荐一套，简短说明理由并询问格式需求，等待用户确认或提出调整要求后再导出。同一任务沿用已确认模板。
 
-- `jishu-zongjie`
-  - Public asset: `assets/template/default-template.style-profile.json`
-  - Source policy: technical-summary style family; original sample document omitted from the public repo
-  - Intended use: jishu-zongjie / acceptance-report formatting with the `GF报告...` custom style family
+| 中文名称 | 导出代码 | 适用用途 | 样式文件名 |
+|---|---|---|---|
+| 通用报告 | `tongyong-moren` | 一般技术说明、老师审阅稿和综合报告 | `master-default-template` |
+| 技术总结 | `jishu-zongjie` | 技术总结、研制及验收报告，使用 `GF报告…` 样式体系 | `default-template` |
+| 工作总结 | `gongzuo-zongjie` | 阶段工作总结、工作汇报 | `work-summary-template` |
+| 申报风格 | `qiye-shenbao` | 一般项目申报材料 | `qiye-shenbao-template` |
+| 经费使用报告 | `funding-usage-report` | 经费使用情况说明 | `funding-usage-report` |
+| 节点验收意见 | `node-eval-opinion` | 阶段节点验收意见 | `node-eval-opinion` |
+| 技术总结自评 | `technical-summary-self-eval` | 技术总结和自评材料 | `technical-summary-self-eval` |
+| 测试大纲评审意见 | `test-outline-review-opinion` | 测试大纲的评审意见 | `test-outline-review-opinion` |
+| 第三方专家意见 | `third-party-test-opinion-expert` | 第三方测试专家意见 | `third-party-test-opinion-expert` |
+| 第三方机构意见 | `third-party-test-opinion-org` | 第三方测试机构意见 | `third-party-test-opinion-org` |
 
-- `gongzuo-zongjie`
-  - Public asset: `assets/template/work-summary-template.style-profile.json`
-  - Source policy: work-summary style family; original sample document omitted from the public repo
-  - Intended use: gongzuo-zongjie formatting that stays closer to built-in Word heading/body styles
+样式文件位于 `assets/template/`，扩展名为 `.style-profile.json`，保存字体、段落样式和页面设置。导出时据此生成临时 Word 模板；原始样例文件不随技能发布，也不从样例补入正文或固定表单。申报风格不代表特定企业的申报要求。
 
-- `qiye-shenbao`
-  - Public asset: `assets/template/qiye-shenbao-template.style-profile.json`
-  - Source policy: proposal-style formatting family; original sample document omitted from the public repo
-  - Intended use: proposal-style formatting; on this machine it is also the current default when the user does not specify another formatting source
+现有 10 套模板的字体颜色统一为明确的黑色。以后新增或用户提供的模板保留自身颜色。模板只处理排版，不擅自添加版本、日期、说明等内容。
 
-Legacy English aliases remain accepted for compatibility:
-
-- `master-default` -> `tongyong-moren`
-- `technical-summary` -> `jishu-zongjie`
-- `work-summary` -> `gongzuo-zongjie`
-- `default` -> `qiye-shenbao`
-
-Use `qiye-shenbao` as the current default on this machine when the user leaves the format unspecified. Use `tongyong-moren` when the user explicitly wants a general report style, use `jishu-zongjie` when the user wants the original `GF报告...` look, and use `gongzuo-zongjie` when the user explicitly wants the work-summary cover/body feel. The public repo ships style profiles only, not the original sample documents.
+兼容旧代码：`master-default` → `tongyong-moren`、`technical-summary` → `jishu-zongjie`、`work-summary` → `gongzuo-zongjie`、`default` → `qiye-shenbao`。这些别名均需显式传入，不表示自动选择模板。

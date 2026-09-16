@@ -30,3 +30,14 @@ def test_mcp_trial_is_documented_as_non_production() -> None:
     assert "MCP_NOT_ADMITTED" in trial
     assert "MCP_NONDETERMINISTIC" in trial
     assert "三次" in trial
+
+
+def test_word_export_requires_an_explicit_format_confirmation() -> None:
+    contract = (
+        SKILLS_ROOT / "writing-router" / "references" / "markdown-docx-contract.md"
+    ).read_text(
+        encoding="utf-8"
+    )
+    assert "推荐一套" in contract
+    assert "等待用户确认或提出调整要求后再导出" in contract
+    assert "所有导出均套用模板" in contract

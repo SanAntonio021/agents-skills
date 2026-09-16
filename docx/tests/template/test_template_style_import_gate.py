@@ -49,6 +49,23 @@ class TemplateStyleImportGateTests(unittest.TestCase):
     def test_apply_parser_defaults_to_blocked(self) -> None:
         args = self.parse_apply()
         self.assertFalse(args.allow_template_style_import)
+        self.assertIsNone(args.preset)
+
+    def test_apply_requires_an_explicit_format_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "input.docx"
+            input_path.write_bytes(b"fixture")
+            with self.assertRaisesRegex(SystemExit, "No formatting source selected"):
+                apply_command(
+                    argparse.Namespace(
+                        allow_template_style_import=True,
+                        input=input_path,
+                        output=None,
+                        profile=None,
+                        template=None,
+                        preset=None,
+                    )
+                )
 
     def test_apply_parser_accepts_explicit_import_permission(self) -> None:
         args = self.parse_apply("--allow-template-style-import")

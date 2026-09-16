@@ -61,6 +61,8 @@ def run_formatter(allow_office_com: bool) -> str:
         sys.executable,
         str(FORMATTER_SCRIPT),
         "apply",
+        "--preset",
+        "tongyong-moren",
         "--input",
         str(INPUT_PATH),
         "--output",

@@ -1,6 +1,6 @@
-# Word Template Profile
+# Word Style Profile
 
-- Template source: public repo ships the style profile only; original sample document omitted.
+- Profile source: public repo ships the style profile only; original sample document omitted.
 - Generated: `2026-03-18T03:12:57.164636+00:00`
 - Styles captured: `19`
 

@@ -13,7 +13,6 @@ from pathlib import Path
 import word_constants as constants
 from office_com_guard import add_office_com_argument, word_application
 from word_template_formatter import (
-    DEFAULT_PRESET,
     PRESET_PATHS,
     apply_page_setup,
     open_document,
@@ -21,6 +20,8 @@ from word_template_formatter import (
 
 
 DEFAULT_NORMAL_TEMPLATE = Path.home() / "AppData" / "Roaming" / "Microsoft" / "Templates" / "Normal.dotm"
+# Installing Word's defaults is an explicit operation, independent of export defaults.
+DEFAULT_INSTALL_TEMPLATE = PRESET_PATHS["qiye-shenbao"]["template"]
 
 
 def backup_normal_template(normal_template: Path) -> Path:
@@ -84,8 +85,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--template",
         type=Path,
-        default=PRESET_PATHS[DEFAULT_PRESET]["template"],
-        help="Source DOCX template. Defaults to the current default preset.",
+        default=DEFAULT_INSTALL_TEMPLATE,
+        help="Source DOCX template. Defaults to the qiye-shenbao template.",
     )
     parser.add_argument(
         "--normal-template",

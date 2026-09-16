@@ -26,7 +26,6 @@ $versionScriptPath = Join-Path (Split-Path -Parent $scriptRoot) "document_versio
 $referenceScriptPath = Join-Path (Split-Path -Parent $scriptRoot) "reference_fields.py"
 $officeComGuardPath = Join-Path $scriptRoot "OfficeComGuard.psm1"
 $defaultWordTemplatePath = Join-Path $env:APPDATA "Microsoft\Templates\Normal.dotm"
-$defaultPresetName = "qiye-shenbao"
 $hasExplicitOutputPath = $PSBoundParameters.ContainsKey("OutputPath")
 $requestedOutputPath = $OutputPath
 
@@ -45,10 +44,16 @@ function Resolve-PresetName {
         "jishu-zongjie" = "jishu-zongjie"
         "gongzuo-zongjie" = "gongzuo-zongjie"
         "qiye-shenbao" = "qiye-shenbao"
+        "funding-usage-report" = "funding-usage-report"
+        "node-eval-opinion" = "node-eval-opinion"
+        "technical-summary-self-eval" = "technical-summary-self-eval"
+        "test-outline-review-opinion" = "test-outline-review-opinion"
+        "third-party-test-opinion-expert" = "third-party-test-opinion-expert"
+        "third-party-test-opinion-org" = "third-party-test-opinion-org"
     }
 
     if (-not $canonicalPresetMap.ContainsKey($PresetName)) {
-        throw "Unknown preset: $PresetName. Canonical presets: tongyong-moren, jishu-zongjie, gongzuo-zongjie, qiye-shenbao."
+        throw "Unknown preset: $PresetName. Canonical presets: $(($canonicalPresetMap.Values | Sort-Object -Unique) -join ', ')."
     }
 
     return $canonicalPresetMap[$PresetName]
@@ -212,9 +217,7 @@ elseif ($PSBoundParameters.ContainsKey("TemplatePath")) {
     }
 }
 else {
-    $Preset = Resolve-PresetName -PresetName $defaultPresetName
-    $templateMode = "docx-preset"
-    $pythonPath = Resolve-PythonPath
+    throw "A formatting source is required. Pass -Preset or -TemplatePath explicitly after confirming the Word format."
 }
 
 $resolvedInputs = @()

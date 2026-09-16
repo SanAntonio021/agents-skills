@@ -56,6 +56,13 @@ repeat a general writing pass. Existing `loaded_refs` records describe only refe
 Reuse rules, templates and scripts already read in this task when they have no relevant changes;
 do not reload the entire workflow for each accepted paragraph.
 
+### Word/DOCX 导出前的格式确认
+
+每个新任务首次导出 Word 前，先核对是否已指定或确认模板。尚未确认时，根据文稿用途和读者，
+从[现有 10 套模板](references/template/template-presets.md)中推荐一套，简短说明理由，并询问用户的格式需求；
+等用户确认或提出调整要求后再导出。用户已明确指定模板时直接采用，同一任务后续导出沿用已确认模板，不重复询问。
+所有导出均套用模板。用户提供的模板或参考 Word 也可采用。模板只控制排版，不擅自增加版本、日期或说明文字。
+
 Check the OOXML/package, styles, affected content and unchanged source. Read
 [Numbering and cross-references](references/numbering-references.md) for the common finalizer:
 whole generation establishes `SEQ`/`REF` for intended numbered figures, tables and equations;
@@ -178,11 +185,13 @@ when the user explicitly requests a whole-document template replacement. Read
 governance are documented in [Template presets](references/template/template-presets.md) and
 [Template governance](references/template/template-governance.md).
 
-Accepted formatting sources are an explicit template or reference `.docx`, the user's
-`%APPDATA%\Microsoft\Templates\Normal.dotm`, a bundled style profile, or plain conversion with no
-template. Current canonical presets are `tongyong-moren`, `jishu-zongjie`, `gongzuo-zongjie`, and
-`qiye-shenbao`; legacy English aliases remain accepted. On this machine, `qiye-shenbao` is the
-governed default when the user requests a Word export but leaves the format source unspecified.
+Use the confirmed template: one of the ten bundled profiles, a supplied template/reference `.docx`,
+or the user's `Normal.dotm` when explicitly requested. The complete names and uses are in
+[Template presets](references/template/template-presets.md); legacy aliases remain accepted.
+Bundled templates store reusable styles and page settings; original sample documents are omitted.
+`qiye-shenbao` provides general proposal formatting, without claiming a particular enterprise's requirements.
+The ten bundled profiles use explicit black font colors. Apply future or user-supplied templates' own
+colors faithfully; do not force them to black. Check the resulting styles and rendered pages.
 
 Template commands are relative to this skill directory:
 
@@ -194,7 +203,7 @@ python scripts/template/word_template_formatter.py extract `
   --report C:\path\template.style-profile.md `
   --allow-office-com
 
-# Apply a preset only for a new document or explicit whole-document replacement.
+# Apply an explicitly selected preset only for a new document or explicit whole-document replacement.
 python scripts/template/word_template_formatter.py apply `
   --preset qiye-shenbao `
   --input C:\path\draft.docx `
@@ -202,7 +211,7 @@ python scripts/template/word_template_formatter.py apply `
   --allow-template-style-import `
   --allow-office-com
 
-# Convert Markdown, then land the result in Word formatting.
+# Convert Markdown with an explicitly selected preset, then land the result in Word formatting.
 powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_word.ps1 `
   C:\path\draft.md `
   -Preset qiye-shenbao `

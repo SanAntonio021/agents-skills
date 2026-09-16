@@ -36,7 +36,8 @@ QIYE_SHENBAO_PROFILE_PATH = (
 QIYE_SHENBAO_REPORT_PATH = (
     TEMPLATE_REFERENCES_DIR / "qiye-shenbao-template-profile.md"
 )
-DEFAULT_PRESET = "qiye-shenbao"
+# No preset is selected implicitly. Callers must choose a preset or provide a template.
+DEFAULT_PRESET: str | None = None
 PRESET_PATHS = {
     "tongyong-moren": {
         "template": MASTER_TEMPLATE_PATH,
@@ -59,6 +60,20 @@ PRESET_PATHS = {
         "report": QIYE_SHENBAO_REPORT_PATH,
     },
 }
+for _profile_stem in (
+    "funding-usage-report",
+    "node-eval-opinion",
+    "technical-summary-self-eval",
+    "test-outline-review-opinion",
+    "third-party-test-opinion-expert",
+    "third-party-test-opinion-org",
+):
+    PRESET_PATHS[_profile_stem] = {
+        "template": TEMPLATE_ASSETS_DIR / f"{_profile_stem}.docx",
+        "profile": TEMPLATE_ASSETS_DIR / f"{_profile_stem}.style-profile.json",
+        "report": TEMPLATE_REFERENCES_DIR / f"{_profile_stem}-profile.md",
+    }
+
 PRESET_ALIASES = {
     "default": "qiye-shenbao",
     "master-default": "tongyong-moren",
@@ -144,6 +159,7 @@ PROFILE_FONT_FIELDS = (
     ("Underline", "underline", False),
     ("AllCaps", "all_caps", True),
     ("SmallCaps", "small_caps", True),
+    ("Color", "color_value", False),
 )
 
 PROFILE_PARAGRAPH_FIELDS = (
@@ -649,8 +665,11 @@ def ensure_profile_style(doc: Any, entry: dict[str, Any]) -> Any | None:
 
 
 def apply_profile_style(doc: Any, entry: dict[str, Any]) -> None:
+    font = entry.get("font") or {}
     style = ensure_profile_style(doc, entry)
     if style is None:
+        if font.get("color_value") is not None:
+            raise RuntimeError(f"Cannot apply font color: style unavailable: {entry.get('name')!r}")
         return
 
     base_style = clean_text(entry.get("base_style"))
@@ -661,8 +680,18 @@ def apply_profile_style(doc: Any, entry: dict[str, Any]) -> None:
     if next_style:
         set_word_attr(style, "NextParagraphStyle", next_style)
 
-    font = entry.get("font") or {}
     for attr, key, is_bool in PROFILE_FONT_FIELDS:
+        if attr == "Color" and font.get(key) is not None:
+            try:
+                style.Font.Color = font[key]
+                actual_color = style.Font.Color
+                if actual_color != font[key]:
+                    raise ValueError(f"requested {font[key]!r}, read back {actual_color!r}")
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Failed to apply font color for style {entry.get('name')!r}: {exc}"
+                ) from exc
+            continue
         set_word_attr(style.Font, attr, font.get(key), is_bool=is_bool)
 
     if entry.get("type") == "paragraph":
@@ -981,7 +1010,11 @@ def preset_name_for_template(template_path: Path) -> str | None:
 
 def resolve_template_path(template_arg: Path | None, preset: str | None) -> Path:
     if template_arg is None:
-        preset_name = canonical_preset_name(preset or DEFAULT_PRESET)
+        if not preset:
+            raise SystemExit(
+                "No formatting source selected. Pass --template or --preset explicitly."
+            )
+        preset_name = canonical_preset_name(preset)
         if preset_name not in PRESET_PATHS:
             raise SystemExit(
                 f"Unknown preset: {preset_name}. Canonical presets: {', '.join(PRESET_PATHS)}."
@@ -1079,11 +1112,12 @@ def apply_command(args: argparse.Namespace) -> int:
     profile_path = args.profile.resolve() if args.profile else None
     template_path: Path | None = None
     synthesized_template_path: Path | None = None
+    preset_name: str | None = None
 
     if args.template is not None:
         template_path = resolve_template_path(args.template, None)
-    else:
-        preset_name = canonical_preset_name(args.preset or DEFAULT_PRESET)
+    elif args.preset:
+        preset_name = canonical_preset_name(args.preset)
         if preset_name not in PRESET_PATHS:
             raise SystemExit(
                 f"Unknown preset: {preset_name}. Canonical presets: {', '.join(PRESET_PATHS)}."
@@ -1094,6 +1128,10 @@ def apply_command(args: argparse.Namespace) -> int:
             template_path = candidate_template
         elif profile_path is None and preset_paths["profile"].exists():
             profile_path = preset_paths["profile"].resolve()
+    elif profile_path is None:
+        raise SystemExit(
+            "No formatting source selected. Pass --template, --preset or --profile explicitly."
+        )
 
     try:
         with word_application(allow_office_com=args.allow_office_com) as app:
@@ -1107,7 +1145,7 @@ def apply_command(args: argparse.Namespace) -> int:
                             "Pass --template explicitly or provide --profile."
                         )
                     profile = load_profile(profile_path)
-                    label = canonical_preset_name(args.preset or DEFAULT_PRESET)
+                    label = preset_name or profile_path.stem
                     synthesized_template_path = materialize_template_from_profile(app, profile, label)
                     template_path = synthesized_template_path
                     template_doc = open_document(app, template_path, read_only=True)
@@ -1219,7 +1257,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=preset_arg,
         default=DEFAULT_PRESET,
         help=(
-            "Built-in template preset to use when --template is omitted. "
+            "Built-in style preset to use when --template is omitted; no preset is selected by default. "
             f"Canonical presets: {', '.join(PRESET_PATHS)}. "
             "Legacy English aliases are still accepted."
         ),
@@ -1245,7 +1283,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=preset_arg,
         default=DEFAULT_PRESET,
         help=(
-            "Built-in template preset to use when --template is omitted. "
+            "Built-in style preset to use when --template is omitted; no preset is selected by default. "
             f"Canonical presets: {', '.join(PRESET_PATHS)}. "
             "Legacy English aliases are still accepted."
         ),

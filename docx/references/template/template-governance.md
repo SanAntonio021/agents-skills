@@ -1,13 +1,12 @@
 # Template Governance
 
-Use this note when deciding whether a newly provided Word sample should become a preset or replace the current default preset.
+Use this note when deciding whether a newly provided Word sample should become a named preset or update an existing preset.
 
 ## Promotion rules
 
-- On this machine, the current governed default is `qiye-shenbao` because the user prefers the company project-proposal format whenever no other format source is specified.
-- Keep `tongyong-moren` available as the general-report preset rather than the current default.
+- When no template is confirmed, recommend one from the template catalog based on purpose and audience, explain briefly, and wait for the user's format requirements or confirmation before export. Reuse a confirmed choice within the task.
+- Keep `tongyong-moren` available as the general-report preset.
 - Add a source document as a separate preset when it has a recognizable house style but is not suitable as the universal default.
-- A project-proposal sample such as `qiye-shenbao` may become the current default when the user's standing preference is to default all unspecified Word exports to the company proposal format.
 - Rebuild `tongyong-moren` only when the new evidence improves the long-term common format, not just one document family.
 
 ## What makes a template reusable
@@ -28,14 +27,15 @@ Use this note when deciding whether a newly provided Word sample should become a
 
 - `jishu-zongjie` is the strongest body-style source because its `GF-report` style family covers headings, body, captions, appendix, and references.
 - `gongzuo-zongjie` is useful for cover conventions and common report feel, but it is not clean enough to serve as the only long-term default because many paragraphs rely on direct formatting.
-- Opinion-style templates and single-purpose review forms should stay separate candidates or future narrow presets, not the universal default.
+- Opinion and review templates are available as separate specialized presets in the template catalog.
 
 ## Maintenance rules
 
 - Maintain the template workflow inside `docx`; do not split it back into a parallel Word skill.
-- With existing authorization and proven Office isolation, regenerate the master asset with `python scripts/template/build_master_template.py --allow-office-com` when changing the synthesized default.
+- With existing authorization and proven Office isolation, regenerate a synthesized preset with `python scripts/template/build_master_template.py --allow-office-com` when changing that preset.
 - Re-extract the profile after any template change and review `references/template/master-default-template-profile.md`.
-- With existing authorization and proven Office isolation, run `python scripts/template/validate_master_default.py --allow-office-com` after changing the default preset or the master builder.
+- With existing authorization and proven Office isolation, run `python scripts/template/validate_master_default.py --allow-office-com` after changing the master preset or its builder.
 - Both scripts refuse to run while `WINWORD.EXE` already exists; do not connect to or close the existing instance.
 
-Legacy English aliases remain accepted for compatibility, but governance notes should use `tongyong-moren`, `jishu-zongjie`, `gongzuo-zongjie`, and `qiye-shenbao` as the canonical labels.
+Use the ten canonical names in [Template presets](template-presets.md). Legacy aliases remain accepted.
+The current ten profiles use explicit black font colors. Future templates retain their specified colors.

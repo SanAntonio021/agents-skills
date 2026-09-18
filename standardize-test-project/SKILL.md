@@ -31,6 +31,10 @@ Formal project content follows the shared global file policy: the six profession
 
 界面交付分别核验：①可见文字的含义、术语一致性、必要性和操作指向；②目标窗口尺寸下的实际截图，包括文字截断、可读性及当前步骤和下一操作；③受影响的功能行为。功能测试或词表无命中均不能替代前两项。无法运行窗口时可以完成源码文案检查，但明确窗口视觉检查未验证，不宣称界面已验收。仅润色既有文字时不重建布局或扩大硬件测试。
 
+## 工作台交互与状态
+
+新建或修改带仪器控制、异步采集或结果浏览的实验工作台时，读取 [工作台交互与状态检查](references/workbench-interaction.md)，只应用受影响的条目。简单脚本、独立图件或无相关行为的 GUI 不需要补齐整套工作台功能。
+
 ## Shared MATLAB Test Plotting
 
 - Single-channel observation uses raw voltage waveform plus one-sided PSD. IQ observation uses I/Q rows with waveform/spectrum columns. Demodulation reuses those capture panels and adds actual processing stages, centered complex spectra and constellations; there is no fixed algorithm or panel count.
@@ -45,10 +49,11 @@ Formal project content follows the shared global file policy: the six profession
 Read [the adaptation guide](assets/tx-rx-workbench/references/adaptation.md) and relevant [TX/RX previews](assets/tx-rx-workbench/assets/previews/) when choosing or adapting this implementation. It is a complete reference project, not a mandatory algorithm or UI.
 
 - For complete reuse, run [copy_template.ps1](assets/tx-rx-workbench/scripts/copy_template.ps1) with `-Destination` pointing to a new directory. It refuses an existing destination. Keep the namespace and runtime dependencies together; the two root entry files alone are insufficient. Local reuse integrates only needed modules and dependencies into a protected current project.
-- For complete reuse, run `Template_Validate('smoke')`, which includes the simulation `Template_Demo` and mock `Template_GUI_Demo`, then only additional plotting/GUI checks relevant to the adaptation. Do not repeat the two demos after a successful smoke. The original no-argument `TX_Workbench()` / `RX_Workbench()` try instrument access and are not offline demos. Local module work runs only its affected checks with isolated inputs.
+- For complete reuse, run `Template_Validate('smoke')`, which includes `Template_Demo('iq')`, `Template_Demo('real_if')` and mock `Template_GUI_Demo`, then only additional plotting/GUI checks relevant to the adaptation. Do not repeat these demos after a successful smoke. The distributed template defaults to simulation; real instrument access still requires explicit configuration and action. Verify both the main process and asynchronous workers; do not assume a child inherits the parent hardware guard. Local module work runs only its affected checks with isolated inputs.
+- Keep instrument adapters, signal forms and optional experiment modules separate when adapting. A single acquired real IF channel is not a new single-DAC transmit algorithm: changing signal form must cover generation, reference, channel mapping, processing and plots together. IF-board control and fixed subband examples remain optional configuration.
 - Adapt waveform, receive processing and plot groups on the copy. Preserve real units, data origins and stage meanings. The 16QAM/QPSK example, frame structure, panel count and layout are examples, not required scientific choices.
-- New or changed single-channel/IQ plots on the copy use [the shared plotting contract](references/test-plotting.md) and common helpers above. The frozen workbench itself has not thereby been migrated; its existing source remains a compatibility reference.
-- Source hashes, device references and historical acceptance remain in [provenance](assets/tx-rx-workbench/references/provenance/). This frozen snapshot retains its existing output behavior and helper differences; it is not proof of current output-contract compliance. Apply the current standard to the new project's requested output adaptations without silently rewriting the snapshot or previously copied projects.
+- New or changed single-channel/IQ plots on the copy use [the shared plotting contract](references/test-plotting.md) and common helpers above. Keep the versioned workbench snapshot separate from selective integrations into existing projects; updating the skill does not update those projects.
+- Source hashes, device references and historical acceptance remain in [provenance](assets/tx-rx-workbench/references/provenance/). Use this version’s independent acceptance record, not historical source-project results, to establish template behavior. The snapshot retains documented output behavior and helper differences; it is not proof of full current output-contract compliance. Apply the current standard to the new project's requested output adaptations without silently rewriting the snapshot or previously copied projects.
 - Hardware operation uses [link-test](../link-test/SKILL.md) and current project protections. Device references do not supply new wiring confirmation or instrument authorization. Reuse valid current authorization; retain capacity, alignment, shared-channel, read-back and shutdown safeguards described in the adaptation guide.
 
 ## Validation and Dry-Run

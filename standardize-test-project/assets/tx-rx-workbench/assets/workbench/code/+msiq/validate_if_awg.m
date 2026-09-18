@@ -1,7 +1,8 @@
-function report=validate_if_awg(matrix_file)
+function report=validate_if_awg(matrix_file, output_root)
 %VALIDATE_IF_AWG Offline AWG previews and mutated-contract rejection tests.
 % Supply the licensed matrix path explicitly or through MSIQ_DVBS2_MATRIX_FILE.
 if nargin<1, matrix_file=getenv('MSIQ_DVBS2_MATRIX_FILE'); end
+if nargin<2, output_root=tempname; end
 before=msiq.instruments.get_audit();
 p=msiq.if_workbench_config();
 p.tx_options=struct('amplitude_vpp',[.2 .2],'offset_v',[0 0], ...
@@ -33,13 +34,13 @@ p.mode='live'; p.authorized_devices={'awg'};
 reject(@() msiq.if_awg_action('tx_level',struct('profile',p,'hardware_confirmed',true)), ...
     'msiq:if:MockProfile');
 assert(isequal(before,msiq.instruments.get_audit()),'Offline AWG tests accessed an instrument.');
-cancel_checks=validate_cancel_boundaries(matrix_file);
+cancel_checks=validate_cancel_boundaries(matrix_file, output_root);
 report=struct('ok',true,'status','passed','checks',{{'missing_matrix_no_io','ext_int_same_frame', ...
     'playback_rate_ratio','fixed_baud_rolloff','baud_mismatch','reference_mismatch', ...
     'capacity_rejection','fixed_waveform_options','mock_live_rejection','no_io'}}, ...
     'comparison',summary,'mock_cancel_boundaries',{cancel_checks});
 end
-function results=validate_cancel_boundaries(matrix_file)
+function results=validate_cancel_boundaries(matrix_file, output_root)
 % Explicit test transport: exercise the real apply cleanup, never real VISA.
 cleanup=onCleanup(@()msiq.instruments.reset_audit()); %#ok<NASGU>
 cfg=msiq.short_frame_config(matrix_file);
@@ -50,6 +51,7 @@ results=cell(1,4); call_count=0; cancel_at=0;
 for boundary=1:4
     msiq.instruments.reset_audit();
     opts.artifact_prefix=sprintf('if_cancel_boundary_%d',boundary);
+    opts.run_dir=fullfile(output_root,sprintf('cancel_boundary_%d',boundary));
     plan=msiq.traditional_tx('awg_plan',[],opts);
     call_count=0; cancel_at=boundary;
     reject(@()msiq.traditional_tx('awg_apply',[],struct('plan',plan, ...
@@ -58,6 +60,10 @@ for boundary=1:4
     assert(call_count==boundary);
     failure=jsondecode(fileread(msiq.artifact_path(plan,'execution_failure.json')));
     assert(failure.shutdown_verified&&isequal(failure.shutdown_channels(:)',1:4));
+    info=Result_Update_Run_Info(plan.run_dir,struct());
+    assert(strcmp(info.output_category,'checks')&&strcmp(info.execution_mode,'simulation'));
+    assert(strcmp(info.purpose,'validation')&&strcmp(info.status,'stopped'));
+    assert(strcmp(info.stop_reason,'user_stop')&&~isempty(info.finished_at));
     commands=msiq.instruments.get_command_history();
     assert(~any(cellfun(@(c)~isempty(regexp(c.command,':OUTPut[1-4] ON','once')),commands)));
     audit=msiq.instruments.get_audit();

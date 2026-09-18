@@ -1,0 +1,12 @@
+{
+  "scope": "Static msiq calls; dynamic and toolbox dependencies additionally tested in MATLAB",
+  "external": [
+    "MATLAB R2023b",
+    "Communications Toolbox",
+    "Signal Processing Toolbox",
+    "Windows .NET process API for asynchronous workers"
+  ],
+  "excluded_restricted_matrix": "Short-frame LDPC matrix not included; normal-frame demo uses dvbs2ldpc",
+  "package_calls": 182,
+  "missing": []
+}

@@ -7,6 +7,7 @@ classdef RxScopeWorker < handle
         pending = false
         closing = false
         started
+        timeout_s = 90
     end
     methods
         function obj = RxScopeWorker(specification, factory, factory_options, worker_kind)
@@ -37,9 +38,16 @@ classdef RxScopeWorker < handle
             obj.process.BeginErrorReadLine();
         end
         function submit(obj, request)
+            assert(~obj.closing && ~obj.process.HasExited,'RX_Workbench:WorkerClosing', ...
+                '后台正在释放会话，请等待退出后重新连接');
             assert(~obj.pending,'RX_Workbench:WorkerBusy','Only one scope request may be active.');
             obj.sequence = obj.sequence+1;
             request.sequence = obj.sequence;
+            obj.timeout_s=90;
+            if isfield(request,'timeout_s')
+                validateattributes(request.timeout_s,{'numeric'},{'scalar','positive','finite'});
+                obj.timeout_s=request.timeout_s;
+            end
             temporary = fullfile(obj.folder,'request.tmp.mat');
             save(temporary,'request','-v7');
             movefile(temporary,fullfile(obj.folder,'request.mat'),'f');
@@ -60,13 +68,18 @@ classdef RxScopeWorker < handle
                 ready = true;
             elseif obj.pending && obj.process.HasExited
                 error('RX_Workbench:WorkerExited','后台进程退出；日志：%s',fullfile(obj.folder,'worker.log'));
-            elseif obj.pending && toc(obj.started)>90
+            elseif obj.pending && toc(obj.started)>obj.timeout_s
                 obj.close(); obj.pending=false;
                 phase='后台请求';
                 progress=fullfile(obj.folder,'progress.txt');
                 if isfile(progress), phase=strtrim(fileread(progress)); end
                 error('RX_Workbench:WorkerTimeout','%s | 超时，等待后台安全释放会话',phase);
             end
+        end
+        function cancel(obj,task_id)
+            validateattributes(task_id,{'numeric'},{'scalar','integer','nonnegative'});
+            fid=fopen(fullfile(obj.folder,sprintf('cancel_%d.flag',task_id)),'w');
+            assert(fid>=0,'RX_Workbench:Cancel','无法记录停止请求'); fclose(fid);
         end
         function message = progress(obj)
             message = '';
@@ -76,13 +89,33 @@ classdef RxScopeWorker < handle
             end
         end
         function close(obj)
-            obj.closing=true;
+            if obj.closing, return; end
             if isempty(obj.folder) || ~isfolder(obj.folder), return; end
             fid = fopen(fullfile(obj.folder,'close.flag'),'w');
-            if fid >= 0, fclose(fid); end
+            if fid<0
+                error('RX_Workbench:WorkerClose','无法写入后台关闭请求：%s',obj.folder);
+            end
+            fclose(fid);
+            obj.closing=true;
         end
         function delete(obj)
             obj.close();
+            if ~isempty(obj.process) && obj.process.HasExited
+                % HasExited does not wait for asynchronous redirected reads.
+                obj.process.WaitForExit();
+                obj.process.Dispose();
+            end
+        end
+        function result=release_status(obj)
+            result=struct('ok',false,'errors',{{'后台尚未结束或缺少释放记录'}});
+            if isempty(obj.process) || ~obj.process.HasExited, return; end
+            path=fullfile(obj.folder,'released.mat');
+            if ~isfile(path), return; end
+            data=load(path,'released'); result=data.released;
+            if obj.process.ExitCode~=0
+                result.ok=false;
+                result.errors{end+1}=sprintf('后台退出码 %d',obj.process.ExitCode);
+            end
         end
     end
 end

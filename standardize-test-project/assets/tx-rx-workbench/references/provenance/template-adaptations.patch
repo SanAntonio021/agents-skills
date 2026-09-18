@@ -1,0 +1,112 @@
+# Review diff; removed local dataset path redacted. Original bytes identified by source hash.
+--- source/code/+msiq/rx_scope_worker.m
++++ template/code/+msiq/rx_scope_worker.m
+@@ -1,8 +1,24 @@
+ function rx_scope_worker(folder)
+ %RX_SCOPE_WORKER Serial process-local instrument owner with cooperative shutdown.
++% Template-only child-process guard: workers do not inherit the parent's path.
++template_guard=[]; template_audit=[]; %#ok<NASGU>
++marker=getenv('MSIQ_TEMPLATE_NO_HARDWARE_ROOT');
++if ~isempty(marker)
++    template_root=fileparts(fileparts(fileparts(mfilename('fullpath'))));
++    assert(strcmpi(char(java.io.File(marker).getCanonicalPath()), ...
++        char(java.io.File(template_root).getCanonicalPath())), ...
++        'template:WorkerRoot','Template guard root does not match this worker.');
++    addpath(template_root); template_guard=Template_NoHardware();
++    msiq.instruments.reset_audit();
++    template_audit=onCleanup(@() template_worker_audit(folder));
++end
+ data = load(fullfile(folder,'bootstrap.mat'));
+ file_only=isfield(data,'worker_kind') && strcmp(data.worker_kind,'reference');
+ board_only=isfield(data,'worker_kind') && strcmp(data.worker_kind,'board');
++if ~isempty(marker) && ~file_only && ~board_only
++    assert(~isempty(data.factory),'template:WorkerFactory', ...
++        'Template scope workers require an explicit simulation factory.');
++end
+ if (file_only || board_only) && isempty(data.factory)
+     io=struct('close',@(~) []);
+ elseif isempty(data.factory)
+@@ -664,3 +680,20 @@
+ values=msiq.instruments.rx_scope_settings(session,query_fn,requested,false);
+ status.range_context=struct('key',{values.fields.key},'value',{values.fields.value},'known',num2cell([values.fields.available]));
+ end
++
++function template_worker_audit(folder)
++audit=msiq.instruments.get_audit();
++attempts=getappdata(0,'TemplateHardwareAttempts');
++record=struct('hardware_attempts',attempts,'instrument_audit',audit, ...
++    'guard_active',true,'pid',feature('getpid'),'worker_folder',folder);
++p=fullfile(folder,'template_hardware_audit.json');
++fid=fopen(p,'w','n','UTF-8'); assert(fid>=0,'template:AuditSave','Cannot save worker audit.');
++cleanup=onCleanup(@()fclose(fid)); fwrite(fid,jsonencode(record),'char'); clear cleanup;
++archive=getenv('TEMPLATE_AUDIT_DIR');
++if ~isempty(archive)
++    if ~isfolder(archive), mkdir(archive); end
++    target=fullfile(archive,sprintf('worker_%d_%s.json',feature('getpid'), ...
++        char(datetime('now','Format','yyyyMMdd_HHmmss_SSS'))));
++    copyfile(p,target);
++end
++end--- source/code/+msiq/validate_rx_scope_restore_worker.m
++++ template/code/+msiq/validate_rx_scope_restore_worker.m
+@@ -39,5 +39,3 @@
+ w.close();t=tic;while ~w.process.HasExited&&toc(t)<40,pause(.05);end
+ assert(w.process.HasExited);delete(w);
+ end
+-
+-
+--- source/code/+msiq/validate_tx_reference_link.m
++++ template/code/+msiq/validate_tx_reference_link.m
+@@ -43,6 +43,3 @@
+ audit=msiq.instruments.get_audit(); assert(audit.scope_connections==0 && audit.source_connections==0);
+ note='成功发送关联、暂存不发布、停用失效、重启发布、读取拒绝不失效、跨通道、来源隔离、哈希与歧义验证；仅 mock AWG。';
+ end
+-
+-
+-
+--- source/run_v2_validation.m
++++ template/run_v2_validation.m
+@@ -3406,9 +3406,7 @@
+ end
+
+ function note = test_v1_golden()
+-path = ['<redacted-local-dataset-path>', ...
+-    '221328_rx_LDPC_r0p90__rx_IQMIMO_', ...
+-    '16QAM_12.5GBd_IF7.5GHz_115GHz_1km_16QAM_IQMIMO'];
++path = getenv('MSIQ_V1_GOLDEN_DIR');
+ if ~isfile(fullfile(path, 'rx_record.mat'))
+     error('validation:skip', ...
+         'V1 golden record is unavailable locally: %s', path);
+--- source/TX_Workbench.m
++++ template/TX_Workbench.m
+@@ -36,7 +36,7 @@
+     return;
+ end
+ if strcmp(action, 'gui')
+-    output = msiq.tx_workbench_app(first_options(varargin));
++    output = msiq.tx_workbench_app(template_gui_options(first_options(varargin)));
+     return;
+ end
+ if ismember(action, rx_actions)
+@@ -66,6 +66,22 @@
+         action, profile, selector, varargin{:});
+ end
+
++function options = template_gui_options(options)
++% Template-only default: explicit caller backends retain their own behavior.
++if ~isfield(options,'backend_options')
++    cfg=msiq.build_config('v2_traditional_wz');
++    cfg.instrument.awg=struct('mock',true,'mock_idn','KEYSIGHT,M8195A,TEMPLATE,1.0');
++    cfg.instrument.scope=struct('mock',true,'mock_idn','LECROY,SDA845ZI-A,TEMPLATE,1.0');
++    cfg.instrument.signal_generator=struct('mock',true);
++    cfg.safety.hardware_enabled=false;
++    options.backend_options=struct('cfg_override',cfg);
++end
++if ~isfield(options,'board_options')
++    options.board_options=struct('source_mode','simulation');
++end
++if ~isfield(options,'auto_connect'), options.auto_connect=false; end
++end
++
+ function options = first_options(values)
+ options = struct();
+ if isempty(values)

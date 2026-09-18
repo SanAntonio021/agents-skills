@@ -1,5 +1,11 @@
 function cfg = rx_workbench_config(options)
 %RX_WORKBENCH_CONFIG Keep injected RX tests independent of local instruments.
+if isfield(options,'native_simulation') && options.native_simulation
+    assert(~isfield(options,'config') || isempty(options.config),'RX_Workbench:TestConfig', ...
+        '模拟参数请使用 options.simulation；config 注入仅用于显式 mock 测试');
+    cfg=msiq.rx_simulation_config(options.simulation);
+    cfg=result_root(cfg,options); return;
+end
 if isfield(options,'config') && ~isempty(options.config)
     synchronous_mock = ~options.asynchronous && options.injected_io;
     asynchronous_mock = options.asynchronous && ~isempty(options.worker_factory);
@@ -20,8 +26,13 @@ else
 end
 if ~isfield(cfg.instrument,'scope') || ~isstruct(cfg.instrument.scope) || ...
         ~isscalar(cfg.instrument.scope) || isempty(fieldnames(cfg.instrument.scope))
-    error('RX_Workbench:ScopeConfig', ...
-        ['Missing scope configuration. Configure config/instruments.local.json ' ...
-        'using instruments.local.example.json before opening the hardware workbench.']);
+    cfg.instrument.scope=struct(); % Opening the UI does not require a hardware address.
+end
+cfg=result_root(cfg,options);
+end
+function cfg=result_root(cfg,options)
+if isfield(options,'results_root') && ~isempty(options.results_root)
+    validateattributes(options.results_root,{'char','string'},{'nonempty'});
+    cfg.results_root=char(options.results_root); cfg.results.root=cfg.results_root;
 end
 end

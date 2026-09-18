@@ -284,7 +284,7 @@ if ~capacity.ok
     throw_capacity_error(capacity);
 end
 comparison = compare_state(state.state, desired, route);
-run_dir = create_run_dir(cfg, route.name, options);
+[run_dir, owns_run_record] = create_run_dir(cfg, route.name, options);
 waveform_hashes = cell(1, numel(route.awg_channels));
 for k = 1:numel(route.awg_channels)
     waveform_hashes{k} = msiq.sha256_bytes(download.channel_data{k});
@@ -297,6 +297,7 @@ if isfield(options,'storage_run_root')
     plan.storage_run_root = options.storage_run_root;
 end
 plan.run_dir = run_dir;
+plan.owns_run_record = owns_run_record;
 plan.artifact_prefix = char(string(field_or(options, 'artifact_prefix', '')));
 plan.diagnostics_dir = fullfile(run_dir, 'data');
 plan.created_at = timestamp_text();
@@ -409,6 +410,7 @@ output_enabled = false;
 try
     % New waveform transfer is the one deliberately global operation.
     check_apply_cancel(options);
+    update_reference_link('invalidate',cfg,options,plan,'waveform_write');
     msiq.instruments.write_scpi(session, ':ABOR');
     msiq.instruments.set_awg_channels_output(session, selected, false);
     other_disabled = [];
@@ -483,6 +485,8 @@ try
     catch dashboard_exception
         output.dashboard_warning = dashboard_exception.message;
     end
+    finalize_tx_run(plan, 'completed', 'normal_completion', '');
+    if strcmp(receipt_status,'applied'), update_reference_link('publish',cfg,options,plan,''); end
 catch exception
     shutdown_channels = selected;
     if strict_switch, shutdown_channels = 1:4; end
@@ -513,6 +517,11 @@ catch exception
         msiq.plotting.tx_dashboard(plan.tx_dashboard_path, plan, failure);
     catch
     end
+    status = 'failed'; reason = 'unhandled_exception';
+    if strcmp(exception.identifier, 'msiq:if:Cancelled')
+        status = 'stopped'; reason = 'user_stop';
+    end
+    finalize_tx_run(plan, status, reason, exception.message);
     rethrow(exception);
 end
 clear cleanup;
@@ -704,11 +713,14 @@ if ~route_matches(before, desired, route)
     error('msiq:traditionalTx:ReuseState', ...
         'Recorded segment, length, selection, or shared AWG state changed.');
 end
+check_apply_cancel(options);
+update_reference_link('invalidate',cfg,options,saved.plan,'enable_output');
+try
 after_outputs = msiq.instruments.set_awg_channels_output( ...
     session, route.awg_channels, true);
 after = msiq.instruments.read_awg_public_state(session);
 verify_route_loaded(after, desired, route);
-if strcmpi(saved.receipt.status, 'staged')
+if ismember(lower(saved.receipt.status), {'staged','applied'})
     staged_receipt = saved.receipt;
     receipt = staged_receipt;
     receipt.status = 'applied';
@@ -729,6 +741,11 @@ output = struct('status', 'reused', 'run_dir', run_dir, 'route', route, ...
     'before', before, 'state', after, 'output_mask', logical(after_outputs), ...
     'state_fingerprint', state_fingerprint(after));
 output.channel_settings_rebound = ~strict_channel_settings;
+update_reference_link('publish',cfg,options,saved.plan,'');
+catch exception
+    try, msiq.instruments.set_awg_channels_output(session,route.awg_channels,false); catch, end
+    rethrow(exception);
+end
 clear cleanup;
 end
 
@@ -736,12 +753,17 @@ function output = stop_route(cfg, options)
 route = msiq.resolve_awg_route(options);
 session = msiq.instruments.open_session('awg', cfg.instrument.awg, 'query_only');
 cleanup = onCleanup(@() msiq.instruments.close_session(session));
+link_error='';
+try, update_reference_link('invalidate',cfg,options,struct(),'output_stop');
+catch exception, link_error=exception.message; end
 output_mask = msiq.instruments.set_awg_channels_output( ...
     session, route.awg_channels, false);
 state = msiq.instruments.read_awg_public_state(session);
 output = struct('status', 'stopped', 'route', route, 'state', state, ...
     'output_mask', logical(output_mask), ...
     'state_fingerprint', state_fingerprint(state));
+output.reference_link_warning=link_error;
+if ~isempty(link_error), warning('msiq:traditionalTx:ReferenceLink','AWG 已关闭，但发送关联失效记录未保存：%s',link_error); end
 clear cleanup;
 end
 
@@ -1027,17 +1049,37 @@ if rdiv_changed && desired_divider > current_divider
     msiq.instruments.write_scpi(session, ...
         sprintf(':INST:MEM:EXT:RDIV %s', desired.rdiv));
 end
+% Select the target DAC topology before changing per-channel memory modes.
+% On M8195A, MMOD writes issued while the previous DAC mode is active can be
+% ignored for lanes that are not legal in that mode (notably CH1 in MARK).
+if ~strcmpi(current.dac_mode, desired.dac_mode)
+    msiq.instruments.write_scpi(session, sprintf(':INST:DACM %s', desired.dac_mode));
+end
 if isfield(desired, 'channel_memory_modes')
-    for channel = 1:4
+    current_modes = {current.traces.memory_mode};
+    target_modes = desired.channel_memory_modes;
+    % M8195A FOUR-mode topology is ordered: entering all-INT must release
+    % the higher-numbered EXT lanes first, while entering all-EXT must build
+    % the contiguous EXT prefix from CH1 upward.  A CH1->CH4 loop can leave
+    % a partially switched E E I I state without reporting the intermediate
+    % settings conflict until the final route readback.
+    if all(strcmpi(target_modes, 'INT'))
+        mode_order = [3 4 2 1];
+    elseif all(strcmpi(target_modes, 'EXT'))
+        mode_order = [1 2 3 4];
+    else
+        mode_order = [find(strcmpi(target_modes, 'EXT') & ...
+            ~strcmpi(current_modes, 'EXT')), ...
+            fliplr(find(strcmpi(target_modes, 'INT') & ...
+            ~strcmpi(current_modes, 'INT')))];
+    end
+    for channel = mode_order
         requested = desired.channel_memory_modes{channel};
         if ~strcmpi(current.traces(channel).memory_mode, requested)
             msiq.instruments.write_scpi(session, ...
                 sprintf(':TRACe%d:MMOD %s', channel, requested));
         end
     end
-end
-if ~strcmpi(current.dac_mode, desired.dac_mode)
-    msiq.instruments.write_scpi(session, sprintf(':INST:DACM %s', desired.dac_mode));
 end
 if rdiv_changed && desired_divider <= current_divider
     msiq.instruments.write_scpi(session, ...
@@ -1323,7 +1365,8 @@ else
 end
 end
 
-function run_dir = create_run_dir(cfg, route_name, options)
+function [run_dir, owns_run_record] = create_run_dir(cfg, route_name, options)
+owns_run_record = false;
 if nargin < 3 || isempty(options)
     options = struct();
 end
@@ -1348,9 +1391,28 @@ if ~isempty(requested)
             run_dir);
     end
 end
-run = msiq.create_output_run(cfg,'measurement', ...
+category = 'measurement';
+is_mock = logical(field_or(cfg.instrument.awg, 'mock', false));
+if is_mock, category = 'checks'; end
+run = msiq.create_output_run(cfg,category, ...
     ['manual_16qam_' route_name],requested);
 run_dir = run.OutputDir;
+owns_run_record = true;
+if is_mock
+    Result_Update_Run_Info(run_dir, struct('purpose','validation', ...
+        'execution_mode','simulation','run_kind','single_point', ...
+        'entry_point','msiq.traditional_tx'));
+end
+end
+
+function finalize_tx_run(plan, status, reason, detail)
+% Shared parent runs are finalized by their orchestrator.
+if ~field_or(plan, 'owns_run_record', false), return; end
+try
+    Result_Finalize_Run(plan.run_dir, status, reason, [], detail);
+catch record_exception
+    warning('msiq:traditionalTx:RunFinalization', '%s', record_exception.message);
+end
 end
 
 function persist_plan(plan)
@@ -1637,4 +1699,14 @@ if isfield(spec, 'fail_stage') && strcmpi(char(string(spec.fail_stage)), stage)
     error('msiq:traditionalTx:MockDownloadFailure', ...
         'Injected TX download failure at %s.', stage);
 end
+end
+
+function update_reference_link(action,cfg,options,plan,reason)
+source='real'; if field_or(cfg.instrument.awg,'mock',false), source='simulation'; end
+device=field_or(cfg.instrument.awg,'resource','mock_awg');
+link=struct('source',source,'device',device,'reason',reason, ...
+    'execution_id',[field_or(plan,'run_id','') ':' char(java.util.UUID.randomUUID())], ...
+    'store_path',field_or(options,'reference_link_store_path',field_or(cfg,'reference_link_store_path','')));
+if strcmp(action,'publish'), link.reference_path=msiq.artifact_path(plan,'tx_reference_bundle.mat','read'); end
+msiq.tx_reference_link(action,cfg.project_root,link);
 end

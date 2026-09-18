@@ -50,20 +50,36 @@ for k=1:numel(source.observations)
         end
         reference_data=msiq.load_reference_bundle(ref_path); bundle=reference_data.bundle;
         item.replay_reference_path=ref_path;
-        item.source_reference_hash=msiq.sha256_bytes(jsonencode(bundle));
+        item.source_reference_hash=msiq.file_sha256(ref_path);
         rx_cfg=cfg;
         rx_cfg.waveform=bundle.dsp_config.waveform;
         rx_cfg.receiver=bundle.dsp_config.receiver;
         rx_cfg=restore_fec(rx_cfg,bundle.tx_ref);
         rx_cfg.receiver.debug_pre_fec_only=debug;
-        [measurement,spectrum]=msiq.if_capture_observation(raw,source.profile,rx_cfg,obs.scale_vdiv);
+        rx_cfg.receiver.strict_reference_blocks=true;
+        profile=source.profile;
+        if isfield(options,'measurement_context')
+            profile.measurement_context=msiq.rx_measurement_context(options.measurement_context);
+        end
+        [measurement,spectrum]=msiq.if_capture_observation(raw,profile,rx_cfg,obs.scale_vdiv);
         item.recomputed_observation=measurement;
         decoded=struct();
-        if strcmp(source.profile.stage,'tx_if')
+        explicit_if=isfield(options,'measurement_context') && options.measurement_context.is_real_if;
+        if strcmp(source.profile.stage,'tx_if') && ~explicit_if
             item.replay_status='spectrum_only';
             item.metrics=invalid('tx_if_direct_demodulation_not_implemented');
         else
             records=raw.channels;
+            if explicit_if
+                measurement_context=msiq.rx_measurement_context(options.measurement_context);
+                assert(numel(records)==1 && strcmp(rx_cfg.waveform.architecture,'single_complex_stream') && ...
+                    rx_cfg.waveform.if_center_hz==0,'msiq:if:ReplayChannels','中频解调需要单路波形及零数字中频单流参考。');
+                input=msiq.dsp.real_if_frontend(records(1).samples,records(1).time_axis_s, ...
+                    records(1).sample_rate_hz,measurement_context.center_freq_hz,rx_cfg.waveform,struct('remove_dc',true));
+                input.payload_pair='A'; input.clip_fraction=measurement.clip_fraction;
+                item.measurement_context=measurement_context;
+                item.processing_log=input.processing_log;
+            else
             assert(numel(records)==2&&numel(records(1).samples)==numel(records(2).samples), ...
                 'msiq:if:ReplayChannels','Two equal-length I/Q records are required.');
             input=struct('samples',[records(1).samples(:),records(2).samples(:)], ...
@@ -71,6 +87,7 @@ for k=1:numel(source.observations)
                 'sample_rate_hz',records(1).sample_rate_hz,'payload_pair','A', ...
                 'already_baseband',strcmp(source.profile.stage,'rx_iq'), ...
                 'iq_pair',true,'clip_fraction',measurement.clip_fraction);
+            end
             decoded=msiq.decode_capture(input,bundle.tx_ref,rx_cfg);
             streams=decoded.primary_streams;
             item.metrics=invalid('');

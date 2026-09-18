@@ -20,6 +20,9 @@ classdef IfBoard < handle
         function obj = IfBoard(cfg)
             if nargin==0, cfg=struct(); end
             if ~isfield(cfg,'mode'), cfg.mode='mock'; end
+            if ~isfield(cfg,'role'), cfg.role='legacy'; end
+            assert(any(strcmp(cfg.role,{'tx','rx','legacy'})), ...
+                'msiq:ifboard:role','Role must be tx, rx or legacy.');
             assert(any(strcmp(cfg.mode,{'mock','live'})), ...
                 'msiq:ifboard:mode','Mode must be mock or live.');
             obj.Config=cfg;
@@ -58,14 +61,46 @@ classdef IfBoard < handle
         end
         function confirmState(obj,state,note)
             assert(~isempty(strtrim(char(note))),'msiq:ifboard:confirmation','Describe manual state confirmation.');
-            for name={'rf','i','q','agc'}
+            names={'rf','i','q','agc'};
+            if strcmp(obj.Config.role,'tx'), names={'rf'}; end
+            base=obj.State;
+            for name=names
                 key=name{1}; assert(isfield(state,key),'msiq:ifboard:state','All four state arrays required.');
                 msiq.instruments.if_board_encode(key,state.(key));
                 state.(key)=double(state.(key)(:).');
+                base.(key)=state.(key);
             end
-            obj.State=state; obj.Requested=state; obj.StateKnown=true;
+            obj.State=base; obj.Requested=base; obj.StateKnown=true;
             obj.Confirmation=char(note);
             % Manual confirmation is neither a sent command nor device readback.
+        end
+        function initialize(obj,settings)
+            % Explicit full-target initialization; never infer board values
+            % from a cache. A partially completed group remains uncertain.
+            obj.Cancelled=false;
+            obj.requireOpen();
+            target=obj.State;
+            names={'rf','i','q'};
+            if strcmp(obj.Config.role,'tx'), names={'rf'}; end
+            for name=names
+                key=name{1};
+                assert(isfield(settings,key),'msiq:ifboard:state','Complete %s settings required.',key);
+                target.(key)=double(settings.(key)(:).');
+            end
+            obj.checkState(target);
+            if strcmp(obj.Config.role,'tx')
+                order={'rf'};
+            else
+                target.agc=zeros(1,6); order={'agc','rf','i','q'};
+            end
+            obj.Requested=target; obj.StateKnown=false;
+            try
+                for k=1:numel(order), obj.send(order{k},target,true); end
+                obj.State=target; obj.StateKnown=true;
+                obj.Confirmation='Complete settings sent; no attenuation readback.';
+            catch err
+                obj.StateKnown=false; rethrow(err);
+            end
         end
         function assertAutomaticReady(obj)
             obj.requireReady();
@@ -77,12 +112,15 @@ classdef IfBoard < handle
         function setAttenuation(obj,kind,subband,value)
             obj.requireReady(); kind=lower(char(kind));
             assert(any(strcmp(kind,{'rf','i','q'})),'msiq:ifboard:kind','Attenuation kind required.');
+            assert(~strcmp(obj.Config.role,'tx') || strcmp(kind,'rf'), ...
+                'msiq:ifboard:role','TX board supports RF attenuation only.');
             validateattributes(subband,{'numeric'},{'scalar','integer','>=',1,'<=',6});
             next=obj.State; next.(kind)(subband)=value;
             obj.checkState(next); obj.Requested=next;
             obj.send(kind,next);
         end
         function setIQ(obj,subband,iDb,qDb)
+            assert(~strcmp(obj.Config.role,'tx'),'msiq:ifboard:role','TX board has no I/Q attenuation control.');
             obj.requireReady();
             validateattributes(subband,{'numeric'},{'scalar','integer','>=',1,'<=',6});
             target=obj.State; target.i(subband)=iDb; target.q(subband)=qDb;
@@ -99,6 +137,7 @@ classdef IfBoard < handle
             for k=1:numel(order), obj.send(names{order(k)},stages{k}); end
         end
         function setAGC(obj,subband,value)
+            assert(strcmp(obj.Config.role,'legacy'),'msiq:ifboard:role','Daily workbenches keep RX AGC disabled.');
             obj.requireReady();
             validateattributes(subband,{'numeric'},{'scalar','integer','>=',1,'<=',6});
             next=obj.State; next.agc(subband)=value;
@@ -130,18 +169,23 @@ classdef IfBoard < handle
             yes=isfield(obj.Config,'runtime') && isfield(obj.Config.runtime,name) && ...
                 isequal(obj.Config.runtime.(name),true);
         end
-        function requireReady(obj)
+        function requireOpen(obj)
             if isfield(obj.Config,'cancel_check')
                 drawnow;
                 if obj.Config.cancel_check(), obj.cancel(); end
             end
             assert(obj.IsOpen && ~obj.Cancelled,'msiq:ifboard:closed','Session closed or cancelled.');
+        end
+        function requireReady(obj)
+            obj.requireOpen();
             assert(obj.StateKnown,'msiq:ifboard:unknown', ...
                 'State unconfirmed. Explicit manual confirmation required; never silently retry.');
         end
         function checkState(obj,state)
             assert(isfield(obj.Config,'limits'),'msiq:ifboard:limits','Approved attenuation limits required.');
-            for name={'rf','i','q'}
+            names={'rf','i','q'};
+            if strcmp(obj.Config.role,'tx'), names={'rf'}; end
+            for name=names
                 key=name{1}; msiq.instruments.if_board_encode(key,state.(key));
                 assert(isfield(obj.Config.limits,key),'msiq:ifboard:limits','Missing %s limits.',key);
                 lim=obj.Config.limits.(key);
@@ -153,8 +197,10 @@ classdef IfBoard < handle
                     'msiq:ifboard:limits','Intermediate %s state exceeds approved limits.',key);
             end
         end
-        function send(obj,kind,next)
-            obj.requireReady(); frame=msiq.instruments.if_board_encode(kind,next.(kind));
+        function send(obj,kind,next,initializing)
+            if nargin<4, initializing=false; end
+            if initializing, obj.requireOpen(); else, obj.requireReady(); end
+            frame=msiq.instruments.if_board_encode(kind,next.(kind));
             entry=struct('kind',kind,'frame',frame,'state',next,'outcome','pending', ...
                 'time',char(datetime('now','Format','yyyy-MM-dd HH:mm:ss.SSS')));
             obj.History(end+1)=entry; obj.WriteCount=obj.WriteCount+1;

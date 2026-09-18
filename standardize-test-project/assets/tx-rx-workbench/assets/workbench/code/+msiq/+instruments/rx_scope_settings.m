@@ -45,6 +45,7 @@ for k=1:numel(fields)
         settings.fields(k)=cached.fields(previous);
         continue;
     end
+    reading_capability=false;
     try
         cmd=f.query;
         if isempty(cmd), cmd=sprintf('VBS? ''return=%s''',f.path); end
@@ -54,7 +55,9 @@ for k=1:numel(fields)
         else
             f.value=canonical(raw,f.key);
         end
-        if ~refresh_capabilities && ~isempty(previous) && cached.fields(previous).available && ~strcmp(f.key,'TRLEVEL')
+        reading_capability=true;
+        if ~refresh_capabilities && ~isempty(previous) && cached.fields(previous).available && ...
+                isempty(cached.fields(previous).error) && ~strcmp(f.key,'TRLEVEL')
             old=cached.fields(previous);
             f.choices=old.choices; f.choice_labels=old.choice_labels;
             f.minimum=old.minimum; f.maximum=old.maximum; f.step=old.step;
@@ -79,16 +82,25 @@ for k=1:numel(fields)
             f.minimum=vals(1); f.maximum=vals(2); f.step=vals(3);
             assert(f.maximum>=f.minimum,'RX_Workbench:Unsupported','无效参数范围');
         end
+        reading_capability=false;
         f.available=true;
         f.writable=strcmp(f.kind,'number') || ~isempty(f.choices);
+        if strcmp(f.kind,'enum') && ~ismember(f.value,f.choices)
+            f.writable=false;
+            f.error=sprintf('当前值 %s 暂不支持修改，保留只读显示',f.value);
+        end
         if ismember(f.key,{'TRSLOPE','TRLEVEL','HTYPE','HTIME','TRSOURCE'})
             trigger_type=canonical(ask('VBS? ''return=app.Acquisition.Trigger.Type'''),'TYPE');
             if ~strcmp(trigger_type,'EDGE'), f.writable=false; f.error='当前不是边沿触发'; end
         end
+        if strcmp(f.key,'HTIME') && f.writable
+            holdoff_type=canonical(ask('VBS? ''return=app.Acquisition.Trigger.Edge.HoldoffType'''),'HTYPE');
+            if ~strcmp(holdoff_type,'TI'), f.writable=false; f.error='仅按时间触发释抑时可设置释抑时间'; end
+        end
         if strcmp(f.key,'SAMPLEMODE'), settings.sample_mode=f.value; end
     catch exception
-        if strcmp(exception.identifier,'RX_Workbench:Transport'), rethrow(exception); end
-        f.available=false; f.writable=false; f.error=exception.message;
+        if strcmp(exception.identifier,'RX_Workbench:Transport') && ~reading_capability, rethrow(exception); end
+        f.available=reading_capability; f.writable=false; f.error=exception.message;
     end
     settings.fields(k)=f;
 end

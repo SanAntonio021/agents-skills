@@ -58,6 +58,10 @@ rolloff=field_or(frame,'rrc_rolloff',field_or(waveform,'rolloff',NaN));
 edge=rate*(1+rolloff)/2;
 if ~isfinite(edge), edge=field_or(frame,'occupied_bandwidth_hz',NaN)/2; end
 center_hz=field_or(waveform,'if_center_hz',NaN);
+measurement=field_or(context,'measurement_context',struct());
+if field_or(measurement,'is_real_if',false)
+    center_hz=measurement.center_freq_hz;
+end
 band_edges=[];
 if isfinite(edge) && isfinite(center_hz)
     band_edges=unique([max(0,abs(center_hz)-edge),abs(center_hz)+edge]);
@@ -86,7 +90,7 @@ for k=1:2
         yticks(a,ticks); a.YTickLabel=numeric_labels(ticks); a.YAxis.Exponent=0;
         channels(k).voltage_ticks=ticks;
         ylabel(a,'电压（V）','FontSize',8);
-        if k==1, a.XTickLabel=[]; else, xlabel(a,'采集时间（μs）'); end
+        if k<min(2,numel(records)), a.XTickLabel=[]; else, xlabel(a,'采集时间（μs）'); end
         grid(a,'on');
     else
         placeholder(a,'缺少有效采集时间轴');
@@ -121,7 +125,7 @@ for k=1:2
             xline(b,band_edge/1e9,'--','Color',[.4 .4 .4]);
         end
         ylabel(b,unit,'Interpreter','none','FontSize',8);
-        if k==1, b.XTickLabel=[]; else, xlabel(b,'频率（GHz）'); end
+        if k<min(2,numel(records)), b.XTickLabel=[]; else, xlabel(b,'频率（GHz）'); end
         grid(b,'on');
         in_axes_note(b,d.name,'nw');
         in_axes_note(b,power_label,'ne');
@@ -136,11 +140,21 @@ rate_notes=arrayfun(@(d) sprintf('%s %.3g GSa/s',d.name,d.sample_rate_hz/1e9), .
     channels,'UniformOutput',false);
 rate_note=strjoin(rate_notes,'；');
 power_note='50 Ω';
+if field_or(measurement,'is_real_if',false)
+    power_note='';
+    if ~isempty(channels) && isfinite(channels(1).impedance_ohm)
+        power_note=sprintf('%.4g Ω',channels(1).impedance_ohm);
+    end
+end
 in_axes_note(a,power_note,'se'); texts{1}{end+1}=power_note;
 spectrum_footer=strjoin({rate_note,'理论带边'},'；');
 if isempty(band_edges), spectrum_footer=rate_note; end
 texts{2}{end+1}=spectrum_footer;
 stage_raw=struct('channels',records);
+if field_or(measurement,'is_real_if',false) && isfield(validation,'pairs') && ...
+        ~isempty(validation.pairs) && isfield(validation.pairs(1),'raw_for_decode')
+    stage_raw=validation.pairs(1).raw_for_decode;
+end
 [stages,stage_info]=msiq.plotting.rx_constellation_stages(stage_raw,context,decoded);
 p=panels(3,:); a=plot_axis(fig,p,44,28);
 sync=field_or(decoded,'synchronization',struct()); metric=field_or(sync,'repeat_metric_trace',[]);

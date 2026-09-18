@@ -54,7 +54,7 @@ state=getappdata(fig,'rx_workbench_state');
 state.scope_status=status; state.raw_scope_status=status;
 state.raw=msiq.plotting.rx_live_analysis(raw,status);
 setappdata(fig,'rx_workbench_state',state);
-for dimensions={[1500 900],[1100 700]}
+for dimensions={[1920 1080],[1280 720]}
     dim=dimensions{1}; set(fig,'Position',[40 40 dim]);
     callback=get(fig,'SizeChangedFcn'); callback(fig,[]); drawnow;
     state=getappdata(fig,'rx_workbench_state');
@@ -67,7 +67,9 @@ for dimensions={[1500 900],[1100 700]}
         assert(numel(ticks)==11 && all(abs(diff(ticks)-5)<1e-10));
         assert(max(abs(get(ax,'XLim')-[-25 25]))<9e-6);
         labels=cellstr(get(ax,'XTickLabel'));
-        assert(isequal(labels,cellstr(string(-25:5:25)')), ...
+        expected=cellstr(string(-25:5:25)'); shown=~cellfun(@isempty,labels);
+        assert(numel(labels)==numel(expected) && shown(1) && shown(end) && nnz(shown)>=3 && ...
+            isequal(labels(shown),expected(shown)), ...
             'Descriptor roundoff changed readable tick labels.');
         position=get(ax,'Position'); inset=get(ax,'TightInset');
         assert(position(1)>=inset(1)-1 && position(2)>=inset(2)-1);

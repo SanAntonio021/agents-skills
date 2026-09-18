@@ -26,23 +26,23 @@ set(state.home.h_tdiv,'String','12');
 io.write(state.session,'TDIV 5e-9');
 tick(fig); state=current(fig); data=get(state.home.h_tdiv,'UserData');
 assert(strcmp(get(state.home.h_tdiv,'String'),'12') && data.multiplier==1e-6);
-invoke(state.home.h_tdiv); state=current(fig);
+enter(state.home.h_tdiv); state=current(fig);
 assert(abs(state.scope_status.timebase-12e-6)<1e-15);
 invoke(state.home.h_pause);
-set(state.home.h_tdiv,'String','10'); invoke(state.home.h_tdiv);
+set(state.home.h_tdiv,'String','10'); enter(state.home.h_tdiv);
 state=current(fig);
 assert(abs(state.scope_status.timebase-10e-6)<1e-15, ...
     'A displayed microsecond input must write seconds, not nanoseconds.');
 assert(state.raw_stale && contains(get(state.home.h_freshness,'String'),'参数已更新'));
-set(state.home.h_center,'String','1'); invoke(state.home.h_center);
+set(state.home.h_center,'String','0'); invoke(state.home.h_center);
 set(state.home.h_bandwidth,'String','2'); invoke(state.home.h_bandwidth);
 set(state.home.h_psd_min,'String','-145'); invoke(state.home.h_psd_min);
 set(state.home.h_ch1,'Value',3); invoke(state.home.h_ch1);
 set(state.home.h_ch2,'Value',4); invoke(state.home.h_ch2);
 state=current(fig);
 assert(isequal(state.channels,{'C3','C4'}) && ~state.manual_band);
-set(state.home.h_center,'String','2'); invoke(state.home.h_center);
-set(state.home.h_bandwidth,'String','3'); invoke(state.home.h_bandwidth);
+set(state.home.h_center,'String','.5'); invoke(state.home.h_center);
+set(state.home.h_bandwidth,'String','3.5'); invoke(state.home.h_bandwidth);
 set(state.home.h_psd_min,'String','-155'); invoke(state.home.h_psd_min);
 close(fig); clear guard;
 % Use a fresh device mock to prove hardware settings are not restored.
@@ -71,7 +71,8 @@ fig=msiq.rx_workbench_app(options); guard=onCleanup(@() finish(fig));
 assert(isequal(current(fig).channels,{'C4','C3'}) && current(fig).running);
 close(fig); clear guard;
 loaded=load(path); preferences=loaded.preferences;
-assert(isequal(sort(fieldnames(preferences)),sort({'version';'channels';'views'})));
+assert(isequal(sort(fieldnames(preferences)),sort({'version';'channels';'views';'measurement_position';'measurement_subband'; ...
+    'measurement_routes';'measurement_second_enabled';'channel_selection_explicit';'second_enabled'})));
 assert(~contains(strjoin(fieldnames(preferences.views.C3_C4)),'timebase'));
 preferences.channels={'C3','C3'}; preferences.hardware=struct('timebase',99);
 preferences.views.C3_C4=struct('bad',true);
@@ -94,6 +95,9 @@ close(fig); clear guard;
 fprintf('RX preferences PASS: ordered routes, per-pair views, read-only reopen, units, first-frame fit, stale data\n');
 end
 
+function enter(h)
+callback=get(h,'KeyPressFcn'); callback(h,struct('Key','return')); drawnow;
+end
 function state=current(fig)
 state=getappdata(fig,'rx_workbench_state');
 end

@@ -1,7 +1,13 @@
-function compact = rx_live_analysis(raw,status)
+function compact = rx_live_analysis(raw,status,options)
 %RX_LIVE_ANALYSIS Analyze once per capture, separately from graphics callbacks.
 % Returned samples are a display envelope, not a uniformly sampled DSP record.
+if nargin<3, options=struct(); end
 compact = raw;
+context=field_or(options,'measurement_context',field_or(raw,'measurement_context',struct()));
+if ~isempty(fieldnames(context))
+    context=msiq.rx_measurement_context(context);
+    compact.measurement_context=context;
+end
 records = field_or(raw,'channels',struct([]));
 spectra = cell(1,numel(records));
 for k = 1:numel(records)
@@ -41,6 +47,35 @@ for k = 1:numel(records)
     end
 end
 compact.live_spectra = spectra;
+if field_or(context,'is_real_if',false)
+    digital=struct('valid',false,'reason','缺少发送参考，无法确定滤波带宽', ...
+        'spectra',{{}},'processing_log',struct());
+    reference=field_or(options,'real_if_reference',field_or(raw,'real_if_reference',struct()));
+    try
+        assert(numel(records)==1,'msiq:real_if:Channels','单路中频需要一个实际采集通道');
+        assert(compact.channels(1).wave_valid,'msiq:real_if:Waveform',compact.channels(1).wave_info);
+        assert(~isempty(fieldnames(reference)),'msiq:real_if:Reference',digital.reason);
+        assert(strcmp(field_or(reference,'architecture','single_complex_stream'),'single_complex_stream') && ...
+            field_or(reference,'if_center_hz',0)==0,'msiq:real_if:Reference', ...
+            '单路中频目前需要零数字中频的单复数流参考');
+        record=records(1); [rate,~]=record_rate(record);
+        processed=msiq.dsp.real_if_frontend(record.samples,record.time_axis_s,rate, ...
+            context.center_freq_hz,reference,struct('remove_dc',false));
+        parts={real(processed.samples),imag(processed.samples)};
+        names={'数字 I','数字 Q'};
+        for n=1:2
+            item=struct('channel',names{n},'samples',parts{n}, ...
+                'time_axis_s',processed.time_axes,'sample_rate_hz',processed.sample_rate_hz);
+            digital.spectra{n}=real_psd(item,struct('sample_rate_hz',processed.sample_rate_hz),struct());
+            digital.spectra{n}.limit_confirmed=true;
+        end
+        digital.valid=true; digital.reason=''; digital.processing_log=processed.processing_log;
+    catch exception
+        digital.reason=exception.message;
+        digital.error_id=exception.identifier;
+    end
+    compact.real_if_analysis=digital;
+end
 end
 
 function label = voltage(value)

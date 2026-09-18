@@ -5,7 +5,7 @@ classdef IfRun < handle
         setting; scale; captureCount=0; clock; bundle=struct();
         amplitude; memoryMode='EXT'; lastRangeChange=false;
         comparisonPlans={};
-        shutdownDone=false;
+        shutdownDone=false; scopeRestoreBlocked=false; scopeStart=struct(); scopeTarget=struct(); scanOperation=false;
         referencePath=''; modeSwitchCount=0;
     end
     properties (Access=private)
@@ -92,6 +92,11 @@ classdef IfRun < handle
             result=self.out;
         end
         function preflight(self,action)
+            if ismember(action,{'scan','mock'}) && strcmp(self.p.mode,'live')
+                explicit=isfield(self.options,'scope_settings')&&isstruct(self.options.scope_settings)&&~isempty(fieldnames(self.options.scope_settings));
+                common=isfield(self.options,'scope_settings_source')&&strcmp(self.options.scope_settings_source,'common');
+                assert(explicit||common,'msiq:if:ScopeSource','扫描需明确指定实验示波器设置或常用设置来源。');
+            end
             [self.p,devices]=msiq.if_workbench_validate_profile(self.p,action);
             self.options.needed_devices=devices;
             self.options.board_automatic=ismember(action,{'balance','scan','mock','resume','final_capture'})&&strcmp(self.p.stage,'rx_iq');
@@ -101,6 +106,18 @@ classdef IfRun < handle
             assert(ismember(p.mode,{'mock','live'}),'msiq:if:Mode','mode must be mock or live.');
             assert(ismember(p.stage,{'direct','tx_if','rx_iq'}),'msiq:if:Stage','Unknown stage.');
             automatic=ismember(action,{'scan','mock','resume'});
+            self.scanOperation=automatic;
+            if strcmp(action,'resume')
+                prior=load(fullfile(self.options.run_dir,'data','if_checkpoint.mat'),'out');
+                assert(isfield(prior.out,'scope_start')&&~isempty(fieldnames(prior.out.scope_start)), ...
+                    'msiq:if:ResumeScope','旧扫描缺少示波器起点；请建立新一轮实验。');
+                self.scopeTarget=prior.out.scope_start;
+            elseif automatic && isfield(self.options,'scope_settings')
+                self.scopeTarget=self.options.scope_settings;
+            elseif automatic && strcmp(p.mode,'live')
+                assert(isfield(self.options,'scope_settings_source')&&strcmp(self.options.scope_settings_source,'common'), ...
+                    'msiq:if:ScopeSource','扫描需明确指定实验示波器设置或常用设置来源。');
+            end
             if automatic && ~self.out.plan.automatic_ready
                 error('msiq:if:NotReady','%s',strjoin(self.out.plan.blockers,'; '));
             end
@@ -110,7 +127,9 @@ classdef IfRun < handle
                 'msiq:if:Authorization','Explicit hardware action confirmation is required.');
             assert(~isempty(p.wiring.id)&&~isempty(p.wiring.confirmed_at),'msiq:if:Wiring','Confirm physical wiring first.');
             if strcmp(p.stage,'tx_if')
-                assert(strcmp(p.scope.side,'lower')&&isequal(p.scope.channels,{'C2'}),'msiq:if:Wiring','TX IF requires lower C2.');
+                assert(strcmp(p.scope.side,'upper')&&numel(p.scope.channels)==1&& ...
+                    ismember(p.scope.channels{1},{'C1','C2','C3','C4'}), ...
+                    'msiq:if:Wiring','TX IF requires one selected upper scope channel C1 through C4.');
             elseif strcmp(p.stage,'rx_iq')
                 assert(strcmp(p.scope.side,'upper')&&numel(p.scope.channels)==2&& ...
                     numel(unique(p.scope.channels))==2&&all(ismember(p.scope.channels,{'C1','C2','C3','C4'})), ...
@@ -254,7 +273,12 @@ classdef IfRun < handle
                     mapped(:,strcmp(channels,self.p.board.mapping.q_channel))=x(:,2);
                     x=mapped;
                 end
-                if strcmp(self.p.stage,'tx_if'), x=.1*cos(2*pi*6.2e9*t); end
+                if strcmp(self.p.stage,'tx_if')
+                    selection=msiq.rx_measurement_context('tx_if',self.p.subband);
+                    assert(selection.center_freq_hz<fs/2,'msiq:if:MockNyquist', ...
+                        'Mock sample rate cannot represent the selected IF band.');
+                    x=.1*cos(2*pi*selection.center_freq_hz*t);
+                end
                 records=cell(1,numel(channels));
                 for k=1:numel(channels)
                     records{k}=struct('channel',channels{k},'samples',x(:,k), ...
@@ -267,7 +291,9 @@ classdef IfRun < handle
             f=self.p.scope.fresh;
             evidence=msiq.if_confirm_fresh(f,@(c)msiq.instruments.write_scpi(self.scope,c), ...
                 @(c)msiq.instruments.query_scpi(self.scope,c),@()self.check(),@(s)self.wait(s));
+            before=self.readScope();
             raw=msiq.instruments.capture_scope_raw(self.scope,self.p.scope.channels);
+            raw.scope_status_before=before; raw.scope_status_after=self.readScope();
             raw.fresh_confirmed=true; raw.fresh_evidence=evidence;
         end
         function obs=capture(self,role,group,point)
@@ -468,6 +494,7 @@ classdef IfRun < handle
             end
         end
         function scan(self)
+            self.establishScopeStart();
             assert(~strcmp(self.p.stage,'tx_if'),'msiq:if:Stage','2D scanning requires RX I/Q metrics.');
             self.prepare(0,0,true); self.out.baseline=self.repeat('baseline',0,0,3);
             self.scanPoints();
@@ -551,6 +578,7 @@ classdef IfRun < handle
         function resume(self)
             loaded=load(fullfile(self.options.run_dir,'data','if_checkpoint.mat'),'out'); old=loaded.out;
             assert(strcmp(old.plan.signature,self.out.plan.signature),'msiq:if:ResumeIdentity','Plan/profile differs; start a new run.');
+            self.establishScopeStart();
             self.out.parent_run=old.run_dir;
             self.out.prior_observations=old.observations;
             if isfield(old,'prior_observations'), self.out.prior_observations=[old.prior_observations,old.observations]; end
@@ -706,6 +734,13 @@ classdef IfRun < handle
                 if self.p.mock.fail_shutdown
                     report.awg_off_verified=false; report.errors{end+1}='Injected AWG OFF verification failure.';
                 end
+                if ~isempty(fieldnames(self.scopeStart))
+                    try
+                        restored=self.restoreScope(self.scopeStart,true); report.scope_restore=restored;
+                        report.scope_restored=restored.ok;
+                    catch ex, report.errors{end+1}=ex.message; report.scope_restored=false; end
+                end
+
             else
                 if ~isempty(self.awg)
                     try
@@ -715,8 +750,19 @@ classdef IfRun < handle
                     catch ex, report.errors{end+1}=ex.message; end
                 end
                 if ~isempty(self.scope)
-                    try, msiq.instruments.write_scpi(self.scope,'TRMD AUTO'); report.scope_auto=true;
-                    catch ex, report.errors{end+1}=ex.message; end
+                    if self.scopeRestoreBlocked
+                        report.scope_restored=false;
+                        report.errors{end+1}='初始化恢复失败；不自动重试或追加示波器写入。';
+                    elseif ~isempty(fieldnames(self.scopeStart))
+                        try
+                            restored=self.restoreScope(self.scopeStart,true); report.scope_restore=restored;
+                            assert(restored.ok,'msiq:if:ScopeRestore','示波器起点恢复未完成。');
+                            report.scope_restored=true;
+                        catch ex, report.errors{end+1}=ex.message; report.scope_restored=false; end
+                    else
+                        try, msiq.instruments.write_scpi(self.scope,'TRMD AUTO'); report.scope_auto=true;
+                        catch ex, report.errors{end+1}=ex.message; end
+                    end
                 end
                 for session={self.scope,self.awg}
                     if ~isempty(session{1})
@@ -725,14 +771,73 @@ classdef IfRun < handle
                 end
             end
             if ~isempty(self.board)
-                self.out.board_final=self.boardState();
-                try, self.board.close(); catch ex, report.errors{end+1}=ex.message; end
+                try, self.out.board_final=self.boardState(); catch ex, report.errors{end+1}=ex.message; end
+                try, self.board.close(); report.board_closed=~self.board.IsOpen;
+                catch ex, report.errors{end+1}=ex.message; report.board_closed=false; end
             end
             report.process_kill_protection=false;
             self.out.shutdown=report;
             self.shutdownDone=true;
             if ~isempty(report.errors), self.out.status='shutdown_failed'; end
             self.progress('shutdown_complete',true);
+        end
+        function status=readScope(self)
+            status=msiq.instruments.rx_scope_state(self.scope,@msiq.instruments.query_scpi);
+            status.settings=msiq.instruments.rx_scope_settings(self.scope,@msiq.instruments.query_scpi,struct(),true);
+        end
+        function establishScopeStart(self)
+            self.check();
+            if strcmp(self.p.mode,'mock') && isempty(fieldnames(self.scopeTarget))
+                % Explicit mock profile is a fixture, never a live fallback.
+                self.scopeTarget=struct('mock_fixture',true,'vdiv',self.scale, ...
+                    'channels',{self.p.scope.channels},'sample_rate_hz',self.p.scope.sample_rate_hz, ...
+                    'window_s',self.p.scope.window_s);
+            end
+            if isempty(fieldnames(self.scopeTarget)) && strcmp(self.p.mode,'live')
+                current=msiq.rx_scope_snapshot(self.readScope(),self.p.scope.channels);
+                presetOptions=struct();
+                if isfield(self.options,'scope_presets_path'), presetOptions.store_path=self.options.scope_presets_path; end
+                selected=msiq.rx_scope_presets('load',self.cfg.project_root,'measurement',current,presetOptions);
+                if ~isempty(selected), self.scopeTarget=selected; end
+            end
+            if isempty(fieldnames(self.scopeTarget))
+                error('msiq:if:ScopeSource','未找到指定的常用示波器设置。');
+            end
+            restored=self.restoreScope(self.scopeTarget);
+            self.out.scope_initial_restore=restored;
+            % A partial initial restore is diagnostic state, not a confirmed start.
+            % Never silently retry the same interrupted write during cleanup.
+            self.scopeRestoreBlocked=~restored.ok;
+            assert(restored.ok,'msiq:if:ScopeRestore','扫描前示波器设置恢复未完成。');
+            self.scopeStart=self.scopeTarget;
+            if ~strcmp(self.p.mode,'mock')
+                self.scopeStart=msiq.rx_scope_snapshot(restored.status,self.p.scope.channels);
+            end
+            self.out.scope_start=self.scopeStart;
+            self.event('scope_start_confirmed',self.scopeStart); self.checkpoint();
+        end
+        function report=restoreScope(self,target,cleanup)
+            if nargin<3, cleanup=false; end
+            if strcmp(self.p.mode,'mock')
+                if cleanup && isfield(self.p.mock,'fail_scope_restore') && self.p.mock.fail_scope_restore
+                    error('msiq:if:ScopeRestore','Injected scope cleanup restoration failure.');
+                end
+                assert(isfield(target,'mock_fixture')&&target.mock_fixture,'msiq:if:ScopeFixture','Mock requires fixture settings.');
+                self.scale=target.vdiv;
+                self.p.scope.sample_rate_hz=target.sample_rate_hz; self.p.scope.window_s=target.window_s;
+                report=struct('ok',true,'status',target,'applied',{{}},'errors',{{}},'mock',true);
+                return;
+            end
+            io=struct('query',@msiq.instruments.query_scpi,'write',@msiq.instruments.write_scpi);
+            restoreOptions=struct();
+            if ~cleanup, restoreOptions.check=@()self.check(); end
+            report=msiq.rx_scope_restore(self.scope,target,self.p.scope.channels,io,restoreOptions);
+            if report.ok
+                for k=1:numel(self.p.scope.channels)
+                    ix=find(strcmp({report.status.channels.channel},self.p.scope.channels{k}),1);
+                    self.scale(k)=report.status.channels(ix).vertical_scale_v_per_div;
+                end
+            end
         end
         function emergencyShutdown(self)
             if self.shutdownDone, return; end

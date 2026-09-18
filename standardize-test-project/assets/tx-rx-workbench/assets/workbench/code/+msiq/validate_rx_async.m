@@ -2,8 +2,17 @@ function report = validate_rx_async(output_dir, section)
 %VALIDATE_RX_ASYNC Real process isolation, blocking mock reads, and large traces.
 if nargin<1, output_dir=tempname; mkdir(output_dir); end
 if nargin<2, section='all'; end
-section=validatestring(section,{'all','reference'});
+section=validatestring(section,{'all','reference','lifecycle'});
 if strcmp(section,'reference')
+    validate_reference_async(output_dir);
+    validate_empty_transport(output_dir);
+    report=struct('passed',true,'section',section);
+    return;
+end
+if strcmp(section,'lifecycle')
+    validate_default_startup(output_dir);
+    validate_disabled_channels(output_dir);
+    validate_capture_retries(output_dir);
     validate_reference_async(output_dir);
     validate_empty_transport(output_dir);
     report=struct('passed',true,'section',section);
@@ -35,7 +44,7 @@ assert(~isempty(worker),'The app did not create a background worker.');
 started=tic; invoke(state.home.h_settings); drawnow;
 startup_page_s=toc(started);
 fprintf('RX startup page switch %.4fs\n',startup_page_s);
-assert(startup_page_s<.5 && current(fig).page=="settings", ...
+assert(startup_page_s<.5 && current(fig).page=="home", ...
     'Startup settings switch took %.4fs (page %s).',startup_page_s,current(fig).page);
 invoke(state.home.h_settings);
 await(fig,@(s) s.connected,60);
@@ -53,14 +62,15 @@ state=current(fig);
 scroll=get(fig,'WindowScrollWheelFcn');
 top=get(state.home.scroll,'Value');
 scroll(fig,struct('PointerPosition',[30 200],'VerticalScrollCount',1));
-assert(get(state.home.scroll,'Value')<top,'Wheel did not move during a blocked read.');
+assert(get(state.home.scroll,'Value')<top,'Wheel did not move during a blocked read (before %.3g after %.3g max %.3g panel %s page %s).', ...
+    top,get(state.home.scroll,'Value'),get(state.home.scroll,'Max'),mat2str(get(state.home.settings_panel,'Position')),current(fig).page);
 scroll(fig,struct('PointerPosition',[30 200],'VerticalScrollCount',-1));
 assert(get(state.home.scroll,'Value')==top,'Wheel/slider top mapping is inconsistent.');
 interaction_marks(end+1)=toc(started);
 set(fig,'Position',[40 40 1100 700]);
 invoke(state.home.h_settings);
 invoke(state.home.h_pause);
-set(state.home.h_off1,'String','.012'); invoke(state.home.h_off1);
+set(state.home.h_off1,'String','.012'); enter(state.home.h_off1);
 drawnow;
 response_s=toc(started);
 interaction_steps=diff([0 interaction_marks response_s]);
@@ -114,20 +124,23 @@ end
 resize_s=toc(started)/5;
 state=current(fig); assert(isequaln(before,state.raw.live_spectra));
 assert(resize_s<.4,'Resizing still performs large-record analysis.');
-% Hidden plots retain their geometry and samples until the home page returns.
+% The fixed sidebar never hides plots. Resize changes geometry; scroll does not.
 invoke(state.home.h_settings);
 hidden_positions=get(axes_list,'Position');
 hidden_lines=findobj(axes_list,'Type','line');
-hidden_xdata=get(hidden_lines,'XData');
+hidden_raw=current(fig).raw;
 set(fig,'Position',[40 40 1100 500]); drawnow;
+resized_positions=get(axes_list,'Position');
+assert(~isequaln(resized_positions,hidden_positions));
 scroll=get(fig,'WindowScrollWheelFcn');
 scroll(fig,struct('PointerPosition',[30 200],'VerticalScrollCount',1));
 scroll(fig,struct('PointerPosition',[30 200],'VerticalScrollCount',-1));
+assert(isequaln(get(axes_list,'Position'),resized_positions),'Sidebar scroll moved plots.');
 set(fig,'Position',[40 40 1100 650]); drawnow;
-assert(isequaln(get(axes_list,'Position'),hidden_positions), ...
-    'Settings-page resize or scroll moved hidden plot axes.');
-assert(all(isgraphics(hidden_lines)) && isequaln(get(hidden_lines,'XData'),hidden_xdata), ...
-    'Settings-page resize or scroll changed hidden waveform samples.');
+assert(~isequaln(get(axes_list,'Position'),hidden_positions), ...
+    'Visible plots did not follow the resized window.');
+assert(all(isgraphics(hidden_lines)) && isequaln(current(fig).raw,hidden_raw), ...
+    'Sidebar resize or scroll changed the accepted observation record.');
 invoke(state.home.h_settings); drawnow;
 assert(~isequaln(get(axes_list,'Position'),hidden_positions), ...
     'Returning home did not apply the final window size.');
@@ -142,7 +155,7 @@ before_writes=count(before_log,'WRITE ');
 invoke(state.home.h_play);
 await(fig,@(s) s.busy,10);
 await(fig,@(~) count(fileread(mock_options.log_path),'CAPTURE BEGIN')>before_captures,10);
-set(state.home.h_trdl,'String','-2.5'); invoke(state.home.h_trdl);
+set(state.home.h_trdl,'String','-2.5'); enter(state.home.h_trdl);
 assert(count(fileread(mock_options.log_path),'WRITE ')==before_writes);
 invoke(state.home.h_pause);
 await(fig,@(s) ~s.busy && isempty(s.pending),20);
@@ -157,7 +170,7 @@ await(fig,@(s) ~s.raw_stale,20);
 invoke(state.home.h_pause); await(fig,@(s) ~s.busy,20);
 new_x=get(findobj(state.home.axes.wave_top,'Tag','rx_waveform'),'XData');
 assert(~isequal(old_x,new_x),'Next frame must use the new waveform timestamps.');
-set(state.home.h_trdl,'String','0'); invoke(state.home.h_trdl);
+set(state.home.h_trdl,'String','0'); enter(state.home.h_trdl);
 await(fig,@(s) ~s.busy && isempty(s.pending),20);
 assert(current(fig).scope_status.trigger_delay_s==0);
 fprintf('RX horizontal position PASS: queued negative TRDL, zero readback, new timestamps, no repeated writes\n');
@@ -196,31 +209,29 @@ assert(~contains(fileread(mock_options.log_path),'CLOSE'));
 
 % A command timeout identifies the field, stops observation, and can reconnect.
 fid=fopen(mock_options.failure_path,'w'); fprintf(fid,'C1:VDIV'); fclose(fid);
-set(state.home.h_vdiv1,'String','.025'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','.025'); enter(state.home.h_vdiv1);
 await(fig,@(s) ~s.busy && ~s.connected,10);
 state=current(fig); data=get(state.home.h_vdiv1,'UserData');
 assert(strcmp(get(data.retry,'Visible'),'on'));
 assert(contains(get(state.home.h_status,'String'),'C1:VDIV'));
 delete(mock_options.failure_path);
 invoke(data.retry);
+% Reconnect and the queued write are separate serialized I/O operations.
+% Keep a bounded deadline for each; do not charge both full readbacks to one.
+await(fig,@(s) s.connected,10);
 await(fig,@(s) ~s.busy && s.connected && isempty(s.pending),10);
 state=current(fig); assert(abs(state.scope_status.channels(1).vertical_scale_v_per_div-.025)<1e-12);
 
-% Navigating to a formal-test page releases the worker before another owner opens.
+% A rejected formal measurement stays on home and retains the scope owner.
 captures_before=count(fileread(mock_options.log_path),'CAPTURE BEGIN');
 invoke(state.home.h_play); tick(fig);
 await_log_count(mock_options.log_path,'CAPTURE BEGIN',captures_before+1,10);
 invoke(state.home.h_single);
-assert(current(fig).page=="single");
-await(fig,@(s) ~s.busy && isempty(s.pending_page),20);
-assert(~current(fig).connected && endsWith(strtrim(fileread(mock_options.log_path)),'CLOSE'));
-
-fid=fopen(mock_options.failure_path,'w'); fprintf(fid,'OPEN'); fclose(fid);
-invoke(state.pages.back_single);
-await(fig,@(s) ~s.busy && ~s.connected,10);
-state=current(fig); assert(contains(get(state.home.h_status,'String'),'OPEN'));
-delete(mock_options.failure_path);
-set(state.home.h_off2,'String','.018'); invoke(state.home.h_off2);
+assert(current(fig).page=="home" && isequal(current(fig).worker,worker));
+invoke(state.home.h_pause); await(fig,@(s) ~s.busy,20);
+assert(current(fig).connected && isempty(current(fig).pending_page));
+assert(~endsWith(strtrim(fileread(mock_options.log_path)),'CLOSE'));
+set(state.home.h_off2,'String','.018'); enter(state.home.h_off2);
 invoke(state.home.h_play); invoke(state.home.h_pause);
 await(fig,@(s) ~s.busy && s.connected && isempty(s.pending),10);
 assert(abs(current(fig).scope_status.channels(2).offset_v-.018)<1e-12);
@@ -229,6 +240,10 @@ fid=fopen(mock_options.failure_path,'w'); fprintf(fid,'C2:VDIV?'); fclose(fid);
 invoke(state.home.h_play);
 await(fig,@(s) ~s.busy && ~s.connected,10);
 assert(contains(get(state.home.h_status,'String'),'C2:VDIV?'));
+delete(mock_options.failure_path);
+fid=fopen(mock_options.failure_path,'w'); fprintf(fid,'OPEN'); fclose(fid);
+invoke(state.home.h_play); await(fig,@(s) ~s.busy && ~s.connected,10);
+assert(contains(get(current(fig).home.h_status,'String'),'OPEN'));
 delete(mock_options.failure_path);
 fid=fopen(mock_options.failure_path,'w'); fprintf(fid,'CAPTURE'); fclose(fid);
 invoke(state.home.h_play);
@@ -246,21 +261,19 @@ report=struct('blocked_read_s',2,'samples_per_channel',4000000, ...
     'warm_interaction_s',warm_interaction_s, ...
     'analysis_s',analysis_s, ...
     'capture_and_analysis_s',state.last_capture_elapsed_s,'worker_folder',worker.folder);
-% Closing is also cooperative: no process kill while STOP cleanup is outstanding.
+% Closing starts its own event polling even in a manual-tick test session.
 capture_count=count(log,'CAPTURE BEGIN');
 state=current(fig);
-state.timer=timer('ExecutionMode','fixedSpacing','BusyMode','drop','Period',.1, ...
-    'TimerFcn',getappdata(fig,'rx_workbench_tick'));
-setappdata(fig,'rx_workbench_state',state);
-start(state.timer);
 invoke(state.home.h_play);
-await_log_count(mock_options.log_path,'CAPTURE BEGIN',capture_count+2,20);
+await(fig,@(~) count(fileread(mock_options.log_path),'CAPTURE BEGIN')>=capture_count+1,20);
 report.warm_analysis_s=current(fig).last_analysis_s;
 started=tic; close(fig); close_request_s=toc(started);
 assert(close_request_s<.3);
 started=tic;
 while isgraphics(fig) && toc(started)<15, pause(.02); drawnow; end
 assert(~isgraphics(fig),'Close never completed after the in-flight read.');
+assert(worker.process.HasExited,'Window closed before its background owner exited.');
+finish(fig,worker);
 save(fullfile(output_dir,'rx_async_results.mat'),'report');
 fprintf('RX async PASS: blocked=2s, N=4M/channel, callbacks=%.4fs, cached resize=%.4fs, cold/warm analysis=%.4f/%.4fs\n', ...
     response_s,resize_s,analysis_s,report.warm_analysis_s);
@@ -287,6 +300,7 @@ fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
     'msiq.instruments.mock_rx_scope_io','worker_options',mock, ...
     'preferences_path',preferences_path,'config',msiq.rx_mock_config()));
 guard=onCleanup(@() finish_default(fig));
+invoke(current(fig).home.h_play);
 await_default(fig,@(s) s.connected && isfield(s.raw,'capture_valid') && ...
     ~s.raw.capture_valid && ~s.first_capture_complete,60);
 state=current(fig);
@@ -301,6 +315,7 @@ state=current(fig);
 assert(state.running && isequal(state.channels,{'C3','C4'}) && ...
     all([state.raw.channels.wave_valid]));
 assert(contains(fileread(mock.log_path),'CAPTURE END'));
+finish_default(fig);
 fprintf('RX disabled-channel recovery PASS: C3/C4 OFF keeps connection, ON resumes capture\n');
 clear guard;
 end
@@ -350,26 +365,27 @@ for k=1:2
     await(fig,@(s) ~isequaln(s.raw.last_new_data_at,stamp),15);
 end
 invoke(state.home.h_pause); await(fig,@(s) ~s.busy,15);
-assert(current(fig).plot_dirty && getappdata(fig,'rx_test_draw_count')==0, ...
-    'New hidden frames touched graphics or were not marked pending.');
+assert(~current(fig).plot_dirty && getappdata(fig,'rx_test_draw_count')>=2, ...
+    'New observations must continue rendering beside the fixed sidebar.');
 assert(strcmp(get(state.home.h_center,'String'),'1.234567'));
 assert(strcmp(get(state.home.h_psd_min,'String'),'-123.456'));
 set(state.home.h_center,'String',old_center); set(state.home.h_psd_min,'String',old_min);
 invoke(state.home.h_auto_psd);
 assert(all(isfinite(current(fig).plot_state.psd_ylim)));
 assert(isfinite(str2double(get(state.home.h_psd_min,'String'))));
-assert(getappdata(fig,'rx_test_draw_count')==0,'Hidden auto-PSD redrew plots.');
+draws=getappdata(fig,'rx_test_draw_count');
 invoke(state.home.h_settings); drawnow;
 state=current(fig);
-assert(~state.plot_dirty && getappdata(fig,'rx_test_draw_count')==1);
+assert(~state.plot_dirty && getappdata(fig,'rx_test_draw_count')==draws, ...
+    'Scrolling to scope settings unexpectedly redrew an unchanged record.');
 record=state.raw.channels(1); box=getpixelposition(state.home.axes.wave_top);
 index=msiq.plotting.rx_envelope_indices(record.samples,max(300,ceil(box(3)*2)));
 assert(isequal(wave.YData(:),record.samples(index(:))));
 resize=get(fig,'SizeChangedFcn'); resize(fig,[]); drawnow;
-assert(getappdata(fig,'rx_test_draw_count')==1,'Same-size event repeated a completed redraw.');
+assert(getappdata(fig,'rx_test_draw_count')==draws,'Same-size event repeated a completed redraw.');
 assert(count(fileread(log_path),'WRITE ')==writes);
 clear guard;
-fprintf('RX hidden capture PASS: live frames and auto-PSD without drawing, unfinished edits intact, one latest-frame render on return\n');
+fprintf('RX sidebar capture PASS: live frames remain visible, unfinished edits intact, scrolling and same-size events do not redraw\n');
 end
 
 function validate_capture_retries(output_dir)
@@ -444,6 +460,7 @@ state=current(fig);
 assert(isequaln(state.raw,saved_raw) && isequaln(state.raw_scope_status,saved_status));
 assert(state.connected && contains(get(state.home.h_freshness,'String'),'旧数据'));
 delete(mock.failure_path);
+finish(fig,worker);
 fprintf('RX rejection/recovery PASS: bounded retries, sticky reason, restart, calibrated offset, preserved frame, zero writes\n');
 end
 
@@ -466,7 +483,8 @@ options=struct('visible',false,'maximize',false,'synchronous_startup',true, ...
 fig=msiq.rx_workbench_app(options); worker=current(fig).worker;
 guard=onCleanup(@() finish_reference(fig,worker,mock.reference_release_path));
 await(fig,@(s) s.first_capture_complete,60);
-assert(isempty(current(fig).reference_worker),'Reference lookup started before the first frame rendered.');
+% Reference association may start before capture; the held file request must not block rendering.
+assert(current(fig).connected,'File-only reference lookup prevented scope observation.');
 await(fig,@(s) s.reference_busy,10);
 state=current(fig);
 assert(isempty(state.reference_bundle) && strcmp(state.reference_request.action,'reference'));
@@ -482,10 +500,10 @@ await(fig,@(~) count(fileread(mock.log_path),'CAPTURE END')>=capture_count+2,10)
 assert(current(fig).reference_busy,'File lookup did not overlap repeated acquisition.');
 started=tic;
 invoke(state.home.h_pause); invoke(state.home.h_settings);
-set(state.home.h_center,'String','1'); invoke(state.home.h_center);
-set(state.home.h_bandwidth,'String','1'); invoke(state.home.h_bandwidth);
+set(state.home.h_center,'String','.5'); invoke(state.home.h_center);
+set(state.home.h_bandwidth,'String','1.5'); invoke(state.home.h_bandwidth);
 assert(toc(started)<.5,'Background file lookup blocked the GUI.');
-set(state.home.h_off1,'String','.014'); invoke(state.home.h_off1);
+set(state.home.h_off1,'String','.014'); enter(state.home.h_off1);
 await(fig,@(s) ~s.busy,10);
 state=current(fig);
 assert(state.reference_busy && abs(state.scope_status.channels(1).offset_v-.014)<1e-12, ...
@@ -573,6 +591,7 @@ release_reference(mock.reference_release_path);
 await(fig,@(s) ~s.reference_busy,10);
 assert(isequal(current(fig).channels,{'C3','C2'}) && isempty(current(fig).reference_bundle));
 assert(current(fig).plot_state.bandwidth_hz==band_before);
+finish_reference(fig,worker,mock.reference_release_path);
 fprintf('RX background reference PASS: capture/edit continue, manual edit wins, file failure isolated, no instrument access\n');
 end
 
@@ -621,7 +640,12 @@ fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
     'worker_factory','msiq.instruments.mock_rx_scope_io','worker_options',mock, ...
     'config',msiq.rx_mock_config()));
 guard=onCleanup(@() finish_default(fig));
-% No manual startup or tick: exercise the same timer path as RX_Workbench().
+% Default startup stays idle; explicit observation then uses the ordinary timer.
+pause(.3); drawnow;
+state=current(fig);
+assert(~state.connected && isempty(state.worker) && isempty(strtrim(fileread(mock.log_path))), ...
+    'Default startup accessed the scope before an explicit action.');
+invoke(state.home.h_play);
 await_default(fig,@(s) s.connected && isfield(s.raw,'live_spectra'),60);
 await_log_count(mock.log_path,'CAPTURE END',3,15);
 state=current(fig); invoke(state.home.h_pause);
@@ -632,14 +656,15 @@ assert(count(fileread(mock.log_path),'CAPTURE BEGIN')==before);
 state=current(fig);
 assert(strcmp(get(state.home.h_play,'Enable'),'on'));
 assert(all(strcmp(get(state.home.hardware_edits,'Enable'),'on')));
-set(state.home.h_off1,'String','.01'); invoke(state.home.h_off1);
+set(state.home.h_off1,'String','.01'); enter(state.home.h_off1);
 await_default(fig,@(s) ~s.busy && isempty(s.pending),10);
 state=current(fig);
 assert(~state.running && abs(state.scope_status.channels(1).offset_v-.01)<1e-12);
 invoke(state.home.h_play);
 await_log_count(mock.log_path,'CAPTURE END',before+2,15);
 assert(current(fig).running);
-fprintf('RX default timer startup / pause / edit / resume PASS\n');
+finish_default(fig);
+fprintf('RX idle startup / explicit observation timer / pause / edit / resume PASS\n');
 end
 
 function await_default(fig,predicate,limit)
@@ -667,6 +692,9 @@ state=getappdata(fig,'rx_workbench_state');
 end
 function tick(fig)
 callback=getappdata(fig,'rx_workbench_tick'); callback([],[]);
+end
+function enter(handle)
+callback=get(handle,'KeyPressFcn'); callback(handle,struct('Key','return')); drawnow;
 end
 function invoke(handle)
 callback=get(handle,'Callback'); callback(handle,[]);
@@ -708,5 +736,9 @@ for k=1:numel(workers)
     started=tic;
     while ~workers{k}.process.HasExited && toc(started)<30, pause(.05); end
     assert(workers{k}.process.HasExited,'The background owner did not close safely.');
+    workers{k}.process.WaitForExit();
+    assert(workers{k}.process.ExitCode==0,'msiq:validation:WorkerExit', ...
+        'Background worker exited abnormally (%d); log: %s', ...
+        workers{k}.process.ExitCode,fullfile(workers{k}.folder,'worker.log'));
 end
 end

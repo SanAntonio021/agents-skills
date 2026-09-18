@@ -1,11 +1,24 @@
-﻿param([Parameter(Mandatory=$true)][string]$Destination)
+param([Parameter(Mandatory=$true)][string]$Destination)
 $ErrorActionPreference='Stop'
 if(-not [IO.Path]::IsPathRooted($Destination)){throw 'Destination must be an absolute path.'}
 $target=[IO.Path]::GetFullPath($Destination)
 if(Test-Path -LiteralPath $target){throw 'Choose a new directory; existing projects are never overwritten.'}
 $source=Join-Path (Split-Path $PSScriptRoot) 'assets\workbench'
 if(-not (Test-Path -LiteralPath (Join-Path $source 'Template_Demo.m'))){throw 'Template incomplete.'}
-Copy-Item -LiteralPath $source -Destination $target -Recurse
+$manifest=Join-Path (Split-Path $PSScriptRoot) 'references\provenance\template-files.json'
+$files=Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
+foreach($entry in $files){
+    $inputPath=[IO.Path]::GetFullPath((Join-Path $source $entry.path))
+    if(-not $inputPath.StartsWith([IO.Path]::GetFullPath($source)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Manifest path leaves template.'}
+    if(-not (Test-Path -LiteralPath $inputPath -PathType Leaf)){throw "Template file missing: $($entry.path)"}
+    if((Get-FileHash -LiteralPath $inputPath -Algorithm SHA256).Hash -ne $entry.sha256){throw "Template hash mismatch: $($entry.path)"}
+}
+New-Item -ItemType Directory -Path $target | Out-Null
+foreach($entry in $files){
+    $outputPath=Join-Path $target $entry.path
+    New-Item -ItemType Directory -Path (Split-Path $outputPath) -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $source $entry.path) -Destination $outputPath
+}
 $skillRoot=Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $agentTemplate=Join-Path $skillRoot 'assets\project-template\AGENTS.md.template'
 $utf8=[Text.UTF8Encoding]::new($false)

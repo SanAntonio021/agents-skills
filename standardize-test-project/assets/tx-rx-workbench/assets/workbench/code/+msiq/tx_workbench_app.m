@@ -75,6 +75,7 @@ end
         save_local_parameters(current);
         stop_app_timer(fig, 'tx_workbench_timer');
         stop_app_timer(fig, 'tx_workbench_hardware_timer');
+        if isfield(current.ui,'if_board'), current.ui.if_board.close(); end
         delete(fig);
     end
 end
@@ -98,7 +99,7 @@ state = struct('figure', fig, 'cfg', cfg, 'connected', false, ...
     'output_running', false, 'output_state', 'unknown', ...
     'last_run_dir', '', 'params', params, ...
     'defaults', defaults, 'rate_authority', params.rate_authority, ...
-    'backend_options', options.backend_options, ...
+    'backend_options', options.backend_options, 'board_options', options.board_options, ...
     'confirmation_handler', options.confirmation_handler, ...
     'persist_parameters', options.persist_parameters, ...
     'parameter_record_path', options.parameter_record_path, ...
@@ -188,7 +189,8 @@ function options = normalize_app_options(options)
 if ~isstruct(options) || ~isscalar(options)
     error('msiq:txWorkbench:Options', 'TX GUI options must be one scalar struct.');
 end
-options.auto_connect = logical_value(options, 'auto_connect', true);
+options.auto_connect = logical_value(options, 'auto_connect', false);
+options.board_options = field_or(options,'board_options',struct());
 options.startup_preview = logical_value(options, 'startup_preview', true);
 options.visible = logical_value(options, 'visible', true);
 options.maximize = logical_value(options, 'maximize', true);
@@ -242,6 +244,9 @@ state.ui.phase = uicontrol(state.ui.header, 'Style', 'text', ...
 state.ui.reconnect = header_button(state.ui.header, '重新连接', ...
     @(~,~) refresh_awg_status(fig));
 set(state.ui.reconnect, 'Visible', 'off');
+set(state.ui.reconnect,'Visible','on','String','连接 AWG');
+state.ui.awg_page=header_button(state.ui.header,'AWG',@(~,~) switch_device_page(fig,false));
+state.ui.if_page=header_button(state.ui.header,'发射中频',@(~,~) switch_device_page(fig,true));
 state.ui.preview = header_button(state.ui.header, '更新预览', ...
     @(~,~) regenerate_preview(fig));
 state.ui.download = header_button(state.ui.header, '下载并输出', ...
@@ -303,6 +308,8 @@ state.ui.plan_scroll = uicontrol(state.ui.plan_panel, 'Style', 'slider', ...
     state.ui.plan_changes] = plan_section(state.ui.plan_content, '设备改动', 8, false);
 [state.ui.plan_fixed_header, state.ui.plan_fixed_labels, ...
     state.ui.plan_fixed] = plan_section(state.ui.plan_content, '固定设计', 8, false);
+state.ui.if_board=msiq.if_board_panel(state.ui.body,'tx',state.board_options);
+set(state.ui.if_board.panel,'Visible','off');
 setappdata(fig, 'tx_workbench_state', state);
 render_plan(fig);
 end
@@ -549,6 +556,9 @@ set(state.ui.body, 'Position', [0 0 w h-header_h]);
 set(state.ui.connection, 'Position', [margin 35 165 24]);
 button_y = 31; first_x = w-416;
 set(state.ui.phase, 'Position', [178 17 max(250,w-712) 42]);
+set(state.ui.phase,'Position',[178 4 max(100,w-720) 22]);
+set(state.ui.awg_page,'Position',[178 33 58 30]);
+set(state.ui.if_page,'Position',[242 33 100 30]);
 if strcmp(get(state.ui.reconnect, 'Visible'), 'on')
     set(state.ui.reconnect, 'Position', [w-526 button_y 102 30]);
 end
@@ -585,6 +595,7 @@ colorbar_reserve = 0;
 if w >= 1300, colorbar_reserve = 62; end
 center_w = right_x-gap-center_x-colorbar_reserve;
 set(state.ui.plan_panel, 'Position', [right_x 8 right_w body_h-16]);
+state.ui.if_board.layout([right_x 8 right_w body_h-16]);
 set(state.ui.dashboard_title, 'Position', [center_x body_h-31 center_w 23]);
 plot_bottom = 45; plot_top = body_h-48; row_gap = 60; column_gap = 62;
 plot_h = max(165, (plot_top-plot_bottom-row_gap)/2);
@@ -599,6 +610,15 @@ set(state.ui.axes(3), 'PositionConstraint', 'innerposition', 'Position', ...
 set(state.ui.axes(4), 'PositionConstraint', 'innerposition', 'Position', ...
     [center_x+plot_w+column_gap plot_bottom plot_w plot_h]);
 layout_plan_blocks(fig, right_w, body_h);
+end
+
+function switch_device_page(fig,show_board)
+state=getappdata(fig,'tx_workbench_state');
+if show_board
+    set(state.ui.plan_panel,'Visible','off'); set(state.ui.if_board.panel,'Visible','on');
+else
+    set(state.ui.plan_panel,'Visible','on'); set(state.ui.if_board.panel,'Visible','off');
+end
 end
 
 function layout_plan_blocks(fig, right_w, body_h)

@@ -41,7 +41,14 @@ for k=1:count
     ps=abs(fftshift(fft(ac))).^2/numel(x)^2;
     bw=cfg.waveform.symbol_rate_hz*(1+cfg.waveform.rolloff)/2;
     mask=abs(bins)<=bw;
-    if strcmp(p.stage,'tx_if'), mask=abs(abs(bins)-6.2e9)<=bw; end
+    if strcmp(p.stage,'tx_if')
+        if isfield(p,'measurement_context')
+            fc=p.measurement_context.center_freq_hz;
+        else
+            selection=msiq.rx_measurement_context('tx_if',p.subband); fc=selection.center_freq_hz;
+        end
+        mask=abs(abs(bins)-fc)<=bw;
+    end
     power(k)=sum(ps(mask));
     spectrum{k}=struct('frequency_hz',bins,'power_v2_bin',ps, ...
         'processing','mean_removed_rectangular_two_sided_fft');

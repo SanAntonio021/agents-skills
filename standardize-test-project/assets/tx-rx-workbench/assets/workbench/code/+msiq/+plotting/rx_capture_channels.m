@@ -46,7 +46,8 @@ for k = 1:numel(records)
     known_bandwidth = ~isempty(constraints);
     limit = rate/2;
     if isfinite(limit) && known_bandwidth, limit = min([limit,constraints]); end
-    impedance = channel_impedance(record,channel);
+    measurement=field_or(context,'measurement_context',struct());
+    impedance = channel_impedance(record,channel,field_or(measurement,'is_real_if',false));
     finite = samples(isfinite(samples));
     rms_v = NaN; vpp_v = NaN; power_dbm = NaN;
     if ~isempty(finite)
@@ -118,6 +119,10 @@ end
 
 function indices = selected_channels(records,context,decoded)
 indices = [];
+measurement=field_or(context,'measurement_context',struct());
+if field_or(measurement,'is_real_if',false) && numel(records)==1
+    indices=1; return;
+end
 route = field_or(context,'route',struct());
 columns = field_or(route,'waveform_columns',[]);
 channels = cellstr(string(field_or(route,'scope_channels',{})));
@@ -169,10 +174,11 @@ for k = 1:numel(fields)
 end
 end
 
-function value = channel_impedance(record,channel)
+function value = channel_impedance(record,channel,strict)
 % The bench default is a 50-ohm scope termination. Explicit 1 Mohm or
 % another saved termination still takes precedence below.
 value = 50;
+if strict, value=NaN; end
 fields = {'input_impedance_ohm','impedance_ohm','termination_ohm'};
 sources = {record,channel};
 for k = 1:numel(sources)

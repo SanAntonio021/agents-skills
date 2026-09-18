@@ -9,7 +9,7 @@ cfg.instrument.awg.mock=true; cfg.instrument.scope.mock=true;
 cfg.instrument.awg.mock_idn='KEYSIGHT,M8195A,TEMPLATE,1.0';
 cfg.instrument.scope.mock_idn='LECROY,SDA845ZI-A,TEMPLATE,1.0';
 cfg.instrument.signal_generator.mock=true; cfg.safety.hardware_enabled=false;
-sizes={[1100 700],[1500 900]}; report=struct('execution_mode','mock','output_dir',output_dir);
+sizes={[1280 720],[1920 1080]}; report=struct('execution_mode','mock','output_dir',output_dir);
 for k=1:2
     dim=sizes{k}; msiq.instruments.reset_audit();
     fig=msiq.tx_workbench_app(struct('visible',false,'maximize',false, ...
@@ -26,22 +26,28 @@ for k=1:2
     audit=msiq.instruments.get_audit(); assert(audit.awg_writes==0 && audit.awg_binary_writes==0);
     snapshot(fig,fullfile(output_dir,sprintf('TX_GUI_%dx%d.png',dim)),dim);
     report.tx_mock_audit(k)=audit; clear cleanup;
-    io=msiq.instruments.mock_rx_scope_io(struct('log_path',fullfile(output_dir,sprintf('rx_mock_%d.log',k)), ...
-        'capture_delay_s',0,'record_count',100000,'timebase_s',125e-9,'observation_mode',true, ...
-        'failure_path',fullfile(output_dir,'unused_failure.txt')));
     fig=msiq.rx_workbench_app(struct('visible',false,'maximize',false, ...
-        'position',[20 20 dim],'synchronous_startup',true,'auto_connect',true, ...
-        'use_timer',false,'asynchronous',false,'find_reference',false, ...
-        'preferences_path','','config',msiq.rx_mock_config(),'io',io));
-    cleanup=onCleanup(@() close(fig));
-    tick=getappdata(fig,'rx_workbench_tick'); tick([],[]); drawnow;
+        'position',[20 20 dim],'auto_connect',false,'source_mode','simulation', ...
+        'use_timer',false,'preferences_path','','results_root',fullfile(output_dir,sprintf('rx_%d',k)), ...
+        'simulation',struct('cache_dir',fullfile(output_dir,'simulation_cache'),'test_fixture',true)));
+    cleanup=onCleanup(@() cleanup_rx(fig));
     state=getappdata(fig,'rx_workbench_state');
-    if isfield(state,'last_exception'), rethrow(state.last_exception); end
-    assert(state.connected && isfield(state.raw,'channels') && numel(state.raw.channels)==2, ...
-        char(string(get(state.home.h_status,'String'))));
-    assert(~state.raw_stale);
+    select=get(state.home.position_group,'SelectionChangedFcn');
+    set(state.home.position_group,'SelectedObject',state.home.position_buttons(1));
+    select(state.home.position_group,struct('NewValue',state.home.position_buttons(1)));
+    callback=get(state.home.h_play,'Callback'); callback(state.home.h_play,[]);
+    started=tic;
+    while true
+        tick=getappdata(fig,'rx_workbench_tick'); tick([],[]); drawnow; pause(.05);
+        state=getappdata(fig,'rx_workbench_state');
+        if state.first_capture_complete, break; end
+        assert(toc(started)<240,'template:RxStartup','%s',get(state.home.h_status,'String'));
+    end
+    pause_and_drain(fig); state=getappdata(fig,'rx_workbench_state');
+    assert(state.connected && numel(state.raw.channels)==2 && ~state.raw_stale);
+
     snapshot(fig,fullfile(output_dir,sprintf('RX_GUI_%dx%d.png',dim)),dim);
-    clear cleanup;
+    report.rx_worker_audits{k}=finish_rx(fig); clear cleanup state callback select tick;
 end
 assert(getappdata(0,'TemplateHardwareAttempts')==0);
 report.hardware_attempts=getappdata(0,'TemplateHardwareAttempts');
@@ -70,4 +76,49 @@ imwrite(pixels,p);
 set(fig,'Visible','off');
 info=imfinfo(p); assert(isequal([info.Width info.Height],dim));
 pixels=imread(p); assert(std(double(pixels(:)))>10);
+end
+
+function audits=finish_rx(fig)
+audits={}; if ~isgraphics(fig), return; end
+pause_and_drain(fig);
+state=getappdata(fig,'rx_workbench_state'); workers={state.worker,state.reference_worker};
+close(fig); started=tic;
+while isgraphics(fig) && toc(started)<60
+    drawnow; pause(.05);
+end
+assert(~isgraphics(fig),'template:ReleaseTimeout','Simulation worker did not release.');
+for k=1:numel(workers)
+    worker=workers{k}; if isempty(worker), continue; end
+    assert(worker.process.HasExited,'template:WorkerExit','Worker is still running.');
+    worker.process.WaitForExit();
+    assert(worker.process.ExitCode==0,'template:WorkerExit','Worker exited with code %d.',worker.process.ExitCode);
+    p=fullfile(worker.folder,'template_hardware_audit.json');
+    assert(isfile(p),'template:WorkerAudit','Missing child-process hardware audit: %s',p);
+    evidence=jsondecode(fileread(p)); a=evidence.instrument_audit;
+    assert(evidence.guard_active && evidence.hardware_attempts==0 && ...
+        a.connections==0 && a.writes==0 && a.queries==0 && a.binary_writes==0, ...
+        'template:WorkerHardware','Child process attempted instrument access.');
+    evidence.exit_code=worker.process.ExitCode; audits{end+1}=evidence; %#ok<AGROW>
+end
+assert(numel(audits)==2,'template:WorkerAudit','Both scope and file workers need evidence.');
+end
+function pause_and_drain(fig)
+if ~isgraphics(fig), return; end
+s=getappdata(fig,'rx_workbench_state');
+if s.close_requested, return; end
+callback=get(s.home.h_pause,'Callback'); callback(s.home.h_pause,[]);
+started=tic;
+while isgraphics(fig)
+    s=getappdata(fig,'rx_workbench_state');
+    if ~s.busy && ~s.reference_busy && ~s.simulation_preparing, return; end
+    assert(toc(started)<120,'template:DrainTimeout','%s',get(s.home.h_status,'String'));
+    tick=getappdata(fig,'rx_workbench_tick'); tick([],[]); drawnow; pause(.05);
+end
+end
+function cleanup_rx(fig)
+% Keep dependencies available if another cleanup has already restored path.
+root=fileparts(mfilename('fullpath')); previous=path;
+addpath(root,fullfile(root,'code'),fullfile(root,'code','result_management'),fullfile(root,'code','plotting'));
+restore=onCleanup(@()path(previous)); %#ok<NASGU>
+if isgraphics(fig), finish_rx(fig); end
 end

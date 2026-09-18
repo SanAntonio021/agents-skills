@@ -27,11 +27,12 @@ options.worker_factory = 'msiq.instruments.mock_rx_scope_io';
 expect_error(options,'RX_Workbench:TestConfig');
 options.injected_io = true;
 options.config.instrument = rmfield(options.config.instrument,'scope');
-expect_error(options,'RX_Workbench:ScopeConfig');
+empty=msiq.rx_workbench_config(options); assert(isempty(fieldnames(empty.instrument.scope)));
 % Exercise the public entry: user-supplied flags cannot enable injected config.
 gui_options = struct('config',cfg,'visible',false,'use_timer',false, ...
     'auto_connect',false,'asynchronous',false,'injected_io',true,'offline_test',true);
-expect_app_error(gui_options,'RX_Workbench:TestConfig');
+% Default simulation rejects synchronous operation before injected-config checks.
+expect_app_error(gui_options,'RX_Workbench:SimulationWorker');
 gui_options.worker_factory = 'msiq.instruments.mock_rx_scope_io';
 expect_app_error(gui_options,'RX_Workbench:TestConfig');
 mock = struct('capture_delay_s',0,'record_count',1000, ...
@@ -52,8 +53,14 @@ assert(contains(fileread(mock.log_path),'OPEN') && ~contains(fileread(mock.log_p
 clear guard;
 assert(contains(fileread(mock.log_path),'CLOSE'));
 gui_options.config.instrument = rmfield(gui_options.config.instrument,'scope');
-expect_app_error(gui_options,'RX_Workbench:ScopeConfig');
-fprintf('RX config isolation PASS: missing/malformed/unexpected local JSON ignored; mock-only injection; missing scope rejected\n');
+gui_options.auto_connect=false;
+beforeLog=fileread(mock.log_path);
+fig=msiq.rx_workbench_app(gui_options); guard=onCleanup(@()close(fig));
+state=getappdata(fig,'rx_workbench_state');
+assert(~state.connected && isempty(fieldnames(state.cfg.instrument.scope)));
+assert(strcmp(beforeLog,fileread(mock.log_path)),'Missing configuration startup accessed transport.');
+clear guard;
+fprintf('RX config isolation PASS: local JSON ignored; mock-only injection; missing scope stays idle without I/O\n');
 end
 
 function write_fixture(path,content)

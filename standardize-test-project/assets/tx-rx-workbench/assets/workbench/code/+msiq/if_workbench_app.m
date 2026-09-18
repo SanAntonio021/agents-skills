@@ -187,7 +187,7 @@ fig.Visible=visible;
         refreshReadiness();
     end
     function stageChanged(~,~)
-        if strcmp(stage.Value,'tx_if'), scopeOne.Value='C2'; end
+        % TX IF uses one selectable scope input; keep the user's channel choice.
         wiringChanged();
     end
     function updateWiringView()
@@ -205,8 +205,8 @@ fig.Visible=visible;
         if ~strcmp(stage.Value,'rx_iq'), scanPanel.Visible='off'; lr=left.RowHeight; lr{5}=0; left.RowHeight=lr; end
         layoutLeft();
         if strcmp(stage.Value,'tx_if')
-            scopeOne.Enable='off'; scopeTwo.Enable='off';
-            inputHint.Text = '下侧 CH2（已确定的测量通道）；需手动切换输入侧并接线。';
+            scopeOne.Enable='on'; scopeTwo.Enable='off';
+            inputHint.Text = sprintf('发射板输出 → %s；需手动确认实际接线。',scopeOne.Value);
         else
             scopeOne.Enable='on'; scopeTwo.Enable='on';
             inputHint.Text = sprintf('上侧 %s / %s；需手动接线。输入顺序不代表板卡物理 I/Q 映射。',scopeOne.Value,scopeTwo.Value);
@@ -245,7 +245,8 @@ fig.Visible=visible;
             if isfield(p.tx_options,key{1}), p.tx_options=rmfield(p.tx_options,key{1}); end
         end
         if strcmp(stage.Value,'tx_if')
-            p.scope.channels={'C2'}; p.scope.side='lower';
+            assert(ismember(scopeOne.Value,{'C1','C2','C3','C4'}),'msiq:if:Wiring','请选择一个有效示波器通道。');
+            p.scope.channels={scopeOne.Value}; p.scope.side='upper';
         else
             assert(~strcmp(scopeOne.Value,scopeTwo.Value),'msiq:if:Wiring','示波器两路输入不能选择同一通道。');
             p.scope.channels={scopeOne.Value,scopeTwo.Value}; p.scope.side='upper';

@@ -67,9 +67,10 @@ if ~isempty(orientation)
     orientation = [orientation, ' | '];
 end
 subtitle = sprintf(['%s同步 %s | metric %.3f | CFO %.3f kHz | SRO %.3f ppm | ', ...
-    '采样相位 %d | %s | DVB-S2 LDPC 9/10 | 总体 %s'], orientation, ...
+    '采样相位 %d | %s | %s | 总体 %s'], orientation, ...
     pass_text(decoded.sync_ok), sync.sync_metric, reported_cfo/1e3, ...
-    sync.sro_ppm, sync.sample_phase, equalizer_text, pass_text(decoded.pass));
+    sync.sro_ppm, sync.sample_phase, equalizer_text, fec_text(cfg), ...
+    pass_text(decoded.pass));
 annotation(fig, 'textbox', [0.025 0.918 0.950 0.030], ...
     'String', subtitle, 'EdgeColor', 'none', ...
     'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
@@ -445,6 +446,18 @@ if order == 4
     value = 'QPSK';
 else
     value = sprintf('%dQAM', order);
+end
+end
+
+function text_value = fec_text(cfg)
+fec = field_or(cfg, 'fec', struct());
+family = field_or(fec, 'family', 'DVB-S2');
+numerator = field_or(fec, 'rate_numerator', NaN);
+denominator = field_or(fec, 'rate_denominator', NaN);
+if isfinite(numerator) && isfinite(denominator) && denominator ~= 0
+    text_value = sprintf('%s LDPC %d/%d', family, numerator, denominator);
+else
+    text_value = sprintf('%s LDPC', family);
 end
 end
 

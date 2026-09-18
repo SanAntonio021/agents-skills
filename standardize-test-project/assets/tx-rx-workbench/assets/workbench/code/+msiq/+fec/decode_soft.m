@@ -6,6 +6,18 @@ if isfield(cfg, 'receiver') && isfield(cfg.receiver, 'debug_pre_fec_only') && ..
     out = pre_fec_only(llr_bits, reference, cfg);
     return;
 end
+strict = isfield(cfg, 'receiver') && ...
+    isfield(cfg.receiver, 'strict_reference_blocks') && ...
+    isequal(cfg.receiver.strict_reference_blocks, true);
+if strict
+    % Validate the same complete metric population before constructing LDPC.
+    strict_pre = pre_fec_only(llr_bits, reference, cfg);
+    if ~strict_pre.valid
+        out = strict_pre;
+        out.decoder_status = 'NOT_RUN_INVALID_REFERENCE_OR_CAPTURE';
+        return;
+    end
+end
 fec = msiq.fec.build(cfg);
 if (isfield(reference, 'codeword_length') && ...
         reference.codeword_length ~= fec.codeword_length) || ...
@@ -82,6 +94,14 @@ out.decoded_bits = decoded_bits;
 out.post_fec_bit_error_count = sum(info_errors);
 out.post_fec_bit_count = info_count;
 out.post_fec_ber = out.post_fec_bit_error_count / info_count;
+if strict
+    out.pre_fec_bit_error_count = strict_pre.pre_fec_bit_error_count;
+    out.pre_fec_bit_count = strict_pre.pre_fec_bit_count;
+    out.pre_fec_ber = strict_pre.pre_fec_ber;
+    out.expected_block_count = strict_pre.expected_block_count;
+    out.decoder_executed = true;
+    out.decoder_status = 'EXECUTED';
+end
 end
 
 function out = pre_fec_only(llr_bits, reference, cfg)

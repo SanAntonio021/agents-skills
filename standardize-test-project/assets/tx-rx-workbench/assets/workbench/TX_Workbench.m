@@ -36,7 +36,7 @@ if ismember(action, tx_actions)
     return;
 end
 if strcmp(action, 'gui')
-    output = msiq.tx_workbench_app(first_options(varargin));
+    output = msiq.tx_workbench_app(template_gui_options(first_options(varargin)));
     return;
 end
 if ismember(action, rx_actions)
@@ -64,6 +64,22 @@ if strcmp(action, 'simulation')
 else
     output = Multistream_Workbench( ...
         action, profile, selector, varargin{:});
+end
+
+function options = template_gui_options(options)
+% Template-only default: explicit caller backends retain their own behavior.
+if ~isfield(options,'backend_options')
+    cfg=msiq.build_config('v2_traditional_wz');
+    cfg.instrument.awg=struct('mock',true,'mock_idn','KEYSIGHT,M8195A,TEMPLATE,1.0');
+    cfg.instrument.scope=struct('mock',true,'mock_idn','LECROY,SDA845ZI-A,TEMPLATE,1.0');
+    cfg.instrument.signal_generator=struct('mock',true);
+    cfg.safety.hardware_enabled=false;
+    options.backend_options=struct('cfg_override',cfg);
+end
+if ~isfield(options,'board_options')
+    options.board_options=struct('source_mode','simulation');
+end
+if ~isfield(options,'auto_connect'), options.auto_connect=false; end
 end
 
 function options = first_options(values)

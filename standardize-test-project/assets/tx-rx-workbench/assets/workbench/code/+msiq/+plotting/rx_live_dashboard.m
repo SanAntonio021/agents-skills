@@ -6,11 +6,19 @@ if nargin < 4, settings = struct(); end
 if nargin < 3, scope_status = struct(); end
 if nargin < 6, render = true; end
 state = defaults(state,settings);
+context=field_or(raw,'measurement_context',struct());
+is_real_if=field_or(context,'is_real_if',false);
+if render && ~isequal(field_or(state,'is_real_if',false),is_real_if)
+    cla(handles.wave_bottom); cla(handles.spectrum_bottom);
+    setappdata(handles.wave_bottom,'rx_decoration',[]);
+    setappdata(handles.spectrum_bottom,'rx_decoration',[]);
+end
+state.is_real_if=is_real_if;
 if ~isfield(raw,'live_spectra')
     raw = msiq.plotting.rx_live_analysis(raw,scope_status);
 end
 records = field_or(raw,'channels',struct([]));
-if numel(records) < 2
+if isempty(records)
     if ~render, return; end
     names = {'wave_top','wave_bottom','spectrum_top','spectrum_bottom','spectrum'};
     for k = 1:numel(names)
@@ -18,15 +26,16 @@ if numel(records) < 2
     end
     return;
 end
-[limits,time_ticks,time_key] = time_geometry(records(1:2),scope_status,state);
+count=min(2,numel(records));
+[limits,time_ticks,time_key] = time_geometry(records(1:count),scope_status,state);
 state.time_limits_s = limits;
 state.time_ticks_s = time_ticks;
 state.time_geometry_key = time_key;
 state.time_window_locked = true;
-spectra = cell(1,2);
+spectra = cell(1,count);
 colors = {[.05 .34 .73],[.87 .28 .08]};
 wave_axes = [handles.wave_top handles.wave_bottom];
-for k = 1:2
+for k = 1:count
     spectra{k} = raw.live_spectra{k};
     if ~render, continue; end
     channel = channel_status(scope_status,records(k).channel);
@@ -48,7 +57,7 @@ state.psd_locked = state.psd_locked || any(cellfun(@(s) ...
 state.frequency_limit_hz = frequency_limit;
 if render && isfield(handles,'spectrum_top')
     axes_list = [handles.spectrum_top handles.spectrum_bottom];
-    for k = 1:2
+    for k = 1:count
         info = draw_spectrum(axes_list(k),spectra{k},state,y_limits,frequency_limit,colors{k});
         if isfield(handles,'spectrum_info')
             set(handles.spectrum_info(k),'String',info,'TooltipString',sprintf('%s\n%s',info,spectra{k}.details));
@@ -61,7 +70,7 @@ elseif render
     ax = handles.spectrum;
     cla(ax);
     hold(ax,'on');
-    for k = 1:2
+    for k = 1:count
         plot(ax,spectra{k}.frequency_hz/1e9,spectra{k}.display_density,'Color',colors{k});
     end
     hold(ax,'off');
@@ -71,8 +80,33 @@ elseif render
     end
     ylim(ax,y_limits);
 end
+if render && count==1 && is_real_if
+    digital=field_or(raw,'real_if_analysis',struct());
+    bottom=[handles.wave_bottom handles.spectrum_bottom];
+    names={'数字 I 频谱','数字 Q 频谱'};
+    if field_or(digital,'valid',false)
+        [ds,~]=display_spectra(digital.spectra,struct());
+        digital_state=struct('psd_unit','voltage','psd_locked',false, ...
+            'psd_ylim',[NaN NaN],'center_hz',0,'bandwidth_hz',NaN);
+        dy=spectrum_ylim(ds,digital_state);
+        for k=1:2
+            draw_spectrum(bottom(k),ds{k},digital_state,dy,common_limit(ds),colors{k});
+        end
+        info='数字下变频后';
+    else
+        info=field_or(digital,'reason','缺少发送参考，无法确定滤波带宽');
+        for k=1:2, placeholder(bottom(k),info); decorate(bottom(k),names{k},'',''); end
+    end
+    if isfield(handles,'wave_info'), set(handles.wave_info(2),'String',info,'TooltipString',info); end
+    if isfield(handles,'spectrum_info'), set(handles.spectrum_info(2),'String',info,'TooltipString',info); end
+elseif render && count==1
+    placeholder(handles.wave_bottom,'未选择第二通道');
+    placeholder(handles.spectrum_bottom,'未选择第二通道');
+    if isfield(handles,'wave_info'), set(handles.wave_info(2),'String','未选择'); end
+    if isfield(handles,'spectrum_info'), set(handles.spectrum_info(2),'String','未选择'); end
+end
 state.last_time_limits_s = limits;
-state.last_sample_count = [records(1:2).original_count];
+state.last_sample_count = [records(1:count).original_count];
 state.last_sample_rate_hz = cellfun(@(s) s.sample_rate_hz,spectra);
 state.spectra = spectra;
 end

@@ -471,13 +471,20 @@ for stream = 1:stream_count
     fec_result = msiq.fec.decode_soft(llr, metrics_ref.fec, cfg);
     debug_pre = isfield(cfg.receiver, 'debug_pre_fec_only') && ...
         isequal(cfg.receiver.debug_pre_fec_only, true);
-    if debug_pre && (~all(finite) || payload_count ~= expected_symbols)
+    strict_blocks = isfield(cfg.receiver, 'strict_reference_blocks') && ...
+        isequal(cfg.receiver.strict_reference_blocks, true);
+    if (debug_pre || strict_blocks) && (~all(finite) || payload_count ~= expected_symbols)
         % Dropping a symbol changes bit alignment: no shortened BER is valid.
         fec_result.valid = false;
         fec_result.status = 'INCOMPLETE_PAYLOAD';
         fec_result.pre_fec_ber = NaN;
         fec_result.pre_fec_bit_count = 0;
         fec_result.pre_fec_bit_error_count = 0;
+        fec_result.post_fec_ber = NaN;
+        fec_result.post_fec_bit_count = NaN;
+        fec_result.post_fec_bit_error_count = NaN;
+        fec_result.bler = NaN;
+        fec_result.parity_converged = false;
     end
 
     streams(stream).stream = stream;

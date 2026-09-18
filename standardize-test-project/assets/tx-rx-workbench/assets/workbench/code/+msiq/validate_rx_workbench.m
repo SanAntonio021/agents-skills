@@ -83,32 +83,32 @@ previous_upper = get(axes_list(2),'YLim'); previous_upper=previous_upper(2);
 set(state.home.h_psd_min,'String','-135'); invoke(state.home.h_psd_min);
 assert(isequal(get(axes_list(2),'YLim'),[-135 previous_upper]));
 assert(numel(writes)==write_before,'Display edits must not write the scope.');
-set(state.home.h_vdiv1,'String','.1234'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','.1234'); enter(state.home.h_vdiv1);
 assert(numel(writes)==write_before+1 && startsWith(writes{end},'C1:VDIV '));
-assert(abs(str2double(get(state.home.h_vdiv1,'String'))-.125)<1e-12, ...
-    'Accepted hardware normalization must be shown.');
+assert(abs(str2double(get(state.home.h_vdiv1,'String'))-.1234)<1e-12, ...
+    'Unproven hardware normalization must preserve the request.');
 state=get_state();
 assert(abs(state.scope_status.channels(1).offset_v-offset(1))<1e-12);
 assert(abs(str2double(get(state.home.h_off1,'String'))-offset(1))<1e-12, ...
     'Scale-dependent offset normalization was not read back.');
 assert(scale(2)==.2 && offset(2)==.01);
-set(state.home.h_off2,'String','-.023'); invoke(state.home.h_off2);
+set(state.home.h_off2,'String','-.023'); enter(state.home.h_off2);
 assert(startsWith(writes{end},'C2:OFST '));
-set(state.home.h_tdiv,'String','5'); invoke(state.home.h_tdiv);
+set(state.home.h_tdiv,'String','5'); enter(state.home.h_tdiv);
 assert(startsWith(writes{end},'TDIV ') && abs(timebase-5e-9)<1e-18);
 assert(get_state().scope_status.sample_rate_hz==acquisition_rate && ...
     get_state().scope_status.memory_depth==memory_depth);
-set(state.home.h_trdl,'String','2.5'); invoke(state.home.h_trdl);
+set(state.home.h_trdl,'String','2.5'); enter(state.home.h_trdl);
 assert(startsWith(writes{end},'TRDL ') && abs(trigger_delay-2.5e-9)<1e-21, ...
     'Horizontal position was not written in seconds.');
-set(state.home.h_trdl,'String','-3.5'); invoke(state.home.h_trdl);
+set(state.home.h_trdl,'String','-3.5'); enter(state.home.h_trdl);
 assert(startsWith(writes{end},'TRDL ') && abs(trigger_delay+3.5e-9)<1e-21, ...
     'Negative horizontal position was rejected.');
 state=get_state(); assert(abs(state.scope_status.trigger_delay_s+3.5e-9)<1e-21);
 write_before = numel(writes);
-set(state.home.h_vdiv1,'String','bad'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','bad'); enter(state.home.h_vdiv1);
 assert(numel(writes)==write_before);
-set(state.home.h_vdiv1,'String','.125'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','.125'); enter(state.home.h_vdiv1);
 
 % Switching loads the actual new channel, never the prior channel's targets.
 set(state.home.h_ch1,'Value',3); invoke(state.home.h_ch1);
@@ -125,7 +125,7 @@ tick(); state=get_state();
 assert(str2double(get(state.home.h_vdiv1,'String'))==.35);
 set(state.home.h_off1,'String','.061'); % Uncommitted keyboard text must survive readback.
 tick(); assert(strcmp(get(state.home.h_off1,'String'),'.061'));
-invoke(state.home.h_off1); assert(startsWith(writes{end},'C3:OFST '));
+enter(state.home.h_off1); assert(startsWith(writes{end},'C3:OFST '));
 
 % An edit delivered during capture is queued until the complete read finishes.
 nested_edit=true; write_before=numel(writes);
@@ -139,7 +139,7 @@ enabled(2)=true; tick();
 
 % Failed field write preserves the typed value and offers an inline retry.
 state=get_state(); write_failure='C3:VDIV';
-set(state.home.h_vdiv1,'String','.4'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','.4'); enter(state.home.h_vdiv1);
 state=get_state(); data=get(state.home.h_vdiv1,'UserData');
 assert(~state.connected && ~state.running && strcmp(get(data.retry,'Visible'),'on'));
 assert(strcmp(get(data.current,'String'),'--'));
@@ -149,7 +149,7 @@ state=get_state(); assert(state.connected && abs(scale(3)-.4)<1e-12);
 invoke(state.home.h_play);
 
 % A malformed readback cannot be reported as success.
-invalid_reply='C3:OFST?'; set(state.home.h_off1,'String','.07'); invoke(state.home.h_off1);
+invalid_reply='C3:OFST?'; set(state.home.h_off1,'String','.07'); enter(state.home.h_off1);
 state=get_state(); assert(~state.connected);
 invalid_reply=''; invoke(state.home.h_play);
 
@@ -166,9 +166,9 @@ capture_failure=false; invoke(state.home.h_play); tick();
 % A disabled/unimplemented page must not issue hidden hardware writes.
 state=get_state(); write_before=numel(writes);
 invoke(state.home.h_single);
-assert(numel(writes)==write_before && get_state_page()=="single");
+assert(numel(writes)==write_before && get_state_page()=="home" && get_state_connected());
 invoke(state.pages.h_single_start);
-assert(numel(writes)==write_before && get_state_page()=="single");
+assert(numel(writes)==write_before && get_state_page()=="home" && get_state_connected());
 original_position=get(fig,'Position');
 set(fig,'Position',[original_position(1:3) original_position(4)-100]); drawnow;
 invoke(state.pages.back_single); tick();
@@ -178,6 +178,11 @@ assert(isequal(getappdata(state.home.plot_panel,'rx_layout_size'), ...
 set(fig,'Position',original_position); drawnow;
 
 state=get_state(); invoke(state.home.h_pause);
+% A failed write remains a draft after reconnect; changing route must first
+% require explicit acceptance/restoration instead of reusing it on another scope channel.
+set(state.home.h_ch1,'Value',1); invoke(state.home.h_ch1);
+assert(strcmp(get_state().channels{1},'C3'),'Failed-write draft crossed a channel change.');
+escape=get(state.home.h_off1,'KeyPressFcn'); escape(state.home.h_off1,struct('Key','escape'));
 set(state.home.h_ch1,'Value',1); invoke(state.home.h_ch1);
 invoke(state.home.h_play); tick();
 limit(1)=5e9; tick(); state=get_state();
@@ -187,8 +192,8 @@ limit(1)=Inf; tick();
 
 % Both even and odd FFT lengths integrate to A^2/(2R) for an in-band tone.
 state=get_state();
-set(state.home.h_center,'String','1'); invoke(state.home.h_center);
-set(state.home.h_bandwidth,'String','1');
+set(state.home.h_center,'String','.5'); invoke(state.home.h_center);
+set(state.home.h_bandwidth,'String','1.5');
 invoke(state.home.h_bandwidth); state=get_state();
 expected=10*log10(.04^2/2/50*1000);
 assert(abs(getappdata(state.home.axes.spectrum_top,'rx_band_power_dbm')-expected)<.02);
@@ -204,36 +209,35 @@ assert(numel(findall(state.home.axes.spectrum_bottom,'Tag','rx_spectrum_band'))=
 % Exercise Swing document/focus/action events without OS-wide key injection.
 state=get_state(); set(fig,'Visible','on'); figure(fig);
 set(state.home.scroll,'Value',get(state.home.scroll,'Max')); invoke(state.home.scroll);
+invoke(state.home.h_settings);
 write_before=numel(writes);
 edit_and_commit(state.home.h_vdiv1,'0.175','focus',@tick);
-assert(numel(writes)==write_before+1 && startsWith(writes{end},'C1:VDIV '), ...
-    'Losing edit focus: expected %d writes, got %d; text=%s', ...
-    write_before+1,numel(writes),get(state.home.h_vdiv1,'String'));
+assert(numel(writes)==write_before,'Losing focus must retain the draft without writing.');
 edit_and_commit(state.home.h_vdiv1,'0.18','enter');
-assert(numel(writes)==write_before+2 && abs(scale(1)-.18)<1e-12, ...
+assert(numel(writes)==write_before+1 && abs(scale(1)-.18)<1e-12, ...
     'Enter did not commit the focused field.');
-invoke(state.home.h_vdiv1);
-assert(numel(writes)==write_before+2,'An unchanged normalized value was written again.');
-invoke(state.home.h_settings);
+enter(state.home.h_vdiv1);
+assert(numel(writes)==write_before+1,'An unchanged normalized value was written again.');
+scroll_control_into_view(fig,state.home.h_psd_min);
 edit_and_commit(state.home.h_psd_min,'-130','focus',@tick);
 state=get_state();
-assert(state.plot_state.psd_ylim(1)==-130 && numel(writes)==write_before+2, ...
+assert(state.plot_state.psd_ylim(1)==-130 && numel(writes)==write_before+1, ...
     'An in-progress display edit was overwritten or wrote hardware.');
 invoke(state.home.h_auto_psd);
 invoke(state.home.h_settings);
 write_before=numel(writes);
-edit_and_commit(state.home.h_trdl,'-1.25','focus',@tick);
+edit_and_commit(state.home.h_trdl,'-1.25','enter',@tick);
 assert(numel(writes)==write_before+1 && strcmp(writes{end},'TRDL -1.25e-09'));
 state=get_state(); data=get(state.home.h_trdl,'UserData');
 assert(abs(state.scope_status.trigger_delay_s+1.25e-9)<1e-21 && ...
     strcmp(get(data.current,'String'),'-1.25') && strcmp(get(data.unit,'String'),'ns'));
 edit_and_commit(state.home.h_trdl,'0','enter');
 assert(numel(writes)==write_before+2 && trigger_delay==0);
-invoke(state.home.h_trdl); tick(); tick();
+enter(state.home.h_trdl); tick(); tick();
 assert(numel(writes)==write_before+2,'Observation must not repeat TRDL writes.');
 scale(1:2)=.015; offset(1:2)=0; timebase=2e-9;
 tick();
-for size_value = {[1500 900],[1100 700]}
+for size_value = {[1920 1080],[1280 720]}
     dim=size_value{1};
     set(fig,'Position',[40 40 dim]);
     resize=get(fig,'SizeChangedFcn'); resize(fig,[]);
@@ -241,7 +245,7 @@ for size_value = {[1500 900],[1100 700]}
     drawnow;
     check_layout(fig,state);
     snapshot(fig,fullfile(output_dir,sprintf('RX_%dx%d_home.png',dim)));
-    invoke(state.home.h_settings); drawnow;
+    set(state.home.scroll,'Value',get(state.home.scroll,'Max')); invoke(state.home.scroll); drawnow;
     check_scroll(state);
     snapshot(fig,fullfile(output_dir,sprintf('RX_%dx%d_settings.png',dim)));
     invoke(state.home.h_settings);
@@ -254,7 +258,7 @@ cleanup=onCleanup(@() close_if_valid(fig));
 state=get_state(); assert(~state.connected && ~state.busy);
 assert(contains(get(state.home.h_status,'String'),'injected connect timeout'));
 connect_failure=false;
-set(state.home.h_vdiv1,'String','.225'); invoke(state.home.h_vdiv1);
+set(state.home.h_vdiv1,'String','.225'); enter(state.home.h_vdiv1);
 write_before=numel(writes); invoke(state.home.h_play);
 assert(numel(writes)==write_before,'Connecting must not itself commit pending edits.');
 tick(); assert(numel(writes)==write_before+1 && startsWith(writes{end},'C1:VDIV '));
@@ -328,6 +332,7 @@ end
 close(fig); clear cleanup;
 
 timer_options=options; timer_options.use_timer=true;
+timer_options.auto_connect=true; % Explicit mock connection; real/default startup remains idle.
 timer_options.synchronous_startup=false; timer_options.refresh_period_s=.15;
 before_connections=connections; before_captures=captures;
 fig=msiq.rx_workbench_app(timer_options); gui=fig;
@@ -342,7 +347,12 @@ assert(captures>=before_captures+3 && connections==before_connections+1, ...
 invoke(state.home.h_pause); before_captures=captures;
 pause(.4); drawnow;
 assert(captures==before_captures);
+% Re-enter close while stop() dispatches callbacks, as a queued timer tick
+% can do in a live window. Finalization must delete the timer only once.
+closing_test_timer=state.timer;
+set(closing_test_timer,'StopFcn',get(fig,'CloseRequestFcn'));
 close(fig); clear cleanup;
+assert(~isgraphics(fig) && ~isvalid(closing_test_timer));
 note=sprintf('RX GUI mock assertions passed; full-window screenshots: %s',output_dir);
 fprintf('%s\n',note);
 
@@ -414,7 +424,7 @@ fprintf('%s\n',note);
         if capture_failure, error('mock:Transport','injected C2:WAVEFORM? ALL timeout'); end
         if nested_edit
             n=numel(writes); s=get_state();
-            set(s.home.h_off2,'String','.081'); invoke(s.home.h_off2);
+            set(s.home.h_off2,'String','.081'); enter(s.home.h_off2);
             assert(numel(writes)==n,'Field write interleaved with an active capture.');
         end
         raw=make_records(channels);
@@ -459,6 +469,9 @@ fprintf('%s\n',note);
     end
 end
 
+function enter(handle)
+callback=get(handle,'KeyPressFcn'); callback(handle,struct('Key','return')); drawnow;
+end
 function invoke(handle)
 callback=get(handle,'Callback'); callback(handle,[]);
 end
@@ -495,7 +508,7 @@ end
 assert(abs(rectangles(1,4)-rectangles(3,4))<1);
 for handle=state.home.hardware_edits
     data=get(handle,'UserData'); a=get(handle,'Position'); b=get(data.current,'Position');
-    assert(a(1)==178 && b(1)==92 && strcmp(get(handle,'HorizontalAlignment'),'right'));
+    assert(b(1)+b(3)<=a(1) && strcmp(get(handle,'HorizontalAlignment'),'right'));
     parent=getpixelposition(get(handle,'Parent'),true);
     assert(a(1)+a(3)<parent(3),'Input clipped by its channel group.');
 end
@@ -521,6 +534,14 @@ else
     assert(content(2)>=-2 && content(2)+content(4)<=viewport(4)+2);
     assert(strcmp(get(slider,'Visible'),'off'));
 end
+end
+
+function scroll_control_into_view(fig,handle)
+state=getappdata(fig,'rx_workbench_state');
+rect=getpixelposition(handle,true); viewport=getpixelposition(state.home.settings_panel,true);
+slider=state.home.scroll; maximum=get(slider,'Max'); offset=maximum-get(slider,'Value');
+move=viewport(2)+viewport(4)-45-rect(2)-rect(4);
+set(slider,'Value',maximum-min(maximum,max(0,offset+move))); invoke(slider);
 end
 
 function snapshot(fig,path)
@@ -567,8 +588,10 @@ if nargin>=4
 end
 if strcmp(commit,'focus')
     javaMethodEDT('transferFocus',owner);
+    drawnow; if isstruct(get(handle,'UserData')), return; end
 else
-    javaMethodEDT('postActionEvent',owner);
+    javaMethodEDT('postActionEvent',owner); drawnow;
+    callback=get(handle,'KeyPressFcn'); callback(handle,struct('Key','return'));
 end
 deadline=tic;
 while toc(deadline)<3

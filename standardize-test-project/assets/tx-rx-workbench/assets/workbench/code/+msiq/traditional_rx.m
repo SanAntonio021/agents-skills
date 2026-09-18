@@ -23,13 +23,30 @@ switch action
     case 'capture'
         context = capture_context(selector, options);
         output = capture_run(context);
+    case 'save_capture'
+        output = save_supplied_capture(selector, options);
     case 'demod_capture'
         run_dir = run_directory(selector, options);
+        assert_saved_capture_validation(run_dir,options);
         context = load_tx_context(run_dir, options);
+        context.cfg = apply_decode_options(context.cfg, options);
+        context.measurement_context = saved_measurement_context(run_dir,options);
         context.artifact_prefix = char(string(field_or(options, 'artifact_prefix', '')));
         output = demod_run(context);
     otherwise
         error('msiq:traditionalRx:Action', 'Unknown RX action: %s.', action);
+end
+end
+
+function cfg = apply_decode_options(cfg, options)
+% Workbench choices must win AFTER the saved transmitter DSP configuration.
+if isfield(options, 'enable_ldpc')
+    validateattributes(options.enable_ldpc, {'logical','numeric'}, {'scalar','binary'});
+    cfg.receiver.debug_pre_fec_only = ~logical(options.enable_ldpc);
+    cfg.receiver.strict_reference_blocks = true;
+elseif isfield(options, 'strict_reference_blocks')
+    validateattributes(options.strict_reference_blocks, {'logical','numeric'}, {'scalar','binary'});
+    cfg.receiver.strict_reference_blocks = logical(options.strict_reference_blocks);
 end
 end
 
@@ -41,6 +58,199 @@ else
 end
 cfg.waveform.architecture = 'single_complex_stream';
 cfg.results_root = fullfile(cfg.project_root, 'measurement');
+end
+
+function output = save_supplied_capture(raw, options)
+% Pure persistence: the caller owns acquisition and all instrument sessions.
+if ~isstruct(raw) || ~isscalar(raw) || ~isfield(raw, 'channels') || ...
+        ~isstruct(raw.channels) || ~ismember(numel(raw.channels), [1 2])
+    error('msiq:traditionalRx:RawChannels', '保存采集需要一个或两个真实通道。');
+end
+records = raw.channels;
+if ~all(isfield(records, {'channel','samples','time_axis_s'}))
+    error('msiq:traditionalRx:RawFields', '原始记录缺少通道、采样值或时间轴。');
+end
+names = cellstr(upper(string({records.channel})));
+if numel(unique(names)) ~= numel(names) || ~all(ismember(names, {'C1','C2','C3','C4'}))
+    error('msiq:traditionalRx:RawChannels', '实际通道必须为不重复的 C1 至 C4。');
+end
+% Never accept a compact display envelope as a new physical acquisition.
+if isfield(raw, 'live_spectra') || any(arrayfun(@(r) ...
+        isfield(r,'original_count') && ~isempty(r.original_count) && ...
+        r.original_count ~= numel(r.samples), records))
+    error('msiq:traditionalRx:DisplayCapture', '显示用抽稀数据不能作为原始采集保存。');
+end
+cfg = load_cfg(options);
+if isfield(options,'results_root'), cfg.results_root = options.results_root; end
+role = char(string(field_or(options,'measurement_role','formal')));
+measurement_context = field_or(options,'measurement_context',struct());
+if ~isempty(fieldnames(measurement_context))
+    measurement_context=msiq.rx_measurement_context(measurement_context);
+    options.measurement_context=measurement_context;
+end
+[source_mode,category] = msiq.rx_capture_source(raw,options);
+run = msiq.create_output_run(cfg,category,['RX_' role], ...
+    char(string(field_or(options,'run_dir',''))));
+context = struct('run_dir',run.OutputDir,'diagnostics_dir',run.DataDir, ...
+    'artifact_prefix','','cfg',cfg,'scope_status',field_or(options,'scope_status',struct()));
+cleanup = onCleanup(@() settle_capture(context));
+requires_validation = field_or(options,'requires_capture_validation', ...
+    field_or(options,'requires_final_validation',false));
+validateattributes(requires_validation,{'logical','numeric'},{'scalar','binary'});
+requires_validation = logical(requires_validation);
+if requires_validation
+    % Mark pending before raw is durable: a worker crash cannot create a
+    % replayable capture whose post-read consistency checks never happened.
+    Result_Atomic_Write_Json(fullfile(run.DataDir,'capture_metadata.json'), ...
+        struct('schema_version','2.0','status','saving_pending_validation', ...
+        'source_mode',source_mode, ...
+        'requires_capture_validation',true));
+    msiq.rx_capture_validation(run.OutputDir,struct('valid',false, ...
+        'status','pending','reason','等待采集后设置和波形校验'));
+end
+raw_path = fullfile(run.DataDir,'raw_capture.mat');
+atomic_mat(raw_path,struct('raw',raw)); % Complete data is durable before analysis.
+atomic_mat(fullfile(run.DataDir,'effective_config.mat'),struct('cfg',cfg));
+
+reference_path = ''; reference_reason = '未关联发送参考';
+validation = struct('ok',false,'reason','reference_not_associated', ...
+    'pairs',struct([]),'summary',struct());
+if has_reference_bundle_option(options)
+    reference_valid = false;
+    try
+        [bundle, source_path] = read_reference_bundle(options.tx_reference_bundle);
+        reference_context = bundle_context(run.OutputDir,cfg,bundle,source_path);
+        reference_context.measurement_context=measurement_context;
+        reference_context.scope_status=context.scope_status;
+        validation = normalize_measurement(raw,reference_context);
+        options.real_if_reference=reference_context.cfg.waveform;
+        reference_valid = true;
+    catch exception
+        % A bad optional reference must not discard an already captured waveform.
+        reference_reason = ['发送参考未关联：' exception.message];
+        validation.ok = false;
+        validation.reason = exception.identifier;
+    end
+    if reference_valid
+        % Once validated, a persistence error is a failed save, not a bad reference.
+        destination = fullfile(run.DataDir,'tx_reference_bundle.mat');
+        msiq.save_reference_bundle(destination,bundle,source_path);
+        reference_path = destination;
+        reference_reason = '';
+        Result_Atomic_Write_Json(fullfile(run.DataDir,'tx_reference_source.json'), ...
+            struct('source_path',source_path,'local_file','tx_reference_bundle.mat', ...
+            'sha256',compute_file_sha256(destination)));
+        atomic_mat(fullfile(run.DataDir,'capture_preparation.mat'),struct('validation',validation));
+    end
+end
+scope_status = context.scope_status;
+display_raw = msiq.plotting.rx_live_analysis(raw,scope_status,options);
+spectrum = display_raw.live_spectra;
+spectrum_path = fullfile(run.DataDir,'capture_spectrum.mat');
+atomic_mat(spectrum_path,struct('spectrum',{spectrum}, ...
+    'real_if_analysis',field_or(display_raw,'real_if_analysis',struct()), ...
+    'measurement_context',measurement_context));
+valid = all([display_raw.channels.wave_valid]);
+metadata = struct('schema_version','2.0','status','captured', ...
+    'source_mode',source_mode, 'measurement_context',measurement_context, ...
+    'captured_at',timestamp_text(),'measurement_role',role,'scope_channels',{names}, ...
+    'scope_status_before',scope_status,'fresh_capture',field_or(options,'fresh_capture',struct()), ...
+    'board_state',field_or(options,'board_state',struct()), ...
+    'raw_valid',valid,'demod_ready',validation.ok, ...
+    'reference_bundle_path',reference_path,'reference_reason',reference_reason, ...
+    'physical_window',validation.summary,'demodulation_status','NOT_RUN', ...
+    'requires_capture_validation',requires_validation);
+metadata.requested_scope_channels=field_or(options,'requested_scope_channels', ...
+    field_or(options,'scope_channels',{}));
+metadata.actual_scope_channels=names;
+metadata.sampling_baseline=field_or(options,'sampling_baseline',struct());
+metadata.source_reference_path=field_or(options,'source_reference_path','');
+metadata.source_reference_hash=field_or(options,'source_reference_hash','');
+metadata.source_reference_association=field_or(options,'source_reference_association',struct());
+if ~isempty(reference_path)
+    metadata.reference_provenance=struct('reference_identity',compute_file_sha256(reference_path), ...
+        'historical_awg_channels',field_or(bundle.route,'awg_channels',[]), ...
+        'historical_scope_channels',{field_or(bundle.route,'scope_channels',{})}, ...
+        'status','saved_transmit_reference_not_current_awg_readback');
+end
+if requires_validation, metadata.status='captured_pending_validation'; end
+metadata_path = fullfile(run.DataDir,'capture_metadata.json');
+Result_Atomic_Write_Json(metadata_path,metadata);
+dashboard_path = fullfile(run.OutputDir,'overview.png');
+save_observation_overview(dashboard_path,display_raw,scope_status);
+Result_Summary_Initialize(run, {'序号','Channel','Samples','SampleRate','角色','状态','来源'}, ...
+    {'-','-','sample','Sa/s','-','-','-'});
+for k = 1:numel(records)
+    Result_Summary_Append(run,{1,names{k},numel(records(k).samples), ...
+        spectrum{k}.sample_rate_hz,role,ternary(display_raw.channels(k).wave_valid,'已保存','波形无效'), ...
+        ternary(strcmp(source_mode,'simulation'),'模拟', ...
+        ternary(strcmp(source_mode,'measurement'),'实测','来源未记录'))});
+end
+Result_Update_Run_Info(run,struct('counts',struct('planned',1,'executed',1, ...
+    'succeeded',double(valid),'failed',0,'invalid',double(~valid)), ...
+    'inputs',struct('reference_bundle_path',reference_path), ...
+    'capture_metadata',metadata));
+Result_Finalize_Run(run,ternary(valid,'completed','completed_with_failures'),'normal_completion');
+output = struct('status',ternary(valid,'captured','captured_invalid'),'source_mode',source_mode, ...
+    'actual_scope_channels',{names},'requested_scope_channels',{metadata.requested_scope_channels}, ...
+    'measurement_context',measurement_context, ...
+    'run_dir',run.OutputDir,'diagnostics_dir',run.DataDir,'raw_path',raw_path, ...
+    'metadata_path',metadata_path,'spectrum_path',spectrum_path,'dashboard_path',dashboard_path, ...
+    'reference_bundle_path',reference_path,'reference_reason',reference_reason, ...
+    'demod_ready',validation.ok,'reason',validation.reason,'physical_window',validation.summary, ...
+    'display_raw',display_raw,'metadata',metadata);
+clear cleanup;
+end
+
+function assert_saved_capture_validation(run_dir,options)
+location=struct('run_dir',run_dir,'artifact_prefix',field_or(options,'artifact_prefix',''));
+path=msiq.artifact_path(location,'capture_validation.json','read');
+required=logical(field_or(options,'requires_capture_validation', ...
+    field_or(options,'requires_final_validation',false)));
+metadata_path=msiq.artifact_path(location,'capture_metadata.json','read');
+if isfile(metadata_path)
+    metadata=jsondecode(fileread(metadata_path));
+    required=required || isequal(field_or(metadata,'requires_capture_validation',false),true);
+end
+if ~isfile(path)
+    assert(~required,'msiq:traditionalRx:CaptureValidation', ...
+        '采集后校验记录缺失；原始波形已保留，不能解调。');
+    return; % Historical captures without this opt-in marker retain their reader.
+end
+evidence=jsondecode(fileread(path));
+assert(isstruct(evidence) && isscalar(evidence) && ...
+    isequal(field_or(evidence,'valid',false),true) && ...
+    strcmp(field_or(evidence,'status',''),'validated'), ...
+    'msiq:traditionalRx:CaptureValidation','采集后校验未通过：%s', ...
+    char(string(field_or(evidence,'reason','校验未完成或记录无效'))));
+end
+
+function atomic_mat(path, values)
+temporary = [tempname(fileparts(path)) '.tmp'];
+cleanup = onCleanup(@() delete_temporary(temporary));
+save(temporary,'-struct','values','-v7.3');
+if isfile(path)
+    error('msiq:traditionalRx:CaptureExists','已存在的采集数据不能覆盖：%s',path);
+end
+[ok,message] = movefile(temporary,path);
+if ~ok, error('msiq:traditionalRx:SaveFailed','%s',message); end
+clear cleanup;
+end
+
+function delete_temporary(path)
+if isfile(path), delete(path); end
+end
+
+function save_observation_overview(path, raw, status)
+fig = figure('Visible','off','Color','w','Position',[30 30 1280 720]);
+cleanup = onCleanup(@() close(fig));
+handles = struct('wave_top',subplot(2,2,1,'Parent',fig), ...
+    'spectrum_top',subplot(2,2,2,'Parent',fig), ...
+    'wave_bottom',subplot(2,2,3,'Parent',fig), ...
+    'spectrum_bottom',subplot(2,2,4,'Parent',fig));
+msiq.plotting.rx_live_dashboard(handles,raw,status,struct(),struct(),true);
+exportgraphics(fig,path,'Resolution',120);
+clear cleanup;
 end
 
 function context = capture_context(selector, options)
@@ -376,7 +586,15 @@ if ~isfile(raw_path)
         'Missing raw_capture.mat in %s.', context.run_dir);
 end
 loaded = load(raw_path, 'raw');
-validation = normalize_capture(loaded.raw, context.tx_ref, context.route);
+source_options=struct();
+metadata_file=msiq.artifact_path(context,'capture_metadata.json','read');
+if isfile(metadata_file)
+    saved_metadata=jsondecode(fileread(metadata_file));
+    if isfield(saved_metadata,'source_mode'), source_options.source_mode=saved_metadata.source_mode; end
+    if isfield(saved_metadata,'scope_status_before'), source_options.scope_status=saved_metadata.scope_status_before; end
+end
+[context.source_mode,~] = msiq.rx_capture_source(loaded.raw,source_options);
+validation = normalize_measurement(loaded.raw, context);
 analysis_run = [];
 if isempty(field_or(context, 'artifact_prefix', ''))
     [context, analysis_run] = analysis_context(context, raw_path);
@@ -384,6 +602,7 @@ if isempty(field_or(context, 'artifact_prefix', ''))
 end
 if ~validation.ok
     output = struct('status', 'blocked', 'run_dir', context.run_dir, ...
+        'source_mode',context.source_mode, 'measurement_context',field_or(context,'measurement_context',struct()), ...
         'diagnostics_dir', context.diagnostics_dir, ...
         'reference_bundle_path', context.reference_bundle_path, ...
         'reason', validation.reason, 'physical_window', validation.summary);
@@ -417,9 +636,11 @@ if any(~strcmp({results.status}, 'decoded'))
     status = 'failed';
 end
 output = struct('status', status, 'run_dir', context.run_dir, ...
+    'source_mode',context.source_mode, 'measurement_context',field_or(context,'measurement_context',struct()), ...
     'diagnostics_dir', context.diagnostics_dir, ...
     'reference_bundle_path', context.reference_bundle_path, ...
-    'physical_window', validation.summary, 'pairs', results);
+    'physical_window', validation.summary, 'pairs', results, ...
+    'strict_reference_blocks',field_or(context.cfg.receiver,'strict_reference_blocks',false));
 output.dashboard_path = msiq.artifact_path(context, 'fig_rx_dashboard.png', 'write');
 output.dashboard = msiq.plotting.rx_dashboard( ...
     output.dashboard_path, loaded.raw, validation, context, output);
@@ -459,6 +680,7 @@ if ~isfile(validation_path)
     validation_path = msiq.artifact_path(source_dir, 'demod_result.mat');
 end
 source = struct('schema_version', '1.0', 'source_run_dir', source_dir, ...
+    'source_mode',context.source_mode, 'measurement_context',field_or(context,'measurement_context',struct()), ...
     'raw_path', raw_path, 'raw_sha256', compute_file_sha256(raw_path), ...
     'validation_path', validation_path, 'validation_sha256', '');
 if isfile(validation_path)
@@ -480,14 +702,16 @@ end
 
 function initialize_rx_summary(run)
 Result_Summary_Initialize(run, ...
-    {'序号','Channel','MER','EVM','pre-FEC BER','post-FEC BER','BLER','状态'}, ...
-    {'-','-','dB','%','-','-','-','-'});
+    {'序号','Channel','MER','EVM','pre-FEC BER','post-FEC BER','BLER','状态','来源'}, ...
+    {'-','-','dB','%','-','-','-','-','-'});
 end
 
 function finalize_standalone_demod(run, output)
 if isempty(run), return; end
 success = 0;
 all_passed = true;
+source_label=ternary(strcmp(field_or(output,'source_mode','unknown'),'simulation'),'模拟', ...
+    ternary(strcmp(field_or(output,'source_mode','unknown'),'measurement'),'实测','来源未记录'));
 if isfield(output, 'pairs') && ~isempty(output.pairs)
     for pair_index = 1:numel(output.pairs)
         pair = output.pairs(pair_index);
@@ -496,20 +720,24 @@ if isfield(output, 'pairs') && ~isempty(output.pairs)
             for stream_index = 1:numel(streams)
                 value = streams(stream_index);
                 passed = field_or(value, 'pass', false);
+                if field_or(output,'strict_reference_blocks',false)
+                    % Valid nonzero BER is a measurement result, not a failed task.
+                    passed = field_or(value,'valid',false);
+                end
                 all_passed = all_passed && passed;
                 success = success + double(passed);
                 Result_Summary_Append(run, {1, pair_index, ...
                     value.mer_db, 100*value.evm_rms, value.pre_fec_ber, ...
-                    value.post_fec_ber, value.bler, ternary(passed, '成功', '失败')});
+                    value.post_fec_ber, value.bler, ternary(passed, '成功', '失败'),source_label});
             end
         else
             all_passed = false;
-            Result_Summary_Append(run, {1, pair_index, [], [], [], [], [], '失败'});
+            Result_Summary_Append(run, {1, pair_index, [], [], [], [], [], '失败',source_label});
         end
     end
 else
     all_passed = false;
-    Result_Summary_Append(run, {1, '', [], [], [], [], [], '无效'});
+    Result_Summary_Append(run, {1, '', [], [], [], [], [], '无效',source_label});
 end
 overview = fullfile(run.OutputDir, 'overview.png');
 copyfile(output.dashboard_path, overview);
@@ -654,6 +882,100 @@ status.preprocessing = msiq.instruments.read_scope_preprocessing( ...
     session, channels);
 end
 
+function measurement = saved_measurement_context(run_dir,options)
+measurement=struct();
+location=struct('run_dir',run_dir,'artifact_prefix',field_or(options,'artifact_prefix',''));
+path=msiq.artifact_path(location,'capture_metadata.json','read');
+if isfile(path)
+    metadata=jsondecode(fileread(path));
+    measurement=field_or(metadata,'measurement_context',struct());
+end
+requested=field_or(options,'measurement_context',struct());
+if ~isempty(fieldnames(measurement)), measurement=msiq.rx_measurement_context(measurement); end
+if ~isempty(fieldnames(requested)), requested=msiq.rx_measurement_context(requested); end
+if ~isempty(fieldnames(measurement))
+    assert(isempty(fieldnames(requested)) || isequaln(measurement,requested), ...
+        'msiq:traditionalRx:MeasurementMismatch','已保存测量位置与本次分析请求不一致。');
+elseif ~isempty(fieldnames(requested))
+    measurement=requested; % Explicit supplementation of a legacy record, analysis only.
+end
+end
+
+function validation = normalize_measurement(raw,context)
+measurement=field_or(context,'measurement_context',struct());
+if ~field_or(measurement,'is_real_if',false)
+    original=field_or(context,'reference_bundle',struct());
+    if ~isempty(fieldnames(measurement)) && ~isempty(fieldnames(original)) && ...
+            ~msiq.rx_reference_channels_compatible(original,{raw.channels.channel},measurement,true)
+        validation=struct('ok',false,'reason','reference_channels_incompatible', ...
+            'pairs',struct([]),'summary',struct()); return;
+    end
+    validation=normalize_capture(raw,context.tx_ref,context.route); return;
+end
+validation=struct('ok',false,'reason','','pairs',struct([]),'summary',struct());
+try
+    canonical=msiq.rx_measurement_context(measurement);
+    assert(canonical.is_real_if && canonical.center_freq_hz==measurement.center_freq_hz, ...
+        'msiq:traditionalRx:MeasurementContext','中频测量位置与中心频率不一致。');
+    assert(numel(raw.channels)==1,'msiq:traditionalRx:RealIFChannels','单路中频解调需要一个实际通道。');
+    cfg=context.cfg; original=field_or(context,'reference_bundle',struct());
+    waveform=field_or(field_or(original,'dsp_config',struct()),'waveform',cfg.waveform);
+    assert(strcmp(waveform.architecture,'single_complex_stream') && ...
+        field_or(waveform,'if_center_hz',0)==0, ...
+        'msiq:traditionalRx:RealIFReference','首版中频解调需要零数字中频的单复数流参考。');
+    record=raw.channels(1);
+    clip=0; descriptor=field_or(record,'descriptor',struct());
+    if all(isfield(descriptor,{'vertical_gain','vertical_offset','comm_type'}))
+        codes=(double(record.samples)+descriptor.vertical_offset)/descriptor.vertical_gain;
+        bits=8+8*descriptor.comm_type;
+        clip=mean(codes<=-2^(bits-1)+.5 | codes>=2^(bits-1)-1-.5);
+    end
+    assert(clip==0,'msiq:traditionalRx:Clipping','原始中频采集削顶，不能报告有效解调指标。');
+    front_options=struct('remove_dc',true,'clip_fraction',clip);
+    scope=field_or(context,'scope_status',struct());
+    physical=field_or(scope,'channels',struct([]));
+    limits=field_or(scope,'analog_bandwidth_hz',NaN);
+    for n=1:numel(physical)
+        if strcmpi(physical(n).channel,record.channel)
+            limits=[limits field_or(physical(n),'analog_bandwidth_hz',NaN) ...
+                field_or(physical(n),'bandwidth_limit_hz',NaN)]; %#ok<AGROW>
+        end
+    end
+    limits=limits(isfinite(limits)&limits>0);
+    if ~isempty(limits), front_options.analog_bandwidth_hz=min(limits); end
+    time=double(record.time_axis_s(:));
+    assert(numel(time)>2 && all(isfinite(time)) && all(diff(time)>0), ...
+        'msiq:traditionalRx:TimeAxis','中频采集时间轴无效。');
+    actual_rate=1/median(diff(time));
+    declared_rate=field_or(record,'sample_rate_hz',actual_rate);
+    assert(isfinite(declared_rate) && abs(declared_rate/actual_rate-1)<1e-5, ...
+        'msiq:traditionalRx:SampleRate','实际时间轴与记录采样率不一致。');
+    prepared=msiq.dsp.real_if_frontend(record.samples,time, ...
+        actual_rate,measurement.center_freq_hz,waveform,front_options);
+    prepared.processing_log.analog_bandwidth_confirmed=~isempty(limits);
+    prepared.processing_log.analog_bandwidth_hz=field_or(front_options,'analog_bandwidth_hz',NaN);
+    required=context.tx_ref.frame.awg_waveform_length/context.tx_ref.frame.awg_sample_rate_hz;
+    assert(numel(prepared.samples)/prepared.sample_rate_hz>=required, ...
+        'msiq:traditionalRx:RealIFWindow','滤波裁边后窗口不足一个完整参考帧。');
+    pairs=route_pairs(context.route);
+    assert(numel(pairs)==1,'msiq:traditionalRx:RealIFReference','单路中频只支持一个发送 I/Q 对。');
+    prepared.payload_pair=pairs(1).payload_pair; prepared.clip_fraction=clip;
+    prepared.full_scale=NaN;
+    pair=empty_normalized_pair(); pair.name=pairs(1).name;
+    pair.scope_channels={record.channel}; pair.raw_for_decode=prepared;
+    pair.summary=struct('valid',true,'processing_log',prepared.processing_log, ...
+        'original_sample_count',numel(record.samples),'common_sample_count',numel(prepared.samples), ...
+        'common_sample_rate_hz',prepared.sample_rate_hz,'clip_fraction',clip);
+    validation.ok=true; validation.pairs=pair;
+    validation.summary=struct('all_pairs_ready',true,'measurement_context',measurement, ...
+        'pair_summaries',{{pair.summary}});
+catch exception
+    validation.reason=[exception.identifier ': ' exception.message];
+    validation.summary=struct('all_pairs_ready',false,'reason',validation.reason, ...
+        'measurement_context',measurement);
+end
+end
+
 function validation = normalize_capture(raw, tx_ref, route)
 pairs = route_pairs(route);
 validation = struct('ok', true, 'reason', '', ...
@@ -786,6 +1108,8 @@ end
 function result = demod_for_json(output)
 pairs = cell(1, numel(output.pairs));
 result = struct('status', output.status, 'run_dir', output.run_dir, ...
+    'source_mode',field_or(output,'source_mode','unknown'), ...
+    'measurement_context',field_or(output,'measurement_context',struct()), ...
     'diagnostics_dir', output.diagnostics_dir, ...
     'dashboard_path', output.dashboard_path, ...
     'physical_window', output.physical_window, 'pairs', {pairs});
@@ -794,11 +1118,20 @@ for k = 1:numel(output.pairs)
     if strcmp(pair.status, 'decoded')
         streams = pair.decoded.primary_streams;
         metrics = repmat(struct('post_fec_ber', NaN, 'pre_fec_ber', NaN, ...
-            'bler', NaN, 'evm_rms', NaN, 'mer_db', NaN), 1, numel(streams));
+            'bler', NaN, 'evm_rms', NaN, 'mer_db', NaN, ...
+            'valid',false,'metric_status','','pre_fec_bit_error_count',0, ...
+            'pre_fec_bit_count',0,'decoder_executed',false,'decoder_status',''), 1, numel(streams));
         for s = 1:numel(streams)
             metrics(s) = struct('post_fec_ber', streams(s).post_fec_ber, ...
                 'pre_fec_ber', streams(s).pre_fec_ber, 'bler', streams(s).bler, ...
-                'evm_rms', streams(s).evm_rms, 'mer_db', streams(s).mer_db);
+                'evm_rms', streams(s).evm_rms, 'mer_db', streams(s).mer_db, ...
+                'valid',field_or(streams(s),'valid',false), ...
+                'metric_status',field_or(streams(s).fec,'status',''), ...
+                'pre_fec_bit_error_count',field_or(streams(s),'pre_fec_bit_error_count',0), ...
+                'pre_fec_bit_count',field_or(streams(s),'pre_fec_bit_count',0), ...
+                'decoder_executed',field_or(streams(s).fec,'decoder_executed', ...
+                    ~isempty(field_or(streams(s).fec,'actual_iterations',[]))), ...
+                'decoder_status',field_or(streams(s).fec,'decoder_status',''));
         end
         result.pairs{k} = struct('name', pair.name, 'status', 'decoded', ...
             'sync_ok', pair.decoded.sync_ok, ...

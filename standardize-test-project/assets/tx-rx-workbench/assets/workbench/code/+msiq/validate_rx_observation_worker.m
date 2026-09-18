@@ -44,6 +44,10 @@ assert(~contains(final,'WRITE '));
 worker.close(); started=tic;
 while ~worker.process.HasExited && toc(started)<15, pause(.05); end
 assert(worker.process.HasExited,'Mock worker did not close cooperatively.');
+worker.process.WaitForExit();
+assert(worker.process.ExitCode==0,'msiq:validation:WorkerExit', ...
+    'Mock worker exited abnormally (%d); log: %s',worker.process.ExitCode, ...
+    fullfile(worker.folder,'worker.log'));
 completion('passed')=true; %#ok<NASGU> Handle state is consumed by artifact cleanup.
 report=struct('passed',true,'hardware_io',false);
 fprintf('RX worker refresh PASS: external channel/trigger changes, per-frame sample mode, cached ranges, zero writes\n');

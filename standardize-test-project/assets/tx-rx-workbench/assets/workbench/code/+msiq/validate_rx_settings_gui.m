@@ -46,7 +46,7 @@ choose(find_setting('TRA',1),'ON'); choose(find_setting('TRA',2),'ON');
 % Native enumerations, readback and numeric edits go through same queue.
 state=getappdata(fig,'rx_workbench_state'); invoke(state.home.h_settings);
 before=numel(writes());
-h=find_setting('AVERAGE',1); set(h,'String','8'); invoke(h);
+h=find_setting('AVERAGE',1); set(h,'String','8'); enter(h);
 lines=writes(); assert(numel(lines)==before+1 && contains(lines{end},'C3.AverageSweeps.Value=8'));
 assert(str2double(get(h,'String'))==8);
 h=find_setting('BWL',1); choose(h,'200MHZ');
@@ -60,7 +60,7 @@ assert(numel(writes())==before,'Display setting wrote instrument.');
 h=find_setting('AVERAGE',1);
 fid=fopen(mock.failure_path,'w'); assert(fid>=0);
 fprintf(fid,'%s','VBS ''app.Acquisition.C3.AverageSweeps.Value'); fclose(fid);
-set(h,'String','9'); invoke(h);
+set(h,'String','9'); enter(h);
 state=getappdata(fig,'rx_workbench_state'); data=get(h,'UserData');
 assert(~state.connected && strcmp(get(h,'String'),'9'));
 assert(isgraphics(data.retry) && strcmp(get(data.retry,'Visible'),'on'));
@@ -71,7 +71,7 @@ assert(state.connected && str2double(get(h,'String'))==9,'Inline retry did not r
 choose(find_setting('BWL',1),'OFF');
 invoke(state.home.h_auto_psd);
 
-for dim={[1500 900],[1100 700]}
+for dim={[1920 1080],[1280 720]}
     d=dim{1}; set(fig,'Position',[30 30 d]); drawnow;
     state=getappdata(fig,'rx_workbench_state');
     set(state.home.scroll,'Value',get(state.home.scroll,'Max')); invoke(state.home.scroll);
@@ -133,6 +133,9 @@ disp(note);
 end
 function invoke(h)
 callback=get(h,'Callback'); callback(h,[]); drawnow;
+end
+function enter(h)
+callback=get(h,'KeyPressFcn'); callback(h,struct('Key','return')); drawnow;
 end
 function close_gui(fig)
 if isgraphics(fig), close(fig); end

@@ -12,10 +12,38 @@ if strcmp(action,'load')
         end
     end
 end
-clean = struct('version',1,'channels',{{}},'views',struct());
+clean = struct('version',3,'channels',{{}},'views',struct(),'measurement_position','','measurement_subband',1, ...
+    'measurement_routes',struct(),'measurement_second_enabled',struct(),'channel_selection_explicit',false,'second_enabled',true);
 if isstruct(record) && isscalar(record)
+    if isfield(record,'measurement_position') && any(strcmp(record.measurement_position,{'','awg_direct','tx_if','thz_if','rx_if','rx_if_thz'}))
+        clean.measurement_position=char(record.measurement_position);
+    end
+    if isfield(record,'measurement_subband') && number(record.measurement_subband) && ismember(record.measurement_subband,1:6)
+        clean.measurement_subband=record.measurement_subband;
+    end
+    if isfield(record,'measurement_routes') && isstruct(record.measurement_routes) && isscalar(record.measurement_routes)
+        for id={'awg_direct','tx_if','thz_if','rx_if','rx_if_thz'}
+            if isfield(record.measurement_routes,id{1}) && valid_channels(record.measurement_routes.(id{1}))
+                clean.measurement_routes.(id{1})=record.measurement_routes.(id{1});
+            end
+        end
+    end
     if isfield(record,'channels') && valid_channels(record.channels)
         clean.channels = reshape(cellstr(string(record.channels)),1,2);
+        clean.channel_selection_explicit = true;
+    end
+    if isfield(record,'channel_selection_explicit') && binary(record.channel_selection_explicit)
+        clean.channel_selection_explicit=logical(record.channel_selection_explicit);
+    end
+    if isfield(record,'second_enabled') && binary(record.second_enabled)
+        clean.second_enabled=logical(record.second_enabled);
+    end
+    if isfield(record,'measurement_second_enabled') && isstruct(record.measurement_second_enabled) && isscalar(record.measurement_second_enabled)
+        for id={'awg_direct','tx_if','thz_if','rx_if','rx_if_thz'}
+            if isfield(record.measurement_second_enabled,id{1}) && binary(record.measurement_second_enabled.(id{1}))
+                clean.measurement_second_enabled.(id{1})=logical(record.measurement_second_enabled.(id{1}));
+            end
+        end
     end
     if isfield(record,'views') && isstruct(record.views) && isscalar(record.views)
         names = fieldnames(record.views);

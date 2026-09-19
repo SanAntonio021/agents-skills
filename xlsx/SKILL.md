@@ -36,7 +36,7 @@ python <skill-root>\scripts\verify_xlsx.py input.xlsx --json-out baseline.json
 python <skill-root>\scripts\officecli_bridge.py mutate input.xlsx draft.xlsx batch --input commands.json
 ```
 
-桥接器固定使用 OfficeCLI `1.0.149`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
+桥接器固定使用 OfficeCLI `1.0.151`，每次调用都会先核对文件存在、SHA-256 和报告版本。普通
 表格任务不会联网下载或自动修复；当前授权覆盖修复或升级时，可运行
 `python <skill-root>\scripts\repair_officecli.py --repair` 修复默认本机路径。设置
 `OFFICECLI_EXE` 时也必须通过相同校验，路径错误应自行修正或取消环境变量；修复脚本不会改写

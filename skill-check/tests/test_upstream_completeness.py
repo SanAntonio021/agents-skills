@@ -76,7 +76,7 @@ def test_failed_source_never_counts_as_complete_week_but_healthy_source_continue
               "last_check_attempt_at": STAMP, "last_successful_check_at": "2026-09-01T06:00:00+00:00"}
     upstream = {"schema_version": 1, "date": "2026-09-08", "generated_at": STAMP,
                 "check_error_count": 1, "sources": [failed, healthy_source()]}
-    usage = {"version": "skill-usage-audit-v2", "date": "2026-09-08", "warnings": {},
+    usage = {"version": "skill-usage-audit-v3", "date": "2026-09-08", "warnings": {},
              "skill_inventory": [{"skill": "alpha", "active_hosts": ["codex"]}],
              "classifications": {"已用": [], "历史内未见使用": [{"skill": "alpha", "active_hosts": ["codex"]}]},
              "configuration": {"count_unit": "request"},

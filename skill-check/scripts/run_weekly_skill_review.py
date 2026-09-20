@@ -32,8 +32,8 @@ except ImportError:  # pragma: no cover
 
 
 SCHEMA_VERSION = 1
-USAGE_AUDIT_VERSION = "skill-usage-audit-v2"
-USAGE_SEMANTICS_VERSION = 2
+USAGE_AUDIT_VERSION = "skill-usage-audit-v3"
+USAGE_SEMANTICS_VERSION = 3
 DEFAULT_USAGE_TIMEZONE = "Asia/Shanghai"
 DEFAULT_USAGE_BOUNDARY_HOUR = 14
 UNSEEN_STREAK_THRESHOLD = 4
@@ -2614,6 +2614,17 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 elif outcome == "propose":
                     if revised is not None:
                         finding["proposal"] = revised
+                    previous_source = finding.get("source_fingerprint")
+                    targets = (finding.get("proposal") or {}).get("targets", [])
+                    finding["source_fingerprint"] = source_fingerprint(skills_root, targets)
+                    if previous_source != finding["source_fingerprint"]:
+                        finding.setdefault("history", []).append({
+                            "event": "facts_proposal_source_bound",
+                            "recorded_at": timestamp,
+                            "previous_source_fingerprint": previous_source,
+                            "source_fingerprint": finding["source_fingerprint"],
+                            "targets": normalize_targets(targets),
+                        })
                     finding["proposal_fingerprint"] = fingerprint(finding.get("proposal"))
                     finding["status"] = "awaiting_decision"
                     ensure_in_queue(state, finding["id"])

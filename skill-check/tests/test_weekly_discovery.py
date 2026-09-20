@@ -191,7 +191,7 @@ def test_bad_discovery_input_and_private_network_failure_preserve_other_audits(t
         "hygiene": {"version": "flat-skill-tree-v1", "date": "2026-09-08", "findings": {}},
         "hygiene_private": {"version": "flat-skill-tree-v1", "date": "2026-09-08",
                             "findings": {"broken_items": [{"path": "pdf/SKILL.md", "detail": "review private source"}]}},
-        "usage": {"version": "skill-usage-audit-v2", "date": "2026-09-08", "warnings": {},
+        "usage": {"version": "skill-usage-audit-v3", "date": "2026-09-08", "warnings": {},
                   "skill_inventory": [], "classifications": {}, "configuration": {"count_unit": "request"},
                   "window": {"start": "2026-09-01T14:00:00+08:00", "end": "2026-09-08T14:00:00+08:00"}},
     }

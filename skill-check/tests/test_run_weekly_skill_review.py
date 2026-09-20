@@ -149,7 +149,7 @@ class WeeklySkillReviewTests(unittest.TestCase):
         end = datetime.fromisoformat(f"{date}T14:00:00+08:00")
         start = end - timedelta(days=7)
         return {
-            "version": "skill-usage-audit-v2",
+            "version": "skill-usage-audit-v3",
             "date": date,
             "window": {
                 "kind": "weekly",
@@ -514,6 +514,41 @@ class WeeklySkillReviewTests(unittest.TestCase):
         changed["evidence_fingerprint"] = REVIEW.fingerprint({"v": 2})
         REVIEW.merge_observations(state, [changed], "2026-08-17")
         self.assertEqual(state["findings"][observation["id"]]["status"], "queued")
+
+    def test_fact_proposal_binds_revised_target_and_still_blocks_later_drift(self) -> None:
+        for drift in (False, True):
+            with self.subTest(drift=drift):
+                observation = self.observation(f"original-{drift}", needs_facts=True)
+                target = f"actual-{drift}"
+                self.make_skill(target)
+                self.seed([observation])
+                question, _ = self.invoke("next-question")
+                result, code = self.invoke(
+                    "record-decision", "--finding-id", observation["id"],
+                    "--expected-evidence-fingerprint", question["expected_evidence_fingerprint"],
+                    "--expected-proposal-fingerprint", question["expected_proposal_fingerprint"],
+                    "--answer", "事实确认真正修改目标", "--facts-outcome", "propose",
+                    "--revised-proposal-json", json.dumps({"action":"modify", "summary":"修正实际解析器", "targets":[target]}),
+                )
+                self.assertEqual(code, 0)
+                finding = self.load()["findings"][observation["id"]]
+                self.assertEqual(finding["source_fingerprint"], REVIEW.source_fingerprint(self.skills,[target]))
+                self.assertNotEqual(finding["source_fingerprint"], observation["source_fingerprint"])
+                self.assertEqual(finding["history"][-1]["event"], "facts_proposal_source_bound")
+                question, _ = self.invoke("next-question")
+                self.invoke("record-decision", "--finding-id", observation["id"],
+                    "--expected-evidence-fingerprint", question["expected_evidence_fingerprint"],
+                    "--expected-proposal-fingerprint", question["expected_proposal_fingerprint"], "--answer", "批准")
+                confirmation, code = self.invoke("prepare-execution")
+                self.assertEqual(code, 0)
+                if drift:
+                    with (self.skills/target/"SKILL.md").open("a",encoding="utf-8") as handle:
+                        handle.write("\nnew independent work\n")
+                result, code = self.invoke("prepare-execution", "--decision", "approve",
+                    "--batch-id", confirmation["batch_id"],
+                    "--expected-batch-fingerprint", confirmation["batch_fingerprint"])
+                self.assertEqual(code, 4 if drift else 0)
+                self.assertEqual(result["status"], "blocked_source_drift" if drift else "ready")
 
     def test_facts_have_two_questions_and_three_exits(self) -> None:
         observation = self.observation("facts", needs_facts=True)

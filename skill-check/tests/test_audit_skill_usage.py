@@ -316,7 +316,7 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
         self.assertEqual(alpha["codex_requests"], 2)
-        self.assertEqual(summary["version"], "skill-usage-audit-v2")
+        self.assertEqual(summary["version"], "skill-usage-audit-v3")
         self.assertEqual(summary["configuration"]["count_unit"], "request")
         self.assertEqual(summary["window"]["kind"], "weekly")
 

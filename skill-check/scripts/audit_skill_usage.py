@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 MAX_WARNING_DETAILS = 200
 MAX_EXCERPT_CHARS = 240
-AUDIT_VERSION = "skill-usage-audit-v2"
+AUDIT_VERSION = "skill-usage-audit-v3"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 BRIDGE_MARKERS = (
     "claude-codex-bridge",
@@ -714,7 +714,7 @@ def list_history_files(root: RootSpec, suffixes: tuple[str, ...]) -> list[Path]:
     return sorted(files, key=lambda item: item.as_posix().lower())
 
 
-def read_codex_session_metadata(path: Path) -> tuple[str, bool]:
+def read_codex_session_metadata(path: Path) -> tuple[str, bool, bool]:
     try:
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             for line in handle:
@@ -733,10 +733,17 @@ def read_codex_session_metadata(path: Path) -> tuple[str, bool]:
                 is_bridge = context_is_bridge(payload.get("cwd")) or context_is_bridge(
                     payload.get("workspace")
                 )
-                return session_id, is_bridge
+                # Guardian reviews replay agent history as UserMessage records.
+                # Identify the host-owned session origin, never quoted prompt text.
+                source = payload.get("source")
+                subagent = source.get("subagent") if isinstance(source, dict) else None
+                is_approval_review = payload.get("thread_source") == "guardian_review" or (
+                    isinstance(subagent, dict) and subagent.get("other") == "guardian"
+                )
+                return session_id, is_bridge, is_approval_review
     except OSError:
         pass
-    return path.stem, False
+    return path.stem, False, False
 
 
 def codex_message_text(payload: dict[str, Any]) -> str | None:
@@ -926,15 +933,21 @@ def scan_codex_history(
     warnings: WarningCollector,
     window: AuditWindow,
     args: argparse.Namespace,
-) -> tuple[int, set[tuple[str, str, str]]]:
+) -> tuple[int, set[tuple[str, str, str]], set[tuple[str, str, str]]]:
     excluded_sessions: set[tuple[str, str, str]] = set()
+    approval_review_sessions: set[tuple[str, str, str]] = set()
     seen_messages: set[tuple[str, str]] = set()
     seen_commands: set[tuple[str, str]] = set()
     scanned_files = 0
     for root in roots:
         for path in list_history_files(root, (".jsonl",)):
             scanned_files += 1
-            session_id, session_bridge = read_codex_session_metadata(path)
+            session_id, session_bridge, session_approval_review = read_codex_session_metadata(path)
+            if session_approval_review:
+                approval_review_sessions.add(
+                    (root.root_id, path.relative_to(root.path).as_posix(), session_id)
+                )
+                continue
             if session_bridge:
                 excluded_sessions.add((root.root_id, path.relative_to(root.path).as_posix(), session_id))
                 continue
@@ -1085,7 +1098,7 @@ def scan_codex_history(
                             args=args,
                         )
                     )
-    return scanned_files, excluded_sessions
+    return scanned_files, excluded_sessions, approval_review_sessions
 
 
 def claude_text_content(message: Any) -> str:
@@ -1428,6 +1441,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "- `tengu_skill_loaded` 只表示 Claude 启动时把技能列为候选，不计为实际使用。",
             f"- 疑似漏用候选共 {warnings['candidate_total']} 条，报告保留 {warnings['candidate_returned']} 条，截断 {warnings['candidate_truncated']} 条。",
             f"- 已排除 bridge 临时副本会话 {warnings['bridge_copy_excluded_count']} 个。",
+            f"- 已排除审批复核副本会话 {warnings['approval_review_excluded_count']} 个（按 session metadata）。",
             f"- 纯图片或附件用户记录 {warnings['non_text_user_record_count']} 条，单独计数且不作为文本字段缺失。",
             f"- 无法关联到用户请求的调用证据 {warnings.get('unmapped_request_count', 0)} 条。",
             f"- JSON 解析错误 {warnings['parse_error_count']} 条；目标事件缺字段 {warnings['missing_field_count']} 条。",
@@ -1478,7 +1492,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     candidates = CandidateCollector(args.max_candidates)
     warnings = WarningCollector()
 
-    codex_files, codex_excluded = scan_codex_history(
+    codex_files, codex_excluded, approval_review_excluded = scan_codex_history(
         codex_roots, inventory, aliases, matcher, usage, candidates, warnings, window, args
     )
     claude_files, claude_excluded = scan_claude_history(
@@ -1556,6 +1570,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "candidate_returned": len(returned_candidates),
         "candidate_truncated": max(0, candidate_total - len(returned_candidates)),
         "bridge_copy_excluded_count": len(codex_excluded | claude_excluded),
+        "approval_review_excluded_count": len(approval_review_excluded),
         "parse_error_count": warnings.parse_error_count,
         "parse_errors": warnings.parse_errors,
         "missing_field_count": warnings.missing_field_count,

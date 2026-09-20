@@ -14,6 +14,13 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 ## Choose one authoring route
 
+For both new decks and changes to an existing deck, first read the collaboration section in
+[references/presentation-workflow.md](references/presentation-workflow.md). The main conversation
+discusses content; one user-visible production conversation per deck executes authorized page work.
+Content approval authorizes the next page of a new deck, but does not by itself authorize editing an
+existing deck. Honor explicit edit scope and the host's requirements for creating a new conversation.
+Read-only inspection does not require a production conversation.
+
 Keep this skill as the local PowerPoint entry, routing and acceptance owner. For creation,
 redesign, template reuse, reconstruction or multi-agent slide work, first read
 [references/presentation-workflow.md](references/presentation-workflow.md). Its ordered routing

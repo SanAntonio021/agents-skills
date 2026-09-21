@@ -33,6 +33,28 @@ here. Announce the chosen authoring route once, then let it own generation; do n
 generators or silently switch after a failure. Asset preparation and local merge/QA are supporting
 stages, not a second authoring route.
 
+### Effect previews, material assets, and editable pages
+
+Keep these three deliverables distinct in names, records, and review:
+
+- an **effect preview** is a page-level composition image used to confirm hierarchy, technical
+  relationships, scale, and visual direction;
+- a **material asset** is a reusable background, device cutout, icon, or local illustration that
+  may be placed on several pages;
+- an **editable page** is the assembled PPTX whose text, arrows, key frames, and change-prone
+  indicators remain native objects where practical.
+
+Use an effect preview to settle the page's intended result before spending effort on the editable
+assembly when the layout or system relationship is still uncertain. Do not present the preview as
+the final PPT, an editable source, or evidence that every object can be independently changed.
+Conversely, do not flatten a finished page into one screenshot merely to match the preview: retain
+independent assets and native objects at the layer where later edits are expected.
+
+When a visual or architecture component is later found to be wrong, remove or replace only the
+identified component and preserve the validated background, topology, and labels. Leave a clear
+insertion area for the user or a later pass when the replacement asset is not yet confirmed; do
+not redraw the whole page or silently substitute a different platform, payload, or relay node.
+
 Only when choosing `ppt-master`, read
 [references/ppt-master-integration.md](references/ppt-master-integration.md) and run its external
 pin verification against the actual installed root before reading or executing the upstream skill.

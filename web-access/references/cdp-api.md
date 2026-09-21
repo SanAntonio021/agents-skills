@@ -35,7 +35,13 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
 
 先用 [snapshot](#ax-snapshotref) 读取结构，再以最新 ref 调用 [action](#结构化-action)，动作后回读页面确认结果。导航、动态重绘、dialog 或 `resume` 后重新 snapshot；`STALE_REF` 不用旧 ref 反复重试。加载等待用 [wait](#wait-与-dialog) 的 selector、text、URL 或 load 条件。
 
+结构化动作遵循固定的快速执行契约：页面状态先转换为可引用的交互元素，planner 只选择受限动作及其当前 ref，执行器再从当前 DOM/AX 状态重新定位目标并检查元素存在、可交互且未被遮挡，动作完成后回读 URL、文本或结构状态确认预期变化。planner 不直接输出 CSS、坐标、任意 JavaScript 或外部请求；ref 过期、动作不合规、页面发生未预期变化或校验失败时，丢弃该动作并回到最新 snapshot 的通用路径。
+
+该快速执行层默认使用现有通用模型或本地确定性逻辑，不依赖 jev-ultrafast 的专用模型服务。专用 planner 只能作为未来的可选实现，默认关闭，并且不用于敏感操作或需要用户接管的步骤。
+
 snapshot/ref 不足时使用 CSS `/click`，必要时才用 `/eval`。结构化交互可以执行页面脚本并保留会话上下文，但仍可能遇到站点检测、验证码或访问限制，不保证优于每一种直接读取方式。通过实际页面交互了解地址与参数，比猜测 URL 更可靠；保留观察到的完整 URL，不自行补造会话参数。
+
+当结构化路径无法表达视觉关系、复杂拖拽、特殊控件或 Windows 原生窗口操作时，才切换到 `computer-use` 后备能力；切换前保留已取得的页面状态和授权边界，完成后重新回到可核验的页面状态。不要因为单次 ref 失效就直接切换后备能力，先按本节规则重新 snapshot。
 
 连续浏览用 ref 点击；并行读取时，在同一 task 用 `POST /v2/tabs` 和完整 URL 新建自有 tab。Proxy 先创建空白页并初始化，再导航；popup 按 `openerId` 继承 task。带签名或会话参数的 URL 只在任务内部使用，不写入交付文本。
 

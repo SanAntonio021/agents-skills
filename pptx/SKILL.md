@@ -33,6 +33,13 @@ here. Announce the chosen authoring route once, then let it own generation; do n
 generators or silently switch after a failure. Asset preparation and local merge/QA are supporting
 stages, not a second authoring route.
 
+For a multi-page technical deck, define the independent question each page answers before authoring
+it. Reuse shared architecture only when it establishes context; subsequent pages should carry their
+own distinct function (for example, link capability versus installation and operations) rather than
+redrawing the same topology. Confirm page text, metrics, footnotes, and comparison conclusions
+before assembly, and treat confirmation as content approval only unless the user explicitly authorizes
+editing an existing deck.
+
 ### Effect previews, material assets, and editable pages
 
 Keep these three deliverables distinct in names, records, and review:

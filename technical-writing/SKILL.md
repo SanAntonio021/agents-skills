@@ -17,7 +17,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 
 需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。
 
-读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
+读取 [共同质量规则](../writing-router/references/common-quality.md)。中文正文首次起草、续写、局部修改或审查前，同时读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)，按共同质量规则的“中文正文展示前检查”加载适用词表并逐批检查；同任务未变时沿用。英文仍在完整草稿、结构重写、终稿审校或 `audit_only` 时读取气味目录。
 
 私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `technical` 样稿获批时才加载对应文件。
 
@@ -52,7 +52,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 
 ### 实验操作单
 
-测试方案用于现场照着执行时，沿用 `technical_scheme`，按实际操作顺序写，不套用结果分析报告的结构。
+测试方案用于现场照着执行时，沿用 `technical_scheme`，按实际操作顺序写，不套用结果分析报告的结构。续写或改排已有操作单时，按 [lab-notebook 的步骤依赖检查](../lab-notebook/SKILL.md#逐步准备实验)确定插入位置；不得因为本轮讨论最后提到某一步，就把它追加到文末。
 
 - 每步写清接什么、设什么、测什么，以及何时进入下一步；结果、图片和数据目录紧接对应步骤，选做扫描和异常排查放在主流程之后。
 - 保留参数、单位、公式、器件限制和安全条件，在对应步骤写成可执行要求，例如“换线前关闭输出”；其他澄清与限制按[共同质量规则的读者需要判断](../writing-router/references/common-quality.md#中文正文展示前检查)取舍。

@@ -72,10 +72,6 @@ Windows 受限进程可能看不到宿主用户的凭据条目；此时“不可
 
 `文章详情页 -> Institutional Sign In -> Access Through <institution> -> stamp/stamp.jsp -> PDF`
 
-未使用本机 PaperAccess、且当前允许使用 `paper-search-mcp` 时的路径：
-
-`DOI/文章详情页 -> download_with_authorization -> 机构 WAYF -> 已登录浏览器会话 -> stamp/stamp.jsp -> iframe 中的 stampPDF/getPDF.jsp`
-
 ### 经验
 
 - 若文章详情页还显示 `You do not have access to this PDF`，说明学校权限还没真正挂上。
@@ -87,7 +83,7 @@ Windows 受限进程可能看不到宿主用户的凭据条目；此时“不可
 - 页面机构名称须与本机配置对应；机构名称与 Shibboleth/CARSI entityId 从本机配置使用，不硬编码到公开技能。
 - 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
 - 登录方式与需用户参与的步骤沿用上方机构授权边界。
-- 授权中断时保留 MCP checkpoint，用户完成授权后用 `retry_authorized_download` 继续，不要重新搜索导致下载到错误版本。
+- 授权中断时保留当前浏览器页面和任务状态，用户完成验证后继续原下载，不要重新搜索导致下载到错误版本。
 - `download_with_authorization` 或浏览器代理返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以已登录浏览器页面的 `Access provided by <institution>` 和 PDF 入口可见性判断授权状态。
 - 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的已授权同源文件取回流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
 

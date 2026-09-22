@@ -47,9 +47,9 @@
       "expected_output": "按浏览器交接流程暂停页面操作，让用户完成扫码；保留当前页面和已有 checkpoint，完成后继续原下载及入库，不从头重建条目。"
     },
     {
-      "id": "mcp-unavailable",
-      "prompt": "这次会话没有 paper-search-mcp，但网页有公开 PDF 链接，Zotero 可用，请下载。",
-      "expected_output": "先查 Zotero；需要下载时使用现有网页或公开请求工具取得 PDF 后原生入库，不要求重开窗口、安装 MCP 或维护技能。"
+      "id": "browser-default-download",
+      "prompt": "网页有公开 PDF 链接，Zotero 可用，请通过浏览器下载并保存。",
+      "expected_output": "先查 Zotero；需要下载时使用浏览器取得并核验 PDF 后原生入库，不要求安装或启用额外 MCP。"
     },
     {
       "id": "connector-unavailable",

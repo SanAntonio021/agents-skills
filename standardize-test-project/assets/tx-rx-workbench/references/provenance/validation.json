@@ -1,4 +1,24 @@
 {
+  "tx_toolbar_update": {
+    "date": "2026-09-23",
+    "scope": "TX selector removal and toolbar layout only",
+    "platform": "MATLAB R2023b",
+    "status": "PASS",
+    "process_exit_code": 0,
+    "hardware_access": false,
+    "checks": [
+      "fresh copy with updated manifest",
+      "270 and 286 pixel TX toolbar non-overlap",
+      "RF rows clear of send button",
+      "TX selector hidden and no target highlight",
+      "RX selector preserved",
+      "validate_if_board_applicability"
+    ],
+    "limits": [
+      "Full DSP regression not repeated for this layout-only change",
+      "Real hardware and high DPI not tested"
+    ]
+  },
   "date": "2026-09-18",
   "acceptance_status": "software_pass_r2023b",
   "platform": "MATLAB R2023b / Windows",

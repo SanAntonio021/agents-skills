@@ -645,8 +645,8 @@
   },
   {
     "path": "code/+msiq/if_board_panel.m",
-    "sha256": "84fb79251649f20756d4397ff1986810473d1fbcd12da91a8b32739be755efa6",
-    "bytes": 25774,
+    "sha256": "7cd0678464e5f15663dd2d76a4943a4d9e8bb509dbdd4c093a6273fe4c5149fc",
+    "bytes": 26388,
     "source_sha256": "84fb79251649f20756d4397ff1986810473d1fbcd12da91a8b32739be755efa6",
     "origin": "extracted"
   },

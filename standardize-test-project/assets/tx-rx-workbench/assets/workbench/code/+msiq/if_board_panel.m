@@ -96,8 +96,12 @@ widget=struct('panel',panel,'layout',@layout,'update',@update,'setBusy',@setBusy
     'close',@closePanel,'loadConfig',@loadConfig,'refreshPorts',@refreshPorts,'getRecordPath',@()record, ...
     'controls',struct('edits',edits,'plus',plus,'minus',minus,'port',port,'refresh_ports',refreshPortsButton, ...
     'config',import,'connect',connect,'down',down,'selection',selection,'status',status,'detail',detail));
+% TX edits each RF row independently; the selector is only meaningful for
+% RX target-subband operations and is kept hidden for API compatibility.
+if strcmp(role,'tx') || field(options,'external_selection',false)
+    set(selection,'Visible','off');
+end
 layout([0 0 400 650]); refresh();
-if field(options,'external_selection',false), set(selection,'Visible','off'); end
     function setSelection(value)
         assert(isscalar(value) && ismember(value,1:6),'msiq:ifboard:subband','子带必须为 1–6。');
         selectedSubband=value; set(selection,'Value',value); refresh();
@@ -112,8 +116,18 @@ if field(options,'external_selection',false), set(selection,'Visible','off'); en
         set(panel,'Position',position); w=position(3); h=position(4); y=h-55;
         set(portLabel,'Position',[10 y 45 26]); set(port,'Position',[56 y max(80,w-134) 30]);
         set(refreshPortsButton,'Position',[w-72 y 62 30]); y=y-38;
-        set(connect,'Position',[10 y 80 30]); set(import,'Position',[100 y 80 30]); y=y-34;
-        set(selection,'Position',[10 y max(95,w-96) 30]); set(down,'Position',[w-78 y 68 30]); y=y-38;
+        set(connect,'Position',[10 y 80 30]); set(import,'Position',[100 y 80 30]);
+        if strcmp(role,'tx')
+            % TX has no target-subband action. Put its only board action on
+            % the same toolbar row so the hidden compatibility control
+            % cannot cover it or consume layout space.
+            set(down,'Position',[w-78 y 68 30]);
+            set(selection,'Position',[0 0 1 1]);
+            y=y-34;
+        else
+            y=y-34;
+            set(selection,'Position',[10 y max(95,w-96) 30]); set(down,'Position',[w-78 y 68 30]); y=y-38;
+        end
         cellw=(w-38)/nc;
         for c=1:nc, set(headings(c),'Position',[30+(c-1)*cellw y cellw 24]); end
         y=y-33;
@@ -139,7 +153,8 @@ if field(options,'external_selection',false), set(selection,'Visible','off'); en
             for r=1:6
                 value=draft.(key)(r); valueText=''; if isfinite(value), valueText=sprintf('%.1f',value); end
                 set(edits(r,c),'String',valueText);
-                color=[1 1 1]; if r==get(selection,'Value'), color=[.86 .94 1]; end
+                color=[1 1 1];
+                if ~strcmp(role,'tx') && r==get(selection,'Value'), color=[.86 .94 1]; end
                 set(edits(r,c),'BackgroundColor',color);
                 if hasLimits(key,r)
                     lim=cfg.limits.(key)(r,:); tip=sprintf('批准范围 %.1f–%.1f dB；步进 0.5 dB',lim);

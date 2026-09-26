@@ -2556,14 +2556,34 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 status in {"deferred", "queued"}
                 and args.facts_outcome in {"close", "wait"}
             )
+            # A scan-generated trigger hint is not an approved change proposal.
+            # Closing a verified false positive must not consume review admission.
+            subject = finding.get("subject")
+            close_trigger_hint = (
+                args.facts_outcome == "close"
+                and args.classification == "auto"
+                and classification not in {"approve", "reject"}
+                and bool(compact_text(args.reason or args.answer))
+                and revised is None
+                and finding.get("kind") == "suspected_missed_use"
+                and finding.get("source") == "usage"
+                and finding.get("proposal") == proposal(
+                    "补触发边界",
+                    f"若真实使用习惯确认需要自动触发，则收紧或补充 {subject} 的 description，并补正反触发测试。",
+                    [subject], skills=[subject],
+                )
+            )
             if resolve_queued_facts and not (
                 finding.get("needs_facts") is True
-                and finding.get("proposal") is None
-                and finding.get("proposal_fingerprint") is None
+                and (
+                    (finding.get("proposal") is None
+                     and finding.get("proposal_fingerprint") is None)
+                    or close_trigger_hint
+                )
             ):
                 return {
                     "status": "invalid_state",
-                    "error": "direct fact resolution requires a facts-only finding without a proposal",
+                    "error": "direct fact resolution requires a facts-only finding or closing an unchanged scan-generated trigger hint",
                 }, 2
 
             if status == "facts" or resolve_queued_facts:

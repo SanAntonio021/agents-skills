@@ -230,3 +230,9 @@ python scripts/run_weekly_skill_review.py record-decision --finding-id <finding-
 
 未问清用 `--facts-outcome wait` 并记录缺少的证据。需要修改则进入既有来源确认、隔离候选和逐项批准流程，
 不能把人工复核项直接解释成批准修改。关闭或等待状态遇到相同证据不重问，证据变化才重新排队。
+
+已逐项核实为误报的 `suspected_missed_use`，即使处于 `deferred` 或 `queued`，也可用当前
+evidence/proposal fingerprint、`--classification auto --facts-outcome close` 和具体核查证据直接关闭，
+不占用新增待审额度。此例外仅接受扫描原样生成的触发边界提示、`needs_facts=true` 且没有修订方案；
+保留原提示、事实记录和历史，不产生修改批准或执行批次。具体修订方案、批准/拒绝请求及其他带方案事项
+仍走原队列；不能借关闭误报绕过审批。重复扫描复用同证据关闭结论，证据变化后重新复核。

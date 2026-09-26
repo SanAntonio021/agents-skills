@@ -305,7 +305,7 @@ class OfficeCliBridgeTests(unittest.TestCase):
             candidate = Path(temp_dir) / "officecli.exe"
             candidate.write_bytes(b"verified-binary")
             expected_hash = bridge.sha256(candidate)
-            version_result = subprocess.CompletedProcess([str(candidate), "--version"], 0, "1.0.151\n", "")
+            version_result = subprocess.CompletedProcess([str(candidate), "--version"], 0, "1.0.152\n", "")
             with patch.dict(os.environ, {}, clear=True):
                 with patch.object(bridge, "DEFAULT_EXE", candidate):
                     with patch.object(bridge, "OFFICECLI_SHA256", expected_hash):
@@ -343,7 +343,7 @@ class OfficeCliBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             override = Path(temp_dir) / "override.exe"
             override.write_bytes(b"verified-override")
-            result = subprocess.CompletedProcess([str(override), "--version"], 0, "1.0.151\n", "")
+            result = subprocess.CompletedProcess([str(override), "--version"], 0, "1.0.152\n", "")
             with patch.dict(os.environ, {"OFFICECLI_EXE": str(override)}, clear=True):
                 with patch.object(bridge, "OFFICECLI_SHA256", bridge.sha256(override)):
                     with patch.object(bridge, "run_process", return_value=result) as run_process:

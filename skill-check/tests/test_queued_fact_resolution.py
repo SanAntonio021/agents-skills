@@ -131,3 +131,54 @@ def test_new_evidence_reopens_review_but_old_close_cannot_apply(tmp_path):
     payload, code = REVIEW.record_decision_command(old_args)
     assert code == 4 and payload["field"] == "evidence"
     assert path.read_bytes() == before
+
+
+def setup_trigger_hint(tmp_path):
+    path, state, finding, item = setup_finding(tmp_path, "deferred")
+    finding.update(kind="suspected_missed_use", source="usage")
+    subject = finding["subject"]
+    finding["proposal"] = REVIEW.proposal(
+        "补触发边界",
+        f"若真实使用习惯确认需要自动触发，则收紧或补充 {subject} 的 description，并补正反触发测试。",
+        [subject], skills=[subject],
+    )
+    finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
+    REVIEW.save_state(path, state)
+    return path, state, finding
+
+
+def test_deferred_trigger_false_positive_closes_without_admission(tmp_path):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    before_queue = list(state["queue"])
+    payload, code = REVIEW.record_decision_command(command(path, finding, "--facts-outcome", "close"))
+    assert code == 0 and payload["next_status"] == "closed"
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    current = saved["findings"][finding["id"]]
+    assert current["decision"]["value"] == "closed_after_facts"
+    assert current["proposal"] == finding["proposal"]
+    assert saved["queue"] == before_queue
+    assert saved["batches"] == state["batches"]
+    assert current.get("routine_admitted_date") == finding.get("routine_admitted_date")
+
+
+@pytest.mark.parametrize("case", ["approve", "wait", "changed_proposal", "stale_evidence", "stale_proposal", "not_facts"])
+def test_trigger_hint_exception_does_not_bypass_guards(tmp_path, case):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    options = ["--facts-outcome", "close"]
+    if case == "approve":
+        options += ["--classification", "approve"]
+    elif case == "wait":
+        options = ["--facts-outcome", "wait"]
+    elif case == "changed_proposal":
+        finding["proposal"]["summary"] = "Concrete revised modification"
+        finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
+        REVIEW.save_state(path, state)
+    elif case == "not_facts":
+        finding["needs_facts"] = False
+        REVIEW.save_state(path, state)
+    else:
+        options += [f"--expected-{case.removeprefix('stale_')}-fingerprint", "stale"]
+    before = path.read_bytes()
+    _, code = REVIEW.record_decision_command(command(path, finding, *options))
+    assert code in {2, 4}
+    assert path.read_bytes() == before

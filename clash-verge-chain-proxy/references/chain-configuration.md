@@ -291,6 +291,33 @@ rg -n -S "claude\.exe.*AI网站|using .*Nov|using DIRECT" `
 如果生成配置仍是旧内容，先核对当前 profile 绑定、生成错误和后处理脚本，再使用经核实可用的后台刷新方式。按入口的刷新与重启规则处理，不由文件未刷新直接推出需要重启 GUI。
 
 
+## 订阅 DNS、脚本异常与应用受管字段
+
+以下机制已在 Clash Verge Rev `v2.5.6` 核实；其他版本先核对实际行为与对应源码。
+
+1. **核对当前订阅的有效 DNS 覆写。** 全局开关开启不代表本次生成会覆写 DNS：订阅带有自定义
+   DNS 时，保护机制可能阻止未经本次会话确认的覆写。检查目标订阅选项、原始 DNS 和脚本实际输入，
+   不从全局偏好推断脚本已经收到默认字段。脚本需要兼容缺省值时，只在字段缺失或为 null 时补入
+   适用默认值；例如依赖 blacklist 语义的脚本可补 `fake-ip-filter-mode: blacklist` 与空
+   `fake-ip-filter`。保留显式模式、已有过滤项和 DNS 服务器，不把显式不兼容值改成默认值；
+   不为消除报错关闭订阅 DNS 保护。验证缺省输入、已有设置和明确不兼容输入三种情况。
+2. **追查 JSON 表象下的脚本原始异常。** `expected value at line 1 column 1` 可能是脚本抛错后，
+   错误包装再被当作 JSON 解析的结果。结合绑定脚本、生成日志及隔离复现查原始异常，不能仅凭该
+   提示认定 YAML 损坏。脚本中断可能使前置组未生成、旧链条未清除，继而报缺组或无效
+   `dialer-proxy`。修复后重跑生成过程并核对引用完整性，不能只向生成文件补一个同名组。
+   复现只用必要输入，凭据留在内存或受保护的本地测试文件，不输出完整配置。
+3. **按应用设置归属维护 TUN 字段。** 出现“应用设置接管、值已丢弃”提示时，核对该版本的受管
+   字段、应用保存值与最终生成值。`tun.route-exclude-address` 等字段会被应用设置恢复，保存的空
+   列表也可能覆盖增强值。沿用准确授权，通过应用 TUN 设置或已核实的受支持接口迁入所需值，保留
+   其他 TUN 参数；核对保存值、生成值及运行态后，移除订阅 merge/script 中重复定义。应用级设置
+   作用于所有订阅，迁移前说明范围；如与原来的单订阅要求不符，先明确取舍。前台操作或可能重载
+   网络前先告知动作及连接影响，不直接编辑生成 YAML 作为修复。
+
+版本依据：[DNS 保护与有效覆写](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.6/src-tauri/src/config/dns.rs)、
+[脚本异常处理](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.6/src-tauri/src/enhance/script.rs)、
+[增强与受管字段恢复](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.6/src-tauri/src/enhance/mod.rs)、
+[受管 TUN 字段](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.6/src-tauri/src/constants.rs)。
+
 ## 常见坑
 
 - 同名旧增强文件还在，但新导入 profile 没绑定它。

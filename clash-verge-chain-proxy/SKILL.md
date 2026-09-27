@@ -21,7 +21,7 @@ description: >
 
 - 单域名下载、TLS、双网卡、TUN、命名管道、临时切换或链路故障自行恢复：[网络诊断](references/network-diagnostics.md)。
 - 多上游、多出口，手动控制出口与供应商、供应商内部自动选节点：[手动多出口架构](references/manual-multi-exit.md)。
-- 前置与落地链、AI 分流、订阅重导入、select / fallback 配置与验收：[链路配置](references/chain-configuration.md)。
+- 前置与落地链、AI 分流、订阅重导入、DNS 覆写未生效、脚本生成报错、TUN 受管字段冲突及 select / fallback 验收：[链路配置](references/chain-configuration.md)。
 - 扩展提示损坏、更新失败或重启后复发：[浏览器扩展恢复](references/browser-extension-recovery.md)。
 - 门户 DNS、路由排除、PktMon 或自动登录：[本地认证门户](references/local-auth-portal.md)。
 - url-test、延迟容差、提前测速、自然周期与持续连接：[延迟优先](references/url-test-latency-priority.md)。

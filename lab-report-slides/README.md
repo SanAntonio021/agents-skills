@@ -4,6 +4,10 @@
 
 首个支持环境：**Windows + Codex**。采集器也支持 Claude Code 会话；macOS/Linux 完整生成流程尚未验证。默认时间范围按 `Asia/Shanghai` 计算。
 
+## 使用文档
+
+[主流程](SKILL.md) 规定项目选择、总览确认和整套制作；按阶段读取 [资料采集与复用](references/materials.md)、[中文表达](references/chinese-style.md) 和 [制作与验证](references/rendering.md)。本地模板另见 [模板适配](references/local-template.md)。优先复用已有实验结果、飞书内容和图件，核对来源与条件后再决定是否加工。
+
 ## 把这个页面交给 Codex
 
 在 **Windows 本机的 Codex** 中发送本发布页链接，并说“请按页面流程完成安装”即可。下面是给执行安装的 Codex 的完整步骤；使用者无需另外下载目录、安装 CC Switch 或复制多段命令。
@@ -35,7 +39,7 @@
 
 5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
 
-6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 SKILL.md 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
+6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 [制作参考](references/rendering.md#deck-json-与渲染) 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
 
 完成后，使用者可以说：“生成今日汇报，先列出可汇报的科研进展让我选择。”
 

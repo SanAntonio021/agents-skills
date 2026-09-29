@@ -2,7 +2,7 @@
 
 ## 私有定位
 
-Windows 从非空、绝对且实际存在的 `USERPROFILE`，macOS/Linux 从相同条件的 `HOME` 解析启动用户主目录，读取 `.agent-rules/local.md` 的“规则维护目录”。不能拿隔离运行账户目录替换启动用户目录。再在该目录下读取 `docs/lab-resources/library.json`，不把真实内容复制到公开技能、样例或测试结果中。
+需要默认库时，按当前项目说明或已核实的维护目录查找 `docs/lab-resources/library.json`。Windows 从非空、绝对且实际存在的 `USERPROFILE`，macOS/Linux 从相同条件的 `HOME` 解析启动用户主目录；`.agent-rules/local.md` 存在时可补充“规则维护目录”，缺失不要求创建，也不阻止独立的本地资料处理。不能拿隔离运行账户目录替换启动用户目录。位置仍无法确定时询问所需库位置，不猜路径；不把真实定位文件内容复制到公开技能、样例或测试结果中。
 
 该文件只负责定位，不是设备数据库。约定包含：
 

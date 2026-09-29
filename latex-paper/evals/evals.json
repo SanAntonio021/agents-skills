@@ -149,6 +149,18 @@
       "prompt": "项目 README 明确 draft.md 是主稿，我刚手工更新了它。请按这份当前主稿更新 tex 并编译，refs.bib 已核实。",
       "expected_output": "读取当前 README、draft.md 和 tex，复用有效主稿约定，保留手工修改并同步；复用已核实参考文献及现有 key，完成编译和语义检查，不重新追问主稿或重新检索全部文献。",
       "files": []
+    },
+    {
+      "id": "compact-columns-not-alignment-flip",
+      "prompt": "对隔离的合成LaTeX工程调整表格。工程使用双栏article，build_table.py生成main.tex：跨栏表采用tabularx的X r r r列；Scheme列的三个值是Reference、M、Lightweight variant，数值列标题为Completion time (s)、Payload rate (Mb/s)、Switch count，数据分别是(1000.00,16.00,0)、(250.00,64.00,25)、(230.00,69.57,32)。表格被拉满双栏，第一列与第二列相距很远。保留文字左对齐、数值右对齐，改善空白，不改正文、数值或字号。当前只允许修改此测试工程，请同步实际使用的生成器并重新构建；阅读PDF不可覆盖时交付新文件。",
+      "expected_output": "读取现用生成器和TeX，识别X列承接双栏剩余宽度，调整为自然或合理受限的总宽度；长表头按完整词组换行，不通过全左/全居中或缩字号解决。同步生成器，编译并检查渲染和数据不变；只报告实际更新的文件，不声称投稿件已更新。",
+      "files": [],
+      "expectations": [
+        "处理列宽及总宽度，而非取消数值右对齐。",
+        "生成器再运行能保留修订，不只手工改派生TeX。",
+        "不改表头含义、数据精度、缺失值或字号，不强行填满双栏。",
+        "用实际编译和视觉检查支持完成声明；不可执行的检查如实说明。"
+      ]
     }
   ]
 }

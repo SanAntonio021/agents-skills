@@ -10,6 +10,8 @@ Load this file only for `mode=en_paper` or an English final audit.
 - Results: observations first, interpretation second. State why a representative operating point was selected.
 - Conclusion: answer the research question within the tested scope. Do not copy the abstract or results paragraph.
 
+For section drafting, Discussion restructuring, or cross-section repetition checks, use [section-by-section-review.md](section-by-section-review.md) for section roles, compact method reminders, and comparison direction. A local sentence edit does not require this additional reference.
+
 ## Sentence decisions
 
 - Put the technical subject and main verb where readers can find them. Keep passive voice when the procedure or object matters more than the actor.

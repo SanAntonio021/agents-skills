@@ -11,9 +11,10 @@ description: >
 
 ## CC Switch 后台配置入口
 
-先读取启动用户主目录下 `.agent-rules/local.md` 的“规则维护目录”字段，再读取该目录下
+需要后台组件时，按用户指定位置、当前项目说明或已核实的维护目录定位
 `automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
-使用已经展开并核验的绝对路径；字段、组件或固定 CLI 校验缺失时报告不可用，不猜路径、不从 PATH
+启动用户主目录下 `.agent-rules/local.md` 存在时可补充“规则维护目录”，缺失不要求创建，也不阻止独立的只读诊断。
+使用已经展开并核验的绝对路径；组件找不到或固定 CLI 校验失败时，只暂停依赖组件的操作并报告原因，不猜路径、不从 PATH
 替换同名程序。步骤以共用指南为准，此处不复制配置维护实现。
 
 供应商配置、Common Config 或通过 CC Switch 保存 Codex 技能启停规则时，使用共用入口先 Inspect、

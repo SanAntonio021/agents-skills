@@ -212,9 +212,10 @@ python <script> complete-review `
 
 ## CC Switch 后台组件
 
-维护共用组件的定位或技能引用时，先读取已展开的启动用户主目录下 `.agent-rules/local.md` 的“规则维护目录”，
-再读取该目录下 `automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
-字段、组件或固定 CLI 校验缺失时报告不可用，不猜路径、不从 PATH 替换同名程序。具体步骤按共用指南执行。
+维护共用组件的定位或技能引用时，按用户指定位置、当前项目说明或已核实的维护目录读取
+`automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
+已展开并核验的启动用户主目录下 `.agent-rules/local.md` 存在时可补充“规则维护目录”，缺失不要求创建。
+组件无法定位或固定 CLI 校验失败时，只暂停依赖组件的操作，不猜路径、不从 PATH 替换同名程序。具体步骤按共用指南执行。
 
 `agent-rules` 负责共用组件的定位、技能引用和发布边界；Codex 供应商、Common Config、技能启停配置及请求链路
 交给 `codex-relay-chain`，Claude 链路交给 `claude-relay-chain`。自建技能发布继续使用已验收的
@@ -226,7 +227,7 @@ python <script> complete-review `
 本节适用于普通本地技能修改及完成审核的上游候选。普通修改无需创建候选或运行 `apply-review`、`complete-review`。
 沿用当前任务已有的准确修改和发布授权；明确只改本地时止于源码和必要验证，尚未授权的发布再确认，不重复询问已决定事项。
 
-先按本机 `.agent-rules/local.md` 的“规则维护目录”读取 `automation/ccswitch-skill-sync/README.md`，
+先按用户指定位置、当前项目说明或已核实的维护目录读取 `automation/ccswitch-skill-sync/README.md`；本机 `.agent-rules/local.md` 存在时可补充定位，缺失不要求创建。
 使用该目录下已核验的 `Invoke-CcSwitchSkillSync.ps1`，具体参数和本机文件声明以同步程序说明为准。
 
 1. 检查本次修改和必要验证，只暂存本次相关文件；`agents-skills` 和 `agents-config` 分别提交、分别推送。

@@ -44,7 +44,7 @@
 | task/token 隔离 | 每个对话创建独立 task，只能看到和控制自己创建的 tab 及 popup；不列出或接管用户 tab |
 | AX snapshot/ref | 默认读取交互式可访问性树，以短 ref 定位元素；动态重绘后重新 snapshot |
 | 结构化交互 | 支持 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`，动作后回读验证 |
-| 等待与接管 | 等 selector/text/URL/load；密码、MFA、验证码和 SSO consent 交给用户完成，handoff 期间禁止页面访问 |
+| 等待与接管 | 等 selector/text/URL/load；匹配的浏览器已保存凭据可直接登录，手动密码、解锁、MFA、验证码和 SSO consent 交给用户完成，handoff 期间禁止页面访问 |
 | 授权复用 | 敏感信息及提交、发送、上传、付款、删除、授权、账号变更核对准确目标与已有授权，缺失或变化时才询问 |
 | 本地浏览器书签/历史检索 | `find-url.mjs` 跨 Chrome / Edge 查询公网搜不到的目标（内部系统）或用户访问过的页面，支持关键词/时间窗/访问频度排序 |
 | 并行分治 | 多目标可并行；同一浏览器共享 Proxy，但 task、token、tab 和 ref 互相隔离 |
@@ -131,7 +131,7 @@ git clone https://github.com/eze-is/web-access ~/.claude/skills/web-access
 - [登录与用户接管](references/cdp-api.md#登录与用户接管)、[并行任务与收尾](references/cdp-api.md#并行任务与收尾)：task 隔离与生命周期。
 - [完整端点协议](references/cdp-api.md#连接与通用规则) 和 [旧版本迁移](references/migration-dual-proxy.2.md)：请求、响应和恢复规则。
 
-每个 task 只操作自己创建的 tab 和 popup；保留用户原有页面和正在运行的浏览器。密码、MFA、验证码、SSO consent 和歧义账号选择仍由用户接管。外部写入核对准确授权，已有授权范围内不重复确认；只说明当次需要用户了解的影响或需要其完成的动作，不照抄固定风险声明。
+每个 task 只操作自己创建的 tab 和 popup；保留用户原有页面和正在运行的浏览器。目标账号明确且浏览器已保存凭据时可直接登录，不读取或输入密码；手动密码、解锁、MFA、验证码、SSO consent 和歧义账号选择由用户接管。外部写入核对准确授权，已有授权范围内不重复确认；只说明当次需要用户了解的影响或需要其完成的动作，不照抄固定风险声明。
 
 ## 使用
 

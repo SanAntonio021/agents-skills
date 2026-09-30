@@ -75,6 +75,29 @@
           "expectations": ["直接记录既有运行事实", "不逐条等待确认", "不运行采集或其他实验操作", "不把未分析写成已完成"]
         }
       ]
+    },
+    {
+      "id": "markdown-batch-before-file-backfill",
+      "entrypoint": "writing-router/SKILL.md",
+      "turns": [
+        {
+          "prompt": "隔离合成材料，draft.md与latest.docx对应。请只修改draft.md第一段的冗余表达，其他段落不动；文字还在讨论，不更新Word、LaTeX或PDF。",
+          "expectations": [
+            "读取当前主稿并只修改指定文字。",
+            "文字讨论阶段保留原格式文件不变。",
+            "保留事实、其他段落及用户新增内容，不增加导出。"
+          ]
+        },
+        {
+          "prompt": "这批文字已经确认，请回填到latest.docx并另存新版本，保留原排版。",
+          "setup": "在latest.docx未修改的另一段追加合成备注：此次补充记录保留。",
+          "expectations": [
+            "重新读取最新原件，按已确认内容准确回填。",
+            "保留新备注、原格式、结构与功能，不整体重建。",
+            "检查最终文件并说明实际更新范围。"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -106,7 +106,9 @@
       "id": 15,
       "prompt": "请对 evals/files/finalization-scopes.md 做只读终稿规范化审计。稿件同时在 Abstract、正文和两个 figure captions 中使用 MIMO；只有 Abstract 写了 multiple-input multiple-output (MIMO)。不要猜任何其他缩写全称，也不要修改稿件。请给出可定位的审计结果。",
       "expected_output": "调用只读 convention audit；把 Abstract、正文和每个 caption 分成独立作用域；只依据稿内唯一显式映射为正文和各 caption 给出安全补全，其他不确定缩写只报告；不修改输入。",
-      "files": ["evals/files/finalization-scopes.md"],
+      "files": [
+        "evals/files/finalization-scopes.md"
+      ],
       "expectations": [
         "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现问题而非脚本失败。",
         "Abstract、正文和每个 figure caption 被作为独立缩写作用域。",
@@ -118,7 +120,9 @@
       "id": 16,
       "prompt": "对 evals/files/finalization-safe-fixes.md 的隔离副本执行终稿规范化并只自动处理确定安全的问题：正文首处 BER 可由稿内唯一 bit error rate (BER) 映射补全，同一 Results 段有两个相邻且完全相同的句子；另外有 under the tested conditions 和 comparison benchmark。应用安全修改后重新审计，并报告最终哈希和最终行号。不要修改技能目录里的 fixture。",
       "expected_output": "只应用带精确 span/replacement 的缩写补全和同段相邻完全重复删除；保留科学限定与比较基准；修改后重跑脚本，最终 SHA-256、行号和计数来自新文件。",
-      "files": ["evals/files/finalization-safe-fixes.md"],
+      "files": [
+        "evals/files/finalization-safe-fixes.md"
+      ],
       "expectations": [
         "只自动采用 safe_findings，不自动改 review_candidates、protected_qualifiers 或 unresolved。",
         "保留 under the tested conditions 和 comparison benchmark 的证据边界。",
@@ -130,7 +134,9 @@
       "id": 17,
       "prompt": "请检查 evals/files/finalization-captions.md 里的两条图注是否自解释。Fig. 1 只有 '(a) setup; (b) result'，Fig. 2 已说明对象、1 km 条件、两种 marker、dBm 单位、median、whiskers 和 threshold。若本地图片存在要结合图片，但不要猜 fixture 没有提供的图像语义，也不要把图注改成 Results 段的复制品。",
       "expected_output": "逐图核对对象、条件、面板、图例、单位、统计元素和主要读法；指出 Fig. 1 缺项，认可 Fig. 2 已明确的元素；图片存在时核对，不存在或统计定义不明时列待确认；不猜测、不用正文重复替代自解释。",
-      "files": ["evals/files/finalization-captions.md"],
+      "files": [
+        "evals/files/finalization-captions.md"
+      ],
       "expectations": [
         "逐项覆盖对象、条件、面板、图例、单位、统计元素和主要读法。",
         "本地图像语义需要人工查看，脚本结果不冒充图像识别。",
@@ -142,7 +148,9 @@
       "id": 18,
       "prompt": "evals/files/finalization-phase1.tex 需要只读终稿规范审计。它包含多行嵌套 \\caption、注释里的 \\caption、verbatim 里的 \\input、正文 \\include{appendix}，以及自定义 caption 宏。请按 Phase 1 边界报告，不要递归读取其他 tex。",
       "expected_output": "正确解析标准嵌套多行 caption，忽略注释和 verbatim；把正文 include 和自定义 caption 宏列入 unresolved；不递归多文件，不声称全文 clean。",
-      "files": ["evals/files/finalization-phase1.tex"],
+      "files": [
+        "evals/files/finalization-phase1.tex"
+      ],
       "expectations": [
         "标准多行嵌套 caption 被作为独立作用域解析。",
         "注释和 verbatim 内容被忽略。",
@@ -154,7 +162,9 @@
       "id": 19,
       "prompt": "审查 evals/files/finalization-language.md 的防御性表达和重复内容：指出 It should be noted that 和 The following discussion focuses on；保护 confidence interval、uncertainty、assumed condition 和 limitation；只把同一正文段内相邻完全相同句当安全删除，Abstract/Introduction/Conclusion 的近重复只列候选。",
       "expected_output": "元话语进入 review_candidates；科学假设、不确定性、置信区间和限制进入 protected_qualifiers；安全删除严格限于同一正文段相邻完全相同句，跨章节近重复只报告。",
-      "files": ["evals/files/finalization-language.md"],
+      "files": [
+        "evals/files/finalization-language.md"
+      ],
       "expectations": [
         "防御性元话语只作为改写候选，不自动删除其科学内容。",
         "假设、不确定性、置信区间和限制被明确保护。",
@@ -166,7 +176,9 @@
       "id": 20,
       "prompt": "请只读审计 evals/files/finalization-negation-chain.md 的否定链和间接否定。重点核对 cannot be ruled out、cannot be excluded 和 by no means 的人工复核噪音，同时检查 not without、not entirely without、not only 配对、neither/nor、No. 编号、无标点列表项和图注。所有结果只列人工复核候选，不自动改写科学限定，也不要把表格、代码、注释或参考文献中的文本算进去。",
       "expected_output": "运行 convention audit，按完整句子合并 LANG_NEGATION_CHAIN；准确区分 fixed_indirect、coordination 和 atomic，报告 10 条否定链候选；分点说明 by no means、cannot be ruled out、cannot be excluded 的判断与噪音统计（本 fixture 为建议改写 1 条、科学限定保留 2 条），列出未触发及被屏蔽的正反例；不强制表格。",
-      "files": ["evals/files/finalization-negation-chain.md"],
+      "files": [
+        "evals/files/finalization-negation-chain.md"
+      ],
       "expectations": [
         "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现候选而不是脚本失败。",
         "LANG_NEGATION_CHAIN 只进入 review_candidates，共 10 条，每条 check=negative_construction 且不含 span/replacement。",
@@ -203,13 +215,13 @@
     {
       "id": "discussion-flow-and-comparison-direction",
       "prompt": "以下均为合成材料。请直接给出修改后的中文摘要结果句和讨论，不联网、不修改外部文件。摘要结果句：同一组配对仿真的参考方案平均用时为1000 s，方法M为250 s，参考方案用时是M的4倍，M用时为参考方案的25%，表现出较好的效果。讨论：M取消了对照方案失败后额外等待1 s的设置，所以能更早恢复，这使恢复更及时。两者路径选择及其他阈值相同。简化方案平均用时比M短8%，但切换次数多12%，体现了用时与切换次数的权衡。无预测方案在基准误差下用时比M长2%。筛选条件对比另见结果节，取消一项检查后速率高1%。当误差标准差变为原来的3倍时，基于当前测量的回退方案速率为60 Mb/s，M为20 Mb/s；回退方案在预测拒绝后用当前测量重新评估路径。完整阈值和计时规则已在方法节定义。以上参数来自仿真设置，未使用收发机实测数据校准。请保留理解比较所需的条件和核心结果，减少重复，不强制每组实验都在讨论出现。",
-      "expected_output": "摘要以M为主语择一报告平均完成时间缩短75%，不把25%写成缩短比例；讨论连续组织预测收益、误差增大和回退机制，去掉更及时及空泛权衡总结；保留共同条件、真实反向指标和校准边界，不补造未测优势。",
+      "expected_output": "准确保留比较对象、指标含义、统计口径、核心结果与必要条件，按论证需要组织讨论并压缩语义重复。允许准确的绝对值、比值、百分比或互补组合，以及不同合理句式和段落顺序，不强制某种指标表达或主语。",
       "files": [],
       "expectations": [
-        "以原始均值1000 s与250 s计算75%的缩短比例，基线方向正确。",
-        "删除语义重复而非仅删除完全相同句，不逐项重述方法计时参数。",
-        "不让无关的筛选结果打断预测与回退话题，不改变保留的结果和条件。",
-        "保留未完成实测校准的边界，不以防御性为由删除。"
+        "比较数值、参照对象与统计含义正确；原值、比值和百分比等合理写法均可。",
+        "压缩没有信息增量的重复，保留当前解释所需的差异与条件。",
+        "根据实际论证组织段落，不以固定实验顺序、句数或关键词判通过。",
+        "保留科学限定和未完成验证状态，不补造未测优势。"
       ]
     }
   ]

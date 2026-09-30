@@ -47,9 +47,13 @@ terminates an existing Word process.
 
 ## Content and layout checks
 
-For new prose or substantive content changes, use [writing-router](../writing-router/SKILL.md)
-before document creation. Small text edits and formatting-only work keep the existing direct route.
-For prose handoff, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
+For new prose or substantive content changes, use [writing-router](../writing-router/SKILL.md).
+Follow its [content editing and backfill workflow](../writing-router/references/collaborative-writing.md#主稿与交付):
+edit text in Markdown by default, then backfill reviewed changes into the latest existing Word file.
+Use the paragraph or table-cell edit route to preserve original styles, structure and unaffected content;
+creating a new output version does not mean rebuilding the document. Small corrections keep their direct
+handling and do not add approval steps. Formatting-only work stays in Word without creating Markdown.
+For file execution, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
 Use the current source, specified template and requested output. Do not rewrite reviewed prose or
 repeat a general writing pass. Existing `loaded_refs` records describe only references actually read.
 用户要求导出即复用本轮授权；格式阶段不自行改写正文。
@@ -58,10 +62,10 @@ do not reload the entire workflow for each accepted paragraph.
 
 ### Word/DOCX 导出前的格式确认
 
-每个新任务首次导出 Word 前，先核对是否已指定或确认模板。尚未确认时，根据文稿用途和读者，
-从[现有 10 套模板](references/template/template-presets.md)中推荐一套，简短说明理由，并询问用户的格式需求；
-等用户确认或提出调整要求后再导出。用户已明确指定模板时直接采用，同一任务后续导出沿用已确认模板，不重复询问。
-所有导出均套用模板。用户提供的模板或参考 Word 也可采用。模板只控制排版，不擅自增加版本、日期或说明文字。
+新建 Word 或用户明确要求整稿更换模板时，先核对已指定或确认的模板。尚未确认时，根据用途和读者，
+从[现有 10 套模板](references/template/template-presets.md)推荐一套，说明理由并确认格式需求；同任务后续沿用。
+已有 Word 的文字回填沿用最新原件的样式与结构，不重新选模板；用户要求调整格式时只修改相应范围。
+模板只控制排版，不擅自增加版本、日期或说明文字。
 
 Check the OOXML/package, styles, affected content and unchanged source. Read
 [Numbering and cross-references](references/numbering-references.md) for the common finalizer:

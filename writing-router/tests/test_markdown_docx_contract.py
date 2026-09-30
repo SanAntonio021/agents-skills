@@ -32,12 +32,14 @@ def test_mcp_trial_is_documented_as_non_production() -> None:
     assert "三次" in trial
 
 
-def test_word_export_requires_an_explicit_format_confirmation() -> None:
+def test_new_word_template_confirmation_and_existing_backfill() -> None:
     contract = (
         SKILLS_ROOT / "writing-router" / "references" / "markdown-docx-contract.md"
     ).read_text(
         encoding="utf-8"
     )
+    assert "新建 Word 或明确要求整稿更换模板" in contract
     assert "推荐一套" in contract
-    assert "等待用户确认或提出调整要求后再导出" in contract
-    assert "所有导出均套用模板" in contract
+    assert "确认后生成" in contract
+    assert "修改已有 Word 的文字时" in contract
+    assert "不重新套模板或重建整稿" in contract

@@ -31,7 +31,8 @@ def test_workbench_capsule() -> None:
     capsule = SCRIPT_DIR.parent / "assets" / "tx-rx-workbench"
     source = capsule / "assets" / "workbench"
     assert not list(capsule.rglob("SKILL.md")), "resources must not add a skill entry"
-    manifest = json.loads((capsule / "references/provenance/source-files.json").read_text(encoding="utf-8-sig"))
+    # Validate the distributed template; source-files.json preserves upstream history.
+    manifest = json.loads((capsule / "references/provenance/template-files.json").read_text(encoding="utf-8-sig"))
     for entry in manifest:
         file = source / entry["path"]
         assert file.is_file(), entry["path"]

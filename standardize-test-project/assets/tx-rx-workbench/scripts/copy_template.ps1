@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Destination)
+﻿param([Parameter(Mandatory=$true)][string]$Destination)
 $ErrorActionPreference='Stop'
 if(-not [IO.Path]::IsPathRooted($Destination)){throw 'Destination must be an absolute path.'}
 $target=[IO.Path]::GetFullPath($Destination)
@@ -11,7 +11,11 @@ foreach($entry in $files){
     $inputPath=[IO.Path]::GetFullPath((Join-Path $source $entry.path))
     if(-not $inputPath.StartsWith([IO.Path]::GetFullPath($source)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Manifest path leaves template.'}
     if(-not (Test-Path -LiteralPath $inputPath -PathType Leaf)){throw "Template file missing: $($entry.path)"}
-    if((Get-FileHash -LiteralPath $inputPath -Algorithm SHA256).Hash -ne $entry.sha256){throw "Template hash mismatch: $($entry.path)"}
+    $sha=[Security.Cryptography.SHA256]::Create()
+    $stream=[IO.File]::OpenRead($inputPath)
+    try{$actualHash=[BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','')}
+    finally{$stream.Dispose();$sha.Dispose()}
+    if($actualHash -ne $entry.sha256){throw "Template hash mismatch: $($entry.path)"}
 }
 New-Item -ItemType Directory -Path $target | Out-Null
 foreach($entry in $files){

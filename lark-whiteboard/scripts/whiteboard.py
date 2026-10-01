@@ -1,5 +1,6 @@
 """Guarded CLI readback and background editor runner (Python standard library)."""
 import argparse
+import copy
 import json
 import math
 from pathlib import Path
@@ -18,6 +19,11 @@ class VerificationError(RuntimeError):
 
 class NotReady(VerificationError):
     pass
+
+
+LINE_SHAPES = {'straight', 'polyline', 'curve', 'right_angled_polyline'}
+STYLE_FIELDS = {'border_color', 'fill_color', 'text_color', 'border_style', 'border_width'}
+CAPTION_PLACEMENTS = {'on_line': 0, 'above_line': 1, 'below_line': 2}
 
 
 def safe_cli_error(payload):
@@ -59,11 +65,13 @@ def projection(raw):
     parents = {child: n['id'] for n in nodes for child in n.get('children', [])}
     result = []
     for n in nodes:
-        kind = {'composite_shape': 'shape', 'connector': 'connector', 'group': 'group'}.get(n.get('type'), 'other')
+        kind = {'composite_shape': 'shape', 'text_shape': 'text', 'connector': 'connector', 'group': 'group'}.get(n.get('type'), 'other')
         v = dict(id=n['id'], kind=kind, **{k: n.get(k, 0) for k in ('x', 'y', 'width', 'height')})
-        v['style'] = {k: value.lower() if k.endswith('_color') else value for k, value in n.get('style', {}).items() if k in ('border_color', 'fill_color', 'border_style')}
+        v['style'] = {k: value.lower() if k.endswith('_color') else value for k, value in n.get('style', {}).items() if k in STYLE_FIELDS}
         if 'text' in n:
             v.update(text=n['text'].get('text', ''), font_size=n['text'].get('font_size', 0))
+            if 'text_color' in n['text']:
+                v['style']['text_color'] = n['text']['text_color'].lower()
         if kind == 'shape':
             v['shape'] = n.get('composite_shape', {}).get('type', '')
         if kind == 'connector':
@@ -75,6 +83,10 @@ def projection(raw):
                     v[side + '_anchor'] = {k:endpoint[k] for k in ('snap_to','position')}
                 v[side + '_arrow'] = c.get(side, {}).get('arrow_style', 'none')
             caption_texts = [t.get('text', '') for t in c.get('captions', {}).get('data', [])]
+            if caption_texts and 'text_color' in c['captions']['data'][0]:
+                v['style']['text_color'] = c['captions']['data'][0]['text_color'].lower()
+            v['points'] = [{'x': n.get('x', 0) + p['x'], 'y': n.get('y', 0) + p['y']}
+                           for p in c.get('turning_points', [])]
             v.update(shape=c.get('shape', ''), caption='\n'.join(caption_texts), caption_texts=caption_texts,
                      caption_position=c.get('caption_position', 0.5) if caption_texts else None,
                      caption_position_type=c.get('caption_position_type', 0) if caption_texts else None,
@@ -95,12 +107,25 @@ def caption_position_equivalent(a, b):
             and math.isfinite(a) and math.isfinite(b) and abs(a-b) <= 1e-6)
 
 
+def point_equivalent(a, b):
+    return (valid_point(a) and valid_point(b)
+            and all(abs(a[k] - b[k]) <= 1e-3 for k in ('x', 'y')))
+
+
+def points_equivalent(a, b):
+    return (isinstance(a, list) and isinstance(b, list) and len(a) == len(b)
+            and all(point_equivalent(x, y) for x, y in zip(a, b)))
+
+
 def equivalent(a, b):
+    if isinstance(a, bool) or isinstance(b, bool):
+        return type(a) is type(b) and a == b
     if isinstance(a, (int, float)) and not isinstance(a, bool) and isinstance(b, (int, float)) and not isinstance(b, bool):
         return math.isfinite(a) and math.isfinite(b) and abs(a-b) < 0.02
     if isinstance(a, dict) and isinstance(b, dict):
         return a.keys() == b.keys() and all(
-            caption_position_equivalent(a[k], b[k]) if k == 'caption_position' else equivalent(a[k], b[k])
+            caption_position_equivalent(a[k], b[k]) if k == 'caption_position'
+            else points_equivalent(a[k], b[k]) if k == 'points' else equivalent(a[k], b[k])
             for k in a)
     if isinstance(a, list) and isinstance(b, list):
         return len(a) == len(b) and all(equivalent(x, y) for x, y in zip(a, b))
@@ -112,19 +137,17 @@ def differences(before, after):
     return dict(added=sorted(b.keys()-a.keys()), removed=sorted(a.keys()-b.keys()), changed=sorted(k for k in a.keys() & b.keys() if not equivalent(a[k], b[k])))
 
 
-def check_scope(before, after, op):
+def check_scope(before, after, op, *, from_raw=False):
     delta = differences(before, after)
     ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
     lookup = {n['id']: n for n in before}
     for ident in list(ids):
         ids.update(lookup.get(ident, {}).get('children', []))
     allowed = ids | {n['id'] for n in before if n.get('start_id') in ids or n.get('end_id') in ids}
-    if op['kind'] in ('caption', 'caption_position'):
+    if op['kind'] in ('caption', 'caption_position', 'style', 'reconnect', 'line_type', 'path'):
         if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
-            raise VerificationError('Caption operation requires unique object IDs')
+            raise VerificationError('Local edit requires unique object IDs')
         allowed = {op.get('id')}
-    if op['kind'] == 'reconnect':
-        allowed.add(op['end_id'])
     if op['kind'] == 'connect':
         if len(delta['added']) != 1 or delta['removed'] or delta['changed']:
             raise VerificationError('Connect must add exactly one line and preserve all existing objects')
@@ -142,7 +165,7 @@ def check_scope(before, after, op):
         raise VerificationError('Unexpected object creation/removal')
     if set(delta['changed']) - allowed:
         raise VerificationError('An unrelated object changed')
-    check_intent(before, after, op, delta)
+    check_intent(before, after, op, delta, from_raw=from_raw)
     return delta
 
 
@@ -150,21 +173,107 @@ def validate_caption_operation(node, op):
     if not node or node.get('kind') != 'connector':
         raise VerificationError('Caption operation requires an existing connector')
     texts = node.get('caption_texts')
-    if not isinstance(texts, list) or len(texts) > 1 or any(not isinstance(t, str) for t in texts):
-        raise VerificationError('Only a single connector caption is supported')
+    if not isinstance(texts, list) or any(not isinstance(t, str) for t in texts):
+        raise VerificationError('Connector caption data must contain strings')
+    if len(texts) > 1:
+        raise VerificationError('Multiple connector captions cannot be safely edited by the native editor')
     if op['kind'] == 'caption':
         if not isinstance(op.get('text'), str):
             raise VerificationError('Caption text must be a string')
     else:
         position = op.get('position')
-        if len(texts) != 1 or type(node.get('caption_position_type')) is not int or node['caption_position_type'] != 0:
-            raise VerificationError('Caption position requires one caption with position type 0')
-        if (not isinstance(position, (int, float)) or isinstance(position, bool)
-                or not math.isfinite(position) or not 0 <= position <= 1):
+        if len(texts) != 1 or type(node.get('caption_position_type')) is not int or node['caption_position_type'] not in CAPTION_PLACEMENTS.values():
+            raise VerificationError('Caption position requires one caption with a supported position type')
+        if 'position' not in op and 'placement' not in op or 'point' in op:
+            raise VerificationError('Caption position requires position or placement')
+        if 'position' in op and (not isinstance(position, (int, float)) or isinstance(position, bool)
+                                or not math.isfinite(position) or not 0 <= position <= 1):
             raise VerificationError('Caption position must be a finite number in [0, 1]')
+        if 'placement' in op and (not isinstance(op['placement'], str) or op['placement'] not in CAPTION_PLACEMENTS):
+            raise VerificationError('Unsupported caption placement')
 
 
-def check_intent(before, after, op, delta=None):
+def validate_style(style):
+    if not isinstance(style, dict) or not style or set(style) - STYLE_FIELDS:
+        raise VerificationError('Style must specify supported nonempty fields')
+    for key, value in style.items():
+        if key.endswith('_color') and (not isinstance(value, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', value)):
+            raise VerificationError('Style colors must be #RRGGBB')
+        if key == 'border_style' and value not in ('none', 'solid', 'dash', 'dot'):
+            raise VerificationError('Unsupported border style')
+        if key == 'border_width' and value not in ('extra_narrow', 'narrow', 'medium', 'bold'):
+            raise VerificationError('Unsupported border width')
+
+
+def finite_number(value, positive=False):
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and (not positive or value > 0))
+
+
+def valid_point(point):
+    return isinstance(point, dict) and set(point) == {'x', 'y'} and all(finite_number(point[k]) for k in point)
+
+
+def validate_local_operation(nodes, op):
+    """Reject unsupported parameters before invoking a mutating editor command."""
+    lookup = {n['id']: n for n in nodes}
+    if len(lookup) != len(nodes):
+        raise VerificationError('Local edit requires unique object IDs')
+    kind = op['kind']
+    node = lookup.get(op.get('id'))
+    if kind in ('caption', 'caption_position'):
+        validate_caption_operation(node, op)
+    elif kind in ('text', 'font', 'resize'):
+        if not node or node.get('kind') not in ('shape', 'text'):
+            raise VerificationError('Text or size edit requires a native shape or text shape')
+        if kind == 'text' and not isinstance(op.get('text'), str):
+            raise VerificationError('Text must be a string')
+        if kind == 'font' and not finite_number(op.get('font_size'), True):
+            raise VerificationError('Font size must be positive and finite')
+        if kind == 'resize' and not all(finite_number(op.get(k), True) for k in ('width', 'height')):
+            raise VerificationError('Dimensions must be positive and finite')
+    elif kind == 'style':
+        validate_style(op.get('style'))
+        if not node or node.get('kind') not in ('shape', 'text', 'connector'):
+            raise VerificationError('Style edit requires a native shape, text shape or connector')
+        if node['kind'] == 'connector' and ('fill_color' in op['style'] or
+                'text_color' in op['style'] and not node.get('caption_texts')):
+            raise VerificationError('Connector has no fill or no caption to recolor')
+    elif kind in ('line_type', 'path', 'reconnect'):
+        if not node or node.get('kind') != 'connector':
+            raise VerificationError('Line edit requires an existing connector')
+        if kind == 'line_type' and (not isinstance(op.get('shape'), str) or op['shape'] not in LINE_SHAPES):
+            raise VerificationError('Unsupported line type')
+        if kind == 'path':
+            points = op.get('points')
+            if not isinstance(points, list) or not all(valid_point(p) for p in points):
+                raise VerificationError('Path points must be finite canvas x/y coordinates')
+            if node.get('shape') not in ('polyline', 'right_angled_polyline', 'curve'):
+                raise VerificationError('Path requires a polyline or curve')
+            if node['shape'] == 'curve' and len(points) != 2:
+                raise VerificationError('A curve path requires two control points')
+            if node['shape'] == 'curve' and not all(node.get(side + '_id') for side in ('start', 'end')):
+                raise VerificationError('Curve control edits require both endpoints to be bound')
+        if kind == 'reconnect':
+            sides = [side for side in ('start', 'end') if side + '_id' in op]
+            if not sides:
+                raise VerificationError('Reconnect requires a start_id or end_id')
+            for side in sides:
+                target = lookup.get(op[side + '_id'])
+                if not target or target.get('kind') != 'shape':
+                    raise VerificationError('Reconnect endpoint requires an existing native shape')
+    elif kind == 'connect':
+        for side in ('start', 'end'):
+            target = lookup.get(op.get(side + '_id'))
+            if not target or target.get('kind') != 'shape':
+                raise VerificationError('Connection endpoint requires an existing native shape')
+        if op['start_id'] == op['end_id']:
+            raise VerificationError('Self connection is not supported')
+        if op.get('template_id') and lookup.get(op['template_id'], {}).get('kind') != 'connector':
+            raise VerificationError('Connection template requires an existing connector')
+
+
+def check_intent(before, after, op, delta=None, *, from_raw=False):
     """Verify requested outcomes, rather than treating absence of damage as success."""
     a, b = ({n['id']: n for n in nodes} for nodes in (before, after))
     kind = op['kind']
@@ -172,17 +281,50 @@ def check_intent(before, after, op, delta=None):
     def require(condition):
         if not condition:
             raise VerificationError('Requested operation postcondition failed: ' + kind)
-    for field, operation, parameter in [('text','text','text'), ('font_size','font','font_size'), ('shape','line_type','shape'), ('end_id','reconnect','end_id')]:
+    for field, operation, parameter in [('text','text','text'), ('shape','line_type','shape')]:
         if kind == operation:
             require(ident in b and equivalent(b[ident].get(field), op[parameter]))
+    if kind == 'text':
+        require(isinstance(op.get('text'), str))
+    if kind == 'font':
+        require(finite_number(op.get('font_size'), True))
+        require(ident in b and caption_position_equivalent(b[ident].get('font_size'), op['font_size']))
+    if kind in ('text', 'font'):
+        validate_local_operation(before, op)
+        require(ident in b)
+        old, new = a[ident], b[ident]
+        editable = {'text' if kind == 'text' else 'font_size'}
+        if old['kind'] == 'text':
+            editable.add('height')
+            require(finite_number(new.get('height'), True))
+        require(equivalent({k:v for k,v in old.items() if k not in editable},
+                           {k:v for k,v in new.items() if k not in editable}))
+        for field in {'x', 'y', 'width', 'height'} - editable:
+            require(finite_number(old.get(field)) and finite_number(new.get(field))
+                    and abs(old[field] - new[field]) <= 1e-3)
+        if kind == 'text':
+            require(caption_position_equivalent(old.get('font_size'), new.get('font_size')))
+    if kind == 'line_type':
+        require(isinstance(op.get('shape'), str) and op['shape'] in LINE_SHAPES and a.get(ident, {}).get('kind') == 'connector')
+        require(all(equivalent(b[ident].get(k), a[ident].get(k)) for k in ('start_id', 'end_id', 'start_anchor', 'end_anchor')))
+    if kind == 'path':
+        validate_local_operation(before, op)
+        require(ident in b and b[ident].get('kind') == 'connector')
+        # CLI raw omits the curve's endpoint control vectors. Native snapshots
+        # must still verify them, including after closing and reopening the page.
+        if not (from_raw and a[ident].get('shape') == 'curve'):
+            require(points_equivalent(b[ident].get('points'), op['points']))
+        editable = {'points', 'x', 'y', 'width', 'height'}
+        require(equivalent({k:v for k,v in a[ident].items() if k not in editable},
+                           {k:v for k,v in b[ident].items() if k not in editable}))
     if kind in ('caption', 'caption_position'):
         validate_caption_operation(a.get(ident), op)
         require(ident in b and b[ident].get('kind') == 'connector')
         old, new = a[ident], b[ident]
-        editable = {'caption_position'}
+        editable = set()
         if kind == 'caption':
             wanted = [op['text']] if op['text'] else []
-            require(new.get('caption_texts') == wanted and new.get('caption') == op['text'])
+            require(new.get('caption_texts') == wanted and new.get('caption') == '\n'.join(wanted))
             editable = {'caption', 'caption_texts'}
             if not wanted:
                 require(new.get('caption_position') is None and new.get('caption_position_type') is None)
@@ -192,19 +334,46 @@ def check_intent(before, after, op, delta=None):
                         and type(new.get('caption_position_type')) is int and new['caption_position_type'] == 0)
                 editable.update(('caption_position', 'caption_position_type'))
         else:
-            require(new.get('caption_texts') == old['caption_texts']
-                    and caption_position_equivalent(new.get('caption_position'), op['position']))
-        require(equivalent({k:v for k,v in old.items() if k not in editable},
-                           {k:v for k,v in new.items() if k not in editable}))
+            require(new.get('caption_texts') == old['caption_texts'])
+            if 'position' in op:
+                require(caption_position_equivalent(new.get('caption_position'), op['position']))
+                editable.add('caption_position')
+            if 'placement' in op:
+                require(type(new.get('caption_position_type')) is int
+                        and new['caption_position_type'] == CAPTION_PLACEMENTS[op['placement']])
+                editable.add('caption_position_type')
+        old_rest = {k:v for k,v in old.items() if k not in editable}
+        new_rest = {k:v for k,v in new.items() if k not in editable}
+        if kind == 'caption' and (not wanted or not old['caption_texts']):
+            old_rest['style'] = {k:v for k,v in old.get('style', {}).items() if k != 'text_color'}
+            new_rest['style'] = {k:v for k,v in new.get('style', {}).items() if k != 'text_color'}
+        require(equivalent(old_rest, new_rest))
     if kind == 'resize':
-        require(all(equivalent(b[ident][k], op[k]) for k in ('width', 'height')))
+        require(all(finite_number(op.get(k), True) for k in ('width', 'height')))
+        require(all(finite_number(b[ident].get(k)) and abs(b[ident][k] - op[k]) <= 1e-3 for k in ('width', 'height')))
+        require(all(finite_number(b[ident].get(k)) and finite_number(a[ident].get(k))
+                    and abs(b[ident][k] - a[ident][k]) <= 1e-3 for k in ('x', 'y')))
     if kind == 'move':
         for node_id in op['ids']:
             require(equivalent(b[node_id]['x'], a[node_id]['x'] + op['dx']) and equivalent(b[node_id]['y'], a[node_id]['y'] + op['dy']))
     if kind == 'arrow':
         require(b[ident]['start_arrow'] == op['start'] and b[ident]['end_arrow'] == op['end'])
     if kind == 'style':
+        validate_style(op.get('style'))
+        require(ident in a and ident in b)
         require(all(b[ident]['style'].get(k) == (v.lower() if k.endswith('_color') else v) for k,v in op['style'].items()))
+    if kind == 'reconnect':
+        require(ident in a and ident in b and a[ident].get('kind') == 'connector' and b[ident].get('kind') == 'connector')
+        require(any(side + '_id' in op for side in ('start', 'end')))
+        for side in ('start', 'end'):
+            field = side + '_id'
+            require(b[ident].get(field) == op.get(field, a[ident].get(field)))
+            if field in op and not a[ident].get(field):
+                wanted_anchor = {'snap_to': 'right' if side == 'start' else 'left',
+                                 'position': {'x': 1 if side == 'start' else 0, 'y': 0.5}}
+                require(equivalent(b[ident].get(side + '_anchor'), wanted_anchor))
+            else:
+                require(equivalent(b[ident].get(side + '_anchor'), a[ident].get(side + '_anchor')))
     if kind == 'anchors':
         require(all(equivalent(b[ident].get(side+'_anchor'),op[side]) for side in ('start','end') if side in op))
         require(all(b[ident].get(side+'_id') == a[ident].get(side+'_id') for side in ('start','end')))
@@ -219,6 +388,13 @@ def check_intent(before, after, op, delta=None):
         require(len(added) == 1)
         line = b[next(iter(added))]
         require(line['kind'] == 'connector' and line['start_id'] == op['start_id'] and line['end_id'] == op['end_id'])
+        if op.get('template_id'):
+            template = a.get(op['template_id'])
+            require(template is not None and template.get('kind') == 'connector')
+            for field in ('style', 'shape', 'start_arrow', 'end_arrow', 'caption', 'caption_texts',
+                          'caption_position', 'caption_position_type', 'caption_auto_direction'):
+                if field in template:
+                    require(equivalent(line.get(field), template[field]))
     if kind == 'ungroup':
         require(ident not in b and all(i in b and not b[i].get('parent_id') for i in a[ident].get('children', [])))
     if kind == 'align_top':
@@ -259,8 +435,10 @@ def check_raw_preservation(before, after, op):
             if ident == target:
                 lc, rc = left['connector'], right['connector']
                 if op['kind'] == 'caption_position':
-                    lc.pop('caption_position', None)
-                    rc.pop('caption_position', None)
+                    for field, parameter in (('caption_position', 'position'), ('caption_position_type', 'placement')):
+                        if parameter in op:
+                            lc.pop(field, None)
+                            rc.pop(field, None)
                 elif not op['text']:
                     for field in ('captions', 'caption_position', 'caption_position_type'):
                         if field in rc:
@@ -276,6 +454,65 @@ def check_raw_preservation(before, after, op):
                         lc.pop(field, None)
                         rc.pop(field, None)
             # Caption edits do not move, restyle or restack any existing object.
+            if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
+                raise VerificationError('Unexpected raw property change on object ' + ident)
+        return []
+    if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'connect'):
+        if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
+            raise VerificationError('Local edit requires unique object IDs')
+        check_scope(projection(before), projection(after), op, from_raw=True)
+        if op['kind'] != 'connect' and a.keys() != b.keys():
+            raise VerificationError('Local edit changed the object ID set')
+        target = op.get('id')
+        for ident in a:
+            left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
+            if ident == target:
+                if op['kind'] == 'style':
+                    for key in op['style']:
+                        if key == 'text_color':
+                            if left['type'] == 'connector':
+                                old_text = left['connector'].get('captions', {}).get('data', [])
+                                new_text = right['connector'].get('captions', {}).get('data', [])
+                                if not old_text or len(old_text) != len(new_text):
+                                    raise VerificationError('Text color requires preserving existing caption entries')
+                                old_text, new_text = old_text[0], new_text[0]
+                            else:
+                                old_text, new_text = left.get('text', {}), right.get('text', {})
+                            if (type(old_text.get('text_color_type')) is int and old_text['text_color_type'] == 0
+                                    and type(new_text.get('text_color_type')) is int and new_text['text_color_type'] == 1
+                                    and 'theme_text_color_code' not in new_text):
+                                old_text.pop('theme_text_color_code', None)
+                            for text in (old_text, new_text):
+                                text.pop('text_color', None)
+                                text.pop('text_color_type', None)
+                        else:
+                            for node in (left, right):
+                                node.get('style', {}).pop(key, None)
+                                if key.endswith('_color'):
+                                    node.get('style', {}).pop(key + '_type', None)
+                    for node in (left, right):
+                        if node.get('style') == {}:
+                            node.pop('style')
+                else:
+                    for node in (left, right):
+                        c = node['connector']
+                        if op['kind'] == 'reconnect':
+                            for side in ('start', 'end'):
+                                if side + '_id' in op:
+                                    old_endpoint = (a[ident]['connector'].get(side + '_object') or
+                                                    a[ident]['connector'].get(side, {}).get('attached_object', {}))
+                                    if old_endpoint.get('id'):
+                                        c.get(side + '_object', {}).pop('id', None)
+                                        c.get(side, {}).get('attached_object', {}).pop('id', None)
+                                    else:
+                                        c.pop(side + '_object', None)
+                                        c.get(side, {}).pop('attached_object', None)
+                                        c.get(side, {}).pop('position', None)
+                        if op['kind'] == 'line_type':
+                            c.pop('shape', None)
+                        c.pop('turning_points', None)
+                        for field in ('x', 'y', 'width', 'height'):
+                            node.pop(field, None)
             if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
                 raise VerificationError('Unexpected raw property change on object ' + ident)
         return []
@@ -303,20 +540,17 @@ def check_raw_preservation(before, after, op):
             if c:
                 paths += [('connector','turning_points')]
         if ident in ids:
-            if kind == 'style':
-                paths += [('style',k) for k in op['style']]
-                paths += [('style',k+'_type') for k in op['style'] if k.endswith('_color')]
+            if kind in ('text', 'font') and left.get('type') == 'text_shape':
+                if not finite_number(right.get('height'), True):
+                    raise VerificationError('Native text height must stay positive and finite')
+                paths.append(('height',))
             if kind == 'anchors':
                 paths += [('connector',side+'_object',k) for side in ('start','end') if side in op for k in ('position','snap_to')]
                 paths += [('connector',side,'attached_object',k) for side in ('start','end') if side in op for k in ('position','snap_to')]
                 paths += [('connector','turning_points')] + [(k,) for k in ('x','y','width','height')]
             paths += {'text':[('text','text')], 'font':[('text','font_size')],
                       'arrow':[('connector','start','arrow_style'),('connector','end','arrow_style')],
-                      'line_type':[('connector','shape'),('connector','turning_points')],
-                      'reconnect':[('connector','end_object'),('connector','end','attached_object'),('connector','turning_points')],
                       'group':[('parent_id',)], 'ungroup':[('parent_id',)]}.get(kind, [])
-            if kind in ('line_type','reconnect'):
-                paths += [(k,) for k in ('x','y','width','height')]
         # The editor canonicalizes a legacy one-pixel straight horizontal line.
         if c.get('shape') == 'straight' and left.get('height') == 1 and right.get('height') == 0 and left.get('x') == right.get('x') and left.get('y') == right.get('y') and left.get('width') == right.get('width'):
             paths.append(('height',))
@@ -324,7 +558,9 @@ def check_raw_preservation(before, after, op):
         for path in paths:
             strip(left, path)
             strip(right, path)
-        if not equivalent(left, right):
+        preserved = (json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
+                     if kind in ('text', 'font', 'resize') else equivalent(left, right))
+        if not preserved:
             raise VerificationError('Unexpected raw property change on object ' + ident)
     # Absolute z indexes may be renumbered, but unrelated objects keep their order.
     untouched = (a.keys() & b.keys()) - ids
@@ -344,12 +580,14 @@ def match_append(before, after, intended):
     if len(added) != len(intended):
         raise VerificationError('Append object count has not converged')
     mapping = {ident:ident for ident in old}
-    for kind in ('shape', 'connector'):
+    for kind in ('shape', 'text', 'connector'):
         for node in [n for n in intended if n['kind'] == kind]:
             wanted = {k: v for k, v in node.items() if k != 'id'}
             if kind == 'connector':
-                wanted['start_id'] = mapping[wanted['start_id']]
-                wanted['end_id'] = mapping[wanted['end_id']]
+                for side in ('start', 'end'):
+                    field = side + '_id'
+                    if wanted[field]:
+                        wanted[field] = mapping[wanted[field]]
             candidates = [ident for ident, obj in added.items() if equivalent(wanted, {k: v for k, v in obj.items() if k != 'id'})]
             if len(candidates) != 1:
                 raise VerificationError('Append ID mapping is missing or ambiguous')
@@ -434,21 +672,104 @@ class Runner:
             raise VerificationError('Editor rejected operation or returned an invalid response')
         return value
 
-    def settle(self, expected):
+    def settle(self, expected, expected_alpha=None, minimum_stable_seconds=0, expected_endpoints=None):
         deadline = time.monotonic() + self.timeout
+        stable_since = None
         while time.monotonic() < deadline:
             current = self.editor({'kind': 'inspect'})
             if not equivalent(current['nodes'], expected):
                 raise VerificationError('Page changed during save verification')
+            if expected_alpha is not None and not self.alpha_equivalent(current.get('render_alpha'), expected_alpha):
+                raise VerificationError('Rendering alpha changed during save verification')
+            if expected_endpoints is not None and not equivalent(current.get('line_endpoints'), expected_endpoints):
+                raise VerificationError('Native line endpoints changed during save verification')
             if current.get('seq') == current.get('savedSeq') and current.get('seq') is not None:
                 try:
                     raw, name = self.export()
-                    if equivalent(projection(raw), expected):
-                        return raw, name
+                    if self.server_equivalent(projection(raw), expected):
+                        if stable_since is None:
+                            stable_since = time.monotonic()
+                        if time.monotonic() - stable_since >= minimum_stable_seconds:
+                            return raw, name
+                    else:
+                        stable_since = None
                 except NotReady:
                     pass
             time.sleep(1)
         raise VerificationError('Save/readback did not converge; write was not retried')
+
+    @staticmethod
+    def server_equivalent(raw_nodes, page_nodes):
+        # CLI raw omits the two Bezier controls; do not invent them from a box.
+        # Edited curves also require a fresh-page native readback below.
+        left, right = copy.deepcopy(raw_nodes), copy.deepcopy(page_nodes)
+        for nodes in (left, right):
+            for node in nodes:
+                if node.get('kind') == 'connector' and node.get('shape') == 'curve':
+                    node.pop('points', None)
+        return equivalent(left, right)
+
+    def reopen_verified(self, saved_raw, expected, expected_alpha=None, expected_endpoints=None):
+        self.call('/v2/tasks/' + self.task + '/complete', {'keep':False})
+        self.token = self.task = self.tab = None
+        self.open_page()
+        state = self.hydrate(saved_raw)
+        if not equivalent(state['nodes'], expected):
+            self.write('reopen-mismatch.json', state)
+            raise VerificationError('Fresh-page native readback differs from the saved edit')
+        if expected_alpha is not None and not self.alpha_equivalent(state.get('render_alpha'), expected_alpha):
+            self.write('reopen-alpha-mismatch.json', state)
+            raise VerificationError('Fresh-page rendering alpha differs from the saved edit')
+        if expected_endpoints is not None and not equivalent(state.get('line_endpoints'), expected_endpoints):
+            self.write('reopen-endpoints-mismatch.json', state)
+            raise VerificationError('Fresh-page native line endpoints differ from the saved state')
+        self.editor({'kind':'enter'})
+        return state
+
+    @staticmethod
+    def alpha_equivalent(left, right):
+        if not isinstance(left, dict) or not isinstance(right, dict) or left.keys()!=right.keys():
+            return False
+        for ident in left:
+            if left[ident].keys()!=right[ident].keys():
+                return False
+            if any(not math.isclose(left[ident][component], right[ident][component], rel_tol=0, abs_tol=1e-6)
+                   for component in left[ident]):
+                return False
+        return True
+
+    @staticmethod
+    def verify_render_alpha(before, after, op):
+        left, right = before.get('render_alpha'), after.get('render_alpha')
+        if left is None or right is None:
+            raise VerificationError('Native rendering alpha evidence is missing')
+        for state, values in ((before,left),(after,right)):
+            if not isinstance(values,dict) or set(values)!={n['id'] for n in state.get('nodes',[])}:
+                raise VerificationError('Native rendering alpha does not cover the full object set')
+        owned = {k.removesuffix('_color') for k in op.get('style', {}) if k.endswith('_color')} if op['kind']=='style' else set()
+        if any(right.get(op.get('id'),{}).get(component)!=1 for component in owned):
+            raise VerificationError('Requested color alpha is missing or transparent')
+        for ident in left.keys() & right.keys():
+            for component in left[ident].keys() | right[ident].keys():
+                if ident == op.get('id') and component in owned:
+                    if right[ident].get(component) != 1:
+                        raise VerificationError('Requested color became transparent')
+                elif ident == op.get('id') and op['kind']=='caption' and component=='text':
+                    if component not in left[ident] or component not in right[ident]:
+                        continue
+                    if not math.isclose(left[ident][component], right[ident][component], rel_tol=0, abs_tol=1e-6):
+                        raise VerificationError('Caption edit changed text alpha')
+                elif not Runner.alpha_equivalent({ident:{component:left[ident][component]}} if component in left[ident] else {ident:{}},
+                                                 {ident:{component:right[ident][component]}} if component in right[ident] else {ident:{}}):
+                    raise VerificationError('Unrequested rendering alpha changed on object ' + ident)
+        if op['kind']=='connect':
+            added = right.keys() - left.keys()
+            for ident in added:
+                if op.get('template_id'):
+                    if not Runner.alpha_equivalent({ident:right[ident]}, {ident:left[op['template_id']]}):
+                        raise VerificationError('Connection changed template rendering alpha')
+                elif right[ident].get('border') != 1:
+                    raise VerificationError('First connection is transparent')
 
     def open_page(self):
         session = self.call('/v2/tasks', {}, auth=False)
@@ -470,6 +791,8 @@ class Runner:
         self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
 
     def hydrate(self, raw):
+        if any(len(n.get('connector', {}).get('captions', {}).get('data', [])) > 1 for n in raw['nodes']):
+            raise VerificationError('Native editor exposes only the first imported caption; use raw read-only inspection to preserve additional text')
         deadline = time.monotonic() + min(self.timeout, 20)
         attempt = 0
         while time.monotonic() < deadline:
@@ -483,7 +806,7 @@ class Runner:
                 continue
             if not equivalent(projection(latest), projection(raw)):
                 raise VerificationError('Server changed while loading the target; reread before submitting edits')
-            if equivalent(state['nodes'], projection(latest)) and state.get('seq') == state.get('savedSeq'):
+            if self.server_equivalent(projection(latest), state['nodes']) and state.get('seq') == state.get('savedSeq'):
                 return state
             time.sleep(1)
         raise VerificationError('Document board and CLI snapshot did not converge before writing; inspect prewrite-browser evidence')
@@ -499,34 +822,101 @@ class Runner:
         previous_delete = None
         for op in [None, *self.request.get('operations', [])]:
             state = self.editor({'kind': 'inspect'})
-            raw, name = self.settle(state['nodes'])
+            raw, name = self.settle(state['nodes'], state['render_alpha'])
             if op is None:
                 self.report['initial_nodes'] = state['nodes']
                 continue
             actual = dict(op)
             reject_nested_groups(state['nodes'], op)
-            if op['kind'] in ('caption', 'caption_position'):
-                validate_caption_operation(next((n for n in state['nodes'] if n['id'] == op.get('id')), None), op)
+            validate_local_operation(state['nodes'], op)
             if op['kind'] == 'undo':
                 if previous_delete is None:
                     raise VerificationError('Undo is only allowed immediately after this session\'s delete')
                 actual['undo_count'] = previous_delete['transaction_count']
                 actual['undo_receipt'] = previous_delete['undo_receipt']
             self.uncertain = True
-            result = self.editor(actual, state['nodes'])
+            result = self.create_connection(actual, state, raw, name) if op['kind'] == 'connect' and not op.get('template_id') else self.editor(actual, state['nodes'])
             self.write(f'editor-{len(self.report["steps"])+1:03d}.json', result)
+            self.verify_render_alpha(state, result, op)
             if op['kind'] == 'undo':
                 if not equivalent(result['nodes'], previous_delete['before']):
                     raise VerificationError('Undo did not restore the pre-delete projection')
                 delta = differences(state['nodes'], result['nodes'])
             else:
                 delta = check_scope(state['nodes'], result['nodes'], op)
-            saved_raw, saved = self.settle(result['nodes'])
+            # A theme-alpha-only correction is absent from CLI raw. Keep the
+            # writer open for stable polling before a fresh-page confirmation.
+            alpha_only = not any(delta.values()) and not self.alpha_equivalent(state['render_alpha'],result['render_alpha'])
+            saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'])
             raw_exceptions = check_raw_preservation(previous_delete['raw'] if op['kind'] == 'undo' else raw, saved_raw, {'kind':'undo'} if op['kind'] == 'undo' else op)
+            if op['kind'] in ('style','connect','reconnect','anchors') or any(n.get('kind') == 'connector' and n.get('shape') == 'curve' for n in result['nodes']):
+                reopened = self.reopen_verified(saved_raw, result['nodes'], result['render_alpha'], result['line_endpoints'])
+                self.write(f'reopened-{len(self.report["steps"])+1:03d}.json', reopened)
             self.uncertain = False
-            self.report['steps'].append({'operation': op, 'before_raw': name, 'after_raw': saved, 'diff': delta, 'raw_exceptions':raw_exceptions})
+            self.report['steps'].append({'operation': op, 'before_raw': name, 'after_raw': saved, 'diff': delta, 'raw_exceptions':raw_exceptions,
+                                         'before_render_alpha':state['render_alpha'],'after_render_alpha':result['render_alpha']})
             previous_delete = {'before': state['nodes'], 'raw':raw, 'transaction_count': result['transaction_count'], 'undo_receipt':result['undo_receipt']} if op['kind'] == 'delete' else None
         self.report['status'] = 'verified'
+
+    def create_connection(self, op, state, raw, name):
+        """Append exactly one free line, then bind it through the native editor.
+
+        The raw append endpoint cannot refer to pre-existing module IDs. Do not
+        re-import those modules or replay an uncertain append to work around it.
+        """
+        lookup = {n['id']:n for n in state['nodes']}
+        start, end = lookup[op['start_id']], lookup[op['end_id']]
+        raw_lookup = {n['id']:n for n in raw['nodes']}
+        for endpoint in (start, end):
+            if raw_lookup[endpoint['id']].get('locked') or endpoint.get('parent_id'):
+                raise VerificationError('First connection requires unlocked, ungrouped native modules')
+        sx, sy = start['x'] + start['width'], start['y'] + start['height']/2
+        ex, ey = end['x'], end['y'] + end['height']/2
+        client_id = 'c' + str(uuid.uuid4().int % 1000000000) + ':1'
+        payload = {'nodes':[{'id':client_id, 'type':'connector',
+            'x':min(sx,ex), 'y':min(sy,ey), 'width':abs(ex-sx), 'height':abs(ey-sy),
+            'style':{'border_color':'#334155','border_style':'solid','border_width':'narrow'},
+            'connector':{'shape':'straight',
+                'start':{'position':{'x':sx,'y':sy},'arrow_style':'none'},
+                'end':{'position':{'x':ex,'y':ey},'arrow_style':'line_arrow'}}}]}
+        step = len(self.report['steps']) + 1
+        filename = f'connect-input-{step:03d}.json'
+        receipt_name = f'connect-receipt-{step:03d}.json'
+        key = str(uuid.uuid4())
+        receipt = {'idempotent_token':key, 'before_raw':name, 'operation':op,
+                   'status':'submitted_once'}
+        self.write(filename, payload)
+        self.write(receipt_name, receipt)
+        self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'],
+                      '--input_format','raw','--source','@'+filename,'--idempotent-token',key,'--as','user'])
+        deadline = time.monotonic() + self.timeout
+        while time.monotonic() < deadline:
+            try:
+                latest, after_name = self.export()
+                mapping = match_append(projection(raw), projection(latest), projection(payload))
+                check_raw_preservation(raw, latest, {'kind':'append'})
+                break
+            except NotReady:
+                time.sleep(1)
+            except VerificationError as error:
+                if 'count has not converged' not in str(error):
+                    raise
+                time.sleep(1)
+        else:
+            raise VerificationError('Connection append did not converge; inspect the receipt before resuming the same line')
+        ident = mapping[client_id]
+        receipt.update(created_id=ident, appended_raw=after_name, status='appended_readback_verified')
+        self.write(f'connect-appended-{step:03d}.json', receipt)
+        # Reload only this owned page so a cached pre-append board cannot write.
+        self.call('/v2/tasks/' + self.task + '/complete', {'keep':False})
+        self.token = self.task = self.tab = None
+        self.open_page()
+        self.hydrate(latest)
+        self.editor({'kind':'enter'})
+        loaded = self.hydrate(latest)
+        result = self.editor({'kind':'reconnect','id':ident,
+                              'start_id':op['start_id'],'end_id':op['end_id']}, loaded['nodes'])
+        return result
 
     def append(self, filename):
         if self.request.get('operations'):
@@ -541,16 +931,16 @@ class Runner:
         shape_lookup = {ident:n for ident,n in existing.items() if n.get('type') == 'composite_shape'}
         shape_lookup.update({n['id']:n for n in nodes if n.get('type') == 'composite_shape'})
         for n in nodes:
-            if n.get('type') not in ('composite_shape', 'connector'):
-                raise ValueError('Append only supports native shapes and bound connectors')
-            if n['type'] == 'composite_shape' and not isinstance(n.get('text', {}).get('text'), str):
+            if n.get('type') not in ('composite_shape', 'text_shape', 'connector'):
+                raise ValueError('Append only supports native shapes, text shapes and bound connectors')
+            if n['type'] in ('composite_shape', 'text_shape') and not isinstance(n.get('text', {}).get('text'), str):
                 raise ValueError('Native shapes must own their text')
             if n['type'] == 'connector':
                 c = n['connector']
                 for side in ('start','end'):
                     endpoint = c.get(side + '_object', {})
                     if endpoint.get('id') not in ids:
-                        raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect with an existing line template')
+                        raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect for existing modules')
                     if endpoint.get('id') not in shape_lookup or endpoint != c.get(side, {}).get('attached_object'):
                         raise ValueError('Append connector has missing or conflicting native shape endpoint')
                 start,end = (shape_lookup[c[side + '_object']['id']] for side in ('start','end'))

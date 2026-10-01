@@ -144,6 +144,8 @@ Zotero 管理的文件沿用库内附件命名设置，不直接重命名 storag
 - `download_status`：`downloaded`、`pending`、`failed`、`skipped`（仅表示对应文件的下载状态）
 - `official_status`：`obtained`、`pending`、`not_applicable`（当前正式版已核验并按请求入库/交付、仍待补、用户指定非正式版或确认仅有预印本）
 
+`access_status=unresolved` 或 `download_status=pending/failed` 时附带具体 `blocking_reason`：`host_policy`、`environment`、`user_verification`、`institution_permission`、`transport`、`pdf_validation` 或 `zotero_write_unknown`。原因以实际证据为准，未知仍标未知；不把这些阻塞合并成学校登录失败。
+
 ## 边界
 
 - 多篇文献综述、代表作筛选：先用 `paper-search`。

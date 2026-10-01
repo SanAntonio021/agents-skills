@@ -8,7 +8,7 @@ description: >
 metadata:
   author: 一泽Eze
   version: "2.5.3"
-  local_revision: "dual-proxy.3"
+  local_revision: "dual-proxy.2"
   github: https://github.com/eze-is/web-access
 ---
 

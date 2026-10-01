@@ -43,7 +43,7 @@ lark-cli whiteboard +export --whiteboard-token <board> --output-type preview --o
 例如驱动从模块下方接入，可用 `start_anchor:{"side":"top"}`、`end_anchor:{"side":"bottom"}`。
 颜色、虚线、锚点与线标签仍须用线上 raw 和预览验收；下表后台编辑接口与本创建接口分开，不表示已有节点自动支持所有创建参数。
 CLI 创建接口不支持连线引用本批次以外的旧形状。给已有图增加模块时，先仅追加新形状；
-已有形状之间新增连线由编辑器 `connect` 复用一条现有连线的样式创建，不能把旧形状复制进追加批次。
+已有形状之间新增连线用 `connect`。有模板时复用其样式；无模板时只追加一条坐标线，再在重新加载的原生编辑器中绑定两端，不能把旧形状复制进追加批次。
 
 ```text
 python <skill>/scripts/native_nodes.py --input diagram.json --output native.json
@@ -75,17 +75,19 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 
 | kind | 参数 |
 |---|---|
-| text | id, text（形状自身文字） |
+| text | id, text（形状自身文字或独立文本框） |
 | font | id, font_size |
 | resize | id, width, height |
 | move | ids, dx, dy |
-| arrow | id, start/end 均为 none 或 line_arrow |
+| arrow | id, start/end；取值见下方箭头列表 |
 | caption | id, text；无标签时新增，单标签时改写；空字符串清空并移除标签。支持多行，改写保留位置与格式 |
-| caption_position | id, position；单标签沿连线的 0～1 比例位置，0 为起点、1 为终点；保持文字、格式、端点及连线几何 |
-| line_type | id, shape 为 straight 或 polyline |
+| caption_position | id；position 为 0～1 沿线比例；placement 为 on_line / above_line / below_line；至少提供一个，另一个保持原值 |
+| line_type | id, shape 为 straight / polyline / curve / right_angled_polyline |
+| path | id, points；画布绝对坐标的中间点数组。折线为拐点，曲线须两端已绑定且恰好两个控制点；直线无拐点，正交线各段须水平或垂直 |
+| style | id, style；border_color / fill_color / text_color 为 #RRGGBB，border_style 为 solid / dash / dot，border_width 为 extra_narrow / narrow / medium / bold；只更改提供的字段 |
 | anchors | id 为已有连接线；start/end 可分别指定 `{snap_to:"bottom",position:{x:0.5,y:1}}`，仅改变锚点，保持两端绑定 ID |
-| reconnect | id 为连线，end_id 为新目标形状；沿用原终点锚定位置 |
-| connect | template_id 为现有连线，start_id/end_id 为两端形状；复制线样式后重新绑定，新 ID 由结果回读取得 |
+| reconnect | id 为连线，start_id / end_id 可单独或同时指定；已有绑定保留原端锚点，首次绑定采用起点右侧中点、终点左侧中点 |
+| connect | start_id/end_id 为两端形状；template_id 可选。省略时使用默认实线箭头，新 ID 由保存回读取得 |
 | group | ids；返回新增 group ID，再据其发起后续操作 |
 | ungroup | id 为 group |
 | align_top | ids，至少两个形状 |
@@ -94,16 +96,20 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | undo | 仅放在同一次请求中的 delete 后一步；撤销该删除 |
 
 组合 ID 由编辑器分配，禁止预猜。需要组合后移动时，先完成组合调用并读取新 ID，再发下一次请求。
-改接只覆盖终点，更改起点尚未提供接口。任意曲线路径、线外文字坐标、多标签选择编辑、文字迁入形状不能借自由 JavaScript 偷换为“已支持”。
+独立文字保留文本框身份，可以改字、字号、字色、移动和尺寸；不自动迁入形状。连线不支持填充色；没有标签时须先添加标签才能改标签字色。
+独立文字改字或字号时，原生编辑器可能按内容调整高度；验收仅对此放行目标文本框高度，仍保护原点、宽度、其他格式和无关对象。尺寸操作使用固定尺寸并核对指定宽高。
+
+箭头取值：`none`、`line_arrow`、`triangle_arrow`、`empty_triangle_arrow`、`circle_arrow`、`empty_circle_arrow`、`diamond_arrow`、`empty_diamond_arrow`、`single_arrow`、`multi_arrow`、`exact_single_arrow`、`zero_or_single_arrow`、`single_or_multi_arrow`、`zero_or_multi_arrow`、`x_arrow`。
 
 箭头文字属于连线。读出目标连线当前标签后，用 `caption` 改写，不能另加独立文本框盖住旧字。
 需要避让时先按沿线比例移动，如 `{"kind":"caption_position","id":"<line-id>","position":0.75}`；改字与移位分别验收。
-只有一个标签且 `caption_position_type=0` 时支持位置调整；多标签、其他定位类型和任意线外坐标未验证，入口拒绝。
+需上下避让时加 `"placement":"above_line"` 或 `"placement":"below_line"`。这对应原生线上、上方、下方三种模式；任意线外绝对坐标不会被当前渲染器使用，入口拒绝。
+文字和位置编辑限单标签。raw 可导入多条文字，但当前原生加载器只暴露首项；遇这种画板只读 raw，拒绝写入，避免隐含文字被删除。
 清空会按原生编辑器语义移除标签；之后重新添加采用编辑器默认样式和中间位置，不承诺保留被删标签的格式。
 
-`right_angled_polyline` 目前只用于原生创建，旧线 `line_type` 仍限已验证的 `straight` / `polyline`。
-旧对象 `style` 编辑未稳定通过服务端保存验证，当前拒绝该操作。创建新对象可用前述颜色与虚线参数；
-已有图若需要新的虚线支路，可追加带样式的新对象，再用已验证的模板连接命令绑定，不能覆盖旧图。
+路径操作保持两端绑定和锚点，改变中间走线；自动直角线可先转换线型再读取生成的拐点。所有样式和路径编辑均须保存、服务端回读，不能仅凭页面显示验收。
+`#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。
+CLI raw 不导出曲线控制点；曲线编辑还须关闭自有页面、重新加载后比较完整原生控制点。游离曲线的控制点会被当前加载器规范化为默认值，入口写前拒绝，不能宣称任意曲线都可编辑。
 长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。
@@ -112,5 +118,6 @@ runner 点击页面真实存在的该目录链接，再滚动到准确画板块�
 
 先看结果中已完成步骤和最后 raw 快照。CLI/API 错误与页面未保存分开报告。
 未知写入结果不自动重试；重新读取确认真实状态后，只补尚未执行的修改。
+无模板建线分两阶段。`connect-receipt-*.json` 保存一次提交的幂等标识，`connect-appended-*.json` 保存已回读的新线ID；若后续绑定失败，只对该ID补绑定，不能重建同一条线。
 原始快照提供恢复依据，但恢复也应以最新状态逐对象处理，不能自动把旧快照整板覆盖回去。
 若页面被保留以等待保存，不另开重复写入；保留标签不等于保存已成功。

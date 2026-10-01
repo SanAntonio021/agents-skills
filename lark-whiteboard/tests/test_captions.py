@@ -137,32 +137,88 @@ class CaptionChecks(unittest.TestCase):
                 with self.assertRaises(VerificationError):
                     check_raw_preservation(before, after, op)
 
-    def test_multilabel_is_rejected_before_edit_and_in_readback(self):
+    def test_multilabel_text_clear_and_position_are_rejected_before_edit(self):
         before = board()
         line(before)['connector']['captions']['data'].append({'text': 'second label'})
+        original = copy.deepcopy(before)
         for op in ({'kind': 'caption', 'id': 'line', 'text': 'new'},
-                   {'kind': 'caption_position', 'id': 'line', 'position': 0.25}):
+                   {'kind': 'caption', 'id': 'line', 'text': ''},
+                   {'kind': 'caption_position', 'id': 'line', 'position': 0.25},
+                   {'kind': 'caption_position', 'id': 'line', 'placement': 'above_line'}):
             with self.subTest(operation=op):
-                with self.assertRaises(VerificationError):
+                with self.assertRaisesRegex(VerificationError, 'Multiple connector captions'):
                     validate_caption_operation(line({'nodes': projection(before)}), op)
                 with self.assertRaises(VerificationError):
+                    check_scope(projection(before), projection(before), op)
+                with self.assertRaises(VerificationError):
                     check_raw_preservation(before, before, op)
+        self.assertEqual(before, original)
+
+    def test_multilabel_raw_cannot_hide_remove_or_modify_the_second_entry(self):
+        before = board()
+        line(before)['connector']['captions']['data'].append({'text': 'second label', 'font_size': 18})
+        for damage in ('keep', 'remove', 'text', 'font'):
+            with self.subTest(damage=damage):
+                after = copy.deepcopy(before)
+                entries = line(after)['connector']['captions']['data']
+                entries[0]['text'] = 'new'
+                if damage == 'remove':
+                    entries.pop()
+                elif damage == 'text':
+                    entries[1]['text'] = 'damaged'
+                elif damage == 'font':
+                    entries[1]['font_size'] = 8
+                op = {'kind': 'caption', 'id': 'line', 'text': 'new'}
+                with self.assertRaises(VerificationError):
+                    check_scope(projection(before), projection(after), op)
+                with self.assertRaises(VerificationError):
+                    check_raw_preservation(before, after, op)
         before = board()
         after = copy.deepcopy(before)
         line(after)['connector']['captions']['data'] = [{'text': 'new'}, {'text': 'extra'}]
         with self.assertRaises(VerificationError):
             check_scope(projection(before), projection(after), {'kind': 'caption', 'id': 'line', 'text': 'new'})
 
-    def test_position_requires_single_caption_type_zero_and_valid_ratio(self):
+    def test_position_requires_single_caption_supported_type_and_valid_ratio(self):
         node = line({'nodes': projection(board())})
         for value in (-0.1, 1.1, math.nan, math.inf, True, '0.25', None):
             with self.subTest(value=value):
                 with self.assertRaises(VerificationError):
                     validate_caption_operation(node, {'kind': 'caption_position', 'id': 'line', 'position': value})
-        for changes in ({'caption_texts': []}, {'caption_position_type': 1}, {'caption_position_type': False}):
+        for changes in ({'caption_texts': []}, {'caption_position_type': 3}, {'caption_position_type': False}):
             with self.subTest(changes=changes):
                 with self.assertRaises(VerificationError):
                     validate_caption_operation(dict(node, **changes), {'kind': 'caption_position', 'id': 'line', 'position': 0.25})
+
+    def test_caption_placement_preserves_ratio_when_omitted(self):
+        before = board()
+        for placement, expected in (('on_line', 0), ('above_line', 1), ('below_line', 2)):
+            with self.subTest(placement=placement):
+                after = copy.deepcopy(before)
+                line(after)['connector']['caption_position_type'] = expected
+                self.verify(before, after, {'kind': 'caption_position', 'id': 'line', 'placement': placement})
+                line(after)['connector']['caption_position'] = 0.4
+                with self.assertRaises(VerificationError):
+                    check_raw_preservation(before, after, {'kind': 'caption_position', 'id': 'line', 'placement': placement})
+
+    def test_position_and_placement_can_change_together(self):
+        before = board()
+        after = copy.deepcopy(before)
+        line(after)['connector'].update(caption_position=0.25, caption_position_type=2)
+        self.verify(before, after, {'kind': 'caption_position', 'id': 'line', 'position': 0.25, 'placement': 'below_line'})
+        before = copy.deepcopy(after)
+        line(after)['connector']['caption_position'] = 0.75
+        self.verify(before, after, {'kind': 'caption_position', 'id': 'line', 'position': 0.75})
+
+    def test_invalid_or_uncompleted_caption_placement_is_rejected(self):
+        before = board()
+        node = line({'nodes': projection(before)})
+        for changes in ({}, {'point': {'x': 10, 'y': 20}}, {'placement': 'outside'}, {'placement': None}):
+            with self.subTest(changes=changes):
+                with self.assertRaises(VerificationError):
+                    validate_caption_operation(node, {'kind': 'caption_position', 'id': 'line', **changes})
+        with self.assertRaises(VerificationError):
+            check_scope(projection(before), projection(before), {'kind': 'caption_position', 'id': 'line', 'placement': 'above_line'})
 
     def test_target_and_text_are_validated_before_edit(self):
         op = {'kind': 'caption', 'id': 'line', 'text': 'new'}

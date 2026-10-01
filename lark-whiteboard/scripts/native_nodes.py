@@ -25,7 +25,7 @@ def compile_diagram(spec):
     nodes, shapes, used = [], {}, set()
     existing = {item['id'] for item in spec.get('existing_shapes', [])}
     if existing:
-        raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect with an existing line template')
+        raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect with an optional line template')
     for item in spec.get('shapes', []):
         ident = item['id']
         if not isinstance(ident, str) or not ident or ident in used:

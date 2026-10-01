@@ -92,7 +92,11 @@
     const s=n.toGlobalPoint(n.lineProps.points[0]),e=n.toGlobalPoint(n.lineProps.points.at(-1));
     return[n.id,{start:{x:s.x,y:s.y},end:{x:e.x,y:e.y}}];
   }));
-  const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
+  const curveHandles=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].filter(n=>n.isCurveLine?.()).map(n=>[n.id,{
+    turning:n.lineProps.points.slice(3,-1).filter((_,j)=>j%3===0).map(p=>{const q=n.toGlobalPoint(p);return{x:q.x,y:q.y};}),
+    segment:n.getControlPoints().map(p=>({x:p.x,y:p.y,enabled:p.enabled}))
+  }]));
+  const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
@@ -170,6 +174,7 @@
     p.points[0]={...p.points[0],x:q.x,y:q.y};update(n.id,[p]);
   };
   const verifiedBindings=[];
+  const verifiedCurvePoints=[];
   const verifyBoundGeometry = n => {
     const evidence={id:n.id};
     for(const side of ['start','end']){
@@ -222,6 +227,33 @@
       p.points=[{...n.lineProps.points[0]},...middle,{...n.lineProps.points.at(-1)}];p.isPointsEdited=true;
       if(p.lineType===3 && p.points.some((q,i)=>i && Math.abs(q.x-p.points[i-1].x)>0.001 && Math.abs(q.y-p.points[i-1].y)>0.001))fail('NON_ORTHOGONAL_PATH');
       const t=actionTypes();transaction(t,update=>update(n.id,[p]));break;
+    }
+    case 'curve_point': {
+      const n=line(op.id),ctx=a.interactCtx;
+      if(!n.isCurveLine?.()||n.lineProps.points.length<4||(n.lineProps.points.length-1)%3!==0)fail('NATIVE_CURVE_REQUIRED');
+      if(n.parent?.id&&a.nodeManager.nodeMap.has(n.parent.id))fail('GROUPED_CURVE_NOT_VERIFIED');
+      const handles=curveHandles()[n.id],mode=op.mode||(handles.turning.length?'turning':'segment'),index=op.index??0;
+      if(!['segment','turning'].includes(mode)||!Number.isInteger(index)||index<0)fail('INVALID_CURVE_HANDLE');
+      const source=handles[mode][index];if(!source||source.enabled===false)fail('CURVE_HANDLE_NOT_AVAILABLE');
+      if(!op.point||Object.keys(op.point).sort().join(',')!=='x,y')fail('INVALID_CURVE_POINT');number(op.point.x);number(op.point.y);
+      const handlers=(a.appConfig?.modes||[]).flatMap(m=>m.subModes||[]).flatMap(m=>m.streamProcessor||[])
+        .filter(h=>typeof h.onStart==='function'&&typeof h.onMove==='function'&&typeof h.onUp==='function'
+          &&h.onStart.toString().includes('CurveControlPoint')&&h.onMove.toString().includes('isPointsEdited'));
+      if(handlers.length!==1)fail('CURVE_HANDLER_NOT_UNIQUE');
+      const h=handlers[0],detector=ctx.getDetector(5),hash=s=>{let v=2166136261;for(let j=0;j<s.length;j++){v^=s.charCodeAt(j);v=Math.imul(v,16777619);}return(v>>>0).toString(16);};
+      const fingerprint=hash([h.onStart,h.onMove,h.onUp].map(f=>f.toString()).join('\n'));
+      if(fingerprint!=='feb5ede2'||hash(detector?.constructor.toString()||'')!=='63fa3cdd')fail('UNVERIFIED_CURVE_INTERFACE');
+      const oldEnds=lineEndpoints()[n.id];selected([n.id]);
+      const originEvent={pointerType:'mouse',button:0,buttons:1,shiftKey:false,ctrlKey:false,metaKey:false,altKey:false};
+      const event=p=>({globalPoint:{x:p.x,y:p.y},originEvent});
+      const detected=ctx.detect(5,event(source));
+      if(!detected||detected.line!==n||detected.index!==index||detected.isTurningPoint!==(mode==='turning')||detected.enabled===false)fail('CURVE_HANDLE_DETECTION_MISMATCH');
+      h.onStart(event(source),ctx);if(h.res?.line!==n)fail('CURVE_DRAG_TARGET_MISMATCH');
+      try{h.onMove(event(op.point),ctx);}finally{h.onUp(event(op.point),ctx);}
+      const actual=n.toGlobalPoint(n.lineProps.points[3*index+3]),ends=lineEndpoints()[n.id];
+      if(Math.hypot(actual.x-op.point.x,actual.y-op.point.y)>1e-5)fail('CURVE_POINT_INTENT_FAILED');
+      if(['start','end'].some(s=>Math.hypot(oldEnds[s].x-ends[s].x,oldEnds[s].y-ends[s].y)>1e-5))fail('CURVE_ENDPOINT_MOVED');
+      verifiedCurvePoints.push({id:n.id,mode,index,point:{x:actual.x,y:actual.y},fingerprint});break;
     }
     case 'style': {
       const n=node(op.id),i=a.api.graphicNodeToPageNode(n).info,s=op.style;
@@ -311,6 +343,6 @@
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
   const max=['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['resize','caption','style'].includes(op.kind)?2:1;
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
-  return {...result(), before, transaction_count:count,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,
+  return {...result(), before, transaction_count:count,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};
 }

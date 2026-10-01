@@ -84,6 +84,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | caption_position | id；position 为 0～1 沿线比例；placement 为 on_line / above_line / below_line；至少提供一个，另一个保持原值 |
 | line_type | id, shape 为 straight / polyline / curve / right_angled_polyline |
 | path | id, points；画布绝对坐标的中间点数组。折线为拐点，曲线须两端已绑定且恰好两个控制点；直线无拐点，正交线各段须水平或垂直 |
+| curve_point | id, point 为画布 `{x,y}`；mode 可选 segment / turning，index 为从 0 开始的手柄下标。segment 拖动曲线段中点新增经过点，turning 移动已有经过点；默认有经过点则移动，否则新增，index 默认为 0 |
 | style | id, style；border_color / fill_color / text_color 为 #RRGGBB，border_style 为 solid / dash / dot，border_width 为 extra_narrow / narrow / medium / bold；只更改提供的字段 |
 | anchors | id 为已有连接线；start/end 可分别指定 `{snap_to:"bottom",position:{x:0.5,y:1}}`，仅改变锚点，保持两端绑定 ID |
 | reconnect | id 为连线，start_id / end_id 可单独或同时指定；已有绑定保留原端锚点，首次绑定采用起点右侧中点、终点左侧中点 |
@@ -103,13 +104,14 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 
 箭头文字属于连线。读出目标连线当前标签后，用 `caption` 改写，不能另加独立文本框盖住旧字。
 需要避让时先按沿线比例移动，如 `{"kind":"caption_position","id":"<line-id>","position":0.75}`；改字与移位分别验收。
-需上下避让时加 `"placement":"above_line"` 或 `"placement":"below_line"`。这对应原生线上、上方、下方三种模式；任意线外绝对坐标不会被当前渲染器使用，入口拒绝。
-文字和位置编辑限单标签。raw 可导入多条文字，但当前原生加载器只暴露首项；遇这种画板只读 raw，拒绝写入，避免隐含文字被删除。
+需上下避让时加 `"placement":"above_line"` 或 `"placement":"below_line"`。这对应原生线上、上方、下方三种模式；人工拖动将鼠标落点投到线上，再按距离与方向选模式，不把文字固定在鼠标的任意线外坐标。绝对标签坐标入口因此拒绝。
+文字和位置编辑限单标签，一个标签内可写多行或多个段落。多标签指多个独立文字块：raw 可导入这种数据，但当前原生加载器只暴露首项；遇这种画板只读 raw，拒绝写入，避免隐含文字被删除。
 清空会按原生编辑器语义移除标签；之后重新添加采用编辑器默认样式和中间位置，不承诺保留被删标签的格式。
 
 路径操作保持两端绑定和锚点，改变中间走线；自动直角线可先转换线型再读取生成的拐点。所有样式和路径编辑均须保存、服务端回读，不能仅凭页面显示验收。
 `#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。
-CLI raw 不导出曲线控制点；曲线编辑还须关闭自有页面、重新加载后比较完整原生控制点。游离曲线的控制点会被当前加载器规范化为默认值，入口写前拒绝，不能宣称任意曲线都可编辑。
+曲线形状微调用 `curve_point`，既可处理绑定曲线，也可处理游离曲线。只读 inspect 的 `curve_handles` 按连线 ID 返回 `segment` 和 `turning` 的实际画布坐标；先据此选择手柄，再指定目标经过点，例如 `{"kind":"curve_point","id":"<curve-id>","point":{"x":410,"y":110}}`。再次调用默认移动已有的第一个经过点；需新增第二个点时明确指定 segment 和对应 index，不能把两个 Bezier 控制点当成经过点。
+CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线编辑还须关闭自有页面、重新加载后比较完整原生点列和首末点。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；分组内曲线尚未验证，写前拒绝。
 长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。

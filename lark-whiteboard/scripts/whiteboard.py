@@ -144,7 +144,7 @@ def check_scope(before, after, op, *, from_raw=False):
     for ident in list(ids):
         ids.update(lookup.get(ident, {}).get('children', []))
     allowed = ids | {n['id'] for n in before if n.get('start_id') in ids or n.get('end_id') in ids}
-    if op['kind'] in ('caption', 'caption_position', 'style', 'reconnect', 'line_type', 'path'):
+    if op['kind'] in ('caption', 'caption_position', 'style', 'reconnect', 'line_type', 'path', 'curve_point'):
         if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
             raise VerificationError('Local edit requires unique object IDs')
         allowed = {op.get('id')}
@@ -214,6 +214,26 @@ def valid_point(point):
     return isinstance(point, dict) and set(point) == {'x', 'y'} and all(finite_number(point[k]) for k in point)
 
 
+def curve_handle(node, op, *, from_raw=False):
+    if not node or node.get('kind') != 'connector' or node.get('shape') != 'curve' or node.get('parent_id'):
+        raise VerificationError('Curve point edit requires an ungrouped native curve')
+    if not valid_point(op.get('point')):
+        raise VerificationError('Curve point must be finite canvas x/y coordinates')
+    points = node.get('points')
+    if not isinstance(points, list) or not all(valid_point(p) for p in points):
+        raise VerificationError('Curve point data is invalid')
+    if not from_raw and (len(points) < 2 or (len(points)-2) % 3):
+        raise VerificationError('Native curve point topology is invalid')
+    turning_count = len(points) if from_raw else (len(points)-2)//3
+    mode = op.get('mode', 'turning' if turning_count else 'segment')
+    index = op.get('index', 0)
+    if mode not in ('segment', 'turning') or type(index) is not int or index < 0:
+        raise VerificationError('Curve handle requires segment/turning and a nonnegative integer index')
+    if index >= turning_count + (mode == 'segment'):
+        raise VerificationError('Curve handle index is not available')
+    return mode, index
+
+
 def validate_local_operation(nodes, op):
     """Reject unsupported parameters before invoking a mutating editor command."""
     lookup = {n['id']: n for n in nodes}
@@ -223,6 +243,8 @@ def validate_local_operation(nodes, op):
     node = lookup.get(op.get('id'))
     if kind in ('caption', 'caption_position'):
         validate_caption_operation(node, op)
+    elif kind == 'curve_point':
+        curve_handle(node, op)
     elif kind in ('text', 'font', 'resize'):
         if not node or node.get('kind') not in ('shape', 'text'):
             raise VerificationError('Text or size edit requires a native shape or text shape')
@@ -317,6 +339,21 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
         editable = {'points', 'x', 'y', 'width', 'height'}
         require(equivalent({k:v for k,v in a[ident].items() if k not in editable},
                            {k:v for k,v in b[ident].items() if k not in editable}))
+    if kind == 'curve_point':
+        mode, index = curve_handle(a.get(ident), op, from_raw=from_raw)
+        require(ident in b)
+        old, new = a[ident], b[ident]
+        points = new.get('points')
+        require(isinstance(points, list) and len(points) == len(old['points']) + ((1 if from_raw else 3) if mode == 'segment' else 0))
+        wanted = list(old['points'] if from_raw else old['points'][2::3])
+        if mode == 'segment':
+            wanted.insert(index, op['point'])
+        else:
+            wanted[index] = op['point']
+        require(points_equivalent(points if from_raw else points[2::3], wanted))
+        editable = {'points', 'x', 'y', 'width', 'height'}
+        require(equivalent({k:v for k,v in old.items() if k not in editable},
+                           {k:v for k,v in new.items() if k not in editable}))
     if kind in ('caption', 'caption_position'):
         validate_caption_operation(a.get(ident), op)
         require(ident in b and b[ident].get('kind') == 'connector')
@@ -457,7 +494,7 @@ def check_raw_preservation(before, after, op):
             if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
                 raise VerificationError('Unexpected raw property change on object ' + ident)
         return []
-    if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'connect'):
+    if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'curve_point', 'connect'):
         if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
             raise VerificationError('Local edit requires unique object IDs')
         check_scope(projection(before), projection(after), op, from_raw=True)
@@ -838,6 +875,11 @@ class Runner:
             result = self.create_connection(actual, state, raw, name) if op['kind'] == 'connect' and not op.get('template_id') else self.editor(actual, state['nodes'])
             self.write(f'editor-{len(self.report["steps"])+1:03d}.json', result)
             self.verify_render_alpha(state, result, op)
+            if op['kind'] == 'curve_point':
+                left, right = state.get('line_endpoints'), result.get('line_endpoints')
+                if not isinstance(left, dict) or not isinstance(right, dict) or left.keys() != right.keys() or any(
+                        not point_equivalent(left[i].get(s), right[i].get(s)) for i in left for s in ('start', 'end')):
+                    raise VerificationError('Curve point edit changed native endpoints')
             if op['kind'] == 'undo':
                 if not equivalent(result['nodes'], previous_delete['before']):
                     raise VerificationError('Undo did not restore the pre-delete projection')

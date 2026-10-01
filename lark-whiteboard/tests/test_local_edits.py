@@ -409,6 +409,99 @@ class LocalEdits(unittest.TestCase):
                 with self.assertRaisesRegex(VerificationError, 'both endpoints'):
                     validate_local_operation(unbound, op)
 
+    def test_curve_point_add_then_move_preserves_native_topology(self):
+        raw = board()
+        line(raw)['connector']['shape'] = 'curve'
+        before = projection(raw)
+        line({'nodes': before})['points'] = [{'x': 120, 'y': 40}, {'x': 180, 'y': 40}]
+        op = {'kind': 'curve_point', 'id': 'line', 'point': {'x': 150, 'y': 10}}
+        after = copy.deepcopy(before)
+        line({'nodes': after})['points'] = [
+            {'x': 100, 'y': 40}, {'x': 120, 'y': 10}, {'x': 150, 'y': 10},
+            {'x': 180, 'y': 10}, {'x': 200, 'y': 40}]
+        check_scope(before, after, op)
+        moved = copy.deepcopy(after)
+        next_op = {'kind': 'curve_point', 'id': 'line', 'point': {'x': 160, 'y': 20}}
+        line({'nodes': moved})['points'][2] = next_op['point']
+        check_scope(after, moved, next_op)
+        for damaged in (after, before):
+            with self.assertRaises(VerificationError):
+                check_scope(after, damaged, next_op)
+        extra = copy.deepcopy(moved)
+        line({'nodes': extra})['points'].extend([{'x': 170, 'y': 30}]*3)
+        with self.assertRaises(VerificationError):
+            check_scope(after, extra, next_op)
+
+    def test_curve_point_preflight_rejects_invalid_handles_and_grouped_curves(self):
+        nodes = projection(board())
+        op = {'kind': 'curve_point', 'id': 'line', 'point': {'x': 150, 'y': 10}}
+        with self.assertRaises(VerificationError):
+            validate_local_operation(nodes, op)
+        target = line({'nodes': nodes})
+        target.update(shape='curve', points=[{'x': 120, 'y': 40}, {'x': 180, 'y': 40}])
+        validate_local_operation(nodes, op)
+        for updates in ({'mode': 'turning'}, {'mode': 'other'}, {'index': 1}, {'index': True},
+                        {'index': -1}, {'index': 0.5}, {'point': {'x': float('nan'), 'y': 10}},
+                        {'point': {'x': 150, 'y': 10, 'z': 0}}):
+            with self.subTest(parameters=updates), self.assertRaises(VerificationError):
+                validate_local_operation(nodes, {**op, **updates})
+        target['parent_id'] = 'group'
+        with self.assertRaises(VerificationError):
+            validate_local_operation(nodes, op)
+        del target['parent_id']
+        target['points'].append({'x': 150, 'y': 10})
+        with self.assertRaises(VerificationError):
+            validate_local_operation(nodes, op)
+
+    def test_curve_point_raw_checks_pass_through_point_and_protects_other_fields(self):
+        before = board()
+        line(before)['connector']['shape'] = 'curve'
+        after = copy.deepcopy(before)
+        line(after).update(y=10, height=30)
+        line(after)['connector']['turning_points'] = [{'x': 50, 'y': 0}]
+        op = {'kind': 'curve_point', 'id': 'line', 'point': {'x': 150, 'y': 10}}
+        self.assertEqual(check_raw_preservation(before, after, op), [])
+        with self.assertRaises(VerificationError):
+            check_raw_preservation(before, before, op)
+        moved = copy.deepcopy(after)
+        line(moved)['connector']['turning_points'][0]['x'] = 60
+        next_op = {**op, 'point': {'x': 160, 'y': 10}}
+        self.assertEqual(check_raw_preservation(after, moved, next_op), [])
+        for field in ('arrow', 'caption', 'style', 'binding', 'z_index', 'other'):
+            damaged = copy.deepcopy(after)
+            target = line(damaged)
+            if field == 'arrow':
+                target['connector']['end']['arrow_style'] = 'none'
+            elif field == 'caption':
+                target['connector']['captions']['data'][0]['text'] = 'lost'
+            elif field == 'style':
+                target['style']['border_width'] = 'bold'
+            elif field == 'binding':
+                target['connector']['end_object']['id'] = 'a'
+            elif field == 'other':
+                line(damaged, 'other-line')['y'] += 1
+            else:
+                target['z_index'] += 1
+            with self.subTest(damage=field), self.assertRaises(VerificationError):
+                check_raw_preservation(before, damaged, op)
+
+    def test_curve_point_second_handle_preserves_the_other_pass_through_point(self):
+        before = board()
+        line(before)['connector'].update(shape='curve', turning_points=[{'x': 30, 'y': -30}])
+        after = copy.deepcopy(before)
+        line(after)['connector']['turning_points'].append({'x': 70, 'y': 10})
+        op = {'kind': 'curve_point', 'id': 'line', 'mode': 'segment', 'index': 1,
+              'point': {'x': 170, 'y': 50}}
+        self.assertEqual(check_raw_preservation(before, after, op), [])
+        moved = copy.deepcopy(after)
+        line(moved)['connector']['turning_points'][1] = {'x': 80, 'y': 20}
+        next_op = {'kind': 'curve_point', 'id': 'line', 'mode': 'turning', 'index': 1,
+                   'point': {'x': 180, 'y': 60}}
+        self.assertEqual(check_raw_preservation(after, moved, next_op), [])
+        line(moved)['connector']['turning_points'][0]['x'] += 1
+        with self.assertRaises(VerificationError):
+            check_raw_preservation(after, moved, next_op)
+
     def test_path_checks_canvas_points_and_rejects_noop_or_binding_change(self):
         raw = board()
         line(raw)['connector']['shape'] = 'curve'

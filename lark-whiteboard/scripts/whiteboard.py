@@ -49,6 +49,9 @@ def validate_target(request):
         raise ValueError('Invalid whiteboard token')
     if not isinstance(request.get('operations', []), list):
         raise ValueError('operations must be a list')
+    for key in ('block_id', 'section_id'):
+        if key in request and not re.fullmatch(r'[A-Za-z0-9]+', request[key]):
+            raise ValueError('Invalid document block identifier')
 
 
 def projection(raw):
@@ -58,6 +61,7 @@ def projection(raw):
     for n in nodes:
         kind = {'composite_shape': 'shape', 'connector': 'connector', 'group': 'group'}.get(n.get('type'), 'other')
         v = dict(id=n['id'], kind=kind, **{k: n.get(k, 0) for k in ('x', 'y', 'width', 'height')})
+        v['style'] = {k: value.lower() if k.endswith('_color') else value for k, value in n.get('style', {}).items() if k in ('border_color', 'fill_color', 'border_style')}
         if 'text' in n:
             v.update(text=n['text'].get('text', ''), font_size=n['text'].get('font_size', 0))
         if kind == 'shape':
@@ -67,8 +71,14 @@ def projection(raw):
             for side in ('start', 'end'):
                 endpoint = c.get(side + '_object') or c.get(side, {}).get('attached_object', {})
                 v[side + '_id'] = endpoint.get('id', '')
+                if endpoint.get('position'):
+                    v[side + '_anchor'] = {k:endpoint[k] for k in ('snap_to','position')}
                 v[side + '_arrow'] = c.get(side, {}).get('arrow_style', 'none')
-            v.update(shape=c.get('shape', ''), caption='\n'.join(t.get('text', '') for t in c.get('captions', {}).get('data', [])))
+            caption_texts = [t.get('text', '') for t in c.get('captions', {}).get('data', [])]
+            v.update(shape=c.get('shape', ''), caption='\n'.join(caption_texts), caption_texts=caption_texts,
+                     caption_position=c.get('caption_position', 0.5) if caption_texts else None,
+                     caption_position_type=c.get('caption_position_type', 0) if caption_texts else None,
+                     caption_auto_direction=c.get('caption_auto_direction', False))
         if kind == 'group':
             v['children'] = sorted(n.get('children', []))
         if n['id'] in parents:
@@ -77,11 +87,21 @@ def projection(raw):
     return sorted(result, key=lambda n: n['id'])
 
 
+def caption_position_equivalent(a, b):
+    if a is None or b is None:
+        return a is None and b is None
+    return (isinstance(a, (int, float)) and not isinstance(a, bool)
+            and isinstance(b, (int, float)) and not isinstance(b, bool)
+            and math.isfinite(a) and math.isfinite(b) and abs(a-b) <= 1e-6)
+
+
 def equivalent(a, b):
     if isinstance(a, (int, float)) and not isinstance(a, bool) and isinstance(b, (int, float)) and not isinstance(b, bool):
         return math.isfinite(a) and math.isfinite(b) and abs(a-b) < 0.02
     if isinstance(a, dict) and isinstance(b, dict):
-        return a.keys() == b.keys() and all(equivalent(a[k], b[k]) for k in a)
+        return a.keys() == b.keys() and all(
+            caption_position_equivalent(a[k], b[k]) if k == 'caption_position' else equivalent(a[k], b[k])
+            for k in a)
     if isinstance(a, list) and isinstance(b, list):
         return len(a) == len(b) and all(equivalent(x, y) for x, y in zip(a, b))
     return a == b
@@ -99,6 +119,10 @@ def check_scope(before, after, op):
     for ident in list(ids):
         ids.update(lookup.get(ident, {}).get('children', []))
     allowed = ids | {n['id'] for n in before if n.get('start_id') in ids or n.get('end_id') in ids}
+    if op['kind'] in ('caption', 'caption_position'):
+        if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
+            raise VerificationError('Caption operation requires unique object IDs')
+        allowed = {op.get('id')}
     if op['kind'] == 'reconnect':
         allowed.add(op['end_id'])
     if op['kind'] == 'connect':
@@ -122,6 +146,24 @@ def check_scope(before, after, op):
     return delta
 
 
+def validate_caption_operation(node, op):
+    if not node or node.get('kind') != 'connector':
+        raise VerificationError('Caption operation requires an existing connector')
+    texts = node.get('caption_texts')
+    if not isinstance(texts, list) or len(texts) > 1 or any(not isinstance(t, str) for t in texts):
+        raise VerificationError('Only a single connector caption is supported')
+    if op['kind'] == 'caption':
+        if not isinstance(op.get('text'), str):
+            raise VerificationError('Caption text must be a string')
+    else:
+        position = op.get('position')
+        if len(texts) != 1 or type(node.get('caption_position_type')) is not int or node['caption_position_type'] != 0:
+            raise VerificationError('Caption position requires one caption with position type 0')
+        if (not isinstance(position, (int, float)) or isinstance(position, bool)
+                or not math.isfinite(position) or not 0 <= position <= 1):
+            raise VerificationError('Caption position must be a finite number in [0, 1]')
+
+
 def check_intent(before, after, op, delta=None):
     """Verify requested outcomes, rather than treating absence of damage as success."""
     a, b = ({n['id']: n for n in nodes} for nodes in (before, after))
@@ -130,9 +172,30 @@ def check_intent(before, after, op, delta=None):
     def require(condition):
         if not condition:
             raise VerificationError('Requested operation postcondition failed: ' + kind)
-    for field, operation, parameter in [('text','text','text'), ('font_size','font','font_size'), ('caption','caption','text'), ('shape','line_type','shape'), ('end_id','reconnect','end_id')]:
+    for field, operation, parameter in [('text','text','text'), ('font_size','font','font_size'), ('shape','line_type','shape'), ('end_id','reconnect','end_id')]:
         if kind == operation:
             require(ident in b and equivalent(b[ident].get(field), op[parameter]))
+    if kind in ('caption', 'caption_position'):
+        validate_caption_operation(a.get(ident), op)
+        require(ident in b and b[ident].get('kind') == 'connector')
+        old, new = a[ident], b[ident]
+        editable = {'caption_position'}
+        if kind == 'caption':
+            wanted = [op['text']] if op['text'] else []
+            require(new.get('caption_texts') == wanted and new.get('caption') == op['text'])
+            editable = {'caption', 'caption_texts'}
+            if not wanted:
+                require(new.get('caption_position') is None and new.get('caption_position_type') is None)
+                editable.update(('caption_position', 'caption_position_type'))
+            elif not old['caption_texts']:
+                require(caption_position_equivalent(new.get('caption_position'), 0.5)
+                        and type(new.get('caption_position_type')) is int and new['caption_position_type'] == 0)
+                editable.update(('caption_position', 'caption_position_type'))
+        else:
+            require(new.get('caption_texts') == old['caption_texts']
+                    and caption_position_equivalent(new.get('caption_position'), op['position']))
+        require(equivalent({k:v for k,v in old.items() if k not in editable},
+                           {k:v for k,v in new.items() if k not in editable}))
     if kind == 'resize':
         require(all(equivalent(b[ident][k], op[k]) for k in ('width', 'height')))
     if kind == 'move':
@@ -140,6 +203,11 @@ def check_intent(before, after, op, delta=None):
             require(equivalent(b[node_id]['x'], a[node_id]['x'] + op['dx']) and equivalent(b[node_id]['y'], a[node_id]['y'] + op['dy']))
     if kind == 'arrow':
         require(b[ident]['start_arrow'] == op['start'] and b[ident]['end_arrow'] == op['end'])
+    if kind == 'style':
+        require(all(b[ident]['style'].get(k) == (v.lower() if k.endswith('_color') else v) for k,v in op['style'].items()))
+    if kind == 'anchors':
+        require(all(equivalent(b[ident].get(side+'_anchor'),op[side]) for side in ('start','end') if side in op))
+        require(all(b[ident].get(side+'_id') == a[ident].get(side+'_id') for side in ('start','end')))
     if kind == 'group':
         added = set(b) - set(a)
         require(len(added) == 1)
@@ -181,6 +249,36 @@ def check_raw_preservation(before, after, op):
     """Compare all raw properties, exempting only operation-owned fields."""
     import copy
     a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
+    if op['kind'] in ('caption', 'caption_position'):
+        if a.keys() != b.keys() or len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
+            raise VerificationError('Caption operation changed the object ID set or duplicated an ID')
+        check_intent(projection(before), projection(after), op)
+        target = op['id']
+        for ident in a:
+            left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
+            if ident == target:
+                lc, rc = left['connector'], right['connector']
+                if op['kind'] == 'caption_position':
+                    lc.pop('caption_position', None)
+                    rc.pop('caption_position', None)
+                elif not op['text']:
+                    for field in ('captions', 'caption_position', 'caption_position_type'):
+                        if field in rc:
+                            raise VerificationError('Clearing a caption must remove its caption and position fields')
+                        lc.pop(field, None)
+                elif lc.get('captions', {}).get('data'):
+                    lc['captions']['data'][0].pop('text', None)
+                    rc['captions']['data'][0].pop('text', None)
+                else:
+                    for field in ('captions', 'caption_position', 'caption_position_type'):
+                        if field != 'captions' and field in lc and lc[field] != rc.get(field):
+                            raise VerificationError('Adding a caption changed an existing position field')
+                        lc.pop(field, None)
+                        rc.pop(field, None)
+            # Caption edits do not move, restyle or restack any existing object.
+            if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
+                raise VerificationError('Unexpected raw property change on object ' + ident)
+        return []
     ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
     for ident in list(ids):
         ids.update(a.get(ident, {}).get('children', []))
@@ -205,9 +303,15 @@ def check_raw_preservation(before, after, op):
             if c:
                 paths += [('connector','turning_points')]
         if ident in ids:
+            if kind == 'style':
+                paths += [('style',k) for k in op['style']]
+                paths += [('style',k+'_type') for k in op['style'] if k.endswith('_color')]
+            if kind == 'anchors':
+                paths += [('connector',side+'_object',k) for side in ('start','end') if side in op for k in ('position','snap_to')]
+                paths += [('connector',side,'attached_object',k) for side in ('start','end') if side in op for k in ('position','snap_to')]
+                paths += [('connector','turning_points')] + [(k,) for k in ('x','y','width','height')]
             paths += {'text':[('text','text')], 'font':[('text','font_size')],
                       'arrow':[('connector','start','arrow_style'),('connector','end','arrow_style')],
-                      'caption':[('connector','captions'),('connector','caption_position'),('connector','caption_position_type')],
                       'line_type':[('connector','shape'),('connector','turning_points')],
                       'reconnect':[('connector','end_object'),('connector','end','attached_object'),('connector','turning_points')],
                       'group':[('parent_id',)], 'ungroup':[('parent_id',)]}.get(kind, [])
@@ -351,7 +455,19 @@ class Runner:
         self.token, self.task = session['taskToken'], session['taskId']
         target = self.call('/v2/tabs', {'url': self.request['document_url'], 'background': True})
         self.tab = target['targetId']
-        self.call('/v2/tabs/' + self.tab + '/wait', {'selector': '.whiteboard-canvas-container', 'timeoutMs': 15000})
+        base = '/v2/tabs/' + self.tab
+        if self.request.get('section_id'):
+            # Click only an actual document-outline link observed in this page.
+            selector = 'a[href="#' + self.request['section_id'] + '"]'
+            self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
+            self.call(base + '/click', {'selector': selector})
+        selector = '.whiteboard-canvas-container'
+        if self.request.get('block_id'):
+            block = '[data-record-id="' + self.request['block_id'] + '"]'
+            self.call(base + '/wait', {'selector': block, 'timeoutMs': 15000})
+            self.call(base + '/eval', {'expression': 'document.querySelector(' + json.dumps(block) + ').scrollIntoView({block:"center"})'})
+            selector = block + ' .whiteboard-canvas-container'
+        self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
 
     def hydrate(self, raw):
         deadline = time.monotonic() + min(self.timeout, 20)
@@ -389,6 +505,8 @@ class Runner:
                 continue
             actual = dict(op)
             reject_nested_groups(state['nodes'], op)
+            if op['kind'] in ('caption', 'caption_position'):
+                validate_caption_operation(next((n for n in state['nodes'] if n['id'] == op.get('id')), None), op)
             if op['kind'] == 'undo':
                 if previous_delete is None:
                     raise VerificationError('Undo is only allowed immediately after this session\'s delete')
@@ -436,9 +554,10 @@ class Runner:
                     if endpoint.get('id') not in shape_lookup or endpoint != c.get(side, {}).get('attached_object'):
                         raise ValueError('Append connector has missing or conflicting native shape endpoint')
                 start,end = (shape_lookup[c[side + '_object']['id']] for side in ('start','end'))
-                sx,sy = start['x']+start['width'], start['y']+start['height']/2
-                ex,ey = end['x'],end['y']+end['height']/2
-                if not equivalent([n['x'],n['y'],n['width'],n['height']], [sx,sy,ex-sx,ey-sy]):
+                sp,ep = (c[side + '_object']['position'] for side in ('start','end'))
+                sx,sy = start['x']+start['width']*sp['x'], start['y']+start['height']*sp['y']
+                ex,ey = end['x']+end['width']*ep['x'],end['y']+end['height']*ep['y']
+                if not equivalent([n['x'],n['y'],n['width'],n['height']], [min(sx,ex),min(sy,ey),abs(ex-sx),abs(ey-sy)]):
                     raise ValueError('Connector geometry is stale or uses unsupported anchors')
         before = projection(raw)
         self.open_page()

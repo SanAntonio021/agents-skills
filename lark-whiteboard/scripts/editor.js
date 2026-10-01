@@ -33,16 +33,31 @@
     const v = {id: n.id, kind: i.connectorV2 ? 'connector' : i.compositeShape ? 'shape' : n.children?.length ? 'group' : 'other',
       x:b.x, y:b.y, width:b.width, height:b.height};
     if (i.textV2) {v.text = i.textV2.text; v.font_size = i.textV2.fontSize;}
+    const theme=i.theme||{}, hex=c=>'#'+(c&0xffffff).toString(16).padStart(6,'0');
+    v.style={};
+    const border=i.connectorV2?theme.connectColor:theme.borderColorCode;
+    if(border>=0 && theme.borderColorCodeType===1)v.style.border_color=hex(border);
+    else if(typeof n.borderProps?.borderColor==='string')v.style.border_color=n.borderProps.borderColor.toLowerCase();
+    if(i.compositeShape && theme.fillColorCode>=0 && theme.fillCodeType===1)v.style.fill_color=hex(theme.fillColorCode);
+    else if(i.compositeShape && typeof n.colorProps?.color==='string')v.style.fill_color=n.colorProps.color.toLowerCase();
+    const dash=i.connectorV2?theme.connectStyleCode:theme.borderStyleCode;
+    if(dash>=1&&dash<=3)v.style.border_style=['','solid','dash','dot'][dash];
     if (i.compositeShape) v.shape = i.compositeShape.shapeType === 8 ? 'round_rect' : i.compositeShape.shapeType === 11 ? 'rect' : 'unsupported';
     if (n.parent?.id && a.nodeManager.nodeMap.has(n.parent.id)) v.parent_id = n.parent.id;
     if (n.children?.length) v.children = n.children.map(x => x.id).sort();
     if (i.connectorV2) {
       const c = i.connectorV2, arrows = i.borderV2?.borderStyleItem?.advanceSettings;
       v.start_id = c.startObject?.objectId || ''; v.end_id = c.endObject?.objectId || '';
-      v.shape = c.shape === 0 ? 'straight' : c.shape === 1 ? 'polyline' : 'unsupported';
+      for(const side of ['start','end']) {const e=c[side+'Object']; if(e?.position)v[side+'_anchor']={snap_to:['','top','right','bottom','left'][e.snapTo],position:{x:e.position.x,y:e.position.y}};}
+      v.shape = c.shape === 0 ? 'straight' : c.shape === 1 ? 'polyline' : c.shape === 3 ? 'right_angled_polyline' : 'unsupported';
       v.start_arrow = arrows?.start === 0 ? 'none' : arrows?.start === 1 ? 'line_arrow' : 'unsupported';
       v.end_arrow = arrows?.end === 0 ? 'none' : arrows?.end === 1 ? 'line_arrow' : 'unsupported';
-      v.caption = (c.captions?.data || []).map(c => c.textStyle?.text || '').join('\n');
+      const captions=c.captions?.data || [];
+      v.caption_texts=captions.map(c => c.textStyle?.text || '');
+      v.caption=v.caption_texts.join('\n');
+      v.caption_position=captions.length ? captions[0].t ?? 0.5 : null;
+      v.caption_position_type=captions.length ? captions[0].positionType ?? 0 : null;
+      v.caption_auto_direction=captions[0]?.autoDirection ?? false;
     }
     return v;
   }).sort((x,y) => x.id.localeCompare(y.id, 'en'));
@@ -51,7 +66,10 @@
     + a.actionManager.execAction.toString();
   let h = 2166136261; for (let j = 0; j < sources.length; j++) {h ^= sources.charCodeAt(j); h = Math.imul(h, 16777619);}
   const signature = (h >>> 0).toString(16);
-  const result = () => ({nodes:snapshot(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature});
+  const textSources=[a.api.selectNodeText,a.inputManager?.processInput,a.inputManager?.blur].map(f=>f?.toString() || '').join('');
+  let th=2166136261;for(let j=0;j<textSources.length;j++){th^=textSources.charCodeAt(j);th=Math.imul(th,16777619);}
+  const textSignature=(th>>>0).toString(16);
+  const result = () => ({nodes:snapshot(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
@@ -97,7 +115,10 @@
   };
   const transaction = (types, work) => {
     a.actionManager.execAction(new types.Start());
-    try {work((id, props) => a.actionManager.execAction(new types.Update([{id, props}])));}
+    try {work((id, props) => {
+      const action=new types.Update([{id, props}]);
+      return a.actionManager.execAction(action);
+    });}
     finally {a.actionManager.execAction(new types.End());}
   };
   switch (op.kind) {
@@ -113,10 +134,38 @@
     case 'arrow': line(op.id);arrows(op.start);arrows(op.end);selected([op.id]);cmd('LineArrow',{lArrow:arrows(op.start),rArrow:arrows(op.end)});break;
     case 'caption': {
       const n=line(op.id);text(op.text);
-      if (a.api.graphicNodeToPageNode(n).info.connectorV2.captions?.data?.length) fail('CAPTION_REPLACEMENT_NOT_VERIFIED');
-      selected([op.id]);cmd('LineTextAdd');a.inputManager.processInput(op.text);a.inputManager.blur();break;
+      const captions=a.api.graphicNodeToPageNode(n).info.connectorV2.captions?.data || [];
+      if(captions.length>1)fail('MULTIPLE_CAPTIONS_NOT_VERIFIED');
+      if(textSignature!=='7e805832')fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      if(!captions.length && !op.text)break;
+      selected([op.id]);
+      if(captions.length)a.api.selectNodeText(n);else cmd('LineTextAdd');
+      if(a.inputManager.textInfo?.node?.id!==n.id || a.inputManager.textInfo?.inputableText?.type!==3 || a.inputManager.inputStatus!=='focusing')fail('CAPTION_INPUT_TARGET_MISMATCH');
+      a.inputManager.processInput(op.text);a.inputManager.blur();break;
+    }
+    case 'caption_position': {
+      const n=line(op.id),p=n.captionsProps;
+      if(p?.type!==10 || !Array.isArray(p.captions) || p.captions.length!==1 || p.captions[0].positionType!==0)fail('CAPTION_POSITION_NOT_VERIFIED');
+      number(op.position);if(op.position<0 || op.position>1)fail('CAPTION_POSITION_OUT_OF_RANGE');
+      const t=actionTypes(),copy=p.clone();copy.captions[0].t=op.position;
+      transaction(t,update=>update(n.id,[copy]));break;
     }
     case 'line_type': line(op.id);if(!['straight','polyline'].includes(op.shape))fail('UNSUPPORTED_LINE_TYPE');selected([op.id]);cmd('LineType',{lineType:op.shape==='straight'?0:1});break;
+    case 'style': fail('STYLE_EDIT_NOT_VERIFIED');break;
+    case 'anchors': {
+      const n=line(op.id), t=actionTypes(), p=n.attachProps.clone();
+      if(!op.start&&!op.end)fail('ANCHOR_REQUIRED');
+      for(const side of ['start','end'])if(op[side]){
+        const e=op[side], s=['','top','right','bottom','left'].indexOf(e.snap_to), pos=e.position;
+        if(s<1||!pos||![pos.x,pos.y].every(v=>Number.isFinite(v)&&v>=0&&v<=1))fail('INVALID_ANCHOR');
+        if((s===1&&pos.y!==0)||(s===2&&pos.x!==1)||(s===3&&pos.y!==1)||(s===4&&pos.x!==0))fail('ANCHOR_NOT_ON_EDGE');
+        p[side].snapTo=s;p[side].position={x:pos.x,y:pos.y};
+      }
+      transaction(t,update=>update(n.id,[p]));selected([n.attachProps.start.id,n.attachProps.end.id]);
+      // A zero move can leave cached line geometry unchanged. Native paired moves
+      // refresh bindings while returning both modules to their original positions.
+      cmd('Move',{dx:1,dy:0});cmd('Move',{dx:-1,dy:0});break;
+    }
     case 'reconnect': {
       const n=line(op.id);shape(op.end_id);const oldId=n.attachProps.end.id;
       if (oldId===op.end_id) break;
@@ -168,7 +217,7 @@
   }
   const count=depth()-depthBefore;
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
-  const max=op.kind==='connect'?3:['resize','reconnect','caption'].includes(op.kind)?2:1;
+  const max=['connect','anchors'].includes(op.kind)?3:['resize','reconnect','caption'].includes(op.kind)?2:1;
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
   return {...result(), before, transaction_count:count,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};

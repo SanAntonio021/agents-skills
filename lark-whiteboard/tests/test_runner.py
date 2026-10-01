@@ -10,6 +10,22 @@ from native_nodes import compile_diagram
 
 
 class Boundaries(unittest.TestCase):
+    def test_compiler_visual_options_and_reverse_anchors(self):
+        raw = compile_diagram(dict(shapes=[dict(id='a',x=300,y=100,width=100,height=80,fill_color='#fff0cc'),dict(id='b',x=0,y=0,width=100,height=80)], connectors=[dict(id='c',start_id='a',end_id='b',start_anchor=dict(side='top',offset=.25),end_anchor=dict(side='bottom'),border_color='#ff8800',border_style='dash',shape='right_angled_polyline',label='signal')]))
+        self.assertEqual(raw['nodes'][0]['style']['fill_color'], '#fff0cc')
+        line = raw['nodes'][-1]
+        self.assertEqual(line['connector']['start']['attached_object']['position'], dict(x=.25,y=0))
+        self.assertEqual(line['connector']['end']['attached_object']['snap_to'], 'bottom')
+        self.assertGreaterEqual(line['width'],0)
+        self.assertGreaterEqual(line['height'],0)
+        self.assertEqual(line['style']['border_style'],'dash')
+        self.assertEqual(line['connector']['captions']['data'][0]['text'],'signal')
+
+    def test_compiler_invalid_visual_options(self):
+        shapes=[dict(id='a',x=0,y=0,width=100,height=80),dict(id='b',x=200,y=0,width=100,height=80)]
+        for extra in [dict(border_color='red'),dict(border_style='dashed'),dict(shape='magic'),dict(start_anchor=dict(side='center')),dict(end_anchor=dict(side='top',offset=float('nan'))),dict(label=2)]:
+            with self.assertRaises(ValueError):
+                compile_diagram(dict(shapes=shapes,connectors=[dict(id='c',start_id='a',end_id='b',**extra)]))
     def test_undo_only_accepts_observed_unlocked_default(self):
         before = {'nodes':[dict(id='line',type='connector')]}
         restored = {'nodes':[dict(id='line',type='connector',locked=False)]}

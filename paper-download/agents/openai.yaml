@@ -1,7 +1,7 @@
 interface:
   display_name: "论文下载"
   short_description: "论文 PDF 下载到 Zotero，先查重再补附件，复用机构登录"
-  default_prompt: "Use $paper-download to check Zotero for existing items and usable attachments, use the browser to obtain only missing requested versions, and verify PDFs stored under matching items. Reuse the article or research task collection and preserve other memberships. Keep paper reading notes about the source paper; put manuscript-specific citation planning in its existing workspace materials. Reuse browser sign-in and autofill without reading credentials. Create local exports or indexes only when requested or required by the project."
+  default_prompt: "Use $paper-download to check Zotero and the task collection, then obtain only missing requested versions. Prefer an existing host-permitted local credential/download helper for authorized institutional access; inspect readiness and the same session before login, and continue through PDF verification, native Zotero import and readback. Keep passwords inside the local executor and OS credential store; never expose them to the model. Distinguish environment readiness, login, article permission, verified PDF and saved attachment. Respect host denials and user verification; do not repeat unknown submissions. Preserve memberships, annotations and existing notes. Create local exports or indexes only when requested or required."
 
 policy:
   allow_implicit_invocation: true

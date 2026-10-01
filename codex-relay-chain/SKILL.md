@@ -3,7 +3,7 @@ name: codex-relay-chain
 description: >
   Windows 上诊断和维护 Codex、CodexCont、CC Switch 及中转站的配置和请求链路。
   用于 provider 切换、认证失效、配置反复覆盖、代理回环、Responses SSE 缺陷、
-  Common Config 与任务设置差异、权限模式、旧任务认证及云端备份恢复问题。
+  Common Config 与任务设置差异、权限模式、Windows 初始化、旧任务认证及云端备份恢复问题。
   按具体故障选择检查；只读诊断不自动改配置或发送模型请求。
 ---
 
@@ -61,7 +61,7 @@ Desktop 自己维护的新任务默认值和任务级设置不属于 watcher 接
 
 ## 按问题读取
 
-- 配置归属、权限模式、Common Config、OAuth、旧任务认证或云端恢复：[配置与认证](references/configuration-and-auth.md)。
+- 配置归属、权限模式、Windows 初始化、Common Config、OAuth、旧任务认证或云端恢复：[配置与认证](references/configuration-and-auth.md)。
 - 端口、provider、代理回环、key 覆盖、watcher、停用或恢复链路：[模式与供应商](references/relay-modes-and-providers.md)。
 - 流式文本、reasoning 字段、502/503/524 分层归因及上游修复能力：[Responses 验证](references/responses-validation.md)。
 

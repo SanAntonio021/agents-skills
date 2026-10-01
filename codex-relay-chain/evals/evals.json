@@ -294,6 +294,18 @@
         "不把 Apply/Verify 或监听正常升级为端到端通过",
         "需要真实链路验收时仍保留实际 SSE 标准，普通局部改动不机械要求 60 秒观察"
       ]
+    },
+    {
+      "id": 27,
+      "prompt": "仅根据故障机提供的材料提出下一步，不在本机修改系统：Codex 首页 Windows 设置未完成，管理员启动重试仍失败；CodexSandboxService.OpenAI.Codex 为 Running/Automatic，普通日志目录与 .sandbox 都不存在，但 Store 包的 LocalCache 日志存在，末尾全是 hostId=durable 的 Sign in to ChatGPT to start a durable thread.。同一包内 doctor --json 显示 active provider requires OpenAI auth=false、sandbox backend=elevated、sandbox provisioning=incomplete，并建议从管理员 shell 运行 sandbox setup --elevated --user <end-user> --codex-home <authoritative-home>。用户已明确要求修好；已核实目标账户为 LabUser，CODEX_HOME=C:\\Users\\LabUser\\.codex，当前版本的 setup --help 支持这三个参数。请给用户简短、可直接操作的步骤。",
+      "expected_output": "应把 provisioning incomplete 作为已确认的初始化失败环节，而不是根因；不归因于云端登录、Defender、服务停止或工作空间依赖。复用修复授权，先保护活动任务并退出应用，再在管理员 PowerShell 用同一 AppX 包内 codex.exe 执行填实的一行 elevated setup，显式指定 LabUser 和 C:\\Users\\LabUser\\.codex，说明会创建或修复 sandbox 账户和权限。收取完整输出；成功后重新打开应用，确认横幅消失，并用新聊天执行 Get-Date 等无害命令验收。不得修改维护机、provider、认证、Common Config，不删除 .codex，不宣称建议已执行。",
+      "files": [],
+      "expectations": [
+        "从 provisioning incomplete 定位初始化层，不把 durable 登录报错或 Running 服务当作本地初始化结论",
+        "使用已核实的目标账户和 CODEX_HOME，给出同一包内 CLI 的一行手动初始化命令",
+        "复用修复授权并说明实际系统初始化影响，不重装无关依赖或改 provider",
+        "验收包含应用横幅与真实本地命令，成功文案不替代最终可用性"
+      ]
     }
   ]
 }

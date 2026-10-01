@@ -20,6 +20,49 @@
 - CC Switch 程序：运行中用 `(Get-Process -Name cc-switch -ErrorAction Stop).Path` 读取；未运行时从已确认的快捷方式或安装记录解析，启动前不猜路径。
 
 
+### Windows 桌面提示“Windows 设置未完成”
+
+首页的 Windows 初始化横幅与设置页的 Node.js/Python 工作空间依赖是不同入口。先确认失败层，
+不要直接重装依赖或改 provider。维护机的账户、日志路径和正常状态不能代替故障机证据。
+
+优先从故障机的实际安装包调用内置诊断；Store 包可使用这一行：
+
+```powershell
+$taskPkg = Get-AppxPackage -Name OpenAI.Codex; & (Join-Path $taskPkg.InstallLocation 'app\resources\codex.exe') doctor --json
+```
+
+包不存在时先核对实际安装位置，不改用 PATH 中可能属于另一版本的 `codex`。
+诊断可能几十秒后统一输出；报告中的应用运行状态、普通日志路径也需结合实际进程和包目录核对。
+
+1. 以 `sandbox.helpers` 的 backend、provisioning 和 remediation 判断初始化状态；服务
+   `CodexSandboxService.OpenAI.Codex` 显示 Running 不代表当前用户已完成 provisioning。
+   `incomplete` 只确认未完成，不能反推为 Defender、UAC 或某条策略阻止。
+2. `hostId=durable` / WebSocket 的 `Sign in to ChatGPT to start a durable thread.` 属于云端会话
+   连接。活动 provider 不需要 OpenAI 认证时，不把它当作本地 Windows 初始化失败的原因。
+   诊断中缺少可选 MCP 环境变量或检测到安全软件，也不能单独证明本次故障根因。
+3. 已获准修复且诊断建议 elevated setup 时，先用同一二进制的 `sandbox setup --help` 核对语法，
+   保护活动任务并完全退出应用后再初始化。
+   已核验的 CLI 0.159.2 支持 `sandbox setup --elevated --user <end-user> --codex-home <authoritative-home>`。
+   在管理员 PowerShell 中执行，显式填入已核实的目标账户和 CODEX_HOME；提升窗口可能属于另一账户，
+   不盲用 `--current-user`。交给用户粘贴时提供填实的一行命令，避免多行脚本残缺造成 `>>` 等待输入。
+4. 执行前说明实际影响：setup 会创建或修复沙盒账户、目录权限、防火墙规则及初始化状态，
+   并保存 `windows.sandbox`。
+   这是应用自身初始化入口；不能借机改认证、provider 或 CC Switch Common Config。
+   若报 registered Core、service-owned provisioning 或 refusing helper fallback，保留具体错误并转查
+   应用包与服务，不能绕过注册组件、直接跑独立 helper 或删除 `.codex` 碰运气。
+5. 修复指导同时给出最终验收：成功文案只证明初始化命令完成；重新打开应用，确认横幅消失，
+   再用新聊天执行无害的本地命令
+   （如 `Get-Date`）。若初始化成功但横幅仍在，转查应用自己的 readiness，不反复重建初始化状态。
+
+需要日志时同时检查 `%LOCALAPPDATA%\Codex\Logs` 与
+`%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\Codex\Logs`，包名由安装记录取得。
+桌面日志常按日期保存为 `codex-desktop-*.log`；沙盒日志也可能使用日期文件名。
+目录或固定 `sandbox.log` 不存在不能证明没有日志。按初始化关键词和失败时段筛选，避免大量云端重连
+报错淹没目标；正常 setup 失败也可能只传给 UI，不写入桌面文件日志，此时继续用诊断或结构化错误取证。
+
+来源：[官方诊断命令](https://learn.chatgpt.com/docs/developer-commands#codex-doctor)、
+[Windows 沙盒说明](https://learn.chatgpt.com/docs/windows/windows-sandbox)；版本相关入口与日志位置使用前现场核对。
+
 ### CC Switch 云端备份恢复
 
 遇到 WebDAV/坚果云下载转圈、结束后配置未变，或用户询问恢复是否成功时，先核对以下证据：

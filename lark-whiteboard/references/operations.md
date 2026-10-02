@@ -99,6 +99,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 
 组合 ID 由编辑器分配，禁止预猜。需要组合后移动时，先完成组合调用并读取新 ID，再发下一次请求。
 独立文字保留文本框身份，可以改字、字号、字色、移动和尺寸；不自动迁入形状。连线不支持填充色；没有标签时须先添加标签才能改标签字色。
+已有一层组合的成员可以沿用 text / font / style / caption / caption_format / caption_position / arrow / line_type / path / curve_point / move / resize，直接提供成员 ID。未改成员的世界位置、属性及成员关系保持；父组只有经过成员几何核验的包围框变化可放行。同一步不能把组合及成员同时加入 ids，不能在组内增加或删除成员；旋转组或含旋转成员的组、复杂嵌套先拒绝写入。锚点刷新仍限两端均绑定的线，并在任何事务前核对实际需要临时移动的端点和关联锁定对象。
 独立文字改字或字号时，原生编辑器可能按内容调整高度；验收仅对此放行目标文本框高度，仍保护原点、宽度、其他格式和无关对象。尺寸操作使用固定尺寸并核对指定宽高。
 
 箭头取值：`none`、`line_arrow`、`triangle_arrow`、`empty_triangle_arrow`、`circle_arrow`、`empty_circle_arrow`、`diamond_arrow`、`empty_diamond_arrow`、`single_arrow`、`multi_arrow`、`exact_single_arrow`、`zero_or_single_arrow`、`single_or_multi_arrow`、`zero_or_multi_arrow`、`x_arrow`。
@@ -114,20 +115,28 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 查看画面时，在请求顶层加 `"capture_preview":true`，可与编辑一起使用，或搭配 `"operations":[]` 只读观察。`inspect-000.json` 保存完整初始检查；编辑结果及 `visual-feedback.json` 的 `label_geometry` 按连线ID给出原生标签占位及屏幕位置，坐标以该次实际视口为准。runner 在自有页面等待两帧一致并排除画板全白的过渡画面，成功写入 `preview.png`，结果 `visual_status` 为 `needs_review`。执行智能体必须实际查看这张图，才能判断文字可见、换行和遮挡；几何数据及截图稳定不等于排版合格。
 若 `visual_status:unavailable`，保存回读结果仍单独记录，使用新的只读观察重取画面，不重放修改。需要挪标签时，先据当前占位和图像选沿线比例或上下模式，改完再取截图。删除与紧接撤销仍在同一请求、同一编辑器中完成，截图在恢复后获取，不打断撤销栈。
 观察入口会以已验原生回调刷新自有画布尺寸，前后必须保持内容、保存序号及撤销栈；被改标签在画面外或被裁切时不给可审截图状态。小数字号可用，CLI raw会将其截成整数，结果记录这一已观察差异；完整字号仍由原生保存和新页面严格核对。
-浏览器合成截图传输失败或连续白帧时，回退为当前原生画布的原始PNG像素，不重画图、不重放修改。`preview_source` 明示 browser_screenshot 或 native_canvas；后者不包含浏览器工具栏，几何屏幕坐标须扣除 `viewport.rect` 原点后对应到图像。两种图像都核对目标文字区域确有像素、两帧稳定，再交执行智能体查看。
+默认先读取当前原生画布PNG，避免慢浏览器截图在超时后仍占用页面；原生图像明确不可用时再尝试浏览器合成截图，不重画图、不重放修改。`preview_source` 明示 browser_screenshot 或 native_canvas；后者不包含浏览器工具栏，几何屏幕坐标须扣除 `viewport.rect` 原点后对应到图像。两种图像都核对目标文字区域确有像素、两帧稳定，再交执行智能体查看。
+浏览器三次可见截图仍不稳定时也执行同一回退，`preview_fallback_reason` 记录原因；转换图像来源不延长原有总超时。
+浏览器单张传输最多等待5秒且不超过本轮剩余预算，给原生回退留出时间；失败结果也保留 `preview_attempts`、回退原因及浏览器错误类型。
 原生画布PNG保留透明背景；查看器显示黑底时应在白底查看器中打开原图，不能把显示背景误判为画板颜色或重新生成图像。
 
 路径操作保持两端绑定和锚点，改变中间走线；自动直角线可先转换线型再读取生成的拐点。所有样式和路径编辑均须保存、服务端回读，不能仅凭页面显示验收。
 `#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。
 曲线形状微调用 `curve_point`，既可处理绑定曲线，也可处理游离曲线。只读 inspect 的 `curve_handles` 按连线 ID 返回 `segment` 和 `turning` 的实际画布坐标；先据此选择手柄，再指定目标经过点，例如 `{"kind":"curve_point","id":"<curve-id>","point":{"x":410,"y":110}}`。再次调用默认移动已有的第一个经过点；需新增第二个点时明确指定 segment 和对应 index，不能把两个 Bezier 控制点当成经过点。
-CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线编辑还须关闭自有页面、重新加载后比较完整原生点列和首末点。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；分组内曲线尚未验证，写前拒绝。
+CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线编辑还须关闭自有页面、重新加载后比较完整原生点列和首末点。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；一层组合内仍按成员 ID 调用并保护父组和其他成员。
 长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。
 
 ## 失败后
 
-先看结果中已完成步骤和最后 raw 快照。CLI/API 错误与页面未保存分开报告。
+先看结果中的全部步骤和最后 raw 快照。每步在提交前建立，不因后续失败而消失；CLI/API 错误与页面未保存分开报告。
+`save_status` 为 not_written / unknown / confirmed，`verification_status` 为 pending / passed / failed，`failure_phase` 指出失败环节。提交前拒绝是 not_written + failed；响应丢失或保存回读超时是 unknown + failed；保存已确认而保护或重开失败是 confirmed + failed；必要数据验收全部完成才是 confirmed + passed。删除等待紧接撤销重开验收期间暂为 pending。
+`visual_status` 仍独立记录图像是否可审。`pages` 和 `cleanup_receipts` 记录每次自有页面与换页/关闭回执，凭据不落盘；关闭超时按未知关闭状态报告，不能把 task 终态当成页面必已关闭。
+保存稳定时间在未保存或服务端暂未就绪时重新计算，但总超时不延长。预览核对同一内容、保存序号、视口和实际像素比例；视口变化重新采样，内容变化停止观察。
+一层组的 `group_cache_normalizations` 记录服务端父包围框与原生完整成员推导框的差异；不表示旧缓存已经更新。成员 ID、成员关系和其他组字段继续严格保护。`raw_exceptions` 仅列已取得真实证据的具体序列化差异。
+重开时服务端可能才更新这四个缓存字段；只有完整成员和其他组属性严格不变、最新值与原生完整成员范围相符时，才在 `server_group_cache_catchup` 记录延迟更新。其他变化仍视为冲突。
+追加入口将新节点的相对层序映射到现有根对象的最高层之后，结果给出 `append_layer_assignment`，保存回读再核对实际层号；原对象层号仍须完全保持。
 未知写入结果不自动重试；重新读取确认真实状态后，只补尚未执行的修改。
 无模板建线分两阶段。`connect-receipt-*.json` 保存一次提交的幂等标识，`connect-appended-*.json` 保存已回读的新线ID；若后续绑定失败，只对该ID补绑定，不能重建同一条线。
 原始快照提供恢复依据，但恢复也应以最新状态逐对象处理，不能自动把旧快照整板覆盖回去。

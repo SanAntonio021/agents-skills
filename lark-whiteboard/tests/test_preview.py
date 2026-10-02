@@ -52,11 +52,14 @@ class Preview(unittest.TestCase):
     def runner(self, directory):
         runner = object.__new__(Runner)
         runner.output, runner.timeout, runner.report, runner.request = Path(directory), 45, {}, {}
+        # Exercise the browser-first fallback branches separately from the
+        # production native preference, without altering returned page data.
+        runner.prefer_native_preview = False
         state = dict(nodes=[dict(id='a',x=1)],render_alpha={'a':{'border':1}},
                      line_endpoints={},seq=1,savedSeq=1,
                      viewport=dict(rect=dict(x=4,y=4,width=8,height=8),device_pixel_ratio=1))
         runner.editor = lambda op, expected=None: self.assertIn(op['kind'],('inspect','observe')) or copy.deepcopy(state)
-        runner.screenshot = lambda: png((4,4,12,12))
+        runner.screenshot = lambda **kwargs: png((4,4,12,12))
         return runner, state
 
     def test_two_stable_frames_require_human_image_review(self):
@@ -66,6 +69,24 @@ class Preview(unittest.TestCase):
             self.assertEqual(runner.report['visual_status'],'needs_review')
             self.assertTrue((runner.output/'preview.png').is_file())
             self.assertTrue((runner.output/'visual-feedback.json').is_file())
+
+    def test_native_preference_avoids_browser_capture_lock(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+            runner,state = self.runner(directory)
+            runner.prefer_native_preview = True
+            state['viewport']['rect'] = dict(x=0,y=0,width=16,height=16)
+            frame = png((4,4,12,12))
+            def editor(op,expected=None):
+                if op['kind']=='canvas_preview':
+                    return dict(viewport=copy.deepcopy(state['viewport']),
+                                data_url='data:image/png;base64,'+base64.b64encode(frame).decode())
+                return copy.deepcopy(state)
+            runner.editor = editor
+            runner.screenshot = lambda **kwargs: self.fail('Native preference must not start browser capture')
+            runner.capture_preview()
+            self.assertEqual(runner.report['preview_source'],'native_canvas')
+            self.assertEqual(runner.report['visual_status'],'needs_review')
+            self.assertEqual((runner.output/'preview.png').read_bytes(),frame)
 
     def test_observation_drift_stops_without_edit_replay(self):
         with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
@@ -80,9 +101,9 @@ class Preview(unittest.TestCase):
             self.assertFalse((runner.output/'preview.png').exists())
 
     def test_white_transition_timeout_is_unavailable_not_visual_pass(self):
-        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,13]):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
             runner, _ = self.runner(directory)
-            runner.screenshot = lambda: png()
+            runner.screenshot = lambda **kwargs: png()
             runner.capture_preview()
             self.assertEqual(runner.report['visual_status'],'unavailable')
             self.assertFalse((runner.output/'preview.png').exists())
@@ -110,11 +131,11 @@ class Preview(unittest.TestCase):
             self.assertEqual(runner.report['visual_status'],'unavailable')
 
     def test_visible_ui_or_other_objects_cannot_replace_target_label_pixels(self):
-        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,13]):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
             runner, state = self.runner(directory)
             state['nodes'] = [dict(id='line',kind='connector',caption_texts=['caption'])]
             state['label_geometry'] = {'line':dict(available=True,screen_rect=dict(x=4,y=4,width=4,height=4))}
-            runner.screenshot = lambda: png((8,4,12,12))
+            runner.screenshot = lambda **kwargs: png((8,4,12,12))
             runner.capture_preview()
             self.assertEqual(runner.report['visual_status'],'unavailable')
             self.assertFalse((runner.output/'preview.png').exists())
@@ -127,13 +148,15 @@ class Preview(unittest.TestCase):
             state['label_geometry'] = {'line':dict(available=True,screen_rect=dict(x=14,y=24,width=8,height=8))}
             frame = png((4,4,12,12))
             calls = []
-            def screenshot():
+            def screenshot(**kwargs):
                 calls.append('screenshot')
+                self.assertGreater(kwargs['timeout'],0)
+                self.assertLessEqual(kwargs['timeout'],5)
                 raise OSError('Transport failure')
             def editor(op, expected=None):
                 if op['kind'] == 'canvas_preview':
                     self.assertEqual(expected,state['nodes'])
-                    return dict(data_url='data:image/png;base64,'+base64.b64encode(frame).decode())
+                    return dict(data_url='data:image/png;base64,'+base64.b64encode(frame).decode(), viewport=copy.deepcopy(state['viewport']))
                 self.assertIn(op['kind'],('inspect','observe'))
                 return copy.deepcopy(state)
             runner.editor, runner.screenshot = editor, screenshot
@@ -142,6 +165,83 @@ class Preview(unittest.TestCase):
             self.assertEqual(runner.report['preview_source'],'native_canvas')
             self.assertEqual(runner.report['visual_status'],'needs_review')
             self.assertEqual((runner.output/'preview.png').read_bytes(),frame)
+
+    def test_hidden_content_save_sequence_change_stops_after_screenshot(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+            runner,state = self.runner(directory)
+            inspections = 0
+            def editor(op,expected=None):
+                nonlocal inspections
+                result = copy.deepcopy(state)
+                if op['kind']=='inspect':
+                    inspections += 1
+                    if inspections>=3:
+                        result.update(seq=2,savedSeq=2)
+                return result
+            runner.editor = editor
+            with self.assertRaisesRegex(VerificationError,'Board changed'):
+                runner.capture_preview()
+            self.assertFalse((runner.output/'preview.png').exists())
+
+    def test_unstable_browser_frames_use_bounded_real_canvas_readback(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+            runner,state = self.runner(directory)
+            state['viewport']['rect'] = dict(x=0,y=0,width=16,height=16)
+            frames = iter([png((2,2,12,12)),png((3,2,12,12)),png((4,2,12,12))])
+            calls = []
+            def screenshot(**kwargs):
+                calls.append('browser')
+                return next(frames)
+            frame = png((4,4,12,12))
+            def editor(op,expected=None):
+                if op['kind']=='canvas_preview':
+                    calls.append('canvas')
+                    return dict(viewport=copy.deepcopy(state['viewport']),
+                                data_url='data:image/png;base64,'+base64.b64encode(frame).decode())
+                return copy.deepcopy(state)
+            runner.screenshot,runner.editor = screenshot,editor
+            runner.capture_preview()
+            self.assertEqual(calls,['browser']*3+['canvas']*2)
+            self.assertEqual(runner.report['preview_source'],'native_canvas')
+            self.assertEqual(runner.report['preview_fallback_reason'],'browser_unstable_frames')
+            self.assertEqual((runner.output/'preview.png').read_bytes(),frame)
+
+    def test_viewport_and_dpr_change_resamples_before_matching_frames(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+            runner,state = self.runner(directory)
+            inspections,screenshots = 0,0
+            def editor(op,expected=None):
+                nonlocal inspections
+                result = copy.deepcopy(state)
+                if op['kind']=='inspect':
+                    inspections += 1
+                    if inspections>=3:
+                        result['viewport']['device_pixel_ratio'] = 1.01
+                return result
+            def screenshot(**kwargs):
+                nonlocal screenshots
+                screenshots += 1
+                return png((4,4,12,12))
+            runner.editor,runner.screenshot = editor,screenshot
+            runner.capture_preview()
+            self.assertEqual(screenshots,3)
+            feedback = __import__('json').loads((runner.output/'visual-feedback.json').read_text(encoding='utf-8'))
+            self.assertEqual(feedback['viewport']['device_pixel_ratio'],1.01)
+
+    def test_native_canvas_changed_viewport_is_not_cropped_with_old_geometry(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'),patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
+            runner,state = self.runner(directory)
+            runner.screenshot = lambda **kwargs: (_ for _ in ()).throw(OSError('Screenshot transport'))
+            def editor(op,expected=None):
+                if op['kind']=='canvas_preview':
+                    viewport = copy.deepcopy(state['viewport'])
+                    viewport['device_pixel_ratio'] = 1.01
+                    return dict(viewport=viewport,data_url='data:image/png;base64,'+base64.b64encode(png((4,4,12,12))).decode())
+                return copy.deepcopy(state)
+            runner.editor = editor
+            runner.capture_preview()
+            self.assertEqual(runner.report['visual_status'],'unavailable')
+            self.assertFalse((runner.output/'preview.png').exists())
 
 
 if __name__ == '__main__':

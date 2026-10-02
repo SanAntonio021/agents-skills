@@ -2,6 +2,8 @@
 // No page globals, storage, network requests, DOM coordinate clicks or raw node mutation.
 (request) => {
   'use strict';
+  let contentWriteStarted=false, probing=false;
+  try {
   const fail = message => { throw new Error(message); };
   const wanted = new URL(request.document_url);
   if (location.origin !== wanted.origin || location.pathname !== wanted.pathname) fail('DOCUMENT_URL_MISMATCH');
@@ -23,9 +25,14 @@
   if (!(a.nodeManager?.nodeMap instanceof Map) || typeof a.api?.graphicNodeToPageNode !== 'function') fail('EDITOR_INTERFACE_MISMATCH');
   const cmd = (name, args = {}) => {
     if (!a.commandManager.handlers.has(name)) fail('COMMAND_UNAVAILABLE:' + name);
+    if(name!=='Select'&&!probing)contentWriteStarted=true;
     return a.commandManager.execute(name, args);
   };
-  const selected = ids => cmd('Select', {nodeIds: ids});
+  const selected = ids => {
+    cmd('Select', {nodeIds: ids});
+    const actual=a.api.getSelectNodes?.();
+    if(!Array.isArray(actual)||actual.map(n=>n.id).sort().join('\n')!==[...ids].sort().join('\n'))fail('NATIVE_SELECTION_MISMATCH');
+  };
   const stable = value => JSON.stringify(value, (_, v) => v && !Array.isArray(v) && typeof v === 'object'
     ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
   const arrowNames=['none','line_arrow','triangle_arrow','empty_triangle_arrow','circle_arrow','empty_circle_arrow','diamond_arrow','empty_diamond_arrow','single_arrow','multi_arrow','exact_single_arrow','zero_or_single_arrow','single_or_multi_arrow','zero_or_multi_arrow','x_arrow'];
@@ -95,6 +102,32 @@
     const s=n.toGlobalPoint(n.lineProps.points[0]),e=n.toGlobalPoint(n.lineProps.points.at(-1));
     return[n.id,{start:{x:s.x,y:s.y},end:{x:e.x,y:e.y}}];
   }));
+  const worldGeometry=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].map(n=>{
+    const b=n.globalBaseProps;
+    return[n.id,b&&['x','y','width','height','angle'].every(k=>Number.isFinite(b[k]))
+      ?Object.fromEntries(['x','y','width','height','angle'].map(k=>[k,b[k]])):null];
+  }));
+  const objectBounds=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].map(n=>{
+    const b=n.getRectNode?.();
+    return[n.id,b&&['minX','minY','maxX','maxY'].every(k=>Number.isFinite(b[k]))
+      ?{x:b.minX,y:b.minY,width:b.maxX-b.minX,height:b.maxY-b.minY}:null];
+  }));
+  // Read actual attachment geometry independently of connector serialization.
+  // Unrelated legacy invalid bindings remain observable without blocking inspect.
+  const bindingGeometry=()=>[...a.nodeManager.nodeMap.values()].filter(n=>a.api.graphicNodeToPageNode(n).info.connectorV2).map(n=>{
+    const evidence={id:n.id,valid:true};
+    for(const side of ['start','end']){
+      const e=n.attachProps?.[side];if(!e?.id)continue;
+      try{
+        const target=a.nodeManager.nodeMap.get(e.id);
+        if(!e.position||typeof target?.getLineAttachPoint!=='function')throw new Error('BINDING_TARGET_UNAVAILABLE');
+        const expected=target.getLineAttachPoint(e.position),actual=n.toGlobalPoint(side==='start'?n.lineProps.points[0]:n.lineProps.points.at(-1));
+        const valid=[actual.x,actual.y,expected.x,expected.y].every(Number.isFinite)&&Math.hypot(actual.x-expected.x,actual.y-expected.y)<=0.02;
+        evidence[side]={actual:{x:actual.x,y:actual.y},expected:{x:expected.x,y:expected.y},valid};evidence.valid&&=valid;
+      }catch(error){evidence[side]={valid:false,error:String(error.message)};evidence.valid=false;}
+    }
+    return evidence;
+  });
   const curveHandles=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].filter(n=>n.isCurveLine?.()).map(n=>[n.id,{
     turning:n.lineProps.points.slice(3,-1).filter((_,j)=>j%3===0).map(p=>{const q=n.toGlobalPoint(p);return{x:q.x,y:q.y};}),
     segment:n.getControlPoints().map(p=>({x:p.x,y:p.y,enabled:p.enabled}))
@@ -115,7 +148,7 @@
     return[n.id,{available:true,angle:b.angle,world_corners:world,world_rect:rect(world),screen_corners:screen,screen_rect:screen?rect(screen):null}];
   }));
   const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(),
-    label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
+    object_bounds:objectBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
@@ -154,12 +187,25 @@
   const before = snapshot(), ids = op.kind==='connect' ? [op.template_id,op.start_id,op.end_id].filter(Boolean) : op.kind==='reconnect' ? [op.id,op.start_id,op.end_id].filter(Boolean) : op.ids || (op.id ? [op.id] : []);
   const node = id => a.nodeManager.nodeMap.get(id) || fail('NODE_NOT_FOUND:' + id);
   ids.forEach(node);
+  const assertUnlocked=n=>{for(let p=n;p;p=p.parent)if(a.api.graphicNodeToPageNode(p)?.info?.locked)fail('LOCKED_OBJECT');};
   for (const id of ids) {
     let n=node(id);
-    while(n) {if(a.api.graphicNodeToPageNode(n)?.info?.locked)fail('LOCKED_OBJECT');n=n.parent;}
+    assertUnlocked(n);
+    for(const child of n.children||[])assertUnlocked(child);
     if (node(id).children?.some(c => c.children?.length)) fail('NESTED_GROUP_NOT_VERIFIED');
+    if(n.parent?.id&&a.nodeManager.nodeMap.has(n.parent.id)){
+      if(n.parent.parent?.id&&a.nodeManager.nodeMap.has(n.parent.parent.id))fail('NESTED_GROUP_NOT_VERIFIED');
+      if(ids.includes(n.parent.id))fail('GROUP_MEMBER_SELECTION_OVERLAP');
+    }
+    const group=n.children?.length?n:n.parent?.id&&a.nodeManager.nodeMap.has(n.parent.id)?n.parent:null;
+    if(group&&[group,...group.children].some(member=>Math.abs(a.api.graphicNodeToPageNode(member)?.info?.baseV2?.angle||0)>1e-6))fail('ROTATED_GROUP_NOT_VERIFIED');
   }
   const shape = id => {const n=node(id); if (n.type!==13 || !a.api.graphicNodeToPageNode(n).info.compositeShape) fail('NATIVE_SHAPE_REQUIRED');return n;};
+  const assertAffectedBindingsUnlocked=targetIds=>{
+    const affected=new Set(targetIds);for(const id of targetIds)for(const child of node(id).children||[])affected.add(child.id);
+    for(const n of a.nodeManager.nodeMap.values())if(n.attachProps&&['start','end'].some(side=>affected.has(n.attachProps[side]?.id)))assertUnlocked(n);
+  };
+  if(['move','resize','align_top','distribute_horizontal','delete'].includes(op.kind))assertAffectedBindingsUnlocked(ids);
   const textNode = id => {const n=node(id),i=a.api.graphicNodeToPageNode(n).info;if(!i.textV2 || i.connectorV2)fail('NATIVE_TEXT_REQUIRED');return n;};
   const line = id => {const n=node(id); if (!a.api.graphicNodeToPageNode(n).info.connectorV2) fail('CONNECTOR_REQUIRED');return n;};
   const number = (v, positive=false) => {if (!Number.isFinite(v) || (positive && v <= 0)) fail('INVALID_NUMBER');return v;};
@@ -169,28 +215,68 @@
   const depth = () => a.undoRedoManager.undoStack.filter(g => g.actionLogs.some(x => ![0,1,7].includes(x.type))).length;
   if (!Array.isArray(a.undoRedoManager.undoStack)) fail('UNDO_INTERFACE_MISMATCH');
   const depthBefore = depth();
+  let cachedActionTypes;
   // Capture constructors without executing any action. Restore the method even on failure.
   const actionTypes = () => {
-    const sample = before.find(n => ['shape','text'].includes(n.kind) && Number.isFinite(n.font_size)) || before.find(n=>n.kind==='connector');
+    if(cachedActionTypes)return cachedActionTypes;
+    const unlocked=id=>{for(let n=node(id);n;n=n.parent)if(a.api.graphicNodeToPageNode(n)?.info?.locked)return false;return true;};
+    const sample = before.find(n => ['shape','text'].includes(n.kind) && Number.isFinite(n.font_size)&&unlocked(n.id)) || before.find(n=>n.kind==='connector'&&unlocked(n.id));
     if (!sample) fail('NO_OBJECT_FOR_INTERFACE_PROBE');
     selected([sample.id]);
     const m=a.actionManager, original=m.execAction, captured=[], prior=stable(snapshot()), d=depth(), seq=a.docState.seq;
     m.execAction = x => {captured.push(x);return null;};
-    try {if(sample.kind==='connector')cmd('LineArrow',{lArrow:node(sample.id).borderProps.lArrow,rArrow:node(sample.id).borderProps.rArrow});else cmd('TextFontSize',{fontSize:sample.font_size});} finally {m.execAction=original;}
+    probing=true;
+    try {if(sample.kind==='connector')cmd('LineArrow',{lArrow:node(sample.id).borderProps.lArrow,rArrow:node(sample.id).borderProps.rArrow});else cmd('TextFontSize',{fontSize:sample.font_size});} finally {m.execAction=original;probing=false;}
     if (prior !== stable(snapshot()) || depth() !== d || a.docState.seq !== seq) fail('PROBE_CHANGED_STATE');
     const Start=captured.find(x=>x.type===0)?.constructor, End=captured.find(x=>x.type===1)?.constructor,
       Update=captured.find(x=>x.type===6)?.constructor;
     if (!Start || !End || !Update || new Set([Start,End,Update]).size !== 3 ||
       !Start.toString().includes('.Start') || !End.toString().includes('.End') || !Update.toString().includes('.UpdateNode')) fail('ACTION_CONSTRUCTOR_MISMATCH');
-    return {Start,End,Update};
+    return cachedActionTypes={Start,End,Update};
   };
   const transaction = (types, work) => {
     a.actionManager.execAction(new types.Start());
     try {work((id, props) => {
       const action=new types.Update([{id, props}]);
+      contentWriteStarted=true;
       return a.actionManager.execAction(action);
     });}
     finally {a.actionManager.execAction(new types.End());}
+  };
+  const hashFunction=f=>{const s=typeof f==='function'?f.toString():'';let h=2166136261;for(let j=0;j<s.length;j++){h^=s.charCodeAt(j);h=Math.imul(h,16777619);}return(h>>>0).toString(16);};
+  const validateGroupBoundsInterface=(group,types)=>{
+    const interfaces=[[group.getBounds,'438a0c72'],[group.baseProps.clone,'6969ad5f'],[group.baseProps.update,'e974b34'],
+      [types.Start,'156ff927'],[types.Update,'dde29aef'],[types.End,'2ce952f5'],[a.actionManager.execAction,'b5fe100a']];
+    for(const child of group.children||[])interfaces.push([child.getRectNode,child.type===15?'6cbf3c17':'4a306f8d']);
+    if(interfaces.some(([f,pin])=>hashFunction(f)!==pin))fail('UNVERIFIED_GROUP_BOUNDS_INTERFACE');
+    if(group.baseProps.angle||group.children.some(c=>c.baseProps.angle||c.children?.length))fail('ROTATED_OR_NESTED_GROUP_NOT_VERIFIED');
+  };
+  const affectedParents=()=>{
+    const affected=new Set(ids);for(const id of ids)for(const child of node(id).children||[])affected.add(child.id);
+    if(['move','resize','align_top','distribute_horizontal'].includes(op.kind))for(const n of a.nodeManager.nodeMap.values())
+      if(n.attachProps&&['start','end'].some(side=>affected.has(n.attachProps[side]?.id)))affected.add(n.id);
+    const groups=new Set();for(const id of affected){const n=node(id);if(n.children?.length)groups.add(n);if(n.parent?.id&&a.nodeManager.nodeMap.has(n.parent.id))groups.add(n.parent);}
+    return groups;
+  };
+  const boundsGroups=!['delete','undo','ungroup'].includes(op.kind)?affectedParents():new Set();
+  if(boundsGroups.size){const types=actionTypes();for(const group of boundsGroups){assertUnlocked(group);validateGroupBoundsInterface(group,types);}}
+  const refreshedGroups=[];
+  const refreshGroupBounds=groups=>{
+    if(!groups.size)return;
+    const types=actionTypes(),updates=[];
+    for(const group of groups){
+      validateGroupBoundsInterface(group,types);
+      const bounds=group.children.map(n=>n.getRectNode());
+      if(!bounds.length||bounds.some(b=>!['minX','minY','maxX','maxY'].every(k=>Number.isFinite(b[k]))))fail('GROUP_MEMBER_BOUNDS_UNAVAILABLE');
+      const x=Math.min(...bounds.map(b=>b.minX)),y=Math.min(...bounds.map(b=>b.minY)),
+        geometry={x,y,width:Math.max(...bounds.map(b=>b.maxX))-x,height:Math.max(...bounds.map(b=>b.maxY))-y};
+      if(Object.entries(geometry).every(([k,v])=>Math.abs(group.baseProps[k]-v)<=1e-6))continue;
+      const children=()=>stable(group.children.map(n=>({id:n.id,page:a.api.graphicNodeToPageNode(n),base:n.baseProps.clone(),global:n.globalBaseProps,path:n.lineProps?.clone?.()})));
+      const beforeChildren=children(),base=group.baseProps.clone();base.update(geometry);
+      updates.push({group,base,children,beforeChildren});
+    }
+    if(updates.length)transaction(types,update=>updates.forEach(v=>update(v.group.id,[v.base])));
+    for(const v of updates){if(v.children()!==v.beforeChildren)fail('GROUP_BOUNDS_REFRESH_CHANGED_MEMBER');refreshedGroups.push(v.group.id);}
   };
   // Refreshing one module also reroutes its other attached lines. Preserve their
   // existing path through native UpdateNode actions after the binding refresh.
@@ -230,10 +316,27 @@
   };
   switch (op.kind) {
     case 'text': {
-      const n=textNode(op.id);text(op.text);selected([n.id]);a.api.selectNodeText(n);a.inputManager.processInput(op.text);a.inputManager.blur();break;
+      const n=textNode(op.id);text(op.text);if(textSignature!=='7e805832')fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      selected([n.id]);a.api.selectNodeText(n);
+      if(a.inputManager.textInfo?.node?.id!==n.id||a.inputManager.inputStatus!=='focusing')fail('TEXT_INPUT_TARGET_MISMATCH');
+      contentWriteStarted=true;a.inputManager.processInput(op.text);a.inputManager.blur();break;
     }
     case 'font': textNode(op.id);number(op.font_size,true);selected([op.id]);cmd('TextFontSize',{fontSize:op.font_size});break;
-    case 'move': ids.forEach(id=>node(id));number(op.dx);number(op.dy);selected(ids);cmd('Move',{dx:op.dx,dy:op.dy});break;
+    case 'move': {
+      number(op.dx);number(op.dy);
+      const moving=new Set(ids);for(const id of ids)for(const child of node(id).children||[])moving.add(child.id);
+      for(const id of moving){const n=node(id);if(n.attachProps&&['start','end'].some(side=>n.attachProps[side]?.id&&!moving.has(n.attachProps[side].id)))fail('BOUND_CONNECTOR_CANNOT_MOVE_WITH_FIXED_ENDPOINT');}
+      // Native group Move can reroute an edited curve. When both modules move
+      // together, preserve the complete native curve translated by the same delta.
+      const preserved=[...a.nodeManager.nodeMap.values()].filter(n=>n.isCurveLine?.()&&(
+        moving.has(n.id)||n.attachProps?.start?.id&&n.attachProps?.end?.id&&moving.has(n.attachProps.start.id)&&moving.has(n.attachProps.end.id)))
+        .map(n=>{const base=n.baseProps.clone();base.x+=op.dx;base.y+=op.dy;return{id:n.id,base,path:n.lineProps.clone()};});
+      selected(ids);cmd('Move',{dx:op.dx,dy:op.dy});
+      const changed=preserved.filter(p=>stable(p.base)!==stable(node(p.id).baseProps.clone())||stable(p.path)!==stable(node(p.id).lineProps.clone()));
+      if(changed.length){const t=actionTypes();transaction(t,update=>changed.forEach(p=>update(p.id,[p.base,p.path])));restoredPaths.push(...changed.map(p=>p.id));}
+      if(preserved.some(p=>stable(p.base)!==stable(node(p.id).baseProps.clone())||stable(p.path)!==stable(node(p.id).lineProps.clone())))fail('MOVED_CURVE_PATH_RESTORE_FAILED');
+      break;
+    }
     case 'resize': {
       const n=textNode(op.id);number(op.width,true);number(op.height,true);const t=actionTypes(),b=n.baseProps.clone();b.width=op.width;b.height=op.height;
       const props=[b];if(n.type===3){const p=n.textProps.clone();p.sizeMode=2;props.push(p);}
@@ -249,7 +352,7 @@
       selected([op.id]);
       if(captions.length)a.api.selectNodeText(n);else cmd('LineTextAdd');
       if(a.inputManager.textInfo?.node?.id!==n.id || a.inputManager.textInfo?.inputableText?.type!==3 || a.inputManager.inputStatus!=='focusing')fail('CAPTION_INPUT_TARGET_MISMATCH');
-      a.inputManager.processInput(op.text);a.inputManager.blur();break;
+      contentWriteStarted=true;a.inputManager.processInput(op.text);a.inputManager.blur();break;
     }
     case 'caption_position': {
       const n=line(op.id),p=n.captionsProps;
@@ -302,7 +405,6 @@
     case 'curve_point': {
       const n=line(op.id),ctx=a.interactCtx;
       if(!n.isCurveLine?.()||n.lineProps.points.length<4||(n.lineProps.points.length-1)%3!==0)fail('NATIVE_CURVE_REQUIRED');
-      if(n.parent?.id&&a.nodeManager.nodeMap.has(n.parent.id))fail('GROUPED_CURVE_NOT_VERIFIED');
       const handles=curveHandles()[n.id],mode=op.mode||(handles.turning.length?'turning':'segment'),index=op.index??0;
       if(!['segment','turning'].includes(mode)||!Number.isInteger(index)||index<0)fail('INVALID_CURVE_HANDLE');
       const source=handles[mode][index];if(!source||source.enabled===false)fail('CURVE_HANDLE_NOT_AVAILABLE');
@@ -320,7 +422,7 @@
       const detected=ctx.detect(5,event(source));
       if(!detected||detected.line!==n||detected.index!==index||detected.isTurningPoint!==(mode==='turning')||detected.enabled===false)fail('CURVE_HANDLE_DETECTION_MISMATCH');
       h.onStart(event(source),ctx);if(h.res?.line!==n)fail('CURVE_DRAG_TARGET_MISMATCH');
-      try{h.onMove(event(op.point),ctx);}finally{h.onUp(event(op.point),ctx);}
+      try{contentWriteStarted=true;h.onMove(event(op.point),ctx);}finally{h.onUp(event(op.point),ctx);}
       const actual=n.toGlobalPoint(n.lineProps.points[3*index+3]),ends=lineEndpoints()[n.id];
       if(Math.hypot(actual.x-op.point.x,actual.y-op.point.y)>1e-5)fail('CURVE_POINT_INTENT_FAILED');
       if(['start','end'].some(s=>Math.hypot(oldEnds[s].x-ends[s].x,oldEnds[s].y-ends[s].y)>1e-5))fail('CURVE_ENDPOINT_MOVED');
@@ -343,7 +445,15 @@
       break;
     }
     case 'anchors': {
-      const n=line(op.id), t=actionTypes(), p=n.attachProps.clone(),preserved=preserveOtherPaths([n.id]);
+      const n=line(op.id);
+      if(['start','end'].some(side=>!n.attachProps?.[side]?.id))fail('BOUND_ENDPOINTS_REQUIRED_FOR_ANCHOR_REFRESH');
+      const endpointIds=[...new Set(['start','end'].map(side=>n.attachProps?.[side]?.id).filter(Boolean))];
+      if(!endpointIds.length)fail('BOUND_ENDPOINT_REQUIRED');
+      for(const side of ['start','end']){const e=n.attachProps?.[side];if(e?.id&&(!e.position||!['x','y'].every(k=>Number.isFinite(e.position[k]))))fail('BINDING_POSITION_UNAVAILABLE:'+side);}
+      for(const id of endpointIds){const target=shape(id);assertUnlocked(target);if(target.parent?.id&&a.nodeManager.nodeMap.has(target.parent.id))fail('GROUPED_ANCHOR_REFRESH_NOT_VERIFIED');}
+      assertAffectedBindingsUnlocked(endpointIds);
+      for(const side of ['start','end'])if(op[side]&&!n.attachProps?.[side]?.id)fail('BOUND_ENDPOINT_REQUIRED:'+side);
+      const t=actionTypes(), p=n.attachProps.clone(),preserved=preserveOtherPaths([n.id]);
       if(!op.start&&!op.end)fail('ANCHOR_REQUIRED');
       for(const side of ['start','end'])if(op[side]){
         const e=op[side], s=['','top','right','bottom','left'].indexOf(e.snap_to), pos=e.position;
@@ -351,7 +461,7 @@
         if((s===1&&pos.y!==0)||(s===2&&pos.x!==1)||(s===3&&pos.y!==1)||(s===4&&pos.x!==0))fail('ANCHOR_NOT_ON_EDGE');
         p[side].snapTo=s;p[side].position={x:pos.x,y:pos.y};
       }
-      transaction(t,update=>update(n.id,[p]));selected([n.attachProps.start.id,n.attachProps.end.id]);
+      transaction(t,update=>update(n.id,[p]));selected(endpointIds);
       // A zero move can leave cached line geometry unchanged. Native paired moves
       // refresh bindings while returning both modules to their original positions.
       cmd('Move',{dx:1,dy:0});cmd('Move',{dx:-1,dy:0});restoreOtherPaths(t,preserved);verifyBoundGeometry(n);break;
@@ -359,6 +469,7 @@
     case 'reconnect': {
       const n=line(op.id),sides=['start','end'].filter(s=>op[s+'_id']!==undefined),old={};if(!sides.length)fail('RECONNECT_TARGET_REQUIRED');
       sides.forEach(s=>{shape(op[s+'_id']);old[s]=n.attachProps[s].id;});
+      assertAffectedBindingsUnlocked(sides.map(s=>op[s+'_id']));
       if(sides.every(s=>old[s]===op[s+'_id']))break;
       const t=actionTypes(),preserved=preserveOtherPaths([n.id]);transaction(t,update=>{const p=n.attachProps.clone();sides.forEach(s=>delete p[s].id);update(n.id,[p]);const q=n.attachProps.clone();sides.forEach(s=>{q[s].id=op[s+'_id'];if(!old[s]){q[s].position=s==='start'?{x:1,y:0.5}:{x:0,y:0.5};q[s].snapTo=s==='start'?2:4;q[s].attachType=1;}});update(n.id,[q]);if(n.attachProps.start.id)seedBoundStart(n,update);});
       selected([...new Set(sides.map(s=>op[s+'_id']))]);cmd('Move',{dx:0,dy:0});
@@ -370,6 +481,7 @@
     case 'connect': {
       // Duplicate is covered by the verified main command fingerprint.
       const template=line(op.template_id);shape(op.start_id);shape(op.end_id);
+      assertAffectedBindingsUnlocked([op.start_id,op.end_id]);
       if(op.start_id===op.end_id)fail('SELF_CONNECTION_NOT_VERIFIED');
       const t=actionTypes(),originalAttachment=template.attachProps.clone(), priorIds=new Set(before.map(n=>n.id)),preserved=preserveOtherPaths([]);
       selected([template.id]);cmd('Duplicate');
@@ -394,7 +506,7 @@
       if(ids.length<(op.kind==='align_top'?2:3))fail('INSUFFICIENT_SELECTION');
       ids.forEach(shape);const method=op.kind==='align_top'?'alignTop':'alignDistributeHorizontal';
       const handler=a.commandManager.handlers.get('Align');if(typeof handler?.[method]!=='function')fail('ALIGN_INTERFACE_MISMATCH');
-      selected(ids);handler[method](a.api.getSelectNodes(),a.interactCtx);break;
+      selected(ids);contentWriteStarted=true;handler[method](a.api.getSelectNodes(),a.interactCtx);break;
     }
     case 'delete': {
       const removed=new Set(ids), visit=id=>{for(const child of node(id).children||[]){removed.add(child.id);visit(child.id);}};ids.forEach(visit);
@@ -406,13 +518,20 @@
       if(op.undo_count!==1 || depthBefore<1)fail('UNDO_NOT_OWNED');
       if (!op.undo_receipt || op.undo_receipt.depth !== a.undoRedoManager.undoStack.length ||
         op.undo_receipt.top !== stable(a.undoRedoManager.undoStack.at(-1))) fail('UNDO_STACK_CHANGED');
-      a.undoRedoManager.undo();break;
+      contentWriteStarted=true;a.undoRedoManager.undo();break;
     default: fail('UNSUPPORTED_OPERATION:' + op.kind);
+  }
+  if(op.kind==='group')for(const n of a.nodeManager.nodeMap.values())if(n.children?.length&&!before.some(p=>p.id===n.id))boundsGroups.add(n);
+  refreshGroupBounds(boundsGroups);
+  if(['move','resize','align_top','distribute_horizontal'].includes(op.kind)){
+    const moved=new Set(ids);for(const id of ids)for(const child of node(id).children||[])moved.add(child.id);
+    for(const n of a.nodeManager.nodeMap.values())if(n.attachProps&&['start','end'].some(side=>moved.has(n.attachProps[side]?.id)))verifyBoundGeometry(n);
   }
   const count=depth()-depthBefore;
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
-  const max=['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['resize','caption','caption_format','style'].includes(op.kind)?2:1;
+  const max=(['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['move','resize','caption','caption_format','style'].includes(op.kind)?2:1)+(refreshedGroups.length?1:0);
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
-  return {...result(), before, transaction_count:count,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
+  return {...result(), before, content_write_started:contentWriteStarted,transaction_count:count,refreshed_group_ids:refreshedGroups,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};
+  }catch(error){return{adapter_error:String(error.message),content_write_started:contentWriteStarted};}
 }

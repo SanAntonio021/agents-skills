@@ -777,5 +777,195 @@ class LocalEdits(unittest.TestCase):
                     self.assertNotIn({'kind': 'enter'}, calls)
 
 
+class DeleteUndoRunnerTests(unittest.TestCase):
+    def make_runner(self, operations, curve='line', fail_operation=None):
+        runner = Runner.__new__(Runner)
+        runner.request = {'operations': operations}
+        runner.timeout = 1
+        runner.uncertain = False
+        runner.report = {'status': 'running', 'steps': []}
+        runner.token = runner.task = runner.tab = None
+        runner.index = 0
+        runner.events, runner.writes = [], {}
+        current = board()
+        if curve:
+            line(current, curve)['connector']['shape'] = 'curve'
+        history = None
+        page_count = 0
+
+        def snapshot():
+            nodes = projection(current)
+            for node in nodes:
+                if node.get('shape') == 'curve':
+                    node['points'] = [{'x': node['x'] + 20, 'y': node['y'] + 10},
+                                      {'x': node['x'] + 80, 'y': node['y'] - 10}]
+            return {'nodes': nodes, 'seq': 2, 'savedSeq': 2,
+                    'render_alpha': {n['id']: {'border': 1, 'text': 1} for n in nodes},
+                    'line_endpoints': {n['id']: {'start': {'x': n['x'], 'y': n['y']},
+                                               'end': {'x': n['x'] + n['width'], 'y': n['y']}}
+                                       for n in nodes if n['kind'] == 'connector'}}
+
+        def export():
+            runner.index += 1
+            raw = copy.deepcopy(current)
+            runner.events.append(('export', runner.task, raw))
+            return raw, f'raw-{runner.index:03d}.json'
+
+        def open_page():
+            nonlocal history, page_count
+            page_count += 1
+            runner.token, runner.task, runner.tab = ('token-' + str(page_count),
+                                                    'task-' + str(page_count), 'tab-' + str(page_count))
+            history = None
+            runner.events.append(('open', runner.task))
+
+        def editor(op, expected=None):
+            nonlocal history, current
+            kind = op['kind']
+            runner.events.append(('editor', runner.task, kind))
+            if kind in ('inspect', 'enter'):
+                return snapshot()
+            self.assertEqual(expected, snapshot()['nodes'])
+            if kind == 'delete':
+                history = (copy.deepcopy(current), runner.task, {'task_id': runner.task})
+                current['nodes'] = [n for n in current['nodes'] if n['id'] not in op['delete_ids']]
+            elif kind == 'undo':
+                if history is None or op.get('undo_receipt') != history[2] or runner.task != history[1]:
+                    raise VerificationError('Undo receipt no longer belongs to the current editor')
+                self.assertEqual(op['undo_count'], 2)
+                current = copy.deepcopy(history[0])
+                history = None
+            elif kind == 'text':
+                line(current, op['id'])['text']['text'] = op['text']
+            else:
+                self.fail('Unexpected fake editor operation: ' + kind)
+            if kind == fail_operation:
+                raise OSError('Result lost after the editor write')
+            result = snapshot()
+            if kind == 'delete':
+                result.update(transaction_count=2, undo_receipt=history[2])
+            return result
+
+        runner.export, runner.open_page, runner.editor = export, open_page, editor
+        runner.hydrate = lambda raw: snapshot()
+        runner.call = lambda path, data: runner.events.append(('complete', runner.task, data))
+        runner.write = lambda name, data: runner.writes.update({name: copy.deepcopy(data)})
+        return runner
+
+    def test_delete_undo_preserves_editor_then_reopens_restored_board(self):
+        delete = {'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}
+        for curve in ('line', 'other-line', None):
+            with self.subTest(curve=curve):
+                runner = self.make_runner([delete, {'kind': 'undo'}], curve=curve)
+                runner.run()
+                writes = [event for event in runner.events if event[0] == 'editor' and event[2] in ('delete', 'undo')]
+                self.assertEqual(writes, [('editor', 'task-1', 'delete'), ('editor', 'task-1', 'undo')])
+                completions = [event for event in runner.events if event[0] == 'complete']
+                self.assertEqual(completions, [('complete', 'task-1', {'keep': False})])
+                undo_index = runner.events.index(writes[1])
+                reopen_index = runner.events.index(completions[0])
+                self.assertLess(undo_index, reopen_index)
+                deleted_exports = [event for event in runner.events[:undo_index] if event[0] == 'export'
+                                   and 'other-line' not in {n['id'] for n in event[2]['nodes']}]
+                self.assertGreaterEqual(len(deleted_exports), 2)
+                restored_exports = [event for event in runner.events[undo_index:reopen_index] if event[0] == 'export']
+                self.assertEqual(len(restored_exports), 1)
+                self.assertEqual({n['id'] for n in restored_exports[0][2]['nodes']}, {'a', 'b', 'line', 'other-line'})
+                self.assertNotIn('reopened-001.json', runner.writes)
+                self.assertIn('reopened-002.json', runner.writes)
+                self.assertEqual(runner.report['status'], 'verified')
+                self.assertEqual(len(runner.report['steps']), 2)
+                self.assertFalse(runner.uncertain)
+
+    def test_curve_reload_remains_for_delete_without_undo_and_other_edits(self):
+        for op in ({'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']},
+                   {'kind': 'text', 'id': 'b', 'text': 'changed'}):
+            with self.subTest(operation=op):
+                runner = self.make_runner([op])
+                runner.run()
+                self.assertIn('reopened-001.json', runner.writes)
+                self.assertEqual([e[0] for e in runner.events].count('open'), 2)
+                self.assertEqual(runner.report['status'], 'verified')
+
+    def test_undo_without_immediately_preceding_delete_is_rejected_before_write(self):
+        delete = {'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}
+        for operations, successful_undos in (([{'kind': 'undo'}], 0),
+                ([delete, {'kind': 'text', 'id': 'b', 'text': 'changed'}, {'kind': 'undo'}], 0),
+                ([delete, {'kind': 'undo'}, {'kind': 'undo'}], 1)):
+            with self.subTest(operations=operations):
+                runner = self.make_runner(operations)
+                with self.assertRaisesRegex(VerificationError, 'only allowed immediately'):
+                    runner.run()
+                self.assertEqual(sum(e[0] == 'editor' and e[2] == 'undo' for e in runner.events), successful_undos)
+                self.assertFalse(runner.uncertain)
+
+    def test_lost_delete_or_undo_response_preserves_uncertain_page_without_retry(self):
+        operations = [{'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}, {'kind': 'undo'}]
+        for failed in ('delete', 'undo'):
+            with self.subTest(failed_operation=failed):
+                runner = self.make_runner(operations, fail_operation=failed)
+                with self.assertRaisesRegex(OSError, 'Result lost'):
+                    runner.run()
+                self.assertTrue(runner.uncertain)
+                self.assertEqual([e for e in runner.events if e[0] == 'complete'], [])
+                self.assertEqual(sum(e[0] == 'editor' and e[2] == failed for e in runner.events), 1)
+                runner.close()
+                self.assertEqual(runner.events[-1], ('complete', 'task-1', {'keep': True}))
+                self.assertEqual(runner.report['released_tab'], 'tab-1')
+
+    def test_deferred_reopen_does_not_skip_save_alpha_endpoints_or_raw_checks(self):
+        operations = [{'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}, {'kind': 'undo'}]
+        for drift in ('alpha', 'endpoint', 'raw'):
+            with self.subTest(drift=drift):
+                runner = self.make_runner(operations)
+                original_editor, original_export = runner.editor, runner.export
+                deleted = False
+                def editor(op, expected=None):
+                    nonlocal deleted
+                    state = original_editor(op, expected)
+                    if op['kind'] == 'delete':
+                        deleted = True
+                    elif deleted and op['kind'] == 'inspect':
+                        if drift == 'alpha':
+                            state['render_alpha']['b']['text'] = 0
+                        elif drift == 'endpoint':
+                            state['line_endpoints']['line']['end']['x'] += 20
+                    return state
+                def export():
+                    raw, name = original_export()
+                    if deleted and drift == 'raw':
+                        line(raw, 'b')['locked'] = True
+                    return raw, name
+                runner.editor, runner.export = editor, export
+                with self.assertRaises(VerificationError):
+                    runner.run()
+                self.assertTrue(runner.uncertain)
+                self.assertFalse(any(e[0] == 'editor' and e[2] == 'undo' for e in runner.events))
+                self.assertEqual([e for e in runner.events if e[0] == 'complete'], [])
+
+    def test_restored_board_still_requires_fresh_native_readback(self):
+        operations = [{'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}, {'kind': 'undo'}]
+        for drift in ('controls', 'alpha', 'endpoint'):
+            with self.subTest(drift=drift):
+                runner = self.make_runner(operations)
+                original_hydrate = runner.hydrate
+                def hydrate(raw):
+                    state = original_hydrate(raw)
+                    if runner.task == 'task-2':
+                        if drift == 'controls':
+                            line({'nodes': state['nodes']})['points'][0]['x'] += 1
+                        elif drift == 'alpha':
+                            state['render_alpha']['other-line']['text'] = 0
+                        else:
+                            state['line_endpoints']['other-line']['end']['x'] += 20
+                    return state
+                runner.hydrate = hydrate
+                with self.assertRaisesRegex(VerificationError, 'Fresh-page'):
+                    runner.run()
+                self.assertTrue(runner.uncertain)
+                self.assertEqual(len(runner.report['steps']), 1)
+                self.assertEqual(runner.report['status'], 'running')
+
+
 if __name__ == '__main__':
     unittest.main()

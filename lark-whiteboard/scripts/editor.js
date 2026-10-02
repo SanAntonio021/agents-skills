@@ -16,10 +16,10 @@
       if (p.app?.docState?.whiteboardToken === request.whiteboard_token) app = p.app;
       if (typeof p.onDoubleClick === 'function') entry = p.onDoubleClick;
     }
-    if (app?.docState.docxToken === doc) matches.push({app, entry});
+    if (app?.docState.docxToken === doc) matches.push({app, entry, element});
   }
   if (matches.length !== 1) fail('BOARD_IDENTITY_NOT_UNIQUE_OR_NOT_LOADED');
-  const {app: a, entry} = matches[0];
+  const {app: a, entry, element} = matches[0];
   if (!(a.nodeManager?.nodeMap instanceof Map) || typeof a.api?.graphicNodeToPageNode !== 'function') fail('EDITOR_INTERFACE_MISMATCH');
   const cmd = (name, args = {}) => {
     if (!a.commandManager.handlers.has(name)) fail('COMMAND_UNAVAILABLE:' + name);
@@ -70,6 +70,9 @@
       v.caption_position=captions.length ? captions[0].t ?? 0.5 : null;
       v.caption_position_type=captions.length ? captions[0].positionType ?? 0 : null;
       v.caption_auto_direction=captions[0]?.autoDirection ?? false;
+      v.caption_font_size=captions.length ? captions[0].textStyle?.fontSize ?? null : null;
+      v.caption_width=captions.length ? captions[0].textBoxWidth ?? null : null;
+      v.caption_size_mode=captions.length ? captions[0].textStyle?.sizeMode ?? null : null;
     }
     return v;
   }).sort((x,y) => x.id.localeCompare(y.id, 'en'));
@@ -96,16 +99,56 @@
     turning:n.lineProps.points.slice(3,-1).filter((_,j)=>j%3===0).map(p=>{const q=n.toGlobalPoint(p);return{x:q.x,y:q.y};}),
     segment:n.getControlPoints().map(p=>({x:p.x,y:p.y,enabled:p.enabled}))
   }]));
-  const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
+  const viewport=()=>{
+    const r=a.interactCtx?.gmlRender,rect=r?.canvas?.getBoundingClientRect?.();
+    if(!rect||typeof r.transfromToViewPort!=='function')return null;
+    const p=r.transfromToViewPort({x:0,y:0}),x=r.transfromToViewPort({x:1,y:0}),y=r.transfromToViewPort({x:0,y:1});
+    return{rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},device_pixel_ratio:window.devicePixelRatio,
+      world_to_screen:{a:x.x-p.x,b:x.y-p.y,c:y.x-p.x,d:y.y-p.y,e:p.x,f:p.y}};
+  };
+  const labelGeometry=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].filter(n=>n.type===15&&n.captions?.length===1&&n.graphicText).map(n=>{
+    const g=n.graphicText,b=g.baseProps,r=a.interactCtx?.gmlRender;
+    if(!b||typeof g.getRectPoint!=='function')return[n.id,{available:false}];
+    const corners=g.getRectPoint(),world=['topLeft','topRight','bottomRight','bottomLeft'].map(k=>({x:corners[k].x,y:corners[k].y})),screen=typeof r?.transfromToViewPort==='function'?world.map(p=>{const q=r.transfromToViewPort(p);return{x:q.x,y:q.y};}):null;
+    const rect=points=>({x:Math.min(...points.map(p=>p.x)),y:Math.min(...points.map(p=>p.y)),
+      width:Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x)),height:Math.max(...points.map(p=>p.y))-Math.min(...points.map(p=>p.y))});
+    return[n.id,{available:true,angle:b.angle,world_corners:world,world_rect:rect(world),screen_corners:screen,screen_rect:screen?rect(screen):null}];
+  }));
+  const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(),
+    label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
   if (!['54e7e6de'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
   if (a.docState.seq !== a.docState.savedSeq) fail('UNSAVED_PAGE_STATE');
   if (request.expected && stable(snapshot()) !== stable(request.expected)) fail('STALE_PAGE_SNAPSHOT');
+  if (op.kind === 'canvas_preview') {
+    if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
+    const canvas=a.interactCtx?.gmlRender?.canvas;
+    if(typeof canvas?.toDataURL!=='function')fail('NATIVE_CANVAS_PREVIEW_UNAVAILABLE');
+    return {data_url:canvas.toDataURL('image/png'),viewport:viewport()};
+  }
   if (op.kind === 'enter') {
     if (typeof entry !== 'function') fail('EDITOR_ENTRY_UNAVAILABLE');
     entry(); return {entered:true};
+  }
+  if (op.kind === 'observe') {
+    if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
+    const plugins=(a.plugins||[]).filter(p=>typeof p.onResize==='function'&&typeof p.resizeCanvas==='function'
+      &&p.onResize.toString().includes('this.resizeCanvas(')&&p.onResize.toString().includes('this.app.viewportManager.zoom'));
+    if(plugins.length!==1||plugins[0].app!==a)fail('VIEW_RESIZE_INTERFACE_NOT_UNIQUE');
+    const p=plugins[0],functions=[p.onResize,p.resizeCanvas,p.notifyApplicationResize,p.onAppResizeCallback,
+      a.viewportManager?.zoom,a.viewportManager?.zoomWorker?.beforeZoom,a.renderManager?.contentDirectDraw,a.auxiliaryManager?.redraw];
+    const sources=functions.map(f=>typeof f==='function'?f.toString():'').join('\n');
+    let hash=2166136261;for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
+    if((hash>>>0).toString(16)!=='ff0c9e81')fail('UNVERIFIED_VIEW_RESIZE_INTERFACE');
+    const nodes=stable(snapshot()),alpha=stable(renderAlpha()),ends=stable(lineEndpoints()),seq=a.docState.seq,
+      saved=a.docState.savedSeq,undo=stable(a.undoRedoManager.undoStack),redo=stable(a.undoRedoManager.redoStack);
+    p.onResize();
+    a.viewportManager.zoom(1,{synDraw:true,animation:false});
+    if(nodes!==stable(snapshot())||alpha!==stable(renderAlpha())||ends!==stable(lineEndpoints())||seq!==a.docState.seq
+      ||saved!==a.docState.savedSeq||undo!==stable(a.undoRedoManager.undoStack)||redo!==stable(a.undoRedoManager.redoStack))fail('OBSERVATION_CHANGED_BOARD');
+    return result();
   }
   if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
   const before = snapshot(), ids = op.kind==='connect' ? [op.template_id,op.start_id,op.end_id].filter(Boolean) : op.kind==='reconnect' ? [op.id,op.start_id,op.end_id].filter(Boolean) : op.ids || (op.id ? [op.id] : []);
@@ -218,6 +261,34 @@
       if(op.placement!==undefined)copy.captions[0].positionType=placements.indexOf(op.placement);
       transaction(t,update=>update(n.id,[copy]));break;
     }
+    case 'caption_format': {
+      const n=line(op.id),p=n.captionsProps;
+      if(p?.type!==10 || !Array.isArray(p.captions) || p.captions.length!==1)fail('SINGLE_CAPTION_REQUIRED');
+      const has=k=>Object.prototype.hasOwnProperty.call(op,k),widthChange=has('width')||has('auto_width');
+      if(Object.keys(op).some(k=>!['kind','id','font_size','width','auto_width'].includes(k)))fail('INVALID_CAPTION_FORMAT_PARAMETER');
+      if(!has('font_size')&&!widthChange)fail('CAPTION_FORMAT_REQUIRED');
+      if(has('font_size')){number(op.font_size);if(op.font_size<4||op.font_size>999)fail('CAPTION_FONT_SIZE_OUT_OF_RANGE');}
+      if(has('width')){number(op.width);if(op.width<10)fail('CAPTION_WIDTH_OUT_OF_RANGE');}
+      if(has('auto_width')&&op.auto_width!==true)fail('AUTO_WIDTH_MUST_BE_TRUE');
+      if(has('width')&&has('auto_width'))fail('CAPTION_WIDTH_CONFLICT');
+      if(widthChange){
+        const handlers=(a.appConfig?.modes||[]).flatMap(m=>m.subModes||[]).flatMap(m=>m.streamProcessor||[])
+          .filter(h=>typeof h.onStart==='function'&&typeof h.onMove==='function'&&typeof h.onUp==='function'&&h.onMove.toString().includes('textBoxWidth'));
+        if(handlers.length!==1)fail('CAPTION_WIDTH_HANDLER_NOT_UNIQUE');
+        const h=handlers[0],caption=p.captions[0],detector=a.interactCtx?.getDetector(8);
+        const sources=[h.onStart,h.onMove,h.onUp,detector?.onDetect,p.clone,caption.clone,caption.update,caption.textProps?.update,a.actionManager.execAction]
+          .map(f=>typeof f==='function'?f.toString():'').join('\n');
+        let hash=2166136261;for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
+        if((hash>>>0).toString(16)!=='f422b16d')fail('UNVERIFIED_CAPTION_WIDTH_INTERFACE');
+      }
+      if(has('font_size')){selected([n.id]);cmd('TextFontSize',{fontSize:op.font_size});}
+      if(widthChange){
+        const t=actionTypes(),copy=n.captionsProps.clone();
+        copy.captions[0].update(has('width')?{textBoxWidth:op.width,textProps:{sizeMode:1}}:{textBoxWidth:-1});
+        transaction(t,update=>update(n.id,[copy]));
+      }
+      break;
+    }
     case 'line_type': line(op.id);if(!lineNames.includes(op.shape))fail('UNSUPPORTED_LINE_TYPE');selected([op.id]);cmd('LineType',{lineType:lineNames.indexOf(op.shape)});break;
     case 'path': {
       const n=line(op.id),p=n.lineProps.clone();if(p.lineType===0)fail('STRAIGHT_LINE_HAS_NO_TURNING_POINTS');
@@ -297,8 +368,7 @@
       if (sides.some(s=>(old[s] && ![n.attachProps.start.id,n.attachProps.end.id].includes(old[s]) && has(old[s])) || !has(op[s+'_id']))) fail('RECONNECT_INDEX_MISMATCH');break;
     }
     case 'connect': {
-      const duplicateSource='execute(e,r){let i=[...e.getSelectNodes()];if(0!==i.length){if(1===i.length){let e=i[0];if(ea.Al.isTableLike(e.type)&&e.tableStatus.hasSelectItem())return}this.worker.work(e)}}';
-      if(a.commandManager.handlers.get('Duplicate')?.execute?.toString()!==duplicateSource)fail('DUPLICATE_INTERFACE_MISMATCH');
+      // Duplicate is covered by the verified main command fingerprint.
       const template=line(op.template_id);shape(op.start_id);shape(op.end_id);
       if(op.start_id===op.end_id)fail('SELF_CONNECTION_NOT_VERIFIED');
       const t=actionTypes(),originalAttachment=template.attachProps.clone(), priorIds=new Set(before.map(n=>n.id)),preserved=preserveOtherPaths([]);
@@ -341,7 +411,7 @@
   }
   const count=depth()-depthBefore;
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
-  const max=['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['resize','caption','style'].includes(op.kind)?2:1;
+  const max=['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['resize','caption','caption_format','style'].includes(op.kind)?2:1;
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
   return {...result(), before, transaction_count:count,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};

@@ -603,7 +603,8 @@ class LocalEdits(unittest.TestCase):
                 calls, writes = [], []
                 state = {'nodes': copy.deepcopy(expected), 'seq': 2, 'savedSeq': 2}
                 line({'nodes': state['nodes']})['points'][0]['x'] += drift
-                runner.call = lambda path, data: calls.append((path, data))
+                runner.report = {}
+                runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
                 def open_page():
                     self.assertEqual((runner.token, runner.task, runner.tab), (None, None, None))
                     runner.token, runner.task, runner.tab = 'new-token', 'new-task', 'new-tab'
@@ -734,7 +735,8 @@ class LocalEdits(unittest.TestCase):
                 calls, writes = [], []
                 state = {'nodes': expected, 'line_endpoints': copy.deepcopy(endpoints)}
                 state['line_endpoints']['line']['end']['x'] += drift
-                runner.call = lambda path, data: calls.append((path, data))
+                runner.report = {}
+                runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
                 runner.open_page = lambda: None
                 runner.hydrate = lambda saved: state
                 runner.editor = lambda op: calls.append(op)
@@ -759,7 +761,8 @@ class LocalEdits(unittest.TestCase):
                 calls, writes = [], []
                 state = {'nodes': copy.deepcopy(expected), 'render_alpha': copy.deepcopy(expected_alpha)}
                 state['render_alpha']['line']['text'] = restored_alpha
-                runner.call = lambda path, data: calls.append((path, data))
+                runner.report = {}
+                runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
                 def open_page():
                     runner.token, runner.task, runner.tab = 'new-token', 'new-task', 'new-tab'
                 runner.open_page = open_page
@@ -848,7 +851,11 @@ class DeleteUndoRunnerTests(unittest.TestCase):
 
         runner.export, runner.open_page, runner.editor = export, open_page, editor
         runner.hydrate = lambda raw: snapshot()
-        runner.call = lambda path, data: runner.events.append(('complete', runner.task, data))
+        def complete(path, data):
+            runner.events.append(('complete', runner.task, data))
+            return {'taskId':runner.task, 'state':'completed', 'keep':data['keep'],
+                    'closed':0 if data['keep'] else 1, 'released':1 if data['keep'] else 0}
+        runner.call = complete
         runner.write = lambda name, data: runner.writes.update({name: copy.deepcopy(data)})
         return runner
 
@@ -891,13 +898,14 @@ class DeleteUndoRunnerTests(unittest.TestCase):
         delete = {'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}
         for operations, successful_undos in (([{'kind': 'undo'}], 0),
                 ([delete, {'kind': 'text', 'id': 'b', 'text': 'changed'}, {'kind': 'undo'}], 0),
-                ([delete, {'kind': 'undo'}, {'kind': 'undo'}], 1)):
+                ([delete, {'kind': 'undo'}, {'kind': 'undo'}], 0)):
             with self.subTest(operations=operations):
                 runner = self.make_runner(operations)
                 with self.assertRaisesRegex(VerificationError, 'only allowed immediately'):
                     runner.run()
                 self.assertEqual(sum(e[0] == 'editor' and e[2] == 'undo' for e in runner.events), successful_undos)
                 self.assertFalse(runner.uncertain)
+                self.assertEqual(runner.events, [])
 
     def test_lost_delete_or_undo_response_preserves_uncertain_page_without_retry(self):
         operations = [{'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}, {'kind': 'undo'}]
@@ -939,7 +947,7 @@ class DeleteUndoRunnerTests(unittest.TestCase):
                 runner.editor, runner.export = editor, export
                 with self.assertRaises(VerificationError):
                     runner.run()
-                self.assertTrue(runner.uncertain)
+                self.assertEqual(runner.uncertain, drift != 'raw')
                 self.assertFalse(any(e[0] == 'editor' and e[2] == 'undo' for e in runner.events))
                 self.assertEqual([e for e in runner.events if e[0] == 'complete'], [])
 
@@ -962,9 +970,12 @@ class DeleteUndoRunnerTests(unittest.TestCase):
                 runner.hydrate = hydrate
                 with self.assertRaisesRegex(VerificationError, 'Fresh-page'):
                     runner.run()
-                self.assertTrue(runner.uncertain)
-                self.assertEqual(len(runner.report['steps']), 1)
-                self.assertEqual(runner.report['status'], 'running')
+                self.assertFalse(runner.uncertain)
+                self.assertEqual(len(runner.report['steps']), 2)
+                self.assertEqual(runner.report['steps'][1]['save_status'], 'confirmed')
+                self.assertEqual(runner.report['steps'][1]['verification_status'], 'failed')
+                self.assertEqual(runner.report['steps'][1]['failure_phase'], 'reopen')
+                self.assertEqual(runner.report['status'], 'unverified')
 
 
 if __name__ == '__main__':

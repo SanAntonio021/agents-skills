@@ -40,7 +40,7 @@ def compile_diagram(spec):
         if geometry['width'] <= 0 or geometry['height'] <= 0:
             raise ValueError('Shape dimensions must be positive')
         size = item.get('font_size', 20)
-        if not isinstance(size, (int, float)) or not math.isfinite(size) or size <= 0:
+        if isinstance(size, bool) or not isinstance(size, (int, float)) or not math.isfinite(size) or size <= 0:
             raise ValueError('font_size must be positive and finite')
         if not isinstance(item.get('text', ''), str):
             raise ValueError('text must be a string')

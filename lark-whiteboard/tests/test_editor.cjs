@@ -16,11 +16,12 @@ const context = {URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:
 const adapter = vm.runInNewContext('('+source+')',context);
 const req = {document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}};
 assert.equal(adapter(req).nodes.length,0);
-assert.throws(()=>adapter({...req,document_url:'https://test.feishu.cn/docx/Wrong'}),/DOCUMENT_URL_MISMATCH/);
-assert.throws(()=>adapter({...req,whiteboard_token:'Wrong'}),/BOARD_IDENTITY/);
-assert.throws(()=>adapter({...req,operation:{kind:'enter'}}),/UNVERIFIED_EDITOR_BUILD/);
+const rejected=(r,pattern)=>{const result=adapter(r);assert.match(result.adapter_error,pattern);assert.equal(result.content_write_started,false);};
+rejected({...req,document_url:'https://test.feishu.cn/docx/Wrong'},/DOCUMENT_URL_MISMATCH/);
+rejected({...req,whiteboard_token:'Wrong'},/BOARD_IDENTITY/);
+rejected({...req,operation:{kind:'enter'}},/UNVERIFIED_EDITOR_BUILD/);
 context.document.querySelectorAll=()=>[element,element];
-assert.throws(()=>adapter(req),/NOT_UNIQUE/);
+rejected(req,/NOT_UNIQUE/);
 assert.equal(writes,0);
 console.log('PASS: read-only inspection and four failure paths make no editor calls');
 

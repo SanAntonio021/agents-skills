@@ -262,9 +262,10 @@ class CaptionFormatChecks(unittest.TestCase):
         for field, value in (('caption_width', 200), ('caption_size_mode', 0)):
             runner = Runner.__new__(Runner)
             runner.token = runner.task = runner.tab = 'owned'
+            runner.report = {}
             state = {'nodes': copy.deepcopy(expected)}
             line(state)[field] = value
-            runner.call = lambda path, data: None
+            runner.call = lambda path, data: {'taskId':'owned','state':'completed','keep':False,'closed':1,'released':0}
             runner.open_page = lambda: None
             runner.hydrate = lambda saved: state
             runner.write = lambda name, value: None

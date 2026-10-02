@@ -100,6 +100,24 @@ CAPTION_PLACEMENTS = {'on_line': 0, 'above_line': 1, 'below_line': 2}
 CAPTION_DEFAULT_RAW_FIELDS = {'text', 'angle', 'font_size', 'font_weight', 'horizontal_align', 'vertical_align',
                               'italic', 'line_through', 'underline', 'text_color', 'text_color_type',
                               'text_background_color_type', 'theme_text_background_color_code'}
+ARROW_STYLES = {'none', 'line_arrow', 'triangle_arrow', 'empty_triangle_arrow', 'circle_arrow',
+                'empty_circle_arrow', 'diamond_arrow', 'empty_diamond_arrow', 'single_arrow',
+                'multi_arrow', 'exact_single_arrow', 'zero_or_single_arrow', 'single_or_multi_arrow',
+                'zero_or_multi_arrow', 'x_arrow'}
+OPERATION_FIELDS = {
+    'text': ({'id', 'text'}, set()), 'font': ({'id', 'font_size'}, set()),
+    'resize': ({'id', 'width', 'height'}, set()), 'move': ({'ids', 'dx', 'dy'}, set()),
+    'arrow': ({'id', 'start', 'end'}, set()), 'caption': ({'id', 'text'}, set()),
+    'caption_position': ({'id'}, {'position', 'placement'}),
+    'caption_format': ({'id'}, {'font_size', 'width', 'auto_width'}),
+    'line_type': ({'id', 'shape'}, set()), 'path': ({'id', 'points'}, set()),
+    'curve_point': ({'id', 'point'}, {'mode', 'index'}), 'style': ({'id', 'style'}, set()),
+    'anchors': ({'id'}, {'start', 'end'}), 'reconnect': ({'id'}, {'start_id', 'end_id'}),
+    'connect': ({'start_id', 'end_id'}, {'template_id'}), 'group': ({'ids'}, set()),
+    'ungroup': ({'id'}, set()), 'align_top': ({'ids'}, set()),
+    'distribute_horizontal': ({'ids'}, set()), 'delete': ({'ids', 'delete_ids'}, set()),
+    'undo': (set(), set()),
+}
 
 
 def safe_cli_error(payload):
@@ -123,19 +141,104 @@ def safe_cli_error(payload):
 
 
 def validate_target(request):
+    if not isinstance(request, dict) or not isinstance(request.get('document_url'), str):
+        raise ValueError('Request requires a document_url string')
     u = urlparse(request['document_url'])
     host = u.hostname or ''
     if u.scheme != 'https' or u.username or u.password or u.port or not any(host == d or host.endswith('.' + d) for d in ('feishu.cn', 'larksuite.com')) or not re.fullmatch(r'/docx/[A-Za-z0-9]+/?', u.path) or u.query or u.fragment:
         raise ValueError('Expected a plain HTTPS Feishu/Lark docx URL')
-    if not re.fullmatch(r'[A-Za-z0-9]+', request['whiteboard_token']):
+    if not isinstance(request.get('whiteboard_token'), str) or not re.fullmatch(r'[A-Za-z0-9]+', request['whiteboard_token']):
         raise ValueError('Invalid whiteboard token')
     if not isinstance(request.get('operations', []), list):
         raise ValueError('operations must be a list')
     if 'capture_preview' in request and type(request['capture_preview']) is not bool:
         raise ValueError('capture_preview must be a boolean')
     for key in ('block_id', 'section_id'):
-        if key in request and not re.fullmatch(r'[A-Za-z0-9]+', request[key]):
+        if key in request and (not isinstance(request[key], str) or not re.fullmatch(r'[A-Za-z0-9]+', request[key])):
             raise ValueError('Invalid document block identifier')
+    validate_request_operations(request)
+
+
+def validate_request_operations(request):
+    """Validate the whole batch without reading or opening a board.
+
+    Object-dependent facts are deliberately checked later against each saved
+    state, so adding a caption then formatting it remains a valid batch.
+    """
+    if not isinstance(request, dict) or not isinstance(request.get('operations', []), list):
+        raise VerificationError('operations must be a list')
+    operations = request.get('operations', [])
+    for index, op in enumerate(operations):
+        validate_operation_parameters(op)
+        if op['kind'] == 'undo' and (index == 0 or operations[index-1]['kind'] != 'delete'):
+            raise VerificationError('Undo is only allowed immediately after a delete in the same request')
+
+
+def validate_operation_parameters(op):
+    if not isinstance(op, dict) or not isinstance(op.get('kind'), str) or op['kind'] not in OPERATION_FIELDS:
+        raise VerificationError('Unsupported operation kind')
+    kind = op['kind']
+    required, optional = OPERATION_FIELDS[kind]
+    if required - op.keys() or set(op) - required - optional - {'kind'}:
+        raise VerificationError('Missing or unsupported parameter for ' + kind)
+    def identifier(value):
+        return isinstance(value, str) and bool(value.strip())
+    for key in ('id', 'start_id', 'end_id', 'template_id'):
+        if key in op and not identifier(op[key]):
+            raise VerificationError('Object identifier must be a nonempty string')
+    for key in ('ids', 'delete_ids'):
+        if key in op and (not isinstance(op[key], list) or not op[key]
+                          or any(not identifier(i) for i in op[key]) or len(set(op[key])) != len(op[key])):
+            raise VerificationError('Object list must contain unique nonempty string IDs')
+    minimum = {'group': 2, 'align_top': 2, 'distribute_horizontal': 3}.get(kind, 1)
+    if 'ids' in op and len(op['ids']) < minimum:
+        raise VerificationError('Insufficient object selection for ' + kind)
+    if kind in ('text', 'caption') and not isinstance(op['text'], str):
+        raise VerificationError('Text must be a string')
+    if kind == 'font' and (not finite_number(op['font_size']) or not 4 <= op['font_size'] <= 999):
+        raise VerificationError('Font size must be a finite number in [4, 999]')
+    if kind == 'resize' and not all(finite_number(op[k], True) for k in ('width', 'height')):
+        raise VerificationError('Dimensions must be positive and finite')
+    if kind == 'move' and not all(finite_number(op[k]) for k in ('dx', 'dy')):
+        raise VerificationError('Movement must use finite numbers')
+    if kind == 'arrow' and any(not isinstance(op[k], str) or op[k] not in ARROW_STYLES for k in ('start', 'end')):
+        raise VerificationError('Unsupported arrow style')
+    if kind in ('caption_position', 'caption_format'):
+        # Reuse parameter validation without assuming the target already has a
+        # caption: a preceding operation may create it.
+        validate_caption_operation({'kind': 'connector', 'caption_texts': [''], 'caption_position_type': 0}, op)
+    if kind == 'line_type' and (not isinstance(op['shape'], str) or op['shape'] not in LINE_SHAPES):
+        raise VerificationError('Unsupported line type')
+    if kind == 'path' and (not isinstance(op['points'], list) or not op['points'] or not all(valid_point(p) for p in op['points'])):
+        raise VerificationError('Path points must be finite canvas x/y coordinates')
+    if kind == 'curve_point':
+        if not valid_point(op['point']):
+            raise VerificationError('Curve point must be finite canvas x/y coordinates')
+        if 'mode' in op and (not isinstance(op['mode'], str) or op['mode'] not in ('segment', 'turning')):
+            raise VerificationError('Unsupported curve handle mode')
+        if 'index' in op and (type(op['index']) is not int or op['index'] < 0):
+            raise VerificationError('Curve handle index must be a nonnegative integer')
+    if kind == 'style':
+        validate_style(op['style'])
+    if kind == 'anchors':
+        if not {'start', 'end'} & op.keys():
+            raise VerificationError('Anchor operation requires start or end')
+        for side in ('start', 'end'):
+            if side in op:
+                anchor = op[side]
+                if (not isinstance(anchor, dict) or set(anchor) != {'snap_to', 'position'}
+                        or anchor['snap_to'] not in ('top', 'right', 'bottom', 'left')
+                        or not valid_point(anchor['position']) or not all(0 <= v <= 1 for v in anchor['position'].values())):
+                    raise VerificationError('Anchor needs a supported edge and position in [0, 1]')
+                x, y = anchor['position']['x'], anchor['position']['y']
+                if not {'top': y == 0, 'right': x == 1, 'bottom': y == 1, 'left': x == 0}[anchor['snap_to']]:
+                    raise VerificationError('Anchor must lie on its specified edge')
+    if kind == 'reconnect' and not {'start_id', 'end_id'} & op.keys():
+        raise VerificationError('Reconnect requires a start_id or end_id')
+    if kind in ('connect', 'reconnect') and 'start_id' in op and 'end_id' in op and op['start_id'] == op['end_id']:
+        raise VerificationError('Self connection is not supported')
+    if kind == 'delete' and not set(op['ids']) <= set(op['delete_ids']):
+        raise VerificationError('Deletion set must include every selected object')
 
 
 def projection(raw):
@@ -227,7 +330,9 @@ def differences(before, after):
     return dict(added=sorted(b.keys()-a.keys()), removed=sorted(a.keys()-b.keys()), changed=sorted(k for k in a.keys() & b.keys() if not equivalent(a[k], b[k])))
 
 
-def check_scope(before, after, op, *, from_raw=False):
+def check_scope(before, after, op, *, from_raw=False, group_evidence=None):
+    if len({n['id'] for n in before}) != len(before) or len({n['id'] for n in after}) != len(after):
+        raise VerificationError('Local edit requires unique object IDs')
     delta = differences(before, after)
     ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
     lookup = {n['id']: n for n in before}
@@ -238,6 +343,7 @@ def check_scope(before, after, op, *, from_raw=False):
         if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
             raise VerificationError('Local edit requires unique object IDs')
         allowed = {op.get('id')}
+    allowed.update(check_group_bounds(before, after, op, group_evidence=group_evidence))
     if op['kind'] == 'connect':
         if len(delta['added']) != 1 or delta['removed'] or delta['changed']:
             raise VerificationError('Connect must add exactly one line and preserve all existing objects')
@@ -304,7 +410,7 @@ def validate_style(style):
     for key, value in style.items():
         if key.endswith('_color') and (not isinstance(value, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', value)):
             raise VerificationError('Style colors must be #RRGGBB')
-        if key == 'border_style' and value not in ('none', 'solid', 'dash', 'dot'):
+        if key == 'border_style' and value not in ('solid', 'dash', 'dot'):
             raise VerificationError('Unsupported border style')
         if key == 'border_width' and value not in ('extra_narrow', 'narrow', 'medium', 'bold'):
             raise VerificationError('Unsupported border width')
@@ -320,8 +426,8 @@ def valid_point(point):
 
 
 def curve_handle(node, op, *, from_raw=False):
-    if not node or node.get('kind') != 'connector' or node.get('shape') != 'curve' or node.get('parent_id'):
-        raise VerificationError('Curve point edit requires an ungrouped native curve')
+    if not node or node.get('kind') != 'connector' or node.get('shape') != 'curve':
+        raise VerificationError('Curve point edit requires a native curve')
     if not valid_point(op.get('point')):
         raise VerificationError('Curve point must be finite canvas x/y coordinates')
     points = node.get('points')
@@ -341,11 +447,26 @@ def curve_handle(node, op, *, from_raw=False):
 
 def validate_local_operation(nodes, op):
     """Reject unsupported parameters before invoking a mutating editor command."""
+    validate_operation_parameters(op)
     lookup = {n['id']: n for n in nodes}
     if len(lookup) != len(nodes):
         raise VerificationError('Local edit requires unique object IDs')
     kind = op['kind']
     node = lookup.get(op.get('id'))
+    reject_nested_groups(nodes, op)
+    affected = operation_target_ids(nodes, op)
+    for ident in affected:
+        target = lookup.get(ident)
+        if target is None:
+            raise VerificationError('Requested object does not exist: ' + ident)
+        current, visited = target, set()
+        while current is not None:
+            if current['id'] in visited:
+                raise VerificationError('Cyclic group membership is not supported')
+            visited.add(current['id'])
+            if current.get('locked') is True:
+                raise VerificationError('Requested object or affected group member is locked')
+            current = lookup.get(current.get('parent_id'))
     if kind in ('caption', 'caption_position', 'caption_format'):
         validate_caption_operation(node, op)
     elif kind == 'curve_point':
@@ -366,6 +487,16 @@ def validate_local_operation(nodes, op):
         if node['kind'] == 'connector' and ('fill_color' in op['style'] or
                 'text_color' in op['style'] and not node.get('caption_texts')):
             raise VerificationError('Connector has no fill or no caption to recolor')
+        if node['kind'] == 'text' and set(op['style']) != {'text_color'}:
+            raise VerificationError('Independent text style supports text_color only')
+    elif kind in ('arrow', 'anchors'):
+        if not node or node.get('kind') != 'connector':
+            raise VerificationError('Line edit requires an existing connector')
+        if kind == 'anchors':
+            for side in ('start', 'end'):
+                endpoint = lookup.get(node.get(side + '_id'))
+                if not endpoint or endpoint.get('kind') != 'shape':
+                    raise VerificationError('Anchor refresh requires both endpoints bound to existing native shapes')
     elif kind in ('line_type', 'path', 'reconnect'):
         if not node or node.get('kind') != 'connector':
             raise VerificationError('Line edit requires an existing connector')
@@ -398,6 +529,34 @@ def validate_local_operation(nodes, op):
             raise VerificationError('Self connection is not supported')
         if op.get('template_id') and lookup.get(op['template_id'], {}).get('kind') != 'connector':
             raise VerificationError('Connection template requires an existing connector')
+    elif kind in ('align_top', 'distribute_horizontal'):
+        if any(lookup[i].get('kind') != 'shape' for i in op['ids']):
+            raise VerificationError('Alignment and distribution require native shapes')
+    elif kind == 'move':
+        if any(lookup[i].get('kind') not in ('shape', 'text', 'connector', 'group') for i in op['ids']):
+            raise VerificationError('Movement requires supported native objects')
+        moving = set(op['ids'])
+        for ident in op['ids']:
+            moving.update(lookup[ident].get('children', []))
+        for ident in moving:
+            target = lookup[ident]
+            if target.get('kind') == 'connector' and any(target.get(side + '_id')
+                    and target[side + '_id'] not in moving for side in ('start', 'end')):
+                raise VerificationError('A bound connector can move uniformly only with all its bound shapes')
+    elif kind == 'ungroup':
+        if not node or node.get('kind') != 'group' or not node.get('children'):
+            raise VerificationError('Ungroup requires an existing native group')
+    elif kind == 'group':
+        if any(lookup[i].get('kind') not in ('shape', 'text', 'connector') for i in op['ids']):
+            raise VerificationError('Grouping requires supported ungrouped native objects')
+    elif kind == 'delete':
+        expected = set(op['ids'])
+        for ident in list(expected):
+            expected.update(lookup[ident].get('children', []))
+        expected.update(n['id'] for n in nodes if n.get('kind') == 'connector'
+                        and (n.get('start_id') in expected or n.get('end_id') in expected))
+        if expected != set(op['delete_ids']):
+            raise VerificationError('Deletion scope must exactly match selected objects, children and bound lines')
 
 
 def check_intent(before, after, op, delta=None, *, from_raw=False):
@@ -526,8 +685,18 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
         require(all(finite_number(b[ident].get(k)) and finite_number(a[ident].get(k))
                     and abs(b[ident][k] - a[ident][k]) <= 1e-3 for k in ('x', 'y')))
     if kind == 'move':
+        moving = set(op['ids'])
         for node_id in op['ids']:
-            require(equivalent(b[node_id]['x'], a[node_id]['x'] + op['dx']) and equivalent(b[node_id]['y'], a[node_id]['y'] + op['dy']))
+            moving.update(a[node_id].get('children', []))
+        for node_id in moving:
+            require(node_id in b and equivalent(b[node_id]['x'], a[node_id]['x'] + op['dx'])
+                    and equivalent(b[node_id]['y'], a[node_id]['y'] + op['dy']))
+            editable = {'x', 'y', 'points'} if a[node_id].get('kind') == 'connector' else {'x', 'y'}
+            require(equivalent({k:v for k,v in a[node_id].items() if k not in editable},
+                               {k:v for k,v in b[node_id].items() if k not in editable}))
+            if a[node_id].get('kind') == 'connector' and ('points' in a[node_id] or 'points' in b[node_id]):
+                require(points_equivalent(b[node_id].get('points'),
+                                          [{'x': p['x']+op['dx'], 'y': p['y']+op['dy']} for p in a[node_id].get('points', [])]))
     if kind == 'arrow':
         require(b[ident]['start_arrow'] == op['start'] and b[ident]['end_arrow'] == op['end'])
     if kind == 'style':
@@ -573,31 +742,293 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
     if kind == 'align_top':
         top = min(a[i]['y'] for i in op['ids'])
         require(all(equivalent(b[i]['y'], top) for i in op['ids']))
+        require(all(equivalent({k:v for k,v in a[i].items() if k != 'y'},
+                               {k:v for k,v in b[i].items() if k != 'y'}) for i in op['ids']))
     if kind == 'distribute_horizontal':
-        nodes = sorted((b[i] for i in op['ids']), key=lambda n: n['x'])
-        gaps = [right['x'] - left['x'] - left['width'] for left, right in zip(nodes, nodes[1:])]
-        require(len(gaps) >= 2 and all(equivalent(gap, gaps[0]) for gap in gaps[1:]))
+        ordered = sorted((a[i] for i in op['ids']), key=lambda n: n['x'])
+        gap = (ordered[-1]['x'] + ordered[-1]['width'] - ordered[0]['x']
+               - sum(n['width'] for n in ordered)) / (len(ordered)-1)
+        position = ordered[0]['x']
+        for old in ordered:
+            require(equivalent(b[old['id']]['x'], position))
+            require(equivalent({k:v for k,v in old.items() if k != 'x'},
+                               {k:v for k,v in b[old['id']].items() if k != 'x'}))
+            position += old['width'] + gap
     if kind == 'delete':
         require(set(a) - set(b) == set(op['delete_ids']))
 
 
+def operation_target_ids(nodes, op):
+    """Objects a native operation can write, including temporary anchor refreshes."""
+    lookup = {n['id']: n for n in nodes}
+    ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
+    if op['kind'] in ('connect', 'reconnect'):
+        ids.update(op[k] for k in ('start_id', 'end_id', 'template_id') if k in op)
+    if op['kind'] == 'anchors':
+        line = lookup.get(op.get('id'), {})
+        ids.update(line.get(side + '_id') for side in ('start', 'end') if line.get(side + '_id'))
+    pending = list(ids)
+    while pending:
+        for child in lookup.get(pending.pop(), {}).get('children', []):
+            if child not in ids:
+                ids.add(child)
+                pending.append(child)
+    if op['kind'] in ('move', 'resize', 'align_top', 'distribute_horizontal', 'delete', 'anchors', 'reconnect', 'connect'):
+        ids.update(n['id'] for n in nodes if n.get('kind') == 'connector'
+                   and (n.get('start_id') in ids or n.get('end_id') in ids))
+    return ids
+
+
 def reject_nested_groups(nodes, op):
     lookup = {n['id']: n for n in nodes}
-    ids = op.get('ids', []) or ([op['id']] if op.get('id') else [])
+    ids = set(op.get('ids', [])) | ({op['id']} if op.get('id') else set())
+    if op['kind'] in ('connect', 'reconnect'):
+        ids.update(op[k] for k in ('start_id', 'end_id', 'template_id') if k in op)
+    member_operations = {'text', 'font', 'style', 'arrow', 'caption', 'caption_position', 'caption_format',
+                         'line_type', 'path', 'curve_point', 'move', 'resize'}
+    for ident in ids:
+        if set(lookup.get(ident, {}).get('children', [])) & ids:
+            raise VerificationError('A group and its member cannot be selected together')
     for ident in ids:
         n = lookup.get(ident, {})
         if n.get('parent_id'):
-            raise VerificationError('Operate on the top-level group or ungroup first')
+            parent = lookup.get(n['parent_id'])
+            if (not parent or parent.get('kind') != 'group' or parent.get('parent_id')
+                    or ident not in parent.get('children', []) or op['kind'] not in member_operations):
+                raise VerificationError('Only supported edits inside one existing group are allowed')
+            if any(lookup.get(child, {}).get('children') for child in parent.get('children', [])):
+                raise VerificationError('Nested group operations are not supported')
         if n.get('children') and any(lookup.get(child, {}).get('children') for child in n['children']):
             raise VerificationError('Nested group operations are not supported')
         if op['kind'] == 'group' and n.get('children'):
             raise VerificationError('Creating nested groups is not supported')
 
 
-def check_raw_preservation(before, after, op):
+def canonical_group_projection(nodes, bounds):
+    """Derive only one-level group envelopes from native member bounds.
+
+    The server's group rectangle is a cache, not member placement. No member or
+    other group property is removed from either comparison.
+    """
+    result = copy.deepcopy(nodes)
+    lookup = {n['id']: n for n in result}
+    geometry = ('x', 'y', 'width', 'height')
+    if not isinstance(bounds, dict):
+        raise VerificationError('Native member bounds are required for group cache comparison')
+    for group in result:
+        if group.get('kind') != 'group':
+            continue
+        children = group.get('children', [])
+        if (group.get('parent_id') or not children or any(i not in lookup or lookup[i].get('children')
+                or not isinstance(bounds.get(i), dict)
+                or not all(finite_number(bounds[i].get(k)) for k in geometry)
+                or bounds[i]['width'] < 0 or bounds[i]['height'] < 0 for i in children)):
+            raise VerificationError('Only complete one-level native group bounds can be derived')
+        x, y = min(bounds[i]['x'] for i in children), min(bounds[i]['y'] for i in children)
+        group.update(x=x, y=y,
+                     width=max(bounds[i]['x']+bounds[i]['width'] for i in children)-x,
+                     height=max(bounds[i]['y']+bounds[i]['height'] for i in children)-y)
+    return result
+
+
+def check_group_bounds(before, after, op, *, group_evidence=None):
+    """Allow only the native derived envelope of an affected one-level group.
+
+    Native getRectNode includes curve labels and arrow padding; base rectangles
+    alone cannot prove their envelope. Runtime passes the before/after native child bounds. Pure
+    shape-only checks may use their already axis-aligned base rectangles.
+    """
+    a, b = ({n['id']: n for n in nodes} for nodes in (before, after))
+    if op['kind'] in ('group', 'ungroup', 'delete', 'undo'):
+        return set()
+    affected = operation_target_ids(before, op)
+    parents = {a[i]['parent_id'] for i in affected if i in a and a[i].get('parent_id')}
+    allowed = set()
+    geometry = {'x', 'y', 'width', 'height'}
+    for ident in parents:
+        old, new = a.get(ident), b.get(ident)
+        if (not old or not new or old.get('kind') != 'group' or old.get('parent_id')
+                or not old.get('children') or any(i not in a or i not in b for i in old['children'])):
+            raise VerificationError('Parent group identity or members changed during member editing')
+        if not equivalent({k:v for k,v in old.items() if k not in geometry},
+                          {k:v for k,v in new.items() if k not in geometry}):
+            raise VerificationError('Parent group properties changed during member editing')
+        children = old['children']
+        if group_evidence is not None:
+            if (not isinstance(group_evidence, dict) or not all(isinstance(group_evidence.get(side), dict) for side in ('before', 'after'))
+                    or any(not isinstance(group_evidence[side].get(i), dict)
+                           or not all(finite_number(group_evidence[side][i].get(k)) for k in geometry)
+                           for side in ('before', 'after') for i in children)):
+                raise VerificationError('Complete native group member bounds are required')
+            bounds_before, bounds_after = group_evidence['before'], group_evidence['after']
+            for child in set(children) - affected:
+                if not all(caption_position_equivalent(bounds_before[child][k], bounds_after[child][k]) for k in geometry):
+                    raise VerificationError('An unrequested group member visible bound changed')
+        else:
+            bounds_before, bounds_after = a, b
+        changed = any(any(not caption_position_equivalent(bounds_before[i].get(k), bounds_after[i].get(k))
+                          for k in geometry) for i in children)
+        if not changed:
+            if not all(caption_position_equivalent(old.get(k), new.get(k)) for k in geometry):
+                raise VerificationError('Parent bounds changed without member geometry changing')
+            continue
+        if any(not all(finite_number(bounds_after[i].get(k)) for k in geometry) for i in children):
+            raise VerificationError('Group member geometry must be finite')
+        if group_evidence is None and any(a[i].get('kind') == 'connector' for i in children):
+            raise VerificationError('Native visible bounds are required for group connector edits')
+        x, y = min(bounds_after[i]['x'] for i in children), min(bounds_after[i]['y'] for i in children)
+        expected = {'x': x, 'y': y,
+                    'width': max(bounds_after[i]['x']+bounds_after[i]['width'] for i in children)-x,
+                    'height': max(bounds_after[i]['y']+bounds_after[i]['height'] for i in children)-y}
+        if not all(finite_number(new.get(k)) and abs(new[k]-expected[k]) <= 1e-3 for k in geometry):
+            raise VerificationError('Parent group bounds do not match its actual member envelope')
+        if any(not caption_position_equivalent(old.get(k), new.get(k)) for k in geometry):
+            allowed.add(ident)
+    return allowed
+
+
+def raw_parent_ids(nodes):
+    parents = {n['id']: n.get('parent_id', '') for n in nodes}
+    for node in nodes:
+        for child in node.get('children', []):
+            parents[child] = node['id']
+    return parents
+
+
+def deletion_layer_normalization(before, after, op):
+    """A native deletion compacts surviving siblings to dense layer indices.
+
+    Isolated delete/immediate-undo raw evidence showed this exact compaction;
+    ordinary edits have no permission to change any absolute layer index.
+    """
+    if op['kind'] != 'delete':
+        return {}
+    a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
+    parents = raw_parent_ids(before['nodes'])
+    removed = a.keys() - b.keys()
+    changed = {}
+    for parent in {parents[i] for i in removed}:
+        siblings = [i for i in a if parents[i] == parent]
+        survivors = [i for i in siblings if i in b]
+        if not any(a[i].get('z_index') != b[i].get('z_index') for i in survivors):
+            continue
+        if any(type(a[i].get('z_index')) is not int or a[i]['z_index'] < 0 for i in siblings):
+            raise VerificationError('Deletion layer normalization requires integer sibling indices')
+        if len({a[i]['z_index'] for i in siblings}) != len(siblings):
+            raise VerificationError('Deletion layer normalization requires unique sibling indices')
+        ordered = sorted(survivors, key=lambda i:a[i]['z_index'])
+        if any(type(b[i].get('z_index')) is not int or b[i]['z_index'] != rank for rank, i in enumerate(ordered)):
+            raise VerificationError('Deletion changed surviving sibling stacking order')
+        changed.update((i, {'id': i, 'normalization': 'delete_sibling_layer_compaction',
+                            'before_z_index': a[i]['z_index'], 'after_z_index': b[i]['z_index']})
+                       for i in survivors if a[i]['z_index'] != b[i]['z_index'])
+    return changed
+
+
+def group_layer_normalization(before, after, op):
+    """Validate measured native group/ungroup sibling ordering and dense ranks."""
+    kind = op['kind']
+    if kind not in ('group', 'ungroup'):
+        return {}
+    a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
+    parents, current_parents = raw_parent_ids(before['nodes']), raw_parent_ids(after['nodes'])
+    roots = [i for i in a if not parents[i]]
+    if any(type(a[i].get('z_index')) is not int or a[i]['z_index'] < 0 for i in roots):
+        raise VerificationError('Grouping requires integer root layer indices')
+    if len({a[i]['z_index'] for i in roots}) != len(roots):
+        raise VerificationError('Grouping requires unique root layer indices')
+    roots.sort(key=lambda i:a[i]['z_index'])
+    expected = {}
+    if kind == 'group':
+        added = b.keys() - a.keys()
+        if len(added) != 1 or not set(op['ids']) <= set(roots):
+            raise VerificationError('Grouping requires ungrouped existing objects')
+        group = next(iter(added))
+        members = [i for i in roots if i in op['ids']]
+        if b[group].get('type') != 'group' or set(b[group].get('children', [])) != set(members):
+            raise VerificationError('Native group membership changed unexpectedly')
+        if any(current_parents.get(i) != group for i in members):
+            raise VerificationError('Native group did not preserve member parent identity')
+        # The new group replaces the highest selected layer after the other
+        # selected objects have been removed from the root sibling order.
+        highest = members[-1]
+        ordered = [group if i == highest else i for i in roots if i not in members or i == highest]
+        expected.update((i, rank) for rank, i in enumerate(members))
+    else:
+        group = op['id']
+        if group not in roots or a[group].get('type') != 'group' or group in b:
+            raise VerificationError('Ungroup did not remove the requested root group')
+        members = list(a[group].get('children', []))
+        if not members or any(i not in a or i not in b or parents[i] != group for i in members):
+            raise VerificationError('Ungroup changed the existing member identity set')
+        if any(type(a[i].get('z_index')) is not int for i in members) or len({a[i]['z_index'] for i in members}) != len(members):
+            raise VerificationError('Ungroup requires unique native member layer indices')
+        members.sort(key=lambda i:a[i]['z_index'])
+        if any(current_parents.get(i) for i in members):
+            raise VerificationError('Ungroup did not release members at the root')
+        ordered = [member for i in roots for member in (members if i == group else [i])]
+    if set(ordered) != {i for i in b if not current_parents[i]}:
+        raise VerificationError('Grouping changed unrelated root membership')
+    expected.update((i, rank) for rank, i in enumerate(ordered))
+    if any(type(b[i].get('z_index')) is not int or b[i]['z_index'] != rank for i, rank in expected.items()):
+        raise VerificationError('Native grouping changed the measured sibling stacking order')
+    return {i: {'id': i, 'normalization': kind + '_sibling_layer_reindex',
+                'before_z_index': a[i]['z_index'], 'after_z_index': b[i]['z_index']}
+            for i in expected if i in a and a[i]['z_index'] != b[i]['z_index']}
+
+
+def check_raw_preservation(before, after, op, *, group_evidence=None):
     """Compare all raw properties, exempting only operation-owned fields."""
     import copy
     a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
+    if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
+        raise VerificationError('Raw readback requires unique object IDs')
+    kind = op['kind']
+    added, removed = b.keys() - a.keys(), a.keys() - b.keys()
+    if kind in ('group', 'connect'):
+        if len(added) != 1 or removed:
+            raise VerificationError('Raw readback changed the requested object creation set')
+    elif kind == 'append':
+        if not added or removed:
+            raise VerificationError('Raw append must preserve all existing object IDs')
+    elif kind == 'delete':
+        if added or removed != set(op['delete_ids']):
+            raise VerificationError('Raw deletion did not match the explicit deletion set')
+    elif kind == 'ungroup':
+        if added or removed != {op['id']}:
+            raise VerificationError('Raw ungroup did not match the requested group')
+    elif added or removed:
+        raise VerificationError('Raw readback changed the object ID set')
+    layer_normalizations = deletion_layer_normalization(before, after, op)
+    layer_normalizations.update(group_layer_normalization(before, after, op))
+    needs_projection = kind in ('style','reconnect','line_type','path','curve_point','connect') or (
+        kind != 'undo' and any(n.get('type') == 'group' for n in before['nodes']))
+    before_projection, after_projection = (projection(before), projection(after)) if needs_projection else ([], [])
+    cache_exceptions = []
+    if kind != 'undo' and group_evidence is not None and any(n.get('type') == 'group' for n in before['nodes']):
+        before_projection = canonical_group_projection(before_projection, group_evidence.get('before'))
+        after_projection = canonical_group_projection(after_projection, group_evidence.get('after'))
+        affected = operation_target_ids(before_projection, op)
+        parents = {n['parent_id'] for n in before_projection if n['id'] in affected and n.get('parent_id')}
+        after_canonical = {n['id']:n for n in after_projection}
+        for ident in parents:
+            if ident not in a or ident not in b:
+                continue
+            geometry = ('x', 'y', 'width', 'height')
+            if all(caption_position_equivalent(a[ident].get(k), b[ident].get(k)) for k in geometry):
+                continue
+            if not all(finite_number(b[ident].get(k)) and abs(b[ident][k]-after_canonical[ident][k]) <= 1e-3 for k in geometry):
+                raise VerificationError('Changed raw group cache does not match native member bounds')
+            cache_exceptions.append({'id':ident, 'normalization':'native_derived_group_bounds_cache',
+                                     'raw_bounds':{k:b[ident][k] for k in geometry}})
+    derived_parents = (check_group_bounds(before_projection, after_projection, op, group_evidence=group_evidence)
+                       if op.get('kind') != 'undo' and any(n.get('type') == 'group' for n in before['nodes']) else set())
+    derived_parents.update(e['id'] for e in cache_exceptions)
+    def strip_parent_bounds(ident, left, right):
+        if ident in derived_parents:
+            for node in (left, right):
+                for field in ('x', 'y', 'width', 'height'):
+                    node.pop(field, None)
     if op['kind'] in ('caption', 'caption_position', 'caption_format'):
         if a.keys() != b.keys() or len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
             raise VerificationError('Caption operation changed the object ID set or duplicated an ID')
@@ -605,6 +1036,7 @@ def check_raw_preservation(before, after, op):
         target = op['id']
         for ident in a:
             left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
+            strip_parent_bounds(ident, left, right)
             if ident == target:
                 lc, rc = left['connector'], right['connector']
                 if op['kind'] == 'caption_format':
@@ -640,20 +1072,21 @@ def check_raw_preservation(before, after, op):
                 raise VerificationError('Unexpected raw property change on object ' + ident)
         if (op['kind'] == 'caption_format' and 'font_size' in op
                 and not caption_position_equivalent(b[target]['connector']['captions']['data'][0].get('font_size'), op['font_size'])):
-            return [{'id':target,'normalization':'cli_caption_font_size_truncation',
+            return cache_exceptions + [{'id':target,'normalization':'cli_caption_font_size_truncation',
                      'requested_font_size':op['font_size'],
                      'raw_font_size':b[target]['connector']['captions']['data'][0].get('font_size'),
                      'native_reopen_required':True}]
-        return []
+        return cache_exceptions
     if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'curve_point', 'connect'):
         if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
             raise VerificationError('Local edit requires unique object IDs')
-        check_scope(projection(before), projection(after), op, from_raw=True)
+        check_scope(before_projection, after_projection, op, from_raw=True, group_evidence=group_evidence)
         if op['kind'] != 'connect' and a.keys() != b.keys():
             raise VerificationError('Local edit changed the object ID set')
         target = op.get('id')
         for ident in a:
             left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
+            strip_parent_bounds(ident, left, right)
             if ident == target:
                 if op['kind'] == 'style':
                     for key in op['style']:
@@ -703,12 +1136,12 @@ def check_raw_preservation(before, after, op):
                             node.pop(field, None)
             if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
                 raise VerificationError('Unexpected raw property change on object ' + ident)
-        return []
+        return cache_exceptions
     ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
     for ident in list(ids):
         ids.update(a.get(ident, {}).get('children', []))
     kind = op['kind']
-    exceptions = []
+    exceptions = list(layer_normalizations.values()) + cache_exceptions
     def strip(node, path):
         current = node
         for key in path[:-1]:
@@ -716,7 +1149,10 @@ def check_raw_preservation(before, after, op):
         current.pop(path[-1], None)
     for ident in a.keys() & b.keys():
         left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
-        paths = [('z_index',)]
+        strip_parent_bounds(ident, left, right)
+        paths = []
+        if ident in layer_normalizations:
+            paths.append(('z_index',))
         if kind == 'undo' and 'locked' not in left and right.get('locked') is False:
             paths.append(('locked',))
             exceptions.append({'id':ident, 'normalization':'undo_missing_locked_to_false'})
@@ -726,9 +1162,58 @@ def check_raw_preservation(before, after, op):
                     paths.append(('style',field))
                     exceptions.append({'id':ident,'normalization':'undo_missing_'+field+'_to_false'})
         c = a[ident].get('connector', {})
+        target_parent = a.get(op.get('id'), {}).get('parent_id')
+        old_turning, new_turning = c.get('turning_points'), b[ident].get('connector', {}).get('turning_points')
+        if (kind in ('text','font') and target_parent and left.get('parent_id') == target_parent
+                and c.get('shape') == 'curve' and old_turning != new_turning
+                and isinstance(group_evidence, dict)
+                and all(a.get((c.get(side + '_object') or c.get(side, {}).get('attached_object', {})).get('id'), {}).get('parent_id')
+                        == target_parent for side in ('start','end'))
+                and isinstance(old_turning,list) and isinstance(new_turning,list)
+                and len(old_turning) == len(new_turning)
+                and all(valid_point(p) for p in old_turning+new_turning)
+                and all(abs(p[k]-q[k]) <= 1e-6 for p,q in zip(old_turning,new_turning) for k in ('x','y'))):
+            native_before = {n['id']:n for n in group_evidence.get('native_before', [])}
+            native_after = {n['id']:n for n in group_evidence.get('native_after', [])}
+            lp,rp = native_before.get(ident,{}).get('points'),native_after.get(ident,{}).get('points')
+            endpoints_before = group_evidence.get('native_endpoints_before',{}).get(ident,{})
+            endpoints_after = group_evidence.get('native_endpoints_after',{}).get(ident,{})
+            valid_bindings = all(any(r.get('id')==ident and r.get('valid') is True
+                                    for r in group_evidence.get(key,[]))
+                                 for key in ('bindings_before','bindings_after'))
+            if (isinstance(lp,list) and isinstance(rp,list) and len(lp)==len(rp)
+                    and all(valid_point(p) for p in lp+rp)
+                    and set(endpoints_before)==set(endpoints_after)=={'start','end'}
+                    and all(valid_point(p) for p in [*endpoints_before.values(),*endpoints_after.values()])
+                    and valid_bindings
+                    and all(abs(p[k]-q[k]) <= 1e-5 for p,q in zip(lp,rp) for k in ('x','y'))
+                    and all(abs(endpoints_before[s][k]-endpoints_after[s][k]) <= 1e-5
+                            for s in ('start','end') for k in ('x','y'))):
+                paths.append(('connector','turning_points'))
+                exceptions.append({'id':ident,'normalization':'grouped_text_curve_turning_point_roundoff',
+                                   'before':old_turning,'after':new_turning,'maximum_difference':
+                                   max((abs(p[k]-q[k]) for p,q in zip(old_turning,new_turning) for k in ('x','y')),default=0)})
+        if (kind == 'text' and target_parent and left.get('parent_id') == target_parent
+                and c.get('shape') == 'curve' and left.get('height') == 0
+                and finite_number(right.get('height')) and 0 < right['height'] <= 1e-12
+                and all(left.get(k) == right.get(k) for k in ('x', 'y', 'width'))
+                and all(a.get((c.get(side + '_object') or c.get(side, {}).get('attached_object', {})).get('id'), {}).get('parent_id')
+                        == target_parent for side in ('start', 'end'))):
+            # The isolated grouped-text command preserves curve geometry but
+            # serializes horizontal zero height as floating-point roundoff.
+            paths.append(('height',))
+            exceptions.append({'id': ident, 'normalization': 'grouped_text_curve_zero_height_roundoff',
+                               'raw_height': right['height']})
         connected = any((c.get(side + '_object') or c.get(side, {}).get('attached_object', {})).get('id') in ids for side in ('start', 'end'))
-        geometry = ident in ids and kind in ('move','resize','align_top','distribute_horizontal','group','ungroup') or connected and kind in ('move','resize','align_top','distribute_horizontal','group','ungroup')
-        if geometry:
+        if ident in ids and kind == 'move':
+            paths += [('x',), ('y',)]
+        elif ident in ids and kind == 'resize':
+            paths += [('width',), ('height',)]
+        elif ident in ids and kind == 'align_top':
+            paths += [('y',)]
+        elif ident in ids and kind == 'distribute_horizontal':
+            paths += [('x',)]
+        if connected and ident not in ids and kind in ('move','resize','align_top','distribute_horizontal'):
             paths += [(k,) for k in ('x','y','width','height')]
             if c:
                 paths += [('connector','turning_points')]
@@ -751,15 +1236,19 @@ def check_raw_preservation(before, after, op):
         for path in paths:
             strip(left, path)
             strip(right, path)
-        preserved = (json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
-                     if kind in ('text', 'font', 'resize') else equivalent(left, right))
+        preserved = json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
         if not preserved:
             raise VerificationError('Unexpected raw property change on object ' + ident)
-    # Absolute z indexes may be renumbered, but unrelated objects keep their order.
+    # Operations above preserve absolute layers as well as their order.
     untouched = (a.keys() & b.keys()) - ids
-    order = lambda lookup: sorted(untouched, key=lambda i:(lookup[i].get('z_index',0), i))
-    if order(a) != order(b):
-        raise VerificationError('Unrelated object stacking order changed')
+    old_parents, new_parents = raw_parent_ids(before['nodes']), raw_parent_ids(after['nodes'])
+    for parent in {old_parents[i] for i in untouched}:
+        siblings = {i for i in untouched if old_parents[i] == parent}
+        if any(new_parents[i] != parent for i in siblings):
+            raise VerificationError('Unrelated object parent changed')
+        order = lambda lookup: sorted(siblings, key=lambda i:(lookup[i].get('z_index',0), i))
+        if order(a) != order(b):
+            raise VerificationError('Unrelated sibling stacking order changed')
     return exceptions
 
 
@@ -795,7 +1284,8 @@ class Runner:
     def __init__(self, request, output, proxy_url, timeout=45):
         validate_target(request)
         self.request, self.output, self.timeout = request, Path(output), timeout
-        self.output.mkdir(parents=True, exist_ok=False)
+        if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError('Timeout must be a positive finite number')
         u = urlparse(proxy_url)
         if u.scheme != 'http' or u.hostname not in ('127.0.0.1', 'localhost', '::1') or u.username or u.password or u.path not in ('', '/') or u.query or u.fragment:
             raise ValueError('Proxy must be an existing loopback HTTP service')
@@ -803,7 +1293,7 @@ class Runner:
         self.token = self.task = self.tab = None
         self.uncertain = False
         self.index = 0
-        self.report = {'status': 'running', 'steps': []}
+        self.report = {'status': 'running', 'steps': [], 'pages': [], 'cleanup_receipts': []}
         self.cli = shutil.which('lark-cli.exe') or shutil.which('lark-cli')
         if self.cli and Path(self.cli).suffix.lower() != '.exe' and __import__('os').name == 'nt':
             binary = Path(self.cli).parent / 'node_modules' / '@larksuite' / 'cli' / 'bin' / 'lark-cli.exe'
@@ -813,6 +1303,7 @@ class Runner:
         if not self.cli:
             raise ValueError('lark-cli is not installed')
         self.adapter = Path(__file__).with_name('editor.js').read_text(encoding='utf-8')
+        self.output.mkdir(parents=True, exist_ok=False)
 
     def write(self, name, data):
         (self.output / name).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -851,10 +1342,10 @@ class Runner:
         with urllib.request.urlopen(req, timeout=45) as r:
             return json.load(r)
 
-    def screenshot(self):
+    def screenshot(self, timeout=45):
         req = urllib.request.Request(self.proxy + '/v2/tabs/' + self.tab + '/screenshot?format=png',
                                      headers={'Authorization': 'Bearer ' + self.token})
-        with urllib.request.urlopen(req, timeout=45) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             data = response.read(16_000_001)
         if len(data) > 16_000_000:
             raise VerificationError('Preview exceeds the screenshot size limit')
@@ -869,16 +1360,27 @@ class Runner:
         label_ids = {n['id'] for n in baseline['nodes'] if n.get('kind') == 'connector' and n.get('caption_texts')
                      and (not self.request.get('operations') or n['id'] in affected)}
         previous = None
-        native_fallback = False
+        # Native pixels avoid the browser capture target lock, which can remain
+        # held after a client transport timeout. Both paths keep the same fences.
+        native_fallback = getattr(self,'prefer_native_preview',True)
+        fallback_reason = None
         attempts = 0
-        deadline = time.monotonic() + min(self.timeout, 12)
+        # A fallback or viewport change may resample, but cannot extend the
+        # overall observation budget.
+        deadline = time.monotonic() + min(self.timeout, 20)
+
+        def same_content(state):
+            return (equivalent(state.get('nodes'), baseline.get('nodes'))
+                    and self.alpha_equivalent(state.get('render_alpha'), baseline.get('render_alpha'))
+                    and equivalent(state.get('line_endpoints'), baseline.get('line_endpoints'))
+                    and state.get('seq') == baseline.get('seq')
+                    and state.get('savedSeq') == baseline.get('savedSeq')
+                    and state.get('seq') is not None and state.get('seq') == state.get('savedSeq'))
+
         while time.monotonic() < deadline:
             time.sleep(1)
             current = self.editor({'kind':'inspect'})
-            if (not equivalent(current['nodes'], baseline['nodes'])
-                    or not self.alpha_equivalent(current['render_alpha'], baseline['render_alpha'])
-                    or not equivalent(current['line_endpoints'], baseline['line_endpoints'])
-                    or current.get('seq') != current.get('savedSeq')):
+            if not same_content(current):
                 raise VerificationError('Board changed while capturing the saved preview; reread before editing')
             viewport = current.get('viewport') or {}
             rect = viewport.get('rect')
@@ -895,18 +1397,44 @@ class Runner:
                     self.report.update(visual_status='unavailable',visual_reason='Edited label is outside the visible board viewport: '+ident)
                     return
             attempts += 1
+            self.report['preview_attempts'] = attempts
             if not native_fallback:
+                remaining = deadline-time.monotonic()
+                if remaining <= 0:
+                    break
                 try:
-                    frame = self.screenshot()
-                except Exception:
+                    # A slow browser transfer must leave time for the canvas
+                    # fallback inside the same observation budget.
+                    frame = self.screenshot(timeout=min(5,remaining))
+                except Exception as error:
                     native_fallback = True
-                    deadline = time.monotonic() + min(self.timeout, 8)
+                    fallback_reason = 'browser_transport_error'
+                    self.report.update(preview_fallback_reason=fallback_reason,
+                                       preview_browser_error=type(error).__name__)
+                    previous = None
             if native_fallback:
-                payload = self.editor({'kind':'canvas_preview'}, current['nodes'])
-                data_url = payload.get('data_url', '')
-                if not data_url.startswith('data:image/png;base64,') or len(data_url) > 22_000_000:
-                    raise VerificationError('Native canvas preview is unavailable or too large')
-                frame = base64.b64decode(data_url.partition(',')[2], validate=True)
+                try:
+                    payload = self.editor({'kind':'canvas_preview'}, current['nodes'])
+                    if payload.get('viewport') != viewport:
+                        previous = None
+                        continue
+                    data_url = payload.get('data_url', '')
+                    if not data_url.startswith('data:image/png;base64,') or len(data_url) > 22_000_000:
+                        raise VerificationError('Native canvas preview is unavailable or too large')
+                    frame = base64.b64decode(data_url.partition(',')[2], validate=True)
+                except VerificationError:
+                    native_fallback = False
+                    fallback_reason = 'native_canvas_unavailable'
+                    self.report['preview_fallback_reason'] = fallback_reason
+                    previous = None
+                    continue
+            after = self.editor({'kind':'inspect'})
+            if not same_content(after):
+                raise VerificationError('Board changed while capturing the saved preview; reread before editing')
+            if (after.get('viewport') != viewport
+                    or not equivalent(after.get('label_geometry') or {}, geometry)):
+                previous = None
+                continue
             pixel_rect = dict(x=0,y=0,width=rect['width'],height=rect['height']) if native_fallback else rect
             try:
                 visible = png_has_board_ink(frame, pixel_rect, viewport.get('device_pixel_ratio', 1))
@@ -920,20 +1448,25 @@ class Runner:
             except (ValueError, struct.error, zlib.error):
                 visible = False
             digest = hashlib.sha256(frame).hexdigest()
+            self.report['preview_last_frame_visible'] = visible
             # This excludes blank transitions and a changing frame. It does not
             # establish legibility, label correctness or absence of overlap.
-            if visible and digest == previous:
+            frame_identity = (digest, json.dumps(viewport, sort_keys=True), json.dumps(geometry, sort_keys=True))
+            if visible and frame_identity == previous:
                 (self.output / 'preview.png').write_bytes(frame)
                 self.write('visual-feedback.json', current)
                 self.report.update(visual_status='needs_review', preview='preview.png',
                                    visual_feedback='visual-feedback.json',
                                    preview_source='native_canvas' if native_fallback else 'browser_screenshot')
+                if fallback_reason:
+                    self.report['preview_fallback_reason'] = fallback_reason
                 return
-            previous = digest if visible else None
-            if not native_fallback and attempts >= 2 and not visible:
+            previous = frame_identity if visible else None
+            if not native_fallback and ((attempts >= 2 and not visible) or attempts >= 3):
                 native_fallback = True
+                fallback_reason = 'browser_blank_frames' if not visible else 'browser_unstable_frames'
+                self.report['preview_fallback_reason'] = fallback_reason
                 previous = None
-                deadline = time.monotonic() + min(self.timeout, 8)
         self.report.update(visual_status='unavailable', visual_reason='No stable nonwhite board frame; inspect a fresh read-only page')
 
     def observe_saved(self):
@@ -947,13 +1480,15 @@ class Runner:
     def editor(self, operation, expected=None):
         request = {k: self.request[k] for k in ('document_url', 'whiteboard_token')}
         request.update(operation=operation, expected=expected)
-        expression = '(()=>{try{return (' + self.adapter.rstrip().rstrip(';') + ')(' + json.dumps(request, ensure_ascii=True) + ')}catch(e){return {adapter_error:String(e.message)}}})()'
+        expression = '(()=>{try{return (' + self.adapter.rstrip().rstrip(';') + ')(' + json.dumps(request, ensure_ascii=True) + ')}catch(e){return {adapter_error:String(e.message),content_write_started:typeof e.content_write_started==="boolean"?e.content_write_started:null}}})()'
         response = self.call('/v2/tabs/' + self.tab + '/eval', {'expression': expression})
         value = response.get('value')
         if isinstance(value, str):
             value = json.loads(value)
         if isinstance(value, dict) and value.get('adapter_error'):
-            raise VerificationError('Editor: ' + value['adapter_error'])
+            error = VerificationError('Editor: ' + value['adapter_error'])
+            error.content_write_started = value.get('content_write_started')
+            raise error
         if not isinstance(value, dict) or value.get('error') or value.get('ok') is False:
             raise VerificationError('Editor rejected operation or returned an invalid response')
         return value
@@ -972,23 +1507,42 @@ class Runner:
             if current.get('seq') == current.get('savedSeq') and current.get('seq') is not None:
                 try:
                     raw, name = self.export()
-                    if self.server_equivalent(projection(raw), expected):
+                    if self.server_equivalent(projection(raw), expected, current.get('object_bounds')):
                         if stable_since is None:
                             stable_since = time.monotonic()
                         if time.monotonic() - stable_since >= minimum_stable_seconds:
+                            self.last_saved_state = current
                             return raw, name
                     else:
                         stable_since = None
                 except NotReady:
-                    pass
+                    stable_since = None
+            else:
+                stable_since = None
             time.sleep(1)
         raise VerificationError('Save/readback did not converge; write was not retried')
 
     @staticmethod
-    def server_equivalent(raw_nodes, page_nodes):
+    def server_equivalent(raw_nodes, page_nodes, group_bounds=None):
         # CLI raw omits the two Bezier controls; do not invent them from a box.
         # Edited curves also require a fresh-page native readback below.
         left, right = copy.deepcopy(raw_nodes), copy.deepcopy(page_nodes)
+        if group_bounds is not None and any(n.get('kind') == 'group' for n in right):
+            try:
+                canonical = canonical_group_projection(right, group_bounds)
+                groups = {n['id']:n for n in canonical if n.get('kind') == 'group'}
+                for node in right:
+                    if node['id'] in groups and any(not finite_number(node.get(k))
+                            or abs(node[k]-groups[node['id']][k]) > 1e-3 for k in ('x','y','width','height')):
+                        return False
+                for node in left:
+                    if node.get('kind') == 'group' and node['id'] in groups:
+                        if (any(not finite_number(node.get(k)) for k in ('x','y','width','height'))
+                                or node['width'] < 0 or node['height'] < 0):
+                            return False
+                        node.update({k:groups[node['id']][k] for k in ('x','y','width','height')})
+            except VerificationError:
+                return False
         raw_lookup = {n['id']: n for n in left}
         for node in right:
             if node.get('kind') == 'connector':
@@ -1005,9 +1559,62 @@ class Runner:
                     node.pop('points', None)
         return equivalent(left, right)
 
-    def reopen_verified(self, saved_raw, expected, expected_alpha=None, expected_endpoints=None):
-        self.call('/v2/tasks/' + self.task + '/complete', {'keep':False})
-        self.token = self.task = self.tab = None
+    @staticmethod
+    def group_cache_evidence(raw, state):
+        lookup = {n['id']:n for n in projection(raw)}
+        geometry = ('x','y','width','height')
+        return [{'id':n['id'], 'normalization':'native_derived_group_bounds_cache',
+                 'raw_bounds':{k:lookup[n['id']][k] for k in geometry},
+                 'native_bounds':{k:n[k] for k in geometry},
+                 'member_bounds':{i:state['object_bounds'][i] for i in n['children']}}
+                for n in state['nodes'] if n.get('kind') == 'group' and n['id'] in lookup
+                and any(abs(n[k]-lookup[n['id']][k]) > 1e-3 for k in geometry)]
+
+    @staticmethod
+    def raw_group_cache_changes(before, after):
+        """Identify cache-only candidates; native evidence must still confirm them."""
+        left, right = ({n['id']:n for n in raw['nodes']} for raw in (before,after))
+        if (left.keys()!=right.keys() or len(left)!=len(before['nodes']) or len(right)!=len(after['nodes'])):
+            return []
+        geometry = ('x','y','width','height')
+        receipts = []
+        strict = lambda value: json.dumps(value,sort_keys=True)
+        for ident in left:
+            old,new = left[ident],right[ident]
+            if strict(old) == strict(new):
+                continue
+            if (old.get('type')!='group' or new.get('type')!='group' or old.get('angle',0)!=0
+                    or strict({k:v for k,v in old.items() if k not in geometry})!=strict({k:v for k,v in new.items() if k not in geometry})
+                    or any(not finite_number(n.get(k)) for n in (old,new) for k in geometry)
+                    or any(n[k]<0 for n in (old,new) for k in ('width','height'))):
+                return []
+            receipts.append({'id':ident,'normalization':'delayed_native_group_bounds_cache',
+                             'saved_bounds':{k:old.get(k) for k in geometry},
+                             'latest_bounds':{k:new[k] for k in geometry}})
+        return receipts
+
+    @staticmethod
+    def verified_group_cache_catchup(before, after, state):
+        """Accept only delayed server cache updates to the observed native union."""
+        receipts = Runner.raw_group_cache_changes(before,after)
+        if not receipts:
+            return []
+        try:
+            canonical = {n['id']:n for n in canonical_group_projection(state['nodes'],state.get('object_bounds'))}
+        except VerificationError:
+            return []
+        geometry = ('x','y','width','height')
+        for receipt in receipts:
+            native = canonical.get(receipt['id'],{})
+            if native.get('kind')!='group' or any(abs(receipt['latest_bounds'][k]-native[k])>1e-3 for k in geometry):
+                return []
+            receipt['native_bounds'] = {k:native[k] for k in geometry}
+        if not Runner.server_equivalent(projection(after),state['nodes'],state.get('object_bounds')):
+            return []
+        return receipts
+
+    def reopen_verified(self, saved_raw, expected, expected_alpha=None, expected_endpoints=None, binding_ids=None):
+        self.complete_page(False, 'saved_reopen')
         self.open_page()
         state = self.hydrate(saved_raw)
         if not equivalent(state['nodes'], expected):
@@ -1019,6 +1626,7 @@ class Runner:
         if expected_endpoints is not None and not equivalent(state.get('line_endpoints'), expected_endpoints):
             self.write('reopen-endpoints-mismatch.json', state)
             raise VerificationError('Fresh-page native line endpoints differ from the saved state')
+        self.verify_native_bindings(state, binding_ids or set())
         self.editor({'kind':'enter'})
         return state
 
@@ -1067,11 +1675,117 @@ class Runner:
                 elif right[ident].get('border') != 1:
                     raise VerificationError('First connection is transparent')
 
+    @staticmethod
+    def affected_bindings(before, after, op):
+        if op['kind'] not in ('move', 'resize', 'align_top', 'distribute_horizontal',
+                              'anchors', 'reconnect', 'connect', 'append'):
+            return set()
+        targets = set(op.get('ids', [])) | ({op['id']} if op.get('id') else set())
+        for node in before:
+            if node['id'] in targets:
+                targets.update(node.get('children', []))
+        if op['kind'] in ('connect', 'append'):
+            targets.update({n['id'] for n in after} - {n['id'] for n in before})
+        return {n['id'] for n in after if n.get('kind') == 'connector'
+                and (n.get('start_id') or n.get('end_id'))
+                and (n['id'] in targets or n.get('start_id') in targets or n.get('end_id') in targets)}
+
+    @staticmethod
+    def verify_native_bindings(state, ids):
+        """Compare native attachment points, not only a previous endpoint copy."""
+        if not ids:
+            return
+        records = {item.get('id'): item for item in state.get('binding_geometry', [])}
+        nodes = {item['id']: item for item in state['nodes']}
+        endpoints = state.get('line_endpoints') or {}
+        for ident in ids:
+            record, node = records.get(ident, {}), nodes.get(ident, {})
+            if record.get('valid') is not True:
+                raise VerificationError('Native attachment evidence is missing or invalid: ' + ident)
+            for side in ('start', 'end'):
+                if not node.get(side + '_id'):
+                    continue
+                evidence = record.get(side, {})
+                actual, expected = evidence.get('actual'), evidence.get('expected')
+                if (evidence.get('valid') is not True or not isinstance(actual, dict)
+                        or not isinstance(expected, dict) or set(actual) != {'x', 'y'} or set(expected) != {'x', 'y'}
+                        or not all(finite_number(point[axis]) for point in (actual, expected) for axis in ('x', 'y'))
+                        or any(abs(actual[axis] - expected[axis]) > .02 for axis in ('x', 'y'))
+                        or not point_equivalent(actual, endpoints.get(ident, {}).get(side))):
+                    raise VerificationError('Native line does not meet its actual attachment point: ' + ident + ':' + side)
+
+    @staticmethod
+    def verify_group_world(before, after, op):
+        nodes = {n['id']:n for n in before['nodes']}
+        selected = set(op.get('ids', [])) | ({op['id']} if op.get('id') else set())
+        groups = {ident for ident in selected if nodes.get(ident, {}).get('kind') == 'group'}
+        groups.update(nodes[ident]['parent_id'] for ident in selected if ident in nodes and nodes[ident].get('parent_id'))
+        if not groups or op['kind'] in ('group', 'ungroup', 'delete', 'undo'):
+            return set()
+        members = {member for ident in groups for member in nodes.get(ident, {}).get('children', [])}
+        left, right = before.get('world_geometry') or {}, after.get('world_geometry') or {}
+        moving = selected | {member for ident in selected if ident in groups for member in nodes[ident].get('children', [])}
+        for ident in members:
+            a, b = left.get(ident), right.get(ident)
+            if (not isinstance(a, dict) or not isinstance(b, dict)
+                    or set(a) != {'x','y','width','height','angle'} or set(b) != set(a)
+                    or not all(finite_number(value) for geometry in (a,b) for value in geometry.values())):
+                raise VerificationError('Group member world-coordinate evidence is missing: ' + ident)
+            if op['kind'] == 'move' and ident in moving:
+                expected = {**a, 'x':a['x']+op['dx'], 'y':a['y']+op['dy']}
+                if any(abs(b[key] - expected[key]) > 1e-6 for key in expected):
+                    raise VerificationError('Group member did not preserve its world-coordinate displacement: ' + ident)
+            elif ident not in selected:
+                # A selected group's binding line may reroute when a member
+                # moves. All other siblings must retain their world geometry.
+                if nodes.get(ident, {}).get('kind') == 'connector' and ident in Runner.affected_bindings(before['nodes'], after['nodes'], op):
+                    continue
+                if any(abs(b[key] - a[key]) > 1e-6 for key in a):
+                    raise VerificationError('Unrequested group member world position or size changed: ' + ident)
+        return members
+
+    def complete_page(self, keep, reason):
+        if not self.task:
+            return
+        record = {'task_id': self.task, 'tab_id': self.tab, 'reason': reason,
+                  'requested_action': 'release' if keep else 'close', 'status': 'pending'}
+        self.report.setdefault('cleanup_receipts', []).append(record)
+        try:
+            response = self.call('/v2/tasks/' + self.task + '/complete', {'keep': keep})
+            if isinstance(response, dict):
+                record['receipt'] = {key: response[key] for key in
+                                     ('taskId', 'state', 'keep', 'closed', 'released', 'unknownResult', 'retainedAsUserTabs')
+                                     if key in response}
+            if (not isinstance(response, dict) or response.get('state') != 'completed'
+                    or response.get('taskId') != record['task_id']
+                    or response.get('keep') is not keep or response.get('unknownResult')
+                    or not isinstance(response.get('closed'), int) or isinstance(response.get('closed'), bool)
+                    or not isinstance(response.get('released'), int) or isinstance(response.get('released'), bool)
+                    or response['closed'] < 0 or response['released'] < 0
+                    or (response['closed'] if keep else response['released']) != 0
+                    or (record['tab_id'] is not None and (response['released'] if keep else response['closed']) != 1)):
+                raise VerificationError('Page completion did not confirm its requested close or release')
+            record['status'] = 'confirmed'
+            record['page_status'] = 'released' if keep else 'closed'
+            self.report['released_tab'] = self.tab if keep else None
+            self.report['page_status'] = record['page_status']
+        except Exception as error:
+            record.update(status='unknown', page_status='unknown', error=type(error).__name__)
+            self.report.update(page_status='unknown', cleanup='Page close or release was not confirmed; use the recorded own-page identity')
+            raise
+        finally:
+            # Tokens are deliberately never recorded. A terminal completion
+            # timeout cannot authorize reacquiring the possibly released page.
+            self.token = self.task = self.tab = None
+
     def open_page(self):
         session = self.call('/v2/tasks', {}, auth=False)
         self.token, self.task = session['taskToken'], session['taskId']
+        page = {'task_id': self.task, 'tab_id': None, 'open_status': 'creating'}
+        self.report.setdefault('pages', []).append(page)
         target = self.call('/v2/tabs', {'url': self.request['document_url'], 'background': True})
         self.tab = target['targetId']
+        page.update(tab_id=self.tab, open_status='created')
         base = '/v2/tabs/' + self.tab
         if self.request.get('section_id'):
             # Click only an actual document-outline link observed in this page.
@@ -1085,6 +1799,7 @@ class Runner:
             self.call(base + '/eval', {'expression': 'document.querySelector(' + json.dumps(block) + ').scrollIntoView({block:"center"})'})
             selector = block + ' .whiteboard-canvas-container'
         self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
+        page['open_status'] = 'ready'
 
     def hydrate(self, raw):
         if any(len(n.get('connector', {}).get('captions', {}).get('data', [])) > 1 for n in raw['nodes']):
@@ -1101,13 +1816,25 @@ class Runner:
                 time.sleep(1)
                 continue
             if not equivalent(projection(latest), projection(raw)):
-                raise VerificationError('Server changed while loading the target; reread before submitting edits')
-            if self.server_equivalent(projection(latest), state['nodes']) and state.get('seq') == state.get('savedSeq'):
+                catchup = self.verified_group_cache_catchup(raw,latest,state)
+                if not catchup:
+                    if not self.raw_group_cache_changes(raw,latest):
+                        raise VerificationError('Server changed while loading the target; reread before submitting edits')
+                    # A first inspect can still be empty while the cache has
+                    # caught up. Wait for native proof; do not accept it yet.
+                    time.sleep(1)
+                    continue
+                state['server_group_cache_catchup'] = catchup
+                self.write(f'group-cache-catchup-{self.index:03d}.json',
+                           {'latest_raw':name,'normalizations':catchup})
+            if self.server_equivalent(projection(latest), state['nodes'], state.get('object_bounds')) and state.get('seq') == state.get('savedSeq'):
+                state['group_cache_normalizations'] = self.group_cache_evidence(latest, state)
                 return state
             time.sleep(1)
         raise VerificationError('Document board and CLI snapshot did not converge before writing; inspect prewrite-browser evidence')
 
     def run(self):
+        validate_request_operations(self.request)
         raw, name = self.export()
         self.report['initial_raw'] = name
         self.open_page()
@@ -1125,45 +1852,93 @@ class Runner:
                 self.write('inspect-000.json', state)
                 self.report['initial_inspect'] = 'inspect-000.json'
                 continue
-            actual = dict(op)
-            reject_nested_groups(state['nodes'], op)
-            validate_local_operation(state['nodes'], op)
-            if op['kind'] == 'undo':
-                if previous_delete is None:
-                    raise VerificationError('Undo is only allowed immediately after this session\'s delete')
-                actual['undo_count'] = previous_delete['transaction_count']
-                actual['undo_receipt'] = previous_delete['undo_receipt']
-            self.uncertain = True
-            result = self.create_connection(actual, state, raw, name) if op['kind'] == 'connect' and not op.get('template_id') else self.editor(actual, state['nodes'])
-            self.write(f'editor-{len(self.report["steps"])+1:03d}.json', result)
-            self.verify_render_alpha(state, result, op)
-            if op['kind'] == 'curve_point':
-                left, right = state.get('line_endpoints'), result.get('line_endpoints')
-                if not isinstance(left, dict) or not isinstance(right, dict) or left.keys() != right.keys() or any(
-                        not point_equivalent(left[i].get(s), right[i].get(s)) for i in left for s in ('start', 'end')):
-                    raise VerificationError('Curve point edit changed native endpoints')
-            if op['kind'] == 'undo':
-                if not equivalent(result['nodes'], previous_delete['before']):
-                    raise VerificationError('Undo did not restore the pre-delete projection')
+            step = {'operation': op, 'before_raw': name, 'save_status': 'not_written',
+                    'verification_status': 'pending', 'failure_phase': None, 'execution_status': 'not_started'}
+            self.report['steps'].append(step)
+            number = len(self.report['steps'])
+            phase = 'preflight'
+            try:
+                actual = dict(op)
+                reject_nested_groups(state['nodes'], op)
+                validate_local_operation(state['nodes'], op)
+                if op['kind'] == 'undo':
+                    if previous_delete is None:
+                        raise VerificationError('Undo is only allowed immediately after this session\'s delete')
+                    actual['undo_count'] = previous_delete['transaction_count']
+                    actual['undo_receipt'] = previous_delete['undo_receipt']
+                phase = 'execute'
+                self.uncertain = True
+                step.update(save_status='unknown', execution_status='submitted')
+                result = self.create_connection(actual, state, raw, name) if op['kind'] == 'connect' and not op.get('template_id') else self.editor(actual, state['nodes'])
+                step['execution_status'] = 'returned'
+                self.write(f'editor-{number:03d}.json', result)
                 delta = differences(state['nodes'], result['nodes'])
-            else:
-                delta = check_scope(state['nodes'], result['nodes'], op)
-            # A theme-alpha-only correction is absent from CLI raw. Keep the
-            # writer open for stable polling before a fresh-page confirmation.
-            alpha_only = not any(delta.values()) and not self.alpha_equivalent(state['render_alpha'],result['render_alpha'])
-            saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'])
-            raw_exceptions = check_raw_preservation(previous_delete['raw'] if op['kind'] == 'undo' else raw, saved_raw, {'kind':'undo'} if op['kind'] == 'undo' else op)
-            # A delete receipt belongs to this editor's undo stack. Defer the
-            # fresh-page check until its immediate undo has restored the board.
-            immediate_undo = (op['kind'] == 'delete' and index + 1 < len(operations)
-                              and operations[index + 1].get('kind') == 'undo')
-            if not immediate_undo and (op['kind'] in ('style','connect','reconnect','anchors','caption_format','undo') or any(n.get('kind') == 'connector' and n.get('shape') == 'curve' for n in result['nodes'])):
-                reopened = self.reopen_verified(saved_raw, result['nodes'], result['render_alpha'], result['line_endpoints'])
-                self.write(f'reopened-{len(self.report["steps"])+1:03d}.json', reopened)
-            self.uncertain = False
-            self.report['steps'].append({'operation': op, 'before_raw': name, 'after_raw': saved, 'diff': delta, 'raw_exceptions':raw_exceptions,
-                                         'before_render_alpha':state['render_alpha'],'after_render_alpha':result['render_alpha']})
-            previous_delete = {'before': state['nodes'], 'raw':raw, 'transaction_count': result['transaction_count'], 'undo_receipt':result['undo_receipt']} if op['kind'] == 'delete' else None
+                alpha_only = not any(delta.values()) and not self.alpha_equivalent(state['render_alpha'], result['render_alpha'])
+                phase = 'save_readback'
+                saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'])
+                # Saving is a fact even if a later protection or reopen fails.
+                self.uncertain = False
+                step.update(save_status='confirmed', after_raw=saved, diff=delta,
+                            before_render_alpha=state['render_alpha'], after_render_alpha=result['render_alpha'],
+                            group_cache_normalizations=self.group_cache_evidence(saved_raw, result))
+                phase = 'protection'
+                self.verify_render_alpha(state, result, op)
+                world_ids = self.verify_group_world(state, result, op)
+                self.verify_group_world(state, self.last_saved_state, op)
+                bindings = self.affected_bindings(state['nodes'], result['nodes'], op)
+                self.verify_native_bindings(result, bindings)
+                self.verify_native_bindings(self.last_saved_state, bindings)
+                if op['kind'] == 'curve_point':
+                    left, right = state.get('line_endpoints'), result.get('line_endpoints')
+                    if not isinstance(left, dict) or not isinstance(right, dict) or left.keys() != right.keys() or any(
+                            not point_equivalent(left[i].get(s), right[i].get(s)) for i in left for s in ('start', 'end')):
+                        raise VerificationError('Curve point edit changed native endpoints')
+                if op['kind'] == 'undo':
+                    if not equivalent(result['nodes'], previous_delete['before']):
+                        raise VerificationError('Undo did not restore the pre-delete projection')
+                else:
+                    check_scope(state['nodes'], result['nodes'], op, group_evidence={'before':state.get('object_bounds'), 'after':result.get('object_bounds')})
+                step['raw_exceptions'] = check_raw_preservation(previous_delete['raw'] if op['kind'] == 'undo' else raw,
+                    saved_raw, {'kind':'undo'} if op['kind'] == 'undo' else op,
+                    group_evidence={'before':state.get('object_bounds'), 'after':result.get('object_bounds'),
+                                    'native_before':state['nodes'], 'native_after':result['nodes'],
+                                    'native_endpoints_before':state.get('line_endpoints',{}),
+                                    'native_endpoints_after':result.get('line_endpoints',{}),
+                                    'bindings_before':state.get('binding_geometry',[]),
+                                    'bindings_after':result.get('binding_geometry',[])})
+                # The immediate undo must use the same editor and undo receipt.
+                immediate_undo = (op['kind'] == 'delete' and index + 1 < len(operations)
+                                  and operations[index + 1].get('kind') == 'undo')
+                if immediate_undo:
+                    step['reopen_status'] = 'deferred_for_immediate_undo'
+                else:
+                    phase = 'reopen'
+                    reopened = self.reopen_verified(saved_raw, result['nodes'], result['render_alpha'], result['line_endpoints'], bindings)
+                    for ident in world_ids:
+                        expected_world, actual_world = result['world_geometry'][ident], reopened.get('world_geometry', {}).get(ident)
+                        if not isinstance(actual_world, dict) or set(actual_world) != set(expected_world) or any(
+                                not finite_number(actual_world[key]) or abs(actual_world[key] - expected_world[key]) > 1e-3 for key in expected_world):
+                            raise VerificationError('Fresh-page group member world geometry differs: ' + ident)
+                        if any(abs(actual_world[key]-expected_world[key]) > 1e-6 for key in expected_world):
+                            step.setdefault('world_reopen_precision', []).append({'id':ident,'before':expected_world,'reopened':actual_world})
+                    self.write(f'reopened-{number:03d}.json', reopened)
+                    if reopened.get('server_group_cache_catchup'):
+                        step['server_group_cache_catchup'] = reopened['server_group_cache_catchup']
+                    step.update(reopen_status='passed', verification_status='passed')
+                    if op['kind'] == 'undo':
+                        previous_delete['step'].update(verification_status='passed', reopen_status='verified_after_immediate_undo')
+                previous_delete = {'before': state['nodes'], 'raw':raw, 'transaction_count': result['transaction_count'],
+                                   'undo_receipt':result['undo_receipt'], 'step':step} if op['kind'] == 'delete' else None
+            except Exception as error:
+                if phase == 'execute' and getattr(error, 'content_write_started', None) is False and not step.get('append_submitted'):
+                    step.update(save_status='not_written', execution_status='rejected_before_content_call')
+                    self.uncertain = False
+                phase = getattr(error, 'failure_phase', phase)
+                step.update(verification_status='failed', failure_phase=phase, error=type(error).__name__)
+                if previous_delete is not None and previous_delete['step'].get('verification_status') == 'pending':
+                    previous_delete['step'].update(verification_status='failed', failure_phase='deferred_reopen')
+                self.report.update(status='unverified', failure_phase=phase)
+                raise
         self.report['status'] = 'verified'
         if self.request.get('capture_preview'):
             self.observe_saved()
@@ -1184,12 +1959,13 @@ class Runner:
         ex, ey = end['x'], end['y'] + end['height']/2
         client_id = 'c' + str(uuid.uuid4().int % 1000000000) + ':1'
         payload = {'nodes':[{'id':client_id, 'type':'connector',
+            'z_index':max((n.get('z_index',0) for n in raw['nodes'] if not n.get('parent_id')), default=-1)+1,
             'x':min(sx,ex), 'y':min(sy,ey), 'width':abs(ex-sx), 'height':abs(ey-sy),
             'style':{'border_color':'#334155','border_style':'solid','border_width':'narrow'},
             'connector':{'shape':'straight',
                 'start':{'position':{'x':sx,'y':sy},'arrow_style':'none'},
                 'end':{'position':{'x':ex,'y':ey},'arrow_style':'line_arrow'}}}]}
-        step = len(self.report['steps']) + 1
+        step = len(self.report['steps'])
         filename = f'connect-input-{step:03d}.json'
         receipt_name = f'connect-receipt-{step:03d}.json'
         key = str(uuid.uuid4())
@@ -1197,6 +1973,8 @@ class Runner:
                    'status':'submitted_once'}
         self.write(filename, payload)
         self.write(receipt_name, receipt)
+        record = self.report['steps'][-1]
+        record['append_submitted'] = True
         self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'],
                       '--input_format','raw','--source','@'+filename,'--idempotent-token',key,'--as','user'])
         deadline = time.monotonic() + self.timeout
@@ -1204,7 +1982,6 @@ class Runner:
             try:
                 latest, after_name = self.export()
                 mapping = match_append(projection(raw), projection(latest), projection(payload))
-                check_raw_preservation(raw, latest, {'kind':'append'})
                 break
             except NotReady:
                 time.sleep(1)
@@ -1215,43 +1992,66 @@ class Runner:
         else:
             raise VerificationError('Connection append did not converge; inspect the receipt before resuming the same line')
         ident = mapping[client_id]
+        self.uncertain = False
+        record.update(save_status='confirmed', append_after_raw=after_name, append_id=ident)
+        try:
+            check_raw_preservation(raw, latest, {'kind':'append'})
+        except Exception as error:
+            error.failure_phase = 'append_protection'
+            raise
         receipt.update(created_id=ident, appended_raw=after_name, status='appended_readback_verified')
         self.write(f'connect-appended-{step:03d}.json', receipt)
         # Reload only this owned page so a cached pre-append board cannot write.
-        self.call('/v2/tasks/' + self.task + '/complete', {'keep':False})
-        self.token = self.task = self.tab = None
+        self.complete_page(False, 'connection_append_reload')
         self.open_page()
         self.hydrate(latest)
         self.editor({'kind':'enter'})
         loaded = self.hydrate(latest)
-        result = self.editor({'kind':'reconnect','id':ident,
-                              'start_id':op['start_id'],'end_id':op['end_id']}, loaded['nodes'])
+        self.uncertain = True
+        record['save_status'] = 'unknown'
+        try:
+            result = self.editor({'kind':'reconnect','id':ident,
+                                  'start_id':op['start_id'],'end_id':op['end_id']}, loaded['nodes'])
+        except Exception as error:
+            if getattr(error, 'content_write_started', None) is False:
+                self.uncertain = False
+                record['save_status'] = 'confirmed'
+            raise
         return result
 
     def append(self, filename):
+        validate_target(self.request)
         if self.request.get('operations'):
             raise ValueError('Append is standalone; inspect the saved board in a new editor session before editing')
         payload = json.loads(Path(filename).read_text(encoding='utf-8-sig'))
-        nodes = payload['nodes']
+        nodes = payload.get('nodes') if isinstance(payload, dict) else None
+        if not isinstance(nodes, list) or not nodes or any(not isinstance(n, dict) or not isinstance(n.get('id'), str) or not n['id'] for n in nodes):
+            raise ValueError('Append requires native objects with nonempty string IDs')
         ids = [n['id'] for n in nodes]
-        if not nodes or len(ids) != len(set(ids)):
+        if len(ids) != len(set(ids)):
             raise ValueError('Append requires nonempty unique IDs')
-        raw, name = self.export()
-        existing = {n['id']:n for n in raw['nodes']}
-        shape_lookup = {ident:n for ident,n in existing.items() if n.get('type') == 'composite_shape'}
-        shape_lookup.update({n['id']:n for n in nodes if n.get('type') == 'composite_shape'})
+        if any(type(n.get('z_index', 0)) is not int or n.get('z_index', 0) < 0 for n in nodes):
+            raise ValueError('Append relative layers must be nonnegative integers')
+        shape_lookup = {n['id']:n for n in nodes if n.get('type') == 'composite_shape'}
         for n in nodes:
             if n.get('type') not in ('composite_shape', 'text_shape', 'connector'):
                 raise ValueError('Append only supports native shapes, text shapes and bound connectors')
             if n['type'] in ('composite_shape', 'text_shape') and not isinstance(n.get('text', {}).get('text'), str):
                 raise ValueError('Native shapes must own their text')
+            if (not all(finite_number(n.get(field)) for field in ('x','y','width','height'))
+                    or n['width'] < 0 or n['height'] < 0
+                    or n['type'] != 'connector' and (n['width'] == 0 or n['height'] == 0)):
+                raise ValueError('Append geometry must be finite and have valid dimensions')
             if n['type'] == 'connector':
                 c = n['connector']
                 for side in ('start','end'):
                     endpoint = c.get(side + '_object', {})
                     if endpoint.get('id') not in ids:
                         raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect for existing modules')
-                    if endpoint.get('id') not in shape_lookup or endpoint != c.get(side, {}).get('attached_object'):
+                    if (endpoint.get('id') not in shape_lookup or endpoint != c.get(side, {}).get('attached_object')
+                            or not isinstance(endpoint.get('position'), dict)
+                            or set(endpoint['position']) != {'x','y'}
+                            or any(not finite_number(endpoint['position'][axis]) or not 0 <= endpoint['position'][axis] <= 1 for axis in ('x','y'))):
                         raise ValueError('Append connector has missing or conflicting native shape endpoint')
                 start,end = (shape_lookup[c[side + '_object']['id']] for side in ('start','end'))
                 sp,ep = (c[side + '_object']['position'] for side in ('start','end'))
@@ -1259,44 +2059,100 @@ class Runner:
                 ex,ey = end['x']+end['width']*ep['x'],end['y']+end['height']*ep['y']
                 if not equivalent([n['x'],n['y'],n['width'],n['height']], [min(sx,ex),min(sy,ey),abs(ex-sx),abs(ey-sy)]):
                     raise ValueError('Connector geometry is stale or uses unsupported anchors')
+        raw, name = self.export()
         before = projection(raw)
-        self.open_page()
-        self.hydrate(raw)
         if set(ids) & {n['id'] for n in before}:
             raise ValueError('Append IDs collide with existing IDs')
+        # The service inserts at z_index and shifts old objects above that slot.
+        # Place new roots above all existing roots, retaining their relative order.
+        layers = [n.get('z_index',0) for n in raw['nodes'] if not n.get('parent_id')]
+        if any(type(z) is not int or z < 0 for z in layers):
+            raise VerificationError('Existing root layers must be valid before appending')
+        first_layer = max(layers, default=-1)+1
+        ordered = sorted(enumerate(nodes), key=lambda pair:(pair[1].get('z_index',0),pair[0]))
+        layer_assignment = {}
+        for offset, (_, node) in enumerate(ordered):
+            node['z_index'] = first_layer+offset
+            layer_assignment[node['id']] = node['z_index']
+        self.open_page()
+        original = self.hydrate(raw)
+        self.report.update(initial_raw=name, initial_nodes=original['nodes'], append_layer_assignment=layer_assignment)
+        self.write('inspect-000.json', original)
+        self.report['initial_inspect'] = 'inspect-000.json'
         intended = projection(payload)
         key = str(uuid.uuid4())
         self.write('append-input.json', payload)
         self.write('append-receipt.json', {'idempotent_token': key, 'before_raw': name})
-        self.uncertain = True
-        self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'], '--input_format', 'raw', '--source', '@append-input.json', '--idempotent-token', key, '--as', 'user'])
-        deadline = time.monotonic() + self.timeout
-        while time.monotonic() < deadline:
-            try:
-                latest, after_name = self.export()
-                mapping = match_append(before, projection(latest), intended)
-                check_raw_preservation(raw, latest, {'kind':'append'})
-                self.report.update(status='verified', before_raw=name, after_raw=after_name, id_mapping=mapping)
-                self.uncertain = False
-                return
-            except NotReady:
-                time.sleep(1)
-                continue
-            except VerificationError as error:
-                if 'count has not converged' not in str(error):
-                    raise
-                time.sleep(1)
-        raise VerificationError('Append save/readback did not converge; write was not retried')
+        step = {'operation': {'kind':'append'}, 'before_raw':name, 'save_status':'unknown',
+                'verification_status':'pending', 'failure_phase':None, 'execution_status':'submitted'}
+        self.report.setdefault('steps', []).append(step)
+        self.uncertain, phase = True, 'execute'
+        try:
+            self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'], '--input_format', 'raw', '--source', '@append-input.json', '--idempotent-token', key, '--as', 'user'])
+            step['execution_status'] = 'returned'
+            phase = 'save_readback'
+            deadline = time.monotonic() + self.timeout
+            while time.monotonic() < deadline:
+                try:
+                    latest, after_name = self.export()
+                    mapping = match_append(before, projection(latest), intended)
+                    break
+                except NotReady:
+                    time.sleep(1)
+                except VerificationError as error:
+                    if 'count has not converged' not in str(error):
+                        raise
+                    time.sleep(1)
+            else:
+                raise VerificationError('Append save/readback did not converge; write was not retried')
+            self.uncertain = False
+            step.update(save_status='confirmed', after_raw=after_name, id_mapping=mapping)
+            self.report.update(before_raw=name, after_raw=after_name, id_mapping=mapping)
+            phase = 'protection'
+            step['raw_exceptions'] = check_raw_preservation(raw, latest, {'kind':'append'})
+            saved_lookup = {n['id']:n for n in latest['nodes']}
+            if any(saved_lookup[mapping[ident]].get('z_index') != layer for ident,layer in layer_assignment.items()):
+                raise VerificationError('Appended object layers differ from the planned top insertion')
+            phase = 'reopen'
+            self.complete_page(False, 'append_saved_reopen')
+            self.open_page()
+            fresh = self.hydrate(latest)
+            self.write('reopened-001.json', fresh)
+            old_ids = {n['id'] for n in original['nodes']}
+            if not equivalent([n for n in fresh['nodes'] if n['id'] in old_ids], original['nodes']):
+                raise VerificationError('Fresh-page append changed an original native object')
+            old_alpha = {ident:value for ident,value in fresh.get('render_alpha', {}).items() if ident in old_ids}
+            if not self.alpha_equivalent(old_alpha, original['render_alpha']):
+                raise VerificationError('Fresh-page append changed original rendering alpha')
+            added_ids = set(mapping.values())
+            if {n['id'] for n in fresh['nodes']} != old_ids | added_ids:
+                raise VerificationError('Fresh-page append object IDs do not match the saved mapping')
+            for ident in added_ids:
+                values = fresh.get('render_alpha', {}).get(ident)
+                if not isinstance(values, dict) or not values or any(value != 1 for value in values.values()):
+                    raise VerificationError('Appended native object has missing or nonopaque rendering alpha: ' + ident)
+            bindings = self.affected_bindings(original['nodes'], fresh['nodes'], {'kind':'append'})
+            self.verify_native_bindings(fresh, bindings)
+            for ident, endpoints in original.get('line_endpoints', {}).items():
+                if not equivalent(fresh.get('line_endpoints', {}).get(ident), endpoints):
+                    raise VerificationError('Append changed an original native line endpoint')
+            step.update(verification_status='passed', reopen_status='passed',
+                        diff=differences(original['nodes'], fresh['nodes']), after_render_alpha=fresh['render_alpha'])
+            self.report['status'] = 'verified'
+            if self.request.get('capture_preview'):
+                self.editor({'kind':'enter'})
+                self.observe_saved()
+        except Exception as error:
+            step.update(verification_status='failed', failure_phase=phase, error=type(error).__name__)
+            self.report.update(status='unverified', failure_phase=phase)
+            raise
 
     def close(self):
         if self.task:
             try:
-                self.call('/v2/tasks/' + self.task + '/complete', {'keep': self.uncertain})
-                self.report['released_tab'] = self.tab if self.uncertain else None
+                self.complete_page(self.uncertain, 'unknown_writer' if self.uncertain else 'finished')
             except Exception:
-                self.report['cleanup'] = 'Task release failed; inspect the existing browser task'
-            finally:
-                self.token = None
+                pass
         self.write('result.json', self.report)
 
 
@@ -1308,20 +2164,31 @@ def main():
     p.add_argument('--timeout', type=int, default=45)
     p.add_argument('--append-raw', help='Standalone native append; request operations must be empty')
     a = p.parse_args()
-    request = json.loads(Path(a.request).read_text(encoding='utf-8-sig'))
-    runner = Runner(request, a.output_dir, a.proxy_url, a.timeout)
+    runner = None
     code = 0
     try:
+        request = json.loads(Path(a.request).read_text(encoding='utf-8-sig'))
+        runner = Runner(request, a.output_dir, a.proxy_url, a.timeout)
         if a.append_raw:
             runner.append(a.append_raw)
         else:
             runner.run()
     except Exception as e:
-        runner.report.update(status='unverified', error=type(e).__name__, reason=str(e) if isinstance(e, (VerificationError, ValueError)) else 'Transport or runtime failure; no automatic write retry')
+        details = dict(status='unverified', error=type(e).__name__, reason=str(e) if isinstance(e, (VerificationError, ValueError)) else 'Transport or runtime failure; no automatic write retry')
+        if runner is not None:
+            runner.report.update(details)
+        else:
+            details.update(steps=[], save_status='not_written', verification_status='failed', failure_phase='preflight')
+            destination = Path(a.output_dir)
+            # Do not replace an existing run, even when initialization failed.
+            if not destination.exists():
+                destination.mkdir(parents=True, exist_ok=False)
+                (destination / 'result.json').write_text(json.dumps(details, ensure_ascii=False, indent=2), encoding='utf-8')
         code = 1
     finally:
-        runner.close()
-    print(json.dumps({'status': runner.report['status'], 'result': str(runner.output / 'result.json')}, ensure_ascii=False))
+        if runner is not None:
+            runner.close()
+    print(json.dumps({'status': runner.report['status'] if runner is not None else 'unverified', 'result': str(Path(a.output_dir) / 'result.json')}, ensure_ascii=False))
     return code
 
 

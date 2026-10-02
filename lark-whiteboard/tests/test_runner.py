@@ -40,6 +40,21 @@ class Boundaries(unittest.TestCase):
                 validate_target(dict(document_url=url, whiteboard_token='abc'))
         validate_target(dict(document_url='https://tenant.feishu.cn/docx/abc', whiteboard_token='Abc123'))
 
+    def test_undo_only_accepts_observed_false_flip_defaults(self):
+        before = {'nodes':[dict(id='a',style={'fill_color':'#ffffff'})]}
+        after = {'nodes':[dict(id='a',style={'fill_color':'#ffffff','h_flip':False,'v_flip':False})]}
+        self.assertEqual(len(check_raw_preservation(before,after,{'kind':'undo'})),2)
+        for field in ('h_flip','v_flip'):
+            for value in (True, 0, 'false'):
+                changed = {'nodes':[dict(id='a',style={'fill_color':'#ffffff',field:value})]}
+                with self.subTest(field=field,value=value), self.assertRaises(VerificationError):
+                    check_raw_preservation(before,changed,{'kind':'undo'})
+        with self.assertRaises(VerificationError):
+            check_raw_preservation(before,after,{'kind':'move','ids':[]})
+        with self.assertRaises(VerificationError):
+            check_raw_preservation({'nodes':[dict(id='a',style={'h_flip':True,'v_flip':False})]},
+                                   {'nodes':[dict(id='a',style={'h_flip':False,'v_flip':False})]}, {'kind':'undo'})
+
     def test_delete_requires_exact_cascade(self):
         nodes = [dict(id='a'), dict(id='b'), dict(id='line', start_id='a', end_id='b')]
         with self.assertRaises(VerificationError):

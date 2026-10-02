@@ -1,16 +1,20 @@
 """Guarded CLI readback and background editor runner (Python standard library)."""
 import argparse
+import base64
 import copy
+import hashlib
 import json
 import math
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import struct
 import time
 import urllib.request
 from urllib.parse import urlparse
 import uuid
+import zlib
 
 
 class VerificationError(RuntimeError):
@@ -21,9 +25,81 @@ class NotReady(VerificationError):
     pass
 
 
+def png_has_board_ink(data, rect, scale=1):
+    """Reject a white transition frame; image review is still required.
+
+    Proxy screenshots use 8-bit RGB/RGBA PNG. Unsupported encodings fail closed.
+    The crop is the observed board viewport, not the document's surrounding UI.
+    """
+    if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+        return False
+    compressed, offset, header = bytearray(), 8, None
+    while offset + 12 <= len(data):
+        size = struct.unpack('>I', data[offset:offset+4])[0]
+        kind, body = data[offset+4:offset+8], data[offset+8:offset+8+size]
+        if len(body) != size:
+            return False
+        if kind == b'IHDR':
+            header = struct.unpack('>IIBBBBB', body)
+        elif kind == b'IDAT':
+            compressed.extend(body)
+        elif kind == b'IEND':
+            break
+        offset += size + 12
+    if not header:
+        return False
+    width, height, depth, color, compression, filtering, interlace = header
+    if depth != 8 or color not in (2, 6) or any((compression, filtering, interlace)) or width * height > 20_000_000:
+        return False
+    channels = 3 if color == 2 else 4
+    stride = width * channels
+    decoder = zlib.decompressobj()
+    pixels = decoder.decompress(bytes(compressed), (stride+1)*height+1)
+    if len(pixels) != (stride+1)*height:
+        return False
+    left, top = max(0, int(rect['x']*scale)), max(0, int(rect['y']*scale))
+    right = min(width, math.ceil((rect['x']+rect['width'])*scale))
+    bottom = min(height, math.ceil((rect['y']+rect['height'])*scale))
+    if left >= right or top >= bottom:
+        return False
+    previous, ink = bytearray(stride), 0
+    for y in range(height):
+        start = y*(stride+1)
+        filter_type, row = pixels[start], bytearray(pixels[start+1:start+1+stride])
+        if filter_type > 4:
+            return False
+        for i in range(stride):
+            a = row[i-channels] if i >= channels else 0
+            b = previous[i]
+            c = previous[i-channels] if i >= channels else 0
+            predictor = 0
+            if filter_type == 1:
+                predictor = a
+            elif filter_type == 2:
+                predictor = b
+            elif filter_type == 3:
+                predictor = (a+b)//2
+            elif filter_type == 4:
+                p = a+b-c
+                predictor = min((a, b, c), key=lambda v: abs(p-v))
+            row[i] = (row[i]+predictor) & 255
+        if top <= y < bottom:
+            for x in range(left, right):
+                p = x*channels
+                if (channels == 3 or row[p+3] >= 200) and min(row[p:p+3]) < 220:
+                    ink += 1
+                    if ink >= 24:
+                        return True
+        previous = row
+    return False
+
+
 LINE_SHAPES = {'straight', 'polyline', 'curve', 'right_angled_polyline'}
 STYLE_FIELDS = {'border_color', 'fill_color', 'text_color', 'border_style', 'border_width'}
 CAPTION_PLACEMENTS = {'on_line': 0, 'above_line': 1, 'below_line': 2}
+CAPTION_DEFAULT_RAW_FIELDS = {'text', 'angle', 'font_size', 'font_weight', 'horizontal_align', 'vertical_align',
+                              'italic', 'line_through', 'underline', 'text_color', 'text_color_type',
+                              'text_background_color_type', 'theme_text_background_color_code'}
 
 
 def safe_cli_error(payload):
@@ -55,6 +131,8 @@ def validate_target(request):
         raise ValueError('Invalid whiteboard token')
     if not isinstance(request.get('operations', []), list):
         raise ValueError('operations must be a list')
+    if 'capture_preview' in request and type(request['capture_preview']) is not bool:
+        raise ValueError('capture_preview must be a boolean')
     for key in ('block_id', 'section_id'):
         if key in request and not re.fullmatch(r'[A-Za-z0-9]+', request[key]):
             raise ValueError('Invalid document block identifier')
@@ -90,7 +168,10 @@ def projection(raw):
             v.update(shape=c.get('shape', ''), caption='\n'.join(caption_texts), caption_texts=caption_texts,
                      caption_position=c.get('caption_position', 0.5) if caption_texts else None,
                      caption_position_type=c.get('caption_position_type', 0) if caption_texts else None,
-                     caption_auto_direction=c.get('caption_auto_direction', False))
+                     caption_auto_direction=c.get('caption_auto_direction', False),
+                     caption_font_size=c['captions']['data'][0].get('font_size') if caption_texts else None)
+            # CLI raw omits the native caption textBoxWidth and sizeMode. Leave
+            # them unknown; save verification uses a fresh native page readback.
         if kind == 'group':
             v['children'] = sorted(n.get('children', []))
         if n['id'] in parents:
@@ -105,6 +186,14 @@ def caption_position_equivalent(a, b):
     return (isinstance(a, (int, float)) and not isinstance(a, bool)
             and isinstance(b, (int, float)) and not isinstance(b, bool)
             and math.isfinite(a) and math.isfinite(b) and abs(a-b) <= 1e-6)
+
+
+def caption_raw_font_equivalent(raw_value, native_value):
+    # CLI serializes this field as an integer, while the native saved label can
+    # retain a fraction. Fresh-page verification still compares the full value.
+    return (caption_position_equivalent(raw_value, native_value)
+            or type(raw_value) is int and finite_number(native_value)
+            and raw_value == math.trunc(native_value))
 
 
 def point_equivalent(a, b):
@@ -124,7 +213,8 @@ def equivalent(a, b):
         return math.isfinite(a) and math.isfinite(b) and abs(a-b) < 0.02
     if isinstance(a, dict) and isinstance(b, dict):
         return a.keys() == b.keys() and all(
-            caption_position_equivalent(a[k], b[k]) if k == 'caption_position'
+            caption_position_equivalent(a[k], b[k]) if k in ('caption_position', 'caption_font_size', 'caption_width')
+            else type(a[k]) is type(b[k]) and a[k] == b[k] if k == 'caption_size_mode'
             else points_equivalent(a[k], b[k]) if k == 'points' else equivalent(a[k], b[k])
             for k in a)
     if isinstance(a, list) and isinstance(b, list):
@@ -144,7 +234,7 @@ def check_scope(before, after, op, *, from_raw=False):
     for ident in list(ids):
         ids.update(lookup.get(ident, {}).get('children', []))
     allowed = ids | {n['id'] for n in before if n.get('start_id') in ids or n.get('end_id') in ids}
-    if op['kind'] in ('caption', 'caption_position', 'style', 'reconnect', 'line_type', 'path', 'curve_point'):
+    if op['kind'] in ('caption', 'caption_position', 'caption_format', 'style', 'reconnect', 'line_type', 'path', 'curve_point'):
         if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
             raise VerificationError('Local edit requires unique object IDs')
         allowed = {op.get('id')}
@@ -180,6 +270,21 @@ def validate_caption_operation(node, op):
     if op['kind'] == 'caption':
         if not isinstance(op.get('text'), str):
             raise VerificationError('Caption text must be a string')
+    elif op['kind'] == 'caption_format':
+        if len(texts) != 1:
+            raise VerificationError('Caption format requires one caption')
+        if set(op) - {'kind', 'id', 'font_size', 'width', 'auto_width'}:
+            raise VerificationError('Unsupported caption format parameter')
+        if not {'font_size', 'width', 'auto_width'} & op.keys():
+            raise VerificationError('Caption format requires font_size, width or auto_width')
+        if 'font_size' in op and (not finite_number(op['font_size']) or not 4 <= op['font_size'] <= 999):
+            raise VerificationError('Caption font size must be a finite number in [4, 999]')
+        if 'width' in op and (not finite_number(op['width']) or op['width'] < 10):
+            raise VerificationError('Caption width must be a finite number at least 10')
+        if 'auto_width' in op and op['auto_width'] is not True:
+            raise VerificationError('auto_width must be true')
+        if 'width' in op and 'auto_width' in op:
+            raise VerificationError('width and auto_width are mutually exclusive')
     else:
         position = op.get('position')
         if len(texts) != 1 or type(node.get('caption_position_type')) is not int or node['caption_position_type'] not in CAPTION_PLACEMENTS.values():
@@ -241,7 +346,7 @@ def validate_local_operation(nodes, op):
         raise VerificationError('Local edit requires unique object IDs')
     kind = op['kind']
     node = lookup.get(op.get('id'))
-    if kind in ('caption', 'caption_position'):
+    if kind in ('caption', 'caption_position', 'caption_format'):
         validate_caption_operation(node, op)
     elif kind == 'curve_point':
         curve_handle(node, op)
@@ -303,6 +408,20 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
     def require(condition):
         if not condition:
             raise VerificationError('Requested operation postcondition failed: ' + kind)
+    for node_id in a.keys() & b.keys():
+        old_node, new_node = a[node_id], b[node_id]
+        if old_node.get('kind') != 'connector':
+            continue
+        owned = set()
+        if node_id == ident and kind == 'caption_format':
+            if 'font_size' in op:
+                owned.add('caption_font_size')
+            if 'width' in op or 'auto_width' in op:
+                owned.update(('caption_width', 'caption_size_mode'))
+        elif node_id == ident and kind == 'caption' and (not op.get('text') or not old_node.get('caption_texts')):
+            owned.update(('caption_font_size', 'caption_width', 'caption_size_mode'))
+        for field in {'caption_font_size', 'caption_width', 'caption_size_mode'} - owned:
+            require(equivalent({field: old_node.get(field)}, {field: new_node.get(field)}))
     for field, operation, parameter in [('text','text','text'), ('shape','line_type','shape')]:
         if kind == operation:
             require(ident in b and equivalent(b[ident].get(field), op[parameter]))
@@ -354,7 +473,7 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
         editable = {'points', 'x', 'y', 'width', 'height'}
         require(equivalent({k:v for k,v in old.items() if k not in editable},
                            {k:v for k,v in new.items() if k not in editable}))
-    if kind in ('caption', 'caption_position'):
+    if kind in ('caption', 'caption_position', 'caption_format'):
         validate_caption_operation(a.get(ident), op)
         require(ident in b and b[ident].get('kind') == 'connector')
         old, new = a[ident], b[ident]
@@ -365,12 +484,17 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
             editable = {'caption', 'caption_texts'}
             if not wanted:
                 require(new.get('caption_position') is None and new.get('caption_position_type') is None)
-                editable.update(('caption_position', 'caption_position_type'))
+                require(all(new.get(k) is None for k in ('caption_font_size', 'caption_width', 'caption_size_mode')))
+                editable.update(('caption_position', 'caption_position_type', 'caption_font_size', 'caption_width', 'caption_size_mode'))
             elif not old['caption_texts']:
                 require(caption_position_equivalent(new.get('caption_position'), 0.5)
                         and type(new.get('caption_position_type')) is int and new['caption_position_type'] == 0)
-                editable.update(('caption_position', 'caption_position_type'))
-        else:
+                require(finite_number(new.get('caption_font_size')) and 4 <= new['caption_font_size'] <= 999)
+                if 'caption_width' in new or 'caption_size_mode' in new:
+                    require(caption_position_equivalent(new.get('caption_width'), -1)
+                            and type(new.get('caption_size_mode')) is int and new['caption_size_mode'] == 0)
+                editable.update(('caption_position', 'caption_position_type', 'caption_font_size', 'caption_width', 'caption_size_mode'))
+        elif kind == 'caption_position':
             require(new.get('caption_texts') == old['caption_texts'])
             if 'position' in op:
                 require(caption_position_equivalent(new.get('caption_position'), op['position']))
@@ -379,6 +503,17 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
                 require(type(new.get('caption_position_type')) is int
                         and new['caption_position_type'] == CAPTION_PLACEMENTS[op['placement']])
                 editable.add('caption_position_type')
+        else:
+            require(new.get('caption_texts') == old['caption_texts'])
+            if 'font_size' in op:
+                compare = caption_raw_font_equivalent if from_raw else caption_position_equivalent
+                require(compare(new.get('caption_font_size'), op['font_size']))
+                editable.add('caption_font_size')
+            if 'width' in op or 'auto_width' in op:
+                if not from_raw:
+                    require(caption_position_equivalent(new.get('caption_width'), op.get('width', -1)))
+                    require(type(new.get('caption_size_mode')) is int and new['caption_size_mode'] == (1 if 'width' in op else 0))
+                editable.update(('caption_width', 'caption_size_mode'))
         old_rest = {k:v for k,v in old.items() if k not in editable}
         new_rest = {k:v for k,v in new.items() if k not in editable}
         if kind == 'caption' and (not wanted or not old['caption_texts']):
@@ -429,9 +564,10 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
             template = a.get(op['template_id'])
             require(template is not None and template.get('kind') == 'connector')
             for field in ('style', 'shape', 'start_arrow', 'end_arrow', 'caption', 'caption_texts',
-                          'caption_position', 'caption_position_type', 'caption_auto_direction'):
+                          'caption_position', 'caption_position_type', 'caption_auto_direction',
+                          'caption_font_size', 'caption_width', 'caption_size_mode'):
                 if field in template:
-                    require(equivalent(line.get(field), template[field]))
+                    require(equivalent({field: line.get(field)}, {field: template[field]}))
     if kind == 'ungroup':
         require(ident not in b and all(i in b and not b[i].get('parent_id') for i in a[ident].get('children', [])))
     if kind == 'align_top':
@@ -462,16 +598,20 @@ def check_raw_preservation(before, after, op):
     """Compare all raw properties, exempting only operation-owned fields."""
     import copy
     a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
-    if op['kind'] in ('caption', 'caption_position'):
+    if op['kind'] in ('caption', 'caption_position', 'caption_format'):
         if a.keys() != b.keys() or len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
             raise VerificationError('Caption operation changed the object ID set or duplicated an ID')
-        check_intent(projection(before), projection(after), op)
+        check_intent(projection(before), projection(after), op, from_raw=True)
         target = op['id']
         for ident in a:
             left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
             if ident == target:
                 lc, rc = left['connector'], right['connector']
-                if op['kind'] == 'caption_position':
+                if op['kind'] == 'caption_format':
+                    if 'font_size' in op:
+                        lc['captions']['data'][0].pop('font_size', None)
+                        rc['captions']['data'][0].pop('font_size', None)
+                elif op['kind'] == 'caption_position':
                     for field, parameter in (('caption_position', 'position'), ('caption_position_type', 'placement')):
                         if parameter in op:
                             lc.pop(field, None)
@@ -485,6 +625,11 @@ def check_raw_preservation(before, after, op):
                     lc['captions']['data'][0].pop('text', None)
                     rc['captions']['data'][0].pop('text', None)
                 else:
+                    captions = rc.get('captions', {})
+                    entries = captions.get('data', [])
+                    if (set(captions) != {'data'} or len(entries) != 1
+                            or set(entries[0]) - CAPTION_DEFAULT_RAW_FIELDS):
+                        raise VerificationError('Adding a caption introduced unverified default format fields')
                     for field in ('captions', 'caption_position', 'caption_position_type'):
                         if field != 'captions' and field in lc and lc[field] != rc.get(field):
                             raise VerificationError('Adding a caption changed an existing position field')
@@ -493,6 +638,12 @@ def check_raw_preservation(before, after, op):
             # Caption edits do not move, restyle or restack any existing object.
             if json.dumps(left, sort_keys=True) != json.dumps(right, sort_keys=True):
                 raise VerificationError('Unexpected raw property change on object ' + ident)
+        if (op['kind'] == 'caption_format' and 'font_size' in op
+                and not caption_position_equivalent(b[target]['connector']['captions']['data'][0].get('font_size'), op['font_size'])):
+            return [{'id':target,'normalization':'cli_caption_font_size_truncation',
+                     'requested_font_size':op['font_size'],
+                     'raw_font_size':b[target]['connector']['captions']['data'][0].get('font_size'),
+                     'native_reopen_required':True}]
         return []
     if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'curve_point', 'connect'):
         if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
@@ -569,6 +720,11 @@ def check_raw_preservation(before, after, op):
         if kind == 'undo' and 'locked' not in left and right.get('locked') is False:
             paths.append(('locked',))
             exceptions.append({'id':ident, 'normalization':'undo_missing_locked_to_false'})
+        if kind == 'undo':
+            for field in ('h_flip', 'v_flip'):
+                if field not in left.get('style', {}) and right.get('style', {}).get(field) is False:
+                    paths.append(('style',field))
+                    exceptions.append({'id':ident,'normalization':'undo_missing_'+field+'_to_false'})
         c = a[ident].get('connector', {})
         connected = any((c.get(side + '_object') or c.get(side, {}).get('attached_object', {})).get('id') in ids for side in ('start', 'end'))
         geometry = ident in ids and kind in ('move','resize','align_top','distribute_horizontal','group','ungroup') or connected and kind in ('move','resize','align_top','distribute_horizontal','group','ungroup')
@@ -695,6 +851,99 @@ class Runner:
         with urllib.request.urlopen(req, timeout=45) as r:
             return json.load(r)
 
+    def screenshot(self):
+        req = urllib.request.Request(self.proxy + '/v2/tabs/' + self.tab + '/screenshot?format=png',
+                                     headers={'Authorization': 'Bearer ' + self.token})
+        with urllib.request.urlopen(req, timeout=45) as response:
+            data = response.read(16_000_001)
+        if len(data) > 16_000_000:
+            raise VerificationError('Preview exceeds the screenshot size limit')
+        return data
+
+    def capture_preview(self):
+        """Observe the owned page without replaying edits or discarding undo."""
+        baseline = self.editor({'kind':'inspect'})
+        self.editor({'kind':'observe'}, baseline['nodes'])
+        affected = {ident for step in self.report.get('steps', [])
+                    for field in ('changed', 'added') for ident in step.get('diff', {}).get(field, [])}
+        label_ids = {n['id'] for n in baseline['nodes'] if n.get('kind') == 'connector' and n.get('caption_texts')
+                     and (not self.request.get('operations') or n['id'] in affected)}
+        previous = None
+        native_fallback = False
+        attempts = 0
+        deadline = time.monotonic() + min(self.timeout, 12)
+        while time.monotonic() < deadline:
+            time.sleep(1)
+            current = self.editor({'kind':'inspect'})
+            if (not equivalent(current['nodes'], baseline['nodes'])
+                    or not self.alpha_equivalent(current['render_alpha'], baseline['render_alpha'])
+                    or not equivalent(current['line_endpoints'], baseline['line_endpoints'])
+                    or current.get('seq') != current.get('savedSeq')):
+                raise VerificationError('Board changed while capturing the saved preview; reread before editing')
+            viewport = current.get('viewport') or {}
+            rect = viewport.get('rect')
+            if not rect or not all(finite_number(rect.get(k), k in ('width','height')) for k in ('x','y','width','height')):
+                break
+            geometry = current.get('label_geometry') or {}
+            for ident in label_ids:
+                label = geometry.get(ident) or {}
+                box = label.get('screen_rect') or {}
+                if (not label.get('available') or not all(finite_number(box.get(k), k in ('width','height')) for k in ('x','y','width','height'))
+                        or box['x'] < rect['x']-1 or box['y'] < rect['y']-1
+                        or box['x']+box['width'] > rect['x']+rect['width']+1
+                        or box['y']+box['height'] > rect['y']+rect['height']+1):
+                    self.report.update(visual_status='unavailable',visual_reason='Edited label is outside the visible board viewport: '+ident)
+                    return
+            attempts += 1
+            if not native_fallback:
+                try:
+                    frame = self.screenshot()
+                except Exception:
+                    native_fallback = True
+                    deadline = time.monotonic() + min(self.timeout, 8)
+            if native_fallback:
+                payload = self.editor({'kind':'canvas_preview'}, current['nodes'])
+                data_url = payload.get('data_url', '')
+                if not data_url.startswith('data:image/png;base64,') or len(data_url) > 22_000_000:
+                    raise VerificationError('Native canvas preview is unavailable or too large')
+                frame = base64.b64decode(data_url.partition(',')[2], validate=True)
+            pixel_rect = dict(x=0,y=0,width=rect['width'],height=rect['height']) if native_fallback else rect
+            try:
+                visible = png_has_board_ink(frame, pixel_rect, viewport.get('device_pixel_ratio', 1))
+                for ident in label_ids:
+                    box = dict(geometry[ident]['screen_rect'])
+                    if native_fallback:
+                        box.update(x=box['x']-rect['x'],y=box['y']-rect['y'])
+                    if not png_has_board_ink(frame, box, viewport.get('device_pixel_ratio', 1)):
+                        visible = False
+                        break
+            except (ValueError, struct.error, zlib.error):
+                visible = False
+            digest = hashlib.sha256(frame).hexdigest()
+            # This excludes blank transitions and a changing frame. It does not
+            # establish legibility, label correctness or absence of overlap.
+            if visible and digest == previous:
+                (self.output / 'preview.png').write_bytes(frame)
+                self.write('visual-feedback.json', current)
+                self.report.update(visual_status='needs_review', preview='preview.png',
+                                   visual_feedback='visual-feedback.json',
+                                   preview_source='native_canvas' if native_fallback else 'browser_screenshot')
+                return
+            previous = digest if visible else None
+            if not native_fallback and attempts >= 2 and not visible:
+                native_fallback = True
+                previous = None
+                deadline = time.monotonic() + min(self.timeout, 8)
+        self.report.update(visual_status='unavailable', visual_reason='No stable nonwhite board frame; inspect a fresh read-only page')
+
+    def observe_saved(self):
+        try:
+            self.capture_preview()
+        except Exception as error:
+            self.report.update(visual_status='unavailable', visual_error=type(error).__name__,
+                               visual_reason=str(error) if isinstance(error, VerificationError)
+                               else 'Preview transport or runtime failure; saved edits were not replayed')
+
     def editor(self, operation, expected=None):
         request = {k: self.request[k] for k in ('document_url', 'whiteboard_token')}
         request.update(operation=operation, expected=expected)
@@ -740,8 +989,18 @@ class Runner:
         # CLI raw omits the two Bezier controls; do not invent them from a box.
         # Edited curves also require a fresh-page native readback below.
         left, right = copy.deepcopy(raw_nodes), copy.deepcopy(page_nodes)
+        raw_lookup = {n['id']: n for n in left}
+        for node in right:
+            if node.get('kind') == 'connector':
+                raw_font = raw_lookup.get(node['id'], {}).get('caption_font_size')
+                if caption_raw_font_equivalent(raw_font, node.get('caption_font_size')):
+                    node['caption_font_size'] = raw_font
         for nodes in (left, right):
             for node in nodes:
+                if node.get('kind') == 'connector':
+                    for field in ('caption_width', 'caption_size_mode'):
+                        if field not in raw_lookup.get(node['id'], {}):
+                            node.pop(field, None)
                 if node.get('kind') == 'connector' and node.get('shape') == 'curve':
                     node.pop('points', None)
         return equivalent(left, right)
@@ -853,15 +1112,18 @@ class Runner:
         self.report['initial_raw'] = name
         self.open_page()
         self.hydrate(raw)
-        if self.request.get('operations'):
+        if self.request.get('operations') or self.request.get('capture_preview'):
             self.editor({'kind': 'enter'})
             self.hydrate(raw)
         previous_delete = None
-        for op in [None, *self.request.get('operations', [])]:
+        operations = [None, *self.request.get('operations', [])]
+        for index, op in enumerate(operations):
             state = self.editor({'kind': 'inspect'})
             raw, name = self.settle(state['nodes'], state['render_alpha'])
             if op is None:
                 self.report['initial_nodes'] = state['nodes']
+                self.write('inspect-000.json', state)
+                self.report['initial_inspect'] = 'inspect-000.json'
                 continue
             actual = dict(op)
             reject_nested_groups(state['nodes'], op)
@@ -891,7 +1153,11 @@ class Runner:
             alpha_only = not any(delta.values()) and not self.alpha_equivalent(state['render_alpha'],result['render_alpha'])
             saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'])
             raw_exceptions = check_raw_preservation(previous_delete['raw'] if op['kind'] == 'undo' else raw, saved_raw, {'kind':'undo'} if op['kind'] == 'undo' else op)
-            if op['kind'] in ('style','connect','reconnect','anchors') or any(n.get('kind') == 'connector' and n.get('shape') == 'curve' for n in result['nodes']):
+            # A delete receipt belongs to this editor's undo stack. Defer the
+            # fresh-page check until its immediate undo has restored the board.
+            immediate_undo = (op['kind'] == 'delete' and index + 1 < len(operations)
+                              and operations[index + 1].get('kind') == 'undo')
+            if not immediate_undo and (op['kind'] in ('style','connect','reconnect','anchors','caption_format','undo') or any(n.get('kind') == 'connector' and n.get('shape') == 'curve' for n in result['nodes'])):
                 reopened = self.reopen_verified(saved_raw, result['nodes'], result['render_alpha'], result['line_endpoints'])
                 self.write(f'reopened-{len(self.report["steps"])+1:03d}.json', reopened)
             self.uncertain = False
@@ -899,6 +1165,8 @@ class Runner:
                                          'before_render_alpha':state['render_alpha'],'after_render_alpha':result['render_alpha']})
             previous_delete = {'before': state['nodes'], 'raw':raw, 'transaction_count': result['transaction_count'], 'undo_receipt':result['undo_receipt']} if op['kind'] == 'delete' else None
         self.report['status'] = 'verified'
+        if self.request.get('capture_preview'):
+            self.observe_saved()
 
     def create_connection(self, op, state, raw, name):
         """Append exactly one free line, then bind it through the native editor.

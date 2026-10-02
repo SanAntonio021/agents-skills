@@ -82,6 +82,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | arrow | id, start/end；取值见下方箭头列表 |
 | caption | id, text；无标签时新增，单标签时改写；空字符串清空并移除标签。支持多行，改写保留位置与格式 |
 | caption_position | id；position 为 0～1 沿线比例；placement 为 on_line / above_line / below_line；至少提供一个，另一个保持原值 |
+| caption_format | id；font_size 为 4～999；width 为不小于 10 的文字框宽度，自动换行；auto_width:true 恢复自动宽度。至少指定一项，width 与 auto_width 互斥，未指定的格式保持 |
 | line_type | id, shape 为 straight / polyline / curve / right_angled_polyline |
 | path | id, points；画布绝对坐标的中间点数组。折线为拐点，曲线须两端已绑定且恰好两个控制点；直线无拐点，正交线各段须水平或垂直 |
 | curve_point | id, point 为画布 `{x,y}`；mode 可选 segment / turning，index 为从 0 开始的手柄下标。segment 拖动曲线段中点新增经过点，turning 移动已有经过点；默认有经过点则移动，否则新增，index 默认为 0 |
@@ -107,6 +108,14 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 需上下避让时加 `"placement":"above_line"` 或 `"placement":"below_line"`。这对应原生线上、上方、下方三种模式；人工拖动将鼠标落点投到线上，再按距离与方向选模式，不把文字固定在鼠标的任意线外坐标。绝对标签坐标入口因此拒绝。
 文字和位置编辑限单标签，一个标签内可写多行或多个段落。多标签指多个独立文字块：raw 可导入这种数据，但当前原生加载器只暴露首项；遇这种画板只读 raw，拒绝写入，避免隐含文字被删除。
 清空会按原生编辑器语义移除标签；之后重新添加采用编辑器默认样式和中间位置，不承诺保留被删标签的格式。
+
+需要调整长标签时，例如 `{"kind":"caption_format","id":"<line-id>","font_size":20,"width":180}`。固定宽度自动换行，显式换行仍保留；恢复自动宽度用 `"auto_width":true`。自动宽度也受原生测量上限影响，不保证长文字全部放在一行。字号和宽度操作保持标签内容、位置、连线和端点；改字及移位保留现有格式。
+
+查看画面时，在请求顶层加 `"capture_preview":true`，可与编辑一起使用，或搭配 `"operations":[]` 只读观察。`inspect-000.json` 保存完整初始检查；编辑结果及 `visual-feedback.json` 的 `label_geometry` 按连线ID给出原生标签占位及屏幕位置，坐标以该次实际视口为准。runner 在自有页面等待两帧一致并排除画板全白的过渡画面，成功写入 `preview.png`，结果 `visual_status` 为 `needs_review`。执行智能体必须实际查看这张图，才能判断文字可见、换行和遮挡；几何数据及截图稳定不等于排版合格。
+若 `visual_status:unavailable`，保存回读结果仍单独记录，使用新的只读观察重取画面，不重放修改。需要挪标签时，先据当前占位和图像选沿线比例或上下模式，改完再取截图。删除与紧接撤销仍在同一请求、同一编辑器中完成，截图在恢复后获取，不打断撤销栈。
+观察入口会以已验原生回调刷新自有画布尺寸，前后必须保持内容、保存序号及撤销栈；被改标签在画面外或被裁切时不给可审截图状态。小数字号可用，CLI raw会将其截成整数，结果记录这一已观察差异；完整字号仍由原生保存和新页面严格核对。
+浏览器合成截图传输失败或连续白帧时，回退为当前原生画布的原始PNG像素，不重画图、不重放修改。`preview_source` 明示 browser_screenshot 或 native_canvas；后者不包含浏览器工具栏，几何屏幕坐标须扣除 `viewport.rect` 原点后对应到图像。两种图像都核对目标文字区域确有像素、两帧稳定，再交执行智能体查看。
+原生画布PNG保留透明背景；查看器显示黑底时应在白底查看器中打开原图，不能把显示背景误判为画板颜色或重新生成图像。
 
 路径操作保持两端绑定和锚点，改变中间走线；自动直角线可先转换线型再读取生成的拐点。所有样式和路径编辑均须保存、服务端回读，不能仅凭页面显示验收。
 `#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。

@@ -50,6 +50,7 @@
 | 并行分治 | 多目标可并行；同一浏览器共享 Proxy，但 task、token、tab 和 ref 互相隔离 |
 | 站点经验复用 | 按域名读取已有 URL 模式、平台特征与已知陷阱；只有用户要求维护时才更新 |
 | 媒体提取 | 从 DOM 直取图片/视频 URL，或对视频任意时间点截帧分析 |
+| 任务收尾与验收 | 先核实可重新打开的整体入口及必要验收链接，再关闭本次新开的标签页、弹窗和独立窗口；仅用户明确要求保留时例外，关闭结果不明时如实报告 |
 
 `dual-proxy.2` 使用 `/v2` API。旧无版本操作路由返回 `410 LEGACY_API_DISABLED`；迁移见 [`references/migration-dual-proxy.2.md`](references/migration-dual-proxy.2.md)。
 

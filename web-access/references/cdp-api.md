@@ -80,9 +80,11 @@ JavaScript dialog 默认保持待处理，先读取实际提示，按同一授�
 
 多个目标独立且分工有益时可交给子 Agent，说明所需结果、材料和约束，并要求加载 `web-access`；不为简单单页任务强行分工。每个对话或子 Agent 创建独立 task，只使用其 token、自有 tab 和 popup；同一浏览器复用专用 Proxy/CDP 连接，跨浏览器 token 不通用。单个 Proxy 最多同时保留 32 个非终态 task，避免密集创建无用页面。
 
-结束时调用 [complete](#post-v2taskstaskidcomplete)，默认 `keep:false` 关闭自有 tab；确需留给用户时用 `keep:true`。handoff 状态先按用户接管流程恢复，不能用 complete 绕开屏障。active task 30 分钟无操作后过期，自有 tab 闲置 15 分钟清理；具体超时和终态结果以下方协议为准。
+任务完成或终止前，先记录并核实用户可重新打开的结果与验收链接，再调用 [complete](#post-v2taskstaskidcomplete)，使用 `keep:false` 关闭自有 tab 和 popup；仅用户明确要求保留时用 `keep:true`，不因等待验收而默认留页。核对关闭回执，超时或未知结果按下方协议如实报告，不能把 task 已终结当作全部页面已关闭。最终回复给出整体入口及验收本次改动必需的链接，具体交付要求见[技能入口](../SKILL.md#完成与按需参考)。
 
-保留长期 Proxy，不把停止 Proxy 或关闭用户浏览器作为收尾步骤。Proxy 重启会失去 token、归属和 ref，遗留页面降为用户 tab，不能重新接管。
+handoff 状态先按用户接管流程恢复，不能用 complete 绕开屏障；仍需用户接管时不提前收尾。active task 30 分钟无操作后过期，自有 tab 闲置 15 分钟清理；这些兜底不能代替主动 complete，具体超时和终态结果以下方协议为准。
+
+保留长期 Proxy 和用户原有浏览器窗口，不把停止 Proxy 或关闭用户浏览器作为收尾步骤。Proxy 的 complete 只负责自有 tab/popup；本次额外新开的独立窗口，确认其中没有用户或其他任务页面后，通过宿主支持的窗口接口关闭，不用退出整个浏览器进程代替。Proxy 重启会失去 token、归属和 ref，遗留页面降为用户 tab，不能重新接管。
 
 ### 本地历史与站点参考
 

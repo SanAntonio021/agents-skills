@@ -2,7 +2,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 // Explicitly bypass only the production build pin in this synthetic fixture.
-const source=production.replace("if (!['54e7e6de'].includes(signature))",'if (false)');
+const source=production.replace("if (!['54e7e6de'].includes(signature))",'if (false)')
+  .replace("if(saveSignature!=='b8586b42')",'if(false)');
 let contentCalls=0,selected=[];
 const shape=(id,locked=false)=>({id,type:13,page:{info:{locked,baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}});
 const a=shape('a'),b=shape('b',true),group={id:'g',children:[a,b],page:{info:{baseV2:{x:0,y:0,width:200,height:60}}}};
@@ -12,6 +13,9 @@ const app={docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,saved
   nodeManager:{nodeMap:new Map([a,b,group,line].map(n=>[n.id,n]))},api:{graphicNodeToPageNode:n=>n.page,getSelectNodes:()=>selected},
   commandManager:{handlers:new Map(['Select','Move','TextFontSize'].map(k=>[k,{execute(){}}])),execute(name,args){if(name==='Select'){selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}contentCalls++;throw new Error('CONTENT_CALL_FAILED');}},
   actionManager:{execAction(){}},undoRedoManager:{undoStack:[]}};
+app.actionManager.ioManager={inited:true,pendingActions:[],docState:{appliedVersion:2},sendAction(){},sendPendingActions(){},
+  channelManager:{orderChannel:{localActions:[],localProcessing:false,localOffline:false,getBaseSeq(){},addLocalAction(){},flushLocalActions(){}}}};
+app.plugins=[{saveState:'saved',httpSavingSet:new Set(),hasUncommitData(){},updateSaveState(){}}];
 const element={__reactFiberTest:{memoizedProps:{app},return:null}};
 const ctx={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},document:{querySelectorAll:()=>[element]}};
 const adapter=vm.runInNewContext('('+source+')',ctx),req={document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest'};
@@ -36,3 +40,30 @@ app.api.getSelectNodes=()=>selected;
 const failure=run({kind:'font',id:'free',font_size:22});
 assert.match(failure.adapter_error,/CONTENT_CALL_FAILED/);assert.equal(failure.content_write_started,true);assert.equal(contentCalls,1);
 console.log('PASS: synthetic locks, selection and content-start receipts');
+
+const io=app.actionManager.ioManager,channel=io.channelManager.orderChannel;
+channel.localActions.push({});
+const waiting=run({kind:'font',id:'free',font_size:22});
+assert.match(waiting.adapter_error,/UNSAVED_NATIVE_IO_STATE/);
+assert.equal(waiting.content_write_started,false);assert.equal(contentCalls,1);
+channel.localActions=[];
+io.inited=1;
+const invalidSave=run({kind:'font',id:'free',font_size:22});
+assert.match(invalidSave.adapter_error,/NATIVE_SAVE_STATE_INVALID/);
+assert.equal(invalidSave.content_write_started,false);assert.equal(contentCalls,1);
+io.inited=true;
+app.commandManager.execute=(name,args)=>{
+  if(name==='Select'){selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}
+  contentCalls++;
+  app.nodeManager.nodeMap.get('free').page.info.textV2.fontSize=args.fontSize;
+  channel.localActions.push({});
+};
+const unchanged=run({kind:'font',id:'free',font_size:18});
+assert.equal(unchanged.save_fence.before_applied_version,2);
+assert.equal(unchanged.save_fence.requires_ack,false);
+assert.equal(unchanged.native_save.ordered_pending,1);
+channel.localActions=[];
+const changed=run({kind:'font',id:'free',font_size:22});
+assert.equal(changed.save_fence.requires_ack,true);
+assert.equal(changed.native_save.ordered_pending,1);
+console.log('PASS: native pending queue blocks before content and save fences distinguish visible changes');

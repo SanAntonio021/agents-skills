@@ -114,7 +114,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 
 查看画面时，在请求顶层加 `"capture_preview":true`，可与编辑一起使用，或搭配 `"operations":[]` 只读观察。`inspect-000.json` 保存完整初始检查；编辑结果及 `visual-feedback.json` 的 `label_geometry` 按连线ID给出原生标签占位及屏幕位置，坐标以该次实际视口为准。runner 在自有页面等待两帧一致并排除画板全白的过渡画面，成功写入 `preview.png`，结果 `visual_status` 为 `needs_review`。执行智能体必须实际查看这张图，才能判断文字可见、换行和遮挡；几何数据及截图稳定不等于排版合格。
 若 `visual_status:unavailable`，保存回读结果仍单独记录，使用新的只读观察重取画面，不重放修改。需要挪标签时，先据当前占位和图像选沿线比例或上下模式，改完再取截图。删除与紧接撤销仍在同一请求、同一编辑器中完成，截图在恢复后获取，不打断撤销栈。
-观察入口会以已验原生回调刷新自有画布尺寸，前后必须保持内容、保存序号及撤销栈；被改标签在画面外或被裁切时不给可审截图状态。小数字号可用，CLI raw会将其截成整数，结果记录这一已观察差异；完整字号仍由原生保存和新页面严格核对。
+观察入口会以已验原生回调刷新自有画布尺寸，前后必须保持内容、保存序号及撤销栈；建立截图基线和每次取图前后均须确认原生发送队列已清空、保存完成，applied_version 与基线严格相同。版本推进或转为未保存立即停止，只允许视口变化在原20秒上限内重新采样。被改标签在画面外或被裁切时不给可审截图状态。小数字号可用，CLI raw会将其截成整数，结果记录这一已观察差异；完整字号仍由原生保存和新页面严格核对。
 默认先读取当前原生画布PNG，避免慢浏览器截图在超时后仍占用页面；原生图像明确不可用时再尝试浏览器合成截图，不重画图、不重放修改。`preview_source` 明示 browser_screenshot 或 native_canvas；后者不包含浏览器工具栏，几何屏幕坐标须扣除 `viewport.rect` 原点后对应到图像。两种图像都核对目标文字区域确有像素、两帧稳定，再交执行智能体查看。
 浏览器三次可见截图仍不稳定时也执行同一回退，`preview_fallback_reason` 记录原因；转换图像来源不延长原有总超时。
 浏览器单张传输最多等待5秒且不超过本轮剩余预算，给原生回退留出时间；失败结果也保留 `preview_attempts`、回退原因及浏览器错误类型。
@@ -123,7 +123,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 路径操作保持两端绑定和锚点，改变中间走线；自动直角线可先转换线型再读取生成的拐点。所有样式和路径编辑均须保存、服务端回读，不能仅凭页面显示验收。
 `#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。
 曲线形状微调用 `curve_point`，既可处理绑定曲线，也可处理游离曲线。只读 inspect 的 `curve_handles` 按连线 ID 返回 `segment` 和 `turning` 的实际画布坐标；先据此选择手柄，再指定目标经过点，例如 `{"kind":"curve_point","id":"<curve-id>","point":{"x":410,"y":110}}`。再次调用默认移动已有的第一个经过点；需新增第二个点时明确指定 segment 和对应 index，不能把两个 Bezier 控制点当成经过点。
-CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线编辑还须关闭自有页面、重新加载后比较完整原生点列和首末点。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；一层组合内仍按成员 ID 调用并保护父组和其他成员。
+CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线控制点变化先由独立新页见证完整点列及首末点，确认保存后再关闭原写入页并执行普通重开验收。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；一层组合内仍按成员 ID 调用并保护父组和其他成员。
 长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。
@@ -133,6 +133,8 @@ runner 点击页面真实存在的该目录链接，再滚动到准确画板块�
 先看结果中的全部步骤和最后 raw 快照。每步在提交前建立，不因后续失败而消失；CLI/API 错误与页面未保存分开报告。
 `save_status` 为 not_written / unknown / confirmed，`verification_status` 为 pending / passed / failed，`failure_phase` 指出失败环节。提交前拒绝是 not_written + failed；响应丢失或保存回读超时是 unknown + failed；保存已确认而保护或重开失败是 confirmed + failed；必要数据验收全部完成才是 confirmed + passed。删除等待紧接撤销重开验收期间暂为 pending。
 `visual_status` 仍独立记录图像是否可审。`pages` 和 `cleanup_receipts` 记录每次自有页面与换页/关闭回执，凭据不落盘；关闭超时按未知关闭状态报告，不能把 task 终态当成页面必已关闭。
+`save_evidence` 记录内容调用前的 `save_fence` 及保存时的 `native_save` 回执：本次有可见变化时原生 `applied_version` 须推进，所有本地及有序待发队列须清空，processing/offline 为 false，保存状态完成。多事务先后入队时也不能仅凭旧 seq/savedSeq 相等判定保存；无变化操作仍须等待已入队事务完成。
+raw 缺省或截断的字段变化由 `native_persistence` 记录独立新页见证；此时原写入页继续保留，保存状态先为 unknown，新页读到完整新值后才为 confirmed。新页仍是旧值时 `failure_phase:native_persistence`，不重放修改、不以组框缓存解释差异。只读见证页的关闭回执单列，关闭失败不能撤销已经取得的保存事实。
 保存稳定时间在未保存或服务端暂未就绪时重新计算，但总超时不延长。预览核对同一内容、保存序号、视口和实际像素比例；视口变化重新采样，内容变化停止观察。
 一层组的 `group_cache_normalizations` 记录服务端父包围框与原生完整成员推导框的差异；不表示旧缓存已经更新。成员 ID、成员关系和其他组字段继续严格保护。`raw_exceptions` 仅列已取得真实证据的具体序列化差异。
 重开时服务端可能才更新这四个缓存字段；只有完整成员和其他组属性严格不变、最新值与原生完整成员范围相符时，才在 `server_group_cache_catchup` 记录延迟更新。其他变化仍视为冲突。

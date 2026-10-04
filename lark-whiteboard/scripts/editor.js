@@ -147,12 +147,36 @@
       width:Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x)),height:Math.max(...points.map(p=>p.y))-Math.min(...points.map(p=>p.y))});
     return[n.id,{available:true,angle:b.angle,world_corners:world,world_rect:rect(world),screen_corners:screen,screen_rect:screen?rect(screen):null}];
   }));
+  const nativeSave = () => {
+    const io=a.actionManager.ioManager,ch=io?.channelManager?.orderChannel,
+      plugins=(a.plugins||[]).filter(p=>typeof p.hasUncommitData==='function'&&typeof p.updateSaveState==='function');
+    if(!io||!ch||plugins.length!==1)return{available:false,reason:'NATIVE_SAVE_INTERFACE_UNAVAILABLE'};
+    const p=plugins[0],functions=[io.sendAction,io.sendPendingActions,ch.getBaseSeq,ch.addLocalAction,ch.flushLocalActions,p.hasUncommitData,p.updateSaveState];
+    if(functions.some(f=>typeof f!=='function'))return{available:false,reason:'NATIVE_SAVE_INTERFACE_UNAVAILABLE'};
+    const sources=functions.map(f=>f.toString()).join('\n');let hash=2166136261;
+    for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
+    const saveSignature=(hash>>>0).toString(16);
+    if(saveSignature!=='b8586b42')return{available:false,reason:'UNVERIFIED_NATIVE_SAVE_INTERFACE',signature:saveSignature};
+    const applied=io.docState?.appliedVersion;
+    if(typeof io.inited!=='boolean'||!Array.isArray(io.pendingActions)||!Array.isArray(ch.localActions)
+      ||typeof ch.localProcessing!=='boolean'||typeof ch.localOffline!=='boolean'
+      ||!Number.isInteger(applied)||applied<0||!(p.httpSavingSet instanceof Set)
+      ||!['saving','saved'].includes(p.saveState))return{available:false,reason:'NATIVE_SAVE_STATE_INVALID',signature:saveSignature};
+    return{available:true,signature:saveSignature,initialized:io.inited,applied_version:applied,
+      pending:io.pendingActions.length,ordered_pending:ch.localActions.length,processing:ch.localProcessing,
+      offline:ch.localOffline,save_state:p.saveState,http_pending:p.httpSavingSet.size};
+  };
+  const nativeSaveReady=s=>s.available&&s.initialized&&!s.pending&&!s.ordered_pending&&!s.processing&&!s.offline
+    &&s.save_state==='saved'&&!s.http_pending;
   const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(),
-    object_bounds:objectBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature});
+    object_bounds:objectBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature,native_save:nativeSave()});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
   if (!['54e7e6de'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
+  const saveBefore=nativeSave();
+  if(!saveBefore.available)fail(saveBefore.reason);
+  if(!nativeSaveReady(saveBefore))fail('UNSAVED_NATIVE_IO_STATE');
   if (a.docState.seq !== a.docState.savedSeq) fail('UNSAVED_PAGE_STATE');
   if (request.expected && stable(snapshot()) !== stable(request.expected)) fail('STALE_PAGE_SNAPSHOT');
   if (op.kind === 'canvas_preview') {
@@ -184,7 +208,7 @@
     return result();
   }
   if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
-  const before = snapshot(), ids = op.kind==='connect' ? [op.template_id,op.start_id,op.end_id].filter(Boolean) : op.kind==='reconnect' ? [op.id,op.start_id,op.end_id].filter(Boolean) : op.ids || (op.id ? [op.id] : []);
+  const before = snapshot(),beforeAlpha=renderAlpha(),beforeEnds=lineEndpoints(), ids = op.kind==='connect' ? [op.template_id,op.start_id,op.end_id].filter(Boolean) : op.kind==='reconnect' ? [op.id,op.start_id,op.end_id].filter(Boolean) : op.ids || (op.id ? [op.id] : []);
   const node = id => a.nodeManager.nodeMap.get(id) || fail('NODE_NOT_FOUND:' + id);
   ids.forEach(node);
   const assertUnlocked=n=>{for(let p=n;p;p=p.parent)if(a.api.graphicNodeToPageNode(p)?.info?.locked)fail('LOCKED_OBJECT');};
@@ -531,7 +555,10 @@
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
   const max=(['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['move','resize','caption','caption_format','style'].includes(op.kind)?2:1)+(refreshedGroups.length?1:0);
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
-  return {...result(), before, content_write_started:contentWriteStarted,transaction_count:count,refreshed_group_ids:refreshedGroups,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
+  const changed=stable(before)!==stable(snapshot())||stable(beforeAlpha)!==stable(renderAlpha())||stable(beforeEnds)!==stable(lineEndpoints());
+  return {...result(), before, content_write_started:contentWriteStarted,
+    save_fence:{signature:saveBefore.signature,before_applied_version:saveBefore.applied_version,requires_ack:contentWriteStarted&&changed},
+    transaction_count:count,refreshed_group_ids:refreshedGroups,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};
   }catch(error){return{adapter_error:String(error.message),content_write_started:contentWriteStarted};}
 }

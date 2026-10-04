@@ -183,6 +183,68 @@ class Preview(unittest.TestCase):
                 runner.capture_preview()
             self.assertFalse((runner.output/'preview.png').exists())
 
+    def native_saved_state(self, state):
+        state.update(seq=0,savedSeq=0,native_save=dict(available=True,signature='b8586b42',
+                     initialized=True,applied_version=10,pending=0,ordered_pending=0,
+                     processing=False,offline=False,save_state='saved',http_pending=0))
+
+    def test_unchanged_nodes_with_native_version_change_stop_before_or_after_frame(self):
+        for changed_inspection in (2,3):
+            with self.subTest(changed_inspection=changed_inspection),tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+                runner,state = self.runner(directory)
+                self.native_saved_state(state)
+                inspections,captures = 0,[]
+                def editor(op,expected=None):
+                    nonlocal inspections
+                    result = copy.deepcopy(state)
+                    if op['kind']=='inspect':
+                        inspections += 1
+                        if inspections>=changed_inspection:
+                            result['native_save']['applied_version'] = 11
+                    return result
+                runner.editor = editor
+                runner.screenshot = lambda **kwargs: captures.append('frame') or png((4,4,12,12))
+                with self.assertRaisesRegex(VerificationError,'Board changed'):
+                    runner.capture_preview()
+                self.assertEqual(inspections,changed_inspection)
+                self.assertEqual(len(captures),changed_inspection-2)
+                self.assertFalse((runner.output/'preview.png').exists())
+
+    def test_zero_legacy_sequence_with_pending_native_io_stops_before_or_after_frame(self):
+        for changed_inspection in (2,3):
+            with self.subTest(changed_inspection=changed_inspection),tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+                runner,state = self.runner(directory)
+                self.native_saved_state(state)
+                inspections,captures = 0,[]
+                def editor(op,expected=None):
+                    nonlocal inspections
+                    result = copy.deepcopy(state)
+                    if op['kind']=='inspect':
+                        inspections += 1
+                        if inspections>=changed_inspection:
+                            result['native_save']['ordered_pending'] = 1
+                    return result
+                runner.editor = editor
+                runner.screenshot = lambda **kwargs: captures.append('frame') or png((4,4,12,12))
+                with self.assertRaisesRegex(VerificationError,'Board changed'):
+                    runner.capture_preview()
+                self.assertEqual(inspections,changed_inspection)
+                self.assertEqual(len(captures),changed_inspection-2)
+                self.assertFalse((runner.output/'preview.png').exists())
+
+    def test_unsaved_native_baseline_stops_before_observe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runner,state = self.runner(directory)
+            self.native_saved_state(state)
+            state['native_save']['pending'] = 1
+            calls = []
+            runner.editor = lambda op,expected=None: calls.append(op['kind']) or copy.deepcopy(state)
+            runner.screenshot = lambda **kwargs: self.fail('Unsaved baseline must not capture')
+            with self.assertRaisesRegex(VerificationError,'not saved'):
+                runner.capture_preview()
+            self.assertEqual(calls,['inspect'])
+            self.assertFalse((runner.output/'preview.png').exists())
+
     def test_unstable_browser_frames_use_bounded_real_canvas_readback(self):
         with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
             runner,state = self.runner(directory)

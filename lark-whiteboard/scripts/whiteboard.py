@@ -1354,6 +1354,9 @@ class Runner:
     def capture_preview(self):
         """Observe the owned page without replaying edits or discarding undo."""
         baseline = self.editor({'kind':'inspect'})
+        baseline_save = baseline.get('native_save')
+        if baseline_save is not None and not self.native_save_ready(baseline):
+            raise VerificationError('Board is not saved while establishing the preview baseline')
         self.editor({'kind':'observe'}, baseline['nodes'])
         affected = {ident for step in self.report.get('steps', [])
                     for field in ('changed', 'added') for ident in step.get('diff', {}).get(field, [])}
@@ -1370,7 +1373,12 @@ class Runner:
         deadline = time.monotonic() + min(self.timeout, 20)
 
         def same_content(state):
-            return (equivalent(state.get('nodes'), baseline.get('nodes'))
+            if baseline_save is not None:
+                native_same = (self.native_save_ready(state, minimum_applied_version=baseline_save['applied_version'])
+                               and state['native_save']['applied_version'] == baseline_save['applied_version'])
+            else:
+                native_same = state.get('native_save') is None
+            return (native_same and equivalent(state.get('nodes'), baseline.get('nodes'))
                     and self.alpha_equivalent(state.get('render_alpha'), baseline.get('render_alpha'))
                     and equivalent(state.get('line_endpoints'), baseline.get('line_endpoints'))
                     and state.get('seq') == baseline.get('seq')
@@ -1493,8 +1501,66 @@ class Runner:
             raise VerificationError('Editor rejected operation or returned an invalid response')
         return value
 
-    def settle(self, expected, expected_alpha=None, minimum_stable_seconds=0, expected_endpoints=None):
+    @staticmethod
+    def native_save_ready(state, fence=None, minimum_applied_version=None):
+        """The legacy page sequence can remain zero while an IO action is queued."""
+        receipt = state.get('native_save')
+        if receipt is None:
+            if fence is not None or minimum_applied_version is not None:
+                raise VerificationError('Native save evidence is missing')
+            return True
+        if receipt.get('available') is not True:
+            if fence is None and receipt.get('reason') == 'NATIVE_SAVE_INTERFACE_UNAVAILABLE':
+                return False
+            raise VerificationError('Native save interface is unavailable or unverified')
+        if receipt.get('signature') != 'b8586b42':
+            raise VerificationError('Native save interface is unavailable or unverified')
+        for key in ('applied_version', 'pending', 'ordered_pending', 'http_pending'):
+            if type(receipt.get(key)) is not int or receipt[key] < 0:
+                raise VerificationError('Native save counters are invalid')
+        for key in ('initialized', 'processing', 'offline'):
+            if type(receipt.get(key)) is not bool:
+                raise VerificationError('Native save flags are invalid')
+        if receipt.get('save_state') not in ('saved', 'saving'):
+            raise VerificationError('Native save state is invalid')
+        required = minimum_applied_version
+        if fence is not None:
+            if (not isinstance(fence, dict) or fence.get('signature') != receipt['signature']
+                    or type(fence.get('before_applied_version')) is not int or fence['before_applied_version'] < 0
+                    or type(fence.get('requires_ack')) is not bool):
+                raise VerificationError('Native save fence is invalid')
+            required = max(required or 0, fence['before_applied_version'] + int(fence['requires_ack']))
+        if required is not None and (type(required) is not int or required < 0):
+            raise VerificationError('Native save version floor is invalid')
+        return (receipt['initialized'] and not receipt['pending'] and not receipt['ordered_pending']
+                and not receipt['processing'] and not receipt['offline'] and not receipt['http_pending']
+                and receipt['save_state'] == 'saved'
+                and (required is None or receipt['applied_version'] >= required))
+
+    @staticmethod
+    def needs_native_persistence(before, after):
+        """Fields absent or truncated in CLI raw require a fresh native witness."""
+        left = {n['id']:n for n in before['nodes']}
+        for node in after['nodes']:
+            prior = left.get(node['id'], {})
+            if not prior:
+                continue
+            if node.get('kind') == 'connector':
+                if any(not equivalent(prior.get(k), node.get(k)) for k in ('caption_width', 'caption_size_mode')):
+                    return True
+                font = node.get('caption_font_size')
+                if (not equivalent(prior.get('caption_font_size'), font) and finite_number(font)
+                        and font != math.trunc(font)):
+                    return True
+                if (node.get('shape') == 'curve' and not equivalent(prior.get('points'), node.get('points'))):
+                    return True
+        alpha_before, alpha_after = before.get('render_alpha') or {}, after.get('render_alpha') or {}
+        return any(not Runner.alpha_equivalent({ident:alpha_before[ident]}, {ident:alpha_after[ident]})
+                   for ident in alpha_before.keys() & alpha_after.keys())
+
+    def settle(self, expected, expected_alpha=None, minimum_stable_seconds=0, expected_endpoints=None, save_fence=None):
         deadline = time.monotonic() + self.timeout
+        self.last_save_deadline = deadline
         stable_since = None
         while time.monotonic() < deadline:
             current = self.editor({'kind': 'inspect'})
@@ -1504,7 +1570,8 @@ class Runner:
                 raise VerificationError('Rendering alpha changed during save verification')
             if expected_endpoints is not None and not equivalent(current.get('line_endpoints'), expected_endpoints):
                 raise VerificationError('Native line endpoints changed during save verification')
-            if current.get('seq') == current.get('savedSeq') and current.get('seq') is not None:
+            if (current.get('seq') == current.get('savedSeq') and current.get('seq') is not None
+                    and self.native_save_ready(current, save_fence)):
                 try:
                     raw, name = self.export()
                     if self.server_equivalent(projection(raw), expected, current.get('object_bounds')):
@@ -1512,6 +1579,7 @@ class Runner:
                             stable_since = time.monotonic()
                         if time.monotonic() - stable_since >= minimum_stable_seconds:
                             self.last_saved_state = current
+                            self.last_save_evidence = {'fence':save_fence, 'native_save':current.get('native_save'), 'raw':name}
                             return raw, name
                     else:
                         stable_since = None
@@ -1801,7 +1869,7 @@ class Runner:
         self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
         page['open_status'] = 'ready'
 
-    def hydrate(self, raw):
+    def hydrate(self, raw, minimum_applied_version=None):
         if any(len(n.get('connector', {}).get('captions', {}).get('data', [])) > 1 for n in raw['nodes']):
             raise VerificationError('Native editor exposes only the first imported caption; use raw read-only inspection to preserve additional text')
         deadline = time.monotonic() + min(self.timeout, 20)
@@ -1827,11 +1895,48 @@ class Runner:
                 state['server_group_cache_catchup'] = catchup
                 self.write(f'group-cache-catchup-{self.index:03d}.json',
                            {'latest_raw':name,'normalizations':catchup})
-            if self.server_equivalent(projection(latest), state['nodes'], state.get('object_bounds')) and state.get('seq') == state.get('savedSeq'):
+            if (self.server_equivalent(projection(latest), state['nodes'], state.get('object_bounds'))
+                    and state.get('seq') == state.get('savedSeq')
+                    and self.native_save_ready(state, minimum_applied_version=minimum_applied_version)):
                 state['group_cache_normalizations'] = self.group_cache_evidence(latest, state)
                 return state
             time.sleep(1)
         raise VerificationError('Document board and CLI snapshot did not converge before writing; inspect prewrite-browser evidence')
+
+    def confirm_native_persistence(self, saved_raw, expected, number, binding_ids=None):
+        """Keep the writer alive until a separate saved page witnesses hidden fields."""
+        remaining = self.last_save_deadline - time.monotonic()
+        if remaining <= 0:
+            raise VerificationError('Native persistence confirmation exceeded the save deadline')
+        folder = f'native-save-witness-{number:03d}'
+        request = {k:self.request[k] for k in ('document_url', 'whiteboard_token', 'section_id', 'block_id') if k in self.request}
+        request['operations'] = []
+        reader = Runner(request, self.output / folder, self.proxy, timeout=remaining)
+        try:
+            reader.open_page()
+            remaining = self.last_save_deadline - time.monotonic()
+            if remaining <= 0:
+                raise VerificationError('Native persistence confirmation exceeded the save deadline')
+            reader.timeout = min(reader.timeout, remaining)
+            receipt = self.last_saved_state.get('native_save') or {}
+            floor = receipt.get('applied_version')
+            state = reader.hydrate(saved_raw, minimum_applied_version=floor)
+            reader.write('fresh-native.json', state)
+            if (not equivalent(state['nodes'], expected['nodes'])
+                    or not self.alpha_equivalent(state.get('render_alpha'), expected.get('render_alpha'))
+                    or not equivalent(state.get('line_endpoints'), expected.get('line_endpoints'))):
+                raise VerificationError('Fresh native persistence witness differs; save remains unknown')
+            self.verify_native_bindings(state, binding_ids or set())
+            if time.monotonic() >= self.last_save_deadline:
+                raise VerificationError('Native persistence confirmation exceeded the save deadline')
+            reader.report['status'] = 'readonly_verified'
+            return {'status':'confirmed', 'inspect':folder + '/fresh-native.json',
+                    'minimum_applied_version':floor, 'native_save':state.get('native_save')}
+        finally:
+            reader.close()
+            reader.write('result.json', reader.report)
+            self.report.setdefault('pages', []).extend(reader.report.get('pages', []))
+            self.report.setdefault('cleanup_receipts', []).extend(reader.report.get('cleanup_receipts', []))
 
     def run(self):
         validate_request_operations(self.request)
@@ -1875,7 +1980,15 @@ class Runner:
                 delta = differences(state['nodes'], result['nodes'])
                 alpha_only = not any(delta.values()) and not self.alpha_equivalent(state['render_alpha'], result['render_alpha'])
                 phase = 'save_readback'
-                saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'])
+                fence = result.get('save_fence')
+                if result.get('content_write_started') is True and fence is None:
+                    raise VerificationError('Content call lacks its pre-submit native save fence')
+                saved_raw, saved = self.settle(result['nodes'], result['render_alpha'], 3 if alpha_only else 0, result['line_endpoints'], save_fence=fence)
+                step['save_evidence'] = self.last_save_evidence
+                if self.needs_native_persistence(state, result):
+                    phase = 'native_persistence'
+                    step['native_persistence'] = self.confirm_native_persistence(saved_raw, result, number,
+                        self.affected_bindings(state['nodes'], result['nodes'], op))
                 # Saving is a fact even if a later protection or reopen fails.
                 self.uncertain = False
                 step.update(save_status='confirmed', after_raw=saved, diff=delta,

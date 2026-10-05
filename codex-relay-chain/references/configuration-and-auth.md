@@ -28,11 +28,15 @@
 优先从故障机的实际安装包调用内置诊断；Store 包可使用这一行：
 
 ```powershell
-$taskPkg = Get-AppxPackage -Name OpenAI.Codex; & (Join-Path $taskPkg.InstallLocation 'app\resources\codex.exe') doctor --json
+$taskPkg = Get-AppxPackage -Name OpenAI.Codex; Write-Output "App version: $($taskPkg.Version)"; $taskCli = Join-Path $taskPkg.InstallLocation 'app\resources\codex.exe'; & $taskCli --version; & $taskCli doctor --json
 ```
 
 包不存在时先核对实际安装位置，不改用 PATH 中可能属于另一版本的 `codex`。
 诊断可能几十秒后统一输出；报告中的应用运行状态、普通日志路径也需结合实际进程和包目录核对。
+
+更新后复发时，使用当前包内 CLI 重新诊断。registered Core 的就绪回执与当前应用包有关，启动时
+可能需要服务刷新；旧版本 setup 成功不能证明新包已就绪。更新与报错的时间先后不能单独证明刷新失败，
+仍以本次 provisioning、remediation 和实际错误定位。
 
 1. 以 `sandbox.helpers` 的 backend、provisioning 和 remediation 判断初始化状态；服务
    `CodexSandboxService.OpenAI.Codex` 显示 Running 不代表当前用户已完成 provisioning。
@@ -42,9 +46,12 @@ $taskPkg = Get-AppxPackage -Name OpenAI.Codex; & (Join-Path $taskPkg.InstallLoca
    诊断中缺少可选 MCP 环境变量或检测到安全软件，也不能单独证明本次故障根因。
 3. 已获准修复且诊断建议 elevated setup 时，先用同一二进制的 `sandbox setup --help` 核对语法，
    保护活动任务并完全退出应用后再初始化。
-   已核验的 CLI 0.159.2 支持 `sandbox setup --elevated --user <end-user> --codex-home <authoritative-home>`。
+   已核验的 CLI 0.159.2 与 0.160.0 支持 `sandbox setup --elevated --user <end-user> --codex-home <authoritative-home>`。
    在管理员 PowerShell 中执行，显式填入已核实的目标账户和 CODEX_HOME；提升窗口可能属于另一账户，
-   不盲用 `--current-user`。交给用户粘贴时提供填实的一行命令，避免多行脚本残缺造成 `>>` 等待输入。
+   不盲用 `--current-user`。报告中的机器或目录与上次不同，先核对本次故障机和实际账户，不沿用旧身份；
+   账户不从目录名推断，必要时收取 `whoami` 和 `$env:USERPROFILE`。`$env:CODEX_HOME` 为空不代表目录
+   缺失，以本次 doctor 解析的 CODEX_HOME 为准。交给用户粘贴时提供填实的一行命令，避免多行脚本
+   残缺造成 `>>` 等待输入。
 4. 执行前说明实际影响：setup 会创建或修复沙盒账户、目录权限、防火墙规则及初始化状态，
    并保存 `windows.sandbox`。
    这是应用自身初始化入口；不能借机改认证、provider 或 CC Switch Common Config。
@@ -61,7 +68,10 @@ $taskPkg = Get-AppxPackage -Name OpenAI.Codex; & (Join-Path $taskPkg.InstallLoca
 报错淹没目标；正常 setup 失败也可能只传给 UI，不写入桌面文件日志，此时继续用诊断或结构化错误取证。
 
 来源：[官方诊断命令](https://learn.chatgpt.com/docs/developer-commands#codex-doctor)、
-[Windows 沙盒说明](https://learn.chatgpt.com/docs/windows/windows-sandbox)；版本相关入口与日志位置使用前现场核对。
+[Windows 沙盒说明](https://learn.chatgpt.com/docs/windows/windows-sandbox)、
+[应用包就绪与刷新](https://github.com/openai/codex/blob/rust-v0.159.2/codex-rs/windows-sandbox-rs/src/app_package.rs#L133-L169)、
+[0.160.0 初始化参数](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/cli/src/sandbox_setup.rs)；
+版本相关入口与日志位置使用前现场核对。
 
 ### CC Switch 云端备份恢复
 

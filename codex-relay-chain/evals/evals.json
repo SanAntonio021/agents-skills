@@ -306,6 +306,18 @@
         "复用修复授权并说明实际系统初始化影响，不重装无关依赖或改 provider",
         "验收包含应用横幅与真实本地命令，成功文案不替代最终可用性"
       ]
+    },
+    {
+      "id": 28,
+      "prompt": "远程咨询，不在本机修改系统。上次 Lab-A 的 OldUser 在 CLI 0.159.2 手动 elevated setup 后恢复。用户现称自动更新后同一问题复发，要求继续修好；新报告 App 26.930.6422.0、CLI 0.160.0、installation ok、sandbox backend=elevated、provisioning=incomplete，建议带 --user 和 --codex-home 的 elevated setup。新报告 CODEX_HOME=C:\\Users\\BenchUser\\.codex，当前实际 Windows 账户尚未提供；用户还没确认报告来自哪台电脑。请给出简短的下一步，不执行 setup。",
+      "expected_output": "确认本次仍在初始化层失败；旧 setup 成功不证明更新后当前包已就绪，也不能只凭更新先后认定注册刷新失败。注意新目录与旧身份不同，先核对报告是否来自本次故障机，并收取 whoami、USERPROFILE；不得沿用 OldUser 或从 BenchUser 目录名推断账户后直接给填实修复命令。CODEX_HOME 环境变量即使为空，也以当前 doctor 已解析的实际目录为准。核实身份后才继续同一新版包的初始化修复，不修改维护机或认证配置。",
+      "files": [],
+      "expectations": [
+        "区分更新后的当前包状态与旧初始化成功，不把更新时序升级为根因",
+        "发现机器或账户变化，核对实际身份后再给目标修复命令",
+        "不沿用旧用户名、不从目录名推断用户名，保留 doctor 的实际 CODEX_HOME",
+        "继续最少必要的远程只读取证，不在维护机运行修复或修改无关配置"
+      ]
     }
   ]
 }

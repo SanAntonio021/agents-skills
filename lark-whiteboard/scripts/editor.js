@@ -232,6 +232,11 @@
   if(['move','resize','align_top','distribute_horizontal','delete'].includes(op.kind))assertAffectedBindingsUnlocked(ids);
   const textNode = id => {const n=node(id),i=a.api.graphicNodeToPageNode(n).info;if(!i.textV2 || i.connectorV2)fail('NATIVE_TEXT_REQUIRED');return n;};
   const line = id => {const n=node(id); if (!a.api.graphicNodeToPageNode(n).info.connectorV2) fail('CONNECTOR_REQUIRED');return n;};
+  if(op.kind==='reconnect'){
+    const n=line(op.id),start=op.start_id===undefined?n.attachProps.start.id:op.start_id,
+      end=op.end_id===undefined?n.attachProps.end.id:op.end_id;
+    if(start&&end&&start===end)fail('SELF_CONNECTION_NOT_VERIFIED');
+  }
   const number = (v, positive=false) => {if (!Number.isFinite(v) || (positive && v <= 0)) fail('INVALID_NUMBER');return v;};
   const text = value => {if (typeof value !== 'string') fail('INVALID_TEXT');return value;};
   const arrows = value => {const i=arrowNames.indexOf(value);if(i<0)fail('UNSUPPORTED_ARROW');return i;};
@@ -524,7 +529,13 @@
       if(!has(op.start_id)||!has(op.end_id)||old.some(id=>id&&![op.start_id,op.end_id].includes(id)&&has(id)))fail('CONNECT_INDEX_MISMATCH');
       break;
     }
-    case 'group': if(ids.length<2)fail('SELECT_AT_LEAST_TWO');if(ids.some(id=>node(id).children?.length || node(id).parent?.id))fail('NESTED_GROUP_NOT_VERIFIED');selected(ids);cmd('Group');break;
+    case 'group': {
+      if(ids.length<2)fail('SELECT_AT_LEAST_TWO');
+      if(ids.some(id=>node(id).children?.length || node(id).parent?.id))fail('NESTED_GROUP_NOT_VERIFIED');
+      const members=new Set(ids);
+      for(const id of ids){const n=node(id);if(a.api.graphicNodeToPageNode(n).info.connectorV2&&!n.attachProps)fail('GROUP_LINE_ATTACH_UNAVAILABLE');if(n.attachProps&&['start','end'].some(side=>n.attachProps[side]?.id&&!members.has(n.attachProps[side].id)))fail('GROUP_BOUND_ENDPOINT_OUTSIDE_SELECTION');}
+      selected(ids);cmd('Group');break;
+    }
     case 'ungroup': if(!node(op.id).children?.length)fail('GROUP_REQUIRED');selected([op.id]);cmd('UnGroup');break;
     case 'align_top': case 'distribute_horizontal': {
       if(ids.length<(op.kind==='align_top'?2:3))fail('INSUFFICIENT_SELECTION');
@@ -536,6 +547,7 @@
       const removed=new Set(ids), visit=id=>{for(const child of node(id).children||[]){removed.add(child.id);visit(child.id);}};ids.forEach(visit);
       for (const n of before) if(n.kind==='connector'&&(removed.has(n.start_id)||removed.has(n.end_id)))removed.add(n.id);
       if(stable([...removed].sort())!==stable([...(op.delete_ids||[])].sort()))fail('DELETE_SCOPE_MISMATCH');
+      for(const id of removed){const parent=node(id).parent;if(parent?.id&&a.nodeManager.nodeMap.has(parent.id)&&!removed.has(parent.id))fail('GROUP_MEMBER_DELETE_NOT_VERIFIED');}
       selected(ids);cmd('Delete');break;
     }
     case 'undo':

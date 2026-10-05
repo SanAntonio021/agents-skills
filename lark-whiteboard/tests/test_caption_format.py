@@ -262,6 +262,7 @@ class CaptionFormatChecks(unittest.TestCase):
         for field, value in (('caption_width', 200), ('caption_size_mode', 0)):
             runner = Runner.__new__(Runner)
             runner.token = runner.task = runner.tab = 'owned'
+            runner.timeout = 45
             runner.report = {}
             state = {'nodes': copy.deepcopy(expected)}
             line(state)[field] = value

@@ -13,7 +13,10 @@ def color(value):
 
 
 def anchor(node, value, default):
-    value = value or {'side': default}
+    if value is None:
+        value = {'side': default}
+    if not isinstance(value, dict):
+        raise ValueError('Anchor must be an object or null')
     side, offset = value.get('side', default), value.get('offset', 0.5)
     if side not in ('left', 'right', 'top', 'bottom') or isinstance(offset, bool) or not isinstance(offset, (int, float)) or not 0 <= offset <= 1:
         raise ValueError('Anchor needs a side and offset in [0, 1]')

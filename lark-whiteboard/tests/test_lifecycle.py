@@ -247,7 +247,8 @@ class Lifecycle(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
             runner,filename = self.append_runner(directory)
             runner.append(filename)
-            self.assertEqual((len(runner.mutations),runner.polls,runner.opens),(1,2,2))
+            # Two submission polls plus the full raw check after reopening.
+            self.assertEqual((len(runner.mutations),runner.polls,runner.opens),(1,3,2))
             self.assertEqual(runner.report['status'],'verified')
             self.assertEqual(runner.report['steps'][0]['save_status'],'confirmed')
             self.assertEqual(runner.report['steps'][0]['verification_status'],'passed')

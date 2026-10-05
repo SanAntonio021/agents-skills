@@ -236,8 +236,11 @@ class LocalEdits(unittest.TestCase):
 
     def test_reconnect_either_or_both_ends_preserves_the_other_side(self):
         before = board()
-        for op in ({'kind': 'reconnect', 'id': 'line', 'start_id': 'b'},
-                   {'kind': 'reconnect', 'id': 'line', 'end_id': 'a'},
+        third = copy.deepcopy(line(before, 'a'))
+        third.update(id='third', x=450, z_index=5)
+        before['nodes'].append(third)
+        for op in ({'kind': 'reconnect', 'id': 'line', 'start_id': 'third'},
+                   {'kind': 'reconnect', 'id': 'line', 'end_id': 'third'},
                    {'kind': 'reconnect', 'id': 'line', 'start_id': 'b', 'end_id': 'a'}):
             with self.subTest(operation=op):
                 after = copy.deepcopy(before)
@@ -600,6 +603,7 @@ class LocalEdits(unittest.TestCase):
             with self.subTest(control_drift=drift):
                 runner = Runner.__new__(Runner)
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
+                runner.timeout = 45
                 calls, writes = [], []
                 state = {'nodes': copy.deepcopy(expected), 'seq': 2, 'savedSeq': 2}
                 line({'nodes': state['nodes']})['points'][0]['x'] += drift
@@ -732,6 +736,7 @@ class LocalEdits(unittest.TestCase):
             with self.subTest(endpoint_drift=drift):
                 runner = Runner.__new__(Runner)
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
+                runner.timeout = 45
                 calls, writes = [], []
                 state = {'nodes': expected, 'line_endpoints': copy.deepcopy(endpoints)}
                 state['line_endpoints']['line']['end']['x'] += drift
@@ -758,6 +763,7 @@ class LocalEdits(unittest.TestCase):
             with self.subTest(alpha=restored_alpha):
                 runner = Runner.__new__(Runner)
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
+                runner.timeout = 45
                 calls, writes = [], []
                 state = {'nodes': copy.deepcopy(expected), 'render_alpha': copy.deepcopy(expected_alpha)}
                 state['render_alpha']['line']['text'] = restored_alpha

@@ -12,6 +12,7 @@ from whiteboard import (VerificationError, check_raw_preservation, check_scope, 
                         reject_nested_groups, validate_local_operation,
                         validate_request_operations, validate_target, Runner)
 from test_captions import board, line
+import test_local_edits as local_edits
 
 
 class RequestGeometry(unittest.TestCase):
@@ -59,6 +60,25 @@ class RequestGeometry(unittest.TestCase):
                            [delete, undo, undo]):
             with self.subTest(operations=operations), self.assertRaises(VerificationError):
                 validate_request_operations(self.request(operations))
+
+    def test_single_end_reconnect_checks_the_final_other_endpoint(self):
+        nodes = projection(board())
+        for changes in ({'start_id':'b'}, {'end_id':'a'}):
+            with self.subTest(changes=changes), self.assertRaisesRegex(VerificationError,'Self connection'):
+                validate_local_operation(nodes, {'kind':'reconnect','id':'line',**changes})
+        third = copy.deepcopy(line({'nodes':nodes},'a'))
+        third.update(id='third', x=400)
+        nodes.append(third)
+        validate_local_operation(nodes, {'kind':'reconnect','id':'line','end_id':'third'})
+
+    def test_cascade_cannot_remove_a_connector_from_a_retained_group(self):
+        nodes = projection(board())
+        line({'nodes':nodes})['parent_id'] = 'g'
+        nodes.append(dict(id='g',kind='group',children=['line'],x=0,y=0,width=200,height=80))
+        op = dict(kind='delete',ids=['a'],delete_ids=['a','line','other-line'])
+        with self.assertRaisesRegex(VerificationError,'retained group'):
+            validate_local_operation(nodes,op)
+        validate_local_operation(nodes,dict(kind='delete',ids=['g'],delete_ids=['g','line']))
 
     def test_anchor_refresh_rejects_unbound_or_locked_endpoint_before_write(self):
         op = {'kind': 'anchors', 'id': 'line', 'end': {'snap_to': 'top', 'position': {'x': 0.5, 'y': 0}}}
@@ -380,6 +400,43 @@ class RequestGeometry(unittest.TestCase):
         nodes.append({'id': 'g', 'kind': 'group', 'children': ['a', 'b', 'line'],
                       'x': 0, 'y': 0, 'width': 300, 'height': 80, 'style': {}})
         validate_local_operation(nodes, {'kind': 'move', 'ids': ['g'], 'dx': 20, 'dy': 0})
+
+    def test_group_rejects_selected_bound_line_with_endpoint_outside_selection(self):
+        raw = board()
+        raw['nodes'] = [n for n in raw['nodes'] if n['id'] != 'other-line']
+        third = copy.deepcopy(line(raw, 'a'))
+        third.update(id='third', x=400)
+        raw['nodes'].append(third)
+        nodes = projection(raw)
+        for ids in (['a','third','line'], ['b','third','line'], ['third','line']):
+            with self.subTest(ids=ids), self.assertRaisesRegex(VerificationError, 'all its bound endpoints'):
+                validate_local_operation(nodes, {'kind':'group','ids':ids})
+        validate_local_operation(nodes, {'kind':'group','ids':['a','b','line']})
+        for side, endpoint in (('start','a'), ('end','b')):
+            half = copy.deepcopy(line({'nodes':nodes}))
+            half.update(id='half-'+side, start_id='' if side=='end' else 'a',
+                        end_id='' if side=='start' else 'b')
+            nodes.append(half)
+            with self.subTest(single_bound_side=side), self.assertRaisesRegex(VerificationError, 'all its bound endpoints'):
+                validate_local_operation(nodes, {'kind':'group','ids':['third',half['id']]})
+            validate_local_operation(nodes, {'kind':'group','ids':[endpoint,half['id']]})
+        free = copy.deepcopy(line({'nodes':nodes}))
+        free.update(id='free-line', start_id='', end_id='')
+        nodes.append(free)
+        validate_local_operation(nodes, {'kind':'group','ids':['third','free-line']})
+
+    def test_invalid_group_never_reaches_mutating_editor_command(self):
+        for ids in (['a','line'], ['b','line'], ['line','other-line']):
+            with self.subTest(ids=ids), patch('whiteboard.time.sleep'):
+                runner = local_edits.DeleteUndoRunnerTests('runTest').make_runner(
+                    [{'kind':'group','ids':ids}], curve=None)
+                with self.assertRaises(VerificationError):
+                    runner.run()
+                self.assertFalse(any(e[0]=='editor' and e[2]=='group' for e in runner.events))
+                step = runner.report['steps'][0]
+                self.assertEqual((step['save_status'],step['verification_status'],step['failure_phase']),
+                                 ('not_written','failed','preflight'))
+                self.assertFalse(runner.uncertain)
 
 
 if __name__ == '__main__':

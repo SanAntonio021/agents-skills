@@ -403,6 +403,86 @@ class ExecutionContract(unittest.TestCase):
             self.assertEqual(summary['report']['cleanup_receipts'], runner.report['cleanup_receipts'])
             self.assertNotIn('memory-only', output.getvalue())
 
+    def test_initialization_failure_returns_this_error_and_new_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            request, destination = Path(directory)/'request.json', Path(directory)/'new-run'
+            request.write_text(json.dumps(dict(document_url='invalid',whiteboard_token='BoardTest',operations=[])),encoding='utf-8')
+            output = io.StringIO()
+            arguments = ['whiteboard','--request',str(request),'--output-dir',str(destination),
+                         '--proxy-url','http://127.0.0.1:3456']
+            with patch('sys.argv',arguments), patch('sys.stdout',output), patch.object(Runner,'close') as closed:
+                self.assertEqual(main(),1)
+                closed.assert_not_called()
+            summary = json.loads(output.getvalue())
+            self.assertEqual(summary['result'],str(destination/'result.json'))
+            report = json.loads((destination/'result.json').read_text(encoding='utf-8'))
+            self.assertEqual(summary['report'],report)
+            self.assertEqual(report['error'],'ValueError')
+            self.assertTrue(report['reason'])
+            self.assertEqual((report['steps'],report['save_status'],report['verification_status'],report['failure_phase']),
+                             ([], 'not_written','failed','preflight'))
+
+    def test_initialization_failure_does_not_overwrite_or_link_an_old_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            request, destination = Path(directory)/'request.json', Path(directory)/'existing-run'
+            request.write_text(json.dumps(dict(document_url='invalid',whiteboard_token='BoardTest',operations=[])),encoding='utf-8')
+            destination.mkdir()
+            stale = destination/'result.json'
+            stale.write_text('{"status":"verified","old_run":true}',encoding='utf-8')
+            original = stale.read_bytes()
+            output = io.StringIO()
+            arguments = ['whiteboard','--request',str(request),'--output-dir',str(destination),
+                         '--proxy-url','http://127.0.0.1:3456']
+            with patch('sys.argv',arguments), patch('sys.stdout',output), patch.object(Runner,'close') as closed:
+                self.assertEqual(main(),1)
+                closed.assert_not_called()
+            summary = json.loads(output.getvalue())
+            self.assertIsNone(summary['result'])
+            self.assertEqual(summary['report']['error'],'ValueError')
+            self.assertEqual(summary['report']['save_status'],'not_written')
+            self.assertNotIn('old_run',summary['report'])
+            self.assertEqual(stale.read_bytes(),original)
+            self.assertEqual(list(destination.iterdir()),[stale])
+
+    def test_initialization_report_failures_preserve_original_error_in_stdout(self):
+        for method in ('mkdir','write_text'):
+            with self.subTest(method=method), tempfile.TemporaryDirectory() as directory:
+                request, destination = Path(directory)/'request.json', Path(directory)/'new-run'
+                request.write_text(json.dumps(dict(document_url='invalid',whiteboard_token='BoardTest',operations=[])),encoding='utf-8')
+                output = io.StringIO()
+                arguments = ['whiteboard','--request',str(request),'--output-dir',str(destination),
+                             '--proxy-url','http://127.0.0.1:3456']
+                with patch('sys.argv',arguments), patch('sys.stdout',output), \
+                        patch.object(Path,method,side_effect=PermissionError('Report destination is unavailable')), \
+                        patch.object(Runner,'close') as closed:
+                    self.assertEqual(main(),1)
+                    closed.assert_not_called()
+                summary = json.loads(output.getvalue())
+                self.assertIsNone(summary['result'])
+                self.assertEqual(summary['report_write_status'],'failed')
+                report = summary['report']
+                self.assertEqual(report['error'],'ValueError')
+                self.assertTrue(report['reason'])
+                self.assertEqual(report['report_write_error'],'PermissionError')
+                self.assertEqual((report['save_status'],report['verification_status'],report['failure_phase']),
+                                 ('not_written','failed','preflight'))
+
+    def test_runtime_initialization_error_does_not_read_an_uncreated_runner(self):
+        with tempfile.TemporaryDirectory() as directory:
+            request, destination = Path(directory)/'request.json', Path(directory)/'new-run'
+            request.write_text(json.dumps(dict(document_url='https://tenant.feishu.cn/docx/DocTest',
+                                                whiteboard_token='BoardTest',operations=[])),encoding='utf-8')
+            output = io.StringIO()
+            arguments = ['whiteboard','--request',str(request),'--output-dir',str(destination),
+                         '--proxy-url','http://127.0.0.1:3456']
+            with patch('whiteboard.Runner',side_effect=RuntimeError('Initialization failed')) as constructor, \
+                    patch('sys.argv',arguments), patch('sys.stdout',output):
+                self.assertEqual(main(),1)
+                constructor.assert_called_once()
+            report = json.loads(output.getvalue())['report']
+            self.assertEqual(report['error'],'RuntimeError')
+            self.assertEqual(report['save_status'],'not_written')
+
     def test_witness_startup_exhaustion_does_not_start_a_later_hydrate(self):
         helper, clock = native_save.NativeSave('runTest'), lifecycle.Clock()
         with tempfile.TemporaryDirectory() as directory:

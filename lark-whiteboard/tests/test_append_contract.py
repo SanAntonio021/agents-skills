@@ -79,6 +79,98 @@ def fresh_requests():
 
 
 class AppendContract(unittest.TestCase):
+    def alpha_runner(self, directory, text_shape=False, empty_text=False):
+        runner, filename = lifecycle.Lifecycle('runTest').append_runner(directory)
+        request = json.loads(filename.read_text(encoding='utf-8'))
+        def adjust(node):
+            if node['id'] in ('a','server-a'):
+                if text_shape:
+                    node['type'] = 'text_shape'
+                    del node['composite_shape'], node['style']
+                if empty_text:
+                    node['text']['text'] = ''
+            if empty_text and node['type']=='connector':
+                node['connector']['captions']['data'][0]['text'] = ''
+        if text_shape or empty_text:
+            if text_shape:
+                # Native text shapes are independent; connector endpoints must
+                # remain bound to composite shapes in the normal append path.
+                request['nodes'] = [node for node in request['nodes'] if node['type']!='connector']
+            for node in request['nodes']:
+                adjust(node)
+            filename.write_text(json.dumps(request),encoding='utf-8')
+            export = runner.export
+            def adjusted_export():
+                raw,name = export()
+                if text_shape:
+                    raw['nodes'] = [node for node in raw['nodes'] if node['type']!='connector']
+                for node in raw['nodes']:
+                    adjust(node)
+                return raw,name
+            runner.export = adjusted_export
+        return runner,filename
+
+    def test_missing_each_required_alpha_component_keeps_confirmed_single_append(self):
+        cases = [('server-a',False,component) for component in ('border','fill','text')]
+        cases += [('server-a',True,'text'),('server-c',False,'border'),('server-c',False,'text')]
+        for ident,text_shape,component in cases:
+            with self.subTest(ident=ident,text_shape=text_shape,component=component), tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
+                runner,filename = self.alpha_runner(directory,text_shape=text_shape)
+                hydrate = runner.hydrate
+                def missing_alpha(raw):
+                    result = hydrate(raw)
+                    if runner.opens==2:
+                        del result['render_alpha'][ident][component]
+                    return result
+                runner.hydrate = missing_alpha
+                with self.assertRaisesRegex(VerificationError,'missing or nonopaque'):
+                    runner.append(filename)
+                step = runner.report['steps'][0]
+                self.assertEqual((step['save_status'],step['verification_status'],step['failure_phase']),
+                                 ('confirmed','failed','reopen'))
+                self.assertEqual(len(runner.mutations),1)
+                self.assertFalse(runner.uncertain)
+
+    def test_nonopaque_expected_or_additional_component_is_still_rejected(self):
+        for component in ('border','fill','text','unexpected'):
+            with self.subTest(component=component), tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
+                runner,filename = self.alpha_runner(directory)
+                hydrate = runner.hydrate
+                def nonopaque(raw):
+                    result = hydrate(raw)
+                    if runner.opens==2:
+                        result['render_alpha']['server-a'][component] = .5
+                    return result
+                runner.hydrate = nonopaque
+                with self.assertRaisesRegex(VerificationError,'missing or nonopaque'):
+                    runner.append(filename)
+                self.assertEqual(runner.report['steps'][0]['save_status'],'confirmed')
+                self.assertEqual(len(runner.mutations),1)
+
+    def test_empty_shape_text_and_line_label_do_not_require_text_alpha(self):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
+            runner,filename = self.alpha_runner(directory,empty_text=True)
+            hydrate = runner.hydrate
+            def no_empty_text_alpha(raw):
+                result = hydrate(raw)
+                if runner.opens==2:
+                    del result['render_alpha']['server-a']['text']
+                    del result['render_alpha']['server-c']['text']
+                return result
+            runner.hydrate = no_empty_text_alpha
+            runner.append(filename)
+            self.assertEqual(runner.report['status'],'verified')
+            self.assertEqual(runner.report['steps'][0]['verification_status'],'passed')
+            self.assertEqual(len(runner.mutations),1)
+
+    def test_independent_text_requires_only_text_alpha(self):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
+            runner,filename = self.alpha_runner(directory,text_shape=True)
+            runner.append(filename)
+            self.assertEqual(runner.report['status'],'verified')
+            self.assertEqual(runner.report['steps'][0]['after_render_alpha']['server-a'],{'text':1})
+            self.assertEqual(len(runner.mutations),1)
+
     def invalid_requests(self):
         cases = [
             ('angle_nan', ('nodes',0,'angle'), float('nan')),

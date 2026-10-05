@@ -148,3 +148,58 @@ for(const ids of [[guardLeft.id,guardRight.id,guardLine.id],[groupThird.id,group
 assert.equal(groupSelections,4);assert.equal(groupContentCalls,4);
 app.commandManager.execute=originalCommand;
 console.log('PASS: group endpoints outside selection reject before Select/content; complete bindings and free lines reach Group');
+
+// A separate app isolates arrangement tests from the grouped/locked fixtures.
+// Native selection order can differ from the requested ID order.
+let arrangementSelected=[],arrangementCalls=0,observedOrder=[];
+const arrangeShape=(id,x,y,width,height,angle=0)=>({
+  id,type:13,outer:{minX:x,minY:y,maxX:x+width,maxY:y+height},
+  getBounds(){return this.outer;},
+  page:{info:{baseV2:{x:x+7,y:y+11,width:height,height:width,angle},
+    compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}
+});
+const arrangeA=arrangeShape('a',0,80,100,60),arrangeB=arrangeShape('b',150,30,40,100,90),
+  arrangeC=arrangeShape('c',300,120,60,80,-30);
+const arrangeApp={
+  docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0},
+  nodeManager:{nodeMap:new Map([arrangeA,arrangeB,arrangeC].map(n=>[n.id,n]))},
+  api:{graphicNodeToPageNode:n=>n.page,getSelectNodes:()=>arrangementSelected},
+  commandManager:{handlers:new Map([['Select',{execute(){}}],['Align',{
+    alignTop(nodes){arrangementCalls++;observedOrder=nodes.map(n=>n.id);
+      for(const n of nodes){const dy=30-n.outer.minY;n.outer.minY+=dy;n.outer.maxY+=dy;n.page.info.baseV2.y+=dy;}}
+  }]]),
+    execute(name,args){assert.equal(name,'Select');
+      const lookup=arrangeApp.nodeManager.nodeMap;
+      arrangementSelected=['c','a','b'].filter(id=>args.nodeIds.includes(id)).map(id=>lookup.get(id));}},
+  actionManager:{execAction(){},ioManager:{inited:true,pendingActions:[],docState:{appliedVersion:2},
+    sendAction(){},sendPendingActions(){},channelManager:{orderChannel:{localActions:[],localProcessing:false,
+      localOffline:false,getBaseSeq(){},addLocalAction(){},flushLocalActions(){}}}}},
+  undoRedoManager:{undoStack:[]},plugins:[{saveState:'saved',httpSavingSet:new Set(),hasUncommitData(){},updateSaveState(){}}],
+  interactCtx:{}
+};
+const arrangeElement={__reactFiberTest:{memoizedProps:{app:arrangeApp},return:null}};
+const arrangeContext={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},
+  document:{querySelectorAll:()=>[arrangeElement]}};
+const arrangeAdapter=vm.runInNewContext('('+source+')',arrangeContext);
+const arrangeRequest={document_url:req.document_url,whiteboard_token:req.whiteboard_token};
+const arrangeRun=operation=>arrangeAdapter({...arrangeRequest,
+  expected:arrangeAdapter({...arrangeRequest,operation:{kind:'inspect'}}).nodes,operation});
+const validBounds=arrangeB.getBounds;
+for(const invalid of [undefined,()=>null,()=>({minX:150,minY:30,maxX:150,maxY:130}),
+                     ()=>({minX:NaN,minY:30,maxX:190,maxY:130}),
+                     ()=>({minX:150,minY:30,maxX:190,maxY:20})]){
+  arrangeB.getBounds=invalid;
+  const rejected=arrangeRun({kind:'align_top',ids:['a','b','c']});
+  assert.match(rejected.adapter_error,/ARRANGEMENT.*BOUNDS|BOUNDS.*ARRANGEMENT/);
+  assert.equal(rejected.content_write_started,false);assert.equal(arrangementCalls,0);
+}
+arrangeB.getBounds=validBounds;
+const aligned=arrangeRun({kind:'align_top',ids:['a','b','c']});
+assert.equal(aligned.adapter_error,undefined);
+assert.deepEqual(observedOrder,['c','a','b']);
+assert.deepEqual(Array.from(aligned.arrangement_order),['c','a','b']);
+assert.equal(aligned.content_write_started,true);assert.equal(arrangementCalls,1);
+assert.equal(aligned.arrangement_bounds.a.y,30);assert.equal(aligned.arrangement_bounds.b.y,30);
+assert.equal(aligned.arrangement_bounds.c.y,30);
+assert.equal(arrangeB.page.info.baseV2.angle,90);
+console.log('PASS: missing arrangement bounds reject before content; native selection order is reported unchanged');

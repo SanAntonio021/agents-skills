@@ -178,6 +178,188 @@ class RequestGeometry(unittest.TestCase):
         with self.assertRaises(VerificationError):
             check_scope(before, distributed, op)
 
+    def arrangement_board(self, specs):
+        """Standalone shapes and their independently observed native outer boxes."""
+        raw = {'nodes': []}
+        bounds = {}
+        for rank, (ident, angle, width, height, visible_x, visible_y) in enumerate(specs):
+            radians = math.radians(angle)
+            outer_width = abs(width * math.cos(radians)) + abs(height * math.sin(radians))
+            outer_height = abs(width * math.sin(radians)) + abs(height * math.cos(radians))
+            raw['nodes'].append({'id': ident, 'type': 'composite_shape',
+                                 'x': visible_x + (outer_width-width)/2,
+                                 'y': visible_y + (outer_height-height)/2,
+                                 'width': width, 'height': height, 'angle': angle,
+                                 'z_index': rank, 'composite_shape': {'type': 'rect'},
+                                 'text': {'text': ident, 'font_size': 18},
+                                 'style': {'border_color': '#000000', 'fill_color': '#ffffff'}})
+            bounds[ident] = dict(x=visible_x, y=visible_y, width=outer_width, height=outer_height)
+        raw['nodes'].append({'id': 'keep', 'type': 'composite_shape', 'x': 900, 'y': 700,
+                             'width': 80, 'height': 50, 'angle': 30, 'z_index': len(specs),
+                             'composite_shape': {'type': 'rect'}, 'text': {'text': 'untouched'}})
+        return raw, bounds
+
+    def arrangement_result(self, before, bounds, axis, positions, order):
+        after, fresh = copy.deepcopy(before), copy.deepcopy(bounds)
+        for ident, position in positions.items():
+            line(after, ident)[axis] += position - bounds[ident][axis]
+            fresh[ident][axis] = position
+        return after, {'before': bounds, 'after': fresh, 'order': order}
+
+    def verify_arrangement(self, before, after, op, evidence):
+        check_scope(projection(before), projection(after), op, arrangement_evidence=evidence)
+        self.assertEqual(check_raw_preservation(before, after, op, arrangement_evidence=evidence), [])
+
+    def test_top_alignment_uses_visible_tops_for_mixed_rotations(self):
+        before, bounds = self.arrangement_board([
+            ('a', 0, 120, 50, 10, 0), ('b', 30, 80, 40, 200, 100),
+            ('c', -30, 60, 110, 400, 200), ('d', 90, 150, 40, 600, 70)])
+        op = {'kind': 'align_top', 'ids': ['a', 'b', 'c', 'd']}
+        after, evidence = self.arrangement_result(before, bounds, 'y',
+                                                 {'a': 0, 'b': 0, 'c': 0, 'd': 0},
+                                                 ['d', 'b', 'a', 'c'])
+        self.verify_arrangement(before, after, op, evidence)
+        # Native outer tops agree even though serialized base y values differ.
+        self.assertGreater(len({n['y'] for n in after['nodes'] if n['id'] != 'keep'}), 1)
+        self.assertEqual(after['nodes'][-1], before['nodes'][-1])
+        for damage in ('x', 'width', 'height', 'angle', 'z_index', 'text', 'unrelated'):
+            bad = copy.deepcopy(after)
+            if damage == 'text':
+                line(bad, 'b')['text']['text'] = 'accidental rewrite'
+            elif damage == 'unrelated':
+                line(bad, 'keep')['x'] += 1
+            else:
+                line(bad, 'b')[damage] += 1
+            with self.subTest(damage=damage), self.assertRaises(VerificationError):
+                self.verify_arrangement(before, bad, op, evidence)
+        wrong_position = copy.deepcopy(after)
+        line(wrong_position, 'b')['y'] += 1
+        with self.assertRaises(VerificationError):
+            self.verify_arrangement(before, wrong_position, op, evidence)
+        with self.assertRaises(VerificationError):
+            check_raw_preservation(before, wrong_position, op, arrangement_evidence=evidence)
+        wrong_visible_top = copy.deepcopy(evidence)
+        wrong_visible_top['after']['b']['y'] += 1
+        with self.assertRaises(VerificationError):
+            self.verify_arrangement(before, after, op, wrong_visible_top)
+
+    def test_horizontal_distribution_handles_unequal_outer_widths_and_overlap(self):
+        scenarios = [
+            # Visible widths are 100, 40, 60; the two gaps must both be 80.
+            ([('a', 0, 100, 50, 0, 0), ('b', 90, 80, 40, 120, 50),
+              ('c', 0, 60, 50, 300, 100)], ['a', 'b', 'c'], {'a': 0, 'b': 180, 'c': 300}),
+            # The widest first object defines the right edge, not the last
+            # sorted object's edge. Negative spacing is valid native behavior.
+            ([('a', 90, 20, 200, 0, 0), ('b', 0, 40, 50, 20, 50),
+              ('c', 0, 60, 50, 50, 100)], ['c', 'b', 'a'], {'a': 0, 'b': 150, 'c': 140}),
+            # Equal left edges retain the actual native selection order.
+            ([('a', 90, 80, 160, 0, 0), ('b', 0, 40, 50, 0, 50),
+              ('c', 0, 60, 50, 20, 100)], ['b', 'a', 'c'], {'a': -10, 'b': 0, 'c': 100})]
+        op = {'kind': 'distribute_horizontal', 'ids': ['a', 'b', 'c']}
+        for specs, order, positions in scenarios:
+            with self.subTest(specs=specs):
+                before, bounds = self.arrangement_board(specs)
+                after, evidence = self.arrangement_result(before, bounds, 'x', positions, order)
+                self.verify_arrangement(before, after, op, evidence)
+                bad = copy.deepcopy(after)
+                line(bad, 'b')['x'] += 1
+                with self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, bad, op, evidence)
+                shifted = copy.deepcopy(after)
+                shifted_evidence = copy.deepcopy(evidence)
+                for ident in op['ids']:
+                    line(shifted, ident)['x'] += 10
+                    shifted_evidence['after'][ident]['x'] += 10
+                with self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, shifted, op, shifted_evidence)
+        before, bounds = self.arrangement_board(scenarios[-1][0])
+        after, evidence = self.arrangement_result(before, bounds, 'x', scenarios[-1][2], scenarios[-1][1])
+        wrong_order = copy.deepcopy(evidence)
+        wrong_order['order'] = ['a', 'b', 'c']
+        with self.assertRaises(VerificationError):
+            self.verify_arrangement(before, after, op, wrong_order)
+
+    def test_rotated_arrangement_requires_complete_native_boxes_and_selection(self):
+        before, bounds = self.arrangement_board([
+            ('a', 0, 100, 50, 0, 0), ('b', 90, 80, 40, 120, 50),
+            ('c', 0, 60, 50, 300, 100)])
+        op = {'kind': 'distribute_horizontal', 'ids': ['a', 'b', 'c']}
+        after, evidence = self.arrangement_result(before, bounds, 'x',
+                                                 {'a': 0, 'b': 180, 'c': 300}, ['a', 'b', 'c'])
+        with self.assertRaises(VerificationError):
+            check_raw_preservation(before, after, op)
+        for order in (None, 'a,b,c', ['a', 'b'], ['a', 'a', 'c'], ['a', 'b', 'other']):
+            invalid = copy.deepcopy(evidence)
+            invalid['order'] = order
+            with self.subTest(order=order), self.assertRaises(VerificationError):
+                self.verify_arrangement(before, after, op, invalid)
+            with self.subTest(raw_order=order), self.assertRaises(VerificationError):
+                check_raw_preservation(before, after, op, arrangement_evidence=invalid)
+        for phase in ('before', 'after'):
+            for invalid_box in (None, {}, {'x': 120, 'y': 50, 'width': 40},
+                                {'x': True, 'y': 50, 'width': 40, 'height': 80},
+                                {'x': math.nan, 'y': 50, 'width': 40, 'height': 80},
+                                {'x': 120, 'y': 50, 'width': 0, 'height': 80},
+                                {'x': 120, 'y': 50, 'width': 40, 'height': -1}):
+                invalid = copy.deepcopy(evidence)
+                invalid[phase]['b'] = invalid_box
+                with self.subTest(phase=phase, box=invalid_box), self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, after, op, invalid)
+            missing = copy.deepcopy(evidence)
+            del missing[phase]['b']
+            with self.subTest(phase=phase, missing='b'), self.assertRaises(VerificationError):
+                self.verify_arrangement(before, after, op, missing)
+        for field in ('y', 'width', 'height'):
+            invalid = copy.deepcopy(evidence)
+            invalid['after']['b'][field] += 1
+            with self.subTest(unrequested_visible_field=field), self.assertRaises(VerificationError):
+                self.verify_arrangement(before, after, op, invalid)
+
+    def test_arrangement_preserves_native_world_geometry_after_moving(self):
+        before, bounds = self.arrangement_board([
+            ('a', 0, 100, 50, 0, 0), ('b', 90, 80, 40, 120, 50),
+            ('c', 0, 60, 50, 300, 100)])
+        for kind, axis, positions in (
+                ('align_top', 'y', {'a': 0, 'b': 0, 'c': 0}),
+                ('distribute_horizontal', 'x', {'a': 0, 'b': 180, 'c': 300})):
+            op = {'kind': kind, 'ids': ['a', 'b', 'c']}
+            after, evidence = self.arrangement_result(before, bounds, axis, positions, op['ids'])
+            for phase, raw in (('world_before', before), ('world_after', after)):
+                evidence[phase] = {ident: {k: line(raw, ident)[k]
+                                           for k in ('x', 'y', 'width', 'height', 'angle')}
+                                   for ident in op['ids']}
+                for world in evidence[phase].values():
+                    world['x'] += 500
+                    world['y'] += 300
+            with self.subTest(kind=kind, result='correct_world_displacement'):
+                self.verify_arrangement(before, after, op, evidence)
+            # The saved raw nodes and visible outer boxes remain correct; the
+            # independent native world read must still reject these changes.
+            for field in ('width', 'height', 'angle', 'x', 'y'):
+                invalid = copy.deepcopy(evidence)
+                invalid['world_after']['b'][field] += 1
+                with self.subTest(kind=kind, changed_world_field=field), self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, after, op, invalid)
+            for phase in ('world_before', 'world_after'):
+                missing_phase = copy.deepcopy(evidence)
+                del missing_phase[phase]
+                with self.subTest(kind=kind, missing_phase=phase), self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, after, op, missing_phase)
+                missing_node = copy.deepcopy(evidence)
+                del missing_node[phase]['b']
+                with self.subTest(kind=kind, missing_node=phase), self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, after, op, missing_node)
+                missing_field = copy.deepcopy(evidence)
+                del missing_field[phase]['b']['angle']
+                with self.subTest(kind=kind, missing_field=phase), self.assertRaises(VerificationError):
+                    self.verify_arrangement(before, after, op, missing_field)
+                for field in ('x', 'y', 'width', 'height', 'angle'):
+                    for value in (math.nan, math.inf, -math.inf):
+                        invalid = copy.deepcopy(evidence)
+                        invalid[phase]['b'][field] = value
+                        with self.subTest(kind=kind, phase=phase, field=field, value=value), self.assertRaises(VerificationError):
+                            self.verify_arrangement(before, after, op, invalid)
+
     def test_creation_font_rejects_boolean(self):
         with self.assertRaises(ValueError):
             compile_diagram({'shapes': [{'id': 'a', 'x': 0, 'y': 0, 'width': 100, 'height': 80,

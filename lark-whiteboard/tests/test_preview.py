@@ -49,6 +49,36 @@ class Preview(unittest.TestCase):
             with self.subTest(filter_type=filter_type):
                 self.assertTrue(png_has_board_ink(png((4,4,12,12),filter_type),dict(x=2,y=2,width=4,height=4),2))
 
+    def test_partial_alpha_uses_its_visible_color_over_white(self):
+        def rgba(alpha):
+            def chunk(kind,data):
+                return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
+            rows = (b'\x00'+bytes([0,0,0,alpha])*8)*8
+            return (b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',8,8,8,6,0,0,0))
+                    +chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b''))
+        rect = dict(x=0,y=0,width=8,height=8)
+        for alpha in (128,199,200,255):
+            with self.subTest(alpha=alpha):
+                self.assertTrue(png_has_board_ink(rgba(alpha),rect))
+        for alpha in (0,20):
+            with self.subTest(alpha=alpha):
+                self.assertFalse(png_has_board_ink(rgba(alpha),rect))
+
+    def test_alpha_only_edited_label_cannot_be_outside_the_preview(self):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):
+            runner,state = self.runner(directory)
+            op = dict(kind='style',id='line',style=dict(text_color='#203040'))
+            runner.request = dict(operations=[op])
+            runner.report = dict(steps=[dict(operation=op,execution_status='returned',
+                diff=dict(changed=[],added=[]),before_render_alpha={'line':dict(text=.5)},
+                after_render_alpha={'line':dict(text=1)})])
+            state['nodes'] = [dict(id='line',kind='connector',caption_texts=['caption'])]
+            state['label_geometry'] = {'line':dict(available=True,screen_rect=dict(x=30,y=30,width=4,height=4))}
+            runner.screenshot = lambda **kwargs:self.fail('Offscreen label must stop capture first')
+            runner.capture_preview()
+            self.assertEqual(runner.report['visual_status'],'unavailable')
+            self.assertIn('line',runner.report['visual_reason'])
+
     def runner(self, directory):
         runner = object.__new__(Runner)
         runner.output, runner.timeout, runner.report, runner.request = Path(directory), 45, {}, {}

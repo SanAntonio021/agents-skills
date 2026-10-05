@@ -45,6 +45,7 @@ class VisualEditor(unittest.TestCase):
         payload=compile_diagram({'shapes':[{'id':'a','text':'a','x':300,'y':300,'width':100,'height':80},{'id':'b','text':'b','x':50,'y':20,'width':100,'height':80}], 'connectors':[{'id':'c','start_id':'a','end_id':'b','start_anchor':{'side':'top','offset':.25},'end_anchor':{'side':'bottom','offset':.7},'shape':'right_angled_polyline'}]})
         runner=Runner.__new__(Runner)
         runner.request={'document_url':'https://test.feishu.cn/docx/DocTest','whiteboard_token':'BoardTest','operations':[]}
+        runner.report={'status':'running','steps':[]}
         runner.export=lambda:({'nodes':[]},'before.json')
         def reached():raise RuntimeError('passed-validation')
         runner.open_page=reached

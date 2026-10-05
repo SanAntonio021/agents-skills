@@ -67,3 +67,84 @@ const changed=run({kind:'font',id:'free',font_size:22});
 assert.equal(changed.save_fence.requires_ack,true);
 assert.equal(changed.native_save.ordered_pending,1);
 console.log('PASS: native pending queue blocks before content and save fences distinguish visible changes');
+
+channel.localActions=[];
+const originalCommand=app.commandManager.execute;
+let guardContentCalls=0,guardSelections=0;
+app.commandManager.handlers.set('Delete',{execute(){}});
+app.commandManager.execute=(name,args)=>{
+  if(name==='Select'){guardSelections++;selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}
+  guardContentCalls++;throw new Error('GUARD_CONTENT_BOUNDARY');
+};
+const boundLine=(id,start,end)=>({id,type:15,attachProps:{start:{id:start.id,position:{x:1,y:.5}},end:{id:end.id,position:{x:0,y:.5}}},
+  lineProps:{points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,
+  page:{info:{baseV2:{x:100,y:30,width:100,height:0},connectorV2:{shape:0,
+    startObject:{objectId:start.id,snapTo:2,position:{x:1,y:.5}},endObject:{objectId:end.id,snapTo:4,position:{x:0,y:.5}}}}}});
+const guardLeft=shape('guard-left'),guardRight=shape('guard-right'),guardLine=boundLine('guard-line',guardLeft,guardRight);
+for(const n of [guardLeft,guardRight,guardLine])app.nodeManager.nodeMap.set(n.id,n);
+for(const op of [{kind:'reconnect',id:guardLine.id,end_id:guardLeft.id},
+                {kind:'reconnect',id:guardLine.id,start_id:guardRight.id},
+                {kind:'reconnect',id:guardLine.id,start_id:guardLeft.id,end_id:guardLeft.id}]){
+  const rejected=run(op);
+  assert.match(rejected.adapter_error,/SELF_CONNECTION_NOT_VERIFIED/);
+  assert.equal(rejected.content_write_started,false);
+}
+const sameEnds=run({kind:'reconnect',id:guardLine.id,start_id:guardLeft.id,end_id:guardRight.id});
+assert.equal(sameEnds.adapter_error,undefined);assert.equal(sameEnds.content_write_started,false);
+assert.equal(guardContentCalls,0);assert.equal(guardSelections,0);
+
+const outside=shape('guard-outside'),spare=shape('guard-spare'),foreignLine=boundLine('guard-foreign-line',outside,spare);
+const foreignGroup={id:'guard-group',children:[spare,foreignLine],page:{info:{baseV2:{x:0,y:0,width:200,height:60}}}};
+spare.parent=foreignGroup;foreignLine.parent=foreignGroup;
+for(const n of [outside,spare,foreignLine,foreignGroup])app.nodeManager.nodeMap.set(n.id,n);
+for(const op of [{kind:'delete',ids:[outside.id],delete_ids:[outside.id,foreignLine.id]},
+                {kind:'delete',ids:[foreignLine.id],delete_ids:[foreignLine.id]}]){
+  const rejected=run(op);
+  assert.match(rejected.adapter_error,/GROUP_MEMBER_DELETE_NOT_VERIFIED/);
+  assert.equal(rejected.content_write_started,false);
+}
+assert.equal(guardContentCalls,0);assert.equal(guardSelections,0);
+const wholeGroup=run({kind:'delete',ids:[foreignGroup.id],delete_ids:[foreignGroup.id,spare.id,foreignLine.id]});
+assert.match(wholeGroup.adapter_error,/GUARD_CONTENT_BOUNDARY/);
+assert.equal(wholeGroup.content_write_started,true);assert.equal(guardContentCalls,1);assert.equal(guardSelections,1);
+app.commandManager.execute=originalCommand;
+console.log('PASS: merged reconnect endpoints and complete deletion membership reject before content; whole-group deletion remains allowed');
+
+// Native Group omits a selected bound line if a bound module is outside the
+// selection. These synthetic checks verify rejection before Select/content.
+app.commandManager.handlers.set('Group',{execute(){}});
+let groupSelections=0,groupContentCalls=0;
+app.commandManager.execute=(name,args)=>{
+  if(name==='Select'){groupSelections++;selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}
+  groupContentCalls++;throw new Error('GROUP_CONTENT_BOUNDARY');
+};
+const groupThird=shape('group-third');
+const groupFree=boundLine('group-free-line',guardLeft,guardRight);
+groupFree.attachProps.start.id='';groupFree.attachProps.end.id='';
+delete groupFree.page.info.connectorV2.startObject;delete groupFree.page.info.connectorV2.endObject;
+const groupHalfStart=boundLine('group-half-start',guardLeft,guardRight),groupHalfEnd=boundLine('group-half-end',guardLeft,guardRight);
+groupHalfStart.attachProps.end.id='';delete groupHalfStart.page.info.connectorV2.endObject;
+groupHalfEnd.attachProps.start.id='';delete groupHalfEnd.page.info.connectorV2.startObject;
+for(const n of [groupThird,groupFree,groupHalfStart,groupHalfEnd])app.nodeManager.nodeMap.set(n.id,n);
+for(const ids of [[guardLeft.id,groupThird.id,guardLine.id],
+                 [guardRight.id,groupThird.id,guardLine.id],
+                 [groupThird.id,guardLine.id],[groupThird.id,groupHalfStart.id],[groupThird.id,groupHalfEnd.id]]){
+  const rejected=run({kind:'group',ids});
+  assert.match(rejected.adapter_error,/GROUP_BOUND_ENDPOINT_OUTSIDE_SELECTION/);
+  assert.equal(rejected.content_write_started,false);
+}
+assert.equal(groupSelections,0);assert.equal(groupContentCalls,0);
+const groupMissingAttach=boundLine('group-missing-attach',guardLeft,guardRight);
+delete groupMissingAttach.attachProps;app.nodeManager.nodeMap.set(groupMissingAttach.id,groupMissingAttach);
+const absentAttach=run({kind:'group',ids:[guardLeft.id,guardRight.id,groupMissingAttach.id]});
+assert.match(absentAttach.adapter_error,/GROUP_LINE_ATTACH_UNAVAILABLE/);
+assert.equal(absentAttach.content_write_started,false);assert.equal(groupSelections,0);assert.equal(groupContentCalls,0);
+for(const ids of [[guardLeft.id,guardRight.id,guardLine.id],[groupThird.id,groupFree.id],
+                 [guardLeft.id,groupHalfStart.id],[guardRight.id,groupHalfEnd.id]]){
+  const permitted=run({kind:'group',ids});
+  assert.match(permitted.adapter_error,/GROUP_CONTENT_BOUNDARY/);
+  assert.equal(permitted.content_write_started,true);
+}
+assert.equal(groupSelections,4);assert.equal(groupContentCalls,4);
+app.commandManager.execute=originalCommand;
+console.log('PASS: group endpoints outside selection reject before Select/content; complete bindings and free lines reach Group');

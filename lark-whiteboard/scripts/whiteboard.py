@@ -2,6 +2,7 @@
 import argparse
 import base64
 import copy
+from contextlib import contextmanager
 import hashlib
 import json
 import math
@@ -22,6 +23,10 @@ class VerificationError(RuntimeError):
 
 
 class NotReady(VerificationError):
+    pass
+
+
+class DeadlineExceeded(VerificationError):
     pass
 
 
@@ -86,7 +91,11 @@ def png_has_board_ink(data, rect, scale=1):
         if top <= y < bottom:
             for x in range(left, right):
                 p = x*channels
-                if (channels == 3 or row[p+3] >= 200) and min(row[p:p+3]) < 220:
+                alpha = row[p+3] if channels == 4 else 255
+                # Native canvas PNGs can retain partial alpha. Test the color
+                # actually visible on the board's white background.
+                visible_color = min(255 + (value-255)*alpha/255 for value in row[p:p+3])
+                if visible_color < 220:
                     ink += 1
                     if ink >= 24:
                         return True
@@ -520,6 +529,10 @@ def validate_local_operation(nodes, op):
                 target = lookup.get(op[side + '_id'])
                 if not target or target.get('kind') != 'shape':
                     raise VerificationError('Reconnect endpoint requires an existing native shape')
+            start = op.get('start_id', node.get('start_id'))
+            end = op.get('end_id', node.get('end_id'))
+            if start and start == end:
+                raise VerificationError('Self connection is not supported')
     elif kind == 'connect':
         for side in ('start', 'end'):
             target = lookup.get(op.get(side + '_id'))
@@ -549,6 +562,12 @@ def validate_local_operation(nodes, op):
     elif kind == 'group':
         if any(lookup[i].get('kind') not in ('shape', 'text', 'connector') for i in op['ids']):
             raise VerificationError('Grouping requires supported ungrouped native objects')
+        selected = set(op['ids'])
+        for ident in selected:
+            member = lookup[ident]
+            if member.get('kind') == 'connector' and any(member.get(side + '_id')
+                    and member[side + '_id'] not in selected for side in ('start', 'end')):
+                raise VerificationError('Grouping a bound connector requires all its bound endpoints in the selection')
     elif kind == 'delete':
         expected = set(op['ids'])
         for ident in list(expected):
@@ -557,6 +576,10 @@ def validate_local_operation(nodes, op):
                         and (n.get('start_id') in expected or n.get('end_id') in expected))
         if expected != set(op['delete_ids']):
             raise VerificationError('Deletion scope must exactly match selected objects, children and bound lines')
+        for ident in expected:
+            parent = lookup[ident].get('parent_id')
+            if parent and parent not in expected:
+                raise VerificationError('Deletion would remove a member from a retained group')
 
 
 def check_intent(before, after, op, delta=None, *, from_raw=False):
@@ -1252,6 +1275,196 @@ def check_raw_preservation(before, after, op, *, group_evidence=None):
     return exceptions
 
 
+def validate_append_payload(payload):
+    """Validate the supported native construction before any content call."""
+    if not isinstance(payload, dict) or set(payload) != {'nodes'} or not isinstance(payload['nodes'], list) or not payload['nodes']:
+        raise ValueError('Append requires a nonempty native nodes list')
+    nodes = payload['nodes']
+    if any(not isinstance(n, dict) or not isinstance(n.get('id'), str) or not n['id'] for n in nodes):
+        raise ValueError('Append requires native objects with nonempty string IDs')
+    ids = {n['id'] for n in nodes}
+    if len(ids) != len(nodes):
+        raise ValueError('Append requires nonempty unique IDs')
+
+    def fields(value, allowed, name):
+        if not isinstance(value,dict) or set(value)-allowed:
+            raise ValueError('Unsupported native ' + name + ' fields')
+
+    def finite_json(value):
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError('Append values must be finite')
+        if isinstance(value, dict):
+            for child in value.values():
+                finite_json(child)
+        elif isinstance(value, list):
+            for child in value:
+                finite_json(child)
+
+    def text(value):
+        fields(value, CAPTION_DEFAULT_RAW_FIELDS | {'text_background_color','theme_text_color_code'}, 'text')
+        if not isinstance(value, dict) or not isinstance(value.get('text'), str):
+            raise ValueError('Native text must be an object owning a string')
+        if 'font_size' in value and not finite_number(value['font_size'], True):
+            raise ValueError('Native font size must be positive and finite')
+        enums = {'angle':(0,90,180,270), 'font_weight':('regular','bold'),
+                 'horizontal_align':('left','center','right'), 'vertical_align':('top','mid','bottom')}
+        for key, choices in enums.items():
+            if key in value and (isinstance(value[key], bool) or value[key] not in choices):
+                raise ValueError('Unsupported native text ' + key)
+        for key in ('italic','line_through','underline'):
+            if key in value and type(value[key]) is not bool:
+                raise ValueError('Native text decorations must be booleans')
+        colors(value)
+
+    def colors(value):
+        for key, item in value.items():
+            if key.endswith('_color') and (not isinstance(item,str) or not re.fullmatch(r'#[0-9a-fA-F]{6}',item)):
+                raise ValueError('Native colors must be #RRGGBB')
+            if key.endswith('_color_type') and (type(item) is not int or item not in (0,1)):
+                raise ValueError('Native color types must be 0 or 1')
+            if key.startswith('theme_') and key.endswith('_color_code') and type(item) is not int:
+                raise ValueError('Native theme color codes must be integers')
+
+    finite_json(payload)
+    shapes = {n['id']:n for n in nodes if n.get('type') == 'composite_shape'}
+    for n in nodes:
+        fields(n, {'id','type','x','y','angle','width','height','locked','z_index','text','style','composite_shape','connector'}, 'node')
+        kind = n.get('type')
+        if kind not in ('composite_shape','text_shape','connector'):
+            raise ValueError('Append only supports native shapes, text shapes and bound connectors')
+        if (kind != 'composite_shape' and 'composite_shape' in n or kind != 'connector' and 'connector' in n
+                or kind == 'connector' and 'text' in n):
+            raise ValueError('Native object fields do not match its type')
+        if type(n.get('z_index',0)) is not int or n.get('z_index',0) < 0:
+            raise ValueError('Append relative layers must be nonnegative integers')
+        if 'angle' in n and not finite_number(n['angle']):
+            raise ValueError('Native object angle must be finite')
+        if 'locked' in n and type(n['locked']) is not bool:
+            raise ValueError('Native lock state must be a boolean')
+        if (not all(finite_number(n.get(k)) for k in ('x','y','width','height')) or n['width'] < 0 or n['height'] < 0
+                or kind != 'connector' and (n['width'] == 0 or n['height'] == 0)):
+            raise ValueError('Append geometry must be finite and have valid dimensions')
+        if kind == 'composite_shape':
+            fields(n.get('composite_shape'), {'type'}, 'composite shape')
+            if not isinstance(n.get('composite_shape'),dict) or n['composite_shape'].get('type') not in ('rect','round_rect'):
+                raise ValueError('Append supports rect and round_rect native shapes')
+        if kind in ('composite_shape','text_shape'):
+            text(n.get('text'))
+        if 'style' in n:
+            style = n['style']
+            fields(style, {'fill_color','fill_opacity','border_style','border_width','border_opacity','h_flip','v_flip',
+                           'border_color','theme_fill_color_code','theme_border_color_code','fill_color_type','border_color_type'}, 'style')
+            if not isinstance(style,dict):
+                raise ValueError('Native style must be an object')
+            colors(style)
+            for key, choices in (('border_style',('solid','dash','dot')),('border_width',('extra_narrow','narrow','medium','bold'))):
+                if key in style and style[key] not in choices:
+                    raise ValueError('Unsupported native ' + key)
+            for key in ('border_opacity','fill_opacity'):
+                if key in style and (not finite_number(style[key]) or style[key] != 100):
+                    raise ValueError('New native objects require opaque colors')
+            for key in ('h_flip','v_flip'):
+                if key in style and type(style[key]) is not bool:
+                    raise ValueError('Native flip flags must be booleans')
+        if kind != 'connector':
+            continue
+        c = n.get('connector')
+        fields(c, {'start_object','end_object','start','end','captions','shape','turning_points','caption_auto_direction',
+                   'caption_position','specified_coordinate','caption_position_type'}, 'connector')
+        if not isinstance(c,dict) or c.get('shape') not in LINE_SHAPES:
+            raise ValueError('Append requires a supported connector object')
+        for key in ('specified_coordinate','caption_auto_direction'):
+            if key in c and type(c[key]) is not bool:
+                raise ValueError('Native connector flags must be booleans')
+        if 'caption_position' in c and (not finite_number(c['caption_position']) or not 0 <= c['caption_position'] <= 1):
+            raise ValueError('Native caption position must be in [0,1]')
+        if 'caption_position_type' in c and (type(c['caption_position_type']) is not int or c['caption_position_type'] not in (0,1,2)):
+            raise ValueError('Unsupported native caption placement')
+        if 'captions' in c:
+            captions = c['captions']
+            fields(captions, {'data'}, 'captions')
+            if (not isinstance(captions,dict) or not isinstance(captions.get('data'),list) or len(captions['data']) > 1):
+                raise ValueError('Append supports at most one independent line label')
+            for caption in captions['data']:
+                text(caption)
+        points = c.get('turning_points',[])
+        if not isinstance(points,list) or not all(valid_point(p) for p in points) or c['shape']=='straight' and points:
+            raise ValueError('Native connector points must match its line type')
+        for side in ('start','end'):
+            endpoint, part = c.get(side+'_object'), c.get(side)
+            fields(endpoint, {'id','snap_to','position'}, 'endpoint')
+            fields(part, {'attached_object','arrow_style'}, 'bound line end')
+            if not isinstance(part,dict) or not isinstance(endpoint,dict) or endpoint.get('id') not in shapes:
+                raise ValueError('Append connector endpoints must bind new native shapes')
+            if part.get('arrow_style','none') not in ARROW_STYLES:
+                raise ValueError('Unsupported native arrow style')
+            if endpoint != part.get('attached_object'):
+                raise ValueError('Append connector has conflicting or invalid edge anchors')
+            try:
+                validate_operation_parameters({'kind':'anchors','id':n['id'],side:{k:v for k,v in endpoint.items() if k!='id'}})
+            except VerificationError as error:
+                raise ValueError('Append connector has conflicting or invalid edge anchors') from error
+        if c['start_object']['id'] == c['end_object']['id']:
+            raise ValueError('Self connection is not supported')
+        start,end = (shapes[c[side+'_object']['id']] for side in ('start','end'))
+        sp,ep = (c[side+'_object']['position'] for side in ('start','end'))
+        sx,sy = start['x']+start['width']*sp['x'],start['y']+start['height']*sp['y']
+        ex,ey = end['x']+end['width']*ep['x'],end['y']+end['height']*ep['y']
+        if not equivalent([n['x'],n['y'],n['width'],n['height']], [min(sx,ex),min(sy,ey),abs(ex-sx),abs(ey-sy)]):
+            raise ValueError('Connector geometry is stale or uses unsupported anchors')
+    return payload
+
+
+def check_appended_raw(payload, saved, mapping):
+    """Check every requested field after resolving the service-assigned IDs.
+
+    Service-added defaults do not erase or alter an explicitly requested field.
+    The only requested-field normalization observed in the isolated fixtures is
+    RGB letter case (IDs and references are already resolved by the mapping).
+    """
+    current = {n['id']:n for n in saved['nodes']}
+    exceptions = []
+    caption_defaults = dict(angle=0, font_weight='regular', horizontal_align='center', vertical_align='mid',
+                            italic=False, line_through=False, underline=False,
+                            text_background_color_type=0, theme_text_background_color_code=-1)
+    def compare(wanted, actual, ident, path=()):
+        if isinstance(wanted,dict):
+            if not isinstance(actual,dict) or not set(wanted) <= set(actual):
+                raise VerificationError('Appended raw fields are missing: ' + ident + '/' + '/'.join(path))
+            for key,value in wanted.items():
+                value = mapping.get(value,value) if key=='id' and isinstance(value,str) else value
+                compare(value,actual[key],ident,(*path,key))
+            # These label additions were witnessed in the isolated append
+            # fixtures. A server-added bold/italic label is not a valid default.
+            defaults = caption_defaults if path==('connector','captions','data','0') else (
+                dict(caption_position=.5,caption_position_type=0) if path==('connector',) and 'captions' in wanted else {})
+            for key in (actual.keys()-wanted.keys()) & defaults.keys():
+                compare(defaults[key],actual[key],ident,(*path,key))
+                exceptions.append({'id':ident,'path':list((*path,key)), 'normalization':'service_caption_default'})
+        elif isinstance(wanted,list):
+            if not isinstance(actual,list) or len(wanted)!=len(actual):
+                raise VerificationError('Appended raw list differs: ' + ident + '/' + '/'.join(path))
+            for index,(left,right) in enumerate(zip(wanted,actual)):
+                compare(left,right,ident,(*path,str(index)))
+        elif path and path[-1].endswith('_color') and isinstance(wanted,str) and isinstance(actual,str) and wanted.lower()==actual.lower():
+            if wanted != actual:
+                exceptions.append({'id':ident,'path':list(path),'normalization':'rgb_letter_case'})
+        elif isinstance(wanted,bool) or isinstance(actual,bool):
+            if type(wanted) is not type(actual) or wanted!=actual:
+                raise VerificationError('Appended raw property differs: ' + ident + '/' + '/'.join(path))
+        elif isinstance(wanted,(int,float)) and isinstance(actual,(int,float)):
+            if not math.isfinite(wanted) or not math.isfinite(actual) or abs(wanted-actual)>1e-6:
+                raise VerificationError('Appended raw number differs: ' + ident + '/' + '/'.join(path))
+        elif type(wanted) is not type(actual) or wanted!=actual:
+            raise VerificationError('Appended raw property differs: ' + ident + '/' + '/'.join(path))
+    for node in payload['nodes']:
+        ident = mapping[node['id']]
+        if ident not in current:
+            raise VerificationError('Appended native ID is missing: ' + ident)
+        compare(node,current[ident],ident)
+    return exceptions
+
+
 def match_append(before, after, intended):
     """Resolve server-assigned IDs only when topology and geometry match uniquely."""
     old = {n['id']: n for n in before}
@@ -1308,8 +1521,90 @@ class Runner:
     def write(self, name, data):
         (self.output / name).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
 
+    @contextmanager
+    def time_budget(self, seconds=None, deadline=None):
+        """Nested observations inherit the earlier absolute deadline."""
+        previous = getattr(self, 'deadline', None)
+        limit = deadline if deadline is not None else time.monotonic() + seconds
+        self.deadline = min(previous, limit) if previous is not None else limit
+        try:
+            self.require_time()
+            yield self.deadline
+        finally:
+            self.deadline = previous
+
+    def require_time(self):
+        deadline = getattr(self, 'deadline', None)
+        if deadline is None:
+            return None
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise DeadlineExceeded('Observation deadline exceeded; content calls were not replayed')
+        return remaining
+
+    def transport_timeout(self, maximum):
+        remaining = self.require_time()
+        return min(maximum, remaining) if remaining is not None else maximum
+
+    def read_response(self, response, maximum=None):
+        """One socket read at a time, with the same total HTTP budget."""
+        chunks, size = [], 0
+        while True:
+            timeout = self.transport_timeout(45)
+            sock = getattr(getattr(getattr(response, 'fp', None), 'raw', None), '_sock', None)
+            if sock is not None:
+                sock.settimeout(timeout)
+            amount = min(65536, maximum-size) if maximum is not None else 65536
+            if amount <= 0:
+                break
+            chunk = getattr(response, 'read1', response.read)(amount)
+            self.require_time()
+            if not chunk:
+                break
+            chunks.append(chunk)
+            size += len(chunk)
+        return b''.join(chunks)
+
     def command(self, args):
-        result = subprocess.run([self.cli, *args], cwd=self.output, capture_output=True, text=True, encoding='utf-8', timeout=60, shell=False)
+        try:
+            with self.time_budget(60):
+                return self._command(args)
+        except DeadlineExceeded as error:
+            if not getattr(error, 'cli_process_started', False):
+                error.content_write_started = False
+            raise
+
+    def _command(self, args):
+        try:
+            timeout = self.transport_timeout(60)
+            process = subprocess.Popen([self.cli, *args], cwd=self.output, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, text=True, encoding='utf-8', shell=False)
+        except (OSError, DeadlineExceeded) as error:
+            error.content_write_started = False
+            raise
+        try:
+            stdout, stderr = process.communicate(timeout=min(timeout, self.transport_timeout(60)))
+            self.require_time()
+            result = subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
+        except Exception as error:
+            error.cli_process_started = True
+            try:
+                process.kill()
+                process.wait(timeout=1)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            raise
+        finally:
+            for stream in (process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
+        try:
+            return self.cli_result(result)
+        except Exception as error:
+            error.cli_process_started = True
+            raise
+
+    def cli_result(self, result):
         try:
             payload = json.loads(result.stdout)
         except (ValueError, TypeError):
@@ -1323,6 +1618,11 @@ class Runner:
             if '2890007' in json.dumps(payload):
                 raise NotReady('Whiteboard export is not ready')
             raise VerificationError('CLI operation failed; no automatic write retry: ' + json.dumps(details, ensure_ascii=False))
+        try:
+            self.require_time()
+        except DeadlineExceeded as error:
+            error.cli_process_started = True
+            raise
         return payload
 
     def export(self):
@@ -1335,23 +1635,43 @@ class Runner:
         return raw, name
 
     def call(self, path, data=None, auth=True):
+        with self.time_budget(45):
+            return self._call(path, data, auth)
+
+    def _call(self, path, data, auth):
         headers = {'Content-Type': 'application/json', 'Idempotency-Key': str(uuid.uuid4())}
         if auth:
             headers['Authorization'] = 'Bearer ' + self.token
         req = urllib.request.Request(self.proxy + path, headers=headers, data=None if data is None else json.dumps(data).encode())
-        with urllib.request.urlopen(req, timeout=45) as r:
-            return json.load(r)
+        with urllib.request.urlopen(req, timeout=self.transport_timeout(45)) as r:
+            payload = self.read_response(r)
+        self.require_time()
+        value = json.loads(payload)
+        self.require_time()
+        return value
 
     def screenshot(self, timeout=45):
+        with self.time_budget(timeout):
+            return self._screenshot(timeout)
+
+    def _screenshot(self, timeout):
         req = urllib.request.Request(self.proxy + '/v2/tabs/' + self.tab + '/screenshot?format=png',
                                      headers={'Authorization': 'Bearer ' + self.token})
-        with urllib.request.urlopen(req, timeout=timeout) as response:
-            data = response.read(16_000_001)
+        with urllib.request.urlopen(req, timeout=self.transport_timeout(timeout)) as response:
+            data = self.read_response(response, 16_000_001)
+        self.require_time()
         if len(data) > 16_000_000:
             raise VerificationError('Preview exceeds the screenshot size limit')
         return data
 
     def capture_preview(self):
+        try:
+            with self.time_budget(min(self.timeout, 20)):
+                return self._capture_preview()
+        except DeadlineExceeded:
+            self.report.update(visual_status='unavailable', visual_reason='Preview exceeded its observation deadline')
+
+    def _capture_preview(self):
         """Observe the owned page without replaying edits or discarding undo."""
         baseline = self.editor({'kind':'inspect'})
         baseline_save = baseline.get('native_save')
@@ -1360,6 +1680,13 @@ class Runner:
         self.editor({'kind':'observe'}, baseline['nodes'])
         affected = {ident for step in self.report.get('steps', [])
                     for field in ('changed', 'added') for ident in step.get('diff', {}).get(field, [])}
+        for step in self.report.get('steps', []):
+            if step.get('execution_status') not in ('submitted', 'returned'):
+                continue
+            affected.update(operation_target_ids(baseline['nodes'], step.get('operation', {})))
+            before, after = step.get('before_render_alpha', {}), step.get('after_render_alpha', {})
+            affected.update(ident for ident in before.keys() | after.keys()
+                            if not self.alpha_equivalent({ident:before.get(ident,{})}, {ident:after.get(ident,{})}))
         label_ids = {n['id'] for n in baseline['nodes'] if n.get('kind') == 'connector' and n.get('caption_texts')
                      and (not self.request.get('operations') or n['id'] in affected)}
         previous = None
@@ -1370,7 +1697,7 @@ class Runner:
         attempts = 0
         # A fallback or viewport change may resample, but cannot extend the
         # overall observation budget.
-        deadline = time.monotonic() + min(self.timeout, 20)
+        deadline = self.deadline
 
         def same_content(state):
             if baseline_save is not None:
@@ -1386,8 +1713,10 @@ class Runner:
                     and state.get('seq') is not None and state.get('seq') == state.get('savedSeq'))
 
         while time.monotonic() < deadline:
-            time.sleep(1)
+            time.sleep(self.transport_timeout(1))
+            self.require_time()
             current = self.editor({'kind':'inspect'})
+            self.require_time()
             if not same_content(current):
                 raise VerificationError('Board changed while capturing the saved preview; reread before editing')
             viewport = current.get('viewport') or {}
@@ -1423,6 +1752,7 @@ class Runner:
             if native_fallback:
                 try:
                     payload = self.editor({'kind':'canvas_preview'}, current['nodes'])
+                    self.require_time()
                     if payload.get('viewport') != viewport:
                         previous = None
                         continue
@@ -1430,6 +1760,8 @@ class Runner:
                     if not data_url.startswith('data:image/png;base64,') or len(data_url) > 22_000_000:
                         raise VerificationError('Native canvas preview is unavailable or too large')
                     frame = base64.b64decode(data_url.partition(',')[2], validate=True)
+                except DeadlineExceeded:
+                    raise
                 except VerificationError:
                     native_fallback = False
                     fallback_reason = 'native_canvas_unavailable'
@@ -1437,6 +1769,7 @@ class Runner:
                     previous = None
                     continue
             after = self.editor({'kind':'inspect'})
+            self.require_time()
             if not same_content(after):
                 raise VerificationError('Board changed while capturing the saved preview; reread before editing')
             if (after.get('viewport') != viewport
@@ -1461,8 +1794,10 @@ class Runner:
             # establish legibility, label correctness or absence of overlap.
             frame_identity = (digest, json.dumps(viewport, sort_keys=True), json.dumps(geometry, sort_keys=True))
             if visible and frame_identity == previous:
+                self.require_time()
                 (self.output / 'preview.png').write_bytes(frame)
                 self.write('visual-feedback.json', current)
+                self.require_time()
                 self.report.update(visual_status='needs_review', preview='preview.png',
                                    visual_feedback='visual-feedback.json',
                                    preview_source='native_canvas' if native_fallback else 'browser_screenshot')
@@ -1559,11 +1894,16 @@ class Runner:
                    for ident in alpha_before.keys() & alpha_after.keys())
 
     def settle(self, expected, expected_alpha=None, minimum_stable_seconds=0, expected_endpoints=None, save_fence=None):
-        deadline = time.monotonic() + self.timeout
+        with self.time_budget(self.timeout):
+            return self._settle(expected, expected_alpha, minimum_stable_seconds, expected_endpoints, save_fence)
+
+    def _settle(self, expected, expected_alpha, minimum_stable_seconds, expected_endpoints, save_fence):
+        deadline = self.deadline
         self.last_save_deadline = deadline
         stable_since = None
         while time.monotonic() < deadline:
             current = self.editor({'kind': 'inspect'})
+            self.require_time()
             if not equivalent(current['nodes'], expected):
                 raise VerificationError('Page changed during save verification')
             if expected_alpha is not None and not self.alpha_equivalent(current.get('render_alpha'), expected_alpha):
@@ -1574,6 +1914,7 @@ class Runner:
                     and self.native_save_ready(current, save_fence)):
                 try:
                     raw, name = self.export()
+                    self.require_time()
                     if self.server_equivalent(projection(raw), expected, current.get('object_bounds')):
                         if stable_since is None:
                             stable_since = time.monotonic()
@@ -1587,7 +1928,7 @@ class Runner:
                     stable_since = None
             else:
                 stable_since = None
-            time.sleep(1)
+            time.sleep(self.transport_timeout(1))
         raise VerificationError('Save/readback did not converge; write was not retried')
 
     @staticmethod
@@ -1682,6 +2023,10 @@ class Runner:
         return receipts
 
     def reopen_verified(self, saved_raw, expected, expected_alpha=None, expected_endpoints=None, binding_ids=None):
+        with self.time_budget(self.timeout):
+            return self._reopen_verified(saved_raw, expected, expected_alpha, expected_endpoints, binding_ids)
+
+    def _reopen_verified(self, saved_raw, expected, expected_alpha, expected_endpoints, binding_ids):
         self.complete_page(False, 'saved_reopen')
         self.open_page()
         state = self.hydrate(saved_raw)
@@ -1813,6 +2158,17 @@ class Runner:
         return members
 
     def complete_page(self, keep, reason):
+        # Page cleanup has its own bounded budget. An exhausted save budget
+        # cannot prevent a read-only witness or a confirmed writer from closing.
+        previous = getattr(self, 'deadline', None)
+        self.deadline = None
+        try:
+            with self.time_budget(min(getattr(self, 'cleanup_timeout', self.timeout), 45)):
+                return self._complete_page(keep, reason)
+        finally:
+            self.deadline = previous
+
+    def _complete_page(self, keep, reason):
         if not self.task:
             return
         record = {'task_id': self.task, 'tab_id': self.tab, 'reason': reason,
@@ -1847,6 +2203,10 @@ class Runner:
             self.token = self.task = self.tab = None
 
     def open_page(self):
+        with self.time_budget(self.timeout):
+            return self._open_page()
+
+    def _open_page(self):
         session = self.call('/v2/tasks', {}, auth=False)
         self.token, self.task = session['taskToken'], session['taskId']
         page = {'task_id': self.task, 'tab_id': None, 'open_status': 'creating'}
@@ -1870,18 +2230,24 @@ class Runner:
         page['open_status'] = 'ready'
 
     def hydrate(self, raw, minimum_applied_version=None):
+        with self.time_budget(min(self.timeout, 20)):
+            return self._hydrate(raw, minimum_applied_version)
+
+    def _hydrate(self, raw, minimum_applied_version):
         if any(len(n.get('connector', {}).get('captions', {}).get('data', [])) > 1 for n in raw['nodes']):
             raise VerificationError('Native editor exposes only the first imported caption; use raw read-only inspection to preserve additional text')
-        deadline = time.monotonic() + min(self.timeout, 20)
+        deadline = self.deadline
         attempt = 0
         while time.monotonic() < deadline:
             state = self.editor({'kind':'inspect'})
+            self.require_time()
             attempt += 1
             self.write(f'prewrite-browser-{self.index:03d}-{attempt:03d}.json', state)
             try:
                 latest, name = self.export()
+                self.require_time()
             except NotReady:
-                time.sleep(1)
+                time.sleep(self.transport_timeout(1))
                 continue
             if not equivalent(projection(latest), projection(raw)):
                 catchup = self.verified_group_cache_catchup(raw,latest,state)
@@ -1890,7 +2256,7 @@ class Runner:
                         raise VerificationError('Server changed while loading the target; reread before submitting edits')
                     # A first inspect can still be empty while the cache has
                     # caught up. Wait for native proof; do not accept it yet.
-                    time.sleep(1)
+                    time.sleep(self.transport_timeout(1))
                     continue
                 state['server_group_cache_catchup'] = catchup
                 self.write(f'group-cache-catchup-{self.index:03d}.json',
@@ -1900,7 +2266,7 @@ class Runner:
                     and self.native_save_ready(state, minimum_applied_version=minimum_applied_version)):
                 state['group_cache_normalizations'] = self.group_cache_evidence(latest, state)
                 return state
-            time.sleep(1)
+            time.sleep(self.transport_timeout(1))
         raise VerificationError('Document board and CLI snapshot did not converge before writing; inspect prewrite-browser evidence')
 
     def confirm_native_persistence(self, saved_raw, expected, number, binding_ids=None):
@@ -1912,6 +2278,9 @@ class Runner:
         request = {k:self.request[k] for k in ('document_url', 'whiteboard_token', 'section_id', 'block_id') if k in self.request}
         request['operations'] = []
         reader = Runner(request, self.output / folder, self.proxy, timeout=remaining)
+        reader.deadline = self.last_save_deadline
+        reader.cleanup_timeout = min(self.timeout, 45)
+        witness = None
         try:
             reader.open_page()
             remaining = self.last_save_deadline - time.monotonic()
@@ -1921,7 +2290,6 @@ class Runner:
             receipt = self.last_saved_state.get('native_save') or {}
             floor = receipt.get('applied_version')
             state = reader.hydrate(saved_raw, minimum_applied_version=floor)
-            reader.write('fresh-native.json', state)
             if (not equivalent(state['nodes'], expected['nodes'])
                     or not self.alpha_equivalent(state.get('render_alpha'), expected.get('render_alpha'))
                     or not equivalent(state.get('line_endpoints'), expected.get('line_endpoints'))):
@@ -1930,18 +2298,45 @@ class Runner:
             if time.monotonic() >= self.last_save_deadline:
                 raise VerificationError('Native persistence confirmation exceeded the save deadline')
             reader.report['status'] = 'readonly_verified'
-            return {'status':'confirmed', 'inspect':folder + '/fresh-native.json',
-                    'minimum_applied_version':floor, 'native_save':state.get('native_save')}
+            witness = {'status':'confirmed', 'minimum_applied_version':floor, 'native_save':state.get('native_save')}
+            try:
+                reader.write('fresh-native.json', state)
+                witness['inspect'] = folder + '/fresh-native.json'
+            except Exception as error:
+                witness['inspect_error'] = type(error).__name__
+            return witness
         finally:
-            reader.close()
-            reader.write('result.json', reader.report)
+            errors = []
+            identity = {'witness':folder, 'task_id':reader.task, 'tab_id':reader.tab}
+            try:
+                reader.close()
+            except Exception as error:
+                errors.append(dict(identity, stage='close', error=type(error).__name__))
+            if reader.report.get('report_write_status') == 'failed':
+                errors.append(dict(identity, stage='result_write', error=reader.report.get('report_write_error')))
             self.report.setdefault('pages', []).extend(reader.report.get('pages', []))
             self.report.setdefault('cleanup_receipts', []).extend(reader.report.get('cleanup_receipts', []))
+            if errors:
+                self.report.setdefault('witness_cleanup_errors', []).extend(errors)
+                if witness is not None:
+                    witness['cleanup_errors'] = errors
 
     def run(self):
+        self.phase = 'preflight'
+        try:
+            return self._run()
+        except Exception:
+            self.report.update(status='unverified', failure_phase=self.report.get('failure_phase') or self.phase)
+            if not self.report.get('steps'):
+                self.report.update(save_status='not_written', verification_status='failed')
+            raise
+
+    def _run(self):
         validate_request_operations(self.request)
+        self.phase = 'initial_read'
         raw, name = self.export()
         self.report['initial_raw'] = name
+        self.phase = 'initial_load'
         self.open_page()
         self.hydrate(raw)
         if self.request.get('operations') or self.request.get('capture_preview'):
@@ -1950,19 +2345,23 @@ class Runner:
         previous_delete = None
         operations = [None, *self.request.get('operations', [])]
         for index, op in enumerate(operations):
-            state = self.editor({'kind': 'inspect'})
-            raw, name = self.settle(state['nodes'], state['render_alpha'])
             if op is None:
+                self.phase = 'initial_read'
+                state = self.editor({'kind': 'inspect'})
+                raw, name = self.settle(state['nodes'], state['render_alpha'])
                 self.report['initial_nodes'] = state['nodes']
                 self.write('inspect-000.json', state)
                 self.report['initial_inspect'] = 'inspect-000.json'
                 continue
-            step = {'operation': op, 'before_raw': name, 'save_status': 'not_written',
+            step = {'operation': op, 'save_status': 'not_written',
                     'verification_status': 'pending', 'failure_phase': None, 'execution_status': 'not_started'}
             self.report['steps'].append(step)
             number = len(self.report['steps'])
             phase = 'preflight'
             try:
+                state = self.editor({'kind': 'inspect'})
+                raw, name = self.settle(state['nodes'], state['render_alpha'])
+                step['before_raw'] = name
                 actual = dict(op)
                 reject_nested_groups(state['nodes'], op)
                 validate_local_operation(state['nodes'], op)
@@ -1972,9 +2371,12 @@ class Runner:
                     actual['undo_count'] = previous_delete['transaction_count']
                     actual['undo_receipt'] = previous_delete['undo_receipt']
                 phase = 'execute'
-                self.uncertain = True
-                step.update(save_status='unknown', execution_status='submitted')
-                result = self.create_connection(actual, state, raw, name) if op['kind'] == 'connect' and not op.get('template_id') else self.editor(actual, state['nodes'])
+                if op['kind'] == 'connect' and not op.get('template_id'):
+                    result = self.create_connection(actual, state, raw, name)
+                else:
+                    self.uncertain = True
+                    step.update(save_status='unknown', execution_status='submitted')
+                    result = self.editor(actual, state['nodes'])
                 step['execution_status'] = 'returned'
                 self.write(f'editor-{number:03d}.json', result)
                 delta = differences(state['nodes'], result['nodes'])
@@ -2062,6 +2464,49 @@ class Runner:
         The raw append endpoint cannot refer to pre-existing module IDs. Do not
         re-import those modules or replay an uncertain append to work around it.
         """
+        record = self.report['steps'][-1]
+        try:
+            return self._create_connection(op, state, raw, name, record)
+        except Exception as error:
+            if record.get('execution_status') == 'not_started':
+                error.content_write_started = False
+            raise
+
+    def append_once(self, args, before, intended, record):
+        """Start once and poll inside one absolute submission/readback budget."""
+        phase = 'execute'
+        self.uncertain = True
+        record.update(save_status='unknown', execution_status='submitted', append_submitted=True)
+        try:
+            with self.time_budget(self.timeout) as deadline:
+                self.command(args)
+                self.require_time()
+                record['execution_status'] = 'returned'
+                phase = 'save_readback'
+                while time.monotonic() < deadline:
+                    try:
+                        latest, name = self.export()
+                        self.require_time()
+                        mapping = match_append(before, projection(latest), intended)
+                        self.require_time()
+                        return latest, name, mapping
+                    except NotReady:
+                        time.sleep(min(1, self.transport_timeout(1)))
+                    except VerificationError as error:
+                        if 'count has not converged' not in str(error):
+                            raise
+                        time.sleep(min(1, self.transport_timeout(1)))
+                raise VerificationError('Append save/readback did not converge; write was not retried')
+        except Exception as error:
+            error.failure_phase = phase
+            if phase == 'execute' and getattr(error,'content_write_started',None) is False:
+                self.uncertain = False
+                record.update(save_status='not_written', execution_status='rejected_before_content_call', append_submitted=False)
+            elif phase != 'execute':
+                error.content_write_started = True
+            raise
+
+    def _create_connection(self, op, state, raw, name, record):
         lookup = {n['id']:n for n in state['nodes']}
         start, end = lookup[op['start_id']], lookup[op['end_id']]
         raw_lookup = {n['id']:n for n in raw['nodes']}
@@ -2083,37 +2528,38 @@ class Runner:
         receipt_name = f'connect-receipt-{step:03d}.json'
         key = str(uuid.uuid4())
         receipt = {'idempotent_token':key, 'before_raw':name, 'operation':op,
-                   'status':'submitted_once'}
+                   'status':'prepared', 'content_write_started':False}
         self.write(filename, payload)
         self.write(receipt_name, receipt)
-        record = self.report['steps'][-1]
-        record['append_submitted'] = True
-        self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'],
-                      '--input_format','raw','--source','@'+filename,'--idempotent-token',key,'--as','user'])
-        deadline = time.monotonic() + self.timeout
-        while time.monotonic() < deadline:
+        try:
+            latest, after_name, mapping = self.append_once(
+                ['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'],
+                 '--input_format','raw','--source','@'+filename,'--idempotent-token',key,'--as','user'],
+                projection(raw), projection(payload), record)
+        except Exception as error:
+            receipt.update(status='not_started' if getattr(error,'content_write_started',None) is False else 'result_unknown',
+                           content_write_started=False if getattr(error,'content_write_started',None) is False
+                           else True if getattr(error,'cli_process_started',False) or getattr(error,'content_write_started',None) is True else None)
             try:
-                latest, after_name = self.export()
-                mapping = match_append(projection(raw), projection(latest), projection(payload))
-                break
-            except NotReady:
-                time.sleep(1)
-            except VerificationError as error:
-                if 'count has not converged' not in str(error):
-                    raise
-                time.sleep(1)
-        else:
-            raise VerificationError('Connection append did not converge; inspect the receipt before resuming the same line')
+                self.write(receipt_name, receipt)
+            except Exception as evidence_error:
+                record['receipt_write_error'] = type(evidence_error).__name__
+            raise
         ident = mapping[client_id]
         self.uncertain = False
         record.update(save_status='confirmed', append_after_raw=after_name, append_id=ident)
         try:
             check_raw_preservation(raw, latest, {'kind':'append'})
+            record['appended_raw_exceptions'] = check_appended_raw(payload, latest, mapping)
         except Exception as error:
             error.failure_phase = 'append_protection'
             raise
-        receipt.update(created_id=ident, appended_raw=after_name, status='appended_readback_verified')
-        self.write(f'connect-appended-{step:03d}.json', receipt)
+        receipt.update(created_id=ident, appended_raw=after_name, status='appended_readback_verified', content_write_started=True)
+        try:
+            self.write(f'connect-appended-{step:03d}.json', receipt)
+        except Exception as error:
+            error.failure_phase = 'append_receipt'
+            raise
         # Reload only this owned page so a cached pre-append board cannot write.
         self.complete_page(False, 'connection_append_reload')
         self.open_page()
@@ -2133,46 +2579,29 @@ class Runner:
         return result
 
     def append(self, filename):
+        step = {'operation':{'kind':'append'}, 'save_status':'not_written', 'verification_status':'pending',
+                'failure_phase':None, 'execution_status':'not_started'}
+        self.report.setdefault('steps', []).append(step)
+        self.phase = 'preflight'
+        try:
+            return self._append(filename, step)
+        except Exception as error:
+            phase = step.get('failure_phase') or getattr(error,'failure_phase',self.phase)
+            step.update(verification_status='failed', failure_phase=phase, error=type(error).__name__)
+            self.report.update(status='unverified', failure_phase=phase)
+            if step['save_status'] == 'not_written':
+                self.report.update(save_status='not_written', verification_status='failed')
+            raise
+
+    def _append(self, filename, step):
         validate_target(self.request)
         if self.request.get('operations'):
             raise ValueError('Append is standalone; inspect the saved board in a new editor session before editing')
-        payload = json.loads(Path(filename).read_text(encoding='utf-8-sig'))
-        nodes = payload.get('nodes') if isinstance(payload, dict) else None
-        if not isinstance(nodes, list) or not nodes or any(not isinstance(n, dict) or not isinstance(n.get('id'), str) or not n['id'] for n in nodes):
-            raise ValueError('Append requires native objects with nonempty string IDs')
+        payload = validate_append_payload(json.loads(Path(filename).read_text(encoding='utf-8-sig')))
+        nodes = payload['nodes']
         ids = [n['id'] for n in nodes]
-        if len(ids) != len(set(ids)):
-            raise ValueError('Append requires nonempty unique IDs')
-        if any(type(n.get('z_index', 0)) is not int or n.get('z_index', 0) < 0 for n in nodes):
-            raise ValueError('Append relative layers must be nonnegative integers')
-        shape_lookup = {n['id']:n for n in nodes if n.get('type') == 'composite_shape'}
-        for n in nodes:
-            if n.get('type') not in ('composite_shape', 'text_shape', 'connector'):
-                raise ValueError('Append only supports native shapes, text shapes and bound connectors')
-            if n['type'] in ('composite_shape', 'text_shape') and not isinstance(n.get('text', {}).get('text'), str):
-                raise ValueError('Native shapes must own their text')
-            if (not all(finite_number(n.get(field)) for field in ('x','y','width','height'))
-                    or n['width'] < 0 or n['height'] < 0
-                    or n['type'] != 'connector' and (n['width'] == 0 or n['height'] == 0)):
-                raise ValueError('Append geometry must be finite and have valid dimensions')
-            if n['type'] == 'connector':
-                c = n['connector']
-                for side in ('start','end'):
-                    endpoint = c.get(side + '_object', {})
-                    if endpoint.get('id') not in ids:
-                        raise ValueError('CLI append cannot reference existing shapes; append new shapes first, then use editor connect for existing modules')
-                    if (endpoint.get('id') not in shape_lookup or endpoint != c.get(side, {}).get('attached_object')
-                            or not isinstance(endpoint.get('position'), dict)
-                            or set(endpoint['position']) != {'x','y'}
-                            or any(not finite_number(endpoint['position'][axis]) or not 0 <= endpoint['position'][axis] <= 1 for axis in ('x','y'))):
-                        raise ValueError('Append connector has missing or conflicting native shape endpoint')
-                start,end = (shape_lookup[c[side + '_object']['id']] for side in ('start','end'))
-                sp,ep = (c[side + '_object']['position'] for side in ('start','end'))
-                sx,sy = start['x']+start['width']*sp['x'], start['y']+start['height']*sp['y']
-                ex,ey = end['x']+end['width']*ep['x'],end['y']+end['height']*ep['y']
-                if not equivalent([n['x'],n['y'],n['width'],n['height']], [min(sx,ex),min(sy,ey),abs(ex-sx),abs(ey-sy)]):
-                    raise ValueError('Connector geometry is stale or uses unsupported anchors')
         raw, name = self.export()
+        step['before_raw'] = name
         before = projection(raw)
         if set(ids) & {n['id'] for n in before}:
             raise ValueError('Append IDs collide with existing IDs')
@@ -2187,6 +2616,7 @@ class Runner:
         for offset, (_, node) in enumerate(ordered):
             node['z_index'] = first_layer+offset
             layer_assignment[node['id']] = node['z_index']
+        self.phase = 'initial_load'
         self.open_page()
         original = self.hydrate(raw)
         self.report.update(initial_raw=name, initial_nodes=original['nodes'], append_layer_assignment=layer_assignment)
@@ -2194,42 +2624,38 @@ class Runner:
         self.report['initial_inspect'] = 'inspect-000.json'
         intended = projection(payload)
         key = str(uuid.uuid4())
+        self.phase = 'preflight'
         self.write('append-input.json', payload)
-        self.write('append-receipt.json', {'idempotent_token': key, 'before_raw': name})
-        step = {'operation': {'kind':'append'}, 'before_raw':name, 'save_status':'unknown',
-                'verification_status':'pending', 'failure_phase':None, 'execution_status':'submitted'}
-        self.report.setdefault('steps', []).append(step)
-        self.uncertain, phase = True, 'execute'
+        receipt = {'idempotent_token':key, 'before_raw':name, 'status':'prepared', 'content_write_started':False}
+        self.write('append-receipt.json', receipt)
+        phase = 'execute'
         try:
-            self.command(['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'], '--input_format', 'raw', '--source', '@append-input.json', '--idempotent-token', key, '--as', 'user'])
-            step['execution_status'] = 'returned'
-            phase = 'save_readback'
-            deadline = time.monotonic() + self.timeout
-            while time.monotonic() < deadline:
-                try:
-                    latest, after_name = self.export()
-                    mapping = match_append(before, projection(latest), intended)
-                    break
-                except NotReady:
-                    time.sleep(1)
-                except VerificationError as error:
-                    if 'count has not converged' not in str(error):
-                        raise
-                    time.sleep(1)
-            else:
-                raise VerificationError('Append save/readback did not converge; write was not retried')
+            latest, after_name, mapping = self.append_once(
+                ['whiteboard', '+update', '--whiteboard-token', self.request['whiteboard_token'], '--input_format', 'raw',
+                 '--source', '@append-input.json', '--idempotent-token', key, '--as', 'user'], before, intended, step)
             self.uncertain = False
             step.update(save_status='confirmed', after_raw=after_name, id_mapping=mapping)
             self.report.update(before_raw=name, after_raw=after_name, id_mapping=mapping)
+            phase = 'save_receipt'
+            receipt.update(status='saved_readback_confirmed', content_write_started=True, id_mapping=mapping)
+            self.write('append-receipt.json', receipt)
             phase = 'protection'
             step['raw_exceptions'] = check_raw_preservation(raw, latest, {'kind':'append'})
+            step['appended_raw_exceptions'] = check_appended_raw(payload, latest, mapping)
             saved_lookup = {n['id']:n for n in latest['nodes']}
             if any(saved_lookup[mapping[ident]].get('z_index') != layer for ident,layer in layer_assignment.items()):
                 raise VerificationError('Appended object layers differ from the planned top insertion')
             phase = 'reopen'
-            self.complete_page(False, 'append_saved_reopen')
-            self.open_page()
-            fresh = self.hydrate(latest)
+            with self.time_budget(self.timeout):
+                self.complete_page(False, 'append_saved_reopen')
+                self.open_page()
+                fresh = self.hydrate(latest)
+                reopened_raw, reopened_name = self.export()
+                self.require_time()
+                step['reopen_raw'] = reopened_name
+                step['reopen_raw_exceptions'] = check_raw_preservation(raw, reopened_raw, {'kind':'append'})
+                step['reopen_appended_raw_exceptions'] = check_appended_raw(payload, reopened_raw, mapping)
+                self.require_time()
             self.write('reopened-001.json', fresh)
             old_ids = {n['id'] for n in original['nodes']}
             if not equivalent([n for n in fresh['nodes'] if n['id'] in old_ids], original['nodes']):
@@ -2253,9 +2679,22 @@ class Runner:
                         diff=differences(original['nodes'], fresh['nodes']), after_render_alpha=fresh['render_alpha'])
             self.report['status'] = 'verified'
             if self.request.get('capture_preview'):
-                self.editor({'kind':'enter'})
-                self.observe_saved()
+                try:
+                    self.editor({'kind':'enter'})
+                    self.observe_saved()
+                except Exception as error:
+                    self.report.update(visual_status='unavailable', visual_error=type(error).__name__,
+                                       visual_reason='Preview entry failed; saved edits were not replayed')
         except Exception as error:
+            phase = getattr(error, 'failure_phase', phase)
+            if step['save_status'] == 'not_written':
+                receipt.update(status='not_started', content_write_started=False)
+            elif step['save_status'] == 'unknown':
+                receipt.update(status='result_unknown', content_write_started=True if getattr(error,'cli_process_started',False) else None)
+            try:
+                self.write('append-receipt.json', receipt)
+            except Exception as evidence_error:
+                step['receipt_write_error'] = type(evidence_error).__name__
             step.update(verification_status='failed', failure_phase=phase, error=type(error).__name__)
             self.report.update(status='unverified', failure_phase=phase)
             raise
@@ -2266,7 +2705,10 @@ class Runner:
                 self.complete_page(self.uncertain, 'unknown_writer' if self.uncertain else 'finished')
             except Exception:
                 pass
-        self.write('result.json', self.report)
+        try:
+            self.write('result.json', self.report)
+        except Exception as error:
+            self.report.update(report_write_status='failed', report_write_error=type(error).__name__)
 
 
 def main():
@@ -2290,6 +2732,10 @@ def main():
         details = dict(status='unverified', error=type(e).__name__, reason=str(e) if isinstance(e, (VerificationError, ValueError)) else 'Transport or runtime failure; no automatic write retry')
         if runner is not None:
             runner.report.update(details)
+            if not runner.report.get('failure_phase'):
+                runner.report['failure_phase'] = getattr(runner, 'phase', 'preflight')
+            if not runner.report.get('steps'):
+                runner.report.update(save_status='not_written', verification_status='failed')
         else:
             details.update(steps=[], save_status='not_written', verification_status='failed', failure_phase='preflight')
             destination = Path(a.output_dir)
@@ -2301,7 +2747,15 @@ def main():
     finally:
         if runner is not None:
             runner.close()
-    print(json.dumps({'status': runner.report['status'] if runner is not None else 'unverified', 'result': str(Path(a.output_dir) / 'result.json')}, ensure_ascii=False))
+            if runner.report.get('report_write_status') == 'failed':
+                code = 1
+    summary = {'status': runner.report['status'] if runner is not None else 'unverified', 'result': str(Path(a.output_dir) / 'result.json')}
+    if runner is not None and runner.report.get('report_write_status') == 'failed':
+        summary['report_write_status'] = 'failed'
+        # Preserve the completed steps in the caller's captured output even if
+        # the local report destination has become unwritable.
+        summary['report'] = runner.report
+    print(json.dumps(summary, ensure_ascii=False))
     return code
 
 

@@ -49,6 +49,37 @@ class Preview(unittest.TestCase):
             with self.subTest(filter_type=filter_type):
                 self.assertTrue(png_has_board_ink(png((4,4,12,12),filter_type),dict(x=2,y=2,width=4,height=4),2))
 
+    def test_short_label_pixel_gate_is_consistent_at_device_scale_one_and_two(self):
+        for scale in (1, 2):
+            with self.subTest(scale=scale):
+                rect = dict(x=2,y=2,width=4,height=4)
+                frame = png((2*scale,2*scale,6*scale,6*scale))
+                self.assertTrue(png_has_board_ink(frame,rect,scale,min_ink=1))
+                self.assertEqual(png_has_board_ink(frame,rect,scale),scale==2)
+                self.assertFalse(png_has_board_ink(png(),rect,scale,min_ink=1))
+
+    def test_target_label_crop_uses_one_pixel_gate_for_both_capture_sources(self):
+        for scale in (1, 2):
+            for native in (False, True):
+                with self.subTest(scale=scale,native=native), tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
+                    runner,state = self.runner(directory)
+                    runner.prefer_native_preview = native
+                    state['nodes'] = [dict(id='line',kind='connector',caption_texts=['x'])]
+                    state['viewport'] = dict(rect=dict(x=0,y=0,width=16/scale,height=16/scale),device_pixel_ratio=scale)
+                    state['label_geometry'] = {'line':dict(available=True,screen_rect=dict(x=4/scale,y=4/scale,width=1,height=1))}
+                    frame = png((4,4,12,12))
+                    def editor(op,expected=None):
+                        if op['kind']=='canvas_preview':
+                            return dict(viewport=copy.deepcopy(state['viewport']),
+                                        data_url='data:image/png;base64,'+base64.b64encode(frame).decode())
+                        return copy.deepcopy(state)
+                    runner.editor = editor
+                    runner.screenshot = lambda **kwargs: frame
+                    runner.capture_preview()
+                    self.assertEqual(runner.report['visual_status'],'needs_review')
+                    self.assertEqual(runner.report['preview_source'],'native_canvas' if native else 'browser_screenshot')
+                    self.assertEqual((runner.output/'preview.png').read_bytes(),frame)
+
     def test_partial_alpha_uses_its_visible_color_over_white(self):
         def rgba(alpha):
             def chunk(kind,data):
@@ -63,6 +94,7 @@ class Preview(unittest.TestCase):
         for alpha in (0,20):
             with self.subTest(alpha=alpha):
                 self.assertFalse(png_has_board_ink(rgba(alpha),rect))
+                self.assertFalse(png_has_board_ink(rgba(alpha),rect,min_ink=1))
 
     def test_alpha_only_edited_label_cannot_be_outside_the_preview(self):
         with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'):

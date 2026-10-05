@@ -112,6 +112,11 @@
     return[n.id,b&&['minX','minY','maxX','maxY'].every(k=>Number.isFinite(b[k]))
       ?{x:b.minX,y:b.minY,width:b.maxX-b.minX,height:b.maxY-b.minY}:null];
   }));
+  const arrangementBounds=()=>Object.fromEntries([...a.nodeManager.nodeMap.values()].filter(n=>n.type===13).map(n=>{
+    const b=n.getBounds?.();
+    return[n.id,b&&['minX','minY','maxX','maxY'].every(k=>Number.isFinite(b[k]))&&b.maxX>b.minX&&b.maxY>b.minY
+      ?{x:b.minX,y:b.minY,width:b.maxX-b.minX,height:b.maxY-b.minY}:null];
+  }));
   // Read actual attachment geometry independently of connector serialization.
   // Unrelated legacy invalid bindings remain observable without blocking inspect.
   const bindingGeometry=()=>[...a.nodeManager.nodeMap.values()].filter(n=>a.api.graphicNodeToPageNode(n).info.connectorV2).map(n=>{
@@ -169,7 +174,7 @@
   const nativeSaveReady=s=>s.available&&s.initialized&&!s.pending&&!s.ordered_pending&&!s.processing&&!s.offline
     &&s.save_state==='saved'&&!s.http_pending;
   const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(),
-    object_bounds:objectBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature,native_save:nativeSave()});
+    object_bounds:objectBounds(),arrangement_bounds:arrangementBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature,native_save:nativeSave()});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
@@ -209,6 +214,7 @@
   }
   if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
   const before = snapshot(),beforeAlpha=renderAlpha(),beforeEnds=lineEndpoints(), ids = op.kind==='connect' ? [op.template_id,op.start_id,op.end_id].filter(Boolean) : op.kind==='reconnect' ? [op.id,op.start_id,op.end_id].filter(Boolean) : op.ids || (op.id ? [op.id] : []);
+  let arrangementOrder=null,arrangementBeforeBounds=null;
   const node = id => a.nodeManager.nodeMap.get(id) || fail('NODE_NOT_FOUND:' + id);
   ids.forEach(node);
   const assertUnlocked=n=>{for(let p=n;p;p=p.parent)if(a.api.graphicNodeToPageNode(p)?.info?.locked)fail('LOCKED_OBJECT');};
@@ -541,7 +547,11 @@
       if(ids.length<(op.kind==='align_top'?2:3))fail('INSUFFICIENT_SELECTION');
       ids.forEach(shape);const method=op.kind==='align_top'?'alignTop':'alignDistributeHorizontal';
       const handler=a.commandManager.handlers.get('Align');if(typeof handler?.[method]!=='function')fail('ALIGN_INTERFACE_MISMATCH');
-      selected(ids);contentWriteStarted=true;handler[method](a.api.getSelectNodes(),a.interactCtx);break;
+      selected(ids);const selection=a.api.getSelectNodes(),bounds=arrangementBounds();
+      if(selection.some(n=>!bounds[n.id]))fail('ARRANGEMENT_BOUNDS_UNAVAILABLE');
+      arrangementOrder=selection.map(n=>n.id);arrangementBeforeBounds=Object.fromEntries(arrangementOrder.map(id=>[id,bounds[id]]));
+      if(op.arrangement_bounds&&stable(op.arrangement_bounds)!==stable(arrangementBeforeBounds))fail('STALE_ARRANGEMENT_BOUNDS');
+      contentWriteStarted=true;handler[method](selection,a.interactCtx);break;
     }
     case 'delete': {
       const removed=new Set(ids), visit=id=>{for(const child of node(id).children||[]){removed.add(child.id);visit(child.id);}};ids.forEach(visit);
@@ -569,6 +579,7 @@
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
   const changed=stable(before)!==stable(snapshot())||stable(beforeAlpha)!==stable(renderAlpha())||stable(beforeEnds)!==stable(lineEndpoints());
   return {...result(), before, content_write_started:contentWriteStarted,
+    ...(arrangementOrder?{arrangement_order:arrangementOrder,arrangement_before_bounds:arrangementBeforeBounds}:{}),
     save_fence:{signature:saveBefore.signature,before_applied_version:saveBefore.applied_version,requires_ack:contentWriteStarted&&changed},
     transaction_count:count,refreshed_group_ids:refreshedGroups,restored_path_ids:restoredPaths,verified_bindings:verifiedBindings,verified_curve_points:verifiedCurvePoints,
     ...(op.kind==='delete'?{undo_receipt:{depth:a.undoRedoManager.undoStack.length,top:stable(a.undoRedoManager.undoStack.at(-1))}}:{})};

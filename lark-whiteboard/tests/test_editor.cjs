@@ -43,3 +43,25 @@ assert.deepEqual(JSON.parse(JSON.stringify(feedback.viewport.world_to_screen)),{
 assert.equal(feedback.viewport.device_pixel_ratio,2);
 assert.equal(writes,0);
 console.log('PASS: native label corners and observed screen transform preserve read-only behavior');
+
+// Arrangement reads the same outer box that native Align uses. It is distinct
+// from serialized base coordinates and the rectangle used for group envelopes.
+app.nodeManager.nodeMap.set('rotated',{
+  id:'rotated',type:13,
+  getBounds:()=>({minX:65,minY:15,maxX:105,maxY:115}),
+  getRectNode:()=>({minX:5,minY:10,maxX:105,maxY:50}),
+  page:{info:{baseV2:{x:5,y:10,width:100,height:40,angle:90},compositeShape:{shapeType:11},
+    textV2:{text:'rotated',fontSize:18}}}
+});
+app.nodeManager.nodeMap.set('unavailable',{
+  id:'unavailable',type:13,
+  page:{info:{baseV2:{x:200,y:10,width:100,height:40},compositeShape:{shapeType:11}}}
+});
+const arrangementInspection=adapter(req);
+assert.deepEqual(JSON.parse(JSON.stringify(arrangementInspection.arrangement_bounds.rotated)),
+  {x:65,y:15,width:40,height:100});
+assert.deepEqual(JSON.parse(JSON.stringify(arrangementInspection.object_bounds.rotated)),
+  {x:5,y:10,width:100,height:40});
+assert.equal(arrangementInspection.arrangement_bounds.unavailable,null);
+assert.equal(writes,0);
+console.log('PASS: inspection reads native arrangement bounds separately and never edits content');

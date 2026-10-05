@@ -208,7 +208,9 @@ class Lifecycle(unittest.TestCase):
         def state(raw):
             nodes = projection(raw)
             result = dict(nodes=nodes,seq=2,savedSeq=2,
-                          render_alpha={n['id']:dict(border=1,text=1) for n in nodes},line_endpoints={},binding_geometry=[])
+                          render_alpha={n['id']:dict(border=1,fill=1,text=1) if n['kind']=='shape' else
+                                        dict(border=1,text=1) if n['kind']=='connector' else dict(text=1)
+                                        for n in nodes},line_endpoints={},binding_geometry=[])
             for raw_node in raw['nodes']:
                 if raw_node['type']=='connector':
                     ident,c = raw_node['id'],raw_node['connector']

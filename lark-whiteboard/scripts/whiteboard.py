@@ -30,11 +30,12 @@ class DeadlineExceeded(VerificationError):
     pass
 
 
-def png_has_board_ink(data, rect, scale=1):
+def png_has_board_ink(data, rect, scale=1, min_ink=24):
     """Reject a white transition frame; image review is still required.
 
     Proxy screenshots use 8-bit RGB/RGBA PNG. Unsupported encodings fail closed.
     The crop is the observed board viewport, not the document's surrounding UI.
+    Tiny label crops only need one visible pixel; whole-board frames need more.
     """
     if not data.startswith(b'\x89PNG\r\n\x1a\n'):
         return False
@@ -97,7 +98,7 @@ def png_has_board_ink(data, rect, scale=1):
                 visible_color = min(255 + (value-255)*alpha/255 for value in row[p:p+3])
                 if visible_color < 220:
                     ink += 1
-                    if ink >= 24:
+                    if ink >= min_ink:
                         return True
         previous = row
     return False
@@ -339,7 +340,7 @@ def differences(before, after):
     return dict(added=sorted(b.keys()-a.keys()), removed=sorted(a.keys()-b.keys()), changed=sorted(k for k in a.keys() & b.keys() if not equivalent(a[k], b[k])))
 
 
-def check_scope(before, after, op, *, from_raw=False, group_evidence=None):
+def check_scope(before, after, op, *, from_raw=False, group_evidence=None, arrangement_evidence=None):
     if len({n['id'] for n in before}) != len(before) or len({n['id'] for n in after}) != len(after):
         raise VerificationError('Local edit requires unique object IDs')
     delta = differences(before, after)
@@ -370,7 +371,7 @@ def check_scope(before, after, op, *, from_raw=False, group_evidence=None):
         raise VerificationError('Unexpected object creation/removal')
     if set(delta['changed']) - allowed:
         raise VerificationError('An unrelated object changed')
-    check_intent(before, after, op, delta, from_raw=from_raw)
+    check_intent(before, after, op, delta, from_raw=from_raw, arrangement_evidence=arrangement_evidence)
     return delta
 
 
@@ -432,6 +433,16 @@ def finite_number(value, positive=False):
 
 def valid_point(point):
     return isinstance(point, dict) and set(point) == {'x', 'y'} and all(finite_number(point[k]) for k in point)
+
+
+def validate_arrangement_bounds(op, bounds):
+    geometry = {'x', 'y', 'width', 'height'}
+    for ident in op['ids']:
+        box = bounds.get(ident) if isinstance(bounds, dict) else None
+        if (not isinstance(box, dict) or set(box) != geometry
+                or not all(finite_number(box[k], k in ('width', 'height')) for k in geometry)):
+            raise VerificationError('Native arrangement bounds are missing or invalid: ' + ident)
+    return {ident:bounds[ident] for ident in op['ids']}
 
 
 def curve_handle(node, op, *, from_raw=False):
@@ -582,7 +593,7 @@ def validate_local_operation(nodes, op):
                 raise VerificationError('Deletion would remove a member from a retained group')
 
 
-def check_intent(before, after, op, delta=None, *, from_raw=False):
+def check_intent(before, after, op, delta=None, *, from_raw=False, arrangement_evidence=None):
     """Verify requested outcomes, rather than treating absence of damage as success."""
     a, b = ({n['id']: n for n in nodes} for nodes in (before, after))
     kind = op['kind']
@@ -762,21 +773,50 @@ def check_intent(before, after, op, delta=None, *, from_raw=False):
                     require(equivalent({field: line.get(field)}, {field: template[field]}))
     if kind == 'ungroup':
         require(ident not in b and all(i in b and not b[i].get('parent_id') for i in a[ident].get('children', [])))
-    if kind == 'align_top':
-        top = min(a[i]['y'] for i in op['ids'])
-        require(all(equivalent(b[i]['y'], top) for i in op['ids']))
-        require(all(equivalent({k:v for k,v in a[i].items() if k != 'y'},
-                               {k:v for k,v in b[i].items() if k != 'y'}) for i in op['ids']))
-    if kind == 'distribute_horizontal':
-        ordered = sorted((a[i] for i in op['ids']), key=lambda n: n['x'])
-        gap = (ordered[-1]['x'] + ordered[-1]['width'] - ordered[0]['x']
-               - sum(n['width'] for n in ordered)) / (len(ordered)-1)
-        position = ordered[0]['x']
-        for old in ordered:
-            require(equivalent(b[old['id']]['x'], position))
-            require(equivalent({k:v for k,v in old.items() if k != 'x'},
-                               {k:v for k,v in b[old['id']].items() if k != 'x'}))
-            position += old['width'] + gap
+    if kind in ('align_top', 'distribute_horizontal'):
+        require(all(i in a and i in b for i in op['ids']))
+        geometry = ('x', 'y', 'width', 'height')
+        if arrangement_evidence is None:
+            require(not any(a[i].get('angle', 0) or b[i].get('angle', 0) for i in op['ids']))
+            left = validate_arrangement_bounds(op, {i:{k:a[i][k] for k in geometry} for i in op['ids']})
+            right = validate_arrangement_bounds(op, {i:{k:b[i][k] for k in geometry} for i in op['ids']})
+            order = op['ids']
+        else:
+            require(isinstance(arrangement_evidence, dict))
+            left = validate_arrangement_bounds(op, arrangement_evidence.get('before'))
+            right = validate_arrangement_bounds(op, arrangement_evidence.get('after'))
+            order = arrangement_evidence.get('order')
+            require(isinstance(order, list) and all(isinstance(i, str) for i in order)
+                    and len(order) == len(op['ids']) and set(order) == set(op['ids']))
+        axis = 'y' if kind == 'align_top' else 'x'
+        if kind == 'align_top':
+            positions = {i:min(left[j]['y'] for j in op['ids']) for i in op['ids']}
+        else:
+            ordered = sorted(order, key=lambda i:left[i]['x'])
+            position = min(left[i]['x'] for i in ordered)
+            span = max(left[i]['x']+left[i]['width'] for i in ordered) - position
+            gap = (span-sum(left[i]['width'] for i in ordered))/(len(ordered)-1)
+            positions = {}
+            for i in ordered:
+                positions[i] = position
+                position += left[i]['width']+gap
+        for i in op['ids']:
+            displacement = positions[i]-left[i][axis]
+            require(equivalent(right[i][axis], positions[i])
+                    and equivalent(b[i][axis], a[i][axis]+displacement)
+                    and equivalent({k:v for k,v in left[i].items() if k != axis},
+                                   {k:v for k,v in right[i].items() if k != axis})
+                    and equivalent({k:v for k,v in a[i].items() if k != axis},
+                                   {k:v for k,v in b[i].items() if k != axis}))
+            if arrangement_evidence is not None and ('world_before' in arrangement_evidence or 'world_after' in arrangement_evidence):
+                require(all(isinstance(arrangement_evidence.get(side), dict) for side in ('world_before', 'world_after')))
+                worlds = [arrangement_evidence.get(side, {}).get(i) for side in ('world_before', 'world_after')]
+                require(all(isinstance(w, dict) and set(w) == set(geometry)|{'angle'}
+                            and all(finite_number(v) for v in w.values()) for w in worlds))
+                old_world, new_world = worlds
+                require(equivalent(new_world[axis], old_world[axis]+displacement)
+                        and all(math.isclose(old_world[k], new_world[k], rel_tol=0, abs_tol=1e-6)
+                                for k in old_world if k != axis))
     if kind == 'delete':
         require(set(a) - set(b) == set(op['delete_ids']))
 
@@ -1000,13 +1040,17 @@ def group_layer_normalization(before, after, op):
             for i in expected if i in a and a[i]['z_index'] != b[i]['z_index']}
 
 
-def check_raw_preservation(before, after, op, *, group_evidence=None):
+def check_raw_preservation(before, after, op, *, group_evidence=None, arrangement_evidence=None):
     """Compare all raw properties, exempting only operation-owned fields."""
     import copy
     a, b = ({n['id']: n for n in raw['nodes']} for raw in (before, after))
     if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
         raise VerificationError('Raw readback requires unique object IDs')
     kind = op['kind']
+    if kind in ('align_top', 'distribute_horizontal'):
+        if arrangement_evidence is None and any(a[i].get('angle', 0) or b[i].get('angle', 0) for i in op['ids']):
+            raise VerificationError('Rotated arrangement requires native bounds evidence')
+        check_intent(projection(before), projection(after), op, from_raw=True, arrangement_evidence=arrangement_evidence)
     added, removed = b.keys() - a.keys(), a.keys() - b.keys()
     if kind in ('group', 'connect'):
         if len(added) != 1 or removed:
@@ -1783,7 +1827,7 @@ class Runner:
                     box = dict(geometry[ident]['screen_rect'])
                     if native_fallback:
                         box.update(x=box['x']-rect['x'],y=box['y']-rect['y'])
-                    if not png_has_board_ink(frame, box, viewport.get('device_pixel_ratio', 1)):
+                    if not png_has_board_ink(frame, box, viewport.get('device_pixel_ratio', 1), min_ink=1):
                         visible = False
                         break
             except (ValueError, struct.error, zlib.error):
@@ -2365,6 +2409,13 @@ class Runner:
                 actual = dict(op)
                 reject_nested_groups(state['nodes'], op)
                 validate_local_operation(state['nodes'], op)
+                if op['kind'] in ('align_top', 'distribute_horizontal'):
+                    actual['arrangement_bounds'] = validate_arrangement_bounds(op, state.get('arrangement_bounds'))
+                    world = state.get('world_geometry')
+                    if not isinstance(world, dict) or any(not isinstance(world.get(i), dict)
+                            or set(world[i]) != {'x','y','width','height','angle'}
+                            or not all(finite_number(v) for v in world[i].values()) for i in op['ids']):
+                        raise VerificationError('Native arrangement world geometry is missing or invalid')
                 if op['kind'] == 'undo':
                     if previous_delete is None:
                         raise VerificationError('Undo is only allowed immediately after this session\'s delete')
@@ -2397,6 +2448,17 @@ class Runner:
                             before_render_alpha=state['render_alpha'], after_render_alpha=result['render_alpha'],
                             group_cache_normalizations=self.group_cache_evidence(saved_raw, result))
                 phase = 'protection'
+                arrangement_evidence = None
+                if op['kind'] in ('align_top', 'distribute_horizontal'):
+                    if not equivalent(actual['arrangement_bounds'], result.get('arrangement_before_bounds')):
+                        raise VerificationError('Native arrangement pre-submit bounds differ from the inspected target')
+                    arrangement_evidence = {
+                        'before':actual['arrangement_bounds'],
+                        'after':validate_arrangement_bounds(op, result.get('arrangement_bounds')),
+                        'order':result.get('arrangement_order'),
+                        'world_before':{i:state['world_geometry'][i] for i in op['ids']},
+                        'world_after':{i:(result.get('world_geometry') or {}).get(i) for i in op['ids']}}
+                    step['arrangement_evidence'] = arrangement_evidence
                 self.verify_render_alpha(state, result, op)
                 world_ids = self.verify_group_world(state, result, op)
                 self.verify_group_world(state, self.last_saved_state, op)
@@ -2412,7 +2474,9 @@ class Runner:
                     if not equivalent(result['nodes'], previous_delete['before']):
                         raise VerificationError('Undo did not restore the pre-delete projection')
                 else:
-                    check_scope(state['nodes'], result['nodes'], op, group_evidence={'before':state.get('object_bounds'), 'after':result.get('object_bounds')})
+                    check_scope(state['nodes'], result['nodes'], op,
+                        group_evidence={'before':state.get('object_bounds'), 'after':result.get('object_bounds')},
+                        arrangement_evidence=arrangement_evidence)
                 step['raw_exceptions'] = check_raw_preservation(previous_delete['raw'] if op['kind'] == 'undo' else raw,
                     saved_raw, {'kind':'undo'} if op['kind'] == 'undo' else op,
                     group_evidence={'before':state.get('object_bounds'), 'after':result.get('object_bounds'),
@@ -2420,7 +2484,8 @@ class Runner:
                                     'native_endpoints_before':state.get('line_endpoints',{}),
                                     'native_endpoints_after':result.get('line_endpoints',{}),
                                     'bindings_before':state.get('binding_geometry',[]),
-                                    'bindings_after':result.get('binding_geometry',[])})
+                                    'bindings_after':result.get('binding_geometry',[])},
+                    arrangement_evidence=arrangement_evidence)
                 # The immediate undo must use the same editor and undo receipt.
                 immediate_undo = (op['kind'] == 'delete' and index + 1 < len(operations)
                                   and operations[index + 1].get('kind') == 'undo')
@@ -2429,6 +2494,14 @@ class Runner:
                 else:
                     phase = 'reopen'
                     reopened = self.reopen_verified(saved_raw, result['nodes'], result['render_alpha'], result['line_endpoints'], bindings)
+                    if arrangement_evidence is not None:
+                        reopened_bounds = validate_arrangement_bounds(op, reopened.get('arrangement_bounds'))
+                        check_scope(state['nodes'], reopened['nodes'], op, arrangement_evidence={
+                            **arrangement_evidence, 'after':reopened_bounds,
+                            'world_after':{i:(reopened.get('world_geometry') or {}).get(i) for i in op['ids']}})
+                        if not equivalent(arrangement_evidence['after'], reopened_bounds):
+                            raise VerificationError('Fresh-page native arrangement bounds differ from the saved edit')
+                        step['arrangement_reopened_bounds'] = reopened_bounds
                     for ident in world_ids:
                         expected_world, actual_world = result['world_geometry'][ident], reopened.get('world_geometry', {}).get(ident)
                         if not isinstance(actual_world, dict) or set(actual_world) != set(expected_world) or any(
@@ -2666,9 +2739,14 @@ class Runner:
             added_ids = set(mapping.values())
             if {n['id'] for n in fresh['nodes']} != old_ids | added_ids:
                 raise VerificationError('Fresh-page append object IDs do not match the saved mapping')
-            for ident in added_ids:
+            for node in nodes:
+                ident = mapping[node['id']]
                 values = fresh.get('render_alpha', {}).get(ident)
-                if not isinstance(values, dict) or not values or any(value != 1 for value in values.values()):
+                required = {'border', 'fill'} if node['type'] == 'composite_shape' else {'border'} if node['type'] == 'connector' else {'text'}
+                if node.get('text', {}).get('text') or any(caption.get('text') for caption in node.get('connector', {}).get('captions', {}).get('data', [])):
+                    required.add('text')
+                if (not isinstance(values, dict) or not required <= values.keys()
+                        or any(value != 1 for value in values.values())):
                     raise VerificationError('Appended native object has missing or nonopaque rendering alpha: ' + ident)
             bindings = self.affected_bindings(original['nodes'], fresh['nodes'], {'kind':'append'})
             self.verify_native_bindings(fresh, bindings)
@@ -2720,6 +2798,7 @@ def main():
     p.add_argument('--append-raw', help='Standalone native append; request operations must be empty')
     a = p.parse_args()
     runner = None
+    initialization_result = None
     code = 0
     try:
         request = json.loads(Path(a.request).read_text(encoding='utf-8-sig'))
@@ -2740,17 +2819,26 @@ def main():
             details.update(steps=[], save_status='not_written', verification_status='failed', failure_phase='preflight')
             destination = Path(a.output_dir)
             # Do not replace an existing run, even when initialization failed.
-            if not destination.exists():
-                destination.mkdir(parents=True, exist_ok=False)
-                (destination / 'result.json').write_text(json.dumps(details, ensure_ascii=False, indent=2), encoding='utf-8')
+            try:
+                if not destination.exists():
+                    destination.mkdir(parents=True, exist_ok=False)
+                    (destination / 'result.json').write_text(json.dumps(details, ensure_ascii=False, indent=2), encoding='utf-8')
+                    initialization_result = str(destination / 'result.json')
+            except Exception as report_error:
+                details.update(report_write_status='failed', report_write_error=type(report_error).__name__)
         code = 1
     finally:
         if runner is not None:
             runner.close()
             if runner.report.get('report_write_status') == 'failed':
                 code = 1
-    summary = {'status': runner.report['status'] if runner is not None else 'unverified', 'result': str(Path(a.output_dir) / 'result.json')}
-    if runner is not None and runner.report.get('report_write_status') == 'failed':
+    summary = {'status': runner.report['status'] if runner is not None else 'unverified',
+               'result': str(Path(a.output_dir) / 'result.json') if runner is not None else initialization_result}
+    if runner is None:
+        summary['report'] = details
+        if details.get('report_write_status') == 'failed':
+            summary['report_write_status'] = 'failed'
+    elif runner.report.get('report_write_status') == 'failed':
         summary['report_write_status'] = 'failed'
         # Preserve the completed steps in the caller's captured output even if
         # the local report destination has become unwritable.

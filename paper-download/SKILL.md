@@ -15,8 +15,8 @@ description: 获取论文 PDF 并统一存入 Zotero，先查已有条目和附�
 
 - 用户还在问“有哪些论文”“哪些方向重要”“帮我筛代表作”时，先走 `paper-search`。
 - 用户给出题名、DOI、URL、作者主页、出版社页面、论文列表或检索结果并要求下载时，进入本流程；只问访问状态时保持只读。
-- 用户要“下载并总结”时，先获取 PDF，再按请求整理；Zotero 笔记使用现有 Zotero 插件，技术疑问核对使用 `paper-review`。
-- 用户已有本地 PDF 并要总结时，按请求直接整理；需要核对技术内容时转 `paper-review`，不默认生成本地文档。
+- 用户要“下载并总结”时，先获取 PDF，再按请求整理；阅读、核对与写作的分工见[边界](#边界)。
+- 用户已有本地 PDF 并要总结时，按请求直接整理，不默认生成本地文档。
 
 ## 输出
 
@@ -150,18 +150,16 @@ Zotero 管理的文件沿用库内附件命名设置，不直接重命名 storag
 
 ## 边界
 
-- 多篇文献综述、代表作筛选：先用 `paper-search`。
-- 投稿文章、引言综述、申报书材料：转 `writing-router` 或 `project-writing`。
+- 多篇文献综述、代表作筛选沿用上方[入口判断](#什么时候用)。
+- 投稿文章、引言综述、申报书材料：`writing-router` 或 `project-writing`；SCI 论文精修和术语核查：`ieee-manuscript-edit`。
 - 论文技术内容、图表公式和笔记准确性核对：转 `paper-review`；Zotero 笔记读写使用现有 Zotero 插件。
 
 ## 会用到的工具
 
-- 上游查找：`paper-search`
 - 网页访问和动态页面：`web-access`
 - 浏览器协作：`browser-use` 或当前可用的浏览器工具
 - PDF 后处理：`pdf`
-- 原文核对：`paper-review`；Zotero 条目、附件和笔记：现有 Zotero 插件及已配置后台桥接
-- SCI 论文精修和术语核查：`ieee-manuscript-edit`
+- Zotero 条目、附件和笔记：现有 Zotero 插件及已配置后台桥接
 
 ## 以后怎么维护
 

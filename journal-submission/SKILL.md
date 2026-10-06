@@ -15,7 +15,7 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 - **选刊与改投建议**：读取 [选刊流程](references/journal-selection.md)，需要时再读 [期刊画像](references/journal-profiles.md)。只交付当前要求的比较、建议或选刊材料；不进入下方投稿操作流程，不初始化 `submission-state.json`、索取作者声明或启动投稿前审查。
 - **投稿合规与出版操作**：准备投稿、检查格式时，默认核对目标期刊的模板、篇幅、文件格式、匿名要求和必需材料；平台操作、返修提交和录用后事项按当前请求处理。只读检查给出问题和建议，明确授权修改则完成对应修改。选刊或材料检查本身不构成实际投稿授权。
-- **相邻任务**：全文技术内容、论证与结论审查或模拟审稿使用 `paper-review`；正文起草、修改和终稿文字审校使用 `ieee-manuscript-edit`。LaTeX、Word 和图件格式修改分别使用 `latex-paper`、`docx`、`paper-figure-review`，由本技能提供适用的投稿要求，共用当前稿件和已有授权。文献检索使用 `paper-search`。同时要求内容与格式检查时完成两项；仅在上下文仍有实质歧义时询问，不因“投稿”一词自动扩大成全文审稿。
+- **相邻任务**：按[职责边界](#职责边界)衔接，由本技能提供适用的投稿要求，共用当前稿件和已有授权。同时要求内容与格式检查时完成两项；仅在上下文仍有实质歧义时询问，不因“投稿”一词自动扩大成全文审稿。
 
 ## 开始前
 
@@ -152,12 +152,13 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 ## 职责边界
 
-- 选刊和拒稿后的改投建议：[选刊流程](references/journal-selection.md)。
-- 用户要求的全文内容审查和模拟审稿：`paper-review`。
-- 正文、摘要、图注、Cover Letter 和 Response Letter 语言精修：`ieee-manuscript-edit`。
+- 选刊和拒稿后的改投建议按上方[任务分流](#任务分流)处理。
+- 用户要求的全文技术内容、论证与结论审查和模拟审稿：`paper-review`。
+- 正文起草、修改和终稿文字审校（含摘要、图注、Cover Letter 和 Response Letter）：`ieee-manuscript-edit`。
 - LaTeX 模板、编译和按需 source 打包：`latex-paper`。
 - Word 排版和格式修改：`docx`。
 - 图件规范、重画和 graphical abstract：`paper-figure-review`。
+- 文献检索：`paper-search`。
 
 未经用户授权，不修改主稿、作者列表、图表或参考文献。
 

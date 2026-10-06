@@ -82,9 +82,7 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 
 ## 边界
 
-- 内容精修（术语、图注文字、结论强度、中改英）：[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)
-- 图件绘制与 IEEE 图规范：[../paper-figure-review/SKILL.md](../paper-figure-review/SKILL.md)
-- Word 版式交付：[../docx/SKILL.md](../docx/SKILL.md)
-- 论文 PDF 获取与索引：[../paper-download/SKILL.md](../paper-download/SKILL.md)
-- 文献检索与元数据核实：[../paper-search/SKILL.md](../paper-search/SKILL.md)
-- 投稿页面、文件类型和生命周期记录：[../journal-submission/SKILL.md](../journal-submission/SKILL.md)
+- 内容精修（术语、图注文字、结论强度、中改英）用 [ieee-manuscript-edit](../ieee-manuscript-edit/SKILL.md)，沿用上方“定位”与“内容同步与排版保留”的范围要求。
+- 图件绘制与 IEEE 图规范用 [paper-figure-review](../paper-figure-review/SKILL.md)，Word 版式交付用 [docx](../docx/SKILL.md)。
+- 文献检索与元数据核实用 [paper-search](../paper-search/SKILL.md)，PDF 获取与索引用 [paper-download](../paper-download/SKILL.md)，按上方“参考文献”衔接。
+- 投稿页面、文件类型和生命周期记录用 [journal-submission](../journal-submission/SKILL.md)，source 包仍按“条件性投稿打包”判断。

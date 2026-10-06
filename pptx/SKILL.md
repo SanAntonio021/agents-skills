@@ -3,7 +3,10 @@ name: pptx
 description: "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates (.potx), layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx or .potx filename, regardless of what they plan to do with the content afterward. Also use for PowerPoint desktop text-paste or clipboard-formatting questions even when no presentation file is being modified. If a .pptx or .potx file needs to be opened, created, or touched, use this skill. For OfficeCLI-backed inspection or constrained editing, route through the shared local OfficeCLI bridge described below."
 ---
 
-# PPTX creation, editing, and analysis
+# PPT 制作流程、文件处理与交付验收
+
+本技能负责 PPT 的共同协作流程、文件处理与最终验收。具体页面制作由选定的专业技能或已有工程负责；
+读取、提取、检查、合并、拆分和少量确定性编辑使用本入口的文件操作能力。
 
 ## 文件存放与交付
 
@@ -14,31 +17,14 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 ## Choose one authoring route
 
-For both new decks and changes to an existing deck, first read the collaboration section in
-[references/presentation-workflow.md](references/presentation-workflow.md). The main conversation
-discusses content; one user-visible production conversation per deck executes authorized page work.
-Content approval authorizes the next page of a new deck, but does not by itself authorize editing an
-existing deck. Honor explicit edit scope and the host's requirements for creating a new conversation.
-Read-only inspection does not require a production conversation.
-
-Keep this skill as the local PowerPoint entry, routing and acceptance owner. For creation,
-redesign, template reuse, reconstruction or multi-agent slide work, first read
-[references/presentation-workflow.md](references/presentation-workflow.md). Its ordered routing
-rules honor explicit tools and existing authoring projects, retain the simple `lab-report-slides`
-route, use PPT Master for its specialist workflows, and otherwise prefer available official
-Presentations for new authoring. This is an operating default, not a design-quality ranking.
-
-Keep reading, extraction, inspection, validation, combining/splitting and small deterministic edits
-here. Announce the chosen authoring route once, then let it own generation; do not run competing
-generators or silently switch after a failure. Asset preparation and local merge/QA are supporting
-stages, not a second authoring route.
-
-For a multi-page technical deck, define the independent question each page answers before authoring
-it. Reuse shared architecture only when it establishes context; subsequent pages should carry their
-own distinct function (for example, link capability versus installation and operations) rather than
-redrawing the same topology. Confirm page text, metrics, footnotes, and comparison conclusions
-before assembly, and treat confirmation as content approval only unless the user explicitly authorizes
-editing an existing deck.
+Before creating or modifying a deck, read the
+[collaboration workflow](references/presentation-workflow.md#内容讨论与制作执行).
+For creation, redesign, template reuse, reconstruction or multi-agent slide work, also read the
+[authoring selection rules](references/presentation-workflow.md#选择制作路线).
+These sections own page discussion, production handoff, authorization and tool selection;
+follow the selected skill's own generation steps, then return here for file acceptance.
+For file-only work, use the local operations below; tool selection follows the same reference
+when an explicit tool choice or existing authoring project needs to be considered.
 
 ### Effect previews, material assets, and editable pages
 
@@ -62,13 +48,8 @@ identified component and preserve the validated background, topology, and labels
 insertion area for the user or a later pass when the replacement asset is not yet confirmed; do
 not redraw the whole page or silently substitute a different platform, payload, or relay node.
 
-Only when choosing `ppt-master`, read
-[references/ppt-master-integration.md](references/ppt-master-integration.md) and run its external
-pin verification against the actual installed root before reading or executing the upstream skill.
-Require `status=PASS`; `--pin-only` does not prove an installation. Preserve the version, integrity
-guard and failure protections in that reference. Follow the selected skill's own workflow without
-copying it here. After any authoring route returns a candidate, apply this skill's editability,
-rendering and formal-release checks; generation success alone is not acceptance.
+After any authoring route returns a candidate, apply this skill's editability, rendering and
+formal-release checks; generation success alone is not acceptance.
 
 The supplied template and approved sample govern this deck's design. Generic design suggestions
 later in this file apply only where those sources leave a choice open; they do not override existing
@@ -85,8 +66,8 @@ Do not transfer Word's default-paste settings to PowerPoint or claim that `Ctrl+
 to always keep text only. Paste Options are context-dependent; when a plain-text choice is absent,
 use the native Paste Special or Quick Access Toolbar routes in the reference.
 
-A `.pptx` is a ZIP archive of XML files. After that routing decision, choose your local approach by
-task:
+A `.pptx` is a ZIP archive of XML files. For local file operations, choose the approach below
+according to the task.
 
 ## OfficeCLI route
 

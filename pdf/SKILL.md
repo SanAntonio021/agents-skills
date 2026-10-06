@@ -1,6 +1,6 @@
 ---
 name: pdf
-description: 读取、创建、检查和加工 PDF，包括扫描件、混合页面、损坏文字层、OCR、全文提取、合并拆页、旋转、水印、加密、图片提取、精确字段修改及按参考版式拼版。根据问题选择文字搜索、原页图像或 OCR；普通查询不默认生成新 PDF。Office 源文件由 docx、pptx、xlsx 处理，本技能检查转换后的 PDF。PDF 表单填写不在本技能范围内。
+description: 读取、创建、检查和加工 PDF，包括扫描件、混合页面、损坏文字层、OCR、全文提取、合并拆页、旋转、水印、加密、图片提取、交互式表单填写与扁平化、精确字段修改及按参考版式拼版。根据问题选择文字搜索、原页图像或 OCR；普通查询不默认生成新 PDF。Office 源文件由 docx、pptx、xlsx 处理，本技能检查转换后的 PDF。
 ---
 
 # 本地 PDF 处理
@@ -22,6 +22,13 @@ description: 读取、创建、检查和加工 PDF，包括扫描件、混合页
 - 字体、扫描背景或版式遇到困难时，在已授权范围内查找可行方法并在副本验证。确实达不到要求时说明具体差异，只暂停受影响部分，有未解决问题的版本标为草稿。
 - 保留原稿和用户手工修改；续做读取当前文件。过程材料按共享规则放入同一任务目录，检查后只交付用户需要的 PDF、文本或其他成果，日志和辅助文件保留在过程目录。
 
+## 交互式表单
+
+- 填写前读取 [表单填写与检查](references/forms.md)，结合字段树和页面 Widget 判断是否有真正的交互字段。普通表格或扫描件沿用精确编辑与 OCR 路径，不伪造已填写的交互表单。
+- 默认保留可编辑字段；用户要求最终静态版时才扁平化。填写和处理签名均保留原文件，核对已有授权和签名状态。
+- 只修改用户指定的字段，核对完整字段名、按钮导出值及下拉选项；字段缺失、重名歧义或不支持的动态表单先解决对应问题。
+- 同时检查字段值、按钮选中状态和页面外观。中文必须核对字体与实际显示；扁平化必须保留已有值并确认字段已移除、文字和按钮仍正确显示。
+
 ## Office 分工
 
 Word、PPT、Excel 源文件分别交给 [docx](../docx/SKILL.md)、[pptx](../pptx/SKILL.md)、[xlsx](../xlsx/SKILL.md) 读取、修改和转换；本技能检查生成 PDF 的页面、文字、裁切与排版。沿用已确定的目标应用和授权，不重复询问。
@@ -33,10 +40,11 @@ Word、PPT、Excel 源文件分别交给 [docx](../docx/SKILL.md)、[pptx](../pp
 - [OCR 加工、路由及参数](references/ocr-workflow.md)
 - [现有 OCR 运行环境记录](references/ocr-runtime.md)：历史安装版本和哈希，使用前核对实际可用性。
 - [精确编辑与拼版检查](references/precise-editing.md)
+- [交互式表单填写、中文与扁平化](references/forms.md)
 - [Windows 工具与旧 Office 接口](references/windows-tools.md)
 
 ## 来源与许可
 
-沿用原有 `anthropics/skills` PDF 文本来源说明（历史记录约 2025-10），保留 Windows 工具适配、OCR 路由与验证、精确编辑和矢量拼版等本地能力。本次删除基础代码教程，没有新增上游吸收。
+沿用原有 `anthropics/skills` PDF 文本来源说明（历史记录约 2025-10），保留 Windows 工具适配、OCR 路由与验证、精确编辑和矢量拼版等本地能力。表单流程吸收本机 OpenAI PDF 插件 `26.921.10847` 的 MIT 许可技术说明，并按本机试跑修正中文字体、单选按钮和扁平化方法；具体来源与验证边界见 [表单参考](references/forms.md#来源与验证边界)。
 
-原先排除的上游 Proprietary 文件 `LICENSE.txt`、`forms.md`、`reference.md`、`scripts/` 继续排除，PDF 表单填写不在本技能范围内。现有 [来源登记](references/upstream-sources.md) 保持原状态，历史来源说明不等同于新增已确认登记。
+原先排除的 Anthropic 上游 Proprietary 文件 `LICENSE.txt`、`forms.md`、`reference.md`、`scripts/` 继续排除；本技能的同名表单参考为本次编写，未引入这些文件。现有 [Git 上游来源登记](references/upstream-sources.md) 保持原状态；本次依据已安装插件快照记录来源，不虚构 Git 地址或接受提交。

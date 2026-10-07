@@ -195,6 +195,30 @@
       "prompt": "去重候选原本无批注，提交前发现新增批注。",
       "expected_output": "停止使用旧清理集合并重新判断，暂留受保护附件，不执行过期的删除决定。",
       "files": []
+    },
+    {
+      "id": "multi-source-fulltext-pagination",
+      "prompt": "下载一个已有准确 DOI 和父条目的期刊全文。出版社正常访问仍受阻，一个公开检索引擎列出14个版本，其中第二页有机构作者原文存档；其他引擎重复同一 DOI 或仅有元数据。请完成可取得版本的保存。",
+      "expected_output": "按共用清单主动补查相关可用来源，检查能提供新来源的后续分页；同论文不重复建条目，元数据与版本数不计为文件。取得存档原始PDF并核验身份、日期和实际版本；作者稿入库不冒充正式版，回读后按目标状态报告。",
+      "files": []
+    },
+    {
+      "id": "explicit-nonofficial-target",
+      "prompt": "这次明确只要已正式发表论文的作者公开稿，不需要下载期刊正式排版。Zotero里已有可读的对应作者稿。",
+      "expected_output": "沿明确目标核验并复用现有作者稿，报告目标已完成及实际版本；official_status=not_applicable，不强制补正式版或重复下载，不清理不同版本附件。",
+      "files": []
+    },
+    {
+      "id": "preprint-only-target",
+      "prompt": "这篇研究确认只有预印本，未发现正式发表记录。请保存其当前预印本PDF。",
+      "expected_output": "按已确认预印本目标获取、核验及保存，publication_status=preprint_only，正式版状态not_applicable，不虚构已发表或待补不存在的正式版。",
+      "files": []
+    },
+    {
+      "id": "import-lock-and-rolled-back-cache",
+      "prompt": "本次暂存PDF校验结束后，原生移动导入因本地文件被占用失败；刷新查询显示没有持久化附件，但旧父条目缓存仍有一个失败产生的附件ID。有效源文件还在。请完成本次保存。",
+      "expected_output": "通过实际持久化状态和文件核实已回滚，结束本次读取并刷新结果，弃用不存在的标识后原生续做导入；回读归属文件哈希和临时文件状态，不操作用户应用、不直接改数据库或storage、不重复有效附件。",
+      "files": []
     }
   ]
 }

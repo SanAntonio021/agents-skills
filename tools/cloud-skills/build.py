@@ -127,7 +127,7 @@ def build(source, config, revision, adapter_bytes, source_root=None):
         'transformations': transforms + ['append-cloud-boundaries'],
         'generated_sha256': {p: sha(data) for p, data in outputs.items()},
         'materialized_sha256': None,
-        'materialized_note': 'Null until explicit post-host semantic verification; excludes this manifest to avoid self-hashing.',
+        'materialized_note': 'Null until explicit semantic verification; managed outputs only, excluding this manifest and host-owned icon bytes. Every operation separately requires a reviewed full-target snapshot.',
     }
     outputs[MANIFEST] = json_bytes(manifest)
     return outputs
@@ -165,7 +165,9 @@ def materialized_matches(target, outputs):
     recorded = actual.get('materialized_sha256')
     if recorded is None:
         return False
-    if recorded != files_snapshot(target, exclude_manifest=True):
+    managed_names = set(json.loads(outputs[MANIFEST])['generated_sha256'])
+    current_managed = {p: h for p, h in files_snapshot(target, exclude_manifest=True).items() if p in managed_names}
+    if recorded != current_managed:
         raise ValueError('materialized target drift: review every changed file')
     verify_materialized(target, outputs, snapshot(target))
     return True
@@ -241,7 +243,7 @@ def verify_materialized(target, outputs, expected):
     if set(actual_files) - expected_names - icons:
         raise ValueError('unexpected materialized files: ' + str(sorted(set(actual_files) - expected_names - icons)))
     manifest = json.loads(outputs[MANIFEST])
-    manifest['materialized_sha256'] = actual_files
+    manifest['materialized_sha256'] = {p: h for p, h in actual_files.items() if p in expected_names}
     return json_bytes(manifest)
 
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "adapter_version": "1.0.0",
+  "adapter_version": "2.0.0",
   "source_repository": "https://github.com/SanAntonio021/agents-skills",
   "source_path": "ask-first/SKILL.md",
   "expected_source_sha256": "4a61f3f5d3e4a6dd5584d2db41808bee24e09dea3ef908975599e9ec5f746f1b",

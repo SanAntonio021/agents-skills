@@ -26,6 +26,19 @@ follow the selected skill's own generation steps, then return here for file acce
 For file-only work, use the local operations below; tool selection follows the same reference
 when an explicit tool choice or existing authoring project needs to be considered.
 
+Choose the authoring route once per task and retain it in the existing project record. A returned
+candidate enters **Acceptance layers** and the existing release checks directly; it does not restart
+route selection or the content discussion. Repair requests go back to that candidate's source
+project. Reuse valid evidence only for the exact unchanged file and the same checked requirement.
+
+Official Presentations can be intentionally absent from automatic skill discovery. When that route
+is selected, use [official authoring integration](references/official-presentations-integration.md)
+to locate and read the installed original instructions and tools without enabling its discovery
+entry. When PPT Master is selected, use its existing integration reference and pass already
+confirmed decisions and their authorization boundaries. Load only the selected author's procedure.
+The **Design Ideas** below guide local authoring; external authoring routes use their own design
+procedure plus the user's requirements, then satisfy this skill's common acceptance requirements.
+
 ### Effect previews, material assets, and editable pages
 
 Keep these three deliverables distinct in names, records, and review:

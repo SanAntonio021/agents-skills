@@ -31,7 +31,7 @@ class BatchTests(unittest.TestCase):
     def test_exact_source_preserved(self):
         for c in self.configs():
             out = generate(c)
-            self.assertEqual(out['references/cloud-source/SKILL.md'],
+            self.assertEqual(out['references/cloud-source/original-skill.md'],
                              (adapter.ROOT / c['source_path']).read_bytes())
             if c['schema_version'] != 2:
                 continue

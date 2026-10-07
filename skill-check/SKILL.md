@@ -60,10 +60,10 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 用户问“现在到底加载了什么”时，看对应工具的运行时层：Claude 看第 4 层，Codex 看第 5＋6 层再叠加第 2 层（直读）；不要把源文件目录当成当前已加载列表。
 
-停用某个技能用 `~\.codex\config.toml` 的 `[[skills.config]]`（`name`/`path` + `enabled = false`）。注意：config.toml 是 cc-switch 按 DB 快照渲染的产物，直接改会在 provider 切换时被冲回，持久化要进 cc-switch 的配置快照。
+停用插件或其技能前，先按 [插件启停的控制归属](references/skill-hygiene.md#插件启停的控制归属)确认实际来源、控制接口及可观测的基线。本地技能可用 `[[skills.config]]` 精确停用，本地市场插件可用 `plugins.<plugin>.enabled`；这些配置不能直接外推为 ChatGPT 远端插件已停用。CC Switch 管理的配置通过受支持接口保存，不直接编辑生成的 `config.toml`。
 
 插件与本地技能重叠时，先把插件包、插件内各技能和连接工具分开盘点。只要插件还提供本地技能没有的能力，
-就保留插件，仅考虑按**当前版本的精确绝对 `SKILL.md` 路径**停用重复技能；不能因为主题相同就关闭整个
+就保留插件；对已验证由本地目录加载的重复技能，可按**当前版本的精确绝对 `SKILL.md` 路径**停用；不能因为主题相同就关闭整个
 插件。写入前必须用一次性配置覆盖证明技能目录只少目标身份，连接工具和保留技能仍在；无法证明就停止，
 不能退化为整插件禁用。完整判据、真实能力 canary 和上下文差值口径见
 [references/skill-hygiene.md](references/skill-hygiene.md) 的“插件技能重叠的选择性处理”。

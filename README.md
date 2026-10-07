@@ -27,3 +27,4 @@
 - 公开文档里使用 `%USERPROFILE%`、`<agents-root>`、`<projects-root>` 这类占位符，不写死本机私有路径。
 - 技能之间的引用使用技能名或仓库内相对链接，不再引用旧的私有目录结构。
 - 部分 Word 格式化技能只保留样式配置文件，原始示例 `.docx` 文件不会放进公开仓库。
+- 技能发布由 [agent-rules](agent-rules/SKILL.md) 统一执行；运行时生效、管理界面显示与云端分发分别核验，具体流程集中维护在[发布章节](agent-rules/references/skill-upstream-maintenance.md#技能定向发布)。

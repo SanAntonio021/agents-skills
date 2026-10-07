@@ -5,6 +5,7 @@ import posixpath
 import re
 import tempfile
 import unittest
+from unittest.mock import patch
 import yaml
 
 HERE = Path(__file__).resolve().parent
@@ -141,7 +142,7 @@ class BatchTests(unittest.TestCase):
             self.assertNotEqual(json.loads(manifest)['generated_sha256']['agents/openai.yaml'],json.loads(manifest)['materialized_sha256']['agents/openai.yaml'])
             (target/adapter.MANIFEST).write_bytes(manifest)
             self.assertEqual(adapter.plan(target,out,adapter.snapshot(target))[1],[])
-            with self.assertRaisesRegex(ValueError,'explicit review'):
+            with self.assertRaisesRegex(ValueError,'target drift'):
                 adapter.plan(target,out,state)
 
     def test_materialized_drift_rejected(self):
@@ -185,10 +186,25 @@ class BatchTests(unittest.TestCase):
             (target/adapter.MANIFEST).write_bytes(adapter.verify_materialized(target,out,adapter.snapshot(target)))
             before=adapter.snapshot(target)
             (target/'assets/icon.svg').write_text('<svg><!-- regenerated host icon --></svg>')
-            with self.assertRaisesRegex(ValueError,'explicit review'):
+            with self.assertRaisesRegex(ValueError,'target drift'):
                 adapter.plan(target,out,before)
             self.assertEqual(adapter.plan(target,out,adapter.snapshot(target))[1],[])
             self.assertNotIn('assets/icon.svg',json.loads((target/adapter.MANIFEST).read_bytes())['materialized_sha256'])
+
+    def test_icon_race_cannot_accept_unreviewed_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target=Path(temp);out=self.fixture(target)
+            (target/adapter.MANIFEST).write_bytes(adapter.verify_materialized(target,out,adapter.snapshot(target)))
+            before=adapter.snapshot(target);real_snapshot=adapter.snapshot;calls=[]
+            def racing_snapshot(path):
+                result=real_snapshot(path)
+                if not calls:
+                    (path/'assets/icon.svg').write_text('<svg><!-- race --></svg>')
+                calls.append(True)
+                return result
+            with patch.object(adapter,'snapshot',side_effect=racing_snapshot):
+                with self.assertRaisesRegex(ValueError,'target drift'):
+                    adapter.plan(target,out,before)
 
     def test_identity_comes_only_from_frontmatter(self):
         self.assertEqual(adapter.skill_name(b'---\nname: other\ndescription: Test\n---\nname: handoff\n'),'other')

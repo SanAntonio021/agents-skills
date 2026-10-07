@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-31`
 - 最近来源登记审核：`2026-09-20`
-- 说明：PPT Master 保留上游作者工作流，通过受审计的 CC Switch Fork 分发；本地 pptx 负责有序路由、外部 pin、确定性文件操作和最终验收，官方 Presentations 是独立支持的制作路线。本登记的 accepted_commit/accepted_version 是全局采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。沿用来源页既有发布边界：以后只处理官方正式 tag；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
+- 说明：PPT Master 以已接受上游 6.6.0 为基线，通过受审计的 CC Switch Fork 分发，Fork 包含有限的入口和已确认任务交接适配；本地 pptx 负责一次选路、外部 pin、确定性文件操作和最终验收，官方 Presentations 由当前插件登记定位并按需读取原包。本登记的 accepted_commit/accepted_version 是上游采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。上游升级只处理正式 tag，本地适配使用递增 ccswitch 发行号；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -32,12 +32,13 @@
 ### 已吸收
 
 - 按 presentation-workflow.md 的有序规则选择制作工具：尊重显式指令、已有工程与本地文件操作，保留 lab-report-slides；PPT Master 承接图片到可编辑 PPTX 重建、Brand/Style/Layout/Deck 工作区、旁白、动画和自运行视频等专门流程，其余新稿或重设计优先当前宿主可用的官方 Presentations。
+- 维护 Fork 收窄为明确点名、既有工程和协调流程已选定任务；复用真实确认及委托边界，缺项才补问，候选直接进入验收，返工回原工程。该适配不更改上游采纳版本。
 - 选中 PPT Master 后，在读取或执行上游技能前验证实际安装树的外部 pin 和完整性；开工前确认官方 Presentations 不可用时，可按共同路由使用通过检查的 PPT Master。
 - 生成完成后执行本地静态、PowerPoint 原生打开、原生渲染和实际页面视觉检查；LibreOffice 仅用于明确需要的兼容性检查或具体渲染差异诊断。源码接受、Fork 发布、pin 发布、CC Switch 安装与各客户端运行时激活分别取证。
 
 ### 明确不吸收
 
-- 不复制或改写官方工作流，不直接修改官方安装目录，不让上游镜像进入运行时技能目录。
+- 不修改官方 Presentations 原包或第三方安装副本；PPT Master 的有限流程适配仅从维护 Fork 构建发布，不让上游镜像进入运行时技能目录。
 - 不采用赞助或模型推荐，不绕过官方完整性检查和阻塞确认；开始制作后不静默更换工具，失败的显式调用不能由其他制作工具或镜像静默替代。
 - 不把普通新建、模板沿用、填入确认内容、重设计或美化本身视作必须选择 PPT Master，也不把 LibreOffice 作为所有候选都要执行的固定验收门。
 

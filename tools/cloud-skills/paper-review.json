@@ -243,7 +243,7 @@
       "replacements": []
     }
   ],
-  "append_body": "\n## 云端依赖\n\nZotero 仅在已连接且实际可用时读写；不可用时用用户提供或获授权可读原文继续局部核对，不假称已保存笔记。writing-router、project-writing、ieee-manuscript-edit、technical-writing、paper-figure-review、latex-paper 等按名称查找；缺失时保持本次审查范围，使用宿主相应工具或报告具体缺口。PDF 使用宿主 PDF 技能。工程检查、指标可行性、公开术语选择规则及选刊参考已打包；没有携带作者私有词库或样例。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/SKILL.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "append_body": "\n## 云端依赖\n\nZotero 仅在已连接且实际可用时读写；不可用时用用户提供或获授权可读原文继续局部核对，不假称已保存笔记。writing-router、project-writing、ieee-manuscript-edit、technical-writing、paper-figure-review、latex-paper 等按名称查找；缺失时保持本次审查范围，使用宿主相应工具或报告具体缺口。PDF 使用宿主 PDF 技能。工程检查、指标可行性、公开术语选择规则及选刊参考已打包；没有携带作者私有词库或样例。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
   "allow_implicit_invocation": true,
   "interface": {
     "display_name": "Paper Review",

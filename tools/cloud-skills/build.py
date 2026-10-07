@@ -80,7 +80,7 @@ def build(source, config, revision, adapter_bytes, source_root=None):
         outputs, source_files, transforms = {}, {}, []
         for item in config['files']:
             src, dst = safe_path(item['source']), safe_path(item['target'])
-            if dst in outputs or dst in (MANIFEST, 'agents/openai.yaml', 'references/cloud-source/SKILL.md'):
+            if dst in outputs or dst in (MANIFEST, 'agents/openai.yaml', 'references/cloud-source/original-skill.md'):
                 raise ValueError('duplicate or reserved output: ' + dst)
             path = source_root / src
             if path.is_symlink() or not path.resolve().is_relative_to(source_root):
@@ -109,10 +109,10 @@ def build(source, config, revision, adapter_bytes, source_root=None):
         if config['source_path'] not in source_files or 'SKILL.md' not in outputs:
             raise ValueError('source SKILL must be explicitly mapped')
         outputs['SKILL.md'] += config.get('append_body', '').encode()
-        outputs['references/cloud-source/SKILL.md'] = source
+        outputs['references/cloud-source/original-skill.md'] = source
     else:
         raise ValueError('unsupported config schema')
-    outputs.setdefault('references/cloud-source/SKILL.md', source)
+    outputs.setdefault('references/cloud-source/original-skill.md', source)
     outputs['agents/openai.yaml'] = metadata(config)
     name = skill_name(outputs['SKILL.md'])
     if name != config.get('skill', 'ask-first'):

@@ -145,7 +145,7 @@
       "selected_sha256": "de71a946d795f484cef226c24edc53eecd092a6a572d9b8be3b8f42d8c70f144"
     }
   ],
-  "append_body": "\n原始引用工具版本 1.1.0，MIT 许可和原作者归属见 LICENSE.md 及 references/upstream-source.md。四个 scripts 文件共同构成 Python 3.10+ 标准库引用/证据工具；它们验证已有输入记录，不自动查询网络或证明输入元数据已被外部核验。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/SKILL.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "append_body": "\n原始引用工具版本 1.1.0，MIT 许可和原作者归属见 LICENSE.md 及 references/upstream-source.md。四个 scripts 文件共同构成 Python 3.10+ 标准库引用/证据工具；它们验证已有输入记录，不自动查询网络或证明输入元数据已被外部核验。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
   "allow_implicit_invocation": true,
   "interface": {
     "display_name": "Paper Search",

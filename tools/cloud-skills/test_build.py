@@ -63,7 +63,7 @@ class BuildTests(unittest.TestCase):
                 adapter.plan(target, output, before)
             self.assertEqual((target / 'example.txt').read_text(), 'concurrent edit')
             (target / 'example.txt').write_bytes(output['example.txt'])
-            self.assertEqual(adapter.plan(target, output, before)[1], [])
+            self.assertEqual(adapter.plan(target, output, adapter.snapshot(target))[1], [])
 
     def test_symlink_rejected(self):
         with tempfile.TemporaryDirectory() as temp:

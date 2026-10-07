@@ -1,0 +1,170 @@
+{
+  "schema_version": 2,
+  "skill": "journal-submission",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "journal-submission/SKILL.md",
+  "expected_source_sha256": "c6250b101a3b23c8a25c77007eae5654198fea5bdc4096e8553c3d661a21cdd2",
+  "files": [
+    {
+      "source": "journal-submission/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "c6250b101a3b23c8a25c77007eae5654198fea5bdc4096e8553c3d661a21cdd2",
+      "replacements": [
+        {
+          "id": "verified-cloud-project",
+          "before": "1. 读取项目规则、稿件现状及该投稿任务已有状态；",
+          "after": "1. 先核实当前云端任务空间或用户已授权连接的项目，本文 <project-root> 仅指这个实际可访问的根目录，不是用户电脑路径。读取项目规则、稿件现状及该投稿任务已有状态；"
+        },
+        {
+          "id": "host-delivery-no-global-assumption",
+          "before": "投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后按已加载的共享全局规则自动无覆盖交付到正式位置，沿用项目命名、同名递增版本，并复核文件及依赖可用；状态中的路径指向实际交付文件。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；普通任务结束保留过程材料，显式清理当前任务时，先将仍在过程目录的持续状态和必要证据归位、更新记录路径并校验，再清空本任务过程目录。",
+          "after": "投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后交付到用户指定且已授权的实际目标；沿用已核实项目命名和同名递增版本，不覆盖旧稿。用户需要附件时使用宿主支持的文件交付流程，确认文件及依赖可用后再报告完成；状态中的路径只指向实际文件，不假定已加载任何本机全局规则。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；普通任务结束保留过程材料，用户明确要求清理时先核实持续状态和必要证据已归位，清理仍遵循宿主确认规则。"
+        },
+        {
+          "id": "available-author-data",
+          "before": "私有作者库继续使用 `<agents-root>/local-assets/ieee-journal-submission/authors.json`，格式见 [references/data-contracts.md](references/data-contracts.md)。不迁移或自动改写真实作者数据。",
+          "after": "不读取或假定存在私有作者库。只使用用户在当前任务提供、确认或已明确授权访问的作者资料；可选作者 JSON 沿用 references/data-contracts.md 的 1.0 字段契约，不迁移或自动改写真实资料。没有作者库时校验器仅传 --state；缺失作者事实保持 pending，不编造 profile_id 或核验状态。"
+        }
+      ]
+    },
+    {
+      "source": "journal-submission/references/data-contracts.md",
+      "target": "references/data-contracts.md",
+      "sha256": "3206bd18a3f0b4e9ec69acdb5a6f18607bf215796f6199645c2b80430dc7e97f",
+      "replacements": [
+        {
+          "id": "optional-authors-heading",
+          "before": "## 私有作者库",
+          "after": "## 可选作者资料（仅限已授权提供）"
+        },
+        {
+          "id": "optional-authors-source",
+          "before": "权威路径：`<agents-root>/local-assets/ieee-journal-submission/authors.json`。",
+          "after": "不存在预置云端作者库。只使用本任务用户提供、确认或已明确授权访问的作者 JSON；其实际路径由用户材料或已核实项目确定，不假定能读取本机 local-assets。未提供时省略校验器 --authors 参数，缺失事实保持 pending，不构造作者资料。"
+        }
+      ]
+    },
+    {
+      "source": "journal-submission/references/evidence-and-safety.md",
+      "target": "references/evidence-and-safety.md",
+      "sha256": "cf8c1e17672887de379a9ba49534c27ae47df6ea483608da6d2f61a4be725fdd",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/journal-profiles.md",
+      "target": "references/journal-profiles.md",
+      "sha256": "6293cf0ec283d95c2c17811613ea1cd6a1987f976363df812afc4fd75a33dc22",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/journal-selection.md",
+      "target": "references/journal-selection.md",
+      "sha256": "40b6bf0fe8b17582e4ae3b83856caa66014aa4ab21f799bd2030e730ddd34307",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/journals/scis.md",
+      "target": "references/journals/scis.md",
+      "sha256": "e4458cd28dc569e36839444dba7bfda32c62178e9bbb9853233fc33c54e2c2bd",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/journals/tmtt.md",
+      "target": "references/journals/tmtt.md",
+      "sha256": "f45ba8004d74579929568d6993b2581c3e0944e60e3790f50252f499dc3c10aa",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/licenses/awesome-journal-skills.txt",
+      "target": "references/licenses/awesome-journal-skills.txt",
+      "sha256": "bad075617318f23249188e9f4561c8f5fa1a3e992d1e6c95a8740750aba98540",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/lifecycle.md",
+      "target": "references/lifecycle.md",
+      "sha256": "5d65d9626e7c3ba27ed39d7de23569a0c846a2ddac914ed1387e7eb3632758b1",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/material-templates.md",
+      "target": "references/material-templates.md",
+      "sha256": "75ec40ed6b59dce8015e4f075c49a5b088aa03175fb4ff7ca7fbef47ecbe96b9",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/official-source-index.md",
+      "target": "references/official-source-index.md",
+      "sha256": "c8ac651cfa2e0aeec393b1ab88d55d8dcc62f2ddc80baaa6ab5caec1c09fd303",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/platforms/editorial-manager.md",
+      "target": "references/platforms/editorial-manager.md",
+      "sha256": "3416bf5640d5df9a0a06bf0c5e8aef25bc08afb4f0fe3c33fe0ce2374e73aa8c",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/platforms/prism-optica.md",
+      "target": "references/platforms/prism-optica.md",
+      "sha256": "6e45138d715704f8d64f990baffb1d4e4762f695136a7f7e831fd0ee075d90d4",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/platforms/research-exchange.md",
+      "target": "references/platforms/research-exchange.md",
+      "sha256": "7baf2456d4fb03efa9653aabbe43fbbaa1bc3c7107425652916ed5f1f7a03714",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/platforms/scholarone.md",
+      "target": "references/platforms/scholarone.md",
+      "sha256": "677381802438a1e51e9d349a4c1763470bfdb0e88e75296302cefcdcccf484de",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/publishers/ieee.md",
+      "target": "references/publishers/ieee.md",
+      "sha256": "ead5ae719fb8bee4c7327e78c84f0bc0a746b6c89cde7a77b9262be4a970730e",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/selection-upstream-source.md",
+      "target": "references/selection-upstream-source.md",
+      "sha256": "e5bd4fae03aa4f2ac010e474768829906b6fcc9c1ef4f48a1d2ad8fb0f5e28c2",
+      "replacements": [
+        {
+          "id": "no-local-mirror-assumption",
+          "before": "- **本地镜像**：`D:\\BaiduSyncdisk\\.agents\\upstream\\brycewang-Awesome-Journal-Skills-managed`（sparse checkout）",
+          "after": "- **来源镜像说明**：原作者曾使用本地稀疏镜像；当前云端不假定可访问该镜像，以公开原仓库和下列接受提交为来源。"
+        }
+      ]
+    },
+    {
+      "source": "journal-submission/references/trigger-evals.json",
+      "target": "references/trigger-evals.json",
+      "sha256": "20215ae3a2c4763c52dad05b72778414b10ec3c981869f53f23f32195babbaef",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "56e7cdb79767c6fd4e0179d6e79e4815e84de90a58ac31dbb127b543470a173b",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/scripts/validate_submission_records.py",
+      "target": "scripts/validate_submission_records.py",
+      "sha256": "0931ebcaa07a1a3574b29b2fe296f25e3fb2fb966559c5cf4d08f41fdaeae49b",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n## 云端任务范围\n\n选刊和只读合规检查不等于实际投稿授权。联网按名称使用可用 web-access 或宿主工具；门户填入、上传、发送、最终提交及出版协议和费用各按本次明确授权与宿主确认要求处理。历史来源记录中的批准不作为本次批准。先核实浏览器状态，不假定任何账号已登录。ieee-manuscript-edit、latex-paper、paper-figure-review 未安装时不假称调用；Word/PDF/表格任务使用宿主当前对应技能，保持稿件证据、作者选择与权限边界。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/SKILL.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Journal Submission",
+    "short_description": "Compare journals and check submission requirements",
+    "default_prompt": "Use $journal-submission to help with this task."
+  }
+}

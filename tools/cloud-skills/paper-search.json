@@ -1,0 +1,155 @@
+{
+  "schema_version": 2,
+  "skill": "paper-search",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "paper-search/SKILL.md",
+  "expected_source_sha256": "9838e105572e849e01c15a5650f2d065ed9a83c3bdd857ccbd2967de927ba677",
+  "files": [
+    {
+      "source": "paper-search/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "9838e105572e849e01c15a5650f2d065ed9a83c3bdd857ccbd2967de927ba677",
+      "replacements": [
+        {
+          "id": "host-frontmatter-license-provenance",
+          "before": "license: MIT\nmetadata:\n  version: \"1.1.0\"\n  skill-author: \"SanAn local adaptation; evidence and citation-management approaches adapted from K-Dense Inc. under MIT\"\n",
+          "after": ""
+        },
+        {
+          "id": "bundled-zotero-reference",
+          "before": "../paper-download/references/zotero-storage.md",
+          "after": "references/zotero-storage.md",
+          "count": 2
+        },
+        {
+          "id": "bundled-discovery-reference",
+          "before": "../paper-download/references/publisher-download-playbook.md#全文入口发现",
+          "after": "references/publisher-download-playbook.md#全文入口发现"
+        },
+        {
+          "id": "actual-dependency-capabilities",
+          "before": "## 入口与边界",
+          "after": "## 云端能力核实\n\n先通过可用技能和工具清单按名称查找依赖，再实际只读探测；技能名称不代表已安装，桌面 Zotero、PaperAccess、用户浏览器和本地磁盘均不假定可用。Zotero 可用时沿用库内查询、去重、分类和回读流程；不可用时继续独立公开检索，明确待完成的归类或入库，不建立替代库。paper-download、latex-paper、research-report、product-research-workbook、lark-doc、lark-base 等未安装时，使用宿主现有相应能力完成已授权范围；不足则交付可完成结果并说明缺口，不声称调用或保存成功。xlsx 任务使用宿主当前 Spreadsheets 或 Google Sheets 技能。库写入、分类创建、远程写回仍核对本次授权及宿主确认要求；技能原文对任务范围的说明不自动授予这些权限。\n\n## 入口与边界"
+        }
+      ]
+    },
+    {
+      "source": "paper-search/LICENSE.md",
+      "target": "LICENSE.md",
+      "sha256": "0207337e5ae2b28c15c647054fafaddafb159be533f9723825d7a5aa2610f21d",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/references/citation-workflow.md",
+      "target": "references/citation-workflow.md",
+      "sha256": "2c6efdf1770beff59dbb40fdee4290283e2c195265b63e853ce625b970e14a91",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/references/upstream-source.md",
+      "target": "references/upstream-source.md",
+      "sha256": "865086fda42be24a9123039cfacedced97c32e00399827fb4ffc34d3cf2d920d",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "f2933bb0aa02ee20f0ce355c7b0cd1e4e27b190b2c54f6586189c7696d8d962a",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/scripts/evidence_records.py",
+      "target": "scripts/evidence_records.py",
+      "sha256": "b97e844f35a933e4a27e30fe3d780c4ef13c310be4f7bcd0b1138a07438bb4a3",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/scripts/citation_records.py",
+      "target": "scripts/citation_records.py",
+      "sha256": "7ea1b7427944a108a81af24c542e45c60e862e958f090ab89a27048b6d2e980c",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/scripts/bibtex_compare.py",
+      "target": "scripts/bibtex_compare.py",
+      "sha256": "7e4864a94f3bf610446b2300d185327059d44103330beee62cb01db26bb35ec0",
+      "replacements": []
+    },
+    {
+      "source": "paper-search/scripts/ieee_renderer.py",
+      "target": "scripts/ieee_renderer.py",
+      "sha256": "442a6279549cb93fe7375791f88aac24b8827d0ca5637fa842941b4483d2f1e2",
+      "replacements": []
+    },
+    {
+      "source": "paper-download/references/publisher-download-playbook.md",
+      "target": "references/publisher-download-playbook.md",
+      "sha256": "3a12891c6331934b2d55da1a9e4d276e8c665099db95dfbb90eca4b4f85da1da",
+      "replacements": [
+        {
+          "id": "available-institutional-access",
+          "before": "再实际尝试已配置且获授权的机构渠道",
+          "after": "再核实宿主确实可用且获授权的机构访问渠道；没有该能力时明确记录阻塞"
+        },
+        {
+          "id": "explicit-discovery-excerpt-scope",
+          "before": "## 全文入口发现",
+          "after": "## 全文入口发现\n\n本文件是原仓库 paper-download/references/publisher-download-playbook.md 的公开发现章节，完整源文件哈希和来源提交见 cloud-build.json。此处“主技能”指按名称查找的 paper-download；未安装时依当前可用下载与 PDF 能力、原目标版本要求处理，不声称已调用。未包含本机助手、机构授权历史或凭据流程。"
+        }
+      ],
+      "select": [
+        {
+          "start": "## 全文入口发现\n",
+          "end": "## 本机 PaperAccess 助手\n"
+        }
+      ],
+      "selected_sha256": "56ca0aa9a7fcaa58b456fb8956d0f5ff6e75a4a4e346d18bd720a51ce98b2471"
+    },
+    {
+      "source": "paper-download/references/zotero-storage.md",
+      "target": "references/zotero-storage.md",
+      "sha256": "0fb08bbf6028077a3b667075cb1f8af4243b17d22bb5338dface1dddcc3fbf34",
+      "replacements": [
+        {
+          "id": "zotero-host-interface",
+          "before": "先读取当前安装的 Zotero 插件说明，用其 `status --json` 核对可用接口和实际资料库。库内检索、条目和附件读取使用本地 API；写入使用现有 Connector 或已配置后台桥接调用 Zotero 原生 API，不直接修改数据库或 storage 文件。",
+          "after": "先读取当前安装且可用的 Zotero 插件说明，用其实际支持的只读状态或检索接口核对可用性和资料库。云端不执行假定存在的 status 命令，不直连用户电脑 localhost，不安装桥接或修改数据库、storage。库内查询、分类和写入仅通过宿主已连接且授权覆盖的接口；接口不足时保留待办并继续独立检索。"
+        },
+        {
+          "id": "native-library-identifiers",
+          "before": "原生个人库使用当前 `Zotero.Libraries.userLibraryID`，其他库通过实际原生条目／资料库对象确认。",
+          "after": "仅在当前接口确实是原生接口时，个人库使用该接口提供的真实 libraryID；其他库通过实际条目或资料库对象确认。"
+        },
+        {
+          "id": "supported-collection-interface",
+          "before": "使用 Zotero 原生分类接口创建必要分类，通过条目的 `addToCollection(collectionID)` 和 `saveTx()` 添加归类。回读 `getCollections()` 检查目标关系及原有归类仍在；不使用仅含新分类的 `setCollections()` 覆盖原关系。",
+          "after": "通过当前连接实际支持且获授权的分类接口创建必要分类并添加条目关系；原生接口可用时对应 addToCollection 和 saveTx，但不猜造云端方法名。按 collection key 和 item key 回读，检查目标关系及原有归类仍在；不以仅含新分类的关系集合覆盖原关系。"
+        },
+        {
+          "id": "no-download-test-cleanup",
+          "before": "测试清理只针对本次新建且身份已核对的对象，移除测试分类不应删除用户文献。",
+          "after": "本检索流程不创建测试对象或清理用户资料；任何分类删除另按用户请求和宿主确认规则处理。"
+        }
+      ],
+      "select": [
+        {
+          "start": "# Zotero 附件入库\n",
+          "end": "## 已有条目补 PDF\n"
+        },
+        {
+          "start": "## 任务分类操作\n",
+          "end": "## 已验证范围\n"
+        }
+      ],
+      "selected_sha256": "de71a946d795f484cef226c24edc53eecd092a6a572d9b8be3b8f42d8c70f144"
+    }
+  ],
+  "append_body": "\n原始引用工具版本 1.1.0，MIT 许可和原作者归属见 LICENSE.md 及 references/upstream-source.md。四个 scripts 文件共同构成 Python 3.10+ 标准库引用/证据工具；它们验证已有输入记录，不自动查询网络或证明输入元数据已被外部核验。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/SKILL.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Paper Search",
+    "short_description": "Find papers and verify citation evidence and metadata",
+    "default_prompt": "Use $paper-search to help with this task."
+  }
+}

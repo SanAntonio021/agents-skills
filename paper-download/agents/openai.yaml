@@ -1,6 +1,6 @@
 interface:
   display_name: "论文下载"
-  short_description: "论文 PDF 下载到 Zotero，先查重再补附件，复用机构登录"
+  short_description: "论文 PDF 多渠道获取到 Zotero，按目标版本查重并复用机构登录"
   default_prompt: "Use $paper-download to check Zotero and the task collection, then obtain only missing requested versions. Prefer an existing host-permitted local credential/download helper for authorized institutional access; inspect readiness and the same session before login, and continue through PDF verification, native Zotero import and readback. Keep passwords inside the local executor and OS credential store; never expose them to the model. Distinguish environment readiness, login, article permission, verified PDF and saved attachment. Respect host denials and user verification; do not repeat unknown submissions. Preserve memberships, annotations and existing notes. Create local exports or indexes only when requested or required."
 
 policy:

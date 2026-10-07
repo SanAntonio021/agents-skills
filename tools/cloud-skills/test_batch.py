@@ -22,7 +22,11 @@ def generate(config):
 
 class BatchTests(unittest.TestCase):
     def configs(self):
-        return [json.loads(p.read_text()) for p in sorted(HERE.glob('*.json'))]
+        # Preserve the original seven-skill regression suite as later batches
+        # add configs (including opt-in private inputs) and nonconfig fixtures.
+        names = ('ask-first', 'handoff', 'humanizer', 'web-access', 'paper-search',
+                 'paper-review', 'journal-submission')
+        return [json.loads((HERE / (name + '.json')).read_text()) for name in names]
 
     def test_all_configs_deterministic(self):
         self.assertEqual(len(self.configs()), 7)

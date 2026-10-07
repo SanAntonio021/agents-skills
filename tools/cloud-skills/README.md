@@ -57,3 +57,35 @@ python3 tools/cloud-skills/build.py --config "$CONFIG" \
 离线实测：paper-search 30 项、submission validator 23 项、figure helpers 17 项通过；合成 PDF 的 auto/page-render/embedded 路径在阻断网络取回的条件下通过。图像提取的 BeautifulSoup HTML 分支未验证；部分历史回归依赖 Windows 项目文件，不能当作云端通过证明。原 journal 文档契约测试依赖未安装兄弟技能，部分检查不适用于此独立包。
 
 这些检查不证明真实第三方投稿、Zotero 入库、机构登录、外发或完整领域任务已执行。门户操作、共享及持续权限仍须满足宿主和用户对具体动作的授权。
+
+## 个人写作与私有词表批次
+
+新增七项：writing-router、style-vocab、ieee-manuscript-edit、technical-writing、project-writing、research-report、meeting-notes。继续完整保留原始入口和文体规则，逐项可逆映射云端差异；原七项配置与已安装身份不需要因此重新发布。共同参考直接从 writing-router 源文件打包，携带 MIT 许可；IEEE 保留引用来源与 CC BY 4.0 归属说明。云端引用以包内相对资源或实际技能名称解析，不依赖随机安装目录。
+
+- 文档、PDF、幻灯片与表格交给实际宿主能力，不提供原 Windows Office COM、原 docx 脚本或 IEEE 模板缓存。相关域刷新或目标应用验证未执行时必须如实说明。
+- technical-writing 的历史 lab-notebook#逐步准备实验 锚点不存在；云端只选取当前原文“开始与写入”第 1–3 项（独立选中内容哈希），保留实验顺序与写入边界，不安装硬件链。
+- IEEE 的旧 run_draft_refine.py 依赖外部 tooling 和固定父目录，未打包；两个实际审计器保留，词表路径改为显式必填。
+- 私有样稿本批不打包。仅入口与对应文体/语言样稿均有 approved 且确实获准读取时使用；无合适样稿正常依照文体规则，不伪称已经学习个人样稿。
+
+### 私有数据输入契约
+
+只有 style-vocab 配置声明 style-vocab-v1 必需私有输入。公开配置仅声明抽象契约，不保存私人仓库地址、版本、路径、词表内容或指纹。构建器从显式传入的私有清单和目录离线读取，不发现账户、不联网、不生成凭据。approved=true 只是操作者记录已经核实的许可，不能自行授予授权。
+
+私有清单字段严格限定为 schema_version=1、contract=style-vocab-v1、approved=true、source_repository（经操作者核实的私有 GitHub 来源）、source_path（仓库相对路径）、source_revision（完整提交 SHA）、files_sha256（精确的十一文件 SHA-256 映射）。清单和实际数据均须留在私有目标，不能提交到本公开仓库。
+
+完整文件集合为目录.md、术语.md、维护.md，中文的通用/申报书/调研报告/论文/审稿回复.md，以及英文的通用/论文/审稿回复.md。拒绝额外文件、目录、符号链接、重复清单键和未知字段；每文件最大 1 MiB，总量最大 8 MiB，清单最大 64 KiB。对捕获字节运行同一固定来源 audit_writing_memory.py 的 validate_vocab_root，验证后重新核对输入未变。目录.md 是人工路由入口；十张数据表通过正式验证，不把空缺或合成表当真实词表。
+
+将以下两个参数同时追加到前述预览、应用、materialized 记录和 no-op 命令：
+
+```sh
+--private-input-manifest "<reviewed-private-manifest.json>" \
+--private-input-root "<reviewed-private-vocab-directory>"
+```
+
+显式生成 references/private-vocab/ 下的全部十一文件，纳入与公开生成文件相同的 managed-hash、完整目标快照和未知漂移验证。私有来源和验证计数仅进入该个人安装包的 cloud-build 清单。私有差异不打印到普通构建预览；先在已授权私有来源检查内容，再执行应用。安装包、清单及审计报告含个人材料，不得公开共享或公开打包。
+
+技能资源随个人技能安装持久可读。跨会话先按名称定位 style-vocab，通过宿主技能资源接口读取真实资源；执行审计才把这些资源材料化到本轮私有工作目录，并显式传入 --vocab-root。不依赖旧临时路径。资源不可访问时仍可处理有依据的编辑，但不能声称完成个人词表审计。长期维护更新同一私有来源后重新构建，不静默修改安装快照造成双来源；维护与共享授权仍按宿主政策。
+
+### 写作批次验证
+
+公共测试全部使用合成词表、样稿门控断言与虚构文稿。覆盖确定性、精确反向恢复、来源哈希、全部运行相对链接、语言/文体路由与覆盖、补充匹配、代码/URL 排除、缺少资源、候选样稿降级、输入变更和未知目标漂移；保留原七项回归。真实词表校验与实际审计另在私有目标执行，绝不把其内容、来源或报告加入公开测试。测试证明的边界不包括真实投稿、外发、门户写入、桌面 Office 或未打包模板。

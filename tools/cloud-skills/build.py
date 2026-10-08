@@ -1,0 +1,539 @@
+#!/usr/bin/env python3
+"""Offline, pinned single-source cloud skill builder. Never authenticates or publishes."""
+import argparse
+import difflib
+import hashlib
+import json
+from pathlib import Path, PurePosixPath
+import re
+import sys
+import tempfile
+import types
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+MANIFEST = 'references/cloud-build.json'
+PRIVATE_VOCAB_PREFIX = 'references/private-vocab/'
+PRIVATE_VOCAB_CONTRACT = 'style-vocab-v1'
+PRIVATE_VOCAB_FILES = frozenset((
+    '目录.md', '中文/通用.md', '中文/申报书.md', '中文/调研报告.md',
+    '中文/论文.md', '中文/审稿回复.md', '英文/通用.md', '英文/论文.md',
+    '英文/审稿回复.md', '术语.md', '维护.md',
+))
+PRIVATE_VALIDATOR_SOURCE = 'ieee-manuscript-edit/scripts/audit_writing_memory.py'
+PRIVATE_MANIFEST_MAX_BYTES = 64 * 1024
+PRIVATE_FILE_MAX_BYTES = 1024 * 1024
+PRIVATE_TOTAL_MAX_BYTES = 8 * 1024 * 1024
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def json_bytes(value):
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
+
+
+def safe_path(value):
+    p = PurePosixPath(value)
+    if not value or p.is_absolute() or '..' in p.parts or '\\' in value or str(p) != value:
+        raise ValueError('unsafe relative path: ' + value)
+    return value
+
+
+def transform(data, replacements):
+    text = data.decode('utf-8')
+    for item in replacements:
+        if not item['before'] or text.count(item['before']) != item.get('count', 1):
+            raise ValueError('replacement anchor mismatch: ' + item['id'])
+        text = text.replace(item['before'], item['after'])
+    return text.encode()
+
+
+def skill_name(data):
+    text = data.decode('utf-8')
+    if not text.startswith('---\n') or '\n---\n' not in text[4:]:
+        raise ValueError('invalid SKILL frontmatter')
+    front = text[4:].split('\n---\n', 1)[0]
+    names = re.findall(r"^(?:name|'name'|\"name\")\s*:\s*(.*)$", front, re.M)
+    if len(names) != 1 or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', names[0]):
+        raise ValueError('missing, duplicate, or unsupported frontmatter name')
+    return names[0]
+
+
+def metadata(config):
+    interface = '\n'.join('  ' + k + ': ' + json.dumps(v, ensure_ascii=False)
+                          for k, v in config['interface'].items())
+    implicit = str(config.get('allow_implicit_invocation', False)).lower()
+    return ('interface:\n' + interface + '\npolicy:\n  allow_implicit_invocation: ' + implicit + '\n').encode()
+
+
+def no_symlink_ancestry(path):
+    path = Path(path).absolute()
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError('symlinks are not supported in private input paths')
+    return path
+
+
+def private_manifest_from_file(path):
+    """Read only an explicitly supplied private manifest; never discover one."""
+    path = no_symlink_ancestry(path)
+    if not path.is_file() or path.stat().st_size > PRIVATE_MANIFEST_MAX_BYTES:
+        raise ValueError('private input manifest is missing or too large')
+    with path.open('rb') as handle:
+        data = handle.read(PRIVATE_MANIFEST_MAX_BYTES + 1)
+    if len(data) > PRIVATE_MANIFEST_MAX_BYTES:
+        raise ValueError('private input manifest is too large')
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('duplicate private input manifest key')
+            result[key] = value
+        return result
+
+    return json.loads(data, object_pairs_hook=unique_object)
+
+
+def private_inputs_from_paths(manifest_path=None, root=None):
+    if (manifest_path is None) != (root is None):
+        raise ValueError('private input manifest and root must be supplied together')
+    if manifest_path is None:
+        return None
+    return {'style_vocab': {'root': root, 'manifest': private_manifest_from_file(manifest_path)}}
+
+
+def private_vocab_snapshot(root):
+    """Capture the exact bounded input set, rejecting links and unknown entries."""
+    root = no_symlink_ancestry(root)
+    if not root.is_dir():
+        raise ValueError('private vocabulary root must be a directory')
+    files, total = {}, 0
+    for path in sorted(root.rglob('*')):
+        no_symlink_ancestry(path)
+        name = path.relative_to(root).as_posix()
+        if path.is_dir() and name in ('中文', '英文'):
+            continue
+        if name not in PRIVATE_VOCAB_FILES or not path.is_file():
+            raise ValueError('unexpected private vocabulary entry')
+        if path.stat().st_size > PRIVATE_FILE_MAX_BYTES:
+            raise ValueError('private vocabulary file is too large')
+        with path.open('rb') as handle:
+            data = handle.read(PRIVATE_FILE_MAX_BYTES + 1)
+        if len(data) > PRIVATE_FILE_MAX_BYTES:
+            raise ValueError('private vocabulary file is too large')
+        total += len(data)
+        if total > PRIVATE_TOTAL_MAX_BYTES:
+            raise ValueError('private vocabulary input is too large')
+        try:
+            text = data.decode('utf-8-sig')
+        except UnicodeDecodeError as error:
+            raise ValueError('private vocabulary files must be UTF-8') from error
+        if not text.strip() or '\x00' in text:
+            raise ValueError('private vocabulary files must contain nonempty text')
+        files[name] = data
+    if set(files) != PRIVATE_VOCAB_FILES:
+        raise ValueError('private vocabulary requires the exact eleven-file set')
+    return files
+
+
+def validate_private_vocab(files, config, source_root):
+    """Validate captured bytes with the reviewed, source-pinned original API."""
+    candidates = [item for item in config.get('files', [])
+                  if item['source'] == PRIVATE_VALIDATOR_SOURCE]
+    if len(candidates) != 1:
+        raise ValueError('private vocabulary requires the pinned original validator')
+    root = Path(source_root or ROOT).resolve()
+    path = root / PRIVATE_VALIDATOR_SOURCE
+    if path.is_symlink() or not path.resolve().is_relative_to(root):
+        raise ValueError('private vocabulary validator escapes source root')
+    data = path.read_bytes()
+    if sha(data) != candidates[0]['sha256']:
+        raise ValueError('private vocabulary validator source hash changed')
+    module_name = '_cloud_private_vocab_validator_' + sha(data)
+    module = types.ModuleType(module_name)
+    module.__file__ = str(path)
+    previous = sys.modules.get(module_name)
+    sys.modules[module_name] = module
+    try:
+        exec(compile(data, str(path), 'exec'), module.__dict__)
+        # Validation never reopens a mutable source as its input. The captured
+        # bytes are exactly the managed bytes that will be generated below.
+        with tempfile.TemporaryDirectory(prefix='cloud-vocab-validation-') as temp:
+            captured = Path(temp)
+            for name, contents in files.items():
+                dest = captured / name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(contents)
+            try:
+                result = module.validate_vocab_root(captured)
+            except ValueError as error:
+                raise ValueError('private vocabulary structure validation failed') from error
+    finally:
+        if previous is None:
+            sys.modules.pop(module_name, None)
+        else:
+            sys.modules[module_name] = previous
+    return result
+
+
+def private_vocab_inputs(config, private_inputs, source_root):
+    """Return managed private resources and installed-only provenance.
+
+    An approved manifest records the operator's already verified authority;
+    its boolean is not itself user authorization. No source is fetched here.
+    """
+    contract = config.get('private_inputs')
+    supplied = {} if private_inputs is None else private_inputs
+    if not isinstance(supplied, dict) or set(supplied) - {'style_vocab'}:
+        raise ValueError('unsupported private input')
+    if contract is None:
+        if supplied:
+            raise ValueError('private inputs require an explicit public contract')
+        return {}, None
+    if (config.get('skill') != 'style-vocab' or config.get('schema_version') != 2
+            or not isinstance(contract, dict) or set(contract) != {'style_vocab'}):
+        raise ValueError('private inputs are allowed only for opted-in style-vocab')
+    declared = contract['style_vocab']
+    if (not isinstance(declared, dict) or set(declared) != {'contract', 'required'}
+            or declared['contract'] != PRIVATE_VOCAB_CONTRACT
+            or type(declared['required']) is not bool):
+        raise ValueError('invalid abstract private vocabulary contract')
+    if not supplied:
+        if declared['required']:
+            raise ValueError('required private vocabulary input is absent')
+        return {}, None
+    entry = supplied['style_vocab']
+    if not isinstance(entry, dict) or set(entry) != {'root', 'manifest'}:
+        raise ValueError('private vocabulary input requires only root and manifest')
+    manifest = entry['manifest']
+    keys = {'schema_version', 'contract', 'approved', 'source_repository',
+            'source_path', 'source_revision', 'files_sha256'}
+    if not isinstance(manifest, dict) or set(manifest) != keys:
+        raise ValueError('invalid private input manifest fields')
+    if len(json_bytes(manifest)) > PRIVATE_MANIFEST_MAX_BYTES:
+        raise ValueError('private input manifest is too large')
+    if (type(manifest['schema_version']) is not int or manifest['schema_version'] != 1
+            or manifest['contract'] != PRIVATE_VOCAB_CONTRACT
+            or manifest['approved'] is not True):
+        raise ValueError('private input contract and explicit approval are required')
+    repository = manifest['source_repository']
+    if (not isinstance(repository, str) or not re.fullmatch(
+            r'https://github\.com/[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+', repository)
+            or repository.rsplit('/', 1)[-1] in ('.', '..')):
+        raise ValueError('private input requires an explicit GitHub source repository')
+    if (not isinstance(manifest['source_path'], str)
+            or re.match(r'^[A-Za-z]:', manifest['source_path'])
+            or any(char in manifest['source_path'] for char in ('\x00', '\r', '\n'))):
+        raise ValueError('private input source path must be repository-relative')
+    safe_path(manifest['source_path'])
+    if not isinstance(manifest['source_revision'], str) or not re.fullmatch(
+            r'[0-9a-f]{40}', manifest['source_revision']):
+        raise ValueError('private input source revision must be a full commit SHA')
+    hashes = manifest['files_sha256']
+    if (not isinstance(hashes, dict) or set(hashes) != PRIVATE_VOCAB_FILES
+            or any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value)
+                   for value in hashes.values())):
+        raise ValueError('private input hashes require the exact eleven-file set')
+    files = private_vocab_snapshot(entry['root'])
+    if {name: sha(data) for name, data in files.items()} != hashes:
+        raise ValueError('private vocabulary source hash changed')
+    validation = validate_private_vocab(files, config, source_root)
+    if private_vocab_snapshot(entry['root']) != files:
+        raise ValueError('private vocabulary changed during validation')
+    provenance = dict(manifest)
+    provenance.update({'manifest_sha256': sha(json_bytes(manifest)),
+                       'output_prefix': PRIVATE_VOCAB_PREFIX,
+                       'validation': validation})
+    return {PRIVATE_VOCAB_PREFIX + name: data for name, data in files.items()}, provenance
+
+
+def build(source, config, revision, adapter_bytes, source_root=None, private_inputs=None):
+    if not re.fullmatch(r'[0-9a-f]{40}', revision):
+        raise ValueError('source revision must be a full commit SHA')
+    if sha(source) != config['expected_source_sha256']:
+        raise ValueError('source hash changed: review source and update adapter pin first')
+    if config['schema_version'] == 1:
+        text = source.decode('utf-8')
+        if not text.startswith('---\n'):
+            raise ValueError('unsupported frontmatter')
+        front, body = text[4:].split('\n---\n', 1)
+        line = config['remove_frontmatter_line']
+        if front.splitlines().count(line) != 1:
+            raise ValueError('explicit-only frontmatter mapping no longer matches')
+        front = '\n'.join(x for x in front.splitlines() if x != line)
+        if any(not x.startswith(('name: ', 'description: ')) for x in front.splitlines()):
+            raise ValueError('new unsupported frontmatter requires review')
+        body = transform(body.encode(), config['replacements']).decode()
+        outputs = {'SKILL.md': ('---\n' + front + '\n---\n' + body + config['append_body']).encode()}
+        source_files = {config['source_path']: sha(source)}
+        transforms = ['map-explicit-only-frontmatter'] + [x['id'] for x in config['replacements']]
+    elif config['schema_version'] == 2:
+        source_root = Path(source_root or ROOT).resolve()
+        outputs, source_files, transforms = {}, {}, []
+        for item in config['files']:
+            src, dst = safe_path(item['source']), safe_path(item['target'])
+            if (dst in outputs or dst.startswith(PRIVATE_VOCAB_PREFIX)
+                    or dst.rstrip('/') == PRIVATE_VOCAB_PREFIX.rstrip('/')
+                    or dst in (MANIFEST, 'agents/openai.yaml', 'references/cloud-source/original-skill.md')):
+                raise ValueError('duplicate or reserved output: ' + dst)
+            path = source_root / src
+            if path.is_symlink() or not path.resolve().is_relative_to(source_root):
+                raise ValueError('source escapes root')
+            data = path.read_bytes()
+            if sha(data) != item['sha256']:
+                raise ValueError('source hash changed: ' + src)
+            source_files[src] = sha(data)
+            selected = data
+            if item.get('select'):
+                text = data.decode('utf-8')
+                parts = []
+                for section in item['select']:
+                    start, end = section['start'], section['end']
+                    if text.count(start) != 1 or (end and text.count(end) != 1):
+                        raise ValueError('section anchor mismatch: ' + src)
+                    a = text.index(start)
+                    b = text.index(end, a + len(start)) if end else len(text)
+                    parts.append(text[a:b])
+                selected = ''.join(parts).encode()
+                if sha(selected) != item['selected_sha256']:
+                    raise ValueError('selected source hash changed: ' + src)
+                transforms.append(dst + ':select-reviewed-source-sections')
+            outputs[dst] = transform(selected, item.get('replacements', []))
+            transforms += [dst + ':' + x['id'] for x in item.get('replacements', [])]
+        if config['source_path'] not in source_files or 'SKILL.md' not in outputs:
+            raise ValueError('source SKILL must be explicitly mapped')
+        outputs['SKILL.md'] += config.get('append_body', '').encode()
+        outputs['references/cloud-source/original-skill.md'] = source
+    else:
+        raise ValueError('unsupported config schema')
+    outputs.setdefault('references/cloud-source/original-skill.md', source)
+    outputs['agents/openai.yaml'] = metadata(config)
+    name = skill_name(outputs['SKILL.md'])
+    if name != config.get('skill', 'ask-first'):
+        raise ValueError('unexpected generated skill name')
+    private_outputs, private_provenance = private_vocab_inputs(config, private_inputs, source_root)
+    outputs.update(private_outputs)
+    manifest = {
+        'schema_version': 2, 'skill': name,
+        'source_repository': config['source_repository'],
+        'source_path': config['source_path'], 'source_revision': revision,
+        'source_sha256': sha(source), 'source_files_sha256': source_files,
+        'adapter_version': config['adapter_version'], 'adapter_sha256': sha(adapter_bytes),
+        'config_sha256': sha(json_bytes(config)),
+        'transformations': transforms + ['append-cloud-boundaries'],
+        'generated_sha256': {p: sha(data) for p, data in outputs.items()},
+        'materialized_sha256': None,
+        'materialized_note': 'Null until explicit semantic verification; managed outputs only, excluding this manifest and host-owned icon bytes. Every operation separately requires a reviewed full-target snapshot.',
+    }
+    if private_provenance is not None:
+        manifest['private_inputs'] = {'style_vocab': private_provenance}
+    outputs[MANIFEST] = json_bytes(manifest)
+    return outputs
+
+
+def files_snapshot(target, exclude_manifest=False):
+    files = {}
+    for path in sorted(target.rglob('*')):
+        if path.is_symlink():
+            raise ValueError('symlinks are not supported in the target')
+        if path.is_file():
+            name = path.relative_to(target).as_posix()
+            if not exclude_manifest or name != MANIFEST:
+                files[name] = sha(path.read_bytes())
+    return files
+
+
+def snapshot(target):
+    return sha(json_bytes(files_snapshot(target)))
+
+
+def manifest_core(data):
+    value = json.loads(data)
+    value['materialized_sha256'] = None
+    return value
+
+
+def materialized_matches(target, outputs, expected):
+    path = target / MANIFEST
+    if not path.is_file():
+        return False
+    actual = json.loads(path.read_bytes())
+    if manifest_core(path.read_bytes()) != manifest_core(outputs[MANIFEST]):
+        return False
+    recorded = actual.get('materialized_sha256')
+    if recorded is None:
+        return False
+    managed_names = set(json.loads(outputs[MANIFEST])['generated_sha256'])
+    current_managed = {p: h for p, h in files_snapshot(target, exclude_manifest=True).items() if p in managed_names}
+    if recorded != current_managed:
+        raise ValueError('materialized target drift: review every changed file')
+    verify_materialized(target, outputs, expected)
+    return True
+
+
+def plan(target, outputs, expected):
+    current = snapshot(target)
+    if MANIFEST in outputs and materialized_matches(target, outputs, expected):
+        if current != expected:
+            raise ValueError('target drift: materialized snapshot requires explicit review')
+        if snapshot(target) != current:
+            raise ValueError('target drift during semantic verification')
+        return current, []
+    changed = [p for p, data in outputs.items()
+               if not (target / p).is_file() or (target / p).read_bytes() != data]
+    if current != expected:
+        raise ValueError('target drift: review current diff; refusing to overwrite')
+    if snapshot(target) != current:
+        raise ValueError('target drift during planning')
+    return current, changed
+
+
+def verify_materialized(target, outputs, expected):
+    """Accept only exact generated files plus a reviewed host YAML normalization."""
+    if snapshot(target) != expected:
+        raise ValueError('target drift before materialized verification')
+    try:
+        import yaml
+    except ImportError as error:
+        raise ValueError('PyYAML is required for explicit semantic verification') from error
+    actual_files = files_snapshot(target, exclude_manifest=True)
+    expected_names = set(outputs) - {MANIFEST}
+    for name in expected_names - {'agents/openai.yaml'}:
+        if actual_files.get(name) != sha(outputs[name]):
+            raise ValueError('generated bytes differ: ' + name)
+    actual_manifest = (target / MANIFEST).read_bytes()
+    if manifest_core(actual_manifest) != manifest_core(outputs[MANIFEST]):
+        raise ValueError('manifest provenance differs')
+    class UniqueLoader(yaml.SafeLoader):
+        pass
+
+    def unique_mapping(loader, node, deep=False):
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            if key in mapping:
+                raise ValueError('duplicate host YAML key: ' + str(key))
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+        return mapping
+
+    UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
+    original = yaml.load(outputs['agents/openai.yaml'], Loader=UniqueLoader)
+    host = yaml.load((target / 'agents/openai.yaml').read_bytes(), Loader=UniqueLoader)
+    if not isinstance(host, dict) or set(host) != set(original):
+        raise ValueError('unexpected host YAML sections')
+    icons = set()
+    for section in original:
+        if not isinstance(host[section], dict):
+            raise ValueError('invalid host YAML section')
+        for key, value in original[section].items():
+            if host[section].get(key) != value or type(host[section].get(key)) != type(value):
+                raise ValueError('host YAML changed managed value: ' + section + '.' + key)
+        extras = set(host[section]) - set(original[section])
+        allowed = {'icon_small', 'icon_large'} if section == 'interface' else {'products'}
+        if not extras <= allowed:
+            raise ValueError('unexpected host YAML key')
+        for key in extras:
+            value = host[section][key]
+            if key == 'products':
+                if not isinstance(value, list) or len(value) != len(set(value)) or not set(value) <= {'chatgpt', 'codex', 'api', 'atlas'}:
+                    raise ValueError('unexpected host product value')
+            else:
+                name = safe_path(value.removeprefix('./'))
+                if not name.startswith('assets/') or name not in actual_files:
+                    raise ValueError('unverified host icon')
+                icons.add(name)
+    if set(actual_files) - expected_names - icons:
+        raise ValueError('unexpected materialized files: ' + str(sorted(set(actual_files) - expected_names - icons)))
+    manifest = json.loads(outputs[MANIFEST])
+    manifest['materialized_sha256'] = {p: h for p, h in actual_files.items() if p in expected_names}
+    if snapshot(target) != expected:
+        raise ValueError('target drift during materialized verification')
+    return json_bytes(manifest)
+
+
+def preview_diff(name, old, new):
+    if (name.startswith(PRIVATE_VOCAB_PREFIX) or
+            (name == MANIFEST and any(b'"private_inputs"' in data for data in (old, new)))):
+        return name + ': private managed resource changed; contents omitted from preview\n'
+    return ''.join(difflib.unified_diff(old.decode().splitlines(True), new.decode().splitlines(True),
+                                      fromfile=name + ' (current)', tofile=name + ' (generated)'))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--config', default='ask-first.json')
+    parser.add_argument('--source-revision')
+    parser.add_argument('--private-input-manifest', type=Path,
+                        help='explicit approved private manifest; never auto-discovered')
+    parser.add_argument('--private-input-root', type=Path,
+                        help='explicit root containing only the eleven declared vocabulary files')
+    parser.add_argument('--skills-root', type=Path, required=True)
+    parser.add_argument('--target-dir', required=True, help='existing identity or host-initialized new skill name')
+    parser.add_argument('--expected-target-sha256')
+    parser.add_argument('--inspect-target', action='store_true')
+    parser.add_argument('--record-materialized', action='store_true')
+    parser.add_argument('--apply', action='store_true', help='write locally; default is preview')
+    args = parser.parse_args()
+    root = args.skills_root.resolve()
+    if not (root / '.git').exists():
+        raise ValueError('use the supported personal-skills Git checkout')
+    if not re.fullmatch(r'(?:skill-[a-zA-Z0-9]+|[a-z0-9]+(?:-[a-z0-9]+)*)', args.target_dir):
+        raise ValueError('invalid target directory')
+    target = root / args.target_dir
+    if target.is_symlink() or not target.is_dir():
+        raise ValueError('existing host-initialized target directory required')
+    config_path = HERE / safe_path(args.config)
+    config = json.loads(config_path.read_text())
+    name = config.get('skill', 'ask-first')
+    if skill_name((target / 'SKILL.md').read_bytes()) != name:
+        raise ValueError('target name mismatch')
+    if args.inspect_target:
+        if args.apply or args.record_materialized:
+            raise ValueError('inspection cannot write')
+        print(snapshot(target))
+        return
+    if not args.source_revision or not args.expected_target_sha256:
+        raise ValueError('source revision and reviewed target hash are required')
+    private_inputs = private_inputs_from_paths(args.private_input_manifest, args.private_input_root)
+    outputs = build((ROOT / safe_path(config['source_path'])).read_bytes(), config,
+                    args.source_revision, Path(__file__).read_bytes(), private_inputs=private_inputs)
+    before = snapshot(target)
+    if args.record_materialized:
+        recorded = verify_materialized(target, outputs, args.expected_target_sha256)
+        outputs = {MANIFEST: recorded}
+        changed = [] if (target / MANIFEST).read_bytes() == recorded else [MANIFEST]
+    else:
+        before, changed = plan(target, outputs, args.expected_target_sha256)
+    print(json.dumps({'status': 'preview' if not args.apply else 'applied' if changed else 'unchanged',
+                      'before_sha256': before, 'changed': changed}, ensure_ascii=False))
+    if not args.apply:
+        for name in changed:
+            old = (target / name).read_bytes() if (target / name).exists() else b''
+            print(preview_diff(name, old, outputs[name]), end='')
+    if args.apply and changed:
+        if snapshot(target) != before:
+            raise ValueError('target changed during preview')
+        originals = {p: (target / p).read_bytes() if (target / p).exists() else None for p in changed}
+        try:
+            for name in changed:
+                path = target / safe_path(name)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(outputs[name])
+        except OSError:
+            for name, data in originals.items():
+                path = target / name
+                if data is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.write_bytes(data)
+            raise
+        print(json.dumps({'after_sha256': snapshot(target)}))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (ValueError, OSError, KeyError) as error:
+        sys.exit(str(error))

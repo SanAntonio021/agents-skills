@@ -1,0 +1,253 @@
+{
+  "schema_version": 2,
+  "skill": "paper-review",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "paper-review/SKILL.md",
+  "expected_source_sha256": "db5b1672025722278a1ed596a1eafb7f717c909f8d6ec7ecc5b9e832abc59074",
+  "files": [
+    {
+      "source": "paper-review/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "db5b1672025722278a1ed596a1eafb7f717c909f8d6ec7ecc5b9e832abc59074",
+      "replacements": [
+        {
+          "id": "truthful-cloud-confidentiality",
+          "before": "默认只在本地处理稿件",
+          "after": "只处理用户已授权提供到当前云端任务的稿件；这不是用户设备上的本地处理"
+        },
+        {
+          "id": "lookup-writing-router",
+          "before": "[../writing-router/SKILL.md](../writing-router/SKILL.md)",
+          "after": "按名称读取可用的 `writing-router` 技能；不可用时说明具体缺口，不假称已调用"
+        },
+        {
+          "id": "lookup-project-writing",
+          "before": "[../project-writing/SKILL.md](../project-writing/SKILL.md)",
+          "after": "按名称读取可用的 `project-writing` 技能；不可用时说明具体缺口，不假称已调用"
+        },
+        {
+          "id": "lookup-ieee-manuscript-edit",
+          "before": "[../ieee-manuscript-edit/SKILL.md](../ieee-manuscript-edit/SKILL.md)",
+          "after": "按名称读取可用的 `ieee-manuscript-edit` 技能；不可用时说明具体缺口，不假称已调用"
+        },
+        {
+          "id": "lookup-journal-submission",
+          "before": "[../journal-submission/SKILL.md](../journal-submission/SKILL.md)",
+          "after": "按名称读取可用的 `journal-submission` 技能；不可用时说明具体缺口，不假称已调用"
+        },
+        {
+          "id": "bundle-engineering-validation",
+          "before": "../technical-writing/references/engineering-validation.md",
+          "after": "references/engineering-validation.md"
+        },
+        {
+          "id": "bundle-metric-feasibility",
+          "before": "../technical-writing/references/metric-feasibility.md",
+          "after": "references/metric-feasibility.md"
+        },
+        {
+          "id": "bundle-journal-selection",
+          "before": "../journal-submission/references/journal-selection.md",
+          "after": "references/journal-submission/journal-selection.md",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/external-peer-review.md",
+      "target": "references/external-peer-review.md",
+      "sha256": "64396346660fd4e4aaf14d6284e6fe23348e0fd7334e9218a955bc4ffd4114e4",
+      "replacements": [
+        {
+          "id": "truthful-cloud-confidentiality",
+          "before": "默认本地处理；联网核对政策时不在查询中放入稿件标题以外的未公开内容、公式、图表或可识别片段。",
+          "after": "只处理政策明确允许且用户已授权提供到当前云端任务的材料，不声称在用户设备本地处理；联网核对政策时不发送未公开稿件标题、正文、公式、图表或可识别片段。"
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/reader-test.md",
+      "target": "references/reader-test.md",
+      "sha256": "8030aafeeca705efe62e9deb94c9edafddbe5ff18359728505bb18cf1dd792c2",
+      "replacements": [
+        {
+          "id": "truthful-cloud-reader-test",
+          "before": "仅使用本地稿件和用户提供的材料",
+          "after": "仅使用已授权进入当前任务的稿件和用户提供的材料，不声称在用户设备本地运行"
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/source-check.md",
+      "target": "references/source-check.md",
+      "sha256": "edbd5d36e850032769ed2afc97f80b38c87599fe1b2debd701d6dccc5c98887c",
+      "replacements": [
+        {
+          "id": "bundle-sci-terminology-bank.md",
+          "before": "../../ieee-manuscript-edit/references/sci-terminology-bank.md",
+          "after": "sci-terminology-bank.md"
+        },
+        {
+          "id": "host-fulltext-access",
+          "before": "- 原文缺失或出版社要求登录时，转用 [paper-download](../../paper-download/SKILL.md) 的机构访问流程。优先复用已配置的 PaperAccess、浏览器登录态及获授权的安全凭据；未检查这些渠道前，不要求用户重新提供 PDF 或凭据。仅在需要验证码、二次验证、新授权或确认无法继续时，请用户介入。",
+          "after": "- 原文缺失或出版社要求登录时，先按名称查找可用的 paper-download 技能，并核实当前宿主实际可用的浏览器、Zotero 或机构访问能力。不假定存在 PaperAccess、本机安全凭据助手或用户浏览器会话；只能通过宿主支持的安全登录及电脑访问流程继续。不可用时查找可合法访问的对应公开版本，必要时请用户提供相关原文。明确来源缺口，不猜测全文内容或权限。"
+        },
+        {
+          "id": "safe-figure-runtime",
+          "before": "只检查相关图表，不强制全篇抽图。",
+          "after": "只检查相关图表，不强制全篇抽图。云端提图先读 [运行边界](cloud-figure-runtime.md)。"
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/stopline-checklist.md",
+      "target": "references/stopline-checklist.md",
+      "sha256": "a953d01e919fb92fa804831fe2cc50178b774a73d650c1350a315cb16a33a649",
+      "replacements": [
+        {
+          "id": "bundle-engineering-validation.md",
+          "before": "../../technical-writing/references/engineering-validation.md",
+          "after": "engineering-validation.md"
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/submission-gauntlet.md",
+      "target": "references/submission-gauntlet.md",
+      "sha256": "86c24ef0586e6e8545a7aebf565493c96a8f17f86472c428c96d37d2c4714caf",
+      "replacements": [
+        {
+          "id": "bundle-selection-upstream-source.md",
+          "before": "../../journal-submission/references/selection-upstream-source.md",
+          "after": "journal-submission/selection-upstream-source.md"
+        },
+        {
+          "id": "bundle-journal-profiles.md",
+          "before": "../../journal-submission/references/journal-profiles.md",
+          "after": "journal-submission/journal-profiles.md"
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/trigger-evals.json",
+      "target": "references/trigger-evals.json",
+      "sha256": "9a6ee025f84ce57c02088760d3d31f47e2a5d746c6a47aa1e481b81bef15777f",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "1fe0ac1d78701be3ca5a57d91727199011341e929064399ac5d950cd335304fa",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/assets/external-review-en-template.md",
+      "target": "assets/external-review-en-template.md",
+      "sha256": "638651377db52775c60e27257f40b0b7e4f5606df89a0a72712f2cff7050685e",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/assets/external-review-paste-ready-template.md",
+      "target": "assets/external-review-paste-ready-template.md",
+      "sha256": "ef7a0bc2e18f2232b394893f3a1f068c154e79dcd717d3546be0a91b870fcfa7",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/assets/external-review-zh-template.md",
+      "target": "assets/external-review-zh-template.md",
+      "sha256": "dd57aeee83634682244b8a246a583592248cc86b7b89a1ca2a71314753cb17cd",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/scripts/extract_paper_images.py",
+      "target": "scripts/extract_paper_images.py",
+      "sha256": "85240ba1c1c39f635689cef1fcfc60a36834bc34987d75f82a8108a57be97f08",
+      "replacements": []
+    },
+    {
+      "source": "paper-review/evals/evals.json",
+      "target": "evals/evals.json",
+      "sha256": "47325d593e91502e473b335ea29c2868c1550b9b1e78629440a55aa87879bb2e",
+      "replacements": []
+    },
+    {
+      "source": "technical-writing/references/engineering-validation.md",
+      "target": "references/engineering-validation.md",
+      "sha256": "8e88fc1149bd4239f201fe91dcb01330f081140563fa108e206271b4710ebed9",
+      "replacements": []
+    },
+    {
+      "source": "technical-writing/references/engineering-validation-source.md",
+      "target": "references/engineering-validation-source.md",
+      "sha256": "49bff511d7ef6b731d4da90b73bf98bf1b2b55f2c9978761c0f8471d2b86aec4",
+      "replacements": []
+    },
+    {
+      "source": "technical-writing/references/metric-feasibility.md",
+      "target": "references/metric-feasibility.md",
+      "sha256": "9b31e02982111232d4d1279abebb12d48b7d2f74fb6f950e61a8c17c6d66fbb6",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/sci-terminology-bank.md",
+      "target": "references/sci-terminology-bank.md",
+      "sha256": "610677268617341ba9f204bdbde6450fe6ca129a68e1c32d9e83449944186223",
+      "replacements": [
+        {
+          "id": "no-private-vocabulary",
+          "before": "全局术语表位于 `D:\\BaiduSyncdisk\\.agents\\vocab\\术语.md`，固定使用两列：",
+          "after": "不读取或假定存在作者私有的全局术语库。只使用用户已提供或本次任务已授权访问的术语表，固定使用两列："
+        },
+        {
+          "id": "confirmed-vocabulary-write",
+          "before": "用户确认后通过 `style-vocab` 写入全局或项目术语表。",
+          "after": "用户确认后先按名称查找 style-vocab；仅在技能、目标文件及写入授权均可用时写入用户指定术语表，否则交付确认后的修订内容并说明尚未保存。"
+        }
+      ]
+    },
+    {
+      "source": "journal-submission/references/journal-selection.md",
+      "target": "references/journal-submission/journal-selection.md",
+      "sha256": "40b6bf0fe8b17582e4ae3b83856caa66014aa4ab21f799bd2030e730ddd34307",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/journal-profiles.md",
+      "target": "references/journal-submission/journal-profiles.md",
+      "sha256": "6293cf0ec283d95c2c17811613ea1cd6a1987f976363df812afc4fd75a33dc22",
+      "replacements": []
+    },
+    {
+      "source": "journal-submission/references/selection-upstream-source.md",
+      "target": "references/journal-submission/selection-upstream-source.md",
+      "sha256": "e5bd4fae03aa4f2ac010e474768829906b6fcc9c1ef4f48a1d2ad8fb0f5e28c2",
+      "replacements": [
+        {
+          "id": "no-local-mirror-assumption",
+          "before": "- **本地镜像**：`D:\\BaiduSyncdisk\\.agents\\upstream\\brycewang-Awesome-Journal-Skills-managed`（sparse checkout）",
+          "after": "- **来源镜像说明**：原作者曾使用本地稀疏镜像；当前云端不假定可访问该镜像，以公开原仓库和下列接受提交为来源。"
+        }
+      ]
+    },
+    {
+      "source": "journal-submission/references/licenses/awesome-journal-skills.txt",
+      "target": "references/journal-submission/licenses/awesome-journal-skills.txt",
+      "sha256": "bad075617318f23249188e9f4561c8f5fa1a3e992d1e6c95a8740750aba98540",
+      "replacements": []
+    },
+    {
+      "source": "tools/cloud-skills/runtime/cloud-figure-runtime.md",
+      "target": "references/cloud-figure-runtime.md",
+      "sha256": "65c0b5203052cdcda18f523cc94a4666f8ea5660432c44c1a1b5ca60478caef2",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n## 云端依赖\n\nZotero 仅在已连接且实际可用时读写；不可用时用用户提供或获授权可读原文继续局部核对，不假称已保存笔记。writing-router、project-writing、ieee-manuscript-edit、technical-writing、paper-figure-review、latex-paper 等按名称查找；缺失时保持本次审查范围，使用宿主相应工具或报告具体缺口。PDF 使用宿主 PDF 技能。工程检查、指标可行性、公开术语选择规则及选刊参考已打包；没有携带作者私有词库或样例。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Paper Review",
+    "short_description": "Check paper claims and review evidence at the right scope",
+    "default_prompt": "Use $paper-review to help with this task."
+  }
+}

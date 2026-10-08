@@ -11,7 +11,7 @@ description: 维护全局规范和系统提示词，并执行自建技能的定�
 
 - **全局规则与提示词**：在这里判断规则应放在哪一层，去重、精简并维护共通内容与平台差异。网页端无工具提示词也由这里承接。
 - **具体技能创建、修改与验证**：交给 [skill-creator](../skill-creator/SKILL.md)。
-- **技能发布**：读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，沿用现有提交、同步和核验流程。
+- **技能发布**：读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，使用同目录 `Invoke-CcSwitchSkillSync.ps1`；参数及本机文件声明以工具说明为准。
 - **相关任务转交**：目录、来源、生效诊断及上游发现交给 [skill-check](../skill-check/SKILL.md)；对话经验整理交给 [chat-notes](../chat-notes/SKILL.md)；供应商与请求链路分别交给 `codex-relay-chain`、`claude-relay-chain`。
 
 只加载当前步骤需要的技能和参考，不按上述列表逐一加载。
@@ -29,10 +29,5 @@ description: 维护全局规范和系统提示词，并执行自建技能的定�
 - 当前工具下的文本修改，或源文件与当前文件不同步：[文件修改与同步判断](references/file-editing-best-practices.md)。
 - 技能查找、源目录与运行副本：[技能查找顺序](references/skill-discovery-protocol.md)。
 - 网页端无工具环境：[提示词写法](references/web-system-prompt-guidelines.md)；涉及媒体能力时再读 [媒体处理](references/media-processing-limitations.md)。
-- 已授权的技能提交、同步及验收：[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)；失败后续做见同页 [恢复说明](references/skill-upstream-maintenance.md#发布失败后的恢复)。
 - 上游发现、来源登记、候选审核及周检：[上游维护](references/skill-upstream-maintenance.md)。已有镜像和来源脚本入口保留在该参考中，不为普通修改运行它们。
 - 维护 CC Switch 共用后台组件的定位或引用时：[后台组件边界](references/skill-upstream-maintenance.md#cc-switch-后台组件)。不涉及该组件就不检查其环境。
-
-## 发布验收
-
-发布只走现有受支持后台流程，不手工覆盖运行副本、直接修改数据库或切换前台兜底。源码修改、测试通过和提交推送分别如实报告；只有定向同步及同参数只读核验满足 `runtime_active`、四层完整文件一致和必要元数据检查，才确认技能已生效。

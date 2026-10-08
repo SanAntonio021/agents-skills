@@ -1,78 +1,70 @@
 ---
 name: lab-report-slides
 description: >
-  Generate concise Chinese advisor daily/weekly research PPTs from local Codex and Claude
-  sessions. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报, 生成组会 PPT,
-  or turning recent experiments, instrument tests, plots and results into slides.
-  Verify research candidates, confirm the selected projects and overview text, then produce
-  the full deck without per-slide approval;
-  reuse confirmed choices and exclude non-research tool maintenance. Inventory all substantive
-  work and outputs within selected projects before choosing representative real figures.
-  Explain current progress with background where needed, collect confirmed next steps on the
-  final slide, and polish Chinese prose. Create editable text and independent pictures with
-  short titles, one result summary per page and flexible typography; inspect actual PPTX renders.
-  Do not use for paper PDF/DOI-to-slides work.
+  Generate Chinese advisor daily/weekly research PPTs from recent sessions, project records,
+  experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
+  生成组会 PPT, or turning recent research work into an advisor report.
+  Select the advances worth reporting, confirm projects and overview text, then make the full
+  deck without per-slide approval. Decide each page's point before writing or layout;
+  keep routine editing, execution and validation details in project records.
+  Preserve research substance, essential evidence and user edits. Deliver editable text and
+  independent images after content review and actual PPTX rendering. Do not use for turning
+  a single paper PDF or DOI into a literature presentation.
 compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, requirements.txt, LibreOffice, Poppler and the sibling libreoffice-runner skill. Node.js/sharp is optional for SVG input.
 ---
 
-# 实验工作汇报幻灯片
+# 科研日报与组会汇报
 
-将会话、项目记录与实际产物整理成导师能理解的中文日报或周报。主入口规定流程；资料、写作与制作细节按下表读取，不能只看链接就声称已加载。
+面向导师讲清本期值得关注的科研推进。先决定讲什么、讲到什么程度，再写文字和排版；资料多、文件多或检查多不构成增加页面的理由。
 
-## 按阶段读取
+## 资料入口
 
-| 时机 | 必读资料 |
+| 阶段 | 读取内容 |
 |---|---|
-| 首次使用、依赖异常 | [安装与使用说明](README.md)，运行 `python scripts/check_dependencies.py` |
-| 开始采集、筛选和核实素材 | [资料采集、筛选与复用](references/materials.md) |
-| 起草总览、页面文字与末页 | [中文表达规则](references/chinese-style.md)，按其中要求加载通用写作检查 |
-| 总览确认后制作、交付前验证 | [页面制作、渲染与验证](references/rendering.md) |
-| 使用或更换本地 PPT/POTX 模板 | [本地模板适配](references/local-template.md) |
+| 首次使用或依赖异常 | [安装与使用](README.md)，运行 `python scripts/check_dependencies.py` |
+| 核实材料、选择工作与详略 | [资料与选材](references/materials.md) |
+| 写总览、组织展开页与下一步 | [内容与中文表达](references/chinese-style.md) |
+| 制作及文件验收 | [制作与验证](references/rendering.md) |
+| 使用或更换本地模板 | [模板适配](references/local-template.md) |
 
-同一任务已实际读取且未变的材料直接复用，不重复加载。未安装的可选技能不视为可用。
+实际读取后再执行。同一任务中未变化的材料直接复用；可选技能未安装时使用随附规则。
 
-## 1. 采集并核实工作
+## 1. 核实本期工作
 
-- 日报按 `Asia/Shanghai` 当天采集；周报为截至所请求日期的最近七个日历日。用户指定项目时只采集该项目及子目录，否则采集时间窗口内发现的项目，再筛选汇报范围。
-- 读取实际记录和产物，区分已完成、进行中、实测、仿真、离线验证及方案；后来的可靠证据和用户更正优先。历史材料可解释背景，不算当天新成果。
-- 优先复用现有实验结果与分析、飞书正文和表格、飞书画板及已有报告；先核对实际版本和适用性，再决定是否需要加工，具体见资料参考。
-- 优先纳入科研结果、有价值的科研或项目交付物，以及直接解除科研阻塞且已验证的支撑工作。一般账号、代理、软件和技能维护不进入科研汇报。
-- 没有实质科研进展、只剩常规支撑工作时，说明材料情况，询问停止还是改为私人工作记录，不凑页数。
+日报按 `Asia/Shanghai` 当天，周报为截至请求日期的最近七个日历日；用户指定的范围优先。读取会话、项目记录和真实产物，后续可靠证据及用户更正优先。区分本期进展、历史背景、方案、仿真、离线验证和实测，不从文件时间或计划推断完成。
 
-## 2. 确认汇报项目
+先了解各项实际工作，再选代表材料。采集与来源记录留在任务过程目录，原始资料保持原位。选用的信息必须准确，取舍方法按资料参考执行。
 
-给出编号候选清单，每项包括项目或工作名称、当前状态、当期主要结果和可用图件，允许用户选择、删减或补充线下工作。仅日期、目录、听众或模板确定，不等于项目已选定；“生成今日汇报”不跳过选项讨论。
+## 2. 选定汇报内容
 
-用户已明确指定的项目直接沿用，不重复确认，不擅自加入新项目。仅纠正一项状态不等于批准全部候选。入选后盘点该项目各项独立工作和产物，形成“工作项—结果/状态—来源与图件—详略及依据—页码”的覆盖清单，避免几张醒目图片替代完整进展。
+范围尚未确定时，给出编号科研候选清单：名称、本期实质进展、状态及可用材料，并简短建议哪些值得展开。用户可以删选或补充线下工作。听众、日期或模板明确不等于内容已选；纠正一项状态也不等于批准全部候选。
 
-## 3. 讨论并确认今日工作总览
+已明确指定的工作直接沿用，不重复确认、不加入范围外项目。对入选材料在已有过程记录中记下来源和取舍：展开、总览简述或留在项目记录。盘点用于防遗漏，页面安排服从汇报重点。没有适合科研汇报的实质内容时说明情况，询问停止还是改为私人工作记录，不凑页数。
 
-项目确定后，直接展示完整总览正文，像向导师说明今天的工作一样，讲清研究问题、本次具体工作及结果或当前状态；论文和方案进展要说出确定了什么研究内容，不能只报“确定路线、完成引言”等文件进度。目标和结果以实际材料为依据，不把核查过程写进成果句。具体写法按中文表达参考的“总览页”执行，沿用用户已确认的范围与详略，总览确认后直接制作整套。
+## 3. 确认总览
 
-## 4. 总览确认后直接制作整套
+展示完整总览正文，讲清各项工作在研究什么、本期具体推进了什么及结果或状态。论文和方案要说出研究内容，不能仅报“写完引言、确定路线”。写法见中文表达参考；必要时随总览说明主要展开内容，不增加独立提纲审批。
 
-总览讨论并确认后，直接完成内容组织、选图、排版、检查和交付，不再逐页确认、单独批准提纲、补问详略或另行询问是否开始。仅确认项目清单尚不等于总览确认；用户已确认总览或明确要求直接生成时，沿用授权。只有用户明确要求逐页讨论时才采用逐页方式。
+沿用用户已经确认的范围、总览和详略。用户明确要求直接生成时直接制作，不插入中间确认；只确认候选而未确认总览时仍完成本阶段。只有用户要求逐页讨论才逐页确认。
 
-当前对话可直接制作，或按授权交给同一个子智能体或已有制作对话并跟进验收；不强制新建用户可见对话。创建对话和子智能体服从宿主规则，不为制作额外索取许可。使用 `pptx` 时复用工具和文件检查，本技能的整套制作流程优先于通用逐页讨论要求。
+## 4. 先定每页重点，再制作整套
 
-首页覆盖全部入选工作；已指定仅简述的项目不再展开。展开页按真实材料安排，每页围绕一个结果或问题，用图文讲清方法、条件与结果，不按固定页数压缩独立成果。一般措辞、页数、选图和排版由智能体处理；无法自行查明且会改变事实或范围的关键缺口才补问，同时继续其他页面。
+总览确认后，智能体自行完成内容组织、选图、写作、排版与检查，不再补问详略或是否开始。每个拟展开主题先在已有过程记录中写清：这页要让导师知道什么，以及哪些材料支持它。这是内部规划，不交给用户逐页审批。按中文表达参考选择必要图、数据和条件；没有值得单独讲的内容就合并或留在总览。
 
-最后一页为“下一步工作”，连接“项目总体目标 → 当前待解决的问题 → 下一步行动及目的”。只用已确定的安排，不补造任务或把预期目的写成既有结果；具体写法见中文表达参考。末页随整套完成，不另设讨论或确认环节。
+首页覆盖全部入选工作。展开页可以讲结果、研究内容的实质变化、关键问题或实验能力的进展；不按产物数量分配页面，也不为了少页漏掉已确认必须讲的内容。最后一页汇总已确定的近期行动；不补造安排，不强制每项重述总体目标或展开整套验证流程。
 
-## 模板与制作入口
+已有制作工程、用户模板及项目约定优先。尚无模板选择时询问一次内置样式或本地模板；等待期间继续核实素材，不把未回答视为选择。模板及个人配置留在当前项目，有效适配直接复用，具体见模板参考。
 
-本轮已指定的模板、工具或制作工程优先；项目已有模板选择直接沿用并提醒可更换。尚无选择时询问一次内置模板或用户本地模板，等待选择期间继续采集与核实，不能把未回答视为选用内置模板。选择记入项目已有说明，不写进公开技能。
+简单日报用随附生成器；指定已有工程则继续该工程。复用真实图件，不以生成图片替代实验或文献曲线。使用 `pptx` 等工具时复用文件检查，沿用本技能的整套制作授权。分工、对话管理和工具调用服从宿主规则，不为制作额外索取许可。
 
-本地模板先核对路径与哈希，变化或失效时按本地模板参考重新适配；不改原模板、不静默换模板。模板的尺寸、母版和版式优先于内置样式。首次适配测试及必要字号缺口按参考执行，不增加每日样页审批。
+## 5. 分别验收内容与文件
 
-简单实验日报使用随附生成器；指定已有工程则继续该工程，不另生成平行稿。复杂场景按已安装工具处理，生成图不能替代真实曲线、仪器截图或实物照片。模板设置、JSON、命令和失败恢复见制作参考。
+先审内容：通读最终 PPT 的全部可见文字，包括图片内文字，检查每页重点是否清楚、证据是否足够、细节是否必要，以及全套是否体现本期主要推进。重要方法、结果和解决的问题应有对应表达，影响判断的条件不能因精简而丢失。不能用词表零命中、材料完整或格式通过代替内容验收。检查方法见中文表达参考。
 
-## 5. 检查、交付与后续修改
+再按制作参考检查结构、原生文字、独立图片及实际逐页渲染；内容检查与文件/排版检查分别记录。PowerPoint 原生打开与导出独立记录，不以 LibreOffice 替代，不接管或关闭用户实例。已知错误先修复，未完成检查如实说明。
 
-交付前按中文表达参考通读全部可见文字和图片内文字，核对事实、数字、状态、来源、图文对应与覆盖清单。总览和末页都应讲清因果，不能仅列动作；保留理解结果所需的条件，删除空话、重复和无关操作细节。
+在约定正式目录交付完整 PPTX，保留旧稿与原始素材、不覆盖同名文件；预览和制作过程按制作参考存放。默认不额外交付 PDF/HTML，不主动清理过程材料。项目文档维护沿用共享规则，不因生成一次日报追加流水记录。
 
-按制作参考检查文件结构、原生文字、独立图片与实际逐页渲染；内容检查和文件/排版检查分别记录。PowerPoint 原生打开与导出是独立验证项，不能用 LibreOffice 冒充，不能接管或关闭用户实例。未完成项如实报告，已知错误先修复。
+## 后续修改
 
-在约定的正式目录交付完整 PPTX，保留旧稿与原始素材，不覆盖同名文件；过程材料和来源记录留在本任务过程目录，具体命名及依赖归位见制作参考。用户未要求时不额外交付 PDF/HTML，不主动清理过程文件。
-
-后续修改先回读用户当前稿，按本次指定范围改动；不恢复用户删掉的页面，不用旧生成稿覆盖手工修改，也不把本次取舍升级成所有后续汇报的默认排除规则。
+先读取用户当前稿，按本次要求改动。保护手工修改，不恢复用户删掉的页面，也不用旧生成稿覆盖当前稿。用户删改可用于理解其重点和表达偏好；本次不展开某项目不构成长期排除该项目的规则。

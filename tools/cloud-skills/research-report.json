@@ -1,0 +1,318 @@
+{
+  "schema_version": 2,
+  "skill": "research-report",
+  "adapter_version": "2.1.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "research-report/SKILL.md",
+  "expected_source_sha256": "30e483c56fffe6d87287553ff85c60cd928cb16e971c12dc16de80efcd203026",
+  "files": [
+    {
+      "source": "research-report/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "30e483c56fffe6d87287553ff85c60cd928cb16e971c12dc16de80efcd203026",
+      "replacements": [
+        {
+          "id": "lookup-writing-router",
+          "before": "从 [writing-router](../writing-router/SKILL.md) 接收：",
+          "after": "从宿主按名称查找的 `writing-router` 接收；直接调用时复用当前任务的相同上下文，不依赖固定兄弟目录：",
+          "count": 1
+        },
+        {
+          "id": "bundle-writing-common-references",
+          "before": "../writing-router/references/",
+          "after": "references/writing-common/",
+          "count": 5
+        },
+        {
+          "id": "authorized-readable-report-samples",
+          "before": "私有样稿入口为 `D:\\BaiduSyncdisk\\.agents\\writing-profile\\index.md`；只有 `research_report` 样稿获批时才加载。",
+          "after": "只加载用户在当前任务已提供或明确授权、实际可读且获批的 `research_report` 样稿；没有可读样稿时按本技能规则继续，不假定本机私有文件已同步。",
+          "count": 1
+        },
+        {
+          "id": "host-word-description",
+          "before": "Word 交付用 docx，PPT 交付用现有演示文稿技能。",
+          "after": "Word 和 PPT 交付分别使用宿主当前可用的文档与演示文稿技能。",
+          "count": 1
+        },
+        {
+          "id": "host-spreadsheet-workflow",
+          "before": "普通参数或采购渠道比较表按需用 `xlsx`",
+          "after": "普通参数或采购渠道比较表按需使用宿主当前可用的电子表格技能",
+          "count": 1
+        },
+        {
+          "id": "host-presentation-workflow",
+          "before": "PPT 交付使用现有 `pptx` 路由及用户指定模板",
+          "after": "PPT 交付使用宿主当前可用的演示文稿技能及当前任务实际可读的用户指定模板",
+          "count": 1
+        },
+        {
+          "id": "authorized-remote-manuscript",
+          "before": "飞书主稿交给对应平台技能局部更新。",
+          "after": "飞书主稿交给宿主已连接、已授权且支持该平台的文档工具局部更新；不可用时保留待写回内容并说明具体阻碍。",
+          "count": 1
+        },
+        {
+          "id": "host-word-workflow",
+          "before": "再交给 `docx`",
+          "after": "再交给宿主当前可用的 Word 文档技能",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "research-report/references/decision-report.md",
+      "target": "references/decision-report.md",
+      "sha256": "19708c007b306cf2af9c79d994caf27e4fa65f5deb34677d7819a458d1e508a6",
+      "replacements": []
+    },
+    {
+      "source": "research-report/references/external-method-sources.md",
+      "target": "references/external-method-sources.md",
+      "sha256": "e88814c8416df4ce6bc14ebf4788fe3051fed0678a25d01e63370393151324cb",
+      "replacements": []
+    },
+    {
+      "source": "research-report/references/modes.md",
+      "target": "references/modes.md",
+      "sha256": "2dbac89b524ff1afaa3a014a9ed2ea67eabec7948ddf82dc0911f0b8b1ceea00",
+      "replacements": []
+    },
+    {
+      "source": "research-report/references/report-contract.md",
+      "target": "references/report-contract.md",
+      "sha256": "a5732658e55edd07e6ab7620f88a3f61631e332b22436b534e973658c1c0fc22",
+      "replacements": []
+    },
+    {
+      "source": "research-report/references/research-ledger.md",
+      "target": "references/research-ledger.md",
+      "sha256": "00c819d41050b0db935dacc60fe4df2eac17315757aba85863a4ec5a68cb2c41",
+      "replacements": []
+    },
+    {
+      "source": "research-report/references/restructure-existing.md",
+      "target": "references/restructure-existing.md",
+      "sha256": "0327c215a2442bfd249c04b61a077df55f7e7a6e2dd632d8827a8036ad344a4c",
+      "replacements": [
+        {
+          "id": "host-document-formats",
+          "before": "Word 使用 `docx`，PPT 使用 `pptx`",
+          "after": "Word 和 PPT 分别使用宿主当前可用的文档与演示文稿技能",
+          "count": 1
+        },
+        {
+          "id": "host-word-reading-and-export",
+          "before": "DOCX 读取和导出遵守 docx",
+          "after": "DOCX 读取和导出遵守宿主当前可用的文档技能",
+          "count": 1
+        },
+        {
+          "id": "bundle-writing-collaboration",
+          "before": "../../writing-router/references/collaborative-writing.md",
+          "after": "writing-common/collaborative-writing.md",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "research-report/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "2b70af40a92e29e49232f493d7eba0342e549d94c429a4423d0c567880d596cf",
+      "replacements": []
+    },
+    {
+      "source": "research-report/scripts/audit_report.py",
+      "target": "scripts/audit_report.py",
+      "sha256": "a7d77ac86340bb28c8e193c541f2fcc26d169f34b694265a1aa302a04c3054f6",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/academic-workflow-map.md",
+      "target": "references/writing-common/academic-workflow-map.md",
+      "sha256": "7e6f64ec1c266563afa61f157d9e1b0765a4834852898f5ce44028451545b704",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\brycewang-Awesome-Journal-Skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\Imbad0202-academic-research-skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\K-Dense-AI-scientific-agent-skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/ai-smell-catalog.md",
+      "target": "references/writing-common/ai-smell-catalog.md",
+      "sha256": "035b77c1e2100e468df93935b4057397ab67cce5ded349408d92372ec77abc16",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/collaborative-writing.md",
+      "target": "references/writing-common/collaborative-writing.md",
+      "sha256": "1d38c01b9c07a6f57488b9289a432e897e020e7547dbae54fc22116599448e54",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "PPT 的内容讨论与文件执行按 `pptx` 的[共同协作流程](../../pptx/references/presentation-workflow.md#内容讨论与制作执行)。",
+          "after": "PPT 的内容讨论与文件执行按当前宿主 `orbit:presentations`、`orbit:slides-artifact` 和 `Presentations` 的实际流程，保留本轮已有协作与写回授权。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "[xlsx](../../xlsx/SKILL.md)",
+          "after": "当前宿主 `Spreadsheets` / `orbit:sheets-artifact`",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "[latex-paper](../../latex-paper/SKILL.md)",
+          "after": "按名称查找且实际可用的 `latex-paper`；不可用时采用已核实工具，不承诺编译",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/common-quality.md",
+      "target": "references/writing-common/common-quality.md",
+      "sha256": "82f2c98f16e26f8d444119d201506d64d448b7fd949a7c1c3393997a61d8d883",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "[style-vocab 技能正文](../../style-vocab/SKILL.md)",
+          "after": "按名称查找并实际读取 `style-vocab` 技能正文及其私有词表资源",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "私有入口为 `D:\\BaiduSyncdisk\\.agents\\writing-profile\\index.md`。",
+          "after": "个人样稿不是此云端包的默认随附资源。仅使用当前已授权、实际可达的私有入口；找不到入口时继续文体规则，不读取来源审计副本中的历史本机路径。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/document-version-protection.md",
+      "target": "references/writing-common/document-version-protection.md",
+      "sha256": "54f0a9cb77a738399fca713cb93f283bc968dbaf5e8ce0d78da8a0246ea9720b",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/exact-edit.md",
+      "target": "references/writing-common/exact-edit.md",
+      "sha256": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "../scripts/exact_edit.py",
+          "after": "../../scripts/exact_edit.py",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/markdown-docx-contract.md",
+      "target": "references/writing-common/markdown-docx-contract.md",
+      "sha256": "fee3ff1266a31ee1f1724be2be7601695e97d0ed948511795bb781f76a561d0f",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "`docx` 承接格式、结构、分页和成品检查",
+          "after": "当前宿主 `documents` / `orbit:docs-artifact` 承接格式、结构、分页和成品检查",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "从 [10 套模板](../../docx/references/template/template-presets.md)推荐一套",
+          "after": "从当前已获授权且实际可用的模板中推荐一套；没有模板时说明并按宿主规则处理，不假定原仓库十套模板已安装",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "- 普通段落小改使用 `docx/scripts/edit_paragraphs.py finalize source edits output --allow-office-com`：严格段落编辑产物/记录与随后刷新全文已有相关内部域的交付物/记录分开保留。`apply`/`check` 仍是严格的底层段落阶段，不能代替有域文档的最终收尾。不为小改临时编写项目脚本、重新生成整稿或自动生成 PDF/PNG；无相关域时不启动 Office。",
+          "after": "- 普通段落小改由当前宿主文档工具原位处理获准段落；保留未改正文和格式，严格段落修改与随后相关内部域刷新分开核验。此包不提供原仓库 edit_paragraphs.py 或 Office COM；确认实际工具可用再执行，有域文档不能把文字修改冒充域刷新。不为小改重新生成整稿；渲染遵循当前宿主文档技能要求。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-4",
+          "before": "- 整稿导出对所有应编号的图、表、公式建立 `SEQ`/`REF`，无编号对象不加号，局部修改不转换无关纯文本引用。统一命令、全文各区域（story）的覆盖、安全刷新及未完成处理见 [编号与交叉引用](../../docx/references/numbering-references.md)；该页列出已批准的源码接口约定，文档更新本身不表示脚本已实现或运行时已发布。整稿导出在转换和模板格式处理之后、最终生成版本与哈希记录之前接入统一 finalizer，不再修改已检查的产物。",
+          "after": "- 整稿导出对所有应编号的图、表、公式建立目标格式支持的编号和交叉引用，无编号对象不加号，局部修改不转换无关纯文本引用。由当前宿主文档工具核对全文各区域的引用结构及可用刷新方式，不假定原仓库 finalizer、编号脚本或 Office 已安装。转换、模板处理和可执行检查完成后固定交付版本；不能完成的原生域刷新明确保留为未完成项。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-5",
+          "before": "- 图片按 [图片引用与图题检查](../../docx/references/figure-integration-gate.md) 核对。PDF 按用户请求从本轮已检查的 Word 导出，无须用户再宣布 Word 为最终版本。",
+          "after": "- 图片核对图文身份、来源、引用位置、编号、图题和版式，使用当前宿主文档/PDF技能可执行的检查。PDF 按用户请求从本轮已检查的 Word 导出，无须用户再宣布 Word 为最终版本。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-6",
+          "before": "没有记录时由 Word 工具生成对应检查记录；局部编辑的两阶段记录按上述约定分别保留。按需维护当前版本指向，不另建审批状态机，也不因更新 Word 自动创建整套快照、页面图片和多份说明。具体调用见 [Word 版本检查](../../docx/references/document-version-checks.md)。",
+          "after": "没有记录时在本轮私有工作材料记录必要来源与检查结果；按需维护当前版本指向，不另建审批状态机，不因更新 Word 自动创建整套快照或多份说明。不得调用未安装的原仓库版本检查脚本。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-1",
+          "before": "Word 为目标时优先安全调用 Word；不能隔离时继续文件级或适用的 LibreOffice 排版检查，但不能用 LibreOffice 替代原生域刷新。",
+          "after": "仅使用当前已核实可用且获授权的渲染器；此包不提供桌面 Word 或 Office COM。可用的 LibreOffice/PDF 渲染可检查版式，但不能声称完成未执行的 Word 原生域刷新。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-2",
+          "before": "OfficeCLI 的结构验证不证明版式。",
+          "after": "结构验证不证明版式；OfficeCLI 不是此包提供的执行依赖。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-3",
+          "before": "恢复任务或复用结果前，由工具自动核对版本。",
+          "after": "恢复任务或复用结果前，用当前实际可用工具回读文件并核对版本及内容哈希，不假定原仓库自动核验工具存在。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/ui-copy.md",
+      "target": "references/writing-common/ui-copy.md",
+      "sha256": "f5e1a36363898b979ce64ba2228b3f9c4d1b258fd601da24d5015f58eef85734",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/upstream-sources.md",
+      "target": "references/writing-common/upstream-sources.md",
+      "sha256": "89b67123370db8e512c76c9dfead3f85fe5d783fd0bf72393b8f3bab1a334e3f",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/scripts/exact_edit.py",
+      "target": "scripts/exact_edit.py",
+      "sha256": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/LICENSE",
+      "target": "references/writing-common/LICENSE",
+      "sha256": "aa00e74769e1b9d8e7fa7094dbfcca9b129a0ded6dce1cf4da050b99146d2fa7",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。缺少专业技能时继续本技能可完成的部分，并明确具体缺口，不假称已经调用或完成。原文或参考中的历史测试、用户批准、维护计划及示例项目只为来源记录，不代表当前环境已验证、当前用户授权或当前任务事实。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n\n`style-vocab` 及个人词表须按名称查找并确认当前已授权、实际可读；缺少任一资源时继续可完成的事实与文体审校，明确未执行个人词表审计，不把公共规则检查称为个人词表已通过。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Research Report",
+    "short_description": "Research and write evidence-based reports and decisions",
+    "default_prompt": "Use $research-report to help with this task."
+  }
+}

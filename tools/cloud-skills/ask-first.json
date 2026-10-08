@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "ask-first/SKILL.md",
+  "expected_source_sha256": "4a61f3f5d3e4a6dd5584d2db41808bee24e09dea3ef908975599e9ec5f746f1b",
+  "remove_frontmatter_line": "disable-model-invocation: true",
+  "replacements": [
+    {
+      "id": "cloud-fact-and-web-access",
+      "before": "先读背景。本地事实从用户材料、项目文件和当前环境核实；影响判断的外部事实若证据不足或可能过期，通过 `web-access` 主动查证，优先一手来源。未能核实就保留缺口，继续可完成的独立分析。目标、价值取舍和偏好由用户决定。",
+      "after": "先读背景。环境事实从用户材料、已授权且确实可读取的项目文件和当前云端环境核实；不假定能访问用户电脑；影响判断的外部事实若证据不足或可能过期，按名称读取可用的 `web-access` 技能并主动查证，优先一手来源；该技能尚未安装时，使用宿主现有的联网检索能力，不假称已调用它。未能核实就保留缺口，继续可完成的独立分析。目标、价值取舍和偏好由用户决定。"
+    }
+  ],
+  "append_body": "\n## 云端边界\n\n仅在用户显式调用 `/ask-first`、`$ask-first` 或明确要求使用 ask-first 时启用，不自动接管普通任务。提问通过当前宿主支持的用户消息渠道发送；不能因为缺少某个本机交互工具就跳过必要问题。此技能不授予外部发送、电脑访问或修改权限，也不更改宿主确认规则。\n\n此版本由原仓库显式构建，不与本机实时自动同步；来源、适配版本及哈希见 references/cloud-build.json。\n",
+  "interface": {
+    "display_name": "Ask First",
+    "short_description": "Clarify the real goal one question at a time",
+    "default_prompt": "Use $ask-first to clarify my goal before proceeding."
+  }
+}

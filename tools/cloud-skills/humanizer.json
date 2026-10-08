@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "skill": "humanizer",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "humanizer/SKILL.md",
+  "expected_source_sha256": "bad25925784dcfe74e39ddc380f1e31675c2c7ea3a7daed9aa4b841e5b5a9adf",
+  "files": [
+    {
+      "source": "humanizer/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "bad25925784dcfe74e39ddc380f1e31675c2c7ea3a7daed9aa4b841e5b5a9adf",
+      "replacements": [
+        {
+          "id": "host-frontmatter-license-provenance",
+          "before": "license: MIT\nmetadata:\n  version: \"2.9.2\"\n",
+          "after": ""
+        },
+        {
+          "id": "unavailable-domain-routing-description",
+          "before": "  engineering proposal delivery; route those to writing-router,\n  ieee-manuscript-edit, or project-writing. Based on Wikipedia's comprehensive",
+          "after": "  engineering proposal delivery; use an available language- or domain-specific\n  writing workflow for those tasks. Based on Wikipedia's comprehensive"
+        },
+        {
+          "id": "unavailable-domain-routing-body",
+          "before": "This local fork handles general English prose. Chinese prose goes to the\nseparate `writing-router` skill; IEEE or SCI manuscript delivery goes first to\n`ieee-manuscript-edit`, and engineering proposal delivery goes first to\n`project-writing`. Those formal delivery skills own terminology, evidence,\nand register, so this skill must not add personality or first-person claims to\ntheir final text.",
+          "after": "This local fork handles general English prose. Chinese prose, IEEE or SCI manuscript delivery, and engineering proposal delivery belong to their respective language- or domain-specific writing workflows. Resolve writing-router, ieee-manuscript-edit, or project-writing by name through the host's available skills when present; sibling directories are not assumed. When absent, use the host's applicable writing or document workflow without claiming to have invoked a missing skill. Those formal delivery workflows own terminology, evidence, and register, so this skill must not add personality or first-person claims to their final text."
+        }
+      ]
+    },
+    {
+      "source": "humanizer/LICENSE",
+      "target": "LICENSE",
+      "sha256": "4ac4810254ab36d45419141aeb8e69bf50652cfafe5b2dab947d06d44e5cbf96",
+      "replacements": []
+    },
+    {
+      "source": "humanizer/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "ad5593bd0c7ff369b10b52897416c4f61eafffa80d89627df30db2ede5bd482b",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n原始版本 2.9.2；许可证 MIT，完整许可见 LICENSE。所有原始写作模式和示例保留，适配器版本与写作源码版本分开记录。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Humanizer",
+    "short_description": "Edit general English while preserving author voice",
+    "default_prompt": "Use $humanizer to help with this task."
+  }
+}

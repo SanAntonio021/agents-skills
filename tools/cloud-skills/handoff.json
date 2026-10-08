@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "skill": "handoff",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "handoff/SKILL.md",
+  "expected_source_sha256": "2b49b994728b1c260cdd20c917c970af2ba5cea18497760430ec0febbf7b6f71",
+  "files": [
+    {
+      "source": "handoff/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "2b49b994728b1c260cdd20c917c970af2ba5cea18497760430ec0febbf7b6f71",
+      "replacements": [
+        {
+          "id": "cross-environment-materials",
+          "before": "- 本机接手默认使用绝对路径，只说明材料用途；已有文件中的完整清单、哈希和正文用链接代替摘抄。",
+          "after": "- 同一已授权环境内接手时可使用已核实的绝对路径；跨会话或跨环境时优先使用接收端确实可访问的链接或随附材料。不得把云端临时路径当作用户电脑路径。已有文件中的完整清单、哈希和正文用可访问的链接代替摘抄。"
+        }
+      ]
+    },
+    {
+      "source": "handoff/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "90c1558a3aad4137d4f65ed6938c9e567b1e709f726c180bef2bbcfd248421ee",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n只使用当前可见对话及已授权工具实际读到的材料。不宣称已检查不可访问的会话、电脑文件或其他模型历史；不复制宿主私有指令、隐藏记录、认证信息或未授权长期外发许可。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。依赖按宿主实际技能名查找，不假定相邻目录名固定；只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "Handoff",
+    "short_description": "Prepare concise, evidence-grounded handoffs",
+    "default_prompt": "Use $handoff to help with this task."
+  }
+}

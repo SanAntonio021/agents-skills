@@ -1,0 +1,519 @@
+{
+  "schema_version": 2,
+  "skill": "ieee-manuscript-edit",
+  "adapter_version": "2.0.0",
+  "source_repository": "https://github.com/SanAntonio021/agents-skills",
+  "source_path": "ieee-manuscript-edit/SKILL.md",
+  "expected_source_sha256": "7e336ea3a8cb2cf9f71e75d46b6629c8add38d2b5e5879f256c16f833fa535ba",
+  "files": [
+    {
+      "source": "ieee-manuscript-edit/SKILL.md",
+      "target": "SKILL.md",
+      "sha256": "7e336ea3a8cb2cf9f71e75d46b6629c8add38d2b5e5879f256c16f833fa535ba",
+      "replacements": [
+        {
+          "id": "host-frontmatter-version-provenance",
+          "before": "metadata:\n  version: \"2.0.0\"\n",
+          "after": "",
+          "count": 1
+        },
+        {
+          "id": "lookup-writing-router",
+          "before": "从 [writing-router](../writing-router/SKILL.md) 接收：",
+          "after": "按实际技能名称查找 `writing-router`，可用时从其接收以下上下文；直接调用或该技能不可用时，按本技能与随包共同参考建立同样字段，不假称已调用：",
+          "count": 1
+        },
+        {
+          "id": "bundle-collaborative-writing",
+          "before": "../writing-router/references/collaborative-writing.md",
+          "after": "references/writing-common/collaborative-writing.md",
+          "count": 1
+        },
+        {
+          "id": "bundle-common-quality",
+          "before": "../writing-router/references/common-quality.md",
+          "after": "references/writing-common/common-quality.md",
+          "count": 1
+        },
+        {
+          "id": "bundle-ai-smell-catalog",
+          "before": "../writing-router/references/ai-smell-catalog.md",
+          "after": "references/writing-common/ai-smell-catalog.md",
+          "count": 1
+        },
+        {
+          "id": "authorized-language-samples",
+          "before": "私有样稿按语言读取：中文使用 `D:\\BaiduSyncdisk\\.agents\\writing-samples\\ieee-manuscript-edit-zh.md`，英文使用 `D:\\BaiduSyncdisk\\.agents\\writing-samples\\ieee-manuscript-edit-en.md`。只读取当前语言、`status: approved` 的正文，候选区不作为写作依据。公开技能不保存个人论文段落。",
+          "after": "私有样稿未随本云端包提供。仅在用户已授权、实际可达且已认可其文风的样稿中读取当前语言、`status: approved` 的正文，候选区不作为写作依据；没有可用样稿时继续当前文体规则，不猜测用户偏好。公开技能不保存个人论文段落。",
+          "count": 1
+        },
+        {
+          "id": "gate-template-assets",
+          "before": "具体模板符合性必须依据用户给出的模板、官方作者指南或技能内对应官方模板。",
+          "after": "具体模板符合性必须依据用户给出的模板或本轮实际获取并核实的官方模板、作者指南。本云端包没有 IEEE 模板资产，不得将来源清单当作已安装模板。",
+          "count": 1
+        },
+        {
+          "id": "host-documents-no-com",
+          "before": "正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。Word 使用本轮按协作方式处理并审校的正文，在执行 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 后交给 `docx`；LaTeX 模板、BibTeX 和编译交给 `latex-paper`。",
+          "after": "正文按当前协作方式写回主稿；在线主稿交给当前确实可用且已授权的对应平台工具局部更新。实际写入任务文件 `.md` 或 `.tex` 前执行 [文稿版本保护](references/writing-common/document-version-protection.md)。Word 使用本轮按协作方式处理并审校的正文，在执行 [Markdown 到 DOCX 交接契约](references/writing-common/markdown-docx-contract.md) 后交给宿主当前 `documents` / `orbit:docs-artifact` 技能。PDF、幻灯片和表格分别使用实际可用的 `pdf`、`Presentations` / `orbit:slides-artifact`、`Spreadsheets` / `orbit:sheets-artifact`；不假定原仓库 Office COM、模板或脚本已安装。LaTeX 模板、BibTeX 和编译按名称查找 `latex-paper`；不可用时核实实际工具，只完成有证据的步骤，不承诺编译通过。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/CHANGELOG.md",
+      "target": "references/CHANGELOG.md",
+      "sha256": "7766bdbe772456f7227f129b6314a51b121e01ee69937483d7a5a3475a9613bd",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/chinese-paper.md",
+      "target": "references/chinese-paper.md",
+      "sha256": "cb8b03f45ed4cdfa5abb1fc74a4f1d23830ffc34fd19ea0aaedbfb0149b9a9db",
+      "replacements": [
+        {
+          "id": "authorized-style-vocab",
+          "before": "起草或精修时读取 `D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md` 和 `D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\论文.md`。术语中英文对应需要统一时再读 `D:\\BaiduSyncdisk\\.agents\\vocab\\术语.md`。",
+          "after": "起草或精修时按名称查找 `style-vocab`，读取其当前确实可用且已授权的私有词表资源中的 `中文/通用.md` 和 `中文/论文.md`。术语中英文对应需要统一时再读该资源的 `术语.md`。私有资源不可用时继续依据当前稿件和文体规则处理，明确词表检查未完成，不使用历史本机路径或伪造通过结果。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/draft-finalization-rules.md",
+      "target": "references/draft-finalization-rules.md",
+      "sha256": "aa102fd4b61ab728269d59c748959f646c29c7fe726a6c62aeaefce75f4122c3",
+      "replacements": [
+        {
+          "id": "authorized-approved-samples",
+          "before": "如果用户明确要求对齐个人论文文风，先读取 `D:\\BaiduSyncdisk\\.agents\\writing-profile\\index.md`；只有 `paper` 样稿标为 `approved` 时才读取当前语言的对应片段。只借句式密度、术语分层和信息推进方式，具体内容仍以当前稿件为准。",
+          "after": "如果用户明确要求对齐个人论文文风，只读取当前已授权且实际可达的个人样稿入口；只有 `paper` 样稿标为 `approved` 时才读取当前语言的对应片段。入口和样稿未随此云端包提供，不可用时继续当前文体规则。只借句式密度、术语分层和信息推进方式，具体内容仍以当前稿件为准。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/english-paper.md",
+      "target": "references/english-paper.md",
+      "sha256": "38ba05c32b6f1763052018231a1d1155ce5af37066e17b0e8e2523b239a6eb9f",
+      "replacements": [
+        {
+          "id": "authorized-style-vocab",
+          "before": "Read `D:\\BaiduSyncdisk\\.agents\\vocab\\英文\\通用.md` and `D:\\BaiduSyncdisk\\.agents\\vocab\\英文\\论文.md` when available. Read the shared terminology table only when bilingual terms need alignment.",
+          "after": "Resolve `style-vocab` by its actual skill name and read `英文/通用.md` and `英文/论文.md` from its currently accessible, authorized private vocabulary resource. Read its `术语.md` only when bilingual terms need alignment. If the private resource is unavailable, continue with manuscript evidence and these writing rules, disclose the incomplete vocabulary check, and never use a historical local path or report a synthetic clean audit.",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/final-audit.md",
+      "target": "references/final-audit.md",
+      "sha256": "7f81d6e0d07c70ea41acf2fb989170779aa2ea7cb969ac1d55e24cb787765b28",
+      "replacements": [
+        {
+          "id": "bundle-collaboration",
+          "before": "../../writing-router/references/collaborative-writing.md",
+          "after": "writing-common/collaborative-writing.md",
+          "count": 1
+        },
+        {
+          "id": "lookup-latex-paper",
+          "before": "[latex-paper](../../latex-paper/SKILL.md)",
+          "after": "按实际名称查找且可用的 `latex-paper`（不可用时说明编译缺口）",
+          "count": 1
+        },
+        {
+          "id": "bundle-stopline",
+          "before": "../../paper-review/references/stopline-checklist.md",
+          "after": "stopline-checklist.md",
+          "count": 1
+        },
+        {
+          "id": "explicit-style-vocab-command",
+          "before": "中英文词表审计使用 [style-vocab 的现有命令](../../style-vocab/SKILL.md#检查)：`--file`、`--language`、`--document-kind` 及适用的词表目录；不要使用规范审计脚本的参数调用词表脚本。",
+          "after": "中英文词表审计按实际名称查找 `style-vocab` 的当前指引，也可使用本包只读 `scripts/audit_writing_memory.py --file <path> --language zh|en --document-kind paper|review-response --vocab-root <已解析且已授权的词表目录>`。词表资源不可用时说明未完成，不生成空表冒充通过；不要使用规范审计脚本的参数调用词表脚本。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/ieee-official-template-cache.md",
+      "target": "references/ieee-official-template-cache.md",
+      "sha256": "6defa43c4fc366de478e37b319f8954e4ccde43bf91871ba5febc6e18b29874b",
+      "replacements": [
+        {
+          "id": "cloud-template-title",
+          "before": "# IEEE 官方模板技能资源",
+          "after": "# IEEE 官方模板来源与云端可用性",
+          "count": 1
+        },
+        {
+          "id": "no-shipped-template-claim",
+          "before": "本文件说明 `ieee-manuscript-edit` 技能内可复用的 IEEE 官方 Word/LaTeX 模板资源。技能只分发可直接使用的模板文件；完整官方下载包保存在本机来源快照中，不参与 CC Switch 更新。",
+          "after": "本文件保留原仓库 IEEE Word/LaTeX 模板的来源和历史清单。本次云端包没有提供任何模板文件或本机下载快照；以下条目是定位线索，不是当前可用性或最新版本证明。",
+          "count": 1
+        },
+        {
+          "id": "exact-template-availability-gate",
+          "before": "## 资源位置\n\n技能源码内位置：\n\n```text\nD:\\BaiduSyncdisk\\.agents\\skills\\ieee-manuscript-edit\\assets\\ieee-official-templates\n```\n\n通用写法：\n\n```text\n<skill-root>\\assets\\ieee-official-templates\n```\n\n",
+          "after": "## 云端模板门槛\n\n本包没有 `assets/ieee-official-templates`，下列九个原仓库缓存文件均未捆绑、未安装：\n\n- `transactions-journals-letters/word-extracted/ieee-transactions-template.docx`\n- `transactions-journals-letters/latex-extracted/bare_jrnl_new_sample4.tex`\n- `transactions-journals-letters/latex-extracted/IEEEtran.cls`\n- `ieee-access/Access_Word_Template.docx`\n- `ieee-access/latex-extracted/ACCESS_latex_template_20240429/access.tex`\n- `ieee-access/latex-extracted/ACCESS_latex_template_20240429/ieeeaccess.cls`\n- `ieee-journal-of-microwaves/JMW_Word_Template.docx`\n- `ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/JMW_template.tex`\n- `ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/IEEEjmw.cls`\n\n先核实用户实际提供的文件或本轮从官方获取的文件及必要依赖。未获得目标模板时可以继续通用语言精修，但模板套用、模板符合性和基于模板的编译保持未完成；不能据下表、历史 association id 或源文件审计副本声称资源可用。\n\n",
+          "count": 1
+        },
+        {
+          "id": "historical-template-list",
+          "before": "## 已分发模板",
+          "after": "## 原仓库模板清单（当前云端均未捆绑）",
+          "count": 1
+        },
+        {
+          "id": "no-local-template-snapshot",
+          "before": "## 完整原包\n\n本机完整快照放在：\n\n```text\nD:\\BaiduSyncdisk\\.agents\\downloads\\ieee-official-templates\\<snapshot-date>\n```\n\n每个快照包含官方下载 ZIP、解压内容、来源说明和逐文件 SHA-256。该目录只用于来源追溯与恢复，技能运行不得依赖它。\n\n",
+          "after": "## 历史原包\n\n原作者本机曾保存完整下载包、解压内容、来源说明和逐文件 SHA-256；本云端无法据此访问或恢复这些文件。历史快照不是运行依赖，也不是当前模板的核验结果。\n\n",
+          "count": 1
+        },
+        {
+          "id": "actual-template-selection",
+          "before": "1. 用户要求 IEEE 模板、IEEE 风格格式化、Word 参考模板或 LaTeX 模板时，先查本技能资源。",
+          "after": "1. 用户要求 IEEE 模板、IEEE 风格格式化、Word 参考模板或 LaTeX 模板时，先检查当前已提供且授权使用的模板；本包清单中的文件均不可直接调用。没有模板时从下列官方来源核实并获取实际文件，失败则说明缺口。",
+          "count": 1
+        },
+        {
+          "id": "conditional-transactions-template",
+          "before": "2. 目标是 IEEE Transactions 类期刊且未指定专用模板时，优先用 `transactions-journals-letters/`。",
+          "after": "2. 目标是 IEEE Transactions 类期刊且未指定专用模板时，先核对官方当前适用性；实际取得相应文件和依赖后再使用。`transactions-journals-letters/` 只是原仓库目录名。",
+          "count": 1
+        },
+        {
+          "id": "conditional-specific-template",
+          "before": "3. 目标是 IEEE Access 或 IEEE Journal of Microwaves 时，用对应专用目录。",
+          "after": "3. 目标是 IEEE Access 或 IEEE Journal of Microwaves 时，核对并实际取得对应专用模板；不能将原仓库目录名当作云端文件路径。",
+          "count": 1
+        },
+        {
+          "id": "authorized-download-no-auto-install",
+          "before": "5. 如果从官方重新下载了新模板，先创建新的本机日期快照并核对 SHA-256，再把可直接使用的 Word/LaTeX 文件更新到技能资源；下载 ZIP、生成 PDF、`__MACOSX`、`.DS_Store` 和 `._*` 不进入公开技能仓库。",
+          "after": "5. 官方下载仅保存到当前已授权任务空间，记录来源、日期和 SHA-256 并核对必要依赖。下载不代表可以自动修改公开技能、安装资源或覆盖旧模板；这些操作需各自授权。下载 ZIP、生成 PDF、`__MACOSX`、`.DS_Store` 和 `._*` 不进入公开技能仓库。",
+          "count": 1
+        },
+        {
+          "id": "historical-association-ids",
+          "before": "本次已核验的 association id：",
+          "after": "原仓库历史记录的 association id（当前可用性、期刊对应和版本须重新核实）：",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/ieee-structure-and-style.md",
+      "target": "references/ieee-structure-and-style.md",
+      "sha256": "c7df7e960200e98f40e618c8532c365498d9b20fd459706d11227a95b82fa8da",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/manuscript-refinement-checklist.md",
+      "target": "references/manuscript-refinement-checklist.md",
+      "sha256": "a09d744e4881a3f4b75ed56b1c8150453fb3e930f0bcab3bee1b877b6e9e21f9",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/sainani-sentence-review.md",
+      "target": "references/sainani-sentence-review.md",
+      "sha256": "639328322dd845d0d1303a701601124f71ec4ee74768a778e80bf53b29f62faa",
+      "replacements": [
+        {
+          "id": "cc-by-license-link",
+          "before": "> Licensed under CC BY 4.0.",
+          "after": "> Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).\n> Cloud packaging preserves the review method and attribution; runtime mappings and provenance are recorded in cloud-build.json.",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/sci-terminology-bank.md",
+      "target": "references/sci-terminology-bank.md",
+      "sha256": "610677268617341ba9f204bdbde6450fe6ca129a68e1c32d9e83449944186223",
+      "replacements": [
+        {
+          "id": "authorized-terminology-resource",
+          "before": "全局术语表位于 `D:\\BaiduSyncdisk\\.agents\\vocab\\术语.md`，固定使用两列：",
+          "after": "全局术语表通过按名称查找 `style-vocab` 后读取其实际可达、已授权的私有词表资源中的 `术语.md`；本公开包不携带个人词表，不假定本机路径存在。可用表固定使用两列：",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/references/section-by-section-review.md",
+      "target": "references/section-by-section-review.md",
+      "sha256": "9a033ed698dc28b26f76ecc8b8432c0cf96ca317743862ecedb62596edb17912",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/upstream-skill-notes.md",
+      "target": "references/upstream-skill-notes.md",
+      "sha256": "7a3fa3c48a7f96abbcc9593adbe38878532d0b7dbc1a2b7f3820c0e33f27f3d4",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/upstream-sources.md",
+      "target": "references/upstream-sources.md",
+      "sha256": "f96ad527cd0333ad70f1a06a9f1b9b4d15a8f5479f12a6dd483663e5da399b3c",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/references/writing-memory-schema.md",
+      "target": "references/writing-memory-schema.md",
+      "sha256": "794dfc1f5e15db87375a0caa4c5fdf1fb36a3ccbd7e5942e2684d7e94ac6254d",
+      "replacements": [
+        {
+          "id": "lookup-style-vocab",
+          "before": "词表位置、结构、收录授权、检查时机、命令和状态统一按 [style-vocab](../../style-vocab/SKILL.md) 执行；",
+          "after": "词表位置、结构、收录授权、检查时机、命令和状态统一按实际名称查找到的 `style-vocab` 执行；私有资源从该技能的当前资源定位，不假定相邻目录或本机词表存在；",
+          "count": 1
+        },
+        {
+          "id": "offline-audit-entry",
+          "before": "审计命中是复核线索；",
+          "after": "本包同时提供只读 `scripts/audit_writing_memory.py`；调用时必须显式传 `--vocab-root <已解析且已授权的词表目录>`、`--file <文件>`、`--language zh|en`、`--document-kind paper|review-response`。所需当前语言通用表、任务表和 `维护.md` 不可用时该步骤保持未完成，不自动创建空表。脚本只检查词级候选，不核验全局/项目术语对应关系，术语表仍需单独核对。\n\n审计命中是复核线索；",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "ieee-manuscript-edit/scripts/audit_manuscript_conventions.py",
+      "target": "scripts/audit_manuscript_conventions.py",
+      "sha256": "a9234a7c4e1af9b690f6bf4823b3b060055961ed5e2ecfd6e4ee2603b4437607",
+      "replacements": []
+    },
+    {
+      "source": "ieee-manuscript-edit/scripts/audit_writing_memory.py",
+      "target": "scripts/audit_writing_memory.py",
+      "sha256": "cfab6142a7991db93a241bc962ec9adf64d2bcfb529f8c553343f2a55cf0c70d",
+      "replacements": [
+        {
+          "id": "remove-windows-vocab-default",
+          "before": "DEFAULT_VOCAB_ROOT = Path(r\"D:\\BaiduSyncdisk\\.agents\\vocab\")\n",
+          "after": "",
+          "count": 1
+        },
+        {
+          "id": "require-explicit-vocab-root",
+          "before": "    parser.add_argument(\"--vocab-root\", default=str(DEFAULT_VOCAB_ROOT))",
+          "after": "    parser.add_argument(\"--vocab-root\", required=True, help=\"Explicit authorized vocabulary directory; no machine-local default\")",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "paper-review/references/stopline-checklist.md",
+      "target": "references/stopline-checklist.md",
+      "sha256": "a953d01e919fb92fa804831fe2cc50178b774a73d650c1350a315cb16a33a649",
+      "replacements": [
+        {
+          "id": "bundle-engineering-validation.md",
+          "before": "../../technical-writing/references/engineering-validation.md",
+          "after": "engineering-validation.md",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "technical-writing/references/engineering-validation.md",
+      "target": "references/engineering-validation.md",
+      "sha256": "8e88fc1149bd4239f201fe91dcb01330f081140563fa108e206271b4710ebed9",
+      "replacements": []
+    },
+    {
+      "source": "technical-writing/references/engineering-validation-source.md",
+      "target": "references/engineering-validation-source.md",
+      "sha256": "49bff511d7ef6b731d4da90b73bf98bf1b2b55f2c9978761c0f8471d2b86aec4",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/academic-workflow-map.md",
+      "target": "references/writing-common/academic-workflow-map.md",
+      "sha256": "7e6f64ec1c266563afa61f157d9e1b0765a4834852898f5ce44028451545b704",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\brycewang-Awesome-Journal-Skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\Imbad0202-academic-research-skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "`D:\\BaiduSyncdisk\\.agents\\upstream\\K-Dense-AI-scientific-agent-skills`",
+          "after": "原仓库的本机上游缓存（此云端包未提供，按已列公开来源核实）",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/ai-smell-catalog.md",
+      "target": "references/writing-common/ai-smell-catalog.md",
+      "sha256": "035b77c1e2100e468df93935b4057397ab67cce5ded349408d92372ec77abc16",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/collaborative-writing.md",
+      "target": "references/writing-common/collaborative-writing.md",
+      "sha256": "1d38c01b9c07a6f57488b9289a432e897e020e7547dbae54fc22116599448e54",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "PPT 的内容讨论与文件执行按 `pptx` 的[共同协作流程](../../pptx/references/presentation-workflow.md#内容讨论与制作执行)。",
+          "after": "PPT 的内容讨论与文件执行按当前宿主 `orbit:presentations`、`orbit:slides-artifact` 和 `Presentations` 的实际流程，保留本轮已有协作与写回授权。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "[xlsx](../../xlsx/SKILL.md)",
+          "after": "当前宿主 `Spreadsheets` / `orbit:sheets-artifact`",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "[latex-paper](../../latex-paper/SKILL.md)",
+          "after": "按名称查找且实际可用的 `latex-paper`；不可用时采用已核实工具，不承诺编译",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/common-quality.md",
+      "target": "references/writing-common/common-quality.md",
+      "sha256": "82f2c98f16e26f8d444119d201506d64d448b7fd949a7c1c3393997a61d8d883",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "[style-vocab 技能正文](../../style-vocab/SKILL.md)",
+          "after": "按名称查找并实际读取 `style-vocab` 技能正文及其私有词表资源",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "私有入口为 `D:\\BaiduSyncdisk\\.agents\\writing-profile\\index.md`。",
+          "after": "个人样稿不是此云端包的默认随附资源。仅使用当前已授权、实际可达的私有入口；找不到入口时继续文体规则，不读取来源审计副本中的历史本机路径。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/document-version-protection.md",
+      "target": "references/writing-common/document-version-protection.md",
+      "sha256": "54f0a9cb77a738399fca713cb93f283bc968dbaf5e8ce0d78da8a0246ea9720b",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/exact-edit.md",
+      "target": "references/writing-common/exact-edit.md",
+      "sha256": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "../scripts/exact_edit.py",
+          "after": "../../scripts/exact_edit.py",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/markdown-docx-contract.md",
+      "target": "references/writing-common/markdown-docx-contract.md",
+      "sha256": "fee3ff1266a31ee1f1724be2be7601695e97d0ed948511795bb781f76a561d0f",
+      "replacements": [
+        {
+          "id": "cloud-boundary-1",
+          "before": "`docx` 承接格式、结构、分页和成品检查",
+          "after": "当前宿主 `documents` / `orbit:docs-artifact` 承接格式、结构、分页和成品检查",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-2",
+          "before": "从 [10 套模板](../../docx/references/template/template-presets.md)推荐一套",
+          "after": "从当前已获授权且实际可用的模板中推荐一套；没有模板时说明并按宿主规则处理，不假定原仓库十套模板已安装",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-3",
+          "before": "- 普通段落小改使用 `docx/scripts/edit_paragraphs.py finalize source edits output --allow-office-com`：严格段落编辑产物/记录与随后刷新全文已有相关内部域的交付物/记录分开保留。`apply`/`check` 仍是严格的底层段落阶段，不能代替有域文档的最终收尾。不为小改临时编写项目脚本、重新生成整稿或自动生成 PDF/PNG；无相关域时不启动 Office。",
+          "after": "- 普通段落小改由当前宿主文档工具原位处理获准段落；保留未改正文和格式，严格段落修改与随后相关内部域刷新分开核验。此包不提供原仓库 edit_paragraphs.py 或 Office COM；确认实际工具可用再执行，有域文档不能把文字修改冒充域刷新。不为小改重新生成整稿；渲染遵循当前宿主文档技能要求。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-4",
+          "before": "- 整稿导出对所有应编号的图、表、公式建立 `SEQ`/`REF`，无编号对象不加号，局部修改不转换无关纯文本引用。统一命令、全文各区域（story）的覆盖、安全刷新及未完成处理见 [编号与交叉引用](../../docx/references/numbering-references.md)；该页列出已批准的源码接口约定，文档更新本身不表示脚本已实现或运行时已发布。整稿导出在转换和模板格式处理之后、最终生成版本与哈希记录之前接入统一 finalizer，不再修改已检查的产物。",
+          "after": "- 整稿导出对所有应编号的图、表、公式建立目标格式支持的编号和交叉引用，无编号对象不加号，局部修改不转换无关纯文本引用。由当前宿主文档工具核对全文各区域的引用结构及可用刷新方式，不假定原仓库 finalizer、编号脚本或 Office 已安装。转换、模板处理和可执行检查完成后固定交付版本；不能完成的原生域刷新明确保留为未完成项。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-5",
+          "before": "- 图片按 [图片引用与图题检查](../../docx/references/figure-integration-gate.md) 核对。PDF 按用户请求从本轮已检查的 Word 导出，无须用户再宣布 Word 为最终版本。",
+          "after": "- 图片核对图文身份、来源、引用位置、编号、图题和版式，使用当前宿主文档/PDF技能可执行的检查。PDF 按用户请求从本轮已检查的 Word 导出，无须用户再宣布 Word 为最终版本。",
+          "count": 1
+        },
+        {
+          "id": "cloud-boundary-6",
+          "before": "没有记录时由 Word 工具生成对应检查记录；局部编辑的两阶段记录按上述约定分别保留。按需维护当前版本指向，不另建审批状态机，也不因更新 Word 自动创建整套快照、页面图片和多份说明。具体调用见 [Word 版本检查](../../docx/references/document-version-checks.md)。",
+          "after": "没有记录时在本轮私有工作材料记录必要来源与检查结果；按需维护当前版本指向，不另建审批状态机，不因更新 Word 自动创建整套快照或多份说明。不得调用未安装的原仓库版本检查脚本。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-1",
+          "before": "Word 为目标时优先安全调用 Word；不能隔离时继续文件级或适用的 LibreOffice 排版检查，但不能用 LibreOffice 替代原生域刷新。",
+          "after": "仅使用当前已核实可用且获授权的渲染器；此包不提供桌面 Word 或 Office COM。可用的 LibreOffice/PDF 渲染可检查版式，但不能声称完成未执行的 Word 原生域刷新。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-2",
+          "before": "OfficeCLI 的结构验证不证明版式。",
+          "after": "结构验证不证明版式；OfficeCLI 不是此包提供的执行依赖。",
+          "count": 1
+        },
+        {
+          "id": "cloud-host-availability-3",
+          "before": "恢复任务或复用结果前，由工具自动核对版本。",
+          "after": "恢复任务或复用结果前，用当前实际可用工具回读文件并核对版本及内容哈希，不假定原仓库自动核验工具存在。",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "writing-router/references/ui-copy.md",
+      "target": "references/writing-common/ui-copy.md",
+      "sha256": "f5e1a36363898b979ce64ba2228b3f9c4d1b258fd601da24d5015f58eef85734",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/references/upstream-sources.md",
+      "target": "references/writing-common/upstream-sources.md",
+      "sha256": "89b67123370db8e512c76c9dfead3f85fe5d783fd0bf72393b8f3bab1a334e3f",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/scripts/exact_edit.py",
+      "target": "scripts/exact_edit.py",
+      "sha256": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be",
+      "replacements": []
+    },
+    {
+      "source": "writing-router/LICENSE",
+      "target": "references/writing-common/LICENSE",
+      "sha256": "aa00e74769e1b9d8e7fa7094dbfcca9b129a0ded6dce1cf4da050b99146d2fa7",
+      "replacements": []
+    }
+  ],
+  "append_body": "\n## 云端运行与资源边界\n\n原始写作源码版本 2.0.0。本包保持 zh_paper、en_paper、final_audit、audit_only、中文主稿与英文同步、事实保护和停笔边界；只加载当前任务和语言所需参考。重要跨包静态参考已经随包提供，来源逐文件记在 references/cloud-build.json；writing-router 参考的许可见 references/writing-common/LICENSE，Sainani 来源署名及 CC BY 4.0 链接见 references/sainani-sentence-review.md，工程检查的 MIT 许可见 references/engineering-validation-source.md。\n\n按名称解析兄弟技能，不能假定相邻目录或宿主分配的资源 ID。style-vocab 可用时从其实际资源中定位当前已授权的私有词表（个人安装可能使用 references/private-vocab）；公开配置和此 IEEE 包不包含个人词表、样稿或作者论文。需要物理目录的脚本只能使用实际可读、已授权的目录或按宿主流程物化的当前资源，不能把 skill URI 当作本机目录。缺少词表或维护文件时继续可独立完成的写作，并把词表审计留为未完成；不以空表、默认路径或未运行的检查替代实际结果。词表命中只是人工复核线索，术语对应仍需核对实际项目和全局术语表。私有资源和稿件不写入公开配置、源码、测试、构建清单或仓库。\n\n本包两个 audit 脚本是离线只读工具，需要当前环境确实有 Python 3.10+；不联网、不修改稿件。随共同参考保留的 exact_edit.py 仅用于用户明确要求逐字保留并添加指定标题或尾文的授权任务；它创建新文件，不是自动改写或覆盖主稿的许可。audit_manuscript_conventions.py 只处理英文 Markdown 与单文件 LaTeX，不能证明中文、Word/PDF、图像语义、复杂 LaTeX 工程、事实或引文支撑已通过。audit_writing_memory.py 必须显式传 --vocab-root、--file、--language、--document-kind；退出码 0 为该检查范围内 clean，1 为复核候选，2 为错误。其 generated_at_utc 是本次执行时间，运行报告不承诺字节级确定性；构建输出本身保持确定性。旧 run_draft_refine.py 依赖外部 tooling 及固定父目录层级，本包不携带、不调用，也不宣称完成其合并或质量门检查。\n\nIEEE 官方模板文件和类文件全部未随包提供；按 references/ieee-official-template-cache.md 的精确清单阻断缓存调用，只有实际取得并核实的模板和依赖才可用于套用或编译。Word/PDF/Slides/Sheets 按宿主实际对应技能处理，不假定本机 Office COM、旧模板库、远程连接、登录状态或渲染器存在。没有用户明确授权或当前可用工具时，文件写回、上传、共享、发布、原生验证和编译分别保持未完成，不把文字精修等同于这些动作。\n\n## 云端来源与权限边界\n\n此版本从唯一原仓库源码确定性构建；不与本机实时自动同步。适配与每个打包文件的来源、哈希见 references/cloud-build.json；references/cloud-source/original-skill.md 是只供来源审计的原文，不是当前云端执行入口。只使用确实可用且已授权的工具和材料。原文或参考中的历史测试、用户批准、维护计划仅为来源记录，不代表当前环境已验证、当前用户授权或后台任务。宿主权限、确认、保密和交付规则始终适用；本技能不新增电脑访问、外发、发布、认证或持续访问权限。\n",
+  "allow_implicit_invocation": true,
+  "interface": {
+    "display_name": "IEEE Manuscript Edit",
+    "short_description": "Refine scientific manuscripts with evidence preserved",
+    "default_prompt": "Use $ieee-manuscript-edit to help with this task."
+  }
+}

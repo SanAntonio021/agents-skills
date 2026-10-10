@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -99,6 +100,52 @@ class AuditSkillUsageTests(unittest.TestCase):
         alpha = next(item for item in summary["skill_inventory"] if item["skill"] == "alpha-skill")
         self.assertEqual(len(alpha["locations"]), 2)
         self.assertEqual({item["root_id"] for item in alpha["locations"]}, {"skills-1", "skills-2"})
+
+    def test_missed_use_candidates_ignore_injected_instruction_blocks(self) -> None:
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(
+            host="codex",
+            session_id="session",
+            timestamp="2026-01-01T00:00:00Z",
+            text="# AGENTS.md instructions\nalpha-skill is mentioned in the rules.",
+            source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(
+            message,
+            inventory,
+            AUDIT.TriggerMatcher(inventory),
+            set(),
+            candidates,
+            SimpleNamespace(no_excerpt=True, excerpt_chars=200),
+        )
+        self.assertEqual(candidates.total, 0)
+
+    def test_missed_use_candidates_ignore_plugin_only_skills(self) -> None:
+        plugin_root = self.root / "plugin-cache"
+        self.make_skill(plugin_root, "alpha-skill", "alpha-skill", "执行专用阿尔法校验流程。")
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("plugin-cache", plugin_root, "plugin_cache", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(
+            host="codex",
+            session_id="session",
+            timestamp="2026-01-01T00:00:00Z",
+            text="请使用 alpha-skill 完成检查。",
+            source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(
+            message,
+            inventory,
+            AUDIT.TriggerMatcher(inventory),
+            set(),
+            candidates,
+            SimpleNamespace(no_excerpt=True, excerpt_chars=200),
+        )
+        self.assertEqual(candidates.total, 0)
 
     def test_codex_prefers_event_message_and_deduplicates_response_item(self) -> None:
         summary = self.run_audit()

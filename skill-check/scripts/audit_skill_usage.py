@@ -832,6 +832,10 @@ def add_candidates(
         or len(message.text) > 20_000
         or "<skills_instructions>" in lowered
         or "<recommended_plugins>" in lowered
+        # These are injected rule/catalog blocks, not user task requests. A
+        # skill name or a description term inside them is only a mention.
+        or "# agents.md instructions" in lowered
+        or "<instructions>" in lowered
     ):
         return
     excluded = explicit | message.used_skills
@@ -840,6 +844,11 @@ def add_candidates(
         if key in excluded:
             continue
         skill = inventory[key]
+        # Third-party plugin skills are outside the maintained source scope.
+        # Their description terms may match ordinary project prose, but that
+        # must not create a local missed-trigger repair candidate.
+        if skill.locations and all(location.get("kind") == "plugin_cache" for location in skill.locations):
+            continue
         score, terms = match
         candidate = {
             "skill": skill.name,

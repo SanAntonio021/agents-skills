@@ -671,6 +671,7 @@ class TriggerMatcher:
 
 
 def extract_explicit_skills(text: str, aliases: dict[str, set[str]]) -> set[str]:
+    text = strip_injected_instruction_block(text)
     raw_names = set(EXPLICIT_DOLLAR_PATTERN.findall(text))
     raw_names.update(EXPLICIT_SLASH_PATTERN.findall(text))
     raw_names.update(SKILL_LINK_PATTERN.findall(text))
@@ -678,6 +679,14 @@ def extract_explicit_skills(text: str, aliases: dict[str, set[str]]) -> set[str]
     for raw_name in raw_names:
         matched.update(aliases.get(normalize_name(raw_name), set()))
     return matched
+
+
+def strip_injected_instruction_block(text: str) -> str:
+    """Remove the host-injected AGENTS block while retaining any real request."""
+    return re.sub(
+        r"\A\s*# AGENTS\.md instructions[^\n]*\n\s*<INSTRUCTIONS>.*?</INSTRUCTIONS>",
+        "", text, flags=re.IGNORECASE | re.DOTALL,
+    )
 
 
 def iter_json_lines(
@@ -828,10 +837,7 @@ def add_candidates(
 ) -> None:
     # Codex serializes injected AGENTS instructions as user messages. Remove
     # only their delimited block, preserving a real request appended after it.
-    matching_text = re.sub(
-        r"\A\s*# AGENTS\.md instructions[^\n]*\n\s*<INSTRUCTIONS>.*?</INSTRUCTIONS>",
-        "", message.text, flags=re.IGNORECASE | re.DOTALL,
-    )
+    matching_text = strip_injected_instruction_block(message.text)
     lowered = matching_text.lower()
     if (
         not matching_text.strip()

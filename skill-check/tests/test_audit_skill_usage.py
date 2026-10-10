@@ -226,6 +226,35 @@ class AuditSkillUsageTests(unittest.TestCase):
             ["explicit_user_invocation", "observed_skill_read"],
         )
 
+    def test_injected_instruction_block_is_not_explicit_usage(self) -> None:
+        self.write_jsonl(
+            self.codex / "sample.jsonl",
+            [
+                {
+                    "type": "session_meta",
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "payload": {"id": "codex-injected-rules"},
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-01-01T00:01:00Z",
+                    "payload": {
+                        "type": "item_completed",
+                        "turn_id": "turn-1",
+                        "item": {
+                            "type": "UserMessage",
+                            "id": "user-1",
+                            "content": "# AGENTS.md instructions for X\n<INSTRUCTIONS>\n$alpha-skill is a rule mention.\n</INSTRUCTIONS>",
+                        },
+                    },
+                },
+            ],
+        )
+        self.write_jsonl(self.claude / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        self.assertEqual(summary["usage_evidence"].get("alpha-skill", []), [])
+
     def test_claude_deduplicates_repeated_skill_tools_by_ancestor_user(self) -> None:
         self.write_jsonl(self.codex / "sample.jsonl", [])
         self.write_jsonl(

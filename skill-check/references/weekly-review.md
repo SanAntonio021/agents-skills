@@ -21,6 +21,14 @@ python scripts/run_weekly_skill_review.py scan `
 python scripts/run_weekly_skill_review.py next-question --json
 ```
 
+维护任务应使用正式源码入口；若从运行副本调用，`scan` 显式传入 `--agents-root`、
+`--skills-root`、`--reports-root` 和 `--state`，后续状态操作复用同一 `--state`。
+`record-decision`、`prepare-execution` 同时传入正式 `--skills-root`，后者还需相同
+`--reports-root`，避免把运行副本位置当成源码基线或另建状态。
+
+疑似漏用仅是待核实线索。Codex 注入的 `AGENTS.md instructions` 规则块不参与候选匹配；
+同条消息在规则块之后的真实请求仍参与。不得把关键词命中直接当成修改触发说明的依据。
+
 `scan` 会继续执行其他审计，即使某一项失败。失败项保留错误 finding；相应旧 finding 在该来源没有
 新证据时不标记为已解决。上游退出码 `2` 只有在本轮确实写出有效新摘要时才可接受；目录健康和使用
 审计的旧摘要不能用来冒充本轮结果。

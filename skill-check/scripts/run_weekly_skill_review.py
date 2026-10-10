@@ -75,12 +75,7 @@ DISCOVERY = importlib.util.module_from_spec(_discovery_spec)
 _discovery_spec.loader.exec_module(DISCOVERY)
 SKILL_ROOT = SCRIPT_PATH.parent.parent
 DEFAULT_SKILLS_ROOT = SKILL_ROOT.parent
-_AUTHORITATIVE_AGENTS_ROOT = Path(r"D:\BaiduSyncdisk\.agents")
-DEFAULT_AGENTS_ROOT = (
-    _AUTHORITATIVE_AGENTS_ROOT
-    if _AUTHORITATIVE_AGENTS_ROOT.is_dir()
-    else DEFAULT_SKILLS_ROOT.parent
-)
+DEFAULT_AGENTS_ROOT = DEFAULT_SKILLS_ROOT.parent
 DEFAULT_REPORTS_ROOT = DEFAULT_AGENTS_ROOT / "reports" / "skill-upstream"
 DEFAULT_STATE_PATH = DEFAULT_REPORTS_ROOT / "weekly-review-state.json"
 DEFAULT_DASHBOARD_ROOT = DEFAULT_REPORTS_ROOT / "usage" / "dashboard"

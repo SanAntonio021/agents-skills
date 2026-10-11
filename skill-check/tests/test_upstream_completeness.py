@@ -48,6 +48,15 @@ def test_same_day_report_render_keeps_success_but_changed_commit_does_not():
     assert REVIEW.upstream_check_evidence(summary)["checks_complete"] is False
 
 
+def test_late_regenerated_weekly_report_accepts_same_render_day_success():
+    source = healthy_source()
+    source["last_successful_check_at"] = "2026-09-09T03:00:00+00:00"
+    source["last_remote_check_attempt_at"] = "2026-09-09T03:00:00+00:00"
+    summary = {"date": "2026-09-08", "generated_at": "2026-09-09T03:00:00+00:00",
+               "sources": [source], "check_error_count": 0}
+    assert REVIEW.upstream_check_evidence(summary)["checks_complete"] is True
+
+
 def test_old_remote_metadata_is_unknown_and_later_failure_survives_local_report():
     source = healthy_source()
     summary = {"date": "2026-09-08", "generated_at": "2026-09-08T08:00:00+00:00",

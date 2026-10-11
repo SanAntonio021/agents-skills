@@ -860,9 +860,14 @@ def upstream_check_evidence(summary: dict[str, Any]) -> dict[str, Any]:
             successful_at = datetime.fromisoformat(str(checked_at).replace("Z", "+00:00"))
             generated_at = datetime.fromisoformat(str(summary.get("generated_at")).replace("Z", "+00:00"))
             remote_at = datetime.fromisoformat(str(remote_attempt).replace("Z", "+00:00"))
+            # A report for the fixed weekly window may be regenerated after
+            # midnight (for example, after repairing a mirror).  In that
+            # case the successful check belongs to the report render day,
+            # while ``summary.date`` remains the audited window date.
             same_day_success = bool(
                 successful_at.tzinfo is not None and generated_at.tzinfo is not None
-                and successful_at.astimezone(ZoneInfo(DEFAULT_USAGE_TIMEZONE)).date().isoformat() == summary.get("date")
+                and successful_at.astimezone(ZoneInfo(DEFAULT_USAGE_TIMEZONE)).date()
+                == generated_at.astimezone(ZoneInfo(DEFAULT_USAGE_TIMEZONE)).date()
                 and successful_at <= generated_at
                 and remote_at == successful_at
             )

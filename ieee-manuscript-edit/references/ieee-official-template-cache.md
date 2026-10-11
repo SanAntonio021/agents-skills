@@ -62,3 +62,14 @@ https://template-selector.ieee.org/api/ieee-template-selector/template/<associat
 - `541`: IEEE Access / LaTeX
 - `544`: IEEE Journal of Microwaves / Word
 - `545`: IEEE Journal of Microwaves / LaTeX
+
+## TVT 作者指南核验（2026-09-14）
+
+IEEE Transactions on Vehicular Technology（TVT）官方作者说明：
+https://vtsociety.org/publication/ieee-transactions-vehicular-technology/guidelines-authors/instructions
+
+- 审稿稿件采用双栏，字体不小于 10 pt，标题通栏。现有 IEEEtran V1.8b（2015/08/26）可用 `journal,10pt` 实现该基础版式。
+- Regular Paper 初投最多 14 页，修改稿／终稿最多 16 页；Correspondence 分别为 5 页／6 页，参考文献和作者简介计入。导师审阅稿若暂不限制篇幅，应明确区别于正式投稿合规稿。
+- 官方页面说明 AI 可用于修改作者已有文本，并要求在致谢披露相关使用；投稿前由作者核对适用要求及最终文本。
+- 核验边界：已读取 TVT 官方说明并核对缓存类文件版本；官方页面提到建议 style/sample，但未取得可验证的 TVT 专用下载关联 ID 或最新 ZIP 哈希。因此只称“IEEEtran 通用期刊模板配合 TVT 作者要求”，不称“已下载最新 TVT 专用模板”。本次不重复下载或复制模板资产。
+- 页数及投稿要求可能变化，正式提交时重新读取上述官方页面。

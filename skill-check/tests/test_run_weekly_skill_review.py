@@ -149,7 +149,7 @@ class WeeklySkillReviewTests(unittest.TestCase):
         end = datetime.fromisoformat(f"{date}T14:00:00+08:00")
         start = end - timedelta(days=7)
         return {
-            "version": "skill-usage-audit-v3",
+            "version": "skill-usage-audit-v4",
             "date": date,
             "window": {
                 "kind": "weekly",

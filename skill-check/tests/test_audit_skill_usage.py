@@ -123,6 +123,61 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         self.assertEqual(candidates.total, 0)
 
+    def test_recognized_host_blocks_do_not_generate_explicit_usage_or_candidates(self) -> None:
+        inventory, aliases = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        for tag, source in (("codex_internal_context", "goal"),
+                            ("in-app-browser-context", "ambient-ui-state")):
+            with self.subTest(tag=tag):
+                text = f'<{tag} source="{source}">\n$alpha-skill alpha-skill\n</{tag}>'
+                self.assertEqual(AUDIT.extract_explicit_skills(text, aliases), set())
+                message = AUDIT.MessageRecord(
+                    host="codex", session_id="s", timestamp="2026-01-01T00:00:00Z",
+                    text=text, source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+                )
+                candidates = AUDIT.CandidateCollector(10)
+                AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(),
+                                     candidates, SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+                self.assertEqual(candidates.total, 0)
+
+    def test_host_filter_keeps_requests_before_between_and_after_complete_blocks(self) -> None:
+        text = ('请完成真实请求 A。\n'
+                '<codex_internal_context source="goal">$beta-skill</codex_internal_context>\n'
+                '请调用 $alpha-skill。\n'
+                '<in-app-browser-context source="ambient-ui-state">$beta-skill</in-app-browser-context>\n'
+                '继续真实请求 B。')
+        filtered = AUDIT.strip_injected_instruction_block(text)
+        self.assertIn('真实请求 A', filtered)
+        self.assertIn('真实请求 B', filtered)
+        self.assertEqual(AUDIT.extract_explicit_skills(text, {'alpha-skill': {'alpha'}, 'beta-skill': {'beta'}}), {'alpha'})
+        self.assertNotIn('$beta-skill', filtered)
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(host="codex", session_id="s", timestamp="2026-01-01T00:00:00Z",
+                                     text=text, source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1})
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(),
+                             candidates, SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 1)
+        self.assertEqual(candidates.items()[0]['skill'], 'alpha-skill')
+
+    def test_similar_incomplete_and_ordinary_user_text_is_preserved(self) -> None:
+        examples = [
+            '<codex_internal_context source="user">$alpha-skill</codex_internal_context>',
+            '<in-app-browser-context source="user">$alpha-skill</in-app-browser-context>',
+            '<codex_internal_context source="goal">$alpha-skill',
+            '<in-app-browser-context source="ambient-ui-state">$alpha-skill',
+            '<codex_internal_context>$alpha-skill</codex_internal_context>',
+            'Automation: 每周维护，请读取 $alpha-skill。' * 100,
+            '用户长提示：请按计划使用 $alpha-skill 完成评测。' * 100,
+        ]
+        for text in examples:
+            with self.subTest(text=text[:80]):
+                self.assertEqual(AUDIT.strip_injected_instruction_block(text), text)
+                self.assertEqual(AUDIT.extract_explicit_skills(text, {'alpha-skill': {'alpha'}}), {'alpha'})
+
     def test_real_request_after_rules_keeps_plugin_candidate(self) -> None:
         plugin_root = self.root / "plugin-cache"
         self.make_skill(plugin_root, "alpha-skill", "alpha-skill", "执行专用阿尔法校验流程。")
@@ -393,7 +448,7 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
         self.assertEqual(alpha["codex_requests"], 2)
-        self.assertEqual(summary["version"], "skill-usage-audit-v3")
+        self.assertEqual(summary["version"], "skill-usage-audit-v4")
         self.assertEqual(summary["configuration"]["count_unit"], "request")
         self.assertEqual(summary["window"]["kind"], "weekly")
 

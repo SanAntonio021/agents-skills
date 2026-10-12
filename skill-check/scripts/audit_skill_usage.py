@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 MAX_WARNING_DETAILS = 200
 MAX_EXCERPT_CHARS = 240
-AUDIT_VERSION = "skill-usage-audit-v3"
+AUDIT_VERSION = "skill-usage-audit-v4"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 BRIDGE_MARKERS = (
     "claude-codex-bridge",
@@ -682,7 +682,15 @@ def extract_explicit_skills(text: str, aliases: dict[str, set[str]]) -> set[str]
 
 
 def strip_injected_instruction_block(text: str) -> str:
-    """Remove the host-injected AGENTS block while retaining any real request."""
+    """Remove recognized complete host blocks, preserving surrounding requests."""
+    for tag, source in (
+        ("codex_internal_context", "goal"),
+        ("in-app-browser-context", "ambient-ui-state"),
+    ):
+        text = re.sub(
+            rf'<{tag} source="{source}">.*?</{tag}>',
+            "", text, flags=re.DOTALL,
+        )
     return re.sub(
         r"\A\s*# AGENTS\.md instructions[^\n]*\n\s*<INSTRUCTIONS>.*?</INSTRUCTIONS>",
         "", text, flags=re.IGNORECASE | re.DOTALL,

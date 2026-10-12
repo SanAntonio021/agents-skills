@@ -1932,6 +1932,15 @@ def merge_observations(
             continue
         if finding.get("status") in {"execution_failed", "retry_pending", "completed"}:
             continue
+        if finding.get("status") == "execution_pending" and any(
+            batch.get("status") in {"ready", "partial_failed"}
+            and (item := batch_item(batch, finding_id)) is not None
+            and item.get("status") == "pending"
+            and not finding_changed(item, finding)
+            and finding.get("decision", {}).get("value") == "approved"
+            for batch in state.get("batches", [])
+        ):
+            continue
         resolved_hygiene_wait = (
             finding.get("status") == "waiting_evidence"
             and finding.get("source") in {"hygiene", "hygiene_private"}
@@ -2476,6 +2485,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     execution.add_argument("--details", required=True)
     execution.add_argument("--commit")
     execution.add_argument("--remote-sha")
+    execution.add_argument("--recover-missing-observation", action="store_true")
+    execution.add_argument("--sync-receipt", type=Path)
+    execution.add_argument("--verify-receipt", type=Path)
+    execution.add_argument("--expected-sync-receipt-sha256")
+    execution.add_argument("--expected-verify-receipt-sha256")
     execution.add_argument(
         "--sync-status",
         choices=("not_run", "timed_out", "failed", "verified"),
@@ -3187,6 +3201,116 @@ def refresh_batch_status(batch: dict[str, Any]) -> None:
         batch["status"] = "ready"
 
 
+def missing_observation_recovery_error(
+    args: argparse.Namespace, batch: dict[str, Any], item: dict[str, Any], finding: dict[str, Any]
+) -> str | None:
+    if not (
+        batch.get("status") == "stale"
+        and batch.get("stale_reason") == "finding no longer appears in the latest scan"
+        and batch.get("decided_at") and batch.get("execution_root")
+        and all(other is item or other.get("status") == "success" for other in batch.get("items", []))
+        and finding.get("status") == "resolved"
+        and item.get("status") == "pending"
+        and not finding_changed(item, finding)
+        and finding.get("decision", {}).get("value") == "approved"
+        and finding.get("decision", {}).get("evidence_fingerprint") == item.get("evidence_fingerprint")
+        and finding.get("decision", {}).get("proposal_fingerprint") == item.get("proposal_fingerprint")
+        and not finding.get("execution") and not item.get("execution")
+        and args.outcome == "success"
+        and args.commit == args.remote_sha
+        and SHA40_PATTERN.fullmatch(args.remote_sha or "")
+    ):
+        return "recovery requires the unchanged authorized item invalidated only by observation disappearance"
+    skills = sorted(set(item.get("skills", [])))
+    receipt_scope = None
+    receipt_manifests = None
+    for option, verify_only in (("sync_receipt", False), ("verify_receipt", True)):
+        path = getattr(args, option, None)
+        if path is None:
+            return "recovery requires both sync and VerifyOnly receipts"
+        expected_hash = getattr(args, f"expected_{option}_sha256", None)
+        try:
+            raw = path.read_bytes()
+            if not isinstance(expected_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+                return f"invalid {option} fingerprint"
+            if hashlib.sha256(raw).hexdigest() != expected_hash:
+                return f"{option} fingerprint mismatch"
+            encoding = "utf-16" if raw.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig"
+            receipt = json.loads(raw.decode(encoding))
+        except (OSError, UnicodeError, ValueError):
+            return f"invalid {option}"
+        if not isinstance(receipt, dict):
+            return f"invalid {option}"
+        if not (
+            isinstance(receipt.get("source"), dict)
+            and isinstance(receipt.get("source", {}).get("changed_skills"), list)
+            and isinstance(receipt.get("cc_switch_metadata"), dict)
+            and isinstance(receipt.get("background", {}), dict)
+            and isinstance(receipt.get("skills"), list)
+            and all(
+                isinstance(row, dict) and isinstance(row.get("name"), str)
+                and isinstance(row.get("layers"), dict)
+                and all(isinstance(row["layers"].get(name), dict)
+                        for name in ("source", "cc_switch", "claude", "codex"))
+                for row in receipt.get("skills", [])
+            )
+        ):
+            return f"invalid {option} structure"
+        current_scope = (
+            receipt.get("source", {}).get("source_root"),
+            receipt.get("allow_historical_commit"), receipt.get("expected_base_commit"),
+            receipt.get("expected_runtime_local_files"),
+        )
+        if not current_scope[0] or (receipt_scope is not None and current_scope != receipt_scope):
+            return "sync and VerifyOnly parameters differ"
+        receipt_scope = current_scope
+        if not verify_only and receipt.get("non_target_unchanged") is not True:
+            no_op = (
+                not receipt.get("background", {}).get("processed_skills")
+                and all(row.get("action") == "already_current" for row in receipt.get("skills", []))
+            )
+            if not no_op:
+                return "sync receipt does not confirm non-target content unchanged"
+        if not (
+            receipt.get("ok") is True and receipt.get("exit_code") == 0
+            and receipt.get("status") == "runtime_active"
+            and receipt.get("verify_only") is verify_only
+            and receipt.get("expected_remote_commit") == args.remote_sha
+            and receipt.get("source", {}).get("release_commit") == args.remote_sha
+            and sorted(receipt.get("source", {}).get("changed_skills", [])) == skills
+            and receipt.get("cc_switch_metadata", {}).get("valid") is True
+            and not receipt.get("cc_switch_metadata", {}).get("issues")
+            and not receipt.get("errors")
+        ):
+            return f"{option} does not verify the exact release"
+        rows = receipt.get("skills", [])
+        if sorted(row.get("name", "") for row in rows) != skills:
+            return f"{option} Skill set mismatch"
+        manifests = sorted(
+            (row.get("name"), row.get("layers", {}).get("source", {}).get("manifest_sha256"),
+             row.get("layers", {}).get("source", {}).get("file_count"))
+            for row in rows
+        )
+        if receipt_manifests is not None and manifests != receipt_manifests:
+            return "sync and VerifyOnly file manifests differ"
+        receipt_manifests = manifests
+        for row in rows:
+            layers = row.get("layers", {})
+            source = layers.get("source", {})
+            if row.get("verified") is not True or not source.get("manifest_sha256"):
+                return f"{option} missing file verification"
+            for name in ("source", "cc_switch", "claude", "codex"):
+                layer = layers.get(name, {})
+                if not (
+                    layer.get("exists") is True and layer.get("equal_to_source") is True
+                    and layer.get("manifest_sha256") == source.get("manifest_sha256")
+                    and layer.get("file_count") == source.get("file_count")
+                    and not any(layer.get(key) for key in ("missing", "extra", "hash_mismatch"))
+                ):
+                    return f"{option} incomplete runtime layers"
+    return None
+
+
 def record_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     args = normalize_cli_fingerprints(args)
     state_path = args.state.resolve()
@@ -3198,7 +3322,8 @@ def record_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any], 
             batch = find_batch(state, args.batch_id)
             if batch is None:
                 return {"status": "not_found", "batch_id": args.batch_id}, 2
-            if batch.get("status") not in {"ready", "partial_failed"}:
+            recovering = bool(getattr(args, "recover_missing_observation", False))
+            if batch.get("status") not in {"ready", "partial_failed"} and not recovering:
                 return {
                     "status": "invalid_state",
                     "batch_status": batch.get("status"),
@@ -3207,6 +3332,10 @@ def record_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any], 
             finding = state["findings"].get(args.finding_id)
             if item is None or finding is None:
                 return {"status": "not_found", "finding_id": args.finding_id}, 2
+            if recovering:
+                recovery_error = missing_observation_recovery_error(args, batch, item, finding)
+                if recovery_error:
+                    return {"status": "recovery_refused", "error": recovery_error}, 4
             if args.expected_proposal_fingerprint != item.get("proposal_fingerprint"):
                 return {"status": "stale_fingerprint", "field": "proposal"}, 4
             if item.get("status") not in {"pending", "blocked_dependency", "failed"}:
@@ -3262,6 +3391,12 @@ def record_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any], 
                 "sync_status": args.sync_status,
                 "recorded_at": timestamp,
             }
+            if recovering:
+                execution["recovery"] = {
+                    "reason": batch["stale_reason"],
+                    "sync_receipt_sha256": hashlib.sha256(args.sync_receipt.read_bytes()).hexdigest(),
+                    "verify_receipt_sha256": hashlib.sha256(args.verify_receipt.read_bytes()).hexdigest(),
+                }
             finding["execution"] = execution
             item["execution"] = execution
             if args.outcome == "success":

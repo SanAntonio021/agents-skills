@@ -199,3 +199,31 @@ def test_legacy_reopened_queue_with_new_facts_keeps_them_for_review():
     assert current['status'] == 'facts'
     assert current['facts'] == [{'answer_summary': 'New user clarification'}]
     assert 'decision' not in current
+
+
+def test_default_usage_window_is_fixed_to_saturday_during_weekday_continuations():
+    expected = ('2026-10-03T14:00:00+08:00', '2026-10-10T14:00:00+08:00')
+    for date in ('2026-10-10', '2026-10-11', '2026-10-12', '2026-10-16'):
+        assert REVIEW.usage_window_for_date(date) == expected
+    assert REVIEW.usage_window_for_date('2026-10-17') == (
+        '2026-10-10T14:00:00+08:00', '2026-10-17T14:00:00+08:00')
+    assert REVIEW.usage_window_for_date('2026-01-01') == (
+        '2025-12-20T14:00:00+08:00', '2025-12-27T14:00:00+08:00')
+
+
+def test_explicit_usage_window_end_keeps_requested_boundary():
+    assert REVIEW.usage_window_for_date('2026-10-12', explicit_end='2026-10-12T06:00:00Z') == (
+        '2026-10-05T14:00:00+08:00', '2026-10-12T14:00:00+08:00')
+
+
+def test_weekday_scan_of_same_fixed_window_does_not_increment_zero_streak():
+    state = REVIEW.new_state()
+    start, end = REVIEW.usage_window_for_date('2026-10-10')
+    usage = {'version': REVIEW.USAGE_AUDIT_VERSION, 'configuration': {'count_unit': 'request'},
+             'window': {'start': start, 'end': end},
+             'skill_inventory': [{'skill': 'alpha', 'active_hosts': ['codex']}],
+             'classifications': {'已用': [], '历史内未见使用': [{'skill': 'alpha', 'active_hosts': ['codex']}]}}
+    first, _ = REVIEW.update_unseen_streaks(state, usage, complete=True, scope_value='same', date='2026-10-10')
+    second, reason = REVIEW.update_unseen_streaks(state, usage, complete=True, scope_value='same', date='2026-10-12')
+    assert first == second == {'alpha': 1}
+    assert reason is None

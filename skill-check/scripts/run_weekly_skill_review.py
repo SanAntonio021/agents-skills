@@ -1375,7 +1375,39 @@ def extract_hygiene_observations(
                     skills_root=skills_root,
                 )
             )
-    return observations
+            observations[-1]["evidence_items"] = [copy.deepcopy(item)]
+
+    # Several nested paths can share the legacy top-level subject and purpose.
+    # Merge them once, in stable order, instead of repeatedly invalidating the
+    # same finding during one scan. Keep the legacy ID and every concrete path.
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for observation in observations:
+        grouped.setdefault(observation["id"], []).append(observation)
+    result: list[dict[str, Any]] = []
+    for entries in grouped.values():
+        unique = {entry["evidence_fingerprint"]: entry for entry in entries}
+        ordered = [unique[key] for key in sorted(unique)]
+        combined = copy.deepcopy(ordered[0])
+        if len(ordered) > 1:
+            combined["evidence_items"] = [
+                item for entry in ordered for item in entry["evidence_items"]
+            ]
+            combined["evidence_fingerprint"] = fingerprint(combined["evidence_items"])
+            combined["severity"] = (
+                "critical" if any(entry["severity"] == "critical" for entry in ordered)
+                else combined["severity"]
+            )
+            combined["evidence_summary"] = compact_text(
+                f"{len(ordered)} 个独立位置；完整路径见 evidence_items。"
+                + "；".join(entry["evidence_summary"] for entry in ordered), 1000
+            )
+            if combined["needs_facts"]:
+                combined["fact_questions"] = [
+                    f"`{combined['subject']}` 下列出的 {len(ordered)} 个位置分别是正式技能、工作材料还是历史副本？",
+                    "是否有其他任务或运行时独立依赖这些位置或名称？",
+                ]
+        result.append(combined)
+    return result
 
 
 def usage_evidence_complete(summary: dict[str, Any]) -> tuple[bool, list[str]]:
@@ -1789,7 +1821,7 @@ def merge_observations(
                 key: copy.deepcopy(previous[key])
                 for key in (
                     "decision", "execution", "facts", "status", "proposal",
-                    "pending_revision", "requested_adjustment", "evidence_summary",
+                    "pending_revision", "requested_adjustment", "evidence_summary", "evidence_items",
                 )
                 if key in previous
             }
@@ -1854,7 +1886,15 @@ def merge_observations(
             continue
         if finding.get("status") in {"execution_failed", "retry_pending", "completed"}:
             continue
-        if finding.get("status") not in TERMINAL_FINDING_STATUSES and finding.get("status") != "observed":
+        resolved_hygiene_wait = (
+            finding.get("status") == "waiting_evidence"
+            and finding.get("source") in {"hygiene", "hygiene_private"}
+            and finding.get("execution", {}).get("outcome") != "failed"
+        )
+        if resolved_hygiene_wait or (
+            finding.get("status") not in TERMINAL_FINDING_STATUSES
+            and finding.get("status") != "observed"
+        ):
             invalidate_batches_for_finding(state, finding_id, "finding no longer appears in the latest scan")
             finding["status"] = "resolved"
             finding["resolved_date"] = date
@@ -2250,6 +2290,7 @@ def question_payload(finding: dict[str, Any]) -> dict[str, Any]:
         "severity": finding["severity"],
         "title": finding["title"],
         "evidence": finding["evidence_summary"],
+        "evidence_items": finding.get("evidence_items", []),
         "proposal": finding.get("pending_revision") or finding.get("proposal"),
         "question": question,
         "choices": ["批准", "不批准", "解释一下"],

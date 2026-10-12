@@ -122,6 +122,7 @@ def usage_window_for_date(
         end = datetime.fromisoformat(f"{date}T{DEFAULT_USAGE_BOUNDARY_HOUR:02d}:00:00").replace(
             tzinfo=timezone
         )
+        end -= timedelta(days=(end.weekday() - 5) % 7)
     start = end - timedelta(days=7)
     return start.isoformat(), end.isoformat()
 
@@ -2409,7 +2410,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--usage-window-end",
         help=(
             "Exclusive ISO-8601 end of the seven-day usage window. "
-            "Defaults to --date at 14:00 in --usage-timezone."
+            "Defaults to the latest Saturday on/before --date at 14:00 in --usage-timezone."
         ),
     )
     scan.add_argument(

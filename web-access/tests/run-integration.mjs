@@ -1641,6 +1641,65 @@ try {
     });
   }
 
+  await runTest('check-deps-recovers-disconnected-proxy-without-restart', async () => {
+    const mock = await startMockCdpServer('edge');
+    const instance = await startIsolatedProxy(mock);
+    try {
+      const task = await createTask(instance.base);
+      const tab = await createTab(instance.base, task, 'https://example.test/recover');
+      const before = await getHealth(instance.port);
+      mock.disconnectAll();
+      await waitUntil(async () => !(await getHealth(instance.port))?.connected, 'isolated disconnection');
+      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], instance.env);
+      const code = await waitForExit(child, 30000);
+      assert.equal(code, 0, `reconnect check failed: ${child.stdoutText}\n${child.stderrText}`);
+      const report = JSON.parse(child.stdoutText);
+      assert.equal(report.ok, true);
+      const after = await getHealth(instance.port);
+      assert.equal(after.pid, before.pid, 'recovery must retain the original proxy');
+      assert.equal(after.browser.id, 'edge');
+      assert.equal(after.chromePort, mock.port);
+      assert.ok(mock.targets.has(tab.targetId), 'recovery must preserve browser tabs');
+      const oldToken = await getJson(instance.base, '/v2/tabs', task.taskToken);
+      assertError(oldToken, 401, 'UNAUTHORIZED');
+      assert.equal(after.activeTasks, 0, 'disconnect must not restore cleared task ownership');
+      return { originalProxyRetained: true, browserIdentityVerified: true, tabsPreserved: true, oldTokensRejected: true };
+    } finally {
+      await stopIsolatedProxy(instance);
+      await mock.close();
+    }
+  });
+
+  await runTest('failed-auto-recovery-does-not-loop', async () => {
+    const mock = await startMockCdpServer('edge');
+    const instance = await startIsolatedProxy(mock);
+    try {
+      await mock.close();
+      await delay(1500);
+      const first = instance.child.stderrText.split('Browser reconnect failed:').length - 1;
+      assert.equal(first, 1, instance.child.stderrText);
+      await delay(1000);
+      assert.equal(instance.child.stderrText.split('Browser reconnect failed:').length - 1, 1);
+      const health = await getHealth(instance.port);
+      assert.equal(health.status, 'ok');
+      assert.ok(!health.connected, 'failed reconnect must remain disconnected');
+      return { failedAttempts: 1, originalProxyAlive: true };
+    } finally { await stopIsolatedProxy(instance); }
+  });
+
+  await runTest('explicit-proxy-stop-does-not-reconnect', async () => {
+    const mock = await startMockCdpServer('edge');
+    const instance = await startIsolatedProxy(mock);
+    try {
+      const before = mock.totalConnections;
+      await stopIsolatedProxy(instance);
+      await delay(600);
+      assert.equal(mock.totalConnections, before);
+      assert.equal(await getHealth(instance.port), null);
+      return { stoppedProxyStaysStopped: true, noNewConnection: true };
+    } finally { await mock.close(); }
+  });
+
   await runTest('proxy-restart-keeps-tabs-but-clears-task-tokens-and-ownership', async () => {
     const task = await createTask(edgeBase);
     const tab = await createTab(edgeBase, task, 'https://example.test/restart');

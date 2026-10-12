@@ -1793,6 +1793,7 @@ def merge_observations(
         seen_ids.add(finding_id)
         previous = findings.get(finding_id)
         changed = False
+        reappeared = False
         previous_status = previous.get("status") if previous else None
         if previous is None:
             current = copy.deepcopy(observation)
@@ -1864,6 +1865,50 @@ def merge_observations(
                 current.pop("requested_adjustment", None)
                 current["facts"] = []
                 current["status"] = "deferred" if current["queueable"] else "observed"
+            elif (
+                previous_status == "resolved"
+                and not current.get("decision")
+                and not current.get("execution")
+                and not current.get("facts")
+                and not current.get("pending_revision")
+                and not current.get("requested_adjustment")
+            ):
+                reappeared = True
+                current["status"] = "deferred" if current["queueable"] else "observed"
+                current.pop("resolved_date", None)
+
+        if (
+            current.get("status") in {"deferred", "queued", "facts", "observed"}
+            and not current.get("decision")
+            and not current.get("execution")
+            and not current.get("facts")
+            and not current.get("pending_revision")
+            and not current.get("requested_adjustment")
+        ):
+            # Returning to an already checked evidence/proposal/source triple
+            # may reuse only a factual closure, never approval or execution.
+            for entry in reversed(current.get("history", [])):
+                reviewed = entry.get("previous", {})
+                if not all(key in reviewed for key in (
+                    "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint"
+                )) or finding_changed(reviewed, observation):
+                    continue
+                if (
+                    reviewed.get("status") == "closed"
+                    and reviewed.get("decision", {}).get("value") == "closed_after_facts"
+                    and not reviewed.get("execution")
+                    and not reviewed.get("pending_revision")
+                    and not reviewed.get("requested_adjustment")
+                ):
+                    current["decision"] = copy.deepcopy(reviewed["decision"])
+                    current["facts"] = copy.deepcopy(reviewed.get("facts", []))
+                    current["status"] = "closed"
+                # Empty scan snapshots are not decisions. A newer substantive
+                # review supersedes earlier facts, even when it is not a closure.
+                if any(reviewed.get(key) for key in (
+                    "decision", "execution", "facts", "pending_revision", "requested_adjustment"
+                )):
+                    break
 
         if not current["queueable"]:
             current["status"] = "observed"
@@ -1874,7 +1919,7 @@ def merge_observations(
             elif current["severity"] == "high":
                 new_high.append(finding_id)
             elif current.get("status") == "deferred":
-                if changed and previous_status not in {None, "deferred", "observed"}:
+                if reappeared or (changed and previous_status not in {None, "deferred", "observed"}):
                     routine_requeues.append(finding_id)
                 else:
                     routine_candidates.append(finding_id)

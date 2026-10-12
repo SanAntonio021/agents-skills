@@ -65,6 +65,7 @@ let pinnedBrowserId = null;
 let commandSequence = 0;
 let dialogSequence = 0;
 let shutdownStarted = false;
+let reconnectTimer = null;
 let cleanupRunning = false;
 
 const pendingCommands = new Map();
@@ -235,6 +236,7 @@ async function connect() {
     }
     const socket = new WS(websocketUrl(chromePort, chromeWsPath));
     ws = socket;
+    let initialized = false;
     await new Promise((resolve, reject) => {
       let opened = false;
       addWsListener(socket, 'open', () => {
@@ -255,6 +257,16 @@ async function connect() {
         rejectPendingCommands(new Error('Browser connection closed.'));
         clearLogicalOwnership();
         console.log('[CDP Proxy] Browser connection closed; task ownership was cleared.');
+        // One bounded retry after an established connection drops; no background retry loop.
+        // Failed handshakes never schedule retries, and shutdown cancels the pending attempt.
+        if (initialized && !shutdownStarted && !reconnectTimer) {
+          reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
+            if (shutdownStarted) return;
+            connect().catch((error) => console.error('[CDP Proxy] Browser reconnect failed:', error.message));
+          }, 250);
+          reconnectTimer.unref();
+        }
       });
       addWsListener(socket, 'message', (event) => {
         try {
@@ -267,6 +279,7 @@ async function connect() {
       });
     });
     await sendCDP('Target.setDiscoverTargets', { discover: true });
+    initialized = true;
     console.log(`[CDP Proxy] Connected to browser CDP port ${chromePort}.`);
   })();
   const attempt = connectingPromise;
@@ -1841,6 +1854,7 @@ async function main() {
   const shutdown = async (signal) => {
     if (shutdownStarted) return;
     shutdownStarted = true;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     console.log(`[CDP Proxy] ${signal}; releasing proxy state without closing browser tabs.`);
     if (cleanupTimer) clearInterval(cleanupTimer);
     clearLogicalOwnership();

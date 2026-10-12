@@ -19,6 +19,26 @@
         "repository": "https://github.com/hugohe3/ppt-master",
         "version": "6.6.0"
       }
+    },
+    {
+      "role": "candidate",
+      "fork_commit": "025c50fdf1ccd4d3e5057b36d024b4b33c932fdc",
+      "release_tag": "v6.7.0-ccswitch.1",
+      "codeload": {
+        "members": 1264,
+        "sha256": "bb0e728156c358e00b27c5ba4b5c6fbd903afd902f2f106d1357c9da1708d35f",
+        "size": 52599309
+      },
+      "distribution_manifest": {
+        "sha256": "4f0e80cb3c7afe3296386d193b789f05107f02e690c88bbe948334a65d58cb16",
+        "bytes": 44980184,
+        "files": 1000
+      },
+      "upstream": {
+        "commit": "b4efe3ddf237a97a42880164759162f8e2412f2f",
+        "repository": "https://github.com/hugohe3/ppt-master",
+        "version": "6.7.0"
+      }
     }
   ],
   "policy": {
@@ -31,5 +51,5 @@
     "branch": "main",
     "repository": "https://github.com/SanAntonio021/ppt-master"
   },
-  "state": "stable"
+  "state": "transition"
 }

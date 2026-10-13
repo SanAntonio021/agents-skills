@@ -1,179 +1,35 @@
 # 科研日报与组会 PPT
 
-从会话、项目记录与真实图件整理导师日报或组会汇报。先选出本期值得讲的科研推进，再确认总览；每个展开页先确定重点和证据，随后直接制作整套可编辑 PPT。常规改稿、运行和检查细节留在项目记录，不按产物数量增加页面。
-
-首个支持环境：**Windows + Codex**。采集器也支持 Claude Code 会话；macOS/Linux 完整生成流程尚未验证。默认时间范围按 `Asia/Shanghai` 计算。
-
-## 使用文档
-
-[主流程](SKILL.md) 管理范围、确认和交付；[资料与选材](references/materials.md) 管理事实、来源及详略；[内容与中文表达](references/chinese-style.md) 管理页面重点和写作；[制作与验证](references/rendering.md) 管理样式、生成接口和文件检查。本地模板另见 [模板适配](references/local-template.md)。各项规则只在对应文件维护。
-
-## 把这个页面交给 Codex
-
-在 **Windows 本机的 Codex** 中发送本发布页链接，并说“请按页面流程完成安装”即可。下面是给执行安装的 Codex 的完整步骤；使用者无需另外下载目录、安装 CC Switch 或复制多段命令。
-
-### 默认安装：PPT + 完整中文润色
-
-把本页交给 Codex 安装，默认同时安装以下四个技能，不要求使用者逐个点名：
-
-| 技能 | 用途 |
-|---|---|
-| `lab-report-slides` | 科研内容整理、页面组织与 PPT 生成 |
-| `libreoffice-runner` | 转换及渲染检查，基本生成流程所需 |
-| `writing-router` | 完整中文质量规则与去 AI 味检查 |
-| `style-vocab` | 个人词表加载与用词检查；词表由使用者提供 |
-
-只有用户明确选择精简安装时，才只装前两个并使用 PPT 自带的基础润色。默认完整安装不额外安装英文 `humanizer`、整套文体技能或整个仓库。
-
-### Codex 安装流程
-
-用户要求按本页安装后，连续完成以下步骤；不要只返回教程或缺项清单。默认安装上表四个技能及缺少的必要软件，已有可用依赖直接复用。遇到管理员授权、网络访问限制或已有同名文件冲突时，说明具体问题，再请用户配合。
-
-1. **确认本机环境和安装位置。** 确认任务在 Windows 本机执行，能够访问网络和运行命令；不要装进远端 Linux 或 WSL 后声称 Windows 已安装。解析启动用户的实际主目录。已有技能管理器时沿用其受支持安装入口；否则优先使用可用的 `skill-installer`，或将完整技能目录安装到该用户的 `.agents/skills`。先检查同名技能，保留已有修改，不把整个仓库安装成技能。目录发现方式见 [Codex 官方说明](https://learn.chatgpt.com/docs/build-skills)。
-
-2. **取得四个技能。** 从同一仓库 `SanAntonio021/agents-skills` 的 `main` 解析一次当前提交 SHA，或沿用发布页指定的固定提交；从该提交取得 `lab-report-slides`、`libreoffice-runner`、`writing-router`、`style-vocab` 四个完整目录。可以下载该提交归档后只取这四项，不把整个仓库安装成技能，不混用旧附件与新依赖。记录提交和实际安装目录；使用技能管理器时沿用其受支持入口。另从同一提交取得 `ieee-manuscript-edit/scripts/audit_writing_memory.py`，保存到实际 `style-vocab/tools/audit_writing_memory.py`，记录来源与文件校验值；该脚本仅使用 Python 标准库，无需安装论文技能。个人词表审计时用此实际脚本路径和用户自己的 `--vocab-root`，覆盖技能文档中的作者路径示例。四个目录保持同级；目录不同时按实际安装位置解析共用参考文件，并配置 `LAB_REPORT_LO_RUNNER`。全部下载与依赖安装由 Codex 执行，不要求用户手工补齐。
-
-3. **补齐软件和 Python 库。** 先发现并复用已有的 Python、LibreOffice 和 `pdftoppm`。Python 需 3.10+；缺失时可选 Python 3.13 的稳定补丁版本。优先使用本机已有的软件包管理器，先查询并核对软件名称、发布者及安装来源，再安装缺项；没有包管理器时，从 [Python 官方 Windows 下载页](https://www.python.org/downloads/windows/)、[LibreOffice 官网](https://www.libreoffice.org/download/) 和 [Poppler Windows 构建发布页](https://github.com/oschwartz10612/poppler-windows/releases) 获取与本机架构匹配的安装包。Poppler 链接是社区 Windows 构建。不要安装预发布版本或把包管理器当成额外必装依赖。使用实际选定的同一个 Python 执行下文 `pip install -r requirements.txt`。
-
-4. **配置可持续使用的实际路径。** 定位真实 `python.exe`、`soffice.com`/`soffice.exe` 和 `pdftoppm.exe`，不使用示例中的占位符或作者路径。优先沿用已有 PATH；需要补充时只追加必要的用户级路径，保留原值，并更新当前进程。非默认位置也可使用下文环境变量，同时设置当前进程与用户级值；先保存旧值，不覆盖无关配置。用户级写入被拒绝时，不把软件已安装判成全部失败：由执行安装的 Codex 保存下文项目配置文件，后续检查和生成明确传入其绝对路径。仅设置本次终端的临时变量不算持久配置完成。记录实际使用的 Python 路径，确保后续命令使用装有依赖的同一解释器。PNG/JPG 安装验收不要求 Node.js/sharp。
-
-5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
-
-6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 [制作参考](references/rendering.md#deck-json-与渲染) 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG 和 manifest，查看逐页图片并确认原生文字可编辑。默认不生成 HTML；确需浏览器预览时显式加 `--html-preview`，HTML 不作为 PPTX 验收条件。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
-
-完成后，使用者可以说：“生成今日汇报，先列出可汇报的科研进展让我选择。”
-
-## 安装命令与配置参考
-
-从本仓库下载并安装以下四个目录，保持同级关系。使用 CC Switch 时，添加仓库 `SanAntonio021/agents-skills`、分支 `main`，选择这四个技能并启用 Codex。若管理器只能跟随分支、不能固定提交，安装后逐项核对实际文件与目标提交一致；不一致时不能宣称完成本发布版本安装。
-
-旧单技能下载包只包含当时版本的 `lab-report-slides`，不代表当前完整配置。默认按上方流程从同一提交安装四项。依赖技能中的作者本机路径仅作作者环境记录，使用时按本机实际配置解析，不创建作者同名目录。
-
-```text
-<技能目录>/
-  lab-report-slides/
-    SKILL.md
-    scripts/
-    references/
-  writing-router/
-    SKILL.md
-    references/
-  style-vocab/
-    SKILL.md
-    tools/audit_writing_memory.py  # 安装时从同版本取得的独立脚本
-  libreoffice-runner/
-    SKILL.md
-    scripts/libreoffice_run.py
-    scripts/libreoffice_runner/
-```
-
-采用上面的 Codex 安装流程时，这些下载与目录整理都由 Codex 执行。已有同名技能先备份，保留用户修改。
-
-以下安装及测试命令均先进入实际的 `lab-report-slides` 目录，用准备运行技能的同一个 Python 执行：
-
-```powershell
-python -m pip install -r requirements.txt
-python scripts/check_dependencies.py
-```
-
-需要 Python 3.10 或更新版本、LibreOffice，以及 Poppler 中的 `pdftoppm`。检查脚本只报告是否找到依赖，不自动下载软件或修改系统。`requirements.txt` 含 Windows 时区数据库和 runner 所需的 Python 库；不需要把 Python 安装到作者的固定目录。
-
-LibreOffice 可采用 Windows 默认安装位置，或将其程序目录加入 PATH。Poppler 的程序目录需在 PATH 中。非默认安装可在当前会话指定：
-
-```powershell
-$env:LAB_REPORT_LO_RUNNER = '<实际技能目录>\libreoffice-runner\scripts\libreoffice_run.py'
-$env:LAB_REPORT_SOFFICE = '<LibreOffice安装目录>\program\soffice.com'
-$env:LAB_REPORT_PDFTOPPM = '<Poppler程序目录>\pdftoppm.exe'
-```
-
-以上值是占位符，须替换成实际已存在的路径。默认同级安装时不需要设置 `LAB_REPORT_LO_RUNNER`。预检通过只说明依赖可定位，首次生成仍须检查实际 PPT、PDF 和逐页图片。
-
-无法持久写入用户环境变量时，Codex 可在当前汇报项目保存 `lab-report.local.json`。这是一项安装操作，不是检查脚本自动安装或写配置；已有同名文件先保留并合并必要项。示例中的路径必须替换为实际值，使用默认发现的项目可以省略：
-
-```json
-{
-  "lo_runner": "<实际技能目录>/libreoffice-runner/scripts/libreoffice_run.py",
-  "soffice": "<实际LibreOffice目录>/program/soffice.com",
-  "pdftoppm": "<实际Poppler目录>/pdftoppm.exe",
-  "work_root": "过程文件/日报运行/work",
-  "diagnostics_root": "过程文件/日报运行/diagnostics"
-}
-```
-
-相对路径基于配置文件所在目录解析。优先级为已有 `LAB_REPORT_*` 环境变量、项目配置、自动发现；配置的程序路径必须存在，明确的错误路径不会被其他发现结果掩盖。目录配置分别对应 `LAB_REPORT_WORK_ROOT` 和 `LAB_REPORT_DIAGNOSTICS_ROOT`，目录可以尚未创建，运行时再创建。配置只保存在项目本机，不提交公开仓库。
-
-```powershell
-python scripts/check_dependencies.py --config '<项目配置绝对路径>'
-python scripts/render_deck.py --deck '<deck JSON绝对路径>' --output-dir '<过程目录绝对路径>' --base-name '<新文件名>' --config '<项目配置绝对路径>'
-```
-
-未传 `--config` 时，依赖检查仅查看当前目录，生成入口仅查看 deck JSON 同目录，不搜索父目录。使用安装回退配置后，后续始终显式传入其绝对路径。检查结果分别列出实际 Python、有效程序路径、来源、当前进程值、项目文件值和用户级持久值；用户级读取被拒绝时标为不可读取，不将其解释为已保存或不存在。所有 JSON 输出采用 UTF-8，不修改系统代码页。
-
-受限 Windows 环境可通过上述工作目录保存临时文件、独立用户配置与诊断；runner 也提供 `--work-root`、`--diagnostics-root`。共享并发锁保持统一位置，所有项目共用两个容量槽位；锁访问被拒绝时 LibreOffice 不启动，应在获准访问该锁的环境中重试，不能为每个项目另建锁以绕开限制。
-
-未配置 `work_root` 时保留系统临时目录默认值。LibreOffice 在深目录中可能因内部缓存路径过长而崩溃；runner 对工作根绝对路径进行长度预检，超过 63 个 UTF-16 单元时返回 `work_root_too_long`。此时由智能体在项目允许范围内选更浅的过程目录，写入本机项目配置后重试；不移动共享锁、不修改原稿。诊断目录不受这项 LibreOffice 工作根限制。
-
-PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 sharp；也可先从原绘图工具导出 PNG。已安装 sharp 但无法解析模块时，可用 `SHARP_MODULE` 指定其实际模块目录。
+从会话、项目记录和真实图件整理导师日报或组会汇报，交付可编辑 PPTX。支持 Windows + Codex；采集器也支持 Claude Code 会话，macOS/Linux 完整流程尚未验证。
 
 ## 开始使用
 
-可以直接对 Codex 说：
+在 Windows 本机 Codex 中提供本页链接，说“请按页面流程完成安装”。执行者须读取 [安装与配置](references/installation.md)，连续完成依赖安装和实际样例验收。默认安装 `lab-report-slides`、`libreoffice-runner`、`writing-router`、`style-vocab`；用户明确选择精简安装时只装前两项。
 
-- “生成今日汇报，只看这个实验项目。先列出今天可汇报的科研进展让我选择。”
-- “生成本周组会汇报，曲线在 results 目录；先让我选择内容，下一步只写我已经确认的安排。”
+安装后可以说：
+
+- “生成今日汇报，只看这个实验项目，先列出科研进展让我选择。”
+- “生成本周组会汇报，曲线在 results 目录；下一步只写已经确定的安排。”
 - “把候选 1、3 做成 PPT，不写 2。使用项目里的汇报词表.md。”
 
-若没有可读取的本地会话，直接提供实验记录与图件；不要把空采集结果理解为没有做过科研。自定义会话位置可使用采集器的 `--codex-root`、`--claude-root`；不自动查找其他账号的记录。
+先选内容、确认总览，再整套制作；已有确认或直接制作授权沿用，不逐页审批。没有可读会话时可直接提供实验记录和图件。
 
-先核实事实并确认入选内容，再给总览正文及必要详略建议。总览确认后直接完成整套，已有范围或直接生成授权照常沿用，不逐页审批。选中的工作可以只在总览出现；展开页按实质内容安排，内部资料盘点不要求全部展示。
+## 模板与个人配置
 
-内容验收会检查全套重点、每页价值、必要证据与条件及文字表达；文件和实际渲染另行检查。程序检查通过、词表零命中和页面不溢出都不能代替内容判断。默认样式及 deck 字段见制作参考，不在本页重复维护。
+首次未指定模板时选择内置样式或本地 `.pptx`／带样页 `.potx`，以后在同一项目沿用并可随时更换。原模板保留，适配与验收见 [本地模板流程](references/local-template.md)。
 
-## 更换自己的模板
+个人词表放在项目根目录 `汇报词表.md` 或指定其他文件，使用“不建议、建议、例外”三列。没有词表也能执行基础表达检查。模板、项目名、交付目录和词表保存在本机或项目中，不随公开技能分发；作者私人样稿不可用时跳过，不阻断制作。
 
-项目首次使用且尚未指定模板时，Codex 会主动询问：“使用内置模板，还是提供你自己的本地 PPT 模板？已有汇报也可以。”选择后在当前项目记住，后续直接沿用并提醒可以更换；已经在请求里指定模板时不重复询问。
+## 流程与参考
 
-直接把本地 `.pptx`、带样页的 `.potx` 或以前做过的汇报路径交给 Codex，说：“以后按这份模板生成每日汇报。”Codex 会检查样页，复用页面尺寸、母版、Logo、字体和图文布局，替换旧报告内容，并在当前项目记住模板。
+| 内容 | 入口 |
+|---|---|
+| 范围、确认、制作顺序和后续修改 | [主流程](SKILL.md) |
+| 事实、详略、图片来源与逐页核对 | [资料与选材](references/materials.md) |
+| 页面文字、表达审校和内容验收 | [中文表达](references/chinese-style.md) |
+| 版式、生成接口、文件检查与失败恢复 | [制作与验证](references/rendering.md) |
+| 软件安装、路径配置与测试 | [安装与配置](references/installation.md) |
 
-原模板保持不动；原稿中的实验图和结论不会当作新成果。普通模板日报固定使用原生模板流程，失败不自动换内置样式或临时删页。首次、模板或映射改变、旧映射没有验收记录时，生成每页标明“模板适配测试，非科研结果”的样例；通过结构检查、实际渲染和逐页查看后，记录原模板、副本与映射哈希，正式生成才能继续。未变化的有效记录可以复用，不必每天重做。标题继承字号先解析，只在副本补齐可确定值；无法确定时由 Codex 询问该字号，用户无需清理缓存或填对象编号。具体执行见 [本地模板流程](references/local-template.md)；复杂图表、SmartArt、动画或纯空白母版可能需要单独适配或适用样页，用户指定的已有制作工具仍可继续使用。
+默认交付 PPTX：文字是原生文本框，图件可独立移动和替换，图内数据仍是像素。内部用 PDF 和逐页 PNG 检查；HTML 默认关闭，需要时用 `--html-preview`。PowerPoint 原生打开与 LibreOffice 渲染分别报告。
 
-## 中文表达和个人词表
-
-内置 [内容与中文表达规则](references/chinese-style.md)，从页面重点到必要信息、总览和下一步统一检查。没有个人配置也能完成基础检查；专业术语和影响结果理解的条件保留，不按词语批量删除。
-
-个人词表可放在当前汇报项目的 `汇报词表.md`，或在对话中指定文件。使用“不建议、建议、例外”三列；个人偏好优先于通用措辞建议。默认安装已包含 `writing-router` 和 `style-vocab`，生成时自动调用，无需另发润色指令。没有个人词表时仍执行共用规则与随附基础用词检查，不凭空生成个人偏好。精简安装可完成基本工作流，不强制安装 `pptx`。
-
-## 本机个性化配置
-
-模板、项目名称、交付目录和个人词表不随公开技能分发。安装时使用用户提供的配置；没有模板则按首次使用流程选择，没有交付目录则沿用当前汇报项目目录，没有个人词表则用通用规则。不要复制作者的用户名、磁盘路径、私人样稿或词表；`writing-router` 中的私人样稿路径不可用时跳过该增强，不阻断 PPT 流程。四个技能齐全代表检查能力配置齐全，不保证未经本机验证的字体、模板和输出与作者电脑逐像素相同。
-
-## 产物与资料保护
-
-- 默认交付 PPTX，过程目录保留 PDF、逐页 PNG 和来源清单；HTML 仅在显式使用 `--html-preview` 时生成。
-- PPT 文字是原生文本框，图件是独立图片；图片内部的曲线数据和标签仍是像素。
-- 使用样式参数，不读取作者的原始 PPT，也不附带私人会话或实验图片。微软雅黑未安装时，先选择本机已有的中文字体。
-- 采集脚本不联网；Codex 本身如何处理材料取决于所用服务和账号设置。不要把“本地采集”理解为模型完全离线运行。
-- 采集摘要和来源清单包含本地内容及路径，仅用于本次任务，不提交到公开仓库。密钥遮盖只能识别部分常见格式，不能代替人工检查。
-- 实际 PPT 经 LibreOffice 渲染检查；PowerPoint 原生打开、字体替换和导出应另外验证，没有验证就明确说明。
-
-版本 3 的 manifest 分别记录 PPTX 生成、结构检查、LibreOffice 渲染、PNG、视觉检查及 PowerPoint 原生验证。自动生成完成的 `rendered_visual_pending` 只表示渲染流程完成，仍须逐页查看。若 PPTX 已生成但后续渲染失败，文件与诊断会保留，命令返回失败状态；报告应准确写成“PPTX 已生成，视觉验收未完成”。清单以临时文件刷新后原子替换，写入失败保留旧清单并报告原因；没有有效清单时不能据此恢复。
-
-修复 LibreOffice、PNG 或已开启的 HTML 阶段错误后，可使用 `python scripts/render_deck.py --resume-manifest '<失败清单绝对路径>' --config '<项目配置绝对路径>'`。恢复校验 PPTX 哈希和结构，在新的尝试目录重做 PDF、PNG，保留旧记录；没有项目配置可省略 `--config`。恢复默认继承失败清单的 HTML 设置，可用 `--html-preview` 或 `--no-html-preview` 覆盖；旧 v3 清单按是否有 HTML 路径推断。HTML 失败可关闭预览后恢复，不阻断 PPTX 验收。PPTX 生成失败须重新生成。视觉或 PowerPoint 检查失败须修正后重查，文件已改动则旧渲染与验收结果失效。
-
-## 验证与更新
-
-只测试采集逻辑（使用临时合成会话，不读取个人历史）：
-
-```powershell
-python -m unittest discover -s tests -p test_collect_sessions.py -v
-```
-
-依赖全部就绪后运行完整测试：
-
-```powershell
-python -m unittest discover -s tests -p 'test_*.py' -v
-```
-
-完整测试包含真实 LibreOffice 转换，使用 runner 的独立进程和新输出目录；保留用户打开的文件，不结束用户进程。测试临时图仅供软件验证，不是科研结果。默认测试检查 PPTX、PDF、PNG 和 manifest；HTML 只在显式开启预览场景时检查。测试通过不代表已在同学电脑或 PowerPoint 中验收。
-
-更新只处理这四个技能的对应目录并保留本机修改；私人词表留在项目内。首次分享建议先让同学运行依赖检查，再用自己的一个小项目完成“选择内容—讨论并确认总览—整套生成—打开检查”。
+采集脚本不联网，但模型如何处理材料取决于所用服务和账号；本地采集不代表模型完全离线。原始会话、来源清单和私人图件不提交公开仓库，自动凭据遮盖不能替代人工检查。

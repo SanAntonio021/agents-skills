@@ -17,6 +17,50 @@ import render_deck  # noqa: E402
 
 
 class RenderDeckTests(unittest.TestCase):
+    def test_overview_preserves_full_text_with_mixed_weight_and_item_spacing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = {"allow_text_only": True, "slides": [{
+                "type": "overview", "title": "今日工作总览", "overview_items": [
+                    {"lead": "架构比较", "text": "比较两种架构，测量时刻为12:30。"},
+                    {"lead": "论文已提交"}]},
+                {"title": "普通页", "body": "1. 说明：保持普通正文。\n2. 另一项"}]}
+            path = root / "overview.pptx"
+            render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), path)
+            prs = Presentation(path)
+            body = next(s for s in prs.slides[0].shapes if s.has_text_frame and s.text.startswith("1. 架构比较"))
+            paragraphs = body.text_frame.paragraphs
+            self.assertEqual(body.text, "1. 架构比较：比较两种架构，测量时刻为12:30。\n2. 论文已提交")
+            self.assertEqual([(r.text, r.font.bold) for r in paragraphs[0].runs],
+                             [("1. 架构比较：", True), ("比较两种架构，测量时刻为12:30。", False)])
+            self.assertTrue(paragraphs[1].runs[0].font.bold)
+            self.assertEqual([p.space_after.pt for p in paragraphs], [18, 0])
+            self.assertTrue(all(p.line_spacing == 1.15 for p in paragraphs))
+            self.assertTrue(all(r.font.size.pt == 22 for p in paragraphs for r in p.runs))
+            normal = next(s for s in prs.slides[1].shapes if s.has_text_frame and s.text.startswith("1. 说明"))
+            self.assertFalse(normal.text_frame.paragraphs[0].runs[0].font.bold)
+            self.assertEqual(normal.text_frame.paragraphs[0].space_after.pt, 8)
+
+    def test_legacy_overview_and_invalid_structured_items(self):
+        slide = {"type": "overview", "blocks": [{"type": "text", "text": "1. 短句：说明\n2. 没有分界\n3. 采集时刻12:30"}]}
+        self.assertEqual(render_deck.slide_text_rows(slide)[1], ["1. 短句：", "", ""])
+        invalid = [[], [{"lead": ""}], [{"lead": "短句\n第二段"}], [{"lead": "短句", "text": None}]]
+        for items in invalid:
+            with self.subTest(items=items), self.assertRaises(ValueError):
+                render_deck.validate_deck({"allow_text_only": True, "slides": [
+                    {"type": "overview", "overview_items": items}]}, Path.cwd())
+        with self.assertRaisesRegex(ValueError, "without blocks or body"):
+            render_deck.validate_deck({"allow_text_only": True, "slides": [
+                {"type": "overview", "body": "已有正文", "overview_items": [{"lead": "短句"}]}]}, Path.cwd())
+
+    def test_overview_does_not_reduce_font_or_spacing_when_crowded(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = {"allow_text_only": True, "slides": [{"type": "overview",
+                "overview_items": [{"lead": "短句", "text": "解释"} for _ in range(10)]}]}
+            with self.assertRaisesRegex(ValueError, "Overview text does not fit"):
+                render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), root / "crowded.pptx")
+
     def test_project_title_keeps_distinct_native_runs_and_three_spaces(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

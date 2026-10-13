@@ -113,7 +113,25 @@ def text_rows(block: dict[str, Any]) -> list[tuple[str, bool]]:
     return rows
 
 
-def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum: int) -> int:
+def slide_text_rows(content):
+    """Keep overview emphasis within each editable paragraph."""
+    rows, prefixes = [], []
+    overview = content.get("type") == "overview"
+    for block in content["blocks"]:
+        if block["type"] == "image":
+            continue
+        for text, bold in text_rows(block):
+            rows.append((text, bold))
+            prefix = block.get("bold_prefix", "") if overview else ""
+            if overview and not prefix:
+                match = re.match(r"^\d+[.、]\s*.*?(?:：|(?<!\d):)", text)
+                prefix = match.group(0) if match else ""
+            prefixes.append(prefix)
+    return rows, prefixes
+
+
+def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum: int,
+              paragraph_spacing=8) -> int:
     if maximum <= 0:
         raise ValueError("Font size must be positive")
     candidates = sorted({maximum, *(size for size in (40, 36, 32, 28, 24, 22, 20, 18) if size <= maximum)}, reverse=True)
@@ -121,17 +139,17 @@ def text_size(rows: list[tuple[str, bool]], width: float, height: float, maximum
         capacity = max(1, width * 72 / size * 1.65)
         lines = sum(max(1, math.ceil(sum(2 if unicodedata.east_asian_width(c) in {"W", "F"} else 1
                                        for c in text) / capacity)) for text, _ in rows)
-        if (lines * size * 1.3 + max(0, len(rows) - 1) * 8) / 72 <= height:
+        if (lines * size * 1.3 + max(0, len(rows) - 1) * paragraph_spacing) / 72 <= height:
             return size
     raise ValueError("Slide text does not fit at a readable size; shorten it or split the slide")
 
 
 def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False,
-             font=FONT, centered=False):
+             font=FONT, centered=False, paragraph_spacing=8, bold_prefixes=None):
     if not rows:
         return
     if fit:
-        size = text_size(rows, width, height, size)
+        size = text_size(rows, width, height, size, paragraph_spacing)
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(width), Inches(height))
     frame = box.text_frame
     frame.word_wrap = True
@@ -140,19 +158,26 @@ def add_text(slide, rows, x, y, width, height, size=20, color=INK, *, fit=False,
     for index, (text, bold) in enumerate(rows):
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
         paragraph.space_before = Pt(0)
-        paragraph.space_after = Pt(8 if index < len(rows) - 1 else 0)
+        paragraph.space_after = Pt(paragraph_spacing if index < len(rows) - 1 else 0)
         paragraph.line_spacing = 1.15
         if centered:
             paragraph.alignment = PP_ALIGN.CENTER
-        run = paragraph.add_run()
-        run.text = re.sub(r"(?<=\d) (?=(?:GHz|MHz|kHz|Hz|dBm|dB|km|mm|ms|ns|Gbit/s|Gbps)\b)", "\u00a0", text)
-        run.font.name = font
-        run.font.size = Pt(size)
-        run.font.bold = bold
-        run.font.color.rgb = RGBColor.from_string(color)
-        east_asian = OxmlElement("a:ea")
-        east_asian.set("typeface", font)
-        run._r.get_or_add_rPr().append(east_asian)
+        prefix = bold_prefixes[index] if bold_prefixes else ""
+        segments = [(text, bold)]
+        if prefix and text.startswith(prefix):
+            segments = [(prefix, True), (text[len(prefix):], False)]
+        for value, weight in segments:
+            if not value:
+                continue
+            run = paragraph.add_run()
+            run.text = re.sub(r"(?<=\d) (?=(?:GHz|MHz|kHz|Hz|dBm|dB|km|mm|ms|ns|Gbit/s|Gbps)\b)", "\u00a0", value)
+            run.font.name = font
+            run.font.size = Pt(size)
+            run.font.bold = weight
+            run.font.color.rgb = RGBColor.from_string(color)
+            east_asian = OxmlElement("a:ea")
+            east_asian.set("typeface", font)
+            run._r.get_or_add_rPr().append(east_asian)
     return box
 
 
@@ -220,6 +245,21 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
     for index, raw in enumerate(deck["slides"]):
         slide = dict(raw)
         project_title(slide)
+        if "overview_items" in slide:
+            items = slide["overview_items"]
+            if slide.get("type") != "overview" or slide.get("blocks") or slide.get("body"):
+                raise ValueError("overview_items requires an overview slide without blocks or body")
+            if not isinstance(items, list) or not items:
+                raise ValueError("overview_items requires a nonempty list")
+            slide["blocks"] = []
+            for number, item in enumerate(items, 1):
+                if not isinstance(item, dict) or not isinstance(item.get("lead"), str) or not item["lead"].strip():
+                    raise ValueError("Each overview item requires a nonempty lead")
+                detail = item.get("text", "")
+                if not isinstance(detail, str) or any(c in item["lead"] + detail for c in "\r\n\v\f\u2028\u2029"):
+                    raise ValueError("Overview items must be single paragraphs; let PowerPoint wrap lines")
+                prefix = f"{number}. {item['lead'].strip()}" + ("：" if detail.strip() else "")
+                slide["blocks"].append({"type": "text", "text": prefix + detail.strip(), "bold_prefix": prefix})
         if slide.get("type") == "next_steps":
             if index != len(deck["slides"]) - 1:
                 raise ValueError("Next steps must be on the final slide")
@@ -334,10 +374,7 @@ def make_pptx(deck, slides, output_path, *, template_test=False):
             strip.line.fill.background()
             add_text(slide, [(subtitle, True)], *spec["box"], fonts.get("summary", spec["font_size"]), spec["color"], fit=True, font=font, centered=True)
         pictures = [block for block in content["blocks"] if block["type"] == "image"]
-        rows = []
-        for block in content["blocks"]:
-            if block["type"] != "image":
-                rows.extend(text_rows(block))
+        rows, prefixes = slide_text_rows(content)
         image_area = list(layout["content"]["box"])
         if rows:
             body_area = list(image_area)
@@ -348,7 +385,13 @@ def make_pptx(deck, slides, output_path, *, template_test=False):
                 body_area[2] = image_area[2] * fraction
                 image_area[0] += body_area[2] + 0.2
                 image_area[2] -= body_area[2] + 0.2
-            add_text(slide, rows, *body_area, fonts.get("body", layout.get("body", {}).get("font_size", 22)), font=font, fit=True)
+            size = fonts.get("body", layout.get("body", {}).get("font_size", 22))
+            overview = content.get("type") == "overview"
+            spacing = 18 if overview else 8
+            if overview and text_size(rows, body_area[2], body_area[3], size, spacing) != size:
+                raise ValueError("Overview text does not fit; shorten explanations or enlarge the body area")
+            add_text(slide, rows, *body_area, size, font=font, fit=True,
+                     paragraph_spacing=spacing, bold_prefixes=prefixes if overview else None)
         boxes = image_boxes(len(pictures), image_area, content.get("layout"))
         slide.notes_slide.notes_text_frame.text = "\n".join(filter(None, [
             str(deck.get("footer") or deck.get("date") or ""), str(content.get("status") or ""),

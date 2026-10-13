@@ -35,10 +35,11 @@ class Boundaries(unittest.TestCase):
         with self.assertRaises(VerificationError):
             check_raw_preservation(before, restored, {'kind':'move','ids':[]})
     def test_host_and_url_boundary(self):
-        for url in ('https://feishu.cn.attacker.test/docx/abc', 'https://feishu.cn@attacker.test/docx/abc', 'http://tenant.feishu.cn/docx/abc', 'https://tenant.feishu.cn/docx/abc?redirect=x', 'https://tenant.feishu.cn/wiki/abc'):
+        for url in ('https://feishu.cn.attacker.test/docx/abc', 'https://feishu.cn@attacker.test/docx/abc', 'http://tenant.feishu.cn/docx/abc', 'https://tenant.feishu.cn/docx/abc?redirect=x', 'https://tenant.feishu.cn/wiki/abc?redirect=x', 'https://tenant.feishu.cn/wiki/abc#block', 'https://tenant.feishu.cn/wiki/abc/extra'):
             with self.assertRaises(ValueError):
                 validate_target(dict(document_url=url, whiteboard_token='abc'))
         validate_target(dict(document_url='https://tenant.feishu.cn/docx/abc', whiteboard_token='Abc123'))
+        validate_target(dict(document_url='https://tenant.feishu.cn/wiki/abc', whiteboard_token='Abc123'))
 
     def test_undo_only_accepts_observed_false_flip_defaults(self):
         before = {'nodes':[dict(id='a',style={'fill_color':'#ffffff'})]}

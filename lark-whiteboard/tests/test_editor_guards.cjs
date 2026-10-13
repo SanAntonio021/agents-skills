@@ -18,7 +18,7 @@ app.actionManager.ioManager={inited:true,pendingActions:[],docState:{appliedVers
 app.plugins=[{saveState:'saved',httpSavingSet:new Set(),hasUncommitData(){},updateSaveState(){}}];
 const element={__reactFiberTest:{memoizedProps:{app},return:null}};
 const ctx={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},document:{querySelectorAll:()=>[element]}};
-const adapter=vm.runInNewContext('('+source+')',ctx),req={document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest'};
+const adapter=vm.runInNewContext('('+source+')',ctx),req={document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest'};
 const run=op=>adapter({...req,expected:adapter({...req,operation:{kind:'inspect'}}).nodes,operation:op});
 a.getLineAttachPoint=()=>({x:200,y:30});b.getLineAttachPoint=()=>({x:200,y:30});
 let geometry=adapter({...req,operation:{kind:'inspect'}}).binding_geometry.find(v=>v.id==='c');
@@ -31,6 +31,23 @@ assert.match(run({kind:'anchors',id:'c',start:{snap_to:'right',position:{x:1,y:.
 assert.equal(contentCalls,0);
 assert.match(run({kind:'move',ids:['g','a'],dx:10,dy:0}).adapter_error,/LOCKED_OBJECT/);
 b.page.info.locked=false;
+const guardFree=shape('unknown-text-build');app.nodeManager.nodeMap.set(guardFree.id,guardFree);
+const independentTextGuard=shape('independent-text-guard');independentTextGuard.type=3;
+app.nodeManager.nodeMap.set(independentTextGuard.id,independentTextGuard);
+independentTextGuard.parent=group;
+const selectedBeforeEmpty=[...selected];
+const emptyTextGuard=run({kind:'text',id:independentTextGuard.id,text:''});
+assert.match(emptyTextGuard.adapter_error,/INDEPENDENT_TEXT_CLEAR_NOT_VERIFIED/);
+assert.equal(emptyTextGuard.content_write_started,false);assert.equal(contentCalls,0);
+assert.deepEqual(selected,selectedBeforeEmpty);
+independentTextGuard.parent=undefined;
+const textGuard=run({kind:'text',id:guardFree.id,text:'changed'});
+assert.match(textGuard.adapter_error,/UNVERIFIED_TEXT_EDITOR_BUILD/);
+assert.equal(textGuard.content_write_started,false);assert.equal(contentCalls,0);
+const unknownCaptionLine={...line,id:'unknown-caption-build',parent:undefined};app.nodeManager.nodeMap.set(unknownCaptionLine.id,unknownCaptionLine);
+const captionGuard=run({kind:'caption',id:unknownCaptionLine.id,text:'changed'});
+assert.match(captionGuard.adapter_error,/UNVERIFIED_TEXT_EDITOR_BUILD/);
+assert.equal(captionGuard.content_write_started,false);assert.equal(contentCalls,0);
 assert.match(run({kind:'move',ids:['g','a'],dx:10,dy:0}).adapter_error,/SELECTION_OVERLAP/);
 app.api.getSelectNodes=()=>[];
 app.nodeManager.nodeMap.set('free',shape('free'));
@@ -181,7 +198,7 @@ const arrangeElement={__reactFiberTest:{memoizedProps:{app:arrangeApp},return:nu
 const arrangeContext={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},
   document:{querySelectorAll:()=>[arrangeElement]}};
 const arrangeAdapter=vm.runInNewContext('('+source+')',arrangeContext);
-const arrangeRequest={document_url:req.document_url,whiteboard_token:req.whiteboard_token};
+const arrangeRequest={document_url:req.document_url,docx_token:req.docx_token,whiteboard_token:req.whiteboard_token};
 const arrangeRun=operation=>arrangeAdapter({...arrangeRequest,
   expected:arrangeAdapter({...arrangeRequest,operation:{kind:'inspect'}}).nodes,operation});
 const validBounds=arrangeB.getBounds;

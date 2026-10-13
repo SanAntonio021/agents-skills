@@ -16,6 +16,7 @@ import urllib.request
 from urllib.parse import urlparse
 import uuid
 import zlib
+import xml.etree.ElementTree as ET
 
 
 class VerificationError(RuntimeError):
@@ -155,8 +156,8 @@ def validate_target(request):
         raise ValueError('Request requires a document_url string')
     u = urlparse(request['document_url'])
     host = u.hostname or ''
-    if u.scheme != 'https' or u.username or u.password or u.port or not any(host == d or host.endswith('.' + d) for d in ('feishu.cn', 'larksuite.com')) or not re.fullmatch(r'/docx/[A-Za-z0-9]+/?', u.path) or u.query or u.fragment:
-        raise ValueError('Expected a plain HTTPS Feishu/Lark docx URL')
+    if u.scheme != 'https' or u.username or u.password or u.port or not any(host == d or host.endswith('.' + d) for d in ('feishu.cn', 'larksuite.com')) or not re.fullmatch(r'/(docx|wiki)/[A-Za-z0-9]+/?', u.path) or u.query or u.fragment:
+        raise ValueError('Expected a plain HTTPS Feishu/Lark Docx or Wiki URL')
     if not isinstance(request.get('whiteboard_token'), str) or not re.fullmatch(r'[A-Za-z0-9]+', request['whiteboard_token']):
         raise ValueError('Invalid whiteboard token')
     if not isinstance(request.get('operations', []), list):
@@ -166,7 +167,35 @@ def validate_target(request):
     for key in ('block_id', 'section_id'):
         if key in request and (not isinstance(request[key], str) or not re.fullmatch(r'[A-Za-z0-9]+', request[key])):
             raise ValueError('Invalid document block identifier')
+    if 'docx_token' in request and (not isinstance(request['docx_token'], str) or not re.fullmatch(r'[A-Za-z0-9]+', request['docx_token'])):
+        raise ValueError('Invalid Docx token')
     validate_request_operations(request)
+
+
+def validate_document_identity(request, response):
+    """Resolve only CLI-fetched document and exact embedded whiteboard identity."""
+    document = response.get('data', {}).get('document', {})
+    token = document.get('document_id')
+    if response.get('ok') is not True or not isinstance(token, str) or not re.fullmatch(r'[A-Za-z0-9]+', token):
+        raise VerificationError('CLI fetch did not resolve a valid Docx document')
+    route = urlparse(request['document_url']).path.strip('/').split('/')
+    if route[0] == 'docx' and route[1] != token or request.get('docx_token', token) != token:
+        raise VerificationError('CLI document identity differs from the requested Docx token')
+    content = document.get('content')
+    if not isinstance(content, str):
+        raise VerificationError('CLI fetch omitted document content')
+    try:
+        root = ET.fromstring('<root>' + content + '</root>')
+    except ET.ParseError:
+        raise VerificationError('CLI document XML cannot be verified') from None
+    matches = [node for node in root.iter('whiteboard') if node.get('token') == request['whiteboard_token']]
+    if len(matches) != 1 or not re.fullmatch(r'[A-Za-z0-9]+', matches[0].get('id', '')):
+        raise VerificationError('Target whiteboard is not unique in the resolved Docx')
+    block = matches[0].get('id')
+    if request.get('block_id', block) != block:
+        raise VerificationError('Requested document block does not contain the target whiteboard')
+    return {'docx_token': token, 'whiteboard_token': request['whiteboard_token'], 'block_id': block,
+            'revision_id': document.get('revision_id')}
 
 
 def validate_request_operations(request):
@@ -496,6 +525,8 @@ def validate_local_operation(nodes, op):
             raise VerificationError('Text or size edit requires a native shape or text shape')
         if kind == 'text' and not isinstance(op.get('text'), str):
             raise VerificationError('Text must be a string')
+        if kind == 'text' and node.get('kind') == 'text' and op.get('text') == '':
+            raise VerificationError('Clearing an independent text shape is not verified and is refused before the native input call')
         if kind == 'font' and not finite_number(op.get('font_size'), True):
             raise VerificationError('Font size must be positive and finite')
         if kind == 'resize' and not all(finite_number(op.get(k), True) for k in ('width', 'height')):
@@ -1101,6 +1132,7 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
             raise VerificationError('Caption operation changed the object ID set or duplicated an ID')
         check_intent(projection(before), projection(after), op, from_raw=True)
         target = op['id']
+        default_caption_exceptions = []
         for ident in a:
             left, right = copy.deepcopy(a[ident]), copy.deepcopy(b[ident])
             strip_parent_bounds(ident, left, right)
@@ -1126,8 +1158,15 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
                 else:
                     captions = rc.get('captions', {})
                     entries = captions.get('data', [])
+                    default_fields = CAPTION_DEFAULT_RAW_FIELDS
+                    if len(entries) == 1 and 'theme_text_color_code' in entries[0]:
+                        if entries[0]['theme_text_color_code'] != -1 or type(entries[0]['theme_text_color_code']) is not int or entries[0].get('text_color_type') != 0:
+                            raise VerificationError('New caption theme color is not the verified native default')
+                        default_fields = default_fields | {'theme_text_color_code'}
+                        default_caption_exceptions.append({'id':target, 'normalization':'native_default_caption_theme',
+                                                           'theme_text_color_code':-1, 'text_color_type':0})
                     if (set(captions) != {'data'} or len(entries) != 1
-                            or set(entries[0]) - CAPTION_DEFAULT_RAW_FIELDS):
+                            or set(entries[0]) - default_fields):
                         raise VerificationError('Adding a caption introduced unverified default format fields')
                     for field in ('captions', 'caption_position', 'caption_position_type'):
                         if field != 'captions' and field in lc and lc[field] != rc.get(field):
@@ -1143,7 +1182,7 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
                      'requested_font_size':op['font_size'],
                      'raw_font_size':b[target]['connector']['captions']['data'][0].get('font_size'),
                      'native_reopen_required':True}]
-        return cache_exceptions
+        return cache_exceptions + default_caption_exceptions
     if op['kind'] in ('style', 'reconnect', 'line_type', 'path', 'curve_point', 'connect'):
         if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
             raise VerificationError('Local edit requires unique object IDs')
@@ -1865,7 +1904,11 @@ class Runner:
                                else 'Preview transport or runtime failure; saved edits were not replayed')
 
     def editor(self, operation, expected=None):
-        request = {k: self.request[k] for k in ('document_url', 'whiteboard_token')}
+        identity = getattr(self, 'document_identity', None)
+        if not identity:
+            raise VerificationError('CLI document identity must be verified before using the editor')
+        request = dict(document_url=self.page_document_url, docx_token=identity['docx_token'],
+                       whiteboard_token=self.request['whiteboard_token'])
         request.update(operation=operation, expected=expected)
         expression = '(()=>{try{return (' + self.adapter.rstrip().rstrip(';') + ')(' + json.dumps(request, ensure_ascii=True) + ')}catch(e){return {adapter_error:String(e.message),content_write_started:typeof e.content_write_started==="boolean"?e.content_write_started:null}}})()'
         response = self.call('/v2/tabs/' + self.tab + '/eval', {'expression': expression})
@@ -2250,7 +2293,19 @@ class Runner:
         with self.time_budget(self.timeout):
             return self._open_page()
 
+    def verify_document(self, url):
+        target = dict(self.request, document_url=url)
+        validate_target(target)
+        response = self.command(['docs', '+fetch', '--doc', url, '--detail', 'with-ids', '--as', 'user'])
+        identity = validate_document_identity(target, response)
+        expected = getattr(self, 'document_identity', None)
+        if expected and any(identity[k] != expected[k] for k in ('docx_token', 'whiteboard_token', 'block_id')):
+            raise VerificationError('Redirected route resolves to a different document or whiteboard')
+        self.report.setdefault('document_routes', []).append(dict(document_url=url, **identity))
+        return identity
+
     def _open_page(self):
+        self.document_identity = self.verify_document(self.request['document_url'])
         session = self.call('/v2/tasks', {}, auth=False)
         self.token, self.task = session['taskToken'], session['taskId']
         page = {'task_id': self.task, 'tab_id': None, 'open_status': 'creating'}
@@ -2271,7 +2326,12 @@ class Runner:
             self.call(base + '/eval', {'expression': 'document.querySelector(' + json.dumps(block) + ').scrollIntoView({block:"center"})'})
             selector = block + ' .whiteboard-canvas-container'
         self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
-        page['open_status'] = 'ready'
+        route = self.call(base + '/eval', {'expression': '({origin:location.origin,href:location.href})'}).get('value')
+        if not isinstance(route, dict) or route.get('origin') != urlparse(self.request['document_url']).scheme + '://' + urlparse(self.request['document_url']).netloc:
+            raise VerificationError('Document navigation changed the requested origin')
+        self.page_document_url = route.get('href')
+        self.document_identity = self.verify_document(self.page_document_url)
+        page.update(open_status='ready', document_url=self.page_document_url)
 
     def hydrate(self, raw, minimum_applied_version=None):
         with self.time_budget(min(self.timeout, 20)):
@@ -2319,7 +2379,7 @@ class Runner:
         if remaining <= 0:
             raise VerificationError('Native persistence confirmation exceeded the save deadline')
         folder = f'native-save-witness-{number:03d}'
-        request = {k:self.request[k] for k in ('document_url', 'whiteboard_token', 'section_id', 'block_id') if k in self.request}
+        request = {k:self.request[k] for k in ('document_url', 'docx_token', 'whiteboard_token', 'section_id', 'block_id') if k in self.request}
         request['operations'] = []
         reader = Runner(request, self.output / folder, self.proxy, timeout=remaining)
         reader.deadline = self.last_save_deadline

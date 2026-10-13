@@ -288,11 +288,11 @@ commandManager:{handlers:new Map(),execute:()=>writes++},actionManager:{execActi
 const e={__reactFiberTest:{memoizedProps:{app}}};
 const adapter=vm.runInNewContext('('+fs.readFileSync(process.argv[1],'utf8')+')',
 {URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},document:{querySelectorAll:()=>[e]}});
-const r=adapter({document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}});
+const r=adapter({document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}});
 assert.equal(r.nodes[0].caption_font_size,28);assert.equal(r.nodes[0].caption_width,180);
 assert.equal(r.nodes[0].caption_size_mode,1);assert.equal(writes,0);
 page.info.connectorV2.captions.data=[];
-const empty=adapter({document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}});
+const empty=adapter({document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}});
 assert.equal(empty.nodes[0].caption_font_size,null);assert.equal(empty.nodes[0].caption_width,null);
 assert.equal(empty.nodes[0].caption_size_mode,null);assert.equal(writes,0);
 """

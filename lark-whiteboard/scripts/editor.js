@@ -7,8 +7,12 @@
   const fail = message => { throw new Error(message); };
   const wanted = new URL(request.document_url);
   if (location.origin !== wanted.origin || location.pathname !== wanted.pathname) fail('DOCUMENT_URL_MISMATCH');
-  const doc = wanted.pathname.match(/^\/docx\/([A-Za-z0-9]+)\/?$/)?.[1];
-  if (!doc || !/^[A-Za-z0-9]+$/.test(request.whiteboard_token)) fail('INVALID_TARGET');
+  const route = wanted.pathname.match(/^\/(docx|wiki)\/([A-Za-z0-9]+)\/?$/);
+  const doc = request.docx_token;
+  if (!route || !/^[A-Za-z0-9]+$/.test(doc || '') || (route[1]==='docx' && route[2]!==doc)
+      || wanted.protocol!=='https:' || wanted.username || wanted.password || wanted.port || wanted.search || wanted.hash
+      || !['feishu.cn','larksuite.com'].some(host=>wanted.hostname===host||wanted.hostname.endsWith('.'+host))
+      || !/^[A-Za-z0-9]+$/.test(request.whiteboard_token)) fail('INVALID_TARGET');
   const matches = [];
   for (const element of document.querySelectorAll('.whiteboard-canvas-container')) {
     let fiber = element[Object.keys(element).find(k => /^__react(InternalInstance|Fiber)/.test(k))];
@@ -217,6 +221,7 @@
   let arrangementOrder=null,arrangementBeforeBounds=null;
   const node = id => a.nodeManager.nodeMap.get(id) || fail('NODE_NOT_FOUND:' + id);
   ids.forEach(node);
+  if(op.kind==='text' && node(op.id).type===3 && op.text==='')fail('INDEPENDENT_TEXT_CLEAR_NOT_VERIFIED');
   const assertUnlocked=n=>{for(let p=n;p;p=p.parent)if(a.api.graphicNodeToPageNode(p)?.info?.locked)fail('LOCKED_OBJECT');};
   for (const id of ids) {
     let n=node(id);
@@ -351,7 +356,8 @@
   };
   switch (op.kind) {
     case 'text': {
-      const n=textNode(op.id);text(op.text);if(textSignature!=='7e805832')fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      const n=textNode(op.id);text(op.text);
+      if(!['7e805832','d309a450'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
       selected([n.id]);a.api.selectNodeText(n);
       if(a.inputManager.textInfo?.node?.id!==n.id||a.inputManager.inputStatus!=='focusing')fail('TEXT_INPUT_TARGET_MISMATCH');
       contentWriteStarted=true;a.inputManager.processInput(op.text);a.inputManager.blur();break;
@@ -381,7 +387,7 @@
     case 'caption': {
       const n=line(op.id);text(op.text);
       const captions=a.api.graphicNodeToPageNode(n).info.connectorV2.captions?.data || [];
-      if(textSignature!=='7e805832')fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      if(!['7e805832','d309a450'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
       if(captions.length>1)fail('MULTIPLE_CAPTIONS_NOT_EDITABLE');
       if(!captions.length && !op.text)break;
       selected([op.id]);

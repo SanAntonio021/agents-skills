@@ -14,15 +14,24 @@ const element = {__reactInternalInstanceTest:{memoizedProps:{},return:{memoizedP
 const context = {URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},
   document:{querySelectorAll:()=>[element]}};
 const adapter = vm.runInNewContext('('+source+')',context);
-const req = {document_url:'https://test.feishu.cn/docx/DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}};
+const req = {document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}};
 assert.equal(adapter(req).nodes.length,0);
 const rejected=(r,pattern)=>{const result=adapter(r);assert.match(result.adapter_error,pattern);assert.equal(result.content_write_started,false);};
 rejected({...req,document_url:'https://test.feishu.cn/docx/Wrong'},/DOCUMENT_URL_MISMATCH/);
 rejected({...req,whiteboard_token:'Wrong'},/BOARD_IDENTITY/);
+rejected({...req,docx_token:'Wrong'},/INVALID_TARGET/);
+rejected({...req,docx_token:undefined},/INVALID_TARGET/);
 rejected({...req,operation:{kind:'enter'}},/UNVERIFIED_EDITOR_BUILD/);
 context.document.querySelectorAll=()=>[element,element];
 rejected(req,/NOT_UNIQUE/);
 assert.equal(writes,0);
+context.document.querySelectorAll=()=>[element];
+context.location.pathname='/wiki/WikiTest';
+const wikiReq={...req,document_url:'https://test.feishu.cn/wiki/WikiTest'};
+assert.equal(adapter(wikiReq).nodes.length,0);
+rejected({...wikiReq,docx_token:'Wrong'},/BOARD_IDENTITY/);
+rejected({...wikiReq,document_url:'https://other.feishu.cn/wiki/WikiTest'},/DOCUMENT_URL_MISMATCH/);
+context.location.pathname='/docx/DocTest';
 console.log('PASS: read-only inspection and four failure paths make no editor calls');
 
 // Native corners are an object, and include any rotation already applied.

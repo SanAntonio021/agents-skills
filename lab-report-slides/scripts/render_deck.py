@@ -559,12 +559,16 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         _write_manifest(path, manifest)
         export_pptx(pptx, Path(manifest["files"]["pdf"]), [Path(p) for p in manifest["files"]["png"]],
                     config=config, stage_callback=signal)
-        stage = "html"
-        images = "".join(f'<img alt="{html.escape(title, quote=True)}" src="data:image/png;base64,{base64.b64encode(Path(p).read_bytes()).decode()}" />'
-                         for title, p in zip(manifest["slide_titles"], manifest["files"]["png"]))
-        with Path(manifest["files"]["html"]).open("x", encoding="utf-8") as output:
-            output.write('<!doctype html><meta charset="utf-8"><title>Lab report</title><style>body{margin:0;background:#ddd}img{display:block;width:min(100%,1600px);height:auto;margin:0 auto 16px}</style>' + images)
-        manifest["file_hashes"][manifest["files"]["html"]] = file_hash(manifest["files"]["html"])
+        if manifest["html_preview"]:
+            stage = "html"
+            images = "".join(f'<img alt="{html.escape(title, quote=True)}" src="data:image/png;base64,{base64.b64encode(Path(p).read_bytes()).decode()}" />'
+                             for title, p in zip(manifest["slide_titles"], manifest["files"]["png"]))
+            html_path = path.parent / f"{manifest['stem']}.html"
+            with html_path.open("x", encoding="utf-8") as output:
+                output.write('<!doctype html><meta charset="utf-8"><title>Lab report</title><style>body{margin:0;background:#ddd}img{display:block;width:min(100%,1600px);height:auto;margin:0 auto 16px}</style>' + images)
+            manifest["file_hashes"][str(html_path)] = file_hash(html_path)
+            manifest["files"]["html"] = str(html_path)
+            manifest["stages"]["html"] = "passed"
         stage = "structure"
         if file_hash(pptx) != manifest["pptx_sha256"]:
             raise ValueError("PPTX changed during rendering; regenerate and inspect the new file")
@@ -592,19 +596,23 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         WORK_ROOT.reset(token)
 
 
-def _new_manifest(output_dir, stem, requested_stem, count, titles, config):
-    return {"schema_version": 3, "ok": False, "status": "running", "requested_stem": requested_stem,
+def _new_manifest(output_dir, stem, requested_stem, count, titles, config, *, html_preview=False):
+    manifest = {"schema_version": 3, "ok": False, "status": "running", "requested_stem": requested_stem,
             "stem": stem, "slide_count": count, "slide_titles": titles, "render_source": "pptx",
+            "html_preview": html_preview,
             "editable_text": True, "independent_images": True, "assets": [], "file_hashes": {},
             "config": config, "stages": {name: "not_run" for name in
                        ("pptx", "structure", "libreoffice", "png", "visual", "powerpoint")},
             "files": {"pptx": str(output_dir / f"{stem}.pptx"),
-                      "pdf": str(output_dir / f"{stem}.pdf"), "html": str(output_dir / f"{stem}.html"),
+                      "pdf": str(output_dir / f"{stem}.pdf"),
                       "manifest": str(output_dir / f"{stem}.manifest.json"),
                       "png": [str(output_dir / f"{stem}_{i:02d}.png") for i in range(1, count + 1)]}}
+    if html_preview:
+        manifest["stages"]["html"] = "not_run"
+    return manifest
 
 
-def render(deck_path, output_dir, requested_stem, *, config_path=None, template_test=False):
+def render(deck_path, output_dir, requested_stem, *, config_path=None, template_test=False, html_preview=False):
     deck_path, output_dir = Path(deck_path).resolve(), Path(output_dir).resolve()
     config = load_config(config_path, discovery_dir=deck_path.parent)
     deck = json.loads(deck_path.read_text(encoding="utf-8-sig"))
@@ -615,13 +623,13 @@ def render(deck_path, output_dir, requested_stem, *, config_path=None, template_
     output_dir.mkdir(parents=True, exist_ok=True)
     with reserve_stem(output_dir, requested_stem) as stem:
         return render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem,
-                              config=config, template_test=template_test)
+                              config=config, template_test=template_test, html_preview=html_preview)
 
 
-def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *, config=None, template_test=False):
+def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *, config=None, template_test=False, html_preview=False):
     config = config if config is not None else load_config(discovery_dir=Path(deck_path).parent)
     manifest = _new_manifest(output_dir, stem, requested_stem, len(slides),
-                             [str(s.get("title", "")) for s in slides], config)
+                             [str(s.get("title", "")) for s in slides], config, html_preview=html_preview)
     manifest.update(source_deck=str(deck_path), template_test=template_test)
     # Read template metadata inside generation so failures still get a stage receipt.
     def generate():
@@ -631,11 +639,14 @@ def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *,
                         template_check=lambda: _check_template(manifest["template"]))
 
 
-def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config_path=None):
+def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config_path=None, html_preview=None):
+    """Reuse the retained PPTX; None inherits HTML intent, including older v3 manifests."""
     manifest_path = Path(manifest_path).resolve()
     previous = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     if previous.get("schema_version") != 3 or previous.get("failed_stage") not in {"libreoffice", "png", "html"}:
         raise ValueError("--resume-manifest requires a version 3 rendering failure; regenerate or repeat the relevant manual check")
+    if html_preview is None:
+        html_preview = previous.get("html_preview", bool(previous.get("files", {}).get("html")))
     pptx = Path(previous["files"]["pptx"])
     if previous.get("stages", {}).get("pptx") != "passed" or file_hash(pptx) != previous.get("pptx_sha256"):
         raise ValueError("PPTX hash/state changed; regenerate before rendering")
@@ -658,7 +669,7 @@ def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config
         raise FileExistsError("Cannot reserve a unique rendering attempt directory")
     stem = requested_stem or previous["requested_stem"]
     stem = choose_stem(attempt, stem)
-    manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config)
+    manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config, html_preview=html_preview)
     manifest["files"]["pptx"] = str(pptx)
     for key in ("source_deck", "template", "template_test", "assets"):
         if key in previous:
@@ -676,6 +687,13 @@ def main(argv=None):
     parser.add_argument("--base-name")
     parser.add_argument("--config")
     parser.add_argument("--template-test", action="store_true")
+    previews = parser.add_mutually_exclusive_group()
+    previews.add_argument("--html-preview", dest="html_preview", action="store_true",
+                          help="Also generate an HTML viewer of the rendered PPTX pages")
+    previews.add_argument("--no-html-preview", dest="html_preview", action="store_false",
+                          help="Disable HTML output, including when resuming an HTML-enabled attempt")
+    parser.set_defaults(html_preview=None)
+    parser.epilog = "HTML is off for new decks. Resume inherits the failed manifest's setting unless a preview flag is supplied."
     args = parser.parse_args(argv)
     if args.deck and (not args.output_dir or not args.base_name):
         parser.error("--deck requires --output-dir and --base-name")
@@ -683,10 +701,12 @@ def main(argv=None):
         parser.error("--template-test is only valid with --deck")
     try:
         if args.resume_manifest:
-            result = resume_render(args.resume_manifest, args.output_dir, args.base_name, config_path=args.config)
+            result = resume_render(args.resume_manifest, args.output_dir, args.base_name,
+                                   config_path=args.config, html_preview=args.html_preview)
         else:
             result = render(args.deck, args.output_dir, args.base_name,
-                            config_path=args.config, template_test=args.template_test)
+                            config_path=args.config, template_test=args.template_test,
+                            html_preview=args.html_preview is True)
         emit_json(result)
         return 0
     except RenderFailure as exc:

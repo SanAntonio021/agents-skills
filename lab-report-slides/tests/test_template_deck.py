@@ -79,6 +79,24 @@ class TemplateDeckTests(unittest.TestCase):
         return template_deck.make_template_pptx(
             deck, render_deck.validate_deck(deck, self.root), self.output, self.spec_path, template_test=True)
 
+    def test_overview_has_mixed_weight_spacing_and_keeps_template_font(self):
+        deck = {"allow_text_only": True, "slides": [{"type": "overview", "title": "总览",
+            "overview_items": [{"lead": "架构比较", "text": "比较两种变频方式。"}, {"lead": "论文已提交"}]}]}
+        spec = copy.deepcopy(self.spec)
+        spec["layouts"]["result"]["shape_overrides"] = {
+            str(spec["layouts"]["result"]["slots"]["body"]): {
+                "box_emu": [Inches(.5), Inches(2.3), Inches(10), Inches(4)]}}
+        self.make(spec=spec, deck=deck)
+        self.assertEqual(self.digest(self.source), self.source_hash)
+        prs = Presentation(self.output)
+        body = next(s for s in prs.slides[0].shapes if s.has_text_frame and s.text.startswith("1. 架构比较"))
+        paragraphs = body.text_frame.paragraphs
+        self.assertEqual([(r.text, r.font.bold, r.font.size.pt) for r in paragraphs[0].runs],
+                         [("1. 架构比较：", True, 24), ("比较两种变频方式。", False, 24)])
+        self.assertEqual([p.space_after.pt for p in paragraphs], [18, 0])
+        self.assertTrue(all(p.space_before.pt == 0 and p.line_spacing == 1.15 for p in paragraphs))
+
+
     def test_preserves_size_native_logo_background_and_source(self):
         assets = self.make()
         self.assertEqual(self.digest(self.source), self.source_hash)

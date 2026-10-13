@@ -108,7 +108,7 @@ def inspect_template(path: Path) -> dict:
     return report
 
 
-def replace_text(shape, text):
+def replace_text(shape, text, *, bold_prefixes=None, paragraph_spacing=None):
     if shape.tag != f"{{{NS['p']}}}sp":
         raise ValueError("Text slots must refer to top-level native text shapes")
     body = shape.find("p:txBody", NS)
@@ -120,14 +120,41 @@ def replace_text(shape, text):
     end_props = original.find("a:endParaRPr", NS) if original is not None else None
     for paragraph in list(body.findall("a:p", NS)):
         body.remove(paragraph)
-    for line in str(text).split("\n"):
+    lines = str(text).split("\n")
+    for index, line in enumerate(lines):
         paragraph = ET.SubElement(body, f"{{{NS['a']}}}p")
         if props is not None:
             paragraph.append(copy.deepcopy(props))
-        run = ET.SubElement(paragraph, f"{{{NS['a']}}}r")
-        if run_props is not None:
-            run.append(copy.deepcopy(run_props))
-        ET.SubElement(run, f"{{{NS['a']}}}t").text = line
+        if paragraph_spacing is not None:
+            pprops = paragraph.find("a:pPr", NS)
+            if pprops is None:
+                pprops = ET.SubElement(paragraph, f"{{{NS['a']}}}pPr")
+            for tag in ("lnSpc", "spcBef", "spcAft"):
+                for child in list(pprops.findall(f"a:{tag}", NS)):
+                    pprops.remove(child)
+            for position, (tag, unit, value) in enumerate([
+                ("lnSpc", "spcPct", 115000), ("spcBef", "spcPts", 0),
+                ("spcAft", "spcPts", round(paragraph_spacing * 100) if index < len(lines) - 1 else 0),
+            ]):
+                node = ET.Element(f"{{{NS['a']}}}{tag}")
+                ET.SubElement(node, f"{{{NS['a']}}}{unit}", val=str(value))
+                pprops.insert(position, node)
+        prefix = bold_prefixes[index] if bold_prefixes else ""
+        segments = [(line, None)]
+        if bold_prefixes is not None:
+            segments = [(line, False)]
+            if prefix and line.startswith(prefix):
+                segments = [(prefix, True), (line[len(prefix):], False)]
+        for value, weight in segments:
+            if not value and line:
+                continue
+            run = ET.SubElement(paragraph, f"{{{NS['a']}}}r")
+            rprops = copy.deepcopy(run_props) if run_props is not None else ET.Element(f"{{{NS['a']}}}rPr")
+            if weight is not None:
+                rprops.set("b", "1" if weight else "0")
+            if run_props is not None or weight is not None:
+                run.append(rprops)
+            ET.SubElement(run, f"{{{NS['a']}}}t").text = value
         if end_props is not None:
             paragraph.append(copy.deepcopy(end_props))
 
@@ -251,7 +278,7 @@ def prune(parts):
 
 
 def make_template_pptx(deck, slides, output_path, template_spec_path: Path, *, template_test=False) -> list:
-    from render_deck import project_title, raster_bytes, text_rows
+    from render_deck import project_title, raster_bytes, slide_text_rows
 
     output_path = Path(output_path)
     if output_path.exists():
@@ -323,7 +350,7 @@ def make_template_pptx(deck, slides, output_path, template_spec_path: Path, *, t
         for shape in list(tree):
             if shape_id(shape) is not None and shape_id(shape) not in kept:
                 tree.remove(shape)
-        rows = [row for block in content["blocks"] if block["type"] != "image" for row in text_rows(block)]
+        rows, prefixes = slide_text_rows(content)
         texts = {"title": str(content.get("title") or ""), "date": str(content.get("date") or deck.get("date") or ""),
                  "summary": str(content.get("summary") or content.get("subtitle") or ""),
                  "body": "\n".join(row[0] for row in rows)}
@@ -332,6 +359,8 @@ def make_template_pptx(deck, slides, output_path, template_spec_path: Path, *, t
                 title_parts = project_title(content) if name == "title" else None
                 if title_parts:
                     replace_project_title(shapes[slots[name]], *title_parts)
+                elif name == "body" and content.get("type") == "overview":
+                    replace_text(shapes[slots[name]], value, bold_prefixes=prefixes, paragraph_spacing=18)
                 else:
                     replace_text(shapes[slots[name]], value)
             elif value and name in {"summary", "body", "title"}:

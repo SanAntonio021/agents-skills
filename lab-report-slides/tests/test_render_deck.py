@@ -132,7 +132,9 @@ class RenderDeckTests(unittest.TestCase):
             manifest = render_deck.render(deck, output, "20260715")
 
             self.assertEqual(manifest["slide_count"], 1)
-            self.assertTrue((output / "20260715.html").stat().st_size > 0)
+            self.assertFalse((output / "20260715.html").exists())
+            self.assertFalse(manifest["html_preview"])
+            self.assertNotIn("html", manifest["files"])
             self.assertTrue((output / "20260715.pdf").stat().st_size > 0)
             self.assertTrue(zipfile.is_zipfile(output / "20260715.pptx"))
             presentation = Presentation(output / "20260715.pptx")
@@ -146,9 +148,11 @@ class RenderDeckTests(unittest.TestCase):
             self.assertEqual(manifest["assets"][0]["path"], str(image.resolve()))
             with Image.open(output / "20260715_01.png") as rendered:
                 self.assertEqual(rendered.size, (1600, 900))
-            second = render_deck.render(deck, output, "20260715")
+            second = render_deck.render(deck, output, "20260715", html_preview=True)
             self.assertEqual(second["stem"], "20260715_v2")
             self.assertTrue((output / "20260715_v2.pptx").exists())
+            self.assertTrue((output / "20260715_v2.html").stat().st_size > 0)
+            self.assertEqual(second["stages"]["html"], "passed")
 
     def test_summary_body_and_numbered_next_steps_use_separate_editable_regions(self):
         with tempfile.TemporaryDirectory() as temp:

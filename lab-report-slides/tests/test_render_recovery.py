@@ -1,5 +1,6 @@
 """Fault injection verifies retained editable output and conservative recovery."""
 import contextlib
+import base64
 import io
 import json
 import os
@@ -29,7 +30,7 @@ class RecoveryTests(unittest.TestCase):
         self.config_patch.start()
         self.addCleanup(self.config_patch.stop)
 
-    def fail(self, stage='libreoffice'):
+    def fail(self, stage='libreoffice', *, html_preview=False):
         def export(pptx, pdf, pages, *, stage_callback, **kwargs):
             if stage == 'png':
                 pdf.write_bytes(b'PDF fixture')
@@ -38,7 +39,7 @@ class RecoveryTests(unittest.TestCase):
                                        {'runner': {'ok': False, 'error': 'injected'}, 'stderr': '完整错误'})
         with patch.object(render, 'export_pptx', side_effect=export):
             with self.assertRaises(render.RenderFailure) as error:
-                render.render(self.deck, self.root, 'report')
+                render.render(self.deck, self.root, 'report', html_preview=html_preview)
         return error.exception.manifest
 
     @staticmethod
@@ -87,6 +88,83 @@ class RecoveryTests(unittest.TestCase):
         path.write_text(json.dumps(failed), encoding='utf-8')
         with self.assertRaisesRegex(ValueError, 'manual check'):
             render.resume_render(path)
+
+    def test_html_preview_is_opt_in_and_embeds_the_rendered_pages(self):
+        for enabled in (False, True):
+            with self.subTest(html_preview=enabled), patch.object(render, 'export_pptx', side_effect=self.export_ok):
+                result = render.render(self.deck, self.root, 'preview', html_preview=enabled)
+            self.assertEqual(result['html_preview'], enabled)
+            self.assertEqual('html' in result['files'], enabled)
+            self.assertEqual('html' in result['stages'], enabled)
+            if enabled:
+                path = Path(result['files']['html'])
+                encoded_page = base64.b64encode(Path(result['files']['png'][0]).read_bytes()).decode()
+                self.assertIn('data:image/png;base64,' + encoded_page, path.read_text(encoding='utf-8'))
+                self.assertEqual(result['file_hashes'][str(path)], render.file_hash(path))
+                self.assertEqual(result['stages']['html'], 'passed')
+            else:
+                self.assertFalse((self.root / f"{result['stem']}.html").exists())
+                self.assertFalse(any(path.endswith('.html') for path in result['file_hashes']))
+
+    def test_resume_preserves_html_intent_or_accepts_an_explicit_override(self):
+        for original, override, expected in [(False, None, False), (True, None, True),
+                                              (False, True, True), (True, False, False)]:
+            with self.subTest(original=original, override=override):
+                failed = self.fail(html_preview=original)
+                self.assertNotIn('html', failed['files'])
+                saved = Path(failed['files']['manifest'])
+                original_manifest = saved.read_bytes()
+                original_pptx = Path(failed['files']['pptx']).read_bytes()
+                with patch.object(render, 'export_pptx', side_effect=self.export_ok):
+                    result = render.resume_render(saved, html_preview=override)
+                self.assertEqual(result['html_preview'], expected)
+                self.assertEqual('html' in result['files'], expected)
+                self.assertEqual(saved.read_bytes(), original_manifest)
+                self.assertEqual(Path(failed['files']['pptx']).read_bytes(), original_pptx)
+
+    def test_resume_legacy_v3_infers_html_from_files(self):
+        failed = self.fail()
+        del failed['html_preview']
+        failed['files']['html'] = str(self.root / 'legacy.html')
+        saved = Path(failed['files']['manifest'])
+        saved.write_text(json.dumps(failed), encoding='utf-8')
+        with patch.object(render, 'export_pptx', side_effect=self.export_ok):
+            result = render.resume_render(saved)
+        self.assertTrue(result['html_preview'])
+        self.assertTrue(Path(result['files']['html']).is_file())
+        self.assertFalse((self.root / 'legacy.html').exists())
+
+    def test_html_failure_retains_intent_without_claiming_a_generated_file(self):
+        def occupy_html(pptx, pdf, pages, **kwargs):
+            self.export_ok(pptx, pdf, pages, **kwargs)
+            pdf.with_suffix('.html').write_text('User content', encoding='utf-8')
+        with patch.object(render, 'export_pptx', side_effect=occupy_html):
+            with self.assertRaises(render.RenderFailure) as error:
+                render.render(self.deck, self.root, 'occupied', html_preview=True)
+        failed = error.exception.manifest
+        self.assertEqual(failed['failed_stage'], 'html')
+        self.assertEqual(failed['stages']['html'], 'failed')
+        self.assertTrue(failed['html_preview'])
+        self.assertNotIn('html', failed['files'])
+        self.assertEqual((self.root / 'occupied.html').read_text(encoding='utf-8'), 'User content')
+        with patch.object(render, 'export_pptx', side_effect=self.export_ok):
+            result = render.resume_render(failed['files']['manifest'])
+        self.assertTrue(Path(result['files']['html']).is_file())
+        self.assertNotEqual(Path(result['files']['html']).parent, self.root)
+
+    def test_cli_preview_defaults_and_overrides(self):
+        for mode in ('deck', 'resume-manifest'):
+            for flags, expected in [([], False if mode == 'deck' else None),
+                                    (['--html-preview'], True), (['--no-html-preview'], False)]:
+                with self.subTest(mode=mode, flags=flags):
+                    args = ['--' + mode, 'input.json', '--output-dir', str(self.root), '--base-name', 'cli', *flags]
+                    target = 'render' if mode == 'deck' else 'resume_render'
+                    with patch.object(render, target, return_value={'ok': True}) as call, contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(render.main(args), 0)
+                    self.assertEqual(call.call_args.kwargs['html_preview'], expected)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+            render.main(['--resume-manifest', 'failed.json', '--html-preview', '--no-html-preview'])
+        self.assertEqual(error.exception.code, 2)
 
     def test_generation_failure_is_reported_and_not_resumable(self):
         with patch.object(render, 'make_pptx', side_effect=ValueError('generation failed')):

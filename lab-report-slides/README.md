@@ -39,7 +39,7 @@
 
 5. **检查并修复缺项。** 在主技能目录用选定的 Python 运行 `scripts/check_dependencies.py`。对 JSON 中的 `missing` 逐项处理，再运行检查；随后运行下文完整测试。转换通过 `libreoffice-runner` 进行，不直接启动裸 LibreOffice 命令，不关闭用户正在编辑的文件。有未解决错误就报告失败原因，不把文件已下载或预检成功称为安装完成。
 
-6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 [制作参考](references/rendering.md#deck-json-与渲染) 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG、HTML 和 manifest，查看逐页预览并确认原生文字可编辑。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
+6. **验证一次实际使用并交付。** 使用单独临时目录中的合成材料，生成标有“安装测试，非科研结果”的小型 PPT；这是明确允许的纯文字安装样例，可设置 `allow_text_only=true`。沿用 [制作参考](references/rendering.md#deck-json-与渲染) 的 deck JSON 与渲染命令，检查 PPTX、PDF、PNG 和 manifest，查看逐页图片并确认原生文字可编辑。默认不生成 HTML；确需浏览器预览时显式加 `--html-preview`，HTML 不作为 PPTX 验收条件。不读取私人会话或实验资料。确认 Codex 可以发现四个技能，并实际读取 `writing-router` 的 `references/common-quality.md`、`references/ai-smell-catalog.md` 和 PPT 随附中文规则。用合成文字核对副标题包含对象、多余操作提醒被删除、必要比较条件仍保留；再检查完整生成样例。未发现技能时核对安装位置，确需重启时提示用户完成后复查。个人词表未配置时跳过个人审计，仍执行通用润色；不能声称通过个人词表审计。有词表时使用上述独立脚本及实际词表目录完成审计。最终报告技能位置、依赖检查、测试、样例文件和首条使用命令。PowerPoint 原生打开与导出若未做，单列为未验证，不影响如实报告已通过的 LibreOffice 渲染结果。
 
 完成后，使用者可以说：“生成今日汇报，先列出可汇报的科研进展让我选择。”
 
@@ -149,7 +149,7 @@ PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 shar
 
 ## 产物与资料保护
 
-- 默认交付 PPTX，过程目录保留 PDF、逐页 PNG、自包含 HTML 和来源清单。
+- 默认交付 PPTX，过程目录保留 PDF、逐页 PNG 和来源清单；HTML 仅在显式使用 `--html-preview` 时生成。
 - PPT 文字是原生文本框，图件是独立图片；图片内部的曲线数据和标签仍是像素。
 - 使用样式参数，不读取作者的原始 PPT，也不附带私人会话或实验图片。微软雅黑未安装时，先选择本机已有的中文字体。
 - 采集脚本不联网；Codex 本身如何处理材料取决于所用服务和账号设置。不要把“本地采集”理解为模型完全离线运行。
@@ -158,7 +158,7 @@ PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 shar
 
 版本 3 的 manifest 分别记录 PPTX 生成、结构检查、LibreOffice 渲染、PNG、视觉检查及 PowerPoint 原生验证。自动生成完成的 `rendered_visual_pending` 只表示渲染流程完成，仍须逐页查看。若 PPTX 已生成但后续渲染失败，文件与诊断会保留，命令返回失败状态；报告应准确写成“PPTX 已生成，视觉验收未完成”。清单以临时文件刷新后原子替换，写入失败保留旧清单并报告原因；没有有效清单时不能据此恢复。
 
-修复 LibreOffice、PNG 或 HTML 阶段错误后，可使用 `python scripts/render_deck.py --resume-manifest '<失败清单绝对路径>' --config '<项目配置绝对路径>'`。恢复校验 PPTX 哈希和结构，在新的尝试目录重做 PDF、PNG 与 HTML，保留旧记录；没有项目配置可省略 `--config`。PPTX 生成失败须重新生成。视觉或 PowerPoint 检查失败须修正后重查，文件已改动则旧渲染与验收结果失效。
+修复 LibreOffice、PNG 或已开启的 HTML 阶段错误后，可使用 `python scripts/render_deck.py --resume-manifest '<失败清单绝对路径>' --config '<项目配置绝对路径>'`。恢复校验 PPTX 哈希和结构，在新的尝试目录重做 PDF、PNG，保留旧记录；没有项目配置可省略 `--config`。恢复默认继承失败清单的 HTML 设置，可用 `--html-preview` 或 `--no-html-preview` 覆盖；旧 v3 清单按是否有 HTML 路径推断。HTML 失败可关闭预览后恢复，不阻断 PPTX 验收。PPTX 生成失败须重新生成。视觉或 PowerPoint 检查失败须修正后重查，文件已改动则旧渲染与验收结果失效。
 
 ## 验证与更新
 
@@ -174,6 +174,6 @@ python -m unittest discover -s tests -p test_collect_sessions.py -v
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-完整测试包含真实 LibreOffice 转换，使用 runner 的独立进程和新输出目录；保留用户打开的文件，不结束用户进程。测试临时图仅供软件验证，不是科研结果。测试通过不代表已在同学电脑或 PowerPoint 中验收。
+完整测试包含真实 LibreOffice 转换，使用 runner 的独立进程和新输出目录；保留用户打开的文件，不结束用户进程。测试临时图仅供软件验证，不是科研结果。默认测试检查 PPTX、PDF、PNG 和 manifest；HTML 只在显式开启预览场景时检查。测试通过不代表已在同学电脑或 PowerPoint 中验收。
 
 更新只处理这四个技能的对应目录并保留本机修改；私人词表留在项目内。首次分享建议先让同学运行依赖检查，再用自己的一个小项目完成“选择内容—讨论并确认总览—整套生成—打开检查”。

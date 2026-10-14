@@ -22,6 +22,7 @@ from recovery_fs import (
     kind_at, reproducible_roots_metadata, validate_rebuild_disposition,
 )
 from recovery_fs import create_payload_tar, walk_paths
+from git_layout import capture_layout, discover_worktrees, inspect_layout
 import time
 
 UTF8 = "utf-8"
@@ -260,14 +261,17 @@ def assert_supported_worktree(worktree: Path) -> None:
         raise RuntimeError(f"Submodule state requires separate recovery: {worktree}")
 
 
-def protection_snapshot(worktree: Path, disposition: dict) -> dict:
+def protection_snapshot(worktree: Path, disposition: dict, nested_entries: list[dict] | None = None, records=None) -> dict:
     """Re-enumerate using Git; never reuse a stale ignored classification."""
     assert_supported_worktree(worktree)
     status = git(worktree, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
     ignored = status_roots(status, b"!! ")
+    nested_entries = list(nested_entries or []) + contained_linked_entries(worktree, records)
+    ignored = strip_nested_roots(ignored, nested_entries)
     validate_disposition(worktree, ignored, disposition)
     tracked = sorted(set(parse_nul_paths(git(worktree, "ls-files", "-z").stdout)))
     others = sorted(set(parse_nul_paths(git(worktree, "ls-files", "--others", "--exclude-standard", "-z").stdout)))
+    others = strip_nested_roots(others, nested_entries)
     lightweight = disposition.get("schemaVersion", 1) == 2
     if lightweight:
         for root in disposition["reproducible"]:
@@ -305,14 +309,167 @@ def protection_snapshot(worktree: Path, disposition: dict) -> dict:
         for end in range(len(parts)):
             name = "/".join(parts[:end] + [".gitignore"])
             rules[name] = current_entry(path_within(worktree, name), name)
-    return {"tracked": tracked, "untracked": others if lightweight else status_roots(status, b"?? "),
+    return {"tracked": tracked, "untracked": others if lightweight else strip_nested_roots(status_roots(status, b"?? "), nested_entries),
             "ignored": ignored, "rules": rules,
             "reproducibleRoots": reproducible_roots_metadata(worktree, disposition) if lightweight else None}
 
 
-def reject_nested_payload(manifest: list[dict]) -> None:
-    if any(".git" in item["path"].split("/") for item in manifest):
-        raise RuntimeError("Nested repository in protected payload requires separate recovery")
+def load_nested_recovery_map(path: str | None) -> list[dict]:
+    if path is None:
+        return []
+    payload = json.loads(io_path(path).read_text(encoding=UTF8))
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1 or not isinstance(payload.get("entries"), list):
+        raise RuntimeError("Nested recovery map requires schemaVersion 1 and an entries array")
+    result = []
+    seen = set()
+    for raw in payload["entries"]:
+        if not isinstance(raw, dict):
+            raise RuntimeError("Nested recovery map entry must be an object")
+        parent = raw.get("parentWorktree", raw.get("worktree"))
+        relative = raw.get("relativePath", raw.get("path"))
+        package = raw.get("packagePath", raw.get("package"))
+        manifest_sha = raw.get("manifestSha256")
+        frozen_sha = raw.get("frozenStateSha256")
+        verification_path = raw.get("verificationPath")
+        verification_sha = raw.get("verificationSha256")
+        if not isinstance(parent, str) or not os.path.isabs(parent):
+            raise RuntimeError("Nested recovery entry requires an absolute parentWorktree")
+        if not isinstance(relative, str):
+            raise RuntimeError("Nested recovery entry requires relativePath")
+        relative = canonical_rel(relative)
+        if not isinstance(package, str) or not os.path.isabs(package):
+            raise RuntimeError("Nested recovery entry requires an absolute packagePath")
+        if not isinstance(manifest_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", manifest_sha):
+            raise RuntimeError("Nested recovery entry requires a SHA-256 manifestSha256")
+        if not isinstance(frozen_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", frozen_sha):
+            raise RuntimeError("Nested recovery entry requires a SHA-256 frozenStateSha256")
+        if not isinstance(verification_path, str) or not os.path.isabs(verification_path):
+            raise RuntimeError("Nested recovery entry requires an absolute verificationPath")
+        if not isinstance(verification_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", verification_sha):
+            raise RuntimeError("Nested recovery entry requires a SHA-256 verificationSha256")
+        key = (canonical_path(parent), relative.casefold())
+        if key in seen:
+            raise RuntimeError("Duplicate nested recovery entry")
+        seen.add(key)
+        layout = raw.get("gitLayout")
+        if not isinstance(layout, dict):
+            raise RuntimeError("Nested recovery entry requires gitLayout metadata")
+        result.append({"parentWorktree": canonical_path(parent), "relativePath": relative,
+                       "packagePath": canonical_path(package), "manifestSha256": manifest_sha,
+                       "frozenStateSha256": frozen_sha, "gitLayout": layout,
+                       "verificationPath": canonical_path(verification_path), "verificationSha256": verification_sha})
+    for index, entry in enumerate(result):
+        for other in result[index + 1:]:
+            if entry["parentWorktree"] == other["parentWorktree"]:
+                first, second = entry["relativePath"].casefold(), other["relativePath"].casefold()
+                if first.startswith(second + "/") or second.startswith(first + "/"):
+                    raise RuntimeError("Nested recovery paths overlap")
+    return result
+
+
+def nested_entries_for(worktree: Path, entries: list[dict]) -> list[dict]:
+    return [item for item in entries if item["parentWorktree"] == canonical_path(worktree)]
+
+
+def contained_linked_entries(worktree: Path, records=None) -> list[dict]:
+    result = []
+    parent = canonical_path(worktree)
+    records = records if records is not None else discover_worktrees(worktree)
+    for record in records:
+        candidate = canonical_path(record["worktree"])
+        if candidate != parent and is_within(candidate, parent):
+            relative = canonical_rel(os.path.relpath(candidate, parent))
+            result.append({"relativePath": relative, "worktree": candidate, "index": record["index"]})
+    return result
+
+
+def nested_root_matches(root: str, entry: dict) -> bool:
+    value, nested = root.casefold(), entry["relativePath"].casefold()
+    return value == nested or value.startswith(nested + "/")
+
+
+def strip_nested_roots(roots: list[str], entries: list[dict]) -> list[str]:
+    return [root for root in roots if not any(nested_root_matches(root, item) for item in entries)]
+
+
+def nested_state_digest(package: Path) -> str:
+    candidate = package / "snapshot" / "full-frozen-state.json"
+    if candidate.is_file():
+        return sha256_file(candidate)
+    manifest = package / "package-manifest.sha256"
+    return sha256_file(manifest)
+
+
+def matching_git_layout(worktree: Path) -> dict:
+    records = discover_worktrees(worktree)
+    matches = [record for record in records if canonical_path(record["worktree"]) == canonical_path(worktree)]
+    if len(matches) != 1:
+        raise RuntimeError(f"Nested path is not an exact registered repository root: {worktree}")
+    return matches[0]
+
+
+def validate_nested_entry(entry: dict) -> dict:
+    package = io_path(entry["packagePath"])
+    manifest = package / "package-manifest.sha256"
+    if not package.is_dir() or not manifest.is_file():
+        raise RuntimeError(f"Nested recovery package is unavailable: {package}")
+    if sha256_file(manifest) != entry["manifestSha256"]:
+        raise RuntimeError(f"Nested recovery package manifest hash mismatch: {package}")
+    verify_package(package)
+    if nested_state_digest(package) != entry["frozenStateSha256"]:
+        raise RuntimeError(f"Nested recovery frozen state hash mismatch: {package}")
+    receipt_path = io_path(entry["verificationPath"])
+    if sha256_file(receipt_path) != entry["verificationSha256"]:
+        raise RuntimeError("Nested independent verification receipt hash mismatch")
+    receipt = json.loads(receipt_path.read_text(encoding=UTF8))
+    if (receipt.get("sourcePackageManifestSha256") != entry["manifestSha256"]
+            or receipt.get("mirrorPackageManifestSha256") != entry["manifestSha256"]
+            or receipt.get("bundleSha256") != sha256_file(package / "repository-recovery.bundle")
+            or receipt.get("packagesIdentical") is not True or receipt.get("fsckExitCode") != 0
+            or not receipt.get("worktreeReplays")
+            or any(item.get("statusMatch") is not True or item.get("indexMatch") is not True
+                   for item in receipt["worktreeReplays"])):
+        raise RuntimeError("Nested package has no matching successful independent replay receipt")
+    child = path_within(entry["parentWorktree"], entry["relativePath"])
+    child_relative = entry["relativePath"].casefold()
+    parent_tracked = parse_nul_paths(git(entry["parentWorktree"], "ls-files", "-z").stdout)
+    if any(name.casefold() == child_relative or name.casefold().startswith(child_relative + "/") for name in parent_tracked):
+        raise RuntimeError("Nested repository overlaps paths tracked by the parent index")
+    if kind_at(child)[0] != "directory" or kind_at(child / ".git")[0] not in ("file", "directory"):
+        raise RuntimeError(f"Nested repository has no supported .git entry: {child}")
+    layout = matching_git_layout(child)
+    if entry["gitLayout"] != layout:
+        raise RuntimeError("Nested Git layout drifted from the recovery map")
+    parent_layout = matching_git_layout(io_path(entry["parentWorktree"]))
+    if canonical_path(layout["common_dir"]) == canonical_path(parent_layout["common_dir"]):
+        raise RuntimeError("A same-common-dir checkout is a linked worktree, not a nested repository")
+    if layout["role"] != "main":
+        raise RuntimeError("A linked worktree cannot be registered as a nested repository")
+    summary = json.loads((package / "snapshot-summary.json").read_text(encoding=UTF8))
+    if summary.get("nestedRecoveryCount", 0) or (package / "snapshot" / "nested-recovery.json").exists():
+        raise RuntimeError("Nested recovery supports one independently sealed child level only")
+    if canonical_path(summary["repo"]) != canonical_path(child):
+        raise RuntimeError("Nested package repository differs from the exact registered path")
+    if summary.get("schemaVersion") != 4 or not (package / "restore-runtime/verify_recovery.py").is_file():
+        raise RuntimeError("Nested composition requires a schema-4 child package with fixed recovery dependencies")
+    if len(receipt["worktreeReplays"]) != summary["worktreeCount"]:
+        raise RuntimeError("Nested independent replay did not cover every child worktree")
+    frozen = json.loads((package / "snapshot" / "full-frozen-state.json").read_text(encoding=UTF8))
+    dispositions = json.loads((package / "snapshot" / "ignored-dispositions.json").read_text(encoding=UTF8))
+    current = full_snapshot(child, summary["remote"], summary["refbase"], dispositions)
+    if current != frozen:
+        raise RuntimeError("Nested repository state drifted from its independently frozen package")
+    return {"manifestSha256": entry["manifestSha256"], "frozenStateSha256": entry["frozenStateSha256"],
+            "layout": layout, "state": current}
+
+
+def reject_nested_payload(manifest: list[dict], allowed: list[dict] | None = None) -> None:
+    # Registered repository roots have already been excluded from payloads.
+    # Any remaining .git belongs to an unprotected independent repository.
+    for item in manifest:
+        parts = [part.casefold() for part in item["path"].split("/")]
+        if ".git" in parts:
+            raise RuntimeError("Nested repository in protected payload requires separate recovery")
 
 
 def backup_worktree(
@@ -321,8 +478,14 @@ def backup_worktree(
     index: int,
     output_root: Path,
     ignored_dispositions: dict[str, dict[str, list[str]]],
+    nested_map: list[dict] | None = None,
+    records=None,
 ) -> dict:
     worktree = io_path(worktree_record["worktree"])
+    nested_entries = nested_entries_for(worktree, nested_map or [])
+    records = records if records is not None else discover_worktrees(repo)
+    linked_entries = contained_linked_entries(worktree, records)
+    excluded_entries = nested_entries + linked_entries
     output = output_root / f"{index:03d}"
     output.mkdir(parents=True, exist_ok=False)
     metadata = dict(worktree_record)
@@ -343,7 +506,8 @@ def backup_worktree(
     head = git_text(worktree, "rev-parse", "HEAD")
     branch_process = git(worktree, "symbolic-ref", "-q", "HEAD", check=False)
     branch = decode(branch_process.stdout).strip() if branch_process.returncode == 0 else None
-    metadata.update({"head": head, "branch": branch})
+    metadata.update({"head": head, "branch": branch, "nestedPaths": [item["relativePath"] for item in nested_entries],
+                     "containedLinked": linked_entries})
 
     command_capture(worktree, output / "status-v2.z", ("status", "--porcelain=v2", "--branch", "--untracked-files=all", "-z"))
     status_no_branch = command_capture(
@@ -374,7 +538,7 @@ def backup_worktree(
 
     ignored_roots = status_roots(status_v1, b"!! ")
     disposition = ignored_dispositions.get(canonical_path(worktree), {"preserve": [], "reproducible": []})
-    protection = protection_snapshot(worktree, disposition)
+    protection = protection_snapshot(worktree, disposition, nested_entries, records)
     write_json(output / "protection-state.json", protection)
     untracked_roots = protection["untracked"]
     lightweight = disposition.get("schemaVersion", 1) == 2
@@ -391,17 +555,18 @@ def backup_worktree(
         if candidate.exists() or candidate.is_symlink():
             tracked_roots.append(relative)
 
-    untracked_manifest = manifest_for_roots(worktree, untracked_roots)
+    excluded = [item["relativePath"] for item in excluded_entries]
+    untracked_manifest = manifest_for_roots(worktree, untracked_roots, exclude_roots=excluded)
     tracked_manifest = manifest_for_roots(worktree, tracked_roots)
-    preserved_manifest = manifest_for_roots(worktree, disposition["preserve"])
+    preserved_manifest = manifest_for_roots(worktree, disposition["preserve"], exclude_roots=excluded)
     reproducible_manifest = (protection["reproducibleRoots"] if lightweight
-                             else manifest_for_roots(worktree, disposition["reproducible"]))
+                             else manifest_for_roots(worktree, disposition["reproducible"], exclude_roots=excluded))
     for manifest in (untracked_manifest, tracked_manifest, preserved_manifest):
-        reject_nested_payload(manifest)
+        reject_nested_payload(manifest, excluded_entries)
 
-    create_payload_tar(worktree, untracked_roots, output / "untracked-payload.tar")
+    create_payload_tar(worktree, untracked_roots, output / "untracked-payload.tar", exclude_roots=excluded)
     create_payload_tar(worktree, tracked_roots, output / "tracked-current.tar")
-    create_payload_tar(worktree, disposition["preserve"], output / "ignored-preserved-payload.tar")
+    create_payload_tar(worktree, disposition["preserve"], output / "ignored-preserved-payload.tar", exclude_roots=excluded)
 
     write_json(output / "untracked-roots.json", untracked_roots)
     write_json(output / "ignored-roots.json", ignored_roots)
@@ -438,7 +603,7 @@ def backup_worktree(
     return metadata
 
 
-def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
+def verify_worktree_unchanged(worktree: Path, state_dir: Path, nested_map: list[dict] | None = None, records=None) -> None:
     metadata = json.loads((state_dir / "metadata.json").read_text(encoding=UTF8))
     if git_text(worktree, "rev-parse", "HEAD") != metadata["head"]:
         raise RuntimeError(f"HEAD changed while freezing {worktree}")
@@ -470,7 +635,9 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
         "-z",
     ).stdout
     disposition = json.loads((state_dir / "ignored-disposition.json").read_text(encoding=UTF8))
-    protection = protection_snapshot(worktree, disposition)
+    nested_entries = nested_entries_for(worktree, nested_map or [])
+    excluded = [item["relativePath"] for item in nested_entries + contained_linked_entries(worktree, records)]
+    protection = protection_snapshot(worktree, disposition, nested_entries, records)
     if (state_dir / "protection-state.json").exists() and protection != json.loads((state_dir / "protection-state.json").read_text(encoding=UTF8)):
         raise RuntimeError(f"Git protection/classification changed while freezing {worktree}")
     if protection["untracked"] != json.loads((state_dir / "untracked-roots.json").read_text(encoding=UTF8)):
@@ -485,7 +652,7 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
     for roots_file, manifest_file in root_manifest_pairs:
         roots = json.loads((state_dir / roots_file).read_text(encoding=UTF8))
         expected = json.loads((state_dir / manifest_file).read_text(encoding=UTF8))
-        if manifest_for_roots(worktree, roots) != expected:
+        if manifest_for_roots(worktree, roots, exclude_roots=excluded) != expected:
             raise RuntimeError(f"{manifest_file} changed while freezing {worktree}")
     for key, manifest_file in [
         ("preserve", "ignored-preserved-manifest.json"),
@@ -497,7 +664,7 @@ def verify_worktree_unchanged(worktree: Path, state_dir: Path) -> None:
                 raise RuntimeError(f"Reproducible roots changed while freezing {worktree}")
             continue
         expected = json.loads((state_dir / manifest_file).read_text(encoding=UTF8))
-        if manifest_for_roots(worktree, disposition[key]) != expected:
+        if manifest_for_roots(worktree, disposition[key], exclude_roots=excluded) != expected:
             raise RuntimeError(f"{manifest_file} changed while freezing {worktree}")
 
 
@@ -546,7 +713,7 @@ def assert_output_paths(repo: Path, worktrees: list[dict], primary: Path, mirror
                 raise RuntimeError(f"Recovery output {output} overlaps repository worktree {protected}")
 
 
-def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> dict:
+def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict, nested_map: list[dict] | None = None) -> dict:
     """Read every protected state, including payload bytes and clean tracked files."""
     worktrees_raw = git(repo, "worktree", "list", "--porcelain", "-z").stdout
     result = {
@@ -556,15 +723,20 @@ def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> 
         "stash": decode(git(repo, "stash", "list", "--format=%gd%x09%H%x09%gs").stdout),
         "reflog": decode(filtered_reflog(repo, refbase)),
         "config": decode(git(repo, "config", "--list", "--show-origin").stdout),
+        "gitLayout": inspect_layout(repo, discover_worktrees(repo, worktrees_raw)),
         "worktrees": [],
     }
-    for record in parse_worktrees(worktrees_raw):
+    records = discover_worktrees(repo, worktrees_raw)
+    for record in records:
         worktree = io_path(record["worktree"])
         status = git(worktree, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
         untracked, ignored = status_roots(status, b"?? "), status_roots(status, b"!! ")
         disposition = dispositions.get(canonical_path(worktree), {"preserve": [], "reproducible": []})
-        protection = protection_snapshot(worktree, disposition)
+        nested_entries = nested_entries_for(worktree, nested_map or [])
+        protection = protection_snapshot(worktree, disposition, nested_entries, records)
         tracked, untracked = protection["tracked"], protection["untracked"]
+        excluded_entries = nested_entries + contained_linked_entries(worktree, records)
+        excluded = [entry["relativePath"] for entry in excluded_entries]
         ignored_manifest_roots = (disposition["preserve"] if disposition.get("schemaVersion", 1) == 2 else ignored)
         index_path = Path(git_text(worktree, "rev-parse", "--git-path", "index"))
         if not index_path.is_absolute():
@@ -580,13 +752,15 @@ def full_snapshot(repo: Path, remote: str, refbase: str, dispositions: dict) -> 
             "stagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--cached", "--binary", "--full-index", "--no-ext-diff", "--no-textconv").stdout).hexdigest(),
             "unstagedPatchSha256": hashlib.sha256(git(worktree, "diff", "--binary", "--full-index", "--no-ext-diff", "--no-textconv").stdout).hexdigest(),
             "tracked": [current_entry(path_within(worktree, name), name) for name in tracked],
-            "untracked": manifest_for_roots(worktree, untracked),
-            "ignored": manifest_for_roots(worktree, ignored_manifest_roots),
+            "untracked": manifest_for_roots(worktree, untracked, exclude_roots=excluded),
+            "ignored": manifest_for_roots(worktree, ignored_manifest_roots, exclude_roots=excluded),
             "disposition": disposition,
             "protection": protection,
+            "nestedRecovery": [validate_nested_entry(entry) for entry in nested_entries],
+            "containedLinked": contained_linked_entries(worktree, records),
         }
         for manifest in (item["untracked"], item["ignored"]):
-            reject_nested_payload(manifest)
+            reject_nested_payload(manifest, excluded_entries)
         result["worktrees"].append(item)
     return result
 
@@ -608,6 +782,7 @@ def main() -> None:
     parser.add_argument("--mirror", required=True)
     parser.add_argument("--stamp", required=True)
     parser.add_argument("--ignored-disposition")
+    parser.add_argument("--nested-recovery-map")
     arguments = parser.parse_args()
 
     repo = io_path(Path(arguments.repo).resolve())
@@ -626,19 +801,50 @@ def main() -> None:
         raise RuntimeError(f"Backup ref namespace already exists: {refbase}")
 
     worktrees_raw = git(repo, "worktree", "list", "--porcelain", "-z").stdout
-    worktrees = parse_worktrees(worktrees_raw)
+    worktrees = discover_worktrees(repo, worktrees_raw)
     if not worktrees:
         raise RuntimeError("No registered worktree was found")
     assert_output_paths(repo, worktrees, primary, mirror)
+    for record in worktrees:
+        for output in (primary, mirror):
+            for key in ("admin_dir", "common_dir"):
+                protected = record[key]
+                if is_within(output, protected) or is_within(protected, output):
+                    raise RuntimeError(f"Recovery output {output} overlaps Git directory {protected}")
     dispositions = load_ignored_dispositions(arguments.ignored_disposition)
+    nested_map = load_nested_recovery_map(arguments.nested_recovery_map)
+    registered_nested = {canonical_path(item["worktree"]) for item in worktrees}
+    for entry in nested_map:
+        if entry["parentWorktree"] not in registered_nested:
+            raise RuntimeError("Nested recovery parentWorktree is not a registered worktree")
+        validate_nested_entry(entry)
+        nested_path = path_within(entry["parentWorktree"], entry["relativePath"])
+        if kind_at(nested_path)[0] != "directory":
+            raise RuntimeError(f"Nested repository path is not a directory: {nested_path}")
+        child_layout = entry["gitLayout"]
+        parent_disposition = dispositions.get(entry["parentWorktree"], {"preserve": [], "reproducible": []})
+        for root in parent_disposition["reproducible"]:
+            left, right = root.casefold(), entry["relativePath"].casefold()
+            if left == right or right.startswith(left + "/") or left.startswith(right + "/"):
+                raise RuntimeError("Nested repository overlaps a reproducible cache root")
+        child_protected = [entry["packagePath"], entry["verificationPath"], child_layout["admin_dir"], child_layout["common_dir"]]
+        for output in (primary, mirror):
+            for protected in child_protected:
+                if is_within(output, protected) or is_within(protected, output):
+                    raise RuntimeError("Recovery output overlaps a nested package, receipt or Git directory")
+
     disposition_hash = sha256_file(arguments.ignored_disposition) if arguments.ignored_disposition else None
+    nested_map_hash = sha256_file(arguments.nested_recovery_map) if arguments.nested_recovery_map else None
 
     def current_snapshot():
         if arguments.ignored_disposition and (
                 sha256_file(arguments.ignored_disposition) != disposition_hash
                 or load_ignored_dispositions(arguments.ignored_disposition) != dispositions):
             raise RuntimeError("Ignored disposition changed during capture")
-        return full_snapshot(repo, arguments.remote, refbase, dispositions)
+        if arguments.nested_recovery_map and (sha256_file(arguments.nested_recovery_map) != nested_map_hash
+                or load_nested_recovery_map(arguments.nested_recovery_map) != nested_map):
+            raise RuntimeError("Nested recovery map changed during capture")
+        return full_snapshot(repo, arguments.remote, refbase, dispositions, nested_map)
     registered = {canonical_path(item["worktree"]) for item in worktrees}
     unknown_dispositions = sorted(set(dispositions) - registered)
     if unknown_dispositions:
@@ -676,7 +882,7 @@ def main() -> None:
             canonical_path(worktree),
             {"preserve": [], "reproducible": []},
         )
-        protection_snapshot(worktree, disposition)
+        protection_snapshot(worktree, disposition, nested_entries_for(worktree, nested_map), worktrees)
 
     log(f"fetching {arguments.remote} and reading live refs")
     fetch = git(repo, "fetch", "--prune", arguments.remote)
@@ -795,8 +1001,23 @@ def main() -> None:
     summaries = []
     for index, record in enumerate(worktrees):
         log(f"worktree {index + 1}/{len(worktrees)}: {record['worktree']}")
-        summaries.append(backup_worktree(repo, record, index, worktree_root, dispositions))
+        summaries.append(backup_worktree(repo, record, index, worktree_root, dispositions, nested_map, worktrees))
     write_json(snapshot_dir / "worktree-summaries.json", summaries)
+    if nested_map:
+        nested_root = primary / "nested"
+        for index, entry in enumerate(nested_map):
+            validate_nested_entry(entry)
+            destination = nested_root / f"{index:03d}" / "package"
+            shutil.copytree(io_path(entry["packagePath"]), destination, symlinks=True, copy_function=shutil.copy2)
+            verify_package(destination)
+            receipt_destination = nested_root / f"{index:03d}" / "independent-verification.json"
+            shutil.copy2(io_path(entry["verificationPath"]), receipt_destination)
+            if sha256_file(receipt_destination) != entry["verificationSha256"]:
+                raise RuntimeError("Nested verification receipt changed while embedding")
+            entry_copy = dict(entry, package=str(destination.relative_to(primary)).replace("\\", "/"),
+                              verification=str(receipt_destination.relative_to(primary)).replace("\\", "/"))
+            write_json(nested_root / f"{index:03d}" / "entry.json", entry_copy)
+        write_json(snapshot_dir / "nested-recovery.json", {"schemaVersion": 1, "entries": [json.loads((nested_root / f"{index:03d}" / "entry.json").read_text(encoding=UTF8)) for index in range(len(nested_map))]})
 
     log("capturing Git metadata and validating source objects")
     metadata_names = [name for name in ["HEAD", "config", "packed-refs", "logs", "refs"] if (common_dir / name).exists()]
@@ -845,13 +1066,13 @@ def main() -> None:
     if list((path for path in walk_paths(common_dir) if path.name.endswith(".baiduyun.uploading.cfg"))):
         raise RuntimeError("Cloud-sync Git metadata pollution appeared before package sealing")
     for index, record in enumerate(worktrees):
-        verify_worktree_unchanged(io_path(record["worktree"]), worktree_root / f"{index:03d}")
+        verify_worktree_unchanged(io_path(record["worktree"]), worktree_root / f"{index:03d}", nested_map, worktrees)
     if current_snapshot() != frozen:
         raise RuntimeError("Full frozen state changed before package sealing")
 
     default_ref = live_before["symbolicHead"]
     summary = {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "createdUtc": datetime.now(timezone.utc).isoformat(),
         "primary": plain_path(primary),
         "mirror": plain_path(mirror),
@@ -874,8 +1095,16 @@ def main() -> None:
         "bundleSha256": sha256_file(bundle),
         "bundleBytes": bundle.stat().st_size,
         "fsckExitCode": fsck.returncode,
+        "nestedRecoveryCount": len(nested_map),
     }
     write_json(primary / "snapshot-summary.json", summary)
+    layout = capture_layout(repo, discover_worktrees(repo), primary / "git-layout")
+    if layout != frozen["gitLayout"]:
+        raise RuntimeError("Git metadata layout changed during capture")
+    runtime = primary / "restore-runtime"
+    runtime.mkdir()
+    for name in ("capture_recovery.py", "verify_recovery.py", "recovery_fs.py", "git_layout.py"):
+        shutil.copy2(Path(__file__).resolve().parent / name, runtime / name)
     package_count = package_manifest(primary)
 
     log("copying the sealed package to the mirror")
@@ -888,7 +1117,7 @@ def main() -> None:
     mirror_verify = git(repo, "bundle", "verify", mirror_bundle, check=False)
     if mirror_verify.returncode != 0 or sha256_file(mirror_bundle) != summary["bundleSha256"]:
         raise RuntimeError("Mirror bundle verification failed")
-    if full_snapshot(repo, arguments.remote, refbase, dispositions) != frozen:
+    if full_snapshot(repo, arguments.remote, refbase, dispositions, nested_map) != frozen:
         raise RuntimeError("Full frozen state changed while copying/verifying the mirror")
 
     log("dual recovery packages are sealed and verified")

@@ -26,6 +26,8 @@
 | index | ls-files --stage 的 NUL 输出、staged binary patch |
 | 工作树 | unstaged binary patch、当前 tracked 字节、untracked payload |
 | ignored | 根路径及 preserve/reproducible 分类；preserve 保存内容哈希，确认纯可重建根仅记录身份、类型及重建依据 |
+| Git 布局 | `.git` 本体或指针原始字节、实际 common/admin 目录、`core.worktree`、`config.worktree`、本地 exclude、hooks 与配置依赖 |
+| 独立嵌套仓库 | 准确路径、独立验证的双包、包与冻结状态摘要；父流程不改变子仓库 refs |
 | Git 健康 | active operations、unmerged index、fsck --full、log --all |
 | 备份/同步状态 | 单向备份或双向同步模式、监控范围、已知写入者协调、真实回写/占用证据；仅在另获授权改变客户端状态时记录原状态和恢复时间 |
 
@@ -114,11 +116,22 @@ worktrees/000/
   ignored-preserved-payload.tar
   ignored-reproducible-roots.json
 git-metadata/git-metadata.tar
+git-layout/layout.json
+git-layout/common/
+git-layout/worktrees/
+git-layout/dependencies/
+restore-runtime/
+  verify_recovery.py
+  capture_recovery.py
+  recovery_fs.py
+  git_layout.py
+snapshot/nested-recovery.json    # 有登记子仓库时
+nested/000/package/             # 嵌入的已验证子包
 ~~~
 
-新捕获使用 snapshot schemaVersion 3。v2 disposition 的 `ignored-reproducible-roots.json` 记录 `path`、`kind`、`mode`、`device`、`inode`、`linkTarget`、根至父级的 `ancestors` 身份和 `rebuild`；v1 disposition 仍生成 `ignored-reproducible-manifest.json` 完整清单，旧 v1/v2 记录按原保护语义读取。
+新捕获使用 snapshot schemaVersion 4。v2 disposition 的 `ignored-reproducible-roots.json` 记录 `path`、`kind`、`mode`、`device`、`inode`、`linkTarget`、根至父级的 `ancestors` 身份和 `rebuild`；v1 disposition 仍生成 `ignored-reproducible-manifest.json` 完整清单，旧 v1/v2 记录按原保护语义读取。
 
-旧 snapshot v2 只按包内原 v1 分类和完整清单验证；snapshot v3 接受 v1 完整清单或 v2 根记录。缺重建依据、两种表示混用或未知版本拒绝读取，不通过外部新分类改变旧包含义。v3 同时记录双包位置，供验收排除“把备份当正常数据存续位置”的情况。
+旧 snapshot v2 只按包内原 v1 分类和完整清单验证；snapshot v3、v4 接受 v1 完整清单或 v2 根记录。缺重建依据、两种表示混用或未知版本拒绝读取，不通过外部新分类、嵌套登记或 retained-local 记录改变旧包含义。v3、v4 同时记录双包位置，供验收排除“把备份当正常数据存续位置”的情况。
 
 package-manifest.sha256 覆盖包内除自身之外的每个文件，记录 SHA-256、字节数和相对路径。两份包从同一封存目录复制，manifest 及所有字节一致。双包相同不能替代源状态稳定；两份包均须验证并通过隔离恢复演练。
 
@@ -126,6 +139,28 @@ Git 官方文档说明 bundle 只打包可达 Git 对象和 refs，不包含工�
 
 - https://git-scm.com/docs/git-bundle
 - https://git-scm.com/docs/git-worktree
+
+### Git 布局与包内恢复依赖
+
+`git-layout` 保存配置与指针原始字节，并记录每个 checkout 的实际 common/admin 关系。普通 `.git`、separate-git-dir 与 linked worktree 均由 Git 查询结果识别，不把外置管理目录当工作树。配置 include 依赖、`config.worktree`、`info/exclude`、全局 exclude 和 hooks 也随包封存；链接依赖不能通过跟随目标暗中扩大读取范围。
+
+隔离恢复只读取包内配置，重映射 `core.worktree`、管理目录和 exclude 等恢复路径；原始文件与重映射配置分别保留并记录哈希。恢复演练保存 hooks、过滤器等原配置，但禁用其动作，不执行原配置中的命令，不连接原 remote。捕获仍保留现有 Git 操作保护。
+
+恢复输出必须是不存在的新目录，且不与原工作树、Git 管理目录、两份恢复包重叠。原仓库和当前技能目录不可用时，用包内固定入口执行同一接口：
+
+~~~powershell
+python <primary-package>\restore-runtime\verify_recovery.py --source <primary-package> --mirror <mirror-package> --restore <new-isolated-restore-dir>
+~~~
+
+包内脚本和必要模块也受 package manifest 保护；不临时从安装目录补模块。
+
+### 一层嵌套组合恢复
+
+先对每个独立子仓库运行捕获和隔离验证，然后给父捕获传入 `--nested-recovery-map <map.json>`。登记字段以脚本校验为准：准确父工作树、相对子路径、子双包及验证回执路径和 SHA-256、包 manifest 和冻结状态 SHA-256。父包嵌入已验证子包，双快照与封包前后都复核子现场。路径、哈希、回执或冻结状态不符时拒绝；未登记 `.git` 仍拒绝，不扫描后自行追认。
+
+map 使用 `schemaVersion: 1` 和 `entries` 数组；每项包含 `parentWorktree`、`relativePath`、`packagePath`、`manifestSha256`、`frozenStateSha256`、`gitLayout`、`verificationPath`、`verificationSha256`。`packagePath` 是子主包绝对路径；manifest 摘要来自 `package-manifest.sha256`，冻结摘要来自 `snapshot/full-frozen-state.json`，`gitLayout` 是子根 checkout 的准确布局记录。验证回执必须绑定相同双包摘要并证明重放成功。组合只接受新 schema 4 子包，以保证固定恢复依赖完整；旧包仍可独立恢复。
+
+首版只支持一层独立嵌套仓库。属于同一个 common Git 目录的 checkout 按 linked worktree 处理，不伪装成独立子仓库。父恢复将子状态放回对应新目录，核验子 refs、index 和 payload；父收口不合并、推送或删除子仓库分支。
 
 ## 4. backup refs
 
@@ -218,6 +253,14 @@ allowlist 使用 `schemaVersion: 1` 和 `links` 数组；每项的 `worktree`（
 
 来源标识和摘要由首次归并检查的失败项直接取得：分支用原 ref（远端加 `remote:`），stash 用 `stash:<SHA>:working/index`，工作区补丁用 `worktree:<三位序号>:staged/unstaged`，payload 用 `worktree:<三位序号>:untracked/ignored-preserved`。补丁摘要为原始字节 SHA-256，payload 为按键排序、保留中文的 JSON 清单 SHA-256；无须用户手工填写。ignored-preserved 另存时在对应记录加 `destination`，程序实际比较该目录下相同相对路径的内容；恢复包及待移除工作区不能作为目的地。
 
+### schema 4 本地材料记录
+
+新增 `classification: retained-local`、`action: retain`，只用于数据、过程材料、凭据、本机配置等已按用途确认的本地内容。`reason` 必须写明用途，已有分类材料可用 `evidence` 引用；不能仅因扩展名或未跟踪状态排除源码。有效源码、测试、项目文档、锁文件和必要依赖必须进入候选提交；准确文件清单暂存，不用批量忽略规则遮住遗漏。
+
+记录的 `source_ref` 对应冻结的 worktree payload，或 `stash:<完整SHA>:untracked`；`source_sha` 绑定该层完整 manifest 摘要，`paths` 必须列出唯一准确路径，`payload` 必须等于冻结清单按这些路径选出的子集，目录必须包括全部冻结子项。`resulting_sha` 必须是完整最终候选 SHA。`destination` 是实际可用的绝对目录，按原相对路径比对类型、模式、大小、链接本体和哈希。stash 清单由受保护的第三父提交对象生成，不依赖清理后的 reflog。
+
+根工作树的材料必须保持原位；辅助工作树和 stash 的材料须有独立可用的存续副本。恢复包、其祖先/子目录及待移除工作树不能冒充存续位置。不能用记录覆盖最终提交中的 tracked 文件。遗漏文件、未登记材料、内容漂移、仅在恢复包存在和最终提交不匹配均失败；schema 2/3 不接受事后 retained-local 例外。
+
 ## 7. 远端发布与删除
 
 默认分支发布条件：
@@ -278,6 +321,8 @@ verify_acceptance.py 检查：
 - single-default-worktree
 - stash-empty
 - working-tree-clean
+- integrated:retained-local:&lt;序号&gt;（schema 4，准确登记的本地材料；源码及 index 仍要求提交完整）
+- integrated:nested:&lt;序号&gt;（schema 4，登记的独立子仓库仍与冻结状态一致）
 - ignored-content-policy
 - temporary-backup-refs-removed
 - no-cloud-sync-ref-pollution

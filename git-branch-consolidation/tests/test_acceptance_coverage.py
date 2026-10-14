@@ -97,6 +97,8 @@ class IntegrationAcceptanceTests(TemporaryGitCase):
         manifest = json.loads((state / "ignored-preserved-manifest.json").read_text())
         digest = hashlib.sha256(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         record = {"source_ref": "worktree:001:ignored-preserved", "source_sha": digest,
+                  "classification": "retained-local", "action": "retain", "reason": "measurement data",
+                  "paths": [item["path"] for item in manifest], "payload": manifest,
                   "resulting_sha": git(repo, "rev-parse", "HEAD").stdout.strip(), "destination": str(mirror)}
         records = self.root / "records.json"
         write(records, json.dumps([record]))

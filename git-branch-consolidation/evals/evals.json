@@ -191,6 +191,51 @@
         "仅恢复包包含改动不能通过覆盖检查",
         "删除前先核对集成覆盖"
       ]
+    },
+    {
+      "id": 17,
+      "prompt": "只说所有分支合到 main 并同步。主工作树有新增源码、分层修改的测试和 README，还有过程文件和实验数据，全部处理完，不要一个个问。",
+      "expected_output": "按项目用途把有效源码、测试、README 和必要依赖整合提交推送；数据和过程材料按 retained-local 保留且验证可用，不机械整库 git add 或隐去源码。",
+      "files": [],
+      "expectations": [
+        "所有有效未提交源码纳入 main 提交",
+        "本地数据有精确存续证据",
+        "无需对可由项目判断的分类重复询问"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "主树 local-results 保留原位，辅助树 measurements 移到项目数据目录。这些材料已经在恢复包，直接写 status-clean 完成？",
+      "expected_output": "使用 retained-local 分类绑定冻结摘要、最终提交与正常存续路径并比较内容；允许被登记本地项仍显示 status，未登记材料、漂移或只剩恢复包失败。",
+      "files": [],
+      "expectations": [
+        "恢复包不是唯一数据副本",
+        "验收核对实际内容",
+        "源码必须提交"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "工作区过程目录有独立 nested Git clone，已单独保存双恢复包并验证。父仓库收口时希望一起保全，但不要改子仓库分支。",
+      "expected_output": "用 nested-recovery-map 绑定准确相对根、包摘要和冻结状态；嵌入子包并复查漂移，组合恢复但不对子仓库提交/推送/删分支；未登记 .git 继续拒绝。",
+      "files": [],
+      "expectations": [
+        "准确登记和冻结检查",
+        "子包随父包可恢复",
+        "不自动收口子仓库"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "这个仓库的 .git 是指针文件，Git 管理目录放在网盘外，core.worktree 与 info/exclude 有配置；原目录不可用时，恢复包必须仍能独立还原。",
+      "expected_output": "保存布局、配置、hooks 和必要依赖，schema4 包内恢复入口从封存配置重映射新目录；不读现仓、不执行hooks、不覆盖任何原路径，验证状态/索引/内容/EOL与元数据。",
+      "files": [],
+      "expectations": [
+        "正确识别真实根和分离Git目录",
+        "package-only恢复",
+        "保存原配置与重映射记录",
+        "旧schema保持原验证"
+      ]
     }
   ]
 }

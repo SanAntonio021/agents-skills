@@ -13,8 +13,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from recovery_fs import package_files, canonical_path, canonical_rel, current_entry, path_within
-from capture_recovery import assert_supported_worktree
+from recovery_fs import package_files, canonical_path, canonical_rel, current_entry, path_within, kind_at, manifest_for_roots, inventory_tree
+from capture_recovery import assert_supported_worktree, validate_nested_entry
+from git_layout import discover_worktrees
 
 UTF8 = "utf-8"
 BACKUP_NAMESPACE = "refs/backup/branch-consolidation"
@@ -140,6 +141,273 @@ def verify_package(root: Path) -> tuple[bool, str]:
         return False, str(error)
 
 
+def manifest_digest(manifest: list[dict]) -> str:
+    return hashlib.sha256(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode(UTF8)).hexdigest()
+
+
+def validate_durable_destination(destination: Path, repo: Path, snapshot: Path, protected: dict, summary: dict) -> None:
+    normalized = canonical_path(destination)
+    surviving_root = canonical_path(summary["repo"])
+    forbidden = [canonical_path(snapshot)]
+    forbidden += [canonical_path(item["worktree"]) for item in protected.get("worktrees", [])
+                  if canonical_path(item["worktree"]) not in (canonical_path(repo), surviving_root)]
+    forbidden += [canonical_path(summary[key]) for key in ("primary", "mirror") if summary.get(key)]
+    if any(normalized == path or normalized.startswith(path + os.sep) for path in forbidden):
+        raise RuntimeError("destination is recovery package or removed worktree")
+    if kind_at(destination)[0] != "directory":
+        raise RuntimeError("destination is not a durable directory: " + str(destination))
+
+
+def validate_retained_path(path: Path, entry: dict, repo: Path, snapshot: Path, protected: dict, summary: dict) -> None:
+    # Check the payload itself as well as the base directory; selecting a
+    # package name beneath its parent must not turn a backup into delivery.
+    forbidden = [canonical_path(snapshot)]
+    forbidden += [canonical_path(summary[key]) for key in ("primary", "mirror") if summary.get(key)]
+    forbidden += [canonical_path(item["worktree"]) for item in protected.get("worktrees", [])
+                  if canonical_path(item["worktree"]) not in (canonical_path(repo), canonical_path(summary["repo"]))]
+    # A link is material in its own right. Its target is never read here.
+    normalized = os.path.normcase(os.path.abspath(str(path))) if entry["kind"] in ("symlink", "junction") else canonical_path(path)
+    if any(normalized == root or normalized.startswith(root + os.sep)
+           or (entry["kind"] == "directory" and root.startswith(normalized + os.sep)) for root in forbidden):
+        raise RuntimeError("retained-local payload overlaps a recovery package or removed worktree")
+
+
+def stash_untracked_manifest(repo: Path, sha: str) -> list[dict]:
+    """Derive frozen material bytes from the protected stash third-parent tree."""
+    third = git(repo, "rev-parse", "--verify", sha + "^3", check=False)
+    if third.returncode:
+        return []
+    manifest = []
+    for raw in git(repo, "ls-tree", "-r", "-z", sha + "^3").stdout.split(b"\0"):
+        if not raw:
+            continue
+        info, raw_path = raw.split(b"\t", 1)
+        mode, kind, blob = info.split(b" ")
+        if kind != b"blob" or mode not in (b"100644", b"100755", b"120000"):
+            raise RuntimeError("Unsupported stash material entry: " + decode(raw_path))
+        content = git(repo, "cat-file", "blob", decode(blob)).stdout
+        link = mode == b"120000"
+        manifest.append({"path": canonical_rel(decode(raw_path)), "kind": "symlink" if link else "file",
+                         "size": len(content), "sha256": hashlib.sha256(content).hexdigest(),
+                         "mode": 0o777 if link else (0o755 if mode == b"100755" else 0o644),
+                         "linkTarget": decode(content) if link else None})
+    return manifest
+
+
+def committed_payload_matches(repo: Path, expected: str, item: dict) -> bool:
+    relative = canonical_rel(item["path"])
+    if item["kind"] == "directory":
+        return True  # Git stores leaves; every frozen child is checked separately.
+    listed = git(repo, "ls-tree", "-z", expected, "--", relative, check=False)
+    entries = [entry for entry in listed.stdout.split(b"\0") if entry]
+    if listed.returncode or len(entries) != 1:
+        return False
+    info, raw_path = entries[0].split(b"\t", 1)
+    mode, kind, blob = info.split(b" ")
+    if decode(raw_path) != relative or kind != b"blob":
+        return False
+    if item["kind"] == "symlink":
+        if mode != b"120000":
+            return False
+    elif item["kind"] == "file":
+        if mode not in (b"100644", b"100755"):
+            return False
+        if os.name != "nt" and bool(item["mode"] & 0o111) != (mode == b"100755"):
+            return False
+    else:
+        return False
+    content = git(repo, "cat-file", "blob", decode(blob)).stdout
+    return (len(content) == item["size"] and hashlib.sha256(content).hexdigest() == item["sha256"]
+            and (item["kind"] != "symlink" or decode(content) == item["linkTarget"]))
+
+
+def retained_local_state(repo: Path, snapshot: Path, protected: dict, expected: str, records: list[dict]) -> dict:
+    """Verify exact frozen local-material subsets; never exempt tracked work.
+
+    source_sha binds the full category manifest while paths/payload select the
+    retained subset. The reason describes the project use; it does not prove
+    that arbitrary source code is disposable. Source and patch coverage remain
+    independent mandatory checks.
+    """
+    summary = json.loads((snapshot / "snapshot-summary.json").read_text(encoding=UTF8))
+    catalog = {}
+    for state in sorted((snapshot / "worktrees").iterdir()):
+        if not state.is_dir():
+            continue
+        metadata = json.loads((state / "metadata.json").read_text(encoding=UTF8))
+        for category in ("untracked", "ignored-preserved"):
+            source = "worktree:" + state.name + ":" + category
+            manifest = json.loads((state / (category + "-manifest.json")).read_text(encoding=UTF8))
+            catalog[source] = (manifest, metadata)
+    for sha in protected.get("stashCommits", []):
+        catalog["stash:" + sha + ":untracked"] = (stash_untracked_manifest(repo, sha), {"stash": sha})
+    checks, covered, root_paths = [], {}, set()
+    retained_directories = []
+    for number, item in enumerate(records):
+        if not isinstance(item, dict):
+            raise RuntimeError("Integration records must contain JSON objects")
+        if item.get("classification") != "retained-local":
+            continue
+        source = item.get("source_ref")
+        detail = {"source_ref": source}
+        try:
+            if summary.get("schemaVersion") != 4:
+                raise RuntimeError("retained-local cannot relax a schema-2 or schema-3 package")
+            if source not in catalog:
+                raise RuntimeError("retained-local only accepts frozen untracked or ignored-preserved payloads")
+            manifest, metadata = catalog[source]
+            digest = manifest_digest(manifest)
+            if item.get("source_sha") != digest or item.get("resulting_sha") != expected:
+                raise RuntimeError("retained-local source or final commit binding differs")
+            if item.get("action") != "retain" or not str(item.get("reason", "")).strip():
+                raise RuntimeError("retained-local requires action retain and a local-material reason")
+            paths, payload = item.get("paths"), item.get("payload")
+            if (not isinstance(paths, list) or not paths or not all(isinstance(path, str) for path in paths)
+                    or len(set(paths)) != len(paths) or not isinstance(payload, list)):
+                raise RuntimeError("retained-local requires unique exact paths and payload")
+            paths = [canonical_rel(path) for path in paths]
+            if len(set(path.casefold() if os.name == "nt" else path for path in paths)) != len(paths):
+                raise RuntimeError("retained-local paths alias the same filesystem entry")
+            frozen = {entry["path"]: entry for entry in manifest}
+            if any(path not in frozen for path in paths):
+                raise RuntimeError("retained-local path is absent from frozen manifest")
+            subset = [entry for entry in manifest if entry["path"] in paths]
+            if payload != subset:
+                raise RuntimeError("retained-local payload differs from frozen manifest subset")
+            # Selecting a directory also selects every frozen child; callers
+            # cannot register a broad folder while dropping one source file.
+            if any(entry["kind"] == "directory" and any(
+                    other["path"].startswith(entry["path"] + "/") and other["path"] not in paths
+                    for other in manifest) for entry in subset):
+                raise RuntimeError("retained-local directory omits frozen descendants")
+            raw_destination = item.get("destination")
+            if not isinstance(raw_destination, str) or not Path(raw_destination).is_absolute():
+                raise RuntimeError("retained-local destination must be an absolute directory")
+            # Inspect the submitted destination before resolving it; otherwise
+            # a directory link would disguise a removed worktree or package.
+            destination = Path(raw_destination).absolute()
+            validate_durable_destination(destination, repo, snapshot, protected, summary)
+            if metadata.get("root") and canonical_path(destination) != canonical_path(summary["repo"]):
+                raise RuntimeError("root local materials must stay at the surviving root")
+            for entry in subset:
+                retained_path = path_within(destination, entry["path"])
+                validate_retained_path(retained_path, entry, repo, snapshot, protected, summary)
+                actual = current_entry(retained_path, entry["path"])
+                if actual is None or any(actual.get(key) != entry.get(key) for key in ("kind", "size", "sha256", "linkTarget")):
+                    raise RuntimeError("retained-local payload drift: " + entry["path"])
+                if ((not metadata.get("stash") and actual["mode"] != entry["mode"])
+                        or (metadata.get("stash") and os.name != "nt" and entry["kind"] == "file"
+                            and bool(actual["mode"] & 0o111) != bool(entry["mode"] & 0o111))):
+                    raise RuntimeError("retained-local payload mode drift: " + entry["path"])
+                if canonical_path(destination) in (canonical_path(repo), canonical_path(summary["repo"])):
+                    tracked = git(destination, "ls-files", "--error-unmatch", "--", entry["path"], check=False)
+                    if entry["kind"] != "directory" and tracked.returncode == 0:
+                        raise RuntimeError("retained-local cannot exempt a tracked path: " + entry["path"])
+                if entry["kind"] == "directory":
+                    retained_directories.append((number, destination, entry["path"]))
+            previous = covered.setdefault(source, set())
+            if previous.intersection(paths):
+                raise RuntimeError("duplicate retained-local payload registration")
+            previous.update(paths)
+            if canonical_path(destination) == canonical_path(repo):
+                root_paths.update(paths)
+            detail.update(source_sha=digest, resulting_sha=expected, destination=str(destination), paths=paths)
+            checks.append({"name": "integrated:retained-local:" + str(number), "ok": True, "detail": detail})
+        except (OSError, RuntimeError) as error:
+            detail["reason"] = str(error)
+            checks.append({"name": "integrated:retained-local:" + str(number), "ok": False, "detail": detail})
+    # Different frozen worktrees/stashes may contribute registered materials
+    # to the same normal directory. Compare its exact final file set against
+    # the union of records whose bindings and contents actually passed.
+    valid_paths = {}
+    by_name = {check["name"]: check for check in checks}
+    for check in checks:
+        if check["ok"]:
+            detail = check["detail"]
+            paths = valid_paths.setdefault(canonical_path(detail["destination"]), set())
+            for path in detail["paths"]:
+                parts = path.split("/")
+                paths.update("/".join(parts[:end]) for end in range(1, len(parts) + 1))
+    for number, destination, relative in retained_directories:
+        check = by_name["integrated:retained-local:" + str(number)]
+        if not check["ok"]:
+            continue
+        expected_children = {path for path in valid_paths[canonical_path(destination)]
+                             if path == relative or path.startswith(relative + "/")}
+        actual_children = {entry["path"] for entry in inventory_tree(path_within(destination, relative), relative)}
+        if actual_children != expected_children:
+            check["ok"] = False
+            check["detail"]["reason"] = "retained-local directory file set drift: " + relative
+    return {"checks": checks, "covered": covered, "rootPaths": root_paths}
+
+
+def working_tree_policy(repo: Path, snapshot: Path, protected: dict, expected: str, records_path, status: bytes) -> dict:
+    records = json.loads(Path(records_path).read_text(encoding=UTF8)) if records_path else []
+    if not isinstance(records, list):
+        raise RuntimeError("Integration records must be a JSON array")
+    retention = retained_local_state(repo, snapshot, protected, expected, records)
+    summary = json.loads((snapshot / "snapshot-summary.json").read_text(encoding=UTF8))
+    excluded = []
+    reproducible = []
+    if summary.get("schemaVersion") == 4:
+        # Exempt only frozen cache roots and independently captured child repos.
+        # Precise material records never exempt subsequent files in a folder.
+        for state in sorted((snapshot / "worktrees").iterdir()):
+            metadata = json.loads((state / "metadata.json").read_text(encoding=UTF8))
+            if canonical_path(metadata["worktree"]) == canonical_path(repo) or metadata.get("root"):
+                if canonical_path(metadata["worktree"]) == canonical_path(repo):
+                    excluded += metadata.get("nestedPaths", [])
+                    disposition = json.loads((state / "ignored-disposition.json").read_text(encoding=UTF8))
+                    reproducible += disposition.get("reproducible", [])
+
+    def under(path, roots):
+        path = path.casefold() if os.name == "nt" else path
+        return any(path == (root.casefold() if os.name == "nt" else root)
+                   or path.startswith((root.casefold() if os.name == "nt" else root) + "/") for root in roots)
+
+    unclassified = []
+    fields = status.split(b"\0")
+    position = 0
+    while position < len(fields):
+        entry = fields[position]
+        position += 1
+        if not entry:
+            continue
+        path = canonical_rel(decode(entry[3:]))
+        code = entry[:2]
+        if b"R" in code or b"C" in code:
+            position += 1  # porcelain -z writes the original name next
+        if code != b"??" or (path not in retention["rootPaths"] and not under(path, excluded)):
+            unclassified.append(decode(entry))
+    ignored_unclassified = []
+    if summary.get("schemaVersion") == 4:
+        live_ignored = git(repo, "status", "--porcelain=v1", "--untracked-files=normal", "--ignored=matching", "-z").stdout
+        roots = [canonical_rel(decode(entry[3:])) for entry in live_ignored.split(b"\0") if entry.startswith(b"!! ")]
+        tracked = {canonical_rel(decode(path)) for path in git(repo, "ls-files", "-z").stdout.split(b"\0") if path}
+        known = retention["rootPaths"] | tracked
+        exempt = excluded + reproducible
+        for root in roots:
+            if under(root, exempt):
+                continue
+            # Unknown roots fail without scanning their interiors (which can
+            # include very large caches or unregistered nested repositories).
+            if root not in known and not any(path.startswith(root + "/") for path in known | set(exempt)):
+                ignored_unclassified.append(root)
+                continue
+            for item in manifest_for_roots(repo, [root], exclude_roots=exempt):
+                path = item["path"]
+                if path in known or under(path, retention["rootPaths"]):
+                    continue
+                if item["kind"] == "directory" and any(other.startswith(path + "/") for other in known | set(exempt)):
+                    continue
+                ignored_unclassified.append(path)
+    cached = git(repo, "diff", "--cached", "--quiet", "--no-ext-diff", "--no-textconv", check=False)
+    return {"ok": not unclassified and not ignored_unclassified and cached.returncode == 0 and all(check["ok"] for check in retention["checks"]),
+            "unclassified": unclassified, "indexClean": cached.returncode == 0,
+            "unclassifiedIgnored": sorted(set(ignored_unclassified)),
+            "retainedPaths": sorted(retention["rootPaths"])}
+
+
 def integration_checks(repo: Path, snapshot: Path, protected: dict, expected: str, records_path=None) -> list[dict]:
     """Check work coverage, also usable before any destructive cleanup.
 
@@ -202,43 +470,66 @@ def integration_checks(repo: Path, snapshot: Path, protected: dict, expected: st
         detail = {"method": "reverse-patch", "source": digest} if result.returncode == 0 else comparison(source, digest)
         record("integrated:" + source, detail is not None, detail or {"source": digest, "reason": "patch not present in candidate"})
 
+    summary = json.loads((snapshot / "snapshot-summary.json").read_text(encoding=UTF8))
+    retention = retained_local_state(repo, snapshot, protected, expected, records)
+    checks.extend(retention["checks"])
+    nested_path = snapshot / "snapshot/nested-recovery.json"
+    if summary.get("schemaVersion") == 4 and nested_path.exists():
+        nested = json.loads(nested_path.read_text(encoding=UTF8))
+        if nested.get("schemaVersion") != 1 or not isinstance(nested.get("entries"), list):
+            raise RuntimeError("Invalid frozen nested recovery registry")
+        for index, frozen_entry in enumerate(nested["entries"]):
+            try:
+                entry = dict(frozen_entry)
+                entry["packagePath"] = str(path_within(snapshot, entry["package"]))
+                entry["verificationPath"] = str(path_within(snapshot, entry["verification"]))
+                state = validate_nested_entry(entry)
+                record("integrated:nested:" + str(index), True,
+                       {"path": str(path_within(entry["parentWorktree"], entry["relativePath"])),
+                        "manifestSha256": state["manifestSha256"], "frozenStateSha256": state["frozenStateSha256"]})
+            except (OSError, RuntimeError, KeyError, ValueError) as error:
+                record("integrated:nested:" + str(index), False, str(error))
+
     def payload_covered(source, manifest, durable=False):
         if not manifest:
             return
-        digest = hashlib.sha256(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode(UTF8)).hexdigest()
+        digest = manifest_digest(manifest)
+        remaining = [item for item in manifest if item["path"] not in retention["covered"].get(source, set())]
+        if not remaining:
+            record("integrated:" + source, True, {"source": digest, "method": "retained-local"})
+            return
         destinations = [repo]
-        if durable:
+        if durable and summary.get("schemaVersion") in (2, 3):
+            # Older packages retain their original durable-payload semantics.
+            # Adding a new retained-local record never changes old validation.
             destinations += [Path(item["destination"]) for item in records
                              if item.get("source_ref") == source and item.get("source_sha") == digest
                              and item.get("destination") and item.get("resulting_sha") == expected]
         failures = []
-        frozen_worktrees = [canonical_path(item["worktree"]) for item in protected.get("worktrees", [])]
+        require_committed = not durable or summary.get("schemaVersion") == 4
         for destination in destinations:
             destination = destination.resolve()
-            normalized = canonical_path(destination)
-            # A package copy or a soon-to-be-removed worktree is not a usable
-            # retained destination. Additional recovery roots can be listed by caller.
-            summary = json.loads((snapshot / "snapshot-summary.json").read_text(encoding=UTF8))
-            surviving_root = canonical_path(summary["repo"])
-            forbidden = [canonical_path(snapshot)] + [path for path in frozen_worktrees
-                                                       if path not in (canonical_path(repo), surviving_root)]
-            forbidden += [canonical_path(summary[key]) for key in ("primary", "mirror") if summary.get(key)]
-            if any(normalized == path or normalized.startswith(path + os.sep) for path in forbidden):
-                failures.append("destination is recovery package or removed worktree")
-                continue
             try:
-                for item in manifest:
+                validate_durable_destination(destination, repo, snapshot, protected, summary)
+                for item in remaining:
                     actual = current_entry(path_within(destination, item["path"]), item["path"])
-                    if actual is None or any(actual.get(key) != item.get(key) for key in ("kind", "size", "sha256", "linkTarget")):
+                    if actual is None or any(actual.get(key) != item.get(key) for key in ("kind", "size", "sha256", "linkTarget", "mode")):
                         raise RuntimeError("payload differs: " + item["path"])
-                    if not durable and item["kind"] != "directory":
-                        if destination != repo or git(repo, "cat-file", "-e", expected + ":" + item["path"], check=False).returncode:
-                            raise RuntimeError("payload is not committed: " + item["path"])
+                    if require_committed and (destination != repo or not committed_payload_matches(repo, expected, item)):
+                        raise RuntimeError("payload is not committed with frozen bytes and kind: " + item["path"])
                 record("integrated:" + source, True, {"source": digest, "method": "payload-content", "destination": str(destination)})
                 return
             except (OSError, RuntimeError) as error:
                 failures.append(str(error))
-        detail = None if durable else comparison(source, digest)
+        detail = comparison(source, digest) if require_committed else None
+        if detail is not None:
+            # A content comparison may explain normalization or deliberate
+            # source edits, but cannot turn an uncommitted file into coverage.
+            leaves = [item for item in remaining if item["kind"] != "directory"]
+            if (summary.get("schemaVersion") == 4 and
+                    (not leaves or any(git(repo, "cat-file", "-e", expected + ":" + item["path"], check=False).returncode
+                                       for item in leaves))):
+                detail = None
         record("integrated:" + source, detail is not None, detail or {"source": digest, "reason": failures})
 
     for sha in protected.get("stashCommits", []):
@@ -259,7 +550,10 @@ def integration_checks(repo: Path, snapshot: Path, protected: dict, expected: st
                     final = git(repo, "ls-tree", expected, "--", decode(path)).stdout.strip()
                     ok = final == info + b"\t" + path
                     source = "stash:" + sha + ":untracked:" + decode(path)
-                    detail = {"method": "stash-untracked-blob", "source": decode(blob)} if ok else comparison(source, decode(blob))
+                    retained_source = "stash:" + sha + ":untracked"
+                    retained = decode(path) in retention["covered"].get(retained_source, set())
+                    detail = ({"method": "stash-untracked-blob", "source": decode(blob)} if ok else
+                              ({"method": "retained-local", "source": decode(blob)} if retained else comparison(source, decode(blob))))
                     record("integrated:" + source, detail is not None, detail or "stash untracked content is missing")
 
     for state in sorted((snapshot / "worktrees").iterdir()):
@@ -294,7 +588,7 @@ def main() -> None:
     snapshot = Path(arguments.snapshot).resolve()
     summary = json.loads((snapshot / "snapshot-summary.json").read_text(encoding=UTF8))
     protected = json.loads((snapshot / "snapshot" / "protected-objects.json").read_text(encoding=UTF8))
-    if summary.get("schemaVersion") not in (2, 3):
+    if summary.get("schemaVersion") not in (2, 3, 4):
         raise RuntimeError("Unsupported recovery-package schema")
     default = summary["defaultBranch"]
     default_ref = f"refs/heads/{default}"
@@ -333,7 +627,11 @@ def main() -> None:
     current_all_refs = local_refs(repo, "refs")
     record("nonbranch-and-other-remote-refs-preserved", all(current_all_refs.get(ref) == sha for ref, sha in original_other_refs.items()), original_other_refs)
 
-    worktrees = parse_worktrees(git(repo, "worktree", "list", "--porcelain", "-z").stdout)
+    # A candidate can be a linked checkout of a separate-git-dir repository
+    # whose main path is not inferable from this checkout. Integration-only
+    # does not require the final topology; keep its read-only raw enumeration.
+    worktrees = (parse_worktrees(git(repo, "worktree", "list", "--porcelain", "-z").stdout)
+                 if arguments.check_integration_only else discover_worktrees(repo))
     one_root_worktree = (
         len(worktrees) == 1
         and canonical_path(worktrees[0].get("worktree", "")) == canonical_path(repo)
@@ -345,7 +643,8 @@ def main() -> None:
     stash = decode(git(repo, "stash", "list", "--format=%gd%x09%H").stdout).strip()
     record("stash-empty", not stash, stash)
     status = git(repo, "status", "--porcelain=v1", "--untracked-files=all", "-z").stdout
-    record("working-tree-clean", not status, decode(status))
+    policy = working_tree_policy(repo, snapshot, protected, expected, arguments.integration_records, status)
+    record("working-tree-clean", policy["ok"], policy)
     ignored_status = git(
         repo,
         "status",

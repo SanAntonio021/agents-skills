@@ -42,7 +42,7 @@ class RootRecordRestoreTests(TemporaryGitCase):
         captured = self.capture(repo, primary, mirror, disposition, stamp="light-restore")
         self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
         self.assertFalse((primary / "worktrees/000/ignored-reproducible-manifest.json").exists())
-        self.assertEqual(json.loads((primary / "snapshot-summary.json").read_text())["schemaVersion"], 3)
+        self.assertEqual(json.loads((primary / "snapshot-summary.json").read_text())["schemaVersion"], 4)
         # The original path no longer exists; a real recovery must still work.
         repo.rename(self.root / "retired-original")
         restore = self.root / "restore"

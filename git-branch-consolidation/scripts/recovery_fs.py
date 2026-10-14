@@ -40,6 +40,11 @@ def canonical_path(path) -> str:
     return os.path.normcase(plain_path(os.path.realpath(io_path(path))))
 
 
+def frozen_path_identity(path) -> str:
+    """Match a sealed original identity without consulting its old location."""
+    return os.path.normcase(os.path.abspath(plain_path(path)))
+
+
 def canonical_rel(value) -> str:
     value = str(value).replace("\\", "/").rstrip("/")
     parts = value.split("/")
@@ -118,12 +123,15 @@ def current_entry(path, logical: str) -> dict | None:
             "sha256": digest, "mode": stat.S_IMODE(info.st_mode), "linkTarget": target}
 
 
-def inventory_tree(root, logical_prefix: str) -> list[dict]:
+def inventory_tree(root, logical_prefix: str, *, exclude_roots=()) -> list[dict]:
     root = io_path(root)
     found = []
     pending = [(root, canonical_rel(logical_prefix))]
+    excluded = {canonical_rel(value).casefold() for value in exclude_roots}
     while pending:
         path, logical = pending.pop()
+        if any(logical.casefold() == value or logical.casefold().startswith(value + "/") for value in excluded):
+            continue
         item = current_entry(path, logical)
         if item is None:
             if path == root:
@@ -137,11 +145,13 @@ def inventory_tree(root, logical_prefix: str) -> list[dict]:
     return found[:1] + sorted(found[1:], key=lambda item: item["path"].casefold())
 
 
-def manifest_for_roots(worktree, roots: list[str]) -> list[dict]:
+def manifest_for_roots(worktree, roots: list[str], *, exclude_roots=()) -> list[dict]:
     entries = []
     for relative in roots:
         source = path_within(worktree, relative)
-        inventory = inventory_tree(source, relative)
+        if any(relative.casefold() == canonical_rel(value).casefold() or relative.casefold().startswith(canonical_rel(value).casefold() + "/") for value in exclude_roots):
+            continue
+        inventory = inventory_tree(source, relative, exclude_roots=exclude_roots)
         if not inventory:
             raise RuntimeError(f"Payload root is missing: {source}")
         entries.extend(inventory)
@@ -260,10 +270,10 @@ def walk_paths(root):
                 pending.extend(path / item.name for item in children)
 
 
-def create_payload_tar(source_root, relative_paths: list[str], archive_path) -> None:
+def create_payload_tar(source_root, relative_paths: list[str], archive_path, *, exclude_roots=()) -> None:
     archive_path = io_path(archive_path)
     archive_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest = manifest_for_roots(source_root, relative_paths)
+    manifest = manifest_for_roots(source_root, relative_paths, exclude_roots=exclude_roots)
     seen = set()
     with tarfile.open(archive_path, "w", format=tarfile.PAX_FORMAT, dereference=False) as archive:
         for item in manifest:
@@ -306,7 +316,7 @@ def load_external_link_allowlist(path) -> set[tuple[str, str, str, str]]:
             raise RuntimeError("Each link allowance needs exact worktree, path, kind and target strings")
         if not os.path.isabs(item["worktree"]) or item["kind"] not in LINK_KINDS or "\0" in item["target"]:
             raise RuntimeError("Invalid external link allowance")
-        key = (canonical_path(item["worktree"]), canonical_rel(item["path"]), item["kind"], item["target"])
+        key = (frozen_path_identity(item["worktree"]), canonical_rel(item["path"]), item["kind"], item["target"])
         identity = (key[0], os.path.normcase(key[1]))
         if identity in identities:
             raise RuntimeError("Duplicate external link allowance")
@@ -326,7 +336,7 @@ def validate_link(root, name, kind, target, allowed=(), source_worktree=None) ->
     except ValueError:
         internal = False
     if not internal:
-        key = (canonical_path(source_worktree), canonical_rel(name), kind, target) if source_worktree else None
+        key = (frozen_path_identity(source_worktree), canonical_rel(name), kind, target) if source_worktree else None
         if key not in allowed:
             raise RuntimeError(f"External link requires an exact allowlist entry: {name} -> {target}")
 
@@ -403,7 +413,7 @@ def validate_link_plan(root, planned=(), *, allowed=(), source_worktree=None) ->
         except ValueError:
             internal = False
         if not internal:
-            key = (canonical_path(source_worktree), name, kind, target) if source_worktree else None
+            key = (frozen_path_identity(source_worktree), name, kind, target) if source_worktree else None
             if key not in allowed:
                 raise RuntimeError(f"External link requires an exact allowlist entry: {name} -> {target}")
 

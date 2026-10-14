@@ -4,7 +4,7 @@
 
 ## 采集本期记录
 
-随附采集器只读取本地文件，不主动联网。Windows 需安装 `tzdata`；从技能根目录运行：
+先按主流程确定工作范围；范围未定时仅在用户要求帮助盘点或明确授权自行选材后采集。已选范围只深入读取对应记录。随附采集器只读取本地文件，不主动联网。Windows 需安装 `tzdata`；从技能根目录运行：
 
 ```text
 python scripts/collect_sessions.py --mode today --out "<project-root>/过程文件/<任务>/brief.json"

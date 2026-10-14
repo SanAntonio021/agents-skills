@@ -21,7 +21,10 @@ Before creating or modifying a deck, read the
 [collaboration workflow](references/presentation-workflow.md#内容讨论与制作执行).
 For creation, redesign, template reuse, reconstruction or multi-agent slide work, also read the
 [authoring selection rules](references/presentation-workflow.md#选择制作路线).
-These sections own page discussion, production handoff, authorization and tool selection;
+These sections own general page discussion, production handoff, authorization and tool selection.
+For research daily reports and group meetings, `lab-report-slides` owns content discussion and
+confirmation cadence; do not impose per-slide approval or a new production conversation.
+Retain existing production arrangements, explicit user choices and this skill's file acceptance;
 follow the selected skill's own generation steps, then return here for file acceptance.
 For file-only work, use the local operations below; tool selection follows the same reference
 when an explicit tool choice or existing authoring project needs to be considered.

@@ -4,8 +4,9 @@ description: >
   Generate Chinese advisor daily/weekly research PPTs from recent sessions, project records,
   experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
   生成组会 PPT, or turning recent research work into an advisor report.
-  Select the advances worth reporting, confirm projects and overview text, then make the full
-  deck without per-slide approval. Decide each page's point before writing or layout;
+  Ask for the work scope first when unspecified. For daily reports, confirm the overview;
+  for group meetings, discuss and confirm each section before making the full deck.
+  Neither mode requires per-slide approval by default. Give each detail page one core point;
   keep routine editing, execution and validation details in project records.
   Preserve research substance, essential evidence and user edits. Deliver editable text and
   independent images after content review and actual PPTX rendering. Do not use for turning
@@ -29,25 +30,30 @@ compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, r
 
 执行相应阶段前实际读取；同一任务中未变化的材料和检查可复用。可选技能缺失时执行随附规则。
 
-## 1. 核实并选定工作
+## 1. 选定工作，再核实材料
 
-日报取 `Asia/Shanghai` 当天，周报取截至请求日期的最近七个日历日；用户指定范围优先。按资料参考读取会话、项目记录和真实产物。
+日报取 `Asia/Shanghai` 当天，周报取截至请求日期的最近七个日历日；用户指定范围优先。
 
-范围未定时给编号候选：名称、本期实质进展、状态、可用材料及展开建议，让用户删选或补充。听众、日期、模板已定或纠正一项状态，不等于选定全部内容。已指定工作直接沿用，不加入范围外项目。
+范围未定时先问要汇报哪些工作，不先扫描会话并自行选材。用户要求帮助盘点时，再按资料参考读取本期记录，给编号候选：名称、本期实质进展、状态、可用材料及展开建议，让用户删选或补充。已指定工作直接沿用，随后深入核实对应会话、项目记录和真实产物，不加入范围外项目。听众、日期、模板已定或纠正一项状态，不等于选定全部内容。
+
+“帮我做 PPT”授权制作，不等于授权自行决定汇报范围。“直接生成”可跳过中间内容确认，但范围不明时仍先询问；明确授权自行选材并直接生成时，才可自行选定范围并制作。
 
 没有适合科研汇报的实质进展时，询问停止还是改做私人工作记录。
 
-## 2. 确认总览
+## 2. 按汇报类型讨论内容
 
-展示完整总览正文，必要时附主要展开内容，不另设提纲审批。沿用已确认的范围、总览和详略；用户明确要求直接生成时跳过中间确认。只确认候选时仍完成总览确认，只有用户要求逐页讨论才逐页确认。
+- **每日汇报**：展示完整工作总览正文，必要时附主要展开内容。讨论并确认总览后自行安排展开页，直接制作整套；只选定工作不等于确认总览，不另设提纲或逐页审批。
+- **组会汇报（含周组会）**：先明确各部分及顺序，再逐部分讨论研究问题、主要内容、结果或判断、证据图和必要展开程度。各部分全部确认后，自行安排分页并生成整套，不再增加总览、提纲或逐页的重复审批。
+
+已有范围、总览、各部分内容及详略确认持续有效；局部更正只处理受影响内容，不重启整套讨论。用户明确要求逐页讨论、提前制作已确认部分或直接生成时，沿用相应授权；直接生成的范围边界见上一节。
 
 ## 3. 核对图文并制作
 
-总览确认后自行完成整套，不再询问是否开始。先做[内部逐页素材核对](references/materials.md#排版前逐页素材核对)，再做[表达审校](references/chinese-style.md#排版前表达审校)，之后排版。仅补问无法核实且影响页面含义的缺口，其他明确页面继续制作。
+日报总览或组会各部分确认后自行完成整套，不再询问是否开始。先做[内部逐页素材核对](references/materials.md#排版前逐页素材核对)，再做[表达审校](references/chinese-style.md#排版前表达审校)，之后排版。仅补问无法核实且影响页面含义的缺口，其他明确页面继续制作。
 
 沿用已有工程、用户模板及项目约定；模板未选时询问一次内置或本地模板，等待期间继续核实素材。未回答不视为选择，有效模板适配可复用。
 
-简单日报用随附生成器，指定工程继续原工程。直接制作可编辑 PPTX，供用户查看和修改；不先做 HTML 页面稿。HTML 默认关闭，显式选项见制作参考。调用其他制作工具仍沿用本技能的整套制作授权，分工和工具调用服从宿主规则。
+简单日报用随附生成器，指定工程继续原工程。直接制作可编辑 PPTX，供用户查看和修改；不先做 HTML 页面稿。HTML 默认关闭，显式选项见制作参考。内容讨论与确认节奏由本技能统一负责，调用其他制作工具不重启确认，也不自动要求新建独立制作对话；已有制作安排和用户指定方式继续沿用。工具选择、文件保护与共同文件验收沿用 `pptx`，分工和工具调用服从宿主规则。
 
 ## 4. 验收与交付
 

@@ -2,5 +2,6 @@
 *.log
 references/site-patterns/*.md
 !references/site-patterns/docs.qq.com.md
+!references/site-patterns/qiye.aliyun.com.md
 config.env
 .claude/

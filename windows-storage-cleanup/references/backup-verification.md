@@ -24,16 +24,21 @@ Strong evidence:
 ## File and Archive Workflow
 
 1. Identify which copy is authoritative and why.
-2. Inspect archive contents or project structure before hashing.
+2. Inspect archive contents or project structure before hashing. Check volume/file identifiers and hard-link
+   relationships first: aliases of the same physical file are not independent copies. Exclude those aliases from
+   independent-duplicate removal recommendations and do not count their logical sizes as reclaimable data.
 3. Hash both candidate and retained copy with SHA-256.
 4. For two folders or differently packaged archives, compare required members rather than only container hashes.
    Confirm that the retained copy is readable and belongs to the intended project and version.
 5. Record unmatched members and retain that candidate if any required file lacks a verified replacement; continue
    unrelated approved candidates.
 6. Recheck hashes immediately before moving the candidate.
-7. Default to Recycle Bin staging and record both original and retained paths. If the approved list also names
-   permanent removal of these exact staged entries, follow the exact-entry procedure in windows-and-wiztree.md
-   without asking again. Staging-only approval remains staging-only.
+7. Record both original and retained paths. For a verified duplicate with a complete, readable independent copy,
+   the consolidated list may recommend permanent removal of the exact duplicate; candidates with remaining
+   recovery value may be staged only, and material of uncertain value stays protected. Obtain approval for the
+   exact scope and disposition together. Once permanent removal of these exact staged entries is approved, follow
+   the exact-entry procedure in windows-and-wiztree.md without asking again. Staging-only approval remains
+   staging-only and has zero estimated space reclaim.
 
 ## Cloud Backup Semantics
 

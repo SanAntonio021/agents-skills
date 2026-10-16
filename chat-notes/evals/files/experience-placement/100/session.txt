@@ -1,0 +1,5 @@
+本轮已经验证：当前项目服务从 /api/v1/upload 切换至 /api/v2/upload，部署回执与请求检查均通过，README 尚未更新。
+在 portal-a.example.test 和 portal-b.example.test 上分别验证了同一现象：写入请求超时后，按返回的任务编号查询可发现任务已完成；不能仅凭超时再次创建任务。现有 sample-integration 技能没有写明这一处理。
+portal-b.example.test 的任务列表查询每页最多返回 20 条；翻页能找到后续任务。portal-a 的列表接口没有此限制。
+项目入口为本目录 README.md，技能源码为 skills/sample-integration/SKILL.md，站点说明在同技能 references/site-patterns/ 下。
+用户本次只允许读取与建议，未批准修改技能、项目文件或执行外部操作。无实验记录、待清理项和提交发布需求。

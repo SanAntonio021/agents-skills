@@ -1,0 +1,2 @@
+本轮已复核通用登录流程和 portal 站点说明，用法正确，无新增规则。通用方法已在 skills/sample-web/SKILL.md 中完整维护。Portal 的登录表单位于 account-frame iframe，账号字段显示名为“组织账号”。
+用户允许整理上述主技能和 references/site-patterns/portal.example.test.md 的现有文档，不改变技能行为。不操作真实浏览器、账号或外部服务，无实验或清理任务。不提交、不发布。

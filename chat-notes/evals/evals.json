@@ -734,7 +734,14 @@
       "id": 100,
       "prompt": "$chat-notes。请根据 session.txt 核对本轮经验并给出具体建议。合成场景同时涉及一个已生效的项目接口变更、两个站点已验证的方法及其中一个站点的分页限制。只读，不改文件、不清理、不提交、不发布。",
       "expected_output": "依据材料分别确定项目事实、通用方法与站点特例的维护位置；未批准的技能行为修改只提出建议。",
-      "files": [],
+      "files": [
+        "evals/files/experience-placement/100/AGENTS.md",
+        "evals/files/experience-placement/100/README.md",
+        "evals/files/experience-placement/100/session.txt",
+        "evals/files/experience-placement/100/skills/sample-integration/references/site-patterns/portal-a.example.test.md",
+        "evals/files/experience-placement/100/skills/sample-integration/references/site-patterns/portal-b.example.test.md",
+        "evals/files/experience-placement/100/skills/sample-integration/SKILL.md"
+      ],
       "expectations": [
         "实际读取项目入口、现有技能和站点说明，项目接口变更归项目 README，不写进技能通用流程。",
         "跨站点验证的超时结果查询方法建议归现有 sample-integration 技能；该行为尚未获准时只给目标、改法和验证场景。",
@@ -746,7 +753,13 @@
       "id": 101,
       "prompt": "$chat-notes。本轮只复核了 sample-web 技能和 portal.example.test 站点说明，用法仍准确，没有新增行为。请只整理这两份已有说明，保留实际操作所需信息；允许含义不变的去重和引用修正，不清理、不提交、不发布。材料位置见 session.txt。",
       "expected_output": "复用已有通用流程，在站点说明中仅保留差异并建立有效引用；不改技能行为或新增文件。",
-      "files": [],
+      "files": [
+        "evals/files/experience-placement/101/AGENTS.md",
+        "evals/files/experience-placement/101/README.md",
+        "evals/files/experience-placement/101/session.txt",
+        "evals/files/experience-placement/101/skills/sample-web/references/site-patterns/portal.example.test.md",
+        "evals/files/experience-placement/101/skills/sample-web/SKILL.md"
+      ],
       "expectations": [
         "通用登录流程在 sample-web/SKILL.md 继续集中维护，既有准确正文不被改写或追加同义条款。",
         "移除站点说明重复的完整登录流程，以有效相对链接引用主技能。",
@@ -758,7 +771,14 @@
       "id": 102,
       "prompt": "$chat-notes。本轮复核了 sample-transfer 的通用重试流程和两种设备说明。请在这些文件内整理重复内容，保留不同条件下的有效操作；无新增行为，不清理、不提交、不发布。实际能力和测试材料见 session.txt。",
       "expected_output": "通用流程集中维护，两种设备的有效差异仍可执行且可追溯，不为去重扩大任何例外的适用范围。",
-      "files": [],
+      "files": [
+        "evals/files/experience-placement/102/AGENTS.md",
+        "evals/files/experience-placement/102/README.md",
+        "evals/files/experience-placement/102/session.txt",
+        "evals/files/experience-placement/102/skills/sample-transfer/references/devices/model-a.md",
+        "evals/files/experience-placement/102/skills/sample-transfer/references/devices/model-b.md",
+        "evals/files/experience-placement/102/skills/sample-transfer/SKILL.md"
+      ],
       "expectations": [
         "实际读取通用流程及两种设备材料，仅删除真正重复的步骤并建立有效引用。",
         "保留 Model-B 缺少任务查询接口、确认未落盘后才能人工重新上传的条件，不能要求它调用不存在的查询接口。",

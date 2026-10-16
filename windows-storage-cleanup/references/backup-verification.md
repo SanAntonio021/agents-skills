@@ -1,64 +1,56 @@
-# Backup and Duplicate Verification
+# 备份与重复项核验
 
-Use this workflow when removing personal files, research material, archives, media, or project outputs on the basis
-of a retained duplicate or backup. It does not require backup copies of verified reproducible caches.
+当删除依据是保留的重复副本或备份时，使用本流程处理个人文件、科研资料、归档、媒体或项目输出。
+对已确认可复现的缓存，不要求额外创建备份副本。
 
-## Evidence Levels
+## 证据等级
 
-Weak evidence, insufficient for deletion:
+以下证据不足以支持删除：
 
-- same filename;
-- same extension;
-- same displayed size;
-- a cloud search result without path, version, or readability checks;
-- an upload-history row without confirming final cloud metadata.
+- 文件名相同；
+- 扩展名相同；
+- 显示大小相同；
+- 只有云端搜索结果，没有核对路径、版本或可读性；
+- 只有上传历史记录，没有确认最终云端元数据。
 
-Strong evidence:
+以下属于强证据：
 
-- exact byte size plus matching SHA-256;
-- archive member-by-member comparison;
-- a readable retained copy at the intended project/version path;
-- cloud metadata that confirms name, size, parent path, identifier, and completed upload;
-- a tested restore when the cloud copy would become the only remaining copy.
+- 精确字节数和一致的 SHA-256；
+- 逐成员比较归档内容；
+- 在目标项目／版本路径下存在可读取的保留副本；
+- 云端元数据确认名称、大小、父路径、标识符和上传完成状态；
+- 如果删除后云端副本会成为唯一副本，已实际测试恢复。
 
-## File and Archive Workflow
+## 文件与归档流程
 
-1. Identify which copy is authoritative and why.
-2. Inspect archive contents or project structure before hashing. Check volume/file identifiers and hard-link
-   relationships first: aliases of the same physical file are not independent copies. Exclude those aliases from
-   independent-duplicate removal recommendations and do not count their logical sizes as reclaimable data.
-3. Hash both candidate and retained copy with SHA-256.
-4. For two folders or differently packaged archives, compare required members rather than only container hashes.
-   Confirm that the retained copy is readable and belongs to the intended project and version.
-5. Record unmatched members and retain that candidate if any required file lacks a verified replacement; continue
-   unrelated approved candidates.
-6. Recheck hashes immediately before moving the candidate.
-7. Record both original and retained paths. For a verified duplicate with a complete, readable independent copy,
-   the consolidated list may recommend permanent removal of the exact duplicate; candidates with remaining
-   recovery value may be staged only, and material of uncertain value stays protected. Obtain approval for the
-   exact scope and disposition together. Once permanent removal of these exact staged entries is approved, follow
-   the exact-entry procedure in windows-and-wiztree.md without asking again. Staging-only approval remains
-   staging-only and has zero estimated space reclaim.
+1. 确定哪一份是权威副本，并记录判断理由。
+2. 计算哈希前先检查归档内容或项目结构。先核对卷／文件标识和硬链接关系：同一物理文件的多个别名不是独立副本。
+   将这些别名排除在独立重复项删除建议之外，也不要把它们的逻辑大小计入可释放空间。
+3. 使用 SHA-256 对候选文件和保留副本都计算哈希。
+4. 对两个目录或打包方式不同的归档，比较必要成员，不要只比较容器哈希。确认保留副本可读取，并且属于目标项目和版本。
+5. 记录不匹配的成员；只要有必要文件没有经过核验的替代副本，就保留该候选，同时继续处理互不相关且已获批的候选项。
+6. 在移动候选文件前立即重新核对哈希。
+7. 记录原路径和保留路径。对于拥有完整、可读取独立副本的已核实重复项，汇总清单可以建议永久删除该准确副本；
+   仍有恢复价值的候选可以只移入回收站，价值不确定的资料保持保护。准确范围和处理方式一起取得批准。
+   如果已批准永久删除这些准确的回收站条目，按 `windows-and-wiztree.md` 的准确条目流程执行，不再重复询问。
+   仅回收的批准仍然只是回收，预计释放空间为零。
 
-## Cloud Backup Semantics
+## 云端备份语义
 
-Distinguish:
+需要区分：
 
-- **backup**: deleting local data usually does not delete the remote backup;
-- **synchronization**: local deletion may propagate remotely;
-- **placeholder/on-demand file**: the visible local entry may not contain a full offline copy.
+- **backup**：删除本地数据通常不会删除远程备份；
+- **synchronization**：本地删除可能同步到远端；
+- **placeholder/on-demand file**：可见的本地条目可能并未包含完整离线副本。
 
-Confirm the product's actual mode and, when necessary, inspect the client's metadata database read-only. Database
-schemas can change; discover tables and columns before querying. If the database is locked, copy it to a temporary
-read-only location when a consistent supported snapshot is possible; otherwise defer that item's verification.
-Keep the sync client and user tasks running rather than stopping them for cleanup.
+确认产品实际使用的是哪种模式；必要时只读检查客户端元数据库。数据库结构可能变化，查询前先发现表和列。
+如果数据库被锁定，只有在能够获得一致且受支持的快照时才复制到临时只读位置，否则推迟该项核验。
+清理时保持同步客户端和用户任务运行，不要为了取得锁而停止它们。
 
-For BaiduNetdisk clients seen on this machine, `filecache.db` and `upload.db` have been useful evidence sources, but
-table names and semantics must be rediscovered each time. A cloud record does not by itself justify deleting the only
-local working copy.
+对于本机出现的 BaiduNetdisk 客户端，`filecache.db` 和 `upload.db` 可以作为证据来源，但每次都必须重新发现表名和字段语义。
+仅有云端记录，不能单独作为删除唯一本地工作副本的依据。
 
-## Research Data Rule
+## 科研数据规则
 
-Original experiment data remains protected unless the user identifies a verified derivative or duplicate and gives
-explicit approval. When a result file exists in two repositories, check path dependencies, uncommitted changes, and
-which repository is authoritative before removing either copy.
+原始实验数据默认保持保护，除非用户明确指出经过核验的派生结果或重复副本，并明确批准删除。
+如果结果文件同时存在于两个仓库，删除任一份前先检查路径依赖、未提交修改以及哪个仓库是权威来源。

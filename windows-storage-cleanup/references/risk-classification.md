@@ -1,116 +1,109 @@
-# Risk Classification
+# 风险分类
 
-Classify by recoverability, reproducibility, ownership, and current use. File extension alone is not enough.
+按可恢复性、可复现性、归属和当前使用状态分类。不能只看文件扩展名。
 
-## Official Cleanup Only
+<a id="official-cleanup-only"></a>
+## 仅限官方清理
 
-Do not delete these paths or file types directly:
+以下路径或文件类型不得直接删除：
 
 - `C:\Windows\WinSxS`
 - `C:\Windows\Installer`
-- Windows driver store and servicing directories
-- `pagefile.sys`, `hiberfil.sys`, swap files, and crash-dump configuration
-- Docker, WSL, Hyper-V, or application VHD/VHDX files
-- WindowsApps and packaged-app internals
+- Windows 驱动程序存储和系统维护目录；
+- `pagefile.sys`、`hiberfil.sys`、交换文件及崩溃转储配置；
+- Docker、WSL、Hyper-V 或应用的 VHD/VHDX 文件；
+- WindowsApps 及打包应用内部文件。
 
-Use documented Windows cleanup, application settings, or the registered uninstaller.
+使用 Windows 官方清理、应用设置或注册的卸载程序。
 
-## Low Risk After Preapproval
+<a id="low-risk-after-preapproval"></a>
+## 预先批准后低风险
 
-Include verified candidates in the concrete cleanup list. Once the list and method are approved, execute without
-another confirmation; a safe official online cleanup may be used while its application runs:
+将已核验候选加入具体清理清单。清单和处理方式获批后，无需再次确认即可执行；应用运行时可以使用安全的官方在线清理：
 
-- package-manager download caches such as npm, pip, Bun, or uv;
-- stale installer download caches whose owning application documents them as disposable;
-- completed crash dumps and diagnostic output no longer under investigation;
-- residual files left after a verified official uninstall;
-- clearly obsolete retained application versions when one working current version remains.
+- npm、pip、Bun 或 uv 等包管理器下载缓存；
+- 所属应用文档明确可丢弃的旧安装包下载缓存；
+- 已完成调查、不再需要继续分析的崩溃转储和诊断输出；
+- 官方卸载完成后经过核验的残留文件；
+- 已有一个正常工作的当前版本时，明确过时的保留应用版本。
 
-Cache directories can regenerate. Explain this before cleanup when recurrence matters to the user.
+缓存目录可能重新生成。如果空间反复增长与用户目标有关，清理前要说明这一点。
 
-## Verified Uninstall Residuals
+<a id="verified-uninstall-residuals"></a>
+## 已核验的卸载残留
 
-Treat a directory as an uninstall residual only after evidence shows that the owning application is gone and the
-directory is not shared with another installed application. Check all applicable ownership surfaces:
+只有证据表明所属应用已不存在，且目录不与其他已安装应用共享时，才能把目录视为卸载残留。检查所有适用的归属面：
 
-1. Machine-wide and per-user uninstall registrations, including 32-bit and 64-bit registry views.
-2. AppX/MSIX package registration and package-manager records.
-3. Expected installation directories under Program Files, ProgramData, LocalAppData, and Roaming AppData.
-4. Running processes, Windows services, drivers, startup entries, and scheduled tasks.
-5. Start-menu and desktop shortcuts, protocol handlers, shell integration, and file associations.
-6. Application recovery, autosave, templates, profiles, and user-created documents that may be stored beside program
-   files.
+1. 计算机范围和用户范围的卸载注册信息，包括 32 位和 64 位注册表视图；
+2. AppX/MSIX 包注册信息和包管理器记录；
+3. Program Files、ProgramData、LocalAppData 和 Roaming AppData 下的预期安装目录；
+4. 正在运行的进程、Windows 服务、驱动程序、启动项和计划任务；
+5. 开始菜单和桌面快捷方式、协议处理器、Shell 集成及文件关联；
+6. 可能存放在程序文件旁的应用恢复文件、自动保存文件、模板、配置档案和用户创建的文档。
 
-The absence of an uninstall entry or active process is only one signal. A vendor directory remains protected when an
-installed or running product from the same vendor still owns files inside it. Likewise, a shared runtime remains
-protected when another installed application declares or contains a dependency on it, even if no runtime process is
-currently active. Inspect application manifests, package metadata, configuration files such as
-`*.runtimeconfig.json`, bundled launchers, and documented runtime requirements before recommending removal.
+缺少卸载项或当前没有活动进程只能作为一个信号。如果同一厂商的已安装或正在运行产品仍拥有目录中的文件，厂商目录继续受保护。
+同样，即使当前没有运行时进程，只要其他已安装应用声明或包含对共享运行时的依赖，该运行时也继续受保护。
+建议删除前，检查应用清单、包元数据、`*.runtimeconfig.json` 等配置文件、捆绑启动器和文档化的运行时要求。
 
-Examples of the decision boundary:
+判断边界示例：
 
-- A directory with no uninstall registration, package, process, program files, recovery material, or user documents
-  can become a residual candidate after its contents and ownership are verified.
-- A vendor directory containing files used by a currently running companion application is active application data,
-  not an uninstall residual.
-- An inactive shared runtime referenced by another application's runtime configuration is a dependency and must be
-  kept. “No process is using it now” is not sufficient evidence.
+- 没有卸载注册信息、包、进程、程序文件、恢复材料或用户文档的目录，只有在内容和归属核验完成后，才能成为残留候选；
+- 包含当前运行的配套应用正在使用的文件的厂商目录，属于活动应用数据，不是卸载残留；
+- 其他应用运行时配置引用的非活动共享运行时仍是依赖，必须保留。“现在没有进程使用”不是充分证据。
 
-Use the registered uninstaller when the application is still installed. After verifying residual ownership and
-excluding user data and dependencies, use the approved list's method: official cleanup, direct deletion, or Recycle
-Bin staging. State any recovery limits before approval; do not add a second approval for unchanged residuals already
-included in that list.
+应用仍安装时使用注册的卸载程序。核验残留归属并排除用户数据和依赖后，按已批准清单的方法处理：官方清理、直接删除或移入回收站。
+批准前说明恢复限制；已经列入清单且没有变化的残留不再增加第二次确认。
 
-## Confirm as a Group
+<a id="confirm-as-a-group"></a>
+## 按组确认
 
-Group by source and purpose in the list for one batch confirmation. Reuse an existing accurate authorization:
+按来源和用途分组，放入一份清单中进行一次批量确认。复用已有的准确授权：
 
-- installers, ISO images, and extracted installation media;
-- old presentations, rendered videos, raw media, and project exports;
-- chat attachments, downloads, and received archives;
-- duplicate archives and duplicated project outputs;
-- model weights, offline maps, speech models, and other optional assets;
-- old application versions whose rollback value is uncertain.
+- 安装包、ISO 镜像和已解压的安装介质；
+- 旧演示文稿、渲染视频、原始媒体和项目导出物；
+- 聊天附件、下载文件和收到的归档；
+- 重复归档和重复项目输出；
+- 模型权重、离线地图、语音模型及其他可选资源；
+- 回滚价值不确定的旧应用版本。
 
-## Protected by Default
+<a id="protected-by-default"></a>
+## 默认保护
 
-- original experiment data and instrument captures;
-- source repositories, uncommitted work, and environment definitions;
-- unique project archives, PCB/CAD source, and editable Office originals;
-- session history, research notes, and user-created recordings;
-- active application data and locked files;
-- the only local working copy, even when a cloud backup exists.
+- 原始实验数据和仪器采集文件；
+- 源代码仓库、未提交工作和环境定义；
+- 唯一项目归档、PCB/CAD 源文件和可编辑 Office 原稿；
+- 会话历史、科研笔记和用户创建的录音；
+- 活动应用数据和被锁定的文件；
+- 唯一的本地工作副本，即使存在云端备份也一样。
 
-`Paper`, research paths under `Program`/`ProgramFile`, and active VS Code, Claude, Office, Docker, browser, or research-tool data remain protected unless
-explicitly reviewed. Resolve their actual roots from local rules instead of hardcoding a private machine path.
+`Paper`、`Program`/`ProgramFile` 下的科研路径，以及活动中的 VS Code、Claude、Office、Docker、浏览器或科研工具数据，除非经过明确审查，否则继续保护。
+从本机规则解析实际根路径，不要硬编码私有机器路径。
 
-## Stable Reclaim and Recurring Growth
+<a id="stable-reclaim-and-recurring-growth"></a>
+## 稳定释放与反复增长
 
-Ordinary cleanup prioritizes large, verified disposable items. Do not require a preliminary choice between temporary
-relief and long-term management. Explain that caches regrow when relevant; only an explicit request to solve recurring
-space exhaustion calls for investigating growth and proposing cache locations or retention changes, under the
-appropriate authorization.
+普通清理优先处理已核验、占用较大且可丢弃的内容。不要求用户先在临时缓解和长期管理之间做选择。
+相关时说明缓存会重新增长；只有用户明确要求解决反复空间不足，才在相应授权下调查增长来源并提出缓存位置或保留策略调整。
 
-When stable reclaimed space is the stated success criterion, review in this order:
+当成功标准是稳定释放空间时，按以下顺序检查：
 
-1. Rarely used applications and confirmed obsolete versions, using registered uninstallers.
-2. Verified residuals after completed uninstall and ownership checks.
-3. One-time backups, installation media, and verified duplicates.
-4. Regenerating caches last; exclude them from stable-reclaim totals.
+1. 使用注册卸载程序处理很少使用的应用和确认过时的版本；
+2. 卸载完成且归属核验通过后的残留；
+3. 一次性备份、安装介质和已核验重复项；
+4. 最后处理会重新生成的缓存，并将其排除在稳定释放量之外。
 
-Stop extending the list when the remaining benefit is small relative to the task. Do not impose a universal MB
-threshold or automatically uninstall additional software or change settings to increase the reported benefit.
+当剩余收益相对于任务已经很小时，停止继续扩大清单。不要设置统一的 MB 阈值，也不要为了增加报告中的释放量而自动卸载其他软件或修改设置。
 
-## Decision Test
+<a id="decision-test"></a>
+## 判断测试
 
-Before recommending a cleanup method, establish:
+推荐清理方式前，先确认：
 
-1. What owns the content, and does any current work or dependency need it?
-2. When removal relies on another copy, has that copy been verified beyond name and size? For disposable caches,
-   establish reproducibility instead of creating an unnecessary backup.
-3. Can the proposed method run safely now? A busy or locked item is skipped without stopping its application.
-4. What can be restored or regenerated, and what permanent loss must the list explain?
-5. Does the approved batch include this exact content and handling method?
+1. 内容由谁或什么应用拥有，当前工作或依赖是否需要它？
+2. 删除依赖另一份副本时，是否已经超出名称和大小完成核验？对于可丢弃缓存，应确认可复现性，不要创建不必要的备份；
+3. 拟议方式现在是否可以安全执行？忙碌或被锁定的项目应跳过，不要停止所属应用；
+4. 哪些内容可以恢复或重新生成，清单必须说明哪些永久损失？
+5. 本批授权是否包含这份准确内容和处理方式？
 
-Resolve facts locally where possible. Preserve an uncertain item and continue the other approved items; ask only
-when the remaining uncertainty requires a consequential user decision. A risk label does not add approval rounds.
+能够在本机确认的事实尽量本机确认。保留不确定项，继续其他已批准项目；只有剩余不确定性会导致重要用户决策时才询问。
+风险标签本身不会增加确认轮次。

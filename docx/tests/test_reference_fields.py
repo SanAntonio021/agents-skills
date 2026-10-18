@@ -95,6 +95,30 @@ def bookmarked_field(parent, *, name="ExistingFigure", number="1", simple=False,
     return start
 
 
+def toc_with_pageref(*, locked=False, child_code="PAGEREF TocHeading \\h"):
+    document = Document()
+    heading = document.add_paragraph()._p
+    etree.SubElement(heading, W + "bookmarkStart", {W + "id": "81", W + "name": "TocHeading"})
+    text_run(heading, "Heading 1")
+    etree.SubElement(heading, W + "bookmarkEnd", {W + "id": "81"})
+
+    toc = document.add_paragraph()._p
+    begin = etree.SubElement(etree.SubElement(toc, W + "r"), W + "fldChar")
+    begin.set(W + "fldCharType", "begin")
+    if locked:
+        begin.set(W + "fldLock", "true")
+    instruction = etree.SubElement(etree.SubElement(toc, W + "r"), W + "instrText")
+    instruction.set(SPACE, "preserve")
+    instruction.text = ' TOC \\o "1-3" \\h '
+    separator = etree.SubElement(etree.SubElement(toc, W + "r"), W + "fldChar")
+    separator.set(W + "fldCharType", "separate")
+    text_run(toc, "1. Heading 1\t")
+    field(toc, child_code, "5")
+    end = etree.SubElement(etree.SubElement(toc, W + "r"), W + "fldChar")
+    end.set(W + "fldCharType", "end")
+    return package(document)
+
+
 def math(parent, value="x=2"):
     equation = OxmlElement("m:oMath")
     run = OxmlElement("m:r")
@@ -414,6 +438,33 @@ def test_nested_internal_field_fails_closed(simple_outer):
     inventory = refs.Inventory(package(document))
     with pytest.raises(ValueError, match="nested|structured"):
         inventory.require_safe()
+
+
+def test_direct_pageref_in_toc_result_is_supported_and_preserves_container():
+    baseline = toc_with_pageref()
+    inventory = refs.Inventory(baseline)
+    inventory.require_safe()
+    toc, page = inventory.fields
+    assert toc.kind == "TOC" and page.kind == "PAGEREF"
+    assert page.parent is toc and page.parent_phase == "result"
+    assert page.descriptor()["parent_ordinal"] == toc.ordinal
+
+    evaluated_inventory = refs.Inventory(baseline)
+    refs.set_result(evaluated_inventory.fields[1], "6")
+    candidate, report = refs.transplant(baseline, evaluated_inventory.updated())
+    checked = refs.Inventory(candidate)
+    checked.require_safe()
+    assert [field.text for field in checked.fields] == ["1. Heading 1\t", "6"]
+    assert report[0]["result"] == "6"
+    assert refs.check_delta(baseline, candidate)["field_result_delta"] == "checked"
+
+
+def test_other_nested_internal_fields_and_locked_toc_fail_closed():
+    with pytest.raises(ValueError, match="Unsupported nested field parent"):
+        refs.Inventory(toc_with_pageref(child_code="REF TocHeading \\h")).require_safe()
+
+    with pytest.raises(ValueError, match="Locked TOC container"):
+        refs.Inventory(toc_with_pageref(locked=True)).require_safe()
 
 
 @pytest.mark.parametrize("fault", ["unclosed", "unmatched_end", "orphan_separator", "no_separator", "structured_result", "missing_bookmark", "duplicate_bookmark"])

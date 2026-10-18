@@ -674,7 +674,7 @@ def audit_text(
                 _finding(
                     "DEFENSIVE_LIMITATION",
                     "warning",
-                    "“尚不能说明”类表述像自我免责；应移入内部调研台账，完成取证后再形成正式结论。",
+                    "复核这处限制是否有具体对象和来源、是否影响当前判断；必要限制保留，无信息的免责句删除。句式命中不代表应移入台账。",
                     line=paragraph.line,
                     section=paragraph.section,
                     excerpt=paragraph.text,

@@ -37,6 +37,40 @@ switch action
         ax=varargin{1}; txt=varargin{2}; out=findobj(ax,'Tag','test_plot_note');
         if isempty(out), out=text(ax,.98,.98,'','Units','normalized','HorizontalAlignment','right','VerticalAlignment','top','Tag','test_plot_note'); end
         set(out,'String',txt,'Interpreter','none','FontSize',max(7,ax.FontSize-1),'BackgroundColor','w','Margin',1);
+    case 'display'
+        % Optional display metadata only; input arrays are never modified.
+        ax=varargin{1}; options=varargin{2}; out=[];
+        names={'x_ticks','y_ticks','x_tick_labels','y_tick_labels'};
+        props={'XTick','YTick','XTickLabel','YTickLabel'};
+        for k=1:numel(names)
+            if isfield(options,names{k}), set(ax,props{k},options.(names{k})); end
+        end
+        if isfield(options,'x_label'), xlabel(ax,options.x_label,'Interpreter','none'); end
+        if isfield(options,'y_label'), ylabel(ax,options.y_label,'Interpreter','none'); end
+        if isfield(options,'note_lines')
+            if isempty(options.note_lines), delete(findobj(ax,'Tag','test_plot_note'));
+            else, Test_Project_Plot_Util('note',ax,options.note_lines); end
+        end
+        if isfield(options,'stage_label')
+            text(ax,.02,.95,options.stage_label,'Units','normalized', ...
+                'VerticalAlignment','top','Interpreter','none','FontSize',ax.FontSize, ...
+                'BackgroundColor','w','Margin',1,'Tag','test_plot_stage');
+        end
+        delete(findobj(ax,'Tag','test_plot_reference'));
+        if isfield(options,'reference_x')
+            ref=options.reference_x;
+            h=xline(ax,ref.value,'--',ref.label,'Color',[.5 .5 .5], ...
+                'FontSize',max(7,ax.FontSize-1),'Interpreter','none', ...
+                'LabelVerticalAlignment','middle');
+            h.HandleVisibility='off'; h.Tag='test_plot_reference';
+        end
+        if isfield(options,'reference_y')
+            ref=options.reference_y;
+            h=yline(ax,ref.value,':',ref.label,'Color',[.5 .5 .5], ...
+                'FontSize',max(7,ax.FontSize-1),'Interpreter','none', ...
+                'LabelHorizontalAlignment','left');
+            h.HandleVisibility='off'; h.Tag='test_plot_reference';
+        end
     case 'color'
         role=char(varargin{1}); out=[0 114 178]/255;
         if strcmpi(role,'Q'), out=[213 85 0]/255; end

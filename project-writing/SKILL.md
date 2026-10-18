@@ -15,7 +15,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 
 仅判断指标是否可行时，直接按下方指标资料回答，不触发写稿、建账本或主稿写入。需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。
 
-读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和只审不改任务再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
+读取 [共同质量规则](../writing-router/references/common-quality.md)。中文正文首次起草、续写、局部修改或审查前，同时读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)，按共同质量规则的“中文正文展示前检查”加载适用词表并逐批检查；同任务未变时沿用。英文仍在完整草稿、结构重写、终稿审校和只审不改任务时读取气味目录。
 
 私有样稿为 `D:\BaiduSyncdisk\.agents\writing-samples\project-writing.md`；只读取 `status: approved` 的正文，候选区不作为写作依据。公开的本技能不保存个人项目样稿。
 

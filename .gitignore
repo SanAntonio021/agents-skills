@@ -28,3 +28,9 @@ archive/cleanup-*/
 # OS
 Thumbs.db
 .DS_Store
+
+# Completed local task artifacts (workspace cleanup 2026-09-08)
+/过程文件/codex-relay-chain-workspace/
+/过程文件/docx-workspace/
+/过程文件/ieee-journal-submission-workspace/
+/过程文件/journal-submission-workspace/

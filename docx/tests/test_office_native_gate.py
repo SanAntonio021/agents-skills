@@ -68,9 +68,20 @@ class FakeWordApplication:
     def __init__(self, *, pages: int = 1) -> None:
         self.Documents = FakeDocuments(pages=pages)
         self.quit_calls = 0
+        self.Path = r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
+        self.Version = "16.0"
+        self.Caption = "Microsoft Word"
 
     def Quit(self) -> None:
         self.quit_calls += 1
+
+
+class FakeEngineApplication(FakeWordApplication):
+    def __init__(self, path: str, *, pages: int = 1) -> None:
+        super().__init__(pages=pages)
+        self.Path = path
+        self.Version = "16.0"
+        self.Caption = "Microsoft Word"
 
 
 class ProcessTimeline:
@@ -105,6 +116,7 @@ class OfficeNativeGateTests(unittest.TestCase):
         application: FakeWordApplication | None = None,
         require_render: bool = False,
         rasterizer=None,
+        dispatch_word_executable=None,
     ) -> tuple[dict[str, object], FakeWordApplication, FakeComRuntime, ProcessTimeline]:
         word = application or FakeWordApplication()
         runtime = FakeComRuntime()
@@ -119,6 +131,7 @@ class OfficeNativeGateTests(unittest.TestCase):
                 dispatch_ex=lambda progid: word,
                 com_runtime=runtime,
                 rasterizer=rasterizer,
+                dispatch_word_executable=dispatch_word_executable,
                 pid_observation_timeout_seconds=0,
                 process_exit_timeout_seconds=0,
             )
@@ -156,6 +169,25 @@ class OfficeNativeGateTests(unittest.TestCase):
         ownership = result["ownership"]
         self.assertEqual(ownership["owned_pids"], [4242])
         self.assertEqual(ownership["cleanup"]["status"], "CLEAN")
+
+    def test_wps_com_provider_falls_back_to_winword_executable(self) -> None:
+        wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")
+        word = FakeEngineApplication(r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE")
+        result, returned, _runtime, _timeline = self.run_docx_gate(
+            [[], [], [4242], []], application=wps,
+            dispatch_word_executable=lambda _path: word,
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["ownership"]["activation_identity"]["status"], "NON_MICROSOFT_PROVIDER")
+        self.assertEqual(result["ownership"]["fallback_identity"]["path"], word.Path)
+        self.assertIs(returned, wps)
+
+    def test_wps_provider_without_word_executable_is_unverified(self) -> None:
+        wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")
+        with patch.object(native_gate, "_installed_word_executable", return_value=None):
+            result, _returned, _runtime, _timeline = self.run_docx_gate([[], []], application=wps)
+        self.assertEqual(result["status"], "UNVERIFIED")
+        self.assertIn("WINWORD.EXE was not found", result["error"])
 
     def test_existing_word_pid_stops_before_dispatch(self) -> None:
         word = FakeWordApplication()

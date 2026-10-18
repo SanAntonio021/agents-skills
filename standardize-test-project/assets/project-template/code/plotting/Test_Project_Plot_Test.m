@@ -67,7 +67,10 @@ for page=1:pageCount
         'Color','w','MenuBar','none','ToolBar','none');
     cleanup=onCleanup(@() close(fig));
     if useGroups
-        [groupAxes,groupTitles,groupTop]=create_group_axes(fig,pageGroups,plotData.view.grid_size,sizePx);
+        displayBottom=.015; displayTop=.945;
+        if isfield(plotData.view,'caption_lines'), displayBottom=.095; end
+        if isfield(plotData.view,'subtitle'), displayTop=.925; end
+        [groupAxes,groupTitles,groupTop]=create_group_axes(fig,pageGroups,plotData.view.grid_size,sizePx,displayBottom,displayTop);
         annotation(fig,'textbox',[.012 .95 .976 .043],'String', ...
             opt(plotData.view,'title',profile_title(plotData.profile)), ...
             'EdgeColor','none','FontName','Microsoft YaHei','FontSize',max(12,sizePx(2)/65), ...
@@ -76,6 +79,16 @@ for page=1:pageCount
         layout=tiledlayout(fig,rows,cols,'TileSpacing','compact','Padding','compact');
         sgtitle(layout,opt(plotData.view,'title',profile_title(plotData.profile)), ...
             'FontName','Microsoft YaHei','FontSize',max(12,sizePx(2)/65),'Interpreter','none');
+    end
+    if isfield(plotData.view,'subtitle')
+        annotation(fig,'textbox',[.012 .930 .976 .024],'String',plotData.view.subtitle, ...
+            'EdgeColor','none','FontName','Microsoft YaHei','FontSize',max(8,sizePx(1)/190), ...
+            'HorizontalAlignment','center','Interpreter','none');
+    end
+    if isfield(plotData.view,'caption_lines')
+        annotation(fig,'textbox',[.025 .002 .95 .080],'String',plotData.view.caption_lines, ...
+            'EdgeColor','none','FontName','Microsoft YaHei','FontSize',max(8,sizePx(1)/185), ...
+            'HorizontalAlignment','left','VerticalAlignment','middle','Interpreter','none');
     end
     for j=1:n
         p=panels(take(j));
@@ -119,7 +132,7 @@ for page=1:pageCount
                 % Keep all scope divisions, but label only major positions.
                 ticks=ax.YTick; labels=compose('%.3g',ticks); labels(2:2:end)={''}; ax.YTickLabel=labels;
             else
-                yticks(ax,linspace(ax.YLim(1),ax.YLim(2),3));
+                if ~isfield(drawOptions,'y_ticks'), yticks(ax,linspace(ax.YLim(1),ax.YLim(2),3)); end
                 if contains(ax.YLabel.String,'dBm/Hz'), ylabel(ax,'dBm/Hz','Interpreter','none');
                 elseif contains(ax.YLabel.String,'dB(V²/Hz)'), ylabel(ax,'dB(V²/Hz)','Interpreter','none'); end
             end
@@ -152,10 +165,10 @@ if fid<0, error('TestProject:Plot:ViewWrite','Cannot write export view record.')
 closer=onCleanup(@() fclose(fid)); fprintf(fid,'%s\n',jsonencode(exportView));
 details.ViewPath=viewPath;
 end
-function [axesList,suppressTitle,hideXLabels]=create_group_axes(fig,groups,gridSize,sizePx)
+function [axesList,suppressTitle,hideXLabels]=create_group_axes(fig,groups,gridSize,sizePx,bottom,top)
 % Separate logical groups retain the proven reception dashboard hierarchy.
 axesList=gobjects(1,0); suppressTitle=false(1,0); hideXLabels=false(1,0);
-margin=.008; gap=.008; bottom=.015; top=.945;
+margin=.008; gap=.008;
 cw=(1-2*margin-(gridSize(2)-1)*gap)/gridSize(2);
 ch=(top-bottom-(gridSize(1)-1)*gap)/gridSize(1);
 for g=groups

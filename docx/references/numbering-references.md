@@ -62,6 +62,11 @@ stay inside one paragraph and wrap only the number span; they must not protect u
 paragraphs from later prose edits. Keep caption wording outside the number field, with readable
 cached results and copied run formatting.
 
+Native refresh supports one narrow nested-field shape: a `PAGEREF` that is a direct child in the
+result of a `TOC` field. The parent must be unlocked; the child must have a plain textual result and
+a valid bookmark target. Other nested internal fields, nested fields inside a `PAGEREF`, and nested
+fields in a TOC code remain unsupported.
+
 Bind each reference to an unambiguous source object identity. Duplicate labels, missing/deleted
 targets and unresolved range endpoints fail with locations; never choose the first match or silently
 retarget. Use an explicit mapping when it resolves the intended identity. A mapping cannot invent a
@@ -81,6 +86,8 @@ read-only checker unchanged. Only the refresh helper opens a writable isolated t
    a document or story, and never use an arbitrary field update loop.
 2. Require stable results within at most five passes. Locked/unsupported relevant fields, broken
    targets, update errors or non-convergence are non-pass; do not unlock fields or guess values.
+   Update direct TOC child `PAGEREF` fields individually; never update the outer `TOC` field as a
+   shortcut for page-number refresh.
 3. Save and reopen the temporary Word copy to verify persistence. Read result text from that saved
    package's OOXML, not COM `Result.Text`, avoiding string coercion and locale changes.
 4. Transplant only validated textual field results and permitted dirty state into the protected
@@ -88,11 +95,13 @@ read-only checker unchanged. Only the refresh helper opens a writable isolated t
    separately with the read-only native gate.
 
 Match OOXML and COM fields through independently built composite identities: story identifier,
-zero-based field-begin ordinal in that story's OOXML order, and normalized instruction text. Require
-a total bijection, never positional pairing alone. For text boxes in `mc:AlternateContent`, use
-`mc:Choice` as canonical and apply the same result to its `mc:Fallback` twin; Word exposes that story
-once, so do not count the twin as unmatched. Count differences, instruction mismatches, nested-field
-ordinal ambiguity, unmapped fields or unsupported result structures abort the entire transplant.
+zero-based field-begin ordinal in that story's OOXML order, normalized instruction text, and the
+parent ordinal/phase for an allowed nested field. Require a total bijection, never positional pairing
+alone. For a nested TOC page field, verify that the COM TOC result's child-field collection matches
+the expected `PAGEREF` children one-to-one. For text boxes in `mc:AlternateContent`, use `mc:Choice`
+as canonical and apply the same result to its `mc:Fallback` twin; Word exposes that story once, so do
+not count the twin as unmatched. Count differences, instruction mismatches, ambiguous parent/child
+mapping, unmapped fields or unsupported result structures abort the entire transplant.
 
 The refresh baseline is the prepared full document or the exact paragraph-stage output, not the
 original before authorized structural/prose edits. The field-scoped checker permits only textual
@@ -119,9 +128,16 @@ python scripts/document_versions.py run-check output.docx `
 
 Use the actual final record path returned by the finalizer, or the explicit `--record` path. A
 temporary-copy save/reopen proves convergence, not native acceptance of the delivered output.
-The wrapper calls the unchanged read-only native gate, using new-instance late-bound COM to avoid
-dependence on user-generated wrapper caches. Registration must identify Microsoft WINWORD.EXE;
-WPS compatibility registration is rejected before activation. No registry/cache repair is attempted.
+The wrapper calls the read-only native gate, using new-instance late-bound COM to avoid dependence on
+user-generated wrapper caches. It refuses pre-existing `WINWORD.EXE`; existing WPS background,
+preview or automation processes are recorded but do not block activation. The newly owned process
+must be `WINWORD.EXE`, and its executable path, the COM application's executable path and the
+registered Microsoft Word server path must match before opening a document. A newly started WPS
+provider is rejected; it is closed only
+when its process is proven task-owned and its document collection is empty. No registry/cache repair
+is attempted. The dispatcher validates the `Word.Application` registration but creates the COM
+instance from the fixed Microsoft Word CLSID with `CLSCTX_LOCAL_SERVER`, avoiding ProgID and
+conflicting WPS in-process provider resolution.
 Static field checks or merely setting `updateFields` do not prove refresh. Final passed delivery
 requires all applicable checks on the final saved hash; retain paragraph-stage evidence separately.
 
@@ -130,8 +146,12 @@ absent/unavailable, an existing user Word process (`UNSAFE_PROCESS`), missing CO
 mapping, locked fields, update or cleanup failure leave native refresh non-pass. Preserve the
 candidate where possible, with its constructed fields/cached values, and state the unfinished items;
 do not call it a final passed deliverable. Never substitute LibreOffice as the field evaluator.
-`Ctrl+A` + `F9` is fallback user advice only, not claimed completion or evidence that every story was
-refreshed. Do not attach to or close a user's Word process to make the operation pass.
+When WPS hijacks the COM provider, use `scripts/native_word_ui_refresh.py` with `--allow-office-ui`.
+It directly launches the registered `WINWORD.EXE`, verifies the owned PID and executable path, performs
+the UI refresh on an isolated copy, and publishes only validated `PAGEREF` result text. Its record is
+separate from the COM gate and uses `engine: "word-ui"`. The helper's guarded `Ctrl+A` + `F9` action is
+therefore recorded evidence, not an untracked manual fallback. Do not attach to or close a user's Word
+or WPS process to make the operation pass.
 
 Refresh alone does not require PDF/PNG or rendering. Keep the existing render requirements for full
 creation, template/layout changes and explicit layout checks. Report output/intermediate and record

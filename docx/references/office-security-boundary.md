@@ -2,7 +2,9 @@
 
 - LibreOffice headless operations run through `libreoffice-runner` with a unique `UserInstallation`. Direct launch of `soffice`, `soffice.exe`, or `soffice.com` is forbidden.
 - Word COM operations must be covered by the current document request and use the existing guard to prove ownership and isolation. Use an exclusive task-owned instance and read-only input copy for native checks; the limited refresh exception is below. Permission flags do not replace these checks, and no fixed user phrase is required.
-- An existing `WINWORD.EXE` causes the native gate's `UNSAFE_PROCESS`; do not connect to, close, save, or alter an existing instance. Continue safe file-level work.
+- An existing `WINWORD.EXE` blocks Word COM automation; existing WPS background, preview or automation processes are recorded but do not block activation. Do not connect to, close, save, or alter any existing Office instance. Continue safe file-level work unless a newly observed provider is proven to be task-owned and empty.
+- For Word, the newly observed task-owned process must be `WINWORD.EXE`; its readable executable path, COM `Application.Path`-derived executable, and registered `WINWORD.EXE` path must agree. If the process path cannot be read or does not match, fail closed before opening the document.
+- If WPS has hijacked `Word.Application`, the guarded `scripts/native_word_ui_refresh.py --allow-office-ui` route may launch the registered `WINWORD.EXE` directly. It must observe exactly the new Word PID, verify its executable path, operate on a disposable copy, close only that task-owned window normally, and leave all pre-existing WPS processes untouched. A missing Word PID or a path resolving to WPS is non-pass.
 - Keep gate temporary files under `%TEMP%/codex-docx-gates` or `%TEMP%/office-mcp-trials`. Reject symbolic links and path traversal in gate-managed temporary workspaces.
 - Protect source Markdown, templates and existing deliverables. Clean up only owned files and the current task's empty instance, proving exit before temporary-workspace cleanup.
 

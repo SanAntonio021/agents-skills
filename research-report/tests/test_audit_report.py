@@ -655,6 +655,13 @@ R-01：建议先补充认证条件。
         codes = {item["code"] for item in result["findings"]}
         self.assertIn("DEFENSIVE_LIMITATION", codes)
 
+    def test_limitation_warning_requires_judgment_instead_of_automatic_removal(self):
+        result = audit_report.audit_text('# 调研报告\n\n## 结果\n\n单发送端试验尚不能说明多发送端竞争时的性能。')
+        finding = next(item for item in result['findings'] if item['code'] == 'DEFENSIVE_LIMITATION')
+        self.assertEqual('warning', finding['severity'])
+        self.assertIn('必要限制保留', finding['message'])
+        self.assertIn('句式命中不代表应移入台账', finding['message'])
+
     def test_evidence_condition_belongs_in_internal_ledger(self):
         report = """# 调研报告
 

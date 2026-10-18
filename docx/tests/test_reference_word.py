@@ -36,10 +36,13 @@ class Collection:
 
 class FakeField:
     def __init__(self, instruction, start, *, result="old", locked=False,
-                 target="1", changing=False, nested=False, update_ok=True):
+                 target="1", changing=False, nested=False, update_ok=True,
+                 children=(), parent=None, parent_phase=None):
         self.Code = SimpleNamespace(Text=instruction, Start=start, Fields=Collection([object()] if nested else []))
-        self.Result = SimpleNamespace(Text=result, Fields=Collection())
+        self.Result = SimpleNamespace(Text=result, Fields=Collection(children))
         self.Locked = locked
+        self.parent = parent
+        self.parent_phase = parent_phase
         self.target = target
         self.changing = changing
         self.update_ok = update_ok
@@ -163,6 +166,9 @@ class FakeWordApplication:
     def __init__(self, source, ranges):
         self.source = source
         self.ranges = ranges
+        self.Name = "Microsoft Word"
+        self.Path = str(source.parent)
+        (source.parent / "WINWORD.EXE").write_bytes(b"fake Word executable")
         self.events = []
         self.Documents = FakeDocuments(self)
         self.Options = FakeOptions(self)
@@ -201,6 +207,8 @@ class ProcessTimeline:
         self.responses = list(responses)
 
     def __call__(self, image):
+        if image.casefold() == "wps.exe":
+            return []
         assert image == "WINWORD.EXE"
         assert self.responses, "unexpected PID probe"
         value = self.responses.pop(0)
@@ -219,11 +227,22 @@ def source(tmp_path):
 
 
 def descriptors(ranges):
+    ordered = {
+        story: sorted(rng.Fields.items, key=lambda item: item.Code.Start)
+        for story, rng in ranges.items()
+    }
+    ordinals = {
+        (story, id(field)): ordinal
+        for story, fields in ordered.items()
+        for ordinal, field in enumerate(fields)
+    }
     return [
         {"story": story, "ordinal": ordinal, "instruction": word_eval._normalize(field.Code.Text),
-         "kind": field.Code.Text.split()[0].upper(), "locked": bool(field.Locked)}
-        for story, rng in ranges.items()
-        for ordinal, field in enumerate(sorted(rng.Fields.items, key=lambda item: item.Code.Start))
+         "kind": field.Code.Text.split()[0].upper(), "locked": bool(field.Locked),
+         "parent_ordinal": ordinals.get((story, id(field.parent))) if field.parent is not None else None,
+         "parent_phase": field.parent_phase}
+        for story, fields in ordered.items()
+        for ordinal, field in enumerate(fields)
     ]
 
 
@@ -277,6 +296,44 @@ def test_dependency_order_save_reopen_options_and_owned_cleanup(source):
         "PasswordTemplate": "", "Revert": False, "WritePasswordDocument": "",
         "WritePasswordTemplate": "", "Visible": False, "OpenAndRepair": False, "NoEncodingDialog": True,
     }
+
+
+def test_direct_toc_pageref_children_are_bound_and_updated(source):
+    toc = FakeField('TOC \\o "1-3" \\h', 1, result="Heading 5")
+    page = FakeField("PAGEREF _Toc1 \\h", 10, target="6", parent=toc, parent_phase="result")
+    toc.Result.Fields = Collection([page])
+    result, app, _runtime = run(source, ranges={"main": FakeRange([toc, page])})
+
+    assert result["ok"] and result["status"] == "PASS"
+    assert result["persisted"]["field_count"] == 2
+    assert app.events.count("PAGEREF") == 2
+    assert "TOC" not in app.events
+    with ZipFile(result["evaluation_output"]) as package:
+        assert json.loads(package.read("test-results.json"))["main"] == ["Heading 5", "6"]
+
+
+def test_multiple_toc_pageref_children_keep_ordered_parent_mapping(source):
+    toc = FakeField('TOC \\o "1-3" \\h', 1, result="Heading 5 6")
+    pages = [
+        FakeField("PAGEREF _Toc1 \\h", 10, target="5", parent=toc, parent_phase="result"),
+        FakeField("PAGEREF _Toc2 \\h", 20, target="6", parent=toc, parent_phase="result"),
+    ]
+    toc.Result.Fields = Collection(pages)
+    result, app, _runtime = run(source, ranges={"main": FakeRange([toc, *pages])})
+
+    assert result["ok"] and result["persisted"]["field_count"] == 3
+    with ZipFile(result["evaluation_output"]) as package:
+        assert json.loads(package.read("test-results.json"))["main"] == ["Heading 5 6", "5", "6"]
+    assert "TOC" not in app.events
+
+
+def test_toc_child_collection_must_match_field_inventory(source):
+    toc = FakeField('TOC \\o "1-3" \\h', 1, result="Heading 5")
+    page = FakeField("PAGEREF _Toc1 \\h", 10, target="6", parent=toc, parent_phase="result")
+    result, app, _runtime = run(source, ranges={"main": FakeRange([toc, page])})
+
+    assert result["status"] == "UNSUPPORTED_NESTED_FIELD"
+    assert not any(event == "PAGEREF" for event in app.events)
 
 
 def test_nonconvergence_stops_at_five_without_save(source):
@@ -634,10 +691,23 @@ def test_native_dispatch_creates_new_late_bound_instance_without_cache_access(mo
     client = SimpleNamespace(DispatchEx=dispatch_ex, dynamic=SimpleNamespace(Dispatch=dynamic_dispatch))
     monkeypatch.setitem(sys.modules, "win32com", SimpleNamespace(client=client))
     monkeypatch.setitem(sys.modules, "win32com.client", client)
-    monkeypatch.setitem(sys.modules, "pythoncom", SimpleNamespace(IID_IDispatch=interface))
-    assert word_eval.native_dispatch("Word.Application") is dynamic_wrapper
+    local_server = object()
+    monkeypatch.setitem(
+        sys.modules,
+        "pythoncom",
+        SimpleNamespace(IID_IDispatch=interface, CLSCTX_LOCAL_SERVER=local_server),
+    )
+    application = word_eval.native_dispatch("Word.Application")
+    assert isinstance(application, word_eval._NativeWordApplication)
+    assert application._application is dynamic_wrapper
+    assert application._codex_expected_provider_path == Path("C:/Microsoft Office/WINWORD.EXE").resolve()
     registry_check.assert_called_once_with("Word.Application")
-    dispatch_ex.assert_called_once_with("Word.Application", resultCLSID=interface)
+    dispatch_ex.assert_called_once()
+    assert str(dispatch_ex.call_args.args[0]) == word_eval.WORD_APPLICATION_CLSID
+    assert dispatch_ex.call_args.kwargs == {
+        "resultCLSID": interface,
+        "clsctx": local_server,
+    }
     dynamic_dispatch.assert_called_once_with(ole_object)
 
 

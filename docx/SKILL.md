@@ -29,7 +29,7 @@ python <skill-root>\scripts\officecli_bridge.py validate input.docx
 python <skill-root>\scripts\officecli_bridge.py mutate input.docx draft.docx batch --input commands.json
 ```
 
-The bridge pins OfficeCLI `1.0.156` and verifies its existence, SHA-256, and reported version before
+The bridge pins OfficeCLI `1.0.157` and verifies its existence, SHA-256, and reported version before
 every invocation. Normal document work never downloads or repairs it. To repair the default local
 binary, run the following only when current authorization covers repair or an upgrade:
 `python <skill-root>\scripts\repair_officecli.py --repair`.
@@ -105,11 +105,21 @@ for a small update.
 Pass `--allow-office-com` for the Word operation covered by the current user request, only when the
 existing guard proves isolation. It refuses existing `WINWORD.EXE`, uses `DispatchEx`, opens an isolated read-only
 copy, checks the source hash, and quits only its own empty instance. Keep all these protections.
+The native gate must also record the actual application identity (`Path`, version, process image and
+owned PID). `Word.Application` alone is not proof of Microsoft Word: WPS may register the same COM
+class and may report a Word-like caption. If the COM object resolves outside Microsoft Office, the
+gate locates the installed `WINWORD.EXE` and starts a task-owned instance directly. WPS processes are
+observed as environment evidence and are never closed by the gate. A result is reported as Word
+native only when the owned executable path is Microsoft Word; WPS or LibreOffice results are
+compatibility/layout evidence and cannot satisfy a Word-native field-refresh requirement.
 When rendering, Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
 Never attach to or end a user's instance. The common reference finalizer has a narrowly scoped
 writable temporary-copy exception described in [Office security](references/office-security-boundary.md).
 If isolation is unavailable, continue file-level checks or suitable `libreoffice-runner` layout work;
-LibreOffice cannot substitute for native field refresh, which remains unfinished.
+LibreOffice cannot substitute for native field refresh, which remains unfinished. For documents with
+TOC, caption, sequence or cross-reference fields, attempt the native refresh after content edits and
+report each failed or unsupported field. A successful compatibility render does not imply that fields
+were refreshed.
 
 Record actual evidence: static validation does not establish rendering; LibreOffice rendering does
 not establish Word-native behavior. A failed OfficeCLI native diagnostic does not establish that

@@ -305,10 +305,10 @@ class DocumentVersionTests(unittest.TestCase):
         self.assertEqual(self.calls(), 0)
 
     def test_checker_source_identity_must_match_target(self) -> None:
-        for key in ("file", "source", "source_sha256", "source_sha256_before", "source_sha256_after"):
+        for key in ("file", "source", "output", "checked_document", "source_sha256", "source_sha256_before", "source_sha256_after"):
             with self.subTest(key=key):
                 self.generate()
-                value = str(self.root / "another.docx") if key in {"file", "source"} else "0" * 64
+                value = str(self.root / "another.docx") if key in {"file", "source", "output", "checked_document"} else "0" * 64
                 result = self.check(self.command({"ok": True, "status": "PASS", key: value}))
                 self.assertFalse(result["ok"])
                 self.assertEqual(result["status"], "CHECK_SOURCE_MISMATCH")
@@ -338,7 +338,7 @@ class DocumentVersionTests(unittest.TestCase):
         self.generate()
         rendered = self.root / "render.pdf"
         rendered.write_bytes(b"rendered pages")
-        command = self.command({"ok": True, "source": str(self.document), "output": str(rendered)})
+        command = self.command({"ok": True, "source": str(self.document), "check_output": str(rendered)})
         self.assertTrue(self.check(command)["ok"])
         rendered.write_bytes(b"different pages")
         self.assertFalse(versions.assess(versions.read_record(self.record), self.document)["reusable"])

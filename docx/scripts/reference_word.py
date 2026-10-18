@@ -29,12 +29,24 @@ WORD_OPTIONS = (
     "WarnBeforeSavingPrintingSendingMarkup",
 )
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+WORD_APPLICATION_CLSID = "{000209FF-0000-0000-C000-000000000046}"
 
 
 class EvaluationFailure(RuntimeError):
     def __init__(self, status: str, message: str):
         super().__init__(message)
         self.status = status
+
+
+class _NativeWordApplication:
+    """Carry the accepted COM registration path through the shared ownership gate."""
+
+    def __init__(self, application: Any, registered_path: Path) -> None:
+        self._application = application
+        self._codex_expected_provider_path = registered_path.resolve()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._application, name)
 
 
 def _registered_word_server(progid: str) -> Path:
@@ -58,6 +70,11 @@ def _registered_word_server(progid: str) -> Path:
             clsid = read_value(key, "", location)
         if not re.fullmatch(r"\{[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\}", clsid):
             raise EvaluationFailure("APP_UNAVAILABLE", f"{location} is not a valid CLSID")
+        if clsid.casefold() != WORD_APPLICATION_CLSID.casefold():
+            raise EvaluationFailure(
+                "APP_UNAVAILABLE",
+                f"{location} is not the Microsoft Word CLSID; activation refused",
+            )
         location = "HKCR Word.Application CLSID/LocalServer32"
         with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, rf"CLSID\{clsid}\LocalServer32", 0, winreg.KEY_READ) as key:
             try:
@@ -97,12 +114,21 @@ def _registered_word_server(progid: str) -> Path:
 
 def native_dispatch(progid: str) -> Any:
     """Create a new late-bound instance without repairing generated COM caches."""
-    _registered_word_server(progid)
+    registered_path = _registered_word_server(progid)
     from win32com.client import DispatchEx, dynamic
-    from pythoncom import IID_IDispatch
+    from pythoncom import CLSCTX_LOCAL_SERVER, IID_IDispatch
+    from pywintypes import IID
 
-    wrapper = DispatchEx(progid, resultCLSID=IID_IDispatch)
-    return dynamic.Dispatch(wrapper._oleobj_)
+    # Resolve the fixed Microsoft Word CLSID directly.  The ProgID is currently
+    # registered to Word but COM activation through Word.Application is hijacked
+    # by WPS on this host.
+    wrapper = DispatchEx(
+        IID(WORD_APPLICATION_CLSID),
+        resultCLSID=IID_IDispatch,
+        clsctx=CLSCTX_LOCAL_SERVER,
+    )
+    application = dynamic.Dispatch(wrapper._oleobj_)
+    return _NativeWordApplication(application, registered_path)
 
 
 def _normalize(value: str) -> str:
@@ -234,32 +260,61 @@ def _expected_map(expected: list[dict], aliases: dict[str, str]) -> dict:
         ordinal = descriptor["ordinal"]
         instruction = _normalize(descriptor["instruction"])
         kind, locked = descriptor["kind"], descriptor["locked"]
+        parent_ordinal = descriptor.get("parent_ordinal")
+        parent_phase = descriptor.get("parent_phase")
         if (story not in aliases or type(ordinal) is not int or ordinal < 0
                 or type(locked) is not bool or not instruction
                 or instruction.split()[0].upper() != kind):
             raise EvaluationFailure("FIELD_MAP_MISMATCH", f"invalid expected descriptor: {descriptor!r}")
+        if parent_ordinal is None:
+            if parent_phase is not None:
+                raise EvaluationFailure("UNSUPPORTED_NESTED_FIELD", f"invalid nested parent: {descriptor!r}")
+        elif (type(parent_ordinal) is not int or parent_ordinal < 0 or parent_ordinal >= ordinal
+              or parent_phase != "result"):
+            raise EvaluationFailure("UNSUPPORTED_NESTED_FIELD", f"invalid nested parent: {descriptor!r}")
         group = groups.setdefault(story, {})
         if ordinal in group:
             raise EvaluationFailure("FIELD_MAP_MISMATCH", f"duplicate expected ordinal: {story}/{ordinal}")
-        group[ordinal] = (instruction, kind, locked)
+        group[ordinal] = (instruction, kind, locked, parent_ordinal, parent_phase)
     canonical: dict[str, dict] = {}
     for story, group in groups.items():
         if sorted(group) != list(range(len(group))):
             raise EvaluationFailure("FIELD_MAP_MISMATCH", f"non-contiguous expected ordinals: {story}")
+        for ordinal, (_instruction, kind, _locked, parent_ordinal, parent_phase) in group.items():
+            if parent_ordinal is None:
+                continue
+            parent = group.get(parent_ordinal)
+            if (kind != "PAGEREF" or parent_phase != "result" or parent is None
+                    or parent[1] != "TOC" or parent[3] is not None):
+                raise EvaluationFailure(
+                    "UNSUPPORTED_NESTED_FIELD",
+                    f"only a direct PAGEREF in a TOC result is supported: {story}/{ordinal}",
+                )
+            if parent[2]:
+                raise EvaluationFailure("LOCKED_FIELD", f"locked TOC container: {story}/{ordinal}")
         key = aliases[story]
         if key in canonical and canonical[key] != group:
             raise EvaluationFailure("FIELD_MAP_MISMATCH", f"inconsistent alias inventory: {story}")
         canonical[key] = group
     return {
-        (story, ordinal, instruction): (kind, locked)
+        (story, ordinal, instruction): (kind, locked, parent_ordinal, parent_phase)
         for story, group in canonical.items()
-        for ordinal, (instruction, kind, locked) in group.items()
+        for ordinal, (instruction, kind, locked, parent_ordinal, parent_phase) in group.items()
     }
 
 
 def _bind(document: Any, expected: list[dict], stories: list[dict]) -> dict:
     ranges, aliases = _locate(document, stories)
     wanted = _expected_map(expected, aliases)
+    children_by_parent: dict[tuple, list[tuple]] = {}
+    for key, (_kind, _locked, parent_ordinal, _parent_phase) in wanted.items():
+        if parent_ordinal is None:
+            continue
+        parent_key = next(
+            candidate for candidate in wanted
+            if candidate[0] == key[0] and candidate[1] == parent_ordinal
+        )
+        children_by_parent.setdefault(parent_key, []).append(key)
     actual: dict[tuple, Any] = {}
     for story, story_range in ranges.items():
         fields = _items(story_range.Fields)  # Include unrelated fields in ordinals.
@@ -267,9 +322,8 @@ def _bind(document: Any, expected: list[dict], stories: list[dict]) -> dict:
         for field in fields:
             code, result = field.Code, field.Result
             text = code.Text
-            if (int(code.Fields.Count) or int(result.Fields.Count)
-                    or any(marker in text for marker in ("\x13", "\x14", "\x15"))):
-                raise EvaluationFailure("UNSUPPORTED_NESTED_FIELD", f"nested field in {story}")
+            if any(marker in text for marker in ("\x13", "\x14", "\x15")):
+                raise EvaluationFailure("UNSUPPORTED_NESTED_FIELD", f"nested marker in field code: {story}")
             ordered.append((int(code.Start), field, _normalize(text)))
         ordered.sort(key=lambda item: item[0])
         if len({start for start, _, _ in ordered}) != len(ordered):
@@ -280,7 +334,25 @@ def _bind(document: Any, expected: list[dict], stories: list[dict]) -> dict:
         missing, extra = sorted(wanted.keys() - actual.keys()), sorted(actual.keys() - wanted.keys())
         raise EvaluationFailure("FIELD_MAP_MISMATCH", f"field bijection failed; missing={missing!r}; extra={extra!r}")
     for key, field in actual.items():
-        kind, locked = wanted[key]
+        kind, locked, _parent_ordinal, _parent_phase = wanted[key]
+        code_fields = _items(field.Code.Fields)
+        result_fields = _items(field.Result.Fields)
+        expected_children = children_by_parent.get(key, [])
+        if code_fields or len(result_fields) != len(expected_children):
+            raise EvaluationFailure("UNSUPPORTED_NESTED_FIELD", f"nested field structure mismatch: {key!r}")
+        if expected_children:
+            observed = sorted(
+                ((int(child.Code.Start), child, _normalize(child.Code.Text)) for child in result_fields),
+                key=lambda item: item[0],
+            )
+            wanted_children = [actual[child_key] for child_key in expected_children]
+            wanted_children.sort(key=lambda child: int(child.Code.Start))
+            if any(
+                int(child.Code.Start) != int(expected_child.Code.Start)
+                or _normalize(child.Code.Text) != _normalize(expected_child.Code.Text)
+                for (_, child, _), expected_child in zip(observed, wanted_children)
+            ):
+                raise EvaluationFailure("FIELD_MAP_MISMATCH", f"nested child mapping failed: {key!r}")
         if kind in KINDS and (locked or bool(field.Locked)):
             raise EvaluationFailure("LOCKED_FIELD", f"locked field: {key!r}")
     return actual

@@ -109,6 +109,7 @@ class Field:
     phase: str = 'code'
     nested: bool = False
     parent: object = None
+    parent_phase: str | None = None
     unsafe_result: bool = False
 
     @property
@@ -133,7 +134,9 @@ class Field:
 
     def descriptor(self):
         return dict(story=self.story, ordinal=self.ordinal, instruction=self.instruction,
-                    kind=self.kind, locked=self.locked)
+                    kind=self.kind, locked=self.locked,
+                    parent_ordinal=self.parent.ordinal if self.parent is not None else None,
+                    parent_phase=self.parent_phase)
 
 
 def parse_fields(story):
@@ -148,7 +151,8 @@ def parse_fields(story):
             return
         if node.tag == W + 'fldSimple':
             item = Field(story.id, len(fields), node, [node.get(W + 'instr', '')],
-                         simple=True, phase='result', parent=stack[-1] if stack else None)
+                         simple=True, phase='result', parent=stack[-1] if stack else None,
+                         parent_phase=stack[-1].phase if stack else None)
             if stack:
                 stack[-1].nested = True
             fields.append(item)
@@ -161,7 +165,9 @@ def parse_fields(story):
         if node.tag == W + 'fldChar':
             kind = node.get(W + 'fldCharType')
             if kind == 'begin':
-                item = Field(story.id, len(fields), node, parent=stack[-1] if stack else None)
+                item = Field(story.id, len(fields), node,
+                             parent=stack[-1] if stack else None,
+                             parent_phase=stack[-1].phase if stack else None)
                 if stack:
                     stack[-1].nested = True
                 fields.append(item)
@@ -216,7 +222,10 @@ class Inventory:
                 else:
                     for a, b in zip(fs, other):
                         self.twins.setdefault(a.key, []).append(b)
-                        if b.kind in INTERNAL and (b.locked or b.nested or b.parent is not None or b.unsafe_result):
+                        if b.kind in INTERNAL and (
+                            b.locked or b.nested or b.unsafe_result or
+                            (b.parent is not None and not self._supported_toc_page_ref(b))
+                        ):
                             self.issues.append(f'Unsafe AlternateContent fallback field: {b.key}')
         self.bookmarks = {}
         for story in self.stories:
@@ -235,8 +244,12 @@ class Inventory:
             if f.kind in INTERNAL:
                 if f.locked:
                     self.issues.append(f'Locked field: {f.key}')
-                if f.nested or f.parent is not None or f.unsafe_result:
+                if f.nested or f.unsafe_result:
                     self.issues.append(f'Unsupported structured/nested field: {f.key}')
+                if f.parent is not None and not self._supported_toc_page_ref(f):
+                    self.issues.append(f'Unsupported nested field parent: {f.key}')
+                elif f.parent is not None and f.parent.locked:
+                    self.issues.append(f'Locked TOC container: {f.key}')
                 if not f.simple and f.separator is None:
                     self.issues.append(f'Field has no cached-result separator: {f.key}')
                 if f.kind in {'REF', 'PAGEREF'}:
@@ -244,6 +257,15 @@ class Inventory:
                     target = tokens[1].strip('"') if len(tokens) > 1 else ''
                     if target not in self.bookmarks:
                         self.issues.append(f'Missing reference target {target!r}: {f.key}')
+
+    @staticmethod
+    def _supported_toc_page_ref(field):
+        return (
+            field.kind == 'PAGEREF' and field.parent is not None and
+            field.parent.kind == 'TOC' and field.parent_phase == 'result' and
+            field.parent.parent is None and
+            not field.nested and not field.unsafe_result
+        )
 
     @staticmethod
     def _inside_other_box(node, root):

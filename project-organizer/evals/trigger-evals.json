@@ -23,5 +23,7 @@
   {"query":"把现有单个仓库从 GitHub 转移到 GitLab，要求保留 branches、tags、issues 导出和 CI 变量清单。工作区路径保持不变，不涉及多个目录归组。","should_trigger":false},
   {"query":"GitHub Project 看板里有 27 个 Done 条目，请按完成日期归档并保留里程碑链接。这是远端看板维护，不处理本机项目目录。","should_trigger":false},
   {"query":"扫描整个 D 盘并按文件扩展名自动分类所有内容，把文档、图片和压缩包移动到不同目录。我没有提供限定的项目来源，也不是在整理相关项目工作区。","should_trigger":false},
-  {"query":"这篇论文收到返修意见，需要新建 D:\\Papers\\Revision-2 工作区、复制期刊模板并整理回复信。原论文目录继续保留，本次没有多个散落来源需要合并。","should_trigger":false}
+  {"query":"这篇论文收到返修意见，需要新建 D:\\Papers\\Revision-2 工作区、复制期刊模板并整理回复信。原论文目录继续保留，本次没有多个散落来源需要合并。","should_trigger":false},
+  {"query":"建立一份本地个人资料主档，补齐根 README 的入口，并把现有个人荣誉说明改成引用主档；原始材料不搬动。请先盘点相关资料、设计主档结构并验证链接。","should_trigger":true},
+  {"query":"只把现有项目里的一个 Markdown 文件改几处文字并更新一个链接，不新建主档、不整理多个来源，也不迁移或退役目录。","should_trigger":false}
 ]

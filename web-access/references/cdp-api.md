@@ -47,7 +47,7 @@ snapshot/ref 不足时使用 CSS `/click`，必要时才用 `/eval`。结构化�
 
 连续浏览用 ref 点击；并行读取时，在同一 task 用 `POST /v2/tabs` 和完整 URL 新建自有 tab。Proxy 先创建空白页并初始化，再导航；popup 按 `openerId` 继承 task。带签名或会话参数的 URL 只在任务内部使用，不写入交付文本。
 
-折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；同源 Shadow DOM/iframe 必要时可用 CSS 或 `/eval`，不宣称可穿越所有 frame。页面显示“内容不存在”时结合实际地址和访问状态判断，不凭一句提示断定原内容已删除。
+折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；iframe 正文可按下方“iframe 正文读取”在隔离上下文中提取。同源 Shadow DOM/iframe 必要时可用 CSS 或 `/eval`，不宣称可穿越所有 frame。页面显示“内容不存在”时结合实际地址和访问状态判断，不凭一句提示断定原内容已删除。
 
 ### 文件与媒体资源入口
 
@@ -376,3 +376,10 @@ JavaScript dialog 默认保持待处理，不自动接受：
 task token 用于减少多个对话之间的误操作，不是本机安全边界。其他本地进程仍可能直接访问浏览器 CDP。Task/tab 逻辑隔离也不是独立 Profile、Cookie 或浏览器上下文隔离。
 
 Proxy 重启或 CDP 断线时，task、token、归属、session 和 ref 全部清空；浏览器 tab 不关闭，遗留 tab 降为用户 tab且不能被重新接管。首版不提供网络抓包、HAR、trace、下载管理或跨域 OOPIF ref。
+
+
+### iframe 正文读取
+
+在任务自有页面正文位于跨域 iframe 时，先用 `GET /v2/tabs/{id}/frames`（Bearer task token）列出该页面主文档的直接 iframe，再用 `POST /v2/tabs/{id}/frame-text`，JSON 为 `{"frameId":"列表中的 frameId"}`，带同一 token 与新幂等键读取标题、当前 URL 和最多 100000 字符正文。
+
+此回退只读取文本，不接受任意表达式、坐标或点击。每次重新验证 frame 属于当前 task 自有页；跨进程 iframe 使用子 session 的隔离 world，同进程 iframe 使用页面 session 的对应 world。列表不覆盖嵌套 iframe 或 shadow root，未加载 frameId 为 null；目标改变或不可用时重新列举，不猜 target ID。登录、密码、MFA 或访问限制仍按既有 handoff 边界处理，不能因读到了 iframe 就宣称已取得授权或完成用户动作。

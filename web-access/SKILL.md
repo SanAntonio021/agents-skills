@@ -68,3 +68,5 @@ metadata:
 - [旧 Proxy 迁移](references/migration-dual-proxy.2.md)：发现旧协议或确需迁移时读取。
 - [本地设计来源](references/browser-source-survey.md)与[上游来源登记](references/upstream-sources.md)：仅在维护或比较来源时读取。
 - `references/site-patterns/{domain}.md`：存在匹配站点资料时按需读取，以当前页面核实其适用性。本机专属资料沿用本机声明，不要求公开源码提供每个域名文件。只有用户要求维护技能或记录经验时才更新来源文件。
+
+iframe 正文在主页面提取不到时，可按 `references/cdp-api.md` 的“iframe 正文读取”使用 task 自有页面的 `/frames` 与 `/frame-text`；这是受限文本回退，不增加跨域 ref 或点击能力。

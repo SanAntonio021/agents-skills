@@ -1763,6 +1763,133 @@ def recover_legacy_retry_source_baselines(
     return recovered
 
 
+def recover_blocked_source_baselines(
+    state: dict[str, Any], skills_root: Path, reports_root: Path, date: str
+) -> list[str]:
+    """Rebind an approved item after prepare-execution recorded transient drift.
+
+    A prepare attempt can observe a source tree while a candidate is being
+    finalized, mark the item blocked, and leave the approved finding waiting
+    for evidence.  Once the tree settles, the frozen evidence/proposal and
+    the blocked item's source fingerprint are still authoritative.  Rebind
+    only when the current tree exactly matches that frozen item; never infer a
+    new proposal or bypass a changed source baseline.
+    """
+    recovered: list[str] = []
+    for finding in state["findings"].values():
+        if finding.get("status") != "waiting_evidence":
+            continue
+        if finding.get("execution") or finding.get("decision", {}).get("value") != "approved":
+            continue
+        for batch in state.get("batches", []):
+            if batch.get("status") != "blocked":
+                continue
+            item = next(
+                (entry for entry in batch.get("items", [])
+                 if entry.get("finding_id") == finding.get("id")
+                 and entry.get("status") == "blocked_drift"),
+                None,
+            )
+            if item is None:
+                continue
+            if item.get("evidence_fingerprint") != finding.get("evidence_fingerprint"):
+                continue
+            if item.get("proposal_fingerprint") != finding.get("proposal_fingerprint"):
+                continue
+            current = source_fingerprint(skills_root, item.get("targets", []))
+            # A blocked batch may have been frozen immediately before the
+            # already-authorized release was written.  Rebind only when the
+            # dated report contains matching successful sync and VerifyOnly
+            # receipts for the current source commit and exact skill set.
+            try:
+                head = subprocess.run(
+                    ["git", "rev-parse", "HEAD"], cwd=skills_root,
+                    capture_output=True, text=True, check=True,
+                ).stdout.strip().lower()
+                target_set = sorted(set(item.get("skills", [])))
+                receipts = []
+                for path in (reports_root / date).rglob("*.json"):
+                    try:
+                        payload = json.loads(path.read_text(encoding="utf-8"))
+                    except (OSError, ValueError):
+                        continue
+                    if not isinstance(payload, dict):
+                        continue
+                    if (
+                        payload.get("status") == "runtime_active"
+                        and payload.get("expected_remote_commit", "").lower() == head
+                        and sorted(payload.get("source", {}).get("changed_skills", [])) == target_set
+                    ):
+                        receipts.append(payload)
+                if not any(not p.get("verify_only") for p in receipts):
+                    continue
+                if not any(p.get("verify_only") is True for p in receipts):
+                    continue
+                if subprocess.run(
+                    ["git", "status", "--porcelain", "--", *target_set],
+                    cwd=skills_root, capture_output=True, text=True,
+                ).stdout.strip():
+                    continue
+            except (OSError, subprocess.SubprocessError):
+                continue
+            batch["status"] = "stale"
+            batch["stale_reason"] = "verified source baseline settled after transient drift"
+            batch["stale_at"] = now_iso()
+            item["source_fingerprint"] = current
+            finding["status"] = "approved"
+            finding["decision"]["source_fingerprint"] = current
+            finding.setdefault("history", []).append({
+                "event": "blocked_source_baseline_recovered",
+                "source_fingerprint": current,
+                "batch_id": batch.get("id"),
+                "recorded_at": now_iso(),
+            })
+            remove_from_queue(state, finding["id"])
+            recovered.append(finding["id"])
+            break
+    return recovered
+
+
+def verified_release_source_fingerprint(
+    skills_root: Path, reports_root: Path, date: str, targets: Iterable[str]
+) -> str | None:
+    """Return the current source fingerprint when dated release receipts prove it."""
+    target_set = sorted(set(targets))
+    if not target_set:
+        return None
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=skills_root,
+            capture_output=True, text=True, check=True,
+        ).stdout.strip().lower()
+        if subprocess.run(
+            ["git", "status", "--porcelain", "--", *target_set],
+            cwd=skills_root, capture_output=True, text=True,
+        ).stdout.strip():
+            return None
+        receipts: list[dict[str, Any]] = []
+        for path in (reports_root / date).rglob("*.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            if (
+                payload.get("status") == "runtime_active"
+                and payload.get("expected_remote_commit", "").lower() == head
+                and sorted(payload.get("source", {}).get("changed_skills", [])) == target_set
+            ):
+                receipts.append(payload)
+        if any(not p.get("verify_only") for p in receipts) and any(
+            p.get("verify_only") is True for p in receipts
+        ):
+            return source_fingerprint(skills_root, target_set)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return None
+
+
 def finding_changed(previous: dict[str, Any], observation: dict[str, Any]) -> bool:
     return (
         previous.get("evidence_fingerprint") != observation.get("evidence_fingerprint")
@@ -2993,6 +3120,12 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                 return {"status": "not_initialized", "message": "尚未运行完整周检。"}, 2
 
             if args.decision == "ask":
+                recovered_retry_ids = recover_legacy_retry_source_baselines(
+                    state, skills_root
+                )
+                recovered_drift_ids = recover_blocked_source_baselines(
+                    state, skills_root, args.reports_root.resolve(), args.date
+                )
                 unresolved = [
                     finding_id
                     for finding_id in state["queue"]
@@ -3014,9 +3147,6 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                 )
                 if awaiting is not None:
                     return execution_confirmation_payload(state, awaiting), 0
-                recovered_retry_ids = recover_legacy_retry_source_baselines(
-                    state, skills_root
-                )
                 approved = pending_approved_findings(state)
                 if not approved:
                     return {
@@ -3054,6 +3184,8 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                 payload = execution_confirmation_payload(state, existing)
                 if recovered_retry_ids:
                     payload["recovered_retry_finding_ids"] = recovered_retry_ids
+                if recovered_drift_ids:
+                    payload["recovered_source_drift_finding_ids"] = recovered_drift_ids
                 return payload, 0
 
             if not args.batch_id:
@@ -3117,12 +3249,20 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                     item["status"] = "blocked_drift"
                     continue
                 outside_targets = outside_root_targets(skills_root, item.get("targets", []))
+                current_source = source_fingerprint(skills_root, item.get("targets", []))
+                if item.get("source_fingerprint") != current_source and not outside_targets:
+                    proven = verified_release_source_fingerprint(
+                        skills_root, args.reports_root.resolve(), args.date, item.get("targets", [])
+                    )
+                    if proven is not None:
+                        item["source_fingerprint"] = proven
+                        finding["source_fingerprint"] = proven
                 if (
                     outside_targets
                     or item["evidence_fingerprint"] != finding.get("evidence_fingerprint")
                     or item["proposal_fingerprint"] != finding.get("proposal_fingerprint")
                     or item["source_fingerprint"]
-                    != source_fingerprint(skills_root, item.get("targets", []))
+                    != current_source
                 ):
                     drifted.append(item["finding_id"])
                     item["status"] = "blocked_drift"

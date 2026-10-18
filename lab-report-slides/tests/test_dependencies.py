@@ -37,8 +37,12 @@ class DependencyTests(unittest.TestCase):
     def test_missing_tools_are_named_and_fail(self):
         with self.simulated_environment(exists=False):
             result = deps.check_dependencies()
-        self.assertFalse(result["ok"])
-        self.assertEqual(set(result["missing"]), {"libreoffice_runner", "pdftoppm", "libreoffice"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["missing"], [])
+        self.assertEqual(set(result["optional"]) - {"powerpoint_com"},
+                         {"libreoffice_runner", "pdftoppm", "libreoffice"})
+        self.assertTrue(all(not result["optional"][name]["present"]
+                            for name in ("libreoffice_runner", "pdftoppm", "libreoffice")))
 
     def test_explicit_paths_override_discovery(self):
         overrides = {
@@ -53,8 +57,8 @@ class DependencyTests(unittest.TestCase):
         for name, variable in (("libreoffice_runner", "LAB_REPORT_LO_RUNNER"),
                                ("pdftoppm", "LAB_REPORT_PDFTOPPM"),
                                ("libreoffice", "LAB_REPORT_SOFFICE")):
-            self.assertEqual(result["required"][name]["source"], variable)
-            self.assertEqual(result["required"][name]["path"], str(Path(overrides[variable])))
+            self.assertEqual(result["optional"][name]["source"], variable)
+            self.assertEqual(result["optional"][name]["path"], str(Path(overrides[variable])))
 
     def test_invalid_override_does_not_fall_back(self):
         with patch.dict(deps.os.environ, {"LAB_REPORT_SOFFICE": "C:/missing.exe"}, clear=True):
@@ -69,8 +73,8 @@ class DependencyTests(unittest.TestCase):
         with self.simulated_environment(), patch.dict(deps.os.environ, {"ProgramFiles": "C:/Programs"}):
             with patch.object(deps.shutil, "which", return_value=None), patch.object(deps.Path, "is_file", new=lambda path: path == expected):
                 result = deps.check_dependencies()
-        self.assertEqual(result["required"]["libreoffice"]["path"], str(expected))
-        self.assertTrue(result["required"]["libreoffice"]["present"])
+        self.assertEqual(result["optional"]["libreoffice"]["path"], str(expected))
+        self.assertTrue(result["optional"]["libreoffice"]["present"])
 
     def test_old_python_and_wrong_platform_fail(self):
         with self.simulated_environment(), patch.object(deps.sys, "version_info", (3, 9, 9)), patch.object(deps.platform, "system", return_value="Linux"):
@@ -104,12 +108,21 @@ class DependencyTests(unittest.TestCase):
                     result = deps.check_dependencies(path)
         self.assertTrue(result["ok"])
         config = result["configuration"]
-        self.assertEqual(config["persistence"]["soffice"]["source"], "project config")
-        self.assertEqual(config["persistence"]["soffice"]["effective"], str(Path(directory) / "中文程序.exe"))
+        self.assertEqual(config["optional_rendering"]["persistence"]["soffice"]["source"], "project config")
+        self.assertEqual(config["optional_rendering"]["persistence"]["soffice"]["effective"], str(Path(directory) / "中文程序.exe"))
         self.assertEqual(config["persistence"]["soffice"]["user_status"], "unavailable")
         self.assertIsNone(config["persistence"]["soffice"]["session"])
         self.assertEqual(config["persistence"]["work_root"]["source"], "project config")
         self.assertTrue(result["interpreter"])
+
+    def test_bad_optional_renderer_does_not_block_default_dependencies(self):
+        missing = str(Path("C:/missing/soffice.exe"))
+        with self.simulated_environment(), patch.dict(deps.os.environ, {"LAB_REPORT_SOFFICE": "C:/missing/soffice.exe"}):
+            with patch.object(deps.Path, "is_file", new=lambda path: str(path) != missing):
+                result = deps.check_dependencies()
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["missing"], [])
+        self.assertFalse(result["optional"]["libreoffice"]["present"])
 
 
 if __name__ == "__main__":

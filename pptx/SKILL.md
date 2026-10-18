@@ -29,6 +29,8 @@ follow the selected skill's own generation steps, then return here for file acce
 For file-only work, use the local operations below; tool selection follows the same reference
 when an explicit tool choice or existing authoring project needs to be considered.
 
+**科研日报验收例外：** 当 `lab-report-slides` 处理每日汇报时，按该技能限定的轻量文件检查、一次 PowerPoint 原生打开/PNG 导出及页面快速扫查执行，不套用本技能更完整的 OOXML/字体或视觉审计，也不默认调用 LibreOffice。复杂模板、结构改动或检查发现异常时再升级。若 PowerPoint 原生检查受阻，可在轻量文件检查通过后交付候选稿并明确标记未验证，不接管用户窗口。此例外只适用于每日汇报；组会及其他 PPT 仍按本技能验收。
+
 Choose the authoring route once per task and retain it in the existing project record. A returned
 candidate enters **Acceptance layers** and the existing release checks directly; it does not restart
 route selection or the content discussion. Repair requests go back to that candidate's source
@@ -97,7 +99,7 @@ python <skill-root>\scripts\officecli_bridge.py validate input.pptx
 python <skill-root>\scripts\officecli_bridge.py mutate input.pptx draft.pptx batch --input commands.json
 ```
 
-The bridge pins OfficeCLI `1.0.156` and verifies its existence, SHA-256, and reported version before
+The bridge pins OfficeCLI `1.0.157` and verifies its existence, SHA-256, and reported version before
 every invocation. Normal presentation work never downloads or repairs it. To repair the default local
 binary, run the following only when current authorization covers repair or an upgrade:
 `python <skill-root>\scripts\repair_officecli.py --repair`.
@@ -188,7 +190,9 @@ or abnormally exited child, and any earlier failure remain unverified. The recei
 PowerPoint release, require `STATIC_PASS`, `NATIVE_OPEN_PASS`, `NATIVE_RENDER_PASS`, and inspection
 of the actual exported pages. LibreOffice is not a default additional gate. A blocked native check
 is not a completed delivery: finish independent file checks and state the specific unverified item
-without taking over a user window or promoting another renderer's output to native acceptance.
+without taking over a user window or promoting another renderer's output to native acceptance. The
+lab-report daily-report exception above may deliver a candidate after its lightweight file checks
+when this native gate is blocked, provided the unverified native state is explicit.
 
 ### Python runtime preflight
 

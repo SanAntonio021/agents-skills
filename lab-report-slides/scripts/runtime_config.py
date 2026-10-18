@@ -66,7 +66,7 @@ def user_environment(name):
         return {"user": None, "user_status": "unavailable", "user_error": str(exc)}
 
 
-def load_config(config_path=None, discovery_dir=None):
+def load_config(config_path=None, discovery_dir=None, *, include_render_tools=True):
     """Resolve env > one project file; callers discover absent executables.
 
     No parent search, environment writes, or directory creation is performed.
@@ -88,14 +88,17 @@ def load_config(config_path=None, discovery_dir=None):
     else:
         path = None
     result = {"path": str(path) if path else None, "values": {}, "sources": {}, "persistence": {}}
+    active_keys = set(ENVIRONMENT) if include_render_tools else {"work_root", "diagnostics_root"}
     for key, variable in ENVIRONMENT.items():
         project = None
-        if key in data:
+        if key in active_keys and key in data:
             project_path = Path(data[key]).expanduser()
             project = str((path.parent / project_path).resolve() if not project_path.is_absolute() else project_path.resolve())
         session = os.environ.get(variable)
-        result["persistence"][key] = {"session": session, "project": project, **user_environment(variable)}
-        value = session or project
+        active = key in active_keys
+        result["persistence"][key] = {"session": session, "project": project,
+                                      "active": active, **user_environment(variable)}
+        value = (session or project) if active else None
         if value:
             candidate = Path(value).expanduser()
             if key in ("work_root", "diagnostics_root"):

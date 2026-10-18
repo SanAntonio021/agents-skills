@@ -39,7 +39,7 @@ class RecoveryTests(unittest.TestCase):
                                        {'runner': {'ok': False, 'error': 'injected'}, 'stderr': '完整错误'})
         with patch.object(render, 'export_pptx', side_effect=export):
             with self.assertRaises(render.RenderFailure) as error:
-                render.render(self.deck, self.root, 'report', html_preview=html_preview)
+                render.render(self.deck, self.root, 'report', pdf_render=True, html_preview=html_preview)
         return error.exception.manifest
 
     @staticmethod
@@ -92,7 +92,8 @@ class RecoveryTests(unittest.TestCase):
     def test_html_preview_is_opt_in_and_embeds_the_rendered_pages(self):
         for enabled in (False, True):
             with self.subTest(html_preview=enabled), patch.object(render, 'export_pptx', side_effect=self.export_ok):
-                result = render.render(self.deck, self.root, 'preview', html_preview=enabled)
+                result = render.render(self.deck, self.root, 'preview', daily_report=not enabled,
+                                       html_preview=enabled)
             self.assertEqual(result['html_preview'], enabled)
             self.assertEqual('html' in result['files'], enabled)
             self.assertEqual('html' in result['stages'], enabled)
@@ -137,7 +138,7 @@ class RecoveryTests(unittest.TestCase):
     def test_html_failure_retains_intent_without_claiming_a_generated_file(self):
         def occupy_html(pptx, pdf, pages, **kwargs):
             self.export_ok(pptx, pdf, pages, **kwargs)
-            pdf.with_suffix('.html').write_text('User content', encoding='utf-8')
+            (Path(pptx).parent / (Path(pptx).stem + '.html')).write_text('User content', encoding='utf-8')
         with patch.object(render, 'export_pptx', side_effect=occupy_html):
             with self.assertRaises(render.RenderFailure) as error:
                 render.render(self.deck, self.root, 'occupied', html_preview=True)
@@ -154,14 +155,30 @@ class RecoveryTests(unittest.TestCase):
 
     def test_cli_preview_defaults_and_overrides(self):
         for mode in ('deck', 'resume-manifest'):
-            for flags, expected in [([], False if mode == 'deck' else None),
+            for flags, expected in [([], None),
                                     (['--html-preview'], True), (['--no-html-preview'], False)]:
                 with self.subTest(mode=mode, flags=flags):
                     args = ['--' + mode, 'input.json', '--output-dir', str(self.root), '--base-name', 'cli', *flags]
                     target = 'render' if mode == 'deck' else 'resume_render'
                     with patch.object(render, target, return_value={'ok': True}) as call, contextlib.redirect_stdout(io.StringIO()):
                         self.assertEqual(render.main(args), 0)
-                    self.assertEqual(call.call_args.kwargs['html_preview'], expected)
+                    self.assertEqual(call.call_args.kwargs['html_preview'],
+                                     (False if mode == 'deck' else None) if expected is None else expected)
+                    self.assertEqual(call.call_args.kwargs['pdf_render'], None)
+                    if mode == 'deck':
+                        self.assertFalse(call.call_args.kwargs['daily_report'])
+        with patch.object(render, 'render', return_value={'ok': True}) as call, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(render.main(['--deck', 'input.json', '--output-dir', str(self.root), '--base-name', 'daily', '--daily-report']), 0)
+        self.assertTrue(call.call_args.kwargs['daily_report'])
+        self.assertIsNone(call.call_args.kwargs['pdf_render'])
+        with patch.object(render, 'render', return_value={'ok': True}) as call, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(render.main(['--deck', 'input.json', '--output-dir', str(self.root), '--base-name', 'daily', '--daily-report', '--pdf-render']), 0)
+        self.assertTrue(call.call_args.kwargs['daily_report'])
+        self.assertTrue(call.call_args.kwargs['pdf_render'])
+        for flag, expected in [('--pdf-render', True), ('--no-pdf-render', False)]:
+            with patch.object(render, 'resume_render', return_value={'ok': True}) as call, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(render.main(['--resume-manifest', 'input.json', '--output-dir', str(self.root), '--base-name', 'cli', flag]), 0)
+            self.assertEqual(call.call_args.kwargs['pdf_render'], expected)
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
             render.main(['--resume-manifest', 'failed.json', '--html-preview', '--no-html-preview'])
         self.assertEqual(error.exception.code, 2)
@@ -169,7 +186,7 @@ class RecoveryTests(unittest.TestCase):
     def test_generation_failure_is_reported_and_not_resumable(self):
         with patch.object(render, 'make_pptx', side_effect=ValueError('generation failed')):
             with self.assertRaises(render.RenderFailure) as error:
-                render.render(self.deck, self.root, 'generation')
+                render.render(self.deck, self.root, 'generation', daily_report=True)
         result = error.exception.manifest
         self.assertEqual(result['failed_stage'], 'pptx')
         self.assertFalse(Path(result['files']['pptx']).exists())
@@ -205,7 +222,7 @@ class RecoveryTests(unittest.TestCase):
         stderr = io.StringIO()
         with patch.object(render, 'atomic_write_json', side_effect=PermissionError('disk denied')), contextlib.redirect_stderr(stderr):
             with self.assertRaises(render.RenderFailure) as error:
-                render.render(self.deck, self.root, 'no-manifest')
+                render.render(self.deck, self.root, 'no-manifest', daily_report=True)
         self.assertIn('recovery is not confirmed', str(error.exception))
         self.assertEqual(error.exception.manifest['failed_stage'], 'manifest')
         self.assertFalse((self.root / 'no-manifest.manifest.json').exists())
@@ -223,7 +240,7 @@ class RecoveryTests(unittest.TestCase):
             return actual(path, payload)
         with patch.object(render, 'atomic_write_json', side_effect=write), contextlib.redirect_stderr(io.StringIO()):
             with self.assertRaises(render.RenderFailure) as error:
-                render.render(self.deck, self.root, 'partial')
+                render.render(self.deck, self.root, 'partial', daily_report=True)
         self.assertEqual(error.exception.manifest['failed_stage'], 'manifest')
         saved = json.loads((self.root / 'partial.manifest.json').read_text(encoding='utf-8'))
         self.assertEqual(saved['stages']['pptx'], 'passed')

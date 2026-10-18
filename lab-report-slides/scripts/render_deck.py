@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create editable lab-report PPTX slides and render that PPTX for inspection."""
+"""Create editable reports; daily mode skips LibreOffice compatibility rendering."""
 
 from __future__ import annotations
 
@@ -579,7 +579,8 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         if details:
             _save_diagnostic(manifest, name, details)
         if status == "passed":
-            paths = [manifest["files"]["pdf"]] if name == "libreoffice" else manifest["files"]["png"]
+            paths = ([manifest["files"]["pdf"]] if name == "libreoffice" and "pdf" in manifest["files"]
+                     else manifest["files"].get("png", []) if name == "png" else [])
             for item in paths:
                 manifest["file_hashes"][item] = file_hash(item)
         _write_manifest(path, manifest)
@@ -600,8 +601,20 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         inspect_pptx(pptx, manifest["slide_count"])
         manifest["stages"]["structure"] = "passed"
         _write_manifest(path, manifest)
-        export_pptx(pptx, Path(manifest["files"]["pdf"]), [Path(p) for p in manifest["files"]["png"]],
-                    config=config, stage_callback=signal)
+        if manifest["pdf_render"] or manifest["html_preview"]:
+            work = Path(config["values"]["work_root"]) if config["values"].get("work_root") else None
+            temporary_pdf = None
+            if "pdf" in manifest["files"]:
+                pdf_path = Path(manifest["files"]["pdf"])
+            else:
+                temporary_pdf = tempfile.TemporaryDirectory(prefix="lab-report-pdf-", dir=work)
+                pdf_path = Path(temporary_pdf.name) / "render.pdf"
+            try:
+                export_pptx(pptx, pdf_path, [Path(p) for p in manifest["files"]["png"]],
+                            config=config, stage_callback=signal)
+            finally:
+                if temporary_pdf is not None:
+                    temporary_pdf.cleanup()
         if manifest["html_preview"]:
             stage = "html"
             images = "".join(f'<img alt="{html.escape(title, quote=True)}" src="data:image/png;base64,{base64.b64encode(Path(p).read_bytes()).decode()}" />'
@@ -618,7 +631,7 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         if template_check:
             template_check()
         manifest["ok"] = True
-        manifest["status"] = "rendered_visual_pending"
+        manifest["status"] = "rendered_visual_pending" if "png" in manifest["files"] else "native_pending"
         _write_manifest(path, manifest)
         return manifest
     except Exception as exc:
@@ -639,25 +652,33 @@ def _run_outputs(manifest, config, generate=None, template_check=None, expected_
         WORK_ROOT.reset(token)
 
 
-def _new_manifest(output_dir, stem, requested_stem, count, titles, config, *, html_preview=False):
+def _new_manifest(output_dir, stem, requested_stem, count, titles, config, *, pdf_render=False, html_preview=False):
     manifest = {"schema_version": 3, "ok": False, "status": "running", "requested_stem": requested_stem,
             "stem": stem, "slide_count": count, "slide_titles": titles, "render_source": "pptx",
-            "html_preview": html_preview,
+            "pdf_render": pdf_render, "html_preview": html_preview,
             "editable_text": True, "independent_images": True, "assets": [], "file_hashes": {},
             "config": config, "stages": {name: "not_run" for name in
-                       ("pptx", "structure", "libreoffice", "png", "visual", "powerpoint")},
+                       ("pptx", "structure", "visual", "powerpoint")},
             "files": {"pptx": str(output_dir / f"{stem}.pptx"),
-                      "pdf": str(output_dir / f"{stem}.pdf"),
-                      "manifest": str(output_dir / f"{stem}.manifest.json"),
-                      "png": [str(output_dir / f"{stem}_{i:02d}.png") for i in range(1, count + 1)]}}
+                      "manifest": str(output_dir / f"{stem}.manifest.json")}}
+    if pdf_render or html_preview:
+        manifest["stages"].update({"libreoffice": "not_run", "png": "not_run"})
+        manifest["files"]["png"] = [str(output_dir / f"{stem}_{i:02d}.png") for i in range(1, count + 1)]
+    if pdf_render:
+        manifest["files"]["pdf"] = str(output_dir / f"{stem}.pdf")
     if html_preview:
         manifest["stages"]["html"] = "not_run"
     return manifest
 
 
-def render(deck_path, output_dir, requested_stem, *, config_path=None, template_test=False, html_preview=False):
+def render(deck_path, output_dir, requested_stem, *, config_path=None, template_test=False,
+           daily_report=False, pdf_render=None, html_preview=False):
     deck_path, output_dir = Path(deck_path).resolve(), Path(output_dir).resolve()
-    config = load_config(config_path, discovery_dir=deck_path.parent)
+    if pdf_render is None:
+        pdf_render = not daily_report
+    pdf_render = pdf_render or template_test
+    config = load_config(config_path, discovery_dir=deck_path.parent,
+                         include_render_tools=pdf_render or html_preview)
     deck = json.loads(deck_path.read_text(encoding="utf-8-sig"))
     if deck.get("template_spec"):
         spec_path = Path(deck["template_spec"]).expanduser()
@@ -666,13 +687,18 @@ def render(deck_path, output_dir, requested_stem, *, config_path=None, template_
     output_dir.mkdir(parents=True, exist_ok=True)
     with reserve_stem(output_dir, requested_stem) as stem:
         return render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem,
-                              config=config, template_test=template_test, html_preview=html_preview)
+                              config=config, template_test=template_test,
+                              pdf_render=pdf_render, html_preview=html_preview)
 
 
-def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *, config=None, template_test=False, html_preview=False):
-    config = config if config is not None else load_config(discovery_dir=Path(deck_path).parent)
+def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *, config=None,
+                   template_test=False, pdf_render=False, html_preview=False):
+    pdf_render = pdf_render or template_test
+    config = config if config is not None else load_config(
+        discovery_dir=Path(deck_path).parent, include_render_tools=pdf_render or html_preview)
     manifest = _new_manifest(output_dir, stem, requested_stem, len(slides),
-                             [str(s.get("title", "")) for s in slides], config, html_preview=html_preview)
+                             [str(s.get("title", "")) for s in slides], config,
+                             pdf_render=pdf_render, html_preview=html_preview)
     manifest.update(source_deck=str(deck_path), template_test=template_test)
     # Read template metadata inside generation so failures still get a stage receipt.
     def generate():
@@ -682,21 +708,25 @@ def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *,
                         template_check=lambda: _check_template(manifest["template"]))
 
 
-def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config_path=None, html_preview=None):
-    """Reuse the retained PPTX; None inherits HTML intent, including older v3 manifests."""
+def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config_path=None,
+                  pdf_render=None, html_preview=None):
+    """Reuse the retained PPTX and resume only an explicitly requested export."""
     manifest_path = Path(manifest_path).resolve()
     previous = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     if previous.get("schema_version") != 3 or previous.get("failed_stage") not in {"libreoffice", "png", "html"}:
         raise ValueError("--resume-manifest requires a version 3 rendering failure; regenerate or repeat the relevant manual check")
     if html_preview is None:
         html_preview = previous.get("html_preview", bool(previous.get("files", {}).get("html")))
+    if pdf_render is None:
+        pdf_render = previous.get("pdf_render", bool(previous.get("files", {}).get("pdf")))
     pptx = Path(previous["files"]["pptx"])
     if previous.get("stages", {}).get("pptx") != "passed" or file_hash(pptx) != previous.get("pptx_sha256"):
         raise ValueError("PPTX hash/state changed; regenerate before rendering")
     count = inspect_pptx(pptx, previous["slide_count"])
     explicit = config_path or previous.get("config", {}).get("path")
     discovery = Path(previous.get("source_deck") or manifest_path).parent
-    config = load_config(explicit, discovery_dir=discovery)
+    config = load_config(explicit, discovery_dir=discovery,
+                         include_render_tools=pdf_render or html_preview)
     root = Path(output_dir).resolve() if output_dir else manifest_path.parent
     root.mkdir(parents=True, exist_ok=True)
     # This is a durable project output, not a private OS temporary directory.
@@ -712,7 +742,8 @@ def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config
         raise FileExistsError("Cannot reserve a unique rendering attempt directory")
     stem = requested_stem or previous["requested_stem"]
     stem = choose_stem(attempt, stem)
-    manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config, html_preview=html_preview)
+    manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config,
+                             pdf_render=pdf_render, html_preview=html_preview)
     manifest["files"]["pptx"] = str(pptx)
     for key in ("source_deck", "template", "template_test", "assets"):
         if key in previous:
@@ -730,25 +761,37 @@ def main(argv=None):
     parser.add_argument("--base-name")
     parser.add_argument("--config")
     parser.add_argument("--template-test", action="store_true")
+    parser.add_argument("--daily-report", action="store_true",
+                        help="Use the daily-report lightweight render path (no LibreOffice by default)")
+    pdf = parser.add_mutually_exclusive_group()
+    pdf.add_argument("--pdf-render", dest="pdf_render", action="store_true",
+                     help="Explicitly export PDF and inspection PNGs through LibreOffice")
+    pdf.add_argument("--no-pdf-render", dest="pdf_render", action="store_false",
+                     help="Skip PDF export when resuming an older failed export")
     previews = parser.add_mutually_exclusive_group()
     previews.add_argument("--html-preview", dest="html_preview", action="store_true",
                           help="Also generate an HTML viewer of the rendered PPTX pages")
     previews.add_argument("--no-html-preview", dest="html_preview", action="store_false",
                           help="Disable HTML output, including when resuming an HTML-enabled attempt")
+    parser.set_defaults(pdf_render=None)
     parser.set_defaults(html_preview=None)
-    parser.epilog = "HTML is off for new decks. Resume inherits the failed manifest's setting unless a preview flag is supplied."
+    parser.epilog = "PDF, HTML and LibreOffice rendering are opt-in. Resume inherits prior export settings unless overridden."
     args = parser.parse_args(argv)
     if args.deck and (not args.output_dir or not args.base_name):
         parser.error("--deck requires --output-dir and --base-name")
     if args.resume_manifest and args.template_test:
         parser.error("--template-test is only valid with --deck")
+    if args.resume_manifest and args.daily_report:
+        parser.error("--daily-report is only valid with --deck; resume inherits the manifest settings")
     try:
         if args.resume_manifest:
             result = resume_render(args.resume_manifest, args.output_dir, args.base_name,
-                                   config_path=args.config, html_preview=args.html_preview)
+                                   config_path=args.config, pdf_render=args.pdf_render,
+                                   html_preview=args.html_preview)
         else:
             result = render(args.deck, args.output_dir, args.base_name,
                             config_path=args.config, template_test=args.template_test,
+                            daily_report=args.daily_report, pdf_render=args.pdf_render,
                             html_preview=args.html_preview is True)
         emit_json(result)
         return 0

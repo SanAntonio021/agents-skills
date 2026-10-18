@@ -110,7 +110,7 @@ class RenderDeckTests(unittest.TestCase):
                     target.write_bytes(b'changed while exporting')
                 with patch.object(render_deck, 'make_pptx', side_effect=make), patch.object(render_deck, 'export_pptx', side_effect=export):
                     with self.assertRaisesRegex(render_deck.RenderFailure, 'changed during report rendering'):
-                        render_deck.render_outputs({'template_spec': str(spec)}, [{'title': 'Test'}], root / 'deck.json', root, 'report', 'report')
+                        render_deck.render_outputs({'template_spec': str(spec)}, [{'title': 'Test'}], root / 'deck.json', root, 'report', 'report', pdf_render=True)
                 manifest = json.loads((root / 'report.manifest.json').read_text(encoding='utf-8'))
                 self.assertEqual(manifest['stages']['structure'], 'failed')
                 self.assertFalse(manifest['ok'])
@@ -173,13 +173,17 @@ class RenderDeckTests(unittest.TestCase):
                 "slides": [{"title": "测试结果", "status": "已完成", "blocks": [{"type": "text", "text": "完成测试"}, {"type": "image", "path": str(image), "caption": "结果图"}]}]
             }, ensure_ascii=False), encoding="utf-8")
             output = base / "out"
-            manifest = render_deck.render(deck, output, "20260715")
+            with patch.object(render_deck, "export_pptx", side_effect=AssertionError("daily generation must not render")):
+                manifest = render_deck.render(deck, output, "20260715", daily_report=True)
 
             self.assertEqual(manifest["slide_count"], 1)
             self.assertFalse((output / "20260715.html").exists())
             self.assertFalse(manifest["html_preview"])
+            self.assertFalse(manifest["pdf_render"])
             self.assertNotIn("html", manifest["files"])
-            self.assertTrue((output / "20260715.pdf").stat().st_size > 0)
+            self.assertNotIn("pdf", manifest["files"])
+            self.assertNotIn("png", manifest["files"])
+            self.assertFalse((output / "20260715.pdf").exists())
             self.assertTrue(zipfile.is_zipfile(output / "20260715.pptx"))
             presentation = Presentation(output / "20260715.pptx")
             slide = presentation.slides[0]
@@ -188,15 +192,53 @@ class RenderDeckTests(unittest.TestCase):
             self.assertEqual(1, len(pictures))
             self.assertLess(pictures[0].height, presentation.slide_height * 0.8)
             self.assertEqual(manifest["render_source"], "pptx")
+            self.assertEqual(manifest["status"], "native_pending")
+            self.assertEqual(manifest["stages"]["structure"], "passed")
             self.assertTrue(manifest["editable_text"])
             self.assertEqual(manifest["assets"][0]["path"], str(image.resolve()))
-            with Image.open(output / "20260715_01.png") as rendered:
-                self.assertEqual(rendered.size, (1600, 900))
-            second = render_deck.render(deck, output, "20260715", html_preview=True)
+            def export(pptx, pdf, pages, **kwargs):
+                pdf.write_bytes(b"temporary PDF")
+                for page in pages:
+                    Image.new("RGB", (1600, 900), "white").save(page)
+                kwargs["stage_callback"]("libreoffice", "passed", {})
+                kwargs["stage_callback"]("png", "passed", {})
+            with patch.object(render_deck, "export_pptx", side_effect=export):
+                second = render_deck.render(deck, output, "20260715", daily_report=True, html_preview=True)
             self.assertEqual(second["stem"], "20260715_v2")
             self.assertTrue((output / "20260715_v2.pptx").exists())
             self.assertTrue((output / "20260715_v2.html").stat().st_size > 0)
+            self.assertNotIn("pdf", second["files"])
+            self.assertFalse((output / "20260715_v2.pdf").exists())
             self.assertEqual(second["stages"]["html"], "passed")
+
+    def test_daily_generation_ignores_invalid_optional_renderer_configuration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = root / "deck.json"
+            deck.write_text(json.dumps({"allow_text_only": True,
+                "slides": [{"title": "日报", "body": "轻量文件检查"}]}), encoding="utf-8")
+            with patch.dict("os.environ", {"LAB_REPORT_SOFFICE": str(root / "missing-soffice.exe")}):
+                result = render_deck.render(deck, root / "out", "daily", daily_report=True)
+            self.assertEqual(result["status"], "native_pending")
+            self.assertFalse((root / "out" / "daily.pdf").exists())
+
+    def test_group_generation_keeps_compatibility_render_by_default(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = root / "deck.json"
+            deck.write_text(json.dumps({"allow_text_only": True,
+                "slides": [{"title": "组会", "body": "完整验收流程"}]}), encoding="utf-8")
+            def export(pptx, pdf, pages, **kwargs):
+                pdf.write_bytes(b"group PDF")
+                for page in pages:
+                    Image.new("RGB", (1600, 900), "white").save(page)
+                kwargs["stage_callback"]("libreoffice", "passed", {})
+                kwargs["stage_callback"]("png", "passed", {})
+            with patch.object(render_deck, "export_pptx", side_effect=export):
+                result = render_deck.render(deck, root / "out", "group")
+            self.assertTrue((root / "out" / "group.pdf").is_file())
+            self.assertEqual(len(result["files"]["png"]), 1)
+            self.assertEqual(result["status"], "rendered_visual_pending")
 
     def test_summary_body_and_numbered_next_steps_use_separate_editable_regions(self):
         with tempfile.TemporaryDirectory() as temp:

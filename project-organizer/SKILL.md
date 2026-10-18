@@ -1,6 +1,6 @@
 ---
 name: project-organizer
-description: 新建普通项目目录并建立 README、AGENTS，按用途组织正式内容和临时过程文件；也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
+description: 新建普通项目目录并建立 README、AGENTS，或建立长期资料主档并补齐项目级 README 入口；按用途组织正式内容和临时过程文件。也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
 compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports local drive-letter paths only.
 ---
 

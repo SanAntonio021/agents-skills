@@ -2,6 +2,7 @@
 // web-access dual-proxy.2: task-scoped CDP proxy protocol v2.
 
 import crypto from 'node:crypto';
+import { createPageFrames, FrameError } from './page-frames.mjs';
 import http from 'node:http';
 import os from 'node:os';
 import { URL } from 'node:url';
@@ -1400,6 +1401,12 @@ async function taskComplete(task, keep) {
   });
 }
 
+// Preserve the single local CDP connection owner and normalize its response shape.
+const pageFrames = createPageFrames({
+  send: async (...args) => ({ result: await sendCDP(...args) }),
+  ensureSession,
+});
+
 async function fallbackEval(sessionId, expression) {
   const result = await sendCDP('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
   if (result.exceptionDetails) throw new ApiError(400, 'EVAL_FAILED', result.exceptionDetails.text || 'Evaluation failed.');
@@ -1496,7 +1503,7 @@ async function handleRoute(req, parsed, rawBody) {
     return jsonResponse(200, await listTaskTabs(task));
   }
 
-  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|set-files|setFiles|scroll|screenshot))?$/.exec(pathname);
+  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|set-files|setFiles|scroll|screenshot|frames|frame-text))?$/.exec(pathname);
   if (!tabMatch) throw new ApiError(404, 'NOT_FOUND', 'Endpoint was not found.');
   const targetId = decodeURIComponent(tabMatch[1]);
   const operation = tabMatch[2] || null;
@@ -1542,6 +1549,14 @@ async function handleRoute(req, parsed, rawBody) {
     finally { release(); }
   }
 
+  if (operation === 'frames' && req.method === 'GET') {
+    const release = acquireTarget(task, targetId);
+    try {
+      if (dialogs.has(targetId)) throw new ApiError(409, 'DIALOG_OPEN', 'Handle the JavaScript dialog before reading frames.');
+      return jsonResponse(200, { frames: await pageFrames.listFrames(targetId) });
+    } finally { release(); }
+  }
+
   if (operation === 'screenshot' && req.method === 'GET') {
     if (parsed.searchParams.has('file')) throw new ApiError(400, 'OUTPUT_PATH_DISABLED', 'Proxy does not accept local screenshot paths.');
     const format = parsed.searchParams.get('format') || 'png';
@@ -1564,6 +1579,24 @@ async function handleRoute(req, parsed, rawBody) {
     }
     if (operation === 'action') return jsonResponse(200, await performAction(task, targetId, body));
     if (operation === 'wait') return jsonResponse(200, await waitForCondition(task, targetId, body));
+    if (operation === 'frame-text') {
+      // The frame must be rediscovered beneath this owned page for every request.
+      // No caller expression, target/session override, or action is accepted here.
+      if (Object.keys(body).some(key => key !== 'frameId')) throw new ApiError(400, 'INVALID_FRAME_REQUEST', 'frame-text accepts frameId only.');
+      let frame;
+      try { frame = await pageFrames.frameContext(targetId, body.frameId); }
+      catch (error) {
+        if (error instanceof FrameError) throw new ApiError(400, 'INVALID_FRAME', error.message);
+        throw error;
+      }
+      const result = await sendCDP('Runtime.evaluate', {
+        expression: '({ title: document.title, url: location.href, text: (document.body?.innerText || "").slice(0, 100000) })',
+        returnByValue: true,
+        contextId: frame.contextId,
+      }, frame.sessionId);
+      if (result.exceptionDetails) throw new ApiError(400, 'FRAME_READ_FAILED', result.exceptionDetails.text || 'Frame reading failed.');
+      return jsonResponse(200, { frameId: body.frameId, crossProcess: frame.frame.crossProcess, value: result.result?.value });
+    }
     const sessionId = await ensureSession(targetId);
     if (operation === 'dialog') {
       const current = dialogs.get(targetId);

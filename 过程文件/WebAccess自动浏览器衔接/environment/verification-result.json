@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-09-12T06:54:37.324Z",
+  "passed": true,
+  "checks": [
+    "five-plain-http-fixtures-match-contract",
+    "existing-check-deps-reuses-isolated-proxy",
+    "session-token-hidden-task-id-available",
+    "real-edge-blocked",
+    "real-edge-dynamic",
+    "real-edge-known-dynamic",
+    "real-edge-denied",
+    "raw-request-response-logs-and-token-redaction"
+  ],
+  "finishedAt": "2026-09-12T06:54:46.256Z"
+}

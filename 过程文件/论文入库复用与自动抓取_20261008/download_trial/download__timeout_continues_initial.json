@@ -1,0 +1,192 @@
+{
+  "/case": {
+    "name": "download__timeout_continues",
+    "facts": "资料库无目标父条目。每次 saveTx 在提交前延迟 1400 ms；客户端断开不取消 JS。",
+    "process": {
+      "pid": 52084,
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "startedAt": "2026-10-08T13:47:18.596Z",
+      "case": "download__timeout_continues",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "contextCreatedAt": "2026-10-08T13:49:57.901Z",
+      "restartCount": 0,
+      "liveTaskCount": 0
+    },
+    "controls": {
+      "saveDelayMs": 1400,
+      "failNextImport": false
+    },
+    "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+    "inputs": [
+      {
+        "itemType": "journalArticle",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001",
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+      }
+    ]
+  },
+  "/process": {
+    "pid": 52084,
+    "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+    "startedAt": "2026-10-08T13:47:18.596Z",
+    "case": "download__timeout_continues",
+    "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+    "contextCreatedAt": "2026-10-08T13:49:57.901Z",
+    "restartCount": 0,
+    "liveTaskCount": 0
+  },
+  "/libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "/collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "/items": [],
+  "/settings": {
+    "zoteroscihub.automatic_pdf_download": true
+  },
+  "/tasks": [],
+  "/logs": [
+    {
+      "time": "2026-10-08T13:44:00.393Z",
+      "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+      "case": "download__timeout_continues",
+      "action": "fixture.seed",
+      "facts": "资料库无目标父条目。每次 saveTx 在提交前延迟 1400 ms；客户端断开不取消 JS。",
+      "initialAutomatic": true,
+      "simulated": true
+    },
+    {
+      "time": "2026-10-08T13:49:57.902Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.905Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/process",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.908Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/libraries",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.911Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/collections",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.913Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/items",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.913Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.read.items",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:49:57.915Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.917Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/tasks",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.919Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__timeout_continues",
+      "action": "http.request",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "method": "GET",
+      "path": "/cases/download__timeout_continues/logs",
+      "query": {}
+    }
+  ]
+}

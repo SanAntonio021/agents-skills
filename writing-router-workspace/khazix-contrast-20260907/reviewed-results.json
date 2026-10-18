@@ -1,0 +1,2879 @@
+{
+  "planned": 72,
+  "completed": 72,
+  "missing": [],
+  "excluded": [],
+  "rows": [
+    {
+      "key": "codex/local/summary-power/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\summary-power\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-2da9-79c1-80d3-7061b1941f80",
+      "output_sha256": "b602ce912616ea083c1428a155830fa050b14c5bb742d39ca39fe6ff753b8608",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 16.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/summary-power/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\summary-power\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-7e04-7750-9d61-2c2f8ba5f784",
+      "output_sha256": "fc252312e5787180cece9c2d74c805109ae8000d0eb239f7e0c58be20cc1254e",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 16.4,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "fail",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "结尾又附温升测试未进行，该状态不改变本句标称功耗比较；这是简洁问题，不是事实错误。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/summary-power/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\summary-power\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c41-e05f-7e83-8574-34f64e2b0233",
+      "output_sha256": "240d1e4d218c22edc0052fe0927efbaa04fd65a386b74be1e9296689f2cddb00",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 12.1,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/summary-power/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\summary-power\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-f9e2-7432-9aec-82a50659143e",
+      "output_sha256": "1cb651e0ff66aa4372f919373401eec9e79537c23ee56eab1df41a437bba6acf",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.3,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/summary-power/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\summary-power\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c45-4f2a-7980-b6e9-36067bd04a34",
+      "output_sha256": "459d870c7fe3b55a157884a560695dd3d24625cd735187857e80a9d8bc57ebf6",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "fail",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "结尾又附温升测试未进行，该状态不改变本句标称功耗比较；这是简洁问题，不是事实错误。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/summary-power/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\summary-power\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-802e-7a51-85ad-691fccf3c1d2",
+      "output_sha256": "8e2cd2ae6309e7646c93bf22ce5076e2d4c1b1418692328e07b03ba5f7c75a83",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 11.1,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/summary-temperature/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\summary-temperature\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-6edf-7e72-8d7c-ccb93c65ddfa",
+      "output_sha256": "b270a62d20fd00837d804374ef3fa855e5bc75850844b4b694362a90f681892f",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/summary-temperature/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\summary-temperature\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-be8c-7423-8a9e-24204ff46c32",
+      "output_sha256": "26a540029cba27f9cacbf44ccfc0e19a35c63e00f7979c6d25beea229a838062",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.5,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/summary-temperature/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\summary-temperature\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-0dc8-7012-94e7-e9b602511b4d",
+      "output_sha256": "3403e307cd84ec5034d226484f95e044166b27c9bbf7731b173d10400a93c6d7",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.4,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/summary-temperature/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\summary-temperature\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-c45a-7e92-9178-e011b576a041",
+      "output_sha256": "86009f7b4952e120e5ca50f6e584150f30dad41a4c8d234f0c8b0eb3d15e758f",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 13.6,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/summary-temperature/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\summary-temperature\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c45-12c8-7392-a229-5faf31271f30",
+      "output_sha256": "ab0182279c318f7f6ca61985385e2b6e11a5aa0eb1689d828c72c6c57f4dce84",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/summary-temperature/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\summary-temperature\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-4740-7082-98f1-ea60c9d07244",
+      "output_sha256": "3403e307cd84ec5034d226484f95e044166b27c9bbf7731b173d10400a93c6d7",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "full",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/technical-switch/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\technical-switch\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-b4fa-7a92-a176-c0a16f1a6101",
+      "output_sha256": "4e70c4b50ef44177d37eb908381ca9ff768faa4d76c57234cb6578eafa794ead",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.9,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "b36ce6e4ab44",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留25 ms、接收功率连续4次低于-62 dBm、增益提高2 dB及调整后等8 ms再读取；空格变化不影响数值与单位。仅单通道台架测试及双通道未测试限制完整，空话和重复总结已删，无新增内容。"
+      }
+    },
+    {
+      "key": "codex/khazix/technical-switch/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\technical-switch\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-faf7-7111-89d1-232729a05280",
+      "output_sha256": "ddc043f905006845238c2c261e01cbfeabf34b79f3e77a084e37cfb5ed50882c",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 19.6,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "review_required",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "采纳匿名复审疑点：“尚未测试”改成“尚未验证”，未明确保留测试未开展这一状态。不判为已证实事实错误，也不计入通过。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "e97e41224990",
+        "facts": "review_required",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "25 ms读取周期、连续4次低于-62 dBm时提高2 dB、调整后等待8 ms再读取均保留，当前仅完成单通道台架测试也保留。‘尚未验证双通道同时工作的情况’不如原文‘尚未测试’明确，可能被理解为测试已开展但验证未完成，需复核或恢复原措辞。空话与重复总结已删，无新增独立事实、效果或改写说明。"
+      }
+    },
+    {
+      "key": "codex/examples/technical-switch/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\technical-switch\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-4673-7301-8cbb-b6405d144a22",
+      "output_sha256": "90c5f3450fcc8428280eebc3a4e0a3660e2ebae464716ad887f131784e2ca299",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "30d542a20df7",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留25 ms、连续4次低于-62 dBm、提高2 dB及调整后等待8 ms再读功率的次序；删除‘先’不影响‘调整后等待……再读取’的顺序。单通道台架已完成、双通道同时工作未测试均保留；空话与重复总结已删除，未新增内容。"
+      }
+    },
+    {
+      "key": "codex/local/technical-switch/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\technical-switch\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-8c0c-7c32-90bf-ede0a0e0c20e",
+      "output_sha256": "f4a1525be809866a5ada29baf90355f69a8699476e2785cb9d98741cc0ba38b2",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 14.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "f686b96ba6c3",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "‘若……则……’保留连续4次低于-62 dBm的触发条件；25 ms周期、提高2 dB及调整后等待8 ms再读取的次序完整。仅单通道台架测试、双通道同时工作尚未测试均保留；开头预告和重复总结已删，无新增效果或说明。"
+      }
+    },
+    {
+      "key": "codex/khazix/technical-switch/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\technical-switch\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-d4bb-7c70-bd16-5b5eb8410288",
+      "output_sha256": "2fea742af43a609469dc211dfe7f4be5c8b1973b1a0eaab5f0fbaf72daa725e1",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "review_required",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "采纳匿名复审疑点：“尚未测试”改成“尚未验证”，未明确保留测试未开展这一状态。不判为已证实事实错误，也不计入通过。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "d7904f5f793d",
+        "facts": "review_required",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "25 ms、连续4次低于-62 dBm触发提高2 dB、随后等待8 ms再读取的条件和次序完整，单通道台架限制保留。但‘双通道……尚未测试’改为‘尚未验证’：后者可能指尚未开展验证，也可能包括做过测试但未完成验证，不能同样明确地交代测试尚未开展，需复核或恢复‘尚未测试’。空话和重复总结已删，未新增性能效果或说明。"
+      }
+    },
+    {
+      "key": "codex/examples/technical-switch/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\technical-switch\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-fc5b-7a32-8664-f80187ac7908",
+      "output_sha256": "85e85bf2170091e32f87f754e6aaadbd25200eec5b79799949c0277d17100d9e",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 19.4,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "36037b731375",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "‘连续4次读数均低于’准确保留连续性和严格低于-62 dBm的条件；25 ms周期、提高2 dB、调整后等待8 ms再读取均未变。保留仅单通道台架测试及双通道未测试限制；删除预告与重复总结，无新增效果。"
+      }
+    },
+    {
+      "key": "codex/local/technical-retry/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\technical-retry\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-f058-7212-85c8-2603f82a3bb7",
+      "output_sha256": "ee62add0a89add0eb29b1dbe4fcb35d3ba106b4d190cd45d8d05c86373ef6bb3",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "4d47c6897dc9",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条、先查序号、重复返回原结果且不执行对应动作、断电清空及‘无法据此识别’的限定。‘先执行动作并写入处理记录，再返回结果’可按动作、记账、返回的普通顺序理解，不能仅凭‘并’判为并行。重要性说明和重复分支解释已删，无新增机制或保证。"
+      }
+    },
+    {
+      "key": "codex/khazix/technical-retry/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\technical-retry\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-486c-73e3-a36b-98bac69aa1a9",
+      "output_sha256": "ba35c4bfd4c53adc6ea17b68ae0a07af680eeb86dcaedb49701a2f9bc2dae1bc",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 16.5,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "1173060cb88e",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条记录、先查序号、重复时返回原结果且不再执行对应动作，以及断电清空记录。‘先执行动作并写入处理记录，再返回结果’按普通顺序表述理解，未出现并行或提前记账的依据；‘无法据此识别’仍只否定依靠这些记录识别。已删除重要性空话和两分支的重复解释；未新增机制、效果保证或改写说明。"
+      }
+    },
+    {
+      "key": "codex/examples/technical-retry/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\technical-retry\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-8041-75b3-a24f-a39b92c8a4b8",
+      "output_sha256": "906be641e485c9121e26d36e1293393a27ee4d3113e4839ca27784bd0b4d6285",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "8262957e6b0d",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条、先查序号、重复时返回原结果且不执行该报文动作。‘先完成动作并写入处理记录，再返回结果’按完成动作、记账、返回的顺序理解，无并行依据；断电清空及‘不能据此识别’完整。已删重要性空话和重复解释，无新增保证或说明。"
+      }
+    },
+    {
+      "key": "codex/local/technical-retry/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\technical-retry\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-47fd-7250-9e86-b3ed2bcb2f4e",
+      "output_sha256": "3912723b9759e3ef6b80a6d78b553a8ac0c6a7bc6135b99fa54e06a9e8084c3c",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.6,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "e798bd644391",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条、先查询、重复返回原结果不执行对应动作及断电清空。‘先执行动作并写入处理记录，再返回结果’按普通顺序理解，无依据判成并行；‘无法据此识别’仍限定为不能使用这些记录识别。空话和重复解释已删，未新增机制或效果保证。"
+      }
+    },
+    {
+      "key": "codex/khazix/technical-retry/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\technical-retry\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-96fd-7f72-b253-52f4aeb310c9",
+      "output_sha256": "f43c04988e9b1a5056e4ac6484cb8eb38bf7990ec9c8f6af60ea683aaad062dd",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "删去了“据此”，把不能根据这64条记录识别，扩大成重启后不能识别此前报文，未保护原文否定范围。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "85bafda591c0",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "最近64条、先查序号、重复返回原结果不执行，以及‘先执行动作，再写入处理记录，最后返回结果’均准确。但末句‘重启后无法识别断电前已处理的报文’缺失‘据此’，将特定记录失效扩大为无条件的识别能力否定，可能排除原文未讨论的其他机制。空话和重复解释已删；未另加独立内容，范围扩大计入facts。"
+      }
+    },
+    {
+      "key": "codex/examples/technical-retry/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\technical-retry\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-b82b-7e51-8f3c-b6438fb5dd17",
+      "output_sha256": "72407cfcf62b8de7aa9af1612a2042b8e542b9b9a938576e3fbbb3d077efba21",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 16.8,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "7937794022f4",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "最近64条及先查询、重复返回原结果不再执行对应动作、断电清空等事实完整。‘执行动作并写入处理记录，再返回结果’是可接受的普通顺序表述，未明示并行或倒序；‘无法据此识别’保留记录这一依据范围。空话及重复分支解释已删，未新增内容。"
+      }
+    },
+    {
+      "key": "codex/local/heading-jitter/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\heading-jitter\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-3511-7f60-8665-52f60b94d4f5",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 13.9,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/heading-jitter/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\heading-jitter\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-88e1-7461-8374-510951b91950",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 12.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/heading-jitter/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\heading-jitter\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c42-c558-7b71-9dc2-1056ed7b0180",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 16.7,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/heading-jitter/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\heading-jitter\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-f95d-75a1-89da-412e008d8dc7",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 20.1,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/heading-jitter/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\heading-jitter\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-62af-7d53-b1ea-e82f7eca724c",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 13.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/heading-jitter/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\heading-jitter\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-880e-7821-a760-0257461b3f35",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 12.4,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/heading-loss/repeat-1",
+      "host": "codex",
+      "arm": "local",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\local\\heading-loss\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-6c73-7e60-ab29-7e6c3f4f33fb",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 22.8,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/heading-loss/repeat-1",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\khazix\\heading-loss\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-b9f8-7750-a1d8-08986a1f5a1a",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 27.9,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/heading-loss/repeat-1",
+      "host": "codex",
+      "arm": "examples",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\codex\\examples\\heading-loss\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-0684-7e73-9a42-78c4368e0c02",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 16.4,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/local/heading-loss/repeat-2",
+      "host": "codex",
+      "arm": "local",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\local\\heading-loss\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-c556-7d70-90de-4e3a313e5c0e",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 13.0,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/khazix/heading-loss/repeat-2",
+      "host": "codex",
+      "arm": "khazix",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\khazix\\heading-loss\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c44-27eb-7db0-90f7-b1d0f698f4d6",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 14.8,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "codex/examples/heading-loss/repeat-2",
+      "host": "codex",
+      "arm": "examples",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\codex\\examples\\heading-loss\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "session": "01a07c43-47cb-78d3-a4ab-9927524831e0",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 16.4,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/summary-power/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\summary-power\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "135cb8d6-6288-48ff-be15-57c291a3b2ce",
+      "output_sha256": "be91795cc39d55361a2f5445c2132f59dd0f43671c81659d11bc0547f5bff193",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 41.5,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/summary-power/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\summary-power\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "07766381-a7b5-4cd7-89b9-ad082282f916",
+      "output_sha256": "85fd163515a157e28004f2422b67aed23bc7956e125fa5837841e64994422032",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 23.4,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/summary-power/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\summary-power\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "1e6a01d1-3991-4376-ad2c-198258ec8952",
+      "output_sha256": "7e4a56cab9fe2846f3cdb1a5f7044b15d056bbdb4c240761ac86db2b305af9c1",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 39.8,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/summary-power/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\summary-power\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "6d58277b-2d95-4b2f-9c94-4cc958ee2252",
+      "output_sha256": "8efb809e53c3551421f9a8372dd7d0eb71738e57a032cf141540d5363d4babaa",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 49.6,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/summary-power/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\summary-power\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "bc80cf8a-1b44-4b7a-ae29-67246276dbf9",
+      "output_sha256": "6552dc3444890a592aaf3d350e7742cdb6ecbae2543878b1f2f74b0e9031cfdf",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 15.9,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/summary-power/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "summary-power",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\summary-power\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "09c9ae67-5b83-46f0-a4c5-34828ecc8853",
+      "output_sha256": "734f8b1c4de73463f6edf71ac63d8d93beb74f175ff19a72efb9879cd56dbcaf",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 22.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "保留标称功耗范围、仅R符合与不超过12 W的要求；没有新增采购或整体可用结论。",
+          "没有附上温升测试状态。保留其余两款的功耗数值也不直接判差。"
+        ],
+        "user_accepted": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/summary-temperature/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\summary-temperature\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "c016ad2c-13c0-43cc-bc42-122f144e645b",
+      "output_sha256": "1677f76577451e09fdf06215ed49e88c0402ba15974bcee0dbd2e89f2723bffa",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 26.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/summary-temperature/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\summary-temperature\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "1cc0f782-feaf-46cf-ade1-3ff4f59cd0f2",
+      "output_sha256": "5830797a140183e390d679efbc58e1e017a1c14223ccaf4eb3e6777a252480bd",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 20.6,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/summary-temperature/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\summary-temperature\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "d9140f90-1eeb-4f95-b7dd-acc46ab819b8",
+      "output_sha256": "ee907e7509e6ca9e124135a43af8ae94ea270c8b2ccc9c422d7f2c2c02250a16",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 88.5,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/summary-temperature/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\summary-temperature\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "a02bb231-f746-423e-ae71-d20bf251f287",
+      "output_sha256": "281224106c0a8d1135db36f2edd57c488318373fc36cad1a56b76a2ebeff2f74",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 41.0,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/summary-temperature/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\summary-temperature\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "6332931e-1d86-4a34-85b8-c84494514d4f",
+      "output_sha256": "7fdd8992276bfb821a6df7adb826c7e0459afd9219826c4b03376d5a7442f1a7",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_summary",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 24.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/summary-temperature/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "summary-temperature",
+      "category": "summary",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\summary-temperature\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "bfd3fe6f-50c5-4aa4-bde4-a68d7172ec49",
+      "output_sha256": "eaa2581baca2e11ae1adc323ac2dfac7808275c9be5db9bf15470661a5e1e532",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 36.1,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "没有将两个测试温度点扩大成全温区验证；准确摘要不因省略未测事项直接判事实错。",
+          "题目“得到验证的温度条件”存在只问成功测试点的合理理解，完整覆盖差异仅记录，不用于判断候选是否更善于保留必要限制。"
+        ],
+        "user_accepted": false,
+        "coverage": "partial",
+        "coverage_comparison_eligible": false,
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/technical-switch/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\technical-switch\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "fb56b164-cdad-4530-8913-5ceb730f9af4",
+      "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 36.8,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "19e8ca296e62",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "25 ms读取周期、连续4次低于-62 dBm才提高2 dB、调整后先等8 ms再复测均保留；仅完成单通道台架测试、双通道同时工作尚未测试的限制完整。开头预告与流程重复总结均删除，无新增效果或说明。"
+      }
+    },
+    {
+      "key": "claude/khazix/technical-switch/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\technical-switch\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "ed5e2833-662d-44c6-846e-95a478dc07cb",
+      "output_sha256": "d5364c29f062112707de4f32480d15c36ea6a46896dfd09a3ac68ae56453cb0a",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 19.0,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "fail",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "采纳匿名复审意见：仍有“接收链路增益调整流程如下”的写作预告，属于轻微精简遗漏。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "9d500a30f8ae",
+        "facts": "pass",
+        "concision": "fail",
+        "extra_content": false,
+        "notes": "25 ms、连续4次低于-62 dBm、提高2 dB、调整后等8 ms再复测，以及单通道台架已完成、双通道未测试均完整，无新增事实。但开头‘接收链路增益调整流程如下：’仍是可删除的写作预告，未落实删除开头预告的检查要求；其余泛泛说明和重复总结已删除。"
+      }
+    },
+    {
+      "key": "claude/examples/technical-switch/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\technical-switch\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "8706c16f-a137-4575-8545-2a7a4b3259de",
+      "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 25.7,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "981afe8b5c7d",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "25 ms、连续4次低于-62 dBm时提高2 dB、调整后先等8 ms再读功率均原样保留；仅完成单通道台架测试、双通道同时工作未测试的限制完整。删除开头预告和重复流程总结，无新增效果或说明。"
+      }
+    },
+    {
+      "key": "claude/local/technical-switch/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\technical-switch\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "95612476-94e0-488a-917e-08e492c37518",
+      "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 22.3,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "a74c03d5ed95",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留25 ms周期、连续4次低于-62 dBm才提高2 dB、调整后先等8 ms再复测的条件和次序；仅完成单通道台架测试、双通道同时工作未测试均保留。开头写作预告和重复总结已删，无新增效果或改写说明。"
+      }
+    },
+    {
+      "key": "claude/khazix/technical-switch/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\technical-switch\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "1ce8f921-0807-4331-9e29-84112dd8b33a",
+      "output_sha256": "c0022ab188842acbeaf07c7e34624bcb19ad223a896976bb6eacd181e5a00bd1",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 37.1,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "46cef28c3d85",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留25 ms读取周期、连续4次低于-62 dBm时增益提高2 dB，以及调整后等8 ms再读取的次序；‘增益提高’在控制器流程语境下没有改变动作归属。单通道台架与双通道未测试限制完整；空话和重复总结已删除，无新增内容。"
+      }
+    },
+    {
+      "key": "claude/examples/technical-switch/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "technical-switch",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\technical-switch\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "d73275ea-e33f-4f5c-aafc-25d005672699",
+      "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 47.2,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "a90de7a012e5",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "读取周期25 ms、连续4次低于-62 dBm触发提高2 dB、调整后先等8 ms再读取均准确；单通道台架已完成和双通道同时工作尚未测试的限制完整。仅删除预告和重复总结，无新增抗抖动、可靠性等结论。"
+      }
+    },
+    {
+      "key": "claude/local/technical-retry/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\technical-retry\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "9e327780-8bf2-4625-9301-732bf5defad7",
+      "output_sha256": "fa6ade7f60cebab740aa6ef3a754fd8ee171a6bb5f393b3ee70032be603c8aa4",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 21.9,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "ce6b020b3a3b",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条及收到报文后查询、按序号分支、重复返回原结果不再执行对应动作、完成动作后记录再返回；省略‘先’未改变查询先于分支的次序。断电清空及‘不能据此识别’完整，空话和重复解释已删，无新增内容；半角标点不构成本次事实或精简问题。"
+      }
+    },
+    {
+      "key": "claude/khazix/technical-retry/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\technical-retry\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "bf3c9880-7ee0-4a9c-acd9-2ddb0c1fb473",
+      "output_sha256": "6e6be9d7efb9ca8a45a0e7ce7cafd252c13e4fd9b826e08f86621972d5f7f1ff",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 17.3,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "删去了“据此”，把不能根据这64条记录识别，扩大成重启后不能识别此前报文，未保护原文否定范围。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "9541fb70c25a",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "保留最近64条、先查序号、重复返回原结果不再执行、完成动作后记录再返回及断电清空。但‘重启后无法识别断电前处理过的报文’删去限定识别依据的‘据此’，原文只说明不能使用这64条记录，并未否定其他识别机制。空话和重复解释已删；未另加独立内容，否定范围问题计入facts。"
+      }
+    },
+    {
+      "key": "claude/examples/technical-retry/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\technical-retry\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "266f3e8d-07c8-46ed-b5ad-676efb378746",
+      "output_sha256": "2ee5902543cf9a566efce3ccb463a2df773e3d748c49a85b465d45d922d74a01",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 28.8,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "a314c85aa4be",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "完整保留最近64条、先查序号、重复返回原结果且不执行该报文动作、完成动作后写记录再返回。断电清空与‘不能据此识别’原有限定均保留。仅删除重要性空话和两分支重复解释，未新增机制、保证、例子或改写理由。"
+      }
+    },
+    {
+      "key": "claude/local/technical-retry/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\technical-retry\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "8945d769-343e-4ead-894b-47c98e61b092",
+      "output_sha256": "207d3b2f66e4b0af010f3dd96846efa80640d8f3324d6cfc00d0eabb1573308e",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.8,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "删去了“据此”，把不能根据这64条记录识别，扩大成重启后不能识别此前报文，未保护原文否定范围。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "c9e379c32e55",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "最近64条、先查序号、重复返回原结果且不执行该报文动作、完成动作后记录再返回均保留。但‘重启后不能识别断电前处理过的报文’省掉‘据此’，将不能依赖被清空的记录识别扩大为不限定手段的不能识别，超出原文否定范围。已删除空话与重复解释；未另加独立内容，范围扩大计入facts。"
+      }
+    },
+    {
+      "key": "claude/khazix/technical-retry/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\technical-retry\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "dbac09d9-33a6-44e9-825d-20c7609b730d",
+      "output_sha256": "197c061bd58739a8749e783ef53ec90ec25c2070bf05b939f5873fbf64e22c02",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "outside_public_account_longform",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 17.4,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "删去了“据此”，把不能根据这64条记录识别，扩大成重启后不能识别此前报文，未保护原文否定范围。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": ""
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "6f93f48f9065",
+        "facts": "fail",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "最近64条、查询后分支、重复返回原结果且不再执行、非重复执行后记账再返回，以及断电清空均保留。但‘重启后无法识别断电前处理过的报文’删去‘据此’，将不能依靠这64条记录识别扩大为不加机制限定的无法识别，原文不支持这一更强结论。空话及重复解释已删；未另加机制、例子或说明，否定范围扩大计入facts。"
+      }
+    },
+    {
+      "key": "claude/examples/technical-retry/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "technical-retry",
+      "category": "technical",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\technical-retry\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "94b6f541-a963-457b-b49c-9a2c81429e5e",
+      "output_sha256": "f6f2d511d2dc31364973c0a3593ebd3132ff044a76a89a9d1db1c1a1e3dc9c3a",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 25.1,
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "数字与主要动作已核对，无额外改写说明；逐项复核如下。",
+          "动作次序和否定范围保持；普通顺序短语不按并行执行误判。",
+          "写作预告和重复总结已删除。"
+        ],
+        "user_accepted": false,
+        "blind_review_resolution": "accepted_after_parent_check",
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false,
+      "independent_blind_review": {
+        "id": "e43db9084938",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": "最近64条、先查序号、重复返回原处理结果且不再执行对应动作、完成动作后记录再返回全部保留。断电清空及‘不能据此识别’保留原否定范围；重要性空话和重复解释已删，无新增内容。末句半角逗号仅为标点一致性问题，不影响本次判定。"
+      }
+    },
+    {
+      "key": "claude/local/heading-jitter/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\heading-jitter\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "b5643b8d-f233-4bd2-9bee-dc6ea636eccc",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 30.9,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/heading-jitter/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\heading-jitter\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "ea2c03f4-723c-454e-b7f7-0e4f0095afd1",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 13.4,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/heading-jitter/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\heading-jitter\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "c74c3f3c-2e69-4b41-8cd8-2e8c2f3a7813",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 19.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/heading-jitter/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\heading-jitter\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "9c1b29de-d306-4b8e-bced-a306deb29445",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 34.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/heading-jitter/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\heading-jitter\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "39c7edc2-33ca-4126-9858-7d5b8b149f29",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 14.5,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/heading-jitter/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "heading-jitter",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\heading-jitter\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "1955b16b-c7d5-435c-a373-13188e2551b5",
+      "output_sha256": "31f8f01f9fc209e910095a39bc3c5fc1a7645ff335f4e7ca839712aad9743720",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 21.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/heading-loss/repeat-1",
+      "host": "claude",
+      "arm": "local",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\local\\heading-loss\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "82ffa693-8156-419e-97bf-4087fbaeb34a",
+      "output_sha256": "d20fca45bd45030ec0412b9e400a75b16c2224334252ad0e880de3c26028b4e2",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 40.9,
+      "exact_check": {
+        "status": "fail",
+        "body_occurs_verbatim": false,
+        "entire_response_matches": false,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "原文中文逗号变成英文逗号；数据未变，但不符合逐字保留要求。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "fail",
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/heading-loss/repeat-1",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\khazix\\heading-loss\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "9e7a7a58-4e86-4dff-9d33-28b8da719b25",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 14.6,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/heading-loss/repeat-1",
+      "host": "claude",
+      "arm": "examples",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 1,
+      "path": "runs\\claude\\examples\\heading-loss\\repeat-1",
+      "model": "claude-opus-5",
+      "session": "b65e7b9c-58a2-4f94-8b43-e49eb4b479b4",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 17.0,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/local/heading-loss/repeat-2",
+      "host": "claude",
+      "arm": "local",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\local\\heading-loss\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "1279c556-8c07-491e-8f0a-1cf601a323e8",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 20.9,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/khazix/heading-loss/repeat-2",
+      "host": "claude",
+      "arm": "khazix",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\khazix\\heading-loss\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "2cfb8819-4902-4e73-bbf1-b81d2dc571cd",
+      "output_sha256": "d20fca45bd45030ec0412b9e400a75b16c2224334252ad0e880de3c26028b4e2",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "explicitly_excluded_heading",
+      "eligible_for_local_candidate_comparison": false,
+      "duration_seconds": 13.4,
+      "exact_check": {
+        "status": "fail",
+        "body_occurs_verbatim": false,
+        "entire_response_matches": false,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "原文中文逗号变成英文逗号；数据未变，但不符合逐字保留要求。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "fail",
+        "format_note": "部分中文句子使用英文逗号或括号；除逐字保留题外另记排版瑕疵，不等同于事实漂移。"
+      },
+      "user_accepted": false
+    },
+    {
+      "key": "claude/examples/heading-loss/repeat-2",
+      "host": "claude",
+      "arm": "examples",
+      "case": "heading-loss",
+      "category": "heading",
+      "repeat": 2,
+      "path": "runs\\claude\\examples\\heading-loss\\repeat-2",
+      "model": "claude-opus-5",
+      "session": "50e774c1-013b-4cb0-bdc4-138b2a7e6668",
+      "output_sha256": "5dba64787fa564bc653af822cb3ae7f36c6475a556d51ad54f99292b1e4d8ed8",
+      "all_requested_rules_and_vocab_in_prompt": true,
+      "unexpected_read_flags": [],
+      "background_rule_reads": 0,
+      "upstream_scope": "applicable",
+      "eligible_for_local_candidate_comparison": true,
+      "duration_seconds": 26.1,
+      "exact_check": {
+        "status": "pass",
+        "body_occurs_verbatim": true,
+        "entire_response_matches": true,
+        "boundary_newlines_ignored": true
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "facts": "pass",
+        "concision": "pass",
+        "extra_content": false,
+        "notes": [
+          "标题、数字、公式和原有结论均已核对。",
+          "除新增标题及连接换行外，整份正文逐字相同。"
+        ],
+        "user_accepted": false,
+        "literal_preservation": "pass",
+        "format_note": ""
+      },
+      "user_accepted": false
+    }
+  ],
+  "quality_accepted": false,
+  "runtime_modified": false,
+  "review_policy": "REVIEW-POLICY.md",
+  "independent_review": {
+    "file": "technical-blind-review.json",
+    "outputs": 24,
+    "parent_reconciled": true,
+    "changes_from_initial_parent_review": 3
+  },
+  "aggregate": {
+    "codex/local": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "codex/khazix": {
+      "outputs": 12,
+      "fact_or_condition_failures": 1,
+      "fact_or_condition_review_required": 2,
+      "concision_failures": 2,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 0,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 1,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "codex/examples": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "claude/local": {
+      "outputs": 12,
+      "fact_or_condition_failures": 1,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 3,
+      "heading_total": 4,
+      "heading_exact_pass": 3
+    },
+    "claude/khazix": {
+      "outputs": 12,
+      "fact_or_condition_failures": 2,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 1,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 2,
+      "heading_total": 4,
+      "heading_exact_pass": 3
+    },
+    "claude/examples": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    }
+  },
+  "tool_calls_total": 0,
+  "decision": "Retain isolated examples candidate; no stable superiority claim, source merge, or runtime publication"
+}

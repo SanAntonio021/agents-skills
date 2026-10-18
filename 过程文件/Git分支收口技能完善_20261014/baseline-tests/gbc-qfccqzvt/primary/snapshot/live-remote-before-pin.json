@@ -1,0 +1,10 @@
+{
+  "heads": {
+    "refs/heads/main": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466"
+  },
+  "tags": {
+    "refs/tags/v1": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466"
+  },
+  "symbolicHead": "refs/heads/main",
+  "symbolicHeadRaw": "ref: refs/heads/main\tHEAD\n88d01f12cdfff0349941d1e44e6f9fd5faa1b466\tHEAD\n"
+}

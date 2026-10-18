@@ -1,0 +1,14 @@
+{
+  "turn": 1,
+  "exit_code": 0,
+  "timed_out": false,
+  "duration_seconds": 132.7,
+  "reported_models": [
+    "gpt-5.6-sol"
+  ],
+  "model_valid": true,
+  "session": "01a07be6-de83-7332-a56d-1d477bd432ce",
+  "command_count": 6,
+  "native_skill_confirmed": false,
+  "status": "completed"
+}

@@ -1,0 +1,3 @@
+只在对话中交付，不创建或修改文件。本次技能入口为 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/local-before/writing-router/SKILL.md。技能及其参考文件、脚本只使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/local-before 下的版本。可只读个人词表 D:/BaiduSyncdisk/.agents/vocab；个人样稿不可用。不读取其他版本、已安装业务技能、历史对话、记忆、评测材料或私有样稿；不调用子智能体、业务系统或网络检索。技能自带检查脚本可通过bash使用标准输入运行，结果留在对话中。
+
+请润色这段中文论文结果讨论，只在对话里返回该段。合作者把丢弃率误读成了缓存占用率，这里需要让指标含义明确。原文：本实验统计的不是缓存占用率，而是帧丢弃率，定义为p_drop = N_drop / N_sent，其中N_drop为丢弃帧数，N_sent为发送帧数。在256 B定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。

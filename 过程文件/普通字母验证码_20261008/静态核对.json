@@ -1,0 +1,12 @@
+{
+  "changed_files": [
+    "web-access/SKILL.md",
+    "web-access/references/cdp-api.md",
+    "paper-download/references/publisher-download-playbook.md"
+  ],
+  "relative_links_valid": true,
+  "ordinary_visible_code_automatic": true,
+  "refresh_requires_fresh_image_and_ref": true,
+  "identity_code_handoff_retained": true,
+  "host_restrictions_retained": true
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/ieee-manuscript-edit/scripts\" && python -X utf8 -c \"\nimport sys, importlib.util, pathlib\nspec = importlib.util.spec_from_file_location('awm','audit_writing_memory.py')\nm = importlib.util.module_from_spec(spec); sys.modules['awm']=m; spec.loader.exec_module(m)\ntext = sys.stdin.read()\nrules, _ = m.build_rules(pathlib.Path(r'D:\\BaiduSyncdisk\\.agents\\vocab'), 'zh', 'research-report')\nvisible = m.masked_text(text)\nhits = [(r.source, r.suggestion, h.group(0)) for r in rules for h in r.compiled.finditer(visible)]\nprint('status:', 'review_required' if hits else 'clean')\nfor h in hits: print(h)\n\" <<'EOF'\n在本次收到的3份含税、含运费报价中，仅丙型（3500元、交期4天）满足该批设备5天内到货的要求，其报价已核对，样机验收尚未进行。\nEOF",
+      "description": "Vocab audit on summary sentence"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/research-report/scripts\" && python -X utf8 -c \"\nimport sys, importlib.util\nspec = importlib.util.spec_from_file_location('ar','audit_report.py')\nm = importlib.util.module_from_spec(spec); sys.modules['ar']=m; spec.loader.exec_module(m)\nprint(m.format_text_report(m.audit_text(sys.stdin.read(), source='<stdin>', document_role='evidence-report')))\n\" <<'EOF'\n## 摘要\n\n在本次收到的3份含税、含运费报价中，仅丙型（3500元、交期4天）满足该批设备5天内到货的要求，其报价已核对，样机验收尚未进行。\nEOF",
+      "description": "Report audit on summary sentence"
+    }
+  }
+]

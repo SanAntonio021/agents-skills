@@ -1,0 +1,43 @@
+{
+  "host": "codex",
+  "version": "waza-original",
+  "case": "natural-prose-general",
+  "requested_model": "gpt-5.6-sol",
+  "requested_effort": "max",
+  "status": "running",
+  "turns": [],
+  "snapshot": {
+    "write/references/durable-context.md": "baadb589895917c5f85487736fdb8b3416ba391771245a2f6b4cc01b17d5dfc6",
+    "write/references/mode-long-form.md": "32ea4181c28797876a0130ec8ffb8936f9a461fea5c74ac6f8d1e8bba5128db6",
+    "write/references/mode-public-reply.md": "84896dc97cf4052c9db79b2c4dab9a99e1a03d9f4350349596f9cbffcb0d6153",
+    "write/references/mode-release-notes.md": "42e3a235831a93f222b069f96b5823a9d43fa997e3c6232f442dd2e79b773563",
+    "write/references/write-en.md": "b14a3c4f695277fc52085028b7592d572e60606148da7b146a94c5f2d13de47c",
+    "write/references/write-product-localization.md": "9cb74327b46cd97d3457f3bb1af4722534a6672eaff2b0ce61f5cde71bc836a5",
+    "write/references/write-zh-bilingual.md": "7f451b03b4f45044423ef469e8662141272ef1fce3c7d7e6ec6484aac192b130",
+    "write/references/write-zh-prose.md": "fe25c015224de9c8421912a512080515665c549fdd0978693d07e02551306071",
+    "write/references/write-zh-release-notes.md": "d0375c3a4bed038e43989f640919def2dd3879749dd6446b5c23a19940789f71",
+    "write/references/write-zh.md": "a31ad6602d7eb32f51a98d51c0d8d6610cb1501b7ae65f93407ae33261e9a93a",
+    "write/SKILL.md": "7bb39c6bb3c7d4a448dc3a9331f7232e2471194de3f60893880d8b635c03f5d8"
+  },
+  "vocab": {
+    "中文/审稿回复.md": "26487952ee1eb7bca6aa934315afb92bf2e41364490c784e4033eec3fde6e32d",
+    "中文/申报书.md": "72a8dc5657a9402d075e55f8ace828059653ca12d69518243a9672bbf0c2191b",
+    "中文/论文.md": "44996057101b0807cdc38bef086f3adbcbb217347fa32b2f84c2cbc3d3d7c0f6",
+    "中文/调研报告.md": "7325ba48e696862c0a5242dd7da5569f8064d28add14b3752db50f0b8c15a2bd",
+    "中文/通用.md": "37e909aa790c4b7318078875af426cd38e15c015e29d2f7034201d8791fb0e7b",
+    "术语.md": "637b1ac6df8b8d298fb59c615a3afde61286f6bd2c48b079e66acc88afdf4b48",
+    "目录.md": "f1757d9669db1efec33c9c48896c76475cbea47f8084e56d9f7d2f6be9115ae4",
+    "维护.md": "db864fb4eca580565500b42b99ce99bb17e8a25a9eb87d5f40f003503cb4d230",
+    "英文/审稿回复.md": "c7b09378b1e6333c822959e2763f233160df5d92f5d1da3d8032bc2e6d320de2",
+    "英文/论文.md": "46a9853537b3c78683ad340bc6d0c5cc1ae56c6e2c5f5f71a02e9d679a0c1ff5",
+    "英文/通用.md": "a69867221679e87dcdc70c4fa3dd715f0adfa88f3b63cb44e48ecd6d8452c23b"
+  },
+  "isolation": "separate case sessions; prompt scoping plus post-run read inspection, not an OS read sandbox",
+  "style_acceptance": "not_reviewed",
+  "read_scope_acceptance": "not_reviewed",
+  "route": {
+    "route": "existing_cli"
+  },
+  "loader": "explicit_file_reads",
+  "native_skill_confirmed": false
+}

@@ -1,0 +1,6 @@
+{
+  "source_files": 204,
+  "staged_blob_mismatches": [],
+  "git_attributes": "assets/workbench/** -text; provenance patch -text",
+  "initial_autocrlf_mismatches_resolved": 144
+}

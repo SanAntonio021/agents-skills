@@ -1,0 +1,16 @@
+{
+  "fixture.txt": "Offline remote document fixture.\n",
+  "remote/document.json": {
+    "revision": 0,
+    "blocks": [],
+    "events": [
+      {
+        "action": "fetch",
+        "actor": "assistant",
+        "revision_before": 0,
+        "revision_after": 0,
+        "error": null
+      }
+    ]
+  }
+}

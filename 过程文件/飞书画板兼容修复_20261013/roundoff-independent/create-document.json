@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "document": {
+      "document_id": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "new_blocks": [
+        {
+          "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+          "block_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+          "block_type": "whiteboard"
+        }
+      ],
+      "revision_id": 3,
+      "url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g"
+    }
+  },
+  "_notice": {
+    "skills": {
+      "command": "lark-cli update",
+      "current": "1.0.94",
+      "message": "lark-cli skills 1.0.94 out of sync with binary 1.0.97, run: lark-cli update",
+      "target": "1.0.97"
+    }
+  }
+}

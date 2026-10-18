@@ -1,0 +1,3 @@
+﻿case,status,seconds,note
+-,-,s,-
+mock_tx_workbench_interaction_and_layout,PASS,40.92,mock GUI renders four plots at two sizes with aligned hardware columns; edits debounce into one selected-channel write; invalid input writes nothing; failure shuts outputs down and retries; reconnect synchronizes offline edits; persistence is isolated; download/output and waveform reuse remain safe

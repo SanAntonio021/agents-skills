@@ -1,0 +1,85 @@
+{
+  "case": "test-explanation",
+  "host": "codex",
+  "arm": "candidate",
+  "turns": [
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6cde-75d3-a72e-777fde7d2333",
+      "previous_session": null,
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 21599,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 489,
+            "reasoning_output_tokens": 367
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 24.792
+    },
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6cde-75d3-a72e-777fde7d2333",
+      "previous_session": "01a08028-6cde-75d3-a72e-777fde7d2333",
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 43729,
+            "cached_input_tokens": 21376,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 839,
+            "reasoning_output_tokens": 592
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 19.919
+    },
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6cde-75d3-a72e-777fde7d2333",
+      "previous_session": "01a08028-6cde-75d3-a72e-777fde7d2333",
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 66266,
+            "cached_input_tokens": 43264,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 1265,
+            "reasoning_output_tokens": 898
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 23.901
+    }
+  ],
+  "status": "completed",
+  "quality_accepted": false,
+  "skipped_turns": 0
+}

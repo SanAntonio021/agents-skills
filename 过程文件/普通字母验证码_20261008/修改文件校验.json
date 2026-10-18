@@ -1,0 +1,17 @@
+[
+  {
+    "file": "web-access/SKILL.md",
+    "before_sha256": "b26684e320cee0974f1e379beb5e9feff60b94b67ff7912a013753f9eacf34db",
+    "after_sha256": "322f1068962de19eb561b65c2e7168226290a7cb52a846ee3d11967eaca45ac0"
+  },
+  {
+    "file": "web-access/references/cdp-api.md",
+    "before_sha256": "6941ec5bb8d3797a6112071797a9ee2a86bd0e3d2b1d2b6be1f477953d63573f",
+    "after_sha256": "938fec377ec02049f37d5c37c151d30dfcf0a49601453d4242962a0370b5df15"
+  },
+  {
+    "file": "paper-download/references/publisher-download-playbook.md",
+    "before_sha256": "80d804ca89475f0695a556257a2f339abd0820434c65fb0d8647db93ca249230",
+    "after_sha256": "01aa617802a3b3deb8e99aa81eb3d715b06efdbe683d25b7d195dc8e398d10dc"
+  }
+]

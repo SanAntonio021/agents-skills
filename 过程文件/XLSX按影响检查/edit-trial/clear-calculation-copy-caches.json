@@ -1,0 +1,28 @@
+{
+  "sheets": {
+    "计算表": {
+      "cells": {
+        "D3": {
+          "kind": "formula",
+          "formula": "B3*C3"
+        },
+        "E3": {
+          "kind": "formula",
+          "formula": "SUMIF(A3:A5,\"A\",D3:D5)"
+        },
+        "D4": {
+          "kind": "formula",
+          "formula": "B4*C4"
+        },
+        "D5": {
+          "kind": "formula",
+          "formula": "B5*C5"
+        },
+        "E5": {
+          "kind": "formula",
+          "formula": "SUM(D3:D5)"
+        }
+      }
+    }
+  }
+}

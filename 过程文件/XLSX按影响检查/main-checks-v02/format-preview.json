@@ -1,0 +1,31 @@
+{
+  "failures": [],
+  "ok": true,
+  "page_count": 1,
+  "pages": [
+    {
+      "blank": false,
+      "height_points": 595.303937007874,
+      "image_count": 0,
+      "missing_required_text": [],
+      "orientation": "landscape",
+      "page": 1,
+      "replacement_character_ratio": 0.0,
+      "rotation": 0,
+      "text_characters": 105,
+      "text_extraction_reliable": true,
+      "text_head": "临时表格检查样本（虚构数据） 类别 数量 单价 金额 备注 A 2 10.00 20.00 25.00 原备注 B 3 20.00 60.00 A 1 5.00 5.00 85.00 全类别合计见左侧 A类合计",
+      "text_tail": "临时表格检查样本（虚构数据） 类别 数量 单价 金额 备注 A 2 10.00 20.00 25.00 原备注 B 3 20.00 60.00 A 1 5.00 5.00 85.00 全类别合计见左侧 A类合计",
+      "width_points": 841.889763779528
+    }
+  ],
+  "pdf": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks-v02\\format-preview.pdf",
+  "rendered_pages": [
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks-v02\\format-preview\\page-1.png"
+  ],
+  "sha256": "FC66BC2EFAC419CA6D7217DC0F6D52C1447F6405BF8857F469DE29E1366E1085",
+  "text_checks_complete": true,
+  "visual_inspection_required": true,
+  "visual_note": "Automated checks do not prove absence of clipping or overlap. Unreliable text extraction also requires visual confirmation of expected text.",
+  "warnings": []
+}

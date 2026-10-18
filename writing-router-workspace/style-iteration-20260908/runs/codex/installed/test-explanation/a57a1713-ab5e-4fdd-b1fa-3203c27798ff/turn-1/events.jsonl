@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a08028-6a7d-7f10-ad30-30e78ce1f246"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"控制器每隔 50 ms 读取一次温度。温度连续 3 次高于 72 °C 时发出告警；告警后继续采集，温度降至 68 °C 以下时解除告警。\n\n当前台架试验仅接入一只传感器，连续运行 6 小时，未观察到误告警。两只传感器同时接入的情况尚未测试，因此该结果仅适用于本次单传感器试验条件。"}}
+{"type":"turn.completed","usage":{"input_tokens":20509,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":280,"reasoning_output_tokens":165}}

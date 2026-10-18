@@ -1,0 +1,23 @@
+{
+  "commit": "0e195632418d5891bfa71c803f9e60f87e06a118",
+  "sha256": "c62a4e1634266ef965358f7f32ea45750cde5523ab8885af7ab5d29222793d74",
+  "files": 16,
+  "archive_verified": true,
+  "release_url": "https://github.com/SanAntonio021/agents-skills/releases/tag/lab-report-slides-v1.1.1",
+  "runtime_status": "runtime_active",
+  "runtime_layers_verified": [
+    "source",
+    "cc_switch",
+    "claude",
+    "codex"
+  ],
+  "history": "v1.1.0: 55 related tests and local template sample structure, LibreOffice, native PowerPoint checks passed. v1.1.1: only template prompt and README changed; independent consistency review passed; remote asset SHA-256 matched.",
+  "limitations": "Classmate computer not yet tested.",
+  "approved_example": "D:\\BaiduSyncdisk\\组会\\20260909_新模板对比_v01.pptx",
+  "cleanup": {
+    "files_recycled": 88,
+    "bytes": 19472508,
+    "recovery": "Windows Recycle Bin",
+    "verified": "Final report, original inputs, local template dependencies and latest release archive checked after cleanup"
+  }
+}

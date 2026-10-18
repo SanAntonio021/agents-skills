@@ -1,0 +1,46 @@
+{
+  "final_pptx": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\20261014_日报样例_技能流程测试_v03.pptx",
+  "sha256": "0ebd0e0dca5143474167deba2368eac75ad4e06aa7bc71fc4494e68b52b66d43",
+  "CONTENT_PASS": true,
+  "STATIC_PASS": true,
+  "TYPOGRAPHY_PASS": true,
+  "EDITABILITY_PASS": true,
+  "NATIVE_OPEN_PASS": true,
+  "NATIVE_RENDER_PASS": true,
+  "VISUAL_PASS": true,
+  "slide_count": 4,
+  "title_objects": [
+    {
+      "slide": 2,
+      "Title": "太赫兹双向通信",
+      "SectionHeader": "   低功率测通方案",
+      "sizes_pt": [
+        36,
+        28
+      ]
+    },
+    {
+      "slide": 3,
+      "Title": "机载通信方案",
+      "SectionHeader": "   750 MBaud 换源损失",
+      "sizes_pt": [
+        36,
+        28
+      ]
+    }
+  ],
+  "unaffected_package_parts_unchanged": true,
+  "typography_failures": 0,
+  "exceptions": [],
+  "native_receipt": "native-gate-v03.json",
+  "visual_review": "User reports that the main agent inspected v03 native PNG pages 2 and 3 and accepted the visuals; pages 1 and 4 unchanged from previously reviewed v01.",
+  "not_verified": [
+    "LibreOffice compatibility render not run",
+    "Simulation raw data/model not supplied; no independent recomputation"
+  ],
+  "scope_notes": [
+    "Initial v01 static validation used the system temporary directory; validator cleaned it automatically.",
+    "v03 first validation exited on temporary-directory cleanup WinError32; bounded retry passed.",
+    "Automatic policy rejected the broad temporary-directory cleanup command; no such deletion was performed. Existing residual temporary files retained."
+  ]
+}

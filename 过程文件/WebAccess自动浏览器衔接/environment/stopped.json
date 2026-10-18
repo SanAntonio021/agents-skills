@@ -1,0 +1,9 @@
+{
+  "stoppedAt": "2026-09-12T06:59:36.171Z",
+  "reason": "owner-stop-command",
+  "managerPid": 44068,
+  "edgePid": 50780,
+  "proxyPid": 75948,
+  "tempRoot": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-behavior-0JMyqH",
+  "retained": true
+}

@@ -1,0 +1,12 @@
+{
+  "process_id": 55888,
+  "exit_code": 0,
+  "stdout": "✓ Uninstalled skill 'SanAntonio021/agents-skills:rigor-check'",
+  "stderr": "",
+  "arguments": [
+    "skills",
+    "uninstall",
+    "SanAntonio021/agents-skills:rigor-check"
+  ],
+  "proxy_source": "wininet"
+}

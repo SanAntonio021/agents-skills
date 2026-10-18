@@ -1,0 +1,20 @@
+{
+  "batch": "native-runs",
+  "host": "codex",
+  "case": "title",
+  "receipt_present": false,
+  "session": "01a07cc6-7f9e-7bd3-b111-977b61d2587b",
+  "startup_writing_router_available": null,
+  "source_unchanged": true,
+  "parent_byte_check": null,
+  "parent_read_error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-ykduloco\\\\result.md'",
+  "byte_details": null,
+  "successful_helper_command": true,
+  "apply_hash_matches_expected": true,
+  "verify_hash_matches_expected": true,
+  "expected_sha256": "7e4d91eaffff368bd27a365961715e4dcb807de83427a37f8a9922b6d9f3b66a",
+  "helper_command_evidence": [
+    "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$pythonExe = '\"'C:\\\\Python313\\\\python.exe'\n\"'$editScript = '\"'C:\\\\Users\\\\SanAn\\\\.cc-switch\\\\skills\\\\writing-router\\\\scripts\\\\exact_edit.py'\n\"'$sourceFile = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-ykduloco\\\\original.md'\n\"'$outputFile = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-ykduloco\\\\result.md'\n\"'$sourceHash = '\"'b479ccaaab7e63a5b72ecd32f3df3127fff76fd1de65feb6e59d03b462446047'\n& \"'$pythonExe $editScript apply --source $sourceFile --source-sha256 $sourceHash --title '\"'## 单通道测试记录' --output \"'$outputFile\nif ($LASTEXITCODE -ne 0) { throw \"exact_edit apply failed with exit code $LASTEXITCODE\" }\n& $pythonExe $editScript verify --source $sourceFile --source-sha256 $sourceHash --title '\"'## 单通道测试记录' --candidate \"'$outputFile\nif ($LASTEXITCODE -ne 0) { throw \"exact_edit verify failed with exit code $LASTEXITCODE\" }'"
+  ],
+  "final": "C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-ykduloco/result.md"
+}

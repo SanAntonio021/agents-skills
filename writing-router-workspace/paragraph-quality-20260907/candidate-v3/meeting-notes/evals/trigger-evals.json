@@ -1,0 +1,42 @@
+[
+  {
+    "query": "我上传了一份多人会议逐字稿，请整理成一份容易读的纪要，重点保留讨论中的不同意见和还没定下来的问题。",
+    "should_trigger": true
+  },
+  {
+    "query": "把这段关于单载波和 OFDM 的技术交流整理一下。大家只是比较方案，没有分配任务，也没有截止时间。",
+    "should_trigger": true
+  },
+  {
+    "query": "同一场会被转写成三个 txt 文件，请合成一份完整记录，删掉重复发言，别把建议写成待办。",
+    "should_trigger": true
+  },
+  {
+    "query": "根据今天的项目例会记录，列清楚已经确定的事项、每个人负责什么以及完成时间。",
+    "should_trigger": true
+  },
+  {
+    "query": "文件虽然放在申报书目录里，但这次只是讨论链路技术路线。请按讨论场景整理这份聊天记录。",
+    "should_trigger": true
+  },
+  {
+    "query": "把访谈转写整理成可分享记录，说明双方已经说清楚什么、还有哪些问题需要下次继续谈。",
+    "should_trigger": true
+  },
+  {
+    "query": "总结这篇 IEEE 论文的研究问题、方法、实验指标和主要结论。",
+    "should_trigger": false
+  },
+  {
+    "query": "把现有的会议纪要 Markdown 原样排版成 Word，不要改写内容。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我在飞书日历创建下周三的会议，并邀请课题组成员。",
+    "should_trigger": false
+  },
+  {
+    "query": "复盘我们这次对话里形成的经验，判断要不要修改现有 skill。",
+    "should_trigger": false
+  }
+]

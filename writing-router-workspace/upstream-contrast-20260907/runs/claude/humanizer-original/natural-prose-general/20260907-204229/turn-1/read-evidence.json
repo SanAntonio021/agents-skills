@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh",
+      "args": "审阅并改写社区阅览室志愿者通知，去除表达不清之处，仅在对话中输出正文"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" 2>/dev/null; echo \"---vocab---\"; ls \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill files and personal vocab dir"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/vocab\" && head -60 目录.md && echo \"=====术语=====\" && head -80 术语.md && echo \"=====中文=====\" && ls 中文",
+      "description": "Read personal vocab index and terms"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cat \"D:/BaiduSyncdisk/.agents/vocab/中文/通用.md\"",
+      "description": "Read general Chinese style vocab list"
+    }
+  }
+]

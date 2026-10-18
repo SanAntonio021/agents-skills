@@ -1,0 +1,31 @@
+{
+  "host": "codex",
+  "case": "append",
+  "requested_model": "gpt-5.6-sol",
+  "reported_models": [],
+  "session": "01a07cca-52b5-70a2-be85-2fafa3c9303e",
+  "route": {
+    "route": "existing_cli"
+  },
+  "exit_code": 0,
+  "timed_out": false,
+  "duration_seconds": 141.1,
+  "source_unchanged": true,
+  "output_byte_exact": null,
+  "helper_command_observed": true,
+  "parent_output_read_error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\result.md'",
+  "native_skills": [],
+  "runtime_files_unchanged": true,
+  "startup_skills": [],
+  "startup_writing_router_available": null,
+  "runtime_hashes": {
+    "SKILL.md": "1a7ff41838c391aef092a66c6a47f6569555efdfc1f449162bb0a4866804b995",
+    "references/exact-edit.md": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+    "scripts/exact_edit.py": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\exact-edit-live-adgbpha7",
+  "source_sha256": "b479ccaaab7e63a5b72ecd32f3df3127fff76fd1de65feb6e59d03b462446047",
+  "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9",
+  "review_status": "pending_tool_result_inspection",
+  "scope": "Explicitly requested installed skill; not spontaneous-trigger reliability or style acceptance"
+}

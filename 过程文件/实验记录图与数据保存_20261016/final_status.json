@@ -1,0 +1,18 @@
+{
+  "status": "complete",
+  "skill": "lab-notebook",
+  "source_file": "lab-notebook/SKILL.md",
+  "commit": "eb3e3f5db7e64bdd7b7edeaa67bbb11d56be336e",
+  "independent_behavior_trial": "passed; trial/result.md inspected",
+  "source_scope": "only the recording-layout and spectrum CSV rules",
+  "runtime_publish": "runtime_active",
+  "same_arguments_verify_only": "runtime_active",
+  "runtime_layers": [
+    "CC Switch",
+    "Codex",
+    "Claude"
+  ],
+  "runtime_files_match_commit": true,
+  "unrelated_template_changes": "preserved uncommitted",
+  "cloud_snapshot": "not requested; no cloud upload performed"
+}

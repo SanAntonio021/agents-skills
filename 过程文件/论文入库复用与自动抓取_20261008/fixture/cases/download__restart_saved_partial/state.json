@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "name": "download__restart_saved_partial",
+  "executor": "download",
+  "facts": "模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。",
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": false
+  },
+  "libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "key": "FX000001",
+      "libraryID": 1,
+      "itemType": "journalArticle",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001"
+      },
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "collections": [
+        20,
+        21
+      ],
+      "parentID": null,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z"
+    },
+    {
+      "id": 100,
+      "key": "FX000100",
+      "libraryID": 1,
+      "itemType": "attachment",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link (simulated local PDF)"
+      },
+      "creators": [],
+      "collections": [],
+      "parentID": 1,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:47:18.596Z",
+      "dateModified": "2026-10-08T13:47:18.596Z",
+      "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__restart_saved_partial\\storage\\100\\simulated_target.pdf",
+      "attachmentContentType": "application/pdf",
+      "attachmentLinkMode": 0,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "sizeBytes": 863
+    }
+  ],
+  "nextItemID": 101,
+  "controls": {
+    "saveDelayMs": 0,
+    "failNextImport": false
+  },
+  "restartCount": 1
+}

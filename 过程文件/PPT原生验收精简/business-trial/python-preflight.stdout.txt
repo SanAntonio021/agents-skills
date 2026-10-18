@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-09-11T12:03:33.796384+00:00",
+  "required_imports": [
+    {
+      "distribution": "defusedxml",
+      "module": "defusedxml"
+    },
+    {
+      "distribution": "lxml",
+      "module": "lxml"
+    },
+    {
+      "distribution": "python-pptx",
+      "module": "pptx"
+    }
+  ],
+  "candidates": [
+    {
+      "source": "current_interpreter",
+      "command": [
+        "C:\\Python313\\python.exe"
+      ],
+      "label": "C:\\Python313\\python.exe",
+      "executable": "C:\\Python313\\python.exe",
+      "status": "PASS",
+      "ok": true,
+      "python_version": "3.13.1",
+      "dependencies": {
+        "defusedxml": {
+          "module": "defusedxml",
+          "ok": true,
+          "version": "0.7.1",
+          "error": null
+        },
+        "lxml": {
+          "module": "lxml",
+          "ok": true,
+          "version": "6.0.2",
+          "error": null
+        },
+        "python-pptx": {
+          "module": "pptx",
+          "ok": true,
+          "version": "1.0.2",
+          "error": null
+        }
+      },
+      "returncode": 0,
+      "error": null,
+      "stderr": null
+    }
+  ],
+  "status": "PASS",
+  "selected_executable": "C:\\Python313\\python.exe",
+  "selected_source": "current_interpreter",
+  "selected_python_version": "3.13.1",
+  "selected_dependencies": {
+    "defusedxml": {
+      "module": "defusedxml",
+      "ok": true,
+      "version": "0.7.1",
+      "error": null
+    },
+    "lxml": {
+      "module": "lxml",
+      "ok": true,
+      "version": "6.0.2",
+      "error": null
+    },
+    "python-pptx": {
+      "module": "pptx",
+      "ok": true,
+      "version": "1.0.2",
+      "error": null
+    }
+  },
+  "failure_reason": null
+}

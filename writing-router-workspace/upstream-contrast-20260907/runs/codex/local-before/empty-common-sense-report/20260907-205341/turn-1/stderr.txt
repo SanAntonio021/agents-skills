@@ -1,0 +1,20 @@
+2026-09-07T12:53:41.940040Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:41.943642Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:41.945816Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:41.948917Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:41.954018Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:41.962197Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:53:42.256389Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-09-07T12:53:42.256445Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-09-07T12:53:42.285659Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="github@openai-api-curated" path=C:\Users\SanAn\.codex\plugins\cache\openai-api-curated\github
+2026-09-07T12:53:42.285691Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="sites@openai-bundled" path=C:\Users\SanAn\.codex\plugins\cache\openai-bundled\sites
+2026-09-07T12:53:42.289131Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T12:53:43.630891Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-09-07T12:53:44.871937Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T12:53:44.913138Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T12:53:44.935618Z  WARN codex_core_plugins::loader: configured curated plugin no longer exists in curated marketplace during cache refresh plugin=github marketplace=openai-api-curated
+2026-09-07T12:58:05.121503Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.3 seconds
+Output:
+audit_report: cannot read \proc\self\fd\0: [Errno 2] No such file or directory: '\\proc\\self\\fd\\0'
+

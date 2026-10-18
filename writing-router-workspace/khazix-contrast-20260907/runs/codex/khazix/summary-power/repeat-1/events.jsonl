@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c42-7e04-7750-9d61-2c2f8ba5f784"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"P、Q、R的标称功耗分别为18 W、15 W和9 W，仅R满足不超过12 W的功耗要求，但整机温升测试尚未进行。"}}
+{"type":"turn.completed","usage":{"input_tokens":29883,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":158,"reasoning_output_tokens":111}}

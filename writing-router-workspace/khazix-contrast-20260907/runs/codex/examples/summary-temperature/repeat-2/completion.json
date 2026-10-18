@@ -1,0 +1,37 @@
+{
+  "host": "codex",
+  "arm": "examples",
+  "case": "summary-temperature",
+  "repeat": 2,
+  "requested_model": "gpt-5.6-sol",
+  "route": {
+    "route": "existing_cli"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-nc9s7mtx",
+  "prompt_sha256": "cd2df0665fd97b95f5ee3951fbe9cf6a17a70d38718b3a7036273d25b7d43727",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "local/writing-router/SKILL.md",
+    "local/writing-router/references/collaborative-writing.md",
+    "local/writing-router/references/common-quality.md",
+    "local/writing-router/references/ai-smell-catalog.md",
+    "local/style-vocab/SKILL.md",
+    "local/technical-writing/SKILL.md",
+    "candidate/examples.md"
+  ],
+  "upstream_scope": "applicable",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "gpt-5.6-sol"
+  ],
+  "session": "01a07c44-4740-7082-98f1-ea60c9d07244",
+  "duration_seconds": 14.7,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

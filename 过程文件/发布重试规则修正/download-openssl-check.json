@@ -1,0 +1,6 @@
+{
+  "test": "Python OpenSSL complete ZIP download using existing proxy",
+  "url": "https://github.com/SanAntonio021/agents-skills/archive/refs/heads/main.zip",
+  "ok": false,
+  "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1018)>"
+}

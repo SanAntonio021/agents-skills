@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write\" && printf '%s\\n' '本实验统计的指标为帧丢弃率，定义为 p_drop = N_drop / N_sent，其中 N_drop 为丢弃帧数，N_sent 为发送帧数。该指标衡量发送过程中被丢弃帧所占的比例，与缓存占用率（缓存已用空间与总容量之比）含义不同，两者不可混用。在 256 B 定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，得到 p_drop = 0.002。该结果仅适用于单个发送端场景，多发送端竞争时的丢弃率尚未测试，不能由此推断。' | bash scripts/check-punctuation.sh --lang zh",
+      "description": "Run punctuation gate on revised paragraph"
+    }
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "修改采购调研报告片段，读者为熟悉采购流程的设备主管，仅在对话中交付修改稿，不创建或修改文件"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\research-report\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\writing-router\\references\\common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\writing-router\\references\\ai-smell-catalog.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\research-report\\references\\modes.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-refined\\skills\\style-vocab\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\目录.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\调研报告.md"
+    }
+  }
+]

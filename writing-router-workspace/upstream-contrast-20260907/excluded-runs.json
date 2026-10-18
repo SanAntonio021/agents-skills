@@ -1,0 +1,9 @@
+{
+  "runs/claude/humanizer-original/necessary-negation-paper/20260907-203901": "Batch ended with Snapshot changed during comparison; current snapshot matches frozen manifest but historical full pre-hash was not persisted. Excluded pending clean rerun.",
+  "runs/claude/humanizer-original/empty-common-sense-report/20260907-204033": "Same unresolved batch hash anomaly; not counted as an accepted run.",
+  "runs/claude/humanizer-original/natural-prose-general/20260907-204229": "Same unresolved batch hash anomaly; not counted as an accepted run.",
+  "runs/codex/local-after/necessary-negation-paper/20260907-204518": "Historical batch hash anomaly without persisted pre-hash. Later evidence found transient upload metadata, but exact historical difference remains unavailable.",
+  "runs/codex/local-after/empty-common-sense-report/20260907-204923": "Same historical batch hash anomaly; retained for diagnosis only.",
+  "runs/codex/local-after/natural-prose-general/20260907-205308": "Same historical batch hash anomaly; retained for diagnosis only.",
+  "runs/claude/local-after/necessary-negation-paper/20260907-204457": "Tool records confirm creation of /tmp/para.md and para2-4.md despite no-file-write task restriction. Retained for diagnosis only."
+}

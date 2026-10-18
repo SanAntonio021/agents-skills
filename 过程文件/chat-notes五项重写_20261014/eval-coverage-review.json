@@ -1,0 +1,267 @@
+{
+  "original_cases": 58,
+  "existing_modified": [
+    6
+  ],
+  "new_cases": [
+    94,
+    95,
+    96,
+    97,
+    98
+  ],
+  "review": [
+    {
+      "id": 1,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 2,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 5,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 6,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 7,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 10,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 11,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 12,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 13,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 17,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 18,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 21,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 24,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 29,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 34,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 42,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 48,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 53,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 54,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 55,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 56,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 57,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 58,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 59,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 60,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 61,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 62,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 63,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 64,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 65,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 66,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 67,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 68,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 69,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 70,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 71,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 72,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 73,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 74,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 75,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 76,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 77,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 78,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 79,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 80,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 81,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 82,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 83,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 84,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 85,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 86,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 87,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 88,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 89,
+      "compatibility": "compatible_existing_authorization_evidence_cleanup_or_publication"
+    },
+    {
+      "id": 90,
+      "compatibility": "existing_document_behavior_compatible"
+    },
+    {
+      "id": 91,
+      "compatibility": "existing_document_behavior_compatible"
+    },
+    {
+      "id": 92,
+      "compatibility": "existing_document_behavior_compatible"
+    },
+    {
+      "id": 93,
+      "compatibility": "existing_document_behavior_compatible"
+    },
+    {
+      "id": 94,
+      "compatibility": "new_actual_trial"
+    },
+    {
+      "id": 95,
+      "compatibility": "new_actual_trial"
+    },
+    {
+      "id": 96,
+      "compatibility": "new_actual_trial"
+    },
+    {
+      "id": 97,
+      "compatibility": "new_actual_trial"
+    },
+    {
+      "id": 98,
+      "compatibility": "new_actual_trial"
+    }
+  ]
+}

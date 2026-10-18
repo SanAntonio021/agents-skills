@@ -1,0 +1,17 @@
+2026-09-07T09:06:24.004967Z  WARN codex_core_plugins::remote::remote_installed_plugin_sync: remote installed plugin bundle sync failed error=chatgpt authentication required for remote plugin catalog; api key auth is not supported
+2026-09-07T09:06:24.024908Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.026788Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.027713Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.029325Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.031695Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.034948Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T09:06:24.218654Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-09-07T09:06:24.218704Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-09-07T09:06:24.237087Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="github@openai-api-curated" path=C:\Users\SanAn\.codex\plugins\cache\openai-api-curated\github
+2026-09-07T09:06:24.237120Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="sites@openai-bundled" path=C:\Users\SanAn\.codex\plugins\cache\openai-bundled\sites
+2026-09-07T09:06:24.239292Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T09:06:25.780244Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-09-07T09:06:26.797332Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T09:06:26.810207Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T09:06:26.817962Z  WARN codex_core_plugins::loader: configured curated plugin no longer exists in curated marketplace during cache refresh plugin=github marketplace=openai-api-curated
+2026-09-07T09:09:06.085935Z  WARN codex_mcp::rmcp_client: failed to initialize MCP client during shutdown: MCP startup failed: Environment variable GITHUB_PAT_TOKEN for MCP server 'github' is not set

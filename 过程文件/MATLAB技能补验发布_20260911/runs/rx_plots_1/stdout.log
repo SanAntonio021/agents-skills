@@ -1,0 +1,27 @@
+MATLAB_VERSION 23.2.0.2485118 (R2023b) Update 6
+  包含以下字段的 1x113 struct 数组:
+
+    Name
+    Version
+    Release
+    Date
+
+PREFDIR D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\runs\rx_plots_1\preferences
+SCREEN_SIZE            1           1        1920        1080
+
+MONITORS            1           1        1920        1080
+          11        1092        1920        1080
+        1931        1089        1920        1080
+        1921           9        1920        1080
+
+[PASS] rx_eleven_panel_data_and_layout (64.19s) RX11/13 axes; 1440x810 and 1920x1080; dynamic channels, rates, bandwidth, QAM order, missing stages, shared payload and tracking statistics; zero instrument I/O
+[PASS] traditional_tx_rx_process_dashboards_and_bundle (38.29s) RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states
+                          Name                           Status    Seconds                                                                                   Note                                                                               
+    _________________________________________________    ______    _______    __________________________________________________________________________________________________________________________________________________________________
+
+    "rx_eleven_panel_data_and_layout"                    "PASS"    64.195     "RX11/13 axes; 1440x810 and 1920x1080; dynamic channels, rates, bandwidth, QAM order, missing stages, shared payload and tracking statistics; zero instrument I/O"
+    "traditional_tx_rx_process_dashboards_and_bundle"    "PASS"     38.29     "RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states"                                                         
+
+Validation report: D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\checks\20260911_144809_validation_rx_plots
+TEMPLATE_VALIDATION_PASS rx_plots
+ACCEPTANCE_COMPLETE rx_plots

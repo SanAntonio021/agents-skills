@@ -1,0 +1,15 @@
+{
+  "init": [
+    {
+      "model": "claude-opus-5",
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read"
+      ],
+      "skills": [],
+      "plugins": [],
+      "mcp_servers": []
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "d:\\baidusyncdisk\\.agents\\skills\\过程文件\\git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\repo": {
+    "preserve": [
+      "preserve-cache"
+    ],
+    "reproducible": [
+      "build-cache"
+    ],
+    "schemaVersion": 2,
+    "rebuild": {
+      "build-cache": "echo executed > D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\rebuild-must-not-run.txt"
+    }
+  }
+}

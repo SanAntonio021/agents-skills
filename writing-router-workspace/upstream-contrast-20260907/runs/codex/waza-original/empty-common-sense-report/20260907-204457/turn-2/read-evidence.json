@@ -1,0 +1,7 @@
+[
+  {
+    "command": "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$gate = '\"'D:\\\\BaiduSyncdisk\\\\.agents\\\\skills\\\\writing-router-workspace\\\\upstream-contrast-20260907\\\\waza-original\\\\write\\\\scripts\\\\check-punctuation.sh'\nif (-not (Test-Path -LiteralPath \"'$gate -PathType Leaf)) { throw \"Punctuation gate not found: $gate\" }\n@'\"'\n🥷该批设备要求 5 天内到货。在到货时限不调整的情况下，丙型是现有报价中唯一满足交期的方案。本次共收到 3 份书面报价，均按含税、含运费口径核对：\n\n- 甲型：2800 元，交期 10 天。\n- 乙型：3100 元，交期 6 天。\n- 丙型：3500 元，交期 4 天。\n\n丙型报价较甲型高 700 元、较乙型高 400 元。目前仅完成报价核对，样机尚未验收，最终采购结论应待样机验收后确定。\n'@ | bash \"'$gate --lang zh'",
+    "exit_code": 0,
+    "output": "punctuation: ok\r\n"
+  }
+]

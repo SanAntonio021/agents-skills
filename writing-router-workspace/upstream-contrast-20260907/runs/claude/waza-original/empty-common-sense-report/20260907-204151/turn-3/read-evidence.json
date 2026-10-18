@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cat <<'EOF' | bash \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write/scripts/check-punctuation.sh\" --lang zh\n受 5 天到货要求约束，现有 3 份报价中只有丙型（3500 元，交期 4 天）可选，样机验收通过后即可定型。\nEOF",
+      "description": "Run punctuation gate on summary sentence"
+    }
+  }
+]

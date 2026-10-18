@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "helper_contract_version": 13,
+  "ok": false,
+  "status": "preflight_failed",
+  "exit_code": 10,
+  "message": "Each worktree exception must be a repository-relative path followed by = and a 64-character SHA-256.",
+  "expected_remote_commit": "da0c2758ad7577f76974c6bce58e4aa1f77c2a52",
+  "expected_base_commit": "",
+  "expected_runtime_local_files": [],
+  "allow_historical_commit": true,
+  "source": null,
+  "verify_only": false,
+  "ui": {
+    "process_started": false,
+    "process_id": null,
+    "scan_invoked": false,
+    "scan_observed_busy_state": null,
+    "clicked_skills": [],
+    "all_update_invoked": false,
+    "input_method": "background_cli",
+    "window_activation_requested": false,
+    "foreground_restore_requested": false
+  },
+  "background": {
+    "tool": "cc-switch-cli",
+    "version": "5.10.4-download-timeout.1",
+    "binary_path": null,
+    "binary_downloaded": false,
+    "backup_created": false,
+    "process_ids": [],
+    "processed_skills": [],
+    "retry_events": [],
+    "proxy_source": null,
+    "foreground_window_requested": false
+  },
+  "non_target_unchanged": null,
+  "cc_switch_metadata": null,
+  "skills": [
+    {
+      "name": "docx",
+      "action": "pending",
+      "verified": false,
+      "layers": null
+    },
+    {
+      "name": "writing-router",
+      "action": "pending",
+      "verified": false,
+      "layers": null
+    }
+  ],
+  "errors": [
+    {
+      "code": "invalid_worktree_exception",
+      "message": "Each worktree exception must be a repository-relative path followed by = and a 64-character SHA-256."
+    }
+  ],
+  "warnings": [],
+  "duration_ms": 83
+}

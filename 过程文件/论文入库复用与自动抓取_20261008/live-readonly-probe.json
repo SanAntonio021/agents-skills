@@ -1,0 +1,9 @@
+{
+  "kind": "real_environment_read_only",
+  "local_api_http_status": 200,
+  "connector_http_status": 200,
+  "zotero_version": "9.0.6",
+  "persisted_automatic_pdf_download": "false",
+  "native_additions_tested": false,
+  "automatic_pause_restore_real_trigger_tested": false
+}

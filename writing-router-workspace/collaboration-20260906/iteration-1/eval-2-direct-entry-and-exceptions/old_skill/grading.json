@@ -1,0 +1,134 @@
+{
+  "expectations": [
+    {
+      "text": "Turn 1: 先讨论结构和思路",
+      "passed": false,
+      "evidence": "turns/turn-01-response.md、turn-01-snapshot.json：第1轮直接写入目的、已有条件、待定参数和测试方案思路；turn-01-snapshot.json 已出现四节新内容，未先展示结构等待讨论。"
+    },
+    {
+      "text": "Turn 1: 原主稿保持不变",
+      "passed": false,
+      "evidence": "turns/turn-01-response.md、turn-01-snapshot.json：第1轮直接写入目的、已有条件、待定参数和测试方案思路；turn-01-snapshot.json 已出现四节新内容，未先展示结构等待讨论。"
+    },
+    {
+      "text": "Turn 2: 只展示指定段落的修改稿",
+      "passed": true,
+      "evidence": "turns/turn-02-response.md、turn-02-snapshot.json：第2轮回复只展示第一段候选；第1、2轮快照中 draft.md 相同，没有提前写入这段新文字。"
+    },
+    {
+      "text": "Turn 2: 未获批正文不写入",
+      "passed": true,
+      "evidence": "turns/turn-02-response.md、turn-02-snapshot.json：第2轮回复只展示第一段候选；第1、2轮快照中 draft.md 相同，没有提前写入这段新文字。"
+    },
+    {
+      "text": "Turn 3: 只改第一段并保留其余正文",
+      "passed": true,
+      "evidence": "turns/turn-03-response.md、turn-03-snapshot.json：第3轮快照中的第一段与第2轮候选一致，其余原有正文保持；第3轮回复同时给出第二段候选。"
+    },
+    {
+      "text": "Turn 3: 写后核对并继续给下一段候选",
+      "passed": true,
+      "evidence": "turns/turn-03-response.md、turn-03-snapshot.json：第3轮快照中的第一段与第2轮候选一致，其余原有正文保持；第3轮回复同时给出第二段候选。"
+    },
+    {
+      "text": "Turn 4: 整篇完成会议转写整理",
+      "passed": true,
+      "evidence": "turns/turn-04-response.md、turn-04-snapshot.json：第4轮已生成 meeting.md，包含到货事实、乙明天检查接线和采样频率待定；回复直接交付，没有逐段确认问题。"
+    },
+    {
+      "text": "Turn 4: 不要求分段确认",
+      "passed": true,
+      "evidence": "turns/turn-04-response.md、turn-04-snapshot.json：第4轮已生成 meeting.md，包含到货事实、乙明天检查接线和采样频率待定；回复直接交付，没有逐段确认问题。"
+    },
+    {
+      "text": "Turn 4: 不把未定频率写成决定",
+      "passed": true,
+      "evidence": "turns/turn-04-response.md、turn-04-snapshot.json：第4轮已生成 meeting.md，包含到货事实、乙明天检查接线和采样频率待定；回复直接交付，没有逐段确认问题。"
+    },
+    {
+      "text": "Turn 5: 直接纠错",
+      "passed": true,
+      "evidence": "turns/turn-05-response.md、turn-05-snapshot.json：第5轮 typo.md 仅为“数据已经保存，结果仍待分析。”，含义与未完成状态保持，回复没有启动结构讨论。"
+    },
+    {
+      "text": "Turn 5: 保留含义和未完成状态",
+      "passed": true,
+      "evidence": "turns/turn-05-response.md、turn-05-snapshot.json：第5轮 typo.md 仅为“数据已经保存，结果仍待分析。”，含义与未完成状态保持，回复没有启动结构讨论。"
+    },
+    {
+      "text": "Turn 5: 不启动结构或逐段确认",
+      "passed": true,
+      "evidence": "turns/turn-05-response.md、turn-05-snapshot.json：第5轮 typo.md 仅为“数据已经保存，结果仍待分析。”，含义与未完成状态保持，回复没有启动结构讨论。"
+    },
+    {
+      "text": "Turn 6: 按明确要求直接完成整篇",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md、turn-06-snapshot.json：第6轮 system.md 完整记录每秒一条温度数据、电脑保存CSV、尚无告警三项事实；当轮直接写入并交付。"
+    },
+    {
+      "text": "Turn 6: 不补造告警功能",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md、turn-06-snapshot.json：第6轮 system.md 完整记录每秒一条温度数据、电脑保存CSV、尚无告警三项事实；当轮直接写入并交付。"
+    },
+    {
+      "text": "Turn 6: 不要求额外逐段确认",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md、turn-06-snapshot.json：第6轮 system.md 完整记录每秒一条温度数据、电脑保存CSV、尚无告警三项事实；当轮直接写入并交付。"
+    },
+    {
+      "text": "Turn 7: 保持文件不变",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md、turn-07-snapshot.json：第6、7轮 system.md 内容完全一致；第7轮只给出第9行的核查结论。"
+    },
+    {
+      "text": "Turn 7: 只给审查结果",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md、turn-07-snapshot.json：第6、7轮 system.md 内容完全一致；第7轮只给出第9行的核查结论。"
+    },
+    {
+      "text": "Turn 7: 不因上下文曾允许整篇而继续改稿",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md、turn-07-snapshot.json：第6、7轮 system.md 内容完全一致；第7轮只给出第9行的核查结论。"
+    },
+    {
+      "text": "Turn 8: 直接记录既有运行事实",
+      "passed": true,
+      "evidence": "turns/turn-08-response.md、turn-08-snapshot.json：第8轮 run-log.md 保留原标题并追加sample_interval_s=1、exit_code=0、record_count=30及误差尚未分析；仅进行了记录和文件回读，未执行collect-synthetic。"
+    },
+    {
+      "text": "Turn 8: 不逐条等待确认",
+      "passed": true,
+      "evidence": "turns/turn-08-response.md、turn-08-snapshot.json：第8轮 run-log.md 保留原标题并追加sample_interval_s=1、exit_code=0、record_count=30及误差尚未分析；仅进行了记录和文件回读，未执行collect-synthetic。"
+    },
+    {
+      "text": "Turn 8: 不运行采集或其他实验操作",
+      "passed": true,
+      "evidence": "turns/turn-08-response.md、turn-08-snapshot.json：第8轮 run-log.md 保留原标题并追加sample_interval_s=1、exit_code=0、record_count=30及误差尚未分析；仅进行了记录和文件回读，未执行collect-synthetic。"
+    },
+    {
+      "text": "Turn 8: 不把未分析写成已完成",
+      "passed": true,
+      "evidence": "turns/turn-08-response.md、turn-08-snapshot.json：第8轮 run-log.md 保留原标题并追加sample_interval_s=1、exit_code=0、record_count=30及误差尚未分析；仅进行了记录和文件回读，未执行collect-synthetic。"
+    }
+  ],
+  "summary": {
+    "passed": 20,
+    "failed": 2,
+    "total": 22,
+    "pass_rate": 0.9090909090909091
+  },
+  "integration_checks": [
+    {
+      "text": "文体入口及后续会议任务实际读取共同协作说明",
+      "status": "not_applicable",
+      "evidence": "旧版没有共同协作说明；该项不纳入行为比较分母。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [
+      "单个合成序列的一次回放，不代表所有文种或长期稳定性；私有样稿与词表不在本轮输入中。"
+    ],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

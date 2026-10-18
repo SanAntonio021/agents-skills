@@ -1,0 +1,15 @@
+2026-09-07T06:58:03.408503Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.409840Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.410635Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.411847Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.413322Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.416138Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T06:58:03.491174Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-09-07T06:58:03.491201Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-09-07T06:58:03.505928Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="github@openai-api-curated" path=C:\Users\SanAn\.codex\plugins\cache\openai-api-curated\github
+2026-09-07T06:58:03.507481Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T06:58:05.173942Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-09-07T06:58:05.676595Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T06:58:05.685627Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T06:58:05.690170Z  WARN codex_core_plugins::loader: configured curated plugin no longer exists in curated marketplace during cache refresh plugin=github marketplace=openai-api-curated
+2026-09-07T06:58:18.697484Z  WARN codex_mcp::rmcp_client: failed to initialize MCP client during shutdown: MCP startup failed: Environment variable GITHUB_PAT_TOKEN for MCP server 'github' is not set

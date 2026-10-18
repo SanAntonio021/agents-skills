@@ -1,0 +1,22 @@
+{
+  "account": "weipengjinniu50\\sanan",
+  "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+  "items": [
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\回收探测_20260914_directory",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IB9ZF31",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RB9ZF31",
+      "files": 1,
+      "bytes": 34,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\回收探测_20260914_file",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWP6R6X",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWP6R6X",
+      "files": 1,
+      "bytes": 29,
+      "verified": true
+    }
+  ]
+}

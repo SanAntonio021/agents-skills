@@ -1,0 +1,181 @@
+{
+  "liveRemote": {
+    "heads": {
+      "refs/heads/main": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466"
+    },
+    "tags": {
+      "refs/tags/v1": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466"
+    },
+    "symbolicHead": "refs/heads/main",
+    "symbolicHeadRaw": "ref: refs/heads/main\tHEAD\n88d01f12cdfff0349941d1e44e6f9fd5faa1b466\tHEAD\n"
+  },
+  "refs": {
+    "refs/heads/main": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466",
+    "refs/remotes/origin/HEAD": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466",
+    "refs/remotes/origin/main": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466",
+    "refs/tags/v1": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466"
+  },
+  "worktreesRaw": "worktree D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-qfccqzvt/repo\u0000HEAD 88d01f12cdfff0349941d1e44e6f9fd5faa1b466\u0000branch refs/heads/main\u0000\u0000",
+  "stash": "",
+  "reflog": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466\trefs/remotes/origin/HEAD@{2026-10-14T22:07:51+08:00}\tfetch\n88d01f12cdfff0349941d1e44e6f9fd5faa1b466\trefs/remotes/origin/main@{2026-10-14T22:07:48+08:00}\tupdate by push\n88d01f12cdfff0349941d1e44e6f9fd5faa1b466\trefs/heads/main@{2026-10-14T22:07:47+08:00}\tcommit (initial): initial\n88d01f12cdfff0349941d1e44e6f9fd5faa1b466\tHEAD@{2026-10-14T22:07:47+08:00}\tcommit (initial): initial\n",
+  "config": "file:C:/Program Files/Git/etc/gitconfig\tdiff.astextplain.textconv=astextplain\nfile:C:/Program Files/Git/etc/gitconfig\tfilter.lfs.clean=git-lfs clean -- %f\nfile:C:/Program Files/Git/etc/gitconfig\tfilter.lfs.smudge=git-lfs smudge -- %f\nfile:C:/Program Files/Git/etc/gitconfig\tfilter.lfs.process=git-lfs filter-process\nfile:C:/Program Files/Git/etc/gitconfig\tfilter.lfs.required=true\nfile:C:/Program Files/Git/etc/gitconfig\thttp.sslbackend=schannel\nfile:C:/Program Files/Git/etc/gitconfig\tcore.autocrlf=true\nfile:C:/Program Files/Git/etc/gitconfig\tcore.fscache=true\nfile:C:/Program Files/Git/etc/gitconfig\tcore.symlinks=true\nfile:C:/Program Files/Git/etc/gitconfig\tpull.rebase=false\nfile:C:/Program Files/Git/etc/gitconfig\tcredential.helper=manager\nfile:C:/Program Files/Git/etc/gitconfig\tcredential.https://dev.azure.com.usehttppath=true\nfile:C:/Program Files/Git/etc/gitconfig\tinit.defaultbranch=master\nfile:C:/Users/SanAn/.gitconfig\tuser.name=SanAntonio021\nfile:C:/Users/SanAn/.gitconfig\tuser.email=11408908@qq.com\nfile:C:/Users/SanAn/.gitconfig\tcredential.helper=manager\nfile:C:/Users/SanAn/.gitconfig\tcredential.https://gitee.com.provider=generic\nfile:C:/Users/SanAn/.gitconfig\tcredential.https://github.com.helper=\nfile:C:/Users/SanAn/.gitconfig\tcredential.https://github.com.helper=!'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential\nfile:C:/Users/SanAn/.gitconfig\tcredential.https://gist.github.com.helper=\nfile:C:/Users/SanAn/.gitconfig\tcredential.https://gist.github.com.helper=!'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential\nfile:.git/config\tcore.repositoryformatversion=0\nfile:.git/config\tcore.filemode=false\nfile:.git/config\tcore.bare=false\nfile:.git/config\tcore.logallrefupdates=true\nfile:.git/config\tcore.ignorecase=true\nfile:.git/config\tuser.name=Branch Consolidation Test\nfile:.git/config\tuser.email=branch-consolidation@example.invalid\nfile:.git/config\tremote.origin.url=D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\remote.git\nfile:.git/config\tremote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\nfile:.git/config\tbranch.main.remote=origin\nfile:.git/config\tbranch.main.merge=refs/heads/main\ncommand line:\tcore.longpaths=true\n",
+  "worktrees": [
+    {
+      "record": {
+        "worktree": "D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-qfccqzvt/repo",
+        "HEAD": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466",
+        "branch": "refs/heads/main"
+      },
+      "head": "88d01f12cdfff0349941d1e44e6f9fd5faa1b466",
+      "branch": "refs/heads/main",
+      "indexSha256": "f7c99199596ca183a8fa23679e0aa6b456adea493640827f004226be4be21b36",
+      "stage": "100644 e121d42ead8721644dca1aed6a400e93231af513 0\t.gitignore\u0000100644 df967b96a579e45a18b8251732d16804b2e56a55 0\tconfig.txt\u0000100644 df967b96a579e45a18b8251732d16804b2e56a55 0\tstash.txt\u0000100644 df967b96a579e45a18b8251732d16804b2e56a55 0\ttracked.txt\u0000",
+      "status": "?? untracked.txt\u0000!! build-cache/\u0000!! preserve-cache/\u0000",
+      "statusAll": "? untracked.txt\u0000",
+      "stagedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": [
+        {
+          "path": ".gitignore",
+          "kind": "file",
+          "size": 29,
+          "sha256": "ab474875bf36d406c4a3ba9eec9a1ee3a2df2c546ba30b3e659bfa29288d3bc8",
+          "mode": 438,
+          "linkTarget": null
+        },
+        {
+          "path": "config.txt",
+          "kind": "file",
+          "size": 5,
+          "sha256": "f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "mode": 438,
+          "linkTarget": null
+        },
+        {
+          "path": "stash.txt",
+          "kind": "file",
+          "size": 5,
+          "sha256": "f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "mode": 438,
+          "linkTarget": null
+        },
+        {
+          "path": "tracked.txt",
+          "kind": "file",
+          "size": 5,
+          "sha256": "f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "mode": 438,
+          "linkTarget": null
+        }
+      ],
+      "untracked": [
+        {
+          "path": "untracked.txt",
+          "kind": "file",
+          "size": 12,
+          "sha256": "1349de7c77274b9598e41a3d7db83351c7e2f3fc765d00651f91fd02c2c33e9b",
+          "mode": 438,
+          "linkTarget": null
+        }
+      ],
+      "ignored": [
+        {
+          "path": "preserve-cache",
+          "kind": "directory",
+          "size": 0,
+          "sha256": null,
+          "mode": 511,
+          "linkTarget": null
+        },
+        {
+          "path": "preserve-cache/experiment.csv",
+          "kind": "file",
+          "size": 29,
+          "sha256": "301533f88486f68a595a6b5b031a9df2b2c473d0235a2e3a04f86c4a4d3a65b7",
+          "mode": 438,
+          "linkTarget": null
+        }
+      ],
+      "disposition": {
+        "preserve": [
+          "preserve-cache"
+        ],
+        "reproducible": [
+          "build-cache"
+        ],
+        "schemaVersion": 2,
+        "rebuild": {
+          "build-cache": "echo executed > D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\rebuild-must-not-run.txt"
+        }
+      },
+      "protection": {
+        "tracked": [
+          ".gitignore",
+          "config.txt",
+          "stash.txt",
+          "tracked.txt"
+        ],
+        "untracked": [
+          "untracked.txt"
+        ],
+        "ignored": [
+          "build-cache",
+          "preserve-cache"
+        ],
+        "rules": {
+          ".gitignore": {
+            "path": ".gitignore",
+            "kind": "file",
+            "size": 29,
+            "sha256": "ab474875bf36d406c4a3ba9eec9a1ee3a2df2c546ba30b3e659bfa29288d3bc8",
+            "mode": 438,
+            "linkTarget": null
+          },
+          "external-0": {
+            "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\repo\\.git\\info\\exclude",
+            "entry": {
+              "path": "ignore-rule",
+              "kind": "file",
+              "size": 240,
+              "sha256": "6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1",
+              "mode": 438,
+              "linkTarget": null
+            }
+          },
+          "external-1": {
+            "path": "C:\\Users\\SanAn\\.config\\git\\ignore",
+            "entry": {
+              "path": "ignore-rule",
+              "kind": "file",
+              "size": 63,
+              "sha256": "744e3b6c0e736af11840443f60f3f4b38176d214e026a54763628d8a6c317cbb",
+              "mode": 438,
+              "linkTarget": null
+            }
+          }
+        },
+        "reproducibleRoots": [
+          {
+            "path": "build-cache",
+            "kind": "directory",
+            "mode": 511,
+            "device": 9676005533149278659,
+            "inode": 1407374885747724,
+            "linkTarget": null,
+            "ancestors": [
+              {
+                "path": ".",
+                "kind": "directory",
+                "mode": 511,
+                "device": 9676005533149278659,
+                "inode": 844424932326344,
+                "linkTarget": null
+              }
+            ],
+            "rebuild": "echo executed > D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-qfccqzvt\\rebuild-must-not-run.txt"
+          }
+        ]
+      }
+    }
+  ]
+}

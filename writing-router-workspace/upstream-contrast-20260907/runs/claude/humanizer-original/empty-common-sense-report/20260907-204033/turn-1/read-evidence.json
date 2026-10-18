@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh",
+      "args": "修改采购调研报告，仅在对话中输出改稿；技能与参考文件只使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills 下的版本"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" 2>/dev/null",
+      "description": "List humanizer-zh skill files"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List personal vocab directory"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/vocab\" && cat 目录.md && echo \"=== 术语 ===\" && cat 术语.md | head -60",
+      "description": "Read vocab index and terms"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/vocab/中文\" && cat 通用.md && echo \"=== 调研报告 ===\" && cat 调研报告.md",
+      "description": "Read Chinese general and survey report vocab"
+    }
+  }
+]

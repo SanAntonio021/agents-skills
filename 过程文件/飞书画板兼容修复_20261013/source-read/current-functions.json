@@ -1,0 +1,12 @@
+{
+  "origin": "https://ycn6583m3r30.feishu.cn",
+  "path": "/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+  "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+  "board_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+  "functions": {
+    "selectNodeText": "selectNodeText(e,r){!r&&e.isInputableNode()&&(r=e.getGraphicTexts().find(e=>{let{type:r}=e;return r===eG.W.Main||r===eG.W.LineCaption})),r&&((0,ew.XA)(e,r,this.app.interactCtx),this.app.renderManager.addAuxiliaryTask())}",
+    "processInput": "processInput(e){this.inputTextProcessor.processInput(e)}",
+    "blur": "blur(){var e;let r=!(arguments.length>0)||void 0===arguments[0]||arguments[0];if(this.isBluring=!0,this.renderInput.blur(this.isMobileInputModeEnabled),this.renderInput.hideCursor(),this.isBluring=!1,!this.textInfo||this.inputStatus===a.Hidden){this.inputStatus=a.Hidden,this.textInfo=void 0;return}let{node:i,inputableText:o}=this.textInfo;this.inputStatus=a.Hidden,this.textInfo=void 0,this.mobileInputControl.resetTransientState(),o.graphicText.resetScrollPosition()&&this.renderManager.addContentTask(),this.mentionManager.resetMentionState(),o.graphicText.isEditing=!1,o.graphicText.isDeactivated=!1,this.emitter.emit(s.Blur,i,o,r),null==(e=this.ctx)||e.auxiliaryManager.addOrUpdateAuxiliaryDomState(M.C.TextNodeFocusStateChange,{type:\"textNodeFocusStateChange\",isFocusing:!1,node:i,inputableText:o})}"
+  },
+  "signature": "d309a450"
+}

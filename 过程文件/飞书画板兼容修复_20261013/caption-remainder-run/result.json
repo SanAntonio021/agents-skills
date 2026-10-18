@@ -1,0 +1,827 @@
+{
+  "status": "unverified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c3:1",
+        "text": "改写标签\n新的第二行"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-005.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 7,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 8,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "after_raw": "raw-006.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c3:1",
+        "text": ""
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-008.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 8,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 9,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-009.json"
+      },
+      "native_persistence": {
+        "status": "confirmed",
+        "minimum_applied_version": 9,
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 9,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "inspect": "native-save-witness-002/fresh-native.json"
+      },
+      "after_raw": "raw-009.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c3:1",
+        "text": "最终标签\n完成"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-011.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 9,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 10,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-012.json"
+      },
+      "native_persistence": {
+        "status": "confirmed",
+        "minimum_applied_version": 10,
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 10,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "inspect": "native-save-witness-003/fresh-native.json"
+      },
+      "after_raw": "raw-012.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [
+        {
+          "id": "c3:1",
+          "normalization": "native_default_caption_theme",
+          "theme_text_color_code": -1,
+          "text_color_type": 0
+        }
+      ],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c3:2",
+        "text": "已有标签改写\n保持第二行"
+      },
+      "save_status": "confirmed",
+      "verification_status": "failed",
+      "failure_phase": "reopen",
+      "execution_status": "returned",
+      "before_raw": "raw-014.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 10,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 11,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-015.json"
+      },
+      "after_raw": "raw-015.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c3:2"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "error": "VerificationError"
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_LSi2TYA06hNRMcWTyDH1tA",
+      "tab_id": "C3A2F2BD8E3724F13F6EB8AE26CEDD5F",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_qY3tsuZLfTrs1giKl6Y0_Q",
+      "tab_id": "FCA9B05499BB8CEA759DE7354F042906",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_A8nyovufl-XaQoPyBZx7Tw",
+      "tab_id": "52DA1D050A3A4853BC6043F276559501",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_uqFPa61XJUl4AmVpj3IqOA",
+      "tab_id": "0CB5EA17048625C0721D02091B6DD70D",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_Qpm6shy3BO4yZiU4DvOZrQ",
+      "tab_id": "25860614F1AD91A1CAF04131D47B15E5",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_yVpw80SSaWmgvltincYSTQ",
+      "tab_id": "33073B20A38306F52D152EBBBF973F70",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_fwCiObzl-OE2QI4wbSuMQw",
+      "tab_id": "5BC98761E380946B3CDF2E562F84ED81",
+      "open_status": "created"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_LSi2TYA06hNRMcWTyDH1tA",
+      "tab_id": "C3A2F2BD8E3724F13F6EB8AE26CEDD5F",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_LSi2TYA06hNRMcWTyDH1tA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_A8nyovufl-XaQoPyBZx7Tw",
+      "tab_id": "52DA1D050A3A4853BC6043F276559501",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_A8nyovufl-XaQoPyBZx7Tw",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_qY3tsuZLfTrs1giKl6Y0_Q",
+      "tab_id": "FCA9B05499BB8CEA759DE7354F042906",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_qY3tsuZLfTrs1giKl6Y0_Q",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_Qpm6shy3BO4yZiU4DvOZrQ",
+      "tab_id": "25860614F1AD91A1CAF04131D47B15E5",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_Qpm6shy3BO4yZiU4DvOZrQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_uqFPa61XJUl4AmVpj3IqOA",
+      "tab_id": "0CB5EA17048625C0721D02091B6DD70D",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_uqFPa61XJUl4AmVpj3IqOA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_yVpw80SSaWmgvltincYSTQ",
+      "tab_id": "33073B20A38306F52D152EBBBF973F70",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_yVpw80SSaWmgvltincYSTQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_fwCiObzl-OE2QI4wbSuMQw",
+      "tab_id": "5BC98761E380946B3CDF2E562F84ED81",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_fwCiObzl-OE2QI4wbSuMQw",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    }
+  ],
+  "initial_nodes": [
+    {
+      "id": "a3:1",
+      "kind": "text",
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50,
+      "text": "独立文本初始",
+      "font_size": 20,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c3:1",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "新连线标签\n第二行"
+      ],
+      "caption": "新连线标签\n第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 14,
+      "caption_width": -1,
+      "caption_size_mode": 0
+    },
+    {
+      "id": "c3:2",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 320,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "已有标签\n原第二行"
+      ],
+      "caption": "已有标签\n原第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o3:1",
+      "kind": "shape",
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "形状新增文字\n完成",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:2",
+      "kind": "shape",
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "保护模块",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:3",
+      "kind": "shape",
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90,
+      "text": "保持原样\n非目标观察",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "initial_inspect": "inspect-000.json",
+  "released_tab": null,
+  "page_status": "closed",
+  "failure_phase": "reopen",
+  "error": "VerificationError",
+  "reason": "CLI operation failed; no automatic write retry: [{\"type\": \"network\"}, {\"subtype\": \"transport\"}, {\"message\": \"API call failed: Post \\\"[URL] EOF\"}]"
+}

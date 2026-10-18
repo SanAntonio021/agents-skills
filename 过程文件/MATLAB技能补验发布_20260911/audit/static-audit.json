@@ -1,0 +1,16 @@
+{
+  "normalized_changes": [
+    "SKILL.md",
+    "references/standard.md"
+  ],
+  "missing_from_candidate": [
+    "evals/evals.json",
+    "evals/trigger-evals.json"
+  ],
+  "new_in_candidate": [],
+  "missing_markdown_links": [],
+  "copy_existing-empty_exit": 1,
+  "copy_new-copy_exit": 0,
+  "copy_exact": true,
+  "existing_empty_unchanged": true
+}

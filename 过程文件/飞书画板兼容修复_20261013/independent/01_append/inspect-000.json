@@ -1,0 +1,45 @@
+{
+  "nodes": [],
+  "render_alpha": {},
+  "line_endpoints": {},
+  "curve_handles": {},
+  "object_bounds": {},
+  "arrangement_bounds": {},
+  "world_geometry": {},
+  "binding_geometry": [],
+  "label_geometry": {},
+  "viewport": {
+    "rect": {
+      "x": 520.5,
+      "y": 236.25,
+      "width": 818,
+      "height": 398
+    },
+    "device_pixel_ratio": 1,
+    "world_to_screen": {
+      "a": 1,
+      "b": 0,
+      "c": 0,
+      "d": 1,
+      "e": 520.5,
+      "f": 236.25
+    }
+  },
+  "seq": 0,
+  "savedSeq": 0,
+  "signature": "54e7e6de",
+  "text_signature": "d309a450",
+  "native_save": {
+    "available": true,
+    "signature": "b8586b42",
+    "initialized": true,
+    "applied_version": 2,
+    "pending": 0,
+    "ordered_pending": 0,
+    "processing": false,
+    "offline": false,
+    "save_state": "saved",
+    "http_pending": 0
+  },
+  "group_cache_normalizations": []
+}

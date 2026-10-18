@@ -1,0 +1,237 @@
+{
+    "passed":  46,
+    "failed":  0,
+    "total":  46,
+    "tests":  [
+                  {
+                      "name":  "reject_relative_path",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "reject_parent_traversal",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "network_path_inventory_form_allowed",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "network_path_execution_rejected",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "overlapping_sources_rejected",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "junction_recorded_not_followed",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "junction_target_not_enumerated",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "symbolic_link_held",
+                      "passed":  true,
+                      "evidence":  "creation_not_permitted; junction coverage passed"
+                  },
+                  {
+                      "name":  "cloud_placeholder_held",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "cache_excluded",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "chinese_path_hashed",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "extended_long_path_enumerated",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "exact_duplicates_listed",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "same_target_conflict_held",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "existing_target_conflict_held",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "inventory_resume_byte_deterministic",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "read_failure_reported",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "scan_time_change_invalidates_hash",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "bounded_candidate_discovery_outputs_evidence",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "new_repo_creates_missing_external_git_parent",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "same_volume_uses_verified_move",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "group_mode_does_not_deduplicate_projects",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "interrupted_execution_writes_resume_state",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "group_active_git_recovered_independently",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "active_git_databases_outside_sync_root",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "git_bundle_restore_refs_stash_reflog_verified",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "git_dirty_untracked_remote_state_saved",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "retirement_removes_only_approved_source_paths",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "mock_recycle_adapter_used",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "shallow_document_layout_has_no_unapproved_structure",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "approved_common_presentation_at_target_root",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "ordinary_material_uses_one_classification_layer",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "paper_keeps_necessary_internal_depth",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "audit_keeps_necessary_internal_depth",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "wrapper_only_directories_removed_from_design",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "unapproved_target_tree_blocks_plan",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "approved_tree_sha256_recorded",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "acceptance_rejects_unapproved_empty_directory",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "acceptance_rejects_forbidden_wrapper_directory",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "cross_volume_uses_verified_copy",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "cross_volume_copy_then_retire_verified",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "plan_hash_tamper_blocks_execution",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "execution_never_overwrites_existing_target",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "failed_action_records_rollback_policy",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "source_change_invalidates_approved_plan",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  },
+                  {
+                      "name":  "insufficient_space_blocks_plan",
+                      "passed":  true,
+                      "evidence":  "passed"
+                  }
+              ]
+}

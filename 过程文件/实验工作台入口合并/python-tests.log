@@ -1,0 +1,6 @@
+Created standardized test project: C:\Users\SanAn\AppData\Local\Temp\standardize_test_project_pl3fdzs1\project
+No instrument connection, query, or write was performed.
+Workbench snapshot and complete copy passed; existing destination preserved.
+Validated runs: 10
+Validation passed. No instrument code was imported or executed.
+Self-test passed: four categories, concurrent collision allocation, display/full precision, legacy reads, raw plots, lossless replot, sources, and no-overwrite protection.

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "name": "search__first_attachment_failure",
+  "executor": "search",
+  "facts": "资料库无目标父条目；下一次 importFromFile 抛出一次模拟异常，随后导入可执行。",
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": true
+  },
+  "libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "items": [],
+  "nextItemID": 100,
+  "controls": {
+    "saveDelayMs": 0,
+    "failNextImport": true
+  },
+  "restartCount": 0
+}

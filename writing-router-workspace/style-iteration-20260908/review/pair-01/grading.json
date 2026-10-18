@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "A: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2, 2, 2]"
+    },
+    {
+      "text": "A: Turn 3 preserves the supply paragraph from turn 2",
+      "passed": true,
+      "evidence": "Exact paragraph comparison; only CRLF normalized."
+    },
+    {
+      "text": "A: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    },
+    {
+      "text": "B: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2, 2, 2]"
+    },
+    {
+      "text": "B: Turn 3 preserves the supply paragraph from turn 2",
+      "passed": true,
+      "evidence": "Exact paragraph comparison; only CRLF normalized."
+    },
+    {
+      "text": "B: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6
+  },
+  "notes": "两者均已达到核心要求。B的窄幅增益仅在第1轮省去了不承担新说明作用的核对/验收状态句，且没有丢失本次参数比较所需的限制。A第2轮已删除该句，最终两版实质相当。不是因为B更短，也不据此推断稳定优越。"
+}

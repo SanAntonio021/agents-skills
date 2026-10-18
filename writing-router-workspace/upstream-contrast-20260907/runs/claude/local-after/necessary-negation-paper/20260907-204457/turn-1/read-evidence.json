@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "润色中文论文结果讨论段落，需明确指标定义（帧丢弃率 vs 缓存占用率），只在对话中返回。技能入口与参考文件仅使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills 下版本。"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\ieee-manuscript-edit\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\writing-router\\references\\common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\writing-router\\references\\ai-smell-catalog.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\ieee-manuscript-edit\\references\\chinese-paper.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-after\\skills\\style-vocab\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\论文.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills\" && printf '%s\\n' '本实验统计的指标是帧丢弃率，而非缓存占用率：帧丢弃率表示发送帧中被丢弃的比例，不反映缓存的占用程度，定义为 p_drop = N_drop / N_sent，其中 N_drop 为丢弃帧数，N_sent 为发送帧数。在 256 B 定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到 p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。' | python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file - --vocab-root \"D:/BaiduSyncdisk/.agents/vocab\" --language zh --document-kind paper --output-format json",
+      "description": "Run vocab audit on the revised paragraph via stdin"
+    }
+  },
+  {
+    "name": "Grep",
+    "input": {
+      "pattern": "stdin|--text|add_argument",
+      "path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills/ieee-manuscript-edit/scripts/audit_writing_memory.py",
+      "output_mode": "content"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills\" && printf '%s\\n' '本实验统计的指标是帧丢弃率，而非缓存占用率：帧丢弃率表示发送帧中被丢弃的比例，不反映缓存的占用程度，定义为 p_drop = N_drop / N_sent，其中 N_drop 为丢弃帧数，N_sent 为发送帧数。在 256 B 定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到 p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。' > /tmp/para.md && python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file /tmp/para.md --vocab-root \"D:/BaiduSyncdisk/.agents/vocab\" --language zh --document-kind paper --output-format json",
+      "description": "Run vocab audit on revised paragraph"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills\" && printf '%s\\n' '本实验统计的指标是帧丢弃率，不是缓存占用率：帧丢弃率只反映发送帧中被丢弃的比例，不表示缓存的占用程度，定义为 p_drop = N_drop / N_sent，其中 N_drop 为丢弃帧数，N_sent 为发送帧数。在 256 B 定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到 p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。' > /tmp/para2.md && python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file /tmp/para2.md --vocab-root \"D:/BaiduSyncdisk/.agents/vocab\" --language zh --document-kind paper --output-format markdown",
+      "description": "Audit final wording of paragraph"
+    }
+  }
+]

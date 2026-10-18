@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "thread_id": "01a05d4d-3ec4-7160-a419-c145e4f4080f",
+    "thread_title": "读取链路预算源码并建基线",
+    "returned_turn_records": 100,
+    "pages": 10,
+    "has_more": false,
+    "source": "Codex read_thread; command outputs fetched separately for selected turns",
+    "scope_warning": "Not a global usage count or proof of every implicit load. No Claude business transcript audited."
+  },
+  "verified_reference_reads": [
+    {
+      "turn_id": "01a079d8-90ed-7cd2-9c2f-3311d9fb8438",
+      "command_id": "exec-0cf60751-7896-4b33-9610-12a02dd08aa6",
+      "started_at": 1788750631,
+      "exit_code": 0,
+      "refs": [
+        "C:/Users/SanAn/.codex/skills/writing-router/references/ai-smell-catalog.md"
+      ],
+      "output_available": true,
+      "output_truncated": false,
+      "returned_rule_headings": [
+        "# AI 写作气味目录"
+      ]
+    },
+    {
+      "turn_id": "01a076c2-f9f5-72e3-99a7-f05bcc96f977",
+      "command_id": "exec-f8e597e0-83e0-424e-b24d-b6cd0b294bde",
+      "started_at": 1788698884,
+      "exit_code": 0,
+      "refs": [
+        "C:/Users/SanAn/.codex/skills/technical-writing/SKILL.md",
+        "C:/Users/SanAn/.codex/skills/technical-writing/references/technical-exchange.md",
+        "C:/Users/SanAn/.codex/skills/writing-router/references/common-quality.md",
+        "C:/Users/SanAn/.codex/skills/writing-router/references/ai-smell-catalog.md"
+      ],
+      "output_available": true,
+      "output_truncated": false,
+      "returned_rule_headings": [
+        "# 技术文档写作",
+        "# 技术交流稿写法",
+        "# 共同质量规则",
+        "# AI 写作气味目录"
+      ]
+    },
+    {
+      "turn_id": "01a076ad-eecf-7572-bdaa-8717fc23e590",
+      "command_id": "exec-cf04a168-bb9e-43db-8df6-b37c670a005a",
+      "started_at": 1788697505,
+      "exit_code": 0,
+      "refs": [
+        "C:/Users/SanAn/.codex/skills/technical-writing/SKILL.md",
+        "C:/Users/SanAn/.codex/skills/writing-router/references/common-quality.md",
+        "C:/Users/SanAn/.codex/skills/writing-router/references/ai-smell-catalog.md",
+        "C:/Users/SanAn/.codex/skills/writing-router/references/document-version-protection.md"
+      ],
+      "output_available": true,
+      "output_truncated": false,
+      "returned_rule_headings": [
+        "# 技术文档写作",
+        "# 共同质量规则",
+        "# AI 写作气味目录",
+        "# 本地文稿版本保护"
+      ]
+    }
+  ],
+  "exact_edit_command_mentions_in_returned_commands": 0,
+  "exact_edit_usage_conclusion": "No strict heading-only case identified in this business history; absence of helper invocation is not itself a missed-use verdict. Helper and reference are absent from current runtime layers.",
+  "recent_diff_checks": [
+    {
+      "command_id": "exec-6a383f1a-2bda-4a8b-864c-d14699c0e34a",
+      "exit_code": 1,
+      "result": "complete diff; only six added lines",
+      "scope": "clear-weather figure, caption and confirmed paragraph"
+    },
+    {
+      "command_id": "exec-85bda3df-55bc-483a-93b4-99904ca4554e",
+      "exit_code": 1,
+      "result": "complete diff; only six added lines",
+      "scope": "hot-humid figure, caption and confirmed paragraph"
+    },
+    {
+      "command_id": "exec-62db46ae-1af0-4b16-883d-7d748688811a",
+      "exit_code": 1,
+      "result": "complete diff; only six added lines",
+      "scope": "medium-rain figure, caption and confirmed paragraph"
+    }
+  ],
+  "diff_note": "git diff exit code 1 with complete diff means changes found, not necessarily verification failure. Clear-weather first attempt had an incomplete filename and was retried correctly.",
+  "compare_object_counterexample": {
+    "original": [
+      "first protected sentence",
+      "second protected sentence"
+    ],
+    "candidate": [
+      "second protected sentence",
+      "first protected sentence"
+    ],
+    "reports_difference": false,
+    "sequence_equal": false,
+    "conclusion": "Compare-Object alone does not prove literal or order preservation; this does not establish that the business manuscript was reordered."
+  },
+  "source_tool_test": {
+    "reviewer": "bounded audit subagent, parent reviewed report and key file identities",
+    "passed": 26,
+    "skipped": 1,
+    "subtests_passed": 50,
+    "skip": "POSIX FIFO on Windows",
+    "runtime_behavior_accepted": false
+  },
+  "changes": {
+    "source_skills": false,
+    "runtime_skills": false,
+    "providers": false,
+    "private_vocab": false,
+    "private_samples": false,
+    "business_documents": false,
+    "commits": false,
+    "publication": false
+  },
+  "notes": [
+    "Selected source and runtime hash identities rechecked by parent.",
+    "Raw rollout file read was locked; continued through supported read_thread, no lock bypass.",
+    "Test results do not establish style quality or native runtime triggering."
+  ]
+}

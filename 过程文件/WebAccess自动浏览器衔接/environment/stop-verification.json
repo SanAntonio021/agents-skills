@@ -1,0 +1,10 @@
+{
+  "checked_ports": [
+    5688,
+    5689,
+    13546,
+    11493
+  ],
+  "remaining_listeners": [],
+  "verified_stopped": true
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate/writing-router/SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate/writing-router/references/common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate/writing-router/references/ai-smell-catalog.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate/style-vocab/SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\目录.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\论文.md"
+    }
+  }
+]

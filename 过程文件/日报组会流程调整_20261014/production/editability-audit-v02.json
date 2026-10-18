@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "file": {
+    "path": "D:/BaiduSyncdisk/.agents/skills/过程文件/日报组会流程调整_20261014/production/20261014_日报样例_技能流程测试_v02.pptx",
+    "bytes": 133672,
+    "sha256": "ab246118898c506ce88dca1f125bdc3c2df0b19b3a6c7d2ae75603f24067c2b0"
+  },
+  "slide_size_emu": {
+    "width": 12192000,
+    "height": 6858000
+  },
+  "slide_count": 4,
+  "totals": {
+    "native_shapes": 20,
+    "text_shapes": 20,
+    "groups": 0,
+    "pictures": 2,
+    "connectors": 0,
+    "graphic_frames": 0,
+    "exact_full_slide_pictures": 0
+  },
+  "media": {
+    "count": 2,
+    "extensions": {
+      ".png": 2
+    },
+    "svg_count": 0
+  },
+  "text_alignment": {
+    "vertical_anchor": {
+      "ctr": 10,
+      "default_top": 4,
+      "t": 6
+    },
+    "first_paragraph_horizontal": {
+      "ctr": 10,
+      "inherited": 10
+    },
+    "centered_top_review_count": 0,
+    "centered_top_review": []
+  },
+  "likely_flattened_slides": [],
+  "warnings": [],
+  "slides": [
+    {
+      "slide": 1,
+      "part": "ppt/slides/slide1.xml",
+      "native_shapes": 4,
+      "text_shapes": 4,
+      "groups": 0,
+      "pictures": 0,
+      "connectors": 0,
+      "graphic_frames": 0,
+      "exact_full_slide_pictures": 0,
+      "likely_flattened": false
+    },
+    {
+      "slide": 2,
+      "part": "ppt/slides/slide2.xml",
+      "native_shapes": 6,
+      "text_shapes": 6,
+      "groups": 0,
+      "pictures": 1,
+      "connectors": 0,
+      "graphic_frames": 0,
+      "exact_full_slide_pictures": 0,
+      "likely_flattened": false
+    },
+    {
+      "slide": 3,
+      "part": "ppt/slides/slide3.xml",
+      "native_shapes": 6,
+      "text_shapes": 6,
+      "groups": 0,
+      "pictures": 1,
+      "connectors": 0,
+      "graphic_frames": 0,
+      "exact_full_slide_pictures": 0,
+      "likely_flattened": false
+    },
+    {
+      "slide": 4,
+      "part": "ppt/slides/slide4.xml",
+      "native_shapes": 4,
+      "text_shapes": 4,
+      "groups": 0,
+      "pictures": 0,
+      "connectors": 0,
+      "graphic_frames": 0,
+      "exact_full_slide_pictures": 0,
+      "likely_flattened": false
+    }
+  ],
+  "interpretation": {
+    "native_objects": "Native text, shapes, groups, connectors, and graphic frames remain PowerPoint objects.",
+    "pictures": "Pictures can be moved, resized, and cropped, but their internal pixels are not decomposable PowerPoint objects.",
+    "svg": "SVG media count describes the final package, not an authoring or preview intermediate."
+  }
+}

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c44-f9e2-7432-9aec-82a50659143e"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"按数据手册标称功耗比较，P、Q、R分别为18 W、15 W和9 W，在功耗不超过12 W的要求下，只有R符合要求。"}}
+{"type":"turn.completed","usage":{"input_tokens":31598,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":219,"reasoning_output_tokens":172}}

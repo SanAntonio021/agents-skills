@@ -1,0 +1,39 @@
+{
+  "simulation": true,
+  "skill_source": "D:/BaiduSyncdisk/.agents/skills/paper-download/SKILL.md",
+  "ready": {
+    "calls": ["check", "start", "status", "login", "status", "download", "import", "verify", "complete"],
+    "precheck": "ready",
+    "credential_available": true,
+    "pdf_reader_available": true,
+    "browser_autofilled": false,
+    "institutional_access_readback": true,
+    "download_stage": "downloaded_identity_verified",
+    "version": "fixture_official",
+    "doi": "10.0000/fixture-only",
+    "parent": "fixture-parent",
+    "attachment": "fixture-attachment",
+    "readable": true,
+    "verified": true,
+    "final_stage": "completed",
+    "result": "Synthetic official-PDF download, existing-parent import, attachment readback and session completion succeeded."
+  },
+  "blocked": {
+    "calls": ["check", "start", "status"],
+    "precheck": "ready",
+    "credential_available": true,
+    "pdf_reader_available": true,
+    "browser_autofilled": false,
+    "start_stage": "host_blocked",
+    "reason": "blocked by policy",
+    "source": "fixture approval gate",
+    "status_readback": "no_session",
+    "host_permission_restoration_evidence": false,
+    "login_attempted": false,
+    "download_attempted": false,
+    "import_attempted": false,
+    "complete_attempted": false,
+    "result": "Stopped dependent actions after policy denial. No active session to close; requested official PDF remains pending."
+  },
+  "limits": "Isolated behavioral simulation only. No real network, browser, credentials, Zotero, publishing, system change or skill modification. Fixture source and initial state files were not read. Category, annotations, trash counts, PDF file bytes and hashes were not supplied by the CLI; no real-world verification is claimed. Older failed-run evidence was preserved."
+}

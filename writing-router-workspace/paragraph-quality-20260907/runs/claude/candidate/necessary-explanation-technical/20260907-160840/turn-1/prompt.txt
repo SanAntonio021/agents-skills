@@ -1,0 +1,3 @@
+这是独立的合成中文文稿任务，不对应真实项目。只在对话中交付，不创建或修改任何文件。本次业务技能仅从 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate 读取，入口为 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/candidate/technical-writing/SKILL.md。按入口选择本次文体并读取所需参考文件。沿相对链接仍在该技能快照内读取，不读取其他版本、源码工作树、已安装业务技能、历史对话、记忆或评测用例文件。个人样稿本次不可用，不读取writing-profile或writing-samples。适用个人词表可只读 D:\BaiduSyncdisk\.agents\vocab。不调用子智能体、业务系统或网络检索。读取限制由本次提示约定，不要求调整任何系统权限。
+
+按 technical-writing 润色下面的系统说明段，在对话中给出正文。读者是首次接触环形缓存、会看日志但不熟悉缓存计算的值班人员。原文：记录器使用环形缓存保存定长记录。缓存容量C = 9600条，写入速率r = 80条/s，保留时长按T = C / r计算，T以秒计。在缓存已写满且写入速率恒定时，T = 120 s，表示缓存中最旧的记录约为120 s前写入；新记录写入会覆盖最旧记录。这个时长表示可回看的记录跨度，不是单条记录的处理延迟。上述数值由容量与速率计算得到，断电后的数据保留尚未测试。

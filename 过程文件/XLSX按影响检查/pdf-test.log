@@ -1,0 +1,29 @@
+test_tools (unittest.loader._FailedTest.test_tools) ... ERROR
+
+======================================================================
+ERROR: test_tools (unittest.loader._FailedTest.test_tools)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_tools
+Traceback (most recent call last):
+  File "C:\Users\SanAn\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\unittest\loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\xlsx\tests\test_tools.py", line 21, in <module>
+    from libreoffice_headless import convert, find_soffice  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\xlsx\scripts\libreoffice_headless.py", line 17, in <module>
+    from libreoffice_runner import convert as _runner_convert  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\libreoffice-runner\scripts\libreoffice_runner\__init__.py", line 3, in <module>
+    from .core import RunReport, RunRequest, convert, find_soffice, run
+  File "D:\BaiduSyncdisk\.agents\skills\libreoffice-runner\scripts\libreoffice_runner\core.py", line 20, in <module>
+    from .cleanup import _remove_without_reparse_points, cleanup_abandoned
+  File "D:\BaiduSyncdisk\.agents\skills\libreoffice-runner\scripts\libreoffice_runner\cleanup.py", line 14, in <module>
+    import pywintypes
+ModuleNotFoundError: No module named 'pywintypes'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

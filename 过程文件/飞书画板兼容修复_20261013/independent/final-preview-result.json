@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "preview_image_path": "./final-preview.jpg",
+    "size_bytes": 88840
+  },
+  "_notice": {
+    "skills": {
+      "command": "lark-cli update",
+      "current": "1.0.94",
+      "message": "lark-cli skills 1.0.94 out of sync with binary 1.0.97, run: lark-cli update",
+      "target": "1.0.97"
+    }
+  }
+}

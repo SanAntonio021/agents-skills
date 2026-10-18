@@ -1,0 +1,11 @@
+{
+  "status": "stopped_after_provider_failure",
+  "reason": "Both first-case runs returned API Error 503 No available accounts; neither supplied valid prose or nonzero reported inference usage.",
+  "completed_failed_cases": ["claude/installed/integration-note", "claude/candidate/integration-note"],
+  "interrupted_cases": ["claude/installed/test-explanation", "claude/candidate/test-explanation"],
+  "not_started_cases": ["claude/installed/terms-control", "claude/candidate/terms-control"],
+  "owned_runner_pids_checked_before_termination": [81668, 40844],
+  "action": "Stopped only the verified current-task runner process trees. Existing prompts and partial execution directories retained. No model or provider switch.",
+  "partial_output_limitation": "Interrupted processes had not persisted their stdout; no claim is made about their responses or billing.",
+  "quality_judgment": "No Claude style-quality conclusion is possible from these infrastructure failures."
+}

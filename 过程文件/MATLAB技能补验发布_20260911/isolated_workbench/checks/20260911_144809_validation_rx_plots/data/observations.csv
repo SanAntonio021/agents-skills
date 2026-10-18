@@ -1,0 +1,4 @@
+﻿case,status,seconds,note
+-,-,s,-
+rx_eleven_panel_data_and_layout,PASS,64.194856299999998,"RX11/13 axes; 1440x810 and 1920x1080; dynamic channels, rates, bandwidth, QAM order, missing stages, shared payload and tracking statistics; zero instrument I/O"
+traditional_tx_rx_process_dashboards_and_bundle,PASS,38.290408599999999,"RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states"

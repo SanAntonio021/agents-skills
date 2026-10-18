@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-v1yi9dak/original.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cat > 'C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-v1yi9dak/result.md' << 'EOF'\n本次记录共24000帧，其中错误帧为12帧。\n帧差错率为q = 12 / 24000 = 0.0005，双通道测试尚未开展。\n周五09:40送到的测试件先放西侧库房，下周一再清点。\nEOF\n",
+      "description": "Write original content plus appended sentence to result.md"
+    }
+  }
+]

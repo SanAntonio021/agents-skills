@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c44-c45a-7e92-9178-e011b576a041"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"该控制器目前仅在 15 °C 和 30 °C 下完成各 12 小时连续运行验证，期间未出现中断；在 -5 °C 下两次均无法启动，50 °C 试验尚未开展。"}}
+{"type":"turn.completed","usage":{"input_tokens":26738,"cached_input_tokens":11648,"cache_write_input_tokens":0,"output_tokens":211,"reasoning_output_tokens":151}}

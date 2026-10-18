@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "operation": "recalc",
+  "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks\\numeric-draft.xlsx",
+  "output": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks\\numeric-recalculated.xlsx",
+  "source_sha256": "51b071bb9e7a97fa42712a93859e7099f2c14d8eb44237a6ecac9d8b69440bad",
+  "output_sha256": "b766ee3457658cd1639696c294f10820d184217f13f438a788a6052968fb2ffc",
+  "exit_code": 0,
+  "stdout": "convert C:\\Users\\SanAn\\AppData\\Local\\Temp\\sanan-lo-2e7933a0-a0bf-40be-89c6-8e997e581374\\input\\numeric-draft.xlsx as a Calc document -> C:\\Users\\SanAn\\AppData\\Local\\Temp\\sanan-lo-2e7933a0-a0bf-40be-89c6-8e997e581374\\output\\numeric-draft.xlsx using filter : Calc MS Excel 2007 XML\r\n",
+  "stderr": "Could not find platform independent libraries <prefix>\r\n",
+  "libreoffice": "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+  "queue_seconds": 0.04394469998078421,
+  "run_seconds": 7.876616800000193,
+  "root_pid": 52388,
+  "owned_pids": [
+    52388,
+    73152
+  ],
+  "error": null,
+  "message": null,
+  "diagnostics": null,
+  "command": [
+    "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+    "--headless",
+    "--nologo",
+    "--nodefault",
+    "--nofirststartwizard",
+    "-env:UserInstallation=file:///C:/Users/SanAn/AppData/Local/Temp/sanan-lo-2e7933a0-a0bf-40be-89c6-8e997e581374/profile",
+    "--convert-to",
+    "xlsx:Calc MS Excel 2007 XML",
+    "--outdir",
+    "C:\\Users\\SanAn\\AppData\\Local\\Temp\\sanan-lo-2e7933a0-a0bf-40be-89c6-8e997e581374\\output",
+    "C:\\Users\\SanAn\\AppData\\Local\\Temp\\sanan-lo-2e7933a0-a0bf-40be-89c6-8e997e581374\\input\\numeric-draft.xlsx"
+  ],
+  "validation": {
+    "format": "xlsx",
+    "formula_count": 5,
+    "formula_cache_count": 5,
+    "formula_error_count": 0
+  },
+  "mode": "recalc"
+}

@@ -1,0 +1,45 @@
+[
+  {
+    "case": "alpha",
+    "event": "submit",
+    "value": "S7kQp",
+    "result": "passed"
+  },
+  {
+    "case": "alpha",
+    "event": "pdf_served",
+    "bytes": 1099
+  },
+  {
+    "case": "alpha",
+    "event": "pdf_served",
+    "bytes": 1099
+  },
+  {
+    "case": "alpha",
+    "event": "pdf_served",
+    "bytes": 1099
+  },
+  {
+    "case": "beta",
+    "event": "submit",
+    "value": "v3nDx",
+    "result": "updated"
+  },
+  {
+    "case": "beta",
+    "event": "submit",
+    "value": "R4mWa",
+    "result": "passed"
+  },
+  {
+    "case": "beta",
+    "event": "pdf_served",
+    "bytes": 1099
+  },
+  {
+    "case": "beta",
+    "event": "pdf_served",
+    "bytes": 1099
+  }
+]

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "name": "search__existing_pdf_notes_collections",
+  "executor": "search",
+  "facts": "父条目已有 PDF；另有笔记、PDF 批注和两个分类。自动下载设置为 true。",
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": true
+  },
+  "libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "key": "FX000001",
+      "libraryID": 1,
+      "itemType": "journalArticle",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001"
+      },
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "collections": [
+        20,
+        21
+      ],
+      "parentID": null,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z"
+    },
+    {
+      "id": 2,
+      "key": "FX000002",
+      "libraryID": 1,
+      "itemType": "attachment",
+      "fields": {
+        "title": "Simulated target PDF"
+      },
+      "creators": [],
+      "collections": [],
+      "parentID": 1,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z",
+      "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\search__existing_pdf_notes_collections\\storage\\2\\simulated_target.pdf",
+      "attachmentContentType": "application/pdf",
+      "attachmentLinkMode": 0,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "sizeBytes": 863
+    },
+    {
+      "id": 3,
+      "key": "FX000003",
+      "libraryID": 1,
+      "itemType": "note",
+      "fields": {
+        "title": "Existing fixture reading note"
+      },
+      "creators": [],
+      "collections": [],
+      "parentID": 1,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z",
+      "note": "<p>Existing fixture note: preserve the recorded observation.</p>"
+    },
+    {
+      "id": 4,
+      "key": "FX000004",
+      "libraryID": 1,
+      "itemType": "annotation",
+      "fields": {},
+      "creators": [],
+      "collections": [],
+      "parentID": 2,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z",
+      "annotationType": "highlight",
+      "annotationText": "This one-page PDF is an isolated Zotero test input.",
+      "annotationComment": "Existing fixture annotation",
+      "annotationColor": "#ffd400",
+      "annotationPageLabel": "1",
+      "annotationSortIndex": "00000|000001|00000",
+      "annotationPosition": "{\"pageIndex\":0,\"rects\":[[48,680,300,695]]}"
+    }
+  ],
+  "nextItemID": 100,
+  "controls": {
+    "saveDelayMs": 0,
+    "failNextImport": false
+  },
+  "restartCount": 0
+}

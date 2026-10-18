@@ -1,0 +1,49 @@
+{
+  "shapes": [
+    {
+      "id": "o1013ind:1",
+      "text": "发射处理模块",
+      "shape": "round_rect",
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "font_size": 24
+    },
+    {
+      "id": "o1013ind:2",
+      "text": "接收处理模块",
+      "shape": "round_rect",
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "font_size": 24
+    },
+    {
+      "id": "o1013ind:3",
+      "text": "观察模块\n保持原样",
+      "shape": "rect",
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "font_size": 24,
+      "fill_color": "#F1F3F5",
+      "border_color": "#606670"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "c1013ind:1",
+      "start_id": "o1013ind:1",
+      "end_id": "o1013ind:2"
+    },
+    {
+      "id": "c1013ind:2",
+      "start_id": "o1013ind:2",
+      "end_id": "o1013ind:3",
+      "label": "初始 LO 标签"
+    }
+  ]
+}

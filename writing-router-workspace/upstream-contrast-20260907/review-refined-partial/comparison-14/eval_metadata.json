@@ -1,0 +1,5 @@
+{
+  "eval_id": 14,
+  "eval_name": "codex-necessary-negation-paper-turn-2",
+  "prompt": "codex，necessary-negation-paper，第 2 轮。同一轮完整输出，非盲评。缺失版本：['local-refined']。\n\n第 1 轮任务：请润色这段中文论文结果讨论，只在对话里返回该段。合作者把丢弃率误读成了缓存占用率，这里需要让指标含义明确。原文：本实验统计的不是缓存占用率，而是帧丢弃率，定义为p_drop = N_drop / N_sent，其中N_drop为丢弃帧数，N_sent为发送帧数。在256 B定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到p_drop = 0.002。该结果不能说明多发送端竞争时的性能；多发送端测试尚未开展。\n\n第 2 轮任务：把这个结果的适用范围单独放成最后一句，给出调整后的整段。指标定义和数据继续保留。"
+}

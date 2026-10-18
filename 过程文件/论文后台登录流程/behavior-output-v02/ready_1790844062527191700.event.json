@@ -1,0 +1,1 @@
+{"command": "download", "result": {"simulation": true, "stage": "downloaded_identity_verified", "version": "fixture_official", "doi": "10.0000/fixture-only", "file": "isolated fixture payload"}, "state": {"started": true, "access": true, "downloaded": true, "saved": false, "verified": false}}

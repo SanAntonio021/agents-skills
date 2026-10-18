@@ -1,0 +1,10 @@
+{
+  "commit": "d71d16e5f65caa2bee0dcdeea3a15c87d436782e",
+  "files": [
+    "writing-router/SKILL.md",
+    "writing-router/evals/collaborative-writing.json",
+    "writing-router/references/common-quality.md",
+    "writing-router/tests/test_collaborative_writing.py",
+    "writing-router/tests/test_paragraph_quality.py"
+  ]
+}

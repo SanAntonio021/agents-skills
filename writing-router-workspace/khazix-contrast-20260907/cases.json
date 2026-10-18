@@ -1,0 +1,51 @@
+{
+  "policy": "Synthetic only. Two material variants per category, two fresh-session repetitions. Includes a required-limit summary control. Rubrics stay outside model prompts; facts and concision are scored separately. No broad generalization claim.",
+  "cases": [
+    {
+      "id": "summary-power", "category": "summary", "genre": "research_report",
+      "vocab": ["中文/通用.md", "中文/调研报告.md"],
+      "prompt": "从下面的设备调研记录中提取一句功耗比较摘要，说明哪款符合功耗要求，只给这句话。材料：P、Q、R三款记录器的数据手册标称功耗分别为18 W、15 W和9 W。机载平台要求记录器功耗不超过12 W，只有R的标称功耗符合这一要求。三份手册已经核对，整机温升测试尚未进行。",
+      "review": ["清楚限定数据手册或标称功耗范围", "保留不超过12 W和仅R符合的结论", "不机械附上手册核对过程或温升测试状态", "不新增采购推荐或实际整机可用结论", "只交付一句摘要"],
+      "upstream_scope": "explicitly_excluded_summary"
+    },
+    {
+      "id": "summary-temperature", "category": "summary", "genre": "technical",
+      "vocab": ["中文/通用.md"],
+      "prompt": "请用一句摘要说明控制器目前得到验证的温度条件，不附说明。资料：同一控制器在15 °C和30 °C各持续运行12小时，未出现中断；在-5 °C下两次均无法启动；50 °C试验尚未开展。",
+      "review": ["保留15 °C和30 °C两个测试点及各12小时未中断，不扩大为整个区间都验证", "保留-5 °C两次启动失败和50 °C未测试的事实", "未测试状态在本题实际限制温度验证结论，应保留，不与多余状态混为一类", "不增加后续测试安排或可靠性保证", "只交付一句摘要"],
+      "upstream_scope": "explicitly_excluded_summary"
+    },
+    {
+      "id": "technical-switch", "category": "technical", "genre": "technical",
+      "vocab": ["中文/通用.md"],
+      "prompt": "润色下面的技术方案段落，删去啰嗦和重复的话，保留具体动作、先后次序及限制，只给修改后的段落。原文：为使接收链路的增益调整过程更加清晰明确，有必要对控制流程进行说明。控制器每隔25 ms读取一次接收功率；连续4次低于-62 dBm时，将增益提高2 dB。增益调整后先等待8 ms，再读取新的接收功率。这一流程体现了先检测、再调整、后复测的处理思路，通过上述安排可以明确各环节之间的先后关系。当前仅完成单通道台架测试，双通道同时工作时的情况尚未测试。",
+      "review": ["保留25 ms、连续4次低于-62 dBm、提高2 dB、等待8 ms及动作次序", "保留仅单通道台架测试与双通道未测试的限制", "删除开头的写作预告和对检测调整复测的重复总结", "不补抗抖动、可靠性提升或其他未经材料支持的效果", "不附改写说明"],
+      "upstream_scope": "outside_public_account_longform"
+    },
+    {
+      "id": "technical-retry", "category": "technical", "genre": "technical",
+      "vocab": ["中文/通用.md"],
+      "prompt": "把下面这段系统说明改得简洁一些，保留参数、触发条件、否定范围和执行次序，只给正文。原文：系统设计中的一个重要方面是对重复报文进行合理处理，这对于说明系统如何工作具有重要意义。服务端收到带有序号的报文后，先查询最近64条处理记录；序号已存在则返回原处理结果，不再执行该报文对应的动作。序号不存在时，完成动作后写入处理记录，再返回结果。这就是说，系统通过查询序号来判断是否重复，并针对重复和非重复两种情况采用不同处理方式。断电会清空这64条记录，重启后不能据此识别断电前处理过的报文。",
+      "review": ["保留最近64条、查序号、重复返回原结果不执行、非重复动作后记录再返回", "保留断电清空及重启后不能据这64条记录识别此前报文的限制，不否定其他可能机制", "删除泛泛重要性说明与末尾对两种分支的重复解释", "不新增持久化或可靠性保证", "不补举例或改写理由"],
+      "upstream_scope": "outside_public_account_longform"
+    },
+    {
+      "id": "heading-jitter", "category": "heading", "genre": "paper",
+      "vocab": ["中文/通用.md", "中文/论文.md"],
+      "heading": "## 单路时间误差",
+      "original": "定义时间误差为d = t_out - t_in，其中t_out为输出时间戳，t_in为输入时间戳。采样率为5 MSa/s，统计12000个样本，标准差为0.18 us。以上结果来自单路输入，未包含两路同时输入的情况。",
+      "prompt": "给下面已确认的段落添加二级Markdown标题“单路时间误差”。正文逐字不动，只给标题和原文，不附说明。原文：定义时间误差为d = t_out - t_in，其中t_out为输出时间戳，t_in为输入时间戳。采样率为5 MSa/s，统计12000个样本，标准差为0.18 us。以上结果来自单路输入，未包含两路同时输入的情况。",
+      "review": ["除新增标题和连接换行外，全部原文字符保持，包括标点和空格", "不改写公式、样本数、数值或输入条件", "不附正文未改的声明"],
+      "upstream_scope": "explicitly_excluded_heading"
+    },
+    {
+      "id": "heading-loss", "category": "heading", "genre": "paper",
+      "vocab": ["中文/通用.md", "中文/论文.md"],
+      "heading": "## 分组丢失率",
+      "original": "分组丢失率按p = (N_tx - N_rx) / N_tx计算。采用768 B定长分组时，发送N_tx = 50000，接收N_rx = 49975，得到p = 0.0005。测试期间未开启重传，因此该结果不包含重传后的恢复效果。",
+      "prompt": "仅在下面论文段落前加二级Markdown标题“分组丢失率”，原有正文连标点和空格都保持不变，只展示标题与正文。原文：分组丢失率按p = (N_tx - N_rx) / N_tx计算。采用768 B定长分组时，发送N_tx = 50000，接收N_rx = 49975，得到p = 0.0005。测试期间未开启重传，因此该结果不包含重传后的恢复效果。",
+      "review": ["整个正文逐字相同，允许标题连接处常规换行", "保留计算公式和未开启重传的限制", "不附说明"],
+      "upstream_scope": "explicitly_excluded_heading"
+    }
+  ]
+}

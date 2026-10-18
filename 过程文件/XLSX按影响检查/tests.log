@@ -1,0 +1,58 @@
+test_atomic_move_failure_preserves_original_and_candidate (test_tools.PublishOutputTests.test_atomic_move_failure_preserves_original_and_candidate) ... ok
+test_chinese_and_space_paths_are_supported (test_tools.PublishOutputTests.test_chinese_and_space_paths_are_supported) ... ok
+test_copy_failure_preserves_original_and_candidate (test_tools.PublishOutputTests.test_copy_failure_preserves_original_and_candidate) ... ok
+test_create_new_destination (test_tools.PublishOutputTests.test_create_new_destination) ... ok
+test_destination_change_between_hash_checks_is_rejected (test_tools.PublishOutputTests.test_destination_change_between_hash_checks_is_rejected) ... ok
+test_destination_parent_junction_is_rejected (test_tools.PublishOutputTests.test_destination_parent_junction_is_rejected) ... ok
+test_directory_candidate_and_destination_are_rejected (test_tools.PublishOutputTests.test_directory_candidate_and_destination_are_rejected) ... ok
+test_existing_destination_without_hash_is_rejected_with_failure_json (test_tools.PublishOutputTests.test_existing_destination_without_hash_is_rejected_with_failure_json) ... ok
+test_fsync_failure_preserves_original_and_candidate (test_tools.PublishOutputTests.test_fsync_failure_preserves_original_and_candidate) ... ok
+test_hash_is_forbidden_when_destination_is_missing (test_tools.PublishOutputTests.test_hash_is_forbidden_when_destination_is_missing) ... ok
+test_locked_destination_failure_preserves_original_and_candidate (test_tools.PublishOutputTests.test_locked_destination_failure_preserves_original_and_candidate) ... ok
+test_main_emits_json_for_publish_failure_exit_code (test_tools.PublishOutputTests.test_main_emits_json_for_publish_failure_exit_code) ... ok
+test_main_emits_json_for_unclassified_error_exit_code (test_tools.PublishOutputTests.test_main_emits_json_for_unclassified_error_exit_code) ... ok
+test_malformed_hash_is_argument_error (test_tools.PublishOutputTests.test_malformed_hash_is_argument_error) ... ok
+test_missing_destination_parent_is_rejected (test_tools.PublishOutputTests.test_missing_destination_parent_is_rejected) ... ok
+test_replace_existing_destination_with_matching_hash (test_tools.PublishOutputTests.test_replace_existing_destination_with_matching_hash) ... ok
+test_same_path_is_rejected (test_tools.PublishOutputTests.test_same_path_is_rejected) ... ok
+test_staging_permission_failure_preserves_original_and_candidate (test_tools.PublishOutputTests.test_staging_permission_failure_preserves_original_and_candidate) ... ok
+test_symbolic_link_candidate_is_rejected (test_tools.PublishOutputTests.test_symbolic_link_candidate_is_rejected) ... ok
+test_two_processes_create_same_destination_only_one_succeeds (test_tools.PublishOutputTests.test_two_processes_create_same_destination_only_one_succeeds) ... ok
+test_wrong_existing_hash_is_rejected (test_tools.PublishOutputTests.test_wrong_existing_hash_is_rejected) ... ok
+test_eval_json_is_valid (test_tools.SkillStructureTests.test_eval_json_is_valid) ... ok
+test_required_files_exist (test_tools.SkillStructureTests.test_required_files_exist) ... ok
+test_skill_is_complete_xlsx_entry (test_tools.SkillStructureTests.test_skill_is_complete_xlsx_entry) ... ok
+test_active_tab_out_of_range_is_rejected (test_tools.WorkbookToolTests.test_active_tab_out_of_range_is_rejected) ... ok
+test_ascii_forbidden_sheet_name_is_rejected (test_tools.WorkbookToolTests.test_ascii_forbidden_sheet_name_is_rejected) ... ok
+test_disjoint_worksheet_filter_and_table_range_is_valid (test_tools.WorkbookToolTests.test_disjoint_worksheet_filter_and_table_range_is_valid) ... ok
+test_duplicate_sheet_name_and_sheet_id_are_rejected (test_tools.WorkbookToolTests.test_duplicate_sheet_name_and_sheet_id_are_rejected) ... ok
+test_duplicate_sheet_relationship_id_is_rejected (test_tools.WorkbookToolTests.test_duplicate_sheet_relationship_id_is_rejected) ... ok
+test_empty_numeric_formula_cache_is_rejected (test_tools.WorkbookToolTests.test_empty_numeric_formula_cache_is_rejected) ... ok
+test_empty_string_formula_cache_is_valid (test_tools.WorkbookToolTests.test_empty_string_formula_cache_is_valid) ... ok
+test_find_pdftoppm_falls_back_to_extensionless_command (test_tools.WorkbookToolTests.test_find_pdftoppm_falls_back_to_extensionless_command) ... ok
+test_find_pdftoppm_prefers_exe_over_extensionless_wrapper (test_tools.WorkbookToolTests.test_find_pdftoppm_prefers_exe_over_extensionless_wrapper) ... ok
+test_formula_cache_merge (test_tools.WorkbookToolTests.test_formula_cache_merge) ... ok
+test_formula_error_cache_is_rejected (test_tools.WorkbookToolTests.test_formula_error_cache_is_rejected) ... ok
+test_fullwidth_slash_sheet_name_is_rejected_after_nfkc (test_tools.WorkbookToolTests.test_fullwidth_slash_sheet_name_is_rejected_after_nfkc) ... ok
+test_identical_worksheet_filter_and_table_range_is_rejected (test_tools.WorkbookToolTests.test_identical_worksheet_filter_and_table_range_is_rejected) ... ok
+test_libreoffice_recalc_when_available (test_tools.WorkbookToolTests.test_libreoffice_recalc_when_available) ... ok
+test_missing_relationship_target_is_rejected (test_tools.WorkbookToolTests.test_missing_relationship_target_is_rejected) ... ok
+test_missing_workbook_part_is_reported_without_internal_error (test_tools.WorkbookToolTests.test_missing_workbook_part_is_reported_without_internal_error) ... ok
+test_no_visible_worksheet_is_rejected (test_tools.WorkbookToolTests.test_no_visible_worksheet_is_rejected) ... ok
+test_note_and_layout_patch_preserve_valid_formula_cache (test_tools.WorkbookToolTests.test_note_and_layout_patch_preserve_valid_formula_cache) ... ok
+test_overlong_sheet_name_is_rejected_by_utf16_length (test_tools.WorkbookToolTests.test_overlong_sheet_name_is_rejected_by_utf16_length) ... ok
+test_partial_worksheet_filter_and_table_overlap_is_rejected (test_tools.WorkbookToolTests.test_partial_worksheet_filter_and_table_overlap_is_rejected) ... ok
+test_pdf_read_only_checks (test_tools.WorkbookToolTests.test_pdf_read_only_checks) ... skipped 'reportlab is not installed'
+test_policy_rejects_unapproved_cell (test_tools.WorkbookToolTests.test_policy_rejects_unapproved_cell) ... ok
+test_safe_sheet_name_passes_workbook_structure_gate (test_tools.WorkbookToolTests.test_safe_sheet_name_passes_workbook_structure_gate) ... ok
+test_sheet_relationship_must_target_a_sheet_part (test_tools.WorkbookToolTests.test_sheet_relationship_must_target_a_sheet_part) ... ok
+test_table_only_filter_is_valid (test_tools.WorkbookToolTests.test_table_only_filter_is_valid) ... ok
+test_targeted_patch_and_policy (test_tools.WorkbookToolTests.test_targeted_patch_and_policy) ... ok
+test_unresolved_sheet_relationship_id_is_rejected (test_tools.WorkbookToolTests.test_unresolved_sheet_relationship_id_is_rejected) ... ok
+test_verify_cli_forces_utf8_output (test_tools.WorkbookToolTests.test_verify_cli_forces_utf8_output) ... ok
+test_worksheet_filter_only_is_valid (test_tools.WorkbookToolTests.test_worksheet_filter_only_is_valid) ... ok
+
+----------------------------------------------------------------------
+Ran 53 tests in 13.595s
+
+OK (skipped=1)

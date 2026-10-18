@@ -31,12 +31,22 @@ for k=1:count
         'MarkerFaceColor',markerFace);
     if ~isempty(labels), set(h(k),'DisplayName',char(string(labels(k)))); end
 end
-if ~isempty(labels), legend(ax,h,'Location','best','Interpreter','none'); else, legend(ax,'off'); end
+if ~isempty(labels)
+    legendIndices=Test_Project_Plot_Util('option',options,'legend_series_indices',1:count);
+    assert(all(legendIndices>=1 & legendIndices<=count & mod(legendIndices,1)==0), ...
+        'TestProject:Plot:LegendIndices','Invalid legend series indices.');
+    lg=legend(ax,h(legendIndices),'Location', ...
+        Test_Project_Plot_Util('option',options,'legend_location','best'),'Interpreter','none');
+    lg.AutoUpdate='off';
+else
+    legend(ax,'off');
+end
 xlabel(ax,Test_Project_Plot_Util('option',data,'x_unit',''),'Interpreter','none');
 ylabel(ax,Test_Project_Plot_Util('option',data,'y_unit',''),'Interpreter','none');
 xLimits=Test_Project_Plot_Util('option',options,'x_limits',[]);
 yLimits=Test_Project_Plot_Util('option',options,'y_limits',[]);
 if ~isempty(xLimits), xlim(ax,xLimits); end
 if ~isempty(yLimits), ylim(ax,yLimits); end
+Test_Project_Plot_Util('display',ax,options);
 state=struct('handle',h);
 end

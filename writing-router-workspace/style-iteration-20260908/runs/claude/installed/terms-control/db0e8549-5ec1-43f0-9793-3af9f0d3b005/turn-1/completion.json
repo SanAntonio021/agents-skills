@@ -1,0 +1,51 @@
+{
+  "status": "completed",
+  "reasons": [],
+  "session": "d47f99b3-dad2-46f4-8dce-795ecf5987a7",
+  "previous_session": null,
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 16097,
+        "cache_creation_input_tokens": 126,
+        "cache_read_input_tokens": 3137,
+        "output_tokens": 774,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "",
+        "iterations": [],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-opus-4-6": {
+          "inputTokens": 32158,
+          "outputTokens": 797,
+          "cacheReadInputTokens": 3191,
+          "cacheCreationInputTokens": 670,
+          "webSearchRequests": 0,
+          "costUSD": 0.186498,
+          "contextWindow": 200000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-opus-4-6",
+          "provider": "firstParty"
+        }
+      },
+      "total_cost_usd": 0.186498
+    }
+  ],
+  "models": [
+    "claude-opus-4-6"
+  ],
+  "exit_code": 0,
+  "timed_out": false,
+  "quality_accepted": false,
+  "style_acceptance": "not_reviewed",
+  "duration_seconds": 19.658
+}

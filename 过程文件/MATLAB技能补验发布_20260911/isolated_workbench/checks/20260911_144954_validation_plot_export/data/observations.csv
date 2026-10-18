@@ -1,0 +1,4 @@
+﻿case,status,seconds,note
+-,-,s,-
+plot_export_geometry,PASS,43.359452099999999,"automatic/manual paper geometry, oversized hidden figures, legacy FIG archives, exact TX/RX/RDIV dimensions and pixel-identical immutable replots passed with zero instrument I/O"
+traditional_tx_rx_process_dashboards_and_bundle,PASS,34.326816800000003,"RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states"

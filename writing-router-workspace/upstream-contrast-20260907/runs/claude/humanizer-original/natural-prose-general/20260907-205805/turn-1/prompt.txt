@@ -1,0 +1,3 @@
+只在对话中交付，不创建或修改文件。本次技能入口为 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh/SKILL.md。请通过 Skill 工具调用 writing-eval:humanizer-zh。技能及其参考文件、脚本只使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills 下的版本。可只读个人词表 D:/BaiduSyncdisk/.agents/vocab；个人样稿不可用。不读取其他版本、已安装业务技能、历史对话、记忆、评测材料或私有样稿；不调用子智能体、业务系统或网络检索。技能自带检查脚本可通过bash使用标准输入运行，结果留在对话中。
+
+帮我看看这段发给社区阅览室志愿者的通知，有表达不清的地方就改一下，在对话中给通知正文。原文：周六14:00至16:00整理二楼书架。已经登记的志愿者直接到二楼集合，不用重复报名。借阅台照常开放，未归还的书不计入本次整理。新标签已经印好，旧标签等核对书号后再换。

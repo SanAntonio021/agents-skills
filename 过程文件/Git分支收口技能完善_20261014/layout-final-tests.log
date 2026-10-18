@@ -1,0 +1,14 @@
+test_config_dependency_links_are_rejected_without_following (test_git_layout.GitLayoutTests.test_config_dependency_links_are_rejected_without_following) ... ok
+test_layout_integrity_rejects_drift_extra_files_and_overwrite (test_git_layout.GitLayoutTests.test_layout_integrity_rejects_drift_extra_files_and_overwrite) ... ok
+test_linked_worktrees_keep_distinct_worktree_config (test_git_layout.GitLayoutTests.test_linked_worktrees_keep_distinct_worktree_config) ... ok
+test_ordinary_layout_raw_lf_bytes_and_excludes_are_restored_from_package (test_git_layout.GitLayoutTests.test_ordinary_layout_raw_lf_bytes_and_excludes_are_restored_from_package) ... ok
+test_recovery_environment_removes_git_injection (test_git_layout.GitLayoutTests.test_recovery_environment_removes_git_injection) ... ok
+test_relocation_rebinds_config_and_rejects_local_config_drift (test_git_layout.GitLayoutTests.test_relocation_rebinds_config_and_rejects_local_config_drift) ... ok
+test_relocation_rebinds_contained_linked_worktree_core_worktree (test_git_layout.GitLayoutTests.test_relocation_rebinds_contained_linked_worktree_core_worktree) ... ok
+test_separate_layout_crlf_pointer_include_dependencies_hooks_and_filters (test_git_layout.GitLayoutTests.test_separate_layout_crlf_pointer_include_dependencies_hooks_and_filters) ... ok
+test_separate_main_without_core_worktree_captures_and_restores_external_linked (test_git_layout.GitLayoutTests.test_separate_main_without_core_worktree_captures_and_restores_external_linked) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 111.877s
+
+OK

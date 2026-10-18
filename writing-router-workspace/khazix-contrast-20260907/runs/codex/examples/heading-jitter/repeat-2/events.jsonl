@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c43-880e-7821-a760-0257461b3f35"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"## 单路时间误差\n\n定义时间误差为d = t_out - t_in，其中t_out为输出时间戳，t_in为输入时间戳。采样率为5 MSa/s，统计12000个样本，标准差为0.18 us。以上结果来自单路输入，未包含两路同时输入的情况。"}}
+{"type":"turn.completed","usage":{"input_tokens":28982,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":144,"reasoning_output_tokens":62}}

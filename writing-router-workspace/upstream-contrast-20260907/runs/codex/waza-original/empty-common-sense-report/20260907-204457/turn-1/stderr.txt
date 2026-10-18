@@ -1,0 +1,36 @@
+2026-09-07T12:44:57.699912Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.701876Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.702745Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.704445Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.706291Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.709881Z  WARN codex_core_plugins::manifest: ignoring hooks: expected a string, string array, object, or object array; found object
+2026-09-07T12:44:57.868327Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-09-07T12:44:57.868360Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-09-07T12:44:57.892541Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="github@openai-api-curated" path=C:\Users\SanAn\.codex\plugins\cache\openai-api-curated\github
+2026-09-07T12:44:57.892580Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="sites@openai-bundled" path=C:\Users\SanAn\.codex\plugins\cache\openai-bundled\sites
+2026-09-07T12:44:57.895340Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T12:44:59.409076Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-09-07T12:45:00.427789Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T12:45:00.440423Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///C:/Users/SanAn/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-09-07T12:45:00.446114Z  WARN codex_core_plugins::loader: configured curated plugin no longer exists in curated marketplace during cache refresh plugin=github marketplace=openai-api-curated
+2026-09-07T12:48:47.917865Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.1 seconds
+Output:
+-:1:6 [zh-missing-space] '到3' -> add a space between CJK and Latin
+-:1:28 [zh-missing-space] '型2' -> add a space between CJK and Latin
+-:1:32 [zh-missing-space] '0元' -> add a space between CJK and Latin
+-:1:36 [zh-missing-space] '期1' -> add a space between CJK and Latin
+-:1:38 [zh-missing-space] '0天' -> add a space between CJK and Latin
+-:1:42 [zh-missing-space] '型3' -> add a space between CJK and Latin
+-:1:46 [zh-missing-space] '0元' -> add a space between CJK and Latin
+-:1:50 [zh-missing-space] '期6' -> add a space between CJK and Latin
+-:1:55 [zh-missing-space] '型3' -> add a space between CJK and Latin
+-:1:59 [zh-missing-space] '0元' -> add a space between CJK and Latin
+-:1:63 [zh-missing-space] '期4' -> add a space between CJK and Latin
+-:1:72 [zh-missing-space] '求5' -> add a space between CJK and Latin
+-:1:115 [zh-missing-space] '高7' -> add a space between CJK and Latin
+-:1:118 [zh-missing-space] '0元' -> add a space between CJK and Latin
+-:1:124 [zh-missing-space] '高4' -> add a space between CJK and Latin
+-:1:127 [zh-missing-space] '0元' -> add a space between CJK and Latin
+
+2026-09-07T12:49:26.388653Z  WARN codex_mcp::rmcp_client: failed to initialize MCP client during shutdown: MCP startup failed: Environment variable GITHUB_PAT_TOKEN for MCP server 'github' is not set

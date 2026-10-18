@@ -1,0 +1,37 @@
+{
+  "host": "claude",
+  "version": "humanizer-original",
+  "case": "all",
+  "before": {
+    "snapshot": {
+      "humanizer-zh/.gitignore": "f2566cea6bac0939568772c3665e70a04b7480ceeaabe152b6cde05aa5b3b8e4",
+      "humanizer-zh/LICENSE": "4a02596d4fbad0e71215c7ce107fb13056ee2ad1f02a8ca778399c356fa04843",
+      "humanizer-zh/README.md": "04b0ec5feaa3cdd94668871bbfc029c7557c024dfe6b22272fe2f6835e476718",
+      "humanizer-zh/SKILL.md": "35eca1b1a5d313b7ebcd2236670831c2e5f13920b8259208eeb3cfad94685fa0"
+    },
+    "plugin": {
+      "humanizer-zh/.gitignore": "f2566cea6bac0939568772c3665e70a04b7480ceeaabe152b6cde05aa5b3b8e4",
+      "humanizer-zh/LICENSE": "4a02596d4fbad0e71215c7ce107fb13056ee2ad1f02a8ca778399c356fa04843",
+      "humanizer-zh/README.md": "04b0ec5feaa3cdd94668871bbfc029c7557c024dfe6b22272fe2f6835e476718",
+      "humanizer-zh/SKILL.md": "35eca1b1a5d313b7ebcd2236670831c2e5f13920b8259208eeb3cfad94685fa0"
+    },
+    "valid": true
+  },
+  "status": "completed",
+  "after": {
+    "snapshot": {
+      "humanizer-zh/.gitignore": "f2566cea6bac0939568772c3665e70a04b7480ceeaabe152b6cde05aa5b3b8e4",
+      "humanizer-zh/LICENSE": "4a02596d4fbad0e71215c7ce107fb13056ee2ad1f02a8ca778399c356fa04843",
+      "humanizer-zh/README.md": "04b0ec5feaa3cdd94668871bbfc029c7557c024dfe6b22272fe2f6835e476718",
+      "humanizer-zh/SKILL.md": "35eca1b1a5d313b7ebcd2236670831c2e5f13920b8259208eeb3cfad94685fa0"
+    },
+    "plugin": {
+      "humanizer-zh/.gitignore": "f2566cea6bac0939568772c3665e70a04b7480ceeaabe152b6cde05aa5b3b8e4",
+      "humanizer-zh/LICENSE": "4a02596d4fbad0e71215c7ce107fb13056ee2ad1f02a8ca778399c356fa04843",
+      "humanizer-zh/README.md": "04b0ec5feaa3cdd94668871bbfc029c7557c024dfe6b22272fe2f6835e476718",
+      "humanizer-zh/SKILL.md": "35eca1b1a5d313b7ebcd2236670831c2e5f13920b8259208eeb3cfad94685fa0"
+    },
+    "valid": true
+  },
+  "failures": []
+}

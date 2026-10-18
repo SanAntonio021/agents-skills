@@ -1,0 +1,14 @@
+{
+  "exit_code": 4,
+  "details": [
+    {
+      "type": "network"
+    },
+    {
+      "subtype": "transport"
+    },
+    {
+      "message": "API call failed: Post \"[URL] EOF"
+    }
+  ]
+}

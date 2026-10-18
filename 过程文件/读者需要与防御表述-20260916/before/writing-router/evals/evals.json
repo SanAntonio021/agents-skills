@@ -1,0 +1,258 @@
+{
+  "skill_name": "writing-router",
+  "fixture_policy": "synthetic-only",
+  "evals": [
+    {
+      "id": "confirmed-paper-format-handoff",
+      "prompt": "本轮论文 Results 两段已确认写入 main.md，当前版本的用词检查已完成。请按已选模板导出 Word；正文不再修改。",
+      "expected_output": "回读当前主稿和已选模板，复用未变化的正文及检查，交 docx 完成格式和必要验证；不再次润色、询问是否导出或启动整稿科学审查。"
+    },
+    {
+      "id": "figure-return-bounded-paper",
+      "prompt": "Fig. 2 只调整了字体和尺寸，数据、单位、图例含义均未变，实际导出已检查。继续处理论文，只核对这幅图在当前稿中的引用，不改其他章节。",
+      "expected_output": "复用图件结果，读取当前稿件并只核对相关图引用；不重做绘图、批次溯源或全文科学审查，发现相关实际矛盾时指出。"
+    },
+    {
+      "id": "research-to-word",
+      "prompt": "为已经明确的技术方向查资料、比较方案，最后形成 Word 调研报告。已有一份提纲和部分来源，先沿用。",
+      "expected_output": "research-report 复用提纲和来源，补足当前问题所需资料并形成报告内容，按既有文稿协作完成后交 docx 制作与验收；不要求用户先准备全部材料，不创建固定任务池或样本审核关口，不只交检索清单就结束。"
+    },
+    {
+      "id": "research-to-ppt",
+      "prompt": "调研这个行业的技术路线，最后做成 PPT 汇报，已有模板和已确认的比较维度。",
+      "expected_output": "research-report 从资料比较推进到适合汇报的结论、图表和来源，pptx 按现有路由制作并检查；复用模板与维度，不先强制做 Word 报告，不重复确认样本或选择相互竞争的制作工具。"
+    },
+    {
+      "id": "paper-search-no-report-expansion",
+      "prompt": "只找几篇相关论文放进已有 Zotero 任务分类，别写报告。",
+      "expected_output": "paper-search 完成专业检索和 Zotero 归类，沿用已有分类，不因具有调研性质调用研究报告写作、创建 Word 或 PPT。"
+    },
+    {
+      "id": "product-library-no-report-expansion",
+      "prompt": "继续维护既有产品库，只补缺失规格和来源，别另外写报告。",
+      "expected_output": "product-research-workbook 复用产品库结构补资料并校验，联网使用现有工具；不再调用旧基线调研入口，不自动创建研究报告、任务池或设计单。"
+    },
+    {
+      "id": "route-complex-paper-workflow",
+      "prompt": "我现在有一篇太赫兹通信系统论文的中文草稿，还有一些实验图和参考文献，但不知道下一步应该先调研、先改英文，还是先审一遍。你帮我判断当前该走哪一步。",
+      "expected_output": "先判断当前阶段，不一次带上所有相关 skill；论文来源缺口用 paper-search，图文或论证问题用 paper-review；若草稿和事实边界已清楚，再路由到 ieee-manuscript-edit。用户要论文工作，不自动扩成独立调研报告。"
+    },
+    {
+      "id": "route-engineering-proposal-metric",
+      "prompt": "合成案例：工程申报书里要求把 24Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
+      "expected_output": "由 project-writing 按需读取共用指标参考，核对 24Gbps 的对象、条件和依据，合理则保留；需要技术计算时直接完成，不切换到独立指标技能，也不为更有说服力虚构支撑。改正文仍遵循当前授权。"
+    },
+    {
+      "id": "upstream-absorption-map",
+      "prompt": "我想把 Imbad 和 K-Dense 的学术写作流程吸收到本地技能里，是不是一次把 jixian、tinggao、SCI 精修和指标论证都改了？",
+      "expected_output": "先读取 academic-workflow-map.md，建议只改最相关的一处；说明 Imbad 主要吸流程门控，K-Dense 主要吸局部检查清单，不批量改多个下游 skill。"
+    },
+    {
+      "id": "local-md-write-triggers-version-protection",
+      "prompt": "请直接修改工作区里的 paper/draft.md，把第二节结构收紧并保存。这个项目还没有 Git。",
+      "expected_output": "路由到对应写作 skill 后，在首次写入前显示准确项目根目录，询问是否执行 git init -b main 并保存目标稿 baseline；明确只做本地版本记录、不配置远程、不 push。",
+      "files": [],
+      "expectations": [
+        "实际写入本地 md 时触发共享版本保护规则。",
+        "初始化前询问一次并显示准确项目路径。",
+        "初始化许可和 baseline 许可合并为一个问题。",
+        "明确不配置远程、不 push。"
+      ]
+    },
+    {
+      "id": "chat-only-rewrite-bypasses-version-protection",
+      "prompt": "只在聊天里把这句话改得更像论文，不要写入任何文件：The system has very good performance.",
+      "expected_output": "直接给出聊天内改写；不询问 Git，不创建 baseline、commit 或 tag。",
+      "files": [],
+      "expectations": [
+        "聊天内改句不触发版本保护。",
+        "不执行任何 Git 写操作。"
+      ]
+    },
+    {
+      "id": "block-overbroad-workspace-root",
+      "prompt": "合成案例：当前工作区根目录是 X:\\SyntheticWorkspace\\PaperCollection，里面有很多论文项目。请修改其中 paper-alpha\\main.tex；这里还没有 Git。",
+      "expected_output": "拒绝在 X:\\SyntheticWorkspace\\PaperCollection 初始化仓库，显示该准确路径并要求把工作区切到具体论文项目；不能自行猜测一个更深根目录后初始化。",
+      "files": [],
+      "expectations": [
+        "识别并拦截过大公共目录。",
+        "不在公共目录执行 git init。",
+        "要求改为具体项目工作区。"
+      ]
+    },
+    {
+      "id": "block-existing-overbroad-git-root",
+      "prompt": "合成案例：我打开的是 X:\\SyntheticWorkspace\\PaperCollection\\paper-alpha，但 git rev-parse 返回的仓库根目录是 X:\\SyntheticWorkspace\\PaperCollection。请继续修改 main.tex。",
+      "expected_output": "识别这是被误初始化的公共父仓库并停止，不沿用该仓库，也不自动创建嵌套仓库；显示准确父仓库路径，提示用户先处理公共父仓库。",
+      "files": [],
+      "expectations": [
+        "现有 Git 根同样经过公共目录拦截。",
+        "不沿用被误初始化的公共父仓库。",
+        "不自动创建嵌套 Git 仓库。"
+      ]
+    },
+    {
+      "id": "find-old-version-before-restore",
+      "prompt": "我想找回 draft.md 的旧版本，可能是上个月改结构前那版。先帮我按日期和提交说明找候选，不要直接改文件。",
+      "expected_output": "先按文件历史列出 2-5 个最相关候选，给出日期、中文提交说明、涉及文件和摘要 diff；等待用户选定后再恢复。恢复必须创建新 commit，不使用 git reset --hard 或 git checkout --。",
+      "files": [],
+      "expectations": [
+        "旧版本请求触发共享版本保护规则。",
+        "先给候选，不直接回退。",
+        "恢复通过新 commit 完成。",
+        "不使用破坏性 reset 或 checkout。"
+      ]
+    },
+    {
+      "id": "route-generic-versus-ieee-submission",
+      "prompt": "期刊已经选定。一个是非 IEEE 的 Editorial Manager 投稿，另一个是 T-MTT 返修，这两类事务分别该走哪个技能？",
+      "expected_output": "所有期刊投稿事务统一进入 journal-submission；IEEE/T-MTT 按需读取出版商和期刊参考，不加载旧入口。"
+    },
+    {
+      "id": "route-final-submit-compliance",
+      "prompt": "ScholarOne 普通字段和文件都准备好了，现在想点最终 Submit。下一步先做什么？",
+      "expected_output": "路由 journal-submission，核对目标期刊要求、实际上传文件、作者声明、费用及准确提交授权，再按平台回执判断完成；不自动调用全文审查，不为获得 pass 虚构审查结果。"
+    },
+    {
+      "id": "route-submission-format-only",
+      "prompt": "稿件内容已固定，只检查投稿格式、页数、匿名要求和附件，不要改正文。",
+      "expected_output": "journal-submission 核对目标刊要求并检查现有文件；需要读取排版或图件时调用对应技能，只报告差异，不自动改稿、模拟审稿或提交。"
+    },
+    {
+      "id": "route-full-scientific-review",
+      "prompt": "论文写完了，全文检查技术内容、论证、结果与结论有没有问题。",
+      "expected_output": "paper-review 执行完整内容审查，不把局部文字校对当整稿审查，不因尚未选刊而阻止一般科学内容检查，不自动进入投稿系统或增加模拟审稿。"
+    },
+    {
+      "id": "route-final-language-audit",
+      "prompt": "只做终稿语言和术语审校，技术内容不变。",
+      "expected_output": "ieee-manuscript-edit 按文字审校范围处理，保护技术事实，不启动 paper-review 整稿科学审查或投稿流程。"
+    },
+    {
+      "id": "route-template-and-figures",
+      "prompt": "已给定目标刊模板和图件要求，把现有 LaTeX 套模板，并检查图片字号；正文不动。",
+      "expected_output": "latex-paper 处理模板与编译，paper-figure-review 检查图件；复用明确要求和当前图源，不重做选刊或全文科学审查，仅授权检查的图片不自动重画。"
+    },
+    {
+      "id": "route-content-and-compliance",
+      "prompt": "全面检查论文论证，并核对目标期刊投稿格式和必需材料，只审不改。",
+      "expected_output": "paper-review 完成全文内容审查，journal-submission 完成投稿合规检查，共享同一当前稿件和目标刊要求；分别报告发现，不改文件、不提交、不把格式通过当内容通过。"
+    },
+    {
+      "id": "route-existing-review-reuse",
+      "prompt": "这个完整版本已经审过且通过，文件和期刊要求都没变，现在继续检查投稿材料。",
+      "expected_output": "复用可定位的既有整稿审查结果，由 journal-submission 检查当前材料与要求，不重新模拟审稿，不把旧文件误作实际上传文件。"
+    },
+    {
+      "id": "route-pre-meeting-technical-exchange",
+      "prompt": "我要把一份射频方案改成会前技术交流材料，里面既有已知接口、三种器件结构，也有会上要选的方案和会后才能测出的参数。",
+      "expected_output": "路由到 technical-writing 的 technical_exchange 模式，区分已有条件、会上决定和另行计算或测试；不按会议纪要整理，也不只做通用去 AI 味改写。"
+    },
+    {
+      "id": "concrete-revision",
+      "prompt": "润色进展：修订了测试方法。材料说明改为每档重复采集三次并取中位数。",
+      "expected_output": "说明具体采集与统计方法，不只宣告修订，不补造性能提升。"
+    },
+    {
+      "id": "preserve-natural-status",
+      "prompt": "原位润色：完成接口开发并通过离线测试。操作步骤为先关闭输出，再换线，最后恢复输出。",
+      "expected_output": "原句清楚且有实际状态和必要顺序，保持原样，不因完成一词或步骤列表判为AI味，不升级为实测。"
+    },
+    {
+      "id": "object-names",
+      "prompt": "请直接精修以下已确认的展厅测试说明，只输出修改后的文字。这是合成材料。材料：投影控制柜连接到一号投影机；音频控制柜连接到扬声器。原稿：投控接一投，音控接音箱；两控都已完成通电检查。",
+      "expected_output": "明确投影控制柜、一号投影机、音频控制柜和扬声器的连接关系，不沿用或新造截短名称，不改变已通电检查状态。"
+    },
+    {
+      "id": "standard-and-unknown",
+      "prompt": "请直接精修这段已确认的设备运行简报，只输出正文及必须核实的一项。合成材料：温度控制器采用 PID 控制，型号为 TC-8，测点代码为 T1、T2；试验记录另写 XQ 模式，没有定义。原稿：温控器用 PID，TC-8 的 T1、T2 数据已保存。XQ 稳定性待查。",
+      "expected_output": "按读者需要保留或说明PID，TC-8及T1/T2标识不变；不为XQ猜全称，只指出其定义缺失，不把待查写成已验证。"
+    }
+  ],
+  "general_edit_trigger_cases": [
+    {
+      "id": "general-chinese-ai-tone",
+      "query": "把这段普通中文材料改自然，删掉空话和重复，但不要补事实。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "general-chinese-audit-only",
+      "query": "只审查这段中文哪里像 AI 写的，不要改正文。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "project-redirect",
+      "query": "这段工程项目申请书 AI 味重，帮我重写建设内容。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> project-writing",
+      "synthetic": true
+    },
+    {
+      "id": "technical-redirect",
+      "query": "把系统接口说明里的套话删掉，参数和状态不能变。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> technical-writing",
+      "synthetic": true
+    },
+    {
+      "id": "research-report-redirect",
+      "query": "这份调研报告重复很多，请按证据型报告重构。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> research-report",
+      "synthetic": true
+    },
+    {
+      "id": "meeting-notes-redirect",
+      "query": "这份会议纪要模板味太重，还补了很多空栏目，请重整。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> meeting-notes",
+      "synthetic": true
+    },
+    {
+      "id": "zh-paper-redirect",
+      "query": "中文论文结果段太像 AI 写的，保留所有实验数字后精修。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:zh_paper",
+      "synthetic": true
+    },
+    {
+      "id": "en-paper-redirect",
+      "query": "Tighten this engineering paper paragraph without changing the measurements.",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:en_paper",
+      "synthetic": true
+    },
+    {
+      "id": "english-general",
+      "query": "Remove the AI tone from this general English paragraph.",
+      "should_trigger": false,
+      "expected_route": "humanizer",
+      "synthetic": true
+    },
+    {
+      "id": "word-layout",
+      "query": "只修这份中文 Word 的目录、页眉和样式。",
+      "should_trigger": false,
+      "expected_route": "docx",
+      "synthetic": true
+    },
+    {
+      "id": "fact-check",
+      "query": "核实这段文字的技术事实和论文来源，不做风格修改。",
+      "should_trigger": false,
+      "expected_route": "paper-search",
+      "synthetic": true
+    },
+    {
+      "id": "grammar-only",
+      "query": "只修这句话的语法错误，不改变写法。",
+      "should_trigger": false,
+      "expected_route": "none",
+      "synthetic": true
+    }
+  ]
+}

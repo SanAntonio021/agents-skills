@@ -1,0 +1,32 @@
+{
+  "commit": "8ea66525b6bba240269d342fcfb284f7b4040e23",
+  "dirty": {
+    ".gitignore": "4245844940473204c4aeac40812f3027a91a07955dd840a4dfa1e2dd54c6a641",
+    "README.md": "45214a31ede9daa66da0c029f91ff6162d7e824c01558c72940e7e0f1a654355",
+    "ieee-manuscript-edit/SKILL.md": "7fbc4265041dbed5913ac6c3c1f193c409d33dbd7a4e75e83e739bdcdd4f6c5a",
+    "meeting-notes/SKILL.md": "b652add3b5e3beaf40b51f1ec9a45f94cdb194b260f165d108556165f74bab12",
+    "project-writing/SKILL.md": "5983e9a230ad283ce6376a835745bf82ecc838f8651e9bb7d2aa8369b5fa1fdf",
+    "research-report/SKILL.md": "379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586",
+    "research-report/references/decision-report.md": "0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2",
+    "research-report/references/modes.md": "15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34",
+    "research-report/references/report-contract.md": "d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc",
+    "research-report/scripts/audit_report.py": "0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde",
+    "research-report/tests/test_audit_report.py": "97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd",
+    "skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": null,
+    "skill-check-workspace/verification-runtime/weekly/2026-04-26.md": null,
+    "skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": null,
+    "skill-check-workspace/verification-source/weekly/2026-04-26.md": null,
+    "style-vocab/SKILL.md": "3788818a3d9b425813c5110964a7c37981339e36d5c25bf6f66524241475da32",
+    "technical-writing/SKILL.md": "0447b8630a6bcd9757b28ef0800f72c4a0d9f1b32553bb8cdb10509132c3b998"
+  },
+  "target": {
+    "SKILL.md": "f12c12819367507013c9d1e981cb0fa387864fbd2d6910d20b181725202c1ed0",
+    "evals/evals.json": "3a8f08f7550cd2800288574572a13b7a87c482dcae0461c6a5ba5d3acb9127bb",
+    "references/backup-verification.md": "ba1f3e400f60972d97ae85d1f93d1189811d71265c6a6e503af2c7e5feaf7074",
+    "references/risk-classification.md": "31d880726b7df9f80615925c117e5e2fc321b7102644540fd762f2d6e1bd2a47",
+    "references/upstream-sources.md": "07ffa3facec428bc976268c35720166daffd9ac30bef934deef8d206a8e37344",
+    "references/windows-and-wiztree.md": "133c1c20ad3f3f7860ecec3fc4b2d06998661ca7c3efc7c72206f91cefa745d2",
+    "scripts/Summarize-WizTreeCsv.ps1": "dae6dea268cc84ab492e78ab076493b6959bc62aae3d0884014f9f301e29890a",
+    "scripts/tests/Test-Summarize-WizTreeCsv.ps1": "5fde1a3a1855cb1724011ffcc04519ee69588e6b7087ef7245c4fb93e38aafe5"
+  }
+}

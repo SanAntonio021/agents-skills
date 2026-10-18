@@ -1,0 +1,11 @@
+{
+  "entry_lines_before": 562,
+  "entry_lines_after": 64,
+  "frontmatter_unchanged": true,
+  "yaml_and_existing_audit_parser": "passed",
+  "links_checked": 17,
+  "original_yaml_blocks_preserved": 5,
+  "evals": 27,
+  "validation_scope": "file checks and scenario walkthrough only; no real network operations",
+  "generic_validator_limitation": "existing disable-model-invocation field is outside quick_validate whitelist; preserved unchanged"
+}

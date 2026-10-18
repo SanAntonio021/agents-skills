@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\sample_v03.pptx",
+  "expected": "wide16x9",
+  "slide_size": {
+    "width_emu": 12192000,
+    "height_emu": 6858000,
+    "width_inches": 13.333333,
+    "height_inches": 7.5,
+    "aspect_ratio": 1.777778,
+    "detected_format": "wide16x9"
+  }
+}

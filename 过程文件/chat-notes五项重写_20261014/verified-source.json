@@ -1,0 +1,12 @@
+{
+  "files": {
+    "SKILL.md": "ef3b90ea2873590151a8152b9608ba0560af162fdd1645f3e58668076545ff10",
+    "agents/openai.yaml": "c91bbfb49bd71a206cd28240888005dd99eba9f953e4e213904b640a91b4f63a",
+    "evals/evals.json": "653a1e4fafa0bc291aee3bf839fbad133a7f21995973dc8db9a1fb41804976cb"
+  },
+  "trial_scenarios": 5,
+  "behavior_passed": true,
+  "legacy_cases_reviewed": 58,
+  "schema_cases": 63,
+  "contract_audit": "Original no-force-push clause restored; no other major authorization regression found."
+}

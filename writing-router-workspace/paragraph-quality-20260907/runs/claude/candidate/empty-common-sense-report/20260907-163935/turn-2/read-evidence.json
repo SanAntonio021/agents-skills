@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\writing-router\\references\\common-quality.md",
+      "offset": 46,
+      "limit": 20
+    }
+  }
+]

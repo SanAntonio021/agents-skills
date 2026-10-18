@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "name": "search__local_pdf_auto_off",
+  "executor": "search",
+  "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 false。",
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": false
+  },
+  "libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "items": [],
+  "nextItemID": 100,
+  "controls": {
+    "saveDelayMs": 0,
+    "failNextImport": false
+  },
+  "restartCount": 0
+}

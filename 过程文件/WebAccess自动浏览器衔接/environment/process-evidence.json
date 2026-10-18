@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-09-12T06:55:46.378Z",
+  "managerPid": 44068,
+  "edgeLauncherPid": 50780,
+  "edgeLauncherStatus": "exited after Edge compatibility relaunch",
+  "edgeBrowserPid": 50380,
+  "proxyPid": 75948,
+  "listeners": [
+    { "address": "127.0.0.1", "port": 5688, "ownerPid": 44068, "role": "fixture" },
+    { "address": "127.0.0.1", "port": 5689, "ownerPid": 50380, "role": "isolated Edge CDP" },
+    { "address": "127.0.0.1", "port": 13546, "ownerPid": 75948, "role": "isolated existing Proxy" }
+  ],
+  "edgeUserDataDir": "C:/Users/SanAn/AppData/Local/Temp/web-access-behavior-0JMyqH/LocalAppData/Microsoft/Edge/User Data",
+  "proxyHealth": { "protocolVersion": 2, "connected": true, "managedTabs": 0, "activeTasks": 0 },
+  "unavailableSession": { "name": "browser-unavailable", "checkStatus": "browser_unavailable", "requestStatus": "browser_unavailable", "networkConnectionAttempted": false },
+  "stopMethod": "Run stop-environment.mjs. It sends the private owner control request, stops its spawned Proxy and sends Browser.close to the captured isolated browser WebSocket. It does not stop processes by name or by production ports.",
+  "execSessionId": 48641
+}

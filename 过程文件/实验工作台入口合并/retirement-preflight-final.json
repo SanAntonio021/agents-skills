@@ -1,0 +1,36 @@
+{
+  "entry": "tx-rx-workbench-template",
+  "source_files": 231,
+  "layers": {
+    ".cc-switch": {
+      "files": 231,
+      "missing": [],
+      "extra": [],
+      "mismatch": []
+    },
+    ".claude": {
+      "files": 231,
+      "missing": [],
+      "extra": [],
+      "mismatch": []
+    },
+    ".codex": {
+      "files": 231,
+      "missing": [],
+      "extra": [],
+      "mismatch": []
+    }
+  },
+  "metadata": [
+    {
+      "id": "SanAntonio021/agents-skills:tx-rx-workbench-template",
+      "name": "tx-rx-workbench-template",
+      "directory": "tx-rx-workbench-template",
+      "repo_owner": "SanAntonio021",
+      "repo_name": "agents-skills",
+      "repo_branch": "main",
+      "enabled_claude": 1,
+      "enabled_codex": 1
+    }
+  ]
+}

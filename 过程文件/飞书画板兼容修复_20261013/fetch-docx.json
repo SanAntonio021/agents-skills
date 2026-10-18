@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "document": {
+      "content": "<title id=\"WLX6dd626orGl6x6PEfcmwb0ndh\">画板兼容性隔离验收 20261013</title><p id=\"doxcnMEf2O8phr0emDV9w8kpguf\">仅用于文字接口兼容性验收，不含实验数据。</p><whiteboard id=\"doxcntKqY3z1kPhcuri9v6vE7Rb\" token=\"WWErwwu7Vhl7MAbRZm0c7VAin9e\"></whiteboard>",
+      "document_id": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "revision_id": 3
+    }
+  },
+  "_notice": {
+    "skills": {
+      "command": "lark-cli update",
+      "current": "1.0.94",
+      "message": "lark-cli skills 1.0.94 out of sync with binary 1.0.97, run: lark-cli update",
+      "target": "1.0.97"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07aa8-bf03-78c1-a41c-56b24d2f8cba"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"在5天内到货的硬性约束下，现有3份报价中仅丙型的书面交期符合要求，但最终采购仍须以样机验收结果为依据。"}}
+{"type":"turn.completed","usage":{"input_tokens":372671,"cached_input_tokens":340480,"cache_write_input_tokens":0,"output_tokens":5983,"reasoning_output_tokens":3670}}

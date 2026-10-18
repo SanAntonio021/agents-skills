@@ -1,0 +1,14 @@
+{
+  "turn": 2,
+  "exit_code": 0,
+  "timed_out": false,
+  "duration_seconds": 29.9,
+  "reported_models": [
+    "claude-opus-5"
+  ],
+  "model_valid": true,
+  "session": "7063c5e0-1b21-4b41-9fd8-6f5e23774fe2",
+  "command_count": 1,
+  "native_skill_confirmed": true,
+  "status": "completed"
+}

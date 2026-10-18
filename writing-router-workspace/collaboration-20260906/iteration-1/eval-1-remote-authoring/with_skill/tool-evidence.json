@@ -1,0 +1,23 @@
+{
+  "agent_id": "01a07770-280b-76d3-89d1-14df99f4b691",
+  "rollout": "C:\\Users\\SanAn\\.codex\\sessions\\2026\\09\\06\\rollout-2026-09-06T23-57-14-01a07770-280b-76d3-89d1-14df99f4b691.jsonl",
+  "workflow_read_observed": true,
+  "workflow_read_receipts": [
+    {
+      "call_id": "call_5Uo36tBW2amZWzwzI7wkqUKX",
+      "call_line": 36,
+      "output_line": 39
+    }
+  ],
+  "child_agent_spawn_observed": false,
+  "tool_calls": 22,
+  "token_usage": {
+    "input_tokens": 1521499,
+    "cached_input_tokens": 1468032,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 10359,
+    "reasoning_output_tokens": 5099,
+    "total_tokens": 1531858
+  },
+  "unparsed_lines": 0
+}

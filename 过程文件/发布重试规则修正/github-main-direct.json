@@ -1,0 +1,8 @@
+{
+  "route": "direct IPv4",
+  "http_status": 200,
+  "bytes": 7881304,
+  "zip_entries": 1200,
+  "zip_integrity": "passed",
+  "sha256": "a839f6b2ee0a3fdf2954ff667860fe23567497dcbe4b3610a391832821e7f18d"
+}

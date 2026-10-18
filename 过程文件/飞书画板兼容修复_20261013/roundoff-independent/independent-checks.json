@@ -1,0 +1,141 @@
+{
+  "status": "passed",
+  "scope": "isolated new document and whiteboard only",
+  "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+  "board_block_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g#doxcnvJIEXztFaYTCKia4eeP4bc",
+  "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+  "sample_to_saved_id_map": {
+    "o3:4": "o2:1",
+    "o3:5": "o2:2",
+    "c3:11": "c2:1"
+  },
+  "append": {
+    "save_status": "confirmed",
+    "verification_status": "passed",
+    "reopen_status": "passed"
+  },
+  "text_edit": {
+    "save_status": "confirmed",
+    "verification_status": "passed",
+    "reopen_status": "passed",
+    "save_evidence": {
+      "fence": {
+        "signature": "b8586b42",
+        "before_applied_version": 3,
+        "requires_ack": true
+      },
+      "native_save": {
+        "available": true,
+        "signature": "b8586b42",
+        "initialized": true,
+        "applied_version": 4,
+        "pending": 0,
+        "ordered_pending": 0,
+        "processing": false,
+        "offline": false,
+        "save_state": "saved",
+        "http_pending": 0
+      },
+      "raw": "raw-006.json"
+    },
+    "raw_exceptions": [
+      {
+        "id": "c2:1",
+        "normalization": "bound_text_horizontal_zero_height_roundoff",
+        "before_raw_height": 0,
+        "after_raw_height": 2.4000000848900527e-06,
+        "maximum_native_endpoint_difference": 2.399999971203215e-06,
+        "native_endpoints_before": {
+          "start": {
+            "x": 910,
+            "y": 400
+          },
+          "end": {
+            "x": 1000,
+            "y": 400
+          }
+        },
+        "native_endpoints_after": {
+          "start": {
+            "x": 910,
+            "y": 400
+          },
+          "end": {
+            "x": 1000,
+            "y": 399.99999760000003
+          }
+        },
+        "expected_attachment_points": {
+          "start": {
+            "x": 910,
+            "y": 400
+          },
+          "end": {
+            "x": 1000,
+            "y": 399.99999760000003
+          }
+        }
+      }
+    ]
+  },
+  "independent_final_raw_checks": "exact complete raw equality by object ID except requested shape text and measured connector height",
+  "serialization_observation": "Later CLI export reorders the nodes array; complete per-object attributes including absolute z_index exactly equal reopened raw.",
+  "reopened_endpoints": {
+    "c2:1": {
+      "start": {
+        "x": 910,
+        "y": 400.0000024
+      },
+      "end": {
+        "x": 1000,
+        "y": 400
+      }
+    }
+  },
+  "reopened_bindings": [
+    {
+      "id": "c2:1",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 910,
+          "y": 400.0000024
+        },
+        "expected": {
+          "x": 910,
+          "y": 400
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 1000,
+          "y": 400
+        },
+        "expected": {
+          "x": 1000,
+          "y": 399.99999760000003
+        },
+        "valid": true
+      }
+    }
+  ],
+  "maximum_reopened_attachment_error": 2.400000028046634e-06,
+  "render_alpha": "all border/fill/text components remain 1",
+  "visual_review": {
+    "status": "passed",
+    "images": [
+      "edit-001/preview.png",
+      "final-server-preview.jpg"
+    ],
+    "findings": "Both amplifier lines, TX label and coupler text are readable with no overlap; native canvas and server white-background preview were both viewed."
+  },
+  "cleanup": {
+    "pages_created": 4,
+    "pages_confirmed_closed": 4,
+    "unknown_or_released_pages": 0
+  },
+  "source_and_sample_hashes_unchanged": true,
+  "business_failures": [],
+  "limitations": "Only the requested old-sample two-shape/one-straight-line text-edit scenario was exercised. Reopened native attachment coordinates differ from same-page coordinates by about 2.4e-6; original binding anchors and expected attachment points remain unchanged."
+}

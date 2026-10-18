@@ -1,0 +1,32 @@
+{
+  "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+  "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+  "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+  "libraryID": 1,
+  "collectionID": 20,
+  "collectionKey": "FXCOL020",
+  "metadata": {
+    "itemType": "journalArticle",
+    "DOI": "10.0000/zotero-fixture.target-001",
+    "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+    "fields": {
+      "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+      "DOI": "10.0000/zotero-fixture.target-001",
+      "date": "2026",
+      "publicationTitle": "Fixture Journal (Simulated)",
+      "volume": "1",
+      "issue": "1",
+      "pages": "1-2",
+      "url": "https://example.invalid/zotero-fixture/target-001"
+    },
+    "creators": [
+      {
+        "creatorType": "author",
+        "firstName": "Mira",
+        "lastName": "Fixture"
+      }
+    ]
+  },
+  "withPDF": false,
+  "localPDF": null
+}

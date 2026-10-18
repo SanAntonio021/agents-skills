@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "kind": "independent representative task",
+  "source_skill": "lab-notebook/SKILL.md",
+  "fixture_sha256": "b9a3bae6c4477973ff740ee8d214513dfc0268a7ddce77a3209dac7ed7813232",
+  "output": "trial/result.md",
+  "output_sha256": "fdbd1e03ecd6d6f88e890f5861739472913bf9c67f233cb69cc0d73a7c18966a",
+  "checks": {
+    "initial_and_low_power_checks_use_image_space": true,
+    "background_has_screenshot_and_CSV_table": true,
+    "formal_spectra_keep_CSV_and_channel_power": true,
+    "single_setup_photo_has_no_table": true,
+    "existing_data_reference_preserved": true,
+    "settings_preserved": true,
+    "input_unchanged": true,
+    "output_written": true
+  },
+  "comparison": "not performed; no comparative performance claim"
+}

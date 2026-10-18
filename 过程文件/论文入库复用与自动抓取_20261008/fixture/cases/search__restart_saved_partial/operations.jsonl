@@ -1,0 +1,2 @@
+{"time":"2026-10-08T13:44:00.418Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__restart_saved_partial","action":"fixture.seed","facts":"模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。","initialAutomatic":false,"simulated":true}
+{"time":"2026-10-08T13:44:00.418Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__restart_saved_partial","action":"fixture.seed.previousSession","facts":"已持久化 Pref=false、父条目 id=1；模拟重启后不保留前一会话的任务或 JS 全局状态。","savedParentItemID":1,"savedAutomatic":false,"restartCount":1}

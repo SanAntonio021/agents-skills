@@ -1,0 +1,285 @@
+{
+  "nodes": [
+    {
+      "id": "c2:1",
+      "kind": "connector",
+      "x": 910,
+      "y": 400,
+      "width": 90,
+      "height": 2.4e-06,
+      "style": {
+        "border_color": "#247e69",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#247e69"
+      },
+      "start_id": "o2:1",
+      "end_id": "o2:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.18421052
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "TX"
+      ],
+      "caption": "TX",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o2:1",
+      "kind": "shape",
+      "x": 740,
+      "y": 350,
+      "width": 170,
+      "height": 100,
+      "text": "发射放大级\nPA / LNA",
+      "font_size": 24,
+      "style": {
+        "border_color": "#247e69",
+        "fill_color": "#eaf5f1",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2933"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:2",
+      "kind": "shape",
+      "x": 1000,
+      "y": 330,
+      "width": 180,
+      "height": 380,
+      "text": "A 定向耦合器\n耦合：TX→ANT\n直通：ANT→RX",
+      "font_size": 22,
+      "style": {
+        "border_color": "#247e69",
+        "fill_color": "#eaf5f1",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2933"
+      },
+      "shape": "round_rect"
+    }
+  ],
+  "render_alpha": {
+    "c2:1": {
+      "border": 1,
+      "text": 1
+    },
+    "o2:1": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "o2:2": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    }
+  },
+  "line_endpoints": {
+    "c2:1": {
+      "start": {
+        "x": 910,
+        "y": 400.0000024
+      },
+      "end": {
+        "x": 1000,
+        "y": 400
+      }
+    }
+  },
+  "curve_handles": {},
+  "object_bounds": {
+    "c2:1": {
+      "x": 908,
+      "y": 380.96800128,
+      "width": 96,
+      "height": 40.06400000000002
+    },
+    "o2:1": {
+      "x": 740,
+      "y": 350,
+      "width": 170,
+      "height": 100
+    },
+    "o2:2": {
+      "x": 1000,
+      "y": 330,
+      "width": 180,
+      "height": 380
+    }
+  },
+  "arrangement_bounds": {
+    "o2:1": {
+      "x": 740,
+      "y": 350,
+      "width": 170,
+      "height": 100
+    },
+    "o2:2": {
+      "x": 1000,
+      "y": 330,
+      "width": 180,
+      "height": 380
+    }
+  },
+  "world_geometry": {
+    "c2:1": {
+      "x": 910,
+      "y": 400,
+      "width": 90,
+      "height": 2.4e-06,
+      "angle": 0
+    },
+    "o2:1": {
+      "x": 740,
+      "y": 350,
+      "width": 170,
+      "height": 100,
+      "angle": 0
+    },
+    "o2:2": {
+      "x": 1000,
+      "y": 330,
+      "width": 180,
+      "height": 380,
+      "angle": 0
+    }
+  },
+  "binding_geometry": [
+    {
+      "id": "c2:1",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 910,
+          "y": 400.0000024
+        },
+        "expected": {
+          "x": 910,
+          "y": 400
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 1000,
+          "y": 400
+        },
+        "expected": {
+          "x": 1000,
+          "y": 399.99999760000003
+        },
+        "valid": true
+      }
+    }
+  ],
+  "label_geometry": {
+    "c2:1": {
+      "available": true,
+      "angle": 0,
+      "world_corners": [
+        {
+          "x": 933.6500015258789,
+          "y": 382.96800128
+        },
+        {
+          "x": 970.3499984741211,
+          "y": 382.96800128
+        },
+        {
+          "x": 970.3499984741211,
+          "y": 417.03200128000003
+        },
+        {
+          "x": 933.6500015258789,
+          "y": 417.03200128000003
+        }
+      ],
+      "world_rect": {
+        "x": 933.6500015258789,
+        "y": 382.96800128,
+        "width": 36.69999694824219,
+        "height": 34.06400000000002
+      },
+      "screen_corners": [
+        {
+          "x": 959.6500015258789,
+          "y": 303.96800128
+        },
+        {
+          "x": 996.3499984741211,
+          "y": 303.96800128
+        },
+        {
+          "x": 996.3499984741211,
+          "y": 338.03200128000003
+        },
+        {
+          "x": 959.6500015258789,
+          "y": 338.03200128000003
+        }
+      ],
+      "screen_rect": {
+        "x": 959.6500015258789,
+        "y": 303.96800128,
+        "width": 36.69999694824219,
+        "height": 34.06400000000002
+      }
+    }
+  },
+  "viewport": {
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1874,
+      "height": 870
+    },
+    "device_pixel_ratio": 1,
+    "world_to_screen": {
+      "a": 1,
+      "b": 0,
+      "c": 0,
+      "d": 1,
+      "e": 26,
+      "f": -79
+    }
+  },
+  "seq": 0,
+  "savedSeq": 0,
+  "signature": "54e7e6de",
+  "text_signature": "d309a450",
+  "native_save": {
+    "available": true,
+    "signature": "b8586b42",
+    "initialized": true,
+    "applied_version": 4,
+    "pending": 0,
+    "ordered_pending": 0,
+    "processing": false,
+    "offline": false,
+    "save_state": "saved",
+    "http_pending": 0
+  }
+}

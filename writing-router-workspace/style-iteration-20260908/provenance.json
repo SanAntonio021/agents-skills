@@ -1,0 +1,31 @@
+{
+  "installed_root": "C:\\Users\\SanAn\\.codex\\skills",
+  "sources": {
+    "installed/writing-router/evals/README.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\evals\\README.md",
+    "installed/writing-router/references/academic-workflow-map.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\academic-workflow-map.md",
+    "installed/writing-router/references/ai-smell-catalog.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\ai-smell-catalog.md",
+    "installed/writing-router/references/collaborative-writing.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\collaborative-writing.md",
+    "installed/writing-router/references/common-quality.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\common-quality.md",
+    "installed/writing-router/references/document-version-protection.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\document-version-protection.md",
+    "installed/writing-router/references/exact-edit.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\exact-edit.md",
+    "installed/writing-router/references/markdown-docx-contract.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\markdown-docx-contract.md",
+    "installed/writing-router/references/upstream-sources.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\upstream-sources.md",
+    "installed/writing-router/SKILL.md": "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\SKILL.md",
+    "installed/technical-writing/references/technical-exchange.md": "C:\\Users\\SanAn\\.codex\\skills\\technical-writing\\references\\technical-exchange.md",
+    "installed/technical-writing/references/upstream-sources.md": "C:\\Users\\SanAn\\.codex\\skills\\technical-writing\\references\\upstream-sources.md",
+    "installed/technical-writing/SKILL.md": "C:\\Users\\SanAn\\.codex\\skills\\technical-writing\\SKILL.md",
+    "installed/style-vocab/references/upstream-sources.md": "C:\\Users\\SanAn\\.codex\\skills\\style-vocab\\references\\upstream-sources.md",
+    "installed/style-vocab/SKILL.md": "C:\\Users\\SanAn\\.codex\\skills\\style-vocab\\SKILL.md",
+    "rules/0-local.md": "C:\\Users\\SanAn\\.agent-rules\\local.md",
+    "rules/1-shared-rules.md": "D:\\BaiduSyncdisk\\.agents\\global-rules\\shared-rules.md",
+    "vocab/中文/通用.md": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\khazix-contrast-20260907\\snapshot\\vocab\\中文\\通用.md"
+  },
+  "models": {
+    "claude": "claude-opus-5",
+    "codex": "gpt-5.6-sol"
+  },
+  "effort": "max",
+  "candidate_difference": "appendix only",
+  "loader": "inline_full_materials",
+  "quality_accepted": false
+}

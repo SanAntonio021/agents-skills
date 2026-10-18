@@ -1,0 +1,39 @@
+{
+  "host": "claude",
+  "arm": "examples",
+  "case": "technical-retry",
+  "repeat": 1,
+  "requested_model": "claude-opus-5",
+  "route": {
+    "route": "direct_selected_provider_child_env_only",
+    "name": "8sKiro",
+    "endpoint": "https://8stoken.com"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-2ts6lmy3",
+  "prompt_sha256": "b37ef5fd740887395d38bf4bbe8dc5d9a4994cea6069284901ad509539f65d65",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "local/writing-router/SKILL.md",
+    "local/writing-router/references/collaborative-writing.md",
+    "local/writing-router/references/common-quality.md",
+    "local/writing-router/references/ai-smell-catalog.md",
+    "local/style-vocab/SKILL.md",
+    "local/technical-writing/SKILL.md",
+    "candidate/examples.md"
+  ],
+  "upstream_scope": "applicable",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "claude-opus-5"
+  ],
+  "session": "266f3e8d-07c8-46ed-b5ad-676efb378746",
+  "duration_seconds": 28.8,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

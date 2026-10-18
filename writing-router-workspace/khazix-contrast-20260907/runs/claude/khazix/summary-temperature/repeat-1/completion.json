@@ -1,0 +1,35 @@
+{
+  "host": "claude",
+  "arm": "khazix",
+  "case": "summary-temperature",
+  "repeat": 1,
+  "requested_model": "claude-opus-5",
+  "route": {
+    "route": "direct_selected_provider_child_env_only",
+    "name": "8sKiro",
+    "endpoint": "https://8stoken.com"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-vc6qs4fk",
+  "prompt_sha256": "6c707531cadf8a27a184ff69ce0241abf14f44daba0204d3528165e85c29065d",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "upstream/khazix-writer/SKILL.md",
+    "upstream/khazix-writer/references/style_examples.md",
+    "upstream/khazix-writer/references/content_methodology.md"
+  ],
+  "upstream_scope": "explicitly_excluded_summary",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "claude-opus-5"
+  ],
+  "session": "1cc0f782-feaf-46cf-ade1-3ff4f59cd0f2",
+  "duration_seconds": 20.6,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

@@ -1,0 +1,5 @@
+Exception: D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\candidate\tx-rx-workbench-template\scripts\copy_template.ps1:5
+Line |
+   5 |  … th $target){throw 'Choose a new directory; existing projects are neve …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Choose a new directory; existing projects are never overwritten.

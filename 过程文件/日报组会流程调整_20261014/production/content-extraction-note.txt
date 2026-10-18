@@ -1,0 +1,1 @@
+markitdown not on PATH; python-pptx fallback used

@@ -1,0 +1,77 @@
+已确定写作上下文：
+
+- `document_type`: `technical`
+- `mode`: `technical_scheme`
+- `edit_scope`: `draft`
+- `language`: `zh`
+- `loaded_refs`: 
+  - `C:\Users\SanAn\.claude\skills\writing-router\references\collaborative-writing.md`
+  - `C:\Users\SanAn\.claude\skills\technical-writing\SKILL.md`
+  - `C:\Users\SanAn\.claude\skills\writing-router\references\common-quality.md`
+
+按文稿协作流程，`draft` 先讨论结构和思路。本次任务是合成材料温度测试方案，核心要素：
+
+**测试对象与目的**
+- 对象：合成材料（具体材料需补充）
+- 比较：室温状态 vs 加热后状态
+- 测量参数：温度
+
+**测试资源**
+- 传感器：1只（型号、量程、精度待补充）
+- 记录设备：1台电脑
+- 采样间隔：1秒
+- 测试时长：待定
+
+**拟定结构**
+
+1. **测试目标**  
+   说明要对比什么、为什么需要温度数据
+
+2. **测试对象与条件**  
+   - 材料规格、初始状态
+   - 室温定义（环境温度范围）
+   - 加热方式、目标温度、加热时长
+
+3. **测试系统**  
+   - 传感器型号、量程、精度、安装位置
+   - 数据采集设备与软件
+   - 采样间隔：1秒
+
+4. **测试流程**  
+   - 室温状态测试：稳定时长、记录时长
+   - 加热状态测试：加热过程、稳定判据、记录时长
+   - 重复次数（如需要）
+
+5. **数据处理与判据**  
+   - 原始数据格式
+   - 统计量（均值、标准差等）
+   - 对比方法
+
+6. **限制与风险**  
+   - 传感器适用范围
+   - 环境干扰因素
+   - 安全要求
+
+**需要明确的信息**
+- 材料名称、规格、尺寸
+- 加热方式（加热台、烘箱、其他）
+- 加热目标温度
+- 传感器型号和规格
+- 测试时长（或稳定判据）
+- 数据采集软件
+
+这个结构能否满足需求？是否需要调整某些部分，或补充其他内容？
+
+```json
+TRACE_WRITING_CONTEXT={
+  "document_type": "technical",
+  "mode": "technical_scheme",
+  "edit_scope": "draft",
+  "language": "zh",
+  "loaded_refs": [
+    "C:\\Users\\SanAn\\.claude\\skills\\writing-router\\references\\collaborative-writing.md",
+    "C:\\Users\\SanAn\\.claude\\skills\\technical-writing\\SKILL.md",
+    "C:\\Users\\SanAn\\.claude\\skills\\writing-router\\references\\common-quality.md"
+  ]
+}
+```

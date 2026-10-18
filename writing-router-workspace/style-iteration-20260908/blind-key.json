@@ -1,0 +1,44 @@
+[
+  {
+    "pair": 1,
+    "label": "A",
+    "host": "codex",
+    "arm": "installed",
+    "path": "runs\\codex\\installed\\integration-note\\18b52c80-d43d-4840-a024-a5c02a5a01c7"
+  },
+  {
+    "pair": 1,
+    "label": "B",
+    "host": "codex",
+    "arm": "candidate",
+    "path": "runs\\codex\\candidate\\integration-note\\0fba3570-cefc-4471-9077-da005ce14571"
+  },
+  {
+    "pair": 2,
+    "label": "A",
+    "host": "codex",
+    "arm": "candidate",
+    "path": "runs\\codex\\candidate\\test-explanation\\acf1d01f-ebbf-468a-991a-a7c40aea9682"
+  },
+  {
+    "pair": 2,
+    "label": "B",
+    "host": "codex",
+    "arm": "installed",
+    "path": "runs\\codex\\installed\\test-explanation\\a57a1713-ab5e-4fdd-b1fa-3203c27798ff"
+  },
+  {
+    "pair": 3,
+    "label": "A",
+    "host": "codex",
+    "arm": "candidate",
+    "path": "runs\\codex\\candidate\\terms-control\\4af5420b-ba59-4101-b628-1afee7fbc201"
+  },
+  {
+    "pair": 3,
+    "label": "B",
+    "host": "codex",
+    "arm": "installed",
+    "path": "runs\\codex\\installed\\terms-control\\7bf53b29-ffa7-44a5-a669-dccc692ba699"
+  }
+]

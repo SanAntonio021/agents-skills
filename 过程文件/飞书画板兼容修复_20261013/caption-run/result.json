@@ -1,0 +1,344 @@
+{
+  "status": "unverified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c3:1",
+        "text": "新连线标签\n第二行"
+      },
+      "save_status": "confirmed",
+      "verification_status": "failed",
+      "failure_phase": "protection",
+      "execution_status": "returned",
+      "before_raw": "raw-005.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 6,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 7,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "native_persistence": {
+        "status": "confirmed",
+        "minimum_applied_version": 7,
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 7,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "inspect": "native-save-witness-001/fresh-native.json"
+      },
+      "after_raw": "raw-006.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "error": "VerificationError"
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_yEAoShnubnPczivl5a3oXg",
+      "tab_id": "D04731961835698179D1CD979505ECB3",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_Cot8B-0yKYBjym6GT8u4Fg",
+      "tab_id": "A4BED344DB2489F144171D55985E6CE5",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_Cot8B-0yKYBjym6GT8u4Fg",
+      "tab_id": "A4BED344DB2489F144171D55985E6CE5",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_Cot8B-0yKYBjym6GT8u4Fg",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_yEAoShnubnPczivl5a3oXg",
+      "tab_id": "D04731961835698179D1CD979505ECB3",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_yEAoShnubnPczivl5a3oXg",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    }
+  ],
+  "initial_nodes": [
+    {
+      "id": "a3:1",
+      "kind": "text",
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50,
+      "text": "独立文本初始",
+      "font_size": 20,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c3:1",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [],
+      "caption": "",
+      "caption_position": null,
+      "caption_position_type": null,
+      "caption_auto_direction": false,
+      "caption_font_size": null,
+      "caption_width": null,
+      "caption_size_mode": null
+    },
+    {
+      "id": "c3:2",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 320,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "已有标签\n原第二行"
+      ],
+      "caption": "已有标签\n原第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o3:1",
+      "kind": "shape",
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "形状新增文字\n完成",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:2",
+      "kind": "shape",
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "保护模块",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:3",
+      "kind": "shape",
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90,
+      "text": "保持原样\n非目标观察",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "initial_inspect": "inspect-000.json",
+  "failure_phase": "protection",
+  "error": "VerificationError",
+  "reason": "Adding a caption introduced unverified default format fields",
+  "released_tab": null,
+  "page_status": "closed"
+}

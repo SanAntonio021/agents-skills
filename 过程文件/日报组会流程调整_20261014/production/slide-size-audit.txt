@@ -1,0 +1,1 @@
+Slide size audit PASS: 13.333 x 7.500 in (12192000 x 6858000 EMU), detected=wide16x9, expected=wide16x9.

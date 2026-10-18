@@ -1,0 +1,5 @@
+2026-09-08T08:34:22.023765Z  WARN sqlx::query: slow statement: execution time exceeded alert threshold summary="DELETE FROM logs WHERE …" db.statement="\n\nDELETE FROM logs WHERE ts < ?\n" rows_affected=15699 rows_returned=0 elapsed=1.217223s elapsed_secs=1.217223 slow_threshold=1s
+2026-09-08T08:34:24.419087Z  WARN sqlx::query: slow statement: execution time exceeded alert threshold summary="PRAGMA auto_vacuum = INCREMENTAL; …" db.statement="\n\nPRAGMA auto_vacuum = INCREMENTAL; PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL; \n" rows_affected=0 rows_returned=1 elapsed=2.3943377s elapsed_secs=2.3943377 slow_threshold=1s
+2026-09-08T08:34:24.419142Z  WARN sqlx::pool::acquire: acquired connection, but time to acquire exceeded slow threshold acquired_after_secs=2.3952656 slow_acquire_threshold_secs=2.0
+2026-09-08T08:34:24.494803Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-08T08:34:25.075929Z  WARN codex_core_skills::loader: ignoring interface.default_prompt: exceeds maximum length of 1024 characters

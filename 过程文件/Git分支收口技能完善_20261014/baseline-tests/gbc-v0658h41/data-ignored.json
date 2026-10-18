@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "worktrees": {
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-v0658h41\\linked": {
+      "preserve": [
+        "preserve-cache"
+      ],
+      "reproducible": [],
+      "rebuild": {}
+    }
+  }
+}

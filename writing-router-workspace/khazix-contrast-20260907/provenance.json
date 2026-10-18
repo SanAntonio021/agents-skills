@@ -1,0 +1,16 @@
+{
+  "upstream_commit": "7a5c4934be4106ac740ffdb95280bb81b3f4b83c",
+  "upstream_repository": "https://github.com/KKKKhazix/khazix-skills",
+  "local_is": "Current source worktree, not installed runtime",
+  "source_head": "55d64b12582e75816309829b33ee45f0bce7365d",
+  "source_status": " M ieee-manuscript-edit/SKILL.md\n M meeting-notes/SKILL.md\n M project-writing/SKILL.md\n M research-report/SKILL.md\n M research-report/references/decision-report.md\n M research-report/references/modes.md\n M research-report/references/report-contract.md\n M research-report/scripts/audit_report.py\n M research-report/tests/test_audit_report.py\n M style-vocab/SKILL.md\n M technical-writing/SKILL.md\n M writing-router/SKILL.md\n M writing-router/evals/README.md\n M writing-router/references/ai-smell-catalog.md\n M writing-router/references/collaborative-writing.md\n M writing-router/references/common-quality.md\n?? codex-relay-chain-workspace/\n?? writing-router-workspace/\n?? writing-router/evals/paragraph-quality.json\n?? writing-router/references/exact-edit.md\n?? writing-router/scripts/\n?? writing-router/tests/test_exact_edit.py\n?? writing-router/tests/test_paragraph_quality.py\n",
+  "candidate_change": "Only the synthetic before/after examples appendix; local rule bodies unchanged",
+  "case_sha256": "237ae564ba1b4d8fc6337999cb22f06c542779c1999a848c0e839713b11604e3",
+  "models": {
+    "codex": "gpt-5.6-sol",
+    "claude": "claude-opus-5"
+  },
+  "effort": "max",
+  "runtime_modified": false,
+  "preflight_changes": "Clarified size requirement and negation scope; added required-limit summary control before first run"
+}

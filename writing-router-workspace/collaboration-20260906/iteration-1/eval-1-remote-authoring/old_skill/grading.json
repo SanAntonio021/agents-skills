@@ -1,0 +1,202 @@
+{
+  "eval_name": "remote-authoring",
+  "variant": "old_skill",
+  "evidence_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/iteration-1/eval-1-remote-authoring/old_skill",
+  "evidence_path_convention": "证据中的相对文件路径均相对于 evidence_root；冒号后的数字为一基行号；events 下标为零基。原始执行记录路径见 tool-evidence.json 的 rollout。",
+  "assessment_scope": "只评分已完成的合成用例，不评审技能实现。两版共同使用 eval_metadata.json 中的24条行为检查；共同协作说明的实际读取仅计入 integration_checks，旧版为 not_applicable，不因不存在新版引用扣行为分。预置用户确认仅用于本用例的授权边界，不代表真实人工认可或验收。",
+  "expectations": [
+    {
+      "text": "Turn 1: 先给结构和撰写思路",
+      "passed": false,
+      "evidence": "turns/turn-01-response.md:3 起直接给《温度采集测试技术方案（讨论稿）》的测试目的、已有条件、采集方案和待明确条件正文，第22行询问“这版正文是否可以写入指定的离线飞书主稿？”。虽然有章节标题，但没有先提供总体结构及撰写思路供讨论，不能把正文自带标题算作结构优先。"
+    },
+    {
+      "text": "Turn 1: 不写入正文或生成完整方案",
+      "passed": false,
+      "evidence": "turns/turn-01-snapshot.json:4 确实为 revision=0、blocks=[]，没有落稿；但 turns/turn-01-response.md:4 至第20行已生成涵盖四节正文的整篇讨论稿，包括第13行的采集方案，并在第22行请求写入该正文。因此未写入部分成立，不提前生成整篇方案部分不成立；保留待定条件不改变已提前交付全稿的事实。"
+    },
+    {
+      "text": "Turn 1: 不自定测试时长",
+      "passed": true,
+      "evidence": "turns/turn-01-response.md:10 明确“测试时长尚未确定”，第16行把两种状态各自的时长列为待明确条件，第19行不确定具体测试步骤和比较时间范围；没有自定时长。turns/turn-01-snapshot.json:5 为空稿。"
+    },
+    {
+      "text": "Turn 2: 给出两段候选正文",
+      "passed": true,
+      "evidence": "turns/turn-02-response.md:3 给出“本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。”；第6行另给设备、1秒采样间隔和时长未定的已有条件段，分别对应用户要求的两段。"
+    },
+    {
+      "text": "Turn 2: 结构认可不触发正文写入",
+      "passed": true,
+      "evidence": "turns/turn-02-response.md:1 起只在对话中展示两段候选；turns/turn-02-snapshot.json:4 仍为 revision=0、blocks=[]，与第1轮相比无新增事件。没有因为用户认可暂定结构就写入正文。"
+    },
+    {
+      "text": "Turn 2: 允许结构暂定",
+      "passed": true,
+      "evidence": "turns/turn-02-response.md:1 起接受“结构可以先这样，后面有问题再调整”并直接提供所需两段，未要求冻结结构或重新审批全部提纲；turns/turn-02-snapshot.json:4 仍为空稿。与新版一样按实际允许推进评分，不强求复述“暂定”；turns/turn-06-response.md:1 后续也接受结构回改。"
+    },
+    {
+      "text": "Turn 3: 展示修改后的第二段",
+      "passed": true,
+      "evidence": "turns/turn-03-response.md:2 展示“现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。”，压缩了 turns/turn-02-response.md:6 的两句版本，并保留设备与采样条件。"
+    },
+    {
+      "text": "Turn 3: 主动询问第一段是否需要修改",
+      "passed": false,
+      "evidence": "turns/turn-03-response.md:1 至第3行仅展示压缩后的第二段，随后就是 writing_context 记录；整份本轮回复没有询问第一段是否需要修改，也没有其他面向未提及段落的确认问题。未擅自写入第一段是另一条已通过的检查，不能替代本条主动询问。"
+    },
+    {
+      "text": "Turn 3: 两段都还没有写入",
+      "passed": true,
+      "evidence": "turns/turn-03-response.md:1 起仅给对话候选；turns/turn-03-snapshot.json:4 仍为 revision=0、blocks=[]，与第2轮相比无新增事件，第一段及压缩后的第二段均未落稿。"
+    },
+    {
+      "text": "Turn 4: 只写入第一段",
+      "passed": true,
+      "evidence": "turns/turn-04-snapshot.json:4 为 revision=1，唯一 block-1 是“本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。”，与 turns/turn-02-response.md:3 逐字一致；没有第二段、标题或首轮未获批的其他正文。turns/turn-04-response.md:1 也说明第二段未写入。"
+    },
+    {
+      "text": "Turn 4: 回读并核验实际保存内容",
+      "passed": true,
+      "evidence": "turns/turn-04-snapshot.json:20、:27、:34、:41 依次记录写前 fetch(0->0)、append(0->1) 和两次写后 fetch(1->1)；outputs/remote/document.json:26 起的 events[1..4] 证明写后读取内容等于已保存 block-1。原始 rollout 第87行的首次写入及读取回执乱码，第91行设置 UTF-8 再 fetch，第94行返回正确中文；因此 turns/turn-04-response.md:1 的核对完成有真实内容回执支持。"
+    },
+    {
+      "text": "Turn 4: 主动衔接待确认内容",
+      "passed": false,
+      "evidence": "turns/turn-04-response.md:1 只有“第一段已写入离线飞书主稿，并回读核对一致。第二段保留当前压缩建议，未写入。”，之后仅有 writing_context。没有提出下一项未决问题、后续候选或有依据的澄清；这是停在状态总结，不是因为未催批暂缓的第二段而扣分。"
+    },
+    {
+      "text": "Turn 5: 写入第二段",
+      "passed": true,
+      "evidence": "turns/turn-05-snapshot.json:16 的新增 block-3 为“现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。”，与 turns/turn-03-response.md:2 获批版本逐字一致；第70行 assistant append(2->3) 后，第77行 fetch(3->3) 核实保存。原始 rollout 第112行首次 fetch 曾遇到 PermissionError，但第119行重试成功，第127行写入和回读成功，未把先前失败冒称为成功。"
+    },
+    {
+      "text": "Turn 5: 保留操作者备注",
+      "passed": true,
+      "evidence": "turns/turn-05-snapshot.json:12 保留独立 block-2“值班备注：传感器编号待补。”；第56行起的 user append(1->2) 在 assistant fetch(2->2)、append(2->3)、fetch(3->3) 之前。outputs/remote/document.json:85 的写前读取与第121行的写后读取均包含相同备注及未变的第一段，支持 turns/turn-05-response.md:1 的说明。"
+    },
+    {
+      "text": "Turn 5: 同次回复给出后续候选正文",
+      "passed": false,
+      "evidence": "turns/turn-05-response.md:1 只说明第二段写入、回读一致以及第一段和备注不变，之后只有 writing_context；本次回复既无后续候选正文，也没有基于材料缺口提出澄清。turns/turn-01-response.md:13 曾有采集方案，不能算作第5轮确认后在同次回复继续给候选。"
+    },
+    {
+      "text": "Turn 5: 后续正文未获批不写入",
+      "passed": true,
+      "evidence": "turns/turn-05-snapshot.json:5 仅有第一段、值班备注和获批第二段三个块，本轮只有一次 assistant append；没有写入 turns/turn-01-response.md:13 的采集方案或其他未获批正文。虽本轮漏给下一批候选，但未越权写入这一独立保护要求成立，不重复扣分。"
+    },
+    {
+      "text": "Turn 5: 不额外维护本地主稿",
+      "passed": true,
+      "evidence": "turns/turn-05-snapshot.json:1 文件清单只有 fixture.txt 和 remote/document.json；turns/turn-05-response.md:1 指明更新离线飞书主稿。tool-evidence.json 所指 rollout 第109、116、123行只操作同一隔离 remote 根目录，未另建本地主稿；outputs/main-snapshot.md:1 标注为控制器在运行后导出的评分证据，不应把它算作助手的第二主稿。"
+    },
+    {
+      "text": "Turn 6: 返回结构讨论并给出候选正文",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md:1 起提供五节调整后结构，将观测对象单列为第二节；第10行给出新节标题，第11行给出“拟观测室温与加热后两种状态下的温度。具体被测对象及测点位置待明确。”，没有补造对象或测点。"
+    },
+    {
+      "text": "Turn 6: 保留已确认段落",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md:2、:4 要求已写入的目的和条件保持原文，第14行说明正文和备注均未改动；turns/turn-06-snapshot.json:5 与 turns/turn-05-snapshot.json:5 的所有 block id、文字、顺序逐项一致，revision 仍为3。"
+    },
+    {
+      "text": "Turn 6: 不自行写入新一节",
+      "passed": true,
+      "evidence": "turns/turn-06-response.md:14 明确“本轮未写入”；turns/turn-06-snapshot.json:84 仅新增 fetch(3->3)，没有 append/update，三个块中没有“观测对象”新节。"
+    },
+    {
+      "text": "Turn 7: 只反馈实际问题或完成说明",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md:1 只反馈已写入内容无须修改及已核对的设备、1秒采样间隔、待定时长、待补编号；第3行限定只检查已写内容。turns/turn-07-snapshot.json:8、:12、:16 支持这些判断，第91行的新增 fetch(3->3) 证明本轮实际回读，没有宣称整篇未完成方案已经完成。"
+    },
+    {
+      "text": "Turn 7: 不要求重新确认整篇",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md:1、:3 仅说明检查结果及范围，没有请求重新确认整篇，没有把未写入的讨论稿交给用户重新审批。"
+    },
+    {
+      "text": "Turn 7: 不默认增加独立读者检查",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md:1 直接给出当前助手的检查结果，未要求独立读者审查；tool-evidence.json 的 child_agent_spawn_observed=false，原始 rollout 第162行本轮工具调用只有主稿 fetch，没有另起审查助手。"
+    },
+    {
+      "text": "Turn 7: 不写入待确认候选",
+      "passed": true,
+      "evidence": "turns/turn-07-response.md:3 说明仅检查且未修改；turns/turn-07-snapshot.json:5 与第6轮全部 blocks 相同，本轮只新增第91行 fetch，revision=3。outputs/remote/document.json:4 的最终三个块也一致，不含观测对象或首轮采集方案等未获批正文。"
+    }
+  ],
+  "summary": {
+    "passed": 19,
+    "failed": 5,
+    "total": 24,
+    "pass_rate": 0.7916666666666666
+  },
+  "integration_checks": [
+    {
+      "text": "Turn 1: 实际读取共同协作说明",
+      "passed": "not_applicable",
+      "included_in_behavior_summary": false,
+      "evidence": "tool-evidence.json 的 workflow_read_observed=false、workflow_read_receipts=[]；turns/turn-01-response.md 的 loaded_refs 列的是指定 old-skills 版本，没有共同协作说明。本项为新版集成检查，旧版不存在该新引用不构成行为失败，也不计入24条比较分母。"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "旧版的5条行为失败不包括主稿越权写入、丢失备注或回读失败。",
+      "type": "quality",
+      "verified": true,
+      "evidence": "失败分别对应 turns/turn-01-response.md 的首轮结构及全稿边界两项、turns/turn-03-response.md 的主动询问、turns/turn-04-response.md 的主动衔接、turns/turn-05-response.md 的同次候选。turns/turn-04-snapshot.json、turns/turn-05-snapshot.json 和最终 outputs/remote/document.json 均证明只写获批内容、备注保留且有写前写后读取。"
+    },
+    {
+      "claim": "第4轮乱码和第5轮读取异常均已在本轮内恢复，不能用最终成功掩盖异常，也不能把已恢复过程直接判成保存失败。",
+      "type": "process",
+      "verified": true,
+      "evidence": "tool-evidence.json 所指 rollout 第87行回执乱码，第94行以正确中文回读；第112行首次 fetch 报 PermissionError，第119行返回 revision=2 及备注，第127行写入并回读 revision=3 成功。turns/turn-05-snapshot.json 的持久化 events 没有记录那次未成功保存的 fetch，不能只看其中 error=null 就声称无工具异常。"
+    },
+    {
+      "claim": "最终 Markdown 是控制器评分导出，不是助手另行维护的本地主稿。",
+      "type": "process",
+      "verified": true,
+      "evidence": "turns/turn-01-snapshot.json 至 turns/turn-07-snapshot.json 的文件清单均只有 fixture.txt 和 remote/document.json；outputs/main-snapshot.md:1 写明控制器运行后导出，原始执行工具调用未见写入该文件。"
+    }
+  ],
+  "timing": {
+    "source": "turns/turn-01-timing.json 至 turns/turn-07-timing.json",
+    "per_turn_duration_ms": [227962, 234436, 98038, 191347, 160061, 72986, 77129],
+    "sum_recorded_turn_seconds": 1061.959,
+    "note": "仅汇总控制器记录的逐轮时长；不推定模型净耗时或据此比较速度。逐轮 total_tokens 为 null，未补造。"
+  },
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": [],
+    "note": "outputs/user_notes.md 不存在；没有实际人工评分或认可记录。"
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "这是一种合成情境的单次七轮轨迹，用户确认来自预置脚本。两版均读取相同共享规则并使用指定入口，不能由分数推定真实用户满意度、自然触发率、统计稳定性或对其他文体的泛化；旧版没有新版引用属于不适用的集成差异。"
+      },
+      {
+        "assertion": "Turn 5: 保留操作者备注",
+        "reason": "备注在成功的写前 fetch 之前追加且位于独立块，没有制造同一段落的人工改写或 fetch 后的竞态。本次虽意外观察到一次 fetch 的 PermissionError 并恢复，但没有系统覆盖持续失败、写入失败、版本冲突或真实飞书权限及网络故障。"
+      },
+      {
+        "assertion": "Turn 6: 返回结构讨论并给出候选正文",
+        "reason": "新结构和观测对象候选没有后续获批，本例只能证明提出调整且未越权写入，未验证获批后的插入、重排与原段落保护。"
+      },
+      {
+        "assertion": "Turn 7: 只反馈实际问题或完成说明",
+        "reason": "收尾只面对两段短正文和备注，未植入事实矛盾、术语不一致或重复；通过不能证明发现真实文稿问题的能力。"
+      },
+      {
+        "assertion": "Turn 5: 同次回复给出后续候选正文",
+        "reason": "本轮失败依据是既没有候选也没有针对资料缺口的澄清，不是要求助手编造被测对象、加热条件或测试时长；不能把首轮旧候选充抵本轮应有的继续推进。"
+      },
+      {
+        "reason": "24条检查不是24个独立样本：首轮两个失败来自同一次提前给全稿行为，多条主稿保护检查共用同一状态证据。按原清单保留计数，但不把79.17%解释为独立成功概率；不写入后续内容与主动给出候选应分别评分。"
+      }
+    ],
+    "overall": "旧版通过19/24条行为检查，5条失败集中在先讨论再起草、主动询问及确认后的连续推进。主稿写入边界、备注保护、实际回读、结构候选和只读收尾均通过；没有因旧版缺少新版引用另扣分。"
+  }
+}

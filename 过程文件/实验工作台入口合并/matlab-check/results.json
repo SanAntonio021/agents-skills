@@ -1,0 +1,261 @@
+{
+  "matlab_version": "23.2.0.2485118 (R2023b) Update 6",
+  "copied_source_files": 213,
+  "source_and_copied_input_hashes_unchanged": true,
+  "copy_to_chinese_and_space_path": "passed",
+  "existing_directory_refused_without_change": "passed",
+  "suites": [
+    {
+      "selection": "smoke",
+      "status": "passed",
+      "hardware_constructor_attempts": 0,
+      "case_pass_markers": 1,
+      "processes": {
+        "initial_user_pids": [
+          19928,
+          62760
+        ],
+        "own_live_pids": [],
+        "processes": [
+          {
+            "parent_id": 35992,
+            "name": "MATLAB.exe",
+            "exited": true,
+            "exit_code": 0,
+            "id": 29668,
+            "started": "2026-09-13T07:08:29.2651897Z"
+          },
+          {
+            "parent_id": 75108,
+            "name": "matlab",
+            "exited": true,
+            "exit_code": 0,
+            "id": 35992,
+            "started": "2026-09-13T07:08:29.1663840Z"
+          }
+        ],
+        "completed_utc": "2026-09-13T07:09:51.0778817Z",
+        "selection": "smoke",
+        "remaining_matlab_pids": [
+          19928,
+          58332,
+          62760,
+          69876
+        ]
+      },
+      "log": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\smoke\\matlab.log"
+    },
+    {
+      "selection": "rx_plots",
+      "status": "passed",
+      "hardware_constructor_attempts": 0,
+      "case_pass_markers": 2,
+      "processes": {
+        "processes": [
+          {
+            "id": 69876,
+            "exit_code": 0,
+            "name": "MATLAB.exe",
+            "parent_id": 58332,
+            "exited": true,
+            "started": "2026-09-13T07:09:00.9593855Z"
+          },
+          {
+            "id": 58332,
+            "exit_code": 0,
+            "name": "matlab",
+            "parent_id": 48784,
+            "exited": true,
+            "started": "2026-09-13T07:09:00.8343277Z"
+          }
+        ],
+        "completed_utc": "2026-09-13T07:11:21.4695672Z",
+        "initial_user_pids": [
+          19928,
+          29668,
+          35992,
+          62760
+        ],
+        "remaining_matlab_pids": [
+          14148,
+          19928,
+          26620,
+          53008,
+          62760,
+          73032
+        ],
+        "own_live_pids": [],
+        "selection": "rx_plots"
+      },
+      "log": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\rx_plots\\matlab.log"
+    },
+    {
+      "selection": "plot_export",
+      "status": "passed",
+      "hardware_constructor_attempts": 0,
+      "case_pass_markers": 2,
+      "processes": {
+        "initial_user_pids": [
+          19928,
+          58332,
+          62760,
+          69876
+        ],
+        "completed_utc": "2026-09-13T07:12:59.9986246Z",
+        "selection": "plot_export",
+        "remaining_matlab_pids": [
+          19928,
+          62760
+        ],
+        "own_live_pids": [],
+        "processes": [
+          {
+            "id": 26620,
+            "exited": true,
+            "exit_code": 0,
+            "started": "2026-09-13T07:10:34.4189785Z",
+            "name": "MATLAB.exe",
+            "parent_id": 73032
+          },
+          {
+            "id": 73032,
+            "exited": true,
+            "exit_code": 0,
+            "started": "2026-09-13T07:10:34.2951925Z",
+            "name": "matlab",
+            "parent_id": 50884
+          }
+        ]
+      },
+      "log": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\plot_export\\matlab.log"
+    },
+    {
+      "selection": "tx_gui",
+      "status": "passed",
+      "hardware_constructor_attempts": 0,
+      "case_pass_markers": 1,
+      "processes": {
+        "completed_utc": "2026-09-13T07:12:30.2241691Z",
+        "processes": [
+          {
+            "exit_code": 0,
+            "id": 53008,
+            "name": "matlab",
+            "parent_id": 55696,
+            "exited": true,
+            "started": "2026-09-13T07:10:47.9117106Z"
+          },
+          {
+            "exit_code": 0,
+            "id": 14148,
+            "name": "MATLAB.exe",
+            "parent_id": 53008,
+            "exited": true,
+            "started": "2026-09-13T07:10:47.9995921Z"
+          }
+        ],
+        "remaining_matlab_pids": [
+          19928,
+          26620,
+          62760,
+          73032
+        ],
+        "initial_user_pids": [
+          19928,
+          26620,
+          58332,
+          62760,
+          69876,
+          73032
+        ],
+        "selection": "tx_gui",
+        "own_live_pids": []
+      },
+      "log": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\tx_gui\\matlab.log"
+    }
+  ],
+  "images": [
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_20260913_150837_792\\RX_1440x810.png",
+      "size": [
+        1440,
+        810
+      ],
+      "sha256": "0c86cceb36ab5ff33ec5946cd035ca23f4e5c46daad396128bf98c3444a97682",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_20260913_150837_792\\RX_1920x1080.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "sha256": "65d4d5cca27a9b0a5821639aefbb2b62aa029de1568c58660ec607b48fab2a19",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_20260913_150837_792\\TX_1440x810.png",
+      "size": [
+        1440,
+        810
+      ],
+      "sha256": "45df365bb62585004dd3a19c04295d4b4d70789ad6305cc2d94b69a766429001",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_20260913_150837_792\\TX_1920x1080.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "sha256": "c3725f2985636eb9b26ed2f852df90b33b25818ae8d757b08f56b75f666295e0",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_gui_20260913_150922_208\\RX_GUI_1100x700.png",
+      "size": [
+        1100,
+        700
+      ],
+      "sha256": "57d6728c74676a6fe5cd2c8366af8dea17151bc68ca62aac5faec764b0f49708",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_gui_20260913_150922_208\\RX_GUI_1500x900.png",
+      "size": [
+        1500,
+        900
+      ],
+      "sha256": "6f025fa938232a817038514a05682f7e1edd9802ba1998e6d8c3db2b4ee43193",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_gui_20260913_150922_208\\TX_GUI_1100x700.png",
+      "size": [
+        1100,
+        700
+      ],
+      "sha256": "f50dd919789b1b5d6cddd8885576b58edc32f0b191ba112d5b78ee2056b19c7a",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    },
+    {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台\\analysis\\template_gui_20260913_150922_208\\TX_GUI_1500x900.png",
+      "size": [
+        1500,
+        900
+      ],
+      "sha256": "00ff3afdf54a02ea64d291d872450ead48ff2b4230acd8cebef4a5622a89c958",
+      "visual_review": "reviewed: complete labels, data panels and controls; no missing plot or obvious overlap at tested size"
+    }
+  ],
+  "not_run": [
+    {
+      "selection": "rx_gui",
+      "reason": "Frozen original suite explicitly requires Visible=on, figure(fig), Swing KeyboardFocusManager focus ownership, and async visible=true. It was not started to preserve background-only requirement. No tests or source were changed. Template_GUI_Demo ran unchanged with hidden TX/RX controls at both sizes."
+    }
+  ],
+  "launch_issue": {
+    "first_unprivileged_attempt": "Get-CimInstance process enumeration denied after launcher; no MATLAB log or child remained. A subsequent authorized process check confirmed only pre-existing PIDs 19928/62760. Launcher was changed to preflight enumeration before spawning; actual tests ran once with authorized elevated process observation."
+  },
+  "scope_limit": "Mock/synthetic software verification, not physical instrument acceptance; full RX focus and async interaction suite not verified this time. Existing frozen algorithms were not changed."
+}

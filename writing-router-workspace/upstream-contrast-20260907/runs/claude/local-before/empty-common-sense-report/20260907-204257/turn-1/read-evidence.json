@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "修改采购调研报告段落，读者为熟悉采购流程的设备主管，仅在对话中输出"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\research-report\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\writing-router\\references\\common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\writing-router\\references\\ai-smell-catalog.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\style-vocab\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\目录.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\调研报告.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills\" && ls research-report/scripts ieee-manuscript-edit/scripts 2>/dev/null",
+      "description": "List skill script files"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\research-report\\references\\modes.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\research-report\\references\\report-contract.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills\" && python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --help 2>&1 | head -40",
+      "description": "Show vocab audit script usage"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills\" && printf '%s\\n' '本次收到3份书面报价，价格均含税、含运费：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。' | python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file /dev/stdin --vocab-root 'D:\\BaiduSyncdisk\\.agents\\vocab' --language zh --document-kind research-report --output-format markdown",
+      "description": "Run vocab audit on revised paragraph via stdin"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills\" && printf '%s\\n' '本次收到3份书面报价，价格均含税、含运费：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。' | MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file /dev/stdin --vocab-root 'D:\\BaiduSyncdisk\\.agents\\vocab' --language zh --document-kind research-report --output-format markdown; echo \"---exit $?\"",
+      "description": "Run vocab audit with path conversion disabled"
+    }
+  },
+  {
+    "name": "Grep",
+    "input": {
+      "pattern": "stdin|read_text|args.file",
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\ieee-manuscript-edit\\scripts\\audit_writing_memory.py",
+      "output_mode": "content"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills\" && grep -n \"stdin\\|add_argument\\|def main\\|argparse\" research-report/scripts/audit_report.py | head -40",
+      "description": "Inspect audit_report.py CLI options"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\ieee-manuscript-edit\\scripts\\audit_writing_memory.py",
+      "offset": 330,
+      "limit": 120
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/ieee-manuscript-edit/scripts\" && python -X utf8 -c \"\nimport sys, importlib.util, pathlib\nspec = importlib.util.spec_from_file_location('awm', 'audit_writing_memory.py')\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\ntext = sys.stdin.read()\nrules, paths = m.build_rules(pathlib.Path(r'D:\\BaiduSyncdisk\\.agents\\vocab'), 'zh', 'research-report')\nvisible = m.masked_text(text)\nhits = [(r.source, r.suggestion, r.exception, h.group(0)) for r in rules for h in r.compiled.finditer(visible)]\nprint('rule_files:', [str(p) for p in paths])\nprint('status:', 'review_required' if hits else 'clean')\nfor h in hits: print(h)\n\" <<'EOF'\n本次收到3份书面报价，价格均含税、含运费：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。\nEOF",
+      "description": "Run vocab audit rules on revised text in memory"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/ieee-manuscript-edit/scripts\" && python -X utf8 -c \"\nimport sys, importlib.util, pathlib\nspec = importlib.util.spec_from_file_location('awm', 'audit_writing_memory.py')\nm = importlib.util.module_from_spec(spec); sys.modules['awm']=m; spec.loader.exec_module(m)\ntext = sys.stdin.read()\nrules, paths = m.build_rules(pathlib.Path(r'D:\\BaiduSyncdisk\\.agents\\vocab'), 'zh', 'research-report')\nvisible = m.masked_text(text)\nhits = [(r.source, r.suggestion, r.exception, h.group(0)) for r in rules for h in r.compiled.finditer(visible)]\nprint('rule_files:', [str(p) for p in paths])\nprint('status:', 'review_required' if hits else 'clean')\nfor h in hits: print(h)\n\" <<'EOF'\n本次收到3份书面报价，价格均含税、含运费：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。\nEOF",
+      "description": "Run vocab rules over revised text via stdin"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/research-report/scripts\" && grep -n \"^def \\|^    def \" audit_report.py | tail -30",
+      "description": "List functions in audit_report.py"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\plugins\\local-before\\skills\\research-report\\scripts\\audit_report.py",
+      "offset": 430,
+      "limit": 30
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-before/skills/research-report/scripts\" && python -X utf8 -c \"\nimport sys, importlib.util, json\nspec = importlib.util.spec_from_file_location('ar','audit_report.py')\nm = importlib.util.module_from_spec(spec); sys.modules['ar']=m; spec.loader.exec_module(m)\ntext = sys.stdin.read()\nres = m.audit_text(text, source='<stdin>', document_role='evidence-report')\nprint(m.format_text_report(res))\n\" <<'EOF'\n本次收到3份书面报价，价格均含税、含运费：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。\nEOF",
+      "description": "Run report audit on revised paragraph"
+    }
+  }
+]

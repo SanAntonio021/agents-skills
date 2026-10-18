@@ -1,0 +1,12 @@
+{
+  "commit": "a38b1ae9cb3a9504b45d598c5addb54bc117afbd",
+  "skills": [
+    "windows-storage-cleanup"
+  ],
+  "files": [
+    "windows-storage-cleanup/SKILL.md",
+    "windows-storage-cleanup/references/backup-verification.md",
+    "windows-storage-cleanup/references/risk-classification.md",
+    "windows-storage-cleanup/references/windows-and-wiztree.md"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "status": "PASS",
+  "format": "pptx",
+  "file": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\sample_v02.pptx",
+  "phase": "render",
+  "source_sha256_before": "95F086027775B6600E333434B59E349564617A1F212522A1E1F84F9D57019617",
+  "source_sha256_after": "95F086027775B6600E333434B59E349564617A1F212522A1E1F84F9D57019617",
+  "details": {
+    "slides": 2,
+    "native_open": true,
+    "native_render": {
+      "export": "native_png",
+      "expected": 2,
+      "files": 2,
+      "retained_files": [
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\native-pages-v02\\slide-0001.png",
+          "sha256": "8F4BA9568811C5365ACCC05D9162EF115E727BB27910D1ED71093BCA76DE2253"
+        },
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\native-pages-v02\\slide-0002.png",
+          "sha256": "C68E2F097998D6D6FD7DF9C646D4A328A1BE4A7AF37D58718816E16AA3729EDD"
+        }
+      ]
+    },
+    "application_lifecycle": {
+      "launch": "explicit_microsoft_executable",
+      "pid": 48896,
+      "application_path": "C:\\Program Files\\Microsoft Office\\root\\Office16",
+      "version": "16.0",
+      "cleanup": "self_exited"
+    }
+  }
+}

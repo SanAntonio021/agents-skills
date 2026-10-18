@@ -1,0 +1,62 @@
+[
+  {
+    "group": 1,
+    "host": "codex",
+    "case": "empty-common-sense-report",
+    "versions": {
+      "A": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\empty-common-sense-report\\20260907-145754"
+      },
+      "B": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\empty-common-sense-report\\20260907-171043"
+      }
+    }
+  },
+  {
+    "group": 2,
+    "host": "codex",
+    "case": "cross-turn-repetition-minutes",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\cross-turn-repetition-minutes\\20260907-171509"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\cross-turn-repetition-minutes\\20260907-170337"
+      }
+    }
+  },
+  {
+    "group": 3,
+    "host": "claude",
+    "case": "empty-common-sense-report",
+    "versions": {
+      "A": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\baseline\\empty-common-sense-report\\20260907-170313"
+      },
+      "B": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\candidate\\empty-common-sense-report\\20260907-171023"
+      }
+    }
+  },
+  {
+    "group": 4,
+    "host": "claude",
+    "case": "cross-turn-repetition-minutes",
+    "versions": {
+      "A": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\baseline\\cross-turn-repetition-minutes\\20260907-170409"
+      },
+      "B": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\candidate\\cross-turn-repetition-minutes\\20260907-171148"
+      }
+    }
+  }
+]

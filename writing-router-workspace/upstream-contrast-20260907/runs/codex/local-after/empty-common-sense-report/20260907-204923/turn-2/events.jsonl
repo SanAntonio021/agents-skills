@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07bea-8c5b-7192-aedd-a793f0d7ff5a"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"本次收到3份书面报价，均含税、含运费。该批设备必须在5天内到货，现有报价中仅丙型满足交期要求：\n\n- 甲型：2800元，交期10天；\n- 乙型：3100元，交期6天；\n- 丙型：3500元，交期4天。\n\n上述报价已核对，样机验收尚未进行。"}}
+{"type":"turn.completed","usage":{"input_tokens":343217,"cached_input_tokens":306432,"cache_write_input_tokens":0,"output_tokens":4362,"reasoning_output_tokens":2246}}

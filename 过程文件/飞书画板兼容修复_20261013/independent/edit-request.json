@@ -1,0 +1,27 @@
+{
+  "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+  "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+  "operations": [
+    {
+      "kind": "text",
+      "id": "o2:1",
+      "text": "发射放大级\nPA / LNA"
+    },
+    {
+      "kind": "text",
+      "id": "a2:1",
+      "text": "测试记录\nA 端"
+    },
+    {
+      "kind": "caption",
+      "id": "c2:1",
+      "text": "3–10 dBm"
+    },
+    {
+      "kind": "caption",
+      "id": "c2:2",
+      "text": "实际 LO：4 fSG\nLO 输入约 +10 dBm"
+    }
+  ],
+  "capture_preview": true
+}

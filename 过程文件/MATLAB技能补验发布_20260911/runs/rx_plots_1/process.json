@@ -1,0 +1,94 @@
+{
+  "selection": "rx_plots",
+  "attempt": "1",
+  "started_at": "2026-09-11T14:46:18.193450+08:00",
+  "preexisting_matlab": [
+    {
+      "pid": 7900,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 22576,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 24776,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 43884,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 47560,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 52792,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 55820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57156,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57556,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 64468,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 64568,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 65820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 67388,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 68408,
+      "name": "MATLABWindow.exe"
+    }
+  ],
+  "hardware_mode": "simulation/mock",
+  "launcher_pid": 65980,
+  "exit_code": 0,
+  "seconds": 118.111,
+  "observed_children": [
+    {
+      "pid": 69992,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109178.2114012,
+      "exit_code": 0
+    },
+    {
+      "pid": 20736,
+      "alive": false,
+      "name": "MATLAB.exe",
+      "started": 1789109178.247597,
+      "exit_code": 0
+    },
+    {
+      "pid": 56216,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109289.453195,
+      "exit_code": 0
+    }
+  ],
+  "lingering_matlab_children": [],
+  "completion_marker": true,
+  "abnormal_matlab_children": [],
+  "status": "PASS"
+}

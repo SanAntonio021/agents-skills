@@ -1,0 +1,21 @@
+{
+  "A": {
+    "original_files_unchanged": true,
+    "read_receipts": 11
+  },
+  "B": {
+    "original_files_unchanged": true,
+    "read_receipts": 13
+  },
+  "C": {
+    "original_files_unchanged": true,
+    "read_receipts": 14
+  },
+  "scope": {
+    "default_delivery_no_main": true,
+    "explicit_save_completed": true,
+    "word_handoff": "simulated; source and packaged text match",
+    "readonly_and_review_before_export": "original preserved; no DOCX created",
+    "auto_trigger_tested": false
+  }
+}

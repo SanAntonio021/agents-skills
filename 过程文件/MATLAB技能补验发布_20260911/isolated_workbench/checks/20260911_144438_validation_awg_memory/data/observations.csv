@@ -1,0 +1,3 @@
+﻿case,status,seconds,note
+-,-,s,-
+m8195a_awg_memory_capacity_preflight,PASS,0.95564329999999997,"IIII DIV1/DIV2/DIV4 rejected at 593280 samples/channel; EXT, 16G, fallback, aligned unequal lengths, and zero-write guards passed"

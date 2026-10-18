@@ -1,0 +1,5 @@
+{
+  "exit_code": 1,
+  "error": "RPC failed; HTTP 408 curl 22; send-pack unexpected disconnect; remote unchanged after check",
+  "observed_remote": "ef000ef937abbcea15dc547cc3b436aad44cdb17"
+}

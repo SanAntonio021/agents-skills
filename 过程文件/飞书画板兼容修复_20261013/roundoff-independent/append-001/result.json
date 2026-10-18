@@ -1,0 +1,152 @@
+{
+  "status": "verified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "append"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-001.json",
+      "append_submitted": true,
+      "after_raw": "raw-003.json",
+      "id_mapping": {
+        "o91426:1": "o2:1",
+        "o91426:2": "o2:2",
+        "c91426:1": "c2:1"
+      },
+      "raw_exceptions": [],
+      "appended_raw_exceptions": [],
+      "reopen_raw": "raw-005.json",
+      "reopen_raw_exceptions": [],
+      "reopen_appended_raw_exceptions": [],
+      "reopen_status": "passed",
+      "diff": {
+        "added": [
+          "c2:1",
+          "o2:1",
+          "o2:2"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "after_render_alpha": {
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        }
+      }
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_4p1XjzRNKHzFJ0SNNbeJYA",
+      "tab_id": "349B2F3CD4313A672B5A01D2AE5E02CD",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g"
+    },
+    {
+      "task_id": "task_AZN1zY4vl-ntd2Onp4JERw",
+      "tab_id": "5D54260FC67DB973109C6889CE4A14F6",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_4p1XjzRNKHzFJ0SNNbeJYA",
+      "tab_id": "349B2F3CD4313A672B5A01D2AE5E02CD",
+      "reason": "append_saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_4p1XjzRNKHzFJ0SNNbeJYA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_AZN1zY4vl-ntd2Onp4JERw",
+      "tab_id": "5D54260FC67DB973109C6889CE4A14F6",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_AZN1zY4vl-ntd2Onp4JERw",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "initial_nodes": [],
+  "append_layer_assignment": {
+    "c91426:1": 0,
+    "o91426:1": 1,
+    "o91426:2": 2
+  },
+  "initial_inspect": "inspect-000.json",
+  "before_raw": "raw-001.json",
+  "after_raw": "raw-003.json",
+  "id_mapping": {
+    "o91426:1": "o2:1",
+    "o91426:2": "o2:2",
+    "c91426:1": "c2:1"
+  },
+  "released_tab": null,
+  "page_status": "closed",
+  "preview_attempts": 2,
+  "preview_last_frame_visible": true,
+  "visual_status": "needs_review",
+  "preview": "preview.png",
+  "visual_feedback": "visual-feedback.json",
+  "preview_source": "native_canvas"
+}

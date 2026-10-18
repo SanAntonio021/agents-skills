@@ -1,0 +1,35 @@
+{
+  "case": "terms-control",
+  "host": "codex",
+  "arm": "installed",
+  "turns": [
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08029-769a-7ee1-a153-52fc6f5a742f",
+      "previous_session": null,
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 20437,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 298,
+            "reasoning_output_tokens": 203
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 17.813
+    }
+  ],
+  "status": "completed",
+  "quality_accepted": false,
+  "skipped_turns": 0
+}

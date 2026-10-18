@@ -1,0 +1,32 @@
+[
+  {
+    "group": 1,
+    "host": "codex",
+    "case": "unnecessary-defense-project",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\unnecessary-defense-project\\20260907-145555"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\unnecessary-defense-project\\20260907-145100"
+      }
+    }
+  },
+  {
+    "group": 2,
+    "host": "codex",
+    "case": "necessary-negation-paper",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\necessary-negation-paper\\20260907-150110"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\necessary-negation-paper\\20260907-145810"
+      }
+    }
+  }
+]

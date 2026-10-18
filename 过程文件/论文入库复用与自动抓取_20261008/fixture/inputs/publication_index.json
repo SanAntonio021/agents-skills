@@ -1,0 +1,27 @@
+{
+  "simulated": true,
+  "warning": "All publication identities and source URLs in this fixture are simulated. No remote requests are made.",
+  "publications": [
+    {
+      "itemType": "journalArticle",
+      "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+      "DOI": "10.0000/zotero-fixture.target-001",
+      "date": "2026",
+      "publicationTitle": "Fixture Journal (Simulated)",
+      "volume": "1",
+      "issue": "1",
+      "pages": "1-2",
+      "url": "https://example.invalid/zotero-fixture/target-001",
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+    }
+  ]
+}

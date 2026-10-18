@@ -1,0 +1,35 @@
+{
+  "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\fixtures\\calculated.xlsx",
+  "source_sha256": "82B8AB05915D9298B3D0E8323558271DB193340D84D827064E5819098935B30E",
+  "source_unchanged": true,
+  "outputs": [
+    {
+      "action": "created",
+      "candidate_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\note-draft.xlsx",
+      "destination_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\备注修改_v01.xlsx",
+      "ok": true,
+      "previous_sha256": null,
+      "published_sha256": "910d0d685da5117605e6ae4d092f5104247b1e519fd08b5e2af932d90c36ca81"
+    },
+    {
+      "action": "created",
+      "candidate_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\category-candidate-v02.xlsx",
+      "destination_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\类别修改_v01.xlsx",
+      "ok": true,
+      "previous_sha256": null,
+      "published_sha256": "7c3efaae3121cb5bcdee761a323b9eca23eedf1d44b319dadf2f4a1e1ed7d258"
+    }
+  ],
+  "STATIC_PASS": true,
+  "LO_RENDER_PASS": true,
+  "NATIVE_OPEN": "not_requested_no_COM",
+  "formula_count_each": 5,
+  "cache_count_each": 5,
+  "error_count_each": 0,
+  "initial_category_recalc": "tool_returned_success_but_E3_stale_25_rejected_by_numeric_assertion",
+  "category_recovery": "clear_formula_caches_on_calculation_copy_then_runner_recalc_and_signature_checked_cache_merge",
+  "final_category_E3": 85,
+  "note_E3": 25,
+  "E5_both": 85,
+  "visual_review": "Both actual LibreOffice rendered PNGs viewed; changed cells and surrounding table text complete, no clipping or overlap. PDFs are internal previews only."
+}

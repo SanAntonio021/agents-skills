@@ -1,0 +1,259 @@
+{
+  "status": "runtime_active",
+  "commit": "e918bb174596d3a1590235e21fa7469a1a83ca06",
+  "commit_url": "https://github.com/SanAntonio021/agents-skills/commit/e918bb174596d3a1590235e21fa7469a1a83ca06",
+  "source_branch": "main",
+  "software_acceptance": "R2023b Update 6: smoke, four specials, 19 MATLAB helpers, 10 Python self-test runs passed; 8 images visually reviewed; acceptance processes exit 0; RX main plus 9 workers exit 0.",
+  "skills": [
+    {
+      "name": "standardize-test-project",
+      "action": "updated_background",
+      "file_count": 45,
+      "four_layer_manifest_sha256": "08D71F9156E52DAA6BB850262FC5E9385C132F63DC60C4F3707471ADDB546FCB"
+    },
+    {
+      "name": "tx-rx-workbench-template",
+      "action": "installed_background",
+      "file_count": 230,
+      "four_layer_manifest_sha256": "654AA4D9DF4EB82174A6886A4B1C76B660519773EA6AFDDA071820C5189FC2E9"
+    }
+  ],
+  "sync_receipt": "sync-1.json",
+  "verify_receipt": "verify-1.json",
+  "software_evidence": "software-acceptance.json",
+  "workspace_preservation": "workspace-preservation.json",
+  "source_snapshot_original_hashes_preserved": 204,
+  "ccswitch_backup_created": true,
+  "non_target_unchanged": true,
+  "original_matlab_sessions_preserved": true,
+  "hardware_access": false,
+  "r2023a_heap_corruption": "Historical unresolved issue retained; no claim of repair.",
+  "push_recovery": "First push returned HTTP 408; remote remained unchanged; same commit retry with command-scoped postBuffer succeeded. No persistent Git or proxy configuration changed.",
+  "lessons": [
+    "断言PASS、操作系统进程退出和真实仪器验收分别记录；本次RX保留进程句柄读取全部工作子进程退出码。",
+    "R2023b Update 6在本机通过，不足以证明R2023a版本本身存在缺陷。",
+    "冻结快照使用技能内.gitattributes关闭换行转换，并核对提交blob与原始哈希；本次保留204个来源文件字节。",
+    "推送结果不明确时先核对远端提交；本次HTTP 408恢复未修改持久Git或代理配置。"
+  ],
+  "cleanup": {
+    "status": "completed",
+    "method": "Windows Recycle Bin, probe verified",
+    "scope": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911",
+    "files": 748,
+    "bytes": 6500895.0,
+    "items": [
+      {
+        "relative_path": "candidate",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\candidate",
+        "directory": true,
+        "files": 273,
+        "bytes": 2988991.0
+      },
+      {
+        "relative_path": "source-backup",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\source-backup",
+        "directory": true,
+        "files": 2,
+        "bytes": 16951.0
+      },
+      {
+        "relative_path": "audit\\copy-test-project",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\audit\\copy-test-project",
+        "directory": true,
+        "files": 213,
+        "bytes": 1722499.0
+      },
+      {
+        "relative_path": "audit\\existing-empty",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\audit\\existing-empty",
+        "directory": true,
+        "files": 0,
+        "bytes": null
+      },
+      {
+        "relative_path": "audit\\final_audit.py",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\audit\\final_audit.py",
+        "directory": false,
+        "files": 1,
+        "bytes": 3086.0
+      },
+      {
+        "relative_path": "audit\\static_audit.py",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\audit\\static_audit.py",
+        "directory": false,
+        "files": 1,
+        "bytes": 2251.0
+      },
+      {
+        "relative_path": "prepare_release.py",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\prepare_release.py",
+        "directory": false,
+        "files": 1,
+        "bytes": 6389.0
+      },
+      {
+        "relative_path": "run_sync.py",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\run_sync.py",
+        "directory": false,
+        "files": 1,
+        "bytes": 1446.0
+      },
+      {
+        "relative_path": "run_matlab.py",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\run_matlab.py",
+        "directory": false,
+        "files": 1,
+        "bytes": 4859.0
+      },
+      {
+        "relative_path": "runs\\environment_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\environment_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\environment_2\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\environment_2\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\helpers_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\helpers_1\\preferences",
+        "directory": true,
+        "files": 7,
+        "bytes": 12450.0
+      },
+      {
+        "relative_path": "runs\\plot_export_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\plot_export_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\rx_gui_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\rx_gui_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\rx_plots_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\rx_plots_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\smoke_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\smoke_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "runs\\tx_gui_1\\preferences",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\runs\\tx_gui_1\\preferences",
+        "directory": true,
+        "files": 5,
+        "bytes": 2782.0
+      },
+      {
+        "relative_path": "isolated_workbench\\code",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\code",
+        "directory": true,
+        "files": 195,
+        "bytes": 1529429.0
+      },
+      {
+        "relative_path": "isolated_workbench\\config",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\config",
+        "directory": true,
+        "files": 4,
+        "bytes": 8425.0
+      },
+      {
+        "relative_path": "isolated_workbench\\template_support",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\template_support",
+        "directory": true,
+        "files": 4,
+        "bytes": 842.0
+      },
+      {
+        "relative_path": "isolated_workbench\\compute_file_sha256.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\compute_file_sha256.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 859.0
+      },
+      {
+        "relative_path": "isolated_workbench\\Multistream_Workbench.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\Multistream_Workbench.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 6113.0
+      },
+      {
+        "relative_path": "isolated_workbench\\README.md",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\README.md",
+        "directory": false,
+        "files": 1,
+        "bytes": 813.0
+      },
+      {
+        "relative_path": "isolated_workbench\\run_v2_validation.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\run_v2_validation.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 162481.0
+      },
+      {
+        "relative_path": "isolated_workbench\\RX_Workbench.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\RX_Workbench.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 1164.0
+      },
+      {
+        "relative_path": "isolated_workbench\\Template_Demo.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\Template_Demo.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 4048.0
+      },
+      {
+        "relative_path": "isolated_workbench\\Template_GUI_Demo.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\Template_GUI_Demo.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 4192.0
+      },
+      {
+        "relative_path": "isolated_workbench\\Template_NoHardware.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\Template_NoHardware.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 443.0
+      },
+      {
+        "relative_path": "isolated_workbench\\Template_Validate.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\Template_Validate.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 650.0
+      },
+      {
+        "relative_path": "isolated_workbench\\TX_Workbench.m",
+        "full_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MATLAB技能补验发布_20260911\\isolated_workbench\\TX_Workbench.m",
+        "directory": false,
+        "files": 1,
+        "bytes": 3040.0
+      }
+    ],
+    "preserved": "Published skill source and runtime copies, original Downloads packages, acceptance logs/process receipts/MAT results, eight reviewed images and associated simulation data, sync/VerifyOnly receipts. Historical invocation paths in logs are not live dependencies; source can be recovered from the published commit or original packages.",
+    "verification": "All 30 listed targets removed; retained acceptance receipts and 8 images match hashes; 204 source files match in all 4 layers; published skill worktrees clean."
+  }
+}

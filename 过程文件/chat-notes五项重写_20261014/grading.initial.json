@@ -1,0 +1,56 @@
+[
+  {
+    "case": "old_mixed",
+    "checks": {
+      "data_and_final_preserved": true,
+      "user_manual_edit_preserved": true,
+      "old_port_only_in_recovery": true,
+      "preview_recoverable": true,
+      "only_user_note_uncommitted": true,
+      "no_redundant_failed_history": true
+    },
+    "passed": true
+  },
+  {
+    "case": "new_mixed",
+    "checks": {
+      "data_and_final_preserved": true,
+      "user_manual_edit_preserved": true,
+      "old_port_only_in_recovery": true,
+      "preview_recoverable": true,
+      "only_user_note_uncommitted": true,
+      "no_redundant_failed_history": false
+    },
+    "passed": false
+  },
+  {
+    "case": "restricted",
+    "checks": {
+      "only_authorized_two_files_changed": true,
+      "port_and_version_correct": true,
+      "no_commit": true
+    },
+    "passed": true
+  },
+  {
+    "case": "partially_blocked",
+    "checks": {
+      "known_port_updated": true,
+      "unknown_data_and_deliverable_preserved": true,
+      "only_unused_recycled": true,
+      "pending_capture_not_accepted": true,
+      "no_commit": true
+    },
+    "passed": true
+  },
+  {
+    "case": "repeat_and_causes",
+    "checks": {
+      "all_retained_inputs_unchanged": true,
+      "only_unused_recycled": true,
+      "one_recycle_after_two_calls": true,
+      "skill_behavior_not_written": true
+    },
+    "passed": true
+  }
+]

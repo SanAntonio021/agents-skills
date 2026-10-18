@@ -1,0 +1,7 @@
+{
+  "writing-router/SKILL.md": "7895964e756d08e6aeced03938ecf970affc42a9169bad3818946721bcf0c192",
+  "writing-router/references/common-quality.md": "4bde5e2fc444d593a2d26692cf3d93efc2524f632e98a7cd3a67cc0379af8102",
+  "writing-router/references/exact-edit.md": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+  "writing-router/scripts/exact_edit.py": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be",
+  "writing-router/tests/test_exact_edit.py": "6b0cc1a26754ab6c7b40182293bb0a7050a27ff765dbac7eb5bf1cb9769c851e"
+}

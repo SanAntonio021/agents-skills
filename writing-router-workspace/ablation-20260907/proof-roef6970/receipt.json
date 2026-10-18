@@ -1,0 +1,215 @@
+{
+  "model_generated": false,
+  "results": [
+    {
+      "case": "paper-heading-only",
+      "newline": "'\\n'",
+      "bom": false,
+      "output": "proof-roef6970\\paper-heading-only-1\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\paper-heading-only-1\\output.md",
+        "source_sha256": "fd2f66853466bdbc3fe8d29ee89c2166388f7805d9346f48161fbf3eeb475df7",
+        "output_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "fd2f66853466bdbc3fe8d29ee89c2166388f7805d9346f48161fbf3eeb475df7",
+        "expected_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af",
+        "candidate_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "paper-heading-only",
+      "newline": "'\\n'",
+      "bom": true,
+      "output": "proof-roef6970\\paper-heading-only-2\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\paper-heading-only-2\\output.md",
+        "source_sha256": "46b739113fd451b05b902e331d5603c5337c0f270e4cce9c3004360448b67f53",
+        "output_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "46b739113fd451b05b902e331d5603c5337c0f270e4cce9c3004360448b67f53",
+        "expected_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c",
+        "candidate_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "paper-heading-only",
+      "newline": "'\\r\\n'",
+      "bom": false,
+      "output": "proof-roef6970\\paper-heading-only-3\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\paper-heading-only-3\\output.md",
+        "source_sha256": "fd2f66853466bdbc3fe8d29ee89c2166388f7805d9346f48161fbf3eeb475df7",
+        "output_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "fd2f66853466bdbc3fe8d29ee89c2166388f7805d9346f48161fbf3eeb475df7",
+        "expected_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af",
+        "candidate_sha256": "20adb9c0e3582c55c0274e2b3f1c3f2ab87f696613379ff8ecad6745175d25af"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "paper-heading-only",
+      "newline": "'\\r\\n'",
+      "bom": true,
+      "output": "proof-roef6970\\paper-heading-only-4\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\paper-heading-only-4\\output.md",
+        "source_sha256": "46b739113fd451b05b902e331d5603c5337c0f270e4cce9c3004360448b67f53",
+        "output_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "46b739113fd451b05b902e331d5603c5337c0f270e4cce9c3004360448b67f53",
+        "expected_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c",
+        "candidate_sha256": "417fe014979516f6ab309ecb83ae8a4110b1e564f7e7fccbef98e86cd29ad44c"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "notice-append-only",
+      "newline": "'\\n'",
+      "bom": false,
+      "output": "proof-roef6970\\notice-append-only-5\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\notice-append-only-5\\output.md",
+        "source_sha256": "44e0fe91f3c7bf9586aeca09fcdffd1b92ce89fbbe35463551e9e6989b282b60",
+        "output_sha256": "eff12e129e088a461aac1157c58813a9f54bef35a2fe3c4bf077c9350ccbaf60"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "44e0fe91f3c7bf9586aeca09fcdffd1b92ce89fbbe35463551e9e6989b282b60",
+        "expected_sha256": "eff12e129e088a461aac1157c58813a9f54bef35a2fe3c4bf077c9350ccbaf60",
+        "candidate_sha256": "eff12e129e088a461aac1157c58813a9f54bef35a2fe3c4bf077c9350ccbaf60"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "notice-append-only",
+      "newline": "'\\n'",
+      "bom": true,
+      "output": "proof-roef6970\\notice-append-only-6\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\notice-append-only-6\\output.md",
+        "source_sha256": "4d92839603ba1e3af7340ac816f08faaf5f4c15db5eb9ec1267e2e9c8143444b",
+        "output_sha256": "e690ecfb26a4cceabe501ebdd684799b09a093f6d722cbdd170e644667121753"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "4d92839603ba1e3af7340ac816f08faaf5f4c15db5eb9ec1267e2e9c8143444b",
+        "expected_sha256": "e690ecfb26a4cceabe501ebdd684799b09a093f6d722cbdd170e644667121753",
+        "candidate_sha256": "e690ecfb26a4cceabe501ebdd684799b09a093f6d722cbdd170e644667121753"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "notice-append-only",
+      "newline": "'\\r\\n'",
+      "bom": false,
+      "output": "proof-roef6970\\notice-append-only-7\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\notice-append-only-7\\output.md",
+        "source_sha256": "b24b77fceef9775e7bb0a3f5e460125198a0c0a4bc766238b078b28a0ed4a5f8",
+        "output_sha256": "79d4b5c96cd50a5a630a27ca8103ddf4564aedfe8ffc389c467d075db596496d"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "b24b77fceef9775e7bb0a3f5e460125198a0c0a4bc766238b078b28a0ed4a5f8",
+        "expected_sha256": "79d4b5c96cd50a5a630a27ca8103ddf4564aedfe8ffc389c467d075db596496d",
+        "candidate_sha256": "79d4b5c96cd50a5a630a27ca8103ddf4564aedfe8ffc389c467d075db596496d"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    },
+    {
+      "case": "notice-append-only",
+      "newline": "'\\r\\n'",
+      "bom": true,
+      "output": "proof-roef6970\\notice-append-only-8\\output.md",
+      "apply": {
+        "ok": true,
+        "action": "apply",
+        "output": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\ablation-20260907\\proof-roef6970\\notice-append-only-8\\output.md",
+        "source_sha256": "fa34f6f925274d7d44d9cbccc7964542596fc6b90ada606d883e4a45b85dbbcf",
+        "output_sha256": "933459c532fb9545550d9bd36507f334f570200ac193fcad890fcbafef2d8c36"
+      },
+      "verify": {
+        "ok": true,
+        "action": "verify",
+        "source_sha256": "fa34f6f925274d7d44d9cbccc7964542596fc6b90ada606d883e4a45b85dbbcf",
+        "expected_sha256": "933459c532fb9545550d9bd36507f334f570200ac193fcad890fcbafef2d8c36",
+        "candidate_sha256": "933459c532fb9545550d9bd36507f334f570200ac193fcad890fcbafef2d8c36"
+      },
+      "deliberate_corruptions_rejected": {
+        "sentence_order": true,
+        "number": true,
+        "extra_explanation": true
+      },
+      "source_unchanged": true
+    }
+  ],
+  "passed": 8,
+  "corruptions_rejected": 24
+}

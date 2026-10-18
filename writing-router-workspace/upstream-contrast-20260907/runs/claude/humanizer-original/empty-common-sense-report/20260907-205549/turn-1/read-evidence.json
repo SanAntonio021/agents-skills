@@ -1,0 +1,40 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh",
+      "args": "修改一段采购调研报告，读者为熟悉采购流程的设备主管；只在对话中输出修改稿"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" 2>/dev/null; echo \"---VOCAB---\"; ls \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill files and vocab dir"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/目录.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/术语.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/调研报告.md"
+    }
+  }
+]

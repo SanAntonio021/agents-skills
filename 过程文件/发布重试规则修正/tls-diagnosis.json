@@ -1,0 +1,5 @@
+{
+  "test": "existing proxy TLS1.2 HTTP1.1",
+  "exit_code": 35,
+  "result": "000 0 2.790297"
+}

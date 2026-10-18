@@ -1,0 +1,17 @@
+{
+  "processes": [],
+  "appPaths": [
+    {
+      "registry": "Registry::HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\POWERPNT.EXE",
+      "path": "C:\\Program Files\\Microsoft Office\\Root\\Office16\\POWERPNT.EXE",
+      "signature": "Valid",
+      "signer": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "registry": "Registry::HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\App Paths\\POWERPNT.EXE",
+      "path": "C:\\Program Files\\Microsoft Office\\Root\\Office16\\POWERPNT.EXE",
+      "signature": "Valid",
+      "signer": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    }
+  ]
+}

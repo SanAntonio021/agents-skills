@@ -1,0 +1,3 @@
+﻿case,status,seconds,note
+-,-,s,-
+mock_rx_workbench_interaction_and_layout,PASS,256.72,RX GUI mock assertions passed; full-window screenshots: C:\Users\SanAn\AppData\Local\Temp\tpb74e2787_44bc_4dc4_ae4d_8ce24016332e

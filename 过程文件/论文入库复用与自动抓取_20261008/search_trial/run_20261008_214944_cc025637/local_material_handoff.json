@@ -1,0 +1,100 @@
+{
+  "from_skill": "paper-search",
+  "to_skill": "paper-download",
+  "case": "search__local_material_handoff",
+  "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+  "DOI": "10.0000/zotero-fixture.target-001",
+  "metadata": {
+    "itemType": "journalArticle",
+    "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+    "DOI": "10.0000/zotero-fixture.target-001",
+    "date": "2026",
+    "publicationTitle": "Fixture Journal (Simulated)",
+    "volume": "1",
+    "issue": "1",
+    "pages": "1-2",
+    "url": "https://example.invalid/zotero-fixture/target-001",
+    "creators": [
+      {
+        "creatorType": "author",
+        "firstName": "Mira",
+        "lastName": "Fixture"
+      }
+    ],
+    "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+    "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+    "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+  },
+  "verification_status": "metadata-verified",
+  "verification_source": "Fixture offline publication index and supplied BibTeX, matched to PDF content",
+  "library": {
+    "interface": "native",
+    "libraryID": 1,
+    "name": "Isolated Fixture Library"
+  },
+  "collection": {
+    "id": 20,
+    "key": "FXCOL020",
+    "name": "Fixture / Communications"
+  },
+  "parent_item": {
+    "id": 100,
+    "key": "FX000100",
+    "libraryID": 1,
+    "itemType": "journalArticle",
+    "fields": {
+      "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+      "DOI": "10.0000/zotero-fixture.target-001",
+      "date": "2026",
+      "publicationTitle": "Fixture Journal (Simulated)",
+      "volume": "1",
+      "issue": "1",
+      "pages": "1-2",
+      "url": "https://example.invalid/zotero-fixture/target-001"
+    },
+    "creators": [
+      {
+        "creatorType": "author",
+        "firstName": "Mira",
+        "lastName": "Fixture"
+      }
+    ],
+    "collections": [
+      20
+    ],
+    "parentID": null,
+    "deleted": false,
+    "dateAdded": "2026-10-08T13:52:31.388Z",
+    "dateModified": "2026-10-08T13:52:31.388Z"
+  },
+  "parent_search": "Actual DOI and title queries returned empty before import",
+  "local_pdf": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+  "local_bibtex": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+  "local_index": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\publication_index.json",
+  "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+  "version": "unresolved",
+  "version_requirement": "Reuse supplied local simulated PDF; do not obtain or upgrade another version",
+  "network_channels_checked": [],
+  "network_request_authorized": false,
+  "handoff_status": "Completed; local PDF copied to managed attachment, persistent file readback hash and content verified",
+  "attachment": {
+    "id": 101,
+    "key": "FX000101",
+    "libraryID": 1,
+    "itemType": "attachment",
+    "fields": {
+      "title": "Supplied simulated local PDF (version unresolved)"
+    },
+    "creators": [],
+    "collections": [],
+    "parentID": 100,
+    "deleted": false,
+    "dateAdded": "2026-10-08T13:47:18.596Z",
+    "dateModified": "2026-10-08T13:47:18.596Z",
+    "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\search__local_material_handoff\\storage\\101\\simulated_target.pdf",
+    "attachmentContentType": "application/pdf",
+    "attachmentLinkMode": 0,
+    "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+    "sizeBytes": 863
+  }
+}

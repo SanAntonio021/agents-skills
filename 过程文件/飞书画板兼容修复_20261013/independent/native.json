@@ -1,0 +1,275 @@
+{
+  "nodes": [
+    {
+      "id": "o1013ind:1",
+      "type": "composite_shape",
+      "composite_shape": {
+        "type": "round_rect"
+      },
+      "angle": 0,
+      "z_index": 1,
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "style": {
+        "border_color": "#2457a7",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow",
+        "fill_color": "#e8f0fe",
+        "fill_color_type": 1,
+        "fill_opacity": 100
+      },
+      "text": {
+        "text": "发射处理模块",
+        "font_size": 24,
+        "angle": 0,
+        "font_weight": "regular",
+        "horizontal_align": "center",
+        "vertical_align": "mid",
+        "italic": false,
+        "line_through": false,
+        "underline": false,
+        "text_color": "#1f2329",
+        "text_color_type": 1,
+        "text_background_color_type": 0,
+        "theme_text_background_color_code": -1
+      }
+    },
+    {
+      "id": "o1013ind:2",
+      "type": "composite_shape",
+      "composite_shape": {
+        "type": "round_rect"
+      },
+      "angle": 0,
+      "z_index": 1,
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "style": {
+        "border_color": "#2457a7",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow",
+        "fill_color": "#e8f0fe",
+        "fill_color_type": 1,
+        "fill_opacity": 100
+      },
+      "text": {
+        "text": "接收处理模块",
+        "font_size": 24,
+        "angle": 0,
+        "font_weight": "regular",
+        "horizontal_align": "center",
+        "vertical_align": "mid",
+        "italic": false,
+        "line_through": false,
+        "underline": false,
+        "text_color": "#1f2329",
+        "text_color_type": 1,
+        "text_background_color_type": 0,
+        "theme_text_background_color_code": -1
+      }
+    },
+    {
+      "id": "o1013ind:3",
+      "type": "composite_shape",
+      "composite_shape": {
+        "type": "rect"
+      },
+      "angle": 0,
+      "z_index": 1,
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "style": {
+        "border_color": "#606670",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow",
+        "fill_color": "#F1F3F5",
+        "fill_color_type": 1,
+        "fill_opacity": 100
+      },
+      "text": {
+        "text": "观察模块\n保持原样",
+        "font_size": 24,
+        "angle": 0,
+        "font_weight": "regular",
+        "horizontal_align": "center",
+        "vertical_align": "mid",
+        "italic": false,
+        "line_through": false,
+        "underline": false,
+        "text_color": "#1f2329",
+        "text_color_type": 1,
+        "text_background_color_type": 0,
+        "theme_text_background_color_code": -1
+      }
+    },
+    {
+      "id": "c1013ind:1",
+      "type": "connector",
+      "angle": 0,
+      "z_index": 2,
+      "x": 320,
+      "y": 215.0,
+      "width": 220,
+      "height": 0.0,
+      "style": {
+        "border_color": "#000000",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "connector": {
+        "shape": "straight",
+        "specified_coordinate": true,
+        "caption_auto_direction": false,
+        "start_object": {
+          "id": "o1013ind:1",
+          "position": {
+            "x": 1,
+            "y": 0.5
+          },
+          "snap_to": "right"
+        },
+        "end_object": {
+          "id": "o1013ind:2",
+          "position": {
+            "x": 0,
+            "y": 0.5
+          },
+          "snap_to": "left"
+        },
+        "start": {
+          "arrow_style": "none",
+          "attached_object": {
+            "id": "o1013ind:1",
+            "position": {
+              "x": 1,
+              "y": 0.5
+            },
+            "snap_to": "right"
+          }
+        },
+        "end": {
+          "arrow_style": "line_arrow",
+          "attached_object": {
+            "id": "o1013ind:2",
+            "position": {
+              "x": 0,
+              "y": 0.5
+            },
+            "snap_to": "left"
+          }
+        },
+        "turning_points": []
+      }
+    },
+    {
+      "id": "c1013ind:2",
+      "type": "connector",
+      "angle": 0,
+      "z_index": 2,
+      "x": 780,
+      "y": 215.0,
+      "width": 400,
+      "height": 0.0,
+      "style": {
+        "border_color": "#000000",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "connector": {
+        "shape": "straight",
+        "specified_coordinate": true,
+        "caption_auto_direction": false,
+        "start_object": {
+          "id": "o1013ind:2",
+          "position": {
+            "x": 1,
+            "y": 0.5
+          },
+          "snap_to": "right"
+        },
+        "end_object": {
+          "id": "o1013ind:3",
+          "position": {
+            "x": 0,
+            "y": 0.5
+          },
+          "snap_to": "left"
+        },
+        "start": {
+          "arrow_style": "none",
+          "attached_object": {
+            "id": "o1013ind:2",
+            "position": {
+              "x": 1,
+              "y": 0.5
+            },
+            "snap_to": "right"
+          }
+        },
+        "end": {
+          "arrow_style": "line_arrow",
+          "attached_object": {
+            "id": "o1013ind:3",
+            "position": {
+              "x": 0,
+              "y": 0.5
+            },
+            "snap_to": "left"
+          }
+        },
+        "turning_points": [],
+        "captions": {
+          "data": [
+            {
+              "text": "初始 LO 标签",
+              "font_size": 18,
+              "text_color": "#000000",
+              "text_color_type": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "t1013ind:1",
+      "type": "text_shape",
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 58,
+      "angle": 0,
+      "z_index": 3,
+      "text": {
+        "text": "初始测试记录",
+        "font_size": 24,
+        "angle": 0,
+        "font_weight": "regular",
+        "horizontal_align": "left",
+        "vertical_align": "top",
+        "italic": false,
+        "line_through": false,
+        "underline": false,
+        "text_color": "#1f2329",
+        "text_color_type": 1,
+        "text_background_color_type": 0,
+        "theme_text_background_color_code": -1
+      }
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "outputs_reviewed": 72,
+  "aggregate": {
+    "codex/local": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "codex/khazix": {
+      "outputs": 12,
+      "fact_or_condition_failures": 1,
+      "fact_or_condition_review_required": 2,
+      "concision_failures": 2,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 0,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 1,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "codex/examples": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    },
+    "claude/local": {
+      "outputs": 12,
+      "fact_or_condition_failures": 1,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 3,
+      "heading_total": 4,
+      "heading_exact_pass": 3
+    },
+    "claude/khazix": {
+      "outputs": 12,
+      "fact_or_condition_failures": 2,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 1,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 2,
+      "heading_total": 4,
+      "heading_exact_pass": 3
+    },
+    "claude/examples": {
+      "outputs": 12,
+      "fact_or_condition_failures": 0,
+      "fact_or_condition_review_required": 0,
+      "concision_failures": 0,
+      "power_summary_total": 2,
+      "power_summary_no_redundant_status": 2,
+      "technical_total": 4,
+      "technical_facts_and_scope_pass": 4,
+      "heading_total": 4,
+      "heading_exact_pass": 4
+    }
+  },
+  "tool_calls_total": 0,
+  "decision": "Retain isolated examples candidate; no stable superiority claim, source merge, or runtime publication"
+}

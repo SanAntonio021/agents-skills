@@ -1,0 +1,101 @@
+{
+  "query": {
+    "meta": {
+      "cache/download.bin": {
+        "owner": "package manager",
+        "rebuild": "download packages again",
+        "busy": false
+      },
+      "research/raw.mat": {
+        "owner": "active experiment",
+        "original": true
+      },
+      "bridge/history.json": {
+        "owner": "bridge",
+        "active": true
+      }
+    },
+    "initial_free_bytes": 8388608,
+    "initial_files": {
+      "bridge/history.json": "18694cb949c62b271a00a4d101e106073f7e93cfa7507123e3014411024dc2e4",
+      "cache/download.bin": "71899db2707c5d7dc62d01bcf923431418374e9fb42a3fcb6d83e5cc017c2173",
+      "research/raw.mat": "01ff2984f7c59de5064eec041cae3f67db369ae6e21d8463ac699fefbeae3b27"
+    },
+    "initial_total_bytes": 3584
+  },
+  "approved": {
+    "meta": {
+      "cache/build.tmp": {
+        "owner": "BuildTool cache",
+        "rebuild": "BuildTool build recreates intermediate cache",
+        "busy": false
+      },
+      "keep/user.txt": {
+        "owner": "user",
+        "original": true
+      }
+    },
+    "initial_free_bytes": 8388608,
+    "initial_files": {
+      "cache/build.tmp": "3abc94a93a42d0eee5c8dda0315f9f1343e2ba36b552ab512c435fd4989c1ac6",
+      "keep/user.txt": "e95df58d12f637daaf829818af73f8ae4ecea21ed3c3ebc511326845eb1d4fcc"
+    },
+    "initial_total_bytes": 4121
+  },
+  "busy": {
+    "meta": {
+      "bridge/history.json": {
+        "owner": "bridge",
+        "busy": true
+      },
+      "cache/download.tmp": {
+        "owner": "package manager",
+        "rebuild": "re-download disposable packages",
+        "busy": false
+      },
+      "keep/user.txt": {
+        "owner": "user",
+        "original": true
+      }
+    },
+    "initial_free_bytes": 8388608,
+    "initial_files": {
+      "bridge/history.json": "df5d2de57af117d76b061b82c3ad4ac2ca5734040ea0629632c7aa9376a35be4",
+      "cache/download.tmp": "81e8781b50694066ba3920a63474fbdfd6fcb639173fcba1b8128766c5a58dc6",
+      "keep/user.txt": "8dfef3faa531cad70736cb40ad8932ffb50887f5a8fffd209193b545c4e354ae"
+    },
+    "initial_total_bytes": 3104
+  },
+  "duplicate": {
+    "meta": {
+      "Paper/analysis_result.mat": {
+        "owner": "Paper project",
+        "version": "paper-a",
+        "referenced_by": [
+          "Paper/plot.m"
+        ],
+        "uncommitted": true
+      },
+      "Program/analysis_result.mat": {
+        "owner": "Program project",
+        "version": "experiment-b",
+        "referenced_by": [
+          "Program/replay.m"
+        ],
+        "uncommitted": true
+      }
+    },
+    "cloud": {
+      "mode": "one-way backup",
+      "search_result": "analysis_result.mat",
+      "upload_complete": "unknown",
+      "restore_tested": false
+    },
+    "initial_free_bytes": 8388608,
+    "initial_files": {
+      "Paper/analysis_result.mat": "3b6146efe54beb8b8fd1afad5dce9d64fa961437d7c5f8af7862ac3abff65c98",
+      "Program/analysis_result.mat": "a05276fd4049e8c7979219f8b196daf25aa445964b36c2b2376099b10997fe08"
+    },
+    "initial_total_bytes": 46
+  }
+}

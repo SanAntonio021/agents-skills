@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c1a-c0f5-74c2-9be1-510670f490d2"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"## 单通道帧差错率\n\n本实验统计帧差错率，定义为q = N_err / N_all，其中N_err为错误帧数，N_all为接收帧总数。在512 B定长帧、单通道条件下，N_all = 40000，N_err = 60，得到q = 0.0015。双通道测试尚未开展，该结果不代表双通道并发时的性能。"}}
+{"type":"turn.completed","usage":{"input_tokens":27384,"cached_input_tokens":11648,"cache_write_input_tokens":0,"output_tokens":208,"reasoning_output_tokens":100}}

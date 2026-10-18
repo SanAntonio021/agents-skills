@@ -1,0 +1,48 @@
+{
+  "status": "readonly_verified",
+  "steps": [],
+  "pages": [
+    {
+      "task_id": "task_sjvA5SRqWLlWAfJJ03OkrQ",
+      "tab_id": "2D10BB2EF828869AF6D65C704E644CB5",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/Iz48wNiTmixLjhkrkvScNwsdnrd"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_sjvA5SRqWLlWAfJJ03OkrQ",
+      "tab_id": "2D10BB2EF828869AF6D65C704E644CB5",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_sjvA5SRqWLlWAfJJ03OkrQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/Iz48wNiTmixLjhkrkvScNwsdnrd",
+      "docx_token": "AhO0dHesto5LLsxPUDfct73Inyb",
+      "whiteboard_token": "JhPdws2oehvIgDbtjj8cX8HOneb",
+      "block_id": "doxcntuOp5h2La73GXL25lPceel",
+      "revision_id": 179
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/Iz48wNiTmixLjhkrkvScNwsdnrd",
+      "docx_token": "AhO0dHesto5LLsxPUDfct73Inyb",
+      "whiteboard_token": "JhPdws2oehvIgDbtjj8cX8HOneb",
+      "block_id": "doxcntuOp5h2La73GXL25lPceel",
+      "revision_id": 179
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "released_tab": null,
+  "page_status": "closed"
+}

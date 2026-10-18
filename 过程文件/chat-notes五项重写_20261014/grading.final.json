@@ -1,0 +1,88 @@
+{
+  "old_comparison_passed": true,
+  "initial_new_attempt_passed": false,
+  "initial_new_issue": "Obsolete failure chronology copied to recovery documentation; corrected in section 1 and retried with fresh executor.",
+  "accepted_scenarios": 5,
+  "results": [
+    {
+      "case": "old_mixed",
+      "checks": {
+        "data_and_final_preserved": true,
+        "user_manual_edit_preserved": true,
+        "old_port_only_in_recovery": true,
+        "preview_recoverable": true,
+        "only_user_note_uncommitted": true,
+        "no_redundant_failed_history": true
+      },
+      "passed": true
+    },
+    {
+      "case": "new_mixed",
+      "checks": {
+        "data_and_final_preserved": true,
+        "user_manual_edit_preserved": true,
+        "old_port_only_in_recovery": true,
+        "preview_recoverable": true,
+        "only_user_note_uncommitted": true,
+        "no_redundant_failed_history": false
+      },
+      "passed": false
+    },
+    {
+      "case": "restricted",
+      "checks": {
+        "only_authorized_two_files_changed": true,
+        "port_and_version_correct": true,
+        "no_commit": true
+      },
+      "passed": true
+    },
+    {
+      "case": "partially_blocked",
+      "checks": {
+        "known_port_updated": true,
+        "unknown_data_and_deliverable_preserved": true,
+        "only_unused_recycled": true,
+        "pending_capture_not_accepted": true,
+        "no_commit": true
+      },
+      "passed": true
+    },
+    {
+      "case": "repeat_and_causes",
+      "checks": {
+        "all_retained_inputs_unchanged": true,
+        "only_unused_recycled": true,
+        "one_recycle_after_two_calls": true,
+        "skill_behavior_not_written": true
+      },
+      "passed": true
+    },
+    {
+      "case": "new_mixed_revised",
+      "checks": {
+        "raw_final_user_and_recovery_preserved": true,
+        "docs_actual_version_and_port": true,
+        "obsolete_tasks_removed": true,
+        "only_preview_removed": true,
+        "no_new_report": true,
+        "recovery_sha_verified": true,
+        "pushed_exact_commit": true,
+        "unrelated_user_edit_not_committed": true
+      },
+      "passed": true
+    },
+    {
+      "case": "long_useful_complete_sources",
+      "checks": {
+        "entire_file_collection_and_bytes_unchanged": true,
+        "no_commit_or_pending_change": true
+      },
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "One comparative mixed case does not prove stable superiority; old version also passed.",
+    "Full set of 58 legacy scenarios was reviewed for compatibility but not all independently rerun."
+  ]
+}

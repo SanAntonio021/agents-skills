@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /c/Python313/python.exe "$@"

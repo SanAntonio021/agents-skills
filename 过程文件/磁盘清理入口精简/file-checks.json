@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "changed_files": [
+    "SKILL.md",
+    "references/backup-verification.md",
+    "references/risk-classification.md",
+    "references/windows-and-wiztree.md"
+  ],
+  "preserved_unrelated": 17,
+  "entry_lines_before": 161,
+  "entry_lines_after": 65,
+  "links_checked": 11,
+  "existing_evals_unchanged": 15,
+  "scripts_and_source_record_unchanged": true,
+  "candidate_exact": true
+}

@@ -1,0 +1,424 @@
+{
+  "status": "verified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "append"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-001.json",
+      "append_submitted": true,
+      "after_raw": "raw-003.json",
+      "id_mapping": {
+        "o1013ind:1": "o2:1",
+        "o1013ind:2": "o2:2",
+        "o1013ind:3": "o2:3",
+        "t1013ind:1": "a2:1",
+        "c1013ind:1": "c2:1",
+        "c1013ind:2": "c2:2"
+      },
+      "raw_exceptions": [],
+      "appended_raw_exceptions": [
+        {
+          "id": "o2:3",
+          "path": [
+            "style",
+            "fill_color"
+          ],
+          "normalization": "rgb_letter_case"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "angle"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "line_through"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "horizontal_align"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "underline"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "text_background_color_type"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "vertical_align"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "font_weight"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "theme_text_background_color_code"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "italic"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "caption_position_type"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "caption_position"
+          ],
+          "normalization": "service_caption_default"
+        }
+      ],
+      "reopen_raw": "raw-005.json",
+      "reopen_raw_exceptions": [],
+      "reopen_appended_raw_exceptions": [
+        {
+          "id": "o2:3",
+          "path": [
+            "style",
+            "fill_color"
+          ],
+          "normalization": "rgb_letter_case"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "angle"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "line_through"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "horizontal_align"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "underline"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "text_background_color_type"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "vertical_align"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "font_weight"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "theme_text_background_color_code"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "captions",
+            "data",
+            "0",
+            "italic"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "caption_position_type"
+          ],
+          "normalization": "service_caption_default"
+        },
+        {
+          "id": "c2:2",
+          "path": [
+            "connector",
+            "caption_position"
+          ],
+          "normalization": "service_caption_default"
+        }
+      ],
+      "reopen_status": "passed",
+      "diff": {
+        "added": [
+          "a2:1",
+          "c2:1",
+          "c2:2",
+          "o2:1",
+          "o2:2",
+          "o2:3"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "after_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      }
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_37uWkMnkbKyR7HojUkmqIg",
+      "tab_id": "09065AEE434A323B0788DD920DA79870",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_GOqv8qsaa_C3i-T8GrVYRA",
+      "tab_id": "3FF3A5ED5627765A96B4022B54B71460",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_37uWkMnkbKyR7HojUkmqIg",
+      "tab_id": "09065AEE434A323B0788DD920DA79870",
+      "reason": "append_saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_37uWkMnkbKyR7HojUkmqIg",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_GOqv8qsaa_C3i-T8GrVYRA",
+      "tab_id": "3FF3A5ED5627765A96B4022B54B71460",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_GOqv8qsaa_C3i-T8GrVYRA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "initial_nodes": [],
+  "append_layer_assignment": {
+    "o1013ind:1": 0,
+    "o1013ind:2": 1,
+    "o1013ind:3": 2,
+    "c1013ind:1": 3,
+    "c1013ind:2": 4,
+    "t1013ind:1": 5
+  },
+  "initial_inspect": "inspect-000.json",
+  "before_raw": "raw-001.json",
+  "after_raw": "raw-003.json",
+  "id_mapping": {
+    "o1013ind:1": "o2:1",
+    "o1013ind:2": "o2:2",
+    "o1013ind:3": "o2:3",
+    "t1013ind:1": "a2:1",
+    "c1013ind:1": "c2:1",
+    "c1013ind:2": "c2:2"
+  },
+  "released_tab": null,
+  "page_status": "closed",
+  "preview_attempts": 2,
+  "preview_last_frame_visible": true,
+  "visual_status": "needs_review",
+  "preview": "preview.png",
+  "visual_feedback": "visual-feedback.json",
+  "preview_source": "native_canvas"
+}

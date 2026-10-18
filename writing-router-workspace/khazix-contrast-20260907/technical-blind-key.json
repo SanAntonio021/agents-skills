@@ -1,0 +1,98 @@
+{
+  "b36ce6e4ab44": {
+    "key": "codex/local/technical-switch/repeat-1",
+    "output_sha256": "4e70c4b50ef44177d37eb908381ca9ff768faa4d76c57234cb6578eafa794ead"
+  },
+  "e97e41224990": {
+    "key": "codex/khazix/technical-switch/repeat-1",
+    "output_sha256": "ddc043f905006845238c2c261e01cbfeabf34b79f3e77a084e37cfb5ed50882c"
+  },
+  "30d542a20df7": {
+    "key": "codex/examples/technical-switch/repeat-1",
+    "output_sha256": "90c5f3450fcc8428280eebc3a4e0a3660e2ebae464716ad887f131784e2ca299"
+  },
+  "f686b96ba6c3": {
+    "key": "codex/local/technical-switch/repeat-2",
+    "output_sha256": "f4a1525be809866a5ada29baf90355f69a8699476e2785cb9d98741cc0ba38b2"
+  },
+  "d7904f5f793d": {
+    "key": "codex/khazix/technical-switch/repeat-2",
+    "output_sha256": "2fea742af43a609469dc211dfe7f4be5c8b1973b1a0eaab5f0fbaf72daa725e1"
+  },
+  "36037b731375": {
+    "key": "codex/examples/technical-switch/repeat-2",
+    "output_sha256": "85e85bf2170091e32f87f754e6aaadbd25200eec5b79799949c0277d17100d9e"
+  },
+  "4d47c6897dc9": {
+    "key": "codex/local/technical-retry/repeat-1",
+    "output_sha256": "ee62add0a89add0eb29b1dbe4fcb35d3ba106b4d190cd45d8d05c86373ef6bb3"
+  },
+  "1173060cb88e": {
+    "key": "codex/khazix/technical-retry/repeat-1",
+    "output_sha256": "ba35c4bfd4c53adc6ea17b68ae0a07af680eeb86dcaedb49701a2f9bc2dae1bc"
+  },
+  "8262957e6b0d": {
+    "key": "codex/examples/technical-retry/repeat-1",
+    "output_sha256": "906be641e485c9121e26d36e1293393a27ee4d3113e4839ca27784bd0b4d6285"
+  },
+  "e798bd644391": {
+    "key": "codex/local/technical-retry/repeat-2",
+    "output_sha256": "3912723b9759e3ef6b80a6d78b553a8ac0c6a7bc6135b99fa54e06a9e8084c3c"
+  },
+  "85bafda591c0": {
+    "key": "codex/khazix/technical-retry/repeat-2",
+    "output_sha256": "f43c04988e9b1a5056e4ac6484cb8eb38bf7990ec9c8f6af60ea683aaad062dd"
+  },
+  "7937794022f4": {
+    "key": "codex/examples/technical-retry/repeat-2",
+    "output_sha256": "72407cfcf62b8de7aa9af1612a2042b8e542b9b9a938576e3fbbb3d077efba21"
+  },
+  "19e8ca296e62": {
+    "key": "claude/local/technical-switch/repeat-1",
+    "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192"
+  },
+  "9d500a30f8ae": {
+    "key": "claude/khazix/technical-switch/repeat-1",
+    "output_sha256": "d5364c29f062112707de4f32480d15c36ea6a46896dfd09a3ac68ae56453cb0a"
+  },
+  "981afe8b5c7d": {
+    "key": "claude/examples/technical-switch/repeat-1",
+    "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192"
+  },
+  "a74c03d5ed95": {
+    "key": "claude/local/technical-switch/repeat-2",
+    "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192"
+  },
+  "46cef28c3d85": {
+    "key": "claude/khazix/technical-switch/repeat-2",
+    "output_sha256": "c0022ab188842acbeaf07c7e34624bcb19ad223a896976bb6eacd181e5a00bd1"
+  },
+  "a90de7a012e5": {
+    "key": "claude/examples/technical-switch/repeat-2",
+    "output_sha256": "ca71918abad910494365bcb4bf25ca1ed0881cda41bc18407bf19d1164d9e192"
+  },
+  "ce6b020b3a3b": {
+    "key": "claude/local/technical-retry/repeat-1",
+    "output_sha256": "fa6ade7f60cebab740aa6ef3a754fd8ee171a6bb5f393b3ee70032be603c8aa4"
+  },
+  "9541fb70c25a": {
+    "key": "claude/khazix/technical-retry/repeat-1",
+    "output_sha256": "6e6be9d7efb9ca8a45a0e7ce7cafd252c13e4fd9b826e08f86621972d5f7f1ff"
+  },
+  "a314c85aa4be": {
+    "key": "claude/examples/technical-retry/repeat-1",
+    "output_sha256": "2ee5902543cf9a566efce3ccb463a2df773e3d748c49a85b465d45d922d74a01"
+  },
+  "c9e379c32e55": {
+    "key": "claude/local/technical-retry/repeat-2",
+    "output_sha256": "207d3b2f66e4b0af010f3dd96846efa80640d8f3324d6cfc00d0eabb1573308e"
+  },
+  "6f93f48f9065": {
+    "key": "claude/khazix/technical-retry/repeat-2",
+    "output_sha256": "197c061bd58739a8749e783ef53ec90ec25c2070bf05b939f5873fbf64e22c02"
+  },
+  "e43db9084938": {
+    "key": "claude/examples/technical-retry/repeat-2",
+    "output_sha256": "f6f2d511d2dc31364973c0a3593ebd3132ff044a76a89a9d1db1c1a1e3dc9c3a"
+  }
+}

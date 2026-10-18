@@ -1,0 +1,4 @@
+2026-09-08T08:35:52.495266Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-08T08:35:53.668513Z  WARN codex_core_skills::loader: ignoring interface.default_prompt: exceeds maximum length of 1024 characters
+2026-09-08T08:35:58.758886Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: tls handshake eof, url: wss://chatgpt.com/backend-api/codex/responses
+2026-09-08T08:35:58.759247Z  WARN codex_core::session_startup_prewarm: startup websocket prewarm setup failed: stream disconnected before completion: tls handshake eof

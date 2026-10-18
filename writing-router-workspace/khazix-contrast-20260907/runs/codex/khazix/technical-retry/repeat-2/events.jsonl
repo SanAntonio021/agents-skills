@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c44-96fd-7f72-b253-52f4aeb310c9"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"服务端收到带序号的报文后，先查询最近64条处理记录。若序号已存在，直接返回原处理结果，不再执行对应动作。若序号不存在，先执行动作，再写入处理记录，最后返回结果。断电会清空这64条记录，重启后无法识别断电前已处理的报文。"}}
+{"type":"turn.completed","usage":{"input_tokens":29880,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":276,"reasoning_output_tokens":191}}

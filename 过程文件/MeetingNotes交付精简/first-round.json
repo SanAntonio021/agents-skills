@@ -1,0 +1,17 @@
+{
+  "A": {
+    "originals_unchanged": true,
+    "added": [
+      "reads.jsonl",
+      "过程文件\\纪要用词检查\\正文.md"
+    ],
+    "business_main_created": false
+  },
+  "C": {
+    "originals_unchanged": true,
+    "added": [
+      "reads.jsonl"
+    ],
+    "business_main_created": false
+  }
+}

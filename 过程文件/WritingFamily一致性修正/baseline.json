@@ -1,0 +1,1908 @@
+{
+  "head": "a31b58ff7985233de76fca3dcf90d52dd8e22ec9",
+  "targets": [
+    "ieee-manuscript-edit",
+    "research-report",
+    "paper-search",
+    "paper-figure-review",
+    "writing-router"
+  ],
+  "dependencies": [
+    "style-vocab",
+    "technical-writing",
+    "project-writing",
+    "meeting-notes",
+    "latex-paper",
+    "docx",
+    "paper-review",
+    "journal-submission",
+    "xlsx",
+    "product-research-workbook",
+    "editaplot"
+  ],
+  "files": {
+    "docx/SKILL.md": {
+      "head": "877b86c6a01044ec7757ba6b90cd0e345e8320cd8abd819c92a6e6995abc469e",
+      "worktree": "877b86c6a01044ec7757ba6b90cd0e345e8320cd8abd819c92a6e6995abc469e"
+    },
+    "docx/agents/openai.yaml": {
+      "head": "7843702d6058219bdcb06d7e39f28c2698d84d8acba73be53f42e60fafdb554a",
+      "worktree": "7843702d6058219bdcb06d7e39f28c2698d84d8acba73be53f42e60fafdb554a"
+    },
+    "docx/assets/template/default-template.style-profile.json": {
+      "head": "d65581047ecac73de6ff1c32394132c5491aa607788c37c35849ea3f1225fe8c",
+      "worktree": "933fce7a666dc3da6fb9e4a313c2b7ee376073383f5f147c9d8314ec80c1d033"
+    },
+    "docx/assets/template/funding-usage-report.style-profile.json": {
+      "head": "72793261316d95cdc7a187780fb3b132cf255959f18c38047b79338ef52f3619",
+      "worktree": "bc2b811b23b3c05c973597ec7ecd872b839114b7d83a24effb7419faaffdebcf"
+    },
+    "docx/assets/template/master-default-template.style-profile.json": {
+      "head": "cc127c8c6c81b1ad0e2a6c2ec4ccf8fc1e4af589a75486a4bda7001b9522f77f",
+      "worktree": "aa3725846bf2438f11c94cd8af00024cc8a1f750a4f626496ceaa703d62be5fd"
+    },
+    "docx/assets/template/node-eval-opinion.style-profile.json": {
+      "head": "6071d3811fb3b4129fc024bd7e843281a18284f133a70b9c18437284ff1418c4",
+      "worktree": "4de1a45c3c7fb91409c113604d4092b0f3198afacd32182a2fc2b428c79f1994"
+    },
+    "docx/assets/template/qiye-shenbao-template.style-profile.json": {
+      "head": "b1114b127360b163e88d540c89e26811691efb7f1c483533f4776591f6cf5709",
+      "worktree": "d22afd0fb42a9bd0e8a055fb7d6d26eefcecb09d08d287e1cc5042de5c80a108"
+    },
+    "docx/assets/template/technical-summary-self-eval.style-profile.json": {
+      "head": "e4c8972041111c3a43df3754cdd3865b44694d571a9fd4c02c11409d0bfd7e1e",
+      "worktree": "20c6f8b04f208961f3183842c8a10ed478b1a649582a1d891e0c3e5b6517d372"
+    },
+    "docx/assets/template/test-outline-review-opinion.style-profile.json": {
+      "head": "29264cf513a58e6d59a86ae903752c07b5b1df9ca1f1a17f34a0c4168ad97a97",
+      "worktree": "6803d80adca3c13e06a0a02a698fda55c07c4f157fa94be4653c473f16e3fb79"
+    },
+    "docx/assets/template/third-party-test-opinion-expert.style-profile.json": {
+      "head": "6fee909798f9b9c3212f266f43ce40159837e13c74c9ccbb3710bd30bf89cf44",
+      "worktree": "80e1e3ff429a5636632bc7b3a50f038ade46c280c975a1e666e93eb2e9d84788"
+    },
+    "docx/assets/template/third-party-test-opinion-org.style-profile.json": {
+      "head": "da4c951312dc00609e8314b1a76e31a502f8dcb41ceccdf02a4b301dd5f3cd18",
+      "worktree": "0f845f5981b5255e9f2eaea6bb1e497a5445d53145b4173c18c647f49abeb806"
+    },
+    "docx/assets/template/work-summary-template.style-profile.json": {
+      "head": "db06cfd7b71a338e49f384309123b687757a4233a8a63d01a4878a3b24f657cc",
+      "worktree": "05ace71aa2d1fe799d419a98c206c64ec6e7a6e9cdf91abc852811b1e4e32e76"
+    },
+    "docx/evals/evals.json": {
+      "head": "406f5d908567cf6f9cbd939d96aff7171106e301a095f6d98cffa4276d96c3e9",
+      "worktree": "406f5d908567cf6f9cbd939d96aff7171106e301a095f6d98cffa4276d96c3e9"
+    },
+    "docx/mcp-determinism-allowlist.json": {
+      "head": "153ba41115e987cbc99c49b678e50c3652b2a0c4a15c24d75f66460171fd5abb",
+      "worktree": "153ba41115e987cbc99c49b678e50c3652b2a0c4a15c24d75f66460171fd5abb"
+    },
+    "docx/references/delivery-qa-checklist.md": {
+      "head": "5f27b8667a98f525aa2e58e922e852b453fbd3d22043fcac542b025d8e945007",
+      "worktree": "5f27b8667a98f525aa2e58e922e852b453fbd3d22043fcac542b025d8e945007"
+    },
+    "docx/references/document-version-checks.md": {
+      "head": "3ca8386302b4eea72c0234f65df26d1f8d15d8cf6a3073a87c18a0e2fab2a15f",
+      "worktree": "3ca8386302b4eea72c0234f65df26d1f8d15d8cf6a3073a87c18a0e2fab2a15f"
+    },
+    "docx/references/figure-integration-gate.md": {
+      "head": "4f0785536f1175829843fbecaad851f09d0101b819427d5657cbe678614aa559",
+      "worktree": "4f0785536f1175829843fbecaad851f09d0101b819427d5657cbe678614aa559"
+    },
+    "docx/references/native-equations.md": {
+      "head": "c9643eb35da8d8e9979330f5ee7d3de6824459b144e4f3f3e484cad20740429f",
+      "worktree": "c9643eb35da8d8e9979330f5ee7d3de6824459b144e4f3f3e484cad20740429f"
+    },
+    "docx/references/numbering-references.md": {
+      "head": "a7ce4b1dfa990963c3c5948d52a6bcb0c2bf5c6464a5fbc6ca9a301de99dd662",
+      "worktree": "a7ce4b1dfa990963c3c5948d52a6bcb0c2bf5c6464a5fbc6ca9a301de99dd662"
+    },
+    "docx/references/office-mcp-trial.md": {
+      "head": "eb247a2e7a5b1ae912ff5fe67bf64f98f64649f74277a75935d4e8e16ffed124",
+      "worktree": "eb247a2e7a5b1ae912ff5fe67bf64f98f64649f74277a75935d4e8e16ffed124"
+    },
+    "docx/references/office-security-boundary.md": {
+      "head": "ea94aaaa23799d1e295c71ad114ed8d1c9a8860510661f279ce2d8221d770291",
+      "worktree": "ea94aaaa23799d1e295c71ad114ed8d1c9a8860510661f279ce2d8221d770291"
+    },
+    "docx/references/paragraph-editing.md": {
+      "head": "ca5a9187d039a408a3be7957ab696f65c62ab7fc07c353f046ad40d079ba2ab7",
+      "worktree": "ca5a9187d039a408a3be7957ab696f65c62ab7fc07c353f046ad40d079ba2ab7"
+    },
+    "docx/references/style-identity.md": {
+      "head": "dc8f9fbba40ee9f7f32ab1062ed24d0eef0c39a8bf2e627beee2e9c3362002a9",
+      "worktree": "dc8f9fbba40ee9f7f32ab1062ed24d0eef0c39a8bf2e627beee2e9c3362002a9"
+    },
+    "docx/references/template/default-template-profile.md": {
+      "head": "16a9a2af4c0009073e39918ac4917eecdda643e14e4f1e290f15a5a3ca2cada9",
+      "worktree": "3ad2302b529aae868bc949c0fd593074259f0fdaf8e4e6f35fc298d2ef83a67a"
+    },
+    "docx/references/template/default-template.md": {
+      "head": "9d76c113d72dff8265708d88a8a605528f8a447dc1329b4624d9a3e3dc7f05e6",
+      "worktree": "9d76c113d72dff8265708d88a8a605528f8a447dc1329b4624d9a3e3dc7f05e6"
+    },
+    "docx/references/template/funding-usage-report-profile.md": {
+      "head": "e01045e3da12b91c492f7d4832772443b7064f11b2057d7896d374de51f34540",
+      "worktree": "9b0c716189058a1fe62d584b2c9c91b0219e538dc7e984c5732d42ac029d40ef"
+    },
+    "docx/references/template/master-default-template-profile.md": {
+      "head": "069069017077b16c21a2ec0911189e5eb7983afd6212a6c10702c5f88a10b62c",
+      "worktree": "e3bc4d8d963b816cc00a7c894d6f580812300e72eec2de8c3e4cb363a09465b1"
+    },
+    "docx/references/template/master-template.md": {
+      "head": "8ce5325fceccb65a3357bdbf8179b743ae1ae56132d9138c75f46d62cdf97864",
+      "worktree": "8ce5325fceccb65a3357bdbf8179b743ae1ae56132d9138c75f46d62cdf97864"
+    },
+    "docx/references/template/node-eval-opinion-profile.md": {
+      "head": "33fc1726e71b1c2a934939ca81e7aad52b71ea3c04e2e2cda6b0158f03673199",
+      "worktree": "f2cfc28da48b00dc84e0591e075cd342b939b6724cedd7bb062882ad5177aa76"
+    },
+    "docx/references/template/qiye-shenbao-template-profile.md": {
+      "head": "e6fcac794d57295a288c18601c67e64d23ab8a4ab64296e01c9b6bc4f0cbe54b",
+      "worktree": "adaca068b00d4046e5a82336318686feb4e233e87457ca241bf9b488661755bd"
+    },
+    "docx/references/template/qiye-shenbao-template.md": {
+      "head": "f398acc953e3173b3350baae7c0b716d37d0192222022fa037a88ce32162cdeb",
+      "worktree": "f398acc953e3173b3350baae7c0b716d37d0192222022fa037a88ce32162cdeb"
+    },
+    "docx/references/template/technical-summary-self-eval-profile.md": {
+      "head": "88445a3981c1eeb0e1e3cbee68cfb7e41ed398c62cd9cdaa53d0aacac29a7f1c",
+      "worktree": "299bb5b0d8a9b1ba12688dfb4073df443fe163d7dd11b332961877a528a6ab76"
+    },
+    "docx/references/template/template-governance.md": {
+      "head": "38951acda892ff3740acf922dc751fdf74afbcd298347c8fc1e093ab222f8c25",
+      "worktree": "38951acda892ff3740acf922dc751fdf74afbcd298347c8fc1e093ab222f8c25"
+    },
+    "docx/references/template/template-presets.md": {
+      "head": "1e7fd112d8de8e6e5adbf2393309050a50a01c033ce6aa9c73ecea0e3db580c0",
+      "worktree": "1e7fd112d8de8e6e5adbf2393309050a50a01c033ce6aa9c73ecea0e3db580c0"
+    },
+    "docx/references/template/test-outline-review-opinion-profile.md": {
+      "head": "2c14e1f4998cdacbcc0e51e8abcfe0b9c4280a5ea68e1f1026caace06dfbce6e",
+      "worktree": "126a9ccf726a20858629f978aba9988549cee698efbb47320ea1167350923257"
+    },
+    "docx/references/template/third-party-test-opinion-expert-profile.md": {
+      "head": "7c50bd77c968a6d9b18bdecfab468474a98ae0ba5a4ad9ea1fafb419b9ee7b15",
+      "worktree": "b47e0ac6aeedbe4a740ce2a66d0e22e0cb9f7fce4a30c34cc2f7b4d222f9a1e8"
+    },
+    "docx/references/template/third-party-test-opinion-org-profile.md": {
+      "head": "408d7b6363eba6d95ad3cdb8ad841e58dec6e28bae2751dc5c30b64b74763866",
+      "worktree": "8b4b0cd7f06cdbd4b5b5dc8e814a703c218bd7d63ddabeb3532d6ccdfddf0b6d"
+    },
+    "docx/references/template/upstream-sources.md": {
+      "head": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d",
+      "worktree": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d"
+    },
+    "docx/references/template/work-summary-template-profile.md": {
+      "head": "c4539aed806e44bf492cd5181d2c953aec80b5f97f16e6465eca0329eda8c1ef",
+      "worktree": "a0b3aa11389de7a1d6085dc218aafa6bbc3efef88b0e6177e343f791f5c1306c"
+    },
+    "docx/references/template/workflow.md": {
+      "head": "fa2c5b421aef16f58221d9fe9dd2b4237fd1bd6b7ebbfd8a86183a647942aaf5",
+      "worktree": "fa2c5b421aef16f58221d9fe9dd2b4237fd1bd6b7ebbfd8a86183a647942aaf5"
+    },
+    "docx/references/upstream-sources.md": {
+      "head": "ff80eda049e98731944efd34984f14a3099400bafc7b0c0c5c1f8df64604b0e8",
+      "worktree": "ff80eda049e98731944efd34984f14a3099400bafc7b0c0c5c1f8df64604b0e8"
+    },
+    "docx/references/word-acceptance-checklist.md": {
+      "head": "c6365a23e2ab5406f0b411e13d8963f5046db62e6ba9962c67e02596225dcb3a",
+      "worktree": "c6365a23e2ab5406f0b411e13d8963f5046db62e6ba9962c67e02596225dcb3a"
+    },
+    "docx/scripts/__init__.py": {
+      "head": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "worktree": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "docx/scripts/accept_changes.py": {
+      "head": "9f977a8a18595a1e334ef2464c85f72db7aaa25047a6505de12ee1b95f14682a",
+      "worktree": "9f977a8a18595a1e334ef2464c85f72db7aaa25047a6505de12ee1b95f14682a"
+    },
+    "docx/scripts/comment.py": {
+      "head": "37d116e5f56bb142b208c6c6a4bbcf960495abf470ddb7c6675ccfac864ba3d7",
+      "worktree": "37d116e5f56bb142b208c6c6a4bbcf960495abf470ddb7c6675ccfac864ba3d7"
+    },
+    "docx/scripts/document_versions.py": {
+      "head": "6686e6e96f365b692fa0e290ca4dd30d4b3c2f35f6f8828c28b68dd1cc73e6e3",
+      "worktree": "6686e6e96f365b692fa0e290ca4dd30d4b3c2f35f6f8828c28b68dd1cc73e6e3"
+    },
+    "docx/scripts/edit_paragraphs.py": {
+      "head": "e4b5f8215c2396d2f6fd4122b43e499565acaeb75d3f33e545a57c2b8a75b243",
+      "worktree": "e4b5f8215c2396d2f6fd4122b43e499565acaeb75d3f33e545a57c2b8a75b243"
+    },
+    "docx/scripts/merge_runs.py": {
+      "head": "3ab367fd7fba4647943d0aa5e65203b15458551410f5ffc821d902616a4b9f40",
+      "worktree": "3ab367fd7fba4647943d0aa5e65203b15458551410f5ffc821d902616a4b9f40"
+    },
+    "docx/scripts/office/helpers/__init__.py": {
+      "head": "678e42456d9e10923c8b9a93691cdd993de3433448a184fa72a0c31f4ae086d5",
+      "worktree": "678e42456d9e10923c8b9a93691cdd993de3433448a184fa72a0c31f4ae086d5"
+    },
+    "docx/scripts/office/helpers/pptx_chart.py": {
+      "head": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+      "worktree": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964"
+    },
+    "docx/scripts/office/helpers/pptx_slide.py": {
+      "head": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+      "worktree": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0"
+    },
+    "docx/scripts/office/helpers/pptx_theme.py": {
+      "head": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+      "worktree": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd": {
+      "head": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+      "worktree": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chartDrawing.xsd": {
+      "head": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+      "worktree": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd": {
+      "head": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+      "worktree": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-lockedCanvas.xsd": {
+      "head": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+      "worktree": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd": {
+      "head": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+      "worktree": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-picture.xsd": {
+      "head": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+      "worktree": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-spreadsheetDrawing.xsd": {
+      "head": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+      "worktree": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-wordprocessingDrawing.xsd": {
+      "head": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+      "worktree": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd": {
+      "head": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+      "worktree": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-additionalCharacteristics.xsd": {
+      "head": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+      "worktree": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-bibliography.xsd": {
+      "head": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+      "worktree": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd": {
+      "head": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+      "worktree": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlDataProperties.xsd": {
+      "head": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+      "worktree": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlSchemaProperties.xsd": {
+      "head": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+      "worktree": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesCustom.xsd": {
+      "head": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+      "worktree": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesExtended.xsd": {
+      "head": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+      "worktree": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesVariantTypes.xsd": {
+      "head": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+      "worktree": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-math.xsd": {
+      "head": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+      "worktree": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/shared-relationshipReference.xsd": {
+      "head": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+      "worktree": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/sml.xsd": {
+      "head": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+      "worktree": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/vml-main.xsd": {
+      "head": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+      "worktree": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/vml-officeDrawing.xsd": {
+      "head": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+      "worktree": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/vml-presentationDrawing.xsd": {
+      "head": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+      "worktree": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/vml-spreadsheetDrawing.xsd": {
+      "head": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+      "worktree": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/vml-wordprocessingDrawing.xsd": {
+      "head": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+      "worktree": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/wml.xsd": {
+      "head": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+      "worktree": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd"
+    },
+    "docx/scripts/office/schemas/ISO-IEC29500-4_2016/xml.xsd": {
+      "head": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+      "worktree": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2"
+    },
+    "docx/scripts/office/schemas/ecma/fouth-edition/opc-contentTypes.xsd": {
+      "head": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+      "worktree": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a"
+    },
+    "docx/scripts/office/schemas/ecma/fouth-edition/opc-coreProperties.xsd": {
+      "head": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+      "worktree": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8"
+    },
+    "docx/scripts/office/schemas/ecma/fouth-edition/opc-digSig.xsd": {
+      "head": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+      "worktree": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24"
+    },
+    "docx/scripts/office/schemas/ecma/fouth-edition/opc-relationships.xsd": {
+      "head": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+      "worktree": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26"
+    },
+    "docx/scripts/office/schemas/mce/mc.xsd": {
+      "head": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+      "worktree": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-2010.xsd": {
+      "head": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+      "worktree": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-2012.xsd": {
+      "head": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+      "worktree": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-2018.xsd": {
+      "head": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+      "worktree": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-cex-2018.xsd": {
+      "head": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+      "worktree": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-cid-2016.xsd": {
+      "head": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+      "worktree": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-sdtdatahash-2020.xsd": {
+      "head": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+      "worktree": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604"
+    },
+    "docx/scripts/office/schemas/microsoft/wml-symex-2015.xsd": {
+      "head": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+      "worktree": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b"
+    },
+    "docx/scripts/office/soffice.py": {
+      "head": "077348393cc5b2eee630c599a25a53072bc4a37ff058efeae49d9c488ca7ff36",
+      "worktree": "077348393cc5b2eee630c599a25a53072bc4a37ff058efeae49d9c488ca7ff36"
+    },
+    "docx/scripts/office/validate.py": {
+      "head": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+      "worktree": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e"
+    },
+    "docx/scripts/office/validators/__init__.py": {
+      "head": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+      "worktree": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987"
+    },
+    "docx/scripts/office/validators/base.py": {
+      "head": "e18f503d54c355d4069e3c64129e88cba6f544e2bd4823aa2c88e7fcd158ef71",
+      "worktree": "e18f503d54c355d4069e3c64129e88cba6f544e2bd4823aa2c88e7fcd158ef71"
+    },
+    "docx/scripts/office/validators/docx.py": {
+      "head": "3fb0dd4662bf7f8e3c6c505f0a962e49ef775eef6b67d2ff8b3e3e7bc9a1faaa",
+      "worktree": "3fb0dd4662bf7f8e3c6c505f0a962e49ef775eef6b67d2ff8b3e3e7bc9a1faaa"
+    },
+    "docx/scripts/office/validators/pptx.py": {
+      "head": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+      "worktree": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299"
+    },
+    "docx/scripts/office/validators/redlining.py": {
+      "head": "ed50d0885eee4b9c387f546b059bcaed64086815880a5167336244f93e305123",
+      "worktree": "ed50d0885eee4b9c387f546b059bcaed64086815880a5167336244f93e305123"
+    },
+    "docx/scripts/office_mcp_trial.py": {
+      "head": "7fdd3b082bf34646aad3602aca5f3c7a718754d7f7decf83b884a90d71a7abf4",
+      "worktree": "7fdd3b082bf34646aad3602aca5f3c7a718754d7f7decf83b884a90d71a7abf4"
+    },
+    "docx/scripts/office_native_gate.py": {
+      "head": "0daec8118e043cc696dd768dc09643137924880893f17c59561fb8f96b07f5d4",
+      "worktree": "0daec8118e043cc696dd768dc09643137924880893f17c59561fb8f96b07f5d4"
+    },
+    "docx/scripts/officecli_bridge.py": {
+      "head": "8e8834a0246663e79c5d810c9e7434a0aab1606a7924af8a76434a6c3cc6c7a3",
+      "worktree": "7fa9359aa5db43d52d40b0561f67976f72d0824b88aa277a807d7671c0d090bb"
+    },
+    "docx/scripts/reference_fields.py": {
+      "head": "eac491ff94580ef36fa3386643250641def3c9577106caecbc454e64ee2d83ac",
+      "worktree": "eac491ff94580ef36fa3386643250641def3c9577106caecbc454e64ee2d83ac"
+    },
+    "docx/scripts/reference_word.py": {
+      "head": "5db17b56b9f788b966ead643780120f5d5047badf0d80dd2907aa2fe90dfae9d",
+      "worktree": "5db17b56b9f788b966ead643780120f5d5047badf0d80dd2907aa2fe90dfae9d"
+    },
+    "docx/scripts/repair_officecli.py": {
+      "head": "95c1dca83783e5deb13620e56886113fda4a234404f933e893c791c852bf33e5",
+      "worktree": "09ac139aa746979d211a72e93d6e7bfa2632702b101cd3d6fd79ef2e3d5a6203"
+    },
+    "docx/scripts/style_guard.py": {
+      "head": "7d535c0ef1fb73c5d44e8d3a8857b6191b244803beb8d074b1adf073cc80f518",
+      "worktree": "7d535c0ef1fb73c5d44e8d3a8857b6191b244803beb8d074b1adf073cc80f518"
+    },
+    "docx/scripts/styles_normalizer.py": {
+      "head": "584e0a6d57cef88f4ca24f51ab38fe7154dd5d436596f1cd33e4d1e4e81e3001",
+      "worktree": "584e0a6d57cef88f4ca24f51ab38fe7154dd5d436596f1cd33e4d1e4e81e3001"
+    },
+    "docx/scripts/template/OfficeComGuard.psm1": {
+      "head": "372f36262be6790d9add59b640efe9a1d1b668c3ced0b5719aaecfe7025c53fa",
+      "worktree": "372f36262be6790d9add59b640efe9a1d1b668c3ced0b5719aaecfe7025c53fa"
+    },
+    "docx/scripts/template/build_master_template.py": {
+      "head": "f053ad5f4b35b03b95bab62987d3954e05aa1aa7e6c8b1097801876fdeb97c45",
+      "worktree": "f053ad5f4b35b03b95bab62987d3954e05aa1aa7e6c8b1097801876fdeb97c45"
+    },
+    "docx/scripts/template/export_markdown_to_word.ps1": {
+      "head": "3ad4c243e7ece51abb5c57d9fb657c7a08ef63cd8b2135e3dc69a616ce303436",
+      "worktree": "3ad4c243e7ece51abb5c57d9fb657c7a08ef63cd8b2135e3dc69a616ce303436"
+    },
+    "docx/scripts/template/install_normal_template.py": {
+      "head": "55cf4a554a2eb305e925b27429dbef4e720eac22c9613e5b1f8395178715fc0f",
+      "worktree": "55cf4a554a2eb305e925b27429dbef4e720eac22c9613e5b1f8395178715fc0f"
+    },
+    "docx/scripts/template/office_com_guard.py": {
+      "head": "1883f2a8084ddfda2c5c6b507e88a6a4b12089d9be8ad4b492939c32fa0895be",
+      "worktree": "1883f2a8084ddfda2c5c6b507e88a6a4b12089d9be8ad4b492939c32fa0895be"
+    },
+    "docx/scripts/template/validate_master_default.py": {
+      "head": "ba50b9966af9f9e3f153af4520f3afaa60d7b4388f516d910beb7defd93f1e07",
+      "worktree": "ba50b9966af9f9e3f153af4520f3afaa60d7b4388f516d910beb7defd93f1e07"
+    },
+    "docx/scripts/template/word_constants.py": {
+      "head": "e766262f511b209d97449c93204a726dc3c857d3ce458bd1e58fcf15e1b83557",
+      "worktree": "e766262f511b209d97449c93204a726dc3c857d3ce458bd1e58fcf15e1b83557"
+    },
+    "docx/scripts/template/word_template_formatter.py": {
+      "head": "b433f1e2ac15599f8d17bd1206ef7a9763e7ee2884812eb5a4d0a4402b668cd4",
+      "worktree": "b433f1e2ac15599f8d17bd1206ef7a9763e7ee2884812eb5a4d0a4402b668cd4"
+    },
+    "docx/scripts/templates/comments.xml": {
+      "head": "a08ba83ee8790ac9e3dc61921f4988f19edd7e06ac09d6f1897a877c1581818d",
+      "worktree": "a08ba83ee8790ac9e3dc61921f4988f19edd7e06ac09d6f1897a877c1581818d"
+    },
+    "docx/scripts/templates/commentsExtended.xml": {
+      "head": "544eeecfeceed4b468fff163cd9c366d33641c8b8ab691ce002576197846afe8",
+      "worktree": "544eeecfeceed4b468fff163cd9c366d33641c8b8ab691ce002576197846afe8"
+    },
+    "docx/scripts/templates/commentsExtensible.xml": {
+      "head": "bad10b3283e6ad6e7ef6d1ca5169683721ed690ee331282c65df04017e080631",
+      "worktree": "bad10b3283e6ad6e7ef6d1ca5169683721ed690ee331282c65df04017e080631"
+    },
+    "docx/scripts/templates/commentsIds.xml": {
+      "head": "db20f9616e004ec42ef736e80c2384e45db0f8d1194d31dc8b37c7d6ecdd6420",
+      "worktree": "db20f9616e004ec42ef736e80c2384e45db0f8d1194d31dc8b37c7d6ecdd6420"
+    },
+    "docx/scripts/templates/people.xml": {
+      "head": "056f63aa1197fd8c9dda980c9f1b9ff016fd5fa4a462df8aec5f384f39d23e37",
+      "worktree": "056f63aa1197fd8c9dda980c9f1b9ff016fd5fa4a462df8aec5f384f39d23e37"
+    },
+    "docx/scripts/validate_figure_references.py": {
+      "head": "688fc74f805cbbf78630d77410a77a6228f10249f3428f4c00992fe7e99c8a63",
+      "worktree": "688fc74f805cbbf78630d77410a77a6228f10249f3428f4c00992fe7e99c8a63"
+    },
+    "docx/tests/__init__.py": {
+      "head": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worktree": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docx/tests/reference_native_smoke.py": {
+      "head": "40cf6df68c33f807aa6842e5b4f282874592e827d8b4639a2345899343ddc47d",
+      "worktree": "40cf6df68c33f807aa6842e5b4f282874592e827d8b4639a2345899343ddc47d"
+    },
+    "docx/tests/template/__init__.py": {
+      "head": "9674c8082c0aa5e88395e3217c2602994d0134197f8d70765b23d1d08a6dccb8",
+      "worktree": "9674c8082c0aa5e88395e3217c2602994d0134197f8d70765b23d1d08a6dccb8"
+    },
+    "docx/tests/template/test_office_com_guard.ps1": {
+      "head": "75bad82c97a7cd2295c43a7499f7a94a9ce3f6f6c46576a22f957d377a509867",
+      "worktree": "75bad82c97a7cd2295c43a7499f7a94a9ce3f6f6c46576a22f957d377a509867"
+    },
+    "docx/tests/template/test_office_com_guard.py": {
+      "head": "5baf3f1e75e470b62a651b929cff286aedf97a21d0de7ee224fb64c954001064",
+      "worktree": "5baf3f1e75e470b62a651b929cff286aedf97a21d0de7ee224fb64c954001064"
+    },
+    "docx/tests/template/test_template_bundle.py": {
+      "head": "91a2beb6017df62433c677422f7623d5596e6141f0eed2362cc5a71a59c1ffb0",
+      "worktree": "91a2beb6017df62433c677422f7623d5596e6141f0eed2362cc5a71a59c1ffb0"
+    },
+    "docx/tests/template/test_template_style_import_gate.py": {
+      "head": "3c1dc015662be30552a79eefce997921a4e2f6a420c52501be92dcf4ae8a39c3",
+      "worktree": "3c1dc015662be30552a79eefce997921a4e2f6a420c52501be92dcf4ae8a39c3"
+    },
+    "docx/tests/test_accept_changes_adapter.py": {
+      "head": "f64ba12c426890b59b3f69adaf3280db8d87a41c64b0a52fd285428e4ce8e34d",
+      "worktree": "f64ba12c426890b59b3f69adaf3280db8d87a41c64b0a52fd285428e4ce8e34d"
+    },
+    "docx/tests/test_document_versions.py": {
+      "head": "398c3715255edac2bb6ac5b10e460a3bbe9ac79abc0a376a555b9fecce96163d",
+      "worktree": "398c3715255edac2bb6ac5b10e460a3bbe9ac79abc0a376a555b9fecce96163d"
+    },
+    "docx/tests/test_edit_paragraphs.py": {
+      "head": "47fbeb6aa52cc66659f5da1588385bf95f6075565c1e337310d325d7c1a9fd04",
+      "worktree": "47fbeb6aa52cc66659f5da1588385bf95f6075565c1e337310d325d7c1a9fd04"
+    },
+    "docx/tests/test_export_document_versions.py": {
+      "head": "602f4bedcb3888964e03e014ee02e8c844df3d92a5041a0c96882fdc162394e7",
+      "worktree": "602f4bedcb3888964e03e014ee02e8c844df3d92a5041a0c96882fdc162394e7"
+    },
+    "docx/tests/test_libreoffice_integration.py": {
+      "head": "c288e5a7876c6e09119ca27cbd4285cc76cde014fa49d6f38b19564277a85b88",
+      "worktree": "c288e5a7876c6e09119ca27cbd4285cc76cde014fa49d6f38b19564277a85b88"
+    },
+    "docx/tests/test_office_mcp_trial.py": {
+      "head": "e41f58d3cdceddaa1880fabf1edc6eb713ceff4f13cd35140738716131c98244",
+      "worktree": "e41f58d3cdceddaa1880fabf1edc6eb713ceff4f13cd35140738716131c98244"
+    },
+    "docx/tests/test_office_native_gate.py": {
+      "head": "b81fd78d6be7274685ac374956f088a0ac986c63677130b10a360890008b3c79",
+      "worktree": "b81fd78d6be7274685ac374956f088a0ac986c63677130b10a360890008b3c79"
+    },
+    "docx/tests/test_ooxml_utf8_validation.py": {
+      "head": "52a7be664990f057b60ef1ac4487008c14e6f7cbd935653616ef2ba4cd90a168",
+      "worktree": "52a7be664990f057b60ef1ac4487008c14e6f7cbd935653616ef2ba4cd90a168"
+    },
+    "docx/tests/test_reference_fields.py": {
+      "head": "7d3ce44595f71baa020a1ae566b05987eedb5bffdbc4a0f496aade8f5318a2b8",
+      "worktree": "7d3ce44595f71baa020a1ae566b05987eedb5bffdbc4a0f496aade8f5318a2b8"
+    },
+    "docx/tests/test_reference_pipeline.py": {
+      "head": "04621e9466e41b4b0304a6ef92badd70c7128bb7c1fdbf2cf4d5b9dcb15008fa",
+      "worktree": "04621e9466e41b4b0304a6ef92badd70c7128bb7c1fdbf2cf4d5b9dcb15008fa"
+    },
+    "docx/tests/test_reference_word.py": {
+      "head": "472a1edb9d9c7e0f7678677e3574e9b945f836f2030b923c440a80b1723b34cc",
+      "worktree": "472a1edb9d9c7e0f7678677e3574e9b945f836f2030b923c440a80b1723b34cc"
+    },
+    "docx/tests/test_soffice_adapter.py": {
+      "head": "f0d4d15c6edb63219a3c276e086aae63aaeadda92cb0413b88dd542c2590b31d",
+      "worktree": "f0d4d15c6edb63219a3c276e086aae63aaeadda92cb0413b88dd542c2590b31d"
+    },
+    "docx/tests/test_style_guard.py": {
+      "head": "37c687772149a1952ce312fc63734ae69ab32fc884b8c9a8c89f0531e99f8ea1",
+      "worktree": "37c687772149a1952ce312fc63734ae69ab32fc884b8c9a8c89f0531e99f8ea1"
+    },
+    "docx/tests/test_styles_normalizer.py": {
+      "head": "5e3d6248264222a0b7f8950e8b057785b029f087e181207898f21c950afc949f",
+      "worktree": "5e3d6248264222a0b7f8950e8b057785b029f087e181207898f21c950afc949f"
+    },
+    "docx/tests/test_validate_figure_references.py": {
+      "head": "52525c1d801242806f4fe179b0f9737e96e1741f1c049423df538c6db380356b",
+      "worktree": "52525c1d801242806f4fe179b0f9737e96e1741f1c049423df538c6db380356b"
+    },
+    "editaplot/.editaplot-local.json": {
+      "head": "3eb8a15f30b621a4dcfb7f66972822f579206ed944d31462b24ca265681e487e",
+      "worktree": "3eb8a15f30b621a4dcfb7f66972822f579206ed944d31462b24ca265681e487e"
+    },
+    "editaplot/LICENSE": {
+      "head": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "worktree": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    "editaplot/NOTICE": {
+      "head": "dc8008407c4bc5d224911d637451ee812bcf758277ca3c77ed273f0af434d0f2",
+      "worktree": "dc8008407c4bc5d224911d637451ee812bcf758277ca3c77ed273f0af434d0f2"
+    },
+    "editaplot/SKILL.md": {
+      "head": "a253cc0ffbcb5b365a4c8970b28606f833e7cde208ff714829780c2b5cfd7761",
+      "worktree": "a253cc0ffbcb5b365a4c8970b28606f833e7cde208ff714829780c2b5cfd7761"
+    },
+    "editaplot/agents/openai.yaml": {
+      "head": "7223677eb82689ddb6c44d8d742b82304f9f99c318f9eb6eb9bdc66b7f024cbf",
+      "worktree": "7223677eb82689ddb6c44d8d742b82304f9f99c318f9eb6eb9bdc66b7f024cbf"
+    },
+    "editaplot/assets/palettes/cards/amber_lavender.png": {
+      "head": "95296587dc17ddc7a973842ce6036703449e0bdf8b2d4cbf8058e8eb4ff806e7",
+      "worktree": "95296587dc17ddc7a973842ce6036703449e0bdf8b2d4cbf8058e8eb4ff806e7"
+    },
+    "editaplot/assets/palettes/cards/blue_coral.png": {
+      "head": "911621761ed6e1a3ed52ffee5ee810d35eb5e4cf593bf593dbb51d411873ab06",
+      "worktree": "911621761ed6e1a3ed52ffee5ee810d35eb5e4cf593bf593dbb51d411873ab06"
+    },
+    "editaplot/assets/palettes/cards/deep_sea_gold.png": {
+      "head": "489c13a9ca71d5e8918c4c1e03a5a7911e6b47d1dd2aca4775072e3c9e4d8d61",
+      "worktree": "489c13a9ca71d5e8918c4c1e03a5a7911e6b47d1dd2aca4775072e3c9e4d8d61"
+    },
+    "editaplot/assets/palettes/cards/forest_amber.png": {
+      "head": "7550dc4d8b5df5057f22a47c6cdfd42e47fa3a50fa70d232def843d165447c4b",
+      "worktree": "7550dc4d8b5df5057f22a47c6cdfd42e47fa3a50fa70d232def843d165447c4b"
+    },
+    "editaplot/assets/palettes/cards/navy_cyan_gold.png": {
+      "head": "2ac254538e191b91ff201f6a1e92bd6f596b733166e3834767fbe5df79e339c5",
+      "worktree": "2ac254538e191b91ff201f6a1e92bd6f596b733166e3834767fbe5df79e339c5"
+    },
+    "editaplot/assets/palettes/cards/navy_ember.png": {
+      "head": "d71c1284a5a23f42f09270cf1f2cf0803914ce6a50c20f5525ab44a4c36818d7",
+      "worktree": "d71c1284a5a23f42f09270cf1f2cf0803914ce6a50c20f5525ab44a4c36818d7"
+    },
+    "editaplot/assets/palettes/cards/ocean_coral.png": {
+      "head": "e21d770c0e52682d340d78b6c33773358c939dfa7b6519ff0ad80459e9c1247f",
+      "worktree": "e21d770c0e52682d340d78b6c33773358c939dfa7b6519ff0ad80459e9c1247f"
+    },
+    "editaplot/assets/palettes/cards/plum_rose.png": {
+      "head": "fe4b35993d43c9edd61fa91ba215938bd4ceccbc6b6bbd6c6800173f8a5c412b",
+      "worktree": "fe4b35993d43c9edd61fa91ba215938bd4ceccbc6b6bbd6c6800173f8a5c412b"
+    },
+    "editaplot/assets/palettes/cards/sky_terra.png": {
+      "head": "846d39b1eedabb6d932b497bfdcdc2d61ce7846aa429940b42f4c41b8afb370f",
+      "worktree": "846d39b1eedabb6d932b497bfdcdc2d61ce7846aa429940b42f4c41b8afb370f"
+    },
+    "editaplot/assets/palettes/cards/violet_lime.png": {
+      "head": "b43973e97dba0de4bf3bc634f9f31c0ad4881a3bd74a46d7bce5c107ac57a8a1",
+      "worktree": "b43973e97dba0de4bf3bc634f9f31c0ad4881a3bd74a46d7bce5c107ac57a8a1"
+    },
+    "editaplot/assets/palettes/palette-catalog.json": {
+      "head": "0670cc630553d016664b99a9b8aa527f108bf65920a8352eb42d77ae3d872bf7",
+      "worktree": "0670cc630553d016664b99a9b8aa527f108bf65920a8352eb42d77ae3d872bf7"
+    },
+    "editaplot/assets/palettes/palette-selector-all.zh-CN.png": {
+      "head": "374bf9a31ffae16c0c678cdde4229e663ad481050304af039338baf4a00a2c04",
+      "worktree": "374bf9a31ffae16c0c678cdde4229e663ad481050304af039338baf4a00a2c04"
+    },
+    "editaplot/assets/palettes/palette-selector-public.zh-CN.png": {
+      "head": "e4d069f3c3ceb2692d4de37a591863c8744b32bb7081432a63a28628d9264ea4",
+      "worktree": "e4d069f3c3ceb2692d4de37a591863c8744b32bb7081432a63a28628d9264ea4"
+    },
+    "editaplot/editaplot.cmd": {
+      "head": "86e70e53ed0762bb4df9776bcbc7219c0693c43503d283de86004916130283c1",
+      "worktree": "86e70e53ed0762bb4df9776bcbc7219c0693c43503d283de86004916130283c1"
+    },
+    "editaplot/references/chart-selection.md": {
+      "head": "a4e061151a8ba9a0d5708c512c8fd6d8a7413fac4ae4d053f8c0dc3302bf1de3",
+      "worktree": "a4e061151a8ba9a0d5708c512c8fd6d8a7413fac4ae4d053f8c0dc3302bf1de3"
+    },
+    "editaplot/references/data-contracts.md": {
+      "head": "f9707a831261ebf1e887ceda42e418aa25d9b9e76ae939c52b193659a2385a09",
+      "worktree": "f9707a831261ebf1e887ceda42e418aa25d9b9e76ae939c52b193659a2385a09"
+    },
+    "editaplot/references/figure-contract.md": {
+      "head": "08f10eed3128ac2292017bc8fd346190975a3c91c67e189907d073d8a470609f",
+      "worktree": "08f10eed3128ac2292017bc8fd346190975a3c91c67e189907d073d8a470609f"
+    },
+    "editaplot/references/origin-safety.md": {
+      "head": "8d303c639d9fe6c73fc6e9978a0c59db46262cf1b1ebe9f0b80007fc7d26070d",
+      "worktree": "8d303c639d9fe6c73fc6e9978a0c59db46262cf1b1ebe9f0b80007fc7d26070d"
+    },
+    "editaplot/references/palettes.md": {
+      "head": "0bbb53266dc15ea099d2b6f6d3c2b6ca9517b1e36a71163ca22d76830eaa6734",
+      "worktree": "0bbb53266dc15ea099d2b6f6d3c2b6ca9517b1e36a71163ca22d76830eaa6734"
+    },
+    "editaplot/references/reference-figures.md": {
+      "head": "7e13d4130ec706f3452eda73ff29cf2d3702e04406849c2f74acfdb41a869f9d",
+      "worktree": "7e13d4130ec706f3452eda73ff29cf2d3702e04406849c2f74acfdb41a869f9d"
+    },
+    "editaplot/references/runtime.md": {
+      "head": "8a6da171297f153b3c774a769d6aef4fd6f67a825d22425fac34e4df5b0e2d08",
+      "worktree": "8a6da171297f153b3c774a769d6aef4fd6f67a825d22425fac34e4df5b0e2d08"
+    },
+    "editaplot/references/semantic-understanding.md": {
+      "head": "8ce86ffa78c6c2417931045bd3c10b2db460e2eb8323dabcaf1e1d2b4a611aae",
+      "worktree": "8ce86ffa78c6c2417931045bd3c10b2db460e2eb8323dabcaf1e1d2b4a611aae"
+    },
+    "editaplot/references/showcase.md": {
+      "head": "6b94b07bdb58dfa47bc31f8e8e85d88ac6e18c240e055afe61b346511bb3e584",
+      "worktree": "6b94b07bdb58dfa47bc31f8e8e85d88ac6e18c240e055afe61b346511bb3e584"
+    },
+    "editaplot/references/upstream-sources.md": {
+      "head": "557fb108b3224a972582320ee8dd2c039ec8b7ce218f26ddd9d379f93808f897",
+      "worktree": "557fb108b3224a972582320ee8dd2c039ec8b7ce218f26ddd9d379f93808f897"
+    },
+    "editaplot/references/verification.md": {
+      "head": "32c01bbf8ddf7493cf376c5a56a571448cb778a47dbec6614bd6d6456162721f",
+      "worktree": "32c01bbf8ddf7493cf376c5a56a571448cb778a47dbec6614bd6d6456162721f"
+    },
+    "editaplot/scripts/bootstrap_editaplot.py": {
+      "head": "ddc3464fd9dd90577dff600ccb6dcd870b5cd10cbdcb6ba1cbebb7258bf05da4",
+      "worktree": "ddc3464fd9dd90577dff600ccb6dcd870b5cd10cbdcb6ba1cbebb7258bf05da4"
+    },
+    "editaplot/scripts/editaplot.py": {
+      "head": "7824424f6350a2adb55e28a5164c9b66b26bae182d847eba61d52cb64c8df3fd",
+      "worktree": "7824424f6350a2adb55e28a5164c9b66b26bae182d847eba61d52cb64c8df3fd"
+    },
+    "editaplot/scripts/editaplot_core.py": {
+      "head": "eb81a88cabd9e2aa38b7de96b0d8815fd6ba63bef4b97d153eff5e455233dfab",
+      "worktree": "eb81a88cabd9e2aa38b7de96b0d8815fd6ba63bef4b97d153eff5e455233dfab"
+    },
+    "editaplot/scripts/opju_review.py": {
+      "head": "03746d2e661f678c8d72fbddcdb78c92ceea3c1bb8e239d858c06b614e54f43e",
+      "worktree": "03746d2e661f678c8d72fbddcdb78c92ceea3c1bb8e239d858c06b614e54f43e"
+    },
+    "editaplot/scripts/requirements-runtime.lock": {
+      "head": "c2f4198ce3e64634fca2dc5712f141bcf164b67a2c8d4fb1221388d9b8f9d4da",
+      "worktree": "c2f4198ce3e64634fca2dc5712f141bcf164b67a2c8d4fb1221388d9b8f9d4da"
+    },
+    "editaplot/scripts/validate_local_distribution.py": {
+      "head": "5e22f7dce52e1b587425c9f895eefbf271c154f9b4ce476c82232e3e7eae1112",
+      "worktree": "5e22f7dce52e1b587425c9f895eefbf271c154f9b4ce476c82232e3e7eae1112"
+    },
+    "editaplot/tests/test_opju_review.py": {
+      "head": "1685c157eb81e5c06dc38bd430ca3c9ef24841c452510b886ac08610a39eec62",
+      "worktree": "1685c157eb81e5c06dc38bd430ca3c9ef24841c452510b886ac08610a39eec62"
+    },
+    "editaplot/tests/test_validate_local_distribution.py": {
+      "head": "a0385e39e3e1b6e837261220ccb8cc8a1c2c3dc987a6a7320c464ca41e5ac75c",
+      "worktree": "a0385e39e3e1b6e837261220ccb8cc8a1c2c3dc987a6a7320c464ca41e5ac75c"
+    },
+    "ieee-manuscript-edit/SKILL.md": {
+      "head": "3a1c21973fa4137a764c5ffa4ff987b8e39e373b272c14edd1a0e6ffaae4553a",
+      "worktree": "7fbc4265041dbed5913ac6c3c1f193c409d33dbd7a4e75e83e739bdcdd4f6c5a"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/README.md": {
+      "head": "0c6b5fc8a374b7d02422feb871a85756aa190183e616ecf1725f36c2c57ce69b",
+      "worktree": "3b51ef8db99c5f710fc0854d25aa9440cf98ee07c2d2ee700f6d1274fcef185c"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/Access_Word_Template.docx": {
+      "head": "7f076ccbd932acb0c8faa31976afb9088b224cae5c0d6925311c3030f24bf205",
+      "worktree": "7f076ccbd932acb0c8faa31976afb9088b224cae5c0d6925311c3030f24bf205"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/IEEEtran.bst": {
+      "head": "314f0ece704568faf827011bac498650691b2b5ee06320720830e782416d5a5f",
+      "worktree": "314f0ece704568faf827011bac498650691b2b5ee06320720830e782416d5a5f"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/IEEEtran.cls": {
+      "head": "da751920a317ed318b7b5cd7fa585a6cc7d28502d457856382e9be24b10a3bd7",
+      "worktree": "da751920a317ed318b7b5cd7fa585a6cc7d28502d457856382e9be24b10a3bd7"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/access.synctex.gz": {
+      "head": "7fd161630d033ca22074c22c5c8296215640aeaf1c68a0a625950038df4b8d82",
+      "worktree": "7fd161630d033ca22074c22c5c8296215640aeaf1c68a0a625950038df4b8d82"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/access.tex": {
+      "head": "c8969cf842d78e49ce5607fdb335bbbe6e580a0ee11e6d84d1220e1ea62c4b96",
+      "worktree": "c8969cf842d78e49ce5607fdb335bbbe6e580a0ee11e6d84d1220e1ea62c4b96"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/author1.png": {
+      "head": "198616cf28c75497af183f8e9dc374f28d26537a4a8dc3ace9a5eee44a0d193c",
+      "worktree": "198616cf28c75497af183f8e9dc374f28d26537a4a8dc3ace9a5eee44a0d193c"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/author2.png": {
+      "head": "b673e3d89c4021b5984f91983d3b1cd989348bbc50b3581e7eca2ee7d7352a53",
+      "worktree": "b673e3d89c4021b5984f91983d3b1cd989348bbc50b3581e7eca2ee7d7352a53"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/author3.png": {
+      "head": "df03222e551646eb458e8b8808cc613efa049b387bc2c6b4adba5dc59963bd05",
+      "worktree": "df03222e551646eb458e8b8808cc613efa049b387bc2c6b4adba5dc59963bd05"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/bullet.png": {
+      "head": "754772e36aab389556f98c14f5deeb4031e792b68a766dc5f9766e76e114fffc",
+      "worktree": "754772e36aab389556f98c14f5deeb4031e792b68a766dc5f9766e76e114fffc"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/equation3.png": {
+      "head": "fba65831980085bba048e29a551dbfc6525a5a60cfe23e6bd42731179334b252",
+      "worktree": "fba65831980085bba048e29a551dbfc6525a5a60cfe23e6bd42731179334b252"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/fig1.png": {
+      "head": "db99fd0a18672b98b085bf1f29e6192b2b29c4f12469bbd4b0c24a85b6ba630e",
+      "worktree": "db99fd0a18672b98b085bf1f29e6192b2b29c4f12469bbd4b0c24a85b6ba630e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/ieeeaccess.cls": {
+      "head": "67b73c4da05479d592a9449c38a81fcc7779d78753085bb44199e7f2746b757d",
+      "worktree": "67b73c4da05479d592a9449c38a81fcc7779d78753085bb44199e7f2746b757d"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/logo.png": {
+      "head": "7e04ba7f0c579f3765941680e2a19437e15a81b84a138d73c54bd4afead752cd",
+      "worktree": "7e04ba7f0c579f3765941680e2a19437e15a81b84a138d73c54bd4afead752cd"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/notaglinelogo.png": {
+      "head": "955e9a07fb35ffbc8a41597b8c6e7ec4cedf6a8652f5c73a33957044aae64900",
+      "worktree": "955e9a07fb35ffbc8a41597b8c6e7ec4cedf6a8652f5c73a33957044aae64900"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/spotcolor.sty": {
+      "head": "a9c5bacbf5b832e5eac61393bf1b330fc75fa353cbc9cf4319c227de49bfa5fa",
+      "worktree": "a9c5bacbf5b832e5eac61393bf1b330fc75fa353cbc9cf4319c227de49bfa5fa"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-bold.pfb": {
+      "head": "85cc7db8dc04090411600cfb2853bb2efe92a8dc3c406e57ba11fd21248e607b",
+      "worktree": "85cc7db8dc04090411600cfb2853bb2efe92a8dc3c406e57ba11fd21248e607b"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-bold.tfm": {
+      "head": "07d3efeaf10af3eb2c15cc00ef16629cee96df315d0551984fce5b7f67cf8ee3",
+      "worktree": "07d3efeaf10af3eb2c15cc00ef16629cee96df315d0551984fce5b7f67cf8ee3"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-bolditalic.pfb": {
+      "head": "51af5f6d5ae0c69597cf68e4f3f0a1b222ae1f8fe014f248379e3162d783a8da",
+      "worktree": "51af5f6d5ae0c69597cf68e4f3f0a1b222ae1f8fe014f248379e3162d783a8da"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-bolditalic.tfm": {
+      "head": "edba8f3a19f9ccc6c3fc2b99aabb108d88ca16188cc110c34dba01716553f005",
+      "worktree": "edba8f3a19f9ccc6c3fc2b99aabb108d88ca16188cc110c34dba01716553f005"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-condmedium.pfb": {
+      "head": "21d1c9853f4c1d1975c13541629e9977380dd61cb461de130dd22f181f60c749",
+      "worktree": "21d1c9853f4c1d1975c13541629e9977380dd61cb461de130dd22f181f60c749"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-condmedium.tfm": {
+      "head": "6b50cfdac0503850bd1042e6f81a5bc7106732b71a6e7382083290e8d28ae3d4",
+      "worktree": "6b50cfdac0503850bd1042e6f81a5bc7106732b71a6e7382083290e8d28ae3d4"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-condmediumital.pfb": {
+      "head": "2b9c7803d3d79d86ec2fe84785a2c5e92db7f8ea01f59ae4d4be19d806e4bc4b",
+      "worktree": "2b9c7803d3d79d86ec2fe84785a2c5e92db7f8ea01f59ae4d4be19d806e4bc4b"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-condmediumital.tfm": {
+      "head": "bdcc73dd762e6345daf132d476845eda1f87a72e900203e43afb721626e2baae",
+      "worktree": "bdcc73dd762e6345daf132d476845eda1f87a72e900203e43afb721626e2baae"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-italic.pfb": {
+      "head": "774a9b0f146bdc4fa3bfe366cc70a0c357f3a33095cc30f41622823a1514ce4e",
+      "worktree": "774a9b0f146bdc4fa3bfe366cc70a0c357f3a33095cc30f41622823a1514ce4e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-italic.tfm": {
+      "head": "b5abe759c73ab5f6c7130b11a1c58e793dc2d329affe8fc82583b97ef6acec3e",
+      "worktree": "b5abe759c73ab5f6c7130b11a1c58e793dc2d329affe8fc82583b97ef6acec3e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-light.pfb": {
+      "head": "e172485ed2369cd310b4510ed1175272c9a25e978c7d9394887d5258b3e22b69",
+      "worktree": "e172485ed2369cd310b4510ed1175272c9a25e978c7d9394887d5258b3e22b69"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-light.tfm": {
+      "head": "e49ec9919a791c4db785743997fbdf6a1896c4820028ef6cf7460a6326bab6bd",
+      "worktree": "e49ec9919a791c4db785743997fbdf6a1896c4820028ef6cf7460a6326bab6bd"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-lightitalic.pfb": {
+      "head": "e1e8b533ef124f9ce1e845031b67a4b71ed4ec283c784217b8383d18629c5efe",
+      "worktree": "e1e8b533ef124f9ce1e845031b67a4b71ed4ec283c784217b8383d18629c5efe"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-lightitalic.tfm": {
+      "head": "faf7c6e83e68da1342bbcba422021e18bc936292e25fc43ce2705e8cc3724dda",
+      "worktree": "faf7c6e83e68da1342bbcba422021e18bc936292e25fc43ce2705e8cc3724dda"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-medium.pfb": {
+      "head": "86bcb9f9047a23d192e46b85af6ac50a3f557dd81bcb57bb77fe10fbd2c4f7a7",
+      "worktree": "86bcb9f9047a23d192e46b85af6ac50a3f557dd81bcb57bb77fe10fbd2c4f7a7"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-medium.tfm": {
+      "head": "06bbc55cb560d7f16e3821f739756db3dcced3543542cfca79790cdaf7918b9d",
+      "worktree": "06bbc55cb560d7f16e3821f739756db3dcced3543542cfca79790cdaf7918b9d"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-mediumitalic.pfb": {
+      "head": "81675003831e33e5e4f708d6d3ee6db81c0ec0da241a083e9457cc83fdd73df4",
+      "worktree": "81675003831e33e5e4f708d6d3ee6db81c0ec0da241a083e9457cc83fdd73df4"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-mediumitalic.tfm": {
+      "head": "6af7b2d27109a2aeb09a6775974d67b0c78f4acdbc23e072138e0b69f39cb53d",
+      "worktree": "6af7b2d27109a2aeb09a6775974d67b0c78f4acdbc23e072138e0b69f39cb53d"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-regsymb.pfb": {
+      "head": "28b3e632d96f651dbbd9f5225ed362f0506279513cf7ecb0785506bb77573c4f",
+      "worktree": "28b3e632d96f651dbbd9f5225ed362f0506279513cf7ecb0785506bb77573c4f"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-regsymb.tfm": {
+      "head": "2099220084353dd2414b1e47156b6b4745cfa94d8cf7a737c519f8e47d8d9cc2",
+      "worktree": "2099220084353dd2414b1e47156b6b4745cfa94d8cf7a737c519f8e47d8d9cc2"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-regular.pfb": {
+      "head": "ddda54f35e3b59effa5bc0782bfc75b971d4503e3d643888e12ef8cf0a5c259c",
+      "worktree": "ddda54f35e3b59effa5bc0782bfc75b971d4503e3d643888e12ef8cf0a5c259c"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata-regular.tfm": {
+      "head": "5b72c4ed7ea54027bfd6206b35898e3d531372f9810b4a1d35325fa4a9bed95f",
+      "worktree": "5b72c4ed7ea54027bfd6206b35898e3d531372f9810b4a1d35325fa4a9bed95f"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-formata.map": {
+      "head": "6bc40400c9d3e827bc8c9243699e5681fe2fd385aa58f1c010c0bb62db8ac7b4",
+      "worktree": "6bc40400c9d3e827bc8c9243699e5681fe2fd385aa58f1c010c0bb62db8ac7b4"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-giovannistd-bookitalic.pfb": {
+      "head": "98ad0803de1518d803e7c6b339196f2a6907cf22b1a18475284c26a0d230a84f",
+      "worktree": "98ad0803de1518d803e7c6b339196f2a6907cf22b1a18475284c26a0d230a84f"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-giovannistd-bookitalic.tfm": {
+      "head": "35669a03bfac8239f2c9aeb234c3d258fb3c8773add552fa79c21d0e8eaf77ce",
+      "worktree": "35669a03bfac8239f2c9aeb234c3d258fb3c8773add552fa79c21d0e8eaf77ce"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-giovannistd.map": {
+      "head": "3b53bc7de8bce199c2b5cb5a7e0b0dd4625a8f15f3ab50ba6b550fc497b0ba37",
+      "worktree": "3b53bc7de8bce199c2b5cb5a7e0b0dd4625a8f15f3ab50ba6b550fc497b0ba37"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-helvetica.map": {
+      "head": "4cb73edb6c8f800aabedf7c69791cafd3df90dc04ef73d334b4f92cccb47d485",
+      "worktree": "4cb73edb6c8f800aabedf7c69791cafd3df90dc04ef73d334b4f92cccb47d485"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-bold.pfb": {
+      "head": "9de3b06aee8a29697b10861f1d4f4fff11568f5629ed2d03bfa82ff0d244c682",
+      "worktree": "9de3b06aee8a29697b10861f1d4f4fff11568f5629ed2d03bfa82ff0d244c682"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-bold.tfm": {
+      "head": "4c845739e4c4b74bd3314d191781ed5bfad3005e568376186ff3be72e4007a2b",
+      "worktree": "4c845739e4c4b74bd3314d191781ed5bfad3005e568376186ff3be72e4007a2b"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-bolditalic.pfb": {
+      "head": "2bc33058718a7bce6defaa09a5c2684e410117baec62937da0b1952c66bf6452",
+      "worktree": "2bc33058718a7bce6defaa09a5c2684e410117baec62937da0b1952c66bf6452"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-bolditalic.tfm": {
+      "head": "2fdc98c536dc5e4c10948496450ae2afe5d221c3063c65d4b5d2322ef05ecc65",
+      "worktree": "2fdc98c536dc5e4c10948496450ae2afe5d221c3063c65d4b5d2322ef05ecc65"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-italic.pfb": {
+      "head": "8b291a54d50d0064621726d947d013743c097ddb6e0dca7704fedec65f6adda5",
+      "worktree": "8b291a54d50d0064621726d947d013743c097ddb6e0dca7704fedec65f6adda5"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times-italic.tfm": {
+      "head": "1a7a52a19b83939973e9a46a1615ca5b01b826670b77631c9e97313e325a6aa0",
+      "worktree": "1a7a52a19b83939973e9a46a1615ca5b01b826670b77631c9e97313e325a6aa0"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times.map": {
+      "head": "34315863a8b07b692262ef6489a0cd2fab0e1c7ee2979379a3ab488dde62a1a9",
+      "worktree": "34315863a8b07b692262ef6489a0cd2fab0e1c7ee2979379a3ab488dde62a1a9"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times.pfb": {
+      "head": "d7a1e71f532e430ecb31b0f70fdc3c13e6d952371899649ba70821ddc2aee3e8",
+      "worktree": "d7a1e71f532e430ecb31b0f70fdc3c13e6d952371899649ba70821ddc2aee3e8"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1-times.tfm": {
+      "head": "5c8fb592c16a481b6594dc5edfa62ef24db5d233a1e57f36f502e2d0f79c1a20",
+      "worktree": "5c8fb592c16a481b6594dc5edfa62ef24db5d233a1e57f36f502e2d0f79c1a20"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1formata.fd": {
+      "head": "87385e77266d505e48556523732275185b9540ff06fb87b78ec5dc122346b10e",
+      "worktree": "87385e77266d505e48556523732275185b9540ff06fb87b78ec5dc122346b10e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1giovannistd.fd": {
+      "head": "e071d747b940f03a238ee82c85b84be9991086ed2a487e4e6293a2185c0fc0a3",
+      "worktree": "e071d747b940f03a238ee82c85b84be9991086ed2a487e4e6293a2185c0fc0a3"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1helvetica.fd": {
+      "head": "5ee12b5ba0ac6ad044218568bc38a9d706e3d1b842559dd3c4c625b0cfbf7012",
+      "worktree": "5ee12b5ba0ac6ad044218568bc38a9d706e3d1b842559dd3c4c625b0cfbf7012"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-access/latex-extracted/ACCESS_latex_template_20240429/t1times.fd": {
+      "head": "257f290ea4e57bd9bcbaf22bdfeb1b17ada22d92e4b543d56625044302708e3b",
+      "worktree": "257f290ea4e57bd9bcbaf22bdfeb1b17ada22d92e4b543d56625044302708e3b"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-journal-of-microwaves/JMW_Word_Template.docx": {
+      "head": "e60d12f6abf1be4d7cdeecc36bb113de1ea10ce4e61a3e33f9c9543f6f00c711",
+      "worktree": "e60d12f6abf1be4d7cdeecc36bb113de1ea10ce4e61a3e33f9c9543f6f00c711"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/IEEEjmw.cls": {
+      "head": "6cfc7dbdbdbf647b23103bae03ac98d1b828fe8d8bcdb7282f8e5cc4bc61d379",
+      "worktree": "6cfc7dbdbdbf647b23103bae03ac98d1b828fe8d8bcdb7282f8e5cc4bc61d379"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/JMW-header.png": {
+      "head": "69446e67610a364ea11dd63dcca83015909054345bba313bd7ff1198ac7bcd8b",
+      "worktree": "69446e67610a364ea11dd63dcca83015909054345bba313bd7ff1198ac7bcd8b"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/JMW_template.tex": {
+      "head": "99813682338db957660a510ffdd3abcd99a3e3dcbe182d0f1b1c6a0232b85337",
+      "worktree": "99813682338db957660a510ffdd3abcd99a3e3dcbe182d0f1b1c6a0232b85337"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/ieee-journal-of-microwaves/latex-extracted/IEEE_JMW_LaTex_Template_Oct18_2021/fig1.png": {
+      "head": "db99fd0a18672b98b085bf1f29e6192b2b29c4f12469bbd4b0c24a85b6ba630e",
+      "worktree": "db99fd0a18672b98b085bf1f29e6192b2b29c4f12469bbd4b0c24a85b6ba630e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/IEEEtran.cls": {
+      "head": "0e8ac35c81c014754516c838a4845dce2bbba2a06bf359748713f1cd118ea679",
+      "worktree": "b0eb3567b81aec7fe98144a3ad283eeac2d31035bb19e0d9dcba7da190f18d9d"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/New_IEEEtran_how-to.tex": {
+      "head": "417b40378ec1c1124918f000eab2f9a27f9cc37d576ef17b77d78347e00c0cd3",
+      "worktree": "417b40378ec1c1124918f000eab2f9a27f9cc37d576ef17b77d78347e00c0cd3"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/bare_jrnl_new_sample4.tex": {
+      "head": "a1225c6ddb0c828596fad8285d4344a654e1597d62e757d0109b07e4f579e4fc",
+      "worktree": "a1225c6ddb0c828596fad8285d4344a654e1597d62e757d0109b07e4f579e4fc"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/latex-extracted/fig1.png": {
+      "head": "966fa8e10adb05f5bc7bc32e6debc68be14e2c4cb5c7a6784cac4324472d6c8e",
+      "worktree": "966fa8e10adb05f5bc7bc32e6debc68be14e2c4cb5c7a6784cac4324472d6c8e"
+    },
+    "ieee-manuscript-edit/assets/ieee-official-templates/transactions-journals-letters/word-extracted/ieee-transactions-template.docx": {
+      "head": "eea69bea29ff9c6e72eabc7717cd0cb58a39ea187894d73d09d70817773d817b",
+      "worktree": "eea69bea29ff9c6e72eabc7717cd0cb58a39ea187894d73d09d70817773d817b"
+    },
+    "ieee-manuscript-edit/evals/evals.json": {
+      "head": "a5abbc2a77e7340131132d4efa66d6ed2dabfd978f0a797edf02871e884fbd2b",
+      "worktree": "a5abbc2a77e7340131132d4efa66d6ed2dabfd978f0a797edf02871e884fbd2b"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-captions.md": {
+      "head": "c5218790eeed8d1a7c43c22973f9dbfdceeecc1f6e36e46bde97a08236158512",
+      "worktree": "c5218790eeed8d1a7c43c22973f9dbfdceeecc1f6e36e46bde97a08236158512"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-language.md": {
+      "head": "30a9f8e6e70aad9f4cceb99d14b48a5aa2f74a3b1840ada96b7059d8b1d68d9c",
+      "worktree": "30a9f8e6e70aad9f4cceb99d14b48a5aa2f74a3b1840ada96b7059d8b1d68d9c"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-negation-chain.md": {
+      "head": "c9f28a99318ff6d7305533156820e7eaf27c6b3644c55392d7776f93b8b45fd3",
+      "worktree": "c9f28a99318ff6d7305533156820e7eaf27c6b3644c55392d7776f93b8b45fd3"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-phase1.tex": {
+      "head": "256240dac11d8257af22f4dd777e4c633715e58319fe80adae40449eea231a39",
+      "worktree": "256240dac11d8257af22f4dd777e4c633715e58319fe80adae40449eea231a39"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-safe-fixes.md": {
+      "head": "ce39f7593fb23b047bda92a0e49bee7cd2059a8de205113ade615b8f17bed568",
+      "worktree": "ce39f7593fb23b047bda92a0e49bee7cd2059a8de205113ade615b8f17bed568"
+    },
+    "ieee-manuscript-edit/evals/files/finalization-scopes.md": {
+      "head": "36c7fd6f4f8b574291a18e11ce9003a56e0c4f46c3f4dd8d621b6ae9505c7b92",
+      "worktree": "36c7fd6f4f8b574291a18e11ce9003a56e0c4f46c3f4dd8d621b6ae9505c7b92"
+    },
+    "ieee-manuscript-edit/evals/trigger-evals.json": {
+      "head": "aa75a59f6f61213227a49de1d3f5203a357549d73118e7bf7b06bdcf12cf8b6a",
+      "worktree": "aa75a59f6f61213227a49de1d3f5203a357549d73118e7bf7b06bdcf12cf8b6a"
+    },
+    "ieee-manuscript-edit/references/CHANGELOG.md": {
+      "head": "7766bdbe772456f7227f129b6314a51b121e01ee69937483d7a5a3475a9613bd",
+      "worktree": "7766bdbe772456f7227f129b6314a51b121e01ee69937483d7a5a3475a9613bd"
+    },
+    "ieee-manuscript-edit/references/chinese-paper.md": {
+      "head": "ada786bbaed0bc567961bca00e3c9bb8cf6b745567b546809c6cd2eea0a338c1",
+      "worktree": "eba41bdae2b133231523e93b41657a8277def9a2c9a3b7e3f215c4585ce40779"
+    },
+    "ieee-manuscript-edit/references/draft-finalization-rules.md": {
+      "head": "7622f7ba1a1f7dc7f09f3509e6feddcde1e2310181fa446ed55efc45b917ce44",
+      "worktree": "b1ce784a575f95d25c6f5d5af2203ca4834dbaab00af2ddaa5096040479336a7"
+    },
+    "ieee-manuscript-edit/references/english-paper.md": {
+      "head": "dd12e8b8d9d823a7807c6e70949320d2ef4392b9415e7c5c00807d3cd69e02df",
+      "worktree": "7a138fe2cee1f2afd53bd10948301113edd85c2e2271a8bf17ad4ac8153ae588"
+    },
+    "ieee-manuscript-edit/references/final-audit.md": {
+      "head": "d4761937e6736a86752c4e9ea1e025ef59c8329151dc59ae1a5b7594300d4ee8",
+      "worktree": "73ec166a08824d17ed3b911294fd2853d2dfc142c997b97ca7bf828d80d03a59"
+    },
+    "ieee-manuscript-edit/references/ieee-official-template-cache.md": {
+      "head": "6defa43c4fc366de478e37b319f8954e4ccde43bf91871ba5febc6e18b29874b",
+      "worktree": "1ff269c2da835abe8e0adda393c180c532d06d8c38857674c51666c54098db52"
+    },
+    "ieee-manuscript-edit/references/ieee-structure-and-style.md": {
+      "head": "c7df7e960200e98f40e618c8532c365498d9b20fd459706d11227a95b82fa8da",
+      "worktree": "c7df7e960200e98f40e618c8532c365498d9b20fd459706d11227a95b82fa8da"
+    },
+    "ieee-manuscript-edit/references/manuscript-refinement-checklist.md": {
+      "head": "e6160ecdc37527ce4b071a71206f507d9364c7ec4f8414ca2f57f3f6fa03239a",
+      "worktree": "e6160ecdc37527ce4b071a71206f507d9364c7ec4f8414ca2f57f3f6fa03239a"
+    },
+    "ieee-manuscript-edit/references/sainani-sentence-review.md": {
+      "head": "ce9d76f53bcd752845cb47459d720e34d082e719b1620349609fbad1f5754f5e",
+      "worktree": "ce9d76f53bcd752845cb47459d720e34d082e719b1620349609fbad1f5754f5e"
+    },
+    "ieee-manuscript-edit/references/sci-terminology-bank.md": {
+      "head": "95533147244cdb5896ef923036d3165355d422ec81ad60b8a62ff9b2a125bb35",
+      "worktree": "95533147244cdb5896ef923036d3165355d422ec81ad60b8a62ff9b2a125bb35"
+    },
+    "ieee-manuscript-edit/references/section-by-section-review.md": {
+      "head": "a90fa9d0821664d028f08819256919f8cc850799471af7629fb6e21ae4121e8c",
+      "worktree": "a90fa9d0821664d028f08819256919f8cc850799471af7629fb6e21ae4121e8c"
+    },
+    "ieee-manuscript-edit/references/upstream-skill-notes.md": {
+      "head": "7a3fa3c48a7f96abbcc9593adbe38878532d0b7dbc1a2b7f3820c0e33f27f3d4",
+      "worktree": "7a3fa3c48a7f96abbcc9593adbe38878532d0b7dbc1a2b7f3820c0e33f27f3d4"
+    },
+    "ieee-manuscript-edit/references/upstream-sources.md": {
+      "head": "f96ad527cd0333ad70f1a06a9f1b9b4d15a8f5479f12a6dd483663e5da399b3c",
+      "worktree": "f96ad527cd0333ad70f1a06a9f1b9b4d15a8f5479f12a6dd483663e5da399b3c"
+    },
+    "ieee-manuscript-edit/references/writing-memory-schema.md": {
+      "head": "9d58091e90a325a3853d42690547c54af4a2a771a5e654e627ba137a80b263db",
+      "worktree": "9d58091e90a325a3853d42690547c54af4a2a771a5e654e627ba137a80b263db"
+    },
+    "ieee-manuscript-edit/scripts/audit_manuscript_conventions.py": {
+      "head": "a9234a7c4e1af9b690f6bf4823b3b060055961ed5e2ecfd6e4ee2603b4437607",
+      "worktree": "a9234a7c4e1af9b690f6bf4823b3b060055961ed5e2ecfd6e4ee2603b4437607"
+    },
+    "ieee-manuscript-edit/scripts/audit_writing_memory.py": {
+      "head": "cfab6142a7991db93a241bc962ec9adf64d2bcfb529f8c553343f2a55cf0c70d",
+      "worktree": "cfab6142a7991db93a241bc962ec9adf64d2bcfb529f8c553343f2a55cf0c70d"
+    },
+    "ieee-manuscript-edit/scripts/run_draft_refine.py": {
+      "head": "4004e763dc4ed25817f6807a2385d34000fab70705b58f1a3ae972b96a47defd",
+      "worktree": "39ff6af7e0abf8dad8420633dc724328aee790325187ea14b6e1ac01c5dbb51c"
+    },
+    "ieee-manuscript-edit/tests/test_audit_manuscript_conventions.py": {
+      "head": "bc285e0072ecaddc6d34660cd6671eaeb89abe61947f477f042ded4436fda008",
+      "worktree": "bc285e0072ecaddc6d34660cd6671eaeb89abe61947f477f042ded4436fda008"
+    },
+    "ieee-manuscript-edit/tests/test_audit_writing_memory.py": {
+      "head": "b258219e5777e09402ca4ddf9239d35071e78763525f1d913de23b58c2201a2a",
+      "worktree": "b258219e5777e09402ca4ddf9239d35071e78763525f1d913de23b58c2201a2a"
+    },
+    "ieee-manuscript-edit/tests/test_template_assets.py": {
+      "head": "9b58f6c354a95f2816c5439cac984355f822017fe3a4dafbdca5152007c41234",
+      "worktree": "c8ff57840db7f6f9561923f10c033fc0d14ca3804c83d514c24abaeb689a5476"
+    },
+    "journal-submission/SKILL.md": {
+      "head": "40f1c4f0b2cecfaff26b944d3c53fa76bbc06e82f42114f7d251c201434d0861",
+      "worktree": "40f1c4f0b2cecfaff26b944d3c53fa76bbc06e82f42114f7d251c201434d0861"
+    },
+    "journal-submission/agents/openai.yaml": {
+      "head": "d5e6c59ac4eff551de8b748f593319ec0bd5ec52bdd224cec1f2e1fc3790a136",
+      "worktree": "d5e6c59ac4eff551de8b748f593319ec0bd5ec52bdd224cec1f2e1fc3790a136"
+    },
+    "journal-submission/evals/evals.json": {
+      "head": "ee459d127439374f869cef756d8625115d62cbcc774713e3ad97def279768691",
+      "worktree": "ee459d127439374f869cef756d8625115d62cbcc774713e3ad97def279768691"
+    },
+    "journal-submission/references/data-contracts.md": {
+      "head": "9c4525a0b17a925e29ba2959a0b808e95c65545c2ccd494365151faba1d4edbb",
+      "worktree": "9c4525a0b17a925e29ba2959a0b808e95c65545c2ccd494365151faba1d4edbb"
+    },
+    "journal-submission/references/evidence-and-safety.md": {
+      "head": "cf8c1e17672887de379a9ba49534c27ae47df6ea483608da6d2f61a4be725fdd",
+      "worktree": "cf8c1e17672887de379a9ba49534c27ae47df6ea483608da6d2f61a4be725fdd"
+    },
+    "journal-submission/references/journal-profiles.md": {
+      "head": "6293cf0ec283d95c2c17811613ea1cd6a1987f976363df812afc4fd75a33dc22",
+      "worktree": "6293cf0ec283d95c2c17811613ea1cd6a1987f976363df812afc4fd75a33dc22"
+    },
+    "journal-submission/references/journal-selection.md": {
+      "head": "40b6bf0fe8b17582e4ae3b83856caa66014aa4ab21f799bd2030e730ddd34307",
+      "worktree": "40b6bf0fe8b17582e4ae3b83856caa66014aa4ab21f799bd2030e730ddd34307"
+    },
+    "journal-submission/references/journals/scis.md": {
+      "head": "e4458cd28dc569e36839444dba7bfda32c62178e9bbb9853233fc33c54e2c2bd",
+      "worktree": "e4458cd28dc569e36839444dba7bfda32c62178e9bbb9853233fc33c54e2c2bd"
+    },
+    "journal-submission/references/journals/tmtt.md": {
+      "head": "f45ba8004d74579929568d6993b2581c3e0944e60e3790f50252f499dc3c10aa",
+      "worktree": "f45ba8004d74579929568d6993b2581c3e0944e60e3790f50252f499dc3c10aa"
+    },
+    "journal-submission/references/licenses/awesome-journal-skills.txt": {
+      "head": "bad075617318f23249188e9f4561c8f5fa1a3e992d1e6c95a8740750aba98540",
+      "worktree": "bad075617318f23249188e9f4561c8f5fa1a3e992d1e6c95a8740750aba98540"
+    },
+    "journal-submission/references/lifecycle.md": {
+      "head": "5d65d9626e7c3ba27ed39d7de23569a0c846a2ddac914ed1387e7eb3632758b1",
+      "worktree": "5d65d9626e7c3ba27ed39d7de23569a0c846a2ddac914ed1387e7eb3632758b1"
+    },
+    "journal-submission/references/material-templates.md": {
+      "head": "75ec40ed6b59dce8015e4f075c49a5b088aa03175fb4ff7ca7fbef47ecbe96b9",
+      "worktree": "75ec40ed6b59dce8015e4f075c49a5b088aa03175fb4ff7ca7fbef47ecbe96b9"
+    },
+    "journal-submission/references/official-source-index.md": {
+      "head": "c8ac651cfa2e0aeec393b1ab88d55d8dcc62f2ddc80baaa6ab5caec1c09fd303",
+      "worktree": "c8ac651cfa2e0aeec393b1ab88d55d8dcc62f2ddc80baaa6ab5caec1c09fd303"
+    },
+    "journal-submission/references/platforms/editorial-manager.md": {
+      "head": "3416bf5640d5df9a0a06bf0c5e8aef25bc08afb4f0fe3c33fe0ce2374e73aa8c",
+      "worktree": "3416bf5640d5df9a0a06bf0c5e8aef25bc08afb4f0fe3c33fe0ce2374e73aa8c"
+    },
+    "journal-submission/references/platforms/prism-optica.md": {
+      "head": "6e45138d715704f8d64f990baffb1d4e4762f695136a7f7e831fd0ee075d90d4",
+      "worktree": "6e45138d715704f8d64f990baffb1d4e4762f695136a7f7e831fd0ee075d90d4"
+    },
+    "journal-submission/references/platforms/research-exchange.md": {
+      "head": "7baf2456d4fb03efa9653aabbe43fbbaa1bc3c7107425652916ed5f1f7a03714",
+      "worktree": "7baf2456d4fb03efa9653aabbe43fbbaa1bc3c7107425652916ed5f1f7a03714"
+    },
+    "journal-submission/references/platforms/scholarone.md": {
+      "head": "677381802438a1e51e9d349a4c1763470bfdb0e88e75296302cefcdcccf484de",
+      "worktree": "677381802438a1e51e9d349a4c1763470bfdb0e88e75296302cefcdcccf484de"
+    },
+    "journal-submission/references/publishers/ieee.md": {
+      "head": "ead5ae719fb8bee4c7327e78c84f0bc0a746b6c89cde7a77b9262be4a970730e",
+      "worktree": "ead5ae719fb8bee4c7327e78c84f0bc0a746b6c89cde7a77b9262be4a970730e"
+    },
+    "journal-submission/references/selection-upstream-source.md": {
+      "head": "e5bd4fae03aa4f2ac010e474768829906b6fcc9c1ef4f48a1d2ad8fb0f5e28c2",
+      "worktree": "e5bd4fae03aa4f2ac010e474768829906b6fcc9c1ef4f48a1d2ad8fb0f5e28c2"
+    },
+    "journal-submission/references/trigger-evals.json": {
+      "head": "20215ae3a2c4763c52dad05b72778414b10ec3c981869f53f23f32195babbaef",
+      "worktree": "20215ae3a2c4763c52dad05b72778414b10ec3c981869f53f23f32195babbaef"
+    },
+    "journal-submission/references/upstream-sources.md": {
+      "head": "56e7cdb79767c6fd4e0179d6e79e4815e84de90a58ac31dbb127b543470a173b",
+      "worktree": "56e7cdb79767c6fd4e0179d6e79e4815e84de90a58ac31dbb127b543470a173b"
+    },
+    "journal-submission/scripts/validate_submission_records.py": {
+      "head": "0931ebcaa07a1a3574b29b2fe296f25e3fb2fb966559c5cf4d08f41fdaeae49b",
+      "worktree": "0931ebcaa07a1a3574b29b2fe296f25e3fb2fb966559c5cf4d08f41fdaeae49b"
+    },
+    "journal-submission/tests/fixtures/synthetic-cases.json": {
+      "head": "2da658e8786ccbd3626740ed0ac7cbfce36fba2fd741444417350321f6cc2915",
+      "worktree": "2da658e8786ccbd3626740ed0ac7cbfce36fba2fd741444417350321f6cc2915"
+    },
+    "journal-submission/tests/test_skill_contract.py": {
+      "head": "57e68cfd2271fc6cd9e9215cfbe8a83938cbb0b43fd81808c816240cd11d6ff4",
+      "worktree": "57e68cfd2271fc6cd9e9215cfbe8a83938cbb0b43fd81808c816240cd11d6ff4"
+    },
+    "journal-submission/tests/test_validate_submission_records.py": {
+      "head": "8bdfc9d70ac08b1b1c2501f2cfadaa1cc8b846d245d355644398f7a35c61cad0",
+      "worktree": "8bdfc9d70ac08b1b1c2501f2cfadaa1cc8b846d245d355644398f7a35c61cad0"
+    },
+    "latex-paper/SKILL.md": {
+      "head": "923d99d327c65c079138d737d341aa80704f3ed5182fc8742d45860773b0265e",
+      "worktree": "923d99d327c65c079138d737d341aa80704f3ed5182fc8742d45860773b0265e"
+    },
+    "latex-paper/evals/evals.json": {
+      "head": "29f25c272947a28787a098f405eaa28f0a8c12d35c53b658ae07e1ec25234d27",
+      "worktree": "29f25c272947a28787a098f405eaa28f0a8c12d35c53b658ae07e1ec25234d27"
+    },
+    "latex-paper/references/compile-and-submission-checklist.md": {
+      "head": "89caa405108b458d12a922c3ec00d92fa2f8dc2baba1875023b1a67600743eac",
+      "worktree": "89caa405108b458d12a922c3ec00d92fa2f8dc2baba1875023b1a67600743eac"
+    },
+    "latex-paper/references/journal-template-migration.md": {
+      "head": "84678d80854a874d8e9c78b5718835372174dc644cd2dad6364c8487268f7d69",
+      "worktree": "84678d80854a874d8e9c78b5718835372174dc644cd2dad6364c8487268f7d69"
+    },
+    "latex-paper/references/md-to-latex-conversion.md": {
+      "head": "76ae1c5a4bb5c650a56f5ac33ccddc0900a4c53085892e89e606f34e1a58be11",
+      "worktree": "76ae1c5a4bb5c650a56f5ac33ccddc0900a4c53085892e89e606f34e1a58be11"
+    },
+    "latex-paper/references/upstream-sources.md": {
+      "head": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d",
+      "worktree": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d"
+    },
+    "meeting-notes/SKILL.md": {
+      "head": "4e5d3120229c7581eff6694f34b996d5a84cb1cedb34467c7b595d473c6a059d",
+      "worktree": "b652add3b5e3beaf40b51f1ec9a45f94cdb194b260f165d108556165f74bab12"
+    },
+    "meeting-notes/evals/evals.json": {
+      "head": "4e5cefc0eee324da382b2dd202e722b60d6e475af9d4cb04803d7ffd10977afd",
+      "worktree": "45c421f202f45cbd81d5a6253346612cb9974714ceb372b215555f5aad3e5df9"
+    },
+    "meeting-notes/evals/trigger-evals.json": {
+      "head": "0279e54e1c75bb70fbdc0477d815eaf3e2e268ef1648eba2ec7a9d2cc1691b1d",
+      "worktree": "0279e54e1c75bb70fbdc0477d815eaf3e2e268ef1648eba2ec7a9d2cc1691b1d"
+    },
+    "meeting-notes/references/upstream-sources.md": {
+      "head": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d",
+      "worktree": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d"
+    },
+    "meeting-notes/references/workflow.md": {
+      "head": "e75cac38f9d9c13137f75f5f387802d9be8bba12153a615791ac14fcd7468411",
+      "worktree": "2bd46e9726ccd7a87d80ef06c317d8c5843b11e392ea161de07a7dbd16127352"
+    },
+    "paper-figure-review/SKILL.md": {
+      "head": "c6726bbc3d7bb5b094a53803c0ee4d13c720fba89d9af5ed1e83a02a56bd1f8b",
+      "worktree": "c6726bbc3d7bb5b094a53803c0ee4d13c720fba89d9af5ed1e83a02a56bd1f8b"
+    },
+    "paper-figure-review/THIRD_PARTY_NOTICES.md": {
+      "head": "14da5168a1db95ff0873a933f3c2e01e9323e8f9ba57b0dff46240316b6a24c1",
+      "worktree": "14da5168a1db95ff0873a933f3c2e01e9323e8f9ba57b0dff46240316b6a24c1"
+    },
+    "paper-figure-review/assets/fonts/LICENSE": {
+      "head": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b",
+      "worktree": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+    },
+    "paper-figure-review/assets/fonts/LiberationSerif-Bold.ttf": {
+      "head": "d754ba427cfe0bca54ae052384baa8f842da5bd6550ad4da024ac441e7a7d5ce",
+      "worktree": "d754ba427cfe0bca54ae052384baa8f842da5bd6550ad4da024ac441e7a7d5ce"
+    },
+    "paper-figure-review/assets/fonts/LiberationSerif-BoldItalic.ttf": {
+      "head": "f17db8af71e24d2066b587546021d4f0b296be389512b658dec3c09affeb11a7",
+      "worktree": "f17db8af71e24d2066b587546021d4f0b296be389512b658dec3c09affeb11a7"
+    },
+    "paper-figure-review/assets/fonts/LiberationSerif-Italic.ttf": {
+      "head": "0e3dea9f8d613e006ccfa62201f33e265d19167bd0907725c3e145368b04fc2e",
+      "worktree": "0e3dea9f8d613e006ccfa62201f33e265d19167bd0907725c3e145368b04fc2e"
+    },
+    "paper-figure-review/assets/fonts/LiberationSerif-Regular.ttf": {
+      "head": "058ea80864aef09a23f45cbec2bb5400bc3dfbdea01c3f10538a21fcb497fb74",
+      "worktree": "058ea80864aef09a23f45cbec2bb5400bc3dfbdea01c3f10538a21fcb497fb74"
+    },
+    "paper-figure-review/assets/fonts/manifest.json": {
+      "head": "9afdf73a5b6ef60d7772a7dc262ef36314170df9fe7dea5cba7d86ce93283324",
+      "worktree": "9afdf73a5b6ef60d7772a7dc262ef36314170df9fe7dea5cba7d86ce93283324"
+    },
+    "paper-figure-review/assets/ieee_single_column_data_plot.py": {
+      "head": "5636f56c8717a4c328003c2a68db1fd0c35c72a73414cef74e29bc565a9e8ff6",
+      "worktree": "5636f56c8717a4c328003c2a68db1fd0c35c72a73414cef74e29bc565a9e8ff6"
+    },
+    "paper-figure-review/assets/scis_compact_single_column.py": {
+      "head": "c6753ad079356c4fb5bdb737fbbd8e205193f7faded8aeff3ad6490b135737d6",
+      "worktree": "c6753ad079356c4fb5bdb737fbbd8e205193f7faded8aeff3ad6490b135737d6"
+    },
+    "paper-figure-review/evals/evals.json": {
+      "head": "b2f262ce511129f807fcc708b81163466e8d3f0251d9926ff23770849a263e62",
+      "worktree": "b2f262ce511129f807fcc708b81163466e8d3f0251d9926ff23770849a263e62"
+    },
+    "paper-figure-review/references/data-plot-color-priority.md": {
+      "head": "76c4128baa38f7f249bcfbcd8c42b2a4d3e09625b40577e5881c383451289881",
+      "worktree": "76c4128baa38f7f249bcfbcd8c42b2a4d3e09625b40577e5881c383451289881"
+    },
+    "paper-figure-review/references/ieee-figure-review-checklist.md": {
+      "head": "cc64faab148ceb8439bbe1537d6ebda4d119accc1b08fda3928841626dfd422a",
+      "worktree": "cc64faab148ceb8439bbe1537d6ebda4d119accc1b08fda3928841626dfd422a"
+    },
+    "paper-figure-review/references/ieee-single-column-data-plot.md": {
+      "head": "1cc0d2b7e079d74430796821d8904ad8e1e2cf68ad87675f86f9331eb20b11cd",
+      "worktree": "1cc0d2b7e079d74430796821d8904ad8e1e2cf68ad87675f86f9331eb20b11cd"
+    },
+    "paper-figure-review/references/matplotlib-ieee-plot-profile.md": {
+      "head": "915a853558a3caef6b901c38b47b236c187431229908338e61afcf49151949f7",
+      "worktree": "915a853558a3caef6b901c38b47b236c187431229908338e61afcf49151949f7"
+    },
+    "paper-figure-review/references/scis-compact-single-column.md": {
+      "head": "4da6d942fe442b6c0a3be1e3af65c0c3f82780809ebc75a4129387fb56608399",
+      "worktree": "4da6d942fe442b6c0a3be1e3af65c0c3f82780809ebc75a4129387fb56608399"
+    },
+    "paper-figure-review/references/upstream-sources.md": {
+      "head": "2d868fcc6ca0acadf887ec0bd7f814bc6af5ac4bbe3f8748f09aaac4ac6be29c",
+      "worktree": "2d868fcc6ca0acadf887ec0bd7f814bc6af5ac4bbe3f8748f09aaac4ac6be29c"
+    },
+    "paper-figure-review/scripts/audit_globecom_single_column.py": {
+      "head": "a7abff81c91a558e5435c6b46bbfd2cc74f33c638c6f73283bfa9bee7512aae2",
+      "worktree": "a7abff81c91a558e5435c6b46bbfd2cc74f33c638c6f73283bfa9bee7512aae2"
+    },
+    "paper-figure-review/scripts/ieee_plot_style.py": {
+      "head": "d6e705297c547170e54e27812c06f71c85730d0ae389d340c8fcf8083710982f",
+      "worktree": "d6e705297c547170e54e27812c06f71c85730d0ae389d340c8fcf8083710982f"
+    },
+    "paper-figure-review/scripts/invoke_paper_figure_python.ps1": {
+      "head": "47aa1a9e66db56d0885c0ce5dc8d1d8d7eb3d1cb8d7d825e04900ad769ff6bc3",
+      "worktree": "47aa1a9e66db56d0885c0ce5dc8d1d8d7eb3d1cb8d7d825e04900ad769ff6bc3"
+    },
+    "paper-figure-review/tests/test_ieee_plot_style.py": {
+      "head": "ae8aa75f976d1380d3cc96f992945ee04e4db17ef8b70175950e19e1ffe47dab",
+      "worktree": "12e02ccf21f5e6a44a03262dd46db156bfdb551b33f262a791716b34ae94f32e"
+    },
+    "paper-figure-review/tests/test_runtime_adapter.py": {
+      "head": "d7754543d2332f072c409e171c72fa07dfebd3547a0d0d7e8ce2d29a93183c5d",
+      "worktree": "d7754543d2332f072c409e171c72fa07dfebd3547a0d0d7e8ce2d29a93183c5d"
+    },
+    "paper-review/SKILL.md": {
+      "head": "5cf18492a882b255c77f3532f18f31cfea53eea0dad1322deecacd4d188dbdc3",
+      "worktree": "5cf18492a882b255c77f3532f18f31cfea53eea0dad1322deecacd4d188dbdc3"
+    },
+    "paper-review/agents/openai.yaml": {
+      "head": "a4ee83bbcbaf4a880e974b0b72ee09df5f9ed90aa68f247c7792f796c2d399dd",
+      "worktree": "a4ee83bbcbaf4a880e974b0b72ee09df5f9ed90aa68f247c7792f796c2d399dd"
+    },
+    "paper-review/assets/external-review-en-template.md": {
+      "head": "638651377db52775c60e27257f40b0b7e4f5606df89a0a72712f2cff7050685e",
+      "worktree": "638651377db52775c60e27257f40b0b7e4f5606df89a0a72712f2cff7050685e"
+    },
+    "paper-review/assets/external-review-paste-ready-template.md": {
+      "head": "ef7a0bc2e18f2232b394893f3a1f068c154e79dcd717d3546be0a91b870fcfa7",
+      "worktree": "ef7a0bc2e18f2232b394893f3a1f068c154e79dcd717d3546be0a91b870fcfa7"
+    },
+    "paper-review/assets/external-review-zh-template.md": {
+      "head": "dd57aeee83634682244b8a246a583592248cc86b7b89a1ca2a71314753cb17cd",
+      "worktree": "dd57aeee83634682244b8a246a583592248cc86b7b89a1ca2a71314753cb17cd"
+    },
+    "paper-review/evals/evals.json": {
+      "head": "229f385b4e95405cd9db0df62b8293d543e864523732536bfafe2f3eb3e132ee",
+      "worktree": "229f385b4e95405cd9db0df62b8293d543e864523732536bfafe2f3eb3e132ee"
+    },
+    "paper-review/references/external-peer-review.md": {
+      "head": "64396346660fd4e4aaf14d6284e6fe23348e0fd7334e9218a955bc4ffd4114e4",
+      "worktree": "64396346660fd4e4aaf14d6284e6fe23348e0fd7334e9218a955bc4ffd4114e4"
+    },
+    "paper-review/references/reader-test.md": {
+      "head": "8030aafeeca705efe62e9deb94c9edafddbe5ff18359728505bb18cf1dd792c2",
+      "worktree": "8030aafeeca705efe62e9deb94c9edafddbe5ff18359728505bb18cf1dd792c2"
+    },
+    "paper-review/references/source-check.md": {
+      "head": "7ad38c07b5c7db6532d3e87094d24344999e7e4f52334d3914e54dc86c15ad7a",
+      "worktree": "7ad38c07b5c7db6532d3e87094d24344999e7e4f52334d3914e54dc86c15ad7a"
+    },
+    "paper-review/references/stopline-checklist.md": {
+      "head": "e084b61345eae96d42d6ca709e39bc93b247edc4bf9193b9f83c65f57519775f",
+      "worktree": "e084b61345eae96d42d6ca709e39bc93b247edc4bf9193b9f83c65f57519775f"
+    },
+    "paper-review/references/submission-gauntlet.md": {
+      "head": "86c24ef0586e6e8545a7aebf565493c96a8f17f86472c428c96d37d2c4714caf",
+      "worktree": "86c24ef0586e6e8545a7aebf565493c96a8f17f86472c428c96d37d2c4714caf"
+    },
+    "paper-review/references/trigger-evals.json": {
+      "head": "9a6ee025f84ce57c02088760d3d31f47e2a5d746c6a47aa1e481b81bef15777f",
+      "worktree": "3850d14e392d9ea438ca833ae0fc238d259b57c8691ab442e26e69cec9c71b33"
+    },
+    "paper-review/references/upstream-sources.md": {
+      "head": "1fe0ac1d78701be3ca5a57d91727199011341e929064399ac5d950cd335304fa",
+      "worktree": "1fe0ac1d78701be3ca5a57d91727199011341e929064399ac5d950cd335304fa"
+    },
+    "paper-review/scripts/extract_paper_images.py": {
+      "head": "85240ba1c1c39f635689cef1fcfc60a36834bc34987d75f82a8108a57be97f08",
+      "worktree": "85240ba1c1c39f635689cef1fcfc60a36834bc34987d75f82a8108a57be97f08"
+    },
+    "paper-review/tests/conftest.py": {
+      "head": "a4d66d2583ecc36d93aea8ad62526230ffb4faaa5f5b7393b411697dfa246be6",
+      "worktree": "a4d66d2583ecc36d93aea8ad62526230ffb4faaa5f5b7393b411697dfa246be6"
+    },
+    "paper-review/tests/test_2023_col_regression.py": {
+      "head": "2d47dd0292721ceecb2332a6a83b9c129869961e8d14106509d837950568fe9d",
+      "worktree": "2d47dd0292721ceecb2332a6a83b9c129869961e8d14106509d837950568fe9d"
+    },
+    "paper-review/tests/test_arxiv_image_url_normalization.py": {
+      "head": "b4e42dcca0b0c521db7f4db46da6ed4ff1cf0bfd83101ca42aa3cce9e4db82c0",
+      "worktree": "b4e42dcca0b0c521db7f4db46da6ed4ff1cf0bfd83101ca42aa3cce9e4db82c0"
+    },
+    "paper-review/tests/test_confidence.py": {
+      "head": "9335644bc23dbf53e3cad59af9558573447912dcd697828e04375645d38a2a2c",
+      "worktree": "9335644bc23dbf53e3cad59af9558573447912dcd697828e04375645d38a2a2c"
+    },
+    "paper-review/tests/test_long_caption_regression.py": {
+      "head": "d8511655722c8ed92b0b047c4f2f2acd00fc8a50126a678e54862c14be39b0f0",
+      "worktree": "d8511655722c8ed92b0b047c4f2f2acd00fc8a50126a678e54862c14be39b0f0"
+    },
+    "paper-review/tests/test_manifest_schema.py": {
+      "head": "164eb38b816d84e3a7862e2dd13e866acce58caef822b51ac13ab7645dccabb7",
+      "worktree": "164eb38b816d84e3a7862e2dd13e866acce58caef822b51ac13ab7645dccabb7"
+    },
+    "paper-review/tests/test_naming.py": {
+      "head": "c83c852e8c3d5d150e1bb8cd606f47d5edd63daa6e396267021af413e677f541",
+      "worktree": "c83c852e8c3d5d150e1bb8cd606f47d5edd63daa6e396267021af413e677f541"
+    },
+    "paper-review/tests/test_official_html_extraction.py": {
+      "head": "08bd60e58d7032b372048cc7cf0d626040893dd153ceefa1dd78153d4d8480bd",
+      "worktree": "08bd60e58d7032b372048cc7cf0d626040893dd153ceefa1dd78153d4d8480bd"
+    },
+    "paper-review/tests/test_rotated_table_regression.py": {
+      "head": "418c5eb9624ee90797ca4417ff7420dd15e2418b15c7261077de200829cb087c",
+      "worktree": "418c5eb9624ee90797ca4417ff7420dd15e2418b15c7261077de200829cb087c"
+    },
+    "paper-search/LICENSE.md": {
+      "head": "0207337e5ae2b28c15c647054fafaddafb159be533f9723825d7a5aa2610f21d",
+      "worktree": "0207337e5ae2b28c15c647054fafaddafb159be533f9723825d7a5aa2610f21d"
+    },
+    "paper-search/README.md": {
+      "head": "49b38733c5313275f055cca8c54db1334cb99a1a9e3dfe50cbce7492308911cb",
+      "worktree": "a41376731cff8bc76ed1cfb7a01acd1773d2dc1ee3cf6a502a69a077213f2307"
+    },
+    "paper-search/SKILL.md": {
+      "head": "e957d78d57c4e82026823494ca821556dd6fad5e6a0f325a6356d82f821e243e",
+      "worktree": "ebc36dc583e3bfe6b348960a78af7688eccaeb058069d5171caecf28b15477cc"
+    },
+    "paper-search/evals/evals.json": {
+      "head": "0dd6cc8c2be85472bb4f4738c992853e5f00e8c69b3bdd8291f05739651a42a0",
+      "worktree": "0dd6cc8c2be85472bb4f4738c992853e5f00e8c69b3bdd8291f05739651a42a0"
+    },
+    "paper-search/evals/files/feishu-wiki-snapshot.json": {
+      "head": "acb3298b50359444e287943bdd271d5776d357eea9561c3ba5e4302652c7cbb5",
+      "worktree": "27f27a9975a2d0bf2586c99f930178af09b522cbfdd37e89d53bed9180ad1c2d"
+    },
+    "paper-search/evals/files/ieee-records.json": {
+      "head": "e03d049a0f3c1a30e182e96b30ba1f389ea4db5fd306af3343da698535a4b6c2",
+      "worktree": "1695312dd13bf24f12cb3115e5434b70207f3bfd22aa0dd84953dedbb35641e5"
+    },
+    "paper-search/evals/files/references.bib": {
+      "head": "cf9faa4c15648a98d58350f8011d8157b8c64f44130493d0c23496bcdb3b79d4",
+      "worktree": "32fdb4fc59d004214c8f85055e239fd353af8effae9fe28414cd725757c3d1c8"
+    },
+    "paper-search/evals/files/verified-records.json": {
+      "head": "8d67226c706b695888e61a031799f4303fff2e8d9e3248992fe41536ec1f82a6",
+      "worktree": "72bb370e739fda763c3d52fc4eaac1963be00116120cf27278632a84906f147d"
+    },
+    "paper-search/references/citation-workflow.md": {
+      "head": "c2d1b89543305215f39ef95127d1101c5ba1dac42b78214b2d8b2964dd00cfa2",
+      "worktree": "d21598a4b4aad712c10a892aeb24d6ec2922c437ffcae4e171535cffd72a8a6c"
+    },
+    "paper-search/references/upstream-source.md": {
+      "head": "865086fda42be24a9123039cfacedced97c32e00399827fb4ffc34d3cf2d920d",
+      "worktree": "7c1df2ab0be153c21115295060003fd669d6b74857d8708017ecbdd4b0c8c04f"
+    },
+    "paper-search/references/upstream-sources.md": {
+      "head": "f2933bb0aa02ee20f0ce355c7b0cd1e4e27b190b2c54f6586189c7696d8d962a",
+      "worktree": "fa4fa691126a9ce583431718aa980e917e4f27210820118221ec7666b3599d37"
+    },
+    "paper-search/scripts/bibtex_compare.py": {
+      "head": "7e4864a94f3bf610446b2300d185327059d44103330beee62cb01db26bb35ec0",
+      "worktree": "3f879ec54b9ab24fa054617bc3469cfe29d53c8666e8cff20d7d6e6bd8660874"
+    },
+    "paper-search/scripts/citation_records.py": {
+      "head": "7ea1b7427944a108a81af24c542e45c60e862e958f090ab89a27048b6d2e980c",
+      "worktree": "ce293a54bbf473a4535f3e76736ced8ec14b8a271537fad721f9080caa677f49"
+    },
+    "paper-search/scripts/evidence_records.py": {
+      "head": "b97e844f35a933e4a27e30fe3d780c4ef13c310be4f7bcd0b1138a07438bb4a3",
+      "worktree": "34c5fe36abdbf5b93b46574bcf3f2db5418504837812acbaf97d1602cdb76fac"
+    },
+    "paper-search/scripts/ieee_renderer.py": {
+      "head": "442a6279549cb93fe7375791f88aac24b8827d0ca5637fa842941b4483d2f1e2",
+      "worktree": "91b96151d688191b846662f39225cea2e70b76c7b7172251f0bd2d6122b2fb73"
+    },
+    "paper-search/tests/test_evidence_records.py": {
+      "head": "92aa62b17ee8293a65e3c182d0547b91bdd9a72520a1210afd83902d427297f3",
+      "worktree": "d99f5e4adb480a22a5b6df4f5fed02df7315accd4e4699bec75a33ef173e23d1"
+    },
+    "product-research-workbook/SKILL.md": {
+      "head": "f8deae358cfe568ac7c83227b2b8175f7636065e56ad211fe52e71f6de7e6fdb",
+      "worktree": "f8deae358cfe568ac7c83227b2b8175f7636065e56ad211fe52e71f6de7e6fdb"
+    },
+    "product-research-workbook/agents/openai.yaml": {
+      "head": "92a72315f22d64ff5be48bea7eaa71c54381e5c005eb339b3181ee3f0879ae1e",
+      "worktree": "92a72315f22d64ff5be48bea7eaa71c54381e5c005eb339b3181ee3f0879ae1e"
+    },
+    "product-research-workbook/evals/evals.json": {
+      "head": "c4f9b16398038954ce7e6e647df358b358d298ce1430697aaf558953c4f4effa",
+      "worktree": "c4f9b16398038954ce7e6e647df358b358d298ce1430697aaf558953c4f4effa"
+    },
+    "product-research-workbook/evals/trigger-evals.json": {
+      "head": "15eff06cefae5b14dc7fd2e38ab9d2fa47dd1acc3b91bd9d9f5d967297357285",
+      "worktree": "15eff06cefae5b14dc7fd2e38ab9d2fa47dd1acc3b91bd9d9f5d967297357285"
+    },
+    "product-research-workbook/references/acceptance-and-release.md": {
+      "head": "4fa32ae8bb97e95f2474396cbc434233d065dfcbc562bc0677e8ec50fb813ddc",
+      "worktree": "4fa32ae8bb97e95f2474396cbc434233d065dfcbc562bc0677e8ec50fb813ddc"
+    },
+    "product-research-workbook/references/upstream-sources.md": {
+      "head": "33cf04830a5cc852e94c3e226cab69aa515f53bfad8c019d6d833a7ae11096b5",
+      "worktree": "33cf04830a5cc852e94c3e226cab69aa515f53bfad8c019d6d833a7ae11096b5"
+    },
+    "product-research-workbook/references/workbook-contract.md": {
+      "head": "a11327ee16fe1ca79aac17c5715c707f599c8f6721f4319014457e2b6fc1255a",
+      "worktree": "a11327ee16fe1ca79aac17c5715c707f599c8f6721f4319014457e2b6fc1255a"
+    },
+    "product-research-workbook/scripts/build_product_workbooks.py": {
+      "head": "28b4031a5a524131bd5714740a45f9e2fe73b14f6979cbef75b5a83c56efdb90",
+      "worktree": "28b4031a5a524131bd5714740a45f9e2fe73b14f6979cbef75b5a83c56efdb90"
+    },
+    "product-research-workbook/scripts/inspect_product_samples.py": {
+      "head": "b2977f309e27075a9c9e931c3b2e2ae86729f6c571178ccc504152777a1f0f3c",
+      "worktree": "b2977f309e27075a9c9e931c3b2e2ae86729f6c571178ccc504152777a1f0f3c"
+    },
+    "product-research-workbook/scripts/scan_legacy_identifiers.py": {
+      "head": "8b8e70c52437d4098fee070434edf552d887cffb3f53fc93c91ccbf64994aeb8",
+      "worktree": "8b8e70c52437d4098fee070434edf552d887cffb3f53fc93c91ccbf64994aeb8"
+    },
+    "product-research-workbook/scripts/validate_product_workbooks.py": {
+      "head": "e9b859886cb644ac7a7d19aff8da2ad89ee5885095c13b894a8e6611f718302c",
+      "worktree": "e9b859886cb644ac7a7d19aff8da2ad89ee5885095c13b894a8e6611f718302c"
+    },
+    "product-research-workbook/scripts/workbook_contract.py": {
+      "head": "e9a7cd69001837f5c44bb0f4dca528cb517cd9f7faaf47a5a21d156e95f28373",
+      "worktree": "e9a7cd69001837f5c44bb0f4dca528cb517cd9f7faaf47a5a21d156e95f28373"
+    },
+    "product-research-workbook/tests/test_product_workbooks.py": {
+      "head": "c147af0b27b2726a6f224b95b8b34f0f091da584dcae783cc01fa50e41d4dc8c",
+      "worktree": "c147af0b27b2726a6f224b95b8b34f0f091da584dcae783cc01fa50e41d4dc8c"
+    },
+    "product-research-workbook/tests/test_static_artifacts.py": {
+      "head": "b1f9e929cf177a5fab7517e9e0e247b12c6ad1ba8e3a40bc5e72b59ce68e0e98",
+      "worktree": "b1f9e929cf177a5fab7517e9e0e247b12c6ad1ba8e3a40bc5e72b59ce68e0e98"
+    },
+    "project-writing/SKILL.md": {
+      "head": "2dff20f54b9939ef53bff61f5bfa94d77733bfc99eb07c94e3feed461745f198",
+      "worktree": "5983e9a230ad283ce6376a835745bf82ecc838f8651e9bb7d2aa8369b5fa1fdf"
+    },
+    "project-writing/evals/evals.json": {
+      "head": "dc545d139c09ff249f272ea6c86b39534599105191e779669c37c2008b28d2e1",
+      "worktree": "e57f23ebb764d93277bf91d79f3ebe0bea5f91a479ba96a05b8bf5ff27479d0a"
+    },
+    "project-writing/references/engineering-glossary-blackout.md": {
+      "head": "03a19ff6c092f8dd1cb5370cf5f8769ff819ecfb85919078c400084201d3eca8",
+      "worktree": "03a19ff6c092f8dd1cb5370cf5f8769ff819ecfb85919078c400084201d3eca8"
+    },
+    "project-writing/references/proposal-defense-protocol.md": {
+      "head": "f7fb2de3fd7cc7a35006315743fe611401a3e90568b2a717a23a57927d2d9625",
+      "worktree": "f7fb2de3fd7cc7a35006315743fe611401a3e90568b2a717a23a57927d2d9625"
+    },
+    "project-writing/references/proposal-revision-lessons.md": {
+      "head": "9cebd8044b63c91812daad1a01a49c76ca01d678a4cd23c88f3244581666ad60",
+      "worktree": "9cebd8044b63c91812daad1a01a49c76ca01d678a4cd23c88f3244581666ad60"
+    },
+    "project-writing/references/upstream-sources.md": {
+      "head": "f8e1c188ca8d5915c75144820a41c75441c53b4b1ab26e2993e35bc8252bbec9",
+      "worktree": "f8e1c188ca8d5915c75144820a41c75441c53b4b1ab26e2993e35bc8252bbec9"
+    },
+    "research-report/SKILL.md": {
+      "head": "30e483c56fffe6d87287553ff85c60cd928cb16e971c12dc16de80efcd203026",
+      "worktree": "379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586"
+    },
+    "research-report/evals/evals.json": {
+      "head": "8bbcacea05e1a40363c894b9f5ad6cd23fa11fea7cf4b3a6ceb8ea05350c68eb",
+      "worktree": "c307121f327d1600f29b35fd0a80c1927542588b713179147268184e8f0c758e"
+    },
+    "research-report/evals/fixtures/audit-fragment.md": {
+      "head": "28895c56c2de056a94640222445d0e31dc37068f8a24941c1e8f727d6567f61f",
+      "worktree": "28895c56c2de056a94640222445d0e31dc37068f8a24941c1e8f727d6567f61f"
+    },
+    "research-report/evals/fixtures/evidence-pack.md": {
+      "head": "4b657ca080b425a99b40fddfd1d66a8bce366bf7a6078678e5ea550a15abfd06",
+      "worktree": "4b657ca080b425a99b40fddfd1d66a8bce366bf7a6078678e5ea550a15abfd06"
+    },
+    "research-report/evals/fixtures/mixed-report.md": {
+      "head": "3f9e1894f90d9647167da6626e1b8fb0df25506873a9eae14fa34064721a12f3",
+      "worktree": "3f9e1894f90d9647167da6626e1b8fb0df25506873a9eae14fa34064721a12f3"
+    },
+    "research-report/evals/fixtures/semantic-boundary.md": {
+      "head": "4c10a5598296fe05ad9a6f16dcb5457ce844bc5241839f746bcc5ae2ac82112d",
+      "worktree": "4c10a5598296fe05ad9a6f16dcb5457ce844bc5241839f746bcc5ae2ac82112d"
+    },
+    "research-report/evals/trigger-evals.json": {
+      "head": "0d4d653d6477b7d3c45635ec31a409f0ab1661c3c68cf3ea2041c04adf2f91f3",
+      "worktree": "0d4d653d6477b7d3c45635ec31a409f0ab1661c3c68cf3ea2041c04adf2f91f3"
+    },
+    "research-report/references/decision-report.md": {
+      "head": "19708c007b306cf2af9c79d994caf27e4fa65f5deb34677d7819a458d1e508a6",
+      "worktree": "0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2"
+    },
+    "research-report/references/external-method-sources.md": {
+      "head": "e88814c8416df4ce6bc14ebf4788fe3051fed0678a25d01e63370393151324cb",
+      "worktree": "2c4e4a0aaadefa0ce8a01571ff5007bb98ead415d2b171420e7d86d05c752bcc"
+    },
+    "research-report/references/modes.md": {
+      "head": "2dbac89b524ff1afaa3a014a9ed2ea67eabec7948ddf82dc0911f0b8b1ceea00",
+      "worktree": "15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34"
+    },
+    "research-report/references/report-contract.md": {
+      "head": "a5732658e55edd07e6ab7620f88a3f61631e332b22436b534e973658c1c0fc22",
+      "worktree": "d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc"
+    },
+    "research-report/references/research-ledger.md": {
+      "head": "00c819d41050b0db935dacc60fe4df2eac17315757aba85863a4ec5a68cb2c41",
+      "worktree": "00c819d41050b0db935dacc60fe4df2eac17315757aba85863a4ec5a68cb2c41"
+    },
+    "research-report/references/restructure-existing.md": {
+      "head": "4e834929b8816370c909f2aee5ebd972c681956ab1f8e249e09a75694422fe2c",
+      "worktree": "c6f0b10c0325263d9449899151177510039ced085b5e89c8dade70a5d9ebc9ee"
+    },
+    "research-report/references/upstream-sources.md": {
+      "head": "2b70af40a92e29e49232f493d7eba0342e549d94c429a4423d0c567880d596cf",
+      "worktree": "2b70af40a92e29e49232f493d7eba0342e549d94c429a4423d0c567880d596cf"
+    },
+    "research-report/scripts/audit_report.py": {
+      "head": "a7d77ac86340bb28c8e193c541f2fcc26d169f34b694265a1aa302a04c3054f6",
+      "worktree": "0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde"
+    },
+    "research-report/tests/test_audit_report.py": {
+      "head": "cf86f055fd0c800737b285de2f2e5fe075e58a9d6a5e1f38f196616aae4d800b",
+      "worktree": "97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd"
+    },
+    "style-vocab/SKILL.md": {
+      "head": "e782eb95a81a6fdb3fd88cd56d1246d048182ea5482b1468366f253dca288561",
+      "worktree": "3788818a3d9b425813c5110964a7c37981339e36d5c25bf6f66524241475da32"
+    },
+    "style-vocab/evals/evals.json": {
+      "head": "826f953c164afafd6deb8c89a6c8a50cbcb47b71c78d6be3a70fff729e0ea6cb",
+      "worktree": "826f953c164afafd6deb8c89a6c8a50cbcb47b71c78d6be3a70fff729e0ea6cb"
+    },
+    "style-vocab/references/upstream-sources.md": {
+      "head": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d",
+      "worktree": "2684c18ff513f0786230979dbc08121f7ad62265799d3fd91e1d2f368b73e39d"
+    },
+    "technical-writing/SKILL.md": {
+      "head": "1a2a9e6bb759ba5f22cafd96f55fab5f0b82979d884a73dc0cd0aa6aebb1986b",
+      "worktree": "0447b8630a6bcd9757b28ef0800f72c4a0d9f1b32553bb8cdb10509132c3b998"
+    },
+    "technical-writing/evals/evals.json": {
+      "head": "07be5c51dcab02a3d0f29f1d8b773118837c05b0b26f50657871433da64283cc",
+      "worktree": "d27b547b7120164c062cc4f74fafbaa22f637f50e130ebaf7a66b2e3273f74f5"
+    },
+    "technical-writing/references/engineering-validation-source.md": {
+      "head": "49bff511d7ef6b731d4da90b73bf98bf1b2b55f2c9978761c0f8471d2b86aec4",
+      "worktree": "49bff511d7ef6b731d4da90b73bf98bf1b2b55f2c9978761c0f8471d2b86aec4"
+    },
+    "technical-writing/references/engineering-validation.md": {
+      "head": "8e88fc1149bd4239f201fe91dcb01330f081140563fa108e206271b4710ebed9",
+      "worktree": "8e88fc1149bd4239f201fe91dcb01330f081140563fa108e206271b4710ebed9"
+    },
+    "technical-writing/references/metric-feasibility.md": {
+      "head": "9b31e02982111232d4d1279abebb12d48b7d2f74fb6f950e61a8c17c6d66fbb6",
+      "worktree": "9b31e02982111232d4d1279abebb12d48b7d2f74fb6f950e61a8c17c6d66fbb6"
+    },
+    "technical-writing/references/technical-exchange.md": {
+      "head": "cd060c23bcf25eb9c29972c39d8dcfc5f5d91ecfd56f3d1af1b9623a9f1603d8",
+      "worktree": "cd060c23bcf25eb9c29972c39d8dcfc5f5d91ecfd56f3d1af1b9623a9f1603d8"
+    },
+    "technical-writing/references/upstream-sources.md": {
+      "head": "999d20cf91cf5bb896552fba7d9043fca3917669133ce30c7d9375a8727cc573",
+      "worktree": "999d20cf91cf5bb896552fba7d9043fca3917669133ce30c7d9375a8727cc573"
+    },
+    "writing-router/LICENSE": {
+      "head": "aa00e74769e1b9d8e7fa7094dbfcca9b129a0ded6dce1cf4da050b99146d2fa7",
+      "worktree": "aa00e74769e1b9d8e7fa7094dbfcca9b129a0ded6dce1cf4da050b99146d2fa7"
+    },
+    "writing-router/SKILL.md": {
+      "head": "69c8486ac62f62914c46fc8362e1e0a8b2db8d5ce3740be692d8fa9fe1ea38b3",
+      "worktree": "69c8486ac62f62914c46fc8362e1e0a8b2db8d5ce3740be692d8fa9fe1ea38b3"
+    },
+    "writing-router/evals/README.md": {
+      "head": "442225e2d4859b81e90aa2ed93d245cbe844a15c89b13a1e1b40c2ed87083898",
+      "worktree": "a5071bef15101ec9366d0e07119e12bbf97ad7c4bcd958a8ad8bcace284a7854"
+    },
+    "writing-router/evals/chat-style-v2.json": {
+      "head": "428b82015890f15e259d8523692826cc09cb3a88231ce382d3decad0b22f1ea0",
+      "worktree": "a2553ca78186039b58a79eb21e1c4b125df04b9b123d9e5348c50a6eb3e6a552"
+    },
+    "writing-router/evals/collaborative-writing.json": {
+      "head": "003d6cbea30e63de03556150cb8864003b13ac67d6c25e9f691869929766021e",
+      "worktree": "003d6cbea30e63de03556150cb8864003b13ac67d6c25e9f691869929766021e"
+    },
+    "writing-router/evals/evals.json": {
+      "head": "91c4b1d1fc7a1b5104cf26af1f2507f05f2940aa68939f1347659fa6a2e635d4",
+      "worktree": "b0bdfe246c82c01fb6a17119a54f0fe68c12a8eba5d2d1178feab2364937b71e"
+    },
+    "writing-router/evals/paragraph-quality.json": {
+      "head": "9004d2db98708db70eafb6acf4414c2c12083a1a5a18f51527ad39196de79e83",
+      "worktree": "9004d2db98708db70eafb6acf4414c2c12083a1a5a18f51527ad39196de79e83"
+    },
+    "writing-router/evals/writing-quality-v2.json": {
+      "head": "77a7fa48c2f5f281a87e7af148d9ab6ef708f8efd196a0aef0dc60343bfee00b",
+      "worktree": "b1604ae9d3165cec308485ab1e82f7df7288f5b47befbd38f91b859539b2e696"
+    },
+    "writing-router/references/academic-workflow-map.md": {
+      "head": "55f2ca9159eaac2ddb7f4ce34de93bd090c66bf18c4fbf4df9f524d102c9ddb9",
+      "worktree": "55f2ca9159eaac2ddb7f4ce34de93bd090c66bf18c4fbf4df9f524d102c9ddb9"
+    },
+    "writing-router/references/ai-smell-catalog.md": {
+      "head": "630b48ec372334302186fb8238711cbd712bf7af6a6f4d9f696906cc3bdc984b",
+      "worktree": "2360ca5d7b149afa371b6e6d2c21bac3b768957be027013faf8ce787179b6241"
+    },
+    "writing-router/references/collaborative-writing.md": {
+      "head": "54aa5e320db93ea96a615615325aa470aaa7f5df048aaad2e6493e3342383d6e",
+      "worktree": "54aa5e320db93ea96a615615325aa470aaa7f5df048aaad2e6493e3342383d6e"
+    },
+    "writing-router/references/common-quality.md": {
+      "head": "3d00e64b99f5850063e508fbc3b12dc891c074eca6db47747c18116621a91fdb",
+      "worktree": "4c15063239b8371975eb3fb71cf116424afff885c02dae2095497ba85f4ad768"
+    },
+    "writing-router/references/document-version-protection.md": {
+      "head": "de5138dd2a5fc7ab6533726d5c7196d3298f0c731ac75433104919e0873cfd96",
+      "worktree": "de5138dd2a5fc7ab6533726d5c7196d3298f0c731ac75433104919e0873cfd96"
+    },
+    "writing-router/references/exact-edit.md": {
+      "head": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+      "worktree": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d"
+    },
+    "writing-router/references/markdown-docx-contract.md": {
+      "head": "3e1eb12d6e254301b0424818e186c9c2e4026ddf3c37c16181cf46019fa5258c",
+      "worktree": "3e1eb12d6e254301b0424818e186c9c2e4026ddf3c37c16181cf46019fa5258c"
+    },
+    "writing-router/references/upstream-sources.md": {
+      "head": "89b67123370db8e512c76c9dfead3f85fe5d783fd0bf72393b8f3bab1a334e3f",
+      "worktree": "89b67123370db8e512c76c9dfead3f85fe5d783fd0bf72393b8f3bab1a334e3f"
+    },
+    "writing-router/scripts/exact_edit.py": {
+      "head": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be",
+      "worktree": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be"
+    },
+    "writing-router/tests/collect_collaboration_evidence.py": {
+      "head": "4e59bcf21b7e182f9b44297616a11580d1befe7f59de5793ec5c28c3e500eb4e",
+      "worktree": "4e59bcf21b7e182f9b44297616a11580d1befe7f59de5793ec5c28c3e500eb4e"
+    },
+    "writing-router/tests/fake_document_store.py": {
+      "head": "88f297a23b3081de68606e4303bdb7d571f4c007759ffe7c7753e05fab5fdc13",
+      "worktree": "88f297a23b3081de68606e4303bdb7d571f4c007759ffe7c7753e05fab5fdc13"
+    },
+    "writing-router/tests/grade_version_protection_eval.py": {
+      "head": "a5e74551b9dd45523d6910ad3933523495970d6adeb5ea089a500f150f4a1293",
+      "worktree": "a5e74551b9dd45523d6910ad3933523495970d6adeb5ea089a500f150f4a1293"
+    },
+    "writing-router/tests/test_collaborative_writing.py": {
+      "head": "4e1550268f350a2e024f299fab62494a692260dc374da8ae40968f7fc8b087d9",
+      "worktree": "4e1550268f350a2e024f299fab62494a692260dc374da8ae40968f7fc8b087d9"
+    },
+    "writing-router/tests/test_document_version_git_flow.py": {
+      "head": "dc4b1b715c99d2d131dca60d204e5e37bdff27cf47ec70fc9371edbbe269851b",
+      "worktree": "dc4b1b715c99d2d131dca60d204e5e37bdff27cf47ec70fc9371edbbe269851b"
+    },
+    "writing-router/tests/test_document_version_protection.py": {
+      "head": "4004671a36195ec9ca538efd09a0f79b57c1f54d761239001ace1bcae0bcbb10",
+      "worktree": "4004671a36195ec9ca538efd09a0f79b57c1f54d761239001ace1bcae0bcbb10"
+    },
+    "writing-router/tests/test_exact_edit.py": {
+      "head": "6b0cc1a26754ab6c7b40182293bb0a7050a27ff765dbac7eb5bf1cb9769c851e",
+      "worktree": "6b0cc1a26754ab6c7b40182293bb0a7050a27ff765dbac7eb5bf1cb9769c851e"
+    },
+    "writing-router/tests/test_markdown_docx_contract.py": {
+      "head": "1a40798917390d1f823e87716d822384c5a796e79e95254b644dabf5376a91f5",
+      "worktree": "1a40798917390d1f823e87716d822384c5a796e79e95254b644dabf5376a91f5"
+    },
+    "writing-router/tests/test_paragraph_quality.py": {
+      "head": "53fb072198dc7bce12f00cc67fa096066816eb0533187a240e55eef135d51c9d",
+      "worktree": "53fb072198dc7bce12f00cc67fa096066816eb0533187a240e55eef135d51c9d"
+    },
+    "writing-router/tests/test_writing_quality_v2.py": {
+      "head": "3f20603f20f923128b09f1aeb880fc332aea1200363cc8da1245fbd3c4fde965",
+      "worktree": "3f20603f20f923128b09f1aeb880fc332aea1200363cc8da1245fbd3c4fde965"
+    },
+    "xlsx/SKILL.md": {
+      "head": "7d5d576e147ec09fd85d1a478538a2d170369b3901c2d4dff74dd681e7261c54",
+      "worktree": "7d5d576e147ec09fd85d1a478538a2d170369b3901c2d4dff74dd681e7261c54"
+    },
+    "xlsx/evals/evals.json": {
+      "head": "4fcde261d8c3dd5f222525088ccb2ee2763fe6db8ff567c8d82c593a8707a631",
+      "worktree": "4fcde261d8c3dd5f222525088ccb2ee2763fe6db8ff567c8d82c593a8707a631"
+    },
+    "xlsx/evals/trigger-evals.json": {
+      "head": "b617b29949144d6d9f22cc84da1eb54331fb84bbdd3531e3178c601a72dd47f0",
+      "worktree": "b617b29949144d6d9f22cc84da1eb54331fb84bbdd3531e3178c601a72dd47f0"
+    },
+    "xlsx/references/design-provenance.md": {
+      "head": "e6240c7dd79c7a2f058ffb67e6f0540916caea3c6d6119d91c600cf838ae5fb9",
+      "worktree": "e6240c7dd79c7a2f058ffb67e6f0540916caea3c6d6119d91c600cf838ae5fb9"
+    },
+    "xlsx/references/formatting-and-formulas.md": {
+      "head": "54e5bbcf715c76297b3f09ce22f28adae003b160f23bba6a61ea93b99f49999a",
+      "worktree": "54e5bbcf715c76297b3f09ce22f28adae003b160f23bba6a61ea93b99f49999a"
+    },
+    "xlsx/references/general-workflow.md": {
+      "head": "5c2b2b5dc875d1f958614575b4ba989a8763ef24b7d654db2905ded62a1bd567",
+      "worktree": "5c2b2b5dc875d1f958614575b4ba989a8763ef24b7d654db2905ded62a1bd567"
+    },
+    "xlsx/references/high-fidelity-workflow.md": {
+      "head": "ad3a604e23c94ec43e8189dc90026be4e69e0dda0d4af8ff037025c7612af2ab",
+      "worktree": "ad3a604e23c94ec43e8189dc90026be4e69e0dda0d4af8ff037025c7612af2ab"
+    },
+    "xlsx/references/output-lifecycle.md": {
+      "head": "e23c83d4b5ece97bef05b4fb8c38d21144de56885e6a16b3d691ee2db4f170ae",
+      "worktree": "e23c83d4b5ece97bef05b4fb8c38d21144de56885e6a16b3d691ee2db4f170ae"
+    },
+    "xlsx/references/patch-spec.md": {
+      "head": "53c42045d1ffb2275b85d8aa4056bc26b31e763510e66c548072dbf77456f482",
+      "worktree": "53c42045d1ffb2275b85d8aa4056bc26b31e763510e66c548072dbf77456f482"
+    },
+    "xlsx/references/upstream-sources.md": {
+      "head": "05fbf396c731a08d38229f3e75ff85b10dfe7766afe455e24c3091247c805f7e",
+      "worktree": "05fbf396c731a08d38229f3e75ff85b10dfe7766afe455e24c3091247c805f7e"
+    },
+    "xlsx/scripts/libreoffice_headless.py": {
+      "head": "d6acb9bf75906141de25d081ed847be3bf399ebff61c85b4b529a531d93035af",
+      "worktree": "d6acb9bf75906141de25d081ed847be3bf399ebff61c85b4b529a531d93035af"
+    },
+    "xlsx/scripts/merge_formula_caches.py": {
+      "head": "23c98fd17496dd267d61060c9e1ab411b8ddce170aabae4f39fb64065cb40bd9",
+      "worktree": "23c98fd17496dd267d61060c9e1ab411b8ddce170aabae4f39fb64065cb40bd9"
+    },
+    "xlsx/scripts/office_native_gate.py": {
+      "head": "0c88152ebc363035c3ade2c302f9060dae4169cf9d5b2c58cae4a6d2e21c531a",
+      "worktree": "9c92fc3778584f5bfe6e909cbcdb26a699cbea19a8ee35e88aa53f3a4c9ffb3d"
+    },
+    "xlsx/scripts/officecli_bridge.py": {
+      "head": "8e8834a0246663e79c5d810c9e7434a0aab1606a7924af8a76434a6c3cc6c7a3",
+      "worktree": "7fa9359aa5db43d52d40b0561f67976f72d0824b88aa277a807d7671c0d090bb"
+    },
+    "xlsx/scripts/ooxml_common.py": {
+      "head": "6ea33285f63454fbf0a0b81e23a53d21c7294d0fb663a5c7280a9d590bd0022b",
+      "worktree": "6ea33285f63454fbf0a0b81e23a53d21c7294d0fb663a5c7280a9d590bd0022b"
+    },
+    "xlsx/scripts/patch_ooxml.py": {
+      "head": "3706c0fa4e4c857d62f1c097cbdda059277ecbba59dfc5bb7651192f0892d63e",
+      "worktree": "3706c0fa4e4c857d62f1c097cbdda059277ecbba59dfc5bb7651192f0892d63e"
+    },
+    "xlsx/scripts/publish_output.py": {
+      "head": "62f29187b8291b9bd341aaa98994036467f53cc67100f4fa2801e0afbbeaf506",
+      "worktree": "62f29187b8291b9bd341aaa98994036467f53cc67100f4fa2801e0afbbeaf506"
+    },
+    "xlsx/scripts/repair_officecli.py": {
+      "head": "95c1dca83783e5deb13620e56886113fda4a234404f933e893c791c852bf33e5",
+      "worktree": "09ac139aa746979d211a72e93d6e7bfa2632702b101cd3d6fd79ef2e3d5a6203"
+    },
+    "xlsx/scripts/verify_pdf.py": {
+      "head": "44897ea6cc6d421f4473d7848a34effdb036d25ec7631eda7e588ae74ab9e909",
+      "worktree": "44897ea6cc6d421f4473d7848a34effdb036d25ec7631eda7e588ae74ab9e909"
+    },
+    "xlsx/scripts/verify_xlsx.py": {
+      "head": "f5cab30324c10a66f4370e332625957de49abbc26c8f0c78cb0acdced5c5fbe6",
+      "worktree": "f5cab30324c10a66f4370e332625957de49abbc26c8f0c78cb0acdced5c5fbe6"
+    },
+    "xlsx/tests/test_tools.py": {
+      "head": "905f61b9baf01ad18180e94f4ed479101e2bbde16dadfcf2656575dc6881f00f",
+      "worktree": "905f61b9baf01ad18180e94f4ed479101e2bbde16dadfcf2656575dc6881f00f"
+    }
+  },
+  "dirty": {
+    ".gitignore": "4245844940473204c4aeac40812f3027a91a07955dd840a4dfa1e2dd54c6a641",
+    "README.md": "45214a31ede9daa66da0c029f91ff6162d7e824c01558c72940e7e0f1a654355",
+    "ieee-manuscript-edit/SKILL.md": "7fbc4265041dbed5913ac6c3c1f193c409d33dbd7a4e75e83e739bdcdd4f6c5a",
+    "meeting-notes/SKILL.md": "b652add3b5e3beaf40b51f1ec9a45f94cdb194b260f165d108556165f74bab12",
+    "project-writing/SKILL.md": "5983e9a230ad283ce6376a835745bf82ecc838f8651e9bb7d2aa8369b5fa1fdf",
+    "research-report/SKILL.md": "379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586",
+    "research-report/references/decision-report.md": "0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2",
+    "research-report/references/modes.md": "15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34",
+    "research-report/references/report-contract.md": "d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc",
+    "research-report/scripts/audit_report.py": "0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde",
+    "research-report/tests/test_audit_report.py": "97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd",
+    "skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": null,
+    "skill-check-workspace/verification-runtime/weekly/2026-04-26.md": null,
+    "skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": null,
+    "skill-check-workspace/verification-source/weekly/2026-04-26.md": null,
+    "style-vocab/SKILL.md": "3788818a3d9b425813c5110964a7c37981339e36d5c25bf6f66524241475da32",
+    "technical-writing/SKILL.md": "0447b8630a6bcd9757b28ef0800f72c4a0d9f1b32553bb8cdb10509132c3b998"
+  }
+}

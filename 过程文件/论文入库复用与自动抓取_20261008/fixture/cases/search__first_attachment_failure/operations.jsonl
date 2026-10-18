@@ -1,0 +1,1 @@
+{"time":"2026-10-08T13:44:00.414Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__first_attachment_failure","action":"fixture.seed","facts":"资料库无目标父条目；下一次 importFromFile 抛出一次模拟异常，随后导入可执行。","initialAutomatic":true,"simulated":true}

@@ -1,0 +1,53 @@
+{
+  "runs": [
+    {
+      "case": "remote-authoring",
+      "version": "with_skill",
+      "agent_id": "01a07770-280b-76d3-89d1-14df99f4b691",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/iteration-1/eval-1-remote-authoring/with_skill",
+      "rollout": "C:/Users/SanAn/.codex/sessions/2026/09/06/rollout-2026-09-06T23-57-14-01a07770-280b-76d3-89d1-14df99f4b691.jsonl"
+    },
+    {
+      "case": "remote-authoring",
+      "version": "old_skill",
+      "agent_id": "01a07770-2918-7070-b07d-7b77b41576ad",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/iteration-1/eval-1-remote-authoring/old_skill",
+      "rollout": "C:/Users/SanAn/.codex/sessions/2026/09/06/rollout-2026-09-06T23-57-14-01a07770-2918-7070-b07d-7b77b41576ad.jsonl"
+    },
+    {
+      "case": "direct-entry-and-exceptions",
+      "version": "with_skill",
+      "agent_id": "01a07770-2b06-7091-874e-c11a7782fb34",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/iteration-1/eval-2-direct-entry-and-exceptions/with_skill",
+      "rollout": "C:/Users/SanAn/.codex/sessions/2026/09/06/rollout-2026-09-06T23-57-15-01a07770-2b06-7091-874e-c11a7782fb34.jsonl"
+    },
+    {
+      "case": "direct-entry-and-exceptions",
+      "version": "old_skill",
+      "agent_id": "01a07770-2c68-7fc0-bcce-e3254a0e3807",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/iteration-1/eval-2-direct-entry-and-exceptions/old_skill",
+      "rollout": "C:/Users/SanAn/.codex/sessions/2026/09/06/rollout-2026-09-06T23-57-15-01a07770-2c68-7fc0-bcce-e3254a0e3807.jsonl"
+    },
+    {
+      "case": "entry-project-writing",
+      "version": "with_skill",
+      "agent_id": "01a07782-0f53-7233-bdd0-f9a3fd372469",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/entry-smokes/project-writing",
+      "rollout": "C:\\Users\\SanAn\\.codex\\sessions\\2026\\09\\07\\rollout-2026-09-07T00-16-47-01a07782-0f53-7233-bdd0-f9a3fd372469.jsonl"
+    },
+    {
+      "case": "entry-research-report",
+      "version": "with_skill",
+      "agent_id": "01a07782-10a7-7a62-85a6-32568e06d091",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/entry-smokes/research-report",
+      "rollout": "C:\\Users\\SanAn\\.codex\\sessions\\2026\\09\\07\\rollout-2026-09-07T00-16-48-01a07782-10a7-7a62-85a6-32568e06d091.jsonl"
+    },
+    {
+      "case": "entry-ieee-manuscript-edit",
+      "version": "with_skill",
+      "agent_id": "01a07782-132e-7852-8d1d-e52f08618309",
+      "run_root": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/collaboration-20260906/entry-smokes/ieee-manuscript-edit",
+      "rollout": "C:\\Users\\SanAn\\.codex\\sessions\\2026\\09\\07\\rollout-2026-09-07T00-16-48-01a07782-132e-7852-8d1d-e52f08618309.jsonl"
+    }
+  ]
+}

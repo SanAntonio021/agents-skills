@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "exit_code": 1,
+    "tail": "11 failed, 35 passed, 1 skipped, 121 subtests passed in 0.37s"
+  },
+  "candidate": {
+    "exit_code": 1,
+    "tail": "11 failed, 35 passed, 1 skipped, 121 subtests passed in 0.30s"
+  }
+}

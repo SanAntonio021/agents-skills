@@ -1,0 +1,27 @@
+MATLAB_VERSION 23.2.0.2485118 (R2023b) Update 6
+  包含以下字段的 1x113 struct 数组:
+
+    Name
+    Version
+    Release
+    Date
+
+PREFDIR D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\runs\plot_export_1\preferences
+SCREEN_SIZE            1           1        1920        1080
+
+MONITORS            1           1        1920        1080
+          11        1092        1920        1080
+        1931        1089        1920        1080
+        1921           9        1920        1080
+
+[PASS] plot_export_geometry (43.36s) automatic/manual paper geometry, oversized hidden figures, legacy FIG archives, exact TX/RX/RDIV dimensions and pixel-identical immutable replots passed with zero instrument I/O
+[PASS] traditional_tx_rx_process_dashboards_and_bundle (34.33s) RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states
+                          Name                           Status    Seconds                                                                                           Note                                                                                        
+    _________________________________________________    ______    _______    ___________________________________________________________________________________________________________________________________________________________________________________
+
+    "plot_export_geometry"                               "PASS"    43.359     "automatic/manual paper geometry, oversized hidden figures, legacy FIG archives, exact TX/RX/RDIV dimensions and pixel-identical immutable replots passed with zero instrument I/O"
+    "traditional_tx_rx_process_dashboards_and_bundle"    "PASS"    34.327     "RX eleven-panel dashboard covers capture-only, blocked, decoded, sync-failed, and capture-failed states"                                                                          
+
+Validation report: D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\checks\20260911_144954_validation_plot_export
+TEMPLATE_VALIDATION_PASS plot_export
+ACCEPTANCE_COMPLETE plot_export

@@ -1,0 +1,33 @@
+按**技术方案**起草，主稿预定为本目录 `draft.md`。先讨论结构，再分批确认正文；本轮只在对话中讨论，不创建或修改文件。
+
+建议采用以下结构：
+- **测试目标**：明确比较对象，以及室温、加热后两种状态。
+- **现有条件**：一只传感器和记录电脑，采样间隔为 1 秒。
+- **测试方法**：说明两种状态如何测量、记录；测试时长保留为“待定”。
+- **数据比较**：明确选取哪些温度记录进行比较，不预写测试结果。
+
+先确认一个关键问题：**具体要测量什么对象的温度？**
+
+本次未联网、未操作设备，未读取技能源码工作树、旧评测材料、私有样稿或词表。
+
+```json
+{
+  "TRACE_WRITING_CONTEXT": {
+    "document_type": "technical",
+    "mode": "technical_scheme",
+    "edit_scope": "draft",
+    "language": "zh",
+    "loaded_refs": [
+      "D:\\BaiduSyncdisk\\.agents\\AGENTS.md",
+      "D:\\BaiduSyncdisk\\.agents\\shared-rules.md",
+      "C:\\Users\\SanAn\\.agent-rules\\local.md",
+      "D:\\BaiduSyncdisk\\.agents\\global-rules\\shared-rules.md",
+      "C:\\Users\\SanAn\\.cc-switch\\skills\\writing-router\\SKILL.md",
+      "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\SKILL.md",
+      "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\collaborative-writing.md",
+      "C:\\Users\\SanAn\\.codex\\skills\\technical-writing\\SKILL.md",
+      "C:\\Users\\SanAn\\.codex\\skills\\writing-router\\references\\common-quality.md"
+    ]
+  }
+}
+```

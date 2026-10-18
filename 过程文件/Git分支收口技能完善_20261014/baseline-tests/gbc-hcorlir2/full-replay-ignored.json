@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "worktrees": {
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-hcorlir2\\repo": {
+      "preserve": [
+        "preserve-cache"
+      ],
+      "reproducible": [
+        "build-cache"
+      ]
+    },
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\Git分支收口技能完善_20261014\\baseline-tests\\gbc-hcorlir2\\feature-worktree": {
+      "preserve": [
+        "preserve-cache"
+      ],
+      "reproducible": [
+        "build-cache"
+      ]
+    }
+  }
+}

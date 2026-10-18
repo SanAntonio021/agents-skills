@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "reasons": [],
+  "session": "01a08027-8def-7573-b285-a5af28d508a5",
+  "previous_session": "01a08027-8def-7573-b285-a5af28d508a5",
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 66234,
+        "cached_input_tokens": 22016,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 886,
+        "reasoning_output_tokens": 487
+      }
+    }
+  ],
+  "models": [
+    "gpt-5.6-sol"
+  ],
+  "exit_code": 0,
+  "timed_out": false,
+  "quality_accepted": false,
+  "style_acceptance": "not_reviewed",
+  "duration_seconds": 14.019
+}

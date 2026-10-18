@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "name": "download__manual_setting_change",
+  "executor": "download",
+  "facts": "资料库无目标父条目；saveTx 在提交前延迟 1400 ms。用户设置注入接口可独立调用。",
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": false
+  },
+  "libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "items": [
+    {
+      "id": 100,
+      "key": "FX000100",
+      "libraryID": 1,
+      "itemType": "journalArticle",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001"
+      },
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "collections": [
+        20
+      ],
+      "parentID": null,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:52:32.020Z",
+      "dateModified": "2026-10-08T13:52:32.020Z"
+    }
+  ],
+  "nextItemID": 101,
+  "controls": {
+    "saveDelayMs": 1400,
+    "failNextImport": false
+  },
+  "restartCount": 0
+}

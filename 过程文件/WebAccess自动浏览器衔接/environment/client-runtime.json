@@ -1,0 +1,10 @@
+{
+  "tempRoot": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-behavior-0JMyqH",
+  "unavailableRoot": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-unavailable-PpNzdO",
+  "localAppData": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-behavior-0JMyqH\\LocalAppData",
+  "proxyUrl": "http://127.0.0.1:13546",
+  "proxyPort": 13546,
+  "chromePort": 13547,
+  "fixtureBase": "http://127.0.0.1:5688",
+  "skillRoot": "D:/BaiduSyncdisk/.agents/skills/web-access"
+}

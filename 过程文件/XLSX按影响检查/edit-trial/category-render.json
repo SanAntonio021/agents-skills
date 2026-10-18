@@ -1,0 +1,40 @@
+{
+  "command": [
+    "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+    "--headless",
+    "--nologo",
+    "--nodefault",
+    "--nofirststartwizard",
+    "-env:UserInstallation=file:///D:/BaiduSyncdisk/.agents/skills/%E8%BF%87%E7%A8%8B%E6%96%87%E4%BB%B6/XLSX%E6%8C%89%E5%BD%B1%E5%93%8D%E6%A3%80%E6%9F%A5/edit-trial/temp/sanan-lo-0b0a44df-6091-45bf-9ce3-b28874963245/profile",
+    "--convert-to",
+    "pdf:calc_pdf_Export",
+    "--outdir",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\sanan-lo-0b0a44df-6091-45bf-9ce3-b28874963245\\output",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\sanan-lo-0b0a44df-6091-45bf-9ce3-b28874963245\\input\\category-candidate-v02.xlsx"
+  ],
+  "diagnostics": null,
+  "error": null,
+  "exit_code": 0,
+  "libreoffice": "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+  "message": null,
+  "mode": "pdf",
+  "ok": true,
+  "operation": "pdf",
+  "output": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\category-preview.pdf",
+  "output_sha256": "8ba646ac993f85ffc7963cbc1043debcbffdebb9f9358e9cba50937bc47a2b70",
+  "owned_pids": [
+    16616,
+    74080
+  ],
+  "queue_seconds": 0.05408910001278855,
+  "root_pid": 74080,
+  "run_seconds": 9.2724753000075,
+  "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\category-candidate-v02.xlsx",
+  "source_sha256": "7c3efaae3121cb5bcdee761a323b9eca23eedf1d44b319dadf2f4a1e1ed7d258",
+  "stderr": "Could not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-12e954.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-92db6a.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-21aad7.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-a0af41.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-0fb832.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-0a531b.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-53f46d.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-c49d40.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-73a768.d\r\n",
+  "stdout": "convert D:\\BaiduSyncdisk\\.agents\\skills\\�����ļ�\\XLSX��Ӱ����\\edit-trial\\temp\\sanan-lo-0b0a44df-6091-45bf-9ce3-b28874963245\\input\\category-candidate-v02.xlsx as a Calc document -> D:\\BaiduSyncdisk\\.agents\\skills\\�����ļ�\\XLSX��Ӱ����\\edit-trial\\temp\\sanan-lo-0b0a44df-6091-45bf-9ce3-b28874963245\\output\\category-candidate-v02.pdf using filter : calc_pdf_Export\r\n",
+  "validation": {
+    "format": "pdf",
+    "pages": 1
+  }
+}

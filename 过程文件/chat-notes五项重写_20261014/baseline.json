@@ -1,0 +1,12 @@
+{
+  "commit": "48f9de98ec8dfb7e1f158f44e18e64fb152fd930",
+  "eval_count": 58,
+  "files": {
+    "SKILL.md": "c64a3c20f7f1a7e2573da8311afddc4b475f4e2c733ffd65c6abc59df4505758",
+    "agents\\openai.yaml": "dee007241b34afef3f8bf8d9aa4071c7c9f0408fac5b5b33947c11591423443b",
+    "evals\\evals.json": "529703b1a099f9bda22c791ed0209ad2dfae42cabaa942f5f18ffccdfc5cfd7f",
+    "references\\external-sources.md": "cf864ab4f725b46360a3196a3b7debe81899a9be4b994300bc400ea94d251222",
+    "references\\skill-edit-followup.md": "28e94c3edd7a74b7f0439ca5dbdd4399f9805ab02047326ec58c026e5cd1dcb5",
+    "references\\upstream-sources.md": "145f4dd906063d29aa7f419ffcb8e31e900a78ce93f81a0907107231e26fbc93"
+  }
+}

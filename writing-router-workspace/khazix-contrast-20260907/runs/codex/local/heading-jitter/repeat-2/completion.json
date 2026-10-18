@@ -1,0 +1,38 @@
+{
+  "host": "codex",
+  "arm": "local",
+  "case": "heading-jitter",
+  "repeat": 2,
+  "requested_model": "gpt-5.6-sol",
+  "route": {
+    "route": "existing_cli"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-hnap2bt9",
+  "prompt_sha256": "7665f7917368ca26e9f140dd2adfcdb2b0945170015c4c9c2d14fdef81d70b13",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "local/writing-router/SKILL.md",
+    "local/writing-router/references/collaborative-writing.md",
+    "local/writing-router/references/common-quality.md",
+    "local/writing-router/references/ai-smell-catalog.md",
+    "local/style-vocab/SKILL.md",
+    "local/ieee-manuscript-edit/SKILL.md",
+    "local/ieee-manuscript-edit/references/chinese-paper.md",
+    "local/writing-router/references/exact-edit.md"
+  ],
+  "upstream_scope": "applicable",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "gpt-5.6-sol"
+  ],
+  "session": "01a07c43-f95d-75a1-89da-412e008d8dc7",
+  "duration_seconds": 20.1,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

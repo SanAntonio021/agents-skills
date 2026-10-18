@@ -1,0 +1,7 @@
+[
+  {
+    "command": "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$gate = '\"'D:\\\\BaiduSyncdisk\\\\.agents\\\\skills\\\\writing-router-workspace\\\\upstream-contrast-20260907\\\\waza-original\\\\write\\\\scripts\\\\check-punctuation.sh'\n@'\n🥷在 5 天到货要求不变的情况下，已核对的 3 份报价中仅丙型满足交期，但样机尚未验收，最终采购结论仍需以验收结果为准。\n'@ | bash \"'$gate --lang zh'",
+    "exit_code": 0,
+    "output": "punctuation: ok\r\n"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/technical-writing/SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/writing-router/references/common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/writing-router/references/collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab"
+    }
+  }
+]

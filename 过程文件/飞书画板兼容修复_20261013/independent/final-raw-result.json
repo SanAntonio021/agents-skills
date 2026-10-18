@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "output_path": "./final-raw.json"
+  },
+  "_notice": {
+    "skills": {
+      "command": "lark-cli update",
+      "current": "1.0.94",
+      "message": "lark-cli skills 1.0.94 out of sync with binary 1.0.97, run: lark-cli update",
+      "target": "1.0.97"
+    }
+  }
+}

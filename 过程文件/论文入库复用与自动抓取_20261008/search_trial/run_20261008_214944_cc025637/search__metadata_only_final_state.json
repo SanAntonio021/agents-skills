@@ -1,0 +1,1228 @@
+{
+  "native_readback": {
+    "taskID": "5988a9d5-38e7-491a-ab10-0effaa3b2f3f",
+    "status": "completed",
+    "mode": "async",
+    "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+    "startedAt": "2026-10-08T13:52:31.578Z",
+    "finishedAt": "2026-10-08T13:52:31.581Z",
+    "result": {
+      "parent": {
+        "id": 100,
+        "key": "FX000100",
+        "libraryID": 1,
+        "itemType": "journalArticle",
+        "fields": {
+          "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+          "DOI": "10.0000/zotero-fixture.target-001",
+          "date": "2026",
+          "publicationTitle": "Fixture Journal (Simulated)",
+          "volume": "1",
+          "issue": "1",
+          "pages": "1-2",
+          "url": "https://example.invalid/zotero-fixture/target-001"
+        },
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "collections": [
+          20
+        ],
+        "parentID": null,
+        "deleted": false,
+        "dateAdded": "2026-10-08T13:52:31.561Z",
+        "dateModified": "2026-10-08T13:52:31.561Z"
+      },
+      "collections": [
+        20
+      ],
+      "attachments": [],
+      "job": {
+        "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+        "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+        "status": "completed",
+        "startedAt": 1791467551548,
+        "savedKeys": [
+          {
+            "libraryID": 1,
+            "key": "FX000100"
+          }
+        ],
+        "preferenceRecovery": [
+          {
+            "key": "zoteroscihub.automatic_pdf_download",
+            "recovery": "restored"
+          }
+        ],
+        "error": null,
+        "output": {
+          "parentAction": "created",
+          "attachmentAction": "not_requested",
+          "parent": {
+            "id": 100,
+            "key": "FX000100",
+            "libraryID": 1,
+            "itemType": "journalArticle",
+            "fields": {
+              "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+              "DOI": "10.0000/zotero-fixture.target-001",
+              "date": "2026",
+              "publicationTitle": "Fixture Journal (Simulated)",
+              "volume": "1",
+              "issue": "1",
+              "pages": "1-2",
+              "url": "https://example.invalid/zotero-fixture/target-001"
+            },
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "collections": [
+              20
+            ],
+            "parentID": null,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:52:31.561Z",
+            "dateModified": "2026-10-08T13:52:31.561Z"
+          },
+          "attachment": null,
+          "attachmentPath": null,
+          "originalCollections": [
+            20
+          ],
+          "collections": [
+            20
+          ],
+          "handoff": "paper-search metadata-only import; no PDF request"
+        },
+        "finishedAt": 1791467551572
+      },
+      "active": null,
+      "automatic": true
+    }
+  },
+  "settings": {
+    "zoteroscihub.automatic_pdf_download": true
+  },
+  "items": [
+    {
+      "id": 100,
+      "key": "FX000100",
+      "libraryID": 1,
+      "itemType": "journalArticle",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001"
+      },
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "collections": [
+        20
+      ],
+      "parentID": null,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:52:31.561Z",
+      "dateModified": "2026-10-08T13:52:31.561Z"
+    }
+  ],
+  "collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "logs": [
+    {
+      "time": "2026-10-08T13:44:00.424Z",
+      "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+      "case": "search__metadata_only",
+      "action": "fixture.seed",
+      "facts": "本地索引提供模拟论文题录和 DOI。资料库没有目标条目；自动设置为 true。",
+      "initialAutomatic": true,
+      "simulated": true
+    },
+    {
+      "time": "2026-10-08T13:49:44.889Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.893Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/process",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.920Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/libraries",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.923Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/collections",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.925Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.927Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/items",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.927Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.read.items",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:49:44.930Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/items",
+      "query": {
+        "doi": "10.0000/zotero-fixture.target-001"
+      }
+    },
+    {
+      "time": "2026-10-08T13:49:44.931Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.read.items",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:49:44.950Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/items",
+      "query": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+      }
+    },
+    {
+      "time": "2026-10-08T13:49:44.950Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.read.items",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "topLevel": false
+      },
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:49:44.954Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/search",
+      "query": {
+        "q": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+      }
+    },
+    {
+      "time": "2026-10-08T13:49:44.954Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.read.publicationIndex",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "query": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+      "DOIResults": [
+        "10.0000/zotero-fixture.target-001"
+      ]
+    },
+    {
+      "time": "2026-10-08T13:49:44.958Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "POST",
+      "path": "/cases/search__metadata_only/js",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:44.959Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.start",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "6067d514-a1c6-4c78-84cd-d2752623c42d",
+      "mode": "async",
+      "code": "return {scihub: Zotero.Scihub, userLibraryID: Zotero.Libraries.userLibraryID, libraries: Zotero.Libraries.getAll(), prefs: {get: typeof Zotero.Prefs.get, set: typeof Zotero.Prefs.set, registerObserver: typeof Zotero.Prefs.registerObserver, unregisterObserver: typeof Zotero.Prefs.unregisterObserver}, currentAutomatic: Zotero.Prefs.get('zoteroscihub.automatic_pdf_download')};"
+    },
+    {
+      "time": "2026-10-08T13:49:44.960Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.libraries.getAll",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483"
+    },
+    {
+      "time": "2026-10-08T13:49:44.960Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:49:44.961Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.complete",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "6067d514-a1c6-4c78-84cd-d2752623c42d",
+      "result": {
+        "scihub": {
+          "installed": true
+        },
+        "userLibraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "prefs": {
+          "get": "function",
+          "set": "function",
+          "registerObserver": "function",
+          "unregisterObserver": "function"
+        },
+        "currentAutomatic": true
+      }
+    },
+    {
+      "time": "2026-10-08T13:52:31.540Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/process",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.542Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.546Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "POST",
+      "path": "/cases/search__metadata_only/js",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.547Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.start",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "848e4069-0aee-4633-9887-5ab8042faf4d",
+      "mode": "async",
+      "code": "async function runPaperImport(operationId, processIdentity, automaticPrefKeys, work) {\n  if (!operationId || !processIdentity || !Array.isArray(automaticPrefKeys)\n      || typeof work !== \"function\") throw new Error(\"invalid_import_context\");\n  const store = Zotero.__paperDownloadBatches ||= {\n    processIdentity, active: null, jobs: Object.create(null)\n  };\n  if (store.processIdentity !== processIdentity) throw new Error(\"process_identity_mismatch\");\n  const copy = value => JSON.parse(JSON.stringify(value));\n  if (store.jobs[operationId]) return copy(store.jobs[operationId]);\n  if (store.active) throw new Error(\"another_import_is_running\");\n  const job = store.jobs[operationId] = {\n    operationId, processIdentity, status: \"running\", startedAt: Date.now(),\n    savedKeys: [], preferenceRecovery: [], error: null, output: null\n  };\n  store.active = operationId;\n  const prefs = [];\n  let terminal = \"failed\", stopReason = null;\n  const stop = reason => { stopReason = reason; throw new Error(reason); };\n  const beforeWrite = () => {\n    for (const pref of prefs) {\n      if (pref.externalChange || Zotero.Prefs.get(pref.key) !== false)\n        stop(\"automatic_preference_changed\");\n    }\n  };\n  try {\n    for (const key of new Set(automaticPrefKeys)) {\n      const original = Zotero.Prefs.get(key);\n      if (typeof original !== \"boolean\") stop(\"automatic_preference_unknown\");\n      const pref = { key, original, ownChange: false, externalChange: false,\n        changed: false, observer: null };\n      pref.observer = Zotero.Prefs.registerObserver(key, () => {\n        if (!pref.ownChange) pref.externalChange = true;\n      });\n      prefs.push(pref);\n      if (Zotero.Prefs.get(key) !== original) stop(\"automatic_preference_changed\");\n      if (original) {\n        pref.changed = true;\n        pref.ownChange = true;\n        try { Zotero.Prefs.set(key, false); }\n        finally { pref.ownChange = false; }\n        if (Zotero.Prefs.get(key) !== false) stop(\"automatic_pause_not_confirmed\");\n      }\n    }\n    beforeWrite();\n    job.output = await work({ beforeWrite, rememberItem: item => {\n      if (item.key) job.savedKeys.push({ libraryID: item.libraryID, key: item.key });\n    }});\n    terminal = \"completed\";\n  } catch (error) {\n    job.error = stopReason || \"native_write_failed\";\n    job.errorDetail = String(error);\n  } finally {\n    for (const pref of prefs.reverse()) {\n      let recovery = \"not_needed\";\n      try {\n        if (pref.changed) {\n          if (pref.externalChange) recovery = \"preserved_user_change\";\n          else if (Zotero.Prefs.get(pref.key) !== false) recovery = \"pending\";\n          else {\n            pref.ownChange = true;\n            try { Zotero.Prefs.set(pref.key, pref.original); }\n            finally { pref.ownChange = false; }\n            recovery = Zotero.Prefs.get(pref.key) === pref.original ? \"restored\" : \"pending\";\n          }\n        }\n      } catch (error) { recovery = \"pending\"; }\n      finally {\n        try { Zotero.Prefs.unregisterObserver(pref.observer); }\n        catch (error) { recovery = \"pending\"; }\n      }\n      job.preferenceRecovery.push({ key: pref.key, recovery });\n    }\n    job.status = terminal;\n    job.finishedAt = Date.now();\n    if (store.active === operationId) store.active = null;\n  }\n  return copy(job);\n}\n\nconst request = {\"operationId\": \"0ce0343c-8655-47f1-8f17-3217819171d3\", \"processIdentity\": \"{\\\"contextID\\\": \\\"13cc0425-4cea-43a9-9e08-9e4f08a9e483\\\", \\\"pid\\\": 52084, \\\"processInstance\\\": \\\"3a0013b9-449c-49ec-a731-1f344900e4f9\\\", \\\"startedAt\\\": \\\"2026-10-08T13:47:18.596Z\\\"}\", \"automaticSettingKey\": \"zoteroscihub.automatic_pdf_download\", \"libraryID\": 1, \"collectionID\": 20, \"collectionKey\": \"FXCOL020\", \"metadata\": {\"itemType\": \"journalArticle\", \"DOI\": \"10.0000/zotero-fixture.target-001\", \"title\": \"Zotero Fixture Study: Spectral Windows in a Simulated Link\", \"fields\": {\"title\": \"Zotero Fixture Study: Spectral Windows in a Simulated Link\", \"DOI\": \"10.0000/zotero-fixture.target-001\", \"date\": \"2026\", \"publicationTitle\": \"Fixture Journal (Simulated)\", \"volume\": \"1\", \"issue\": \"1\", \"pages\": \"1-2\", \"url\": \"https://example.invalid/zotero-fixture/target-001\"}, \"creators\": [{\"creatorType\": \"author\", \"firstName\": \"Mira\", \"lastName\": \"Fixture\"}]}, \"withPDF\": false, \"localPDF\": null};\nreturn await runPaperImport(request.operationId, request.processIdentity,\n  [request.automaticSettingKey], async ({beforeWrite, rememberItem}) => {\n    const libraryID = Zotero.Libraries.userLibraryID;\n    if (libraryID !== request.libraryID) throw new Error(\"library_identity_changed\");\n    const collection = await Zotero.Collections.getAsync(request.collectionID);\n    if (!collection || collection.key !== request.collectionKey || collection.libraryID !== libraryID)\n      throw new Error(\"collection_identity_changed\");\n    async function candidates() {\n      const doiSearch = new Zotero.Search();\n      doiSearch.libraryID = libraryID;\n      doiSearch.addCondition(\"DOI\", \"is\", request.metadata.DOI);\n      const titleSearch = new Zotero.Search();\n      titleSearch.libraryID = libraryID;\n      titleSearch.addCondition(\"title\", \"is\", request.metadata.title);\n      const ids = [...new Set([...(await doiSearch.search()), ...(await titleSearch.search())])];\n      const all = await Zotero.Items.getAsync(ids);\n      const regular = all.filter(item => item.isRegularItem());\n      const matches = regular.filter(item => item.getField(\"DOI\") === request.metadata.DOI && item.getField(\"title\") === request.metadata.title);\n      if (regular.length !== matches.length) throw new Error(\"identity_conflict\");\n      if (matches.length > 1) throw new Error(\"duplicate_parent_conflict\");\n      return matches;\n    }\n    let found = await candidates();\n    let parent = found[0];\n    let parentAction = \"reused\";\n    if (!parent) {\n      beforeWrite();\n      found = await candidates();\n      parent = found[0];\n      if (!parent) {\n        parent = new Zotero.Item(request.metadata.itemType);\n        parent.libraryID = libraryID;\n        for (const [field, value] of Object.entries(request.metadata.fields)) parent.setField(field, value);\n        parent.setCreators(request.metadata.creators);\n        parent.addToCollection(request.collectionID);\n        beforeWrite();\n        await parent.saveTx();\n        rememberItem(parent);\n        parentAction = \"created\";\n      }\n    }\n    const originalCollections = parent.getCollections();\n    if (!originalCollections.includes(request.collectionID)) {\n      beforeWrite();\n      parent.addToCollection(request.collectionID);\n      await parent.saveTx();\n      rememberItem(parent);\n    }\n    parent = await Zotero.Items.getByLibraryAndKeyAsync(libraryID, parent.key);\n    if (parent.getField(\"DOI\") !== request.metadata.DOI || parent.getField(\"title\") !== request.metadata.title)\n      throw new Error(\"parent_readback_identity_mismatch\");\n    let attachment = null;\n    let attachmentAction = \"not_requested\";\n    if (request.withPDF) {\n      const attachments = await Zotero.Items.getAsync(parent.getAttachments());\n      const pdfs = attachments.filter(item => item.attachmentContentType === \"application/pdf\");\n      if (pdfs.length > 1) throw new Error(\"multiple_existing_pdfs_need_verification\");\n      attachment = pdfs[0];\n      attachmentAction = attachment ? \"reused_pending_file_readback\" : \"imported\";\n      if (!attachment) {\n        beforeWrite();\n        const freshParent = await Zotero.Items.getByLibraryAndKeyAsync(libraryID, parent.key);\n        const freshAttachments = await Zotero.Items.getAsync(freshParent.getAttachments());\n        if (freshAttachments.some(item => item.attachmentContentType === \"application/pdf\"))\n          throw new Error(\"attachment_state_changed\");\n        attachment = await Zotero.Attachments.importFromFile({\n          file: request.localPDF, parentItemID: freshParent.id, libraryID,\n          title: \"Supplied simulated local PDF (version unresolved)\", contentType: \"application/pdf\"\n        });\n        rememberItem(attachment);\n      }\n    }\n    return {parentAction, attachmentAction, parent: parent.toJSON(),\n      attachment: attachment ? attachment.toJSON() : null,\n      attachmentPath: attachment ? await attachment.getFilePathAsync() : null,\n      originalCollections, collections: parent.getCollections(),\n      handoff: request.withPDF ? \"paper-search local-material handoff completed by paper-download local reuse\" : \"paper-search metadata-only import; no PDF request\"};\n  });\n"
+    },
+    {
+      "time": "2026-10-08T13:52:31.548Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.549Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.registerObserver",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "token": "observer-061a4aa8-e543-4fe8-bdb7-167941d4d3e3"
+    },
+    {
+      "time": "2026-10-08T13:52:31.549Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.551Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.set",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "oldValue": true,
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.552Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.observer.notify",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "token": "observer-061a4aa8-e543-4fe8-bdb7-167941d4d3e3",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false,
+      "source": "native"
+    },
+    {
+      "time": "2026-10-08T13:52:31.552Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.553Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.553Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.collections.getAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "collectionID": 20
+    },
+    {
+      "time": "2026-10-08T13:52:31.554Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.addCondition",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "field": "DOI",
+      "operator": "is",
+      "value": "10.0000/zotero-fixture.target-001"
+    },
+    {
+      "time": "2026-10-08T13:52:31.554Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.addCondition",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "field": "title",
+      "operator": "is",
+      "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+    },
+    {
+      "time": "2026-10-08T13:52:31.554Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.search",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "conditions": [
+        {
+          "field": "DOI",
+          "operator": "is",
+          "value": "10.0000/zotero-fixture.target-001"
+        }
+      ],
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.554Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.search",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "conditions": [
+        {
+          "field": "title",
+          "operator": "is",
+          "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+        }
+      ],
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.555Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.items.getAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.555Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.555Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.addCondition",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "field": "DOI",
+      "operator": "is",
+      "value": "10.0000/zotero-fixture.target-001"
+    },
+    {
+      "time": "2026-10-08T13:52:31.556Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.addCondition",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "field": "title",
+      "operator": "is",
+      "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+    },
+    {
+      "time": "2026-10-08T13:52:31.556Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.search",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "conditions": [
+        {
+          "field": "DOI",
+          "operator": "is",
+          "value": "10.0000/zotero-fixture.target-001"
+        }
+      ],
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.556Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.search.search",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "conditions": [
+        {
+          "field": "title",
+          "operator": "is",
+          "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+        }
+      ],
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.557Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.items.getAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.557Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "title",
+      "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+    },
+    {
+      "time": "2026-10-08T13:52:31.557Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "DOI",
+      "value": "10.0000/zotero-fixture.target-001"
+    },
+    {
+      "time": "2026-10-08T13:52:31.558Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "date",
+      "value": "2026"
+    },
+    {
+      "time": "2026-10-08T13:52:31.558Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "publicationTitle",
+      "value": "Fixture Journal (Simulated)"
+    },
+    {
+      "time": "2026-10-08T13:52:31.558Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "volume",
+      "value": "1"
+    },
+    {
+      "time": "2026-10-08T13:52:31.559Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "issue",
+      "value": "1"
+    },
+    {
+      "time": "2026-10-08T13:52:31.559Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "pages",
+      "value": "1-2"
+    },
+    {
+      "time": "2026-10-08T13:52:31.559Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "field": "url",
+      "value": "https://example.invalid/zotero-fixture/target-001"
+    },
+    {
+      "time": "2026-10-08T13:52:31.560Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.setCreators",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ]
+    },
+    {
+      "time": "2026-10-08T13:52:31.560Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.addToCollection",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "collectionID": 20
+    },
+    {
+      "time": "2026-10-08T13:52:31.561Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.561Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.save.start",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": null,
+      "itemType": "journalArticle",
+      "delayMs": 0,
+      "options": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.563Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.save.committed",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "isNew": true,
+      "item": {
+        "id": 100,
+        "key": "FX000100",
+        "libraryID": 1,
+        "itemType": "journalArticle",
+        "fields": {
+          "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+          "DOI": "10.0000/zotero-fixture.target-001",
+          "date": "2026",
+          "publicationTitle": "Fixture Journal (Simulated)",
+          "volume": "1",
+          "issue": "1",
+          "pages": "1-2",
+          "url": "https://example.invalid/zotero-fixture/target-001"
+        },
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "collections": [
+          20
+        ],
+        "parentID": null,
+        "deleted": false,
+        "dateAdded": "2026-10-08T13:52:31.561Z",
+        "dateModified": "2026-10-08T13:52:31.561Z"
+      }
+    },
+    {
+      "time": "2026-10-08T13:52:31.564Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getCollections",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "collections": [
+        20
+      ]
+    },
+    {
+      "time": "2026-10-08T13:52:31.564Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.items.getByLibraryAndKeyAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "key": "FX000100"
+    },
+    {
+      "time": "2026-10-08T13:52:31.565Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "field": "DOI",
+      "value": "10.0000/zotero-fixture.target-001"
+    },
+    {
+      "time": "2026-10-08T13:52:31.565Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getField",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "field": "title",
+      "value": "Zotero Fixture Study: Spectral Windows in a Simulated Link"
+    },
+    {
+      "time": "2026-10-08T13:52:31.566Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.toJSON",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100
+    },
+    {
+      "time": "2026-10-08T13:52:31.566Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getCollections",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "collections": [
+        20
+      ]
+    },
+    {
+      "time": "2026-10-08T13:52:31.567Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": false
+    },
+    {
+      "time": "2026-10-08T13:52:31.570Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.set",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "oldValue": false,
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.571Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.observer.notify",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "token": "observer-061a4aa8-e543-4fe8-bdb7-167941d4d3e3",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true,
+      "source": "native"
+    },
+    {
+      "time": "2026-10-08T13:52:31.571Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.572Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.unregisterObserver",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "token": "observer-061a4aa8-e543-4fe8-bdb7-167941d4d3e3",
+      "removed": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.572Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.complete",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "848e4069-0aee-4633-9887-5ab8042faf4d",
+      "result": {
+        "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+        "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+        "status": "completed",
+        "startedAt": 1791467551548,
+        "savedKeys": [
+          {
+            "libraryID": 1,
+            "key": "FX000100"
+          }
+        ],
+        "preferenceRecovery": [
+          {
+            "key": "zoteroscihub.automatic_pdf_download",
+            "recovery": "restored"
+          }
+        ],
+        "error": null,
+        "output": {
+          "parentAction": "created",
+          "attachmentAction": "not_requested",
+          "parent": {
+            "id": 100,
+            "key": "FX000100",
+            "libraryID": 1,
+            "itemType": "journalArticle",
+            "fields": {
+              "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+              "DOI": "10.0000/zotero-fixture.target-001",
+              "date": "2026",
+              "publicationTitle": "Fixture Journal (Simulated)",
+              "volume": "1",
+              "issue": "1",
+              "pages": "1-2",
+              "url": "https://example.invalid/zotero-fixture/target-001"
+            },
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "collections": [
+              20
+            ],
+            "parentID": null,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:52:31.561Z",
+            "dateModified": "2026-10-08T13:52:31.561Z"
+          },
+          "attachment": null,
+          "attachmentPath": null,
+          "originalCollections": [
+            20
+          ],
+          "collections": [
+            20
+          ],
+          "handoff": "paper-search metadata-only import; no PDF request"
+        },
+        "finishedAt": 1791467551572
+      }
+    },
+    {
+      "time": "2026-10-08T13:52:31.577Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "POST",
+      "path": "/cases/search__metadata_only/js",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.578Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.start",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "5988a9d5-38e7-491a-ab10-0effaa3b2f3f",
+      "mode": "async",
+      "code": "const item = await Zotero.Items.getByLibraryAndKeyAsync(1, \"FX000100\"); return {parent: item.toJSON(), collections: item.getCollections(), attachments: (await Zotero.Items.getAsync(item.getAttachments())).map(a => a.toJSON()), job: Zotero.__paperDownloadBatches?.jobs[\"0ce0343c-8655-47f1-8f17-3217819171d3\"] ?? null, active: Zotero.__paperDownloadBatches?.active ?? null, automatic: Zotero.Prefs.get(\"zoteroscihub.automatic_pdf_download\")};"
+    },
+    {
+      "time": "2026-10-08T13:52:31.579Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.items.getByLibraryAndKeyAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "libraryID": 1,
+      "key": "FX000100"
+    },
+    {
+      "time": "2026-10-08T13:52:31.579Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.toJSON",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100
+    },
+    {
+      "time": "2026-10-08T13:52:31.580Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getCollections",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "collections": [
+        20
+      ]
+    },
+    {
+      "time": "2026-10-08T13:52:31.580Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.item.getAttachments",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemID": 100,
+      "attachmentIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.581Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.items.getAsync",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:52:31.581Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "native.pref.get",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "key": "zoteroscihub.automatic_pdf_download",
+      "value": true
+    },
+    {
+      "time": "2026-10-08T13:52:31.581Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "js.task.complete",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "taskID": "5988a9d5-38e7-491a-ab10-0effaa3b2f3f",
+      "result": {
+        "parent": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:31.561Z",
+          "dateModified": "2026-10-08T13:52:31.561Z"
+        },
+        "collections": [
+          20
+        ],
+        "attachments": [],
+        "job": {
+          "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+          "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467551548,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "restored"
+            }
+          ],
+          "error": null,
+          "output": {
+            "parentAction": "created",
+            "attachmentAction": "not_requested",
+            "parent": {
+              "id": 100,
+              "key": "FX000100",
+              "libraryID": 1,
+              "itemType": "journalArticle",
+              "fields": {
+                "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+                "DOI": "10.0000/zotero-fixture.target-001",
+                "date": "2026",
+                "publicationTitle": "Fixture Journal (Simulated)",
+                "volume": "1",
+                "issue": "1",
+                "pages": "1-2",
+                "url": "https://example.invalid/zotero-fixture/target-001"
+              },
+              "creators": [
+                {
+                  "creatorType": "author",
+                  "firstName": "Mira",
+                  "lastName": "Fixture"
+                }
+              ],
+              "collections": [
+                20
+              ],
+              "parentID": null,
+              "deleted": false,
+              "dateAdded": "2026-10-08T13:52:31.561Z",
+              "dateModified": "2026-10-08T13:52:31.561Z"
+            },
+            "attachment": null,
+            "attachmentPath": null,
+            "originalCollections": [
+              20
+            ],
+            "collections": [
+              20
+            ],
+            "handoff": "paper-search metadata-only import; no PDF request"
+          },
+          "finishedAt": 1791467551572
+        },
+        "active": null,
+        "automatic": true
+      }
+    },
+    {
+      "time": "2026-10-08T13:52:31.588Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.591Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/items",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.592Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.read.items",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": [
+        100
+      ]
+    },
+    {
+      "time": "2026-10-08T13:52:31.614Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/collections",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:52:31.617Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "search__metadata_only",
+      "action": "http.request",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "method": "GET",
+      "path": "/cases/search__metadata_only/logs",
+      "query": {}
+    }
+  ]
+}

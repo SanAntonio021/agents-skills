@@ -1,0 +1,5 @@
+Reading prompt from stdin...
+2026-09-07T16:49:36.078849Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 132 column 5
+2026-09-07T16:49:38.720928Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T16:50:23.223642Z  WARN codex_analytics::client: failed to send events request: error sending request for url (https://chatgpt.com/backend-api/codex/analytics-events/events)
+2026-09-07T16:51:16.314564Z  WARN codex_core::responses_retry: stream disconnected - retrying sampling request (1/5 in 205ms)... turn_id=01a07cc6-83df-7dc2-ad6b-2d60652c1d6f retries=1 max_retries=5 sampling_error=stream disconnected before completion: IO error: peer closed connection without sending TLS close_notify: https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof

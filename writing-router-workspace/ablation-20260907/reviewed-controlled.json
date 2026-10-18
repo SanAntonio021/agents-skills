@@ -1,0 +1,1017 @@
+{
+  "phase": "controlled",
+  "rows": [
+    {
+      "key": "claude/without-skill/sensor-summary/repeat-1",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "sensor-summary",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\without-skill\\sensor-summary\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "75e2b367fdc837961ebc770e1eb5e9b287919d31de182c74d8f772370d887ad9",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "research-report/SKILL.md": "not_proven",
+          "research-report/references/modes.md": "not_proven",
+          "research-report/references/report-contract.md": "not_proven",
+          "research-report/references/research-ledger.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。",
+        "user_accepted": false
+      },
+      "duration_seconds": 18.2,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/sensor-summary/repeat-1",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "sensor-summary",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\loaded-skill\\sensor-summary\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "7a0f5793746fe7417b73c6d389a9c91dcd5f2586fa6a5d096f65ffe04e0795e8",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "research-report/SKILL.md": "inline",
+          "research-report/references/modes.md": "inline",
+          "research-report/references/report-contract.md": "inline",
+          "research-report/references/research-ledger.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "仅陈述书面参数比较；保留50 ms上限及只有G3符合的结论，不附核对与标定状态。",
+        "user_accepted": false
+      },
+      "duration_seconds": 36.9,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/without-skill/sensor-summary/repeat-2",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "sensor-summary",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\without-skill\\sensor-summary\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "7558f6dd1a42850e1b56d8a3fa46a50baeeaef8fc473ae88c0c7a32387745cea",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "research-report/SKILL.md": "not_proven",
+          "research-report/references/modes.md": "not_proven",
+          "research-report/references/report-contract.md": "not_proven",
+          "research-report/references/research-ledger.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。",
+        "user_accepted": false
+      },
+      "duration_seconds": 16.3,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/sensor-summary/repeat-2",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "sensor-summary",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\loaded-skill\\sensor-summary\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "28782f3227ffc8532a081bcd8b4ba579cbd485cc4ae319487d8280150f4894cf",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "research-report/SKILL.md": "inline",
+          "research-report/references/modes.md": "inline",
+          "research-report/references/report-contract.md": "inline",
+          "research-report/references/research-ledger.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。另将“不超过50 ms”缩成“50 ms要求”，丢失明确的不等式方向。",
+        "user_accepted": false
+      },
+      "duration_seconds": 52.0,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/without-skill/paper-heading-only/repeat-1",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "paper-heading-only",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\without-skill\\paper-heading-only\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/references/chinese-paper.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 11.7,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/paper-heading-only/repeat-1",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "paper-heading-only",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\loaded-skill\\paper-heading-only\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "84e0598ba332ffffe28e0b9307d05dd313439ce0c86725a48b8d53237bda06ee",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "ieee-manuscript-edit/SKILL.md": "inline",
+          "ieee-manuscript-edit/references/chinese-paper.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "fail",
+        "whole_response_matches": false,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "出现中文逗号改为英文逗号，违反原句逐字保留要求；不是普通标题间距差异。",
+        "user_accepted": false
+      },
+      "duration_seconds": 13.0,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/without-skill/paper-heading-only/repeat-2",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "paper-heading-only",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\without-skill\\paper-heading-only\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/references/chinese-paper.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 10.5,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/paper-heading-only/repeat-2",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "paper-heading-only",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\loaded-skill\\paper-heading-only\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "ieee-manuscript-edit/SKILL.md": "inline",
+          "ieee-manuscript-edit/references/chinese-paper.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 27.4,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/without-skill/notice-append-only/repeat-1",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "notice-append-only",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\without-skill\\notice-append-only\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "22bbc2d5db4342cf260da87fdddf2bbec078026a08f87c1ab329b7f5e78a6e13",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 11.1,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/notice-append-only/repeat-1",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "notice-append-only",
+      "repeat": 1,
+      "path": "controlled-runs\\claude\\loaded-skill\\notice-append-only\\repeat-1",
+      "model": "claude-opus-5",
+      "output_sha256": "22bbc2d5db4342cf260da87fdddf2bbec078026a08f87c1ab329b7f5e78a6e13",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 13.2,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/without-skill/notice-append-only/repeat-2",
+      "host": "claude",
+      "arm": "without-skill",
+      "case": "notice-append-only",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\without-skill\\notice-append-only\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "22bbc2d5db4342cf260da87fdddf2bbec078026a08f87c1ab329b7f5e78a6e13",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 10.0,
+      "phase": "controlled"
+    },
+    {
+      "key": "claude/loaded-skill/notice-append-only/repeat-2",
+      "host": "claude",
+      "arm": "loaded-skill",
+      "case": "notice-append-only",
+      "repeat": 2,
+      "path": "controlled-runs\\claude\\loaded-skill\\notice-append-only\\repeat-2",
+      "model": "claude-opus-5",
+      "output_sha256": "22bbc2d5db4342cf260da87fdddf2bbec078026a08f87c1ab329b7f5e78a6e13",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 13.8,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/sensor-summary/repeat-1",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "sensor-summary",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\without-skill\\sensor-summary\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "236c77782e5e44a0c8063f08c3e74542cc528e4c8ccf1d382c9f40475929e9ab",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "research-report/SKILL.md": "not_proven",
+          "research-report/references/modes.md": "not_proven",
+          "research-report/references/report-contract.md": "not_proven",
+          "research-report/references/research-ledger.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。“结论尚待现场标定验证”还将书面参数比较接成了后续验证判断。",
+        "user_accepted": false
+      },
+      "duration_seconds": 36.2,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/sensor-summary/repeat-1",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "sensor-summary",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\loaded-skill\\sensor-summary\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "44ddaf0b64fd8ae49c68b545556c4cacd88854941d827179f2128fb7b8cbabb8",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "research-report/SKILL.md": "inline",
+          "research-report/references/modes.md": "inline",
+          "research-report/references/report-contract.md": "inline",
+          "research-report/references/research-ledger.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。",
+        "user_accepted": false
+      },
+      "duration_seconds": 37.5,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/sensor-summary/repeat-2",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "sensor-summary",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\without-skill\\sensor-summary\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "12ea5bff23173fbc7d09d8013f9a2de8ce2c191caff42a1f6c4a263e8a39965b",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "research-report/SKILL.md": "not_proven",
+          "research-report/references/modes.md": "not_proven",
+          "research-report/references/report-contract.md": "not_proven",
+          "research-report/references/research-ledger.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。",
+        "user_accepted": false
+      },
+      "duration_seconds": 41.9,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/sensor-summary/repeat-2",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "sensor-summary",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\loaded-skill\\sensor-summary\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "81d95bb03a9710ab120d7299a0dcb5e78a07171d0c0df018d2cc3433cb3cc54b",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "research-report/SKILL.md": "inline",
+          "research-report/references/modes.md": "inline",
+          "research-report/references/report-contract.md": "inline",
+          "research-report/references/research-ledger.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/调研报告.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "semantic_review_required"
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "fail",
+        "note": "摘要已限定书面参数或标称刷新间隔，仍机械附上未标定状态；该状态不改变本句的书面参数比较。",
+        "user_accepted": false
+      },
+      "duration_seconds": 40.9,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/paper-heading-only/repeat-1",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "paper-heading-only",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\without-skill\\paper-heading-only\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/references/chinese-paper.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 40.2,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/paper-heading-only/repeat-1",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "paper-heading-only",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\loaded-skill\\paper-heading-only\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "ieee-manuscript-edit/SKILL.md": "inline",
+          "ieee-manuscript-edit/references/chinese-paper.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": false,
+        "successful_tool_returns": 0,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 13.2,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/paper-heading-only/repeat-2",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "paper-heading-only",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\without-skill\\paper-heading-only\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/SKILL.md": "not_proven",
+          "ieee-manuscript-edit/references/chinese-paper.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 38.7,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/paper-heading-only/repeat-2",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "paper-heading-only",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\loaded-skill\\paper-heading-only\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "be34b5f49fdcee6f4d2aa36c5ff3cf954e16b201343c130846a3200119fdb6a6",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline",
+          "ieee-manuscript-edit/SKILL.md": "inline",
+          "ieee-manuscript-edit/references/chinese-paper.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline",
+          "中文/论文.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 45.1,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/notice-append-only/repeat-1",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "notice-append-only",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\without-skill\\notice-append-only\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "cc3b6bb7df4bd19ae0807beab53200f9ac83f57e2a7464b2680fe0bebc529bfd",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 43.3,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/notice-append-only/repeat-1",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "notice-append-only",
+      "repeat": 1,
+      "path": "controlled-runs\\codex\\loaded-skill\\notice-append-only\\repeat-1",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "cc3b6bb7df4bd19ae0807beab53200f9ac83f57e2a7464b2680fe0bebc529bfd",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 49.4,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/without-skill/notice-append-only/repeat-2",
+      "host": "codex",
+      "arm": "without-skill",
+      "case": "notice-append-only",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\without-skill\\notice-append-only\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "22bbc2d5db4342cf260da87fdddf2bbec078026a08f87c1ab329b7f5e78a6e13",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "not_proven",
+          "writing-router/references/collaborative-writing.md": "not_proven",
+          "writing-router/references/common-quality.md": "not_proven",
+          "writing-router/references/ai-smell-catalog.md": "not_proven",
+          "style-vocab/SKILL.md": "not_proven"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": false,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 36.5,
+      "phase": "controlled"
+    },
+    {
+      "key": "codex/loaded-skill/notice-append-only/repeat-2",
+      "host": "codex",
+      "arm": "loaded-skill",
+      "case": "notice-append-only",
+      "repeat": 2,
+      "path": "controlled-runs\\codex\\loaded-skill\\notice-append-only\\repeat-2",
+      "model": "gpt-5.6-sol",
+      "output_sha256": "cc3b6bb7df4bd19ae0807beab53200f9ac83f57e2a7464b2680fe0bebc529bfd",
+      "loading": {
+        "references": {
+          "writing-router/SKILL.md": "inline",
+          "writing-router/references/collaborative-writing.md": "inline",
+          "writing-router/references/common-quality.md": "inline",
+          "writing-router/references/ai-smell-catalog.md": "inline",
+          "style-vocab/SKILL.md": "inline"
+        },
+        "vocabulary": {
+          "中文/通用.md": "inline"
+        },
+        "all_required_rules_supplied_or_returned": true,
+        "all_vocabulary_supplied_or_returned": true,
+        "local_or_shared_rules_read": true,
+        "successful_tool_returns": 2,
+        "note": "Full text in context does not prove instruction compliance; partial returns are not full reads."
+      },
+      "exact_check": {
+        "status": "pass",
+        "whole_response_matches": true,
+        "policy": "Only connecting and terminal line breaks may differ; body whitespace is exact."
+      },
+      "semantic_review": {
+        "reviewer": "parent_assistant",
+        "status": "pass",
+        "note": "人工通读与机械校验一致，正文、公式、时间和限制保留，未附说明。",
+        "user_accepted": false
+      },
+      "duration_seconds": 36.0,
+      "phase": "controlled"
+    }
+  ],
+  "missing": [],
+  "excluded_attempts": [],
+  "execution_complete": true,
+  "quality_accepted": false
+}

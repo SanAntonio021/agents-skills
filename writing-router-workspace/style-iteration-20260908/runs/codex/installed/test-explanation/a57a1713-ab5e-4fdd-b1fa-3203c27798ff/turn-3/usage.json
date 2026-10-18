@@ -1,0 +1,11 @@
+[
+  {
+    "usage": {
+      "input_tokens": 62516,
+      "cached_input_tokens": 40960,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 897,
+      "reasoning_output_tokens": 547
+    }
+  }
+]

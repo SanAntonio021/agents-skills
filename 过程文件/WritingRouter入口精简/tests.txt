@@ -1,0 +1,19 @@
+.FF.......................................s......F.................................                              [100%]
+================================== FAILURES ===================================
+___ test_entrypoint_resolves_and_loads_one_shared_workflow[project-writing] ___
+writing-router\tests\test_collaborative_writing.py:31: in test_entrypoint_resolves_and_loads_one_shared_workflow
+    assert "直接调用本技能时同样执行" in line
+E   AssertionError: assert '直接调用本技能时同样执行' in '仅判断指标是否可行时，直接按下方指标资料回答，不触发写稿、建账本或主稿写入。需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。'
+__ test_entrypoint_resolves_and_loads_one_shared_workflow[technical-writing] __
+writing-router\tests\test_collaborative_writing.py:31: in test_entrypoint_resolves_and_loads_one_shared_workflow
+    assert "直接调用本技能时同样执行" in line
+E   AssertionError: assert '直接调用本技能时同样执行' in '需要处理正文时，建立或沿用写作上下文，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按范围和例外选择处理方式，并将实际路径记入 `loaded_refs`；同任务已读且方式未变时沿用。'
+_ test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named __
+writing-router\tests\test_markdown_docx_contract.py:24: in test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named
+    assert fragment in text
+E   AssertionError: assert 'standing task authorization' in '# Office Security Boundary\n\n- LibreOffice headless operations run through `libreoffice-runner` with a unique `UserI...cleanup means non-pass; LibreOffice\nis not a substitute field evaluator. No relevant fields means no Office launch.\n'
+=========================== short test summary info ===========================
+FAILED writing-router/tests/test_collaborative_writing.py::test_entrypoint_resolves_and_loads_one_shared_workflow[project-writing]
+FAILED writing-router/tests/test_collaborative_writing.py::test_entrypoint_resolves_and_loads_one_shared_workflow[technical-writing]
+FAILED writing-router/tests/test_markdown_docx_contract.py::test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named
+3 failed, 79 passed, 1 skipped, 176 subtests passed in 1.66s

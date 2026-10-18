@@ -1,0 +1,9 @@
+{
+  "status": "started",
+  "expected_session": null,
+  "timeout_seconds": 300,
+  "prompt_sha256": "847c13f7bea0c4f1e0ac29254c5c551ce75be9cf3ab860041c93b7c1120b8d23",
+  "model": "claude-opus-5",
+  "effort": "max",
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\style-iteration-zyoijj98"
+}

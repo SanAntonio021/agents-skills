@@ -1,0 +1,134 @@
+[
+  {
+    "batch": "native-runs",
+    "host": "claude",
+    "case": "append",
+    "receipt_present": true,
+    "session": "64c39d4f-f422-4e4d-a1ce-48e7c45a96b9",
+    "startup_writing_router_available": false,
+    "source_unchanged": true,
+    "parent_byte_check": false,
+    "parent_read_error": null,
+    "byte_details": {
+      "bom_preserved": false,
+      "original_byte_sequence_present": false,
+      "actual_sha256": "297760abe583b45fc327c0ffa5fa11717e3ae13cc2fcbacf14d815291e95bbb7"
+    },
+    "successful_helper_command": false,
+    "apply_hash_matches_expected": false,
+    "verify_hash_matches_expected": false,
+    "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9"
+  },
+  {
+    "batch": "native-runs",
+    "host": "claude",
+    "case": "title",
+    "receipt_present": true,
+    "session": "1bb9fba6-1e1e-4048-a230-f48643812bdc",
+    "startup_writing_router_available": false,
+    "source_unchanged": true,
+    "parent_byte_check": false,
+    "parent_read_error": null,
+    "byte_details": {
+      "bom_preserved": false,
+      "original_byte_sequence_present": false,
+      "actual_sha256": "7d80f5a8494c58fcb4139bca1d1ec18814cd1133dc72e6a432c11bd8ed4da5d0"
+    },
+    "successful_helper_command": false,
+    "apply_hash_matches_expected": false,
+    "verify_hash_matches_expected": false,
+    "expected_sha256": "7e4d91eaffff368bd27a365961715e4dcb807de83427a37f8a9922b6d9f3b66a"
+  },
+  {
+    "batch": "native-runs",
+    "host": "codex",
+    "case": "append",
+    "receipt_present": true,
+    "session": "01a07cca-52b5-70a2-be85-2fafa3c9303e",
+    "startup_writing_router_available": null,
+    "source_unchanged": true,
+    "parent_byte_check": null,
+    "parent_read_error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\result.md'",
+    "byte_details": null,
+    "successful_helper_command": true,
+    "apply_hash_matches_expected": true,
+    "verify_hash_matches_expected": true,
+    "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9"
+  },
+  {
+    "batch": "native-runs",
+    "host": "codex",
+    "case": "title",
+    "receipt_present": false,
+    "session": "01a07cc6-7f9e-7bd3-b111-977b61d2587b",
+    "startup_writing_router_available": null,
+    "source_unchanged": true,
+    "parent_byte_check": null,
+    "parent_read_error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-ykduloco\\\\result.md'",
+    "byte_details": null,
+    "successful_helper_command": true,
+    "apply_hash_matches_expected": true,
+    "verify_hash_matches_expected": true,
+    "expected_sha256": "7e4d91eaffff368bd27a365961715e4dcb807de83427a37f8a9922b6d9f3b66a"
+  },
+  {
+    "batch": "native-user-source",
+    "host": "claude",
+    "case": "append",
+    "receipt_present": true,
+    "session": "8689a620-5a46-4c80-a85e-d46a109e5433",
+    "startup_writing_router_available": true,
+    "source_unchanged": true,
+    "parent_byte_check": false,
+    "parent_read_error": null,
+    "byte_details": {
+      "bom_preserved": false,
+      "original_byte_sequence_present": false,
+      "actual_sha256": "297760abe583b45fc327c0ffa5fa11717e3ae13cc2fcbacf14d815291e95bbb7"
+    },
+    "successful_helper_command": false,
+    "apply_hash_matches_expected": false,
+    "verify_hash_matches_expected": false,
+    "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9"
+  },
+  {
+    "batch": "native-user-source",
+    "host": "claude",
+    "case": "title",
+    "receipt_present": true,
+    "session": "6d85d740-4256-4a9f-937f-6498e5a361b7",
+    "startup_writing_router_available": true,
+    "source_unchanged": true,
+    "parent_byte_check": false,
+    "parent_read_error": null,
+    "byte_details": {
+      "bom_preserved": false,
+      "original_byte_sequence_present": false,
+      "actual_sha256": "8c9119b301035c4c3c2a023e747e37a61a839e3dd68c3f21083a31575b4227b6"
+    },
+    "successful_helper_command": false,
+    "apply_hash_matches_expected": false,
+    "verify_hash_matches_expected": false,
+    "expected_sha256": "7e4d91eaffff368bd27a365961715e4dcb807de83427a37f8a9922b6d9f3b66a"
+  },
+  {
+    "batch": "native-slash-control",
+    "host": "claude",
+    "case": "title",
+    "receipt_present": true,
+    "session": "06d3c277-a3aa-4b3c-a692-af588e7d1eef",
+    "startup_writing_router_available": true,
+    "source_unchanged": true,
+    "parent_byte_check": false,
+    "parent_read_error": null,
+    "byte_details": {
+      "bom_preserved": false,
+      "original_byte_sequence_present": false,
+      "actual_sha256": "8c9119b301035c4c3c2a023e747e37a61a839e3dd68c3f21083a31575b4227b6"
+    },
+    "successful_helper_command": false,
+    "apply_hash_matches_expected": false,
+    "verify_hash_matches_expected": false,
+    "expected_sha256": "7e4d91eaffff368bd27a365961715e4dcb807de83427a37f8a9922b6d9f3b66a"
+  }
+]

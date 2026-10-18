@@ -1,0 +1,507 @@
+{
+  "nodes": [
+    {
+      "id": "a3:1",
+      "kind": "text",
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50,
+      "text": "独立文本初始",
+      "font_size": 20,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c3:1",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "新连线标签\n第二行"
+      ],
+      "caption": "新连线标签\n第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 14,
+      "caption_width": -1,
+      "caption_size_mode": 0
+    },
+    {
+      "id": "c3:2",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 320,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "已有标签\n原第二行"
+      ],
+      "caption": "已有标签\n原第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o3:1",
+      "kind": "shape",
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "形状新增文字\n完成",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:2",
+      "kind": "shape",
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "保护模块",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:3",
+      "kind": "shape",
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90,
+      "text": "保持原样\n非目标观察",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "render_alpha": {
+    "o3:1": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "o3:2": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "o3:3": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "a3:1": {
+      "border": 1,
+      "text": 1
+    },
+    "c3:1": {
+      "border": 1,
+      "text": 1
+    },
+    "c3:2": {
+      "border": 1,
+      "text": 1
+    }
+  },
+  "line_endpoints": {
+    "c3:1": {
+      "start": {
+        "x": 230,
+        "y": 125
+      },
+      "end": {
+        "x": 700,
+        "y": 125
+      }
+    },
+    "c3:2": {
+      "start": {
+        "x": 230,
+        "y": 125
+      },
+      "end": {
+        "x": 700,
+        "y": 445
+      }
+    }
+  },
+  "curve_handles": {},
+  "object_bounds": {
+    "o3:1": {
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90
+    },
+    "o3:2": {
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90
+    },
+    "o3:3": {
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90
+    },
+    "a3:1": {
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50
+    },
+    "c3:1": {
+      "x": 228,
+      "y": 98.72800000000001,
+      "width": 476,
+      "height": 54.54399999999998
+    },
+    "c3:2": {
+      "x": 228,
+      "y": 123,
+      "width": 476.07034887213524,
+      "height": 328.7084315772072
+    }
+  },
+  "arrangement_bounds": {
+    "o3:1": {
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90
+    },
+    "o3:2": {
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90
+    },
+    "o3:3": {
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90
+    }
+  },
+  "world_geometry": {
+    "o3:1": {
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "angle": 0
+    },
+    "o3:2": {
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "angle": 0
+    },
+    "o3:3": {
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90,
+      "angle": 0
+    },
+    "a3:1": {
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50,
+      "angle": 0
+    },
+    "c3:1": {
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 0,
+      "angle": 0
+    },
+    "c3:2": {
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 320,
+      "angle": 0
+    }
+  },
+  "binding_geometry": [
+    {
+      "id": "c3:1",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 230,
+          "y": 125
+        },
+        "expected": {
+          "x": 230,
+          "y": 125
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 700,
+          "y": 125
+        },
+        "expected": {
+          "x": 700,
+          "y": 125
+        },
+        "valid": true
+      }
+    },
+    {
+      "id": "c3:2",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 230,
+          "y": 125
+        },
+        "expected": {
+          "x": 230,
+          "y": 125
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 700,
+          "y": 445
+        },
+        "expected": {
+          "x": 700,
+          "y": 445
+        },
+        "valid": true
+      }
+    }
+  ],
+  "label_geometry": {
+    "c3:1": {
+      "available": true,
+      "angle": 0,
+      "world_corners": [
+        {
+          "x": 419,
+          "y": 100.72800000000001
+        },
+        {
+          "x": 505,
+          "y": 100.72800000000001
+        },
+        {
+          "x": 505,
+          "y": 149.272
+        },
+        {
+          "x": 419,
+          "y": 149.272
+        }
+      ],
+      "world_rect": {
+        "x": 419,
+        "y": 100.72800000000001,
+        "width": 86,
+        "height": 48.54399999999998
+      },
+      "screen_corners": [
+        {
+          "x": 886.9780487804878,
+          "y": 321.4107609756098
+        },
+        {
+          "x": 966.4756097560976,
+          "y": 321.4107609756098
+        },
+        {
+          "x": 966.4756097560976,
+          "y": 366.28436097560973
+        },
+        {
+          "x": 886.9780487804878,
+          "y": 366.28436097560973
+        }
+      ],
+      "screen_rect": {
+        "x": 886.9780487804878,
+        "y": 321.4107609756098,
+        "width": 79.49756097560976,
+        "height": 44.87359999999995
+      }
+    },
+    "c3:2": {
+      "available": true,
+      "angle": 0,
+      "world_corners": [
+        {
+          "x": 418.5202022572323,
+          "y": 253.24762706875393
+        },
+        {
+          "x": 506.5202022572323,
+          "y": 253.24762706875393
+        },
+        {
+          "x": 506.5202022572323,
+          "y": 313.37562706875394
+        },
+        {
+          "x": 418.5202022572323,
+          "y": 313.37562706875394
+        }
+      ],
+      "world_rect": {
+        "x": 418.5202022572323,
+        "y": 253.24762706875393,
+        "width": 88,
+        "height": 60.128000000000014
+      },
+      "screen_corners": [
+        {
+          "x": 886.534528428027,
+          "y": 462.39841624160425
+        },
+        {
+          "x": 967.8808698914415,
+          "y": 462.39841624160425
+        },
+        {
+          "x": 967.8808698914415,
+          "y": 517.9801528269702
+        },
+        {
+          "x": 886.534528428027,
+          "y": 517.9801528269702
+        }
+      ],
+      "screen_rect": {
+        "x": 886.534528428027,
+        "y": 462.39841624160425,
+        "width": 81.34634146341455,
+        "height": 55.581736585365945
+      }
+    }
+  },
+  "viewport": {
+    "rect": {
+      "x": 520.5,
+      "y": 278.25,
+      "width": 818,
+      "height": 427
+    },
+    "device_pixel_ratio": 1,
+    "world_to_screen": {
+      "a": 0.924390243902451,
+      "b": 0,
+      "c": 0,
+      "d": 0.9243902439024225,
+      "e": 499.6585365853658,
+      "f": 228.2987804878049
+    }
+  },
+  "seq": 0,
+  "savedSeq": 0,
+  "signature": "54e7e6de",
+  "text_signature": "d309a450",
+  "native_save": {
+    "available": true,
+    "signature": "b8586b42",
+    "initialized": true,
+    "applied_version": 7,
+    "pending": 0,
+    "ordered_pending": 0,
+    "processing": false,
+    "offline": false,
+    "save_state": "saved",
+    "http_pending": 0
+  },
+  "group_cache_normalizations": []
+}

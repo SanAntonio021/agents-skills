@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/writing-router/SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/meeting-notes/SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/writing-router/references/common-quality.md"
+    }
+  }
+]

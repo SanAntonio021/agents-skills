@@ -1,0 +1,15 @@
+[
+  {
+    "url": "https://github.com",
+    "route": "direct",
+    "ok": true,
+    "status": 200,
+    "bytes": 575922
+  },
+  {
+    "url": "https://codeload.github.com/SanAntonio021/agents-skills/zip/refs/heads/main",
+    "route": "direct",
+    "ok": false,
+    "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1018)>"
+  }
+]

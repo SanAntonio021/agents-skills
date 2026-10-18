@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "会议纪要 - 情况与决定部分\n\n完整会议记录：\n- 主持人确认，入口闸机日志已导出，共420条\n- 陈岚说，其中7条缺少设备编号，已定位到接线检查期间，但尚未查明缺失原因\n- 主持人决定先暂停合并这7条记录，其余413条照常归档\n- 杜衡确认，由他在周四16:00前核对这7条记录的设备编号并把结果发给陈岚\n- 是否补录由陈岚收到结果后决定\n\n本次只写\"情况与决定\"部分，行动项下一轮再写。"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\meeting-notes\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\writing-router\\references\\common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\writing-router\\references\\ai-smell-catalog.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\candidate\\skills\\style-vocab\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\目录.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  }
+]

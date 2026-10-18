@@ -1,0 +1,108 @@
+{
+  "skill_name": "docx",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请在一份已有的中文申报书 DOCX 中补写两段正文并统一一个二级标题。不要整体换模板，也不要改变现有中文样式名称。你会走什么流程？",
+      "expected_output": "Use the existing-document path: preserve existing style IDs, reuse them for inserted text, avoid template style import, and verify with style_guard audit.",
+      "files": [],
+      "assertions": [
+        "Routes the task to docx existing-document editing rather than template application.",
+        "Freezes the existing style table and reuses existing style IDs for inserted paragraphs.",
+        "Uses style_guard audit and does not enable template style import."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "新建一份 Word 报告，并明确把整篇文档套用 qiye-shenbao 预设。请说明入口、命令门禁、输出和 Word 进程保护。",
+      "expected_output": "Use docx's template workflow and the bundled qiye-shenbao profile, require both template-import and current-operation COM permission, write a new output, and stop if Word is already running.",
+      "files": [],
+      "assertions": [
+        "Uses the docx template workflow and scripts/template entrypoint.",
+        "Requires both --allow-template-style-import and --allow-office-com.",
+        "Writes a new output and refuses to attach to or close an existing Word process."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "把现有 Markdown 稿导出成 Word，并按我的 Normal.dotm 落实版式。Markdown 原稿不能改，Word 当前如果已打开也不能碰。请说明流程。",
+      "expected_output": "Use docx's Markdown export wrapper with explicit current-task COM permission, preserve the Markdown source, delegate native template handling to the guarded Python path, and stop when WINWORD.EXE exists.",
+      "files": [],
+      "assertions": [
+        "Uses scripts/template/export_markdown_to_word.ps1 under the docx skill.",
+        "Treats Normal.dotm as the formatting source without modifying the Markdown input.",
+        "Requires current-task COM approval and stops if WINWORD.EXE already exists."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我想试用一个公开的 Office-Word-MCP-Server，让它生成 Word。请说明它能不能进入正式 DOCX 流程，以及如果只做隔离试验，如何处理三次确定性和 Word 打开、渲染验收。",
+      "expected_output": "Keep the public Office MCP out of production; use only an explicitly approved isolated diagnostic trial, run the offline three-round package comparator, and retain the independent LibreOffice, Word native open/render, and human inspection gates.",
+      "files": [],
+      "assertions": [
+        "Does not install or register a public Office MCP as a production dependency.",
+        "Requires three isolated rounds and reports MCP_NOT_ADMITTED even when package-level determinism passes.",
+        "Does not claim that an OOXML comparator proves page count, raster, Word open, or human visual acceptance."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "请给出一份正式 DOCX 的验收清单。除了四层门禁，还要逐项检查字体回退、段落缩进和行距、表格首行首列、页眉页脚几何、分页、Word 原生打开和 Word 原生渲染。",
+      "expected_output": "引用 Word 权威验收清单，要求每个项目记录责任层、基线、比较规则、结果、严重级别和证据路径；缺失/失败阻断，警告在用户确认前展示。",
+      "assertions": [
+        "References the authoritative word-acceptance-checklist.md.",
+        "Lists all seven explicit document-level acceptance items.",
+        "Requires item-level evidence and distinguishes hard blocks from warnings."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "一份正式 Word 看起来基本正常，但表格表头有些单元格仍带首行缩进，首列只设置了单元格垂直居中，部分文字字号不一且变成蓝色，页眉中的校名对象宽度超过正文可用宽度。能否验收通过？请说明逐项检查和证据要求。",
+      "expected_output": "不能通过。逐表检查段落水平对齐、单元格垂直对齐和段落缩进，分别审计字体字号字色，并按节计算页眉对象宽度与页面可用宽度；静态属性清单和对应渲染页证据均需非空。",
+      "files": [],
+      "assertions": [
+        "Rejects visual centering when table-cell paragraph indentation remains noncompliant.",
+        "Separately checks paragraph horizontal alignment and cell vertical alignment for every table.",
+        "Treats unexpected font size or blue/theme color as a hard formatting defect.",
+        "Compares each section's header object width with the approved baseline and usable page width.",
+        "Requires non-null machine evidence and linked rendered-page evidence."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "仅作流程判断，不启动 Office。共享全局规则已不包含 Office 隔离或持续授权条款。用户已要求把确认后的正文导出 Word 并检查版式。请依据 docx 本身的说明，分别处理 WINWORD.EXE 已运行、没有现有 Word 且守护工具能证明任务归属、以及 PID 或退出证据缺失三种情况。不要安装或修复工具。",
+      "expected_output": "仅依据 docx 的原生检查和 Office Security Boundary 承接保护；本次导出请求覆盖必要的守护操作，已有用户实例不连接或退出，归属或退出证据缺失时保持未验证并继续可行的文件级工作。",
+      "files": [],
+      "assertions": [
+        "不依赖已删除的全局 Office 条款或全局持续授权。",
+        "当前请求已覆盖的操作不要求固定确认口令或逐页签字。",
+        "WINWORD.EXE 已运行时不连接、不关闭，保留文件级或 LibreOffice 路径。",
+        "只有守护工具证明任务归属且文档集合为空时才允许退出实例；缺少 PID 或退出证据不报告通过。"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "现有 67 页 Word 只需把已确认的两个普通正文段落回填进去，样式和图表不变。本轮已经读过规则和模板，但没有旧检查记录。请直接完成小改，说明工具和交付检查范围。",
+      "expected_output": "使用 edit_paragraphs.py inspect/apply/check，在 UTF-8 JSON 中直接使用已确认正文，另存 Word 并生成单份检查记录。核对完整原文、样式、无关部件和原文件；不因没有旧记录而渲染。交付注明内容和样式已检查，未检查排版。",
+      "files": [],
+      "assertions": [
+        "使用固定段落工具，不重复润色或编写项目专用脚本。",
+        "复用本轮已读取且无变化的规则和模板。",
+        "不启动 Office，不生成 PDF/PNG、全套快照或多份报告。",
+        "重复原文必须使用 inspect 返回的序号并核对原文。",
+        "另存文件并保留内容与样式检查，明确未检查排版。"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "这次虽然只改两个段落，我还明确要求检查它们所在页面及后续分页有没有错位。请说明应采用的路径；不要实际启动 Office。",
+      "expected_output": "明确排版检查触发真实渲染，使用适合目标应用的守护渲染器并检查受影响页面和分页衔接。内容小改仍复用固定工具；保护用户 Office 实例，不把静态检查当作版式通过。",
+      "files": [],
+      "assertions": [
+        "明确请求排版检查时选择渲染路径。",
+        "检查范围按影响确定，不无条件逐页检查全部 67 页。",
+        "继续执行原文件、样式和 Office 进程保护。"
+      ]
+    }
+  ]
+}

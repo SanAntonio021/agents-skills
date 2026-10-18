@@ -1,0 +1,183 @@
+{
+  "revision": 3,
+  "next_id": 4,
+  "blocks": [
+    {
+      "id": "block-1",
+      "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+    },
+    {
+      "id": "block-2",
+      "text": "值班备注：传感器编号待补。"
+    },
+    {
+      "id": "block-3",
+      "text": "现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。"
+    }
+  ],
+  "events": [
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 0,
+      "revision_after": 0,
+      "blocks": []
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 0,
+      "revision_after": 0,
+      "blocks": []
+    },
+    {
+      "action": "append",
+      "actor": "assistant",
+      "revision_before": 0,
+      "revision_after": 1,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 1,
+      "revision_after": 1,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 1,
+      "revision_after": 1,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        }
+      ]
+    },
+    {
+      "action": "append",
+      "actor": "user",
+      "revision_before": 1,
+      "revision_after": 2,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 2,
+      "revision_after": 2,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        }
+      ]
+    },
+    {
+      "action": "append",
+      "actor": "assistant",
+      "revision_before": 2,
+      "revision_after": 3,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        },
+        {
+          "id": "block-3",
+          "text": "现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 3,
+      "revision_after": 3,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        },
+        {
+          "id": "block-3",
+          "text": "现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 3,
+      "revision_after": 3,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        },
+        {
+          "id": "block-3",
+          "text": "现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。"
+        }
+      ]
+    },
+    {
+      "action": "fetch",
+      "actor": "assistant",
+      "revision_before": 3,
+      "revision_after": 3,
+      "blocks": [
+        {
+          "id": "block-1",
+          "text": "本次测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+        },
+        {
+          "id": "block-2",
+          "text": "值班备注：传感器编号待补。"
+        },
+        {
+          "id": "block-3",
+          "text": "现有传感器1只、记录电脑1台，采样间隔1秒，测试时长待定。"
+        }
+      ]
+    }
+  ],
+  "available": true
+}

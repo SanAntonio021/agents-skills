@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "请润色以下项目申请书的一段正文。读者是熟悉仓储调度的评审，这一段交代拟解决的问题、拟形成的能力和当前进展。\n\n原文：\n本项目不是简单增加车辆数量，也不是为了追求功能堆叠，而是拟开发货架搬运任务分配软件，解决同一巷道内任务冲突造成的等待问题。软件拟接收12台搬运车的位置和任务队列，每500 ms更新一次分配结果。当前已完成调度接口设计，尚未开展联机验证。"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\project-writing\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\writing-router\\references\\common-quality.md"
+    }
+  }
+]

@@ -1,0 +1,15 @@
+静态审计完成，范围为候选内容、Python 自检及复制脚本；未启动 MATLAB，未改候选或技能源码。
+
+检查结果：
+- standardize-test-project/scripts/test_skill.py：退出 0，Validated runs: 10，Self-test passed。
+- 两技能 quick_validate.py：均退出 0。
+- 全部 Markdown 显式本地链接扫描：0 个缺失。源码引用中的运行时输出、外部可选历史夹具和授权依赖不被误算为已打包。
+- copy_template.ps1：已有空目录退出 1 且仍为空；新目录退出 0，全部工作台文件集合及字节完全一致。脚本不启动 MATLAB、不连接仪器。
+- 通用规范候选与当前源码按 CRLF/LF 归一化比较：仅 SKILL.md、references/standard.md 有文本差异。全部现有 helper 相同，无函数回退。候选缺现有 evals/evals.json 和 evals/trigger-evals.json，发布必须保留，不允许整目录覆盖删除。
+- 新版通用规范修改限定绘图范围与目标尺寸验收，保留结果 schema、完整精度、重绘、真实数据和硬件安全约束。
+- Template_NoHardware.m 为主进程安装 tcpclient/visadev/visa/serialport 拒绝保护，恢复先前 path；保护不自动延伸到子进程。Template_Demo/Template_GUI_Demo 显式 mock 并禁用硬件。
+- validate_rx_async.m:19 指定 mock_rx_scope_io，21-27 断言 mock IO 缺失 worker 工厂不得降级为真硬件；validate_rx_observation_worker.m:14,73-74 指定 mock 工厂。rx_scope_worker.m 根据 data.factory 调用工厂。
+- 包中无 instruments.local.json、用户偏好数据或第三方 MDD 文件，只有 instruments.local.example.json 与偏好代码。adaptation.md 明示工具箱、VISA/MDD、短帧授权依赖与历史夹具边界。
+- 不将现有验证记录中的断言 PASS 视作 MATLAB 正常退出；本审计不替代主代理 GUI 两尺寸/运行时验收。
+
+证据：static-audit.json、standardize-self-test.log、standardize-quick-validate.log、workbench-quick-validate.log、copy-existing-empty.log、copy-new-copy.log、SKILL.md.diff、standard.md.diff。

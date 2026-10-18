@@ -1,0 +1,44 @@
+{
+  "preserved_preexisting_changes": {
+    "skills:.gitignore": true,
+    "skills:README.md": true,
+    "skills:ieee-manuscript-edit/SKILL.md": true,
+    "skills:meeting-notes/SKILL.md": true,
+    "skills:project-writing/SKILL.md": true,
+    "skills:research-report/SKILL.md": true,
+    "skills:research-report/references/decision-report.md": true,
+    "skills:research-report/references/modes.md": true,
+    "skills:research-report/references/report-contract.md": true,
+    "skills:research-report/scripts/audit_report.py": true,
+    "skills:research-report/tests/test_audit_report.py": true,
+    "skills:skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": true,
+    "skills:skill-check-workspace/verification-runtime/weekly/2026-04-26.md": true,
+    "skills:skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": true,
+    "skills:skill-check-workspace/verification-source/weekly/2026-04-26.md": true,
+    "skills:style-vocab/SKILL.md": true,
+    "skills:technical-writing/SKILL.md": true,
+    "config:.gitignore": true,
+    "config:AGENTS.md": true,
+    "config:CLAUDE.md": true,
+    "config:GEMINI.md": true,
+    "config:README.md": true,
+    "config:automation/ccswitch-skill-sync/README.md": true,
+    "config:automation/codex-hooks/README.md": true,
+    "config:automation/codex-hooks/codex-preferences.json": true,
+    "config:automation/codex-hooks/test-codex-preference-restore.ps1": true,
+    "config:shared-rules.md": true
+  },
+  "unchanged_capsule_resources": 228,
+  "modified_capsule_usage_guides": [
+    "references/adaptation.md"
+  ],
+  "links_checked": 19,
+  "skill_valid": [
+    "standardize-test-project",
+    "link-test"
+  ],
+  "eval_counts": {
+    "evals.json": 12,
+    "trigger-evals.json": 29
+  }
+}

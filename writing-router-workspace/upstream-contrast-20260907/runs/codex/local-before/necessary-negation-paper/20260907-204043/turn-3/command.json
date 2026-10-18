@@ -1,0 +1,18 @@
+[
+  "D:\\Program Files\\nodejs\\node.exe",
+  "C:\\Users\\SanAn\\AppData\\Roaming\\npm\\node_modules\\@openai\\codex\\bin\\codex.js",
+  "exec",
+  "resume",
+  "--model",
+  "gpt-5.6-sol",
+  "-c",
+  "model_reasoning_effort=\"max\"",
+  "-c",
+  "approval_policy=\"never\"",
+  "-c",
+  "sandbox_mode=\"read-only\"",
+  "--skip-git-repo-check",
+  "--json",
+  "01a07be2-9b5b-7f80-a65b-068e0fcbc9c6",
+  "-"
+]

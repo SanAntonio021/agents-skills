@@ -1,0 +1,68 @@
+{
+  "selection": "environment",
+  "attempt": "2",
+  "started_at": "2026-09-11T14:43:12.375998+08:00",
+  "preexisting_matlab": [
+    {
+      "pid": 7900,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 22576,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 24776,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 47560,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 55820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57156,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 64568,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 65820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 67388,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 68408,
+      "name": "MATLABWindow.exe"
+    }
+  ],
+  "hardware_mode": "simulation/mock",
+  "launcher_pid": 42432,
+  "exit_code": 0,
+  "seconds": 11.511,
+  "observed_children": [
+    {
+      "pid": 74276,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789108992.3908281
+    },
+    {
+      "pid": 51896,
+      "alive": false,
+      "name": "MATLAB.exe",
+      "started": 1789108992.4314106
+    }
+  ],
+  "lingering_matlab_children": [],
+  "completion_marker": true,
+  "status": "PASS"
+}

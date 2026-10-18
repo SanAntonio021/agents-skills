@@ -1,0 +1,649 @@
+{
+  "status": "passed",
+  "skill": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\飞书画板兼容修复_20261013\\candidate\\lark-whiteboard\\SKILL.md",
+  "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+  "document_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+  "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+  "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+  "node_count": 6,
+  "native_ids": [
+    "a2:1",
+    "c2:1",
+    "c2:2",
+    "o2:1",
+    "o2:2",
+    "o2:3"
+  ],
+  "requested_final_text": {
+    "o2:1": "发射放大级\nPA / LNA",
+    "a2:1": "测试记录\nA 端",
+    "c2:1": "3–10 dBm",
+    "c2:2": "实际 LO：4 fSG\nLO 输入约 +10 dBm"
+  },
+  "initial_caption_states": {
+    "c2:1": "no label",
+    "c2:2": "初始 LO 标签"
+  },
+  "saves": [
+    {
+      "operation": {
+        "kind": "append"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "reopen_status": "passed",
+      "save_evidence": null,
+      "native_persistence": null
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "o2:1",
+        "text": "发射放大级\nPA / LNA"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "reopen_status": "passed",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 3,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 4,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "native_persistence": null
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "a2:1",
+        "text": "测试记录\nA 端"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "reopen_status": "passed",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 4,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 5,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-009.json"
+      },
+      "native_persistence": null
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c2:1",
+        "text": "3–10 dBm"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "reopen_status": "passed",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 5,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 6,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-012.json"
+      },
+      "native_persistence": {
+        "status": "confirmed",
+        "minimum_applied_version": 6,
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 6,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "inspect": "native-save-witness-003/fresh-native.json"
+      }
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c2:2",
+        "text": "实际 LO：4 fSG\nLO 输入约 +10 dBm"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "reopen_status": "passed",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 6,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 7,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-015.json"
+      },
+      "native_persistence": null
+    }
+  ],
+  "protection": {
+    "node_ids_preserved": true,
+    "second_signal_module_entire_raw_unchanged": true,
+    "observation_module_entire_raw_unchanged": true,
+    "fresh_cli_matches_last_reopened_raw": true,
+    "connector_bindings_unchanged": {
+      "c2:1": {
+        "start": {
+          "id": "o2:1",
+          "position": {
+            "x": 1,
+            "y": 0.5
+          },
+          "snap_to": "right"
+        },
+        "end": {
+          "id": "o2:2",
+          "position": {
+            "x": 0,
+            "y": 0.5
+          },
+          "snap_to": "left"
+        }
+      },
+      "c2:2": {
+        "start": {
+          "id": "o2:2",
+          "position": {
+            "x": 1,
+            "y": 0.5
+          },
+          "snap_to": "right"
+        },
+        "end": {
+          "id": "o2:3",
+          "position": {
+            "x": 0,
+            "y": 0.5
+          },
+          "snap_to": "left"
+        }
+      }
+    }
+  },
+  "visual_review": {
+    "status": "passed",
+    "actually_viewed": [
+      "02_edit/preview.png",
+      "original-png-white-viewer.png",
+      "final-preview.jpg"
+    ],
+    "original_native_png": "02_edit/preview.png",
+    "white_viewer": "original-png-white-viewer.png",
+    "service_preview": "final-preview.jpg",
+    "finding": "四项请求内容及换行可读，两个模块、观察模块、独立文字和两条绑定线完整可见；线标签未遮挡模块。原生PNG有透明背景，以白底查看器实际显示原图核验。"
+  },
+  "results_json": [
+    "create-result.json",
+    "01_append/result.json",
+    "02_edit/result.json",
+    "original-png-white-viewer-result.json",
+    "final-preview-result.json",
+    "final-raw-result.json"
+  ],
+  "page_cleanup": {
+    "status": "confirmed",
+    "total_pages_closed": 9,
+    "released": 0,
+    "runner_receipts": [
+      {
+        "task_id": "task_37uWkMnkbKyR7HojUkmqIg",
+        "tab_id": "09065AEE434A323B0788DD920DA79870",
+        "reason": "append_saved_reopen",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_37uWkMnkbKyR7HojUkmqIg",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_GOqv8qsaa_C3i-T8GrVYRA",
+        "tab_id": "3FF3A5ED5627765A96B4022B54B71460",
+        "reason": "finished",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_GOqv8qsaa_C3i-T8GrVYRA",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_lJwk8Odr_CHYVVKAxKgPOg",
+        "tab_id": "461C0FA5E2678609ABCACB07B9C70CE2",
+        "reason": "saved_reopen",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_lJwk8Odr_CHYVVKAxKgPOg",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_Y7CwV9kI26wtH5ttuUg6-g",
+        "tab_id": "B53B219078438B314FBC31F9D973C08C",
+        "reason": "saved_reopen",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_Y7CwV9kI26wtH5ttuUg6-g",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_gBqp3dF5iI0FiswPUBjcWg",
+        "tab_id": "304777E89BF6F79A30EFDD0B74723249",
+        "reason": "finished",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_gBqp3dF5iI0FiswPUBjcWg",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_yIzHpbg_bS0NtrRJ-OZjiQ",
+        "tab_id": "06B1E2F13B8D50FA194BA492F65128FD",
+        "reason": "saved_reopen",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_yIzHpbg_bS0NtrRJ-OZjiQ",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_HgaWmW2Nk0ZOU0QWx9HAXQ",
+        "tab_id": "E0F87494D86FD896B9D3354339673B1D",
+        "reason": "saved_reopen",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_HgaWmW2Nk0ZOU0QWx9HAXQ",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      },
+      {
+        "task_id": "task_i6VQk6e4XjSltJs0V9ZNhA",
+        "tab_id": "9D969832B6F8343AC481BC46B2D967E3",
+        "reason": "finished",
+        "requested_action": "close",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_i6VQk6e4XjSltJs0V9ZNhA",
+          "state": "completed",
+          "keep": false,
+          "closed": 1,
+          "released": 0
+        },
+        "page_status": "closed"
+      }
+    ],
+    "white_viewer_receipt": {
+      "taskId": "task_mcHwLOhqQYIFPqe7YOPXGg",
+      "state": "completed",
+      "keep": false,
+      "closed": 1,
+      "released": 0
+    }
+  },
+  "content_calls_replayed": false,
+  "scope": "仅新建与编辑本次临时文档/画板；未修改候选技能源码或其他现有文档",
+  "evidence_files": [
+    {
+      "path": "01_append\\append-input.json",
+      "sha256": "acc10140f4ecc7db02dd69337e9351ea40cdf49e4500d4c5de44cb7725a2ff09"
+    },
+    {
+      "path": "01_append\\append-receipt.json",
+      "sha256": "2ed82b20e983894d42c931a2c85e72b4547092c96217d370f909ea67ff1a6f0b"
+    },
+    {
+      "path": "01_append\\inspect-000.json",
+      "sha256": "04bf3df309f56ef003b5578913eacf108e968315815ad32b0f15345f14c0ca8c"
+    },
+    {
+      "path": "01_append\\preview.png",
+      "sha256": "1442d8aeea576d94f386e2fa84cea2677ae9d25f774093084102b2db2e57091b"
+    },
+    {
+      "path": "01_append\\prewrite-browser-001-001.json",
+      "sha256": "f8e208ab3cd253f9785a397759bb07c9d890f0399cdc23ebe7309f602ebabd3a"
+    },
+    {
+      "path": "01_append\\prewrite-browser-003-001.json",
+      "sha256": "9d75504aef84e540214ad85155491fb914cf40212e10fbe871a883c654dc8344"
+    },
+    {
+      "path": "01_append\\raw-001.json",
+      "sha256": "c593041a57041206d8974c0a9306cd3c812076041fca305873393dc633200500"
+    },
+    {
+      "path": "01_append\\raw-002.json",
+      "sha256": "c593041a57041206d8974c0a9306cd3c812076041fca305873393dc633200500"
+    },
+    {
+      "path": "01_append\\raw-003.json",
+      "sha256": "0d59c1cc1dda98f1277a7581da696498fe7d14c958e524fc1f94c6e370012eb5"
+    },
+    {
+      "path": "01_append\\raw-004.json",
+      "sha256": "256c476bfad128e8354441b0b4ddcef5463cb75df992ed73e97e59fd2b65980c"
+    },
+    {
+      "path": "01_append\\raw-005.json",
+      "sha256": "9e7c6d527542c4f06edb0c67dcfa586acfedd2c625808bde99f2e7dc224f1ff8"
+    },
+    {
+      "path": "01_append\\reopened-001.json",
+      "sha256": "3caf0f6b295280bb2a61ccc043a30b7cc57817b16cd8dc6d73dc00c420cd5b1a"
+    },
+    {
+      "path": "01_append\\result.json",
+      "sha256": "5415ba51bf795e5566f30bf81613134df7e3af6c89a5a70c217a0682c77ced99"
+    },
+    {
+      "path": "01_append\\visual-feedback.json",
+      "sha256": "5ffe10f4c6100c251daa4568e55479db8a321b6628e1f7a3e03724753c154dde"
+    },
+    {
+      "path": "02_edit\\editor-001.json",
+      "sha256": "f6448c990ffa6a8a58fa38a92372e431430f6302d227f7fed231b811d65a7ff2"
+    },
+    {
+      "path": "02_edit\\editor-002.json",
+      "sha256": "ffb9d7109a713f0e7f0326388ad325b143222f837faf50cdc5310a8725cd8d56"
+    },
+    {
+      "path": "02_edit\\editor-003.json",
+      "sha256": "6edb344fd38cbb59665c2fab971907dcb2b26e8201ab6c89126f52a8cc651965"
+    },
+    {
+      "path": "02_edit\\editor-004.json",
+      "sha256": "94027ac45d4eb07a2b67e071989f2f04db832a264178643888494a3e257293b9"
+    },
+    {
+      "path": "02_edit\\inspect-000.json",
+      "sha256": "5ffe10f4c6100c251daa4568e55479db8a321b6628e1f7a3e03724753c154dde"
+    },
+    {
+      "path": "02_edit\\native-save-witness-003\\fresh-native.json",
+      "sha256": "3e39ba8723e76b248f6d8ad65dcacdc1e5a7021e187a50720d0232a8906a6393"
+    },
+    {
+      "path": "02_edit\\native-save-witness-003\\prewrite-browser-000-001.json",
+      "sha256": "a3497f9be620509d9fe230111cabf3e09c00750c31994e74e8df6608d60a51d5"
+    },
+    {
+      "path": "02_edit\\native-save-witness-003\\raw-001.json",
+      "sha256": "61c3b2c18f88827094aac864ae6ecca8ca0a5730a22ffef8406190ddeecec402"
+    },
+    {
+      "path": "02_edit\\native-save-witness-003\\result.json",
+      "sha256": "54f902115d76dc65e7e84c9e930271bc42159e924186250232e5607da67a8ab8"
+    },
+    {
+      "path": "02_edit\\preview.png",
+      "sha256": "c6c69c3a0bb4baa98efb22f7725a9b7e306b0b52b0fafdbb42f184962e77f5fe"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-001-001.json",
+      "sha256": "9d75504aef84e540214ad85155491fb914cf40212e10fbe871a883c654dc8344"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-002-001.json",
+      "sha256": "5ffe10f4c6100c251daa4568e55479db8a321b6628e1f7a3e03724753c154dde"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-006-001.json",
+      "sha256": "b6a5dc5d133a65231cbcb3c899903bfdf0a1b941b74dd45ef61549f864fc1ac7"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-009-001.json",
+      "sha256": "4e30a3a2f445ec2af404b9e469420c614ca19d7f3af2140f66f294e2c6735f8d"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-012-001.json",
+      "sha256": "a3497f9be620509d9fe230111cabf3e09c00750c31994e74e8df6608d60a51d5"
+    },
+    {
+      "path": "02_edit\\prewrite-browser-015-001.json",
+      "sha256": "b09fce946d96f7d3066b0b008ed67ac7c377ad5e204a33e29f6eebab555bdc53"
+    },
+    {
+      "path": "02_edit\\raw-001.json",
+      "sha256": "0d59c1cc1dda98f1277a7581da696498fe7d14c958e524fc1f94c6e370012eb5"
+    },
+    {
+      "path": "02_edit\\raw-002.json",
+      "sha256": "0d59c1cc1dda98f1277a7581da696498fe7d14c958e524fc1f94c6e370012eb5"
+    },
+    {
+      "path": "02_edit\\raw-003.json",
+      "sha256": "9e7c6d527542c4f06edb0c67dcfa586acfedd2c625808bde99f2e7dc224f1ff8"
+    },
+    {
+      "path": "02_edit\\raw-004.json",
+      "sha256": "2aec503c7a3143a385e70f222f6d9a565237445a103b0071f34a740520f49cb6"
+    },
+    {
+      "path": "02_edit\\raw-005.json",
+      "sha256": "55ee808fa7d7801a2f4fa57ba2cfa54bf744a5656bf651820501b246bcd165b2"
+    },
+    {
+      "path": "02_edit\\raw-006.json",
+      "sha256": "30db0d70a05cb99e98ec53ba3297f1fb94a87ab39c24fd6c0eaceae9e515b985"
+    },
+    {
+      "path": "02_edit\\raw-007.json",
+      "sha256": "819ba5f577180471b235b7b82b7047ea3c020c7ee26c92441d527b4d2c20246e"
+    },
+    {
+      "path": "02_edit\\raw-008.json",
+      "sha256": "777affef2e1e1d3bd1ce7945633721d1d9d4e6d07d2a9984529f3c9369674ed4"
+    },
+    {
+      "path": "02_edit\\raw-009.json",
+      "sha256": "cfca337ada98b69d6034b8805dbc03bf0f27b5045131d86bb4a15c3a2e51ddce"
+    },
+    {
+      "path": "02_edit\\raw-010.json",
+      "sha256": "ad9412b3185447c44b5c9b18656d1242b40b29726fb69ec6aaf533a670cf1d05"
+    },
+    {
+      "path": "02_edit\\raw-011.json",
+      "sha256": "cfca337ada98b69d6034b8805dbc03bf0f27b5045131d86bb4a15c3a2e51ddce"
+    },
+    {
+      "path": "02_edit\\raw-012.json",
+      "sha256": "01a976dc7b804324e6d6edd0b94df62b92151797a24d65ff1a0f57cb892e2be3"
+    },
+    {
+      "path": "02_edit\\raw-013.json",
+      "sha256": "3cede5311bba37ec0380a080245c5c95a5735f4a2f7b4318d0b477ee323e81e8"
+    },
+    {
+      "path": "02_edit\\raw-014.json",
+      "sha256": "01a976dc7b804324e6d6edd0b94df62b92151797a24d65ff1a0f57cb892e2be3"
+    },
+    {
+      "path": "02_edit\\raw-015.json",
+      "sha256": "24aa1f897750dbe2c57e29421fb034c219aca9753129df0ae6f603b1dbdb3b83"
+    },
+    {
+      "path": "02_edit\\raw-016.json",
+      "sha256": "2e62c9d0c00826f473fd2f0879ddcdc8433d7752be51ec388125cf838b97d9a0"
+    },
+    {
+      "path": "02_edit\\reopened-001.json",
+      "sha256": "c7e61cf7b31937595eccdc74a34965f75bc73bfeda16501c5e1ab0e87f6568e4"
+    },
+    {
+      "path": "02_edit\\reopened-002.json",
+      "sha256": "98bce86dd544630a12c27dabebb1f018d8489b7b6ed475cfbd4fce570606bdbf"
+    },
+    {
+      "path": "02_edit\\reopened-003.json",
+      "sha256": "3e39ba8723e76b248f6d8ad65dcacdc1e5a7021e187a50720d0232a8906a6393"
+    },
+    {
+      "path": "02_edit\\reopened-004.json",
+      "sha256": "a5d774e349f5309f0a9a256b0bcd5fc5064eae6f06980b48e7e5f7e5fc3ab654"
+    },
+    {
+      "path": "02_edit\\result.json",
+      "sha256": "67ba6cead13fa682456ea2b1418518436cee639a98c9c8a4c39ed1c8c7a01f27"
+    },
+    {
+      "path": "02_edit\\visual-feedback.json",
+      "sha256": "61f08969f63d9eb96c9d1a3a6c924dc5fcd911a4a129350c7f429f24677fa580"
+    },
+    {
+      "path": "append-request.json",
+      "sha256": "2e294eb5e23b62154434d607282dd7f5f4cb55944a7161617788261eeb5a3b6f"
+    },
+    {
+      "path": "create-result.json",
+      "sha256": "5abb12bcbd6341e83723fb26c0a49e85b1ec5959b5a30300ec335a594048063b"
+    },
+    {
+      "path": "create.xml",
+      "sha256": "fbbb18587f96c4146b4c6da99beb0e59d31cdaf3f5d1e5e3c1f071700fdb4d39"
+    },
+    {
+      "path": "diagram.json",
+      "sha256": "67289bbe8318eed867d2b1dfc401e26f02508c4062d3fe173b2678ed539ffc21"
+    },
+    {
+      "path": "edit-request.json",
+      "sha256": "1c8ef6f1f4d497214397a3516bb51b63f68f1e1f06dc361f86e400768e9898c3"
+    },
+    {
+      "path": "final-preview-result.json",
+      "sha256": "f8fd40f6bbeedaa04ac3743e378bf2e73e307a7bacc3850f6c458a356578f6c2"
+    },
+    {
+      "path": "final-preview.jpg",
+      "sha256": "85dd6ca31dce1bc767970289dac28952718c7b9c8b1e86507ad395e68005bce2"
+    },
+    {
+      "path": "final-raw-result.json",
+      "sha256": "c9679f140f0b08ff5656266cbc3d0c73a028eac918d5bb1a07b580540cba005f"
+    },
+    {
+      "path": "final-raw.json",
+      "sha256": "6c7dd9060985271c7bd5169bc58f1ef84ee019b5f6e1611d274f23c4c456cfd0"
+    },
+    {
+      "path": "finalize.py",
+      "sha256": "744ea536a483e1aaf816bf7dd33a9e0fcfc6ea46e30663d45801bd583f302c6d"
+    },
+    {
+      "path": "native.json",
+      "sha256": "d1c6eaac358ca87b79c86186115850928ea966231ee2964a45d55a86c04f505c"
+    },
+    {
+      "path": "original-png-white-viewer-result.json",
+      "sha256": "535b7e42a7643fd1983ab323fdf501f0fc7d3b9337222c1847318e61f0a3ed3f"
+    },
+    {
+      "path": "original-png-white-viewer.png",
+      "sha256": "0673c9310d66eeae1a9adeb3223a1a95b5e8131c67f3ecb7bd552ce59623f382"
+    },
+    {
+      "path": "prepare.py",
+      "sha256": "2ef9df9196ae657f72ff6130c132288265c3a80c196c040c8c7d2d63005d01d8"
+    },
+    {
+      "path": "view_original_png.py",
+      "sha256": "c722de978180e5c148a44f31e5f70b590127cfdd750a687ef58a63e8ac229155"
+    }
+  ]
+}

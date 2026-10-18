@@ -1,0 +1,106 @@
+[
+  {
+    "path": "web-access/.claude-plugin/marketplace.json",
+    "sha256": "F008631CD33408ED16F3CB828CC108B9FDF5CED64E02A5AAF3872D88A0E50659"
+  },
+  {
+    "path": "web-access/.claude-plugin/plugin.json",
+    "sha256": "22995D83120BDA2E710AF1630AC7094B3A7C31C139EFC993DBE7F3C2F36FFB00"
+  },
+  {
+    "path": "web-access/.gitignore",
+    "sha256": "2CA74A32209C70091403723CC8622CDA40A6111B86CADAC9EAACA1AEC2153B1D"
+  },
+  {
+    "path": "web-access/README.md",
+    "sha256": "90CCFD364F87AE2C056C86DA4F453C489F05E3E3651108DCD9FE9D3F23F3A356"
+  },
+  {
+    "path": "web-access/SKILL.md",
+    "sha256": "6D2CFCC2A00C135DEC6A515D462E038CC49D1BCFEB5CC6833EA40D0057591394"
+  },
+  {
+    "path": "web-access/evals/evals.json",
+    "sha256": "E60C77010F5B5F3B3D44031E548AC20D2643299BBF46F183345E1453B073F72E"
+  },
+  {
+    "path": "web-access/references/browser-source-survey.md",
+    "sha256": "17E93DD98A45AE8A137EB20A8A31700F8165D7DB9B7775F0150A26C6E71019EA"
+  },
+  {
+    "path": "web-access/references/cdp-api.md",
+    "sha256": "5ADE52CD9121D6E11551936726B5D2A6B6BDAD4607CB77E7C4F7064AFA35379F"
+  },
+  {
+    "path": "web-access/references/migration-2.5.3.md",
+    "sha256": "AA7AEC6C623171C932BD368966E426B5AD0752F24C0BFC7981B1460F4650C34C"
+  },
+  {
+    "path": "web-access/references/migration-dual-proxy.2.md",
+    "sha256": "C09F76A0F413421C629092D7DE54F8C197A63E959AC115ED9E49CD3D1BDF2D27"
+  },
+  {
+    "path": "web-access/references/site-patterns/.gitkeep",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "path": "web-access/references/site-patterns/chatgpt.com.md",
+    "sha256": "A4B87EBA86BEA15A9A14E0CE9CC2999C499288A37A9556101876FB32C59E692C"
+  },
+  {
+    "path": "web-access/references/site-patterns/docs.qq.com.md",
+    "sha256": "BDC975EC31916C685EFFA7C1A2A5D9E2DA169C1C818290B77CBEBC7FF9CB4530"
+  },
+  {
+    "path": "web-access/references/site-patterns/google.com.md",
+    "sha256": "BFC55E1ECA2E2A6C23CF8AD73723E8C70E839E116D5F3B509A9206F189B7C210"
+  },
+  {
+    "path": "web-access/references/upstream-sources.md",
+    "sha256": "CF35212E88C1F5B2FC9C5BFE57EDC8B7FB488FB341A335F1F3D4ED5CED555CC7"
+  },
+  {
+    "path": "web-access/scripts/browser-discovery.mjs",
+    "sha256": "E05E1C10AF9440583C0CB4451ED808BFF7B68B54C00BCAD436C7C4A1C23FB52D"
+  },
+  {
+    "path": "web-access/scripts/cdp-proxy.mjs",
+    "sha256": "55DE6D2512E39B76CFA26AF18B12D03B16FFA5C025883BFF48DB1BDB0AF6A7D5"
+  },
+  {
+    "path": "web-access/scripts/check-deps.mjs",
+    "sha256": "655A0DB82D5E55731D11D5B5832D728E8E95CB98D53F1D4AFF39F9BCBDEBE476"
+  },
+  {
+    "path": "web-access/scripts/find-url.mjs",
+    "sha256": "B5738E490DC6DA95F2ECB38D201749BFEC4BAF8C4184D4D439D152D7FA8346C6"
+  },
+  {
+    "path": "web-access/scripts/match-site.mjs",
+    "sha256": "75A5BD66DB947DC7CB894F2C14BA04845FCA832D22CA664EDD8E471EB72125C1"
+  },
+  {
+    "path": "web-access/scripts/runtime-config.mjs",
+    "sha256": "CE07FE542E5D21D6D06577445DD77008D681A619B1C33C1A66E737E50D923341"
+  },
+  {
+    "path": "web-access/templates/config.env.template",
+    "sha256": "B6539BFDEAF0F158D974EDDF6DA40CE0AB379938D4BFDAB0BCA8C193364B1E7F"
+  },
+  {
+    "path": "web-access/tests/fixtures/interactive.html",
+    "sha256": "E4C335A12132CFF7D1B58C0EB2E09FF0D4FE4F89E9104FC9D554713FA9139105"
+  },
+  {
+    "path": "web-access/tests/mock-cdp-server.mjs",
+    "sha256": "A710DFAE6E6C886B2A1801E6B4C0993569A743DB20DD3376A30C2468367459E8"
+  },
+  {
+    "path": "web-access/tests/run-integration.mjs",
+    "sha256": "067D051E5EC0BAE6EF6C0825D9A74B4CAB5B877330AD81DD63CAF4E3E6266F0A"
+  },
+  {
+    "path": "web-access/tests/run-real-edge.mjs",
+    "sha256": "C9C78ECA7305186311891DF5EEB025F5FEB9082781DDBF06B6176ED6AA26CC69"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "document": {
+      "content": "<title id=\"PDhJdC8IcoOTGAxslQGcV2pDn7g\">隔离验收：水平TX线改字 roundoff-independent 20261014</title><whiteboard id=\"doxcnvJIEXztFaYTCKia4eeP4bc\" token=\"GwFXw4WhmhHvDkbcyJacCgQLnme\"></whiteboard>",
+      "document_id": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "revision_id": 3
+    }
+  },
+  "_notice": {
+    "skills": {
+      "command": "lark-cli update",
+      "current": "1.0.94",
+      "message": "lark-cli skills 1.0.94 out of sync with binary 1.0.97, run: lark-cli update",
+      "target": "1.0.97"
+    }
+  }
+}

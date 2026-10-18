@@ -1,0 +1,11 @@
+{
+  "idempotent_token": "45809069-b025-446b-a034-cf4dbb6b6ae2",
+  "before_raw": "raw-001.json",
+  "status": "saved_readback_confirmed",
+  "content_write_started": true,
+  "id_mapping": {
+    "o91426:1": "o2:1",
+    "o91426:2": "o2:2",
+    "c91426:1": "c2:1"
+  }
+}

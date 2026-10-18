@@ -1,0 +1,93 @@
+{
+  "cases": {
+    "query": {
+      "scope_and_file_checks": "passed",
+      "calls": 7,
+      "mutations": [],
+      "reads": [
+        [
+          "SKILL.md"
+        ],
+        [
+          "references/risk-classification.md"
+        ],
+        [
+          "references/windows-and-wiztree.md",
+          "Read-only Capacity Snapshot"
+        ]
+      ]
+    },
+    "approved": {
+      "scope_and_file_checks": "passed",
+      "calls": 11,
+      "mutations": [
+        [
+          "delete",
+          [
+            "cache/build.tmp"
+          ]
+        ]
+      ],
+      "reads": [
+        [
+          "SKILL.md"
+        ],
+        [
+          "references/risk-classification.md"
+        ],
+        [
+          "references/windows-and-wiztree.md",
+          "Read-only Capacity Snapshot"
+        ],
+        [
+          "references/windows-and-wiztree.md",
+          "Recycle Bin Staging"
+        ]
+      ]
+    },
+    "busy": {
+      "scope_and_file_checks": "passed",
+      "calls": 10,
+      "mutations": [
+        [
+          "delete",
+          [
+            "cache/download.tmp"
+          ]
+        ]
+      ],
+      "reads": [
+        [
+          "SKILL.md"
+        ],
+        [
+          "references/risk-classification.md"
+        ],
+        [
+          "references/windows-and-wiztree.md"
+        ]
+      ]
+    },
+    "duplicate": {
+      "scope_and_file_checks": "passed",
+      "calls": 7,
+      "mutations": [],
+      "reads": [
+        [
+          "SKILL.md"
+        ],
+        [
+          "references/risk-classification.md"
+        ],
+        [
+          "references/backup-verification.md"
+        ]
+      ]
+    }
+  },
+  "independent_cases": 4,
+  "environment": "isolated files with simulated disk capacity and application interfaces",
+  "automatic_trigger_tested": false,
+  "real_disk_cleanup_tested": false,
+  "presentation_note": "The initial query answer used a table despite the recommended keyword bullets; the agent corrected presentation after a self-check request against the existing skill, without rerunning operations. No new rule was added."
+}

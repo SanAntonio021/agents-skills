@@ -1,0 +1,264 @@
+{
+  "search__local_material_handoff": {
+    "operation": {
+      "operationId": "fb9f8bee-4ede-4a30-be88-e54d56da8aab",
+      "processIdentity": "{\"contextID\": \"2b2ab90e-c931-49df-8e2e-12e273d8b9ac\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+      "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+      "libraryID": 1,
+      "collectionID": 20,
+      "collectionKey": "FXCOL020",
+      "metadata": {
+        "itemType": "journalArticle",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "fields": {
+          "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+          "DOI": "10.0000/zotero-fixture.target-001",
+          "date": "2026",
+          "publicationTitle": "Fixture Journal (Simulated)",
+          "volume": "1",
+          "issue": "1",
+          "pages": "1-2",
+          "url": "https://example.invalid/zotero-fixture/target-001"
+        },
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ]
+      },
+      "withPDF": true,
+      "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf"
+    },
+    "response": {
+      "taskID": "723d103a-78cc-48a5-ae40-05b5e86cab45",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "2b2ab90e-c931-49df-8e2e-12e273d8b9ac",
+      "startedAt": "2026-10-08T13:52:31.372Z",
+      "finishedAt": "2026-10-08T13:52:31.404Z",
+      "result": {
+        "operationId": "fb9f8bee-4ede-4a30-be88-e54d56da8aab",
+        "processIdentity": "{\"contextID\": \"2b2ab90e-c931-49df-8e2e-12e273d8b9ac\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+        "status": "completed",
+        "startedAt": 1791467551374,
+        "savedKeys": [
+          {
+            "libraryID": 1,
+            "key": "FX000100"
+          },
+          {
+            "libraryID": 1,
+            "key": "FX000101"
+          }
+        ],
+        "preferenceRecovery": [
+          {
+            "key": "zoteroscihub.automatic_pdf_download",
+            "recovery": "restored"
+          }
+        ],
+        "error": null,
+        "output": {
+          "parentAction": "created",
+          "attachmentAction": "imported",
+          "parent": {
+            "id": 100,
+            "key": "FX000100",
+            "libraryID": 1,
+            "itemType": "journalArticle",
+            "fields": {
+              "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+              "DOI": "10.0000/zotero-fixture.target-001",
+              "date": "2026",
+              "publicationTitle": "Fixture Journal (Simulated)",
+              "volume": "1",
+              "issue": "1",
+              "pages": "1-2",
+              "url": "https://example.invalid/zotero-fixture/target-001"
+            },
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "collections": [
+              20
+            ],
+            "parentID": null,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:52:31.388Z",
+            "dateModified": "2026-10-08T13:52:31.388Z"
+          },
+          "attachment": {
+            "id": 101,
+            "key": "FX000101",
+            "libraryID": 1,
+            "itemType": "attachment",
+            "fields": {
+              "title": "Supplied simulated local PDF (version unresolved)"
+            },
+            "creators": [],
+            "collections": [],
+            "parentID": 100,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:47:18.596Z",
+            "dateModified": "2026-10-08T13:47:18.596Z",
+            "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\search__local_material_handoff\\storage\\101\\simulated_target.pdf",
+            "attachmentContentType": "application/pdf",
+            "attachmentLinkMode": 0,
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+            "sizeBytes": 863
+          },
+          "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\search__local_material_handoff\\storage\\101\\simulated_target.pdf",
+          "originalCollections": [
+            20
+          ],
+          "collections": [
+            20
+          ],
+          "handoff": "paper-search local-material handoff completed by paper-download local reuse"
+        },
+        "finishedAt": 1791467551404
+      }
+    },
+    "verification": {
+      "status": "completed",
+      "native_readback_success": true,
+      "automatic_restored": true,
+      "active_batch_cleared": true,
+      "collection_20": true,
+      "parent_count": 1,
+      "pdf_count": 1,
+      "pdf_readback": {
+        "attachmentID": 101,
+        "attachmentKey": "FX000101",
+        "parentID": 100,
+        "bytes": 863,
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "source_hash_match": true,
+        "title_match": true,
+        "doi_match": true,
+        "page_count": 1
+      }
+    }
+  },
+  "search__metadata_only": {
+    "operation": {
+      "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+      "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+      "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+      "libraryID": 1,
+      "collectionID": 20,
+      "collectionKey": "FXCOL020",
+      "metadata": {
+        "itemType": "journalArticle",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "fields": {
+          "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+          "DOI": "10.0000/zotero-fixture.target-001",
+          "date": "2026",
+          "publicationTitle": "Fixture Journal (Simulated)",
+          "volume": "1",
+          "issue": "1",
+          "pages": "1-2",
+          "url": "https://example.invalid/zotero-fixture/target-001"
+        },
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ]
+      },
+      "withPDF": false,
+      "localPDF": null
+    },
+    "response": {
+      "taskID": "848e4069-0aee-4633-9887-5ab8042faf4d",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+      "startedAt": "2026-10-08T13:52:31.547Z",
+      "finishedAt": "2026-10-08T13:52:31.572Z",
+      "result": {
+        "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+        "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+        "status": "completed",
+        "startedAt": 1791467551548,
+        "savedKeys": [
+          {
+            "libraryID": 1,
+            "key": "FX000100"
+          }
+        ],
+        "preferenceRecovery": [
+          {
+            "key": "zoteroscihub.automatic_pdf_download",
+            "recovery": "restored"
+          }
+        ],
+        "error": null,
+        "output": {
+          "parentAction": "created",
+          "attachmentAction": "not_requested",
+          "parent": {
+            "id": 100,
+            "key": "FX000100",
+            "libraryID": 1,
+            "itemType": "journalArticle",
+            "fields": {
+              "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+              "DOI": "10.0000/zotero-fixture.target-001",
+              "date": "2026",
+              "publicationTitle": "Fixture Journal (Simulated)",
+              "volume": "1",
+              "issue": "1",
+              "pages": "1-2",
+              "url": "https://example.invalid/zotero-fixture/target-001"
+            },
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "collections": [
+              20
+            ],
+            "parentID": null,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:52:31.561Z",
+            "dateModified": "2026-10-08T13:52:31.561Z"
+          },
+          "attachment": null,
+          "attachmentPath": null,
+          "originalCollections": [
+            20
+          ],
+          "collections": [
+            20
+          ],
+          "handoff": "paper-search metadata-only import; no PDF request"
+        },
+        "finishedAt": 1791467551572
+      }
+    },
+    "verification": {
+      "status": "completed",
+      "native_readback_success": true,
+      "automatic_restored": true,
+      "active_batch_cleared": true,
+      "collection_20": true,
+      "parent_count": 1,
+      "pdf_count": 0
+    }
+  }
+}

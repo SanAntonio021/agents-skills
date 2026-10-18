@@ -1,0 +1,3 @@
+这是独立的合成中文文稿任务，不对应真实项目。只在对话中交付，不创建或修改任何文件。本次业务技能仅从 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline 读取，入口为 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/paragraph-quality-20260907/baseline/writing-router/SKILL.md。按入口选择本次文体并读取所需参考文件。沿相对链接仍在该技能快照内读取，不读取其他版本、源码工作树、已安装业务技能、历史对话、记忆或评测用例文件。个人样稿本次不可用，不读取writing-profile或writing-samples。适用个人词表可只读 D:\BaiduSyncdisk\.agents\vocab。不调用子智能体、业务系统或网络检索。读取限制由本次提示约定，不要求调整任何系统权限。
+
+请润色以下项目申请书的一段正文，只在对话中给出这一段。读者是熟悉仓储调度的评审，这一段交代拟解决的问题、拟形成的能力和当前进展。原文：本项目不是简单增加车辆数量，也不是为了追求功能堆叠，而是拟开发货架搬运任务分配软件，解决同一巷道内任务冲突造成的等待问题。软件拟接收12台搬运车的位置和任务队列，每500 ms更新一次分配结果。当前已完成调度接口设计，尚未开展联机验证。

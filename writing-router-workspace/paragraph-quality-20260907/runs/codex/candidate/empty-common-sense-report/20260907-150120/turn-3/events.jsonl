@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07aab-e63f-7140-950f-b9f6b5b81887"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"在5天内到货的刚性要求下，三份已核对报价中仅丙型满足交期，可作为当前采购候选，但最终采购仍以样机验收通过为前提。"}}
+{"type":"turn.completed","usage":{"input_tokens":514147,"cached_input_tokens":486656,"cache_write_input_tokens":0,"output_tokens":5787,"reasoning_output_tokens":2908}}

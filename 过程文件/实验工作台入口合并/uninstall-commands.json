@@ -1,0 +1,23 @@
+[
+  {
+    "args": [
+      "config",
+      "backup",
+      "--name",
+      "tx-rx-workbench-retirement-20260913"
+    ],
+    "exit_code": 0,
+    "stdout": "Creating backup with name 'tx-rx-workbench-retirement-20260913'...\n✓ Backup created: tx-rx-workbench-retirement-20260913_20260913_073000\nLocation: C:\\Users\\SanAn\\.cc-switch\\backups\\tx-rx-workbench-retirement-20260913_20260913_073000.sql\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "skills",
+      "uninstall",
+      "SanAntonio021/agents-skills:tx-rx-workbench-template"
+    ],
+    "exit_code": 0,
+    "stdout": "✓ Uninstalled skill 'SanAntonio021/agents-skills:tx-rx-workbench-template'\n",
+    "stderr": ""
+  }
+]

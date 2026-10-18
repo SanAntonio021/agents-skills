@@ -68,6 +68,7 @@ PID_OBSERVATION_TIMEOUT_SECONDS = 5.0
 PROCESS_EXIT_TIMEOUT_SECONDS = 10.0
 PROCESS_POLL_SECONDS = 0.1
 POPPLER_TIMEOUT_SECONDS = 120.0
+WORD_PROCESS_IMAGES = ("WINWORD.EXE", "wps.exe", "wpp.exe", "et.exe")
 
 
 class GateFailure(RuntimeError):
@@ -175,6 +176,61 @@ def _process_ids(image_name: str) -> list[int]:
     return sorted(set(pids))
 
 
+def _process_path(pid: int) -> str | None:
+    """Return a process executable path without terminating or attaching to it."""
+    if os.name != "nt":
+        return None
+    creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    script = "(Get-Process -Id $args[0] -ErrorAction Stop).Path"
+    try:
+        completed = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script, str(pid)],
+            capture_output=True, check=False, creationflags=creation_flags,
+        )
+    except OSError:
+        return None
+    if completed.returncode != 0:
+        return None
+    value = (completed.stdout or b"").decode("utf-8", errors="replace").strip()
+    return value or None
+
+
+def _installed_word_executable() -> Path | None:
+    """Locate Microsoft Word without trusting the Word.Application COM registration."""
+    candidates: list[Path] = []
+    for env_name in ("ProgramFiles", "ProgramFiles(x86)"):
+        root = os.environ.get(env_name)
+        if root:
+            candidates.append(Path(root) / "Microsoft Office" / "root" / "Office16" / "WINWORD.EXE")
+    candidates.extend(
+        Path(item) for item in (
+            r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.EXE",
+        )
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate.resolve()
+    return None
+
+
+def _application_identity(application: Any) -> dict[str, Any]:
+    """Best-effort identity evidence for a COM application object."""
+    identity: dict[str, Any] = {}
+    for key, attr in (("version", "Version"), ("caption", "Caption"), ("path", "Path")):
+        try:
+            value = getattr(application, attr)
+            identity[key] = str(value)
+        except Exception:
+            pass
+    return identity
+
+
+def _is_microsoft_word_identity(identity: dict[str, Any]) -> bool:
+    path = str(identity.get("path", "")).lower().replace("/", "\\")
+    return path.endswith("\\winword.exe") or "\\microsoft office\\" in path
+
+
 def _safe_process_ids(
     image_name: str,
     *,
@@ -185,6 +241,18 @@ def _safe_process_ids(
         return sorted({int(pid) for pid in probe(image_name)}), None
     except Exception as exc:
         return None, _exception_text(exc)
+
+
+def _word_process_snapshot(process_ids: Callable[[str], list[int]] | None = None) -> dict[str, list[int]]:
+    """Observe Word and WPS images separately; never treat WPS as Word ownership."""
+    probe = process_ids or _process_ids
+    snapshot: dict[str, list[int]] = {}
+    for image in WORD_PROCESS_IMAGES:
+        try:
+            snapshot[image] = sorted({int(pid) for pid in probe(image)})
+        except Exception:
+            snapshot[image] = []
+    return snapshot
 
 
 def _observe_owned_processes(
@@ -300,6 +368,25 @@ def default_dispatch_ex(progid: str) -> Any:
     return DispatchEx(progid)
 
 
+def default_dispatch_word_executable(executable: Path) -> Any:
+    """Start Word directly when the Word.Application COM class is WPS-owned."""
+    import subprocess as _subprocess
+    import time as _time
+
+    _subprocess.Popen([str(executable), "/x"], close_fds=True)
+    deadline = _time.monotonic() + PID_OBSERVATION_TIMEOUT_SECONDS
+    last_error: BaseException | None = None
+    while _time.monotonic() < deadline:
+        try:
+            return default_dispatch_ex("Word.Application")
+        except Exception as exc:  # pragma: no cover - depends on installed Office
+            last_error = exc
+            _time.sleep(PROCESS_POLL_SECONDS)
+    raise ActivationFailure(
+        f"Microsoft Word executable started but COM activation did not become available: {_exception_text(last_error) if last_error else 'timeout'}"
+    )
+
+
 def default_com_runtime() -> Any:
     import pythoncom
 
@@ -383,6 +470,7 @@ def owned_application(
     spec: dict[str, Any],
     *,
     dispatch_ex: Callable[[str], Any] | None = None,
+    dispatch_word_executable: Callable[[Path], Any] | None = None,
     com_runtime: Any | None = None,
     process_ids: Callable[[str], list[int]] | None = None,
     pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
@@ -397,6 +485,7 @@ def owned_application(
     metadata.update(
         {
             "process_image": spec["process"],
+            "expected_engine": "Microsoft Word" if spec["progid"] == "Word.Application" else spec["progid"],
             "activation_attempted": False,
             "activation_succeeded": False,
         }
@@ -435,6 +524,28 @@ def owned_application(
         try:
             metadata["activation_attempted"] = True
             application = dispatch(spec["progid"])
+            identity = _application_identity(application)
+            metadata["activation_identity"] = identity
+            if spec["progid"] == "Word.Application" and not _is_microsoft_word_identity(identity):
+                metadata["activation_identity"]["status"] = "NON_MICROSOFT_PROVIDER"
+                try:
+                    application.Quit()
+                except Exception:
+                    pass
+                executable = _installed_word_executable()
+                if executable is None:
+                    raise ActivationFailure(
+                        "Word.Application resolved to a non-Microsoft provider and WINWORD.EXE was not found"
+                    )
+                metadata["fallback_executable"] = str(executable)
+                fallback = dispatch_word_executable or default_dispatch_word_executable
+                application = fallback(executable)
+                fallback_identity = _application_identity(application)
+                metadata["fallback_identity"] = fallback_identity
+                if not _is_microsoft_word_identity(fallback_identity):
+                    raise ActivationFailure(
+                        "direct WINWORD.EXE fallback did not produce a Microsoft Word application"
+                    )
         except Exception as exc:
             raise ActivationFailure(_exception_text(exc)) from exc
         metadata["activation_succeeded"] = True
@@ -1052,6 +1163,7 @@ def check_file(
     process_probe: Callable[[str], bool] | None = None,
     process_ids: Callable[[str], list[int]] | None = None,
     dispatch_ex: Callable[[str], Any] | None = None,
+    dispatch_word_executable: Callable[[Path], Any] | None = None,
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
     pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
@@ -1140,6 +1252,7 @@ def check_file(
         with owned_application(
             spec,
             dispatch_ex=dispatch_ex,
+            dispatch_word_executable=dispatch_word_executable,
             com_runtime=com_runtime,
             process_ids=process_ids,
             pid_observation_timeout_seconds=pid_observation_timeout_seconds,

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07ad2-9a5a-7bc0-8a81-3d91fe72d1bc"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"在5天内到货的约束下，现有三份报价中仅丙型满足交期要求，但样机尚未验收，暂不能形成最终采购结论。"}}
+{"type":"turn.completed","usage":{"input_tokens":438205,"cached_input_tokens":391808,"cache_write_input_tokens":0,"output_tokens":5672,"reasoning_output_tokens":3248}}

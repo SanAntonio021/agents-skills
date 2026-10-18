@@ -1,0 +1,286 @@
+{
+  "status": "verified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "text",
+        "text": "发射放大级\nPA / LNA",
+        "id": "o2:1"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-005.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 3,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 4,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "after_raw": "raw-006.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "o2:1"
+        ]
+      },
+      "before_render_alpha": {
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [
+        {
+          "id": "c2:1",
+          "normalization": "bound_text_horizontal_zero_height_roundoff",
+          "before_raw_height": 0,
+          "after_raw_height": 2.4000000848900527e-06,
+          "maximum_native_endpoint_difference": 2.399999971203215e-06,
+          "native_endpoints_before": {
+            "start": {
+              "x": 910,
+              "y": 400
+            },
+            "end": {
+              "x": 1000,
+              "y": 400
+            }
+          },
+          "native_endpoints_after": {
+            "start": {
+              "x": 910,
+              "y": 400
+            },
+            "end": {
+              "x": 1000,
+              "y": 399.99999760000003
+            }
+          },
+          "expected_attachment_points": {
+            "start": {
+              "x": 910,
+              "y": 400
+            },
+            "end": {
+              "x": 1000,
+              "y": 399.99999760000003
+            }
+          }
+        }
+      ],
+      "reopen_status": "passed"
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_NZxCAmSkDTsbH7J6zzOkHQ",
+      "tab_id": "BFEEED7D25207895D54B05096EFE4430",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g"
+    },
+    {
+      "task_id": "task_dHnesSHDPjh5zPG_GEA7wA",
+      "tab_id": "386FDDDA6A13177DBF77E20DC5D1A74D",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_NZxCAmSkDTsbH7J6zzOkHQ",
+      "tab_id": "BFEEED7D25207895D54B05096EFE4430",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_NZxCAmSkDTsbH7J6zzOkHQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_dHnesSHDPjh5zPG_GEA7wA",
+      "tab_id": "386FDDDA6A13177DBF77E20DC5D1A74D",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_dHnesSHDPjh5zPG_GEA7wA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "docx_token": "PDhJdC8IcoOTGAxslQGcV2pDn7g",
+      "whiteboard_token": "GwFXw4WhmhHvDkbcyJacCgQLnme",
+      "block_id": "doxcnvJIEXztFaYTCKia4eeP4bc",
+      "revision_id": 3
+    }
+  ],
+  "initial_nodes": [
+    {
+      "id": "c2:1",
+      "kind": "connector",
+      "x": 910,
+      "y": 400,
+      "width": 90,
+      "height": 0,
+      "style": {
+        "border_color": "#247e69",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#247e69"
+      },
+      "start_id": "o2:1",
+      "end_id": "o2:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.18421052
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "TX"
+      ],
+      "caption": "TX",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o2:1",
+      "kind": "shape",
+      "x": 740,
+      "y": 350,
+      "width": 170,
+      "height": 100,
+      "text": "发射放大级",
+      "font_size": 24,
+      "style": {
+        "border_color": "#247e69",
+        "fill_color": "#eaf5f1",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2933"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:2",
+      "kind": "shape",
+      "x": 1000,
+      "y": 330,
+      "width": 180,
+      "height": 380,
+      "text": "A 定向耦合器\n耦合：TX→ANT\n直通：ANT→RX",
+      "font_size": 22,
+      "style": {
+        "border_color": "#247e69",
+        "fill_color": "#eaf5f1",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2933"
+      },
+      "shape": "round_rect"
+    }
+  ],
+  "initial_inspect": "inspect-000.json",
+  "released_tab": null,
+  "page_status": "closed",
+  "preview_attempts": 2,
+  "preview_last_frame_visible": true,
+  "visual_status": "needs_review",
+  "preview": "preview.png",
+  "visual_feedback": "visual-feedback.json",
+  "preview_source": "native_canvas"
+}

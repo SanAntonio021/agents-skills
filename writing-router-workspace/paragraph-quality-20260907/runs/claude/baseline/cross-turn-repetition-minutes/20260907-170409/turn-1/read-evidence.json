@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:writing-router",
+      "args": "整理会议纪要的\"情况与决定\"部分。会议内容：主持人确认入口闸机日志已导出共420条；陈岚报告其中7条缺少设备编号，已定位到接线检查期间但尚未查明缺失原因；主持人决定先暂停合并这7条记录，其余413条照常归档；杜衡确认由他在周四16:00前核对这7条记录的设备编号并把结果发给陈岚；是否补录由陈岚收到结果后决定。"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\meeting-notes\\SKILL.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\writing-router\\references\\common-quality.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\plugins\\baseline\\skills\\writing-router\\references\\collaborative-writing.md"
+    }
+  }
+]

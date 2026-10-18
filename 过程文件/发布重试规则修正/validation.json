@@ -1,0 +1,19 @@
+{
+  "existing_tests": {
+    "agent_rules_unittest": 84,
+    "skill_check_pytest": 98,
+    "sync_selected_pester": 47
+  },
+  "skill_formats": "passed with PYTHONUTF8=1",
+  "eval_cases": {
+    "agent-rules": 19,
+    "skill-check": 39
+  },
+  "local_links_checked": 23,
+  "missing_links": [],
+  "scenarios": "manual rule walkthrough, not a live model evaluation",
+  "historical_receipts": {
+    "sync-receipt.json": "90d631965fa2ef3dcca12b5341bbe431876dc421eea3010d78d086fa59d53b36",
+    "verify-receipt.json": "48bc3296d0e3ca1b04a14d1b467165e4ad44039a305e6286c670cfee2a805cff"
+  }
+}

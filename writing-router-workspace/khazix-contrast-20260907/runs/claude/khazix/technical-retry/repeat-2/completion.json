@@ -1,0 +1,35 @@
+{
+  "host": "claude",
+  "arm": "khazix",
+  "case": "technical-retry",
+  "repeat": 2,
+  "requested_model": "claude-opus-5",
+  "route": {
+    "route": "direct_selected_provider_child_env_only",
+    "name": "8sKiro",
+    "endpoint": "https://8stoken.com"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-k5rcldpn",
+  "prompt_sha256": "7caa48993a7a76b86cecaf3b67c19a87d0657eb94efeafbefc429598bcdfdf20",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "upstream/khazix-writer/SKILL.md",
+    "upstream/khazix-writer/references/style_examples.md",
+    "upstream/khazix-writer/references/content_methodology.md"
+  ],
+  "upstream_scope": "outside_public_account_longform",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "claude-opus-5"
+  ],
+  "session": "dbac09d9-33a6-44e9-825d-20c7609b730d",
+  "duration_seconds": 17.4,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

@@ -1,0 +1,25 @@
+diff --git a/meeting-notes/SKILL.md b/meeting-notes/SKILL.md
+index 8aeb1af..b742028 100644
+--- a/meeting-notes/SKILL.md
++++ b/meeting-notes/SKILL.md
+@@ -13,9 +13,9 @@ description: 将会议转写和用户补充整理成讨论型、行动型或混
+ - `mode=discussion|action|mixed`
+ - `edit_scope`、`language`、`loaded_refs`
+ 
+-建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。会议转写整理属于直接处理，沿用本技能流程整篇交付。
++建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。会议转写整理属于直接处理，不额外增加正文确认轮次；默认整篇交付，用户指定部分或分轮整理时，只交付本轮所要的部分，不重发或改动已确认部分。
+ 
+-读取 [共同质量规则](../writing-router/references/common-quality.md)。完整纪要、结构重写、终稿审校或 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
++读取 [共同质量规则](../writing-router/references/common-quality.md)。中文正文首次起草、续写、局部修改或审查前，同时读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)，按共同质量规则的“中文正文展示前检查”加载适用词表并逐批检查；同任务未变时沿用。英文仍在完整纪要、结构重写、终稿审校或 `audit_only` 时读取气味目录。
+ 
+ 私有样稿为 `D:\BaiduSyncdisk\.agents\writing-samples\meeting-notes.md`；只读取 `status: approved` 的正文，候选区不作为写作依据。
+ 
+@@ -58,7 +58,7 @@ description: 将会议转写和用户补充整理成讨论型、行动型或混
+ 3. 同一观点没有新增条件、证据或结论时只保留一次。
+ 4. 个人判断、建议和确认注明发言人或一方；原文写“主持人确认”时保留主持人，不能把“甲提出比较”改成“会议提出比较”。有人异议时不得写成会议共识。
+ 5. 任务表只保留动作、执行方，以及原文明确的时间或条件。
+-6. 删除寒暄、口头重复和转写噪声，但保留会改变结论的限定语。
++6. 删除寒暄、口头重复和转写噪声，但保留会改变结论的限定语。人名不按读音或常见字形改写；展示前从正文逐字回对原始转写和用户更正，同时核对发言人与任务归属，不只沿用上一轮纪要。
+ 
+ ## `audit_only`
+ 

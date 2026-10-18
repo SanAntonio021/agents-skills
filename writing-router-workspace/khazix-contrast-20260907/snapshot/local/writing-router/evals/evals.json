@@ -1,0 +1,178 @@
+{
+  "skill_name": "writing-router",
+  "fixture_policy": "synthetic-only",
+  "evals": [
+    {
+      "id": "route-complex-paper-workflow",
+      "prompt": "我现在有一篇太赫兹通信系统论文的中文草稿，还有一些实验图和参考文献，但不知道下一步应该先调研、先改英文，还是先审一遍。你帮我判断当前该走哪一步。",
+      "expected_output": "先判断当前阶段，不一次带上所有相关 skill；如果事实、证据或图文关系未定，先路由到 baseline-research 或 paper-review；若草稿和事实边界已清楚，再路由到 ieee-manuscript-edit。"
+    },
+    {
+      "id": "route-engineering-proposal-metric",
+      "prompt": "合成案例：工程申报书里要求把 24Gbps 指标写得更有说服力，还要说明工程部署条件。这个任务该直接改正文，还是先论证指标？",
+      "expected_output": "判断核心阻塞是指标口径和可行性，先路由到 target-feasibility；指标站稳后再回到 project-writing 改正文。"
+    },
+    {
+      "id": "upstream-absorption-map",
+      "prompt": "我想把 Imbad 和 K-Dense 的学术写作流程吸收到本地技能里，是不是一次把 jixian、tinggao、SCI 精修和指标论证都改了？",
+      "expected_output": "先读取 academic-workflow-map.md，建议只改最相关的一处；说明 Imbad 主要吸流程门控，K-Dense 主要吸局部检查清单，不批量改多个下游 skill。"
+    },
+    {
+      "id": "local-md-write-triggers-version-protection",
+      "prompt": "请直接修改工作区里的 paper/draft.md，把第二节结构收紧并保存。这个项目还没有 Git。",
+      "expected_output": "路由到对应写作 skill 后，在首次写入前显示准确项目根目录，询问是否执行 git init -b main 并保存目标稿 baseline；明确只做本地版本记录、不配置远程、不 push。",
+      "files": [],
+      "expectations": [
+        "实际写入本地 md 时触发共享版本保护规则。",
+        "初始化前询问一次并显示准确项目路径。",
+        "初始化许可和 baseline 许可合并为一个问题。",
+        "明确不配置远程、不 push。"
+      ]
+    },
+    {
+      "id": "chat-only-rewrite-bypasses-version-protection",
+      "prompt": "只在聊天里把这句话改得更像论文，不要写入任何文件：The system has very good performance.",
+      "expected_output": "直接给出聊天内改写；不询问 Git，不创建 baseline、commit 或 tag。",
+      "files": [],
+      "expectations": [
+        "聊天内改句不触发版本保护。",
+        "不执行任何 Git 写操作。"
+      ]
+    },
+    {
+      "id": "block-overbroad-workspace-root",
+      "prompt": "合成案例：当前工作区根目录是 X:\\SyntheticWorkspace\\PaperCollection，里面有很多论文项目。请修改其中 paper-alpha\\main.tex；这里还没有 Git。",
+      "expected_output": "拒绝在 X:\\SyntheticWorkspace\\PaperCollection 初始化仓库，显示该准确路径并要求把工作区切到具体论文项目；不能自行猜测一个更深根目录后初始化。",
+      "files": [],
+      "expectations": [
+        "识别并拦截过大公共目录。",
+        "不在公共目录执行 git init。",
+        "要求改为具体项目工作区。"
+      ]
+    },
+    {
+      "id": "block-existing-overbroad-git-root",
+      "prompt": "合成案例：我打开的是 X:\\SyntheticWorkspace\\PaperCollection\\paper-alpha，但 git rev-parse 返回的仓库根目录是 X:\\SyntheticWorkspace\\PaperCollection。请继续修改 main.tex。",
+      "expected_output": "识别这是被误初始化的公共父仓库并停止，不沿用该仓库，也不自动创建嵌套仓库；显示准确父仓库路径，提示用户先处理公共父仓库。",
+      "files": [],
+      "expectations": [
+        "现有 Git 根同样经过公共目录拦截。",
+        "不沿用被误初始化的公共父仓库。",
+        "不自动创建嵌套 Git 仓库。"
+      ]
+    },
+    {
+      "id": "find-old-version-before-restore",
+      "prompt": "我想找回 draft.md 的旧版本，可能是上个月改结构前那版。先帮我按日期和提交说明找候选，不要直接改文件。",
+      "expected_output": "先按文件历史列出 2-5 个最相关候选，给出日期、中文提交说明、涉及文件和摘要 diff；等待用户选定后再恢复。恢复必须创建新 commit，不使用 git reset --hard 或 git checkout --。",
+      "files": [],
+      "expectations": [
+        "旧版本请求触发共享版本保护规则。",
+        "先给候选，不直接回退。",
+        "恢复通过新 commit 完成。",
+        "不使用破坏性 reset 或 checkout。"
+      ]
+    },
+    {
+      "id": "route-generic-versus-ieee-submission",
+      "prompt": "期刊已经选定。一个是非 IEEE 的 Editorial Manager 投稿，另一个是 T-MTT 返修，这两类事务分别该走哪个技能？",
+      "expected_output": "所有期刊投稿事务统一进入 journal-submission；IEEE/T-MTT 按需读取出版商和期刊参考，不加载旧入口。"
+    },
+    {
+      "id": "route-final-submit-review-gate",
+      "prompt": "ScholarOne 普通字段和文件都准备好了，现在想点最终 Submit。下一步先做什么？",
+      "expected_output": "先路由 paper-review 完成投稿前把关并生成有 checked_at 和 evidence 的 pre_submission_review=pass；此前可准备文件和普通字段，但不能进入最终提交确认。"
+    },
+    {
+      "id": "route-pre-meeting-technical-exchange",
+      "prompt": "我要把一份射频方案改成会前技术交流材料，里面既有已知接口、三种器件结构，也有会上要选的方案和会后才能测出的参数。",
+      "expected_output": "路由到 technical-writing 的 technical_exchange 模式，区分已有条件、会上决定和另行计算或测试；不按会议纪要整理，也不只做通用去 AI 味改写。"
+    }
+  ],
+  "general_edit_trigger_cases": [
+    {
+      "id": "general-chinese-ai-tone",
+      "query": "把这段普通中文材料改自然，删掉空话和重复，但不要补事实。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "general-chinese-audit-only",
+      "query": "只审查这段中文哪里像 AI 写的，不要改正文。",
+      "should_trigger": true,
+      "expected_route": "writing-router",
+      "synthetic": true
+    },
+    {
+      "id": "project-redirect",
+      "query": "这段工程项目申请书 AI 味重，帮我重写建设内容。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> project-writing",
+      "synthetic": true
+    },
+    {
+      "id": "technical-redirect",
+      "query": "把系统接口说明里的套话删掉，参数和状态不能变。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> technical-writing",
+      "synthetic": true
+    },
+    {
+      "id": "research-report-redirect",
+      "query": "这份调研报告重复很多，请按证据型报告重构。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> research-report",
+      "synthetic": true
+    },
+    {
+      "id": "meeting-notes-redirect",
+      "query": "这份会议纪要模板味太重，还补了很多空栏目，请重整。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> meeting-notes",
+      "synthetic": true
+    },
+    {
+      "id": "zh-paper-redirect",
+      "query": "中文论文结果段太像 AI 写的，保留所有实验数字后精修。",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:zh_paper",
+      "synthetic": true
+    },
+    {
+      "id": "en-paper-redirect",
+      "query": "Tighten this engineering paper paragraph without changing the measurements.",
+      "should_trigger": false,
+      "expected_route": "writing-router -> ieee-manuscript-edit:en_paper",
+      "synthetic": true
+    },
+    {
+      "id": "english-general",
+      "query": "Remove the AI tone from this general English paragraph.",
+      "should_trigger": false,
+      "expected_route": "humanizer",
+      "synthetic": true
+    },
+    {
+      "id": "word-layout",
+      "query": "只修这份中文 Word 的目录、页眉和样式。",
+      "should_trigger": false,
+      "expected_route": "docx",
+      "synthetic": true
+    },
+    {
+      "id": "fact-check",
+      "query": "核实这段文字的技术事实和论文来源，不做风格修改。",
+      "should_trigger": false,
+      "expected_route": "paper-search",
+      "synthetic": true
+    },
+    {
+      "id": "grammar-only",
+      "query": "只修这句话的语法错误，不改变写法。",
+      "should_trigger": false,
+      "expected_route": "none",
+      "synthetic": true
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "run_id": "20260911-090846-b809705a",
+  "started_at": "2026-09-11T09:08:46+00:00",
+  "finished_at": "2026-09-11T09:08:49+00:00",
+  "duration_seconds": 3.502,
+  "exit_code": 0,
+  "input": {
+    "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\mixed.pdf",
+    "sha256": "0D4CE6F0023D622AEB625D1F337E1E5427462AE334E39B5E9C5A92C37DDEFAA6",
+    "bytes": 208347
+  },
+  "route": {
+    "requested_mode": "auto",
+    "selected_mode": "skip",
+    "reason": "document-level mixture of image-only and text-bearing pages",
+    "languages": "chi_sim",
+    "deskew": false,
+    "jobs": 1,
+    "timeout_seconds": 1800,
+    "inspection": {
+      "page_count": 2,
+      "encrypted": false,
+      "pages": [
+        {
+          "page_number": 1,
+          "width_points": 595.0,
+          "height_points": 842.0,
+          "rotation": 0,
+          "text_chars": 314,
+          "visible_chars": 180,
+          "bad_text_chars": 0,
+          "bad_text_ratio": 0.0,
+          "image_count": 0,
+          "image_coverage": 0.0,
+          "category": "digital"
+        },
+        {
+          "page_number": 2,
+          "width_points": 595.2,
+          "height_points": 841.92,
+          "rotation": 0,
+          "text_chars": 0,
+          "visible_chars": 0,
+          "bad_text_chars": 0,
+          "bad_text_ratio": 0.0,
+          "image_count": 1,
+          "image_coverage": 1.0,
+          "category": "scan"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "python": "C:\\Users\\SanAn\\AppData\\Local\\pdf-ocr\\.venv\\Scripts\\python.exe",
+    "tesseract": "C:\\Users\\SanAn\\AppData\\Local\\Programs\\Tesseract-OCR\\tesseract.exe",
+    "tessdata": "C:\\Users\\SanAn\\AppData\\Local\\Programs\\Tesseract-OCR\\tessdata",
+    "pdftotext": "C:\\Users\\SanAn\\poppler\\poppler-24.08.0\\Library\\bin\\pdftotext.exe",
+    "pdfinfo": "C:\\Users\\SanAn\\poppler\\poppler-24.08.0\\Library\\bin\\pdfinfo.exe",
+    "pdftoppm": "C:\\Users\\SanAn\\poppler\\poppler-24.08.0\\Library\\bin\\pdftoppm.exe",
+    "versions": {
+      "ocrmypdf": "17.8.1",
+      "pymupdf": "1.27.1",
+      "pypdf": "6.10.0",
+      "pypdfium2": "5.12.1",
+      "tesseract": "tesseract v5.4.0.20240606",
+      "pdftotext": "pdftotext version 24.08.0",
+      "pdfinfo": "pdfinfo version 24.08.0",
+      "pdftoppm": "pdftoppm version 24.08.0"
+    },
+    "ghostscript": null,
+    "qpdf": null
+  },
+  "output": {
+    "sha256": "EB8A2FEB10D23EFAC6839ACB7EFD853BC08E25F8B25DB06FE1D67D2DF85A9AB5",
+    "bytes": 222728,
+    "text_sha256": "340CB6997783B2E15628B8703DFB442517979E0894A8D473C2645CFD1340ABEF",
+    "text_bytes": 532,
+    "text_characters": 474,
+    "final_paths": {
+      "pdf": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.pdf",
+      "txt": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.txt",
+      "log": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.log",
+      "status": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.status.json"
+    },
+    "finalized": true
+  },
+  "validation": {
+    "pymupdf": [
+      {
+        "page_number": 1,
+        "input_size_points": [
+          595.0,
+          842.0
+        ],
+        "output_size_points": [
+          595.0,
+          842.0
+        ],
+        "input_rotation": 0,
+        "output_rotation": 0,
+        "input_nonwhite_fraction": 0.036267,
+        "output_nonwhite_fraction": 0.036267,
+        "render_width": 298,
+        "render_height": 421
+      },
+      {
+        "page_number": 2,
+        "input_size_points": [
+          595.2,
+          841.92
+        ],
+        "output_size_points": [
+          595.2,
+          841.92
+        ],
+        "input_rotation": 0,
+        "output_rotation": 0,
+        "input_nonwhite_fraction": 0.02675,
+        "output_nonwhite_fraction": 0.02675,
+        "render_width": 298,
+        "render_height": 421
+      }
+    ],
+    "pypdf_strict": true,
+    "pdfinfo": true,
+    "pdftoppm": true
+  },
+  "error": null
+}
+

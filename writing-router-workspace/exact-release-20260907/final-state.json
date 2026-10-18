@@ -1,0 +1,66 @@
+{
+  "layers": [
+    {
+      "skill": "docx",
+      "commit": "da0c2758ad7577f76974c6bce58e4aa1f77c2a52",
+      "host": ".cc-switch",
+      "file_count": 142,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    },
+    {
+      "skill": "docx",
+      "commit": "da0c2758ad7577f76974c6bce58e4aa1f77c2a52",
+      "host": ".claude",
+      "file_count": 142,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    },
+    {
+      "skill": "docx",
+      "commit": "da0c2758ad7577f76974c6bce58e4aa1f77c2a52",
+      "host": ".codex",
+      "file_count": 142,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    },
+    {
+      "skill": "writing-router",
+      "commit": "c32d384a879b5870b07af35fd5248cacd15f7adc",
+      "host": ".cc-switch",
+      "file_count": 25,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    },
+    {
+      "skill": "writing-router",
+      "commit": "c32d384a879b5870b07af35fd5248cacd15f7adc",
+      "host": ".claude",
+      "file_count": 25,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    },
+    {
+      "skill": "writing-router",
+      "commit": "c32d384a879b5870b07af35fd5248cacd15f7adc",
+      "host": ".codex",
+      "file_count": 25,
+      "equal_to_commit": true,
+      "missing": [],
+      "extra": [],
+      "different": []
+    }
+  ],
+  "index_empty": true,
+  "head": "c32d384a879b5870b07af35fd5248cacd15f7adc"
+}

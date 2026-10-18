@@ -1,0 +1,246 @@
+{
+  "/case": {
+    "name": "download__restart_saved_partial",
+    "facts": "模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。",
+    "process": {
+      "pid": 52084,
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "startedAt": "2026-10-08T13:47:18.596Z",
+      "case": "download__restart_saved_partial",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "contextCreatedAt": "2026-10-08T13:48:33.481Z",
+      "restartCount": 1,
+      "liveTaskCount": 0
+    },
+    "controls": {
+      "saveDelayMs": 0,
+      "failNextImport": false
+    },
+    "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+    "inputs": [
+      {
+        "itemType": "journalArticle",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001",
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+      }
+    ]
+  },
+  "/process": {
+    "pid": 52084,
+    "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+    "startedAt": "2026-10-08T13:47:18.596Z",
+    "case": "download__restart_saved_partial",
+    "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+    "contextCreatedAt": "2026-10-08T13:48:33.481Z",
+    "restartCount": 1,
+    "liveTaskCount": 0
+  },
+  "/libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "/collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "/items": [
+    {
+      "id": 1,
+      "key": "FX000001",
+      "libraryID": 1,
+      "itemType": "journalArticle",
+      "fields": {
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001"
+      },
+      "creators": [
+        {
+          "creatorType": "author",
+          "firstName": "Mira",
+          "lastName": "Fixture"
+        }
+      ],
+      "collections": [
+        20,
+        21
+      ],
+      "parentID": null,
+      "deleted": false,
+      "dateAdded": "2026-10-08T13:44:00.375Z",
+      "dateModified": "2026-10-08T13:44:00.375Z"
+    }
+  ],
+  "/settings": {
+    "zoteroscihub.automatic_pdf_download": false
+  },
+  "/tasks": [],
+  "/logs": [
+    {
+      "time": "2026-10-08T13:44:00.399Z",
+      "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+      "case": "download__restart_saved_partial",
+      "action": "fixture.seed",
+      "facts": "模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。",
+      "initialAutomatic": false,
+      "simulated": true
+    },
+    {
+      "time": "2026-10-08T13:44:00.399Z",
+      "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+      "case": "download__restart_saved_partial",
+      "action": "fixture.seed.previousSession",
+      "facts": "已持久化 Pref=false、父条目 id=1；模拟重启后不保留前一会话的任务或 JS 全局状态。",
+      "savedParentItemID": 1,
+      "savedAutomatic": false,
+      "restartCount": 1
+    },
+    {
+      "time": "2026-10-08T13:48:33.481Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.016Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.020Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/process",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.023Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/libraries",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.025Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/collections",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.029Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/items",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.029Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.read.items",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": [
+        1
+      ]
+    },
+    {
+      "time": "2026-10-08T13:49:58.032Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.035Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/tasks",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:58.037Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__restart_saved_partial",
+      "action": "http.request",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "method": "GET",
+      "path": "/cases/download__restart_saved_partial/logs",
+      "query": {}
+    }
+  ]
+}

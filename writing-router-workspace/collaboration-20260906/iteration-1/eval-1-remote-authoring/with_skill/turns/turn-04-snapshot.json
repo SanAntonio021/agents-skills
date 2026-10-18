@@ -1,0 +1,42 @@
+{
+  "fixture.txt": "Offline remote document fixture.\n",
+  "remote/document.json": {
+    "revision": 1,
+    "blocks": [
+      {
+        "id": "block-1",
+        "text": "本测试拟采集室温与加热后两种状态下的温度数据，比较两种状态的温度差异。"
+      }
+    ],
+    "events": [
+      {
+        "action": "fetch",
+        "actor": "assistant",
+        "revision_before": 0,
+        "revision_after": 0,
+        "error": null
+      },
+      {
+        "action": "fetch",
+        "actor": "assistant",
+        "revision_before": 0,
+        "revision_after": 0,
+        "error": null
+      },
+      {
+        "action": "append",
+        "actor": "assistant",
+        "revision_before": 0,
+        "revision_after": 1,
+        "error": null
+      },
+      {
+        "action": "fetch",
+        "actor": "assistant",
+        "revision_before": 1,
+        "revision_after": 1,
+        "error": null
+      }
+    ]
+  }
+}

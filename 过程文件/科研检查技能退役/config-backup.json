@@ -1,0 +1,13 @@
+{
+  "process_id": 68920,
+  "exit_code": 0,
+  "stdout": "Creating backup with name 'rigor-check-retirement-20260911'...\n✓ Backup created: rigor-check-retirement-20260911_20260911_060905\nLocation: C:\\Users\\SanAn\\.cc-switch\\backups\\rigor-check-retirement-20260911_20260911_060905.sql",
+  "stderr": "",
+  "arguments": [
+    "config",
+    "backup",
+    "--name",
+    "rigor-check-retirement-20260911"
+  ],
+  "proxy_source": "wininet"
+}

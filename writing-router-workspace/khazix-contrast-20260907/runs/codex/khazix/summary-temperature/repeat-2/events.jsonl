@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c45-12c8-7392-a229-5faf31271f30"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"该控制器目前仅验证了在 15 °C 和 30 °C 下可连续运行 12 小时且不中断，-5 °C 下两次均无法启动，50 °C 条件尚未试验。"}}
+{"type":"turn.completed","usage":{"input_tokens":29773,"cached_input_tokens":11648,"cache_write_input_tokens":0,"output_tokens":236,"reasoning_output_tokens":180}}

@@ -1,0 +1,30 @@
+{
+  "status": "running",
+  "steps": [],
+  "pages": [
+    {
+      "task_id": "task_A6UWD8MPpf1lgb81jDAK_w",
+      "tab_id": "7695477E4CF1113716887DB7BAAB607C",
+      "open_status": "ready"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_A6UWD8MPpf1lgb81jDAK_w",
+      "tab_id": "7695477E4CF1113716887DB7BAAB607C",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_A6UWD8MPpf1lgb81jDAK_w",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "released_tab": null,
+  "page_status": "closed"
+}

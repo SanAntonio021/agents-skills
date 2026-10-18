@@ -369,9 +369,11 @@ def run_check(
         result["status"] = "CHECK_FAILED"
     # Native Office and LibreOffice already identify the checked source; keep that binding honest.
     if result["ok"]:
-        for key in ("file", "source"):
+        for key in ("file", "source", "checked_document"):
             if result.get(key) and (not isinstance(result[key], str) or Path(result[key]).resolve() != document):
                 result.update(ok=False, status="CHECK_SOURCE_MISMATCH")
+        if result.get("output") and (not isinstance(result["output"], str) or Path(result["output"]).resolve() != document):
+            result.update(ok=False, status="CHECK_SOURCE_MISMATCH")
         for key in ("source_sha256", "source_sha256_before", "source_sha256_after"):
             if key in result and (not isinstance(result[key], str) or result[key].lower() != before_document["sha256"]):
                 result.update(ok=False, status="CHECK_SOURCE_MISMATCH")
@@ -380,8 +382,9 @@ def run_check(
         result.update(ok=False, status="FILES_CHANGED_DURING_CHECK", changed=changed)
     result.update(reused=False, check_exit_code=exit_code)
     outputs = []
-    if result["ok"] and result.get("output"):
-        output = fingerprint(result["output"], "check_output") if isinstance(result["output"], str) else None
+    output_path = result.get("check_output") or result.get("output")
+    if result["ok"] and output_path:
+        output = fingerprint(output_path, "check_output") if isinstance(output_path, str) else None
         if output is None or output["sha256"] is None:
             result.update(ok=False, status="CHECK_OUTPUT_MISSING")
         else:

@@ -1,0 +1,33 @@
+{
+  "host": "codex",
+  "arm": "khazix",
+  "case": "summary-power",
+  "repeat": 2,
+  "requested_model": "gpt-5.6-sol",
+  "route": {
+    "route": "existing_cli"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-7v3l7mdi",
+  "prompt_sha256": "738be78598cb3777e4c5ba06b58ab8f58851ef51475f6cabcfaa332b64e1c2f5",
+  "status": "completed",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "upstream/khazix-writer/SKILL.md",
+    "upstream/khazix-writer/references/style_examples.md",
+    "upstream/khazix-writer/references/content_methodology.md"
+  ],
+  "upstream_scope": "explicitly_excluded_summary",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964",
+  "models": [
+    "gpt-5.6-sol"
+  ],
+  "session": "01a07c45-4f2a-7980-b6e9-36067bd04a34",
+  "duration_seconds": 15.7,
+  "timed_out": false,
+  "exit_code": 0,
+  "material_unchanged": true,
+  "automatic_catalog_and_user_context_absent": true,
+  "background_rules": "Host rules may remain; inspect successful reads, not a fully blank system context",
+  "read_scope": "pending_review"
+}

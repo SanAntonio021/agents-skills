@@ -1,0 +1,54 @@
+{
+  "parent_review_complete": true,
+  "decisions": [
+    {
+      "case": "integration-note",
+      "winner": "candidate",
+      "gain": "small",
+      "parent_agrees": true,
+      "evidence": "两者均已达到核心要求。B的窄幅增益仅在第1轮省去了不承担新说明作用的核对/验收状态句，且没有丢失本次参数比较所需的限制。A第2轮已删除该句，最终两版实质相当。不是因为B更短，也不据此推断稳定优越。"
+    },
+    {
+      "case": "test-explanation",
+      "winner": "tie",
+      "gain": "none",
+      "parent_agrees": true,
+      "evidence": "两者全程达标，删除空话后未反弹，严格遵守后两轮局部修改范围。采集/读取、不会中断/不中断和首句主语取舍未产生可辨别的质量增益。必要范围限定不算重复，句长和标点不足以判优。"
+    },
+    {
+      "case": "terms-control",
+      "winner": "candidate",
+      "gain": "small",
+      "parent_agrees": true,
+      "evidence": "两者都达到术语含义、事实和格式要求。A的窄幅增益是未保留“两类指标采用不同的处理方式”这一无新信息的概括，必要的约束解释及统计澄清仍完整。不是越短越好，也不惩罚合法术语。"
+    }
+  ],
+  "candidate_small_wins": 2,
+  "ties": 1,
+  "facts_scope_regressions_found": false,
+  "completed_turns": 14,
+  "independent_scenarios": 3,
+  "mechanical_checks_passed": 16,
+  "quality_status": "small_positive_codex_pilot_not_dual_host_acceptance",
+  "claude_status": "provider_503_no_available_accounts_then_cancelled",
+  "source_merged": false,
+  "runtime_published": false,
+  "installed_snapshot_files_unchanged": {
+    "style-vocab/SKILL.md": true,
+    "technical-writing/SKILL.md": true,
+    "writing-router/SKILL.md": true,
+    "writing-router/evals/README.md": true,
+    "writing-router/references/academic-workflow-map.md": true,
+    "writing-router/references/ai-smell-catalog.md": true,
+    "writing-router/references/collaborative-writing.md": true,
+    "writing-router/references/common-quality.md": true,
+    "writing-router/references/document-version-protection.md": true,
+    "writing-router/references/exact-edit.md": true,
+    "writing-router/references/markdown-docx-contract.md": true,
+    "writing-router/references/upstream-sources.md": true,
+    "technical-writing/references/technical-exchange.md": true,
+    "technical-writing/references/upstream-sources.md": true,
+    "style-vocab/references/upstream-sources.md": true
+  },
+  "next_step": "Restore the existing Claude provider availability before additional cross-host testing; do not switch providers without approval."
+}

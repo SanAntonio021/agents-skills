@@ -1,0 +1,1 @@
+{"command": "check", "result": {"simulation": true, "stage": "ready", "credential_available": true, "pdf_reader_available": true, "has_session": false, "browser_autofilled": false}}

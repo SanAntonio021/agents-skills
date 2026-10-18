@@ -1,0 +1,250 @@
+test_detached_head_work_and_nonbranch_refs_are_retained (test_acceptance_coverage.IntegrationAcceptanceTests.test_detached_head_work_and_nonbranch_refs_are_retained) ... FAIL
+test_durable_data_needs_usable_copy_not_backup (test_acceptance_coverage.IntegrationAcceptanceTests.test_durable_data_needs_usable_copy_not_backup) ... FAIL
+test_lease_drift_and_atomic_failure_keep_all_remote_targets (test_acceptance_coverage.IntegrationAcceptanceTests.test_lease_drift_and_atomic_failure_keep_all_remote_targets) ... ok
+test_merge_is_allowed_by_default_and_linear_option_rejects (test_acceptance_coverage.IntegrationAcceptanceTests.test_merge_is_allowed_by_default_and_linear_option_rejects) ... FAIL
+test_stash_and_dirty_work_have_to_be_committed (test_acceptance_coverage.IntegrationAcceptanceTests.test_stash_and_dirty_work_have_to_be_committed) ... FAIL
+test_unmerged_branch_fails_before_deletion_and_false_cleanup (test_acceptance_coverage.IntegrationAcceptanceTests.test_unmerged_branch_fails_before_deletion_and_false_cleanup) ... FAIL
+test_classification_and_ancestor_replacement_change_snapshot (test_capture_v3.CaptureV3Tests.test_classification_and_ancestor_replacement_change_snapshot) ... ok
+test_hidden_index_flags_and_nested_repository_block (test_capture_v3.CaptureV3Tests.test_hidden_index_flags_and_nested_repository_block) ... ok
+test_legacy_disposition_still_hashes_cache (test_capture_v3.CaptureV3Tests.test_legacy_disposition_still_hashes_cache) ... ERROR
+test_missing_rebuild_and_overlapping_paths_rejected (test_capture_v3.CaptureV3Tests.test_missing_rebuild_and_overlapping_paths_rejected) ... ok
+test_new_root_and_ignore_negation_stop_capture (test_capture_v3.CaptureV3Tests.test_new_root_and_ignore_negation_stop_capture) ... ok
+test_no_cache_traversal_or_hash_and_internal_change_does_not_drift (test_capture_v3.CaptureV3Tests.test_no_cache_traversal_or_hash_and_internal_change_does_not_drift) ... ok
+test_preserved_change_and_root_replacement_drift (test_capture_v3.CaptureV3Tests.test_preserved_change_and_root_replacement_drift) ... ok
+test_sparse_submodule_and_interrupted_merge_are_not_silently_captured (test_capture_v3.CaptureV3Tests.test_sparse_submodule_and_interrupted_merge_are_not_silently_captured) ... ok
+test_tracked_file_below_cache_cannot_be_excluded (test_capture_v3.CaptureV3Tests.test_tracked_file_below_cache_cannot_be_excluded) ... ok
+test_allowed_external_file_symlink_is_not_read_during_index_refresh (test_recovery_flow.FilesystemSafetyTests.test_allowed_external_file_symlink_is_not_read_during_index_refresh) ... ok
+test_exact_allowlist_rejects_wrong_path_kind_target_and_worktree (test_recovery_flow.FilesystemSafetyTests.test_exact_allowlist_rejects_wrong_path_kind_target_and_worktree) ... ok
+test_existing_junction_parent_cannot_receive_later_payload (test_recovery_flow.FilesystemSafetyTests.test_existing_junction_parent_cannot_receive_later_payload) ... ok
+test_full_snapshot_detects_payload_drift_across_two_second_gate (test_recovery_flow.FilesystemSafetyTests.test_full_snapshot_detects_payload_drift_across_two_second_gate) ... ERROR
+test_index_refresh_never_invokes_git_for_a_link_kind (test_recovery_flow.FilesystemSafetyTests.test_index_refresh_never_invokes_git_for_a_link_kind) ... ok
+test_later_payload_cannot_redirect_existing_internal_alias_outside (test_recovery_flow.FilesystemSafetyTests.test_later_payload_cannot_redirect_existing_internal_alias_outside) ... ok
+test_link_plan_rejects_cycles_and_resolves_parent_after_alias (test_recovery_flow.FilesystemSafetyTests.test_link_plan_rejects_cycles_and_resolves_parent_after_alias) ... ok
+test_old_hardlink_cannot_target_a_symlink_or_escape (test_recovery_flow.FilesystemSafetyTests.test_old_hardlink_cannot_target_a_symlink_or_escape) ... ok
+test_old_plain_tar_is_compatible (test_recovery_flow.FilesystemSafetyTests.test_old_plain_tar_is_compatible) ... ok
+test_path_escape_drive_ads_and_duplicates_are_rejected_before_writes (test_recovery_flow.FilesystemSafetyTests.test_path_escape_drive_ads_and_duplicates_are_rejected_before_writes) ... ok
+test_planned_external_link_chain_requires_permission_for_every_alias (test_recovery_flow.FilesystemSafetyTests.test_planned_external_link_chain_requires_permission_for_every_alias) ... ok
+test_tar_cannot_write_below_a_link_even_when_external_link_is_allowed (test_recovery_flow.FilesystemSafetyTests.test_tar_cannot_write_below_a_link_even_when_external_link_is_allowed) ... ok
+test_unknown_reparse_and_archive_kind_are_rejected (test_recovery_flow.FilesystemSafetyTests.test_unknown_reparse_and_archive_kind_are_rejected) ... ok
+test_capture_and_isolated_replay_preserve_every_worktree_state (test_recovery_flow.RecoveryFlowTests.test_capture_and_isolated_replay_preserve_every_worktree_state) ... FAIL
+test_capture_and_replay_ignore_failing_textconv (test_recovery_flow.RecoveryFlowTests.test_capture_and_replay_ignore_failing_textconv) ... FAIL
+test_capture_fails_when_any_ignored_root_has_no_disposition (test_recovery_flow.RecoveryFlowTests.test_capture_fails_when_any_ignored_root_has_no_disposition) ... ok
+test_final_acceptance_passes_only_after_exact_branch_and_backup_cleanup (test_recovery_flow.RecoveryFlowTests.test_final_acceptance_passes_only_after_exact_branch_and_backup_cleanup) ... FAIL
+test_long_paths_and_external_junction_are_captured_without_following (test_recovery_flow.RecoveryFlowTests.test_long_paths_and_external_junction_are_captured_without_following) ... FAIL
+test_cache_ancestor_must_be_regular_and_complete (test_restore_v3.RootRecordRestoreTests.test_cache_ancestor_must_be_regular_and_complete) ... ok
+test_cache_records_cannot_cover_captured_protected_files (test_restore_v3.RootRecordRestoreTests.test_cache_records_cannot_cover_captured_protected_files) ... ok
+test_lightweight_records_reject_missing_basis_and_mixed_representations (test_restore_v3.RootRecordRestoreTests.test_lightweight_records_reject_missing_basis_and_mixed_representations) ... ok
+test_new_lightweight_restore_does_not_require_original_or_run_rebuild (test_restore_v3.RootRecordRestoreTests.test_new_lightweight_restore_does_not_require_original_or_run_rebuild) ... FAIL
+test_snapshot_disposition_version_matrix (test_restore_v3.RootRecordRestoreTests.test_snapshot_disposition_version_matrix) ... ok
+
+======================================================================
+ERROR: test_legacy_disposition_still_hashes_cache (test_capture_v3.CaptureV3Tests.test_legacy_disposition_still_hashes_cache)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_capture_v3.py", line 118, in test_legacy_disposition_still_hashes_cache
+    before = self.snapshot(repo, disposition)
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_capture_v3.py", line 27, in snapshot
+    return capture.full_snapshot(repo, "origin", "refs/backup/test", {fs.canonical_path(repo): disposition})
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 557, in full_snapshot
+    "reflog": decode(filtered_reflog(repo, refbase)),
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 219, in filtered_reflog
+    raw = git(repo, "reflog", "show", "--all", "--date=iso-strict", "--format=%H%x09%gD%x09%gs").stdout
+          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 55, in git
+    return run(
+        ["git", "--no-optional-locks", "-C", repo, *args],
+        check=check,
+        input_bytes=input_bytes,
+    )
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 46, in run
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: Command failed (128): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-iwr99bq_/repo'), 'reflog', 'show', '--all', '--date=iso-strict', '--format=%H%x09%gD%x09%gs']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+
+
+======================================================================
+ERROR: test_full_snapshot_detects_payload_drift_across_two_second_gate (test_recovery_flow.FilesystemSafetyTests.test_full_snapshot_detects_payload_drift_across_two_second_gate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 562, in test_full_snapshot_detects_payload_drift_across_two_second_gate
+    stable = capture_module.stable_snapshot(reader, sleeper=sleeper)
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 595, in stable_snapshot
+    first = reader()
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 557, in <lambda>
+    reader = lambda: capture_module.full_snapshot(repo, "origin", "refs/backup/branch-consolidation/test", {})
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 557, in full_snapshot
+    "reflog": decode(filtered_reflog(repo, refbase)),
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 219, in filtered_reflog
+    raw = git(repo, "reflog", "show", "--all", "--date=iso-strict", "--format=%H%x09%gD%x09%gs").stdout
+          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 55, in git
+    return run(
+        ["git", "--no-optional-locks", "-C", repo, *args],
+        check=check,
+        input_bytes=input_bytes,
+    )
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\scripts\capture_recovery.py", line 46, in run
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: Command failed (128): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-mwj5tbpg/repo'), 'reflog', 'show', '--all', '--date=iso-strict', '--format=%H%x09%gD%x09%gs']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+
+
+======================================================================
+FAIL: test_detached_head_work_and_nonbranch_refs_are_retained (test_acceptance_coverage.IntegrationAcceptanceTests.test_detached_head_work_and_nonbranch_refs_are_retained)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_acceptance_coverage.py", line 79, in test_detached_head_work_and_nonbranch_refs_are_retained
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:03:43.959233+00:00] fetching origin and reading live refs
+[2026-10-14T14:03:45.014687+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+FATAL: Command failed (128): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('//?/D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-gzkz5hfs/repo'), 'reflog', 'show', '--all', '--date=iso-strict', '--format=%H%x09%gD%x09%gs']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+
+
+
+======================================================================
+FAIL: test_durable_data_needs_usable_copy_not_backup (test_acceptance_coverage.IntegrationAcceptanceTests.test_durable_data_needs_usable_copy_not_backup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_acceptance_coverage.py", line 95, in test_durable_data_needs_usable_copy_not_backup
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:04:00.109127+00:00] fetching origin and reading live refs
+[2026-10-14T14:04:01.003701+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+FATAL: Command failed (128): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('//?/D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-v0658h41/repo'), 'reflog', 'show', '--all', '--date=iso-strict', '--format=%H%x09%gD%x09%gs']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+
+
+
+======================================================================
+FAIL: test_merge_is_allowed_by_default_and_linear_option_rejects (test_acceptance_coverage.IntegrationAcceptanceTests.test_merge_is_allowed_by_default_and_linear_option_rejects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_acceptance_coverage.py", line 38, in test_merge_is_allowed_by_default_and_linear_option_rejects
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:04:23.868826+00:00] fetching origin and reading live refs
+[2026-10-14T14:04:24.732895+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+FATAL: Full frozen snapshots differ across the 2-second interval
+
+
+======================================================================
+FAIL: test_stash_and_dirty_work_have_to_be_committed (test_acceptance_coverage.IntegrationAcceptanceTests.test_stash_and_dirty_work_have_to_be_committed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_acceptance_coverage.py", line 56, in test_stash_and_dirty_work_have_to_be_committed
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:04:39.492459+00:00] fetching origin and reading live refs
+[2026-10-14T14:04:41.081872+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+FATAL: Full frozen snapshots differ across the 2-second interval
+
+
+======================================================================
+FAIL: test_unmerged_branch_fails_before_deletion_and_false_cleanup (test_acceptance_coverage.IntegrationAcceptanceTests.test_unmerged_branch_fails_before_deletion_and_false_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_acceptance_coverage.py", line 29, in test_unmerged_branch_fails_before_deletion_and_false_cleanup
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:04:57.242601+00:00] fetching origin and reading live refs
+[2026-10-14T14:04:58.048083+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+FATAL: Full frozen state drifted before pinning protected refs
+
+
+======================================================================
+FAIL: test_capture_and_isolated_replay_preserve_every_worktree_state (test_recovery_flow.RecoveryFlowTests.test_capture_and_isolated_replay_preserve_every_worktree_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 206, in test_capture_and_isolated_replay_preserve_every_worktree_state
+    self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : FATAL: Full frozen snapshots differ across the 2-second interval
+[2026-10-14T14:06:32.586337+00:00] fetching origin and reading live refs
+[2026-10-14T14:06:33.524610+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+
+
+======================================================================
+FAIL: test_capture_and_replay_ignore_failing_textconv (test_recovery_flow.RecoveryFlowTests.test_capture_and_replay_ignore_failing_textconv)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 147, in test_capture_and_replay_ignore_failing_textconv
+    self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : FATAL: Command failed (1): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('//?/D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-wglzwih0/repo'), 'fetch', '--no-tags', '--no-write-fetch-head', 'origin', '+refs/tags/v1:refs/backup/branch-consolidation/no-textconv/remote-tags/v1']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+error: D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\baseline-tests\gbc-wglzwih0\remote.git did not send all necessary objects
+
+[2026-10-14T14:06:50.822463+00:00] fetching origin and reading live refs
+[2026-10-14T14:06:51.488698+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+[2026-10-14T14:07:03.780617+00:00] pinning every protected object under temporary backup refs
+
+
+======================================================================
+FAIL: test_final_acceptance_passes_only_after_exact_branch_and_backup_cleanup (test_recovery_flow.RecoveryFlowTests.test_final_acceptance_passes_only_after_exact_branch_and_backup_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 265, in test_final_acceptance_passes_only_after_exact_branch_and_backup_cleanup
+    self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : FATAL: Command failed (1): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('//?/D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-shnsauft/repo'), 'fetch', '--no-tags', '--no-write-fetch-head', 'origin', '+refs/heads/feature:refs/backup/branch-consolidation/acceptance/remote-heads/feature']
+stdout=
+stderr=fatal: bad object refs/heads/feature.baiduyun.uploading.cfg
+error: D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\baseline-tests\gbc-shnsauft\remote.git did not send all necessary objects
+
+[2026-10-14T14:07:13.938580+00:00] fetching origin and reading live refs
+[2026-10-14T14:07:14.890469+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+[2026-10-14T14:07:26.601108+00:00] pinning every protected object under temporary backup refs
+
+
+======================================================================
+FAIL: test_long_paths_and_external_junction_are_captured_without_following (test_recovery_flow.RecoveryFlowTests.test_long_paths_and_external_junction_are_captured_without_following)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_recovery_flow.py", line 352, in test_long_paths_and_external_junction_are_captured_without_following
+    self.assertEqual(captured.returncode, 0, captured.stderr + captured.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : FATAL: Command failed (1): ['git', '-c', 'core.longpaths=true', '--no-optional-locks', '-C', WindowsPath('//?/D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-b1x6eyii/repo'), 'fetch', '--no-tags', '--no-write-fetch-head', 'origin', '+refs/tags/v1:refs/backup/branch-consolidation/long-junction/remote-tags/v1']
+stdout=
+stderr=fatal: bad object refs/heads/main.baiduyun.uploading.cfg
+error: D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\baseline-tests\gbc-b1x6eyii\remote.git did not send all necessary objects
+
+[2026-10-14T14:07:31.676502+00:00] fetching origin and reading live refs
+[2026-10-14T14:07:32.735319+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+[2026-10-14T14:07:44.971043+00:00] pinning every protected object under temporary backup refs
+
+
+======================================================================
+FAIL: test_new_lightweight_restore_does_not_require_original_or_run_rebuild (test_restore_v3.RootRecordRestoreTests.test_new_lightweight_restore_does_not_require_original_or_run_rebuild)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\BaiduSyncdisk\.agents\skills\过程文件\Git分支收口技能完善_20261014\source-before\tests\test_restore_v3.py", line 43, in test_new_lightweight_restore_does_not_require_original_or_run_rebuild
+    self.assertEqual(captured.returncode, 0, captured.stdout + captured.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : [2026-10-14T14:07:51.258940+00:00] fetching origin and reading live refs
+[2026-10-14T14:07:52.159011+00:00] reading two complete frozen snapshots, separated by at least 2 seconds
+[2026-10-14T14:08:03.448933+00:00] pinning every protected object under temporary backup refs
+[2026-10-14T14:08:06.226487+00:00] capturing 1 worktree states
+[2026-10-14T14:08:06.227397+00:00] worktree 1/1: D:/BaiduSyncdisk/.agents/skills/过程文件/Git分支收口技能完善_20261014/baseline-tests/gbc-qfccqzvt/repo
+[2026-10-14T14:08:10.018283+00:00] capturing Git metadata and validating source objects
+FATAL: Source git fsck --full failed
+
+
+----------------------------------------------------------------------
+Ran 38 tests in 274.154s
+
+FAILED (failures=10, errors=2)

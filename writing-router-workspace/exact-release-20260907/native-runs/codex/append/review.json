@@ -1,0 +1,21 @@
+{
+  "batch": "native-runs",
+  "host": "codex",
+  "case": "append",
+  "receipt_present": true,
+  "session": "01a07cca-52b5-70a2-be85-2fafa3c9303e",
+  "startup_writing_router_available": null,
+  "source_unchanged": true,
+  "parent_byte_check": null,
+  "parent_read_error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\result.md'",
+  "byte_details": null,
+  "successful_helper_command": true,
+  "apply_hash_matches_expected": true,
+  "verify_hash_matches_expected": true,
+  "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9",
+  "helper_command_evidence": [
+    "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$pythonExe = '\"'C:\\\\Python313\\\\python.exe'\n\"'$script = '\"'C:\\\\Users\\\\SanAn\\\\.cc-switch\\\\skills\\\\writing-router\\\\scripts\\\\exact_edit.py'\n\"'$source = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\original.md'\n\"'$output = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\result.md'\n\"'$sourceHash = '\"'b479ccaaab7e63a5b72ecd32f3df3127fff76fd1de65feb6e59d03b462446047'\n\"'$appendText = '\"'周五09:40送到的测试件先放西侧库房，下周一再清点。'\nif (-not (Test-Path -LiteralPath \"'$pythonExe -PathType Leaf)) { throw '\"'Configured Python executable is unavailable.' }\nif (-not (Test-Path -LiteralPath \"'$script -PathType Leaf)) { throw '\"'exact_edit.py is unavailable.' }\n& \"'$pythonExe $script apply --source $source --source-sha256 $sourceHash --append $appendText --output $output\nif ($LASTEXITCODE -ne 0) { throw \"exact_edit.py apply failed with exit code $LASTEXITCODE.\" }'",
+    "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n$pythonExe = '\"'C:\\\\Python313\\\\python.exe'\n\"'$script = '\"'C:\\\\Users\\\\SanAn\\\\.cc-switch\\\\skills\\\\writing-router\\\\scripts\\\\exact_edit.py'\n\"'$source = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\original.md'\n\"'$candidate = '\"'C:\\\\Users\\\\SanAn\\\\AppData\\\\Local\\\\Temp\\\\exact-edit-live-adgbpha7\\\\result.md'\n\"'$sourceHash = '\"'b479ccaaab7e63a5b72ecd32f3df3127fff76fd1de65feb6e59d03b462446047'\n\"'$appendText = '\"'周五09:40送到的测试件先放西侧库房，下周一再清点。'\n& \"'$pythonExe $script verify --source $source --source-sha256 $sourceHash --append $appendText --candidate $candidate\nif ($LASTEXITCODE -ne 0) { throw \"exact_edit.py verify failed with exit code $LASTEXITCODE.\" }\n$resultItem = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop\n$resultContent = Get-Content -LiteralPath $candidate -Raw -Encoding UTF8 -ErrorAction Stop\n$resultHash = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()\nWrite-Output \"RESULT_BYTES=$($resultItem.Length)\"\nWrite-Output \"RESULT_SHA256=$resultHash\"\nWrite-Output '\"'RESULT_BEGIN'\nWrite-Output \"'$resultContent\nWrite-Output '\"'RESULT_END'\""
+  ],
+  "final": "C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-adgbpha7/result.md"
+}

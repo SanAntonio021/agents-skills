@@ -1,0 +1,72 @@
+{
+  "skill_name": "docx",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请在一份已有的中文申报书 DOCX 中补写两段正文并统一一个二级标题。不要整体换模板，也不要改变现有中文样式名称。你会走什么流程？",
+      "expected_output": "Use the existing-document path: preserve existing style IDs, reuse them for inserted text, avoid template style import, and verify with style_guard audit.",
+      "files": [],
+      "assertions": [
+        "Routes the task to docx existing-document editing rather than template application.",
+        "Freezes the existing style table and reuses existing style IDs for inserted paragraphs.",
+        "Uses style_guard audit and does not enable template style import."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "新建一份 Word 报告，并明确把整篇文档套用 qiye-shenbao 预设。请说明入口、命令门禁、输出和 Word 进程保护。",
+      "expected_output": "Use docx's template workflow and the bundled qiye-shenbao profile, require both template-import and current-operation COM permission, write a new output, and stop if Word is already running.",
+      "files": [],
+      "assertions": [
+        "Uses the docx template workflow and scripts/template entrypoint.",
+        "Requires both --allow-template-style-import and --allow-office-com.",
+        "Writes a new output and refuses to attach to or close an existing Word process."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "把现有 Markdown 稿导出成 Word，并按我的 Normal.dotm 落实版式。Markdown 原稿不能改，Word 当前如果已打开也不能碰。请说明流程。",
+      "expected_output": "Use docx's Markdown export wrapper with explicit current-task COM permission, preserve the Markdown source, delegate native template handling to the guarded Python path, and stop when WINWORD.EXE exists.",
+      "files": [],
+      "assertions": [
+        "Uses scripts/template/export_markdown_to_word.ps1 under the docx skill.",
+        "Treats Normal.dotm as the formatting source without modifying the Markdown input.",
+        "Requires current-task COM approval and stops if WINWORD.EXE already exists."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我想试用一个公开的 Office-Word-MCP-Server，让它生成 Word。请说明它能不能进入正式 DOCX 流程，以及如果只做隔离试验，如何处理三次确定性和 Word 打开、渲染验收。",
+      "expected_output": "Keep the public Office MCP out of production; use only an explicitly approved isolated diagnostic trial, run the offline three-round package comparator, and retain the independent LibreOffice, Word native open/render, and human inspection gates.",
+      "files": [],
+      "assertions": [
+        "Does not install or register a public Office MCP as a production dependency.",
+        "Requires three isolated rounds and reports MCP_NOT_ADMITTED even when package-level determinism passes.",
+        "Does not claim that an OOXML comparator proves page count, raster, Word open, or human visual acceptance."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "请给出一份正式 DOCX 的验收清单。除了四层门禁，还要逐项检查字体回退、段落缩进和行距、表格首行首列、页眉页脚几何、分页、Word 原生打开和 Word 原生渲染。",
+      "expected_output": "引用 Word 权威验收清单，要求每个项目记录责任层、基线、比较规则、结果、严重级别和证据路径；缺失/失败阻断，警告在用户确认前展示。",
+      "assertions": [
+        "References the authoritative word-acceptance-checklist.md.",
+        "Lists all seven explicit document-level acceptance items.",
+        "Requires item-level evidence and distinguishes hard blocks from warnings."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "一份正式 Word 看起来基本正常，但表格表头有些单元格仍带首行缩进，首列只设置了单元格垂直居中，部分文字字号不一且变成蓝色，页眉中的校名对象宽度超过正文可用宽度。能否验收通过？请说明逐项检查和证据要求。",
+      "expected_output": "不能通过。逐表检查段落水平对齐、单元格垂直对齐和段落缩进，分别审计字体字号字色，并按节计算页眉对象宽度与页面可用宽度；静态属性清单和对应渲染页证据均需非空。",
+      "files": [],
+      "assertions": [
+        "Rejects visual centering when table-cell paragraph indentation remains noncompliant.",
+        "Separately checks paragraph horizontal alignment and cell vertical alignment for every table.",
+        "Treats unexpected font size or blue/theme color as a hard formatting defect.",
+        "Compares each section's header object width with the approved baseline and usable page width.",
+        "Requires non-null machine evidence and linked rendered-page evidence."
+      ]
+    }
+  ]
+}

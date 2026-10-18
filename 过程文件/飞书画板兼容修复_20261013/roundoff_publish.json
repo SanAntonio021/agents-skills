@@ -1,0 +1,18 @@
+{
+  "receipt_excerpt": true,
+  "basis": "successful publisher stdout returned by session 9473; full VerifyOnly receipt retained separately",
+  "ok": true,
+  "status": "runtime_active",
+  "exit_code": 0,
+  "expected_remote_commit": "7d816428eca72581a54be41243dafb073b0cdfa0",
+  "non_target_unchanged": true,
+  "errors": [],
+  "warnings": [],
+  "layers_verified": [
+    "git_commit_blob",
+    "cc_switch",
+    "claude",
+    "codex"
+  ],
+  "manifest_sha256": "3F215931AAB0EAFDB7B5C0CCD9C67F311BFE860A56E4D4AA0183BA4A6F44E639"
+}

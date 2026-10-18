@@ -1,0 +1,1 @@
+{"command": "import", "result": {"simulation": true, "stage": "saved", "parent": "fixture-parent", "attachment": "fixture-attachment"}, "state": {"started": true, "access": true, "downloaded": true, "saved": true, "verified": false}}

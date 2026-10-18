@@ -1,0 +1,70 @@
+{
+  "kind": "scoped-recovery",
+  "backup": {
+    "process_id": 11636,
+    "exit_code": 0,
+    "stdout": "Creating backup with name 'writing-recovery-20260907-015311'...\n✓ Backup created: writing-recovery-20260907-015311_20260907_015311\nLocation: C:\\Users\\SanAn\\.cc-switch\\backups\\writing-recovery-20260907-015311_20260907_015311.sql",
+    "stderr": "",
+    "arguments": [
+      "config",
+      "backup",
+      "--name",
+      "writing-recovery-20260907-015311"
+    ],
+    "proxy_source": "wininet",
+    "transient_retry": false,
+    "retry_event": null
+  },
+  "actions": [
+    {
+      "skill": "technical-writing",
+      "ok": false,
+      "error": {
+        "code": "background_cli_command_failed",
+        "exit_code": 23,
+        "message": "The background CC Switch command failed with exit code 1: Error: Some skill updates need attention:\nSanAntonio021/agents-skills:technical-writing: Failed to stage existing Skill: C:\\Users\\SanAn\\.cc-switch\\skills\\technical-writing: 拒绝访问。 (os error 5)",
+        "retry_event": null
+      }
+    },
+    {
+      "skill": "writing-router",
+      "ok": true,
+      "action": {
+        "action": "updated_background",
+        "commands": [
+          {
+            "process_id": 12704,
+            "exit_code": 0,
+            "stdout": "✓ Updated 1 skill(s)",
+            "stderr": "",
+            "arguments": [
+              "skills",
+              "update",
+              "writing-router"
+            ],
+            "proxy_source": "wininet",
+            "transient_retry": false,
+            "retry_event": null
+          },
+          {
+            "process_id": 67380,
+            "exit_code": 0,
+            "stdout": "✓ Enabled 'writing-router' for claude, codex",
+            "stderr": "",
+            "arguments": [
+              "skills",
+              "enable",
+              "writing-router",
+              "--apps",
+              "claude,codex"
+            ],
+            "proxy_source": "wininet",
+            "transient_retry": false,
+            "retry_event": null
+          }
+        ]
+      }
+    }
+  ],
+  "ok": false
+}

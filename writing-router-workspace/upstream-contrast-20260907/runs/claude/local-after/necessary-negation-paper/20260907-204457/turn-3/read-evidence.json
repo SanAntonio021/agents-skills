@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/local-after/skills\" && printf '%s\\n\\n%s\\n' '### 单发送端条件下的帧丢弃率' '本实验统计的指标是帧丢弃率，不是缓存占用率：帧丢弃率只反映发送帧中被丢弃的比例，不表示缓存的占用程度，定义为 p_drop = N_drop / N_sent，其中 N_drop 为丢弃帧数，N_sent 为发送帧数。在 256 B 定长帧、单个发送端条件下，N_sent = 80000，N_drop = 160，计算得到 p_drop = 0.002。该结果只在上述条件下成立，不能说明多发送端竞争时的性能；多发送端测试尚未开展。' > /tmp/para4.md && python -X utf8 ieee-manuscript-edit/scripts/audit_writing_memory.py --file /tmp/para4.md --vocab-root \"D:/BaiduSyncdisk/.agents/vocab\" --language zh --document-kind paper --output-format markdown",
+      "description": "Audit paragraph with added subheading"
+    }
+  }
+]

@@ -1,0 +1,343 @@
+{
+    "complete":  true,
+    "total":  84,
+    "passed":  84,
+    "tests":  [
+                  {
+                      "name":  "manifest_two_groups_and_target_input",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_duplicate_group",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_duplicate_input",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_duplicate_output",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_output_traversal",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_output_inside_audit",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_missing_input_coverage",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_unrelated_coverage_destination",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_target_without_input",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_recovery_outside_audit",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_prepared_outside_audit",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_audit_overlap_project",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_audit_overlap_audit",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_audit_junction",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "reject_existing_business_hidden_in_audit",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "outputs_installed_once_for_many_inputs",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "final_tree_one_readme",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "only_current_audit_subtree_excluded",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "other_task_material_in_inventory",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_source_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_source_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_source_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_source_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_target_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_target_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_target_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_target_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_prepared_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_prepared_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_prepared_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_prepared_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_recovery_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_recovery_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_recovery_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_recovery_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_coverage_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_coverage_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_coverage_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "preflight_coverage_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "new_source_file_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "integration_interruption_state_saved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "unchecked_integration_keeps_old_sources",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "same_bytes_distinct_reference_roles_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "unrelated_target_content_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_output_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_output_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_output_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_output_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_recovery_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_recovery_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_recovery_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_recovery_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_report_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_report_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_report_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_plan_report_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_output_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_output_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_output_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_output_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_recovery_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_recovery_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_recovery_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_recovery_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_source_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_source_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_source_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_source_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_report_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_report_source_a_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_report_source_b_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "before_retirement_execute_report_all_integrated_source_files_retained",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "retirement_rejects_new_unplanned_source_file",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "unplanned_source_detected_before_first_recycle",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "failed_mock_recycle_preserves_source",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "all_integrated_old_roots_retired",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "new_project_usable_after_old_roots_removed",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "final_acceptance_detects_and_preserves_other_target_change",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "final_acceptance_detects_extra_target_file",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "single_source_plus_existing_target_supported",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "external_audit_supported_with_integration",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "uncovered_conflicting_inputs_remain_held",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "unresolved_first_variant_preserved",
+                      "passed":  true
+                  },
+                  {
+                      "name":  "unresolved_second_variant_preserved",
+                      "passed":  true
+                  }
+              ]
+}

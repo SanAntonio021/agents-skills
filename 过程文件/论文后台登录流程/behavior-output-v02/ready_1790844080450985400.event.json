@@ -1,0 +1,1 @@
+{"command": "verify", "result": {"simulation": true, "stage": "verified", "parent": "fixture-parent", "attachment": "fixture-attachment", "readable": true}, "state": {"started": true, "access": true, "downloaded": true, "saved": true, "verified": true}}

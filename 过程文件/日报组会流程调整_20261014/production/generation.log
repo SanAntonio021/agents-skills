@@ -1,0 +1,54 @@
+{
+  "created_at_utc": "2026-10-14T14:39:55.852933+00:00",
+  "authoring": "unchanged lab-report-slides make_pptx, bundled style profile",
+  "source_deck": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\deck.json",
+  "source_deck_sha256": "37876299fa5cf4c0d77b5172d6a030ce7fd3eac9f57e59ad9df185d16621cf82",
+  "source_hashes_before": {
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\switch.png": "e00f8d3ab8ae1e1d51ff1030a4f7edf41a7ce7cf31660ccbb6fb9da608dbd219",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\phase-noise.png": "dbba02df0ff464d019a54506098937bb282c8636af310d06023a321cbb33152a",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\SKILL.md": "089461af13daf16f36abc12f2d1e88c292e58fbd7233b80f314b3b72e8ff6d59",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\pptx\\SKILL.md": "b4cdaa90d53b3ef08b6d508056bac2c952224065a7f08d4bcdeeb73798f7449b",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\template-profile.json": "52202e6fb3017a04bb2c3868e629f20bb8f91d2d2027726d3a32a15a791f26e3",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\scripts\\render_deck.py": "eadc1bca2ca136e586b7bff03ef3dd2e6ea6f3443fb6053c1b235b1666596788"
+  },
+  "source_hashes_after": {
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\switch.png": "e00f8d3ab8ae1e1d51ff1030a4f7edf41a7ce7cf31660ccbb6fb9da608dbd219",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\phase-noise.png": "dbba02df0ff464d019a54506098937bb282c8636af310d06023a321cbb33152a",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\SKILL.md": "089461af13daf16f36abc12f2d1e88c292e58fbd7233b80f314b3b72e8ff6d59",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\pptx\\SKILL.md": "b4cdaa90d53b3ef08b6d508056bac2c952224065a7f08d4bcdeeb73798f7449b",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\template-profile.json": "52202e6fb3017a04bb2c3868e629f20bb8f91d2d2027726d3a32a15a791f26e3",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\scripts\\render_deck.py": "eadc1bca2ca136e586b7bff03ef3dd2e6ea6f3443fb6053c1b235b1666596788"
+  },
+  "source_integrity": "PASS",
+  "assets": [
+    {
+      "slide": 2,
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\switch.png",
+      "sha256": "e00f8d3ab8ae1e1d51ff1030a4f7edf41a7ce7cf31660ccbb6fb9da608dbd219",
+      "embedded_sha256": "e00f8d3ab8ae1e1d51ff1030a4f7edf41a7ce7cf31660ccbb6fb9da608dbd219",
+      "caption": "方案连接图：虚线表示测量后的换接顺序。",
+      "role": "setup",
+      "source": "用户指定 input/switch.png；方案连接图，非测量结果。",
+      "period": "current"
+    },
+    {
+      "slide": 3,
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\input\\phase-noise.png",
+      "sha256": "dbba02df0ff464d019a54506098937bb282c8636af310d06023a321cbb33152a",
+      "embedded_sha256": "dbba02df0ff464d019a54506098937bb282c8636af310d06023a321cbb33152a",
+      "caption": "750 MBaud｜2026-10-12 仿真，本期分析｜相对 E8257D 标准比较",
+      "role": "simulation",
+      "source": "用户指定 input/phase-noise.png；2026-10-12 仿真。日期与符号率依据用户说明。",
+      "period": "historical"
+    }
+  ],
+  "generated_pptx": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\builtin-generated.pptx",
+  "final_pptx": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\20261014_日报样例_技能流程测试_v01.pptx",
+  "final_sha256": "b32de85d5fa7de25b19fcadb5cccbfc7041e2c7126e5d91a5f7cbeab083ce4af",
+  "slide_count": 4,
+  "editability": "Native text and shape objects; two independently replaceable raster images.",
+  "libreoffice": "NOT_RUN: fixed external lock writes outside allowed production directory",
+  "powerpoint": "PENDING",
+  "visual": "PENDING",
+  "publication": "isolated sample only; no formal-directory delivery"
+}

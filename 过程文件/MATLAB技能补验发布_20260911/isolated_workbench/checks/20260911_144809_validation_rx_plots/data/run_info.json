@@ -1,0 +1,102 @@
+{
+  "schema_version": "2.0",
+  "output_category": "checks",
+  "retention_mode": "compact",
+  "run_id": "20260911_144809_validation_rx_plots",
+  "project_name": "multistream_iq_SC",
+  "test_name": "software_validation",
+  "run_kind": "checks",
+  "planned_run_kind": null,
+  "purpose": "validation",
+  "execution_mode": "dry_run",
+  "status": "completed",
+  "stop_reason": "normal_completion",
+  "stop_detail": "Hardware-free validation.",
+  "started_at": "2026-09-11T14:48:09+08:00",
+  "finished_at": "2026-09-11T14:48:12+08:00",
+  "entry_point": "run_v2_validation.m",
+  "code": {
+    "git_commit": "ef000ef937abbcea15dc547cc3b436aad44cdb17",
+    "git_dirty": true,
+    "entry_file_sha256": "daa1114f2025231d68728a02744b341808cc486e0eb8385ea7026794b1854fc7",
+    "reproduction_note": "Checkout contained local changes; the commit alone does not reproduce this run.",
+    "entry_file": "run_v2_validation.m"
+  },
+  "runtime": {
+    "name": "MATLAB",
+    "version": "R2023b",
+    "os": "Microsoft Windows 11 专业版"
+  },
+  "primary_variable": null,
+  "parameters": {
+    "selection": "rx_plots"
+  },
+  "inputs": [],
+  "instruments": [],
+  "counts": {
+    "planned": 2,
+    "executed": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "invalid": 0
+  },
+  "safety": {
+    "preflight": "pending",
+    "initial_outputs": "pending",
+    "shutdown": "pending",
+    "shutdown_readback": "pending"
+  },
+  "source_runs": [],
+  "artifacts": [
+    {
+      "file": "data/run_info.json",
+      "role": "run_record",
+      "sha256": null
+    },
+    {
+      "file": "data/run_log.txt",
+      "role": "run_record",
+      "sha256": null
+    },
+    {
+      "file": "summary.csv",
+      "role": "detail_table",
+      "sha256": null
+    },
+    {
+      "file": "overview.png",
+      "role": "run_artifact",
+      "sha256": null
+    },
+    {
+      "file": "data/observations.csv",
+      "role": "run_artifact",
+      "sha256": null
+    },
+    {
+      "file": "data/overview.fig",
+      "role": "run_artifact",
+      "sha256": null
+    },
+    {
+      "file": "data/plot_data.mat",
+      "role": "run_artifact",
+      "sha256": null
+    }
+  ],
+  "summary": {
+    "headers": [
+      "case",
+      "status",
+      "seconds",
+      "note"
+    ],
+    "display_indices": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "formats": {}
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "status": "complete",
+  "commit": "a35ca71de6eacf7fd13adc47333544f6ddbb082a",
+  "change": "single image labels use bold body text and a colon, without heading level",
+  "validation": "format and skill structure checked; document scope protected",
+  "runtime_publish": "runtime_active",
+  "same_argument_read_only_verification": "runtime_active",
+  "enabled_runtime_layers": [
+    "CC Switch",
+    "Codex",
+    "Claude"
+  ],
+  "unrelated_user_template_changes": "preserved"
+}

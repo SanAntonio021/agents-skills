@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07b22-57b7-7123-83c4-b311767aa489"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"在已收到的3份含税、含运费报价中，仅丙型满足5天内到货要求；报价均已核对，样机尚未验收。"}}
+{"type":"turn.completed","usage":{"input_tokens":473398,"cached_input_tokens":427264,"cache_write_input_tokens":0,"output_tokens":5180,"reasoning_output_tokens":2746}}

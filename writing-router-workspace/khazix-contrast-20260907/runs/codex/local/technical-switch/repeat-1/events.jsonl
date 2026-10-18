@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c42-b4fa-7a92-a176-c0a16f1a6101"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"控制器每隔 25 ms 读取一次接收功率。接收功率连续 4 次低于 -62 dBm 时，将增益提高 2 dB；调整后等待 8 ms，再次读取接收功率。当前仅完成单通道台架测试，尚未测试双通道同时工作的情况。"}}
+{"type":"turn.completed","usage":{"input_tokens":26841,"cached_input_tokens":11648,"cache_write_input_tokens":0,"output_tokens":221,"reasoning_output_tokens":142}}

@@ -1,0 +1,58 @@
+{
+  "git-branch-consolidation/SKILL.md": {
+    "worktree": "c41dd002c57a4818927a4dcd8f391d13b73a3504cfe36ce7b232651a4777741e",
+    "staged_blob": "c41dd002c57a4818927a4dcd8f391d13b73a3504cfe36ce7b232651a4777741e"
+  },
+  "git-branch-consolidation/evals/evals.json": {
+    "worktree": "71de9000a91ad2d7c52966d26163c05a6d71964550310216b0d45dac151987c2",
+    "staged_blob": "7887b43c2d0f466d45717e4e59fa9e32f408f121389fb0b5daf0eae58ecebb6f"
+  },
+  "git-branch-consolidation/references/recovery-contract.md": {
+    "worktree": "88d11946aa992ff74c585fee803cf0a64ac583784ed344bff41c6ea3ff9709bb",
+    "staged_blob": "88d11946aa992ff74c585fee803cf0a64ac583784ed344bff41c6ea3ff9709bb"
+  },
+  "git-branch-consolidation/scripts/capture_recovery.py": {
+    "worktree": "935412e6a325727f6f963f8a729a129b4aab06aa081603f292b9aa581928120c",
+    "staged_blob": "935412e6a325727f6f963f8a729a129b4aab06aa081603f292b9aa581928120c"
+  },
+  "git-branch-consolidation/scripts/git_layout.py": {
+    "worktree": "1afddfd502d922ee82156511436f90aaea3d3e24d9f79daf9d3fe6179aedd4b7",
+    "staged_blob": "1afddfd502d922ee82156511436f90aaea3d3e24d9f79daf9d3fe6179aedd4b7"
+  },
+  "git-branch-consolidation/scripts/recovery_fs.py": {
+    "worktree": "d7f23edc51768c0dd314b22f2e0429e0b7cfa0ccc8680f32d6e82cc0c7ce365e",
+    "staged_blob": "d7f23edc51768c0dd314b22f2e0429e0b7cfa0ccc8680f32d6e82cc0c7ce365e"
+  },
+  "git-branch-consolidation/scripts/verify_acceptance.py": {
+    "worktree": "510f3a47be5ed751db83ca74b73f6df9d5ed5e10499dbea991dcf12dc5b522f3",
+    "staged_blob": "510f3a47be5ed751db83ca74b73f6df9d5ed5e10499dbea991dcf12dc5b522f3"
+  },
+  "git-branch-consolidation/scripts/verify_recovery.py": {
+    "worktree": "1ebb7b9316cec93f276ac2edf1b88af5a99275c8af5f0be413a65b94952a2fa8",
+    "staged_blob": "1ebb7b9316cec93f276ac2edf1b88af5a99275c8af5f0be413a65b94952a2fa8"
+  },
+  "git-branch-consolidation/tests/test_acceptance_coverage.py": {
+    "worktree": "3ac7f149b239f7e8eca9aaa94af43d390e98b0a7b083450d47e671a4e865f235",
+    "staged_blob": "3ac7f149b239f7e8eca9aaa94af43d390e98b0a7b083450d47e671a4e865f235"
+  },
+  "git-branch-consolidation/tests/test_git_layout.py": {
+    "worktree": "ba814a7c120ef54175f07e49835d2d5ba227476dbc4ecd8c608313af5f13b167",
+    "staged_blob": "ba814a7c120ef54175f07e49835d2d5ba227476dbc4ecd8c608313af5f13b167"
+  },
+  "git-branch-consolidation/tests/test_legacy_packages.py": {
+    "worktree": "9f85813f28e8c3929da8d1aaaebc91127e62057e66969f61500c2accef95759c",
+    "staged_blob": "9f85813f28e8c3929da8d1aaaebc91127e62057e66969f61500c2accef95759c"
+  },
+  "git-branch-consolidation/tests/test_nested_v4.py": {
+    "worktree": "e770644c8d80e341da2a7958aa3f7e5beeadcc435078d83c15671e07839c266c",
+    "staged_blob": "e770644c8d80e341da2a7958aa3f7e5beeadcc435078d83c15671e07839c266c"
+  },
+  "git-branch-consolidation/tests/test_restore_v3.py": {
+    "worktree": "824dd61d6505a0e218a8cbc710df9b5a0107a6a3772c187c4b9d0af1d3a08f4c",
+    "staged_blob": "824dd61d6505a0e218a8cbc710df9b5a0107a6a3772c187c4b9d0af1d3a08f4c"
+  },
+  "git-branch-consolidation/tests/test_retained_local.py": {
+    "worktree": "07a2fbe47d74531b73213fac2767549c967620915a109d8667fe0f00713d426b",
+    "staged_blob": "07a2fbe47d74531b73213fac2767549c967620915a109d8667fe0f00713d426b"
+  }
+}

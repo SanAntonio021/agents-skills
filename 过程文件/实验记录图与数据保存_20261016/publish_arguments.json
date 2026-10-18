@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "powershell.exe",
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "D:\\BaiduSyncdisk\\.agents\\automation\\ccswitch-skill-sync\\Invoke-CcSwitchSkillSync.ps1",
+    "-Skills",
+    "lab-notebook",
+    "-ExpectedRemoteCommit",
+    "eb3e3f5db7e64bdd7b7edeaa67bbb11d56be336e",
+    "-SourceRoot",
+    "D:\\BaiduSyncdisk\\.agents\\skills",
+    "-ExpectedWorktreeExceptions",
+    "lab-notebook/assets/labbook-template.md=48b6c84faffcf50f63b612549c6094ef13173a07354c21197a543b2bb9b77f32"
+  ],
+  "commit": "eb3e3f5db7e64bdd7b7edeaa67bbb11d56be336e"
+}

@@ -1,0 +1,18 @@
+{
+  "A": {
+    "changed": [],
+    "added": [
+      "1\\answer.md",
+      "2\\answer.md"
+    ]
+  },
+  "B": {
+    "changed": [
+      "1\\vocab\\中文\\调研报告.md"
+    ],
+    "added": [
+      "1\\answer.md",
+      "2\\answer.md"
+    ]
+  }
+}

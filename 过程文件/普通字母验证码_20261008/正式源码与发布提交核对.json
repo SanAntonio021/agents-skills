@@ -1,0 +1,20 @@
+{
+  "commit": "e5ec52fac412dc23954301bd5683f1f385d08cbc",
+  "checks": [
+    {
+      "file": "web-access/SKILL.md",
+      "source_equals_published_commit_blob": true,
+      "sha256": "322f1068962de19eb561b65c2e7168226290a7cb52a846ee3d11967eaca45ac0"
+    },
+    {
+      "file": "web-access/references/cdp-api.md",
+      "source_equals_published_commit_blob": true,
+      "sha256": "938fec377ec02049f37d5c37c151d30dfcf0a49601453d4242962a0370b5df15"
+    },
+    {
+      "file": "paper-download/references/publisher-download-playbook.md",
+      "source_equals_published_commit_blob": true,
+      "sha256": "01aa617802a3b3deb8e99aa81eb3d715b06efdbe683d25b7d195dc8e398d10dc"
+    }
+  ]
+}

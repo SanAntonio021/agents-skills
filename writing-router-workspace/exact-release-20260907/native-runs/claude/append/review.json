@@ -1,0 +1,22 @@
+{
+  "batch": "native-runs",
+  "host": "claude",
+  "case": "append",
+  "receipt_present": true,
+  "session": "64c39d4f-f422-4e4d-a1ce-48e7c45a96b9",
+  "startup_writing_router_available": false,
+  "source_unchanged": true,
+  "parent_byte_check": false,
+  "parent_read_error": null,
+  "byte_details": {
+    "bom_preserved": false,
+    "original_byte_sequence_present": false,
+    "actual_sha256": "297760abe583b45fc327c0ffa5fa11717e3ae13cc2fcbacf14d815291e95bbb7"
+  },
+  "successful_helper_command": false,
+  "apply_hash_matches_expected": false,
+  "verify_hash_matches_expected": false,
+  "expected_sha256": "f942d40de55f87d1281899452c581fcde53046b8486431a093d4400d21533af9",
+  "helper_command_evidence": [],
+  "final": "C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-qkbg5siu/result.md"
+}

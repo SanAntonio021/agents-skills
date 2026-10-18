@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills\" 2>/dev/null; echo \"---VOCAB---\"; ls -R \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill files and vocab directory"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/论文.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh/README.md"
+    }
+  }
+]

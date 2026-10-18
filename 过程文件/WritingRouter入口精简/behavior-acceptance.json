@@ -1,0 +1,26 @@
+{
+  "A": {
+    "read_receipts": 12,
+    "unique_paths": 11
+  },
+  "B": {
+    "read_receipts": 19,
+    "unique_paths": 15
+  },
+  "C": {
+    "read_receipts": 12,
+    "unique_paths": 11
+  },
+  "inspection": {
+    "scenarios": [
+      "ordinary correction",
+      "structure before prose",
+      "approved text saved unchanged with manual note preserved and next draft offered",
+      "explicit full document through direct genre entry",
+      "read-only review"
+    ],
+    "original_router_files_unchanged": 22,
+    "automatic_trigger_tested": false,
+    "dependencies": "Captured working-tree technical-writing and style-vocab; these dependency copies were not published by this task."
+  }
+}

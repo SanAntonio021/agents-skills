@@ -1,0 +1,71 @@
+Add-in Express Loader Log File: 10/14/2026 22:50:35:446
+
+Startup directory: D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS Manage Client (2)\
+Loader version: 10.1.4703.0
+Operating System: Microsoft Windows 10 Professional (build 26200), 64-bit
+Process Owner: Administrator
+Command Line: "C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE" /AUTOMATION
+Run 'As Administrator': No
+Process Elevated: No
+Integrity Level: Medium
+UAC (User Account Control): On
+------------------------------------------------------------------------
+22:50:35:447 5052 89356 Start.
+22:50:35:447 5052 89356 The host's version is 16.0.20430.20146
+22:50:35:447 5052 89356 Creating a new instance of the add-in loader.
+22:50:35:447 5052 89356 Loading mscoree.dll
+22:50:35:447 5052 89356 INFO: Assembly codebase - D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS Manage Client (2)\SWM.OfficeAddin.dll.
+22:50:35:447 5052 89356 INFO: Assembly version - 34.1.0.5.
+22:50:35:449 5052 89356 Success.
+22:50:35:449 5052 89356 Loading the configuration from the system registry.
+22:50:35:449 5052 89356 Getting the latest CLR version.
+22:50:35:449 5052 89356 The latest CLR version is 'v4.0.30319'.
+22:50:35:449 5052 89356 The configuration has been loaded successfully.
+22:50:35:449 5052 89356     Runtime version: v4.0.30319.
+22:50:35:449 5052 89356     Assembly name: SWM.OfficeAddin, PublicKeyToken=3CA6E96120E20E33.
+22:50:35:449 5052 89356     Class name: RZOfficeAddin.AddinModule.
+22:50:35:449 5052 89356     Registry key: CLSID\{F1397220-973F-43BD-A2E0-F052137887B4}.
+22:50:35:449 5052 89356 Attempting to create a new instance of the managed add-in class: CLR - v4.0.30319
+22:50:35:450 5052 89356 Loading CLR: v4.0.30319.
+22:50:35:450 5052 89356 Calling CLRCreateInstance method.
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Calling GetRuntime method.
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Checking if the hosting API of .NET Framework v4.0 beta is installed.
+22:50:35:450 5052 89356 The hosting API is up to date.
+22:50:35:450 5052 89356 Calling SetDefaultStartupFlags method.
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Calling GetInterface method for the CorRuntimeHost interface.
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Starting CLR...
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Getting the CLR version.
+22:50:35:450 5052 89356 The CLR v4.0.30319 has been initialized successfully.
+22:50:35:450 5052 89356 Creating a new domain setup.
+22:50:35:450 5052 89356 Success.
+22:50:35:450 5052 89356 Getting the add-in directory.
+22:50:35:450 5052 89356 Success. The directory is 'D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS Manage Client (2)\'
+22:50:35:450 5052 89356 The 'shadow copy' is enabled.
+22:50:35:450 5052 89356 Creating a new application domain.
+22:50:35:452 5052 89356 Success.
+22:50:35:452 5052 89356 Creating an instance of the managed class. Assembly identity: 'SWM.OfficeAddin, PublicKeyToken=3CA6E96120E20E33'
+22:50:36:923 5052 89356 Success.
+22:50:36:923 5052 89356 Unwrapping the managed class.
+22:50:36:924 5052 89356 Success.
+22:50:36:924 5052 89356 Querying the add-in extensibility.
+22:50:36:924 5052 89356 Success.
+22:50:36:924 5052 89356 Querying the custom task panes.
+22:50:36:924 5052 89356 Success.
+22:50:36:924 5052 89356 Querying the ribbon extensibility.
+22:50:36:924 5052 89356 Success.
+22:50:36:924 5052 89356 Querying the form regions.
+22:50:36:924 5052 89356 Success.
+22:50:36:924 5052 89356 Querying the encryption provider.
+22:50:36:924 5052 89356 The 'EncryptionProvider' interface is not supported.
+22:50:36:924 5052 89356 Getting the dispid of the 'Dispose' method.
+22:50:36:926 5052 89356 Success.
+22:50:36:926 5052 89356 Getting the dispid of the 'InitializeLoaderService' method.
+22:50:36:926 5052 89356 Success.
+22:50:36:926 5052 89356 Invoking the 'InitializeLoaderService' method.
+22:50:36:926 5052 89356 Success.
+22:50:36:926 5052 89356 The instance of the managed add-in class has been created successfully.

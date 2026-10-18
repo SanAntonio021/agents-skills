@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07bf7-8660-71c1-8275-87363f06d35b"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"在3份含税、含运费的书面报价中，仅交期为4天的丙型满足该批设备5天内到货的要求。"}}
+{"type":"turn.completed","usage":{"input_tokens":429912,"cached_input_tokens":391296,"cache_write_input_tokens":0,"output_tokens":4521,"reasoning_output_tokens":2208}}

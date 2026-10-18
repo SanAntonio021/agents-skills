@@ -1,0 +1,15 @@
+{
+  "source_commit": "4172208243ff66202b868973bfefdca4d902ccc7",
+  "source_sha256": "ef3b90ea2873590151a8152b9608ba0560af162fdd1645f3e58668076545ff10",
+  "behavior_verified": true,
+  "publication_status": "source_pushed_runtime_not_active",
+  "publish_exit_code": 23,
+  "verify_exit_code": 30,
+  "runtime_old_skill_unchanged": true,
+  "blocking_reason": "Pinned CLI supports database schema 19; live CC Switch database is schema 20. Compatible supported entry was not found locally.",
+  "source_scope": [
+    "chat-notes/SKILL.md",
+    "chat-notes/agents/openai.yaml",
+    "chat-notes/evals/evals.json"
+  ]
+}

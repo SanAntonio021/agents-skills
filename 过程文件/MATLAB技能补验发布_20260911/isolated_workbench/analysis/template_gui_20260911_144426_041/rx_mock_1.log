@@ -1,0 +1,183 @@
+CLOSE
+OPEN
+QUERY *IDN?
+QUERY TDIV?
+QUERY TRDL?
+QUERY VBS? 'return=app.Acquisition.Horizontal.SampleRate'
+QUERY MSIZ?
+QUERY BWL?
+QUERY C1:TRA?
+QUERY C1:VDIV?
+QUERY C1:CPL?
+QUERY C1:OFST?
+QUERY VBS? 'return=app.Acquisition.C1.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C1.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C1.OptimizeGroupDelay'
+QUERY C2:TRA?
+QUERY C2:VDIV?
+QUERY C2:CPL?
+QUERY C2:OFST?
+QUERY VBS? 'return=app.Acquisition.C2.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C2.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C2.OptimizeGroupDelay'
+QUERY C3:TRA?
+QUERY C3:VDIV?
+QUERY C3:CPL?
+QUERY C3:OFST?
+QUERY VBS? 'return=app.Acquisition.C3.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C3.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C3.OptimizeGroupDelay'
+QUERY C4:TRA?
+QUERY C4:VDIV?
+QUERY C4:CPL?
+QUERY C4:OFST?
+QUERY VBS? 'return=app.Acquisition.C4.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C4.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C4.OptimizeGroupDelay'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Source'
+QUERY C1:TRA?
+QUERY C1:CPL?
+QUERY VBS? 'return=app.Acquisition.C1.Coupling.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C1.BandwidthLimit'
+QUERY VBS? 'return=app.Acquisition.C1.BandwidthLimit.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps.GetMin'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps.GetMax'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps.GetGrain'
+QUERY VBS? 'return=app.Acquisition.C1.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C1.InterpolateType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C1.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C1.EnhanceResType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C1.OptimizeGroupDelay'
+QUERY VBS? 'return=app.Acquisition.C1.OptimizeGroupDelay.GetRangeStringRemote'
+QUERY C2:TRA?
+QUERY C2:CPL?
+QUERY VBS? 'return=app.Acquisition.C2.Coupling.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C2.BandwidthLimit'
+QUERY VBS? 'return=app.Acquisition.C2.BandwidthLimit.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps.GetMin'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps.GetMax'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps.GetGrain'
+QUERY VBS? 'return=app.Acquisition.C2.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C2.InterpolateType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C2.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C2.EnhanceResType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C2.OptimizeGroupDelay'
+QUERY VBS? 'return=app.Acquisition.C2.OptimizeGroupDelay.GetRangeStringRemote'
+QUERY C3:TRA?
+QUERY C3:CPL?
+QUERY VBS? 'return=app.Acquisition.C3.Coupling.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C3.BandwidthLimit'
+QUERY VBS? 'return=app.Acquisition.C3.BandwidthLimit.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps.GetMin'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps.GetMax'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps.GetGrain'
+QUERY VBS? 'return=app.Acquisition.C3.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C3.InterpolateType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C3.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C3.EnhanceResType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C3.OptimizeGroupDelay'
+QUERY VBS? 'return=app.Acquisition.C3.OptimizeGroupDelay.GetRangeStringRemote'
+QUERY C4:TRA?
+QUERY C4:CPL?
+QUERY VBS? 'return=app.Acquisition.C4.Coupling.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C4.BandwidthLimit'
+QUERY VBS? 'return=app.Acquisition.C4.BandwidthLimit.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps.GetMin'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps.GetMax'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps.GetGrain'
+QUERY VBS? 'return=app.Acquisition.C4.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C4.InterpolateType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C4.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C4.EnhanceResType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.C4.OptimizeGroupDelay'
+QUERY VBS? 'return=app.Acquisition.C4.OptimizeGroupDelay.GetRangeStringRemote'
+QUERY TRMD?
+QUERY VBS? 'return=app.Acquisition.TriggerMode.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Source'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Source.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.Trigger.Type'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Slope'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Slope.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.Trigger.Type'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Level'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Level.GetMinValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Level.GetMaxValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.Level.GetGrainValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Type'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffType'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffType.GetRangeStringRemote'
+QUERY VBS? 'return=app.Acquisition.Trigger.Type'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffTime'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffTime.GetMinValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffTime.GetMaxValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Edge.HoldoffTime.GetGrainValue'
+QUERY VBS? 'return=app.Acquisition.Trigger.Type'
+QUERY VBS? 'return=app.Acquisition.Horizontal.MaxSamples'
+QUERY VBS? 'return=app.Acquisition.Horizontal.MaxSamples.GetMinValue'
+QUERY VBS? 'return=app.Acquisition.Horizontal.MaxSamples.GetMaxValue'
+QUERY VBS? 'return=app.Acquisition.Horizontal.MaxSamples.GetGrainValue'
+QUERY VBS? 'return=app.Acquisition.Horizontal.SampleMode'
+QUERY VBS? 'return=app.Acquisition.Horizontal.SampleMode.GetRangeStringRemote'
+QUERY *IDN?
+QUERY TDIV?
+QUERY TRDL?
+QUERY VBS? 'return=app.Acquisition.Horizontal.SampleRate'
+QUERY MSIZ?
+QUERY BWL?
+QUERY C1:TRA?
+QUERY C1:VDIV?
+QUERY C1:CPL?
+QUERY C1:OFST?
+QUERY VBS? 'return=app.Acquisition.C1.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C1.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C1.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C1.OptimizeGroupDelay'
+QUERY C2:TRA?
+QUERY C2:VDIV?
+QUERY C2:CPL?
+QUERY C2:OFST?
+QUERY VBS? 'return=app.Acquisition.C2.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C2.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C2.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C2.OptimizeGroupDelay'
+QUERY C3:TRA?
+QUERY C3:VDIV?
+QUERY C3:CPL?
+QUERY C3:OFST?
+QUERY VBS? 'return=app.Acquisition.C3.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C3.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C3.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C3.OptimizeGroupDelay'
+QUERY C4:TRA?
+QUERY C4:VDIV?
+QUERY C4:CPL?
+QUERY C4:OFST?
+QUERY VBS? 'return=app.Acquisition.C4.InterpolateType'
+QUERY VBS? 'return=app.Acquisition.C4.AverageSweeps'
+QUERY VBS? 'return=app.Acquisition.C4.EnhanceResType'
+QUERY VBS? 'return=app.Acquisition.C4.OptimizeGroupDelay'
+CAPTURE BEGIN
+CAPTURE END
+CAPTURE RELEASE
+QUERY TDIV?
+QUERY TRDL?
+QUERY VBS? 'return=app.Acquisition.Horizontal.SampleRate'
+QUERY MSIZ?
+QUERY BWL?
+QUERY C1:TRA?
+QUERY C1:VDIV?
+QUERY C1:OFST?
+QUERY C1:CPL?
+QUERY C2:TRA?
+QUERY C2:VDIV?
+QUERY C2:OFST?
+QUERY C2:CPL?
+CLOSE

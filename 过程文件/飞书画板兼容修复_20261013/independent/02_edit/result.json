@@ -1,0 +1,794 @@
+{
+  "status": "verified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "text",
+        "id": "o2:1",
+        "text": "发射放大级\nPA / LNA"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-005.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 3,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 4,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "after_raw": "raw-006.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "o2:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "a2:1",
+        "text": "测试记录\nA 端"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-008.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 4,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 5,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-009.json"
+      },
+      "after_raw": "raw-009.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "a2:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c2:1",
+        "text": "3–10 dBm"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-011.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 5,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 6,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-012.json"
+      },
+      "native_persistence": {
+        "status": "confirmed",
+        "minimum_applied_version": 6,
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 6,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "inspect": "native-save-witness-003/fresh-native.json"
+      },
+      "after_raw": "raw-012.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c2:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [
+        {
+          "id": "c2:1",
+          "normalization": "native_default_caption_theme",
+          "theme_text_color_code": -1,
+          "text_color_type": 0
+        }
+      ],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "caption",
+        "id": "c2:2",
+        "text": "实际 LO：4 fSG\nLO 输入约 +10 dBm"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-014.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 6,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 7,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-015.json"
+      },
+      "after_raw": "raw-015.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "c2:2"
+        ]
+      },
+      "before_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o2:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o2:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "c2:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c2:2": {
+          "border": 1,
+          "text": 1
+        },
+        "a2:1": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_lJwk8Odr_CHYVVKAxKgPOg",
+      "tab_id": "461C0FA5E2678609ABCACB07B9C70CE2",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_Y7CwV9kI26wtH5ttuUg6-g",
+      "tab_id": "B53B219078438B314FBC31F9D973C08C",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_yIzHpbg_bS0NtrRJ-OZjiQ",
+      "tab_id": "06B1E2F13B8D50FA194BA492F65128FD",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_gBqp3dF5iI0FiswPUBjcWg",
+      "tab_id": "304777E89BF6F79A30EFDD0B74723249",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_HgaWmW2Nk0ZOU0QWx9HAXQ",
+      "tab_id": "E0F87494D86FD896B9D3354339673B1D",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    },
+    {
+      "task_id": "task_i6VQk6e4XjSltJs0V9ZNhA",
+      "tab_id": "9D969832B6F8343AC481BC46B2D967E3",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_lJwk8Odr_CHYVVKAxKgPOg",
+      "tab_id": "461C0FA5E2678609ABCACB07B9C70CE2",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_lJwk8Odr_CHYVVKAxKgPOg",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_Y7CwV9kI26wtH5ttuUg6-g",
+      "tab_id": "B53B219078438B314FBC31F9D973C08C",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_Y7CwV9kI26wtH5ttuUg6-g",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_gBqp3dF5iI0FiswPUBjcWg",
+      "tab_id": "304777E89BF6F79A30EFDD0B74723249",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_gBqp3dF5iI0FiswPUBjcWg",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_yIzHpbg_bS0NtrRJ-OZjiQ",
+      "tab_id": "06B1E2F13B8D50FA194BA492F65128FD",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_yIzHpbg_bS0NtrRJ-OZjiQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_HgaWmW2Nk0ZOU0QWx9HAXQ",
+      "tab_id": "E0F87494D86FD896B9D3354339673B1D",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_HgaWmW2Nk0ZOU0QWx9HAXQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_i6VQk6e4XjSltJs0V9ZNhA",
+      "tab_id": "9D969832B6F8343AC481BC46B2D967E3",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_i6VQk6e4XjSltJs0V9ZNhA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "docx_token": "P0ljdNvEHomLXRxAi5hcY9QXnUh",
+      "whiteboard_token": "EpoxwPUYphzoQWbTtPmcynrbnDh",
+      "block_id": "doxcnBwcGb9JlXyUhD8s9OXRyuf",
+      "revision_id": 3
+    }
+  ],
+  "initial_nodes": [
+    {
+      "id": "a2:1",
+      "kind": "text",
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 58,
+      "text": "初始测试记录",
+      "font_size": 24,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c2:1",
+      "kind": "connector",
+      "x": 320,
+      "y": 215,
+      "width": 220,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "start_id": "o2:1",
+      "end_id": "o2:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [],
+      "caption": "",
+      "caption_position": null,
+      "caption_position_type": null,
+      "caption_auto_direction": false,
+      "caption_font_size": null,
+      "caption_width": null,
+      "caption_size_mode": null
+    },
+    {
+      "id": "c2:2",
+      "kind": "connector",
+      "x": 780,
+      "y": 215,
+      "width": 400,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o2:2",
+      "end_id": "o2:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "初始 LO 标签"
+      ],
+      "caption": "初始 LO 标签",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o2:1",
+      "kind": "shape",
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "发射处理模块",
+      "font_size": 24,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:2",
+      "kind": "shape",
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "接收处理模块",
+      "font_size": 24,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:3",
+      "kind": "shape",
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "观察模块\n保持原样",
+      "font_size": 24,
+      "style": {
+        "border_color": "#606670",
+        "fill_color": "#f1f3f5",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "initial_inspect": "inspect-000.json",
+  "released_tab": null,
+  "page_status": "closed",
+  "preview_attempts": 2,
+  "preview_last_frame_visible": true,
+  "visual_status": "needs_review",
+  "preview": "preview.png",
+  "visual_feedback": "visual-feedback.json",
+  "preview_source": "native_canvas"
+}

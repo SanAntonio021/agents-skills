@@ -1,0 +1,13 @@
+{
+  "response": "今天（2026-10-14）的每日汇报，请先告诉我需要汇报哪些工作。请直接列出项目或任务名称；如方便，也一并写明各项本期进展、结果或待讨论问题，以及要使用的图件或记录路径。当前不会读取真实会话自行选材。",
+  "read_files": [
+    "D:\\BaiduSyncdisk\\.agents\\README.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\SKILL.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\pptx\\SKILL.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\materials.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\chinese-style.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\rendering.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\lab-report-slides\\references\\local-template.md",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\pptx\\references\\presentation-workflow.md"
+  ]
+}

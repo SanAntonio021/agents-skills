@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/调研报告.md"
+    }
+  }
+]

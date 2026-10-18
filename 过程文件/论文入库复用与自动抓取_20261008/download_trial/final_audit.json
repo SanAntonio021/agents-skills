@@ -1,0 +1,1717 @@
+{
+  "download__existing_pdf_notes_collections": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 33,
+      "http.read.items": 4,
+      "js.task.start": 2,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 1,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 2,
+      "http.read.attachmentFile": 2,
+      "native.items.getAsync": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.691Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__existing_pdf_notes_collections",
+        "action": "native.pref.get",
+        "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": null,
+      "automatic": true
+    }
+  },
+  "download__local_pdf_auto_on": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 26,
+      "http.read.items": 4,
+      "js.task.start": 3,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 10,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 3,
+      "native.pref.registerObserver": 1,
+      "native.pref.set": 2,
+      "native.pref.observer.notify": 2,
+      "native.collections.getAsync": 1,
+      "native.search.addCondition": 2,
+      "native.search.search": 2,
+      "native.items.getAsync": 3,
+      "native.item.setField": 8,
+      "native.item.setCreators": 1,
+      "native.item.addToCollection": 1,
+      "native.item.save.start": 1,
+      "native.item.save.committed": 1,
+      "native.item.getAttachments": 1,
+      "native.attachment.import.start": 1,
+      "native.attachment.import.committed": 1,
+      "native.pref.unregisterObserver": 1,
+      "http.read.attachmentFile": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.796Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.383Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.383Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.registerObserver",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-f1076aef-638a-4aae-9587-ae5a8064381d"
+      },
+      {
+        "time": "2026-10-08T13:52:28.384Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.387Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.set",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.387Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.observer.notify",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "token": "observer-f1076aef-638a-4aae-9587-ae5a8064381d",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:28.388Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.388Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.392Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.398Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.item.save.start",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "itemID": null,
+        "itemType": "journalArticle",
+        "delayMs": 0,
+        "options": {}
+      },
+      {
+        "time": "2026-10-08T13:52:28.400Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.item.save.committed",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "itemID": 100,
+        "isNew": true,
+        "item": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:28.398Z",
+          "dateModified": "2026-10-08T13:52:28.398Z"
+        }
+      },
+      {
+        "time": "2026-10-08T13:52:28.401Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.403Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.403Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.attachment.import.start",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 100
+      },
+      {
+        "time": "2026-10-08T13:52:28.409Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.attachment.import.committed",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "attachmentID": 101,
+        "parentItemID": 100,
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "destination": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__local_pdf_auto_on\\storage\\101\\simulated_target.pdf",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "sizeBytes": 863
+      },
+      {
+        "time": "2026-10-08T13:52:28.409Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.412Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.set",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": false,
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.412Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.observer.notify",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "token": "observer-f1076aef-638a-4aae-9587-ae5a8064381d",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:28.413Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.get",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.413Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_on",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "token": "observer-f1076aef-638a-4aae-9587-ae5a8064381d",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "a7e26209-c7ae-459a-bdd1-f1fee73f85e0": {
+          "operationId": "a7e26209-c7ae-459a-bdd1-f1fee73f85e0",
+          "processIdentity": "{\"contextID\": \"d5429eb5-39fd-4fee-ba78-357630f91269\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467548383,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            },
+            {
+              "libraryID": 1,
+              "key": "FX000101"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "restored"
+            }
+          ],
+          "error": null,
+          "finishedAt": 1791467548414
+        }
+      },
+      "automatic": true
+    }
+  },
+  "download__local_pdf_auto_off": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 27,
+      "http.read.items": 4,
+      "js.task.start": 3,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 7,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 3,
+      "native.pref.registerObserver": 1,
+      "native.collections.getAsync": 1,
+      "native.search.addCondition": 2,
+      "native.search.search": 2,
+      "native.items.getAsync": 3,
+      "native.item.setField": 8,
+      "native.item.setCreators": 1,
+      "native.item.addToCollection": 1,
+      "native.item.save.start": 1,
+      "native.item.save.committed": 1,
+      "native.item.getAttachments": 1,
+      "native.attachment.import.start": 1,
+      "native.attachment.import.committed": 1,
+      "native.pref.unregisterObserver": 1,
+      "http.read.attachmentFile": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.867Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.528Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.528Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.registerObserver",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-bd572d0f-8178-4060-a535-8de1691e96e5"
+      },
+      {
+        "time": "2026-10-08T13:52:28.529Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.529Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.533Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.538Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.item.save.start",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "itemID": null,
+        "itemType": "journalArticle",
+        "delayMs": 0,
+        "options": {}
+      },
+      {
+        "time": "2026-10-08T13:52:28.541Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.item.save.committed",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "itemID": 100,
+        "isNew": true,
+        "item": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:28.538Z",
+          "dateModified": "2026-10-08T13:52:28.538Z"
+        }
+      },
+      {
+        "time": "2026-10-08T13:52:28.541Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.543Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.get",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.543Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.attachment.import.start",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 100
+      },
+      {
+        "time": "2026-10-08T13:52:28.547Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.attachment.import.committed",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "attachmentID": 101,
+        "parentItemID": 100,
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "destination": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__local_pdf_auto_off\\storage\\101\\simulated_target.pdf",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "sizeBytes": 863
+      },
+      {
+        "time": "2026-10-08T13:52:28.548Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__local_pdf_auto_off",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "token": "observer-bd572d0f-8178-4060-a535-8de1691e96e5",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "438d4e32-142b-4122-91ea-cbcce01d40d8": {
+          "operationId": "438d4e32-142b-4122-91ea-cbcce01d40d8",
+          "processIdentity": "{\"contextID\": \"cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467548528,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            },
+            {
+              "libraryID": 1,
+              "key": "FX000101"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "not_needed"
+            }
+          ],
+          "error": null,
+          "finishedAt": 1791467548548
+        }
+      },
+      "automatic": false
+    }
+  },
+  "download__doi_generic_search_empty_title": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 34,
+      "http.read.items": 6,
+      "js.task.start": 2,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 1,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 2,
+      "http.read.attachmentFile": 2,
+      "native.items.getAsync": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.897Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__doi_generic_search_empty_title",
+        "action": "native.pref.get",
+        "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": null,
+      "automatic": true
+    }
+  },
+  "download__timeout_continues": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 56,
+      "http.read.items": 10,
+      "js.task.start": 9,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 10,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 9,
+      "native.pref.registerObserver": 1,
+      "native.pref.set": 2,
+      "native.pref.observer.notify": 2,
+      "native.collections.getAsync": 1,
+      "native.search.addCondition": 2,
+      "native.search.search": 2,
+      "native.items.getAsync": 3,
+      "native.item.setField": 8,
+      "native.item.setCreators": 1,
+      "native.item.addToCollection": 1,
+      "native.item.save.start": 1,
+      "http.client.disconnected": 1,
+      "native.item.save.committed": 1,
+      "native.item.getAttachments": 1,
+      "native.attachment.import.start": 1,
+      "native.attachment.import.committed": 1,
+      "native.pref.unregisterObserver": 1,
+      "http.read.attachmentFile": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.927Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.750Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.750Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.registerObserver",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-c0d81e4a-78ed-4a52-83f2-4f93f8a8b4fb"
+      },
+      {
+        "time": "2026-10-08T13:52:28.751Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:28.754Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.set",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.755Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.observer.notify",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "token": "observer-c0d81e4a-78ed-4a52-83f2-4f93f8a8b4fb",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:28.755Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.756Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.759Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:28.764Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.item.save.start",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "itemID": null,
+        "itemType": "journalArticle",
+        "delayMs": 1400,
+        "options": {}
+      },
+      {
+        "time": "2026-10-08T13:52:29.011Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "http.client.disconnected",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "taskID": "cc9ed0c6-50c5-4179-aa24-3f08f81e3d14",
+        "jsCancelled": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.181Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.item.save.committed",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "itemID": 100,
+        "isNew": true,
+        "item": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:30.178Z",
+          "dateModified": "2026-10-08T13:52:30.178Z"
+        }
+      },
+      {
+        "time": "2026-10-08T13:52:30.182Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.183Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.183Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.attachment.import.start",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 100
+      },
+      {
+        "time": "2026-10-08T13:52:30.187Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.attachment.import.committed",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "attachmentID": 101,
+        "parentItemID": 100,
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "destination": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__timeout_continues\\storage\\101\\simulated_target.pdf",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "sizeBytes": 863
+      },
+      {
+        "time": "2026-10-08T13:52:30.188Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.190Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.set",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": false,
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.190Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.observer.notify",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "token": "observer-c0d81e4a-78ed-4a52-83f2-4f93f8a8b4fb",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.191Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.get",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.191Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__timeout_continues",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "token": "observer-c0d81e4a-78ed-4a52-83f2-4f93f8a8b4fb",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "01055fe0-768e-49bc-9831-37ee6a60e852": {
+          "operationId": "01055fe0-768e-49bc-9831-37ee6a60e852",
+          "processIdentity": "{\"contextID\": \"26275782-89af-42d0-a6ee-aa8fbfb829de\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467548750,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            },
+            {
+              "libraryID": 1,
+              "key": "FX000101"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "restored"
+            }
+          ],
+          "error": null,
+          "finishedAt": 1791467550192
+        }
+      },
+      "automatic": true
+    }
+  },
+  "download__first_attachment_failure": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 34,
+      "http.read.items": 6,
+      "js.task.start": 4,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 18,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 4,
+      "native.pref.registerObserver": 2,
+      "native.pref.set": 4,
+      "native.pref.observer.notify": 4,
+      "native.collections.getAsync": 2,
+      "native.search.addCondition": 3,
+      "native.search.search": 3,
+      "native.items.getAsync": 5,
+      "native.item.setField": 8,
+      "native.item.setCreators": 1,
+      "native.item.addToCollection": 1,
+      "native.item.save.start": 1,
+      "native.item.save.committed": 1,
+      "native.item.getAttachments": 2,
+      "native.attachment.import.start": 2,
+      "native.attachment.import.failure": 1,
+      "native.pref.unregisterObserver": 2,
+      "native.item.getField": 1,
+      "native.item.getCreators": 1,
+      "native.item.getCollections": 1,
+      "native.attachment.import.committed": 1,
+      "http.read.attachmentFile": 1,
+      "native.attachment.getFilePathAsync": 1,
+      "native.item.toJSON": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:57.968Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.430Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.430Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.registerObserver",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-e0aeabd5-3b43-46be-97fa-87cffb0e0b08"
+      },
+      {
+        "time": "2026-10-08T13:52:30.431Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.433Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.set",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.434Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.observer.notify",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-e0aeabd5-3b43-46be-97fa-87cffb0e0b08",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.434Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.434Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.438Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.442Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.item.save.start",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "itemID": null,
+        "itemType": "journalArticle",
+        "delayMs": 0,
+        "options": {}
+      },
+      {
+        "time": "2026-10-08T13:52:30.444Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.item.save.committed",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "itemID": 100,
+        "isNew": true,
+        "item": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:30.442Z",
+          "dateModified": "2026-10-08T13:52:30.442Z"
+        }
+      },
+      {
+        "time": "2026-10-08T13:52:30.445Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.446Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.447Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.attachment.import.start",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 100
+      },
+      {
+        "time": "2026-10-08T13:52:30.449Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.attachment.import.failure",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "injected": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.450Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.452Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.set",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": false,
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.453Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.observer.notify",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-e0aeabd5-3b43-46be-97fa-87cffb0e0b08",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.453Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.454Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-e0aeabd5-3b43-46be-97fa-87cffb0e0b08",
+        "removed": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.478Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.479Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.registerObserver",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-67210a98-6973-4d0f-bed8-916b9ea1ab41"
+      },
+      {
+        "time": "2026-10-08T13:52:30.479Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.482Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.set",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.482Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.observer.notify",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-67210a98-6973-4d0f-bed8-916b9ea1ab41",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.483Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.483Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.487Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.488Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.488Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.attachment.import.start",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 100
+      },
+      {
+        "time": "2026-10-08T13:52:30.494Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.attachment.import.committed",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "attachmentID": 101,
+        "parentItemID": 100,
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "destination": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__first_attachment_failure\\storage\\101\\simulated_target.pdf",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "sizeBytes": 863
+      },
+      {
+        "time": "2026-10-08T13:52:30.494Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.497Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.set",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": false,
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.497Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.observer.notify",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-67210a98-6973-4d0f-bed8-916b9ea1ab41",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.498Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.get",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.498Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__first_attachment_failure",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "token": "observer-67210a98-6973-4d0f-bed8-916b9ea1ab41",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "8c745542-9a1e-4f58-8de9-477e5594ec75": {
+          "operationId": "8c745542-9a1e-4f58-8de9-477e5594ec75",
+          "processIdentity": "{\"contextID\": \"1fb0994b-67c8-4903-b765-d00d5cd4eca5\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "failed",
+          "startedAt": 1791467550430,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "restored"
+            }
+          ],
+          "error": "native_write_failed",
+          "errorDetail": "Injected one-time fixture attachment import failure",
+          "finishedAt": 1791467550454
+        },
+        "8e174da3-e8c8-4364-8fad-bdb4adea083d": {
+          "operationId": "8e174da3-e8c8-4364-8fad-bdb4adea083d",
+          "processIdentity": "{\"contextID\": \"1fb0994b-67c8-4903-b765-d00d5cd4eca5\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467550478,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000101"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "restored"
+            }
+          ],
+          "error": null,
+          "finishedAt": 1791467550499
+        }
+      },
+      "automatic": true
+    }
+  },
+  "download__manual_setting_change": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "http.request": 26,
+      "http.read.items": 4,
+      "js.task.start": 2,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 6,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 2,
+      "native.pref.registerObserver": 1,
+      "native.pref.set": 1,
+      "native.pref.observer.notify": 3,
+      "native.collections.getAsync": 1,
+      "native.search.addCondition": 2,
+      "native.search.search": 2,
+      "native.items.getAsync": 1,
+      "native.item.setField": 8,
+      "native.item.setCreators": 1,
+      "native.item.addToCollection": 1,
+      "native.item.save.start": 1,
+      "manual.pref.set": 2,
+      "native.item.save.committed": 1,
+      "native.pref.unregisterObserver": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:58.012Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.604Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.604Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.registerObserver",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-7cae8344-b38c-4a7e-aad6-679002b21bd0"
+      },
+      {
+        "time": "2026-10-08T13:52:30.605Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.608Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.set",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.608Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.observer.notify",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "token": "observer-7cae8344-b38c-4a7e-aad6-679002b21bd0",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "native"
+      },
+      {
+        "time": "2026-10-08T13:52:30.609Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.609Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.612Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.get",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:30.620Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.item.save.start",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "itemID": null,
+        "itemType": "journalArticle",
+        "delayMs": 1400,
+        "options": {}
+      },
+      {
+        "time": "2026-10-08T13:52:30.984Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "manual.pref.set",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": false,
+        "value": true
+      },
+      {
+        "time": "2026-10-08T13:52:30.985Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.observer.notify",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "token": "observer-7cae8344-b38c-4a7e-aad6-679002b21bd0",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": true,
+        "source": "manual"
+      },
+      {
+        "time": "2026-10-08T13:52:31.092Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "manual.pref.set",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "oldValue": true,
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:52:31.093Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.observer.notify",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "token": "observer-7cae8344-b38c-4a7e-aad6-679002b21bd0",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false,
+        "source": "manual"
+      },
+      {
+        "time": "2026-10-08T13:52:32.023Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.item.save.committed",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "itemID": 100,
+        "isNew": true,
+        "item": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:32.020Z",
+          "dateModified": "2026-10-08T13:52:32.020Z"
+        }
+      },
+      {
+        "time": "2026-10-08T13:52:32.024Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__manual_setting_change",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "token": "observer-7cae8344-b38c-4a7e-aad6-679002b21bd0",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "3248862e-f3ff-4e7d-83a4-0e48857d6503": {
+          "operationId": "3248862e-f3ff-4e7d-83a4-0e48857d6503",
+          "processIdentity": "{\"contextID\": \"c09ad729-fb27-4120-b497-aae832f246af\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "failed",
+          "startedAt": 1791467550604,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "preserved_user_change"
+            }
+          ],
+          "error": "automatic_preference_changed",
+          "errorDetail": "automatic_preference_changed",
+          "finishedAt": 1791467552025
+        }
+      },
+      "automatic": false
+    }
+  },
+  "download__restart_saved_partial": {
+    "actionCounts": {
+      "fixture.seed": 1,
+      "fixture.seed.previousSession": 1,
+      "http.request": 40,
+      "http.read.items": 6,
+      "js.task.start": 5,
+      "native.libraries.getAll": 1,
+      "native.pref.get": 7,
+      "native.collections.getByLibrary": 1,
+      "js.task.complete": 4,
+      "native.items.getAll": 2,
+      "js.task.failed": 1,
+      "native.item.toJSON": 2,
+      "native.pref.registerObserver": 1,
+      "native.collections.getAsync": 1,
+      "native.search.addCondition": 1,
+      "native.search.search": 1,
+      "native.items.getAsync": 3,
+      "native.item.getField": 1,
+      "native.item.getCreators": 1,
+      "native.item.getCollections": 1,
+      "native.item.getAttachments": 1,
+      "native.attachment.import.start": 1,
+      "native.attachment.import.committed": 1,
+      "native.pref.unregisterObserver": 1,
+      "http.read.attachmentFile": 1,
+      "native.attachment.getFilePathAsync": 1
+    },
+    "events": [
+      {
+        "time": "2026-10-08T13:49:58.046Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.313Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.325Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.326Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.registerObserver",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "token": "observer-fb94d2fd-0596-44c5-95ff-96af40f904c1"
+      },
+      {
+        "time": "2026-10-08T13:53:05.326Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.326Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.330Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.331Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.get",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "key": "zoteroscihub.automatic_pdf_download",
+        "value": false
+      },
+      {
+        "time": "2026-10-08T13:53:05.331Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.attachment.import.start",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "parentItemID": 1
+      },
+      {
+        "time": "2026-10-08T13:53:05.335Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.attachment.import.committed",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "attachmentID": 100,
+        "parentItemID": 1,
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "destination": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__restart_saved_partial\\storage\\100\\simulated_target.pdf",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+        "sizeBytes": 863
+      },
+      {
+        "time": "2026-10-08T13:53:05.335Z",
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "case": "download__restart_saved_partial",
+        "action": "native.pref.unregisterObserver",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "token": "observer-fb94d2fd-0596-44c5-95ff-96af40f904c1",
+        "removed": true
+      }
+    ],
+    "jobsReadback": {
+      "active": null,
+      "jobs": {
+        "e0b85bcf-6c11-433b-872c-15569b46ce45": {
+          "operationId": "e0b85bcf-6c11-433b-872c-15569b46ce45",
+          "processIdentity": "{\"contextID\": \"acf3877e-be78-4b25-a828-1f9310b48249\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+          "status": "completed",
+          "startedAt": 1791467585325,
+          "savedKeys": [
+            {
+              "libraryID": 1,
+              "key": "FX000100"
+            }
+          ],
+          "preferenceRecovery": [
+            {
+              "key": "zoteroscihub.automatic_pdf_download",
+              "recovery": "not_needed"
+            }
+          ],
+          "error": null,
+          "finishedAt": 1791467585336
+        }
+      },
+      "automatic": false
+    }
+  }
+}

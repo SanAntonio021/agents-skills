@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07aae-2ab1-74f3-b455-82fdc715215a"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"缓存写满后，新记录会覆盖其中最旧的记录。因此，上述 120 s 表示缓存中记录的可回看时间跨度，即最旧的记录约在 120 s 前写入，并非单条记录的处理延迟。断电后缓存中的数据能否保留尚未测试。"}}
+{"type":"turn.completed","usage":{"input_tokens":213565,"cached_input_tokens":182272,"cache_write_input_tokens":0,"output_tokens":2360,"reasoning_output_tokens":853}}

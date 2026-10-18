@@ -1,0 +1,1 @@
+{"time": "2026-10-08T13:44:00.410Z", "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec", "case": "search__doi_generic_search_empty_title", "action": "fixture.seed", "facts": "父条目保留正确题名、DOI 和 PDF；此案例的 DOI 通用搜索为空，题名可命中。DOI 精确查询仍正常。案例 ID 沿用历史名称。", "initialAutomatic": true, "simulated": true}

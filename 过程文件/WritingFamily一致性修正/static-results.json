@@ -1,0 +1,84 @@
+{
+  "changed_files": 18,
+  "eval_counts": {
+    "ieee-manuscript-edit/evals/evals.json": 24,
+    "paper-figure-review/evals/evals.json": 31,
+    "paper-search/evals/evals.json": 19,
+    "research-report/evals/evals.json": 12,
+    "writing-router/evals/evals.json": 27
+  },
+  "links_checked": 19,
+  "link_errors": [],
+  "skill_validation": {
+    "ieee-manuscript-edit": {
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    "research-report": {
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    "paper-search": {
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    "paper-figure-review": {
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    "writing-router": {
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    }
+  },
+  "router_existing_failures_identical": true,
+  "router_failure_cases": [
+    [
+      "writing-router.tests.test_collaborative_writing",
+      "test_entrypoint_resolves_and_loads_one_shared_workflow[project-writing]"
+    ],
+    [
+      "writing-router.tests.test_collaborative_writing",
+      "test_entrypoint_resolves_and_loads_one_shared_workflow[technical-writing]"
+    ],
+    [
+      "writing-router.tests.test_paragraph_quality.ParagraphQualityTests",
+      "test_all_entrypoints_load_rules_before_chinese_prose_work"
+    ],
+    [
+      "writing-router.tests.test_paragraph_quality.ParagraphQualityTests",
+      "test_output_and_audit_scope_do_not_request_process_narration"
+    ],
+    [
+      "writing-router.tests.test_paragraph_quality.ParagraphQualityTests",
+      "test_report_mode_does_not_expand_a_local_edit"
+    ],
+    [
+      "writing-router.tests.test_paragraph_quality.ParagraphQualityTests",
+      "test_summary_and_name_checks_return_to_user_material"
+    ],
+    [
+      "writing-router.tests.test_paragraph_quality.ParagraphQualityTests",
+      "test_vocab_distinguishes_contextual_batch_checks_from_full_audit"
+    ]
+  ],
+  "preexisting_changes_preserved": {
+    ".gitignore": true,
+    "README.md": true,
+    "ieee-manuscript-edit/SKILL.md": true,
+    "meeting-notes/SKILL.md": true,
+    "project-writing/SKILL.md": true,
+    "research-report/SKILL.md": true,
+    "research-report/references/decision-report.md": true,
+    "research-report/references/modes.md": true,
+    "research-report/references/report-contract.md": true,
+    "research-report/scripts/audit_report.py": true,
+    "research-report/tests/test_audit_report.py": true,
+    "skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": true,
+    "skill-check-workspace/verification-runtime/weekly/2026-04-26.md": true,
+    "skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": true,
+    "skill-check-workspace/verification-source/weekly/2026-04-26.md": true,
+    "style-vocab/SKILL.md": true,
+    "technical-writing/SKILL.md": true
+  }
+}

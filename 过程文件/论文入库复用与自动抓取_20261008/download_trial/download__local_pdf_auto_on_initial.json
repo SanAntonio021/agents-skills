@@ -1,0 +1,192 @@
+{
+  "/case": {
+    "name": "download__local_pdf_auto_on",
+    "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 true。",
+    "process": {
+      "pid": 52084,
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "startedAt": "2026-10-08T13:47:18.596Z",
+      "case": "download__local_pdf_auto_on",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "contextCreatedAt": "2026-10-08T13:49:57.696Z",
+      "restartCount": 0,
+      "liveTaskCount": 0
+    },
+    "controls": {
+      "saveDelayMs": 0,
+      "failNextImport": false
+    },
+    "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+    "inputs": [
+      {
+        "itemType": "journalArticle",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001",
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+      }
+    ]
+  },
+  "/process": {
+    "pid": 52084,
+    "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+    "startedAt": "2026-10-08T13:47:18.596Z",
+    "case": "download__local_pdf_auto_on",
+    "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+    "contextCreatedAt": "2026-10-08T13:49:57.696Z",
+    "restartCount": 0,
+    "liveTaskCount": 0
+  },
+  "/libraries": [
+    {
+      "libraryID": 1,
+      "id": 1,
+      "libraryType": "user",
+      "name": "Isolated Fixture Library",
+      "editable": true,
+      "filesEditable": true
+    }
+  ],
+  "/collections": [
+    {
+      "id": 20,
+      "key": "FXCOL020",
+      "libraryID": 1,
+      "name": "Fixture / Communications",
+      "parentID": null
+    },
+    {
+      "id": 21,
+      "key": "FXCOL021",
+      "libraryID": 1,
+      "name": "Fixture / Read and Annotated",
+      "parentID": null
+    }
+  ],
+  "/items": [],
+  "/settings": {
+    "zoteroscihub.automatic_pdf_download": true
+  },
+  "/tasks": [],
+  "/logs": [
+    {
+      "time": "2026-10-08T13:44:00.386Z",
+      "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+      "case": "download__local_pdf_auto_on",
+      "action": "fixture.seed",
+      "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 true。",
+      "initialAutomatic": true,
+      "simulated": true
+    },
+    {
+      "time": "2026-10-08T13:49:57.697Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.724Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/process",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.727Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/libraries",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.730Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/collections",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.754Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/items",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.755Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.read.items",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "query": "",
+      "filters": {
+        "libraryID": null,
+        "itemType": null,
+        "DOI": null,
+        "title": null,
+        "topLevel": false
+      },
+      "itemIDs": []
+    },
+    {
+      "time": "2026-10-08T13:49:57.759Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/settings",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.785Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/tasks",
+      "query": {}
+    },
+    {
+      "time": "2026-10-08T13:49:57.789Z",
+      "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+      "case": "download__local_pdf_auto_on",
+      "action": "http.request",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "method": "GET",
+      "path": "/cases/download__local_pdf_auto_on/logs",
+      "query": {}
+    }
+  ]
+}

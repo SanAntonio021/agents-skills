@@ -1,0 +1,49 @@
+{
+  "commit": "c3f67c48c5d35ba40eed5f213c6dc6f38827acfd",
+  "skills": [
+    "ieee-manuscript-edit",
+    "research-report",
+    "paper-search",
+    "paper-figure-review",
+    "writing-router"
+  ],
+  "files": [
+    "ieee-manuscript-edit/evals/evals.json",
+    "ieee-manuscript-edit/references/draft-finalization-rules.md",
+    "ieee-manuscript-edit/references/final-audit.md",
+    "ieee-manuscript-edit/references/manuscript-refinement-checklist.md",
+    "ieee-manuscript-edit/references/sainani-sentence-review.md",
+    "ieee-manuscript-edit/references/writing-memory-schema.md",
+    "paper-figure-review/SKILL.md",
+    "paper-figure-review/evals/evals.json",
+    "paper-figure-review/references/ieee-figure-review-checklist.md",
+    "paper-search/README.md",
+    "paper-search/SKILL.md",
+    "paper-search/evals/evals.json",
+    "paper-search/references/citation-workflow.md",
+    "research-report/evals/evals.json",
+    "research-report/references/restructure-existing.md",
+    "writing-router/SKILL.md",
+    "writing-router/evals/evals.json",
+    "writing-router/references/academic-workflow-map.md"
+  ],
+  "worktree_exceptions": [
+    "ieee-manuscript-edit/SKILL.md=7fbc4265041dbed5913ac6c3c1f193c409d33dbd7a4e75e83e739bdcdd4f6c5a",
+    "research-report/SKILL.md=379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586",
+    "research-report/references/decision-report.md=0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2",
+    "research-report/references/modes.md=15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34",
+    "research-report/references/report-contract.md=d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc",
+    "research-report/scripts/audit_report.py=0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde",
+    "research-report/tests/test_audit_report.py=97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd"
+  ],
+  "git_newline_normalization_only": [
+    "ieee-manuscript-edit/references/draft-finalization-rules.md",
+    "ieee-manuscript-edit/references/final-audit.md",
+    "paper-search/README.md",
+    "paper-search/SKILL.md",
+    "paper-search/references/citation-workflow.md",
+    "research-report/evals/evals.json",
+    "research-report/references/restructure-existing.md",
+    "writing-router/evals/evals.json"
+  ]
+}

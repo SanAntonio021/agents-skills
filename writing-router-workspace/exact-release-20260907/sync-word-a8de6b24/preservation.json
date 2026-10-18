@@ -1,0 +1,32 @@
+[
+  {
+    "path": "writing-router/evals/paragraph-quality.json",
+    "sha256": "9004d2db98708db70eafb6acf4414c2c12083a1a5a18f51527ad39196de79e83",
+    "moved": true,
+    "restored": true
+  },
+  {
+    "path": "writing-router/tests/test_paragraph_quality.py",
+    "sha256": "cddacd1412c61739e6d847ae0ea4a0695ce3c8c92a606dae2528c407910ef4c4",
+    "moved": true,
+    "restored": true
+  },
+  {
+    "path": "writing-router/references/exact-edit.md",
+    "sha256": "4aff6a04f7242edd10fe732c4f342c5d3e3a87333f6ec07305aa50f44f393a7d",
+    "moved": true,
+    "restored": true
+  },
+  {
+    "path": "writing-router/scripts/exact_edit.py",
+    "sha256": "562cdf92fe839d524ba15649d768cee7ac45a9388e99e72591809ba1b35857be",
+    "moved": true,
+    "restored": true
+  },
+  {
+    "path": "writing-router/tests/test_exact_edit.py",
+    "sha256": "6b0cc1a26754ab6c7b40182293bb0a7050a27ff765dbac7eb5bf1cb9769c851e",
+    "moved": true,
+    "restored": true
+  }
+]

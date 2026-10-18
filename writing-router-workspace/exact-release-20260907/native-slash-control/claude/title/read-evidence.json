@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-vfh8i9s_/original.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cat > 'C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-vfh8i9s_/result.md' << 'EOF'\n## 单通道测试记录\n\n本次记录共24000帧，其中错误帧为12帧。\n帧差错率为q = 12 / 24000 = 0.0005，双通道测试尚未开展。\nEOF\n",
+      "description": "Create result.md with title and original content"
+    }
+  }
+]

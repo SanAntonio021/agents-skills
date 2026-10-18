@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh",
+      "args": "润色一段中文论文结果讨论段落，需明确\"帧丢弃率\"而非\"缓存占用率\"的指标含义"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" 2>/dev/null; echo \"---VOCAB---\"; ls -R \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill files and personal vocab"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/论文.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/术语.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" && wc -l README.md SKILL.md && grep -n -i \"script\\|脚本\\|\\.py\\|\\.sh\" README.md SKILL.md | head -20",
+      "description": "Check skill README for check scripts"
+    }
+  }
+]

@@ -1,0 +1,76 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
+let writes = 0;
+const app = {
+  docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0},
+  nodeManager:{nodeMap:new Map()}, api:{graphicNodeToPageNode:n=>n},
+  commandManager:{handlers:new Map(),execute:()=>writes++},
+  actionManager:{execAction:()=>writes++}
+};
+const element = {__reactInternalInstanceTest:{memoizedProps:{},return:{memoizedProps:{app,onDoubleClick:()=>writes++}}}};
+const context = {URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},
+  document:{querySelectorAll:()=>[element]}};
+const adapter = vm.runInNewContext('('+source+')',context);
+const req = {document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest',operation:{kind:'inspect'}};
+assert.equal(adapter(req).nodes.length,0);
+const rejected=(r,pattern)=>{const result=adapter(r);assert.match(result.adapter_error,pattern);assert.equal(result.content_write_started,false);};
+rejected({...req,document_url:'https://test.feishu.cn/docx/Wrong'},/DOCUMENT_URL_MISMATCH/);
+rejected({...req,whiteboard_token:'Wrong'},/BOARD_IDENTITY/);
+rejected({...req,docx_token:'Wrong'},/INVALID_TARGET/);
+rejected({...req,docx_token:undefined},/INVALID_TARGET/);
+rejected({...req,operation:{kind:'enter'}},/UNVERIFIED_EDITOR_BUILD/);
+context.document.querySelectorAll=()=>[element,element];
+rejected(req,/NOT_UNIQUE/);
+assert.equal(writes,0);
+context.document.querySelectorAll=()=>[element];
+context.location.pathname='/wiki/WikiTest';
+const wikiReq={...req,document_url:'https://test.feishu.cn/wiki/WikiTest'};
+assert.equal(adapter(wikiReq).nodes.length,0);
+rejected({...wikiReq,docx_token:'Wrong'},/BOARD_IDENTITY/);
+rejected({...wikiReq,document_url:'https://other.feishu.cn/wiki/WikiTest'},/DOCUMENT_URL_MISMATCH/);
+context.location.pathname='/docx/DocTest';
+console.log('PASS: read-only inspection and four failure paths make no editor calls');
+
+// Native corners are an object, and include any rotation already applied.
+context.document.querySelectorAll=()=>[element];
+context.window={devicePixelRatio:2};
+app.interactCtx={gmlRender:{canvas:{getBoundingClientRect:()=>({x:10,y:20,width:800,height:300})},
+  transfromToViewPort:p=>({x:2*p.x+30,y:2*p.y+50})}};
+app.api.graphicNodeToPageNode=n=>n.page;
+const corners={topLeft:{x:10,y:15},topRight:{x:30,y:25},bottomLeft:{x:5,y:25},bottomRight:{x:25,y:35}};
+const caption={textProps:{fontSize:18,sizeMode:1},textBoxWidth:180};
+app.nodeManager.nodeMap.set('line',{id:'line',type:15,captions:[caption],lineProps:{points:[{x:0,y:0},{x:100,y:0}]},toGlobalPoint:p=>p,
+  graphicText:{baseProps:{angle:30},getRectPoint:()=>corners},
+  page:{info:{baseV2:{x:0,y:0,width:100,height:0},connectorV2:{shape:0,captions:{data:[{textStyle:{text:'label',fontSize:18},t:0.5,positionType:0}]}}}}});
+const feedback=adapter(req);
+assert.deepEqual(JSON.parse(JSON.stringify(feedback.label_geometry.line.world_corners)),[corners.topLeft,corners.topRight,corners.bottomRight,corners.bottomLeft]);
+assert.deepEqual(JSON.parse(JSON.stringify(feedback.label_geometry.line.screen_rect)),{x:40,y:80,width:50,height:40});
+assert.deepEqual(JSON.parse(JSON.stringify(feedback.viewport.world_to_screen)),{a:2,b:0,c:0,d:2,e:30,f:50});
+assert.equal(feedback.viewport.device_pixel_ratio,2);
+assert.equal(writes,0);
+console.log('PASS: native label corners and observed screen transform preserve read-only behavior');
+
+// Arrangement reads the same outer box that native Align uses. It is distinct
+// from serialized base coordinates and the rectangle used for group envelopes.
+app.nodeManager.nodeMap.set('rotated',{
+  id:'rotated',type:13,
+  getBounds:()=>({minX:65,minY:15,maxX:105,maxY:115}),
+  getRectNode:()=>({minX:5,minY:10,maxX:105,maxY:50}),
+  page:{info:{baseV2:{x:5,y:10,width:100,height:40,angle:90},compositeShape:{shapeType:11},
+    textV2:{text:'rotated',fontSize:18}}}
+});
+app.nodeManager.nodeMap.set('unavailable',{
+  id:'unavailable',type:13,
+  page:{info:{baseV2:{x:200,y:10,width:100,height:40},compositeShape:{shapeType:11}}}
+});
+const arrangementInspection=adapter(req);
+assert.deepEqual(JSON.parse(JSON.stringify(arrangementInspection.arrangement_bounds.rotated)),
+  {x:65,y:15,width:40,height:100});
+assert.deepEqual(JSON.parse(JSON.stringify(arrangementInspection.object_bounds.rotated)),
+  {x:5,y:10,width:100,height:40});
+assert.equal(arrangementInspection.arrangement_bounds.unavailable,null);
+assert.equal(writes,0);
+console.log('PASS: inspection reads native arrangement bounds separately and never edits content');

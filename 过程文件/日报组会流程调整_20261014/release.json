@@ -1,0 +1,116 @@
+{
+  "source_commit": "feb9c23ffe6781c16bda121b49d993748bd7c7a7",
+  "source_pushed": true,
+  "skills": [
+    "lab-report-slides",
+    "pptx"
+  ],
+  "runtime_status": "runtime_active",
+  "behavior_record": "behavior-check.json",
+  "static_record": "static-check.json",
+  "scope": "仅修改两个技能及其说明和评测，未修改全局规则或历史PPT。",
+  "receipts": {
+    "sync": {
+      "status": "runtime_active",
+      "exit_code": 0,
+      "skills": [
+        {
+          "name": "lab-report-slides",
+          "verified": true,
+          "layers": {
+            "source": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "cc_switch": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "claude": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "codex": {
+              "equal_to_source": true,
+              "file_count": 24
+            }
+          }
+        },
+        {
+          "name": "pptx",
+          "verified": true,
+          "layers": {
+            "source": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "cc_switch": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "claude": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "codex": {
+              "equal_to_source": true,
+              "file_count": 91
+            }
+          }
+        }
+      ]
+    },
+    "verify": {
+      "status": "runtime_active",
+      "exit_code": 0,
+      "skills": [
+        {
+          "name": "lab-report-slides",
+          "verified": true,
+          "layers": {
+            "source": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "cc_switch": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "claude": {
+              "equal_to_source": true,
+              "file_count": 24
+            },
+            "codex": {
+              "equal_to_source": true,
+              "file_count": 24
+            }
+          }
+        },
+        {
+          "name": "pptx",
+          "verified": true,
+          "layers": {
+            "source": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "cc_switch": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "claude": {
+              "equal_to_source": true,
+              "file_count": 91
+            },
+            "codex": {
+              "equal_to_source": true,
+              "file_count": 91
+            }
+          }
+        }
+      ]
+    }
+  },
+  "cloud_distribution": "not_requested",
+  "management_ui_refresh": "not_checked"
+}

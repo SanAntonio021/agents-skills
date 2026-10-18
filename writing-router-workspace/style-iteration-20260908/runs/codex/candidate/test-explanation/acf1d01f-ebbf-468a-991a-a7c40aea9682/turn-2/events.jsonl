@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a08028-6cde-75d3-a72e-777fde7d2333"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"控制器以 50 ms 为周期持续采集温度，连续 3 次采集值均高于 72 °C 时发出告警；告警期间采集不会中断，待温度降至 68 °C 以下后解除告警。\n\n当前台架试验在单只传感器接入条件下连续运行 6 小时，未观察到误告警。两只传感器同时接入时的告警情况尚未测试，因此该结果仅适用于本次单传感器试验条件。"}}
+{"type":"turn.completed","usage":{"input_tokens":43729,"cached_input_tokens":21376,"cache_write_input_tokens":0,"output_tokens":839,"reasoning_output_tokens":592}}

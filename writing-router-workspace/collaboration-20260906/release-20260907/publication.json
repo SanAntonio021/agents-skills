@@ -1,0 +1,108 @@
+{
+  "checked_at": "2026-09-07T02:23:51.065Z",
+  "own_release_commit": "8f572de312d0a0b023e6b2b766837f2e4c09b0ba",
+  "own_skills": [
+    "docx",
+    "ieee-manuscript-edit",
+    "meeting-notes",
+    "project-writing",
+    "research-report",
+    "technical-writing",
+    "writing-router"
+  ],
+  "own_files": [
+    "docx/SKILL.md",
+    "ieee-manuscript-edit/SKILL.md",
+    "meeting-notes/SKILL.md",
+    "project-writing/SKILL.md",
+    "research-report/SKILL.md",
+    "technical-writing/SKILL.md",
+    "writing-router/SKILL.md",
+    "writing-router/evals/README.md",
+    "writing-router/evals/writing-quality-v2.json",
+    "writing-router/references/markdown-docx-contract.md",
+    "writing-router/evals/collaborative-writing.json",
+    "writing-router/references/collaborative-writing.md",
+    "writing-router/tests/collect_collaboration_evidence.py",
+    "writing-router/tests/fake_document_store.py",
+    "writing-router/tests/test_collaborative_writing.py"
+  ],
+  "verification_base": "3bb66ef293a857a1de4ab851d519287f4312d83b",
+  "verification_commit": "13afdb76b8b53dfe9296cb7acb0edfe01659525d",
+  "verification_skills": [
+    "ask-first",
+    "chat-notes",
+    "docx",
+    "ieee-manuscript-edit",
+    "meeting-notes",
+    "project-writing",
+    "research-report",
+    "technical-writing",
+    "writing-router"
+  ],
+  "full_status": "runtime_active",
+  "verify_status": "runtime_active",
+  "metadata_valid": true,
+  "controlled_file_sets_and_hashes_match": true,
+  "extra_skills_actions": [
+    {
+      "name": "ask-first",
+      "action": "already_current"
+    },
+    {
+      "name": "chat-notes",
+      "action": "already_current"
+    }
+  ],
+  "fresh_readonly_sessions": [
+    {
+      "client": "codex",
+      "folder": "codex",
+      "exit_code": 0,
+      "timed_out": false,
+      "draft_created": false,
+      "workflow_read_observed": true,
+      "read_receipts": [
+        {
+          "event_line": 17,
+          "kind": "command_execution",
+          "command": "\"C:\\\\Users\\\\SanAn\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); Get-Content -LiteralPath '\"'C:\\\\Users\\\\SanAn\\\\.codex\\\\skills\\\\writing-router\\\\references\\\\collaborative-writing.md' -Encoding UTF8; Get-Content -LiteralPath 'C:\\\\Users\\\\SanAn\\\\.codex\\\\skills\\\\technical-writing\\\\SKILL.md' -Encoding UTF8\"",
+          "header_returned": true
+        }
+      ],
+      "structure_marker_present": true,
+      "json_trace_present": true
+    },
+    {
+      "client": "claude",
+      "folder": "claude-clarified",
+      "exit_code": 0,
+      "timed_out": false,
+      "draft_created": false,
+      "workflow_read_observed": true,
+      "read_receipts": [
+        {
+          "event_line": 65,
+          "kind": "tool_result",
+          "call": {
+            "name": "Read",
+            "input": {
+              "file_path": "C:\\Users\\SanAn\\.claude\\skills\\writing-router\\references\\collaborative-writing.md"
+            }
+          },
+          "header_returned": true
+        }
+      ],
+      "structure_marker_present": true,
+      "json_trace_present": false
+    }
+  ],
+  "scope_notes": [
+    "Own commit contains only the seven writing-related skills.",
+    "Subsequent writing-audit and conversation-maintenance commits were preserved; the final check used their latest combined tree.",
+    "technical-writing disappeared and reappeared during concurrent activity; this task did not uninstall, reinstall, or manually overwrite it.",
+    "The final full run and VerifyOnly used identical range parameters and returned runtime_active.",
+    "Claude's first prompt was ambiguous; the clarified fresh-session result is used. JSON trace formatting is not a gate for this read-evidence check.",
+    "Existing sessions were not forcibly reloaded."
+  ]
+}

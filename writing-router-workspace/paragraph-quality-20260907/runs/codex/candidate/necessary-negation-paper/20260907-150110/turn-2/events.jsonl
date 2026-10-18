@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07aab-bcea-71e1-bae7-1e4dbf318d68"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"本实验统计的指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中，\\(N_{\\mathrm{drop}}\\) 为丢弃帧数，\\(N_{\\mathrm{sent}}\\) 为发送帧数，该指标反映发送帧中被丢弃帧所占的比例。在 256 B 定长帧、单个发送端条件下，\\(N_{\\mathrm{sent}}=80000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此计算得到 \\(p_{\\mathrm{drop}}=0.002\\)，即 0.2%。多发送端测试尚未开展。本结果仅适用于上述单发送端条件，不能用于评价多发送端竞争场景下的性能。"}}
+{"type":"turn.completed","usage":{"input_tokens":202118,"cached_input_tokens":164480,"cache_write_input_tokens":0,"output_tokens":2841,"reasoning_output_tokens":1081}}

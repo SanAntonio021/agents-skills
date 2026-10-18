@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/中文/通用.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/ablation-20260907/snapshot/writing-router/SKILL.md"
+    }
+  }
+]

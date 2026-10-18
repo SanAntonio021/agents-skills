@@ -1,0 +1,3 @@
+只在最终回复中交付本次任务要求的正文，不创建或修改文件。工具返回只供内部检查，不附在最终回复中。不使用其他会话、记忆、私有样稿、子智能体、网络或业务系统。先只读以下适用词表，两组均使用这些词表：D:/BaiduSyncdisk/.agents/vocab/中文/通用.md、D:/BaiduSyncdisk/.agents/vocab/中文/论文.md。读取 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/ablation-20260907/snapshot/writing-router/SKILL.md，按该入口读取本轮所需技能及参考文件；只使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/ablation-20260907/snapshot 下的版本。不要读取已安装的技能副本、测试材料或其他版本。
+
+给下面已确认的论文段落加二级Markdown标题“单通道帧差错率”。正文逐字保持原样，只给标题和正文。正文：本实验统计帧差错率，定义为q = N_err / N_all，其中N_err为错误帧数，N_all为接收帧总数。在512 B定长帧、单通道条件下，N_all = 40000，N_err = 60，得到q = 0.0015。双通道测试尚未开展，该结果不代表双通道并发时的性能。

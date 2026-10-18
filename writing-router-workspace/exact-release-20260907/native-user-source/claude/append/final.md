@@ -1,0 +1,1 @@
+C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-v1yi9dak/result.md

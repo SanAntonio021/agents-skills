@@ -1,0 +1,20 @@
+[
+  "D:\\Program Files\\nodejs\\node.exe",
+  "C:\\Users\\SanAn\\AppData\\Roaming\\npm\\node_modules\\@openai\\codex\\bin\\codex.js",
+  "exec",
+  "--model",
+  "gpt-5.6-sol",
+  "-c",
+  "model_reasoning_effort=\"max\"",
+  "-c",
+  "approval_policy=\"never\"",
+  "-c",
+  "sandbox_mode=\"read-only\"",
+  "--skip-git-repo-check",
+  "--json",
+  "--sandbox",
+  "read-only",
+  "-C",
+  "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\natural-prose-general\\20260907-160945",
+  "-"
+]

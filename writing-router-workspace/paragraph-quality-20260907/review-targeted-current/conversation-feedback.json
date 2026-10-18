@@ -1,0 +1,19 @@
+{
+  "source": "user_feedback_in_current_conversation",
+  "review": "review-targeted-current",
+  "group": 1,
+  "status": "partial_feedback_pending_clarification",
+  "turns": [
+    {"turn": 1, "choice": null, "feedback": "A我觉得有点啰嗦"},
+    {"turn": 2, "choice": "B", "feedback": "A用了‘口径’，不对；B更好"},
+    {"turn": 3, "choice": "B", "feedback": "A用了‘硬性约束’，有点生硬，B更好"}
+  ],
+  "shared_feedback": "A和B同时都有的问题是‘上述报价已经核对，但样机验收尚未进行。’，每一轮都在强调这个内容。",
+  "overall_choice": null,
+  "pending": "确认验收状态在正文与摘要中的保留位置，不推定用户要求删除该事实。",
+  "boundaries": [
+    "第一轮没有明确选择B，不代填偏好。",
+    "不把本例对口径、硬性约束的批评写成全局禁词。",
+    "未获得删除必要状态、批准整组或发布技能的确认。"
+  ]
+}

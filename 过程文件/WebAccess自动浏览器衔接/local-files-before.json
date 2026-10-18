@@ -1,0 +1,38 @@
+[
+  {
+    "path": "D:\\BaiduSyncdisk\\.agents\\skills\\web-access\\config.env",
+    "sha256": "39467FF94FD2D8C97A7066D2489CE3CFE852ABED2821FFA226074C04B5EE17F6"
+  },
+  {
+    "path": "D:\\BaiduSyncdisk\\.agents\\skills\\web-access\\references\\site-patterns\\chatgpt.com.md",
+    "sha256": "A4B87EBA86BEA15A9A14E0CE9CC2999C499288A37A9556101876FB32C59E692C"
+  },
+  {
+    "path": "D:\\BaiduSyncdisk\\.agents\\skills\\web-access\\references\\site-patterns\\google.com.md",
+    "sha256": "BFC55E1ECA2E2A6C23CF8AD73723E8C70E839E116D5F3B509A9206F189B7C210"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.cc-switch\\skills\\web-access\\references\\site-patterns\\chatgpt.com.md",
+    "sha256": "A4B87EBA86BEA15A9A14E0CE9CC2999C499288A37A9556101876FB32C59E692C"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.cc-switch\\skills\\web-access\\references\\site-patterns\\google.com.md",
+    "sha256": "BFC55E1ECA2E2A6C23CF8AD73723E8C70E839E116D5F3B509A9206F189B7C210"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.claude\\skills\\web-access\\references\\site-patterns\\chatgpt.com.md",
+    "sha256": "A4B87EBA86BEA15A9A14E0CE9CC2999C499288A37A9556101876FB32C59E692C"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.claude\\skills\\web-access\\references\\site-patterns\\google.com.md",
+    "sha256": "BFC55E1ECA2E2A6C23CF8AD73723E8C70E839E116D5F3B509A9206F189B7C210"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.codex\\skills\\web-access\\references\\site-patterns\\chatgpt.com.md",
+    "sha256": "A4B87EBA86BEA15A9A14E0CE9CC2999C499288A37A9556101876FB32C59E692C"
+  },
+  {
+    "path": "C:\\Users\\SanAn\\.codex\\skills\\web-access\\references\\site-patterns\\google.com.md",
+    "sha256": "BFC55E1ECA2E2A6C23CF8AD73723E8C70E839E116D5F3B509A9206F189B7C210"
+  }
+]

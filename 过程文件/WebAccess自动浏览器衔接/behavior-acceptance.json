@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "independent_sessions": 6,
+  "checks": [
+    "complete-public-body-without-browser",
+    "trial-report-read-then-browser",
+    "trial-report-body-read",
+    "trial-weekly-read-then-browser",
+    "trial-weekly-body-read",
+    "blocked-body-actually-returned",
+    "dynamic-body-actually-returned",
+    "known-dynamic-direct-browser",
+    "known-dynamic-body-actually-returned",
+    "trial-weekly-actual-click",
+    "trial-known-actual-click",
+    "trial-report-task-completed",
+    "trial-weekly-task-completed",
+    "trial-known-task-completed",
+    "permission-denial-does-not-upgrade",
+    "unavailable-retains-public-read",
+    "unavailable-no-browser-request",
+    "tested-source-unchanged"
+  ],
+  "owner_availability_probes_excluded_by_executor_call_timestamps": 2,
+  "counts": {
+    "trial-public": {
+      "read": 2,
+      "check": 0,
+      "request": 0
+    },
+    "trial-report": {
+      "read": 1,
+      "check": 1,
+      "request": 5
+    },
+    "trial-weekly": {
+      "read": 1,
+      "check": 1,
+      "request": 7
+    },
+    "trial-known": {
+      "read": 0,
+      "check": 1,
+      "request": 7
+    },
+    "trial-denied": {
+      "read": 1,
+      "check": 0,
+      "request": 0
+    },
+    "browser-unavailable": {
+      "read": 2,
+      "check": 1,
+      "request": 0
+    }
+  },
+  "scope": "One fresh-context independent executor; six controlled tasks. Real headless Edge with simulated site responses. No public-site anti-bot or automatic skill triggering acceptance.",
+  "environment_issue": "First environment DNS isolation prevented browser localhost navigation; owner repaired only its temporary environment. Initial static reads preserved; no executor browser calls occurred on the faulty instance."
+}

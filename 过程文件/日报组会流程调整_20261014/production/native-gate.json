@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "status": "PASS",
+  "format": "pptx",
+  "file": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\20261014_日报样例_技能流程测试_v01.pptx",
+  "phase": "render",
+  "source_sha256_before": "B32DE85D5FA7DE25B19FCADB5CCCBFC7041E2C7126E5D91A5F7CBEAB083CE4AF",
+  "source_sha256_after": "B32DE85D5FA7DE25B19FCADB5CCCBFC7041E2C7126E5D91A5F7CBEAB083CE4AF",
+  "details": {
+    "slides": 4,
+    "native_open": true,
+    "native_render": {
+      "export": "native_png",
+      "expected": 4,
+      "files": 4,
+      "retained_files": [
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\native-png\\slide-0001.png",
+          "sha256": "31851CA8EDC58F46C162341C4482F8BA4C1536C437C031178C879A93720DB355"
+        },
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\native-png\\slide-0002.png",
+          "sha256": "1415D73A45CA02931737853D9BF15B4EA1E79060341CC20E53C2890C5D49B186"
+        },
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\native-png\\slide-0003.png",
+          "sha256": "38A8AE76587CB795133F6FC732D67CD09B3F3666EF42F75AA9622A084D88BFC3"
+        },
+        {
+          "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\日报组会流程调整_20261014\\production\\native-png\\slide-0004.png",
+          "sha256": "DB7EB696E47CA6F89D80DD598F5825556319A3866BDAC3B0F8C9BBB20C99F640"
+        }
+      ]
+    },
+    "application_lifecycle": {
+      "launch": "explicit_microsoft_executable",
+      "pid": 35696,
+      "application_path": "C:\\Program Files\\Microsoft Office\\root\\Office16",
+      "version": "16.0",
+      "cleanup": "self_exited"
+    }
+  }
+}

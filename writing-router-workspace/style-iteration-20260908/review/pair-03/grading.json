@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "A: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2]"
+    },
+    {
+      "text": "A: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    },
+    {
+      "text": "B: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2]"
+    },
+    {
+      "text": "B: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4
+  },
+  "notes": "两者都达到术语含义、事实和格式要求。A的窄幅增益是未保留“两类指标采用不同的处理方式”这一无新信息的概括，必要的约束解释及统计澄清仍完整。不是越短越好，也不惩罚合法术语。"
+}

@@ -1,0 +1,17 @@
+{
+  "client": "claude",
+  "pid": 83996,
+  "exit_code": 0,
+  "timed_out": false,
+  "duration_seconds": 85.84,
+  "event_count": 61,
+  "event_types": [
+    "assistant",
+    "result",
+    "system",
+    "user"
+  ],
+  "final_file": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\collaboration-20260906\\release-20260907\\claude\\final.txt",
+  "draft_created": false,
+  "cli_result_error": false
+}

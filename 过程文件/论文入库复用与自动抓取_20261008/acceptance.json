@@ -1,0 +1,519 @@
+{
+  "kind": "isolated_behavior_run",
+  "cases": [
+    {
+      "case": "download__existing_pdf_notes_collections",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1,
+        "note": 1,
+        "annotation": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 34,
+        "http.read.items": 4,
+        "js.task.start": 3,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 2,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 3,
+        "http.read.attachmentFile": 2,
+        "native.items.getAsync": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": null
+    },
+    {
+      "case": "download__local_pdf_auto_on",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 27,
+        "http.read.items": 4,
+        "js.task.start": 4,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 11,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 4,
+        "native.pref.registerObserver": 1,
+        "native.pref.set": 2,
+        "native.pref.observer.notify": 2,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 2,
+        "native.search.search": 2,
+        "native.items.getAsync": 3,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "native.item.save.committed": 1,
+        "native.item.getAttachments": 1,
+        "native.attachment.import.start": 1,
+        "native.attachment.import.committed": 1,
+        "native.pref.unregisterObserver": 1,
+        "http.read.attachmentFile": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "download__local_pdf_auto_off",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": false,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 28,
+        "http.read.items": 4,
+        "js.task.start": 4,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 8,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 4,
+        "native.pref.registerObserver": 1,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 2,
+        "native.search.search": 2,
+        "native.items.getAsync": 3,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "native.item.save.committed": 1,
+        "native.item.getAttachments": 1,
+        "native.attachment.import.start": 1,
+        "native.attachment.import.committed": 1,
+        "native.pref.unregisterObserver": 1,
+        "http.read.attachmentFile": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "not_needed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "download__doi_generic_search_empty_title",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 35,
+        "http.read.items": 6,
+        "js.task.start": 3,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 2,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 3,
+        "http.read.attachmentFile": 2,
+        "native.items.getAsync": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": null
+    },
+    {
+      "case": "download__timeout_continues",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 57,
+        "http.read.items": 10,
+        "js.task.start": 10,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 11,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 10,
+        "native.pref.registerObserver": 1,
+        "native.pref.set": 2,
+        "native.pref.observer.notify": 2,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 2,
+        "native.search.search": 2,
+        "native.items.getAsync": 3,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "http.client.disconnected": 1,
+        "native.item.save.committed": 1,
+        "native.item.getAttachments": 1,
+        "native.attachment.import.start": 1,
+        "native.attachment.import.committed": 1,
+        "native.pref.unregisterObserver": 1,
+        "http.read.attachmentFile": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "download__first_attachment_failure",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 35,
+        "http.read.items": 6,
+        "js.task.start": 5,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 19,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 5,
+        "native.pref.registerObserver": 2,
+        "native.pref.set": 4,
+        "native.pref.observer.notify": 4,
+        "native.collections.getAsync": 2,
+        "native.search.addCondition": 3,
+        "native.search.search": 3,
+        "native.items.getAsync": 5,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "native.item.save.committed": 1,
+        "native.item.getAttachments": 2,
+        "native.attachment.import.start": 2,
+        "native.attachment.import.failure": 1,
+        "native.pref.unregisterObserver": 2,
+        "native.item.getField": 1,
+        "native.item.getCreators": 1,
+        "native.item.getCollections": 1,
+        "native.attachment.import.committed": 1,
+        "http.read.attachmentFile": 1,
+        "native.attachment.getFilePathAsync": 1,
+        "native.item.toJSON": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "failed",
+            "error": "native_write_failed",
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          },
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "download__manual_setting_change",
+      "passed": true,
+      "types": {
+        "journalArticle": 1
+      },
+      "automatic_setting": false,
+      "simulated_popup_count": 0,
+      "expected_business_pending": true,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 27,
+        "http.read.items": 4,
+        "js.task.start": 3,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 7,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 3,
+        "native.pref.registerObserver": 1,
+        "native.pref.set": 1,
+        "native.pref.observer.notify": 3,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 2,
+        "native.search.search": 2,
+        "native.items.getAsync": 1,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "manual.pref.set": 2,
+        "native.item.save.committed": 1,
+        "native.pref.unregisterObserver": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "failed",
+            "error": "automatic_preference_changed",
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "preserved_user_change"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "download__restart_saved_partial",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": false,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "fixture.seed.previousSession": 1,
+        "http.request": 41,
+        "http.read.items": 6,
+        "js.task.start": 6,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 8,
+        "native.collections.getByLibrary": 1,
+        "js.task.complete": 5,
+        "native.items.getAll": 2,
+        "js.task.failed": 1,
+        "native.item.toJSON": 2,
+        "native.pref.registerObserver": 1,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 1,
+        "native.search.search": 1,
+        "native.items.getAsync": 3,
+        "native.item.getField": 1,
+        "native.item.getCreators": 1,
+        "native.item.getCollections": 1,
+        "native.item.getAttachments": 1,
+        "native.attachment.import.start": 1,
+        "native.attachment.import.committed": 1,
+        "native.pref.unregisterObserver": 1,
+        "http.read.attachmentFile": 1,
+        "native.attachment.getFilePathAsync": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "not_needed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "search__local_material_handoff",
+      "passed": true,
+      "types": {
+        "journalArticle": 1,
+        "attachment": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 23,
+        "http.read.items": 4,
+        "http.read.publicationIndex": 1,
+        "js.task.start": 3,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 11,
+        "js.task.complete": 3,
+        "native.pref.registerObserver": 1,
+        "native.pref.set": 2,
+        "native.pref.observer.notify": 2,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 4,
+        "native.search.search": 4,
+        "native.items.getAsync": 5,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "native.item.save.committed": 1,
+        "native.item.getCollections": 3,
+        "native.items.getByLibraryAndKeyAsync": 3,
+        "native.item.getField": 2,
+        "native.item.getAttachments": 3,
+        "native.attachment.import.start": 1,
+        "native.attachment.import.committed": 1,
+        "native.item.toJSON": 4,
+        "native.attachment.getFilePathAsync": 1,
+        "native.pref.unregisterObserver": 1,
+        "http.read.attachmentFile": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "search__metadata_only",
+      "passed": true,
+      "types": {
+        "journalArticle": 1
+      },
+      "automatic_setting": true,
+      "simulated_popup_count": 0,
+      "expected_business_pending": false,
+      "action_counts": {
+        "fixture.seed": 1,
+        "http.request": 22,
+        "http.read.items": 4,
+        "http.read.publicationIndex": 1,
+        "js.task.start": 3,
+        "native.libraries.getAll": 1,
+        "native.pref.get": 10,
+        "js.task.complete": 3,
+        "native.pref.registerObserver": 1,
+        "native.pref.set": 2,
+        "native.pref.observer.notify": 2,
+        "native.collections.getAsync": 1,
+        "native.search.addCondition": 4,
+        "native.search.search": 4,
+        "native.items.getAsync": 3,
+        "native.item.setField": 8,
+        "native.item.setCreators": 1,
+        "native.item.addToCollection": 1,
+        "native.item.save.start": 1,
+        "native.item.save.committed": 1,
+        "native.item.getCollections": 3,
+        "native.items.getByLibraryAndKeyAsync": 2,
+        "native.item.getField": 2,
+        "native.item.toJSON": 2,
+        "native.pref.unregisterObserver": 1,
+        "native.item.getAttachments": 1
+      },
+      "no_observer_leak": true,
+      "final_marker": {
+        "active": null,
+        "jobs": [
+          {
+            "status": "completed",
+            "error": null,
+            "preferenceRecovery": [
+              {
+                "key": "zoteroscihub.automatic_pdf_download",
+                "recovery": "restored"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "protected_file_drift": [],
+  "real_plugin_trigger_verified": false,
+  "log_schema_field": "action"
+}

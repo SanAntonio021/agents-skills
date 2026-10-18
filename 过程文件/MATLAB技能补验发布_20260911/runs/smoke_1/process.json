@@ -1,0 +1,128 @@
+{
+  "selection": "smoke",
+  "attempt": "1",
+  "started_at": "2026-09-11T14:43:45.924468+08:00",
+  "preexisting_matlab": [
+    {
+      "pid": 7900,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 22576,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 24776,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 47560,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 55820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57156,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 64568,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 65820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 67388,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 68408,
+      "name": "MATLABWindow.exe"
+    }
+  ],
+  "hardware_mode": "simulation/mock",
+  "launcher_pid": 73212,
+  "exit_code": 0,
+  "seconds": 66.762,
+  "observed_children": [
+    {
+      "pid": 57556,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109025.9442315
+    },
+    {
+      "pid": 72980,
+      "alive": false,
+      "name": "MATLAB.exe",
+      "started": 1789109025.9759057
+    },
+    {
+      "pid": 38196,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109079.0003269
+    },
+    {
+      "pid": 73480,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109079.0160348
+    },
+    {
+      "pid": 63548,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109079.2093043
+    },
+    {
+      "pid": 61808,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109079.2413557
+    },
+    {
+      "pid": 54892,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109079.4233005
+    },
+    {
+      "pid": 44748,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109079.4824111
+    },
+    {
+      "pid": 69932,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109080.022306
+    },
+    {
+      "pid": 69056,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109080.0326319
+    },
+    {
+      "pid": 71732,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109080.081216
+    },
+    {
+      "pid": 74400,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109080.0995035
+    }
+  ],
+  "lingering_matlab_children": [],
+  "completion_marker": true,
+  "status": "PASS"
+}

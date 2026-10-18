@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07aee-4642-7f71-8710-6b911c5df256"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"缓存写满后，新记录写入会覆盖最旧记录。在写入速率恒定的条件下，120 s 表示缓存中最旧的记录约在 120 s 前写入，即当前可回看的记录时间跨度约为 120 s；它不是单条记录的处理延迟。该数值由缓存容量和写入速率计算得到；断电后数据能否保留以及可保留多久，尚未测试。"}}
+{"type":"turn.completed","usage":{"input_tokens":287855,"cached_input_tokens":251264,"cache_write_input_tokens":0,"output_tokens":3965,"reasoning_output_tokens":2097}}

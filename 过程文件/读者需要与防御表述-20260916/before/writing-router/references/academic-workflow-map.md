@@ -1,0 +1,147 @@
+# 学术与申报工作流地图
+
+更新时间：2026-07-26
+
+这份文件给 `writing-router` 做路由参考。它不替代下游 skill，也不要求一次改多个 skill。
+
+## 基本判断
+
+先判断用户当前处在哪个阶段：
+
+| 阶段 | 用户常见说法 | 推荐去向 |
+|---|---|---|
+| 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | 按当前任务澄清关键问题；显式调用 `ask-first` 时用它，为报告调研时由 `research-report` 连续处理 |
+| 调研到报告 | 为报告找材料、做比较、补来源并形成 Word 或 PPT | `research-report`；论文检索用 `paper-search`，文件制作按格式转 `docx` 或 `pptx` |
+| 文献下载 | 下载论文、补 PDF、复用 Zotero 条目及任务分类 | `paper-download`；明确本地交付或只读要求仍优先 |
+| 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，Zotero 使用现有插件，局部核对用 `paper-review` |
+| 指标论证 | 这个指标能否做到、需要什么条件、申报中怎么写 | 申报用 `project-writing`，技术方案或独立工程指标用 `technical-writing`，按需共用指标参考资料 |
+| 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
+| SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |
+| 纯英文句子质量审查 | 删废话、改被动、精简句子、检查用词一致 | `ieee-manuscript-edit`（已并入） |
+| 停稿审查 | 帮我按严重程度审、还要不要改 | `paper-review` |
+| 全文内容审查 | 全文技术内容、论证、结果和结论是否一致；明确预判审稿意见或模拟审稿人 | `paper-review`；明确模拟审稿时用 submission-gauntlet 模式 |
+| 投稿合规检查 | 投稿格式、篇幅、匿名要求、文件材料、投稿页面和最终提交核对 | `journal-submission`；格式修改按实际图源及文件类型转 `paper-figure-review`、`latex-paper` 或 `docx` |
+| 选刊定位 | 这篇投哪、TTST 还是 TMTT、被拒了改投哪 | `journal-submission` 的选刊分支 |
+| 通用期刊投稿事务 | 未指定或非 IEEE 的投稿系统、作者、声明、状态、返修、录用后、版权、费用、校样和归档 | `journal-submission` |
+| IEEE 期刊投稿事务 | 明确 IEEE 的投稿系统、作者、声明、审稿状态、返修提交、final files、copyright、费用、proof、Xplore 归档 | `journal-submission` |
+| 实验设计与科学判断 | 实验设计是否合理、比较条件是否适用、结果能支持什么结论 | 独立实验与分析问题用 `technical-writing`，直接回答；论文方法与结论用 `paper-review`，按局部或全文范围检查 |
+| 局部精修 | 这一段怎么收口、老师批注怎么补 | `ieee-manuscript-edit` |
+| 论文配图检查 | 图的标注不规范、配色不对、IEEE 图件规范 | `paper-figure-review` |
+| 用词表维护/交付前扫词 | 别用这个词、这个词太 AI、收录用词、检查用词 | `style-vocab` |
+| 去 AI 写作痕迹 | 去掉 AI 味、让文字更自然 | 英文一般文本 `humanizer`；中文一般文本 `writing-router`；论文/申报书交付稿优先 `ieee-manuscript-edit` / `project-writing` |
+| 在线搜文献 | 搜论文、查最新进展、找相关工作 | `paper-search` |
+| Word/模板交付 | 回填 Word、标黄、格式、目录 | `docx` |
+| LaTeX 转换与投稿工程 | 转 LaTeX、套期刊模板、BibTeX、编译报错；当前期刊或页面要求时打包 source | `latex-paper` |
+| 引用事实核验 | 生成正式引用、核对或纠正 DOI、作者、版本等元数据 | `paper-search`；已有 BibTeX 的语法、样式、键对应及编译仍由 `latex-paper` 处理 |
+| 产品资料比较 | 普通参数或采购渠道对比；建立或持续维护产品库 | 普通表格用 `xlsx`，长期产品库及明确库契约审计用 `product-research-workbook` |
+
+**句子精修已并入 ieee-manuscript-edit：**
+- "润色这段 SCI 论文英文"或"帮我改英文还要校准术语" → `ieee-manuscript-edit`（涉及内容）
+- "这段英文太冗余，帮我精简句子" → `ieee-manuscript-edit`（纯句子质量时按需读取 `references/sainani-sentence-review.md`）
+- "这段英文太冗余，而且术语也要校准" → `ieee-manuscript-edit`（内容 + 句子同时有问题，优先大粒度）
+
+若一句话同时命中多个阶段，按当前请求和实际依赖选择，复用已确认事实与已有检查。明确要求精修时直接处理授权范围，不因已有稿件自动追加前置科学审查；同时要求内容与格式检查时分别完成，共用当前稿件和期刊要求。
+
+跨技能的范围、版本和检查复用统一按总路由的“最小加载规则”执行。图件纯格式处理检查图件及数据表达是否保持；数据、选取规则或科学表述变化，以及明确溯源请求，再按图件技能检查相关来源和图表正文关系。
+
+## brycewang-stanford/Awesome-Journal-Skills
+
+本地镜像（sparse checkout）：
+`D:\BaiduSyncdisk\.agents\upstream\brycewang-Awesome-Journal-Skills`
+
+按期刊拆解的投稿全流程库。2026-07-10 已完成第一轮吸收：
+
+| 上游模块 | 已吸收内容 | 本地承接 |
+|---|---|---|
+| `shared-resources/journal-selection` | 论文画像→五维评估→reach/match/safe 三档→降级阶梯 | `journal-submission/references/journal-selection.md` |
+| `shared-resources/submission-readiness`（readiness-checklist + simulated-referee） | 9 维预检 + 多视角模拟审稿 + 意见三重过滤 | `paper-review` 的 submission-gauntlet 模式 |
+| TWC/TCOM/NC 期刊 skill | 期刊定位、审稿关注点、兄弟刊分流 | `journal-submission/references/journal-profiles.md` |
+| TAP/TWC 的期刊画像版式 | 定位→红线→秒拒→分流→官方核查 | TTST/TMTT 画像自建模板（`[初稿待校准]`，待与用户投稿经验校准） |
+
+### 暂缓/不吸收
+
+- 审稿回复正文继续由 `ieee-manuscript-edit` 处理；投稿技能只维护决定信、意见台账、版本和返修提交。
+- 经管社科实证包、`empirical-methods` 代码层（Stata/DiD/IV）、CoPaper.AI 绑定部分。
+- 注意上游 TAP skill 有指向不存在 TMTT 的幽灵引用，勿照搬其改投目标名。
+
+## Imbad0202/academic-research-skills
+
+本地镜像：
+`D:\BaiduSyncdisk\.agents\upstream\Imbad0202-academic-research-skills`
+
+适合作为轻量学术流程样板。
+
+### 建议吸收
+
+| 上游模块 | 可吸收内容 | 本地承接 |
+|---|---|---|
+| `academic-pipeline` | 阶段门控、完整性检查、审稿-修改-复审闭环 | `writing-router` 做路由；必要时分发到下游 |
+| `deep-research` | Socratic 问题澄清、source verification、gap analysis | `research-report` 的调研流程；功能映射不代表调用或安装独立 deep-research 插件 |
+| `academic-paper` | 先大纲再成文、引用/图表一致性、修改回应 | `ieee-manuscript-edit` |
+| `academic-paper-reviewer` | 多视角审稿、Devil's Advocate、re-review | `paper-review` |
+
+### 不直接照搬
+
+- 不直接引入它的完整 10 阶段流水线作为本地强制流程。
+- 不把所有阶段门控写进 `writing-router` 正文。
+- 不把台湾高教或通用学术写作口径套到工程申报。
+
+## K-Dense-AI/scientific-agent-skills
+
+本地镜像：
+`D:\BaiduSyncdisk\.agents\upstream\K-Dense-AI-scientific-agent-skills`
+
+这是综合科学技能库，范围很大。默认只挑和太赫兹通信、工程硬件、科研写作、申报论证接近的部分。
+
+### 第一批可参考
+
+| 上游模块 | 可吸收内容 | 本地承接 |
+|---|---|---|
+| `peer-review` | 方法、统计、可复现性、报告规范检查表 | `paper-review` |
+| `hypothesis-generation` | 现象 -> 假设 -> 预测 -> 验证实验 | 可参考的功能映射：`technical-writing`、`lab-notebook`；不表示已吸收该上游 |
+| `citation-management` | 引用元数据核验、DOI/BibTeX 一致性 | `paper-download`、`ieee-manuscript-edit` |
+| `paper-lookup` | 数据库选择和跨库检索思路 | `paper-search`；下载用 `paper-download`，形成调研报告由 `research-report` 统筹 |
+| `scientific-writing` | IMRaD、先大纲再成文、图表引用一致性 | `ieee-manuscript-edit` |
+| `research-grants` | significance / innovation / feasibility 框架 | `project-writing`，需改成国内工程申报口径 |
+| `matlab`、`matplotlib`、`statistical-analysis` | 实验数据处理、绘图、统计报告模板 | 暂存，等有太赫兹实验数据处理 skill 时再用 |
+
+### 默认不吸收
+
+- 生物、医学、化学、云实验室、药物筛选、基因组学等远离当前学科的技能。
+- 需要云端计算、外部 API、安装复杂依赖、读取环境变量或上传数据的技能。
+- 强制生成大量 AI 图片、图形摘要或装饰性图的规则。
+
+## 吸收规则
+
+1. 先判断这次任务卡在哪个阶段。
+2. 只改一个最相关的本地 skill。
+3. 上游内容只吸收结构、检查清单和边界判断；不要整段照搬。
+4. 直接复制或深度改写时，保留来源和许可证说明。
+5. 如果只是未来可能有用，记录在这份地图里，不马上改下游。
+
+## 外部 skill 参考（暂不安装，留作扩展参考）
+
+更新时间：2026-05-20
+
+以下外部 skill 在市场搜索中值得关注，不是现在要用，是以后想扩展时知道去哪里找。
+
+| 外部来源 | 值得关注的内容 | 适合补充本地哪一块 |
+|----------|---------------|-------------------|
+| Imbad0202/academic-research-skills | 4 个 skill 的写-审全链路，12-agent 写作 + 7-agent 审稿 | paper-review 的多视角审稿、ieee-manuscript-edit 的修改回应 |
+| claesbackman/AI-research-feedback | 6-agent 期刊定向审稿 + grant review | paper-review 的期刊定向评审、未来的基金申请 skill |
+| wanshuiyin grant-proposal | 9 个国际基金机构（NSF/NIH/NSFC/ERC 等）、3 种语言的基金申请 | 未来独立的 grant-writing skill |
+| kgraph57/paper-writer-skill | 10 阶段全流程写稿，18 项 AI 写作痕迹清除模式 | `writing-router` 的英文版扩展 |
+
+## 推荐节奏
+
+第一步只维护本文件和 `writing-router` 的路由规则。
+
+后续按真实任务触发：
+
+- 调研收敛差：完善 `research-report` 的问题、比较范围和资料补齐流程。
+- 审稿不够狠：改 `paper-review`
+- 英文论文精修不够稳：改 `ieee-manuscript-edit`
+- 指标论证不清：完善 `project-writing`、`technical-writing` 共用的指标参考；实验记录或解释不清：按实际问题看 `lab-notebook`、`technical-writing`。
+- 纯英文句子不够干净：改 `ieee-manuscript-edit`
+- 用户自维护词级偏好不够稳：改 `style-vocab`
+- 实验设计与结果判断需要补充专业内容：完善 `technical-writing` 的工程科研检查参考，论文审查复用该参考。

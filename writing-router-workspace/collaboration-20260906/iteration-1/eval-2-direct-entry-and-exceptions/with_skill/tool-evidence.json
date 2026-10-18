@@ -1,0 +1,43 @@
+{
+  "agent_id": "01a07770-2b06-7091-874e-c11a7782fb34",
+  "rollout": "C:\\Users\\SanAn\\.codex\\sessions\\2026\\09\\06\\rollout-2026-09-06T23-57-15-01a07770-2b06-7091-874e-c11a7782fb34.jsonl",
+  "workflow_read_observed": true,
+  "workflow_read_receipts": [
+    {
+      "call_id": "call_xuvfdFiiRiv7Gxumc0yCP92s",
+      "call_line": 21,
+      "output_line": 27
+    },
+    {
+      "call_id": "call_bzDVWN5i9A064eb6dAOTe4qY",
+      "call_line": 109,
+      "output_line": 114
+    },
+    {
+      "call_id": "call_egS42tuKbojmZVZ0e2he5Psy",
+      "call_line": 148,
+      "output_line": 153
+    },
+    {
+      "call_id": "call_LOSSKadGXLc5sl7ZXL8x39qm",
+      "call_line": 189,
+      "output_line": 194
+    },
+    {
+      "call_id": "call_43R34gF9BUwSyHcBxPhSiwby",
+      "call_line": 225,
+      "output_line": 232
+    }
+  ],
+  "child_agent_spawn_observed": false,
+  "tool_calls": 20,
+  "token_usage": {
+    "input_tokens": 1924508,
+    "cached_input_tokens": 1857536,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 13730,
+    "reasoning_output_tokens": 4859,
+    "total_tokens": 1938238
+  },
+  "unparsed_lines": 0
+}

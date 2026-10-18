@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:write",
+      "args": "修改采购调研报告段落，读者为熟悉采购流程的设备主管；只在对话中给出修改稿。技能与参考文件仅使用 D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills 下的版本；可只读 D:/BaiduSyncdisk/.agents/vocab。原文：供应商各有特点，采购应综合考虑多方面因素，合适的产品才能满足实际需要。本次在同一含税、含运费口径下收到3份书面报价：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货。因此，在已收到的报价中仅丙型满足交期要求。报价已经核对，样机验收尚未进行。"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write\" 2>/dev/null; echo \"---vocab---\"; ls \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill and vocab directories"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write/references/write-zh-prose.md"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:/BaiduSyncdisk/.agents/vocab/术语.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "printf '%s\\n' '本次在同一含税、含运费口径下收到3份书面报价：甲型2800元，交期10天；乙型3100元，交期6天；丙型3500元，交期4天。该批设备必须在5天内到货，已收到的报价中只有丙型满足交期要求。报价已核对，样机验收尚未进行。' | bash \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write/scripts/check-punctuation.sh\" --lang zh",
+      "description": "Run punctuation gate on the rewrite"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "printf '%s\\n' '本次在同一含税、含运费口径下收到 3 份书面报价：甲型 2800 元，交期 10 天；乙型 3100 元，交期 6 天；丙型 3500 元，交期 4 天。该批设备必须在 5 天内到货，已收到的报价中只有丙型满足交期要求。报价已核对，样机验收尚未进行。' | bash \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/waza-original/skills/write/scripts/check-punctuation.sh\" --lang zh",
+      "description": "Re-run punctuation gate with spacing fixed"
+    }
+  }
+]

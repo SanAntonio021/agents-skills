@@ -1,0 +1,17 @@
+ M .gitignore
+ M README.md
+ M ieee-manuscript-edit/SKILL.md
+ M meeting-notes/SKILL.md
+ M project-writing/SKILL.md
+ M research-report/SKILL.md
+ M research-report/references/decision-report.md
+ M research-report/references/modes.md
+ M research-report/references/report-contract.md
+ M research-report/scripts/audit_report.py
+ M research-report/tests/test_audit_report.py
+ D skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json
+ D skill-check-workspace/verification-runtime/weekly/2026-04-26.md
+ D skill-check-workspace/verification-source/manifests/2026-04-26/summary.json
+ D skill-check-workspace/verification-source/weekly/2026-04-26.md
+ M style-vocab/SKILL.md
+ M technical-writing/SKILL.md

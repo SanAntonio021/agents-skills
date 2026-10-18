@@ -1,0 +1,49 @@
+{
+  "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\sample.pptx",
+  "source_sha256_after": "410803c42d77f7a9dd3d32cf08d90cd0a82aa7cfb1241fea9389fdd44975b398",
+  "slides": [
+    {
+      "part": "ppt/slides/slide1.xml",
+      "texts": [
+        "PowerPoint 原生验收样例",
+        "临时合成样本：中文、图片与单位标注",
+        "检查内容",
+        "文字未裁切",
+        "图片完整",
+        "源文件保持不变"
+      ],
+      "native_tables": 0,
+      "pictures": 1,
+      "text_shapes": 3,
+      "fonts": [
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "part": "ppt/slides/slide2.xml",
+      "texts": [
+        "原生表格与后续编辑",
+        "以下数值只用于校验排版，均为虚构测试数据。",
+        "方案",
+        "Channel",
+        "设定功率 (dBm)",
+        "方案 A",
+        "1",
+        "-10.00",
+        "方案 A",
+        "2",
+        "-8.50",
+        "方案 B",
+        "1",
+        "-12.00",
+        "交付检查：结构 → PowerPoint 打开与导出 → 逐页查看"
+      ],
+      "native_tables": 1,
+      "pictures": 0,
+      "text_shapes": 3,
+      "fonts": [
+        "Microsoft YaHei"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "pdf_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+  "bibtex_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+  "index_path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\publication_index.json",
+  "bytes": 863,
+  "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+  "pdf_header": true,
+  "pdf_eof": true,
+  "pdf_page_count": 1,
+  "pdf_text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+  "bibtex_text": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n",
+  "index": {
+    "simulated": true,
+    "warning": "All publication identities and source URLs in this fixture are simulated. No remote requests are made.",
+    "publications": [
+      {
+        "itemType": "journalArticle",
+        "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+        "DOI": "10.0000/zotero-fixture.target-001",
+        "date": "2026",
+        "publicationTitle": "Fixture Journal (Simulated)",
+        "volume": "1",
+        "issue": "1",
+        "pages": "1-2",
+        "url": "https://example.invalid/zotero-fixture/target-001",
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+        "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+        "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+      }
+    ]
+  },
+  "identity": {
+    "pdf_title": true,
+    "pdf_doi": true,
+    "pdf_author": true,
+    "bib_title": true,
+    "bib_doi": true,
+    "index_title": true,
+    "index_doi": true,
+    "expected_sha256": true
+  },
+  "scope": "Local simulated material only; no current publication version upgrade and no DOI network resolution",
+  "version": "unresolved",
+  "version_reason": "The PDF is a one-page fixture mock, not evidence of a real publisher version. Identity checked; local file reused as provided."
+}

@@ -1,0 +1,258 @@
+{
+  "selection": "plot_export",
+  "attempt": "1",
+  "started_at": "2026-09-11T14:48:29.502881+08:00",
+  "preexisting_matlab": [
+    {
+      "pid": 7900,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 22576,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 24776,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 33128,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 47560,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 55820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57156,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 57556,
+      "name": "MATLAB.exe"
+    },
+    {
+      "pid": 64468,
+      "name": "matlab.exe"
+    },
+    {
+      "pid": 64568,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 65820,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 67388,
+      "name": "MATLABWindow.exe"
+    },
+    {
+      "pid": 68408,
+      "name": "MATLABWindow.exe"
+    }
+  ],
+  "hardware_mode": "simulation/mock",
+  "launcher_pid": 44820,
+  "exit_code": 0,
+  "seconds": 101.124,
+  "observed_children": [
+    {
+      "pid": 70960,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109309.5296438,
+      "exit_code": 0
+    },
+    {
+      "pid": 65012,
+      "alive": false,
+      "name": "MATLAB.exe",
+      "started": 1789109309.56599,
+      "exit_code": 0
+    },
+    {
+      "pid": 73460,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109324.6571863,
+      "exit_code": 0
+    },
+    {
+      "pid": 61912,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109324.6731436,
+      "exit_code": 0
+    },
+    {
+      "pid": 63192,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109324.7362635,
+      "exit_code": 0
+    },
+    {
+      "pid": 51176,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109324.759468,
+      "exit_code": 0
+    },
+    {
+      "pid": 63556,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109332.0502236,
+      "exit_code": 0
+    },
+    {
+      "pid": 35512,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109332.0620074,
+      "exit_code": 0
+    },
+    {
+      "pid": 43084,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109338.8677464,
+      "exit_code": 0
+    },
+    {
+      "pid": 35960,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109338.8793604,
+      "exit_code": 0
+    },
+    {
+      "pid": 16816,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109338.9430506,
+      "exit_code": 0
+    },
+    {
+      "pid": 70116,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109338.9673944,
+      "exit_code": 0
+    },
+    {
+      "pid": 71052,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109347.8833501,
+      "exit_code": 0
+    },
+    {
+      "pid": 11052,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109347.8929875,
+      "exit_code": 0
+    },
+    {
+      "pid": 23412,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109356.5182033,
+      "exit_code": 0
+    },
+    {
+      "pid": 57272,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109356.529745,
+      "exit_code": 0
+    },
+    {
+      "pid": 35588,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109356.6005723,
+      "exit_code": 0
+    },
+    {
+      "pid": 44256,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109356.6485968,
+      "exit_code": 0
+    },
+    {
+      "pid": 4172,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109357.158176,
+      "exit_code": 0
+    },
+    {
+      "pid": 69068,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109357.1757064,
+      "exit_code": 0
+    },
+    {
+      "pid": 61884,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109357.2498972,
+      "exit_code": 0
+    },
+    {
+      "pid": 51228,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109357.2714152,
+      "exit_code": 0
+    },
+    {
+      "pid": 45848,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109394.9640584,
+      "exit_code": 0
+    },
+    {
+      "pid": 74316,
+      "alive": false,
+      "name": "cmd.exe",
+      "started": 1789109395.3874207,
+      "exit_code": 0
+    },
+    {
+      "pid": 50452,
+      "alive": false,
+      "name": "conhost.exe",
+      "started": 1789109395.400334,
+      "exit_code": 0
+    },
+    {
+      "pid": 46652,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109395.4643605,
+      "exit_code": 0
+    },
+    {
+      "pid": 59124,
+      "alive": false,
+      "name": "git.exe",
+      "started": 1789109395.4841444,
+      "exit_code": 0
+    }
+  ],
+  "lingering_matlab_children": [],
+  "completion_marker": true,
+  "abnormal_matlab_children": [],
+  "status": "PASS"
+}

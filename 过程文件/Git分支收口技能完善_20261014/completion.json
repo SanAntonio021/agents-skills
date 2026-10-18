@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "commit": "14bdab137008972017119b82bf1bec526ce73434",
+  "remote_main": "14bdab137008972017119b82bf1bec526ce73434",
+  "tests": {
+    "regression": 64,
+    "followup": 19,
+    "git_layout": 9
+  },
+  "independent_trials": [
+    "D:/AgentSkillTests/git-branch-consolidation-20261014/behavior-v4/execution/completion.json",
+    "D:/AgentSkillTests/git-branch-consolidation-20261014/composite-behavior-20261014/result.json"
+  ],
+  "runtime_statuses": [
+    "runtime_active",
+    "runtime_active"
+  ],
+  "files_per_layer": 18,
+  "manifest_sha256": "18C284933FD3C9CAF0A57580EBA81266A9F17ECCA68CBE2432FF687810B5BDEA",
+  "non_target_source_and_runtime_preserved": true,
+  "configuration_protection": true,
+  "business_repository_cleanup_repeated": false,
+  "ask_first_chat_notes_global_rules_modified": false,
+  "receipt_paths": [
+    "release-sync.json",
+    "release-verify.json",
+    "release-protection-after.json"
+  ]
+}

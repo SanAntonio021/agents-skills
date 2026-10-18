@@ -1,0 +1,450 @@
+{
+  "nodes": [
+    {
+      "id": "a2:1",
+      "kind": "text",
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 58,
+      "text": "初始测试记录",
+      "font_size": 24,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c2:1",
+      "kind": "connector",
+      "x": 320,
+      "y": 215,
+      "width": 220,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "start_id": "o2:1",
+      "end_id": "o2:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [],
+      "caption": "",
+      "caption_position": null,
+      "caption_position_type": null,
+      "caption_auto_direction": false,
+      "caption_font_size": null,
+      "caption_width": null,
+      "caption_size_mode": null
+    },
+    {
+      "id": "c2:2",
+      "kind": "connector",
+      "x": 780,
+      "y": 215,
+      "width": 400,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o2:2",
+      "end_id": "o2:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "初始 LO 标签"
+      ],
+      "caption": "初始 LO 标签",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o2:1",
+      "kind": "shape",
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "发射放大级\nPA / LNA",
+      "font_size": 24,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:2",
+      "kind": "shape",
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "接收处理模块",
+      "font_size": 24,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "round_rect"
+    },
+    {
+      "id": "o2:3",
+      "kind": "shape",
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "text": "观察模块\n保持原样",
+      "font_size": 24,
+      "style": {
+        "border_color": "#606670",
+        "fill_color": "#f1f3f5",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "render_alpha": {
+    "o2:1": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "o2:2": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "o2:3": {
+      "border": 1,
+      "fill": 1,
+      "text": 1
+    },
+    "c2:1": {
+      "border": 1
+    },
+    "c2:2": {
+      "border": 1,
+      "text": 1
+    },
+    "a2:1": {
+      "border": 1,
+      "text": 1
+    }
+  },
+  "line_endpoints": {
+    "c2:1": {
+      "start": {
+        "x": 320,
+        "y": 215
+      },
+      "end": {
+        "x": 540,
+        "y": 215
+      }
+    },
+    "c2:2": {
+      "start": {
+        "x": 780,
+        "y": 215
+      },
+      "end": {
+        "x": 1180,
+        "y": 215
+      }
+    }
+  },
+  "curve_handles": {},
+  "object_bounds": {
+    "o2:1": {
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    },
+    "o2:2": {
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    },
+    "o2:3": {
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    },
+    "c2:1": {
+      "x": 318,
+      "y": 207,
+      "width": 226,
+      "height": 18
+    },
+    "c2:2": {
+      "x": 778,
+      "y": 195.968,
+      "width": 406,
+      "height": 40.06399999999999
+    },
+    "a2:1": {
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 58
+    }
+  },
+  "arrangement_bounds": {
+    "o2:1": {
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    },
+    "o2:2": {
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    },
+    "o2:3": {
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110
+    }
+  },
+  "world_geometry": {
+    "o2:1": {
+      "x": 80,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "angle": 0
+    },
+    "o2:2": {
+      "x": 540,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "angle": 0
+    },
+    "o2:3": {
+      "x": 1180,
+      "y": 160,
+      "width": 240,
+      "height": 110,
+      "angle": 0
+    },
+    "c2:1": {
+      "x": 320,
+      "y": 215,
+      "width": 220,
+      "height": 0,
+      "angle": 0
+    },
+    "c2:2": {
+      "x": 780,
+      "y": 215,
+      "width": 400,
+      "height": 0,
+      "angle": 0
+    },
+    "a2:1": {
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 58,
+      "angle": 0
+    }
+  },
+  "binding_geometry": [
+    {
+      "id": "c2:1",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 320,
+          "y": 215
+        },
+        "expected": {
+          "x": 320,
+          "y": 215
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 540,
+          "y": 215
+        },
+        "expected": {
+          "x": 540,
+          "y": 215
+        },
+        "valid": true
+      }
+    },
+    {
+      "id": "c2:2",
+      "valid": true,
+      "start": {
+        "actual": {
+          "x": 780,
+          "y": 215
+        },
+        "expected": {
+          "x": 780,
+          "y": 215
+        },
+        "valid": true
+      },
+      "end": {
+        "actual": {
+          "x": 1180,
+          "y": 215
+        },
+        "expected": {
+          "x": 1180,
+          "y": 215
+        },
+        "valid": true
+      }
+    }
+  ],
+  "label_geometry": {
+    "c2:2": {
+      "available": true,
+      "angle": 0,
+      "world_corners": [
+        {
+          "x": 917.6640167236328,
+          "y": 197.968
+        },
+        {
+          "x": 1036.3359832763672,
+          "y": 197.968
+        },
+        {
+          "x": 1036.3359832763672,
+          "y": 232.03199999999998
+        },
+        {
+          "x": 917.6640167236328,
+          "y": 232.03199999999998
+        }
+      ],
+      "world_rect": {
+        "x": 917.6640167236328,
+        "y": 197.968,
+        "width": 118.67196655273438,
+        "height": 34.06399999999999
+      },
+      "screen_corners": [
+        {
+          "x": 1025.0294979006744,
+          "y": 281.8829302325581
+        },
+        {
+          "x": 1092.6449207039766,
+          "y": 281.8829302325581
+        },
+        {
+          "x": 1092.6449207039766,
+          "y": 301.291488372093
+        },
+        {
+          "x": 1025.0294979006744,
+          "y": 301.291488372093
+        }
+      ],
+      "screen_rect": {
+        "x": 1025.0294979006744,
+        "y": 281.8829302325581,
+        "width": 67.61542280330218,
+        "height": 19.408558139534875
+      }
+    }
+  },
+  "viewport": {
+    "rect": {
+      "x": 520.5,
+      "y": 236.25,
+      "width": 818,
+      "height": 195
+    },
+    "device_pixel_ratio": 1,
+    "world_to_screen": {
+      "a": 0.5697674418604493,
+      "b": 0,
+      "c": 0,
+      "d": 0.5697674418604777,
+      "e": 502.1744186046511,
+      "f": 169.08720930232556
+    }
+  },
+  "seq": 0,
+  "savedSeq": 0,
+  "signature": "54e7e6de",
+  "text_signature": "d309a450",
+  "native_save": {
+    "available": true,
+    "signature": "b8586b42",
+    "initialized": true,
+    "applied_version": 4,
+    "pending": 0,
+    "ordered_pending": 0,
+    "processing": false,
+    "offline": false,
+    "save_state": "saved",
+    "http_pending": 0
+  }
+}

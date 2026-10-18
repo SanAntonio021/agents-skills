@@ -1,0 +1,405 @@
+{
+  "date": "2026-09-11",
+  "acceptance_status": "software_pass_r2023b",
+  "hardware_access": false,
+  "acceptance_version": "MATLAB R2023b Update 6 (23.2.0.2485118), Windows",
+  "acceptance_scope": "Template smoke, GUI sizes, existing named software specials, and common helpers; simulation/mock only.",
+  "source_snapshot": {
+    "file_count": 204,
+    "hash_check": "PASS",
+    "static_package_dependencies": "PASS",
+    "json_and_links": "PASS"
+  },
+  "local_validation": {
+    "evidence_root": "D:/BaiduSyncdisk/.agents/skills/过程文件/MATLAB技能补验发布_20260911",
+    "runs": {
+      "environment_2": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 11.511,
+        "receipt": "runs/environment_2/process.json",
+        "receipt_sha256": "5913c2caf3a921f246ad97e7c6ecdcb09bb4082290841dcb62fc74478088b384",
+        "matlab_processes": [
+          {
+            "pid": 51896,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789108992.4314106
+          }
+        ]
+      },
+      "helpers_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 43.514,
+        "receipt": "runs/helpers_1/process.json",
+        "receipt_sha256": "3c7f6c3ac2770f3c2f426c877e78f7d8c35e727dc7d633a6b03a4ebae87b7ac1",
+        "matlab_processes": [
+          {
+            "pid": 38180,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109074.8637693
+          }
+        ]
+      },
+      "smoke_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 66.762,
+        "receipt": "runs/smoke_1/process.json",
+        "receipt_sha256": "0f8059edad3f902e5a45bebc4722b70b365ec77aff5f034a506c88e28e0cb0d1",
+        "matlab_processes": [
+          {
+            "pid": 72980,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109025.9759057
+          }
+        ]
+      },
+      "rx_plots_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 118.111,
+        "receipt": "runs/rx_plots_1/process.json",
+        "receipt_sha256": "8a11dc52485e11d9b169c25ca1e0adf2704d49712fd9366d02703a2784ddda2e",
+        "matlab_processes": [
+          {
+            "pid": 20736,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109178.247597,
+            "exit_code": 0
+          }
+        ]
+      },
+      "plot_export_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 101.124,
+        "receipt": "runs/plot_export_1/process.json",
+        "receipt_sha256": "6cc3363605febfc0f3ef37028dd7816805a50d7fb2c8791528b928deb122e97a",
+        "matlab_processes": [
+          {
+            "pid": 65012,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109309.56599,
+            "exit_code": 0
+          }
+        ]
+      },
+      "tx_gui_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 57.558,
+        "receipt": "runs/tx_gui_1/process.json",
+        "receipt_sha256": "898512f936eae1ad3185ba464ab057221067a45668e900e6713b9b1eb6d689f7",
+        "matlab_processes": [
+          {
+            "pid": 33256,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109430.9408953,
+            "exit_code": 0
+          }
+        ]
+      },
+      "rx_gui_1": {
+        "status": "PASS",
+        "process_exit_code": 0,
+        "seconds": 277.552,
+        "receipt": "runs/rx_gui_1/process.json",
+        "receipt_sha256": "4f28410e35be06ba8c0bb08d2e1c215bdf8f7bcf0684906190ea714d1054ac88",
+        "matlab_processes": [
+          {
+            "pid": 57556,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109143.270154,
+            "exit_code": 0
+          },
+          {
+            "pid": 52792,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109169.2704363,
+            "exit_code": 0
+          },
+          {
+            "pid": 43884,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109177.0042262,
+            "exit_code": 0
+          },
+          {
+            "pid": 41604,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109216.1441252,
+            "exit_code": 0
+          },
+          {
+            "pid": 33128,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109300.7074523,
+            "exit_code": 0
+          },
+          {
+            "pid": 71148,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109316.3578477,
+            "exit_code": 0
+          },
+          {
+            "pid": 73032,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109329.734276,
+            "exit_code": 0
+          },
+          {
+            "pid": 57576,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109352.6295936,
+            "exit_code": 0
+          },
+          {
+            "pid": 57196,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109360.7611687,
+            "exit_code": 0
+          },
+          {
+            "pid": 23752,
+            "alive": false,
+            "name": "MATLAB.exe",
+            "started": 1789109389.9952884,
+            "exit_code": 0
+          }
+        ]
+      }
+    },
+    "standardize_python_selftest": {
+      "status": "PASS",
+      "validated_runs": 10,
+      "process_exit_code": 0,
+      "log": "audit/standardize-self-test.log"
+    },
+    "matlab_helpers": {
+      "passed": 19,
+      "failed": 0,
+      "incomplete": 0
+    },
+    "gui_sizes": [
+      [
+        1100,
+        700
+      ],
+      [
+        1500,
+        900
+      ]
+    ],
+    "export_sizes": [
+      [
+        1920,
+        1080
+      ],
+      [
+        1440,
+        810
+      ]
+    ],
+    "visual_review": {
+      "reviewer": "primary agent visual inspection",
+      "status": "PASS",
+      "notes": "Eight final smoke images inspected at their native sizes. GUI labels, controls and plots are readable; TX parameter pane scrolls at compact sizes. No cropped outer canvas or stretched clamped window. Synthetic/mock only.",
+      "files": [
+        {
+          "file": "isolated_workbench/analysis/template_20260911_144352_355/RX_1440x810.png",
+          "pixels": [
+            1440,
+            810
+          ],
+          "sha256": "9b8726304c322be4ad995cc1926bddac8318e88bd44aca0cff247bcf799d6788",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_20260911_144352_355/RX_1920x1080.png",
+          "pixels": [
+            1920,
+            1080
+          ],
+          "sha256": "65289e0b770a7a89e195139785eb6ec288ef83b2dd494e886ead42063b4bd50f",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_20260911_144352_355/TX_1440x810.png",
+          "pixels": [
+            1440,
+            810
+          ],
+          "sha256": "9afd5b9c2437145a706f9735061fb5bf5c8e7d14cc3ddeae898784ef67d3dc8d",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_20260911_144352_355/TX_1920x1080.png",
+          "pixels": [
+            1920,
+            1080
+          ],
+          "sha256": "fc27c340b3ef101a1a6ad18cf5082dd26020588c4196df5985a6233371486a0b",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/RX_GUI_1100x700.png",
+          "pixels": [
+            1100,
+            700
+          ],
+          "sha256": "a5f3570eff04587592b140aeb74f6b8b89e4d959d08e591eb663130827853b79",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/RX_GUI_1500x900.png",
+          "pixels": [
+            1500,
+            900
+          ],
+          "sha256": "adbe2cc5aae7911f81f18ef431465dac419a143d8a7f888873b2a34decd75e5a",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/TX_GUI_1100x700.png",
+          "pixels": [
+            1100,
+            700
+          ],
+          "sha256": "10af2cbfaee253c0610f49257f4b816141c8be3dcdf4209ccbbd11704283b8ad",
+          "visual_review": "PASS"
+        },
+        {
+          "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/TX_GUI_1500x900.png",
+          "pixels": [
+            1500,
+            900
+          ],
+          "sha256": "4469e37fc466989ac2708b582b8cd108419eb1507572a853fbc5a20e0b62d1cb",
+          "visual_review": "PASS"
+        }
+      ]
+    },
+    "hardware_constructor_attempts": 0,
+    "exit_validation": "Every acceptance launcher used -wait and returned 0 after the completion marker. RX worker process handles were retained and every observed MATLAB process exited 0; no lingering MATLAB descendants.",
+    "environment_probe_correction": "Initial probe used an incorrect Instrument Control license feature name and exited 1. Corrected probe uses Instr_Control_Toolbox and exits 0; no candidate code changed."
+  },
+  "publication_tracking": {
+    "policy": "Software acceptance and runtime publication are separate. Actual Git commit, sync and VerifyOnly outcomes are recorded in external release receipts under evidence_root; this frozen file does not claim installation.",
+    "required": "Both sync and VerifyOnly exit 0, runtime_active, matching source/CC Switch/Claude/Codex trees and metadata, and unchanged non-target skills."
+  },
+  "historical_candidate_r2023a": {
+    "date": "2026-09-11",
+    "acceptance_status": "partial_runtime_blocked",
+    "installed": false,
+    "published": false,
+    "hardware_access": false,
+    "source_snapshot": {
+      "file_count": 204,
+      "hash_check": "PASS",
+      "static_package_dependencies": "PASS",
+      "json_and_links": "PASS"
+    },
+    "skill_structure": "PASS",
+    "standardize_test_project_selftest": {
+      "status": "PASS",
+      "validated_runs": 10,
+      "process_exit_code": 0,
+      "log": "standard_skill_test.log"
+    },
+    "tx_rx_demo": {
+      "function_status": "PASS",
+      "source_version": "final Template_Demo.m",
+      "checks": [
+        "final aligned waveform playback",
+        "RX DSP decoded.pass",
+        "1920x1080 exports",
+        "1440x810 exports",
+        "RX layout issues empty",
+        "instrument audit zero",
+        "hardware constructor attempts zero"
+      ],
+      "artifacts": "isolated_workbench/analysis/template_20260911_130006_692",
+      "outer_process_status": "nonzero: a subsequent earlier GUI demo version failed; do not report this as a clean full smoke run"
+    },
+    "gui_mock": {
+      "function_status": "PASS before final demo-only changes",
+      "checks": [
+        "1100x700",
+        "1500x900",
+        "TX connected and plan valid",
+        "TX startup writes zero",
+        "RX connected and fresh data",
+        "hardware constructor attempts zero"
+      ],
+      "artifacts": "isolated_workbench/analysis/template_gui_20260911_130659_001",
+      "pending_changes": [
+        "mock timebase paired with 100000-point record",
+        "native getframe replaces UI print scaling"
+      ]
+    },
+    "awg_capacity": {
+      "assertion_status": "PASS",
+      "seconds": 3.114,
+      "checks": [
+        "INT DIV1 DIV2 DIV4 rejection",
+        "EXT standard and 16G",
+        "option query fallback",
+        "aligned unequal channel lengths",
+        "active and inactive output state preservation",
+        "zero writes on capacity failure"
+      ],
+      "report": "isolated_workbench/checks/20260911_130806_validation_awg_memory/summary.csv",
+      "outer_process_exit_code": 1,
+      "outer_process_error": "0xc0000374 Heap corruption after report generation"
+    },
+    "remaining_specials": {
+      "rx_plots": "PASS: 2026-09-11 retry, 131.927 seconds",
+      "plot_geometry": "PASS: 2026-09-11 retry, 49.969 seconds",
+      "tx_gui": "PASS: 2026-09-11 retry, 101.267 seconds",
+      "rx_gui": "PASS: 2026-09-11 retry, 513.846 seconds"
+    },
+    "retry_20260911": {
+      "log": "retry_acceptance_v4.log",
+      "specials": "specials.json",
+      "awg_capacity": "PASS, 2.8595 seconds, checks/20260911_135859_validation_awg_memory",
+      "completed_marker": "RETRY_COMPLETE",
+      "process_exit_code": 1,
+      "process_error": "0xc0000374 Heap corruption after all special assertions passed",
+      "gui_1100x700": "TX and RX controls, fresh mock data and screenshots passed",
+      "gui_1500x900": "BLOCKED: Windows/MATLAB clamps the actual figure to 1500x854.6; strict size assertion rejected it",
+      "dpi_isolation": "HIGHDPIAWARE child-process-only retry still reports 1536x864 logical desktop and the same clamp",
+      "hardware_access": false,
+      "source_hash_audit": "204 original source files PASS",
+      "publication": "NOT_DONE: acceptance incomplete; local public/private skill source locations unconfigured and documented sync helper missing"
+    },
+    "runtime_attempts": [
+      "Initial dependency discovery crashed; retry with isolated preferences succeeded and exited 0.",
+      "Specials launch stalled before its diary was created; only the owned startup process was terminated.",
+      "Fresh preferences specials retry exited with 0xc0000374 before tests.",
+      "ASCII system-temp copy and fresh preferences retry also stalled with empty logfile; only the owned startup process was terminated."
+    ],
+    "evidence_root": "D:/AWG/WWP/multistream_iq_SC/过程文件/收发工作台技能",
+    "resume": "Resolve MATLAB exit heap corruption and provide a desktop capable of the actual 1500x900 GUI size; rerun final GUI demo and verify clean process exit. All four special assertions passed in the retry, but the enclosing process crashed. Configure the supported skill source/publish location before pushing."
+  },
+  "limitations": [
+    "R2023a heap corruption remains unresolved; this release is validated on R2023b.",
+    "No real instruments connected; VISA/MDD/short-frame and historical-fixture limitations in adaptation.md remain."
+  ]
+}

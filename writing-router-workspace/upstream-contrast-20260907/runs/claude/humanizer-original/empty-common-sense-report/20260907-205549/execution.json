@@ -1,0 +1,36 @@
+{
+  "host": "claude",
+  "version": "humanizer-original",
+  "case": "empty-common-sense-report",
+  "requested_model": "claude-opus-5",
+  "requested_effort": "max",
+  "status": "running",
+  "turns": [],
+  "snapshot": {
+    "humanizer-zh/README.md": "04b0ec5feaa3cdd94668871bbfc029c7557c024dfe6b22272fe2f6835e476718",
+    "humanizer-zh/SKILL.md": "35eca1b1a5d313b7ebcd2236670831c2e5f13920b8259208eeb3cfad94685fa0"
+  },
+  "vocab": {
+    "中文/审稿回复.md": "26487952ee1eb7bca6aa934315afb92bf2e41364490c784e4033eec3fde6e32d",
+    "中文/申报书.md": "72a8dc5657a9402d075e55f8ace828059653ca12d69518243a9672bbf0c2191b",
+    "中文/论文.md": "44996057101b0807cdc38bef086f3adbcbb217347fa32b2f84c2cbc3d3d7c0f6",
+    "中文/调研报告.md": "7325ba48e696862c0a5242dd7da5569f8064d28add14b3752db50f0b8c15a2bd",
+    "中文/通用.md": "37e909aa790c4b7318078875af426cd38e15c015e29d2f7034201d8791fb0e7b",
+    "术语.md": "637b1ac6df8b8d298fb59c615a3afde61286f6bd2c48b079e66acc88afdf4b48",
+    "目录.md": "f1757d9669db1efec33c9c48896c76475cbea47f8084e56d9f7d2f6be9115ae4",
+    "维护.md": "db864fb4eca580565500b42b99ce99bb17e8a25a9eb87d5f40f003503cb4d230",
+    "英文/审稿回复.md": "c7b09378b1e6333c822959e2763f233160df5d92f5d1da3d8032bc2e6d320de2",
+    "英文/论文.md": "46a9853537b3c78683ad340bc6d0c5cc1ae56c6e2c5f5f71a02e9d679a0c1ff5",
+    "英文/通用.md": "a69867221679e87dcdc70c4fa3dd715f0adfa88f3b63cb44e48ecd6d8452c23b"
+  },
+  "isolation": "separate case sessions; prompt scoping plus post-run read inspection, not an OS read sandbox",
+  "style_acceptance": "not_reviewed",
+  "read_scope_acceptance": "not_reviewed",
+  "route": {
+    "route": "direct_selected_provider_child_env_only",
+    "name": "8sKiro",
+    "endpoint": "https://8stoken.com"
+  },
+  "loader": "native_skill_plugin",
+  "native_skill_confirmed": false
+}

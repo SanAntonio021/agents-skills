@@ -1,0 +1,4 @@
+Reading prompt from stdin...
+2026-09-07T16:53:49.367408Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-09-07T16:54:34.437144Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit
+2026-09-07T16:54:58.150475Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit

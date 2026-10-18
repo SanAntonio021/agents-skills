@@ -1,0 +1,8 @@
+{
+  "branch": "main",
+  "head": "e92c424343a9fb8f00ba45db0c0813ffb3a8bb40",
+  "remote_main": "e92c424343a9fb8f00ba45db0c0813ffb3a8bb40",
+  "unrelated_template_sha256": "48b6c84faffcf50f63b612549c6094ef13173a07354c21197a543b2bb9b77f32",
+  "target_status": "M lab-notebook/SKILL.md\n M lab-notebook/assets/labbook-template.md",
+  "staged": ""
+}

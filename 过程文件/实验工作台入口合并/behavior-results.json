@@ -1,0 +1,107 @@
+{
+  "independent_tasks": 8,
+  "cases": {
+    "general_old": {
+      "passed": true,
+      "runs": 4,
+      "read_events": 9,
+      "template_reads": []
+    },
+    "general_new": {
+      "passed": true,
+      "runs": 2,
+      "read_events": 6,
+      "template_reads": []
+    },
+    "workbench_old": {
+      "passed": true,
+      "unchanged_code_files": 212,
+      "simulated_selections": [
+        "smoke",
+        "rx_plots",
+        "plot_export",
+        "tx_gui",
+        "rx_gui"
+      ],
+      "real_matlab": false,
+      "read_events": 14,
+      "template_reads": [
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\SKILL.md",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\references\\adaptation.md",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\scripts\\copy_template.ps1",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\assets\\workbench\\README.md",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\assets\\workbench\\Template_Demo.m",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\assets\\workbench\\Template_GUI_Demo.m",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\assets\\workbench\\Template_Validate.m",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before\\template\\assets\\workbench\\Template_NoHardware.m"
+      ]
+    },
+    "workbench_new": {
+      "passed": true,
+      "unchanged_code_files": 212,
+      "simulated_selections": [
+        "smoke"
+      ],
+      "real_matlab": false,
+      "read_events": 13,
+      "template_reads": [
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate\\standardize-test-project\\assets\\tx-rx-workbench\\references\\adaptation.md",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate\\standardize-test-project\\assets\\tx-rx-workbench\\scripts\\copy_template.ps1"
+      ]
+    },
+    "plot": {
+      "passed": true,
+      "only_font_change": true,
+      "sizes": [
+        [
+          1200,
+          800
+        ],
+        [
+          900,
+          600
+        ]
+      ],
+      "read_events": 6,
+      "template_reads": []
+    },
+    "module": {
+      "passed": true,
+      "matlab_files_copied": 1,
+      "real_matlab": false,
+      "read_events": 11,
+      "template_reads": [
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate\\standardize-test-project\\assets\\tx-rx-workbench\\references\\adaptation.md",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate\\standardize-test-project\\assets\\tx-rx-workbench\\assets\\workbench\\code\\result_management\\Result_Atomic_Write_Json.m",
+        "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate\\standardize-test-project\\assets\\tx-rx-workbench\\assets\\workbench\\code\\result_management\\Result_Open_File_Retry.m"
+      ]
+    },
+    "query": {
+      "passed": true,
+      "business_file_changes": 0,
+      "read_events": 2,
+      "template_reads": []
+    },
+    "bench": {
+      "passed": true,
+      "commands": [
+        "status",
+        "smoke",
+        "status",
+        "off",
+        "status"
+      ],
+      "simulated": true,
+      "read_events": 6,
+      "template_reads": []
+    }
+  },
+  "input_protection": "passed",
+  "candidate_material_unchanged": true,
+  "limits": [
+    "Specified-skill behavior only, not automatic triggering.",
+    "Workbench behavior trials used a MATLAB simulator; real MATLAB verification is separate.",
+    "Both generic-output versions passed; no context or timing improvement inferred.",
+    "Workbench old/new simulator calls were 5/1 in this small comparison, not a general performance guarantee."
+  ]
+}

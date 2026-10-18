@@ -1,0 +1,1077 @@
+{
+  "account": "weipengjinniu50\\sanan",
+  "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+  "items": [
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\before",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IBF41W9",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RBF41W9",
+      "files": 305,
+      "bytes": 3186904,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\candidate",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IEKQWLL",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$REKQWLL",
+      "files": 280,
+      "bytes": 3020632,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\trials",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I7XUGQY",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R7XUGQY",
+      "files": 479,
+      "bytes": 3564939,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\finalize.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I83D738.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R83D738.py",
+      "files": 1,
+      "bytes": 4972,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\plot_export",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZCLIH8",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZCLIH8",
+      "files": 6,
+      "bytes": 4940,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\prepare.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IJ8WFVG.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RJ8WFVG.py",
+      "files": 1,
+      "bytes": 1943,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\run-hidden.ps1",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I8I1TC3.ps1",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R8I1TC3.ps1",
+      "files": 1,
+      "bytes": 2561,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\rx_gui",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ISH3TEY",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RSH3TEY",
+      "files": 1,
+      "bytes": 717,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\rx_plots",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IRGORVL",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RRGORVL",
+      "files": 6,
+      "bytes": 4874,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\smoke",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IRGO0BK",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RRGO0BK",
+      "files": 9,
+      "bytes": 76653,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\tx_gui",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZZ9G7F",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZZ9G7F",
+      "files": 6,
+      "bytes": 5949,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\matlab-check\\中文 带空格 工作台",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IXTYNTF",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RXTYNTF",
+      "files": 257,
+      "bytes": 58207405,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\baseline.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$II81G42.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RI81G42.py",
+      "files": 1,
+      "bytes": 1860,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\commit_successors.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IA5W6OL.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RA5W6OL.py",
+      "files": 1,
+      "bytes": 3019,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\copy_capsule.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQBYFWY.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQBYFWY.py",
+      "files": 1,
+      "bytes": 917,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\grade_trials.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IP4G408.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RP4G408.py",
+      "files": 1,
+      "bytes": 5171,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\prepare_trials.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IW5B8OX.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RW5B8OX.py",
+      "files": 1,
+      "bytes": 3648,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\publish.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IKZ9LLO.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RKZ9LLO.py",
+      "files": 1,
+      "bytes": 1469,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\read_trial.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IVPAMBD.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RVPAMBD.py",
+      "files": 1,
+      "bytes": 884,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\retirement_preflight.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IP04OPZ.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RP04OPZ.py",
+      "files": 1,
+      "bytes": 1923,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\retire_runtime.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQWJ3MY.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQWJ3MY.py",
+      "files": 1,
+      "bytes": 4022,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\static_checks.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I3S0ZUP.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R3S0ZUP.py",
+      "files": 1,
+      "bytes": 2344,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\sync.stderr.txt",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I3BT46D.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R3BT46D.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\verify-after-retirement.stderr.txt",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IC8DSM6.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RC8DSM6.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\实验工作台入口合并\\verify.stderr.txt",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IP4EKYE.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RP4EKYE.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\before",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IUIRSIK",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RUIRSIK",
+      "files": 8,
+      "bytes": 55036,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\candidate",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ISL8VSI",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RSL8VSI",
+      "files": 8,
+      "bytes": 52378,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\trials",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I59SBUU",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R59SBUU",
+      "files": 16,
+      "bytes": 82667,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\checks.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IFPJNUS.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RFPJNUS.py",
+      "files": 1,
+      "bytes": 2350,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\commit.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IR11TND.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RR11TND.py",
+      "files": 1,
+      "bytes": 1004,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\fixtures.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWN87XS.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWN87XS.py",
+      "files": 1,
+      "bytes": 2549,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\fixture_api.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IFD6M0N.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RFD6M0N.py",
+      "files": 1,
+      "bytes": 3351,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\grade.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ITK9O5E.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RTK9O5E.py",
+      "files": 1,
+      "bytes": 3053,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\prepare.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWSOQET.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWSOQET.py",
+      "files": 1,
+      "bytes": 1032,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\publish.py",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I5HNT4V.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R5HNT4V.py",
+      "files": 1,
+      "bytes": 1459,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\sync.stderr.txt",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IK2A2YL.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RK2A2YL.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\verify.stderr.txt",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IR4ZK9K.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RR4ZK9K.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\before",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I14UBLW",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R14UBLW",
+      "files": 949,
+      "bytes": 22497899,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\candidate",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I257VAT",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R257VAT",
+      "files": 486,
+      "bytes": 12160249,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\trials",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQBB1UU",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQBB1UU",
+      "files": 158,
+      "bytes": 249700,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\发布重试规则修正\\github-main-direct.zip",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I5V5LAI.zip",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R5V5LAI.zip",
+      "files": 1,
+      "bytes": 7881304,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\发布重试规则修正\\github-recovery.zip",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IFRJHSR.zip",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RFRJHSR.zip",
+      "files": 1,
+      "bytes": 7883622,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WebAccess自动浏览器衔接\\archive-main-probe.zip",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IN78QY4.zip",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RN78QY4.zip",
+      "files": 1,
+      "bytes": 9299322,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\baseline",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I6TQC4A",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R6TQC4A",
+      "files": 19,
+      "bytes": 994700,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\trials",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I4YH86D",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R4YH86D",
+      "files": 261,
+      "bytes": 247013,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\before",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IBR2RW3",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RBR2RW3",
+      "files": 5,
+      "bytes": 14298,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\candidate",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ITSLYEQ",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RTSLYEQ",
+      "files": 17,
+      "bytes": 101808,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\trials",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IIXDY32",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RIXDY32",
+      "files": 50,
+      "bytes": 16445,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\before",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I66YMLT",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R66YMLT",
+      "files": 32,
+      "bytes": 283990,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\candidate",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IC8A48E",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RC8A48E",
+      "files": 20,
+      "bytes": 117778,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\trials",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ITC2ZI2",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RTC2ZI2",
+      "files": 53,
+      "bytes": 17340,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\trials",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IJGYDGQ",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RJGYDGQ",
+      "files": 116,
+      "bytes": 43759,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\text",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IDB073P",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RDB073P",
+      "files": 3,
+      "bytes": 1467,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\behavior",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IENW9I5",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RENW9I5",
+      "files": 7,
+      "bytes": 8225,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\new",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IE9IL3V",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RE9IL3V",
+      "files": 5,
+      "bytes": 6522,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\resume",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IBFWEBN",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RBFWEBN",
+      "files": 6,
+      "bytes": 3577,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\scenarios",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I3VOUYO",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R3VOUYO",
+      "files": 3,
+      "bytes": 6492,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\tool-fixtures",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IAYDFVZ",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RAYDFVZ",
+      "files": 2,
+      "bytes": 221,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\codex-relay-chain-workspace\\skill-snapshot",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IEZIQND",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$REZIQND",
+      "files": 3,
+      "bytes": 65068,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\codex-relay-chain-workspace\\baseline.tar",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZB9L5V.tar",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZB9L5V.tar",
+      "files": 1,
+      "bytes": 71680,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\ieee-journal-submission-workspace\\skill-snapshot",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I6ZW3DG",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R6ZW3DG",
+      "files": 17,
+      "bytes": 70622,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\回收探测_20260914_directory",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IL8D3LS",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RL8D3LS",
+      "files": 1,
+      "bytes": 34,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IG0Y10Y",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RG0Y10Y",
+      "files": 5,
+      "bytes": 3578,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I9QHYDR",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R9QHYDR",
+      "files": 5,
+      "bytes": 3578,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IBTBPRF",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RBTBPRF",
+      "files": 283,
+      "bytes": 2410659,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I0D6NDA",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R0D6NDA",
+      "files": 5,
+      "bytes": 3578,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQ4KZNG",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQ4KZNG",
+      "files": 5,
+      "bytes": 3578,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp_回收准备",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IFZ41MH",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RFZ41MH",
+      "files": 163,
+      "bytes": 19386,
+      "verified": true,
+      "original_source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp",
+      "original_removed_after_recovery_verification": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\accept_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IK7F1KJ.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RK7F1KJ.py",
+      "files": 1,
+      "bytes": 5390,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\publish.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IU48OY4.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RU48OY4.py",
+      "files": 1,
+      "bytes": 1829,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\sync.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ITTHFWA.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RTTHFWA.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\validate_files.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I1WF6EV.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R1WF6EV.py",
+      "files": 1,
+      "bytes": 2577,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\verify.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IB2PGFN.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RB2PGFN.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\check_commit.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IKACKE1.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RKACKE1.py",
+      "files": 1,
+      "bytes": 3990,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\prepare.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQSO9RO.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQSO9RO.py",
+      "files": 1,
+      "bytes": 2841,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\publish.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IESFNHK.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RESFNHK.py",
+      "files": 1,
+      "bytes": 1873,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\read_material.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IREEXIN.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RREEXIN.py",
+      "files": 1,
+      "bytes": 837,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\sync.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IKPWXG9.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RKPWXG9.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\verify.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IJ3RL6L.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RJ3RL6L.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\MeetingNotes交付精简\\word_stub.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IL1N4O5.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RL1N4O5.py",
+      "files": 1,
+      "bytes": 1876,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\accept.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IP8NUHK.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RP8NUHK.py",
+      "files": 1,
+      "bytes": 3217,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\prepare_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I9HEKGK.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R9HEKGK.py",
+      "files": 1,
+      "bytes": 2114,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\publish.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWW8F7T.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWW8F7T.py",
+      "files": 1,
+      "bytes": 1335,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\read_material.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IDF9YIL.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RDF9YIL.py",
+      "files": 1,
+      "bytes": 837,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\sync.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZ1X4H1.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZ1X4H1.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\verify.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWN6AX3.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWN6AX3.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\accept_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IPI8IZY.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RPI8IZY.py",
+      "files": 1,
+      "bytes": 2408,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\check_and_commit.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZ0749Z.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZ0749Z.py",
+      "files": 1,
+      "bytes": 3263,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\prepare.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZYZBMW.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZYZBMW.py",
+      "files": 1,
+      "bytes": 2319,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\publish.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IKQ9PXZ.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RKQ9PXZ.py",
+      "files": 1,
+      "bytes": 1867,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\sync.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I9FK2ZY.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R9FK2ZY.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\verify.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IXJ9DS6.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RXJ9DS6.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\check_tool_limits.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IKHCW77.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RKHCW77.py",
+      "files": 1,
+      "bytes": 1485,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\技能创建流程精简\\verify_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IXFTU6K.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RXFTU6K.py",
+      "files": 1,
+      "bytes": 2226,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\commit_batch.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$ILUSLFG.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RLUSLFG.py",
+      "files": 1,
+      "bytes": 1931,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\grade_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I2MUAQ8.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R2MUAQ8.py",
+      "files": 1,
+      "bytes": 5317,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\prepare_library.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IM8D69F.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RM8D69F.py",
+      "files": 1,
+      "bytes": 642,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\prepare_trials.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I5S0I6Z.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R5S0I6Z.py",
+      "files": 1,
+      "bytes": 6055,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\publish.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IV02LGZ.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RV02LGZ.py",
+      "files": 1,
+      "bytes": 1749,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\read_material.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IHW7B2N.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RHW7B2N.py",
+      "files": 1,
+      "bytes": 844,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\run_checks.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IJKK6PH.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RJKK6PH.py",
+      "files": 1,
+      "bytes": 924,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\snapshot.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I5I6U8J.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R5I6U8J.py",
+      "files": 1,
+      "bytes": 2052,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\static_checks.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I9PWOGC.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R9PWOGC.py",
+      "files": 1,
+      "bytes": 2404,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\sync.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I2ZLIKQ.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R2ZLIKQ.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\verify.stderr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IWIJBMK.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RWIJBMK.txt",
+      "files": 1,
+      "bytes": 0,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\word_stub.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I049XMN.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R049XMN.py",
+      "files": 1,
+      "bytes": 1718,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\check_sample.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IY3AV4W.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RY3AV4W.py",
+      "files": 1,
+      "bytes": 3301,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\mixed.pdf",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IU2ZWH8.pdf",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RU2ZWH8.pdf",
+      "files": 1,
+      "bytes": 208347,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\scan.pdf",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IQBNJKV.pdf",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RQBNJKV.pdf",
+      "files": 1,
+      "bytes": 205636,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\page-1.png",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IB8BKFE.png",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RB8BKFE.png",
+      "files": 1,
+      "bytes": 37522,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\page-2.png",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IIRASOR.png",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RIRASOR.png",
+      "files": 1,
+      "bytes": 55468,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.pdf",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I9DR2MF.pdf",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R9DR2MF.pdf",
+      "files": 1,
+      "bytes": 222728,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\processed\\mixed_ocr.txt",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I5CO7OJ.txt",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R5CO7OJ.txt",
+      "files": 1,
+      "bytes": 532,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\sample.pptx",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IEE74UT.pptx",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$REE74UT.pptx",
+      "files": 1,
+      "bytes": 65053,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\sample_v02.pptx",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IBMM7F1.pptx",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RBMM7F1.pptx",
+      "files": 1,
+      "bytes": 65050,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\native-pages",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I3HXCRO",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R3HXCRO",
+      "files": 2,
+      "bytes": 136066,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PPT原生验收精简\\native-pages-v02",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$I4SN27B",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$R4SN27B",
+      "files": 2,
+      "bytes": 136066,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks\\numeric-draft.xlsx",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IZ95LJV.xlsx",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RZ95LJV.xlsx",
+      "files": 1,
+      "bytes": 7039,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks\\numeric-final.xlsx",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IJ2KLM7.xlsx",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RJ2KLM7.xlsx",
+      "files": 1,
+      "bytes": 7039,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\main-checks\\numeric-recalculated.xlsx",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$II5JCIX.xlsx",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RI5JCIX.xlsx",
+      "files": 1,
+      "bytes": 8756,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\closeout_recycle.py",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IU6NBYT.py",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RU6NBYT.py",
+      "files": 1,
+      "bytes": 6979,
+      "verified": true
+    },
+    {
+      "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\磁盘清理入口精简\\__pycache__",
+      "sid": "S-1-5-21-2459399124-3236396703-4268170121-1001",
+      "metadata": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$IYW3BPS",
+      "payload": "D:\\$Recycle.Bin\\S-1-5-21-2459399124-3236396703-4268170121-1001\\$RYW3BPS",
+      "files": 1,
+      "bytes": 14860,
+      "verified": true
+    }
+  ]
+}

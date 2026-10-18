@@ -1,0 +1,3597 @@
+[
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 201,
+        "sha256": "52043181d95d98375a407f51191648ab0aa50d0bcc8ccb93d42539214860c62d"
+      },
+      "test_declared_loaded_ref_alonecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router\\test_declared_loaded_ref_alone0",
+        "tag": 2684354572
+      },
+      "test_evidence_requires_a_match0": {
+        "type": "dir"
+      },
+      "test_evidence_requires_a_match0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 374,
+        "sha256": "5bb5e70d2a65c148d87079d7af1821b877981bff25d355e16a3afd76603ac7fb"
+      },
+      "test_evidence_requires_a_matchcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router\\test_evidence_requires_a_match0",
+        "tag": 2684354572
+      },
+      "test_failed_store_write_does_n0": {
+        "type": "dir"
+      },
+      "test_failed_store_write_does_n0/document.json": {
+        "type": "file",
+        "bytes": 1153,
+        "sha256": "c091cb97e3dc4246d3a290ec8d3bedb4dcc7d6cba50240cec4f468706d85b7b3"
+      },
+      "test_failed_store_write_does_ncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router\\test_failed_store_write_does_n0",
+        "tag": 2684354572
+      },
+      "test_store_preserves_other_blo0": {
+        "type": "dir"
+      },
+      "test_store_preserves_other_blo0/document.json": {
+        "type": "file",
+        "bytes": 1423,
+        "sha256": "6ff578612f6618341761a9e26fbd258355b966b3d88b10549ea3a7ab0f06adba"
+      },
+      "test_store_preserves_other_blocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router\\test_store_preserves_other_blo0",
+        "tag": 2684354572
+      },
+      "test_store_records_writes_with0": {
+        "type": "dir"
+      },
+      "test_store_records_writes_with0/document.json": {
+        "type": "file",
+        "bytes": 427,
+        "sha256": "5b8be9a30006436cf1103dc8b4edb503cbc4a1ed9e90e199f1aaf760621a1069"
+      },
+      "test_store_records_writes_withcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-baseline-router\\test_store_records_writes_with0",
+        "tag": 2684354572
+      }
+    }
+  },
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 201,
+        "sha256": "52043181d95d98375a407f51191648ab0aa50d0bcc8ccb93d42539214860c62d"
+      },
+      "test_declared_loaded_ref_alonecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router\\test_declared_loaded_ref_alone0",
+        "tag": 2684354572
+      },
+      "test_evidence_requires_a_match0": {
+        "type": "dir"
+      },
+      "test_evidence_requires_a_match0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 374,
+        "sha256": "5bb5e70d2a65c148d87079d7af1821b877981bff25d355e16a3afd76603ac7fb"
+      },
+      "test_evidence_requires_a_matchcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router\\test_evidence_requires_a_match0",
+        "tag": 2684354572
+      },
+      "test_failed_store_write_does_n0": {
+        "type": "dir"
+      },
+      "test_failed_store_write_does_n0/document.json": {
+        "type": "file",
+        "bytes": 1153,
+        "sha256": "c091cb97e3dc4246d3a290ec8d3bedb4dcc7d6cba50240cec4f468706d85b7b3"
+      },
+      "test_failed_store_write_does_ncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router\\test_failed_store_write_does_n0",
+        "tag": 2684354572
+      },
+      "test_store_preserves_other_blo0": {
+        "type": "dir"
+      },
+      "test_store_preserves_other_blo0/document.json": {
+        "type": "file",
+        "bytes": 1423,
+        "sha256": "6ff578612f6618341761a9e26fbd258355b966b3d88b10549ea3a7ab0f06adba"
+      },
+      "test_store_preserves_other_blocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router\\test_store_preserves_other_blo0",
+        "tag": 2684354572
+      },
+      "test_store_records_writes_with0": {
+        "type": "dir"
+      },
+      "test_store_records_writes_with0/document.json": {
+        "type": "file",
+        "bytes": 427,
+        "sha256": "5b8be9a30006436cf1103dc8b4edb503cbc4a1ed9e90e199f1aaf760621a1069"
+      },
+      "test_store_records_writes_withcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-candidate-router\\test_store_records_writes_with0",
+        "tag": 2684354572
+      }
+    }
+  },
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_abstract_single_use_acron0": {
+        "type": "dir"
+      },
+      "test_abstract_single_use_acron0/paper.md": {
+        "type": "file",
+        "bytes": 99,
+        "sha256": "2a11ee870b62f2a75a01f3303cfaaaa47a8c39712c7514c256c4fcb0727459d2"
+      },
+      "test_abstract_single_use_acroncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_abstract_single_use_acron0",
+        "tag": 2684354572
+      },
+      "test_adapter_propagates_figure0": {
+        "type": "dir"
+      },
+      "test_adapter_propagates_figure0/fail.py": {
+        "type": "file",
+        "bytes": 22,
+        "sha256": "a11682df934666ce88f27b77333cd74505e7f7671ad2369b9efcd7f3ef2c2c32"
+      },
+      "test_adapter_propagates_figurecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_adapter_propagates_figure0",
+        "tag": 2684354572
+      },
+      "test_adapter_rejects_non_fixed0": {
+        "type": "dir"
+      },
+      "test_adapter_rejects_non_fixed0/noop.py": {
+        "type": "file",
+        "bytes": 25,
+        "sha256": "7af0de0f206dea38683b17a773fd5caad36b2b2d29d3e8d51095c48879769257"
+      },
+      "test_adapter_rejects_non_fixedcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_adapter_rejects_non_fixed0",
+        "tag": 2684354572
+      },
+      "test_adapter_reports_missing_t0": {
+        "type": "dir"
+      },
+      "test_adapter_reports_missing_t0/noop.py": {
+        "type": "file",
+        "bytes": 25,
+        "sha256": "7af0de0f206dea38683b17a773fd5caad36b2b2d29d3e8d51095c48879769257"
+      },
+      "test_adapter_reports_missing_tcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_adapter_reports_missing_t0",
+        "tag": 2684354572
+      },
+      "test_adapter_runs_fixed_runtim0": {
+        "type": "dir"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output": {
+        "type": "dir"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output/drafts": {
+        "type": "dir"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output/drafts/runtime.manifest.json": {
+        "type": "file",
+        "bytes": 6693,
+        "sha256": "40a1216dee33930d4f00be61eb4bc13b81da897aba499525dad6fab4427a4263"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output/drafts/runtime.pdf": {
+        "type": "file",
+        "bytes": 19918,
+        "sha256": "8dec877894f26ff923433df4d99f3ce201d70a0b0671cc3fd63fae4b52808f74"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output/drafts/runtime.png": {
+        "type": "file",
+        "bytes": 119983,
+        "sha256": "a9d7e0fddd9bdb6a8c5e7d7a7091886265651084a197fe74a210a9c8c92fbea4"
+      },
+      "test_adapter_runs_fixed_runtim0/figure-output/drafts/runtime.svg": {
+        "type": "file",
+        "bytes": 40875,
+        "sha256": "a608ea5069a4353003a7c8aa71f5108cd60bbb3ebe95c21a7d2c6645d6c7722f"
+      },
+      "test_adapter_runs_fixed_runtim0/make_runtime_figure.py": {
+        "type": "file",
+        "bytes": 569,
+        "sha256": "a1adeab33f5b66928ac26b4075194a7ccd71df26afdb8f08e01bf55510953ab7"
+      },
+      "test_adapter_runs_fixed_runtimcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_adapter_runs_fixed_runtim0",
+        "tag": 2684354572
+      },
+      "test_agent_palette_requires_tr0": {
+        "type": "dir"
+      },
+      "test_agent_palette_requires_tr0/profile.json": {
+        "type": "file",
+        "bytes": 775,
+        "sha256": "32d689535c662e6ecbec11e312304f6d1e4161e9fb47eebf1a897a35c719d553"
+      },
+      "test_agent_palette_requires_trcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_agent_palette_requires_tr0",
+        "tag": 2684354572
+      },
+      "test_bundled_font_tampering_is0": {
+        "type": "dir"
+      },
+      "test_bundled_font_tampering_is0/fonts": {
+        "type": "dir"
+      },
+      "test_bundled_font_tampering_is0/fonts/LiberationSerif-Bold.ttf": {
+        "type": "file",
+        "bytes": 370096,
+        "sha256": "d754ba427cfe0bca54ae052384baa8f842da5bd6550ad4da024ac441e7a7d5ce"
+      },
+      "test_bundled_font_tampering_is0/fonts/LiberationSerif-BoldItalic.ttf": {
+        "type": "file",
+        "bytes": 376772,
+        "sha256": "f17db8af71e24d2066b587546021d4f0b296be389512b658dec3c09affeb11a7"
+      },
+      "test_bundled_font_tampering_is0/fonts/LiberationSerif-Italic.ttf": {
+        "type": "file",
+        "bytes": 375632,
+        "sha256": "0e3dea9f8d613e006ccfa62201f33e265d19167bd0907725c3e145368b04fc2e"
+      },
+      "test_bundled_font_tampering_is0/fonts/LiberationSerif-Regular.ttf": {
+        "type": "file",
+        "bytes": 393582,
+        "sha256": "aa51e37cc43230da1f42b7f5b52dacde817620769564c4ea657b1cf96c561d47"
+      },
+      "test_bundled_font_tampering_is0/fonts/LICENSE": {
+        "type": "file",
+        "bytes": 4414,
+        "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+      },
+      "test_bundled_font_tampering_is0/fonts/manifest.json": {
+        "type": "file",
+        "bytes": 839,
+        "sha256": "9afdf73a5b6ef60d7772a7dc262ef36314170df9fe7dea5cba7d86ce93283324"
+      },
+      "test_bundled_font_tampering_iscurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_bundled_font_tampering_is0",
+        "tag": 2684354572
+      },
+      "test_caption_checks_distinguis0": {
+        "type": "dir"
+      },
+      "test_caption_checks_distinguis0/paper.md": {
+        "type": "file",
+        "bytes": 265,
+        "sha256": "e1e83fd433cacdc6f1630c126892ad60af0b91e2a833c73209dcdc8431351944"
+      },
+      "test_caption_checks_distinguiscurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_caption_checks_distinguis0",
+        "tag": 2684354572
+      },
+      "test_clean_and_markdown_cli_co0": {
+        "type": "dir"
+      },
+      "test_clean_and_markdown_cli_co0/clean.md": {
+        "type": "file",
+        "bytes": 61,
+        "sha256": "a72d647e13e2eb31f166f4dcd937cb3a8daf002555c3329dcf1630170b1b80fd"
+      },
+      "test_clean_and_markdown_cli_cocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_clean_and_markdown_cli_co0",
+        "tag": 2684354572
+      },
+      "test_cli_status_and_exit_codes0": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/clean.md": {
+        "type": "file",
+        "bytes": 27,
+        "sha256": "66ca65e2004626f4f958290cac3866c86244f508f47a3dac9d6e4c589ad94d7e"
+      },
+      "test_cli_status_and_exit_codes0/review.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_cli_status_and_exit_codes0/vocab": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_cli_status_and_exit_codes0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_cli_status_and_exit_codes0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_cli_status_and_exit_codescurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_cli_status_and_exit_codes0",
+        "tag": 2684354572
+      },
+      "test_complete_language_and_doc0": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_complete_language_and_doc0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_complete_language_and_doc0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_complete_language_and_doc0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_complete_language_and_doc0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_complete_language_and_doc0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_complete_language_and_doc0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_complete_language_and_doc0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_complete_language_and_doc0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_complete_language_and_doc0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_complete_language_and_doccurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_complete_language_and_doc0",
+        "tag": 2684354572
+      },
+      "test_coordination_and_nonadjac0": {
+        "type": "dir"
+      },
+      "test_coordination_and_nonadjac0/coordination-inside-negative.md": {
+        "type": "file",
+        "bytes": 74,
+        "sha256": "27f7b90512701565252bef256715a51bbdc323af6210d2e03355af773861afc9"
+      },
+      "test_coordination_and_nonadjac0/coordination-only.md": {
+        "type": "file",
+        "bytes": 56,
+        "sha256": "1102584b82eb48bc7da80e8029e6c57b7811c22748572bdf2fffce0ff22271fc"
+      },
+      "test_coordination_and_nonadjac0/coordination-plus-negative.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "c6acbe5a67b3092af12be12a7b7685d3c1462d1f2ffbe3dfc9bcd2bbdb04d62b"
+      },
+      "test_coordination_and_nonadjac0/not-entirely-without.md": {
+        "type": "file",
+        "bytes": 48,
+        "sha256": "07430de62beb52e200d6d1d8a80385590c1601c9a1c375044a1fadc909f7f142"
+      },
+      "test_coordination_and_nonadjaccurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_coordination_and_nonadjac0",
+        "tag": 2684354572
+      },
+      "test_declared_loaded_ref_alone0": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 201,
+        "sha256": "52043181d95d98375a407f51191648ab0aa50d0bcc8ccb93d42539214860c62d"
+      },
+      "test_declared_loaded_ref_alonecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_declared_loaded_ref_alone0",
+        "tag": 2684354572
+      },
+      "test_defensive_meta_language_i0": {
+        "type": "dir"
+      },
+      "test_defensive_meta_language_i0/paper.md": {
+        "type": "file",
+        "bytes": 255,
+        "sha256": "41117bda4b62b82ba1c8851c8e2fbb7bab072981c5537a59df3cf91af5aeb29b"
+      },
+      "test_defensive_meta_language_icurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_defensive_meta_language_i0",
+        "tag": 2684354572
+      },
+      "test_draft_and_formal_export_g0": {
+        "type": "dir"
+      },
+      "test_draft_and_formal_export_g0/drafts": {
+        "type": "dir"
+      },
+      "test_draft_and_formal_export_g0/drafts/sample.manifest.json": {
+        "type": "file",
+        "bytes": 6264,
+        "sha256": "f164851f813e26154069c05b2e0e4c9f15fe59a729dccc351f606e3aa312edb4"
+      },
+      "test_draft_and_formal_export_g0/drafts/sample.pdf": {
+        "type": "file",
+        "bytes": 27874,
+        "sha256": "f903fd98b7e335817a04084ac83dc6e415b1a84467d2f556bc034587be3846b1"
+      },
+      "test_draft_and_formal_export_g0/drafts/sample.png": {
+        "type": "file",
+        "bytes": 146701,
+        "sha256": "8783f3693b9c1fea65b70951ce5ff59a5c964c15a6bc5132356c070bb3425e72"
+      },
+      "test_draft_and_formal_export_g0/drafts/sample.svg": {
+        "type": "file",
+        "bytes": 43117,
+        "sha256": "b4d7a13228f179a82fb8682e1fe19d9fc8b225c34f57c4a1d92bd5baf9bb9b17"
+      },
+      "test_draft_and_formal_export_g0/formal.manifest.json": {
+        "type": "file",
+        "bytes": 7107,
+        "sha256": "d8d1bdac00ccdb2bbefb07b8e2f56132a9ad9b095af5cde9d957e6547791dd21"
+      },
+      "test_draft_and_formal_export_g0/formal.pdf": {
+        "type": "file",
+        "bytes": 28354,
+        "sha256": "834175966ba73366fe6e6d5d5597083c48fd505fe15c26bcad3028cd6fb0ca1b"
+      },
+      "test_draft_and_formal_export_g0/formal.png": {
+        "type": "file",
+        "bytes": 138149,
+        "sha256": "ba60cb574cddb15bcf9055a7a4c4a42babf0cc102932bb1778e93cc321c76ee2"
+      },
+      "test_draft_and_formal_export_g0/formal.svg": {
+        "type": "file",
+        "bytes": 44256,
+        "sha256": "68c70bafb9249cb90fa8c013ef4dfba3f5d3ed73741a2eaf4b2ffd70a52426d4"
+      },
+      "test_draft_and_formal_export_gcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_draft_and_formal_export_g0",
+        "tag": 2684354572
+      },
+      "test_empty_markdown_image_capt0": {
+        "type": "dir"
+      },
+      "test_empty_markdown_image_capt0/empty-caption.md": {
+        "type": "file",
+        "bytes": 16,
+        "sha256": "106f80381bdfa4c917f829e59922dcf92e67db0a6718787d881c1e4ce20529d4"
+      },
+      "test_empty_markdown_image_captcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_empty_markdown_image_capt0",
+        "tag": 2684354572
+      },
+      "test_english_paper_loads_gener0": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/draft.md": {
+        "type": "file",
+        "bytes": 44,
+        "sha256": "0988882f753c1da39b6ed8be750d6dc48e57989294d736740d16d1786194c597"
+      },
+      "test_english_paper_loads_gener0/vocab": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_english_paper_loads_gener0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_english_paper_loads_gener0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_english_paper_loads_gener0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_english_paper_loads_genercurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_english_paper_loads_gener0",
+        "tag": 2684354572
+      },
+      "test_evidence_requires_a_match0": {
+        "type": "dir"
+      },
+      "test_evidence_requires_a_match0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 374,
+        "sha256": "5bb5e70d2a65c148d87079d7af1821b877981bff25d355e16a3afd76603ac7fb"
+      },
+      "test_evidence_requires_a_matchcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_evidence_requires_a_match0",
+        "tag": 2684354572
+      },
+      "test_exception_text_is_always_0": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "a6cc552787e2234ade251cca6f3a663e214e738d5dd3ffa6c466ecc2e4686a1b"
+      },
+      "test_exception_text_is_always_0/vocab": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_exception_text_is_always_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_exception_text_is_always_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_exception_text_is_always_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_exception_text_is_always_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_exception_text_is_always_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_exception_text_is_always_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_exception_text_is_always_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_exception_text_is_always_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_exception_text_is_always_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_exception_text_is_always_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_exception_text_is_always_0",
+        "tag": 2684354572
+      },
+      "test_failed_store_write_does_n0": {
+        "type": "dir"
+      },
+      "test_failed_store_write_does_n0/document.json": {
+        "type": "file",
+        "bytes": 1153,
+        "sha256": "c091cb97e3dc4246d3a290ec8d3bedb4dcc7d6cba50240cec4f468706d85b7b3"
+      },
+      "test_failed_store_write_does_ncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_failed_store_write_does_n0",
+        "tag": 2684354572
+      },
+      "test_fixed_indirect_negatives_0": {
+        "type": "dir"
+      },
+      "test_fixed_indirect_negatives_0/by-no-means.md": {
+        "type": "file",
+        "bytes": 42,
+        "sha256": "1eaecf0c4069e40e3a5ad3651e3abb31c23d92a72d31e470db00411f6989016a"
+      },
+      "test_fixed_indirect_negatives_0/not-unlikely.md": {
+        "type": "file",
+        "bytes": 36,
+        "sha256": "f0c2e3af70781b93815b6f5e41aed0eeaf6d4c5b5fb288078cfaa81560823c9a"
+      },
+      "test_fixed_indirect_negatives_0/not-without.md": {
+        "type": "file",
+        "bytes": 39,
+        "sha256": "340bf9544547ef742d5db70dc9e72ca466715e8443c2109027d4b15d3b89497c"
+      },
+      "test_fixed_indirect_negatives_0/ruled-out.md": {
+        "type": "file",
+        "bytes": 43,
+        "sha256": "91e67330f6dbd146037da007aad71df2437a4a209e425742311e3a2a94bfadd5"
+      },
+      "test_fixed_indirect_negatives_0/standalone-without.md": {
+        "type": "file",
+        "bytes": 43,
+        "sha256": "c286d069e99299cebeef2023e6ebda9350d5d84133fa0c08a73968ae599228c0"
+      },
+      "test_fixed_indirect_negatives_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_fixed_indirect_negatives_0",
+        "tag": 2684354572
+      },
+      "test_formatted_explicit_mappin0": {
+        "type": "dir"
+      },
+      "test_formatted_explicit_mappin0/formatted.md": {
+        "type": "file",
+        "bytes": 67,
+        "sha256": "89618f25499048cfc92f8f6a09821de6366bc0bf3ac24867b47c4f8931f3e811"
+      },
+      "test_formatted_explicit_mappin0/formatted.tex": {
+        "type": "file",
+        "bytes": 228,
+        "sha256": "8dafe39ea1c250842e4ececf9e324b188fc054a45435ef2fc89e436fb8017141"
+      },
+      "test_formatted_explicit_mappin0/partial-format.md": {
+        "type": "file",
+        "bytes": 67,
+        "sha256": "d6e566bd845d764cd967bf1f7a0ff9cafec1d0ba85a0699ec00a5ce9b77c524e"
+      },
+      "test_formatted_explicit_mappin0/trailing-format.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "32130c55dca258ec1277129503980a97dd3306ab35e2b8e8636ab90cd6421289"
+      },
+      "test_formatted_explicit_mappincurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_formatted_explicit_mappin0",
+        "tag": 2684354572
+      },
+      "test_full_vocab_validation_che0": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_full_vocab_validation_che0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_full_vocab_validation_che0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_full_vocab_validation_che0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_full_vocab_validation_checurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_full_vocab_validation_che0",
+        "tag": 2684354572
+      },
+      "test_full_vocab_validation_rej0": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_full_vocab_validation_rej0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_full_vocab_validation_rej0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 362,
+        "sha256": "6167b63efd0d2d1848c5c31da9917d51ad6b9423f5fa6eb17cb07109ff5fad08"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_full_vocab_validation_rejcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_full_vocab_validation_rej0",
+        "tag": 2684354572
+      },
+      "test_globecom_audit_passes_fon0": {
+        "type": "dir"
+      },
+      "test_globecom_audit_passes_fon0/figures": {
+        "type": "dir"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig2_power_sweep.pdf": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "b94e506ebca495c74a814f776d234924a55614cac932463aa982ba9a2e0c0e81"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig2_power_sweep.png": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "4793232f742218839bc4242a28c7af63eb7db84396488bea80a43fa9bc8903ac"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig2_power_sweep.svg": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "47e9942ebbda7cdbb5d532ce30df541ef9824ec39aa98eba2216016aff479028"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig3_endurance.pdf": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "b2efbdadb10704496b1903479f0fa14d36174d02bbf8b459f2ce84f5d8b0f77a"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig3_endurance.png": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "a4712893136f2362d3b4de0616451e3f63b20401afc27323448f18952d0e9728"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig3_endurance.svg": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "a9568268f08e8a0332593e0df3dcdf4419c4a9c977142c4f0f8789aac0742efd"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig4_reversal.pdf": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "4e5f54d28774107c324058ec15825001b1048abc8f349dd815ce57af09d8fd14"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig4_reversal.png": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "d68f7241b1928e3959a3e08b20e2ae151283f9413847e48748141dd54dd3dde1"
+      },
+      "test_globecom_audit_passes_fon0/figures/fig4_reversal.svg": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "afb48d617a86e00f0d94dfa56529ea22efbad577fcec74a507a9e9b8ce10d833"
+      },
+      "test_globecom_audit_passes_fon0/figures/plot_profile.json": {
+        "type": "file",
+        "bytes": 155,
+        "sha256": "d2986523927dc4d37b4fdc7235a3e9956ba8f213759c2959b9170f80d1162c97"
+      },
+      "test_globecom_audit_passes_foncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_globecom_audit_passes_fon0",
+        "tag": 2684354572
+      },
+      "test_globecom_audit_reports_fa0": {
+        "type": "dir"
+      },
+      "test_globecom_audit_reports_fa0/figures": {
+        "type": "dir"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig2_power_sweep.pdf": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "b94e506ebca495c74a814f776d234924a55614cac932463aa982ba9a2e0c0e81"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig2_power_sweep.png": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "4793232f742218839bc4242a28c7af63eb7db84396488bea80a43fa9bc8903ac"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig2_power_sweep.svg": {
+        "type": "file",
+        "bytes": 20,
+        "sha256": "47e9942ebbda7cdbb5d532ce30df541ef9824ec39aa98eba2216016aff479028"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig3_endurance.pdf": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "b2efbdadb10704496b1903479f0fa14d36174d02bbf8b459f2ce84f5d8b0f77a"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig3_endurance.png": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "a4712893136f2362d3b4de0616451e3f63b20401afc27323448f18952d0e9728"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig3_endurance.svg": {
+        "type": "file",
+        "bytes": 18,
+        "sha256": "a9568268f08e8a0332593e0df3dcdf4419c4a9c977142c4f0f8789aac0742efd"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig4_reversal.pdf": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "4e5f54d28774107c324058ec15825001b1048abc8f349dd815ce57af09d8fd14"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig4_reversal.png": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "d68f7241b1928e3959a3e08b20e2ae151283f9413847e48748141dd54dd3dde1"
+      },
+      "test_globecom_audit_reports_fa0/figures/fig4_reversal.svg": {
+        "type": "file",
+        "bytes": 17,
+        "sha256": "afb48d617a86e00f0d94dfa56529ea22efbad577fcec74a507a9e9b8ce10d833"
+      },
+      "test_globecom_audit_reports_fa0/figures/plot_profile.json": {
+        "type": "file",
+        "bytes": 155,
+        "sha256": "d2986523927dc4d37b4fdc7235a3e9956ba8f213759c2959b9170f80d1162c97"
+      },
+      "test_globecom_audit_reports_facurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_globecom_audit_reports_fa0",
+        "tag": 2684354572
+      },
+      "test_invalid_utf8_reports_the_0": {
+        "type": "dir"
+      },
+      "test_invalid_utf8_reports_the_0/broken.md": {
+        "type": "file",
+        "bytes": 25,
+        "sha256": "45368a5f27ac537cec6430f2928733e89d43eb2af97d5af9511360265cf30311"
+      },
+      "test_invalid_utf8_reports_the_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_invalid_utf8_reports_the_0",
+        "tag": 2684354572
+      },
+      "test_json_schema_sorting_and_c0": {
+        "type": "dir"
+      },
+      "test_json_schema_sorting_and_c0/paper.md": {
+        "type": "file",
+        "bytes": 73,
+        "sha256": "240c5dff5149db2f2567c4e4257bd288656f6f060f19ad8333a7c3cc69f24f20"
+      },
+      "test_json_schema_sorting_and_ccurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_json_schema_sorting_and_c0",
+        "tag": 2684354572
+      },
+      "test_latex_comment_cannot_clos0": {
+        "type": "dir"
+      },
+      "test_latex_comment_cannot_clos0/commented-math-end.tex": {
+        "type": "file",
+        "bytes": 225,
+        "sha256": "b661c16eab4a0a512ec982768008c4849fc7dbf1c8fdf9e264b21dae12f896bc"
+      },
+      "test_latex_comment_cannot_closcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_comment_cannot_clos0",
+        "tag": 2684354572
+      },
+      "test_latex_content_after_end_d0": {
+        "type": "dir"
+      },
+      "test_latex_content_after_end_d0/post-document.tex": {
+        "type": "file",
+        "bytes": 231,
+        "sha256": "bed481e18fd4e8a774b0f815374126f0ad79df071a970f28010162183061adee"
+      },
+      "test_latex_content_after_end_dcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_content_after_end_d0",
+        "tag": 2684354572
+      },
+      "test_latex_custom_caption_macr0": {
+        "type": "dir"
+      },
+      "test_latex_custom_caption_macr0/paper.tex": {
+        "type": "file",
+        "bytes": 109,
+        "sha256": "1edfe5d0c001f729d330c3f30ff82b9c3882c0aaf69005fa6948fc55a9cd72d5"
+      },
+      "test_latex_custom_caption_macrcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_custom_caption_macr0",
+        "tag": 2684354572
+      },
+      "test_latex_document_without_ab0": {
+        "type": "dir"
+      },
+      "test_latex_document_without_ab0/sectionless.tex": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "5a33b04964868c04619e61bb621aace55b3c1811ed7d1c322d2914611d94e926"
+      },
+      "test_latex_document_without_abcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_document_without_ab0",
+        "tag": 2684354572
+      },
+      "test_latex_front_matter_math_a0": {
+        "type": "dir"
+      },
+      "test_latex_front_matter_math_a0/sections.tex": {
+        "type": "file",
+        "bytes": 307,
+        "sha256": "35d53a6a4cca2ea6073dc0689605690572daedd50eb907604659b328e30598fe"
+      },
+      "test_latex_front_matter_math_acurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_front_matter_math_a0",
+        "tag": 2684354572
+      },
+      "test_latex_heading_table_inlin0": {
+        "type": "dir"
+      },
+      "test_latex_heading_table_inlin0/latex-boundaries.tex": {
+        "type": "file",
+        "bytes": 421,
+        "sha256": "bc2a9d640d34d3aa257e3d25bbcd4a5271e012ef0c02eeafe8c7ca2a7ca265e6"
+      },
+      "test_latex_heading_table_inlincurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_heading_table_inlin0",
+        "tag": 2684354572
+      },
+      "test_latex_inline_verbatim_is_0": {
+        "type": "dir"
+      },
+      "test_latex_inline_verbatim_is_0/inline-verbatim.tex": {
+        "type": "file",
+        "bytes": 180,
+        "sha256": "8853b48ac2ae931995eba372856f7a81997e8001c7ac5a6b2ed2ba1283cc3eb9"
+      },
+      "test_latex_inline_verbatim_is_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_inline_verbatim_is_0",
+        "tag": 2684354572
+      },
+      "test_latex_masks_comments_and_0": {
+        "type": "dir"
+      },
+      "test_latex_masks_comments_and_0/paper.tex": {
+        "type": "file",
+        "bytes": 267,
+        "sha256": "bb921cbfe31348e148864e7075548b83a6de9a3dea728bcb388cbba2c74f6101"
+      },
+      "test_latex_masks_comments_and_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_masks_comments_and_0",
+        "tag": 2684354572
+      },
+      "test_latex_negation_audit_excl0": {
+        "type": "dir"
+      },
+      "test_latex_negation_audit_excl0/masked-regions.tex": {
+        "type": "file",
+        "bytes": 505,
+        "sha256": "bae29ff56049c4e379c4d405339d8488e60a2a6d7c953a93f0e70870a22974a8"
+      },
+      "test_latex_negation_audit_exclcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_negation_audit_excl0",
+        "tag": 2684354572
+      },
+      "test_latex_quotes_are_not_trea0": {
+        "type": "dir"
+      },
+      "test_latex_quotes_are_not_trea0/latex-quotes.tex": {
+        "type": "file",
+        "bytes": 125,
+        "sha256": "31b9cf6687cb60cc31b5926c94f61c2f7cc3c272e652a523230715be97f30ac0"
+      },
+      "test_latex_quotes_are_not_treacurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_latex_quotes_are_not_trea0",
+        "tag": 2684354572
+      },
+      "test_long_fail_to_decimal_and_0": {
+        "type": "dir"
+      },
+      "test_long_fail_to_decimal_and_0/decimal.md": {
+        "type": "file",
+        "bytes": 55,
+        "sha256": "23489713fabb4668fe3d7cf286cbee32fd23db92ee2789cf261e67ae85ede329"
+      },
+      "test_long_fail_to_decimal_and_0/long-fail.md": {
+        "type": "file",
+        "bytes": 104,
+        "sha256": "17193891d4c16c19aaed5bbb99d2786fd70984344afed286a3337b025d2effd6"
+      },
+      "test_long_fail_to_decimal_and_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_long_fail_to_decimal_and_0",
+        "tag": 2684354572
+      },
+      "test_malformed_style_table_ret0": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/draft.md": {
+        "type": "file",
+        "bytes": 11,
+        "sha256": "92e0a996bcb799ea79e1d0842d81abe8c12fe5e0b36270052869e7668d7fc46d"
+      },
+      "test_malformed_style_table_ret0/vocab": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_malformed_style_table_ret0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_malformed_style_table_ret0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_malformed_style_table_ret0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 61,
+        "sha256": "bcbff1ce2b17003ff14b3b09653686214e0c2a46e25a4f925b0c28f1bcfe86fe"
+      },
+      "test_malformed_style_table_retcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_malformed_style_table_ret0",
+        "tag": 2684354572
+      },
+      "test_markdown_fenced_fake_abst0": {
+        "type": "dir"
+      },
+      "test_markdown_fenced_fake_abst0/closed.md": {
+        "type": "file",
+        "bytes": 143,
+        "sha256": "edd8441ad70273b4ed3431ebec8c4dd682a6a89e3df84d4d7e8537afe7c36a1c"
+      },
+      "test_markdown_fenced_fake_abst0/fenced.md": {
+        "type": "file",
+        "bytes": 91,
+        "sha256": "58bb800842ce5daa3f74cf6b6910d6051655164abdf9abd0723c5e1b71f9991e"
+      },
+      "test_markdown_fenced_fake_abst0/longer-fence.md": {
+        "type": "file",
+        "bytes": 156,
+        "sha256": "4e0e5cb5fa12fa6bd39da46887e91bca3c6cb53dd8fc4ff555af943f1a59c259"
+      },
+      "test_markdown_fenced_fake_abstcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_fenced_fake_abst0",
+        "tag": 2684354572
+      },
+      "test_markdown_html_comments_an0": {
+        "type": "dir"
+      },
+      "test_markdown_html_comments_an0/hidden-markup.md": {
+        "type": "file",
+        "bytes": 224,
+        "sha256": "63075de65022911005f3db55491abb29427addc273edd9a79f8ce6a9c8ab75d8"
+      },
+      "test_markdown_html_comments_ancurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_html_comments_an0",
+        "tag": 2684354572
+      },
+      "test_markdown_negation_audit_e0": {
+        "type": "dir"
+      },
+      "test_markdown_negation_audit_e0/masked-regions.md": {
+        "type": "file",
+        "bytes": 359,
+        "sha256": "e40c6a2964e9587f6d08e21fef869666c6ba996cb78761f1450fe161987a16c6"
+      },
+      "test_markdown_negation_audit_ecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_negation_audit_e0",
+        "tag": 2684354572
+      },
+      "test_markdown_output_contains_0": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_markdown_output_contains_0/vocab": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_markdown_output_contains_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_markdown_output_contains_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_markdown_output_contains_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_markdown_output_contains_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_markdown_output_contains_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_markdown_output_contains_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_markdown_output_contains_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_markdown_output_contains_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_markdown_output_contains_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_markdown_output_contains_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_output_contains_0",
+        "tag": 2684354572
+      },
+      "test_markdown_panel_caption_em0": {
+        "type": "dir"
+      },
+      "test_markdown_panel_caption_em0/markdown-boundaries.md": {
+        "type": "file",
+        "bytes": 208,
+        "sha256": "db1568603821d185a27a9f06ed38e3f834fc9d5f3fbff8f432f913d783176929"
+      },
+      "test_markdown_panel_caption_emcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_panel_caption_em0",
+        "tag": 2684354572
+      },
+      "test_markdown_raw_html_blocks_0": {
+        "type": "dir"
+      },
+      "test_markdown_raw_html_blocks_0/raw-html.md": {
+        "type": "file",
+        "bytes": 149,
+        "sha256": "649fd0b172c2dbd3391c30573aede99a012bd7bf046c0b3d2b8582cb238cb315"
+      },
+      "test_markdown_raw_html_blocks_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_raw_html_blocks_0",
+        "tag": 2684354572
+      },
+      "test_markdown_references_and_a0": {
+        "type": "dir"
+      },
+      "test_markdown_references_and_a0/backmatter.md": {
+        "type": "file",
+        "bytes": 196,
+        "sha256": "1628cc59219985cbd264d7253bcabc644899d5a2c2a356f4776b01b3110c5e4c"
+      },
+      "test_markdown_references_and_acurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_references_and_a0",
+        "tag": 2684354572
+      },
+      "test_markdown_setext_headings_0": {
+        "type": "dir"
+      },
+      "test_markdown_setext_headings_0/setext.md": {
+        "type": "file",
+        "bytes": 228,
+        "sha256": "ff925aeb9dbfc040c82f9825f66b34c3f8c127f7b17e406b2f942a98198d1635"
+      },
+      "test_markdown_setext_headings_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_setext_headings_0",
+        "tag": 2684354572
+      },
+      "test_markdown_uses_independent0": {
+        "type": "dir"
+      },
+      "test_markdown_uses_independent0/paper.md": {
+        "type": "file",
+        "bytes": 267,
+        "sha256": "cc7d8822c4af5c33ffea4cb7d2dbf5a54ee55cb773be3143cfd761d7db18ab1e"
+      },
+      "test_markdown_uses_independentcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_markdown_uses_independent0",
+        "tag": 2684354572
+      },
+      "test_masking_skips_code_urls_p0": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/draft.md": {
+        "type": "file",
+        "bytes": 242,
+        "sha256": "0ac90c8ebd2eb6e14950bf15b6a892523007956f5588f23f246b652d831d8993"
+      },
+      "test_masking_skips_code_urls_p0/vocab": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_masking_skips_code_urls_p0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_masking_skips_code_urls_p0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_masking_skips_code_urls_pcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_masking_skips_code_urls_p0",
+        "tag": 2684354572
+      },
+      "test_multibacktick_code_spans_0": {
+        "type": "dir"
+      },
+      "test_multibacktick_code_spans_0/markup-boundaries.md": {
+        "type": "file",
+        "bytes": 275,
+        "sha256": "65c56008e27ec35e137fec745a5378a69884759bc23ce4904b6ae2d62ea707f5"
+      },
+      "test_multibacktick_code_spans_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_multibacktick_code_spans_0",
+        "tag": 2684354572
+      },
+      "test_negation_chain_merges_hit0": {
+        "type": "dir"
+      },
+      "test_negation_chain_merges_hit0/complete-evidence.md": {
+        "type": "file",
+        "bytes": 217,
+        "sha256": "da8860a6335ef32ad77216ec0b4321399f187929b9bb43d21ec56aef2de7755c"
+      },
+      "test_negation_chain_merges_hitcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_negation_chain_merges_hit0",
+        "tag": 2684354572
+      },
+      "test_non_utf8_input_returns_fi0": {
+        "type": "dir"
+      },
+      "test_non_utf8_input_returns_fi0/paper.md": {
+        "type": "file",
+        "bytes": 15,
+        "sha256": "8b46862ce48d76a1b1d718c5d199dc7846034b6f34c4c24396c31829b0fdbcc8"
+      },
+      "test_non_utf8_input_returns_ficurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_non_utf8_input_returns_fi0",
+        "tag": 2684354572
+      },
+      "test_not_only_pair_masks_only_0": {
+        "type": "dir"
+      },
+      "test_not_only_pair_masks_only_0/not-only-long-pair.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "9b61956ee75fc973a08f7e82abfdc0073c36311dc88b2839607b7e7a6905e88a"
+      },
+      "test_not_only_pair_masks_only_0/not-only-repeated.md": {
+        "type": "file",
+        "bytes": 73,
+        "sha256": "366b395acaaa23070d2981ab7ced0564fb2de73a8d6dff7c89ad501c4dfac955"
+      },
+      "test_not_only_pair_masks_only_0/not-only-single.md": {
+        "type": "file",
+        "bytes": 68,
+        "sha256": "c2938160b418b52a5b462a7bf4e89c11140543d8de276eb2650b5a1bf0a70ec5"
+      },
+      "test_not_only_pair_masks_only_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_not_only_pair_masks_only_0",
+        "tag": 2684354572
+      },
+      "test_number_abbreviations_and_0": {
+        "type": "dir"
+      },
+      "test_number_abbreviations_and_0/single-negatives.md": {
+        "type": "file",
+        "bytes": 252,
+        "sha256": "0830631f3ec12cb2d0c904c496113cc304fe50363c80908faca7525827ab8cd5"
+      },
+      "test_number_abbreviations_and_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_number_abbreviations_and_0",
+        "tag": 2684354572
+      },
+      "test_only_adjacent_exact_body_0": {
+        "type": "dir"
+      },
+      "test_only_adjacent_exact_body_0/paper.md": {
+        "type": "file",
+        "bytes": 570,
+        "sha256": "09434d01ed9678d9fdc8c06721683cb57b249f3a6b7ebd14676fad7274ece67d"
+      },
+      "test_only_adjacent_exact_body_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_only_adjacent_exact_body_0",
+        "tag": 2684354572
+      },
+      "test_other_english_kinds_load_0": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "2c959047d609dbbd73b5053ebed59988680dae26e6c6bf5f7af2593bc1f3c6bf"
+      },
+      "test_other_english_kinds_load_0/vocab": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_other_english_kinds_load_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_other_english_kinds_load_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_other_english_kinds_load_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_other_english_kinds_load_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_other_english_kinds_load_0",
+        "tag": 2684354572
+      },
+      "test_palette_routing_and_freez0": {
+        "type": "dir"
+      },
+      "test_palette_routing_and_freez0/plot_profile.json": {
+        "type": "file",
+        "bytes": 1145,
+        "sha256": "9e1feb188c271a15268babdea2df5631d648d76cada1da99271c8a3af25d842b"
+      },
+      "test_palette_routing_and_freezcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_palette_routing_and_freez0",
+        "tag": 2684354572
+      },
+      "test_partial_expansion_conflic0": {
+        "type": "dir"
+      },
+      "test_partial_expansion_conflic0/paper.md": {
+        "type": "file",
+        "bytes": 236,
+        "sha256": "5de8b69935320a0a167a4f3f1c2509464d080f372e1ef1e5ec997fbd924f3dac"
+      },
+      "test_partial_expansion_confliccurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_partial_expansion_conflic0",
+        "tag": 2684354572
+      },
+      "test_pdf_svg_png_rendered_ink_0": {
+        "type": "dir"
+      },
+      "test_pdf_svg_png_rendered_ink_0/drafts": {
+        "type": "dir"
+      },
+      "test_pdf_svg_png_rendered_ink_0/drafts/render.manifest.json": {
+        "type": "file",
+        "bytes": 6264,
+        "sha256": "861baf24586346c61cffb0a2758c195089bb3ea9862caec2663cfd836e42a481"
+      },
+      "test_pdf_svg_png_rendered_ink_0/drafts/render.pdf": {
+        "type": "file",
+        "bytes": 27874,
+        "sha256": "acac18db5f3a32b900b3e81472743babe2b7535f122c85400b674b179c8df667"
+      },
+      "test_pdf_svg_png_rendered_ink_0/drafts/render.png": {
+        "type": "file",
+        "bytes": 146701,
+        "sha256": "8783f3693b9c1fea65b70951ce5ff59a5c964c15a6bc5132356c070bb3425e72"
+      },
+      "test_pdf_svg_png_rendered_ink_0/drafts/render.svg": {
+        "type": "file",
+        "bytes": 43117,
+        "sha256": "92750d70671487a94d7236c21938270faecda3b6641c8e64ee211bd5749b6b68"
+      },
+      "test_pdf_svg_png_rendered_ink_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_pdf_svg_png_rendered_ink_0",
+        "tag": 2684354572
+      },
+      "test_proposal_nonliteral_rule_0": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "5d6477fc2735968bdc374e21c2804f3119b36095b87d638b3815838ece47a34e"
+      },
+      "test_proposal_nonliteral_rule_0/vocab": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_proposal_nonliteral_rule_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_proposal_nonliteral_rule_0",
+        "tag": 2684354572
+      },
+      "test_proposal_rule_is_not_load0": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "5d6477fc2735968bdc374e21c2804f3119b36095b87d638b3815838ece47a34e"
+      },
+      "test_proposal_rule_is_not_load0/vocab": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_proposal_rule_is_not_load0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_proposal_rule_is_not_load0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_proposal_rule_is_not_loadcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_proposal_rule_is_not_load0",
+        "tag": 2684354572
+      },
+      "test_reference_style_markdown_0": {
+        "type": "dir"
+      },
+      "test_reference_style_markdown_0/reference-image.md": {
+        "type": "file",
+        "bytes": 216,
+        "sha256": "7b5e4f2416a7adbb60a8ca54be152fdfd194c982a24cedaaeebf3fece4b64dd0"
+      },
+      "test_reference_style_markdown_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_reference_style_markdown_0",
+        "tag": 2684354572
+      },
+      "test_report_contains_input_and0": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_report_contains_input_and0/vocab": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_report_contains_input_and0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_report_contains_input_and0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_report_contains_input_and0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_report_contains_input_and0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_report_contains_input_and0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_report_contains_input_and0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_report_contains_input_and0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_report_contains_input_and0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_report_contains_input_and0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_report_contains_input_andcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_report_contains_input_and0",
+        "tag": 2684354572
+      },
+      "test_same_line_opaque_math_pre0": {
+        "type": "dir"
+      },
+      "test_same_line_opaque_math_pre0/same-line-math.tex": {
+        "type": "file",
+        "bytes": 139,
+        "sha256": "b8037967389db239e0808631b733e948ca570855f17092613d498b740506dc02"
+      },
+      "test_same_line_opaque_math_precurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_same_line_opaque_math_pre0",
+        "tag": 2684354572
+      },
+      "test_sentence_terminators_befo0": {
+        "type": "dir"
+      },
+      "test_sentence_terminators_befo0/quoted-chain.md": {
+        "type": "file",
+        "bytes": 72,
+        "sha256": "23b6cc511714953709825f4ef85c86f7171c9af656323f2ab88bbf44d4fdb6b3"
+      },
+      "test_sentence_terminators_befo0/quoted-list.md": {
+        "type": "file",
+        "bytes": 54,
+        "sha256": "113cc88ffc440487ebc6ee16ef119560094d22565cb358c4bb0f7f761a2b4c05"
+      },
+      "test_sentence_terminators_befocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_sentence_terminators_befo0",
+        "tag": 2684354572
+      },
+      "test_store_preserves_other_blo0": {
+        "type": "dir"
+      },
+      "test_store_preserves_other_blo0/document.json": {
+        "type": "file",
+        "bytes": 1423,
+        "sha256": "6ff578612f6618341761a9e26fbd258355b966b3d88b10549ea3a7ab0f06adba"
+      },
+      "test_store_preserves_other_blocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_store_preserves_other_blo0",
+        "tag": 2684354572
+      },
+      "test_store_records_writes_with0": {
+        "type": "dir"
+      },
+      "test_store_records_writes_with0/document.json": {
+        "type": "file",
+        "bytes": 427,
+        "sha256": "5b8be9a30006436cf1103dc8b4edb503cbc4a1ed9e90e199f1aaf760621a1069"
+      },
+      "test_store_records_writes_withcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_store_records_writes_with0",
+        "tag": 2684354572
+      },
+      "test_task_rule_overrides_gener0": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/proposal.md": {
+        "type": "file",
+        "bytes": 30,
+        "sha256": "ff68d24549218519fa2c2cda002f3b4630ba6748dce18b918a8b6b53c3ffef0b"
+      },
+      "test_task_rule_overrides_gener0/vocab": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_task_rule_overrides_gener0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_task_rule_overrides_gener0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_task_rule_overrides_genercurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_task_rule_overrides_gener0",
+        "tag": 2684354572
+      },
+      "test_terms_are_not_style_rules0": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/draft.md": {
+        "type": "file",
+        "bytes": 35,
+        "sha256": "a6439b85fc3abfd1a9ea237b4f26aa5a51eff11cb479dee497736a09f6e892ec"
+      },
+      "test_terms_are_not_style_rules0/vocab": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_terms_are_not_style_rules0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_terms_are_not_style_rules0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_terms_are_not_style_rulescurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_terms_are_not_style_rules0",
+        "tag": 2684354572
+      },
+      "test_unbalanced_latex_caption_0": {
+        "type": "dir"
+      },
+      "test_unbalanced_latex_caption_0/paper.tex": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "169da43e87ce1fd1dc070754c9b2365199fe828214c4df7ddc6c29d525309ec9"
+      },
+      "test_unbalanced_latex_caption_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unbalanced_latex_caption_0",
+        "tag": 2684354572
+      },
+      "test_unbound_full_form_is_revi0": {
+        "type": "dir"
+      },
+      "test_unbound_full_form_is_revi0/paper.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "b7f0806e2fbf53950d449437609a2e9072dff12d81b1e15663486c7d2719115e"
+      },
+      "test_unbound_full_form_is_revicurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unbound_full_form_is_revi0",
+        "tag": 2684354572
+      },
+      "test_unbraced_latex_input_is_u0": {
+        "type": "dir"
+      },
+      "test_unbraced_latex_input_is_u0/unbraced-input.tex": {
+        "type": "file",
+        "bytes": 91,
+        "sha256": "af9b0b32a3732f9d76f6871bb7e1b47a58ce6f7ab6c7bf6a03d4277f95e5b4d9"
+      },
+      "test_unbraced_latex_input_is_ucurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unbraced_latex_input_is_u0",
+        "tag": 2684354572
+      },
+      "test_unclosed_latex_lstinline_0": {
+        "type": "dir"
+      },
+      "test_unclosed_latex_lstinline_0/unclosed-lstinline.tex": {
+        "type": "file",
+        "bytes": 132,
+        "sha256": "f2d2fe2e2dc8d51fddd099ca93e92ba1851c63c7d84063b9c69993095d2e2958"
+      },
+      "test_unclosed_latex_lstinline_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unclosed_latex_lstinline_0",
+        "tag": 2684354572
+      },
+      "test_unclosed_standard_latex_e0": {
+        "type": "dir"
+      },
+      "test_unclosed_standard_latex_e0/document.tex": {
+        "type": "file",
+        "bytes": 50,
+        "sha256": "387c47c6837986e2e61fb138d50de883f79d8043ddd7cd684f951f718bec0e49"
+      },
+      "test_unclosed_standard_latex_e0/figure.tex": {
+        "type": "file",
+        "bytes": 48,
+        "sha256": "c4742ab2ccbf73d6785da771f47d52acb7a87395223b19a87c52c7b4caf804e5"
+      },
+      "test_unclosed_standard_latex_e0/itemize.tex": {
+        "type": "file",
+        "bytes": 37,
+        "sha256": "cd421f7525b6e6a94c748cf0127ad46f0e2ca1a75a441cff309c1833986c85eb"
+      },
+      "test_unclosed_standard_latex_ecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unclosed_standard_latex_e0",
+        "tag": 2684354572
+      },
+      "test_units_models_and_title_ca0": {
+        "type": "dir"
+      },
+      "test_units_models_and_title_ca0/tokens.md": {
+        "type": "file",
+        "bytes": 142,
+        "sha256": "b06a2999ad9ae78409262e46b6c58dcea0f8d016c91bedc5264e55ed500d156e"
+      },
+      "test_units_models_and_title_cacurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_units_models_and_title_ca0",
+        "tag": 2684354572
+      },
+      "test_unresolved_latex_calls_do0": {
+        "type": "dir"
+      },
+      "test_unresolved_latex_calls_do0/unresolved.tex": {
+        "type": "file",
+        "bytes": 255,
+        "sha256": "15ae4cc33b3449b96dfff7b22eedfaa9e3cddb669f033231237af5a3c3a41a84"
+      },
+      "test_unresolved_latex_calls_docurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unresolved_latex_calls_do0",
+        "tag": 2684354572
+      },
+      "test_unterminated_latex_captio0": {
+        "type": "dir"
+      },
+      "test_unterminated_latex_captio0/unterminated.tex": {
+        "type": "file",
+        "bytes": 193,
+        "sha256": "d1b0f5aacd0cd02c7f6e9f13654a34ee94559c9c8953d3be6985fa9923fc8aef"
+      },
+      "test_unterminated_latex_captiocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unterminated_latex_captio0",
+        "tag": 2684354572
+      },
+      "test_unterminated_markdown_cap0": {
+        "type": "dir"
+      },
+      "test_unterminated_markdown_cap0/unterminated.md": {
+        "type": "file",
+        "bytes": 159,
+        "sha256": "956848b3046bf8a02fd267ca5790dc579c9617cd58f42597e24df3cd33937750"
+      },
+      "test_unterminated_markdown_capcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_unterminated_markdown_cap0",
+        "tag": 2684354572
+      },
+      "test_visible_non_english_text_0": {
+        "type": "dir"
+      },
+      "test_visible_non_english_text_0/chinese.md": {
+        "type": "file",
+        "bytes": 33,
+        "sha256": "dae9add75295c38fb00e7e108e6528367e9e650b13b17d96fb50fc0a42c2f7a4"
+      },
+      "test_visible_non_english_text_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingFamily一致性修正\\pytest-current\\test_visible_non_english_text_0",
+        "tag": 2684354572
+      }
+    }
+  },
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 201,
+        "sha256": "52043181d95d98375a407f51191648ab0aa50d0bcc8ccb93d42539214860c62d"
+      },
+      "test_declared_loaded_ref_alonecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final\\test_declared_loaded_ref_alone0",
+        "tag": 2684354572
+      },
+      "test_evidence_requires_a_match0": {
+        "type": "dir"
+      },
+      "test_evidence_requires_a_match0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 374,
+        "sha256": "5bb5e70d2a65c148d87079d7af1821b877981bff25d355e16a3afd76603ac7fb"
+      },
+      "test_evidence_requires_a_matchcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final\\test_evidence_requires_a_match0",
+        "tag": 2684354572
+      },
+      "test_failed_store_write_does_n0": {
+        "type": "dir"
+      },
+      "test_failed_store_write_does_n0/document.json": {
+        "type": "file",
+        "bytes": 1153,
+        "sha256": "c091cb97e3dc4246d3a290ec8d3bedb4dcc7d6cba50240cec4f468706d85b7b3"
+      },
+      "test_failed_store_write_does_ncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final\\test_failed_store_write_does_n0",
+        "tag": 2684354572
+      },
+      "test_store_preserves_other_blo0": {
+        "type": "dir"
+      },
+      "test_store_preserves_other_blo0/document.json": {
+        "type": "file",
+        "bytes": 1423,
+        "sha256": "6ff578612f6618341761a9e26fbd258355b966b3d88b10549ea3a7ab0f06adba"
+      },
+      "test_store_preserves_other_blocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final\\test_store_preserves_other_blo0",
+        "tag": 2684354572
+      },
+      "test_store_records_writes_with0": {
+        "type": "dir"
+      },
+      "test_store_records_writes_with0/document.json": {
+        "type": "file",
+        "bytes": 427,
+        "sha256": "5b8be9a30006436cf1103dc8b4edb503cbc4a1ed9e90e199f1aaf760621a1069"
+      },
+      "test_store_records_writes_withcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-final\\test_store_records_writes_with0",
+        "tag": 2684354572
+      }
+    }
+  },
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0": {
+        "type": "dir"
+      },
+      "test_declared_loaded_ref_alone0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 201,
+        "sha256": "52043181d95d98375a407f51191648ab0aa50d0bcc8ccb93d42539214860c62d"
+      },
+      "test_declared_loaded_ref_alonecurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp\\test_declared_loaded_ref_alone0",
+        "tag": 2684354572
+      },
+      "test_evidence_requires_a_match0": {
+        "type": "dir"
+      },
+      "test_evidence_requires_a_match0/rollout.jsonl": {
+        "type": "file",
+        "bytes": 374,
+        "sha256": "5bb5e70d2a65c148d87079d7af1821b877981bff25d355e16a3afd76603ac7fb"
+      },
+      "test_evidence_requires_a_matchcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp\\test_evidence_requires_a_match0",
+        "tag": 2684354572
+      },
+      "test_failed_store_write_does_n0": {
+        "type": "dir"
+      },
+      "test_failed_store_write_does_n0/document.json": {
+        "type": "file",
+        "bytes": 1153,
+        "sha256": "c091cb97e3dc4246d3a290ec8d3bedb4dcc7d6cba50240cec4f468706d85b7b3"
+      },
+      "test_failed_store_write_does_ncurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp\\test_failed_store_write_does_n0",
+        "tag": 2684354572
+      },
+      "test_store_preserves_other_blo0": {
+        "type": "dir"
+      },
+      "test_store_preserves_other_blo0/document.json": {
+        "type": "file",
+        "bytes": 1423,
+        "sha256": "6ff578612f6618341761a9e26fbd258355b966b3d88b10549ea3a7ab0f06adba"
+      },
+      "test_store_preserves_other_blocurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp\\test_store_preserves_other_blo0",
+        "tag": 2684354572
+      },
+      "test_store_records_writes_with0": {
+        "type": "dir"
+      },
+      "test_store_records_writes_with0/document.json": {
+        "type": "file",
+        "bytes": 427,
+        "sha256": "5b8be9a30006436cf1103dc8b4edb503cbc4a1ed9e90e199f1aaf760621a1069"
+      },
+      "test_store_records_writes_withcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WritingRouter入口精简\\pytest-temp\\test_store_records_writes_with0",
+        "tag": 2684354572
+      }
+    }
+  },
+  {
+    "original": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp",
+    "staging": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp_回收准备",
+    "inventory": {
+      "": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/clean.md": {
+        "type": "file",
+        "bytes": 27,
+        "sha256": "66ca65e2004626f4f958290cac3866c86244f508f47a3dac9d6e4c589ad94d7e"
+      },
+      "test_cli_status_and_exit_codes0/review.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_cli_status_and_exit_codes0/vocab": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_cli_status_and_exit_codes0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_cli_status_and_exit_codes0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_cli_status_and_exit_codes0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_cli_status_and_exit_codes0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_cli_status_and_exit_codescurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_cli_status_and_exit_codes0",
+        "tag": 2684354572
+      },
+      "test_complete_language_and_doc0": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_complete_language_and_doc0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_complete_language_and_doc0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_complete_language_and_doc0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_complete_language_and_doc0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_complete_language_and_doc0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_complete_language_and_doc0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_complete_language_and_doc0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_complete_language_and_doc0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_complete_language_and_doc0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_complete_language_and_doc0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_complete_language_and_doccurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_complete_language_and_doc0",
+        "tag": 2684354572
+      },
+      "test_english_paper_loads_gener0": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/draft.md": {
+        "type": "file",
+        "bytes": 44,
+        "sha256": "0988882f753c1da39b6ed8be750d6dc48e57989294d736740d16d1786194c597"
+      },
+      "test_english_paper_loads_gener0/vocab": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_english_paper_loads_gener0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_english_paper_loads_gener0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_english_paper_loads_gener0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_english_paper_loads_gener0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_english_paper_loads_gener0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_english_paper_loads_genercurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_english_paper_loads_gener0",
+        "tag": 2684354572
+      },
+      "test_exception_text_is_always_0": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "a6cc552787e2234ade251cca6f3a663e214e738d5dd3ffa6c466ecc2e4686a1b"
+      },
+      "test_exception_text_is_always_0/vocab": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_exception_text_is_always_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_exception_text_is_always_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_exception_text_is_always_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_exception_text_is_always_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_exception_text_is_always_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_exception_text_is_always_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_exception_text_is_always_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_exception_text_is_always_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_exception_text_is_always_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_exception_text_is_always_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_exception_text_is_always_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_exception_text_is_always_0",
+        "tag": 2684354572
+      },
+      "test_full_vocab_validation_che0": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_full_vocab_validation_che0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_full_vocab_validation_che0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_full_vocab_validation_che0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_full_vocab_validation_che0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_full_vocab_validation_che0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_full_vocab_validation_checurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_full_vocab_validation_che0",
+        "tag": 2684354572
+      },
+      "test_full_vocab_validation_rej0": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_full_vocab_validation_rej0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_full_vocab_validation_rej0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_full_vocab_validation_rej0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 362,
+        "sha256": "6167b63efd0d2d1848c5c31da9917d51ad6b9423f5fa6eb17cb07109ff5fad08"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_full_vocab_validation_rej0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_full_vocab_validation_rejcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_full_vocab_validation_rej0",
+        "tag": 2684354572
+      },
+      "test_malformed_style_table_ret0": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/draft.md": {
+        "type": "file",
+        "bytes": 11,
+        "sha256": "92e0a996bcb799ea79e1d0842d81abe8c12fe5e0b36270052869e7668d7fc46d"
+      },
+      "test_malformed_style_table_ret0/vocab": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_malformed_style_table_ret0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_malformed_style_table_ret0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_malformed_style_table_ret0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_malformed_style_table_ret0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_malformed_style_table_ret0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 61,
+        "sha256": "bcbff1ce2b17003ff14b3b09653686214e0c2a46e25a4f925b0c28f1bcfe86fe"
+      },
+      "test_malformed_style_table_retcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_malformed_style_table_ret0",
+        "tag": 2684354572
+      },
+      "test_markdown_output_contains_0": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_markdown_output_contains_0/vocab": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_markdown_output_contains_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_markdown_output_contains_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_markdown_output_contains_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_markdown_output_contains_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_markdown_output_contains_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_markdown_output_contains_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_markdown_output_contains_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_markdown_output_contains_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_markdown_output_contains_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_markdown_output_contains_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_markdown_output_contains_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_markdown_output_contains_0",
+        "tag": 2684354572
+      },
+      "test_masking_skips_code_urls_p0": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/draft.md": {
+        "type": "file",
+        "bytes": 242,
+        "sha256": "0ac90c8ebd2eb6e14950bf15b6a892523007956f5588f23f246b652d831d8993"
+      },
+      "test_masking_skips_code_urls_p0/vocab": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_masking_skips_code_urls_p0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_masking_skips_code_urls_p0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_masking_skips_code_urls_p0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_masking_skips_code_urls_p0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_masking_skips_code_urls_pcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_masking_skips_code_urls_p0",
+        "tag": 2684354572
+      },
+      "test_other_english_kinds_load_0": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "2c959047d609dbbd73b5053ebed59988680dae26e6c6bf5f7af2593bc1f3c6bf"
+      },
+      "test_other_english_kinds_load_0/vocab": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_other_english_kinds_load_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_other_english_kinds_load_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_other_english_kinds_load_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_other_english_kinds_load_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_other_english_kinds_load_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_other_english_kinds_load_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_other_english_kinds_load_0",
+        "tag": 2684354572
+      },
+      "test_proposal_nonliteral_rule_0": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "5d6477fc2735968bdc374e21c2804f3119b36095b87d638b3815838ece47a34e"
+      },
+      "test_proposal_nonliteral_rule_0/vocab": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_proposal_nonliteral_rule_0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_proposal_nonliteral_rule_current": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_proposal_nonliteral_rule_0",
+        "tag": 2684354572
+      },
+      "test_proposal_rule_is_not_load0": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/draft.md": {
+        "type": "file",
+        "bytes": 45,
+        "sha256": "5d6477fc2735968bdc374e21c2804f3119b36095b87d638b3815838ece47a34e"
+      },
+      "test_proposal_rule_is_not_load0/vocab": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_proposal_rule_is_not_load0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_proposal_rule_is_not_load0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_proposal_rule_is_not_load0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_proposal_rule_is_not_load0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_proposal_rule_is_not_loadcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_proposal_rule_is_not_load0",
+        "tag": 2684354572
+      },
+      "test_report_contains_input_and0": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/draft.md": {
+        "type": "file",
+        "bytes": 32,
+        "sha256": "e84fbd4f8387687e384efe00d59335ae70a695cb42800ce2f42415c85943d7f9"
+      },
+      "test_report_contains_input_and0/vocab": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_report_contains_input_and0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_report_contains_input_and0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_report_contains_input_and0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_report_contains_input_and0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_report_contains_input_and0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_report_contains_input_and0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_report_contains_input_and0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_report_contains_input_and0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_report_contains_input_and0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_report_contains_input_and0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_report_contains_input_andcurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_report_contains_input_and0",
+        "tag": 2684354572
+      },
+      "test_task_rule_overrides_gener0": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/proposal.md": {
+        "type": "file",
+        "bytes": 30,
+        "sha256": "ff68d24549218519fa2c2cda002f3b4630ba6748dce18b918a8b6b53c3ffef0b"
+      },
+      "test_task_rule_overrides_gener0/vocab": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_task_rule_overrides_gener0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_task_rule_overrides_gener0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_task_rule_overrides_gener0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_task_rule_overrides_gener0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_task_rule_overrides_genercurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_task_rule_overrides_gener0",
+        "tag": 2684354572
+      },
+      "test_terms_are_not_style_rules0": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/draft.md": {
+        "type": "file",
+        "bytes": 35,
+        "sha256": "a6439b85fc3abfd1a9ea237b4f26aa5a51eff11cb479dee497736a09f6e892ec"
+      },
+      "test_terms_are_not_style_rules0/vocab": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/审稿回复.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "33f4ca52e8816520b9664f73dd97d59be21c5b8ce3480e36f5af894a8f46f505"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/申报书.md": {
+        "type": "file",
+        "bytes": 205,
+        "sha256": "0212841027247e6ba3c0f8699635ab280976f852afcc36218cb50e8228cbd1f3"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/论文.md": {
+        "type": "file",
+        "bytes": 63,
+        "sha256": "8900fd612c514709dd9f9564c7322dc16e996ddc741af1a6eb4bab42d1930e00"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/调研报告.md": {
+        "type": "file",
+        "bytes": 69,
+        "sha256": "c698c189a428c7ee67db7224c1cdba7913be84a4d0a2034d5dc5e546660e91fe"
+      },
+      "test_terms_are_not_style_rules0/vocab/中文/通用.md": {
+        "type": "file",
+        "bytes": 102,
+        "sha256": "a208441e4ec3216cfb12fa8dccb942c8935c0c4718ba09c142157348e8a89b4e"
+      },
+      "test_terms_are_not_style_rules0/vocab/术语.md": {
+        "type": "file",
+        "bytes": 83,
+        "sha256": "936a51d8c788b328cc20169b1e1d2e626904dd47af68265750d44de8966f2b74"
+      },
+      "test_terms_are_not_style_rules0/vocab/维护.md": {
+        "type": "file",
+        "bytes": 326,
+        "sha256": "09cb505b8117aa9f8c2715fb80c34d6293646f31505447dde5f49eb8f3901473"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文": {
+        "type": "dir"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/审稿回复.md": {
+        "type": "file",
+        "bytes": 70,
+        "sha256": "9c747b63f6bb2dd686cd7d75d9822cad93bd89557551e2de1dbd9ce6715e19f1"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/论文.md": {
+        "type": "file",
+        "bytes": 136,
+        "sha256": "7d062ebc9745b6a5e7ee4e11713083ec47020d8ecd1139423c015ff8c3381406"
+      },
+      "test_terms_are_not_style_rules0/vocab/英文/通用.md": {
+        "type": "file",
+        "bytes": 128,
+        "sha256": "fe2a6382d9b86e8ae8be91d15acf00927356e108ee81ce239afe56378929f4ba"
+      },
+      "test_terms_are_not_style_rulescurrent": {
+        "type": "link",
+        "target": "\\\\?\\D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\StyleVocab收录范围\\pytest-temp\\test_terms_are_not_style_rules0",
+        "tag": 2684354572
+      }
+    }
+  }
+]

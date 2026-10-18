@@ -1,0 +1,91 @@
+{
+  "historical_preserved": true,
+  "run_receipts_match": true,
+  "image_hashes_and_dimensions_match": true,
+  "visual_review_evidence": {
+    "reviewer": "primary agent visual inspection",
+    "status": "PASS",
+    "notes": "Eight final smoke images inspected at their native sizes. GUI labels, controls and plots are readable; TX parameter pane scrolls at compact sizes. No cropped outer canvas or stretched clamped window. Synthetic/mock only.",
+    "files": [
+      {
+        "file": "isolated_workbench/analysis/template_20260911_144352_355/RX_1440x810.png",
+        "pixels": [
+          1440,
+          810
+        ],
+        "sha256": "9b8726304c322be4ad995cc1926bddac8318e88bd44aca0cff247bcf799d6788",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_20260911_144352_355/RX_1920x1080.png",
+        "pixels": [
+          1920,
+          1080
+        ],
+        "sha256": "65289e0b770a7a89e195139785eb6ec288ef83b2dd494e886ead42063b4bd50f",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_20260911_144352_355/TX_1440x810.png",
+        "pixels": [
+          1440,
+          810
+        ],
+        "sha256": "9afd5b9c2437145a706f9735061fb5bf5c8e7d14cc3ddeae898784ef67d3dc8d",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_20260911_144352_355/TX_1920x1080.png",
+        "pixels": [
+          1920,
+          1080
+        ],
+        "sha256": "fc27c340b3ef101a1a6ad18cf5082dd26020588c4196df5985a6233371486a0b",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/RX_GUI_1100x700.png",
+        "pixels": [
+          1100,
+          700
+        ],
+        "sha256": "a5f3570eff04587592b140aeb74f6b8b89e4d959d08e591eb663130827853b79",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/RX_GUI_1500x900.png",
+        "pixels": [
+          1500,
+          900
+        ],
+        "sha256": "adbe2cc5aae7911f81f18ef431465dac419a143d8a7f888873b2a34decd75e5a",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/TX_GUI_1100x700.png",
+        "pixels": [
+          1100,
+          700
+        ],
+        "sha256": "10af2cbfaee253c0610f49257f4b816141c8be3dcdf4209ccbbd11704283b8ad",
+        "visual_review": "PASS"
+      },
+      {
+        "file": "isolated_workbench/analysis/template_gui_20260911_144426_041/TX_GUI_1500x900.png",
+        "pixels": [
+          1500,
+          900
+        ],
+        "sha256": "4469e37fc466989ac2708b582b8cd108419eb1507572a853fbc5a20e0b62d1cb",
+        "visual_review": "PASS"
+      }
+    ]
+  },
+  "quick_validate": {
+    "standardize-test-project": 0,
+    "tx-rx-workbench-template": 0
+  },
+  "missing_links": [],
+  "standardize_candidate_deltas_match": true,
+  "existing_evals_preserved": true
+}

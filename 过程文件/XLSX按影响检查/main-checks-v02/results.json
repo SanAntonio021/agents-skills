@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "numeric_change": {
+    "A_sum": 45,
+    "total": 105
+  },
+  "format_no_recalc_preserved": true,
+  "no_formula_no_recalc": true,
+  "missing_cache_rejected": true,
+  "protected_fixtures_unchanged": true,
+  "pdfs_rendered": 2,
+  "visual_inspection": "pending"
+}

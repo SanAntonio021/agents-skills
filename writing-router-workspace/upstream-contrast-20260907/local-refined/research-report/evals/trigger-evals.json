@@ -1,0 +1,86 @@
+[
+  {
+    "query": "我做完一轮产业调研，资料和来源表都在项目目录里。请整理成给领导看的研究报告，别再套市场概览、趋势展望那套固定模板。",
+    "should_trigger": true
+  },
+  {
+    "query": "这份行业研究 Word 改了二十多版，摘要全在解释名词，事实和建议也混在一起。请重新组织内容，原文件保留不动。",
+    "should_trigger": true
+  },
+  {
+    "query": "根据 evidence.xlsx 和 source-notes.md 写一份国内卫星终端调研报告，没有证据的市场规模不要估。",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我审查这份技术调研报告为什么读起来像 AI 写的。先区分结构、证据和语言问题，不要只替换几个词。",
+    "should_trigger": true
+  },
+  {
+    "query": "这份调研报告把名词解释塞进摘要和发现段，还总写不是没有、在一定程度上。请按正式报告重构。",
+    "should_trigger": true
+  },
+  {
+    "query": "把现有竞品清单改成一份能支持产品立项判断的报告，参数事实、我们的判断和开发建议要分开。",
+    "should_trigger": true
+  },
+  {
+    "query": "我要写政策调研简报，读者最关心目前已经生效什么、还有什么没确定，以及这对项目时间表有什么影响。",
+    "should_trigger": true
+  },
+  {
+    "query": "给这份市场研究重新搭结构，术语只解释一次，摘要直接写发现和限制，引用不要丢。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们有任务池、设计单和两份产品表，现在要把阶段调研变成正式中文报告，Markdown 先定稿再导出 Word。",
+    "should_trigger": true
+  },
+  {
+    "query": "这份报告把技术科普、企业产品、合规说明和工程方案交替写在一起。请做内容重构，不是简单润色。",
+    "should_trigger": true
+  },
+  {
+    "query": "只读评估 report.md：哪些段落混合了定义、公开事实、作者推断和建议？给出重组方向和证据缺口。",
+    "should_trigger": true
+  },
+  {
+    "query": "查一下 2026 年国内固定卫星宽带有多少用户，只告诉我目前能核实的数字和来源。",
+    "should_trigger": false
+  },
+  {
+    "query": "这个长期调研项目还没开始，请先建任务池和设计单，做三个厂商的 sample-first 取样，等我确认后再扩展。",
+    "should_trigger": false
+  },
+  {
+    "query": "总结这篇 IEEE 论文的研究问题、实验系统、关键指标和局限，做成中文论文卡片。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这份已经定稿的 Markdown 原样排版成 Word，内容一个字都不要改，只处理样式、目录和页码。",
+    "should_trigger": false
+  },
+  {
+    "query": "根据会议逐字稿整理讨论纪要，保留不同意见，不要自动生成任务。",
+    "should_trigger": false
+  },
+  {
+    "query": "审查这个实验设计是否能支持论文结论，重点看样本、对照组、统计方法和偏倚。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这段英文论文结果改得更符合 IEEE T-MTT 的学术表达，技术含义和数字不变。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写四川省科技项目申报书的研究内容、考核指标和实施计划。",
+    "should_trigger": false
+  },
+  {
+    "query": "从 GitHub 找几个做深度研究的 agent skill，比较许可证、Star 和安装方式。",
+    "should_trigger": false
+  },
+  {
+    "query": "把三份厂商规格 PDF 的参数提取到 Excel，保留原始单位和来源页码，不需要写报告。",
+    "should_trigger": false
+  }
+]

@@ -1,0 +1,106 @@
+{
+  ".gitignore": {
+    "exists": true,
+    "sha256": "4245844940473204c4aeac40812f3027a91a07955dd840a4dfa1e2dd54c6a641"
+  },
+  "README.md": {
+    "exists": true,
+    "sha256": "1f2933678494855de88a8f759a84e4ff6757ed63804b2cfd797d45fdafc2eee5"
+  },
+  "agent-rules/SKILL.md": {
+    "exists": true,
+    "sha256": "e330d4493fb5259ceebcd842d3bee1f589286ef58002b19c922d76be21b431df"
+  },
+  "agent-rules/references/skill-upstream-maintenance.md": {
+    "exists": true,
+    "sha256": "aae45b933906186205666c64d21fe8c0e750748eb98d5455ded2daa680eaece4"
+  },
+  "chat-notes/SKILL.md": {
+    "exists": true,
+    "sha256": "f17cd9987f2931d432366b0c1c7b30a0c5c2513774eb69cf5c1d0c28ff2c1ea9"
+  },
+  "chat-notes/evals/evals.json": {
+    "exists": true,
+    "sha256": "272f2ec4d84e210c3ad6bd330f65a668f4b6098c07ae675694225300f4da83e0"
+  },
+  "ieee-manuscript-edit/SKILL.md": {
+    "exists": true,
+    "sha256": "33f7c30f9969d0345a39eddbec198a7cb47ca70b96d8b35a4d3d0fef99c6b3a7"
+  },
+  "ieee-manuscript-edit/references/ieee-official-template-cache.md": {
+    "exists": true,
+    "sha256": "581d69f75a308964c2999af214f1e08c78487a53ef5b32b8a19d87c299f104c0"
+  },
+  "lab-notebook/assets/labbook-template.md": {
+    "exists": true,
+    "sha256": "48b6c84faffcf50f63b612549c6094ef13173a07354c21197a543b2bb9b77f32"
+  },
+  "meeting-notes/SKILL.md": {
+    "exists": true,
+    "sha256": "b652add3b5e3beaf40b51f1ec9a45f94cdb194b260f165d108556165f74bab12"
+  },
+  "project-organizer/SKILL.md": {
+    "exists": true,
+    "sha256": "c4440dcb34a307f3a18dd1561aefd22e718cb221c083af5e0c7fa9c799ff7fab"
+  },
+  "project-writing/SKILL.md": {
+    "exists": true,
+    "sha256": "5983e9a230ad283ce6376a835745bf82ecc838f8651e9bb7d2aa8369b5fa1fdf"
+  },
+  "research-report/SKILL.md": {
+    "exists": true,
+    "sha256": "379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586"
+  },
+  "research-report/references/decision-report.md": {
+    "exists": true,
+    "sha256": "0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2"
+  },
+  "research-report/references/modes.md": {
+    "exists": true,
+    "sha256": "15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34"
+  },
+  "research-report/references/report-contract.md": {
+    "exists": true,
+    "sha256": "d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc"
+  },
+  "research-report/scripts/audit_report.py": {
+    "exists": true,
+    "sha256": "0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde"
+  },
+  "research-report/tests/test_audit_report.py": {
+    "exists": true,
+    "sha256": "97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd"
+  },
+  "skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": {
+    "exists": false,
+    "sha256": null
+  },
+  "skill-check-workspace/verification-runtime/weekly/2026-04-26.md": {
+    "exists": false,
+    "sha256": null
+  },
+  "skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": {
+    "exists": false,
+    "sha256": null
+  },
+  "skill-check-workspace/verification-source/weekly/2026-04-26.md": {
+    "exists": false,
+    "sha256": null
+  },
+  "style-vocab/SKILL.md": {
+    "exists": true,
+    "sha256": "72bbaf28947a9b237a5052295ee27e83b23ea3ade09ecabe0911d00bc2aa733e"
+  },
+  "web-access/SKILL.md": {
+    "exists": true,
+    "sha256": "322f1068962de19eb561b65c2e7168226290a7cb52a846ee3d11967eaca45ac0"
+  },
+  "web-access/references/cdp-api.md": {
+    "exists": true,
+    "sha256": "938fec377ec02049f37d5c37c151d30dfcf0a49601453d4242962a0370b5df15"
+  },
+  "paper-download/references/publisher-download-playbook.md": {
+    "exists": true,
+    "sha256": "01aa617802a3b3deb8e99aa81eb3d715b06efdbe683d25b7d195dc8e398d10dc"
+  }
+}

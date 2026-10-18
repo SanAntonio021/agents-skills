@@ -1,0 +1,62 @@
+[
+  {
+    "group": 1,
+    "host": "codex",
+    "case": "unnecessary-defense-project",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\unnecessary-defense-project\\20260907-160519"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\unnecessary-defense-project\\20260907-145100"
+      }
+    }
+  },
+  {
+    "group": 2,
+    "host": "codex",
+    "case": "necessary-negation-paper",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\candidate\\necessary-negation-paper\\20260907-160951"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\codex\\baseline\\necessary-negation-paper\\20260907-145810"
+      }
+    }
+  },
+  {
+    "group": 3,
+    "host": "claude",
+    "case": "unnecessary-defense-project",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\candidate\\unnecessary-defense-project\\20260907-163926"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\baseline\\unnecessary-defense-project\\20260907-163729"
+      }
+    }
+  },
+  {
+    "group": 4,
+    "host": "claude",
+    "case": "necessary-negation-paper",
+    "versions": {
+      "A": {
+        "version": "candidate",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\candidate\\necessary-negation-paper\\20260907-164206"
+      },
+      "B": {
+        "version": "baseline",
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\paragraph-quality-20260907\\runs\\claude\\baseline\\necessary-negation-paper\\20260907-164054"
+      }
+    }
+  }
+]

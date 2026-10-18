@@ -1,0 +1,2239 @@
+{
+  "download__existing_pdf_notes_collections": {
+    "initial": {
+      "/case": {
+        "name": "download__existing_pdf_notes_collections",
+        "facts": "父条目已有 PDF；另有笔记、PDF 批注和两个分类。自动下载设置为 true。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__existing_pdf_notes_collections",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "contextCreatedAt": "2026-10-08T13:49:57.654Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__existing_pdf_notes_collections",
+        "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+        "contextCreatedAt": "2026-10-08T13:49:57.654Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [
+        {
+          "id": 1,
+          "key": "FX000001",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20,
+            21
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z"
+        },
+        {
+          "id": 2,
+          "key": "FX000002",
+          "libraryID": 1,
+          "itemType": "attachment",
+          "fields": {
+            "title": "Simulated target PDF"
+          },
+          "creators": [],
+          "collections": [],
+          "parentID": 1,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z",
+          "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__existing_pdf_notes_collections\\storage\\2\\simulated_target.pdf",
+          "attachmentContentType": "application/pdf",
+          "attachmentLinkMode": 0,
+          "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+          "sizeBytes": 863
+        },
+        {
+          "id": 3,
+          "key": "FX000003",
+          "libraryID": 1,
+          "itemType": "note",
+          "fields": {
+            "title": "Existing fixture reading note"
+          },
+          "creators": [],
+          "collections": [],
+          "parentID": 1,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z",
+          "note": "<p>Existing fixture note: preserve the recorded observation.</p>"
+        },
+        {
+          "id": 4,
+          "key": "FX000004",
+          "libraryID": 1,
+          "itemType": "annotation",
+          "fields": {},
+          "creators": [],
+          "collections": [],
+          "parentID": 2,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z",
+          "annotationType": "highlight",
+          "annotationText": "This one-page PDF is an isolated Zotero test input.",
+          "annotationComment": "Existing fixture annotation",
+          "annotationColor": "#ffd400",
+          "annotationPageLabel": "1",
+          "annotationSortIndex": "00000|000001|00000",
+          "annotationPosition": "{\"pageIndex\":0,\"rects\":[[48,680,300,695]]}"
+        }
+      ],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.384Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "fixture.seed",
+          "facts": "父条目已有 PDF；另有笔记、PDF 批注和两个分类。自动下载设置为 true。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.655Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.660Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.663Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.666Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.669Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.670Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.read.items",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "time": "2026-10-08T13:49:57.672Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.674Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.677Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__existing_pdf_notes_collections",
+          "action": "http.request",
+          "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+          "method": "GET",
+          "path": "/cases/download__existing_pdf_notes_collections/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "130829a2-eaa6-4ea6-a525-e9749a894ded",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "fb3317db-f123-429d-8ee9-df983ada45a9",
+      "startedAt": "2026-10-08T13:49:57.690Z",
+      "finishedAt": "2026-10-08T13:49:57.693Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__local_pdf_auto_on": {
+    "initial": {
+      "/case": {
+        "name": "download__local_pdf_auto_on",
+        "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 true。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__local_pdf_auto_on",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "contextCreatedAt": "2026-10-08T13:49:57.696Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__local_pdf_auto_on",
+        "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+        "contextCreatedAt": "2026-10-08T13:49:57.696Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.386Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__local_pdf_auto_on",
+          "action": "fixture.seed",
+          "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 true。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.697Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.724Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.727Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.730Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.754Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.755Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.read.items",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": []
+        },
+        {
+          "time": "2026-10-08T13:49:57.759Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.785Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.789Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_on",
+          "action": "http.request",
+          "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_on/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "53ad564a-f9ec-4ca9-8ac6-231883a42bf8",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "d5429eb5-39fd-4fee-ba78-357630f91269",
+      "startedAt": "2026-10-08T13:49:57.795Z",
+      "finishedAt": "2026-10-08T13:49:57.797Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__local_pdf_auto_off": {
+    "initial": {
+      "/case": {
+        "name": "download__local_pdf_auto_off",
+        "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 false。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__local_pdf_auto_off",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "contextCreatedAt": "2026-10-08T13:48:33.474Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__local_pdf_auto_off",
+        "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+        "contextCreatedAt": "2026-10-08T13:48:33.474Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": false
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.388Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__local_pdf_auto_off",
+          "action": "fixture.seed",
+          "facts": "inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 false。",
+          "initialAutomatic": false,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:48:33.476Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.801Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.806Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.831Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.846Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.850Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.850Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.read.items",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": []
+        },
+        {
+          "time": "2026-10-08T13:49:57.854Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.856Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.858Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__local_pdf_auto_off",
+          "action": "http.request",
+          "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+          "method": "GET",
+          "path": "/cases/download__local_pdf_auto_off/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "c324def0-deda-4db9-8e50-ae247e8af2c2",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "cdd0dd11-0a6e-4dcf-b31e-286324fcbb9a",
+      "startedAt": "2026-10-08T13:49:57.865Z",
+      "finishedAt": "2026-10-08T13:49:57.868Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": false,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__doi_generic_search_empty_title": {
+    "initial": {
+      "/case": {
+        "name": "download__doi_generic_search_empty_title",
+        "facts": "父条目保留正确题名、DOI 和 PDF；此案例的 DOI 通用搜索为空，题名可命中。DOI 精确查询仍正常。案例 ID 沿用历史名称。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__doi_generic_search_empty_title",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "contextCreatedAt": "2026-10-08T13:49:57.872Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": false,
+          "excludeDOIFromGenericSearch": true
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__doi_generic_search_empty_title",
+        "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+        "contextCreatedAt": "2026-10-08T13:49:57.872Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [
+        {
+          "id": 1,
+          "key": "FX000001",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20,
+            21
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z"
+        },
+        {
+          "id": 2,
+          "key": "FX000002",
+          "libraryID": 1,
+          "itemType": "attachment",
+          "fields": {
+            "title": "Simulated target PDF"
+          },
+          "creators": [],
+          "collections": [],
+          "parentID": 1,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z",
+          "attachmentPath": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\cases\\download__doi_generic_search_empty_title\\storage\\2\\simulated_target.pdf",
+          "attachmentContentType": "application/pdf",
+          "attachmentLinkMode": 0,
+          "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+          "sizeBytes": 863
+        }
+      ],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.391Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "fixture.seed",
+          "facts": "父条目保留正确题名、DOI 和 PDF；此案例的 DOI 通用搜索为空，题名可命中。DOI 精确查询仍正常。案例 ID 沿用历史名称。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.872Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.875Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.877Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.879Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.881Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.882Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.read.items",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": [
+            1,
+            2
+          ]
+        },
+        {
+          "time": "2026-10-08T13:49:57.884Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.886Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.888Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__doi_generic_search_empty_title",
+          "action": "http.request",
+          "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+          "method": "GET",
+          "path": "/cases/download__doi_generic_search_empty_title/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "8c909784-045a-462d-b0c4-2ecd4ac731fa",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "49c54c1b-1871-41f0-98e5-5f2f66315716",
+      "startedAt": "2026-10-08T13:49:57.896Z",
+      "finishedAt": "2026-10-08T13:49:57.898Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__timeout_continues": {
+    "initial": {
+      "/case": {
+        "name": "download__timeout_continues",
+        "facts": "资料库无目标父条目。每次 saveTx 在提交前延迟 1400 ms；客户端断开不取消 JS。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__timeout_continues",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "contextCreatedAt": "2026-10-08T13:49:57.901Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 1400,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__timeout_continues",
+        "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+        "contextCreatedAt": "2026-10-08T13:49:57.901Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.393Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__timeout_continues",
+          "action": "fixture.seed",
+          "facts": "资料库无目标父条目。每次 saveTx 在提交前延迟 1400 ms；客户端断开不取消 JS。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.902Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.905Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.908Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.911Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.913Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.913Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.read.items",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": []
+        },
+        {
+          "time": "2026-10-08T13:49:57.915Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.917Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.919Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__timeout_continues",
+          "action": "http.request",
+          "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+          "method": "GET",
+          "path": "/cases/download__timeout_continues/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "1e83a1b0-466c-4e17-8827-49cf6c495795",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "26275782-89af-42d0-a6ee-aa8fbfb829de",
+      "startedAt": "2026-10-08T13:49:57.926Z",
+      "finishedAt": "2026-10-08T13:49:57.928Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__first_attachment_failure": {
+    "initial": {
+      "/case": {
+        "name": "download__first_attachment_failure",
+        "facts": "资料库无目标父条目；下一次 importFromFile 抛出一次模拟异常，随后导入可执行。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__first_attachment_failure",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "contextCreatedAt": "2026-10-08T13:49:57.931Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": true
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__first_attachment_failure",
+        "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+        "contextCreatedAt": "2026-10-08T13:49:57.931Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.395Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__first_attachment_failure",
+          "action": "fixture.seed",
+          "facts": "资料库无目标父条目；下一次 importFromFile 抛出一次模拟异常，随后导入可执行。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.931Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.934Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.950Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.953Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.955Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.955Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.read.items",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": []
+        },
+        {
+          "time": "2026-10-08T13:49:57.957Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.959Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.961Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__first_attachment_failure",
+          "action": "http.request",
+          "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+          "method": "GET",
+          "path": "/cases/download__first_attachment_failure/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "d7c01b87-e13d-42f9-9017-0ccf4bc5c43a",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "1fb0994b-67c8-4903-b765-d00d5cd4eca5",
+      "startedAt": "2026-10-08T13:49:57.967Z",
+      "finishedAt": "2026-10-08T13:49:57.969Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__manual_setting_change": {
+    "initial": {
+      "/case": {
+        "name": "download__manual_setting_change",
+        "facts": "资料库无目标父条目；saveTx 在提交前延迟 1400 ms。用户设置注入接口可独立调用。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__manual_setting_change",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "contextCreatedAt": "2026-10-08T13:49:57.972Z",
+          "restartCount": 0,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 1400,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__manual_setting_change",
+        "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+        "contextCreatedAt": "2026-10-08T13:49:57.972Z",
+        "restartCount": 0,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": true
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.396Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__manual_setting_change",
+          "action": "fixture.seed",
+          "facts": "资料库无目标父条目；saveTx 在提交前延迟 1400 ms。用户设置注入接口可独立调用。",
+          "initialAutomatic": true,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:49:57.973Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.976Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.979Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.982Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.983Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.984Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.read.items",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": []
+        },
+        {
+          "time": "2026-10-08T13:49:57.985Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.987Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:57.989Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__manual_setting_change",
+          "action": "http.request",
+          "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+          "method": "GET",
+          "path": "/cases/download__manual_setting_change/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "81e2da3f-41cf-4220-8ae4-b4b3f4c7de22",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "c09ad729-fb27-4120-b497-aae832f246af",
+      "startedAt": "2026-10-08T13:49:58.011Z",
+      "finishedAt": "2026-10-08T13:49:58.013Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": true,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  },
+  "download__restart_saved_partial": {
+    "initial": {
+      "/case": {
+        "name": "download__restart_saved_partial",
+        "facts": "模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。",
+        "process": {
+          "pid": 52084,
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "startedAt": "2026-10-08T13:47:18.596Z",
+          "case": "download__restart_saved_partial",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "contextCreatedAt": "2026-10-08T13:48:33.481Z",
+          "restartCount": 1,
+          "liveTaskCount": 0
+        },
+        "controls": {
+          "saveDelayMs": 0,
+          "failNextImport": false
+        },
+        "automaticSettingKey": "zoteroscihub.automatic_pdf_download",
+        "inputs": [
+          {
+            "itemType": "journalArticle",
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001",
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "localPDF": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+            "localBibTeX": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.bib",
+            "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e"
+          }
+        ]
+      },
+      "/process": {
+        "pid": 52084,
+        "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+        "startedAt": "2026-10-08T13:47:18.596Z",
+        "case": "download__restart_saved_partial",
+        "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+        "contextCreatedAt": "2026-10-08T13:48:33.481Z",
+        "restartCount": 1,
+        "liveTaskCount": 0
+      },
+      "/libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "/collections": [
+        {
+          "id": 20,
+          "key": "FXCOL020",
+          "libraryID": 1,
+          "name": "Fixture / Communications",
+          "parentID": null
+        },
+        {
+          "id": 21,
+          "key": "FXCOL021",
+          "libraryID": 1,
+          "name": "Fixture / Read and Annotated",
+          "parentID": null
+        }
+      ],
+      "/items": [
+        {
+          "id": 1,
+          "key": "FX000001",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20,
+            21
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:44:00.375Z",
+          "dateModified": "2026-10-08T13:44:00.375Z"
+        }
+      ],
+      "/settings": {
+        "zoteroscihub.automatic_pdf_download": false
+      },
+      "/tasks": [],
+      "/logs": [
+        {
+          "time": "2026-10-08T13:44:00.399Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__restart_saved_partial",
+          "action": "fixture.seed",
+          "facts": "模拟前一会话已把自动设置改为 false 并保存父条目；尚无 PDF。上下文已重启，前一会话的 JS 全局变量、观察器和任务均不存在。",
+          "initialAutomatic": false,
+          "simulated": true
+        },
+        {
+          "time": "2026-10-08T13:44:00.399Z",
+          "processInstance": "9fada2e7-ed56-4a48-a8a5-57c93e4978ec",
+          "case": "download__restart_saved_partial",
+          "action": "fixture.seed.previousSession",
+          "facts": "已持久化 Pref=false、父条目 id=1；模拟重启后不保留前一会话的任务或 JS 全局状态。",
+          "savedParentItemID": 1,
+          "savedAutomatic": false,
+          "restartCount": 1
+        },
+        {
+          "time": "2026-10-08T13:48:33.481Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.016Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.020Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/process",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.023Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/libraries",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.025Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/collections",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.029Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/items",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.029Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.read.items",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "query": "",
+          "filters": {
+            "libraryID": null,
+            "itemType": null,
+            "DOI": null,
+            "title": null,
+            "topLevel": false
+          },
+          "itemIDs": [
+            1
+          ]
+        },
+        {
+          "time": "2026-10-08T13:49:58.032Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/settings",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.035Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/tasks",
+          "query": {}
+        },
+        {
+          "time": "2026-10-08T13:49:58.037Z",
+          "processInstance": "3a0013b9-449c-49ec-a731-1f344900e4f9",
+          "case": "download__restart_saved_partial",
+          "action": "http.request",
+          "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+          "method": "GET",
+          "path": "/cases/download__restart_saved_partial/logs",
+          "query": {}
+        }
+      ]
+    },
+    "localValidation": {
+      "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\论文入库复用与自动抓取_20261008\\fixture\\inputs\\simulated_target.pdf",
+      "bytes": 863,
+      "sha256": "61485e23b1c513f355a4fa6f1cb6e3ea8864a6aa44435b7e412e57acef84280e",
+      "pdfHeader": true,
+      "pages": 1,
+      "text": "SIMULATED PAPER - NOT A REAL PUBLICATION\nZotero Fixture Study: Spectral Windows in a Simulated Link\nDOI: 10.0000/zotero-fixture.target-001\nAuthor: Mira Fixture. Fixture Journal (Simulated), 2026.\nThis one-page PDF is an isolated Zotero test input.\n",
+      "embeddedAnnotations": [],
+      "matchesIndexSHA256": true,
+      "titlePresent": true,
+      "doiPresent": true,
+      "authorPresent": true,
+      "version": "unresolved",
+      "bibTeX": "@article{fixture_target_001,\n  title = {Zotero Fixture Study: Spectral Windows in a Simulated Link},\n  author = {Fixture, Mira},\n  journal = {Fixture Journal (Simulated)},\n  year = {2026},\n  volume = {1},\n  number = {1},\n  pages = {1--2},\n  doi = {10.0000/zotero-fixture.target-001},\n  url = {https://example.invalid/zotero-fixture/target-001}\n}\n"
+    },
+    "nativeProbe": {
+      "taskID": "d212be8e-5f06-49dd-9dbd-09d44bff6fef",
+      "status": "completed",
+      "mode": "async",
+      "contextID": "acf3877e-be78-4b25-a828-1f9310b48249",
+      "startedAt": "2026-10-08T13:49:58.044Z",
+      "finishedAt": "2026-10-08T13:49:58.047Z",
+      "result": {
+        "libraryID": 1,
+        "libraries": [
+          {
+            "libraryID": 1,
+            "id": 1,
+            "libraryType": "user",
+            "name": "Isolated Fixture Library",
+            "editable": true,
+            "filesEditable": true
+          }
+        ],
+        "scihub": {
+          "installed": true
+        },
+        "prefKey": "zoteroscihub.automatic_pdf_download",
+        "automatic": false,
+        "observerAvailable": true,
+        "unregisterAvailable": true,
+        "collections": [
+          {
+            "id": 20,
+            "key": "FXCOL020",
+            "libraryID": 1,
+            "name": "Fixture / Communications",
+            "parentID": null
+          },
+          {
+            "id": 21,
+            "key": "FXCOL021",
+            "libraryID": 1,
+            "name": "Fixture / Read and Annotated",
+            "parentID": null
+          }
+        ]
+      }
+    }
+  }
+}

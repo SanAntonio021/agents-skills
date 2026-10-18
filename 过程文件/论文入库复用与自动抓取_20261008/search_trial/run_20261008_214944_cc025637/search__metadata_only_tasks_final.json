@@ -1,0 +1,213 @@
+[
+  {
+    "taskID": "6067d514-a1c6-4c78-84cd-d2752623c42d",
+    "status": "completed",
+    "mode": "async",
+    "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+    "startedAt": "2026-10-08T13:49:44.959Z",
+    "finishedAt": "2026-10-08T13:49:44.961Z",
+    "result": {
+      "scihub": {
+        "installed": true
+      },
+      "userLibraryID": 1,
+      "libraries": [
+        {
+          "libraryID": 1,
+          "id": 1,
+          "libraryType": "user",
+          "name": "Isolated Fixture Library",
+          "editable": true,
+          "filesEditable": true
+        }
+      ],
+      "prefs": {
+        "get": "function",
+        "set": "function",
+        "registerObserver": "function",
+        "unregisterObserver": "function"
+      },
+      "currentAutomatic": true
+    }
+  },
+  {
+    "taskID": "848e4069-0aee-4633-9887-5ab8042faf4d",
+    "status": "completed",
+    "mode": "async",
+    "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+    "startedAt": "2026-10-08T13:52:31.547Z",
+    "finishedAt": "2026-10-08T13:52:31.572Z",
+    "result": {
+      "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+      "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+      "status": "completed",
+      "startedAt": 1791467551548,
+      "savedKeys": [
+        {
+          "libraryID": 1,
+          "key": "FX000100"
+        }
+      ],
+      "preferenceRecovery": [
+        {
+          "key": "zoteroscihub.automatic_pdf_download",
+          "recovery": "restored"
+        }
+      ],
+      "error": null,
+      "output": {
+        "parentAction": "created",
+        "attachmentAction": "not_requested",
+        "parent": {
+          "id": 100,
+          "key": "FX000100",
+          "libraryID": 1,
+          "itemType": "journalArticle",
+          "fields": {
+            "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+            "DOI": "10.0000/zotero-fixture.target-001",
+            "date": "2026",
+            "publicationTitle": "Fixture Journal (Simulated)",
+            "volume": "1",
+            "issue": "1",
+            "pages": "1-2",
+            "url": "https://example.invalid/zotero-fixture/target-001"
+          },
+          "creators": [
+            {
+              "creatorType": "author",
+              "firstName": "Mira",
+              "lastName": "Fixture"
+            }
+          ],
+          "collections": [
+            20
+          ],
+          "parentID": null,
+          "deleted": false,
+          "dateAdded": "2026-10-08T13:52:31.561Z",
+          "dateModified": "2026-10-08T13:52:31.561Z"
+        },
+        "attachment": null,
+        "attachmentPath": null,
+        "originalCollections": [
+          20
+        ],
+        "collections": [
+          20
+        ],
+        "handoff": "paper-search metadata-only import; no PDF request"
+      },
+      "finishedAt": 1791467551572
+    }
+  },
+  {
+    "taskID": "5988a9d5-38e7-491a-ab10-0effaa3b2f3f",
+    "status": "completed",
+    "mode": "async",
+    "contextID": "13cc0425-4cea-43a9-9e08-9e4f08a9e483",
+    "startedAt": "2026-10-08T13:52:31.578Z",
+    "finishedAt": "2026-10-08T13:52:31.581Z",
+    "result": {
+      "parent": {
+        "id": 100,
+        "key": "FX000100",
+        "libraryID": 1,
+        "itemType": "journalArticle",
+        "fields": {
+          "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+          "DOI": "10.0000/zotero-fixture.target-001",
+          "date": "2026",
+          "publicationTitle": "Fixture Journal (Simulated)",
+          "volume": "1",
+          "issue": "1",
+          "pages": "1-2",
+          "url": "https://example.invalid/zotero-fixture/target-001"
+        },
+        "creators": [
+          {
+            "creatorType": "author",
+            "firstName": "Mira",
+            "lastName": "Fixture"
+          }
+        ],
+        "collections": [
+          20
+        ],
+        "parentID": null,
+        "deleted": false,
+        "dateAdded": "2026-10-08T13:52:31.561Z",
+        "dateModified": "2026-10-08T13:52:31.561Z"
+      },
+      "collections": [
+        20
+      ],
+      "attachments": [],
+      "job": {
+        "operationId": "0ce0343c-8655-47f1-8f17-3217819171d3",
+        "processIdentity": "{\"contextID\": \"13cc0425-4cea-43a9-9e08-9e4f08a9e483\", \"pid\": 52084, \"processInstance\": \"3a0013b9-449c-49ec-a731-1f344900e4f9\", \"startedAt\": \"2026-10-08T13:47:18.596Z\"}",
+        "status": "completed",
+        "startedAt": 1791467551548,
+        "savedKeys": [
+          {
+            "libraryID": 1,
+            "key": "FX000100"
+          }
+        ],
+        "preferenceRecovery": [
+          {
+            "key": "zoteroscihub.automatic_pdf_download",
+            "recovery": "restored"
+          }
+        ],
+        "error": null,
+        "output": {
+          "parentAction": "created",
+          "attachmentAction": "not_requested",
+          "parent": {
+            "id": 100,
+            "key": "FX000100",
+            "libraryID": 1,
+            "itemType": "journalArticle",
+            "fields": {
+              "title": "Zotero Fixture Study: Spectral Windows in a Simulated Link",
+              "DOI": "10.0000/zotero-fixture.target-001",
+              "date": "2026",
+              "publicationTitle": "Fixture Journal (Simulated)",
+              "volume": "1",
+              "issue": "1",
+              "pages": "1-2",
+              "url": "https://example.invalid/zotero-fixture/target-001"
+            },
+            "creators": [
+              {
+                "creatorType": "author",
+                "firstName": "Mira",
+                "lastName": "Fixture"
+              }
+            ],
+            "collections": [
+              20
+            ],
+            "parentID": null,
+            "deleted": false,
+            "dateAdded": "2026-10-08T13:52:31.561Z",
+            "dateModified": "2026-10-08T13:52:31.561Z"
+          },
+          "attachment": null,
+          "attachmentPath": null,
+          "originalCollections": [
+            20
+          ],
+          "collections": [
+            20
+          ],
+          "handoff": "paper-search metadata-only import; no PDF request"
+        },
+        "finishedAt": 1791467551572
+      },
+      "active": null,
+      "automatic": true
+    }
+  }
+]

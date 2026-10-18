@@ -1,0 +1,20 @@
+{
+  "SKILL.md": "c41dd002c57a4818927a4dcd8f391d13b73a3504cfe36ce7b232651a4777741e",
+  "evals/evals.json": "71de9000a91ad2d7c52966d26163c05a6d71964550310216b0d45dac151987c2",
+  "evals/trigger-evals.json": "348d9b715f96d6506821cb03385b5ac390f2eb2a62ac0728b2b903ad4b89a5e4",
+  "references/recovery-contract.md": "88d11946aa992ff74c585fee803cf0a64ac583784ed344bff41c6ea3ff9709bb",
+  "references/upstream-sources.md": "90c1558a3aad4137d4f65ed6938c9e567b1e709f726c180bef2bbcfd248421ee",
+  "scripts/capture_recovery.py": "935412e6a325727f6f963f8a729a129b4aab06aa081603f292b9aa581928120c",
+  "scripts/git_layout.py": "1afddfd502d922ee82156511436f90aaea3d3e24d9f79daf9d3fe6179aedd4b7",
+  "scripts/recovery_fs.py": "d7f23edc51768c0dd314b22f2e0429e0b7cfa0ccc8680f32d6e82cc0c7ce365e",
+  "scripts/verify_acceptance.py": "510f3a47be5ed751db83ca74b73f6df9d5ed5e10499dbea991dcf12dc5b522f3",
+  "scripts/verify_recovery.py": "1ebb7b9316cec93f276ac2edf1b88af5a99275c8af5f0be413a65b94952a2fa8",
+  "tests/test_acceptance_coverage.py": "3ac7f149b239f7e8eca9aaa94af43d390e98b0a7b083450d47e671a4e865f235",
+  "tests/test_capture_v3.py": "3d86c75980d90dd6b7394eae34402881196e6e4f2d3d28e8c454164466a42072",
+  "tests/test_git_layout.py": "ba814a7c120ef54175f07e49835d2d5ba227476dbc4ecd8c608313af5f13b167",
+  "tests/test_legacy_packages.py": "9f85813f28e8c3929da8d1aaaebc91127e62057e66969f61500c2accef95759c",
+  "tests/test_nested_v4.py": "e770644c8d80e341da2a7958aa3f7e5beeadcc435078d83c15671e07839c266c",
+  "tests/test_recovery_flow.py": "6ed7e1fb624d267131e02f6213f87e9577878ca04af76eae5ebc1fcfda11e2b2",
+  "tests/test_restore_v3.py": "824dd61d6505a0e218a8cbc710df9b5a0107a6a3772c187c4b9d0af1d3a08f4c",
+  "tests/test_retained_local.py": "07a2fbe47d74531b73213fac2767549c967620915a109d8667fe0f00713d426b"
+}

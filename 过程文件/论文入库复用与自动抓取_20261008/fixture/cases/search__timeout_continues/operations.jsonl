@@ -1,0 +1,1 @@
+{"time":"2026-10-08T13:44:00.412Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__timeout_continues","action":"fixture.seed","facts":"资料库无目标父条目。每次 saveTx 在提交前延迟 1400 ms；客户端断开不取消 JS。","initialAutomatic":true,"simulated":true}

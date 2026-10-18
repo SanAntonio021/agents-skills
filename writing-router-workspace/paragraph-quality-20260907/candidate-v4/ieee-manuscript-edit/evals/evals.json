@@ -1,0 +1,180 @@
+{
+  "skill_name": "ieee-manuscript-edit",
+  "fixture_policy": "synthetic-only",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请按 IEEE Transactions 的口气精修下面这段英文摘要，要求保留所有数值和实验条件，只提升表达、逻辑和结论强度控制。",
+      "expected_output": "输出修改稿、主要改动和待确认问题；主要改动最多 3 条；事实范围、数值和实验条件保持原文边界，有限实验对应克制结论。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "帮我审一下这个太赫兹通信系统实验结果段和图注是否适合 IEEE 风格。重点看图文对应、代表性指标选择依据、方法和结果边界。",
+      "expected_output": "先列最多 5 条必须处理的问题，再给必要的修改段落或图注；指出需要用户核验的数据或图中信息。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "这段引言有点像中文直译，请按 SCI/IEEE 工程论文写法重新整理。文献范围以原来的 citation keys 为准。",
+      "expected_output": "输出更克制的引言段落，保留引用位置，并用最多 3 条说明主要结构调整。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "请把下面这段中文实验结果说明改写成 IEEE 风格英文论文段落。按英文论文信息顺序组织句子，保留数值、频率、功率和实验条件；如果中文里有含混表达，请在待确认问题里指出。",
+      "expected_output": "输出英文论文版本、关键术语选择和待确认问题；以中文技术事实为准，实验结论限于原文信息。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "这个论文目录里有很多 Maintext 相关文件，我准备把英文稿和中文稿发给共同作者。请告诉我根目录保留哪些、哪些先归档，解释保持简短。",
+      "expected_output": "给出短方案：根目录只保留合作者要看的 Word 文件和待确认问题说明；源文件、历史版本和中间文件建议移入归档目录；移动或删除前提醒需要用户确认。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "请帮我把这篇稿子改到符合 IEEE Transactions on Terahertz Science and Technology 的投稿要求。",
+      "expected_output": "先说明具体期刊合规需要官方依据；要求使用用户提供的官方模板/作者指南，或先核验期刊官网、IEEE Author Center 等官方来源。核验完成前只做通用 SCI/IEEE 精修，并把目标期刊模板核对列为待确认问题。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "这篇英文稿投刊目标待定，你先帮我做投稿前终稿精修吧。",
+      "expected_output": "先提醒可做一次选刊判断；说明选刊需要联网核验期刊官网、scope 和近期文章，并以核验结果推荐。若用户仍选择先精修，则明确这是通用 SCI/IEEE 精修，期刊适配状态标为待确认。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "output/DRAFT.md 已经定稿了，请做提交前最后一轮精修：去掉模板化套话、压缩重复、统一术语，citation keys 和引用小节保持原位。",
+      "expected_output": "按终稿精修流程处理 output/DRAFT.md；保留原有 citation keys 和小节内引用位置，只做语言、术语和冗余精修。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "我这段论文正文AI味太重了，'是……而非……''需要说明的是'到处都是，帮我去一去AI腔，但是数字和结论一个都不能动。",
+      "expected_output": "按学术模式边界清理：改写否定对比句式为正面陈述、删金句式总结、防御性表述改中性事实陈述；保留全部数值/术语/LaTeX命令，结论力度不减；不注入个性化或第一人称表达。",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "请直接修改本地 main.tex 的 Results 小节。仓库里 notes.md 和另一个实验脚本有未提交改动，但和这次无关。改完请编译确认。",
+      "expected_output": "修改前记录状态并只锁定 main.tex 及本轮必要依赖；验证和编译通过后创建一个本地 commit，格式为“文稿：Results｜<修改目的>”；不得暂存、提交或取消暂存 notes.md 和无关脚本，不 push。",
+      "files": [],
+      "expectations": [
+        "只处理显式相关文件，不使用 git add .、git add -A 或 git commit -am。",
+        "编译验证通过后每轮只创建一个本地 commit。",
+        "commit 使用中文可检索格式。",
+        "不执行 git push。"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "刚才那轮已经改完并提交了，这版可以，作为投稿候选。",
+      "expected_output": "不给文件制造空改动或空 commit；在最近的相关 commit 上创建 annotated milestone tag，名称使用 milestone/YYYYMMDD-HHmmss-投稿候选，annotation 记录文件或章节和用户确认语义；若同秒重名则追加序号。",
+      "files": [],
+      "expectations": [
+        "识别用户明确的里程碑语义。",
+        "创建 annotated tag，不创建空 commit。",
+        "tag 指向最近的相关 commit。",
+        "不 push tag。"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "只审查 main.tex 的摘要有没有术语和结论强度问题，先不要修改。",
+      "expected_output": "执行只读审查，不询问 Git，不创建 baseline、commit 或 tag。",
+      "files": [],
+      "expectations": [
+        "只读任务不触发版本保护。",
+        "不修改文件或 Git 状态。"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "T-MTT 的 12 条审稿意见已经编号并确定修改位置。请只把 Response Letter 正文润色成正式英文，不处理上传。",
+      "expected_output": "由 ieee-manuscript-edit 精修逐条回复正文，保持意见编号、事实、修改位置和证据不变；返修状态、文件版本和页面上传仍由 journal-submission 负责。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "非 IEEE 期刊的稿件正文已经润色完，现在要填写 Editorial Manager 并最终提交。",
+      "expected_output": "正文精修已经完成；平台事务路由到 journal-submission。最终 Submit 前先由 paper-review 生成有时间和证据的 pre_submission_review=pass，且最终操作由用户亲自确认。",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "请对 evals/files/finalization-scopes.md 做只读终稿规范化审计。稿件同时在 Abstract、正文和两个 figure captions 中使用 MIMO；只有 Abstract 写了 multiple-input multiple-output (MIMO)。不要猜任何其他缩写全称，也不要修改稿件。请给出可定位的审计结果。",
+      "expected_output": "调用只读 convention audit；把 Abstract、正文和每个 caption 分成独立作用域；只依据稿内唯一显式映射为正文和各 caption 给出安全补全，其他不确定缩写只报告；不修改输入。",
+      "files": ["evals/files/finalization-scopes.md"],
+      "expectations": [
+        "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现问题而非脚本失败。",
+        "Abstract、正文和每个 figure caption 被作为独立缩写作用域。",
+        "只使用稿内唯一且一致的 full form (ACRONYM) 映射提供安全 replacement。",
+        "输入稿件保持不变。"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "对 evals/files/finalization-safe-fixes.md 的隔离副本执行终稿规范化并只自动处理确定安全的问题：正文首处 BER 可由稿内唯一 bit error rate (BER) 映射补全，同一 Results 段有两个相邻且完全相同的句子；另外有 under the tested conditions 和 comparison benchmark。应用安全修改后重新审计，并报告最终哈希和最终行号。不要修改技能目录里的 fixture。",
+      "expected_output": "只应用带精确 span/replacement 的缩写补全和同段相邻完全重复删除；保留科学限定与比较基准；修改后重跑脚本，最终 SHA-256、行号和计数来自新文件。",
+      "files": ["evals/files/finalization-safe-fixes.md"],
+      "expectations": [
+        "只自动采用 safe_findings，不自动改 review_candidates、protected_qualifiers 或 unresolved。",
+        "保留 under the tested conditions 和 comparison benchmark 的证据边界。",
+        "自动修改后重新运行审计。",
+        "最终报告使用修改后文件的 SHA-256 和行号。"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "请检查 evals/files/finalization-captions.md 里的两条图注是否自解释。Fig. 1 只有 '(a) setup; (b) result'，Fig. 2 已说明对象、1 km 条件、两种 marker、dBm 单位、median、whiskers 和 threshold。若本地图片存在要结合图片，但不要猜 fixture 没有提供的图像语义，也不要把图注改成 Results 段的复制品。",
+      "expected_output": "逐图核对对象、条件、面板、图例、单位、统计元素和主要读法；指出 Fig. 1 缺项，认可 Fig. 2 已明确的元素；图片存在时核对，不存在或统计定义不明时列待确认；不猜测、不用正文重复替代自解释。",
+      "files": ["evals/files/finalization-captions.md"],
+      "expectations": [
+        "逐项覆盖对象、条件、面板、图例、单位、统计元素和主要读法。",
+        "本地图像语义需要人工查看，脚本结果不冒充图像识别。",
+        "未知 whisker 定义只报告，不猜成极值或 1.5 IQR。",
+        "明确图注自解释不等于复述整段 Results。"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "evals/files/finalization-phase1.tex 需要只读终稿规范审计。它包含多行嵌套 \\caption、注释里的 \\caption、verbatim 里的 \\input、正文 \\include{appendix}，以及自定义 caption 宏。请按 Phase 1 边界报告，不要递归读取其他 tex。",
+      "expected_output": "正确解析标准嵌套多行 caption，忽略注释和 verbatim；把正文 include 和自定义 caption 宏列入 unresolved；不递归多文件，不声称全文 clean。",
+      "files": ["evals/files/finalization-phase1.tex"],
+      "expectations": [
+        "标准多行嵌套 caption 被作为独立作用域解析。",
+        "注释和 verbatim 内容被忽略。",
+        "include 与自定义 caption 宏进入 unresolved。",
+        "不读取外部 tex，也不报告多文件全文已通过。"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "审查 evals/files/finalization-language.md 的防御性表达和重复内容：指出 It should be noted that 和 The following discussion focuses on；保护 confidence interval、uncertainty、assumed condition 和 limitation；只把同一正文段内相邻完全相同句当安全删除，Abstract/Introduction/Conclusion 的近重复只列候选。",
+      "expected_output": "元话语进入 review_candidates；科学假设、不确定性、置信区间和限制进入 protected_qualifiers；安全删除严格限于同一正文段相邻完全相同句，跨章节近重复只报告。",
+      "files": ["evals/files/finalization-language.md"],
+      "expectations": [
+        "防御性元话语只作为改写候选，不自动删除其科学内容。",
+        "假设、不确定性、置信区间和限制被明确保护。",
+        "安全重复严格限于同一正文段内相邻完全相同句。",
+        "跨章节和语义近重复只报告，不自动删除。"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "请只读审计 evals/files/finalization-negation-chain.md 的否定链和间接否定。重点核对 cannot be ruled out、cannot be excluded 和 by no means 的人工复核噪音，同时检查 not without、not entirely without、not only 配对、neither/nor、No. 编号、无标点列表项和图注。所有结果只列人工复核候选，不自动改写科学限定，也不要把表格、代码、注释或参考文献中的文本算进去。",
+      "expected_output": "运行 convention audit，按完整句子合并 LANG_NEGATION_CHAIN；准确区分 fixed_indirect、coordination 和 atomic，报告 10 条否定链候选；用中文表格单列 by no means、cannot be ruled out、cannot be excluded 的人工处置与噪音统计（本 fixture 为建议改写 1 条、科学限定保留 2 条），并列出未触发及被屏蔽的正反例。",
+      "files": ["evals/files/finalization-negation-chain.md"],
+      "expectations": [
+        "运行 scripts/audit_manuscript_conventions.py，并说明退出码 1 表示发现候选而不是脚本失败。",
+        "LANG_NEGATION_CHAIN 只进入 review_candidates，共 10 条，每条 check=negative_construction 且不含 span/replacement。",
+        "by no means、cannot be ruled out、cannot be excluded 和直接 not without 被识别为 fixed_indirect；not entirely without 被识别为两个 atomic。",
+        "not only 配对只屏蔽紧邻 only 的 not，第二个实际否定仍进入 evidence；neither/nor 合并为 coordination；No. A1/No. A2 只屏蔽编号 No.，同句其他否定仍正常计数。",
+        "单独 without、cannot confirm、No packet loss 和单一 not statistically significant 不报告；表格、代码、注释、fenced code 和 References 内容不参与发现。",
+        "中文复核表把三个重点短语逐条标为建议改写或科学限定保留，并给出建议改写 1、保留 2、人工复核噪音 2/3；任何一项都不自动改写。"
+      ]
+    }
+  ]
+}

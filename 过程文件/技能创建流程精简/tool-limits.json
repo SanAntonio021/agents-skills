@@ -1,0 +1,9 @@
+{
+  "isolated_project_root": "passed",
+  "ancestor_search_reproduced": true,
+  "aggregate_character_fallback_reproduced": true,
+  "actual_token_fixture": 73,
+  "reported_tokens_by_existing_tool": 999,
+  "cost_comparison_valid": false,
+  "network_requests": 0
+}

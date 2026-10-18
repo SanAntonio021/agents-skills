@@ -1,0 +1,22 @@
+{
+  "behavior_trial_passed": true,
+  "real_browser_submissions": 3,
+  "normal_code_passed": true,
+  "updated_image_reread_and_passed": true,
+  "pdfs": [
+    {
+      "name": "alpha",
+      "pages": 1,
+      "bytes": 1099,
+      "sha256": "02f444020332c1ee8ca9d99e35f16a480566f06c52c732f6fa2e99a51d1b49fa",
+      "same_as_server_source": true
+    },
+    {
+      "name": "beta",
+      "pages": 1,
+      "bytes": 1099,
+      "sha256": "c02b15b3598823a9ca498d735977571e1b3f6641ce6f2c79ed0d831a9171ef4d",
+      "same_as_server_source": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c43-6c73-7e60-ab29-7e6c3f4f33fb"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"## 分组丢失率\n\n分组丢失率按p = (N_tx - N_rx) / N_tx计算。采用768 B定长分组时，发送N_tx = 50000，接收N_rx = 49975，得到p = 0.0005。测试期间未开启重传，因此该结果不包含重传后的恢复效果。"}}
+{"type":"turn.completed","usage":{"input_tokens":28276,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":187,"reasoning_output_tokens":100}}

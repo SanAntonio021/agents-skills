@@ -1,0 +1,21 @@
+{
+  "fixtureBase": "http://127.0.0.1:5688",
+  "urls": {
+    "public": "http://127.0.0.1:5688/public",
+    "blocked": "http://127.0.0.1:5688/blocked",
+    "dynamic": "http://127.0.0.1:5688/dynamic",
+    "known-dynamic": "http://127.0.0.1:5688/known-dynamic",
+    "denied": "http://127.0.0.1:5688/denied"
+  },
+  "proxyUrl": "http://127.0.0.1:13546",
+  "browser": "isolated headless Microsoft Edge",
+  "client": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\WebAccess自动浏览器衔接\\environment\\client.mjs",
+  "node": "D:\\Program Files\\nodejs\\node.exe",
+  "sessionUsage": "Use a unique session name for each test. The browser-unavailable session simulates an unavailable browser.",
+  "commands": [
+    "node client.mjs SESSION read URL",
+    "node client.mjs SESSION check",
+    "node client.mjs SESSION request METHOD PATH [JSON_BODY|@BODY_FILE] [--key=IDEMPOTENCY_KEY]"
+  ],
+  "safety": "Only the listed localhost fixture origin and isolated Proxy are in scope. Do not connect production 3456/3457 or user browser tabs. No real accounts or external writes. Each session keeps its own local task token; token values are removed from output and logs."
+}

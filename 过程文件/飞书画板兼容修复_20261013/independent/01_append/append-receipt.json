@@ -1,0 +1,14 @@
+{
+  "idempotent_token": "17fe5e9d-490c-4ef8-9fdc-116ed4bf8516",
+  "before_raw": "raw-001.json",
+  "status": "saved_readback_confirmed",
+  "content_write_started": true,
+  "id_mapping": {
+    "o1013ind:1": "o2:1",
+    "o1013ind:2": "o2:2",
+    "o1013ind:3": "o2:3",
+    "t1013ind:1": "a2:1",
+    "c1013ind:1": "c2:1",
+    "c1013ind:2": "c2:2"
+  }
+}

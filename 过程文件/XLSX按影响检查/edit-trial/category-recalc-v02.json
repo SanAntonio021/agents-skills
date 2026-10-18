@@ -1,0 +1,42 @@
+{
+  "command": [
+    "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+    "--headless",
+    "--nologo",
+    "--nodefault",
+    "--nofirststartwizard",
+    "-env:UserInstallation=file:///D:/BaiduSyncdisk/.agents/skills/%E8%BF%87%E7%A8%8B%E6%96%87%E4%BB%B6/XLSX%E6%8C%89%E5%BD%B1%E5%93%8D%E6%A3%80%E6%9F%A5/edit-trial/temp/sanan-lo-9a91981c-5600-4159-82b0-fb16ca40cb14/profile",
+    "--convert-to",
+    "xlsx:Calc MS Excel 2007 XML",
+    "--outdir",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\sanan-lo-9a91981c-5600-4159-82b0-fb16ca40cb14\\output",
+    "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\sanan-lo-9a91981c-5600-4159-82b0-fb16ca40cb14\\input\\category-calculation-input.xlsx"
+  ],
+  "diagnostics": null,
+  "error": null,
+  "exit_code": 0,
+  "libreoffice": "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+  "message": null,
+  "mode": "recalc",
+  "ok": true,
+  "operation": "recalc",
+  "output": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\category-recalculated-v02.xlsx",
+  "output_sha256": "2ed85f259d18cb079a63b7a0f156283a35c8531e488a71c06ec1b713003fa0d1",
+  "owned_pids": [
+    76616,
+    77736
+  ],
+  "queue_seconds": 0.057830699981423095,
+  "root_pid": 77736,
+  "run_seconds": 9.323897299997043,
+  "source": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\category-calculation-input.xlsx",
+  "source_sha256": "318b3d7cd5b4c6915f46edef60aead7032b441022c5fcdc4cf0104cbc1bf241e",
+  "stderr": "Could not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-8f861a.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-2ad26b.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-7a0c39.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-6ec9a0.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-dd6980.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-144dcf.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-c4c2eb.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-07ed6b.d\r\nCould not open file: D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\temp\\dep-b2a517.d\r\nCould not find platform independent libraries <prefix>\r\n",
+  "stdout": "convert D:\\BaiduSyncdisk\\.agents\\skills\\�����ļ�\\XLSX��Ӱ����\\edit-trial\\temp\\sanan-lo-9a91981c-5600-4159-82b0-fb16ca40cb14\\input\\category-calculation-input.xlsx as a Calc document -> D:\\BaiduSyncdisk\\.agents\\skills\\�����ļ�\\XLSX��Ӱ����\\edit-trial\\temp\\sanan-lo-9a91981c-5600-4159-82b0-fb16ca40cb14\\output\\category-calculation-input.xlsx using filter : Calc MS Excel 2007 XML\r\n",
+  "validation": {
+    "format": "xlsx",
+    "formula_cache_count": 5,
+    "formula_count": 5,
+    "formula_error_count": 0
+  }
+}

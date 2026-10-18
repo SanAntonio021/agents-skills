@@ -1,0 +1,54 @@
+[
+  {
+    "path": "agent-rules/SKILL.md",
+    "sha256": "694FF1E1533AA30C06FE3C94E0A6E2E4B3958983FAD39811AD4A05D84503B75F"
+  },
+  {
+    "path": "agent-rules/evals/evals.json",
+    "sha256": "7C27E107BAB4DE9FC391119785A2276733FC284DEBB9F515AA2AA960E5FCF15E"
+  },
+  {
+    "path": "agent-rules/references/file-editing-best-practices.md",
+    "sha256": "5C27F294B4CAEC7BDA7C4015A3939342CE3A285CA98344671F1913919A1C2D00"
+  },
+  {
+    "path": "agent-rules/references/media-processing-limitations.md",
+    "sha256": "D2E97D8B8E6C106DBDFD5F309588FF1BD08F09A0835DED7057F03026FE9C400C"
+  },
+  {
+    "path": "agent-rules/references/skill-discovery-protocol.md",
+    "sha256": "FCAB15721E56A2C4161519C43C12B4568CA3E28BEDA1EC5B88419D0B50E6394C"
+  },
+  {
+    "path": "agent-rules/references/skill-upstream-maintenance.md",
+    "sha256": "D2AED69C994C78C2DBDD4C43DDB8580B7474D0051955AC50818A1874D2DF0AEA"
+  },
+  {
+    "path": "agent-rules/references/system-prompt-refinement.md",
+    "sha256": "1CB6850E9BCA53930AB8A847FEDD50C379E0ECBDEA3EBAB2E505A3B9DEE1295A"
+  },
+  {
+    "path": "agent-rules/references/upstream-sources.md",
+    "sha256": "E5B7B4B8ACF4C5CE063EF35D2D2A1BAD601267B29693C64C99C3B4A5B6FEEE08"
+  },
+  {
+    "path": "agent-rules/references/web-system-prompt-guidelines.md",
+    "sha256": "1F81F15476097F1BBFDE2C8E594DF86BF78F4345D170DF4D4FE9EDB41F598565"
+  },
+  {
+    "path": "agent-rules/scripts/manage_repo_mirrors.py",
+    "sha256": "E4893CBE16C298CB1FD61A42FB942D4A40BAF91FDA6B4EC71CE91D55DF40D361"
+  },
+  {
+    "path": "agent-rules/scripts/skill_upstream_maintenance.py",
+    "sha256": "99D600A87177881F598415247744C8695503D2DECF72C4864F749D462E5E48E2"
+  },
+  {
+    "path": "agent-rules/tests/test_manage_repo_mirrors.py",
+    "sha256": "836E7CFD59FA9912C5614734E4F63B47AC50086E2F398F07F85E690C4733086B"
+  },
+  {
+    "path": "agent-rules/tests/test_skill_upstream_maintenance.py",
+    "sha256": "8FFFA759BA85D4DF8F0F4A178C363D4FACA7EB070C67A7E538E826F42A722A97"
+  }
+]

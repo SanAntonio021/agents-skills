@@ -1,0 +1,909 @@
+{
+  "comparison": {
+    "defined_names_changed": false,
+    "ok": true,
+    "package_changes": {
+      "added": [],
+      "changed": [
+        "xl/worksheets/sheet1.xml"
+      ],
+      "removed": []
+    },
+    "sheet_changes": {
+      "计算表": {
+        "cell_changes": [
+          {
+            "after": {
+              "attributes": {
+                "s": "2",
+                "t": "inlineStr"
+              },
+              "payload": [
+                {
+                  "attributes": {},
+                  "children": [
+                    {
+                      "attributes": {},
+                      "children": [],
+                      "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                      "text": "新备注"
+                    }
+                  ],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                  "text": ""
+                }
+              ],
+              "style": "2",
+              "type": "inlineStr",
+              "value": "新备注"
+            },
+            "before": {
+              "attributes": {
+                "s": "2",
+                "t": "inlineStr"
+              },
+              "payload": [
+                {
+                  "attributes": {},
+                  "children": [
+                    {
+                      "attributes": {},
+                      "children": [],
+                      "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                      "text": "原备注"
+                    }
+                  ],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                  "text": ""
+                }
+              ],
+              "style": "2",
+              "type": "inlineStr",
+              "value": "原备注"
+            },
+            "cell": "F3",
+            "kinds": [
+              "value"
+            ]
+          }
+        ],
+        "feature_changes": [],
+        "row_height_changes": []
+      }
+    },
+    "unexpected": {
+      "cells": [],
+      "expected_metrics": [],
+      "package_entries": [],
+      "protected_entries": [],
+      "row_heights": [],
+      "sheet_features": []
+    }
+  },
+  "ok": true,
+  "workbook": {
+    "defined_names": [
+      {
+        "attributes": {
+          "localSheetId": "0",
+          "name": "_xlnm.Print_Area"
+        },
+        "children": [],
+        "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}definedName",
+        "text": "'计算表'!$A$1:$F$5"
+      }
+    ],
+    "filter_overlap_count": 0,
+    "filter_overlaps": [],
+    "formula_cache_count": 5,
+    "formula_count": 5,
+    "formula_error_count": 0,
+    "formula_errors": [],
+    "objects": {
+      "calc_chain_present": false,
+      "comments": [
+        "xl/comments/comment1.xml"
+      ],
+      "digital_signatures": [],
+      "drawings": [
+        "xl/drawings/commentsDrawing1.vml"
+      ],
+      "external_links": [],
+      "media": [],
+      "styles_present": true,
+      "vba_projects": []
+    },
+    "package_entries": {
+      "[Content_Types].xml": "8EEAEE7FD6243D88A8737472DCBA782AB66FA51CA72AA73140A954E87149EBCB",
+      "_rels/.rels": "C545941BA36C15FCDCE4AE4568C663F3CED1A2226AD5082D3FD66B178BFAC11A",
+      "docProps/app.xml": "209FCA6B00AFE72A5029754B94BE5953D8F16D96F67130325566B9366AD4CCC5",
+      "docProps/core.xml": "C20F5FA80470451CD09B3DE3FDA71791F532708B4726300AE90AD1546CDDCDF6",
+      "xl/_rels/workbook.xml.rels": "26AD8FCC38D41229833E624496DF364492772697AD2E5D6696E1738F05BA225F",
+      "xl/comments/comment1.xml": "B26B17F4375BF465CE2B72B6A4EF3F332A0412FE8918136A63E644EE58CF2367",
+      "xl/drawings/commentsDrawing1.vml": "D1A08B6CB310232B0C42C08C6CAA3F3DBDD594C7C04D284D7F2F3274F75E303D",
+      "xl/styles.xml": "9948D7FB7E0BACCB78A6A2FE82FB46F639B6F5B5100A3A6683E3242ACF0703FF",
+      "xl/theme/theme1.xml": "D15E8EBF78EF7B9720839D7AE8FDC81A7DF5BC24706D8E137DF61A5683C358D9",
+      "xl/workbook.xml": "8643EFE6B41CFA10DC5FB6F8D0E196D51E90F7B58D3306CDACA286F6247ED781",
+      "xl/worksheets/_rels/sheet1.xml.rels": "E2D28D8E38B35F1729AA1D52A0DCD52D78A4ABB684CDB284D4D991DEC8DBC165",
+      "xl/worksheets/sheet1.xml": "391D9C2AB2FBCC2BF193E7129D23DFBF172432517188FB97275BD278BBEC7025"
+    },
+    "package_entry_count": 12,
+    "path": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\XLSX按影响检查\\edit-trial\\note-draft.xlsx",
+    "sha256": "910D0D685DA5117605E6AE4D092F5104247B1E519FD08B5E2AF932D90C36CA81",
+    "sheets": {
+      "计算表": {
+        "cells": {
+          "A1": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "临时表格检查样本（虚构数据）"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "临时表格检查样本（虚构数据）"
+          },
+          "A2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "类别"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "类别"
+          },
+          "A3": {
+            "attributes": {
+              "s": "2",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "A"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "2",
+            "type": "inlineStr",
+            "value": "A"
+          },
+          "A4": {
+            "attributes": {
+              "s": "2",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "B"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "2",
+            "type": "inlineStr",
+            "value": "B"
+          },
+          "A5": {
+            "attributes": {
+              "s": "2",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "A"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "2",
+            "type": "inlineStr",
+            "value": "A"
+          },
+          "B1": {
+            "attributes": {
+              "s": "1",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "1",
+            "type": "n",
+            "value": null
+          },
+          "B2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "数量"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "数量"
+          },
+          "B3": {
+            "attributes": {
+              "s": "2",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "2"
+              }
+            ],
+            "style": "2",
+            "type": "n",
+            "value": "2"
+          },
+          "B4": {
+            "attributes": {
+              "s": "2",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "3"
+              }
+            ],
+            "style": "2",
+            "type": "n",
+            "value": "3"
+          },
+          "B5": {
+            "attributes": {
+              "s": "2",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "1"
+              }
+            ],
+            "style": "2",
+            "type": "n",
+            "value": "1"
+          },
+          "C1": {
+            "attributes": {
+              "s": "1",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "1",
+            "type": "n",
+            "value": null
+          },
+          "C2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "单价"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "单价"
+          },
+          "C3": {
+            "attributes": {
+              "s": "3",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "10"
+              }
+            ],
+            "style": "3",
+            "type": "n",
+            "value": "10"
+          },
+          "C4": {
+            "attributes": {
+              "s": "3",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "20"
+              }
+            ],
+            "style": "3",
+            "type": "n",
+            "value": "20"
+          },
+          "C5": {
+            "attributes": {
+              "s": "3",
+              "t": "n"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v",
+                "text": "5"
+              }
+            ],
+            "style": "3",
+            "type": "n",
+            "value": "5"
+          },
+          "D1": {
+            "attributes": {
+              "s": "1",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "1",
+            "type": "n",
+            "value": null
+          },
+          "D2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "金额"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "金额"
+          },
+          "D3": {
+            "attributes": {
+              "s": "3"
+            },
+            "cached": "20",
+            "formula": {
+              "attributes": {},
+              "text": "B3*C3"
+            },
+            "style": "3",
+            "type": null
+          },
+          "D4": {
+            "attributes": {
+              "s": "3"
+            },
+            "cached": "60",
+            "formula": {
+              "attributes": {},
+              "text": "B4*C4"
+            },
+            "style": "3",
+            "type": null
+          },
+          "D5": {
+            "attributes": {
+              "s": "3"
+            },
+            "cached": "5",
+            "formula": {
+              "attributes": {},
+              "text": "B5*C5"
+            },
+            "style": "3",
+            "type": null
+          },
+          "E1": {
+            "attributes": {
+              "s": "1",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "1",
+            "type": "n",
+            "value": null
+          },
+          "E2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "A类合计"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "A类合计"
+          },
+          "E3": {
+            "attributes": {
+              "s": "3"
+            },
+            "cached": "25",
+            "formula": {
+              "attributes": {},
+              "text": "SUMIF(A3:A5,\"A\",D3:D5)"
+            },
+            "style": "3",
+            "type": null
+          },
+          "E4": {
+            "attributes": {
+              "s": "3",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "3",
+            "type": "n",
+            "value": null
+          },
+          "E5": {
+            "attributes": {
+              "s": "3"
+            },
+            "cached": "85",
+            "formula": {
+              "attributes": {},
+              "text": "SUM(D3:D5)"
+            },
+            "style": "3",
+            "type": null
+          },
+          "F1": {
+            "attributes": {
+              "s": "1",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "1",
+            "type": "n",
+            "value": null
+          },
+          "F2": {
+            "attributes": {
+              "s": "1",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "备注"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "1",
+            "type": "inlineStr",
+            "value": "备注"
+          },
+          "F3": {
+            "attributes": {
+              "s": "2",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "新备注"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "2",
+            "type": "inlineStr",
+            "value": "新备注"
+          },
+          "F4": {
+            "attributes": {
+              "s": "2",
+              "t": "n"
+            },
+            "payload": [],
+            "style": "2",
+            "type": "n",
+            "value": null
+          },
+          "F5": {
+            "attributes": {
+              "s": "2",
+              "t": "inlineStr"
+            },
+            "payload": [
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {},
+                    "children": [],
+                    "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t",
+                    "text": "全类别合计见左侧"
+                  }
+                ],
+                "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is",
+                "text": ""
+              }
+            ],
+            "style": "2",
+            "type": "inlineStr",
+            "value": "全类别合计见左侧"
+          }
+        },
+        "features": {
+          "auto_filter": [],
+          "column_breaks": [],
+          "columns": [
+            {
+              "attributes": {},
+              "children": [
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "1",
+                    "min": "1",
+                    "width": "18"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "2",
+                    "min": "2",
+                    "width": "18"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "3",
+                    "min": "3",
+                    "width": "18"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "4",
+                    "min": "4",
+                    "width": "18"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "5",
+                    "min": "5",
+                    "width": "18"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "customWidth": "1",
+                    "max": "6",
+                    "min": "6",
+                    "width": "27"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}col",
+                  "text": ""
+                }
+              ],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}cols",
+              "text": ""
+            }
+          ],
+          "conditional_formatting": [],
+          "data_validations": [
+            {
+              "attributes": {
+                "count": "1"
+              },
+              "children": [
+                {
+                  "attributes": {
+                    "allowBlank": "0",
+                    "showDropDown": "0",
+                    "showErrorMessage": "0",
+                    "showInputMessage": "0",
+                    "sqref": "A3:A5",
+                    "type": "list"
+                  },
+                  "children": [
+                    {
+                      "attributes": {},
+                      "children": [],
+                      "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}formula1",
+                      "text": "\"A,B\""
+                    }
+                  ],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}dataValidation",
+                  "text": ""
+                }
+              ],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}dataValidations",
+              "text": ""
+            }
+          ],
+          "dimension": [
+            {
+              "attributes": {
+                "ref": "A1:F5"
+              },
+              "children": [],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}dimension",
+              "text": ""
+            }
+          ],
+          "drawing": [],
+          "hyperlinks": [],
+          "legacy_drawing": [
+            {
+              "attributes": {
+                "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id": "anysvml"
+              },
+              "children": [],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}legacyDrawing",
+              "text": ""
+            }
+          ],
+          "merges": [
+            {
+              "attributes": {
+                "count": "1"
+              },
+              "children": [
+                {
+                  "attributes": {
+                    "ref": "A1:F1"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}mergeCell",
+                  "text": ""
+                }
+              ],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}mergeCells",
+              "text": ""
+            }
+          ],
+          "page_margins": [
+            {
+              "attributes": {
+                "bottom": "1",
+                "footer": "0.5",
+                "header": "0.5",
+                "left": "0.75",
+                "right": "0.75",
+                "top": "1"
+              },
+              "children": [],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}pageMargins",
+              "text": ""
+            }
+          ],
+          "page_setup": [
+            {
+              "attributes": {
+                "fitToHeight": "1",
+                "fitToWidth": "1",
+                "orientation": "landscape",
+                "paperSize": "9"
+              },
+              "children": [],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}pageSetup",
+              "text": ""
+            }
+          ],
+          "print_options": [],
+          "row_attributes": {},
+          "row_breaks": [],
+          "sheet_properties": [
+            {
+              "attributes": {},
+              "children": [
+                {
+                  "attributes": {
+                    "summaryBelow": "1",
+                    "summaryRight": "1"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}outlinePr",
+                  "text": ""
+                },
+                {
+                  "attributes": {
+                    "fitToPage": "1"
+                  },
+                  "children": [],
+                  "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}pageSetUpPr",
+                  "text": ""
+                }
+              ],
+              "tag": "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetPr",
+              "text": ""
+            }
+          ],
+          "sheet_protection": []
+        },
+        "filter_topology": {
+          "overlaps": [],
+          "tables": [],
+          "worksheet_auto_filters": []
+        },
+        "formula_cache_count": 5,
+        "formula_count": 5,
+        "formula_errors": [],
+        "part": "xl/worksheets/sheet1.xml",
+        "row_heights": {
+          "1": {
+            "customHeight": "1",
+            "ht": "29"
+          },
+          "2": {
+            "customHeight": "1",
+            "ht": "29"
+          },
+          "3": {
+            "customHeight": "1",
+            "ht": "30"
+          },
+          "4": {
+            "customHeight": "1",
+            "ht": "30"
+          },
+          "5": {
+            "customHeight": "1",
+            "ht": "30"
+          }
+        }
+      }
+    },
+    "workbook_issue_count": 0,
+    "workbook_issues": [],
+    "workbook_structure": {
+      "issues": [],
+      "sheet_count": 1,
+      "visible_sheet_count": 1
+    },
+    "zip_integrity": true
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "status": "unverified",
+  "steps": [],
+  "pages": [
+    {
+      "task_id": "task_5RotMJtXTNpkqDPzDzVysw",
+      "tab_id": "CE50CEDA616710997F98AE038EE81F6E",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_5RotMJtXTNpkqDPzDzVysw",
+      "tab_id": "CE50CEDA616710997F98AE038EE81F6E",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_5RotMJtXTNpkqDPzDzVysw",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    }
+  ],
+  "failure_phase": "initial_load",
+  "save_status": "not_written",
+  "verification_status": "failed",
+  "error": "VerificationError",
+  "reason": "Editor: UNSAVED_NATIVE_IO_STATE",
+  "released_tab": null,
+  "page_status": "closed"
+}

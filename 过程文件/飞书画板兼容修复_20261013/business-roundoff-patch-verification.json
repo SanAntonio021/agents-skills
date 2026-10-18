@@ -1,0 +1,45 @@
+{
+  "source_evidence": "D:\\BaiduSyncdisk\\Paper\\202607_THz_freq_planning\\过程文件\\实验方案精简\\第一节框图\\功率与放大级标签_20261013\\正式修改_20261014\\edit_001",
+  "raw_exceptions": [
+    {
+      "id": "c3:11",
+      "normalization": "bound_text_horizontal_zero_height_roundoff",
+      "before_raw_height": 0,
+      "after_raw_height": 2.4000000848900527e-06,
+      "maximum_native_endpoint_difference": 2.399999971203215e-06,
+      "native_endpoints_before": {
+        "start": {
+          "x": 910,
+          "y": 400
+        },
+        "end": {
+          "x": 1000,
+          "y": 400
+        }
+      },
+      "native_endpoints_after": {
+        "start": {
+          "x": 910,
+          "y": 400
+        },
+        "end": {
+          "x": 1000,
+          "y": 399.99999760000003
+        }
+      },
+      "expected_attachment_points": {
+        "start": {
+          "x": 910,
+          "y": 400
+        },
+        "end": {
+          "x": 1000,
+          "y": 399.99999760000003
+        }
+      }
+    }
+  ],
+  "fresh_readonly": "business-roundoff-readonly/fresh-native.json",
+  "finding": "Native endpoint moved only 2.4e-6 to the unchanged expected nonmidpoint attachment; raw zero-height serialization became float32 positive height. Fresh-page endpoint serialization differs by the same measured scale, both bindings remain valid.",
+  "original_result_unchanged": true
+}

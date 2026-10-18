@@ -1,0 +1,27 @@
+MATLAB_VERSION 23.2.0.2485118 (R2023b) Update 6
+  包含以下字段的 1x113 struct 数组:
+
+    Name
+    Version
+    Release
+    Date
+
+PREFDIR D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\runs\smoke_1\preferences
+SCREEN_SIZE            1           1        1920        1080
+
+MONITORS            1           1        1920        1080
+          11        1092        1920        1080
+        1931        1089        1920        1080
+        1921           9        1920        1080
+
+TEMPLATE_DEMO_PASS D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\analysis\template_20260911_144352_355
+TEMPLATE_GUI_PASS D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\analysis\template_gui_20260911_144426_041
+[PASS] m8195a_awg_memory_capacity_preflight (0.96s) IIII DIV1/DIV2/DIV4 rejected at 593280 samples/channel; EXT, 16G, fallback, aligned unequal lengths, and zero-write guards passed
+                     Name                     Status    Seconds                                                                   Note                                                                
+    ______________________________________    ______    _______    ___________________________________________________________________________________________________________________________________
+
+    "m8195a_awg_memory_capacity_preflight"    "PASS"    0.95564    "IIII DIV1/DIV2/DIV4 rejected at 593280 samples/channel; EXT, 16G, fallback, aligned unequal lengths, and zero-write guards passed"
+
+Validation report: D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\checks\20260911_144438_validation_awg_memory
+TEMPLATE_VALIDATION_PASS smoke
+ACCEPTANCE_COMPLETE smoke

@@ -1,0 +1,44 @@
+{
+  "A": {
+    "changed": [],
+    "added": [
+      "1\\answer.md",
+      "2\\answer.md"
+    ]
+  },
+  "B": {
+    "changed": [
+      "1\\vocab\\中文\\调研报告.md"
+    ],
+    "added": [
+      "1\\answer.md",
+      "2\\answer.md"
+    ]
+  },
+  "C": {
+    "changed": [
+      "1\\术语.md",
+      "3\\vocab\\中文\\申报书.md",
+      "2\\vocab\\维护.md",
+      "2\\vocab\\中文\\通用.md"
+    ],
+    "added": [
+      "1\\answer.md",
+      "2\\answer.md",
+      "3\\answer.md"
+    ]
+  },
+  "D": {
+    "changed": [],
+    "added": [
+      "1\\answer.md"
+    ]
+  },
+  "assessment": {
+    "initial_cases": 7,
+    "initial_scope_failure": "C/3 removed an existing duplicate without a cleanup request",
+    "correction": "Explicitly preserve equivalent existing entries; remove duplicates only on an explicit cleanup request.",
+    "affected_case_retested": "D/1: existing general and proposal rows preserved, no data changes",
+    "scope": "Specified skill behavior in isolated files; automatic skill discovery and comparative prose quality not tested."
+  }
+}

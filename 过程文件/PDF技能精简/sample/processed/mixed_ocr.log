@@ -1,0 +1,10 @@
+2026-09-11 17:08:46,775 INFO Input SHA256=0D4CE6F0023D622AEB625D1F337E1E5427462AE334E39B5E9C5A92C37DDEFAA6
+2026-09-11 17:08:46,776 INFO Selected route=skip (document-level mixture of image-only and text-bearing pages)
+2026-09-11 17:08:46,776 INFO Running OCRmyPDF mode=skip languages=chi_sim deskew=False
+2026-09-11 17:08:49,677 INFO OCRmyPDF stderr:
+    1 skipping all processing on this page
+Parsing 1 pages with HocrParser
+Postprocessing...
+Image optimization ratio: 1.00 savings: 0.0%
+Total file size ratio: 0.94 savings: -6.7%
+2026-09-11 17:08:49,934 INFO Validation passed; publishing four artifacts.

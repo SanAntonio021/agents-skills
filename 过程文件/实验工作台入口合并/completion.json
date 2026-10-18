@@ -1,0 +1,9 @@
+{
+  "skills_commit": "57ed736b80ddc416c97e01d3ce17606d1308f46e",
+  "config_commit": "5ae786884a65623ddd83b60618a14fdd56eb92c4",
+  "source_old_absent": true,
+  "entry_count": 42,
+  "sync.json": "runtime_active",
+  "verify.json": "runtime_active",
+  "verify-after-retirement.json": "runtime_active"
+}

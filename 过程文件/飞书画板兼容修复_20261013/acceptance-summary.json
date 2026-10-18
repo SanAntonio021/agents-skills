@@ -1,0 +1,258 @@
+{
+  "signature_evidence": "source-comparison.json",
+  "isolated_document": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+  "reports": {
+    "seed-run": {
+      "status": "verified",
+      "reason": null,
+      "page_status": "closed"
+    },
+    "smoke-run": {
+      "status": "unverified",
+      "reason": "Editor: UNSAVED_NATIVE_IO_STATE",
+      "page_status": "closed"
+    },
+    "smoke-remainder-run": {
+      "status": "unverified",
+      "reason": "Editor: UNSAVED_NATIVE_IO_STATE",
+      "page_status": "closed"
+    },
+    "caption-run": {
+      "status": "unverified",
+      "reason": "Adding a caption introduced unverified default format fields",
+      "page_status": "closed"
+    },
+    "caption-remainder-run": {
+      "status": "unverified",
+      "reason": "CLI operation failed; no automatic write retry: [{\"type\": \"network\"}, {\"subtype\": \"transport\"}, {\"message\": \"API call failed: Post \\\"[URL] EOF\"}]",
+      "page_status": "closed"
+    },
+    "text-run": {
+      "status": "unverified",
+      "reason": "Editor: UNEXPECTED_TRANSACTION_COUNT",
+      "page_status": "released"
+    },
+    "final-readonly-run": {
+      "status": "verified",
+      "reason": null,
+      "page_status": "closed"
+    }
+  },
+  "steps": {
+    "seed-run": [
+      {
+        "operation": {
+          "kind": "append"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      }
+    ],
+    "smoke-run": [
+      {
+        "operation": {
+          "kind": "text",
+          "id": "o3:1",
+          "text": "形状改字\n第二行"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "text",
+          "id": "o3:1",
+          "text": ""
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "text",
+          "id": "o3:1",
+          "text": "形状新增文字\n完成"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "text",
+          "id": "a3:1",
+          "text": "独立文字\n第二行"
+        },
+        "save_status": "not_written",
+        "verification_status": "failed",
+        "failure_phase": "execute",
+        "reopen_status": null
+      }
+    ],
+    "smoke-remainder-run": [],
+    "caption-run": [
+      {
+        "operation": {
+          "kind": "caption",
+          "id": "c3:1",
+          "text": "新连线标签\n第二行"
+        },
+        "save_status": "confirmed",
+        "verification_status": "failed",
+        "failure_phase": "protection",
+        "reopen_status": null
+      }
+    ],
+    "caption-remainder-run": [
+      {
+        "operation": {
+          "kind": "caption",
+          "id": "c3:1",
+          "text": "改写标签\n新的第二行"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "caption",
+          "id": "c3:1",
+          "text": ""
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "caption",
+          "id": "c3:1",
+          "text": "最终标签\n完成"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "caption",
+          "id": "c3:2",
+          "text": "已有标签改写\n保持第二行"
+        },
+        "save_status": "confirmed",
+        "verification_status": "failed",
+        "failure_phase": "reopen",
+        "reopen_status": null
+      }
+    ],
+    "text-run": [
+      {
+        "operation": {
+          "kind": "text",
+          "id": "a3:1",
+          "text": "独立文字\n第二行"
+        },
+        "save_status": "confirmed",
+        "verification_status": "passed",
+        "failure_phase": null,
+        "reopen_status": "passed"
+      },
+      {
+        "operation": {
+          "kind": "text",
+          "id": "a3:1",
+          "text": ""
+        },
+        "save_status": "unknown",
+        "verification_status": "failed",
+        "failure_phase": "execute",
+        "reopen_status": null
+      }
+    ],
+    "final-readonly-run": []
+  },
+  "final_readonly_confirmation": {
+    "native_save": {
+      "available": true,
+      "signature": "b8586b42",
+      "initialized": true,
+      "applied_version": 14,
+      "pending": 0,
+      "ordered_pending": 0,
+      "processing": false,
+      "offline": false,
+      "save_state": "saved",
+      "http_pending": 0
+    },
+    "node_count": 5,
+    "protected_raw_and_native_unchanged": [
+      "o3:2",
+      "o3:3"
+    ],
+    "all_line_endpoints_unchanged": true,
+    "deleted_during_unsupported_native_text_clear": [
+      "a3:1"
+    ],
+    "final_captions": {
+      "c3:1": "最终标签\n完成",
+      "c3:2": "已有标签改写\n保持第二行"
+    }
+  },
+  "visual_evidence": {
+    "original_native_png": "final-readonly-run/preview.png",
+    "white_background_server_preview": "final-preview.jpg",
+    "review": "Both viewed; two multiline line captions are readable and no module overlap; native PNG has transparent background."
+  },
+  "unknown_page": {
+    "task_and_tab": [
+      {
+        "task_id": "task_yw4piYFfHGUcsVViYnIuCA",
+        "tab_id": "D7F2071A447D72E6C4F2F816C2163607",
+        "reason": "unknown_writer",
+        "requested_action": "release",
+        "status": "confirmed",
+        "receipt": {
+          "taskId": "task_yw4piYFfHGUcsVViYnIuCA",
+          "state": "completed",
+          "keep": true,
+          "closed": 0,
+          "released": 1
+        },
+        "page_status": "released"
+      }
+    ],
+    "state": "Released after unknown content result; subsequent independent native and CLI readbacks confirmed the text object deleted. Released page was not reacquired."
+  },
+  "candidate_sha256": {
+    "editor.js": "052b69942654578eb386497ae6f6c347a5695ac8126646ac35859fba09ef5297",
+    "whiteboard.py": "840e9ff9a2b5f03bdd657480cd2eb319e9fdb274e152f0721aa21a3f31ae1263"
+  },
+  "source_sha256": {
+    "editor.js": "2aa0e85f1f08f6414121cf0519591b4f39dc24a456e2b115cb75fe93f96eb13c",
+    "whiteboard.py": "1aa95e1c80a063c992e8e12e02bc9e133160af38d4ecf6992d15e22561cfe113"
+  },
+  "source_extra_guard": "Refuse independent-text empty strings before write in Python preflight and native adapter; added failure checks. Candidate remains frozen.",
+  "validation": {
+    "python_unittest": {
+      "count": 231,
+      "status": "passed"
+    },
+    "node_checks": [
+      "test_editor.cjs",
+      "test_editor_guards.cjs"
+    ],
+    "git_diff_check": "passed"
+  },
+  "scope": "Only new isolated whiteboard written; user experiment board not opened for mutation. No commit, push or publication."
+}

@@ -1,0 +1,18 @@
+\begin{document}
+% \caption{This commented caption must be ignored.}
+\begin{verbatim}
+\input{ignored-verbatim-file}
+\caption{Ignored verbatim caption}
+\end{verbatim}
+
+\begin{abstract}
+The bit error rate (BER) was measured. BER remained below the target threshold.
+\end{abstract}
+
+\section{Results}
+\caption[Short entry]{Measured {bit error rate} versus
+received power for two streams; circles denote stream one and squares denote stream two.}
+\include{appendix}
+\newcommand{\mycap}[1]{\caption{#1}}
+\mycap{Custom BER result}
+\end{document}

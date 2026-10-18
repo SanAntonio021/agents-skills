@@ -1,0 +1,624 @@
+{
+  "schema_version": 1,
+  "helper_contract_version": 13,
+  "ok": false,
+  "status": "source_pushed_runtime_not_active",
+  "exit_code": 30,
+  "message": "源码已推送，运行时未生效。Four-layer file collection and SHA-256 verification failed.",
+  "expected_remote_commit": "c3db54baf9d6afb9332edb611ee752a8bcf92611",
+  "expected_base_commit": "",
+  "expected_runtime_local_files": [],
+  "allow_historical_commit": true,
+  "source": {
+    "source_root": "D:\\BaiduSyncdisk\\.agents\\skills",
+    "branch": "main",
+    "head": "c3db54baf9d6afb9332edb611ee752a8bcf92611",
+    "release_commit": "c3db54baf9d6afb9332edb611ee752a8bcf92611",
+    "historical_commit": false,
+    "head_at_remote": true,
+    "remote_commit": "c3db54baf9d6afb9332edb611ee752a8bcf92611",
+    "base_commit": null,
+    "remote_url": "https://github.com/SanAntonio021/agents-skills.git",
+    "repo_slug": "SanAntonio021/agents-skills",
+    "changed_skills": [
+      "agent-rules",
+      "skill-check"
+    ],
+    "dirty_skills": [],
+    "worktree_exceptions": [],
+    "expected_runtime_local_files": []
+  },
+  "verify_only": true,
+  "ui": {
+    "process_started": false,
+    "process_id": null,
+    "scan_invoked": false,
+    "scan_observed_busy_state": null,
+    "clicked_skills": [],
+    "all_update_invoked": false,
+    "input_method": "background_cli",
+    "window_activation_requested": false,
+    "foreground_restore_requested": false
+  },
+  "background": {
+    "tool": "cc-switch-cli",
+    "version": "5.10.4-download-timeout.1",
+    "binary_path": null,
+    "binary_downloaded": false,
+    "backup_created": false,
+    "process_ids": [],
+    "processed_skills": [],
+    "retry_events": [],
+    "proxy_source": null,
+    "foreground_window_requested": false
+  },
+  "non_target_unchanged": null,
+  "cc_switch_metadata": {
+    "database_path": "C:\\Users\\SanAn\\.cc-switch\\cc-switch.db",
+    "integrity_check": "ok",
+    "repo_slug": "SanAntonio021/agents-skills",
+    "expected_branch": "main",
+    "repository_row_count": 1,
+    "repository_skill_count": 43,
+    "repository_skills": [
+      {
+        "name": "link-test",
+        "directory": "link-test",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-download",
+        "directory": "paper-download",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "style-vocab",
+        "directory": "style-vocab",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "codex-relay-chain",
+        "directory": "codex-relay-chain",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "xlsx",
+        "directory": "xlsx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-figure-review",
+        "directory": "paper-figure-review",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "rigor-check",
+        "directory": "rigor-check",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "ask-first",
+        "directory": "ask-first",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "lab-report-slides",
+        "directory": "lab-report-slides",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "windows-storage-cleanup",
+        "directory": "windows-storage-cleanup",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "standardize-test-project",
+        "directory": "standardize-test-project",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "project-writing",
+        "directory": "project-writing",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "lab-notebook",
+        "directory": "lab-notebook",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "latex-paper",
+        "directory": "latex-paper",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "writing-router",
+        "directory": "writing-router",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-review",
+        "directory": "paper-review",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "humanizer",
+        "directory": "humanizer",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "api-relay-billing-audit",
+        "directory": "api-relay-billing-audit",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "claude-relay-chain",
+        "directory": "claude-relay-chain",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "docx",
+        "directory": "docx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "journal-submission",
+        "directory": "journal-submission",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "libreoffice-runner",
+        "directory": "libreoffice-runner",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "pdf",
+        "directory": "pdf",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "pptx",
+        "directory": "pptx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "project-organizer",
+        "directory": "project-organizer",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "agent-rules",
+        "directory": "agent-rules",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "editaplot",
+        "directory": "editaplot",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "meeting-notes",
+        "directory": "meeting-notes",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "clash-verge-chain-proxy",
+        "directory": "clash-verge-chain-proxy",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "web-access",
+        "directory": "web-access",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "research-report",
+        "directory": "research-report",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "ieee-manuscript-edit",
+        "directory": "ieee-manuscript-edit",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "chat-notes",
+        "directory": "chat-notes",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "cross-model-orchestration",
+        "directory": "cross-model-orchestration",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "product-research-workbook",
+        "directory": "product-research-workbook",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "research-schematic-imagegen",
+        "directory": "research-schematic-imagegen",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "skill-check",
+        "directory": "skill-check",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-search",
+        "directory": "paper-search",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "handoff",
+        "directory": "handoff",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "git-branch-consolidation",
+        "directory": "git-branch-consolidation",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "technical-writing",
+        "directory": "technical-writing",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "skill-creator",
+        "directory": "skill-creator",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "lab-resources",
+        "directory": "lab-resources",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      }
+    ],
+    "valid": true,
+    "skills": [
+      {
+        "name": "agent-rules",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "skill-check",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      }
+    ],
+    "issues": []
+  },
+  "skills": [
+    {
+      "name": "agent-rules",
+      "action": "pending",
+      "verified": false,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\agent-rules",
+          "exists": true,
+          "file_count": 13,
+          "manifest_sha256": "F045C8294F4A794ABB3533299ED7989FA5297DF25DC4A97AFAF4D7B552DAD577",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\agent-rules",
+          "exists": true,
+          "file_count": 13,
+          "manifest_sha256": "4192136ED4B5D94E61CA9EC7196D96304C13E03B8827477FACC1487ADF8C4F2F",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "1F934FD23CB544269BD5CCBC9B99AA95DAB712CC39C626DF7DF376E3DD3DB142",
+              "actual_sha256": "99FFEBB2DD0FD9E8CA8424D7B892E3043EB4BCAB8806DC1F1925636E76671775",
+              "expected_length": 14590,
+              "actual_length": 12001
+            },
+            {
+              "path": "references/skill-upstream-maintenance.md",
+              "expected_sha256": "D2AED69C994C78C2DBDD4C43DDB8580B7474D0051955AC50818A1874D2DF0AEA",
+              "actual_sha256": "66A56EFC2535E5A067F5CD842A9318863666C800C287F377145D2020EB8ECDBE",
+              "expected_length": 25040,
+              "actual_length": 23930
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\agent-rules",
+          "exists": true,
+          "file_count": 13,
+          "manifest_sha256": "4192136ED4B5D94E61CA9EC7196D96304C13E03B8827477FACC1487ADF8C4F2F",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "1F934FD23CB544269BD5CCBC9B99AA95DAB712CC39C626DF7DF376E3DD3DB142",
+              "actual_sha256": "99FFEBB2DD0FD9E8CA8424D7B892E3043EB4BCAB8806DC1F1925636E76671775",
+              "expected_length": 14590,
+              "actual_length": 12001
+            },
+            {
+              "path": "references/skill-upstream-maintenance.md",
+              "expected_sha256": "D2AED69C994C78C2DBDD4C43DDB8580B7474D0051955AC50818A1874D2DF0AEA",
+              "actual_sha256": "66A56EFC2535E5A067F5CD842A9318863666C800C287F377145D2020EB8ECDBE",
+              "expected_length": 25040,
+              "actual_length": 23930
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\agent-rules",
+          "exists": true,
+          "file_count": 13,
+          "manifest_sha256": "4192136ED4B5D94E61CA9EC7196D96304C13E03B8827477FACC1487ADF8C4F2F",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "1F934FD23CB544269BD5CCBC9B99AA95DAB712CC39C626DF7DF376E3DD3DB142",
+              "actual_sha256": "99FFEBB2DD0FD9E8CA8424D7B892E3043EB4BCAB8806DC1F1925636E76671775",
+              "expected_length": 14590,
+              "actual_length": 12001
+            },
+            {
+              "path": "references/skill-upstream-maintenance.md",
+              "expected_sha256": "D2AED69C994C78C2DBDD4C43DDB8580B7474D0051955AC50818A1874D2DF0AEA",
+              "actual_sha256": "66A56EFC2535E5A067F5CD842A9318863666C800C287F377145D2020EB8ECDBE",
+              "expected_length": 25040,
+              "actual_length": 23930
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "skill-check",
+      "action": "pending",
+      "verified": false,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\skill-check",
+          "exists": true,
+          "file_count": 27,
+          "manifest_sha256": "F7F40A6C8199B8F6F0F8F608A8E937E156BD67A65C3DBAF9EB71BD174B1BEE59",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\skill-check",
+          "exists": true,
+          "file_count": 27,
+          "manifest_sha256": "EC60159EEF30D1D9A7E43D225B5BBDE43F309EE938D216DB056EF850FF61CEDA",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "D5C2A9BF711FAB5ADCB829571E93DB78F3E4409850BE91572EF72345E1F72250",
+              "actual_sha256": "34FEE6D888A116F4324EEC65FD8CD254EA0F2B5D73387D5CCBC05D983041E00D",
+              "expected_length": 41184,
+              "actual_length": 38557
+            },
+            {
+              "path": "references/skill-hygiene.md",
+              "expected_sha256": "8F6C0922E3EB914FE6838727EC0DB0D4AFD022692CC3829FE21CABC69E54FF0F",
+              "actual_sha256": "EAF5F19562A05D195EAEA1034B7CE80E7406E8766695C1537D4CD31030AD83EE",
+              "expected_length": 21267,
+              "actual_length": 20810
+            },
+            {
+              "path": "SKILL.md",
+              "expected_sha256": "D55BEF8C839F3808F0B1A9F210054E2C7B86AAE4588C285AA4F6C3097BFC2C42",
+              "actual_sha256": "ABF1259D8CEA94708DEFEB369D209C93C5CDC8D4DDE82B8A755736FDA4F1E842",
+              "expected_length": 25000,
+              "actual_length": 24884
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\skill-check",
+          "exists": true,
+          "file_count": 27,
+          "manifest_sha256": "EC60159EEF30D1D9A7E43D225B5BBDE43F309EE938D216DB056EF850FF61CEDA",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "D5C2A9BF711FAB5ADCB829571E93DB78F3E4409850BE91572EF72345E1F72250",
+              "actual_sha256": "34FEE6D888A116F4324EEC65FD8CD254EA0F2B5D73387D5CCBC05D983041E00D",
+              "expected_length": 41184,
+              "actual_length": 38557
+            },
+            {
+              "path": "references/skill-hygiene.md",
+              "expected_sha256": "8F6C0922E3EB914FE6838727EC0DB0D4AFD022692CC3829FE21CABC69E54FF0F",
+              "actual_sha256": "EAF5F19562A05D195EAEA1034B7CE80E7406E8766695C1537D4CD31030AD83EE",
+              "expected_length": 21267,
+              "actual_length": 20810
+            },
+            {
+              "path": "SKILL.md",
+              "expected_sha256": "D55BEF8C839F3808F0B1A9F210054E2C7B86AAE4588C285AA4F6C3097BFC2C42",
+              "actual_sha256": "ABF1259D8CEA94708DEFEB369D209C93C5CDC8D4DDE82B8A755736FDA4F1E842",
+              "expected_length": 25000,
+              "actual_length": 24884
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\skill-check",
+          "exists": true,
+          "file_count": 27,
+          "manifest_sha256": "EC60159EEF30D1D9A7E43D225B5BBDE43F309EE938D216DB056EF850FF61CEDA",
+          "equal_to_source": false,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [
+            {
+              "path": "evals/evals.json",
+              "expected_sha256": "D5C2A9BF711FAB5ADCB829571E93DB78F3E4409850BE91572EF72345E1F72250",
+              "actual_sha256": "34FEE6D888A116F4324EEC65FD8CD254EA0F2B5D73387D5CCBC05D983041E00D",
+              "expected_length": 41184,
+              "actual_length": 38557
+            },
+            {
+              "path": "references/skill-hygiene.md",
+              "expected_sha256": "8F6C0922E3EB914FE6838727EC0DB0D4AFD022692CC3829FE21CABC69E54FF0F",
+              "actual_sha256": "EAF5F19562A05D195EAEA1034B7CE80E7406E8766695C1537D4CD31030AD83EE",
+              "expected_length": 21267,
+              "actual_length": 20810
+            },
+            {
+              "path": "SKILL.md",
+              "expected_sha256": "D55BEF8C839F3808F0B1A9F210054E2C7B86AAE4588C285AA4F6C3097BFC2C42",
+              "actual_sha256": "ABF1259D8CEA94708DEFEB369D209C93C5CDC8D4DDE82B8A755736FDA4F1E842",
+              "expected_length": 25000,
+              "actual_length": 24884
+            }
+          ],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": "four_layer_verification_failed",
+      "message": "Four-layer file collection and SHA-256 verification failed."
+    }
+  ],
+  "warnings": [],
+  "duration_ms": 10381
+}

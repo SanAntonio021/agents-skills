@@ -1,0 +1,162 @@
+{
+  "nodes": [
+    {
+      "angle": 0,
+      "composite_shape": {
+        "type": "round_rect"
+      },
+      "height": 380,
+      "id": "o2:2",
+      "style": {
+        "border_color": "#247e69",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow",
+        "fill_color": "#eaf5f1",
+        "fill_color_type": 1,
+        "fill_opacity": 100
+      },
+      "text": {
+        "angle": 0,
+        "font_size": 22,
+        "font_weight": "regular",
+        "horizontal_align": "center",
+        "italic": false,
+        "line_through": false,
+        "text": "A 定向耦合器\n耦合：TX→ANT\n直通：ANT→RX",
+        "text_background_color_type": 0,
+        "text_color": "#1f2933",
+        "text_color_type": 1,
+        "theme_text_background_color_code": -1,
+        "underline": false,
+        "vertical_align": "mid"
+      },
+      "type": "composite_shape",
+      "width": 180,
+      "x": 1000,
+      "y": 330,
+      "z_index": 2
+    },
+    {
+      "angle": 0,
+      "connector": {
+        "caption_auto_direction": false,
+        "caption_position": 0.5,
+        "caption_position_type": 0,
+        "captions": {
+          "data": [
+            {
+              "angle": 0,
+              "font_size": 18,
+              "font_weight": "regular",
+              "horizontal_align": "center",
+              "italic": false,
+              "line_through": false,
+              "text": "TX",
+              "text_background_color_type": 0,
+              "text_color": "#247e69",
+              "text_color_type": 1,
+              "theme_text_background_color_code": -1,
+              "underline": false,
+              "vertical_align": "mid"
+            }
+          ]
+        },
+        "end": {
+          "arrow_style": "line_arrow",
+          "attached_object": {
+            "id": "o2:2",
+            "position": {
+              "x": 0,
+              "y": 0.18421052396297455
+            },
+            "snap_to": "left"
+          }
+        },
+        "end_object": {
+          "id": "o2:2",
+          "position": {
+            "x": 0,
+            "y": 0.18421052396297455
+          },
+          "snap_to": "left"
+        },
+        "shape": "straight",
+        "specified_coordinate": true,
+        "start": {
+          "arrow_style": "none",
+          "attached_object": {
+            "id": "o2:1",
+            "position": {
+              "x": 1,
+              "y": 0.5
+            },
+            "snap_to": "right"
+          }
+        },
+        "start_object": {
+          "id": "o2:1",
+          "position": {
+            "x": 1,
+            "y": 0.5
+          },
+          "snap_to": "right"
+        },
+        "turning_points": []
+      },
+      "height": 0,
+      "id": "c2:1",
+      "style": {
+        "border_color": "#247e69",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "type": "connector",
+      "width": 90,
+      "x": 910,
+      "y": 400,
+      "z_index": 0
+    },
+    {
+      "angle": 0,
+      "composite_shape": {
+        "type": "round_rect"
+      },
+      "height": 100,
+      "id": "o2:1",
+      "style": {
+        "border_color": "#247e69",
+        "border_color_type": 1,
+        "border_opacity": 100,
+        "border_style": "solid",
+        "border_width": "narrow",
+        "fill_color": "#eaf5f1",
+        "fill_color_type": 1,
+        "fill_opacity": 100
+      },
+      "text": {
+        "angle": 0,
+        "font_size": 24,
+        "font_weight": "regular",
+        "horizontal_align": "center",
+        "italic": false,
+        "line_through": false,
+        "text": "发射放大级",
+        "text_background_color_type": 0,
+        "text_color": "#1f2933",
+        "text_color_type": 1,
+        "theme_text_background_color_code": -1,
+        "underline": false,
+        "vertical_align": "mid"
+      },
+      "type": "composite_shape",
+      "width": 170,
+      "x": 740,
+      "y": 350,
+      "z_index": 1
+    }
+  ]
+}

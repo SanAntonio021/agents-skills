@@ -1,0 +1,23 @@
+{
+  "scope": "git-branch-consolidation",
+  "changed": [
+    "git-branch-consolidation/SKILL.md",
+    "git-branch-consolidation/evals/evals.json",
+    "git-branch-consolidation/references/recovery-contract.md",
+    "git-branch-consolidation/scripts/capture_recovery.py",
+    "git-branch-consolidation/scripts/recovery_fs.py",
+    "git-branch-consolidation/scripts/verify_acceptance.py",
+    "git-branch-consolidation/scripts/verify_recovery.py",
+    "git-branch-consolidation/tests/test_acceptance_coverage.py",
+    "git-branch-consolidation/tests/test_restore_v3.py"
+  ],
+  "new": [
+    "git-branch-consolidation/scripts/git_layout.py",
+    "git-branch-consolidation/tests/test_git_layout.py",
+    "git-branch-consolidation/tests/test_legacy_packages.py",
+    "git-branch-consolidation/tests/test_nested_v4.py",
+    "git-branch-consolidation/tests/test_retained_local.py"
+  ],
+  "independent_composite_trial_matches_current_scripts": true,
+  "single_skill_file_count": 18
+}

@@ -1,0 +1,10 @@
+{
+  "source_commit": "31bcb6202036a8db9040418614f3b1c2f988d612",
+  "integration_commit": "1151943c79df326f160ec3d29a48ca522a88dc8e",
+  "files_identical": 22,
+  "release_scope": [
+    "paper-download",
+    "paper-search"
+  ],
+  "native_example_unchanged_since_trials": true
+}

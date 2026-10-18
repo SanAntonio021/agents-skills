@@ -1,0 +1,20 @@
+[
+  "ieee-manuscript-edit/evals/evals.json",
+  "ieee-manuscript-edit/references/draft-finalization-rules.md",
+  "ieee-manuscript-edit/references/final-audit.md",
+  "ieee-manuscript-edit/references/manuscript-refinement-checklist.md",
+  "ieee-manuscript-edit/references/sainani-sentence-review.md",
+  "ieee-manuscript-edit/references/writing-memory-schema.md",
+  "paper-figure-review/SKILL.md",
+  "paper-figure-review/evals/evals.json",
+  "paper-figure-review/references/ieee-figure-review-checklist.md",
+  "paper-search/README.md",
+  "paper-search/SKILL.md",
+  "paper-search/evals/evals.json",
+  "paper-search/references/citation-workflow.md",
+  "research-report/evals/evals.json",
+  "research-report/references/restructure-existing.md",
+  "writing-router/SKILL.md",
+  "writing-router/evals/evals.json",
+  "writing-router/references/academic-workflow-map.md"
+]

@@ -1,0 +1,19 @@
+{
+  "old_signature": "7e805832",
+  "current_signature": "d309a450",
+  "old_sources": {
+    "selectNodeText": "selectNodeText(e,r){!r&&e.isInputableNode()&&(r=e.getGraphicTexts().find(e=>{let{type:r}=e;return r===eG.W.Main||r===eG.W.LineCaption})),r&&((0,ew.XA)(e,r,this.app.interactCtx),this.app.renderManager.addAuxiliaryTask())}",
+    "processInput": "processInput(e){this.inputTextProcessor.processInput(e)}",
+    "blur": "blur(){var e;let r=!(arguments.length>0)||void 0===arguments[0]||arguments[0];if(this.isBluring=!0,this.renderInput.blur(this.isMobileInputModeEnabled),this.renderInput.hideCursor(),this.isBluring=!1,!this.textInfo||this.inputStatus===a.Hidden){this.inputStatus=a.Hidden,this.textInfo=void 0;return}let{node:i,inputableText:o}=this.textInfo;this.inputStatus=a.Hidden,this.textInfo=void 0,this.mobileInputControl.resetTransientState(),o.graphicText.resetScrollPosition()&&this.renderManager.addContentTask(),this.mentionManager.resetMentionState(),o.graphicText.isEditing=!1,o.graphicText.isDeactivated=!1,this.emitter.emit(s.Blur,i,o,r),null==(e=this.ctx)||e.auxiliaryManager.addOrUpdateAuxiliaryDomState(w.C.TextNodeFocusStateChange,{type:\"textNodeFocusStateChange\",isFocusing:!1,node:i,inputableText:o})}"
+  },
+  "source_evidence": {
+    "selectNodeText": "D:\\BaiduSyncdisk\\.agents\\过程文件\\箭头文字编辑完善\\inspect-labels-result.json",
+    "processInput_and_blur": "D:\\BaiduSyncdisk\\.agents\\过程文件\\画板局部编辑补齐\\editor-bundle.js",
+    "bundle_sha256": "8bfd6ffcc4b9b028dfcbf8bcbdf09d54e3987a179ae595a39f0a3cbb686d54e9"
+  },
+  "unchanged": [
+    "selectNodeText",
+    "processInput"
+  ],
+  "blur_only_alias_change": true
+}

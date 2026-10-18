@@ -1,0 +1,16 @@
+{
+  "managerPid": 44068,
+  "edgePid": 50780,
+  "proxyPid": 75948,
+  "cdpPort": 5689,
+  "proxyPort": 13546,
+  "fixturePort": 5688,
+  "controlUrl": "http://127.0.0.1:11493",
+  "shutdownSecret": "6df674e3-423a-4ebd-842b-2cf8a2132597",
+  "browserWebSocketUrl": "ws://127.0.0.1:5689/devtools/browser/ce389369-dd7d-4e4f-8dab-edcfc17274e7",
+  "tempRoot": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-behavior-0JMyqH",
+  "unavailableRoot": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-unavailable-PpNzdO",
+  "groundtruthPath": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\web-access-behavior-0JMyqH\\private\\groundtruth.json",
+  "startedAt": "2026-09-12T06:54:23.428Z",
+  "engineSha256": "55de6d2512e39b76cfa26af18b12d03b16ffa5c025883bff48db1bdb0af6a7d5"
+}

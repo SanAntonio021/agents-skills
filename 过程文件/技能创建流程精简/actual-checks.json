@@ -1,0 +1,9 @@
+{
+  "text_only": "passed",
+  "behavior_export": "passed",
+  "new_skill_output": "passed",
+  "resume_manual_edits_and_separate_records": "passed",
+  "auto_trigger_test": "not_run",
+  "model_aliases": "scenario_only",
+  "cost_comparison": "not_run"
+}

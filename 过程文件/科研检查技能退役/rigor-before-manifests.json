@@ -1,0 +1,54 @@
+{
+  "source": {
+    "LICENSE": "8975070a970c5db29e387626758050b59d09aa0d7e2293cc929fac7b66fd244b",
+    "SKILL.md": "19f3bb8a88bbe7d1356e042781c459163a1cde8193299d8124097bd8414e8f56",
+    "references\\common_biases.md": "99f608c86075f1a1ab115a1cf4ecd54fe482266cb5e47761172894f21829f6cf",
+    "references\\evidence_hierarchy.md": "1147c5b600887b7763f00f0095b7b8b707c31a398b8aa37f9d62253537262516",
+    "references\\experimental_design.md": "99023cfb10e455349f5e57fff75d34f80f3bba8842c48f5385ad7d0586f01b11",
+    "references\\logical_fallacies.md": "7911abe82bc05c8f513591e9b00572f21e5a631783cc00cd9dbf644b5eae28ce",
+    "references\\scientific_method.md": "7e68c2fcb852bfffd23c5d6d710a3d0ca54b983fcfcea6e5f864f4c86e40810a",
+    "references\\statistical_pitfalls.md": "c525ed590c36eef9dfca95c9c8bc2ab3e228e9247aa476a2c2ddcf07ffc62172",
+    "references\\thz_hardware_evaluation.md": "1f53b8156ec1d516397704fdf98040ac12241aaf2c3e34dcc0a4f80e8129eef5",
+    "references\\upstream-source.md": "545831721b0a800d4312b75277e2ce4994b6329b0045efddea91115d85b2d0a4",
+    "references\\upstream-sources.md": "6af3c1990711ee56beaa39d54e34f61cd1e88ef14d31905f4de95265fe48e27b"
+  },
+  "cc-switch": {
+    "LICENSE": "8975070a970c5db29e387626758050b59d09aa0d7e2293cc929fac7b66fd244b",
+    "SKILL.md": "19f3bb8a88bbe7d1356e042781c459163a1cde8193299d8124097bd8414e8f56",
+    "references\\common_biases.md": "99f608c86075f1a1ab115a1cf4ecd54fe482266cb5e47761172894f21829f6cf",
+    "references\\evidence_hierarchy.md": "1147c5b600887b7763f00f0095b7b8b707c31a398b8aa37f9d62253537262516",
+    "references\\experimental_design.md": "99023cfb10e455349f5e57fff75d34f80f3bba8842c48f5385ad7d0586f01b11",
+    "references\\logical_fallacies.md": "7911abe82bc05c8f513591e9b00572f21e5a631783cc00cd9dbf644b5eae28ce",
+    "references\\scientific_method.md": "7e68c2fcb852bfffd23c5d6d710a3d0ca54b983fcfcea6e5f864f4c86e40810a",
+    "references\\statistical_pitfalls.md": "c525ed590c36eef9dfca95c9c8bc2ab3e228e9247aa476a2c2ddcf07ffc62172",
+    "references\\thz_hardware_evaluation.md": "1f53b8156ec1d516397704fdf98040ac12241aaf2c3e34dcc0a4f80e8129eef5",
+    "references\\upstream-source.md": "545831721b0a800d4312b75277e2ce4994b6329b0045efddea91115d85b2d0a4",
+    "references\\upstream-sources.md": "6af3c1990711ee56beaa39d54e34f61cd1e88ef14d31905f4de95265fe48e27b"
+  },
+  "claude": {
+    "LICENSE": "8975070a970c5db29e387626758050b59d09aa0d7e2293cc929fac7b66fd244b",
+    "SKILL.md": "19f3bb8a88bbe7d1356e042781c459163a1cde8193299d8124097bd8414e8f56",
+    "references\\common_biases.md": "99f608c86075f1a1ab115a1cf4ecd54fe482266cb5e47761172894f21829f6cf",
+    "references\\evidence_hierarchy.md": "1147c5b600887b7763f00f0095b7b8b707c31a398b8aa37f9d62253537262516",
+    "references\\experimental_design.md": "99023cfb10e455349f5e57fff75d34f80f3bba8842c48f5385ad7d0586f01b11",
+    "references\\logical_fallacies.md": "7911abe82bc05c8f513591e9b00572f21e5a631783cc00cd9dbf644b5eae28ce",
+    "references\\scientific_method.md": "7e68c2fcb852bfffd23c5d6d710a3d0ca54b983fcfcea6e5f864f4c86e40810a",
+    "references\\statistical_pitfalls.md": "c525ed590c36eef9dfca95c9c8bc2ab3e228e9247aa476a2c2ddcf07ffc62172",
+    "references\\thz_hardware_evaluation.md": "1f53b8156ec1d516397704fdf98040ac12241aaf2c3e34dcc0a4f80e8129eef5",
+    "references\\upstream-source.md": "545831721b0a800d4312b75277e2ce4994b6329b0045efddea91115d85b2d0a4",
+    "references\\upstream-sources.md": "6af3c1990711ee56beaa39d54e34f61cd1e88ef14d31905f4de95265fe48e27b"
+  },
+  "codex": {
+    "LICENSE": "8975070a970c5db29e387626758050b59d09aa0d7e2293cc929fac7b66fd244b",
+    "SKILL.md": "19f3bb8a88bbe7d1356e042781c459163a1cde8193299d8124097bd8414e8f56",
+    "references\\common_biases.md": "99f608c86075f1a1ab115a1cf4ecd54fe482266cb5e47761172894f21829f6cf",
+    "references\\evidence_hierarchy.md": "1147c5b600887b7763f00f0095b7b8b707c31a398b8aa37f9d62253537262516",
+    "references\\experimental_design.md": "99023cfb10e455349f5e57fff75d34f80f3bba8842c48f5385ad7d0586f01b11",
+    "references\\logical_fallacies.md": "7911abe82bc05c8f513591e9b00572f21e5a631783cc00cd9dbf644b5eae28ce",
+    "references\\scientific_method.md": "7e68c2fcb852bfffd23c5d6d710a3d0ca54b983fcfcea6e5f864f4c86e40810a",
+    "references\\statistical_pitfalls.md": "c525ed590c36eef9dfca95c9c8bc2ab3e228e9247aa476a2c2ddcf07ffc62172",
+    "references\\thz_hardware_evaluation.md": "1f53b8156ec1d516397704fdf98040ac12241aaf2c3e34dcc0a4f80e8129eef5",
+    "references\\upstream-source.md": "545831721b0a800d4312b75277e2ce4994b6329b0045efddea91115d85b2d0a4",
+    "references\\upstream-sources.md": "6af3c1990711ee56beaa39d54e34f61cd1e88ef14d31905f4de95265fe48e27b"
+  }
+}

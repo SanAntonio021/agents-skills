@@ -1,0 +1,44 @@
+MATLAB_VERSION 23.2.0.2485118 (R2023b) Update 6
+  包含以下字段的 1x113 struct 数组:
+
+    Name
+    Version
+    Release
+    Date
+
+PREFDIR D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\runs\rx_gui_1\preferences
+SCREEN_SIZE            1           1        1920        1080
+
+MONITORS            1           1        1920        1080
+          11        1092        1920        1080
+        1931        1089        1920        1080
+        1921           9        1920        1080
+
+RX config isolation PASS: missing/malformed/unexpected local JSON ignored; mock-only injection; missing scope rejected
+RX scope settings mock PASS: 36 fields, 10 isolated writes, timeout/unsupported/mode validation.
+RX observation PASS: trigger preservation success/failure, descriptor freshness, sequence/RIS rejection
+RX GUI mock assertions passed; full-window screenshots: C:\Users\SanAn\AppData\Local\Temp\tpb74e2787_44bc_4dc4_ae4d_8ce24016332e
+Extended GUI: query-only startup, single-field writes, channel switches, freshness, settings scrolling and screenshots passed.
+RX time grid PASS: origin jitter locked, timestamps intact, position/timebase/route changes and legacy fallback
+RX consistency PASS: 8x10 physical grid, snapshot/descriptor drift, units, offscale, disabled/invalid channels
+RX preferences PASS: ordered routes, per-pair views, read-only reopen, units, first-frame fit, stale data
+RX startup page switch 0.0368s
+RX interaction steps: settings 0.0028s, resize 0.0581s, wheel 0.0056s, return/edit 0.0704s; total 0.1370s
+RX horizontal position PASS: queued negative TRDL, zero readback, new timestamps, no repeated writes
+RX warm-frame pressure PASS: three 4M-point interactions [0.09909 0.09191 0.1242] s
+RX hidden capture PASS: live frames and auto-PSD without drawing, unfinished edits intact, one latest-frame render on return
+RX async PASS: blocked=2s, N=4M/channel, callbacks=0.1370s, cached resize=0.0008s, cold/warm analysis=0.3386/0.2563s
+RX default timer startup / pause / edit / resume PASS
+RX disabled-channel recovery PASS: C3/C4 OFF keeps connection, ON resumes capture
+RX rejection/recovery PASS: bounded retries, sticky reason, restart, calibrated offset, preserved frame, zero writes
+RX background reference PASS: capture/edit continue, manual edit wins, file failure isolated, no instrument access
+RX worker refresh PASS: external channel/trigger changes, per-frame sample mode, cached ranges, zero writes
+[PASS] mock_rx_workbench_interaction_and_layout (256.72s) RX GUI mock assertions passed; full-window screenshots: C:\Users\SanAn\AppData\Local\Temp\tpb74e2787_44bc_4dc4_ae4d_8ce24016332e
+                       Name                       Status    Seconds                                                                   Note                                                               
+    __________________________________________    ______    _______    __________________________________________________________________________________________________________________________________
+
+    "mock_rx_workbench_interaction_and_layout"    "PASS"    256.72     "RX GUI mock assertions passed; full-window screenshots: C:\Users\SanAn\AppData\Local\Temp\tpb74e2787_44bc_4dc4_ae4d_8ce24016332e"
+
+Validation report: D:\BaiduSyncdisk\.agents\skills\过程文件\MATLAB技能补验发布_20260911\isolated_workbench\checks\20260911_145006_validation_rx_gui
+TEMPLATE_VALIDATION_PASS rx_gui
+ACCEPTANCE_COMPLETE rx_gui

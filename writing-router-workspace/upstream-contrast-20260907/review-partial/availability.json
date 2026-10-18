@@ -1,0 +1,70 @@
+{
+  "groups": [
+    {
+      "group": 1,
+      "host": "codex",
+      "case": "necessary-negation-paper",
+      "turn": 1
+    },
+    {
+      "group": 2,
+      "host": "codex",
+      "case": "necessary-negation-paper",
+      "turn": 2
+    },
+    {
+      "group": 3,
+      "host": "codex",
+      "case": "necessary-negation-paper",
+      "turn": 3
+    }
+  ],
+  "missing": [
+    {
+      "host": "claude",
+      "case": "empty-common-sense-report",
+      "versions": [
+        "humanizer-original"
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "necessary-negation-paper",
+      "versions": [
+        "humanizer-original"
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "natural-prose-general",
+      "versions": [
+        "local-after",
+        "humanizer-original"
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "empty-common-sense-report",
+      "versions": [
+        "local-before"
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "natural-prose-general",
+      "versions": [
+        "local-after",
+        "waza-original"
+      ]
+    }
+  ],
+  "excluded_runs": {
+    "runs/claude/humanizer-original/necessary-negation-paper/20260907-203901": "Batch ended with Snapshot changed during comparison; current snapshot matches frozen manifest but historical full pre-hash was not persisted. Excluded pending clean rerun.",
+    "runs/claude/humanizer-original/empty-common-sense-report/20260907-204033": "Same unresolved batch hash anomaly; not counted as an accepted run.",
+    "runs/claude/humanizer-original/natural-prose-general/20260907-204229": "Same unresolved batch hash anomaly; not counted as an accepted run."
+  },
+  "integrity_note": "Current full snapshots/plugins match frozen manifests; historical per-case receipts protect Markdown and vocabulary, not every file type.",
+  "blind": false,
+  "user_choices": [],
+  "quality_accepted": false
+}

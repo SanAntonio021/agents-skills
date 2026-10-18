@@ -1,0 +1,19 @@
+{
+  "kind": "generated_sample",
+  "route": "skip",
+  "source_unchanged": true,
+  "full_text_has_native_and_scan": true,
+  "pages": [
+    {
+      "page": 1,
+      "pixels_identical": true,
+      "preview": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\page-1.png"
+    },
+    {
+      "page": 2,
+      "pixels_identical": true,
+      "preview": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\PDF技能精简\\sample\\page-2.png"
+    }
+  ],
+  "visual_inspection": "passed: both rendered pages inspected; readable text and table, no clipping or unexpected changes"
+}

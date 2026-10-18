@@ -1,0 +1,52 @@
+[
+  {
+    "host": "codex",
+    "case": "necessary-negation-paper",
+    "runs": {
+      "local-before": {
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\runs\\codex\\local-before\\necessary-negation-paper\\20260907-204043",
+        "route": {
+          "route": "existing_cli"
+        },
+        "outputs": [
+          "本实验的统计指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中，\\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在单个发送端发送 256 B 定长帧的条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此计算得到 \\(p_{\\mathrm{drop}}=0.002\\)。由于多发送端测试尚未开展，该结果仅反映单发送端条件下的帧丢弃情况，不能用于评价多发送端竞争场景下的性能。",
+          "本实验的统计指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中，\\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在单个发送端发送 256 B 定长帧的条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此计算得到 \\(p_{\\mathrm{drop}}=0.002\\)。多发送端测试尚未开展。该结果仅适用于单发送端条件，不能说明多发送端竞争场景下的性能。",
+          "### 帧丢弃率结果及适用范围\n\n本实验的统计指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中，\\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在单个发送端发送 256 B 定长帧的条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此计算得到 \\(p_{\\mathrm{drop}}=0.002\\)。多发送端测试尚未开展。该结果仅适用于单发送端条件，不能说明多发送端竞争场景下的性能。"
+        ]
+      },
+      "local-after": {
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\runs\\codex\\local-after\\necessary-negation-paper\\20260907-204518",
+        "route": {
+          "route": "existing_cli"
+        },
+        "outputs": [
+          "本实验统计的指标为帧丢弃率 \\(p_{\\mathrm{drop}}\\)，即丢弃帧数占发送帧数的比例，而非缓存占用率。其定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 为丢弃帧数，\\(N_{\\mathrm{sent}}\\) 为发送帧总数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此得到 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。该结果仅反映上述单发送端条件下的帧丢弃情况，不能用于评价多发送端竞争场景下的性能；相关测试尚未开展。",
+          "本实验统计的指标为帧丢弃率 \\(p_{\\mathrm{drop}}\\)，即丢弃帧数占发送帧数的比例，而非缓存占用率。其定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 为丢弃帧数，\\(N_{\\mathrm{sent}}\\) 为发送帧总数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此得到 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。目前尚未开展多发送端测试。本结果仅适用于上述单发送端条件，不能用于评价多发送端竞争场景下的性能。",
+          "### 单发送端条件下的帧丢弃率\n\n本实验统计的指标为帧丢弃率 \\(p_{\\mathrm{drop}}\\)，即丢弃帧数占发送帧数的比例，而非缓存占用率。其定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 为丢弃帧数，\\(N_{\\mathrm{sent}}\\) 为发送帧总数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80\\,000\\)，\\(N_{\\mathrm{drop}}=160\\)，由此得到 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。目前尚未开展多发送端测试。本结果仅适用于上述单发送端条件，不能用于评价多发送端竞争场景下的性能。"
+        ]
+      },
+      "humanizer-original": {
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\runs\\codex\\humanizer-original\\necessary-negation-paper\\20260907-203923",
+        "route": {
+          "route": "existing_cli"
+        },
+        "outputs": [
+          "本实验统计的指标是帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80{,}000\\)，\\(N_{\\mathrm{drop}}=160\\)，因此 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。该结果仅反映单发送端条件下的帧丢弃情况，不能据此判断多发送端竞争时的系统性能，相关测试尚未开展。",
+          "本实验统计的指标是帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80{,}000\\)，\\(N_{\\mathrm{drop}}=160\\)，因此 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。由于尚未开展多发送端测试，该结果仅适用于上述单发送端条件下的帧丢弃性能评价，不能用于判断多发送端竞争时的系统性能。",
+          "### 单发送端条件下的帧丢弃率\n\n本实验统计的指标是帧丢弃率，而非缓存占用率。帧丢弃率定义为 \\(p_{\\mathrm{drop}}=N_{\\mathrm{drop}}/N_{\\mathrm{sent}}\\)，其中 \\(N_{\\mathrm{drop}}\\) 和 \\(N_{\\mathrm{sent}}\\) 分别表示丢弃帧数和发送帧数。在 256 B 定长帧、单个发送端的实验条件下，\\(N_{\\mathrm{sent}}=80{,}000\\)，\\(N_{\\mathrm{drop}}=160\\)，因此 \\(p_{\\mathrm{drop}}=0.002\\)（0.2%）。由于尚未开展多发送端测试，该结果仅适用于上述单发送端条件下的帧丢弃性能评价，不能用于判断多发送端竞争时的系统性能。"
+        ]
+      },
+      "waza-original": {
+        "source": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router-workspace\\upstream-contrast-20260907\\runs\\codex\\waza-original\\necessary-negation-paper\\20260907-204002",
+        "route": {
+          "route": "existing_cli"
+        },
+        "outputs": [
+          "🥷 本实验统计的指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 p_drop = N_drop / N_sent，其中，N_drop 表示丢弃帧数，N_sent 表示发送帧数。在采用 256 B 定长帧且仅有一个发送端的测试中，N_sent = 80000，N_drop = 160，由此得到 p_drop = 0.002，即发送帧中有 0.2% 被丢弃。该结果仅表征上述单发送端条件下的帧丢弃情况，不能据此推断多发送端竞争场景下的性能，相关测试尚未开展。",
+          "本实验统计的指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 p_drop = N_drop / N_sent，其中，N_drop 表示丢弃帧数，N_sent 表示发送帧数。在采用 256 B 定长帧且仅有一个发送端的测试中，N_sent = 80000，N_drop = 160，由此得到 p_drop = 0.002，即发送帧中有 0.2% 被丢弃。由于多发送端测试尚未开展，该结果仅适用于上述单发送端条件，不能用于评价多发送端竞争场景下的性能。",
+          "### 单发送端条件下的帧丢弃率\n\n本实验统计的指标为帧丢弃率，而非缓存占用率。帧丢弃率定义为 p_drop = N_drop / N_sent，其中，N_drop 表示丢弃帧数，N_sent 表示发送帧数。在采用 256 B 定长帧且仅有一个发送端的测试中，N_sent = 80000，N_drop = 160，由此得到 p_drop = 0.002，即发送帧中有 0.2% 被丢弃。由于多发送端测试尚未开展，该结果仅适用于上述单发送端条件，不能用于评价多发送端竞争场景下的性能。"
+        ]
+      }
+    }
+  }
+]

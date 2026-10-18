@@ -1,0 +1,85 @@
+{
+  "case": "test-explanation",
+  "host": "codex",
+  "arm": "installed",
+  "turns": [
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6a7d-7f10-ad30-30e78ce1f246",
+      "previous_session": null,
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 20509,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 280,
+            "reasoning_output_tokens": 165
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 24.637
+    },
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6a7d-7f10-ad30-30e78ce1f246",
+      "previous_session": "01a08028-6a7d-7f10-ad30-30e78ce1f246",
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 41340,
+            "cached_input_tokens": 20352,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 568,
+            "reasoning_output_tokens": 335
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 22.878
+    },
+    {
+      "status": "completed",
+      "reasons": [],
+      "session": "01a08028-6a7d-7f10-ad30-30e78ce1f246",
+      "previous_session": "01a08028-6a7d-7f10-ad30-30e78ce1f246",
+      "usage": [
+        {
+          "usage": {
+            "input_tokens": 62516,
+            "cached_input_tokens": 40960,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 897,
+            "reasoning_output_tokens": 547
+          }
+        }
+      ],
+      "models": [
+        "gpt-5.6-sol"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "quality_accepted": false,
+      "style_acceptance": "not_reviewed",
+      "duration_seconds": 20.996
+    }
+  ],
+  "status": "completed",
+  "quality_accepted": false,
+  "skipped_turns": 0
+}

@@ -1,0 +1,3 @@
+2026-09-11T14:44:40.367+08:00 | INFO | startup | Run initialized: 20260911_144438_validation_awg_memory
+2026-09-11T14:44:40.379+08:00 | INFO | safety | dry-run: no instrument connection, query, or write was performed.
+2026-09-11T14:44:42.892+08:00 | INFO | finish | Run finalized with status completed.

@@ -1,0 +1,1 @@
+请使用本机已安装的 writing-router 技能完成这个合成文稿任务。原文文件为 C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-ykduloco/original.md，只在原文开头加标题“## 单通道测试记录”。原有正文逐字不动，包括标点、数字、公式、空格和行序。已授权直接生成新文件 C:/Users/SanAn/AppData/Local/Temp/exact-edit-live-ykduloco/result.md，不要覆盖原文，不要额外解释或润色。写入范围仅限这两个文件所在的测试目录。不要读取历史会话、记忆、私人样稿、源码或其他测试目录，不要使用网络、业务系统或子智能体，不要改变配置；可读取本机规则和实际安装技能所需的参考文件。最终只给新文件路径。

@@ -1,0 +1,28 @@
+{
+  "host": "codex",
+  "arm": "examples",
+  "case": "heading-loss",
+  "repeat": 1,
+  "requested_model": "gpt-5.6-sol",
+  "route": {
+    "route": "existing_cli"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-7468t9l9",
+  "prompt_sha256": "0607e2c65aafa186bcd2bf306ac6ec3c77370fc20cef395e76b6f366b41ece01",
+  "status": "running",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "local/writing-router/SKILL.md",
+    "local/writing-router/references/collaborative-writing.md",
+    "local/writing-router/references/common-quality.md",
+    "local/writing-router/references/ai-smell-catalog.md",
+    "local/style-vocab/SKILL.md",
+    "local/ieee-manuscript-edit/SKILL.md",
+    "local/ieee-manuscript-edit/references/chinese-paper.md",
+    "local/writing-router/references/exact-edit.md",
+    "candidate/examples.md"
+  ],
+  "upstream_scope": "applicable",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964"
+}

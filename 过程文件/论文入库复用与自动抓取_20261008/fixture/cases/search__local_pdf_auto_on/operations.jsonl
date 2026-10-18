@@ -1,0 +1,1 @@
+{"time":"2026-10-08T13:44:00.405Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__local_pdf_auto_on","action":"fixture.seed","facts":"inputs 中有本地 PDF；资料库没有此论文的父条目或附件。自动下载设置为 true。","initialAutomatic":true,"simulated":true}

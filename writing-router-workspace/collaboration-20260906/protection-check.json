@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-09-06T16:24:42.539Z",
+  "groups": 23,
+  "files": 853,
+  "unchanged": false,
+  "changes": [
+    {
+      "group": "C:\\Users\\SanAn\\.codex\\skills\\docx",
+      "count": 135,
+      "sha256": "9d1f47cfe330e27d7ce67fc0f1bbb57ea4d05f3723d4a4eb55997f2e7e2c70db"
+    },
+    {
+      "group": "C:\\Users\\SanAn\\.claude\\skills\\docx",
+      "count": 135,
+      "sha256": "0a48343c6930b955ea197aa5dd61c0738eb055b04d0a566a0ab7ea102c37c277"
+    },
+    {
+      "group": "C:\\Users\\SanAn\\.cc-switch\\skills\\docx",
+      "count": 135,
+      "sha256": "526ef2427741601aa3f16f44b3635514c18681d7b77acb54d352a98996c318e8"
+    }
+  ],
+  "runtime_cache_detail": [
+    {
+      "group": "C:\\Users\\SanAn\\.codex\\skills\\docx",
+      "count": 128,
+      "originalFilesUnchanged": true
+    },
+    {
+      "group": "C:\\Users\\SanAn\\.claude\\skills\\docx",
+      "count": 128,
+      "originalFilesUnchanged": true
+    },
+    {
+      "group": "C:\\Users\\SanAn\\.cc-switch\\skills\\docx",
+      "count": 128,
+      "originalFilesUnchanged": true
+    }
+  ],
+  "originalRuntimeFilesUnchanged": true,
+  "runtimeWorkflowDistributed": false,
+  "sharedRuleCloudBefore": {
+    "checkedAt": "2026-09-06T23:49:33.3064020+08:00",
+    "httpStatus": 200,
+    "cloudBytes": 4513,
+    "cloudSha256": "59E9CA74F90EEB10F75FD5B2FBB27B98121326BBDDDD8B4809202B64C0E5765D",
+    "localSha256": "59E9CA74F90EEB10F75FD5B2FBB27B98121326BBDDDD8B4809202B64C0E5765D",
+    "equal": true
+  },
+  "sharedRuleCloudAfter": {
+    "checkedAt": "2026-09-07T00:35:12.4902891+08:00",
+    "httpStatus": 200,
+    "cloudBytes": 4383,
+    "cloudSha256": "C6F75ED0094E65212888EB513F5D62307E5D21C5E0FACFADFB152A53BB026862",
+    "localSha256": "C6F75ED0094E65212888EB513F5D62307E5D21C5E0FACFADFB152A53BB026862",
+    "equal": true
+  }
+}

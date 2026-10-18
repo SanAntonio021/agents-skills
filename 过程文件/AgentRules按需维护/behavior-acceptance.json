@@ -1,0 +1,127 @@
+{
+  "status": "passed",
+  "actual_tasks": 8,
+  "comparison": {
+    "A": {
+      "tasks_passed": 2,
+      "changed_files": [
+        "ccswitch/metadata.json",
+        "ccswitch/skills/alpha/references/usage.md",
+        "ccswitch/skills/alpha/SKILL.md",
+        "claude/skills/alpha/references/usage.md",
+        "claude/skills/alpha/SKILL.md",
+        "codex/skills/alpha/references/usage.md",
+        "codex/skills/alpha/SKILL.md",
+        "global-rules/shared-rules.md"
+      ],
+      "helper_calls": 2,
+      "release_commit": "d11ac85a7a1a93a8b41807b8d0214c3996f2cecb",
+      "rule_read_paths": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/environment.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/baseline/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/automation/ccswitch-background/README.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/tasks/01-rule-edit.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/global-rules/README.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/baseline/references/system-prompt-refinement.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/global-rules/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/logs/task1-shared-rules-before.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/global-rules/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/A/logs/task1-protected-before.json"
+      ],
+      "rule_background_guide_reads": 1,
+      "recorded_read_characters": 31561,
+      "recorded_read_count": 18,
+      "simulation_only": true
+    },
+    "B": {
+      "tasks_passed": 2,
+      "changed_files": [
+        "ccswitch/metadata.json",
+        "ccswitch/skills/alpha/references/usage.md",
+        "ccswitch/skills/alpha/SKILL.md",
+        "claude/skills/alpha/references/usage.md",
+        "claude/skills/alpha/SKILL.md",
+        "codex/skills/alpha/references/usage.md",
+        "codex/skills/alpha/SKILL.md",
+        "global-rules/shared-rules.md"
+      ],
+      "helper_calls": 2,
+      "release_commit": "d11ac85a7a1a93a8b41807b8d0214c3996f2cecb",
+      "rule_read_paths": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/environment.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/tasks/01-rule-edit.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/global-rules/README.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/global-rules/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/global-rules/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/B/logs/task01-protected-hashes.json"
+      ],
+      "rule_background_guide_reads": 0,
+      "recorded_read_characters": 27576,
+      "recorded_read_count": 15,
+      "simulation_only": true
+    }
+  },
+  "new_behavior": {
+    "01-skill-wording": {
+      "reads": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/01-skill-wording/task.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/skill-creator/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/01-skill-wording/source/gamma/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/01-skill-wording/source/gamma/SKILL.md"
+      ],
+      "result": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\trials\\new-only\\01-skill-wording\\logs\\result.md"
+    },
+    "02-chat-notes": {
+      "reads": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/task.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/chat-notes/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/materials/case-1.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/materials/case-2.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/materials/case-3.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/current/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/current/skills/text-import/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/02-chat-notes/current/skills/artifact-export/SKILL.md"
+      ],
+      "result": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\trials\\new-only\\02-chat-notes\\logs\\result.md"
+    },
+    "03-read-only-diagnosis": {
+      "reads": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/03-read-only-diagnosis/task.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/skill-check/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/03-read-only-diagnosis/observations.json",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/03-read-only-diagnosis/source/shared-rules.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/03-read-only-diagnosis/runtime/codex/AGENTS.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/03-read-only-diagnosis/runtime/claude/CLAUDE.md"
+      ],
+      "result": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\trials\\new-only\\03-read-only-diagnosis\\logs\\result.md"
+    },
+    "04-upstream-candidate": {
+      "reads": [
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/task.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/skill-check/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/references/skill-upstream-maintenance.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/source/gamma/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/candidate/gamma/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/review-state.json",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/source-note.md",
+        "D:/BaiduSyncdisk/.agents/skills/agent-rules/references/skill-upstream-maintenance.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/source/gamma/SKILL.md",
+        "D:/BaiduSyncdisk/.agents/skills/过程文件/AgentRules按需维护/trials/new-only/04-upstream-candidate/candidate/gamma/SKILL.md"
+      ],
+      "result": "D:\\BaiduSyncdisk\\.agents\\skills\\过程文件\\AgentRules按需维护\\trials\\new-only\\04-upstream-candidate\\logs\\result.md"
+    }
+  },
+  "only_extra_business_change": [
+    "01-skill-wording/source/gamma/SKILL.md"
+  ],
+  "limits": [
+    "Controlled fixtures and explicit skill loading; not automatic trigger validation.",
+    "Character counts reflect recorded file reads, not tokens, total context, time, or cost.",
+    "A/B helper compatibility was corrected before release calls; no timing comparison."
+  ]
+}

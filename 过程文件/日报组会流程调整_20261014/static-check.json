@@ -1,0 +1,25 @@
+{
+  "changed_files": {
+    "lab-report-slides/README.md": "4840ceb3f4f390c418752f9cfc61b9bc62e1cca9be38755ec2099f406e2b5384",
+    "lab-report-slides/SKILL.md": "089461af13daf16f36abc12f2d1e88c292e58fbd7233b80f314b3b72e8ff6d59",
+    "lab-report-slides/evals/evals.json": "010eae6cbe6e6b63fe74a57dfb59728ef5fc21db7432c50f35ecb37d6b38f797",
+    "lab-report-slides/references/chinese-style.md": "0fa8956d45e0740d1b55e9a5b61f7b32d66ef51c005a54b208b43f829a2072d8",
+    "lab-report-slides/references/installation.md": "e78381c2660bbd6aeabe191aa4919989fbfe8056e3396629b2a8868e05c52d5c",
+    "lab-report-slides/references/materials.md": "c309450a0494b90399f2ddd7e3aa0bb6f4aa42b0621a7a117601e3b8c3f53a12",
+    "pptx/SKILL.md": "b4cdaa90d53b3ef08b6d508056bac2c952224065a7f08d4bcdeeb73798f7449b",
+    "pptx/references/presentation-workflow.md": "532e4bb96f26b61441f0fa3f0b3a656d4685e35b8793f78c39b1aa1fb99f808c"
+  },
+  "checked_local_links": 27,
+  "link_issues": [],
+  "eval_count": 60,
+  "unique_ids": 60,
+  "quick_validate": "both passed with python -X utf8",
+  "diff_check": "passed",
+  "independent_review": {
+    "result": "未发现本次范围内冲突",
+    "local_references_and_anchors": 41,
+    "pptx_evals": 18,
+    "lab_report_evals": 60,
+    "agent": "01a13ad9-3ba4-7a40-a8ac-20246c6b1cc1"
+  }
+}

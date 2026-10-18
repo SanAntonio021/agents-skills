@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a07c42-2da9-79c1-80d3-7061b1941f80"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"P、Q、R三款记录器的标称功耗分别为18 W、15 W和9 W，在不超过12 W的机载平台功耗要求下，只有R符合要求。"}}
+{"type":"turn.completed","usage":{"input_tokens":31600,"cached_input_tokens":4224,"cache_write_input_tokens":0,"output_tokens":207,"reasoning_output_tokens":158}}

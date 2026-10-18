@@ -1,0 +1,31 @@
+{
+  "simulation": true,
+  "skill": "paper-download",
+  "ready": {
+    "check": "ready",
+    "credential_available": true,
+    "pdf_reader_available": true,
+    "has_session": false,
+    "browser_autofilled": false,
+    "start": "environment_error",
+    "status_readback": "environment_error",
+    "error": "PermissionError: [Errno 13] Permission denied writing ready_state.json",
+    "official_status": "pending",
+    "download_status": "pending",
+    "imported": false
+  },
+  "blocked": {
+    "check": "ready",
+    "credential_available": true,
+    "pdf_reader_available": true,
+    "has_session": false,
+    "browser_autofilled": false,
+    "start": "environment_error",
+    "status_readback": "environment_error",
+    "error": "PermissionError: [Errno 13] Permission denied writing blocked_state.json",
+    "official_status": "pending",
+    "download_status": "pending",
+    "imported": false
+  },
+  "scope": "Only provided isolated CLI used for synthetic workflow. No fixture source or initial state read. No real network, browser, credentials, Zotero, publishing, system change, or skill maintenance."
+}

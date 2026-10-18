@@ -1,0 +1,19 @@
+{
+  ".gitignore": "4245844940473204c4aeac40812f3027a91a07955dd840a4dfa1e2dd54c6a641",
+  "README.md": "45214a31ede9daa66da0c029f91ff6162d7e824c01558c72940e7e0f1a654355",
+  "ieee-manuscript-edit/SKILL.md": "7fbc4265041dbed5913ac6c3c1f193c409d33dbd7a4e75e83e739bdcdd4f6c5a",
+  "meeting-notes/SKILL.md": "4751b396d13ec552136cc9c6fb7778696e55b5a291c60830f79972e71e8af940",
+  "project-writing/SKILL.md": "5983e9a230ad283ce6376a835745bf82ecc838f8651e9bb7d2aa8369b5fa1fdf",
+  "research-report/SKILL.md": "379fac079170601498f69bd4734f552d409754bf6aee81d7db59685debe9c586",
+  "research-report/references/decision-report.md": "0db0d911ae7804880f247bd99b4feb228b4c22d0ae15dc60e0fcf5dedfd581b2",
+  "research-report/references/modes.md": "15b4c05b98a9d91c3c1a9e921812dcb9ee239bfc6aeda46ad73405de845bbf34",
+  "research-report/references/report-contract.md": "d42d450cb4249e72b54a7ab1ff46a26378067c51b8910983a1c8a50e9c7e8edc",
+  "research-report/scripts/audit_report.py": "0c56d711702217179d096c5470dd34fb8fc59b32126893aab1777767ddb2bbde",
+  "research-report/tests/test_audit_report.py": "97fb73e9e938d9af47b463c83c5284be456e8f73a9ec25461c92c2e6d9ed63bd",
+  "skill-check-workspace/verification-runtime/manifests/2026-04-26/summary.json": null,
+  "skill-check-workspace/verification-runtime/weekly/2026-04-26.md": null,
+  "skill-check-workspace/verification-source/manifests/2026-04-26/summary.json": null,
+  "skill-check-workspace/verification-source/weekly/2026-04-26.md": null,
+  "style-vocab/SKILL.md": "f90fb1098ba117c8cf581bcbb9054e7c88914b183b50c631d40f82f5b237f932",
+  "technical-writing/SKILL.md": "0447b8630a6bcd9757b28ef0800f72c4a0d9f1b32553bb8cdb10509132c3b998"
+}

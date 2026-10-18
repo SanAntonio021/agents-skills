@@ -1,0 +1,70 @@
+{
+  "expectations": [
+    {
+      "text": "A: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2, 2, 2]"
+    },
+    {
+      "text": "A: Turn 2 preserves the results paragraph",
+      "passed": true,
+      "evidence": "Turn 1/2 second paragraph exact comparison."
+    },
+    {
+      "text": "A: Turn 3 preserves the process paragraph",
+      "passed": true,
+      "evidence": "Turn 2/3 first paragraph exact comparison."
+    },
+    {
+      "text": "A: Turn 3 uses the requested opening",
+      "passed": true,
+      "evidence": "Second paragraph opening."
+    },
+    {
+      "text": "A: Turn 3 preserves text after the first results sentence",
+      "passed": true,
+      "evidence": "Remainder after first Chinese full stop; first sentence needs semantic review."
+    },
+    {
+      "text": "A: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    },
+    {
+      "text": "B: Each output has two paragraphs",
+      "passed": true,
+      "evidence": "Paragraph counts: [2, 2, 2]"
+    },
+    {
+      "text": "B: Turn 2 preserves the results paragraph",
+      "passed": true,
+      "evidence": "Turn 1/2 second paragraph exact comparison."
+    },
+    {
+      "text": "B: Turn 3 preserves the process paragraph",
+      "passed": true,
+      "evidence": "Turn 2/3 first paragraph exact comparison."
+    },
+    {
+      "text": "B: Turn 3 uses the requested opening",
+      "passed": true,
+      "evidence": "Second paragraph opening."
+    },
+    {
+      "text": "B: Turn 3 preserves text after the first results sentence",
+      "passed": true,
+      "evidence": "Remainder after first Chinese full stop; first sentence needs semantic review."
+    },
+    {
+      "text": "B: Facts and scope preserved",
+      "passed": true,
+      "evidence": "Independent semantic review, confirmed by parent; see blind-review.json."
+    }
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "total": 12
+  },
+  "notes": "两者全程达标，删除空话后未反弹，严格遵守后两轮局部修改范围。采集/读取、不会中断/不中断和首句主语取舍未产生可辨别的质量增益。必要范围限定不算重复，句长和标点不足以判优。"
+}

@@ -1,0 +1,19 @@
+{
+  "purpose": "Display the unmodified original native PNG against a white viewer background",
+  "source": "02_edit/preview.png",
+  "task_id": "task_mcHwLOhqQYIFPqe7YOPXGg",
+  "tab_id": "221FA98F046E3773E7A9FCCDF373F27C",
+  "viewer_metadata": {
+    "value": "{\"title\":\"Original native PNG — white viewer\",\"complete\":true,\"naturalWidth\":1874,\"naturalHeight\":870,\"background\":\"rgb(255, 255, 255)\"}"
+  },
+  "viewer_screenshot": "original-png-white-viewer.png",
+  "status": "captured",
+  "cleanup_receipt": {
+    "taskId": "task_mcHwLOhqQYIFPqe7YOPXGg",
+    "state": "completed",
+    "keep": false,
+    "closed": 1,
+    "released": 0
+  },
+  "page_status": "closed"
+}

@@ -1,0 +1,12 @@
+{
+  "ready_groups": 4,
+  "missing": [],
+  "user_choices": [
+    {"group": 1, "turn": 2, "choice": "B"},
+    {"group": 1, "turn": 3, "choice": "B"}
+  ],
+  "quality_accepted": false,
+  "purpose": "targeted_diagnostic_only_not_acceptance",
+  "blind": false,
+  "note": "Complete outputs retained, including version paths emitted by Claude; not a blind comparison. Does not replace the planned project/paper acceptance groups. Partial group 1 feedback is recorded in conversation-feedback.json; no overall acceptance."
+}

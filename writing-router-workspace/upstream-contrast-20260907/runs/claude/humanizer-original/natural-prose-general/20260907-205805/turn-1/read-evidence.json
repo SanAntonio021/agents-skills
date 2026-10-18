@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Skill",
+    "input": {
+      "skill": "writing-eval:humanizer-zh"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "ls -R \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" 2>/dev/null; ls \"D:/BaiduSyncdisk/.agents/vocab\" 2>/dev/null",
+      "description": "List skill files and personal vocab"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "echo \"--- skill ---\"; ls -1 \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\"; echo \"--- vocab ---\"; ls -1 \"D:/BaiduSyncdisk/.agents/vocab\"",
+      "description": "List skill dir and vocab dir separately"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/vocab\" && cat 目录.md && echo \"=== 术语 ===\" && head -60 术语.md && echo \"=== 中文 ===\" && ls -1 中文",
+      "description": "Read vocab index and terms"
+    }
+  },
+  {
+    "name": "Read",
+    "input": {
+      "file_path": "D:\\BaiduSyncdisk\\.agents\\vocab\\中文\\通用.md"
+    }
+  },
+  {
+    "name": "Bash",
+    "input": {
+      "command": "cd \"D:/BaiduSyncdisk/.agents/skills/writing-router-workspace/upstream-contrast-20260907/plugins/humanizer-original/skills/humanizer-zh\" && head -40 README.md",
+      "description": "Check skill README for scripts"
+    }
+  }
+]

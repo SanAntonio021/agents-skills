@@ -1,0 +1,22 @@
+{
+  "host": "codex",
+  "arm": "khazix",
+  "case": "heading-loss",
+  "repeat": 1,
+  "requested_model": "gpt-5.6-sol",
+  "route": {
+    "route": "existing_cli"
+  },
+  "scratch": "C:\\Users\\SanAn\\AppData\\Local\\Temp\\khazix-contrast-gia5wbmj",
+  "prompt_sha256": "c2e542348ea805275c76f3982c7af2e4d6f695af8d61ed89c4b5fa090cada32d",
+  "status": "running",
+  "loader": "inline_full_rules_and_vocabulary",
+  "references": [
+    "upstream/khazix-writer/SKILL.md",
+    "upstream/khazix-writer/references/style_examples.md",
+    "upstream/khazix-writer/references/content_methodology.md"
+  ],
+  "upstream_scope": "explicitly_excluded_heading",
+  "quality_accepted": false,
+  "snapshot_manifest_sha256": "d4ce2673879485c6804ff23443f1616fc430a978849fb442ae24b88f785c8964"
+}

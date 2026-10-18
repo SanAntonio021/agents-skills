@@ -1,0 +1,18 @@
+{
+  "ready_groups": 2,
+  "missing": [
+    {
+      "host": "claude",
+      "case": "unnecessary-defense-project",
+      "reason": "missing complete matched outputs"
+    },
+    {
+      "host": "claude",
+      "case": "necessary-negation-paper",
+      "reason": "missing complete matched outputs"
+    }
+  ],
+  "user_choices": [],
+  "quality_accepted": false,
+  "note": "Complete outputs only; no automatic style or read-scope pass. Raw traces remain available."
+}

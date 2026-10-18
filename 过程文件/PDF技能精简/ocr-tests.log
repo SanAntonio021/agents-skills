@@ -1,0 +1,16 @@
+test_auto_route_matrix (test_ocr_pdf.ClassificationTests.test_auto_route_matrix) ... ok
+test_explicit_mode_wins (test_ocr_pdf.ClassificationTests.test_explicit_mode_wins) ... ok
+test_page_classification_thresholds (test_ocr_pdf.ClassificationTests.test_page_classification_thresholds) ... ok
+test_union_area_does_not_double_count (test_ocr_pdf.ClassificationTests.test_union_area_does_not_double_count) ... ok
+test_document_mixed_keeps_native_and_ocr_text (test_ocr_pdf.EndToEndTests.test_document_mixed_keeps_native_and_ocr_text) ... ok
+test_good_existing_text_layer_is_copied_without_ocr (test_ocr_pdf.EndToEndTests.test_good_existing_text_layer_is_copied_without_ocr) ... ok
+test_page_level_mixed_content_uses_redo (test_ocr_pdf.EndToEndTests.test_page_level_mixed_content_uses_redo) ... ok
+test_scan_canary_and_failure_cleanup (test_ocr_pdf.EndToEndTests.test_scan_canary_and_failure_cleanup) ... ok
+test_traditional_chinese_language_pack (test_ocr_pdf.EndToEndTests.test_traditional_chinese_language_pack) ... ok
+test_native_and_image_only_pages_are_distinguished (test_ocr_pdf.InspectionTests.test_native_and_image_only_pages_are_distinguished) ... ok
+test_finalize_keeps_validation_evidence_until_explicit_cleanup (test_ocr_pdf.PublicationRetentionTests.test_finalize_keeps_validation_evidence_until_explicit_cleanup) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 19.821s
+
+OK

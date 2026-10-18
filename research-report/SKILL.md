@@ -17,9 +17,13 @@ description: 围绕行业、市场、技术、竞品或政策问题开展调研�
 
 建立或沿用写作上下文后、处理正文前，读取[文稿协作](../writing-router/references/collaborative-writing.md)，按其中的范围和例外选择处理方式，并将实际路径记入 `loaded_refs`。直接调用本技能时同样执行；本轮已读且处理方式未变时沿用。
 
-读取 [共同质量规则](../writing-router/references/common-quality.md)。完整草稿、结构重写、终稿审校和 `audit_only` 再读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)。
+读取 [共同质量规则](../writing-router/references/common-quality.md)。中文正文首次起草、续写、局部修改或审查前，同时读取 [AI 气味目录](../writing-router/references/ai-smell-catalog.md)，按共同质量规则的“中文正文展示前检查”加载适用词表并逐批检查；同任务未变时沿用。英文仍在完整草稿、结构重写、终稿审校和 `audit_only` 时读取气味目录。
 
 再按 [工作模式](references/modes.md) 读取最少参考文件。私有样稿入口为 `D:\BaiduSyncdisk\.agents\writing-profile\index.md`；只有 `research_report` 样稿获批时才加载。
+
+局部润色和从现有正文提取摘要时，先沿用原文的事实与结论范围，不因题目含“采购”“选型”就增加决策建议。`mode` 规定文体能容纳什么，不扩大本轮改动授权；没有要求新增建议时，不补采购、验证或暂缓安排。材料中已核实的未完成状态属于对象事实，按其对判断的影响保留，不当作编写者的资料缺口移出正文。
+
+提取摘要时，先在原文中定位要概括的结论句，按共同质量规则选择必要信息，不把单项满足改写成综合推荐。对象状态是否入摘要取决于它是否限制这句结论，不按状态清单逐项补齐。区分材料中的单项比较与产品的实测验证：按报价比较交期，不等于断言产品已经可用，不能把未验收自动接成该交期结论的转折。若摘要确实声称产品可用，则必须有相应验证依据。用户只要摘要时只交付摘要。
 
 ## 从调研到报告
 
@@ -95,7 +99,7 @@ description: 围绕行业、市场、技术、竞品或政策问题开展调研�
 
 ## 审计脚本
 
-Markdown 或纯文本可运行：
+用于完整报告审计或用户明确要求的脚本检查。聊天内局部润色、改列表和提取一句摘要按共同质量规则直接核对，不为这些操作启动完整报告审计。Markdown 或纯文本文件可运行：
 
 ```text
 python scripts/audit_report.py report.md --mode evidence-report --json

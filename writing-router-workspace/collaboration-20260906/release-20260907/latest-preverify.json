@@ -1,0 +1,991 @@
+{
+  "schema_version": 1,
+  "helper_contract_version": 13,
+  "ok": true,
+  "status": "runtime_active",
+  "exit_code": 0,
+  "message": "Release commit, CC Switch metadata, and all runtime layers passed verification.",
+  "expected_remote_commit": "13afdb76b8b53dfe9296cb7acb0edfe01659525d",
+  "expected_base_commit": "3bb66ef293a857a1de4ab851d519287f4312d83b",
+  "expected_runtime_local_files": [],
+  "allow_historical_commit": false,
+  "source": {
+    "source_root": "D:\\BaiduSyncdisk\\.agents\\skills",
+    "branch": "main",
+    "head": "13afdb76b8b53dfe9296cb7acb0edfe01659525d",
+    "release_commit": "13afdb76b8b53dfe9296cb7acb0edfe01659525d",
+    "historical_commit": false,
+    "head_at_remote": true,
+    "remote_commit": "13afdb76b8b53dfe9296cb7acb0edfe01659525d",
+    "base_commit": "3bb66ef293a857a1de4ab851d519287f4312d83b",
+    "remote_url": "https://github.com/SanAntonio021/agents-skills.git",
+    "repo_slug": "SanAntonio021/agents-skills",
+    "changed_skills": [
+      "ask-first",
+      "chat-notes",
+      "docx",
+      "ieee-manuscript-edit",
+      "meeting-notes",
+      "project-writing",
+      "research-report",
+      "technical-writing",
+      "writing-router"
+    ],
+    "dirty_skills": [],
+    "worktree_exceptions": [],
+    "expected_runtime_local_files": []
+  },
+  "verify_only": true,
+  "ui": {
+    "process_started": false,
+    "process_id": null,
+    "scan_invoked": false,
+    "scan_observed_busy_state": null,
+    "clicked_skills": [],
+    "all_update_invoked": false,
+    "input_method": "background_cli",
+    "window_activation_requested": false,
+    "foreground_restore_requested": false
+  },
+  "background": {
+    "tool": "cc-switch-cli",
+    "version": "5.10.4-download-timeout.1",
+    "binary_path": null,
+    "binary_downloaded": false,
+    "backup_created": false,
+    "process_ids": [],
+    "processed_skills": [],
+    "retry_events": [],
+    "proxy_source": null,
+    "foreground_window_requested": false
+  },
+  "non_target_unchanged": null,
+  "cc_switch_metadata": {
+    "database_path": "C:\\Users\\SanAn\\.cc-switch\\cc-switch.db",
+    "integrity_check": "ok",
+    "repo_slug": "SanAntonio021/agents-skills",
+    "expected_branch": "main",
+    "repository_row_count": 1,
+    "repository_skill_count": 45,
+    "repository_skills": [
+      {
+        "name": "baseline-research",
+        "directory": "baseline-research",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "link-test",
+        "directory": "link-test",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-download",
+        "directory": "paper-download",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "style-vocab",
+        "directory": "style-vocab",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "codex-relay-chain",
+        "directory": "codex-relay-chain",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "xlsx",
+        "directory": "xlsx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "command-memory",
+        "directory": "command-memory",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-figure-review",
+        "directory": "paper-figure-review",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "rigor-check",
+        "directory": "rigor-check",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "ask-first",
+        "directory": "ask-first",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "lab-report-slides",
+        "directory": "lab-report-slides",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "windows-storage-cleanup",
+        "directory": "windows-storage-cleanup",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "target-feasibility",
+        "directory": "target-feasibility",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "standardize-test-project",
+        "directory": "standardize-test-project",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "project-writing",
+        "directory": "project-writing",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "lab-notebook",
+        "directory": "lab-notebook",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "latex-paper",
+        "directory": "latex-paper",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "writing-router",
+        "directory": "writing-router",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-review",
+        "directory": "paper-review",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "humanizer",
+        "directory": "humanizer",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "api-relay-billing-audit",
+        "directory": "api-relay-billing-audit",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "claude-relay-chain",
+        "directory": "claude-relay-chain",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "docx",
+        "directory": "docx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "journal-submission",
+        "directory": "journal-submission",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "libreoffice-runner",
+        "directory": "libreoffice-runner",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "pdf",
+        "directory": "pdf",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "pptx",
+        "directory": "pptx",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "project-organizer",
+        "directory": "project-organizer",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "agent-rules",
+        "directory": "agent-rules",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "editaplot",
+        "directory": "editaplot",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-summary",
+        "directory": "paper-summary",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "meeting-notes",
+        "directory": "meeting-notes",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "clash-verge-chain-proxy",
+        "directory": "clash-verge-chain-proxy",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "web-access",
+        "directory": "web-access",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "research-report",
+        "directory": "research-report",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "ieee-manuscript-edit",
+        "directory": "ieee-manuscript-edit",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "chat-notes",
+        "directory": "chat-notes",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "cross-model-orchestration",
+        "directory": "cross-model-orchestration",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "product-research-workbook",
+        "directory": "product-research-workbook",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "research-schematic-imagegen",
+        "directory": "research-schematic-imagegen",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "skill-check",
+        "directory": "skill-check",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "paper-search",
+        "directory": "paper-search",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "handoff",
+        "directory": "handoff",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "git-branch-consolidation",
+        "directory": "git-branch-consolidation",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "technical-writing",
+        "directory": "technical-writing",
+        "managed_by_helper": true,
+        "valid": true,
+        "issues": []
+      }
+    ],
+    "valid": true,
+    "skills": [
+      {
+        "name": "ask-first",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "chat-notes",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "docx",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "ieee-manuscript-edit",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "meeting-notes",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "project-writing",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "research-report",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "technical-writing",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      },
+      {
+        "name": "writing-router",
+        "row_count": 1,
+        "valid": true,
+        "issues": []
+      }
+    ],
+    "issues": []
+  },
+  "skills": [
+    {
+      "name": "ask-first",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\ask-first",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "785B5D602258FF4EB09C23DA185F2362A5056E0417AFB95E3405EE285EF508B1",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\ask-first",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "785B5D602258FF4EB09C23DA185F2362A5056E0417AFB95E3405EE285EF508B1",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\ask-first",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "785B5D602258FF4EB09C23DA185F2362A5056E0417AFB95E3405EE285EF508B1",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\ask-first",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "785B5D602258FF4EB09C23DA185F2362A5056E0417AFB95E3405EE285EF508B1",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "chat-notes",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\chat-notes",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "CAB5EB1E9495100D086D5B89A755CECFA21058C45E66F9E5EC34D30B9E2ABE6E",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\chat-notes",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "CAB5EB1E9495100D086D5B89A755CECFA21058C45E66F9E5EC34D30B9E2ABE6E",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\chat-notes",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "CAB5EB1E9495100D086D5B89A755CECFA21058C45E66F9E5EC34D30B9E2ABE6E",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\chat-notes",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "CAB5EB1E9495100D086D5B89A755CECFA21058C45E66F9E5EC34D30B9E2ABE6E",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "docx",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\docx",
+          "exists": true,
+          "file_count": 128,
+          "manifest_sha256": "5FC2BFCB8BA4CA240DC2D30BE2156FD4F64390890278BC6C8DB57656014FE07C",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\docx",
+          "exists": true,
+          "file_count": 128,
+          "manifest_sha256": "5FC2BFCB8BA4CA240DC2D30BE2156FD4F64390890278BC6C8DB57656014FE07C",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\docx",
+          "exists": true,
+          "file_count": 128,
+          "manifest_sha256": "5FC2BFCB8BA4CA240DC2D30BE2156FD4F64390890278BC6C8DB57656014FE07C",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\docx",
+          "exists": true,
+          "file_count": 128,
+          "manifest_sha256": "5FC2BFCB8BA4CA240DC2D30BE2156FD4F64390890278BC6C8DB57656014FE07C",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "ieee-manuscript-edit",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\ieee-manuscript-edit",
+          "exists": true,
+          "file_count": 95,
+          "manifest_sha256": "5A59D50AA200F730383ACA95EB042E42E4D4F9764CD291547B25DCFA66DDCB51",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\ieee-manuscript-edit",
+          "exists": true,
+          "file_count": 95,
+          "manifest_sha256": "5A59D50AA200F730383ACA95EB042E42E4D4F9764CD291547B25DCFA66DDCB51",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\ieee-manuscript-edit",
+          "exists": true,
+          "file_count": 95,
+          "manifest_sha256": "5A59D50AA200F730383ACA95EB042E42E4D4F9764CD291547B25DCFA66DDCB51",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\ieee-manuscript-edit",
+          "exists": true,
+          "file_count": 95,
+          "manifest_sha256": "5A59D50AA200F730383ACA95EB042E42E4D4F9764CD291547B25DCFA66DDCB51",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "meeting-notes",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\meeting-notes",
+          "exists": true,
+          "file_count": 5,
+          "manifest_sha256": "B7DC248719B67BFCC8ABFA0EF153BC8F8123F30BCF02554356A1ABF18E5D1A66",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\meeting-notes",
+          "exists": true,
+          "file_count": 5,
+          "manifest_sha256": "B7DC248719B67BFCC8ABFA0EF153BC8F8123F30BCF02554356A1ABF18E5D1A66",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\meeting-notes",
+          "exists": true,
+          "file_count": 5,
+          "manifest_sha256": "B7DC248719B67BFCC8ABFA0EF153BC8F8123F30BCF02554356A1ABF18E5D1A66",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\meeting-notes",
+          "exists": true,
+          "file_count": 5,
+          "manifest_sha256": "B7DC248719B67BFCC8ABFA0EF153BC8F8123F30BCF02554356A1ABF18E5D1A66",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "project-writing",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\project-writing",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "7C45A55CEE33E07C5BE481DDC895B6951742E781F7F00C9202473E5526846509",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\project-writing",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "7C45A55CEE33E07C5BE481DDC895B6951742E781F7F00C9202473E5526846509",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\project-writing",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "7C45A55CEE33E07C5BE481DDC895B6951742E781F7F00C9202473E5526846509",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\project-writing",
+          "exists": true,
+          "file_count": 6,
+          "manifest_sha256": "7C45A55CEE33E07C5BE481DDC895B6951742E781F7F00C9202473E5526846509",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "research-report",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\research-report",
+          "exists": true,
+          "file_count": 16,
+          "manifest_sha256": "1E95A20B0132093F7692005B87A6EC84604BCC835FD4494F4267068D88D805E6",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\research-report",
+          "exists": true,
+          "file_count": 16,
+          "manifest_sha256": "1E95A20B0132093F7692005B87A6EC84604BCC835FD4494F4267068D88D805E6",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\research-report",
+          "exists": true,
+          "file_count": 16,
+          "manifest_sha256": "1E95A20B0132093F7692005B87A6EC84604BCC835FD4494F4267068D88D805E6",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\research-report",
+          "exists": true,
+          "file_count": 16,
+          "manifest_sha256": "1E95A20B0132093F7692005B87A6EC84604BCC835FD4494F4267068D88D805E6",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "technical-writing",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\technical-writing",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "3B5E462D8DC20A6511F2BA08140B8116C84034E120B0ECA0E8C8A45EBC84E6B3",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\technical-writing",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "3B5E462D8DC20A6511F2BA08140B8116C84034E120B0ECA0E8C8A45EBC84E6B3",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\technical-writing",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "3B5E462D8DC20A6511F2BA08140B8116C84034E120B0ECA0E8C8A45EBC84E6B3",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\technical-writing",
+          "exists": true,
+          "file_count": 4,
+          "manifest_sha256": "3B5E462D8DC20A6511F2BA08140B8116C84034E120B0ECA0E8C8A45EBC84E6B3",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    },
+    {
+      "name": "writing-router",
+      "action": "already_current",
+      "verified": true,
+      "layers": {
+        "source": {
+          "root": "D:\\BaiduSyncdisk\\.agents\\skills\\writing-router",
+          "exists": true,
+          "file_count": 22,
+          "manifest_sha256": "DBC2773FD16950A3D88F0AD7A82826DB21C88DC1932F7CF0E113A982F832EF89",
+          "equal_to_source": true,
+          "basis": "git_commit_blob",
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "cc_switch": {
+          "root": "C:\\Users\\SanAn\\.cc-switch\\skills\\writing-router",
+          "exists": true,
+          "file_count": 22,
+          "manifest_sha256": "DBC2773FD16950A3D88F0AD7A82826DB21C88DC1932F7CF0E113A982F832EF89",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "claude": {
+          "root": "C:\\Users\\SanAn\\.claude\\skills\\writing-router",
+          "exists": true,
+          "file_count": 22,
+          "manifest_sha256": "DBC2773FD16950A3D88F0AD7A82826DB21C88DC1932F7CF0E113A982F832EF89",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        },
+        "codex": {
+          "root": "C:\\Users\\SanAn\\.codex\\skills\\writing-router",
+          "exists": true,
+          "file_count": 22,
+          "manifest_sha256": "DBC2773FD16950A3D88F0AD7A82826DB21C88DC1932F7CF0E113A982F832EF89",
+          "equal_to_source": true,
+          "missing": [],
+          "extra": [],
+          "hash_mismatch": [],
+          "line_ending_only_mismatch": [],
+          "runtime_local_files_allowed": [],
+          "runtime_local_files_present": []
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "duration_ms": 15188
+}

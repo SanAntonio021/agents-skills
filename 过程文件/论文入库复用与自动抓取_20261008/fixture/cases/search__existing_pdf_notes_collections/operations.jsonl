@@ -1,0 +1,1 @@
+{"time":"2026-10-08T13:44:00.403Z","processInstance":"9fada2e7-ed56-4a48-a8a5-57c93e4978ec","case":"search__existing_pdf_notes_collections","action":"fixture.seed","facts":"父条目已有 PDF；另有笔记、PDF 批注和两个分类。自动下载设置为 true。","initialAutomatic":true,"simulated":true}

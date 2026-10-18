@@ -1,0 +1,622 @@
+{
+  "status": "unverified",
+  "steps": [
+    {
+      "operation": {
+        "kind": "text",
+        "id": "o3:1",
+        "text": "形状改字\n第二行"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-005.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 3,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 4,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-006.json"
+      },
+      "after_raw": "raw-006.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "o3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "o3:1",
+        "text": ""
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-008.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 4,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 5,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-009.json"
+      },
+      "after_raw": "raw-009.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "o3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "o3:1",
+        "text": "形状新增文字\n完成"
+      },
+      "save_status": "confirmed",
+      "verification_status": "passed",
+      "failure_phase": null,
+      "execution_status": "returned",
+      "before_raw": "raw-011.json",
+      "save_evidence": {
+        "fence": {
+          "signature": "b8586b42",
+          "before_applied_version": 5,
+          "requires_ack": true
+        },
+        "native_save": {
+          "available": true,
+          "signature": "b8586b42",
+          "initialized": true,
+          "applied_version": 6,
+          "pending": 0,
+          "ordered_pending": 0,
+          "processing": false,
+          "offline": false,
+          "save_state": "saved",
+          "http_pending": 0
+        },
+        "raw": "raw-012.json"
+      },
+      "after_raw": "raw-012.json",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "o3:1"
+        ]
+      },
+      "before_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "after_render_alpha": {
+        "o3:1": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:2": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "o3:3": {
+          "border": 1,
+          "fill": 1,
+          "text": 1
+        },
+        "a3:1": {
+          "border": 1,
+          "text": 1
+        },
+        "c3:1": {
+          "border": 1
+        },
+        "c3:2": {
+          "border": 1,
+          "text": 1
+        }
+      },
+      "group_cache_normalizations": [],
+      "raw_exceptions": [],
+      "reopen_status": "passed"
+    },
+    {
+      "operation": {
+        "kind": "text",
+        "id": "a3:1",
+        "text": "独立文字\n第二行"
+      },
+      "save_status": "not_written",
+      "verification_status": "failed",
+      "failure_phase": "execute",
+      "execution_status": "rejected_before_content_call",
+      "before_raw": "raw-014.json",
+      "error": "VerificationError"
+    }
+  ],
+  "pages": [
+    {
+      "task_id": "task_p9bd8SV6anhjQJRWLCOIFQ",
+      "tab_id": "63852EDE41EEA006698306787216715F",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_ex2hJGle374x6nwtiMcR5w",
+      "tab_id": "5AA6E3D471353D31DB6AD54E4D61E27B",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_yrdWuzvl4jxan9CZeeDr2Q",
+      "tab_id": "A62EC01940F1D9BA1848FBE118AE2CA2",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    },
+    {
+      "task_id": "task_u1yRvEi7aqE0lnwzPbbaUA",
+      "tab_id": "7EAC6FD21FB785F1C1BF06746C7D666D",
+      "open_status": "ready",
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh"
+    }
+  ],
+  "cleanup_receipts": [
+    {
+      "task_id": "task_p9bd8SV6anhjQJRWLCOIFQ",
+      "tab_id": "63852EDE41EEA006698306787216715F",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_p9bd8SV6anhjQJRWLCOIFQ",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_ex2hJGle374x6nwtiMcR5w",
+      "tab_id": "5AA6E3D471353D31DB6AD54E4D61E27B",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_ex2hJGle374x6nwtiMcR5w",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_yrdWuzvl4jxan9CZeeDr2Q",
+      "tab_id": "A62EC01940F1D9BA1848FBE118AE2CA2",
+      "reason": "saved_reopen",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_yrdWuzvl4jxan9CZeeDr2Q",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    },
+    {
+      "task_id": "task_u1yRvEi7aqE0lnwzPbbaUA",
+      "tab_id": "7EAC6FD21FB785F1C1BF06746C7D666D",
+      "reason": "finished",
+      "requested_action": "close",
+      "status": "confirmed",
+      "receipt": {
+        "taskId": "task_u1yRvEi7aqE0lnwzPbbaUA",
+        "state": "completed",
+        "keep": false,
+        "closed": 1,
+        "released": 0
+      },
+      "page_status": "closed"
+    }
+  ],
+  "initial_raw": "raw-001.json",
+  "document_routes": [
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/docx/WLX6dd626orGl6x6PEfcmwb0ndh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    },
+    {
+      "document_url": "https://ycn6583m3r30.feishu.cn/wiki/RBD9wVt6ki560IkOgHIcjz65nUh",
+      "docx_token": "WLX6dd626orGl6x6PEfcmwb0ndh",
+      "whiteboard_token": "WWErwwu7Vhl7MAbRZm0c7VAin9e",
+      "block_id": "doxcntKqY3z1kPhcuri9v6vE7Rb",
+      "revision_id": 3
+    }
+  ],
+  "initial_nodes": [
+    {
+      "id": "a3:1",
+      "kind": "text",
+      "x": 50,
+      "y": 400,
+      "width": 220,
+      "height": 50,
+      "text": "独立文本初始",
+      "font_size": 20,
+      "style": {
+        "text_color": "#1f2329"
+      }
+    },
+    {
+      "id": "c3:1",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 0,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:2",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [],
+      "caption": "",
+      "caption_position": null,
+      "caption_position_type": null,
+      "caption_auto_direction": false,
+      "caption_font_size": null,
+      "caption_width": null,
+      "caption_size_mode": null
+    },
+    {
+      "id": "c3:2",
+      "kind": "connector",
+      "x": 230,
+      "y": 125,
+      "width": 470,
+      "height": 320,
+      "style": {
+        "border_color": "#000000",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#000000"
+      },
+      "start_id": "o3:1",
+      "end_id": "o3:3",
+      "start_anchor": {
+        "snap_to": "right",
+        "position": {
+          "x": 1,
+          "y": 0.5
+        }
+      },
+      "end_anchor": {
+        "snap_to": "left",
+        "position": {
+          "x": 0,
+          "y": 0.5
+        }
+      },
+      "shape": "straight",
+      "start_arrow": "none",
+      "end_arrow": "line_arrow",
+      "points": [],
+      "caption_texts": [
+        "已有标签\n原第二行"
+      ],
+      "caption": "已有标签\n原第二行",
+      "caption_position": 0.5,
+      "caption_position_type": 0,
+      "caption_auto_direction": false,
+      "caption_font_size": 18,
+      "caption_width": -1,
+      "caption_size_mode": 2
+    },
+    {
+      "id": "o3:1",
+      "kind": "shape",
+      "x": 50,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "目标形状\n初始文字",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:2",
+      "kind": "shape",
+      "x": 700,
+      "y": 80,
+      "width": 180,
+      "height": 90,
+      "text": "保护模块",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    },
+    {
+      "id": "o3:3",
+      "kind": "shape",
+      "x": 700,
+      "y": 400,
+      "width": 180,
+      "height": 90,
+      "text": "保持原样\n非目标观察",
+      "font_size": 20,
+      "style": {
+        "border_color": "#2457a7",
+        "fill_color": "#e8f0fe",
+        "border_style": "solid",
+        "border_width": "narrow",
+        "text_color": "#1f2329"
+      },
+      "shape": "rect"
+    }
+  ],
+  "initial_inspect": "inspect-000.json",
+  "released_tab": null,
+  "page_status": "closed",
+  "failure_phase": "execute",
+  "error": "VerificationError",
+  "reason": "Editor: UNSAVED_NATIVE_IO_STATE"
+}

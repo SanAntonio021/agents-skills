@@ -1,0 +1,645 @@
+{
+  "skillRoot": "D:\\BaiduSyncdisk\\.agents\\skills\\web-access",
+  "generatedAt": "2026-09-12T06:48:41.134Z",
+  "passed": 45,
+  "failed": 0,
+  "results": [
+    {
+      "name": "canonical-config-created-once-and-equal-production-override-is-compatible",
+      "passed": true,
+      "durationMs": 181,
+      "evidence": {
+        "port": 3456,
+        "legacyIgnored": true,
+        "canonicalCreated": true
+      }
+    },
+    {
+      "name": "different-production-port-override-fails-before-browser-connection",
+      "passed": true,
+      "durationMs": 273,
+      "evidence": {
+        "rejectedBeforeListen": true,
+        "status": "port_override_conflict"
+      }
+    },
+    {
+      "name": "tampered-canonical-production-ports-fail-closed",
+      "passed": true,
+      "durationMs": 253,
+      "evidence": {
+        "rejectedBeforeListen": true,
+        "status": "config_invalid"
+      }
+    },
+    {
+      "name": "test-mode-rejects-nonisolated-localappdata-before-browser-connection",
+      "passed": true,
+      "durationMs": 285,
+      "evidence": {
+        "rejectedBeforeListen": true,
+        "status": "test_isolation_invalid"
+      }
+    },
+    {
+      "name": "dual-browser-check-deps-json",
+      "passed": true,
+      "durationMs": 993,
+      "evidence": {
+        "edgeProxyPort": 13405,
+        "chromeProxyPort": 13408,
+        "results": [
+          {
+            "ok": true,
+            "status": "ready",
+            "ready": true,
+            "reused": false,
+            "browser": {
+              "id": "edge",
+              "label": "Microsoft Edge",
+              "url": "http://127.0.0.1:13401",
+              "cdpPort": 13401
+            },
+            "proxy": {
+              "url": "http://127.0.0.1:13405",
+              "port": 13405,
+              "protocolVersion": 2
+            },
+            "capabilities": {
+              "protocolVersion": 2,
+              "taskIsolation": true,
+              "userTabsVisible": false,
+              "maxActiveTasks": 32,
+              "snapshot": {
+                "source": "cdp-ax",
+                "modes": [
+                  "interactive",
+                  "all"
+                ],
+                "defaultDepth": 12,
+                "defaultMaxNodes": 300,
+                "hardMaxNodes": 1000
+              },
+              "actions": [
+                "click",
+                "fill",
+                "type",
+                "press",
+                "check",
+                "uncheck",
+                "select",
+                "hover"
+              ],
+              "waits": [
+                "selector",
+                "text",
+                "url",
+                "domcontentloaded",
+                "load"
+              ],
+              "fallbacks": [
+                "eval",
+                "click",
+                "navigate",
+                "back",
+                "scroll",
+                "set-files"
+              ],
+              "unsupported": [
+                "cross-origin-oopif-refs",
+                "network-capture",
+                "har",
+                "trace",
+                "download-management",
+                "networkidle",
+                "javascript-wait"
+              ],
+              "security": {
+                "bind": "127.0.0.1",
+                "cors": false,
+                "taskTokenIsLocalSecurityBoundary": false
+              }
+            },
+            "exitCode": 0
+          },
+          {
+            "ok": true,
+            "status": "ready",
+            "ready": true,
+            "reused": false,
+            "browser": {
+              "id": "chrome",
+              "label": "Chrome",
+              "url": "http://127.0.0.1:13402",
+              "cdpPort": 13402
+            },
+            "proxy": {
+              "url": "http://127.0.0.1:13408",
+              "port": 13408,
+              "protocolVersion": 2
+            },
+            "capabilities": {
+              "protocolVersion": 2,
+              "taskIsolation": true,
+              "userTabsVisible": false,
+              "maxActiveTasks": 32,
+              "snapshot": {
+                "source": "cdp-ax",
+                "modes": [
+                  "interactive",
+                  "all"
+                ],
+                "defaultDepth": 12,
+                "defaultMaxNodes": 300,
+                "hardMaxNodes": 1000
+              },
+              "actions": [
+                "click",
+                "fill",
+                "type",
+                "press",
+                "check",
+                "uncheck",
+                "select",
+                "hover"
+              ],
+              "waits": [
+                "selector",
+                "text",
+                "url",
+                "domcontentloaded",
+                "load"
+              ],
+              "fallbacks": [
+                "eval",
+                "click",
+                "navigate",
+                "back",
+                "scroll",
+                "set-files"
+              ],
+              "unsupported": [
+                "cross-origin-oopif-refs",
+                "network-capture",
+                "har",
+                "trace",
+                "download-management",
+                "networkidle",
+                "javascript-wait"
+              ],
+              "security": {
+                "bind": "127.0.0.1",
+                "cors": false,
+                "taskTokenIsLocalSecurityBoundary": false
+              }
+            },
+            "exitCode": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "check-deps-fetches-capabilities-before-reusing-ready-proxy",
+      "passed": true,
+      "durationMs": 204,
+      "evidence": {
+        "requestOrder": [
+          "/health",
+          "/capabilities"
+        ],
+        "capabilities": {
+          "protocolVersion": 2,
+          "taskIsolation": true,
+          "userTabsVisible": false,
+          "maxActiveTasks": 32,
+          "actions": [
+            "click"
+          ]
+        },
+        "reused": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-missing-endpoint-fails-closed",
+      "passed": true,
+      "durationMs": 375,
+      "evidence": {
+        "scenario": "missing-endpoint",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-non-json-response-fails-closed",
+      "passed": true,
+      "durationMs": 395,
+      "evidence": {
+        "scenario": "non-json-response",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-json-with-wrong-content-type-fails-closed",
+      "passed": true,
+      "durationMs": 471,
+      "evidence": {
+        "scenario": "json-with-wrong-content-type",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-http-error-with-valid-looking-json-fails-closed",
+      "passed": true,
+      "durationMs": 424,
+      "evidence": {
+        "scenario": "http-error-with-valid-looking-json",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-oversized-json-response-fails-closed",
+      "passed": true,
+      "durationMs": 376,
+      "evidence": {
+        "scenario": "oversized-json-response",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "check-deps-capabilities-protocol-version-mismatch-fails-closed",
+      "passed": true,
+      "durationMs": 378,
+      "evidence": {
+        "scenario": "protocol-version-mismatch",
+        "failedClosed": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "protocol-capabilities-and-http-guards",
+      "passed": true,
+      "durationMs": 9,
+      "evidence": {
+        "protocolVersion": 2,
+        "originRejected": true,
+        "hostRejected": true
+      }
+    },
+    {
+      "name": "legacy-routes-disabled",
+      "passed": true,
+      "durationMs": 3,
+      "evidence": {
+        "routes": [
+          "/targets",
+          "/new",
+          "/info"
+        ],
+        "status": 410
+      }
+    },
+    {
+      "name": "task-token-and-idempotency-contract",
+      "passed": true,
+      "durationMs": 8,
+      "evidence": {
+        "tokenBytes": 32,
+        "replayedTask": "task_9YL7o1zmH2aj5PXbvm4dgQ",
+        "replayedTarget": "edge-target-1"
+      }
+    },
+    {
+      "name": "created-tab-attaches-and-initializes-before-requested-navigation",
+      "passed": true,
+      "durationMs": 4,
+      "evidence": {
+        "createUrl": "about:blank",
+        "attachedBeforeNavigate": true,
+        "initializedBeforeNavigate": true
+      }
+    },
+    {
+      "name": "task-tab-isolation-popup-and-browser-scope",
+      "passed": true,
+      "durationMs": 15,
+      "evidence": {
+        "taskATabs": [
+          "edge-target-3",
+          "edge-popup-1"
+        ],
+        "taskBTabs": [
+          "edge-target-4"
+        ],
+        "cdpWebSockets": 1
+      }
+    },
+    {
+      "name": "popup-lineage-reconciles-and-late-popups-follow-complete-policy",
+      "passed": true,
+      "durationMs": 11,
+      "evidence": {
+        "reconciledNested": true,
+        "lateNestedClosed": true
+      }
+    },
+    {
+      "name": "handoff-resume-complete-and-wait-cancellation",
+      "passed": true,
+      "durationMs": 125,
+      "evidence": {
+        "handoffTarget": "edge-target-7",
+        "waitCancelledMs": 120,
+        "completed": true,
+        "keptTarget": "edge-target-8"
+      }
+    },
+    {
+      "name": "handoff-activation-timeout-is-fail-closed",
+      "passed": true,
+      "durationMs": 322,
+      "evidence": {
+        "unknownResult": true,
+        "stateAfterTimeout": "handoff",
+        "readBlocked": true
+      }
+    },
+    {
+      "name": "ax-snapshot-ref-generation-and-actions",
+      "passed": true,
+      "durationMs": 72,
+      "evidence": {
+        "nodes": 6,
+        "actions": [
+          "click",
+          "fill",
+          "type",
+          "press",
+          "check",
+          "uncheck",
+          "select",
+          "hover"
+        ],
+        "staleRefChecked": true
+      }
+    },
+    {
+      "name": "wait-contract",
+      "passed": true,
+      "durationMs": 121,
+      "evidence": {
+        "conditions": [
+          "selector",
+          "text",
+          "url",
+          "domcontentloaded",
+          "load"
+        ],
+        "ambiguousRejected": true,
+        "targetRemovalCancelled": true
+      }
+    },
+    {
+      "name": "dialog-default-deny-explicit-resolution-and-ref-invalidation",
+      "passed": true,
+      "durationMs": 92,
+      "evidence": {
+        "defaultAccepted": false,
+        "explicitDismiss": true,
+        "explicitAccept": true,
+        "refInvalidated": true
+      }
+    },
+    {
+      "name": "consecutive-dialogs-preserve-the-new-dialog-generation",
+      "passed": true,
+      "durationMs": 47,
+      "evidence": {
+        "dialogsHandled": 2,
+        "secondGenerationPreserved": true
+      }
+    },
+    {
+      "name": "authenticated-fallback-api-regression",
+      "passed": true,
+      "durationMs": 11,
+      "evidence": {
+        "apiChecks": [
+          "navigate",
+          "eval",
+          "click",
+          "set-files",
+          "scroll",
+          "back",
+          "screenshot"
+        ],
+        "screenshotBytes": 68
+      }
+    },
+    {
+      "name": "element-state-guards-react-contenteditable-and-multiselect",
+      "passed": true,
+      "durationMs": 21,
+      "evidence": {
+        "guarded": [
+          "hidden",
+          "disabled",
+          "obscured"
+        ],
+        "inputEvents": true,
+        "contenteditable": true,
+        "multiSelect": true
+      }
+    },
+    {
+      "name": "concurrent-idempotency-key-executes-once",
+      "passed": true,
+      "durationMs": 4,
+      "evidence": {
+        "targetId": "edge-target-16",
+        "cdpCreates": 1
+      }
+    },
+    {
+      "name": "active-task-idempotency-survives-terminal-retention-window",
+      "passed": true,
+      "durationMs": 1109,
+      "evidence": {
+        "retentionMs": 300,
+        "waitedMs": 800,
+        "startupReplayStable": true,
+        "tabReplayStable": true
+      }
+    },
+    {
+      "name": "task-expiry-releases-tabs-and-enforces-task-limit",
+      "passed": true,
+      "durationMs": 2046,
+      "evidence": {
+        "activeAndHandoffExpired": true,
+        "taskLimit": 32
+      }
+    },
+    {
+      "name": "expiry-waits-for-in-flight-action-and-cancels-in-flight-wait",
+      "passed": true,
+      "durationMs": 3311,
+      "evidence": {
+        "actionDrainedBeforeExpiry": true,
+        "waitCancelledBeforeExpiry": true,
+        "cancellationWinsDelayedMatch": true,
+        "ownershipHeldByBarrier": true
+      }
+    },
+    {
+      "name": "handoff-cancels-wait-that-is-still-in-session-initialization",
+      "passed": true,
+      "durationMs": 1659,
+      "evidence": {
+        "cancelledDuringInitialization": true,
+        "attachDelayMs": 700
+      }
+    },
+    {
+      "name": "idle-gc-locks-in-flight-action-and-restarts-idle-window-after-release",
+      "passed": true,
+      "durationMs": 1751,
+      "evidence": {
+        "protectedWhileBusy": true,
+        "postActionIdleMs": 400,
+        "closedOnce": true
+      }
+    },
+    {
+      "name": "mutation-timeout-is-unknown-result-and-replay-is-safe",
+      "passed": true,
+      "durationMs": 614,
+      "evidence": {
+        "unknownResult": true,
+        "replayedWithoutSecondMutation": true
+      }
+    },
+    {
+      "name": "late-create-target-is-owned-while-active-and-closed-after-complete",
+      "passed": true,
+      "durationMs": 1049,
+      "evidence": {
+        "activeLateTargetOwned": true,
+        "completedLateTargetClosed": true,
+        "keptLateTargetNavigated": true
+      }
+    },
+    {
+      "name": "expired-late-create-target-keeps-original-navigation",
+      "passed": true,
+      "durationMs": 815,
+      "evidence": {
+        "expiredBeforeLateResult": true,
+        "originalUrlPreserved": true
+      }
+    },
+    {
+      "name": "complete-close-timeout-is-terminal-and-idempotently-replayed",
+      "passed": true,
+      "durationMs": 608,
+      "evidence": {
+        "unknownResult": true,
+        "terminalState": "completed",
+        "closeCommands": 1,
+        "exactReplay": true
+      }
+    },
+    {
+      "name": "old-proxy-is-rejected-without-stop-or-overwrite",
+      "passed": true,
+      "durationMs": 334,
+      "evidence": {
+        "legacyPreserved": true,
+        "status": "protocol_mismatch"
+      }
+    },
+    {
+      "name": "protocol-v2-proxy-with-unknown-browser-is-rejected-and-preserved",
+      "passed": true,
+      "durationMs": 364,
+      "evidence": {
+        "checkDepsRejected": true,
+        "directStartRejected": true,
+        "existingProxyPreserved": true
+      }
+    },
+    {
+      "name": "protocol-v2-proxy-missing-browser-id-is-rejected-and-preserved",
+      "passed": true,
+      "durationMs": 384,
+      "evidence": {
+        "identityIssue": "browser_id_missing",
+        "existingProxyPreserved": true,
+        "directStartRejected": true
+      }
+    },
+    {
+      "name": "protocol-v2-proxy-requested-browser-conflict-is-rejected-and-preserved",
+      "passed": true,
+      "durationMs": 418,
+      "evidence": {
+        "identityIssue": "requested_browser_conflict",
+        "existingProxyPreserved": true,
+        "directStartRejected": true
+      }
+    },
+    {
+      "name": "protocol-v2-proxy-cdp-port-mismatch-is-rejected-and-preserved",
+      "passed": true,
+      "durationMs": 181,
+      "evidence": {
+        "identityIssue": "cdp_port_mismatch",
+        "existingProxyPreserved": true,
+        "directStartRejected": false
+      }
+    },
+    {
+      "name": "proxy-restart-keeps-tabs-but-clears-task-tokens-and-ownership",
+      "passed": true,
+      "durationMs": 227,
+      "evidence": {
+        "tabPreserved": true,
+        "oldTokenRejected": true
+      }
+    },
+    {
+      "name": "stopping-edge-does-not-affect-chrome",
+      "passed": true,
+      "durationMs": 26,
+      "evidence": {
+        "stopped": "edge",
+        "unaffected": "chrome",
+        "chromePid": 28336
+      }
+    },
+    {
+      "name": "concurrent-start-has-one-live-proxy",
+      "passed": true,
+      "durationMs": 2494,
+      "evidence": {
+        "attempted": 20,
+        "liveProcesses": 1,
+        "newCdpWebSockets": 1,
+        "proxyPid": 56528
+      }
+    },
+    {
+      "name": "atomic-bind-and-fatal-error-guard",
+      "passed": true,
+      "durationMs": 1,
+      "evidence": {
+        "atomicListen": true,
+        "eaddrinuseHandled": true,
+        "fatalErrorsExit": true
+      }
+    }
+  ]
+}

@@ -50,6 +50,7 @@ if ~isfield(spectrum,'display_x')
     end
     Test_Project_Plot_Util('note',ax,note);
 end
+Test_Project_Plot_Util('display',ax,options);
 state=struct('handle',h,'display_indices',idx,'status','ok');
 end
 function v=opt(s,k,d), v=Test_Project_Plot_Util('option',s,k,d); end

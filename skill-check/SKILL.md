@@ -127,6 +127,8 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 - Claude `tengu_skill_loaded` 只是启动时候选加载，绝不计为使用。
 - Codex 统计真实用户记录里的 `$skill-name`、`/skill-name`、技能 `SKILL.md` 链接，以及能映射到
   `turn_id`、执行成功且读取已知 `SKILL.md` 的命令；显式点名和读取证据在同一请求内合并。
+- Codex 的附件/批注宿主包装只扫描 `My request` 中的实际请求文本；子代理生成的任务提示不生成漏用候选，
+  但子代理实际读取到的技能仍保留为使用证据。
 - Codex 的 `session_meta.thread_source = guardian_review` 或 `source.subagent.other = guardian`
   标识审批复核副本，整会话的点名、命令读取和漏用候选均排除，并单独记录排除数；不凭正文里的
   审批提示前缀过滤普通用户引用。此口径升级重置连续零周，保留既有 finding、决定和批次。

@@ -167,7 +167,7 @@ class FakeWordApplication:
         self.source = source
         self.ranges = ranges
         self.Name = "Microsoft Word"
-        self.Path = str(source.parent)
+        self.Path = str(source.parent / "WINWORD.EXE")
         (source.parent / "WINWORD.EXE").write_bytes(b"fake Word executable")
         self.events = []
         self.Documents = FakeDocuments(self)

@@ -153,17 +153,6 @@ def _wait_for_file_stable(path: Path, timeout_seconds: float, *, initial: tuple[
     raise UiRefreshFailure("UNVERIFIED", f"Word did not finish saving {path}")
 
 
-def _normal_close(main_hwnd: int | None, win32con: Any, win32gui: Any) -> None:
-    if main_hwnd is None or win32con is None or win32gui is None:
-        return
-    try:
-        if win32gui.IsWindow(main_hwnd):
-            win32gui.SetForegroundWindow(main_hwnd)
-            win32gui.PostMessage(main_hwnd, win32con.WM_SYSCOMMAND, win32con.SC_CLOSE, 0)
-    except Exception:
-        pass
-
-
 def _field_inventory(path: Path, *, strict: bool = True) -> dict[str, Any]:
     try:
         inventory = reference_fields.inspect_document(path)
@@ -255,8 +244,12 @@ def refresh_copy(
     owned_pids: list[int] = []
     main_hwnd: int | None = None
     before_hash: str | None = None
+    registered_word: Path | None = None
+    launched_process: Any | None = None
+    verified_owned_pids: list[int] = []
     win32con: Any | None = None
     win32gui: Any | None = None
+    win32process: Any | None = None
     try:
         if not allow_office_ui:
             raise UiRefreshFailure("UNVERIFIED", "pass --allow-office-ui for this Word UI operation")
@@ -293,7 +286,7 @@ def refresh_copy(
             raise UiRefreshFailure("SOURCE_CHANGED", "source changed while creating the Word UI copy")
 
         result["phase"] = "launch"
-        process = subprocess.Popen(
+        launched_process = subprocess.Popen(
             [str(registered_word), "/n", "/q", str(isolated)],
             close_fds=True,
         )
@@ -310,8 +303,9 @@ def refresh_copy(
             if path is None:
                 raise UiRefreshFailure("UNVERIFIED", f"could not verify Word PID {pid}: {path_error}")
             paths[str(pid)] = str(path)
-            if path != registered_word:
+            if str(path).casefold() != str(registered_word).casefold():
                 raise UiRefreshFailure("UNVERIFIED", f"Word PID {pid} path does not match registered Word")
+            verified_owned_pids.append(pid)
         result["ownership"]["process_paths"] = paths
         if len(owned_pids) != 1:
             raise UiRefreshFailure("UNVERIFIED", f"expected exactly one task-owned Word PID, got {owned_pids}")
@@ -350,7 +344,7 @@ def refresh_copy(
         result["ownership"]["cleanup"] = exit_record
         if exit_record["status"] != "CLEAN":
             raise UiRefreshFailure("UNVERIFIED", "task-owned Word process did not exit cleanly")
-        process.wait(timeout=5)
+        launched_process.wait(timeout=5)
 
         output.parent.mkdir(parents=True, exist_ok=True)
         _publish_field_results(source, isolated, output)
@@ -381,14 +375,49 @@ def refresh_copy(
             except Exception as exc:
                 result.update(ok=False, status="SOURCE_CHANGED", error=f"could not re-hash source: {exc}")
         cleanup = result.get("ownership", {}).get("cleanup", {})
-        if owned_pids and cleanup.get("status") != "CLEAN" and main_hwnd is not None:
-            _normal_close(main_hwnd, win32con, win32gui)
+        if launched_process is not None and registered_word is not None:
             try:
-                result["ownership"]["cleanup"] = gate._wait_for_owned_processes_exit(
-                    "WINWORD.EXE", owned_pids, timeout_seconds=5.0,
-                )
+                if launched_process.poll() is None:
+                    path, path_error = gate._safe_process_executable_path(int(launched_process.pid))
+                    if path is not None and str(path).casefold() == str(registered_word).casefold():
+                        if int(launched_process.pid) not in verified_owned_pids:
+                            verified_owned_pids.append(int(launched_process.pid))
+                        result["ownership"]["launcher_pid"] = int(launched_process.pid)
+                        result["ownership"].setdefault("process_paths", {})[
+                            str(launched_process.pid)
+                        ] = str(path)
+                    else:
+                        result["ownership"]["launcher_path_error"] = path_error or (
+                            f"launcher PID path did not match {registered_word}"
+                        )
             except Exception as exc:
-                result["ownership"]["cleanup_error"] = str(exc)
+                result["ownership"]["launcher_path_error"] = str(exc)
+
+        if verified_owned_pids and cleanup.get("status") != "CLEAN":
+            close_requests: list[dict[str, Any]] = []
+            cleanup_pids: list[int] = []
+            for pid in verified_owned_pids:
+                try:
+                    path, path_error = gate._safe_process_executable_path(pid)
+                    if path is None or str(path).casefold() != str(registered_word).casefold():
+                        close_requests.append({
+                            "pid": pid,
+                            "status": "SKIPPED_UNVERIFIED",
+                            "reason": path_error or f"process path no longer matches {registered_word}",
+                        })
+                        continue
+                    cleanup_pids.append(pid)
+                    close_requests.append(gate._request_process_close(pid))
+                except Exception as exc:
+                    close_requests.append({"pid": pid, "status": "FAILED", "reason": str(exc)})
+            result["ownership"]["cleanup_close_requests"] = close_requests
+            if cleanup_pids:
+                try:
+                    result["ownership"]["cleanup"] = gate._wait_for_owned_processes_exit(
+                        "WINWORD.EXE", cleanup_pids, timeout_seconds=5.0,
+                    )
+                except Exception as exc:
+                    result["ownership"]["cleanup_error"] = str(exc)
         if workspace is not None:
             if result.get("ok") and not owned_pids:
                 shutil.rmtree(workspace, ignore_errors=True)

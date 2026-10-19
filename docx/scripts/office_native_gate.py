@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import ctypes
 import hashlib
 import json
 import os
@@ -25,6 +26,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterator, Sequence
+from ctypes import wintypes
 
 
 STATUSES = {
@@ -193,6 +195,51 @@ def _process_path(pid: int) -> str | None:
         return None
     value = (completed.stdout or b"").decode("utf-8", errors="replace").strip()
     return value or None
+
+
+def _safe_process_executable_path(pid: int) -> tuple[Path | None, str | None]:
+    """Read one process path while preserving an explicit inspection error."""
+
+    try:
+        value = _process_path(pid)
+    except Exception as exc:  # pragma: no cover - platform probe failure
+        return None, _exception_text(exc)
+    if not value:
+        return None, f"could not read executable path for PID {pid}"
+    try:
+        return Path(value).resolve(), None
+    except OSError as exc:  # pragma: no cover - malformed platform path
+        return None, _exception_text(exc)
+
+
+def _request_process_close(pid: int) -> dict[str, Any]:
+    """Post WM_CLOSE to top-level windows owned by one already-verified PID."""
+
+    if os.name != "nt":
+        return {"status": "UNAVAILABLE", "pid": pid, "reason": "Windows window messages are unavailable"}
+
+    user32 = ctypes.windll.user32
+    windows: list[int] = []
+    failures: list[str] = []
+    enum_callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def visit(hwnd: int, _extra: int) -> bool:
+        owner_pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner_pid))
+        if int(owner_pid.value) == pid:
+            windows.append(int(hwnd))
+            if not user32.PostMessageW(hwnd, 0x0010, 0, 0):  # WM_CLOSE
+                failures.append(f"PostMessageW failed for HWND {int(hwnd)}")
+        return True
+
+    callback = enum_callback_type(visit)
+    if not user32.EnumWindows(callback, 0):
+        return {"status": "FAILED", "pid": pid, "reason": "EnumWindows failed"}
+    if failures:
+        return {"status": "PARTIAL", "pid": pid, "windows": windows, "errors": failures}
+    if not windows:
+        return {"status": "NO_WINDOW", "pid": pid, "windows": []}
+    return {"status": "CLOSE_REQUESTED", "pid": pid, "windows": windows}
 
 
 def _installed_word_executable() -> Path | None:
@@ -528,10 +575,9 @@ def owned_application(
             metadata["activation_identity"] = identity
             if spec["progid"] == "Word.Application" and not _is_microsoft_word_identity(identity):
                 metadata["activation_identity"]["status"] = "NON_MICROSOFT_PROVIDER"
-                try:
-                    application.Quit()
-                except Exception:
-                    pass
+                # The COM object may refer to a user's existing WPS server.
+                # Do not call Quit until a WPS PID is proven task-owned; release
+                # the Python reference by replacing it with the Word fallback.
                 executable = _installed_word_executable()
                 if executable is None:
                     raise ActivationFailure(

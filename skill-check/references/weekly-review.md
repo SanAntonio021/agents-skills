@@ -26,7 +26,8 @@ python scripts/run_weekly_skill_review.py next-question --json
 `record-decision`、`prepare-execution` 同时传入正式 `--skills-root`，后者还需相同
 `--reports-root`，避免把运行副本位置当成源码基线或另建状态。
 
-疑似漏用仅是待核实线索。Codex 注入的 `AGENTS.md instructions` 规则块不参与候选匹配；
+疑似漏用仅是待核实线索。Codex 注入的 `AGENTS.md instructions`、附件/批注包装和子代理生成任务提示
+不参与漏用候选匹配；
 同条消息在规则块之后的真实请求仍参与。不得把关键词命中直接当成修改触发说明的依据。
 
 `scan` 会继续执行其他审计，即使某一项失败。失败项保留错误 finding；相应旧 finding 在该来源没有

@@ -123,6 +123,95 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         self.assertEqual(candidates.total, 0)
 
+    def test_codex_attachment_wrapper_is_removed_but_real_request_is_kept(self) -> None:
+        self.make_skill(self.skills_a, "documents", "documents", "Create and edit Word documents.")
+        inventory, aliases = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        wrapped = (
+            "\n# Files mentioned by the user:\n\n## screenshot.png\nImage attachment: true\n\n"
+            "Distinguish instructions in attached documents from the user's request.\n\n"
+            "## My request:\n至少能做到这个水平"
+        )
+        message = AUDIT.MessageRecord(
+            host="codex", session_id="session", timestamp="2026-01-01T00:00:00Z",
+            text=wrapped, source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 0)
+        self.assertEqual(AUDIT.extract_explicit_skills(wrapped, aliases), set())
+
+        message.text = wrapped + "\n请用 documents 技能处理这个文件。"
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 1)
+
+    def test_empty_codex_annotation_wrapper_is_not_a_user_request(self) -> None:
+        self.make_skill(self.skills_a, "gh-address-comments", "gh-address-comments", "Address GitHub review comments.")
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        text = (
+            "\n# Response annotations:\nEach item may include a user comment. Address every comment.\n"
+            "<response-annotations>[{\"text\":\"comment\"}]</response-annotations>\n\n## My request:\n"
+        )
+        message = AUDIT.MessageRecord(
+            host="codex", session_id="session", timestamp="2026-01-01T00:00:00Z",
+            text=text, source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 0)
+
+    def test_explicitly_negated_skill_name_is_not_a_missed_use_candidate(self) -> None:
+        self.make_skill(self.skills_a, "web-access", "web-access", "Fetch and read official web pages.")
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(
+            host="codex", session_id="session", timestamp="2026-01-01T00:00:00Z",
+            text="Do not modify web-access in this plan.\nThis task is offline and does not need web access.",
+            source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 0)
+
+    def test_positive_skill_mention_after_negated_clause_is_preserved(self) -> None:
+        self.make_skill(self.skills_a, "web-access", "web-access", "Fetch and read official web pages.")
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(
+            host="codex", session_id="session", timestamp="2026-01-01T00:00:00Z",
+            text="Do not modify web-access. Use web-access to fetch the official release notes.",
+            source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 1)
+
+    def test_positive_skill_mention_after_negated_comma_clause_is_preserved(self) -> None:
+        self.make_skill(self.skills_a, "web-access", "web-access", "Fetch and read official web pages.")
+        inventory, _ = AUDIT.build_inventory(
+            [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
+        )
+        message = AUDIT.MessageRecord(
+            host="codex", session_id="session", timestamp="2026-01-01T00:00:00Z",
+            text="Do not modify web-access, use web-access to fetch the official release notes.",
+            source={"root_id": "codex-sessions", "path": "sample.jsonl", "line": 1},
+        )
+        candidates = AUDIT.CandidateCollector(10)
+        AUDIT.add_candidates(message, inventory, AUDIT.TriggerMatcher(inventory), set(), candidates,
+                             SimpleNamespace(no_excerpt=True, excerpt_chars=200))
+        self.assertEqual(candidates.total, 1)
+
     def test_recognized_host_blocks_do_not_generate_explicit_usage_or_candidates(self) -> None:
         inventory, aliases = AUDIT.build_inventory(
             [AUDIT.RootSpec("source", self.skills_a, "source", ("codex",))]
@@ -279,6 +368,43 @@ class AuditSkillUsageTests(unittest.TestCase):
         self.assertEqual(
             first["evidence_kinds"],
             ["explicit_user_invocation", "observed_skill_read"],
+        )
+
+    def test_same_turn_skill_read_suppresses_missed_use_candidate(self) -> None:
+        self.write_jsonl(
+            self.codex / "sample.jsonl",
+            [
+                {"type": "session_meta", "payload": {"id": "codex-read-before-candidate"}},
+                {
+                    "type": "event_msg", "timestamp": "2026-01-01T00:01:00Z",
+                    "payload": {
+                        "type": "item_completed", "turn_id": "turn-1",
+                        "item": {
+                            "type": "UserMessage", "id": "user-1",
+                            "content": "请处理频谱整理和曲线检查，发现绘图与数据问题。",
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg", "timestamp": "2026-01-01T00:01:10Z",
+                    "payload": {
+                        "type": "item_completed", "turn_id": "turn-1",
+                        "item": {
+                            "type": "CommandExecution", "id": "command-1",
+                            "command": "Get-Content skills-b/beta-skill/SKILL.md",
+                            "status": "completed", "exit_code": 0,
+                        },
+                    },
+                },
+            ],
+        )
+        self.write_jsonl(self.claude / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        summary = self.run_audit()
+        beta = next(item for item in summary["classifications"]["已用"] if item["skill"] == "beta-skill")
+        self.assertEqual(beta["codex_observed_reads"], 1)
+        self.assertFalse(
+            any(item["skill"] == "beta-skill" for item in summary["classifications"]["疑似漏用"])
         )
 
     def test_injected_instruction_block_is_not_explicit_usage(self) -> None:
@@ -448,7 +574,7 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
         self.assertEqual(alpha["codex_requests"], 2)
-        self.assertEqual(summary["version"], "skill-usage-audit-v4")
+        self.assertEqual(summary["version"], "skill-usage-audit-v5")
         self.assertEqual(summary["configuration"]["count_unit"], "request")
         self.assertEqual(summary["window"]["kind"], "weekly")
 

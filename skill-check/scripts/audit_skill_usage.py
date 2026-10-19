@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 MAX_WARNING_DETAILS = 200
 MAX_EXCERPT_CHARS = 240
-AUDIT_VERSION = "skill-usage-audit-v4"
+AUDIT_VERSION = "skill-usage-audit-v5"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 BRIDGE_MARKERS = (
     "claude-codex-bridge",
@@ -55,6 +55,39 @@ ENGLISH_STOPWORDS = {
     "when",
     "where",
     "with",
+    # Common plan, wrapper, and report vocabulary. These words are too broad
+    # to be useful as description-only missed-use evidence on their own.
+    "address",
+    "built",
+    "comment",
+    "comments",
+    "context",
+    "daily",
+    "evidence",
+    "files",
+    "generated",
+    "items",
+    "notes",
+    "output",
+    "presentation",
+    "presentations",
+    "report",
+    "reports",
+    "request",
+    "results",
+    "selected",
+    "source",
+    "summary",
+    "template",
+    "today",
+    "using",
+    "workflow",
+    "workflows",
+    "claude",
+    "codex",
+    "lark",
+    "cc-switch",
+    "ssot",
 }
 CHINESE_STOP_TERMS = {
     "以及",
@@ -562,26 +595,43 @@ def chinese_ngrams(text: str) -> set[str]:
 
 def build_trigger_terms(inventory: dict[str, SkillInfo]) -> None:
     chinese_by_skill: dict[str, set[str]] = {}
+    english_by_skill: dict[str, set[str]] = {}
     document_frequency: Counter[str] = Counter()
+    english_document_frequency: Counter[str] = Counter()
+    all_skill_aliases = {
+        normalize_name(alias)
+        for skill in inventory.values()
+        for alias in skill.aliases
+        if normalize_name(alias)
+    }
     for key, skill in inventory.items():
         terms = set()
+        english: set[str] = set()
         for description in skill.descriptions:
             terms.update(chinese_ngrams(description))
+            for token in re.findall(r"[A-Za-z][A-Za-z0-9_-]{3,}", description.lower()):
+                normalized = token.replace("_", "-")
+                # A reference to another skill is not a description trigger for
+                # this skill. The skill's own name remains a strong alias match.
+                if (
+                    normalized not in ENGLISH_STOPWORDS
+                    and normalize_name(normalized) not in all_skill_aliases
+                ):
+                    english.add(normalized)
         chinese_by_skill[key] = terms
+        english_by_skill[key] = english
         document_frequency.update(terms)
+        english_document_frequency.update(english)
 
     for key, skill in inventory.items():
         selected_chinese = sorted(
             (term for term in chinese_by_skill[key] if document_frequency[term] <= 2),
             key=lambda term: (-len(term), document_frequency[term], term),
         )[:24]
-        english: set[str] = set()
-        for description in skill.descriptions:
-            for token in re.findall(r"[A-Za-z][A-Za-z0-9_-]{3,}", description.lower()):
-                normalized = token.replace("_", "-")
-                if normalized not in ENGLISH_STOPWORDS:
-                    english.add(normalized)
-        selected_english = sorted(english, key=lambda term: (-len(term), term))[:16]
+        selected_english = sorted(
+            (term for term in english_by_skill[key] if english_document_frequency[term] <= 2),
+            key=lambda term: (-len(term), term),
+        )[:16]
         skill.trigger_terms = selected_chinese + selected_english
 
 
@@ -671,7 +721,7 @@ class TriggerMatcher:
 
 
 def extract_explicit_skills(text: str, aliases: dict[str, set[str]]) -> set[str]:
-    text = strip_injected_instruction_block(text)
+    text = strip_host_wrappers(text)
     raw_names = set(EXPLICIT_DOLLAR_PATTERN.findall(text))
     raw_names.update(EXPLICIT_SLASH_PATTERN.findall(text))
     raw_names.update(SKILL_LINK_PATTERN.findall(text))
@@ -695,6 +745,19 @@ def strip_injected_instruction_block(text: str) -> str:
         r"\A\s*# AGENTS\.md instructions[^\n]*\n\s*<INSTRUCTIONS>.*?</INSTRUCTIONS>",
         "", text, flags=re.IGNORECASE | re.DOTALL,
     )
+
+
+def strip_host_wrappers(text: str) -> str:
+    """Remove known desktop transport wrappers while keeping the real request."""
+    text = strip_injected_instruction_block(text)
+    lowered = text.lower()
+    if lowered.lstrip().startswith("# files mentioned by the user:"):
+        marker = re.search(r"(?im)^\s*## my request:\s*$", text)
+        return text[marker.end() :] if marker else ""
+    if lowered.lstrip().startswith("# response annotations:"):
+        marker = re.search(r"(?im)^\s*## my request:\s*$", text)
+        return text[marker.end() :] if marker else ""
+    return text
 
 
 def iter_json_lines(
@@ -731,7 +794,7 @@ def list_history_files(root: RootSpec, suffixes: tuple[str, ...]) -> list[Path]:
     return sorted(files, key=lambda item: item.as_posix().lower())
 
 
-def read_codex_session_metadata(path: Path) -> tuple[str, bool, bool]:
+def read_codex_session_metadata(path: Path) -> tuple[str, bool, bool, bool]:
     try:
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             for line in handle:
@@ -757,10 +820,11 @@ def read_codex_session_metadata(path: Path) -> tuple[str, bool, bool]:
                 is_approval_review = payload.get("thread_source") == "guardian_review" or (
                     isinstance(subagent, dict) and subagent.get("other") == "guardian"
                 )
-                return session_id, is_bridge, is_approval_review
+                is_subagent = payload.get("thread_source") == "subagent"
+                return session_id, is_bridge, is_approval_review, is_subagent
     except OSError:
         pass
-    return path.stem, False, False
+    return path.stem, False, False, False
 
 
 def codex_message_text(payload: dict[str, Any]) -> str | None:
@@ -845,7 +909,7 @@ def add_candidates(
 ) -> None:
     # Codex serializes injected AGENTS instructions as user messages. Remove
     # only their delimited block, preserving a real request appended after it.
-    matching_text = strip_injected_instruction_block(message.text)
+    matching_text = strip_host_wrappers(message.text)
     lowered = matching_text.lower()
     if (
         not matching_text.strip()
@@ -861,19 +925,44 @@ def add_candidates(
             continue
         skill = inventory[key]
         score, terms = match
+        positive_terms = [
+            term for term in terms if not term_is_negated(matching_text, term)
+        ]
+        if not positive_terms:
+            continue
         candidate = {
             "skill": skill.name,
             "host": message.host,
             "timestamp": message.timestamp,
             "session_ref": short_session_ref(message.session_id),
             "source": message.source,
-            "matched_terms": terms,
+            "matched_terms": positive_terms,
             "score": score,
             "reason": "技能名或 description 规则命中，但该条用户记录未见对应显式调用证据。",
         }
         if not args.no_excerpt:
             candidate["excerpt"] = sanitize_excerpt_around(matching_text, terms, args.excerpt_chars)
         candidates.add(candidate)
+
+
+NEGATION_PATTERN = re.compile(
+    r"(?:\b(?:do\s+not|don't|does\s+not|did\s+not|without|never|not\s+use|not\s+select|not\s+choose|not\s+modify|not\s+involve|no\s+need)\b|"
+    r"(?:不(?:要|用|需|改|涉及|选择|选用)|无需|未要求|没有|禁止))",
+    re.IGNORECASE,
+)
+
+
+def term_is_negated(text: str, term: str) -> bool:
+    """Return true only when every occurrence is in a nearby negated phrase."""
+    matches = list(re.finditer(re.escape(term), text, flags=re.IGNORECASE))
+    if not matches:
+        return False
+    for match in matches:
+        before = text[max(0, match.start() - 80) : match.start()]
+        before = re.split(r"[。！？!?;；,，.\n]", before)[-1]
+        if not NEGATION_PATTERN.search(before):
+            return False
+    return True
 
 
 READ_COMMAND_MARKERS = (
@@ -953,16 +1042,17 @@ def scan_codex_history(
     warnings: WarningCollector,
     window: AuditWindow,
     args: argparse.Namespace,
-) -> tuple[int, set[tuple[str, str, str]], set[tuple[str, str, str]]]:
+) -> tuple[int, set[tuple[str, str, str]], set[tuple[str, str, str]], set[tuple[str, str, str]]]:
     excluded_sessions: set[tuple[str, str, str]] = set()
     approval_review_sessions: set[tuple[str, str, str]] = set()
+    subagent_sessions: set[tuple[str, str, str]] = set()
     seen_messages: set[tuple[str, str]] = set()
     seen_commands: set[tuple[str, str]] = set()
     scanned_files = 0
     for root in roots:
         for path in list_history_files(root, (".jsonl",)):
             scanned_files += 1
-            session_id, session_bridge, session_approval_review = read_codex_session_metadata(path)
+            session_id, session_bridge, session_approval_review, session_subagent = read_codex_session_metadata(path)
             if session_approval_review:
                 approval_review_sessions.add(
                     (root.root_id, path.relative_to(root.path).as_posix(), session_id)
@@ -971,6 +1061,8 @@ def scan_codex_history(
             if session_bridge:
                 excluded_sessions.add((root.root_id, path.relative_to(root.path).as_posix(), session_id))
                 continue
+            if session_subagent:
+                subagent_sessions.add((root.root_id, path.relative_to(root.path).as_posix(), session_id))
 
             preferred: dict[tuple[str, str], MessageRecord] = {}
             priorities: dict[tuple[str, str], int] = {}
@@ -1074,11 +1166,19 @@ def scan_codex_history(
                 )
                 priorities[key] = priority
 
+            observed_by_request: dict[str, set[str]] = defaultdict(set)
+            for request_id, _timestamp, _command, _source, _item, matched_keys in command_events:
+                observed_by_request[request_id].update(matched_keys)
+
             for key in sorted(preferred, key=lambda item: item[1]):
                 if key in seen_messages:
                     continue
                 seen_messages.add(key)
                 message = preferred[key]
+                # A successful Skill.md read can occur after the user record
+                # in the same turn. Apply that evidence before testing for a
+                # missed-use candidate, not only when counting usage events.
+                message.used_skills.update(observed_by_request.get(message.request_id, set()))
                 explicit = extract_explicit_skills(message.text, aliases)
                 for skill_key in sorted(explicit):
                     usage[skill_key].append(
@@ -1091,7 +1191,12 @@ def scan_codex_history(
                             args=args,
                         )
                     )
-                add_candidates(message, inventory, matcher, explicit, candidates, args)
+                # A child agent's task prompt is orchestrator-authored, not a
+                # human request to infer missing skills from. Keep counting
+                # explicit calls and actual reads above; omit only its
+                # generated prompt from missed-use candidate screening.
+                if not session_subagent:
+                    add_candidates(message, inventory, matcher, explicit, candidates, args)
 
             for request_id, timestamp, command, source, item, matched_keys in command_events:
                 command_id = str(item.get("id") or f"{source['path']}:{source['line']}")
@@ -1118,7 +1223,7 @@ def scan_codex_history(
                             args=args,
                         )
                     )
-    return scanned_files, excluded_sessions, approval_review_sessions
+    return scanned_files, excluded_sessions, approval_review_sessions, subagent_sessions
 
 
 def claude_text_content(message: Any) -> str:
@@ -1462,6 +1567,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"- 疑似漏用候选共 {warnings['candidate_total']} 条，报告保留 {warnings['candidate_returned']} 条，截断 {warnings['candidate_truncated']} 条。",
             f"- 已排除 bridge 临时副本会话 {warnings['bridge_copy_excluded_count']} 个。",
             f"- 已排除审批复核副本会话 {warnings['approval_review_excluded_count']} 个（按 session metadata）。",
+            f"- 漏触发候选筛选排除子代理任务会话 {warnings['subagent_candidate_excluded_count']} 个；实际技能读取仍计入使用证据。",
             f"- 纯图片或附件用户记录 {warnings['non_text_user_record_count']} 条，单独计数且不作为文本字段缺失。",
             f"- 无法关联到用户请求的调用证据 {warnings.get('unmapped_request_count', 0)} 条。",
             f"- JSON 解析错误 {warnings['parse_error_count']} 条；目标事件缺字段 {warnings['missing_field_count']} 条。",
@@ -1512,7 +1618,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     candidates = CandidateCollector(args.max_candidates)
     warnings = WarningCollector()
 
-    codex_files, codex_excluded, approval_review_excluded = scan_codex_history(
+    codex_files, codex_excluded, approval_review_excluded, subagent_candidate_excluded = scan_codex_history(
         codex_roots, inventory, aliases, matcher, usage, candidates, warnings, window, args
     )
     claude_files, claude_excluded = scan_claude_history(
@@ -1591,6 +1697,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "candidate_truncated": max(0, candidate_total - len(returned_candidates)),
         "bridge_copy_excluded_count": len(codex_excluded | claude_excluded),
         "approval_review_excluded_count": len(approval_review_excluded),
+        "subagent_candidate_excluded_count": len(subagent_candidate_excluded),
         "parse_error_count": warnings.parse_error_count,
         "parse_errors": warnings.parse_errors,
         "missing_field_count": warnings.missing_field_count,

@@ -75,21 +75,28 @@ class RequestOriginTests(unittest.TestCase):
                     self.assertTrue(result['classifications']['疑似漏用'])
                     self.assertEqual(result['warnings'].get('approval_review_excluded_count',0),0)
 
-    def test_v3_to_v4_semantics_migration_preserves_prior_decisions_and_resets_streak(self):
+    def test_subagent_prompt_is_not_a_user_missed_use_candidate(self):
+        origin={'thread_source':'subagent','source':{'subagent':{'thread_spawn':{'parent_thread_id':'parent'}}}}
+        result=self.audit(origin, 'frequency spectrum curve plotting')
+        self.assertEqual(result['classifications']['疑似漏用'],[])
+        self.assertIn('alpha',result['usage_evidence'])
+        self.assertEqual(result['warnings']['subagent_candidate_excluded_count'],1)
+
+    def test_v4_to_v5_semantics_migration_preserves_prior_decisions_and_resets_streak(self):
         state=REVIEW.new_state()
-        state['usage_semantics_version']=3
+        state['usage_semantics_version']=4
         state['unseen_streaks']={'alpha':{'count':3,'last_counted_date':'2026-08-15','last_window_end':'2026-08-15T14:00:00+08:00'}}
         state['findings']={'old-closed':{'status':'closed','decisions':[{'classification':'reject'}]}}
         state['batches']={'old-completed':{'status':'completed'}}
         protected=copy.deepcopy((state['findings'],state['batches']))
-        usage={'version':'skill-usage-audit-v4','configuration':{'count_unit':'request'},
+        usage={'version':'skill-usage-audit-v5','configuration':{'count_unit':'request'},
             'window':{'start':'2026-08-15T14:00:00+08:00','end':'2026-08-22T14:00:00+08:00'},
             'skill_inventory':[{'skill':'alpha','active_hosts':['codex']}],
             'classifications':{'已用':[],'历史内未见使用':[{'skill':'alpha','active_hosts':['codex']}]}}
         counts, reason=REVIEW.update_unseen_streaks(state,usage,complete=True,scope_value='same',date='2026-08-22')
         self.assertEqual(reason,'usage_semantics_changed')
         self.assertEqual(counts,{'alpha':1})
-        self.assertEqual(state['usage_semantics_version'],4)
+        self.assertEqual(state['usage_semantics_version'],5)
         self.assertEqual((state['findings'],state['batches']),protected)
         counts,reason=REVIEW.update_unseen_streaks(state,usage,complete=True,scope_value='same',date='2026-08-22')
         self.assertEqual(counts,{'alpha':1})
@@ -102,7 +109,7 @@ class RequestOriginTests(unittest.TestCase):
         stale['version']='skill-usage-audit-v3'
         self.assertFalse(REVIEW.summary_is_valid(stale,'usage','2026-01-03')[0])
 
-    def test_minimal_scan_cli_accepts_real_v4_audit_output(self):
+    def test_minimal_scan_cli_accepts_real_v5_audit_output(self):
         usage=self.audit({'source':'cli'}, '$alpha frequency spectrum curve plotting')
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

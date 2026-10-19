@@ -19,15 +19,24 @@ def _inventory(fields=None, issues=None):
 
 
 class _Process:
+    pid = 20
+
+    def poll(self):
+        return None
+
     def wait(self, timeout=None):
         return 0
 
 
 class _Gui:
+    def __init__(self):
+        self.posted = []
+
     def IsWindow(self, _hwnd):
         return True
 
-    def PostMessage(self, *_args):
+    def PostMessage(self, *args):
+        self.posted.append(args)
         return None
 
 
@@ -40,7 +49,8 @@ def _patch_refresh(monkeypatch, tmp_path, *, process_path=None, observed=None, w
     process_path = process_path or word_exe
     observed = observed or {"status": "OBSERVED", "owned_pids": [20]}
 
-    monkeypatch.setattr(ui_refresh, "_imports", lambda: (object(), SimpleNamespace(WM_SYSCOMMAND=0, SC_CLOSE=0), _Gui(), object()))
+    gui = _Gui()
+    monkeypatch.setattr(ui_refresh, "_imports", lambda: (object(), SimpleNamespace(WM_SYSCOMMAND=0, SC_CLOSE=0), gui, object()))
     monkeypatch.setattr(ui_refresh, "reference_word_server", lambda: word_exe)
     monkeypatch.setattr(ui_refresh, "_field_inventory", lambda *_args, **_kwargs: _inventory())
     monkeypatch.setattr(ui_refresh, "_word_field_results", lambda *_args: {
@@ -56,6 +66,9 @@ def _patch_refresh(monkeypatch, tmp_path, *, process_path=None, observed=None, w
     monkeypatch.setattr(ui_refresh.gate, "_wait_for_owned_processes_exit", lambda *_args, **_kwargs: {
         "status": "CLEAN", "owned_pids": [20], "residual_pids": [],
     })
+    monkeypatch.setattr(ui_refresh.gate, "_request_process_close", lambda pid: {
+        "status": "CLOSE_REQUESTED", "pid": pid, "windows": [99],
+    })
 
     def process_ids(image):
         if image.casefold() == "winword.exe":
@@ -63,9 +76,10 @@ def _patch_refresh(monkeypatch, tmp_path, *, process_path=None, observed=None, w
         return list(wps_pids or []), None
 
     monkeypatch.setattr(ui_refresh.gate, "_safe_process_ids", process_ids)
-    monkeypatch.setattr(ui_refresh.subprocess, "Popen", lambda *_args, **_kwargs: _Process())
+    process = _Process()
+    monkeypatch.setattr(ui_refresh.subprocess, "Popen", lambda *_args, **_kwargs: process)
     monkeypatch.setattr(ui_refresh, "_publish_field_results", lambda _source, _evaluated, destination: destination.write_bytes(b"output"))
-    return source, output, word_exe
+    return source, output, word_exe, gui
 
 
 def test_requires_explicit_ui_permission(tmp_path):
@@ -77,7 +91,7 @@ def test_requires_explicit_ui_permission(tmp_path):
 
 
 def test_existing_word_still_blocks(monkeypatch, tmp_path):
-    source, output, _word_exe = _patch_refresh(monkeypatch, tmp_path)
+    source, output, _word_exe, _gui = _patch_refresh(monkeypatch, tmp_path)
     monkeypatch.setattr(ui_refresh.gate, "_safe_process_ids", lambda image: ([123], None) if image == "WINWORD.EXE" else ([], None))
     result = ui_refresh.refresh_copy(source, output, allow_office_ui=True)
     assert result["status"] == "UNSAFE_PROCESS"
@@ -85,7 +99,7 @@ def test_existing_word_still_blocks(monkeypatch, tmp_path):
 
 
 def test_existing_wps_is_recorded_but_does_not_block(monkeypatch, tmp_path):
-    source, output, word_exe = _patch_refresh(monkeypatch, tmp_path, wps_pids=[10, 11])
+    source, output, word_exe, _gui = _patch_refresh(monkeypatch, tmp_path, wps_pids=[10, 11])
     result = ui_refresh.refresh_copy(source, output, allow_office_ui=True)
     assert result["status"] == "PASS"
     assert result["ownership"]["preflight_wps_pids"] == [10, 11]
@@ -93,7 +107,7 @@ def test_existing_wps_is_recorded_but_does_not_block(monkeypatch, tmp_path):
 
 
 def test_no_new_word_pid_is_rejected(monkeypatch, tmp_path):
-    source, output, _word_exe = _patch_refresh(
+    source, output, _word_exe, _gui = _patch_refresh(
         monkeypatch, tmp_path,
         observed={"status": "NO_NEW_PID", "owned_pids": []},
         wps_pids=[10],
@@ -105,7 +119,7 @@ def test_no_new_word_pid_is_rejected(monkeypatch, tmp_path):
 
 
 def test_word_pid_path_must_not_be_wps(monkeypatch, tmp_path):
-    source, output, _word_exe = _patch_refresh(
+    source, output, _word_exe, _gui = _patch_refresh(
         monkeypatch, tmp_path,
         process_path=tmp_path / "wps.exe",
     )
@@ -113,6 +127,68 @@ def test_word_pid_path_must_not_be_wps(monkeypatch, tmp_path):
     assert result["status"] == "UNVERIFIED"
     assert "does not match registered Word" in result["error"]
     assert not output.exists()
+
+
+def test_window_discovery_failure_still_closes_verified_task_word(monkeypatch, tmp_path):
+    source, output, _word_exe, gui = _patch_refresh(monkeypatch, tmp_path)
+    calls = 0
+
+    def fail_first_window_lookup(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ui_refresh.UiRefreshFailure("UNVERIFIED", "injected window discovery failure")
+        return 99
+
+    monkeypatch.setattr(ui_refresh, "_main_window", fail_first_window_lookup)
+
+    result = ui_refresh.refresh_copy(source, output, allow_office_ui=True)
+
+    assert result["status"] == "UNVERIFIED"
+    assert result["ownership"]["cleanup"]["status"] == "CLEAN"
+    assert result["ownership"]["cleanup_close_requests"][0]["status"] == "CLOSE_REQUESTED"
+    assert calls == 1
+    assert not output.exists()
+
+
+def test_unverified_launcher_path_is_not_closed(monkeypatch, tmp_path):
+    source, output, _word_exe, _gui = _patch_refresh(
+        monkeypatch, tmp_path, process_path=tmp_path / "wps.exe",
+    )
+    close_calls = []
+    monkeypatch.setattr(ui_refresh.gate, "_request_process_close", lambda pid: close_calls.append(pid))
+
+    result = ui_refresh.refresh_copy(source, output, allow_office_ui=True)
+
+    assert result["status"] == "UNVERIFIED"
+    assert close_calls == []
+    assert not output.exists()
+
+
+def test_stale_verified_pid_is_rechecked_before_close(monkeypatch, tmp_path):
+    source, output, word_exe, _gui = _patch_refresh(monkeypatch, tmp_path)
+    path_checks = 0
+
+    def path_changes_after_launch(_pid):
+        nonlocal path_checks
+        path_checks += 1
+        if path_checks == 1:
+            return word_exe.resolve(), None
+        return tmp_path / "other.exe", None
+
+    close_calls = []
+    monkeypatch.setattr(ui_refresh.gate, "_safe_process_executable_path", path_changes_after_launch)
+    monkeypatch.setattr(ui_refresh.gate, "_request_process_close", lambda pid: close_calls.append(pid))
+    monkeypatch.setattr(
+        ui_refresh, "_main_window",
+        lambda *_args: (_ for _ in ()).throw(ui_refresh.UiRefreshFailure("UNVERIFIED", "injected failure")),
+    )
+
+    result = ui_refresh.refresh_copy(source, output, allow_office_ui=True)
+
+    assert result["status"] == "UNVERIFIED"
+    assert close_calls == []
+    assert result["ownership"]["cleanup_close_requests"][0]["status"] == "SKIPPED_UNVERIFIED"
 
 
 def test_pageref_results_survive_word_hyperlink_wrappers(monkeypatch, tmp_path):

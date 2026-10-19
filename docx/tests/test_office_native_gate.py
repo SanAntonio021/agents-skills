@@ -109,6 +109,19 @@ class OfficeNativeGateTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
+    def test_safe_process_executable_path_returns_path_and_reports_missing(self) -> None:
+        executable = self.root / "WINWORD.EXE"
+        executable.write_bytes(b"word")
+        with patch.object(native_gate, "_process_path", return_value=str(executable)):
+            path, error = native_gate._safe_process_executable_path(4242)
+        self.assertEqual(path, executable.resolve())
+        self.assertIsNone(error)
+
+        with patch.object(native_gate, "_process_path", return_value=None):
+            path, error = native_gate._safe_process_executable_path(4242)
+        self.assertIsNone(path)
+        self.assertIn("could not read executable path", str(error))
+
     def run_docx_gate(
         self,
         pid_responses: list[object],
@@ -181,6 +194,7 @@ class OfficeNativeGateTests(unittest.TestCase):
         self.assertEqual(result["ownership"]["activation_identity"]["status"], "NON_MICROSOFT_PROVIDER")
         self.assertEqual(result["ownership"]["fallback_identity"]["path"], word.Path)
         self.assertIs(returned, wps)
+        self.assertEqual(wps.quit_calls, 0)
 
     def test_wps_provider_without_word_executable_is_unverified(self) -> None:
         wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")

@@ -114,6 +114,8 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 
 正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。需要 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 使用本轮按协作方式处理并审校的正文，再交给 `docx`；导出阶段不重新改写内容。
 
+需要整合 Markdown 入口、专题记录或跨文档引用时，按 [Markdown 文档维护规范](../../docs/markdown-maintenance.md) 处理职责、历史和引用；技术对象、参数、状态、公式和证据仍以本技能的专业要求为准。
+
 ## 完成条件
 
 - 对象、方法、条件、结果和限制足以让目标读者判断或复现；

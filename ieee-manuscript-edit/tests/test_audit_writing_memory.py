@@ -102,6 +102,61 @@ def run_audit(tmp_path: Path, text: str, language: str = "en", kind: str = "pape
     return audit.audit(parse_args(root, source, language, kind))
 
 
+def test_default_vocab_root_prefers_home_agents_config(tmp_path: Path) -> None:
+    home = tmp_path / "user"
+    primary = home / "agents-config" / "vocab"
+    legacy = tmp_path / "legacy-vocab"
+    primary.mkdir(parents=True)
+    legacy.mkdir()
+
+    script = tmp_path / "unrelated" / "audit.py"
+    assert audit.resolve_default_vocab_root(home, legacy, script) == primary
+
+
+def test_parser_default_resolves_user_home_agents_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "user"
+    primary = home / "agents-config" / "vocab"
+    primary.mkdir(parents=True)
+    monkeypatch.setattr(audit.Path, "home", lambda: home)
+
+    args = audit.build_parser().parse_args(
+        ["--file", "draft.md", "--language", "en", "--document-kind", "paper"]
+    )
+
+    assert Path(args.vocab_root) == primary
+
+
+def test_default_vocab_root_uses_private_source_checkout(tmp_path: Path) -> None:
+    source_root = tmp_path / ".agents"
+    source_vocab = source_root / "vocab"
+    script = source_root / "skills" / "ieee-manuscript-edit" / "scripts" / "audit.py"
+    source_vocab.mkdir(parents=True)
+
+    assert audit.resolve_default_vocab_root(
+        tmp_path / "user", tmp_path / "missing-legacy", script
+    ) == source_vocab
+
+
+def test_default_vocab_root_falls_back_to_existing_legacy_path(tmp_path: Path) -> None:
+    home = tmp_path / "user"
+    legacy = tmp_path / "legacy-vocab"
+    legacy.mkdir()
+
+    script = tmp_path / "unrelated" / "audit.py"
+    assert audit.resolve_default_vocab_root(home, legacy, script) == legacy
+
+
+def test_default_vocab_root_reports_portable_location_when_none_exists(tmp_path: Path) -> None:
+    home = tmp_path / "user"
+    legacy = tmp_path / "legacy-vocab"
+
+    script = tmp_path / "unrelated" / "audit.py"
+    expected = home / "agents-config" / "vocab"
+    assert audit.resolve_default_vocab_root(home, legacy, script) == expected
+
+
 def test_complete_language_and_document_kind_routing(tmp_path: Path) -> None:
     root = make_vocab_root(tmp_path)
     for kind in audit.DOCUMENT_KINDS:

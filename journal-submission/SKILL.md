@@ -113,7 +113,7 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 收到决定后保存决定信原文、决定类型、截止日期、文件要求和来源。不要只记录“返修”。
 
-建立稳定编号的审稿意见台账，保存原始意见、分类、处理决定、修改位置、证据、回复和状态。投稿技能维护台账、版本和页面提交；Response Letter 正文和语言精修转 `ieee-manuscript-edit`。
+建立稳定编号的审稿意见台账，保存原始意见、分类、处理决定、修改位置、证据、回复和状态。编号规范（`Rn-m`）和逐条对应的回复体例见 [references/material-templates.md](references/material-templates.md)。投稿技能维护台账、版本和页面提交；Response Letter 正文和语言精修转 `ieee-manuscript-edit`。
 
 只有决定信或当前页面允许时才进入 `revision` / `resubmission`。编辑部退回补件但没有正式决定时，保留平台原始状态，不伪造返修决定。
 

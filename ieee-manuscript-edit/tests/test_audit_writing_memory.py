@@ -102,30 +102,73 @@ def run_audit(tmp_path: Path, text: str, language: str = "en", kind: str = "pape
     return audit.audit(parse_args(root, source, language, kind))
 
 
-def test_default_vocab_root_prefers_home_agents_config(tmp_path: Path) -> None:
-    home = tmp_path / "user"
+def test_default_vocab_root_prefers_bundle_across_user_and_checkout_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "C-drive" / "Users" / "DifferentUser"
     primary = home / "agents-config" / "vocab"
-    legacy = tmp_path / "legacy-vocab"
+    old_location = tmp_path / "D-drive" / "BaiduSyncdisk" / ".agents" / "vocab"
+    bundle = tmp_path / "E-drive" / "agents-skills" / "skills" / "style-vocab" / "vocab"
+    script = (
+        tmp_path
+        / "E-drive"
+        / "agents-skills"
+        / "skills"
+        / "ieee-manuscript-edit"
+        / "scripts"
+        / "audit.py"
+    )
     primary.mkdir(parents=True)
-    legacy.mkdir()
+    old_location.mkdir(parents=True)
+    bundle.mkdir(parents=True)
+    monkeypatch.setattr(audit, "LEGACY_VOCAB_ROOT", old_location)
+    monkeypatch.setattr(audit.Path, "home", lambda: home)
 
-    script = tmp_path / "unrelated" / "audit.py"
-    assert audit.resolve_default_vocab_root(home, legacy, script) == primary
+    args = audit.build_parser(script_path=script).parse_args(
+        ["--file", "draft.md", "--language", "en", "--document-kind", "paper"]
+    )
+
+    assert Path(args.vocab_root) == bundle
 
 
-def test_parser_default_resolves_user_home_agents_config(
+def test_parser_default_uses_user_home_agents_config_as_transition_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     home = tmp_path / "user"
     primary = home / "agents-config" / "vocab"
+    script = tmp_path / "unrelated" / "audit.py"
     primary.mkdir(parents=True)
+    monkeypatch.setattr(audit, "LEGACY_VOCAB_ROOT", tmp_path / "missing-old-location")
     monkeypatch.setattr(audit.Path, "home", lambda: home)
 
-    args = audit.build_parser().parse_args(
+    args = audit.build_parser(script_path=script).parse_args(
         ["--file", "draft.md", "--language", "en", "--document-kind", "paper"]
     )
 
     assert Path(args.vocab_root) == primary
+
+
+def test_explicit_vocab_root_overrides_bundled_default(tmp_path: Path) -> None:
+    bundle = tmp_path / "skills" / "style-vocab" / "vocab"
+    override = tmp_path / "explicit-vocab"
+    script = tmp_path / "skills" / "ieee-manuscript-edit" / "scripts" / "audit.py"
+    bundle.mkdir(parents=True)
+    override.mkdir()
+
+    args = audit.build_parser(script_path=script).parse_args(
+        [
+            "--file",
+            "draft.md",
+            "--vocab-root",
+            str(override),
+            "--language",
+            "en",
+            "--document-kind",
+            "paper",
+        ]
+    )
+
+    assert Path(args.vocab_root) == override
 
 
 def test_default_vocab_root_uses_private_source_checkout(tmp_path: Path) -> None:
@@ -139,7 +182,7 @@ def test_default_vocab_root_uses_private_source_checkout(tmp_path: Path) -> None
     ) == source_vocab
 
 
-def test_default_vocab_root_falls_back_to_existing_legacy_path(tmp_path: Path) -> None:
+def test_default_vocab_root_falls_back_to_explicit_legacy_path(tmp_path: Path) -> None:
     home = tmp_path / "user"
     legacy = tmp_path / "legacy-vocab"
     legacy.mkdir()
@@ -148,13 +191,29 @@ def test_default_vocab_root_falls_back_to_existing_legacy_path(tmp_path: Path) -
     assert audit.resolve_default_vocab_root(home, legacy, script) == legacy
 
 
-def test_default_vocab_root_reports_portable_location_when_none_exists(tmp_path: Path) -> None:
+def test_default_vocab_root_keeps_former_fixed_location_as_last_resort(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     home = tmp_path / "user"
-    legacy = tmp_path / "legacy-vocab"
-
+    legacy = tmp_path / "old-drive" / "BaiduSyncdisk" / ".agents" / "vocab"
+    legacy.mkdir(parents=True)
     script = tmp_path / "unrelated" / "audit.py"
-    expected = home / "agents-config" / "vocab"
-    assert audit.resolve_default_vocab_root(home, legacy, script) == expected
+    monkeypatch.setattr(audit, "LEGACY_VOCAB_ROOT", legacy)
+
+    assert audit.resolve_default_vocab_root(home, script_path=script) == legacy
+
+
+def test_default_vocab_root_reports_bundled_location_when_none_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "user"
+    script = tmp_path / "skills" / "ieee-manuscript-edit" / "scripts" / "audit.py"
+    bundled_default = tmp_path / "skills" / "style-vocab" / "vocab"
+    monkeypatch.setattr(audit, "LEGACY_VOCAB_ROOT", tmp_path / "missing-old-location")
+
+    assert audit.resolve_default_vocab_root(
+        home, tmp_path / "missing-legacy", script
+    ) == bundled_default
 
 
 def test_complete_language_and_document_kind_routing(tmp_path: Path) -> None:

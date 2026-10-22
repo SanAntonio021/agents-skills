@@ -8,9 +8,23 @@ import os from 'node:os';
 import { URL } from 'node:url';
 import { selectBrowser, findFallbackPort } from './browser-discovery.mjs';
 import { getProxyPort, readConfig, RuntimeConfigError } from './runtime-config.mjs';
+import { BROKER_VERSION } from './broker-version.mjs';
 
 const PROTOCOL_VERSION = 2;
 const BROWSER_OVERRIDE = parseBrowserArg();
+const PROFILE_MODE = parseArgValue('--broker-profile-mode') ||
+  (process.env.WEB_ACCESS_PROFILE_MODE === 'managed' ? 'managed' : 'existing');
+const MANAGED_INSTANCE_ID = parseArgValue('--managed-instance-id') ||
+  process.env.WEB_ACCESS_MANAGED_INSTANCE_ID ||
+  null;
+if (!['managed', 'existing'].includes(PROFILE_MODE)) {
+  console.error(`[CDP Proxy] Invalid broker profile mode: ${PROFILE_MODE}`);
+  process.exit(2);
+}
+if (PROFILE_MODE === 'managed' && !MANAGED_INSTANCE_ID) {
+  console.error('[CDP Proxy] Managed profile mode requires --managed-instance-id.');
+  process.exit(2);
+}
 let CONFIGURED_BROWSER;
 let PORT;
 try {
@@ -118,10 +132,14 @@ function parsePositiveInt(raw, fallback) {
 }
 
 function parseBrowserArg() {
+  return parseArgValue('--browser');
+}
+
+function parseArgValue(name) {
   const argv = process.argv.slice(2);
   for (let index = 0; index < argv.length; index++) {
-    if (argv[index] === '--browser' && argv[index + 1]) return argv[index + 1];
-    if (argv[index].startsWith('--browser=')) return argv[index].slice('--browser='.length);
+    if (argv[index] === name && argv[index + 1]) return argv[index + 1];
+    if (argv[index].startsWith(`${name}=`)) return argv[index].slice(name.length + 1);
   }
   return null;
 }
@@ -170,6 +188,7 @@ async function discoverBrowser() {
       id: result.browser.id,
       label: result.browser.label,
       source: result.source,
+      profileMode: PROFILE_MODE,
     };
     return { port: result.browser.port, wsPath: result.browser.wsPath };
   }
@@ -869,6 +888,8 @@ function validateHostAndOrigin(req) {
 function capabilities() {
   return {
     protocolVersion: PROTOCOL_VERSION,
+    brokerVersion: BROKER_VERSION,
+    profileMode: PROFILE_MODE,
     taskIsolation: true,
     userTabsVisible: false,
     maxActiveTasks: TASK_LIMIT,
@@ -884,7 +905,12 @@ function capabilities() {
 function requestedBrowserInfo() {
   if (!BROWSER_OVERRIDE) return null;
   const labels = { edge: 'Microsoft Edge', chrome: 'Chrome', chromium: 'Chromium', 'chrome-canary': 'Chrome Canary' };
-  return { id: BROWSER_OVERRIDE, label: labels[BROWSER_OVERRIDE] || BROWSER_OVERRIDE, source: 'override' };
+  return {
+    id: BROWSER_OVERRIDE,
+    label: labels[BROWSER_OVERRIDE] || BROWSER_OVERRIDE,
+    source: PROFILE_MODE === 'managed' ? 'managed' : 'override',
+    profileMode: PROFILE_MODE,
+  };
 }
 
 async function targetInfo(targetId) {
@@ -1424,6 +1450,10 @@ async function handleRoute(req, parsed, rawBody) {
       proxyPort: PORT,
       requestedBrowser: BROWSER_OVERRIDE,
       browser: connectedBrowser || requestedBrowserInfo(),
+      profileMode: PROFILE_MODE,
+      managedProfile: PROFILE_MODE === 'managed',
+      managedInstanceId: MANAGED_INSTANCE_ID,
+      brokerVersion: BROKER_VERSION,
       sessions: sessions.size,
       managedTabs: tabOwners.size,
       activeTasks: activeTaskCount(),
@@ -1816,12 +1846,17 @@ function existingProxyMatchesBrowser(health) {
   const runningId = existingBrowserId(health);
   const requestedId = health?.requestedBrowser || null;
   if (!runningId || !requestedId) return false;
-  return runningId === CONFIGURED_BROWSER && requestedId === CONFIGURED_BROWSER;
+  if (runningId !== CONFIGURED_BROWSER || requestedId !== CONFIGURED_BROWSER) return false;
+  if (health.profileMode !== PROFILE_MODE) return false;
+  if (PROFILE_MODE === 'managed' && health.managedInstanceId !== MANAGED_INSTANCE_ID) return false;
+  return true;
 }
 
 function existingProxyIsCompatible(health, capabilities, expectedCdpPort) {
   return isWebAccessProxy(health)
     && health.protocolVersion === PROTOCOL_VERSION
+    && health.brokerVersion === BROKER_VERSION
+    && health.profileMode === PROFILE_MODE
     && health.proxyPort === PORT
     && health.connected === true
     && health.chromePort === expectedCdpPort
@@ -1829,6 +1864,8 @@ function existingProxyIsCompatible(health, capabilities, expectedCdpPort) {
     && health.pid > 0
     && existingProxyMatchesBrowser(health)
     && capabilities?.protocolVersion === PROTOCOL_VERSION
+    && capabilities?.brokerVersion === BROKER_VERSION
+    && capabilities?.profileMode === PROFILE_MODE
     && capabilities?.taskIsolation === true
     && capabilities?.userTabsVisible === false
     && Number.isInteger(capabilities?.maxActiveTasks)

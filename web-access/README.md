@@ -29,7 +29,7 @@
 
 它保留现有浏览器会话、CDP 操作及按需读取的站点经验，兼容支持 SKILL.md 的 Agent（Claude Code、Cursor、Gemini CLI、Codex CLI 等）。真实浏览器可以处理部分普通抓取无法访问的页面，仍可能遇到站点检测、验证码或权限限制；取得所需正文和核验实际操作结果才算完成。
 
-> **本地修订 dual-proxy.2**：在上游 v2.5.3 与 dual-proxy.1 基础上，保留 Edge（固定 3456）和 Chrome（固定 3457）双长期 Proxy，并新增唯一生产配置、单实例并发复用、task/token 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认。
+> **本地修订 managed-edge.1**：在 dual-proxy.2 基础上增加 Windows 受管 Edge。默认使用独立 Profile、CDP `9222` 和长期 Proxy `3456`；首次任务按需启动，多个对话共享同一 Broker 但各自使用独立 task/token/tab。日常 Edge 只保留显式 `--mode existing` 人工备用模式，失败不自动回退。原有唯一生产配置、task 隔离、AX snapshot/ref、结构化 action、wait/dialog、用户接管和敏感操作确认继续保留。
 
 > 推荐必读：[Web Access：一个 Skill，拉满 Agent 联网和浏览器能力](https://mp.weixin.qq.com/s/rps5YVB6TchT9npAaIWKCw) ，完整介绍了 Web-Access Skill 的开发细节与 Agent Skill 设计哲学，帮助你也能写出类似通用、高上限的 Skill
 
@@ -40,14 +40,15 @@
 | 能力 | 说明 |
 |------|------|
 | 联网工具自动选择 | 选择当前可用的搜索、正文读取或浏览器工具；普通读取不足时自动转浏览器，已知动态或登录需求直接访问 |
-| 双长期 CDP Proxy | Edge 固定 3456、Chrome 固定 3457；所有生产副本复用同一配置和现有兼容进程，不使用备用端口 |
+| 受管 Edge Broker | 独立 Profile `%LOCALAPPDATA%\\web-access\\managed-edge-profile`；CDP 固定 9222、Proxy 固定 3456；首次任务按需启动并长期复用 |
+| 日常浏览器备用 | 只有显式 `--mode existing` 才连接日常 Edge/Chrome；不参与受管自动修复、并发复用或失败回退 |
 | task/token 隔离 | 每个对话创建独立 task，只能看到和控制自己创建的 tab 及 popup；不列出或接管用户 tab |
 | AX snapshot/ref | 默认读取交互式可访问性树，以短 ref 定位元素；动态重绘后重新 snapshot |
 | 结构化交互 | 支持 `click`、`fill`、`type`、`press`、`check`、`uncheck`、`select`、`hover`，动作后回读验证 |
 | 等待与接管 | 等 selector/text/URL/load；复用匹配的浏览器保存账号或获准的本机安全凭据助手；需用户录入、解锁、MFA、扫码/验证码或变化的 SSO 发布范围时接管，handoff 期间禁止页面访问 |
 | 授权复用 | 敏感信息及提交、发送、上传、付款、删除、授权、账号变更核对准确目标与已有授权，缺失或变化时才询问 |
 | 本地浏览器书签/历史检索 | `find-url.mjs` 跨 Chrome / Edge 查询公网搜不到的目标（内部系统）或用户访问过的页面，支持关键词/时间窗/访问频度排序 |
-| 并行分治 | 多目标可并行；同一浏览器共享 Proxy，但 task、token、tab 和 ref 互相隔离 |
+| 并行分治 | 多目标可并行；多个对话共享同一受管 Edge/Proxy，但各自创建独立 task、token、tab 和 ref，完成一个 task 不影响其他对话 |
 | 站点经验复用 | 按域名读取已有 URL 模式、平台特征与已知陷阱；只有用户要求维护时才更新 |
 | 媒体提取 | 从 DOM 直取图片/视频 URL，或对视频任意时间点截帧分析 |
 | 任务收尾与验收 | 先核实可重新打开的整体入口及必要验收链接，再关闭本次新开的标签页、弹窗和独立窗口；仅用户明确要求保留时例外，关闭结果不明时如实报告 |
@@ -95,6 +96,8 @@
 
 ## 安装
 
+本仓库的 `managed-edge.1` 修订版通过 `SanAntonio021/agents-skills` 与 CC Switch 分发；下面的上游安装方式只用于获取原始上游版本。安装本地修订版时，同时发布 `web-access`，机构论文下载还应安装同一仓库的 `paper-download`。
+
 **方式一：npx skills 一键安装（推荐）**
 
 ```bash
@@ -124,7 +127,9 @@ git clone https://github.com/eze-is/web-access ~/.claude/skills/web-access
 
 ## 浏览器配置与 API
 
-选择 CDP Proxy 后才检查 Node.js 22+、浏览器调试开关与 `/v2` 协议。生产副本统一使用 `%LOCALAPPDATA%\web-access\config.env`，Edge / Chrome Proxy 端口固定为 `3456` / `3457`，复用现有兼容进程。
+选择 CDP Proxy 后才检查 Node.js 22+、受管 Broker 与 `/v2` 协议。Windows 默认使用受管 Edge，生产副本统一使用 `%LOCALAPPDATA%\web-access\config.env`；现有配置升级时原子补充 `WEB_ACCESS_BROWSER_MODE=managed`。受管 Edge 使用独立 Profile、CDP `9222`、Proxy `3456`，由首次任务按需启动并长期复用。日常 Edge/Chrome 的 `existing` 模式仍可按人工要求使用，但不能作为受管失败后的自动回退。
+
+正常新对话先运行 `check-deps.mjs --browser edge --mode managed --json`。只有 `ready:true` 且真实 `controlProbe.passed:true` 才能继续；`--status-only` 只诊断、不启动或修复，`--no-probe` 仅用于隔离测试。`paper-download` 机构模块只消费该入口，不自行启动或停止浏览器。
 
 - [启动与浏览器选择](references/cdp-api.md#启动与浏览器选择)：前检命令、配置、固定端口和授权连接复用。
 - [页面观察与导航](references/cdp-api.md#页面观察与导航)：snapshot/ref、导航、等待和能力限制。

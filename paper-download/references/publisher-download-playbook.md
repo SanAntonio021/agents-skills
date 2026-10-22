@@ -28,7 +28,7 @@
 
 ## 公开机构访问模块
 
-Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `scripts/institutional_access/run.ps1`。模块依赖同仓库的 `web-access`，首次运行会在 `%LOCALAPPDATA%\PaperDownload\venv` 创建独立 Python 环境。只有短生命周期浏览器 task token 存入 Windows 凭据管理器；学校密码、浏览器密码库、Cookie 和认证头均不读取、不保存。
+Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `scripts/institutional_access/run.ps1`。模块依赖同仓库的 `web-access`，首次运行会在 `%LOCALAPPDATA%\PaperDownload\venv` 创建独立 Python 环境。浏览器固定使用受管 Edge：Profile 为 `%LOCALAPPDATA%\web-access\managed-edge-profile`，CDP 为 `9222`，Proxy 为 `3456`；首次任务按需启动，后续任务复用同一 Broker。只有短生命周期浏览器 task token 存入 Windows 凭据管理器；学校密码、浏览器密码库、Cookie 和认证头均不读取、不保存。
 
 推荐流程：
 
@@ -54,7 +54,7 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 | `access_unavailable` | 用户恢复后仍没有出版社权限；不得绕过。 |
 | `downloaded_identity_verified` | PDF 文件头、页面、DOI 和出版社身份已通过检查。 |
 | `resume` | 用户声称完成登录后必须调用；从同一浏览器 tab 回读页面。 |
-| `complete` | 仅在 PDF 与 Zotero 收尾完成后关闭本任务自己的 tab。 |
+| `complete` | 仅在 PDF 与 Zotero 收尾完成后关闭本任务自己的 tab；不停止 Broker、不关闭受管 Edge 或其他对话页面。 |
 
 仅当页面为 HTTPS 登录页、用户名与密码已由浏览器填好、存在唯一同源 POST 表单和唯一提交控件且没有待确认的必选项时，模块可自动提交一次。账号或机构有歧义、出现 MFA/扫码/短信或邮件验证码、提交失败或结果未知时交给用户。页面激活后由用户确认站点并完成必要步骤；用户回复“已登录”本身不构成成功证据。
 
@@ -72,7 +72,7 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 - `Access provided by <institution>` 是是否真正接通权限的高价值信号。
 - 对受限条目，命令行直抓 `stampPDF/getPDF.jsp` 常被风控或返回包装页；浏览器内下载更稳。
 - `IEEE Access` 虽然是开放获取，也优先通过文章页确认官方 PDF 链接后再下载。
-- 若本机日常浏览器已经有学校登录态，优先复用该浏览器会话；MCP 单独启动的新浏览器资料目录可能没有账号、Cookie 和机构登录状态。
+- 首次使用时在受管 Edge 中完成学校登录，之后 Cookie 随独立 Profile 持久化；不要改用日常浏览器或另一个临时 Profile 重做登录。
 - 对 IEEE，`stamp/stamp.jsp` 常是外层 HTML wrapper；真正 PDF 往往在页面里的 `iframe`、`embed` 或 `object`，例如 `stampPDF/getPDF.jsp?...`。保存时必须抓内层 PDF，并用 `%PDF-` 文件头确认。
 - `Access provided by <institution>` 只作为辅助信号；最终以实际取得并通过 DOI 校验的 PDF 为准。
 - 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
@@ -80,6 +80,7 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 - 授权中断时保留当前浏览器页面和任务状态，用户完成验证后继续原下载，不要重新搜索导致下载到错误版本。
 - 浏览器代理或出版社返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以同一页面的访问状态和 PDF 入口可见性判断。
 - 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的已授权同源文件取回流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
+- 机构模块前检返回 `managed_profile_busy`、`managed_cdp_port_conflict`、`managed_browser_launch_failed`、`proxy_version_mismatch`、`control_probe_failed` 或 `task_capacity_reached` 时，按 Broker 故障处理；这些状态不等同于学校登录、MFA、出版社挑战或无订阅。
 
 ## ScienceDirect / Elsevier
 

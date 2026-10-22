@@ -27,6 +27,9 @@ class ProxyInfo:
     proxy_url: str
     browser: str
     protocol_version: int
+    mode: str = "managed"
+    broker_version: str | None = None
+    instance_id: str | None = None
 
 
 def discover_web_access_checker() -> Path:
@@ -81,12 +84,21 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
             "Node.js 22 or newer is required for browser access",
         )
     checker = discover_web_access_checker()
-    command = [node, str(checker), "--json"]
     selected = (browser or os.environ.get("PAPER_DOWNLOAD_BROWSER") or "auto").lower()
-    if selected not in {"auto", "edge", "chrome"}:
-        raise BrowserError("invalid_browser", "browser must be auto, edge, or chrome")
-    if selected != "auto":
-        command.extend(["--browser", selected])
+    if selected not in {"auto", "edge"}:
+        raise BrowserError(
+            "managed_edge_required",
+            "paper-download institutional access uses managed Edge only",
+        )
+    command = [
+        node,
+        str(checker),
+        "--browser",
+        "edge",
+        "--mode",
+        "managed",
+        "--json",
+    ]
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
         result = subprocess.run(
@@ -94,7 +106,7 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
             capture_output=True,
             text=True,
             encoding="utf-8",
-            timeout=60,
+            timeout=120,
             creationflags=flags,
         )
     except subprocess.TimeoutExpired as error:
@@ -125,16 +137,28 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         result.returncode != 0
         or parsed.get("ready") is not True
         or parsed.get("protocolVersion") != 2
+        or parsed.get("browserMode") != "managed"
     ):
         raise BrowserError(
             str(parsed.get("status") or "browser_preflight_failed"),
             "web-access browser service is not ready",
         )
+    results = parsed.get("results")
+    if not isinstance(results, list):
+        raise BrowserError(
+            "browser_preflight_invalid",
+            "web-access returned no browser result list",
+        )
     ready = [
         item
-        for item in parsed.get("results", [])
+        for item in results
+        if isinstance(item, dict)
+        and isinstance(item.get("browser"), dict)
+        and isinstance(item.get("proxy"), dict)
         if item.get("ready") is True
         and (item.get("proxy") or {}).get("protocolVersion") == 2
+        and (item.get("managedBrowser") or {}).get("ready") is True
+        and (item.get("controlProbe") or {}).get("passed") is True
     ]
     if not ready:
         raise BrowserError(
@@ -146,6 +170,9 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         proxy_url=selected_result["proxy"]["url"].rstrip("/"),
         browser=selected_result["browser"]["id"],
         protocol_version=2,
+        mode="managed",
+        broker_version=parsed.get("brokerVersion"),
+        instance_id=selected_result.get("instanceId"),
     )
 
 
@@ -205,11 +232,13 @@ class BrowserClient:
             code = "browser_api_error"
             try:
                 body_data = json.loads(error.read(8192).decode("utf-8"))
-                code = str(
-                    ((body_data.get("error") or {}).get("code"))
-                    or body_data.get("code")
-                    or code
-                )
+                error_value = body_data.get("error") if isinstance(body_data, dict) else None
+                if isinstance(error_value, dict):
+                    code = str(error_value.get("code") or code)
+                elif isinstance(error_value, str) and error_value:
+                    code = error_value
+                if isinstance(body_data, dict) and body_data.get("code"):
+                    code = str(body_data["code"])
             except Exception:
                 pass
             raise BrowserError(code, f"browser API HTTP {error.code}", status=error.code)

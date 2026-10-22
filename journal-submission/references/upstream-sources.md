@@ -16,7 +16,6 @@
 - 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-wireless-communications`
 - 技能入口：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-wireless-communications/SKILL.md`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -52,7 +51,6 @@
 - 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-communications`
 - 技能入口：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-communications/SKILL.md`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -88,7 +86,6 @@
 - 接受时上游路径：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-antennas-and-propagation`
 - 技能入口：`Engineering-Technology-Journal-Skills/skills/ieee-transactions-on-antennas-and-propagation/SKILL.md`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -125,7 +122,6 @@
 - 接受时上游路径：`English-NaturalScience-Journal-Skills/skills/nature-communications`
 - 技能入口：`English-NaturalScience-Journal-Skills/skills/nature-communications/SKILL.md`
 - 已接受提交：`d08b584985bb7bd306607c40b47acdd061bb9c41`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

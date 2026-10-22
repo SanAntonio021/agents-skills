@@ -195,11 +195,10 @@ python <script> complete-review `
   --skills-root <agents-root>/skills `
   --workspace <review-workspace> --skill <skill-name> --source <source-id> `
   --date <YYYY-MM-DD> --confirm-retest-passed `
-  --accepted-version <source-id> <version> --json
+  --json
 ```
 
-`--accepted-version` 可按来源重复，也可省略并保留已有版本。命令只接受
-`applied_pending_retest` 状态；先确认正式技能仍与已应用候选一致、候选证据未变、全部来源 HEAD 与接受基线仍有效，
+命令只接受 `applied_pending_retest` 状态；先确认正式技能仍与已应用候选一致、候选证据未变、全部来源 HEAD 与接受基线仍有效，
 再通过恢复日志保护的可恢复事务更新集中登记、定向生成来源页并把上下文标为 `completed`。路径迁移已经随新基线完成时，删除冗余的
 `accepted_upstream_path`、`path_migration_commit` 和 `path_migration_evidence`；加载时仍由当前 `upstream_path`
 推导接受路径。每次写入前保存三个文件的旧快照；普通写入失败会立即恢复，进程中断则在下次重跑时先恢复。

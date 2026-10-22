@@ -95,7 +95,6 @@ def write_registry(path: Path, baseline: str, include_beta: bool = True) -> None
         'repo_url = "https://github.com/example/upstream"',
         'upstream_path = "skills/source-skill"',
         f'accepted_commit = "{baseline}"',
-        'accepted_version = "1.0"',
         'license = "MIT"',
         'baseline_kind = "exact"',
         'tracked_paths = ["SKILL.md", "scripts", "references"]',
@@ -440,7 +439,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
                 f'repo_url = "{source.repo_url}"',
                 f'upstream_path = "{source.upstream_path}"',
                 f'accepted_commit = "{source.accepted_commit}"',
-                f'accepted_version = "{source.accepted_version}"',
                 f'license = "{source.license}"',
                 f'baseline_kind = "{source.baseline_kind}"',
                 'tracked_paths = ["SKILL.md", "scripts", "references"]',
@@ -1615,7 +1613,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
             "example-source",
             "2026-07-25",
             True,
-            {"example-source": "2.0"},
         )
         self.assertEqual(completed["status"], "completed")
         reloaded = MODULE.load_sources(self.registry)
@@ -1623,7 +1620,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         source = alpha.sources[0]
         self.assertEqual(alpha.last_review_date, "2026-07-25")
         self.assertEqual(source.accepted_commit, head)
-        self.assertEqual(source.accepted_version, "2.0")
         self.assertEqual(source.accepted_upstream_path, source.upstream_path)
         self.assertEqual(source.path_migration_commit, "")
         self.assertNotIn("accepted_upstream_path =", self.registry.read_text(encoding="utf-8"))
@@ -1631,7 +1627,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn(head, rendered)
-        self.assertIn("`2.0`", rendered)
         self.assertEqual((self.skills / "beta" / "SKILL.md").read_text(encoding="utf-8"), unrelated_content)
         context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
         self.assertEqual(context["candidate_status"], "completed")
@@ -1663,7 +1658,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
             "example-source",
             "2026-07-25",
             True,
-            {"example-source": "2.0"},
         )
         self.assertEqual(repeated["status"], "already_completed")
 
@@ -1685,7 +1679,6 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
                 "example-source",
                 "2026-07-25",
                 True,
-                {"example-source": "2.0"},
             )
 
     def test_complete_review_removes_multiline_path_migration_evidence(self) -> None:
@@ -1958,15 +1951,12 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
             "example-source",
             "2026-07-25",
             True,
-            {"example-source": "2.0", "second-source": "3.0"},
         )
         self.assertEqual(completed["status"], "completed")
         alpha = MODULE.load_sources(self.registry)[0]
         accepted = {source.id: source for source in alpha.sources}
         self.assertEqual(accepted["example-source"].accepted_commit, primary_head)
         self.assertEqual(accepted["second-source"].accepted_commit, second_head)
-        self.assertEqual(accepted["example-source"].accepted_version, "2.0")
-        self.assertEqual(accepted["second-source"].accepted_version, "3.0")
         context = json.loads((workspace / "review-context.json").read_text(encoding="utf-8"))
         self.assertEqual(
             {item["source"] for item in context["accepted_sources"]},

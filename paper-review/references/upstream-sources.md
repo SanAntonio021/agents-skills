@@ -16,7 +16,6 @@
 - 接受时上游路径：`skills/paper-reader`
 - 技能入口：`skills/paper-reader/SKILL.md`
 - 已接受提交：`a79ff8be1f785aa0f1ef8b53c37ed59f2f81ce5c`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`
@@ -54,7 +53,6 @@
 - 接受时上游路径：`skills/ljg-paper`
 - 技能入口：`skills/ljg-paper/SKILL.md`
 - 已接受提交：`0e78094f449a331d25f692d0b6518f5623fd018f`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`provenance_only`
 - 许可证：`NOASSERTION (no LICENSE file; README has no license section)`
@@ -90,7 +88,6 @@
 - 接受时上游路径：`skills/literature/metadata/academic-paper-summarizer`
 - 技能入口：`skills/literature/metadata/academic-paper-summarizer/SKILL.md`
 - 已接受提交：`bf44b3cd617fa94c8a1b254c5d1987142ca3d631`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -126,7 +123,6 @@
 - 接受时上游路径：`skills/research/paper-review/paper-reading-assistant`
 - 技能入口：`skills/research/paper-review/paper-reading-assistant/SKILL.md`
 - 已接受提交：`bf44b3cd617fa94c8a1b254c5d1987142ca3d631`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -160,7 +156,6 @@
 - 接受时上游路径：`skills/paper-analyzer`
 - 技能入口：`skills/paper-analyzer/SKILL.md`
 - 已接受提交：`3be47a2a53cc35a411c587bca5231a08de57287a`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT (README-only; no LICENSE file)`
@@ -198,7 +193,6 @@
 - 接受时上游路径：`skills/paperzilla`
 - 技能入口：`skills/paperzilla/SKILL.md`
 - 已接受提交：`a1b84fb2235e3b24d4af08b0b118414ff3d95d41`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

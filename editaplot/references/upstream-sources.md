@@ -16,7 +16,6 @@
 - 接受时上游路径：`.`
 - 技能入口：`skill/editaplot/SKILL.md`
 - 已接受提交：`4aa986f3f84da9cb2a2297159a8f20e42b7e527c`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`

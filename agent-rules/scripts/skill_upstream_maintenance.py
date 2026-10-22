@@ -79,7 +79,6 @@ class SourceRecord:
     path_migration_commit: str
     path_migration_evidence: tuple[str, ...]
     accepted_commit: str
-    accepted_version: str
     license: str
     baseline_kind: str
     update_policy: str
@@ -193,14 +192,6 @@ def parse_args() -> argparse.Namespace:
     complete_review.add_argument("--source", required=True)
     complete_review.add_argument("--date", required=True, help="Review date in YYYY-MM-DD format.")
     complete_review.add_argument("--confirm-retest-passed", action="store_true")
-    complete_review.add_argument(
-        "--accepted-version",
-        action="append",
-        default=[],
-        nargs=2,
-        metavar=("SOURCE", "VERSION"),
-        help="Set an accepted version for one reviewed source; repeat for multiple sources.",
-    )
     complete_review.add_argument("--json", action="store_true")
 
     record = subparsers.add_parser("record-review", help="Record an explicit review disposition.")
@@ -268,7 +259,6 @@ def load_sources(path: Path) -> list[SkillRecord]:
                     str(value) for value in source.get("path_migration_evidence", [])
                 ),
                 accepted_commit=str(source["accepted_commit"]).lower(),
-                accepted_version=str(source.get("accepted_version", "")),
                 license=str(source["license"]),
                 baseline_kind=str(source.get("baseline_kind", "exact")),
                 update_policy=str(source.get("update_policy", "review")),
@@ -719,7 +709,6 @@ def render_skill_reference(skill: SkillRecord) -> str:
                 f"- 技能入口：`{source_skill_entry_path(source)}`",
                 f"- 已接受提交：`{source.accepted_commit}`",
                 *([f"- 实际接受时间：`{source.accepted_at}`"] if source.accepted_at else []),
-                f"- 已接受版本：`{source.accepted_version or '未提供'}`",
                 f"- 基线类型：`{source.baseline_kind}`",
                 f"- 更新策略：`{source.update_policy}`",
                 f"- 许可证：`{source.license}`",
@@ -1262,7 +1251,6 @@ def source_identity_payload(source: SourceRecord) -> dict[str, Any]:
         "path_migration_commit": source.path_migration_commit,
         "path_migration_evidence": list(source.path_migration_evidence),
         "accepted_commit": source.accepted_commit,
-        "accepted_version": source.accepted_version,
         "license": source.license,
         "baseline_kind": source.baseline_kind,
         "update_policy": source.update_policy,
@@ -2819,13 +2807,6 @@ def update_registry_acceptance_text(
                 update["accepted_commit"],
                 required=True,
             )
-            if "accepted_version" in update:
-                source_lines = update_toml_string_field(
-                    source_lines,
-                    "accepted_version",
-                    update["accepted_version"],
-                    insert_after="accepted_commit",
-                )
             if "accepted_at" in update:
                 source_lines = update_toml_string_field(
                     source_lines, "accepted_at", update["accepted_at"], insert_after="accepted_commit",
@@ -2862,8 +2843,6 @@ def update_registry_acceptance_text(
             for key in ("accepted_upstream_path", "path_migration_commit", "path_migration_evidence")
         ):
             raise ValueError(f"Redundant path migration metadata remains for {source_id}.")
-        if "accepted_version" in update and parsed_source.get("accepted_version") != update["accepted_version"]:
-            raise ValueError(f"Updated accepted version did not round-trip through TOML: {source_id}")
     return updated_text
 
 
@@ -3004,7 +2983,6 @@ def complete_review(
     source_id: str,
     review_date: str,
     retest_confirmed: bool,
-    accepted_versions: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     if not retest_confirmed:
         raise ValueError("Refusing to complete review without --confirm-retest-passed")
@@ -3022,7 +3000,6 @@ def complete_review(
         [registry_path, reference_path, context_path],
     ):
         skills = load_sources(registry_path)
-    versions = dict(accepted_versions or {})
     skill = next((record for record in skills if record.name == skill_name), None)
     if skill is None:
         raise ValueError(f"Unknown skill: {skill_name}")
@@ -3032,9 +3009,6 @@ def complete_review(
     validate_finalized_review_integrity(context, workspace)
     source_contexts = review_source_contexts(context)
     source_context_ids = {str(item["source"]) for item in source_contexts}
-    unknown_versions = sorted(set(versions) - source_context_ids)
-    if unknown_versions:
-        raise ValueError(f"Accepted versions name sources outside this review: {', '.join(unknown_versions)}")
 
     if context.get("candidate_status") == "completed":
         if context.get("completed_review_date") != review_date:
@@ -3065,10 +3039,6 @@ def complete_review(
                 raise ValueError(f"Accepted path is not current after completion: {current_source_id}")
             if current_source.path_migration_commit or current_source.path_migration_evidence:
                 raise ValueError(f"Redundant migration metadata remains after completion: {current_source_id}")
-            if current_source.accepted_version != str(accepted_entry.get("accepted_version", "")):
-                raise ValueError(f"Accepted version drifted after completion: {current_source_id}")
-            if current_source_id in versions and versions[current_source_id] != current_source.accepted_version:
-                raise ValueError(f"Accepted version does not match the prior completion: {current_source_id}")
         if skill.last_review_date != review_date:
             raise ValueError("Skill review date drifted after completion.")
         if not reference_path.is_file() or reference_path.read_text(encoding="utf-8") != render_skill_reference(skill):
@@ -3112,16 +3082,11 @@ def complete_review(
             raise ValueError(f"Invalid reviewed commit for {current_source.id}.")
         source_update = {"accepted_commit": accepted_commit, "accepted_local_digest": accepted_local_digest,
                          "accepted_at": accepted_at}
-        accepted_version = current_source.accepted_version
-        if current_source.id in versions:
-            accepted_version = versions[current_source.id]
-            source_update["accepted_version"] = accepted_version
         source_updates[current_source.id] = source_update
         updated_source_records.append(
             replace(
                 current_source,
                 accepted_commit=accepted_commit,
-                accepted_version=accepted_version,
                 accepted_local_digest=accepted_local_digest,
                 accepted_at=accepted_at,
                 accepted_upstream_path=current_source.upstream_path,
@@ -3156,7 +3121,6 @@ def complete_review(
         {
             "source": current_source.id,
             "accepted_commit": current_source.accepted_commit,
-            "accepted_version": current_source.accepted_version,
             "accepted_at": current_source.accepted_at,
             "accepted_upstream_path": current_source.accepted_upstream_path,
             "source_identity": source_identity_payload(current_source),
@@ -3453,11 +3417,6 @@ def main() -> int:
             emit(payload, args.json)
             return 0 if payload["status"] == "applied_pending_retest" else 2
         if args.command == "complete-review":
-            accepted_versions: dict[str, str] = {}
-            for accepted_source, accepted_version in args.accepted_version:
-                if accepted_source in accepted_versions:
-                    raise ValueError(f"Duplicate accepted version source: {accepted_source}")
-                accepted_versions[accepted_source] = accepted_version
             payload = complete_review(
                 skills,
                 mirrors,
@@ -3468,7 +3427,6 @@ def main() -> int:
                 args.source,
                 args.date,
                 args.confirm_retest_passed,
-                accepted_versions,
             )
             emit(payload, args.json)
             return 0 if payload["status"] in {"completed", "already_completed"} else 2

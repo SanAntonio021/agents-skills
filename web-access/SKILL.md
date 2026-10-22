@@ -7,7 +7,7 @@ description: >
   已知依赖登录态、动态内容或页面交互时直接使用浏览器，无需用户再次点名。
 metadata:
   author: 一泽Eze
-  version: "2.5.4"
+  version: "2.6.0"
   local_revision: "managed-edge.1"
   github: https://github.com/eze-is/web-access
 ---

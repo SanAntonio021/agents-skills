@@ -19,7 +19,7 @@ description: 仅在用户显式调用 `$chat-notes` 或明确要求按本技能�
 
 **判断**：完整读取本轮涉及的 README、AGENTS、SKILL.md 和接续入口；关联专题只读受影响内容与必要引用。核对当前成果、状态、限制、待办、重复、错位、失效内容，以及文档之间的主要维护位置；不扫描或改写无关历史文件。
 
-Markdown 的职责、结构、引用、历史整理和通用验收按 [Markdown 文档维护规范](../../docs/markdown-maintenance.md) 执行；句子与段落质量（事实保护、重复判断、修改强度、停笔条件）按 [common-quality.md](../writing-router/references/common-quality.md) 执行，本技能不重复维护这些通用条文。
+Markdown 的职责、结构、引用、历史整理和通用验收按 [Markdown 文档维护规范](references/markdown-maintenance.md) 执行；句子与段落质量（事实保护、重复判断、修改强度、停笔条件）按 [common-quality.md](../writing-router/references/common-quality.md) 执行，本技能不重复维护这些通用条文。
 
 | 载体 | 主要职责 |
 |---|---|

@@ -16,7 +16,6 @@
 - 接受时上游路径：`skills/skill-creator`
 - 技能入口：`skills/skill-creator/SKILL.md`
 - 已接受提交：`b9e19e6f44773509fbdd7001d77ff41a49a486c1`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`

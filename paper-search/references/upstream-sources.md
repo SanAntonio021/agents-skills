@@ -16,7 +16,6 @@
 - 接受时上游路径：`skills/research-lookup`
 - 技能入口：`skills/research-lookup/SKILL.md`
 - 已接受提交：`b085e116c5de7d244fccbd666f1a9e73257999e4`
-- 已接受版本：`1.4`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -55,7 +54,6 @@
 - 接受时上游路径：`skills/citation-management`
 - 技能入口：`skills/citation-management/SKILL.md`
 - 已接受提交：`1dd0fccf46fc3c9855c4a0c313a0c57fe4319883`
-- 已接受版本：`2.0`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

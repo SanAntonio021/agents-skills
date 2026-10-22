@@ -16,7 +16,6 @@
 - 接受时上游路径：`skills/interview-me`
 - 技能入口：`skills/interview-me/SKILL.md`
 - 已接受提交：`ff2df4c07e7836a092ed28e1e9b42f4d6009280c`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -52,7 +51,6 @@
 - 接受时上游路径：`skills/idea-refine`
 - 技能入口：`skills/idea-refine/SKILL.md`
 - 已接受提交：`ff2df4c07e7836a092ed28e1e9b42f4d6009280c`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -92,7 +90,6 @@
 - 接受时上游路径：`skills/productivity/grilling`
 - 技能入口：`skills/productivity/grilling/SKILL.md`
 - 已接受提交：`ed37663cc5fbef691ddfecd080dff42f7e7e350d`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -127,7 +124,6 @@
 - 接受时上游路径：`skills/engineering/domain-modeling`
 - 技能入口：`skills/engineering/domain-modeling/SKILL.md`
 - 已接受提交：`ed37663cc5fbef691ddfecd080dff42f7e7e350d`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -165,7 +161,6 @@
 - 接受时上游路径：`plugins/ask-questions-if-underspecified/skills/ask-questions-if-underspecified`
 - 技能入口：`plugins/ask-questions-if-underspecified/skills/ask-questions-if-underspecified/SKILL.md`
 - 已接受提交：`cfe5d7b1619e47fb5b38b7e2561dad7e5f1e89af`
-- 已接受版本：`1.0.2`
 - 基线类型：`exact`
 - 更新策略：`provenance_only`
 - 许可证：`CC BY-SA 4.0`
@@ -201,7 +196,6 @@
 - 接受时上游路径：`.agents/skills/impeccable`
 - 技能入口：`.agents/skills/impeccable/SKILL.md`
 - 已接受提交：`af78b1e512148e2a2f2d2ded6786d265ea420191`
-- 已接受版本：`4.0.2`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`
@@ -238,7 +232,6 @@
 - 接受时上游路径：`product-management/skills/product-brainstorming`
 - 技能入口：`product-management/skills/product-brainstorming/SKILL.md`
 - 已接受提交：`e554e9a05b1c2708e52f555c5e29f93f402eef7b`
-- 已接受版本：`1.2.0`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`
@@ -274,7 +267,6 @@
 - 接受时上游路径：`skills/brainstorming`
 - 技能入口：`skills/brainstorming/SKILL.md`
 - 已接受提交：`3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9`
-- 已接受版本：`6.2.0`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -310,7 +302,6 @@
 - 接受时上游路径：`plugins/brand-landingpage/skills/brand-landingpage`
 - 技能入口：`plugins/brand-landingpage/skills/brand-landingpage/SKILL.md`
 - 已接受提交：`c4b82b0ad771190355eb8e204b1329732a18449a`
-- 已接受版本：`1.0.1`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

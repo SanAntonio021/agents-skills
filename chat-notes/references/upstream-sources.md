@@ -16,7 +16,6 @@
 - 接受时上游路径：`.`
 - 技能入口：`SKILL.md`
 - 已接受提交：`62dbb91d1183a866b5cf40079265c825b2695843`
-- 已接受版本：`3.0.0`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -52,7 +51,6 @@
 - 接受时上游路径：`.`
 - 技能入口：`SKILL.md`
 - 已接受提交：`884ee05b086d107283eab18d9d0e9025527f4846`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT (README-only; no LICENSE file/full text)`
@@ -87,7 +85,6 @@
 - 接受时上游路径：`neat-freak`
 - 技能入口：`neat-freak/SKILL.md`
 - 已接受提交：`2b4a645cfdc894156ae347d897723562f719ce95`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -125,7 +122,6 @@
 - 接受时上游路径：`document-release`
 - 技能入口：`document-release/SKILL.md`
 - 已接受提交：`a3259400a366593e0c909dd9ac3e59752efd2488`
-- 已接受版本：`1.0.0`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

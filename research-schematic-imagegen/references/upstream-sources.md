@@ -15,7 +15,6 @@
 - 当前上游路径：`skills/gpt-image-2`
 - 接受时上游路径：`skills/gpt-image-2`
 - 已接受提交：`aaf9a82f5efd73e87cc0998edc398e75bfc35901`
-- 已接受版本：`1.0.4`
 - 基线类型：`exact`
 - 许可证：`MIT`
 - 镜像登记：`conardli-garden-skills`

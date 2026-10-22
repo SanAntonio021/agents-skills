@@ -16,7 +16,6 @@
 - 接受时上游路径：`.`
 - 技能入口：`.agents/skills/minutes/minutes-debrief/SKILL.md`
 - 已接受提交：`9e5e616e93315c765812170037e1e260d54bb1fa`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

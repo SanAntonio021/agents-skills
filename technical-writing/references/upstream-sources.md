@@ -16,7 +16,6 @@
 - 接受时上游路径：`skills/scientific-critical-thinking`
 - 技能入口：`skills/scientific-critical-thinking/SKILL.md`
 - 已接受提交：`757b63b1c09798a45c79eea542c9b55dbe04e502`
-- 已接受版本：`1.1`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`

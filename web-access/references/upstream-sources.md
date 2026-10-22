@@ -17,7 +17,6 @@
 - 技能入口：`SKILL.md`
 - 已接受提交：`d173a75978ceb2c63fa0b27f7408cd2bf7fe4310`
 - 实际接受时间：`2026-10-18T09:25:19.732135+00:00`
-- 已接受版本：`2.5.3`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT (declared in SKILL.md and README; no standalone LICENSE file)`
@@ -61,7 +60,6 @@
 - 接受时上游路径：`skills/playwright-cli`
 - 技能入口：`skills/playwright-cli/SKILL.md`
 - 已接受提交：`ca196c297169a494ee5517584883eada60dc8d0e`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`
@@ -98,7 +96,6 @@
 - 接受时上游路径：`skills/browser-use`
 - 技能入口：`skills/browser-use/SKILL.md`
 - 已接受提交：`a3e3cc5dd11dd219884532fd37d67775cd66c74d`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -134,7 +131,6 @@
 - 接受时上游路径：`skills/remote-browser`
 - 技能入口：`skills/remote-browser/SKILL.md`
 - 已接受提交：`a3e3cc5dd11dd219884532fd37d67775cd66c74d`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -170,7 +166,6 @@
 - 接受时上游路径：`.`
 - 技能入口：`skills/agent-browser/SKILL.md`
 - 已接受提交：`acbc22bdc5d4f6c5a88d97d4a4745d3c5eb0591f`
-- 已接受版本：`未提供`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`Apache-2.0`

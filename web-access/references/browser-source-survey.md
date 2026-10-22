@@ -17,7 +17,6 @@
 - 仓库：`https://github.com/eze-is/web-access.git`
 - 路径：`.`；入口：`SKILL.md`
 - 已接受提交：`7af34af6a25940d917905f0e5f2a7ef056952971`
-- 已接受版本：`2.5.3`
 - 许可证：MIT（声明于 `SKILL.md` 和 `README.md`）
 - 状态：已登记 confirmed source；本次保持 accepted commit 不变
 - 已采用范围：联网策略、CDP 基础操作、浏览器发现、站点经验和 dual-proxy.1 的本地延伸基线

@@ -15,7 +15,6 @@
 - 当前上游路径：`skills/paper-self-review`
 - 接受时上游路径：`skills/paper-self-review`
 - 已接受提交：`2f7766fd541a723d4ddc6230b3277f948d61b093`
-- 已接受版本：`0.1.0`
 - 基线类型：`exact`
 - 许可证：`MIT`
 - 镜像登记：`galaxy-dawn-claude-scholar`

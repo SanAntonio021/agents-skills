@@ -248,6 +248,19 @@
       "expected_output": "直接结合 skill-creator 查看相关现有技能和用途，判断复用或必要新建；不把 chat-notes 作为前置关口，不扫描无关对话或自动清场。",
       "files": [],
       "expectations": ["判断基于当前用途和实际技能", "允许必要的新建但优先复用", "没有强制收尾转接"]
+    },
+    {
+      "id": 27,
+      "prompt": "alpha 技能已提交到 main 并推送。固定提交更新返回 `Pinned update requires an exact GitHub source path in readme_url`；改走归档更新后又报 `Remote Skill directory 'alpha' is ambiguous`，仓库过程目录里确实还有同名测试副本。请继续完成这次已授权发布。",
+      "expected_output": "保留原提交和发布参数，先核对来源仓库、登记分支、readme_url 与同名目录，不手工改数据库或运行副本。创建受支持配置备份后，用完整键 owner/repo:alpha 从登记发布分支重装并恢复原启用矩阵，再执行普通或固定提交更新；最后用原提交和完整技能集合执行 VerifyOnly。",
+      "files": [],
+      "expectations": [
+        "区分路径解析缺口与真实源码冲突",
+        "重装前通过受支持流程备份配置",
+        "完整键重装后恢复原启用矩阵",
+        "不接受归档回退的别名分支作为预期来源",
+        "最终以原提交和完整技能集合验收"
+      ]
     }
   ]
 }

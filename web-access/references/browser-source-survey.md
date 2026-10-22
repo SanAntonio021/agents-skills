@@ -19,7 +19,7 @@
 - 已接受提交：`7af34af6a25940d917905f0e5f2a7ef056952971`
 - 许可证：MIT（声明于 `SKILL.md` 和 `README.md`）
 - 状态：已登记 confirmed source；本次保持 accepted commit 不变
-- 已采用范围：联网策略、CDP 基础操作、浏览器发现、站点经验和 dual-proxy.1 的本地延伸基线
+- 已采用范围：联网策略、CDP 基础操作、浏览器发现、站点经验和 dual-proxy.1 的本地延伸基线；Windows 现另加受管 Edge Profile、固定 9222/3456 和 task 隔离
 
 ## 采纳候选
 
@@ -34,7 +34,7 @@
 - 许可证：Apache-2.0
 - 候选 mirror：`microsoft-playwright-cli`
 - 拟采用：snapshot/ref 生命周期和元素动作语义
-- 不采用：Playwright runtime 本身、独立浏览器 Profile、trace/HAR/network interception、自动安装
+- 不采用：Playwright runtime 本身、trace/HAR/network interception、自动安装；独立浏览器 Profile 已由本机 managed-edge.1 以受管 Edge 生命周期单独实现，不采用其来源的 runtime
 - 2026-08-06 节奏证据：仓库近 90 天 14 次提交；目标路径 3 次，最近 2026-07-09
 - 更新策略：正式登记后每周 review；固定提交之外的变化只生成隔离报告
 
@@ -73,7 +73,7 @@
 - 许可证：Apache-2.0
 - 候选 mirror：`vercel-labs-agent-browser`
 - 拟采用：不可信页面内容边界、CLI/技能能力握手和协议版本匹配
-- 不采用：安装 agent-browser CLI、替换现有 CDP Proxy、独立浏览器 Profile
+- 不采用：安装 agent-browser CLI、替换现有 CDP Proxy；独立 Profile 仅由 managed-edge.1 的受管 Edge 实现，不引入该候选 runtime
 - 2026-08-06 节奏证据：仓库近 90 天 60 次提交；skill 入口 2 次；`skill-data/core` 25 次
 - 更新策略：正式登记后每周 review；技能入口和 `skill-data/core/` 联合比较
 

@@ -6,30 +6,30 @@
 
 ### 启动与浏览器选择
 
-CDP 路径需要 Node.js 22+。沿用用户指定的浏览器；没有指定时使用已配置的默认浏览器，首次默认 Edge。用户指定的浏览器不可用时，先处理对应原因，不静默换成另一个浏览器。
+CDP 路径需要 Node.js 22+。Windows 首次使用默认创建独立、受管的 Edge Profile；沿用用户明确指定的浏览器，没有指定时使用已配置的默认浏览器。受管浏览器不可用时，先处理对应原因，不静默换成日常 Edge、Chrome 或另一个端口。
 
 以下示例使用已核实的技能目录；若宿主没有提供 `CLAUDE_SKILL_DIR`，将其替换为实际技能路径，不把变量名当作已展开路径。
 
 ```bash
-# 默认浏览器；首次默认 Edge
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --json
-# 本次明确使用 Chrome；不停止 Edge Proxy
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser chrome --json
-# 仅任务需要同时使用两个浏览器时检查两者
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --all --json
+# Windows 默认：受管 Edge，按需启动并复用同一实例
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --json
+# 只诊断，不启动或修复
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --status-only --json
+# 只有人工明确要求时才使用日常 Edge；失败不回退
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --json
 ```
 
 - `exit 0`：使用返回的 `proxyUrl`，核对 `protocolVersion: 2` 和所需能力后继续。
 - `exit 2`：生产配置或端口覆盖冲突，按输出处理，不以备用端口绕过。
-- `exit 1`：按输出的具体原因和“Agent 处理顺序”恢复；已有授权内能自行解决的步骤直接完成。需要用户开启调试开关或浏览器授权时才说明实际动作；仍不可用只暂停依赖浏览器的部分。
+- `exit 1`：按输出的具体原因和“Agent 处理顺序”恢复；受管模式会明确返回 `managed_profile_busy`、`managed_cdp_port_conflict`、`managed_browser_launch_failed`、`proxy_version_mismatch`、`control_probe_failed` 或 `task_capacity_reached`。只自动修复已核验属于受管 Edge/Proxy 的对象；端口或 Profile 被其他程序占用时停止并报告。仍不可用只暂停依赖浏览器的部分。
 
-所有生产副本读取 `%LOCALAPPDATA%\web-access\config.env`，缺失时由脚本原子创建。`WEB_ACCESS_BROWSER` 可为 `edge` 或 `chrome`；Edge、Chrome Proxy 端口分别固定为 `3456`、`3457`。同名环境变量只能重复相同端口值；临时端口仅用于脚本建立的隔离测试根和 `WEB_ACCESS_TEST_MODE=1`。
+所有生产副本读取 `%LOCALAPPDATA%\web-access\config.env`，缺失时由脚本原子创建；现有配置升级时只补充 `WEB_ACCESS_BROWSER_MODE=managed`，保留其他键。默认模式为 `managed`，使用 `%LOCALAPPDATA%\web-access\managed-edge-profile`、CDP `9222` 和 Proxy `3456`。日常 Edge 只能显式指定 `--mode existing`，以 Edge/Chrome Proxy `3456/3457` 连接用户已开启的调试实例；它不参与受管模式的前检、自动修复或自动回退。
 
-脚本先绑定固定 Proxy 端口，再连接浏览器。并发调用只有端口胜者建立 CDP 连接，其他调用核验并复用兼容 Proxy。Edge 与 Chrome 可同时常驻；不要为切换浏览器或解决占用再建备用端口。
+受管启动和修复由全局锁串行化，正常页面操作不加全局锁。多个对话共享同一受管 Edge、CDP 连接和 Proxy，但各自创建独立 task/token/tab；第二次调用应返回 `reused:true`，不建立第二条调试授权连接。日常 Edge/Chrome 的固定端口和隔离测试行为沿用下方连接规则；不要为切换浏览器或解决占用再建备用端口。
 
-浏览器需在 `edge://inspect/#remote-debugging` 或 `chrome://inspect/#remote-debugging` 开启相应远程调试开关。Edge 授权绑定当前浏览器实例和长期 Proxy 连接，两者持续运行时通常可复用；关闭、断线重连或迁移后可能再次出现提示。反复提示时先检查重复 Proxy，不默认重启浏览器。
+受管 Edge 由 `check-deps.mjs` 启动，不需要用户在日常 Edge 的 `edge://inspect` 页勾选调试开关。首次启动可能显示浏览器窗口；登录 Cookie 存在独立 Profile 中，学校/CARSI/OpenAthens/MFA 仍由用户在页面完成。`check-deps` 完成真实控制探针后才返回 `ready:true`。关闭受管 Edge 后再次 `ensure` 会用同一 Profile 重启；关闭 Proxy 只重启 Proxy，不关闭浏览器页面。
 
-发现旧 Proxy 或 `protocol_mismatch` 时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口和 PID；`check-deps` 只报告，不自动结束旧进程。重启复用已覆盖准确对象与影响的授权，缺失或对象变化时才询问；保留用户浏览器窗口。
+发现旧 Proxy、协议或 Broker 版本不一致时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口、模式和 PID；只有命令行明确标记为同一受管实例的 Proxy 才允许自动修复。普通旧 Proxy 或日常 Edge Proxy 只报告，不自动结束；保留用户浏览器窗口和页面。
 
 ### 页面观察与导航
 
@@ -80,13 +80,13 @@ JavaScript dialog 默认保持待处理，先读取实际提示，按同一授�
 
 ### 并行任务与收尾
 
-多个目标独立且分工有益时可交给子 Agent，说明所需结果、材料和约束，并要求加载 `web-access`；不为简单单页任务强行分工。每个对话或子 Agent 创建独立 task，只使用其 token、自有 tab 和 popup；同一浏览器复用专用 Proxy/CDP 连接，跨浏览器 token 不通用。单个 Proxy 最多同时保留 32 个非终态 task，避免密集创建无用页面。
+多个目标独立且分工有益时可交给子 Agent，说明所需结果、材料和约束，并要求加载 `web-access`；不为简单单页任务强行分工。每个对话或子 Agent 创建独立 task，只使用其 token、自有 tab 和 popup；受管 Edge 与长期 Proxy 复用同一 CDP 连接，任务之间不共享 token，跨浏览器 token 不通用。单个 Proxy 最多同时保留 32 个非终态 task，避免密集创建无用页面。
 
 任务完成或终止前，先记录并核实用户可重新打开的结果与验收链接，再调用 [complete](#post-v2taskstaskidcomplete)，使用 `keep:false` 关闭自有 tab 和 popup；仅用户明确要求保留时用 `keep:true`，不因等待验收而默认留页。核对关闭回执，超时或未知结果按下方协议如实报告，不能把 task 已终结当作全部页面已关闭。最终回复给出整体入口及验收本次改动必需的链接，具体交付要求见[技能入口](../SKILL.md#完成与按需参考)。
 
 handoff 状态先按用户接管流程恢复，不能用 complete 绕开屏障；仍需用户接管时不提前收尾。active task 30 分钟无操作后过期，自有 tab 闲置 15 分钟清理；这些兜底不能代替主动 complete，具体超时和终态结果以下方协议为准。
 
-保留长期 Proxy 和用户原有浏览器窗口，不把停止 Proxy 或关闭用户浏览器作为收尾步骤。Proxy 的 complete 只负责自有 tab/popup；本次额外新开的独立窗口，确认其中没有用户或其他任务页面后，通过宿主支持的窗口接口关闭，不用退出整个浏览器进程代替。Proxy 重启会失去 token、归属和 ref，遗留页面降为用户 tab，不能重新接管。
+保留长期 Proxy、受管 Edge 和用户原有页面，不把停止 Proxy 或关闭用户浏览器作为收尾步骤。Proxy 的 `complete keep:false` 只负责本 task 的 tab/popup；其他对话、用户页面和长期 Broker 不受影响。本次额外新开的独立窗口，确认其中没有用户或其他任务页面后，通过宿主支持的窗口接口关闭，不用退出整个浏览器进程代替。Proxy 或 Edge 重启会失去 token、归属和 ref，遗留页面降为用户 tab，不能重新接管。
 
 ### 本地历史与站点参考
 
@@ -102,8 +102,9 @@ node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks
 
 ## 连接与通用规则
 
-- Edge 默认地址：`http://127.0.0.1:3456`
-- Chrome 默认地址：`http://127.0.0.1:3457`
+- 受管 Edge Proxy：`http://127.0.0.1:3456`（浏览器 CDP：`127.0.0.1:9222`）
+- 日常 Edge 显式模式：`http://127.0.0.1:3456`；Chrome 显式模式：`http://127.0.0.1:3457`
+- `paper-download` 机构模块只接受受管 Edge，不接受日常 Edge 或 Chrome 的 `existing` 模式。
 - Proxy 只绑定 `127.0.0.1`，只接受匹配端口的 `127.0.0.1`/`localhost` Host。
 - 带 `Origin` 的请求被拒绝；Proxy 不返回 CORS 许可头。
 - `/health`、`/capabilities` 和创建 task 之外的 `/v2` 请求都要发送 `Authorization: Bearer <taskToken>`。
@@ -125,6 +126,10 @@ node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks
   "protocolVersion": 2,
   "connected": true,
   "browser": {"id": "edge", "label": "Microsoft Edge"},
+  "profileMode": "managed",
+  "managedProfile": true,
+  "managedInstanceId": "0123456789abcdef01234567",
+  "brokerVersion": "managed-edge.1",
   "activeTasks": 1,
   "managedTabs": 2
 }
@@ -132,7 +137,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks
 
 ### `GET /capabilities`
 
-返回协议版本、snapshot/action/wait 能力、任务上限和明确不支持项。调用方必须确认 `protocolVersion === 2`。
+返回协议版本、snapshot/action/wait 能力、任务上限、Broker 版本、Profile 模式和明确不支持项。调用方必须确认 `protocolVersion === 2`、`brokerVersion` 与当前源码一致；受管模式还必须确认 `profileMode === "managed"`。
 
 ## Task
 
@@ -373,7 +378,7 @@ JavaScript dialog 默认保持待处理，不自动接受：
 
 ## 隔离边界
 
-task token 用于减少多个对话之间的误操作，不是本机安全边界。其他本地进程仍可能直接访问浏览器 CDP。Task/tab 逻辑隔离也不是独立 Profile、Cookie 或浏览器上下文隔离。
+task token 用于减少多个对话之间的误操作，不是本机安全边界。其他本地进程仍可能直接访问浏览器 CDP。受管 Edge 使用独立 Profile 和 Cookie 目录，与日常 Edge 分开；同一受管 Profile 内的多个 task 仍共享登录态、Cookie 和浏览器上下文，task/tab 隔离不等于站点权限隔离。
 
 Proxy 重启或 CDP 断线时，task、token、归属、session 和 ref 全部清空；浏览器 tab 不关闭，遗留 tab 降为用户 tab且不能被重新接管。首版不提供网络抓包、HAR、trace、下载管理或跨域 OOPIF ref。
 

@@ -8,6 +8,7 @@ from unittest.mock import patch
 from institutional_access.browser import BrowserError
 from institutional_access.cli import (
     observe_and_continue,
+    reconcile_created_tab,
     session_summary,
     try_submit_autofilled_login,
 )
@@ -67,6 +68,23 @@ class _UnknownAutofillClient(_AutofillClient):
         return super().eval(target_id, expression, **kwargs)
 
 
+class _UnknownCreateClient:
+    def __init__(self):
+        self.navigate_calls = 0
+        self._url = ""
+
+    def tabs(self):
+        return [{"targetId": "target", "url": self._url}]
+
+    def tab(self, _target_id):
+        return {"targetId": "target", "url": self._url}
+
+    def navigate(self, _target_id, url):
+        self.navigate_calls += 1
+        self._url = url
+        return {"ok": True}
+
+
 class CliStateTests(unittest.TestCase):
     def session(self):
         return {
@@ -102,6 +120,14 @@ class CliStateTests(unittest.TestCase):
             self.assertEqual(result["stage"], "user_login_required")
             self.assertEqual(client.handoff_calls, ["target"])
             self.assertEqual(store.read("test")["stage"], "user_login_required")
+
+    def test_unknown_create_reconciles_one_owned_blank_tab(self):
+        client = _UnknownCreateClient()
+        requested = "https://ieeexplore.ieee.org/document/123/"
+        result = reconcile_created_tab(client, requested, timeout_seconds=10)
+        self.assertEqual(result["targetId"], "target")
+        self.assertEqual(result["url"], requested)
+        self.assertEqual(client.navigate_calls, 1)
 
     def test_handoff_never_reads_page(self):
         with tempfile.TemporaryDirectory() as root:

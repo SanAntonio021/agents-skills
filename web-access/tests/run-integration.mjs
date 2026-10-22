@@ -467,7 +467,7 @@ try {
 
   await runTest('dual-browser-check-deps-json', async () => {
     assert.ok(checkDepsSource.includes("'--json'") || checkDepsSource.includes('"--json"'), 'check-deps 缺少 --json');
-    const child = spawnNode([checkDepsScript, '--all', '--json'], baseEnv);
+    const child = spawnNode([checkDepsScript, '--all', '--mode', 'existing', '--no-probe', '--json'], baseEnv);
     const code = await waitForExit(child, 30000);
     assert.equal(code, 0, `check-deps --all --json exit=${code}\n${child.stdoutText}\n${child.stderrText}`);
     let report;
@@ -521,7 +521,7 @@ try {
     const stub = await startProxyStub(proxyPort, expectedHealth, { body: untrustedCapabilities });
     try {
       const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
-      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
+      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], env);
       const code = await waitForExit(child, 10000);
       assert.equal(code, 0, `${child.stdoutText}\n${child.stderrText}`);
       const report = JSON.parse(child.stdoutText);
@@ -588,7 +588,7 @@ try {
       const stub = await startProxyStub(proxyPort, expectedHealth, scenario.response);
       try {
         const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
-        const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
+        const child = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], env);
         const code = await waitForExit(child, 10000);
         assert.equal(code, 1, `${child.stdoutText}\n${child.stderrText}`);
         const report = JSON.parse(child.stdoutText);
@@ -1536,7 +1536,7 @@ try {
     const legacy = await startLegacyProxyStub(legacyPort);
     try {
       const env = { ...baseEnv, CDP_PROXY_PORT: String(legacyPort), WEB_ACCESS_EDGE_PORT: String(legacyPort) };
-      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
+      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], env);
       const code = await waitForExit(child, 10000);
       assert.equal(code, 1, `${child.stdoutText}\n${child.stderrText}`);
       const report = JSON.parse(child.stdoutText);
@@ -1567,7 +1567,7 @@ try {
     }, { body: validCapabilities });
     try {
       const env = { ...baseEnv, CDP_PROXY_PORT: String(unknownPort), WEB_ACCESS_EDGE_PORT: String(unknownPort) };
-      const check = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
+      const check = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], env);
       const checkCode = await waitForExit(check, 10000);
       assert.equal(checkCode, 1, `${check.stdoutText}\n${check.stderrText}`);
       const report = JSON.parse(check.stdoutText);
@@ -1613,7 +1613,7 @@ try {
       const stub = await startProxyStub(proxyPort, { ...scenario.health, proxyPort }, { body: untrustedCapabilities });
       try {
         const env = { ...baseEnv, CDP_PROXY_PORT: String(proxyPort), WEB_ACCESS_EDGE_PORT: String(proxyPort) };
-        const check = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], env);
+        const check = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], env);
         const checkCode = await waitForExit(check, 10000);
         assert.equal(checkCode, 1, `${check.stdoutText}\n${check.stderrText}`);
         const report = JSON.parse(check.stdoutText);
@@ -1650,7 +1650,7 @@ try {
       const before = await getHealth(instance.port);
       mock.disconnectAll();
       await waitUntil(async () => !(await getHealth(instance.port))?.connected, 'isolated disconnection');
-      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--json'], instance.env);
+      const child = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], instance.env);
       const code = await waitForExit(child, 30000);
       assert.equal(code, 0, `reconnect check failed: ${child.stdoutText}\n${child.stderrText}`);
       const report = JSON.parse(child.stdoutText);

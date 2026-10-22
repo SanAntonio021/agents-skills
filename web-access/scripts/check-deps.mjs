@@ -8,12 +8,24 @@
 //   node check-deps.mjs --json           stdout 仅输出机器可读 JSON
 
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getProxyPort, knownBrowsers, selectBrowser } from './browser-discovery.mjs';
 import { ensureCanonicalConfig, RuntimeConfigError } from './runtime-config.mjs';
+import { BROKER_VERSION } from './broker-version.mjs';
+import {
+  ManagedBrowserError,
+  acquireManagedLock,
+  ensureManagedEdge,
+  getProcessCommandLine,
+  managedBrowserPaths,
+  proxyCommandMatchesManaged,
+  statusManagedEdge,
+} from './managed-browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROXY_SCRIPT = path.join(ROOT, 'scripts', 'cdp-proxy.mjs');
@@ -40,7 +52,14 @@ function emitJson(payload) {
 }
 
 function parseArgs(argv) {
-  const opts = { browser: null, all: false, json: false };
+  const opts = {
+    browser: null,
+    all: false,
+    json: false,
+    mode: null,
+    statusOnly: false,
+    probe: true,
+  };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--browser' && argv[i + 1]) {
       opts.browser = argv[i + 1];
@@ -51,6 +70,15 @@ function parseArgs(argv) {
       opts.all = true;
     } else if (argv[i] === '--json') {
       opts.json = true;
+    } else if (argv[i] === '--mode' && argv[i + 1]) {
+      opts.mode = argv[i + 1];
+      i++;
+    } else if (argv[i].startsWith('--mode=')) {
+      opts.mode = argv[i].slice('--mode='.length);
+    } else if (argv[i] === '--status-only') {
+      opts.statusOnly = true;
+    } else if (argv[i] === '--no-probe') {
+      opts.probe = false;
     }
   }
 
@@ -60,6 +88,10 @@ function parseArgs(argv) {
   if (opts.browser && !PERSISTENT_BROWSERS.includes(opts.browser)) {
     throw new Error(`--browser 仅支持 ${PERSISTENT_BROWSERS.join(' / ')}`);
   }
+  if (opts.mode && !['managed', 'existing'].includes(opts.mode)) {
+    throw new Error('--mode 仅支持 managed / existing');
+  }
+  if (opts.statusOnly) opts.probe = false;
   return opts;
 }
 
@@ -73,23 +105,13 @@ function checkNode() {
 }
 
 async function readLimitedBody(response, maxBytes) {
-  if (!response.body) return Buffer.alloc(0);
-  const reader = response.body.getReader();
+  if (!response) return Buffer.alloc(0);
   const chunks = [];
   let total = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > maxBytes) {
-        await reader.cancel();
-        throw new Error('response_too_large');
-      }
-      chunks.push(Buffer.from(value));
-    }
-  } finally {
-    reader.releaseLock();
+  for await (const chunk of response) {
+    total += chunk.length;
+    if (total > maxBytes) throw new Error('response_too_large');
+    chunks.push(Buffer.from(chunk));
   }
   return Buffer.concat(chunks, total);
 }
@@ -99,36 +121,187 @@ function isJsonContentType(value) {
   return mediaType === 'application/json' || mediaType.endsWith('+json');
 }
 
-async function httpGetJsonResponse(url, timeoutMs = 3000, maxBytes = MAX_JSON_RESPONSE_BYTES) {
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    const contentLength = Number(response.headers.get('content-length'));
-    if (Number.isFinite(contentLength) && contentLength > maxBytes) {
-      await response.body?.cancel();
-      return { ok: false, status: response.status, reason: 'response_too_large', value: null };
-    }
-    if (!response.ok) {
-      await response.body?.cancel();
-      return { ok: false, status: response.status, reason: 'http_status', value: null };
-    }
-    if (!isJsonContentType(response.headers.get('content-type'))) {
-      await response.body?.cancel();
-      return { ok: false, status: response.status, reason: 'content_type', value: null };
-    }
-    const raw = await readLimitedBody(response, maxBytes);
+function rawHttpRequest(url, {
+  method = 'GET',
+  headers = {},
+  body = null,
+  timeoutMs = 3000,
+  maxBytes = MAX_JSON_RESPONSE_BYTES,
+} = {}) {
+  return new Promise((resolve) => {
+    let request;
+    let timer;
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      resolve(result);
+    };
     try {
-      return { ok: true, status: response.status, reason: null, value: JSON.parse(raw.toString('utf8')) };
-    } catch {
-      return { ok: false, status: response.status, reason: 'invalid_json', value: null };
+      request = http.request(url, { method, headers, agent: false }, async (response) => {
+        try {
+          const contentLength = Number(response.headers['content-length']);
+          if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+            response.resume();
+            finish({
+              ok: false,
+              status: response.statusCode || null,
+              reason: 'response_too_large',
+              contentType: response.headers['content-type'] || null,
+              value: null,
+            });
+            return;
+          }
+          const raw = await readLimitedBody(response, maxBytes);
+          finish({
+            ok: response.statusCode >= 200 && response.statusCode < 300,
+            status: response.statusCode || null,
+            reason: null,
+            contentType: response.headers['content-type'] || null,
+            raw,
+            value: null,
+          });
+        } catch (error) {
+          response.resume();
+          finish({
+            ok: false,
+            status: response.statusCode || null,
+            reason: error.message || 'response_read_failed',
+            contentType: response.headers['content-type'] || null,
+            value: null,
+          });
+        }
+      });
+    } catch (error) {
+      finish({ ok: false, status: null, reason: error.message || 'request_failed', value: null });
+      return;
     }
-  } catch (error) {
-    return { ok: false, status: null, reason: error.message || 'request_failed', value: null };
+    request.on('error', (error) => {
+      finish({ ok: false, status: null, reason: error.code || error.message || 'request_failed', value: null });
+    });
+    timer = setTimeout(() => {
+      request.destroy(new Error('request_timeout'));
+    }, timeoutMs);
+    timer.unref?.();
+    if (body !== null) request.write(body);
+    request.end();
+  });
+}
+
+export async function httpGetJsonResponse(url, timeoutMs = 3000, maxBytes = MAX_JSON_RESPONSE_BYTES) {
+  const response = await rawHttpRequest(url, { timeoutMs, maxBytes });
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      reason: response.reason || 'http_status',
+      value: null,
+    };
+  }
+  if (!isJsonContentType(response.contentType)) {
+    return { ok: false, status: response.status, reason: 'content_type', value: null };
+  }
+  try {
+    return {
+      ok: true,
+      status: response.status,
+      reason: null,
+      value: JSON.parse(response.raw.toString('utf8')),
+    };
+  } catch {
+    return { ok: false, status: response.status, reason: 'invalid_json', value: null };
   }
 }
 
 async function httpGetJson(url, timeoutMs = 3000) {
   const response = await httpGetJsonResponse(url, timeoutMs);
   return response.ok ? response.value : null;
+}
+
+async function httpJsonRequest(url, { method = 'GET', body = null, token = null, key = null, timeoutMs = 5000 } = {}) {
+  const headers = { Accept: 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (method !== 'GET') {
+    headers['Content-Type'] = 'application/json';
+    headers['Idempotency-Key'] = key || crypto.randomUUID();
+  }
+  const serialized = body === null ? null : JSON.stringify(body);
+  const response = await rawHttpRequest(url, {
+    method,
+    headers,
+    body: serialized,
+    timeoutMs,
+  });
+  if (response.reason) {
+    return { ok: false, status: response.status, value: null, error: response.reason };
+  }
+  let value = null;
+  try {
+    value = response.raw.length ? JSON.parse(response.raw.toString('utf8')) : null;
+  } catch {}
+  return { ok: response.ok, status: response.status, value };
+}
+
+export async function probeBrowserControl(proxyPort) {
+  const proxyUrl = `http://127.0.0.1:${proxyPort}`;
+  const started = performance.now();
+  let task = null;
+  let failure = null;
+  try {
+    const created = await httpJsonRequest(`${proxyUrl}/v2/tasks`, {
+      method: 'POST',
+      body: { label: 'web-access control probe' },
+    });
+    if (!created.ok || !created.value?.taskId || !created.value?.taskToken) {
+      failure = created.status === 429
+        ? { code: 'task_capacity_reached', status: created.status }
+        : { code: 'control_probe_failed', status: created.status, stage: 'create_task' };
+      return { passed: false, ...failure, durationMs: Math.round(performance.now() - started) };
+    }
+    task = created.value;
+    const tab = await httpJsonRequest(`${proxyUrl}/v2/tabs`, {
+      method: 'POST',
+      token: task.taskToken,
+      body: { url: 'about:blank', background: true },
+    });
+    const targetId = tab.value?.targetId || tab.value?.id;
+    if (!tab.ok || !targetId) {
+      failure = { code: 'control_probe_failed', status: tab.status, stage: 'create_tab' };
+      return { passed: false, ...failure, durationMs: Math.round(performance.now() - started) };
+    }
+    const evaluated = await httpJsonRequest(
+      `${proxyUrl}/v2/tabs/${encodeURIComponent(targetId)}/eval`,
+      {
+        method: 'POST',
+        token: task.taskToken,
+        body: {
+          expression: "({readyState:document.readyState,href:location.href,title:document.title})",
+        },
+      },
+    );
+    if (!evaluated.ok || evaluated.value?.value?.href !== 'about:blank') {
+      failure = { code: 'control_probe_failed', status: evaluated.status, stage: 'eval' };
+      return { passed: false, ...failure, durationMs: Math.round(performance.now() - started) };
+    }
+    return {
+      passed: true,
+      durationMs: Math.round(performance.now() - started),
+      pageReadyState: evaluated.value.value.readyState || null,
+    };
+  } finally {
+    if (task?.taskId && task?.taskToken) {
+      await httpJsonRequest(
+        `${proxyUrl}/v2/tasks/${encodeURIComponent(task.taskId)}/complete`,
+        {
+          method: 'POST',
+          token: task.taskToken,
+          body: { keep: false },
+          timeoutMs: 5000,
+        },
+      ).catch(() => null);
+    }
+  }
 }
 
 function looksLikeWebAccessProxy(health) {
@@ -274,14 +447,18 @@ function proxyLogPath(browserId, proxyPort) {
   return path.join(os.tmpdir(), `web-access-${browserId}-${proxyPort}.log`);
 }
 
-function startProxyDetached(browserId, proxyPort) {
+function startProxyDetached(browserId, proxyPort, extraEnv = {}, extraArgs = []) {
   const logFile = proxyLogPath(browserId, proxyPort);
   const logFd = fs.openSync(logFile, 'a');
   try {
-    const child = spawn(process.execPath, [PROXY_SCRIPT, '--browser', browserId], {
+    const child = spawn(process.execPath, [PROXY_SCRIPT, '--browser', browserId, ...extraArgs], {
       detached: true,
       stdio: ['ignore', logFd, logFd],
-      env: { ...process.env, CDP_PROXY_PORT: String(proxyPort) },
+      env: {
+        ...process.env,
+        CDP_PROXY_PORT: String(proxyPort),
+        ...extraEnv,
+      },
       ...(os.platform() === 'win32' ? { windowsHide: true } : {}),
     });
     child.unref();
@@ -347,7 +524,351 @@ async function completeCapabilityHandshake({ browser, proxyPort, health, reused 
   });
 }
 
-async function ensureProxy(browserId, proxyPort) {
+async function stopVerifiedProxy(health, proxyPort, instanceId) {
+  const pid = Number(health?.pid);
+  if (!Number.isInteger(pid) || pid < 1) return false;
+  if (health?.profileMode !== 'managed' || health?.managedProfile !== true) return false;
+  const commandLine = getProcessCommandLine(pid);
+  const acceptedInstanceIds = new Set(
+    [instanceId, health.managedInstanceId].filter((value) => typeof value === 'string' && value),
+  );
+  if (![...acceptedInstanceIds].some((value) => proxyCommandMatchesManaged(commandLine, value))) {
+    return false;
+  }
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    return false;
+  }
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    const healthNow = await httpGetJson(`http://127.0.0.1:${proxyPort}/health`, 500);
+    if (!healthNow) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+export function managedProxyIssue(health, managed, proxyPort) {
+  if (!looksLikeWebAccessProxy(health)) return 'proxy_unhealthy';
+  if (health.protocolVersion !== EXPECTED_PROTOCOL_VERSION) return 'proxy_protocol_mismatch';
+  if (health.brokerVersion !== BROKER_VERSION) return 'proxy_version_mismatch';
+  if (health.profileMode !== 'managed') return 'proxy_mode_mismatch';
+  if (health.requestedBrowser !== 'edge' || health.browser?.id !== 'edge') return 'proxy_browser_mismatch';
+  if (health.proxyPort !== proxyPort) return 'proxy_port_mismatch';
+  if (!health.connected) return 'proxy_disconnected';
+  if (health.chromePort !== managed.cdpPort) return 'proxy_cdp_port_mismatch';
+  if (health.managedInstanceId !== managed.instanceId) return 'proxy_instance_mismatch';
+  return null;
+}
+
+async function ensureManagedProxy(managed, opts) {
+  const browser = {
+    id: 'edge',
+    label: 'Microsoft Edge',
+    source: 'managed',
+    profileMode: 'managed',
+  };
+  let proxyPort;
+  try {
+    proxyPort = getProxyPort('edge', { diagnostic });
+  } catch (error) {
+    return makeResult({
+      status: error instanceof RuntimeConfigError ? error.code : 'config_error',
+      browser,
+      error: error.message,
+      exitCode: 2,
+      managedBrowser: managed,
+    });
+  }
+  const proxyUrl = `http://127.0.0.1:${proxyPort}`;
+  const healthResponse = await httpGetJsonResponse(`${proxyUrl}/health`);
+  let health = healthResponse.ok ? healthResponse.value : null;
+  if (!healthResponse.ok) {
+    diagnostic(
+      `proxy[edge]: health_unavailable (${healthResponse.reason || 'unknown'}, status ${healthResponse.status ?? 'none'})`,
+    );
+  }
+
+  if (health) {
+    const issue = managedProxyIssue(health, managed, proxyPort);
+    if (issue) {
+      const activeTasks = Number.isInteger(health.activeTasks) ? health.activeTasks : 0;
+      if (opts.statusOnly) {
+        return makeResult({
+          status: issue,
+          browser,
+          proxyPort,
+          health,
+          managedBrowser: managed,
+          brokerVersion: BROKER_VERSION,
+          instanceId: managed.instanceId,
+          userActionRequired: 'proxy_restart',
+        });
+      }
+      if (activeTasks > 0) {
+        return makeResult({
+          status: 'proxy_repair_blocked_active_tasks',
+          browser,
+          proxyPort,
+          health,
+          managedBrowser: managed,
+          brokerVersion: BROKER_VERSION,
+          instanceId: managed.instanceId,
+          userActionRequired: 'wait_for_active_tasks',
+        });
+      }
+      if (!(await stopVerifiedProxy(health, proxyPort, managed.instanceId))) {
+        return makeResult({
+          status: 'proxy_repair_unverified',
+          browser,
+          proxyPort,
+          health,
+          managedBrowser: managed,
+          brokerVersion: BROKER_VERSION,
+          instanceId: managed.instanceId,
+          userActionRequired: 'inspect_proxy',
+        });
+      }
+      health = null;
+    } else {
+      const capabilities = await httpGetJson(`${proxyUrl}/capabilities`);
+      if (
+        capabilities?.brokerVersion === BROKER_VERSION &&
+        capabilities?.profileMode === 'managed' &&
+        capabilityIssue(capabilities) === null
+      ) {
+        const result = await completeCapabilityHandshake({
+          browser,
+          proxyPort,
+          health,
+          reused: Boolean(managed.reused),
+        });
+        result.managedBrowser = managed;
+        result.brokerVersion = BROKER_VERSION;
+        result.instanceId = managed.instanceId;
+        result.userActionRequired = null;
+        return result;
+      }
+      if (opts.statusOnly) {
+        return makeResult({
+          status: 'proxy_capabilities_mismatch',
+          browser,
+          proxyPort,
+          health,
+          capabilities,
+          managedBrowser: managed,
+        });
+      }
+      const activeTasks = Number.isInteger(health.activeTasks) ? health.activeTasks : 0;
+      if (activeTasks > 0) {
+        return makeResult({
+          status: 'proxy_repair_blocked_active_tasks',
+          browser,
+          proxyPort,
+          health,
+          capabilities,
+          managedBrowser: managed,
+          userActionRequired: 'wait_for_active_tasks',
+        });
+      }
+      if (!(await stopVerifiedProxy(health, proxyPort, managed.instanceId))) {
+        return makeResult({
+          status: 'proxy_repair_unverified',
+          browser,
+          proxyPort,
+          health,
+          managedBrowser: managed,
+        });
+      }
+      health = null;
+    }
+  }
+
+  if (!health) {
+    if (opts.statusOnly) {
+      return makeResult({
+        status: 'proxy_not_running',
+        browser,
+        proxyPort,
+        managedBrowser: managed,
+        userActionRequired: 'run_ensure',
+      });
+    }
+    diagnostic(`proxy[edge]: connecting managed Edge on CDP ${managed.cdpPort}...`);
+    try {
+      startProxyDetached('edge', proxyPort, {
+        WEB_ACCESS_EDGE_DEVTOOLS_PATH: path.join(managed.profilePath, 'DevToolsActivePort'),
+        WEB_ACCESS_PROFILE_MODE: 'managed',
+        WEB_ACCESS_MANAGED_INSTANCE_ID: managed.instanceId,
+      }, [
+        '--broker-profile-mode',
+        'managed',
+        '--managed-instance-id',
+        managed.instanceId,
+      ]);
+    } catch (error) {
+      return makeResult({
+        status: 'start_failed',
+        browser,
+        proxyPort,
+        error: error.message,
+        managedBrowser: managed,
+      });
+    }
+  }
+
+  const deadline = Date.now() + 30_000;
+  let lastHealth = health;
+  while (Date.now() < deadline) {
+    lastHealth = await httpGetJson(`${proxyUrl}/health`);
+    if (lastHealth) {
+      const issue = managedProxyIssue(lastHealth, managed, proxyPort);
+      if (!issue) {
+        const result = await completeCapabilityHandshake({
+          browser,
+          proxyPort,
+          health: lastHealth,
+          reused: Boolean(managed.reused),
+        });
+        result.managedBrowser = managed;
+        result.brokerVersion = BROKER_VERSION;
+        result.instanceId = managed.instanceId;
+        result.userActionRequired = null;
+        return result;
+      }
+      if (
+        !looksLikeWebAccessProxy(lastHealth) ||
+        issue === 'proxy_protocol_mismatch' ||
+        issue === 'proxy_version_mismatch' ||
+        issue === 'proxy_mode_mismatch' ||
+        issue === 'proxy_browser_mismatch'
+      ) {
+        return makeResult({
+          status: issue,
+          browser,
+          proxyPort,
+          health: lastHealth,
+          managedBrowser: managed,
+          brokerVersion: BROKER_VERSION,
+          instanceId: managed.instanceId,
+        });
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return makeResult({
+    status: 'proxy_timeout',
+    browser,
+    proxyPort,
+    health: lastHealth,
+    managedBrowser: managed,
+    brokerVersion: BROKER_VERSION,
+    instanceId: managed.instanceId,
+    logFile: proxyLogPath('edge', proxyPort),
+  });
+}
+
+async function ensureManagedBroker(opts) {
+  const browser = {
+    id: 'edge',
+    label: 'Microsoft Edge',
+    source: 'managed',
+    profileMode: 'managed',
+  };
+  const proxyPort = getProxyPort('edge', { diagnostic });
+  const proxyUrl = `http://127.0.0.1:${proxyPort}`;
+  const initialManaged = await statusManagedEdge();
+  const initialHealthResponse = await httpGetJsonResponse(`${proxyUrl}/health`);
+  const initialHealth = initialHealthResponse.ok ? initialHealthResponse.value : null;
+
+  if (initialManaged.ready && initialHealth) {
+    const issue = managedProxyIssue(initialHealth, initialManaged, proxyPort);
+    if (!issue) {
+      const capabilities = await httpGetJson(`${proxyUrl}/capabilities`);
+      if (
+        capabilities?.brokerVersion === BROKER_VERSION &&
+        capabilities?.profileMode === 'managed' &&
+        capabilityIssue(capabilities) === null
+      ) {
+        const result = await completeCapabilityHandshake({
+          browser,
+          proxyPort,
+          health: initialHealth,
+          reused: true,
+        });
+        result.managedBrowser = initialManaged;
+        result.brokerVersion = BROKER_VERSION;
+        result.instanceId = initialManaged.instanceId;
+        result.userActionRequired = null;
+        return result;
+      }
+    }
+  }
+
+  if (opts.statusOnly) {
+    if (!initialManaged.ready) {
+      return makeResult({
+        status: 'managed_browser_start_required',
+        browser,
+        proxyPort,
+        managedBrowser: initialManaged,
+        brokerVersion: BROKER_VERSION,
+        userActionRequired: 'start_managed_browser',
+      });
+    }
+    return ensureManagedProxy(initialManaged, opts);
+  }
+
+  const activeTasks = Number.isInteger(initialHealth?.activeTasks) ? initialHealth.activeTasks : 0;
+  if (
+    activeTasks > 0 &&
+    initialHealth &&
+    (initialHealth.profileMode !== 'managed' ||
+      initialHealth.brokerVersion !== BROKER_VERSION ||
+      initialHealth.managedInstanceId !== initialManaged.instanceId)
+  ) {
+    return makeResult({
+      status: 'proxy_repair_blocked_active_tasks',
+      browser,
+      proxyPort,
+      health: initialHealth,
+      managedBrowser: initialManaged,
+      brokerVersion: BROKER_VERSION,
+      instanceId: initialManaged.instanceId,
+      userActionRequired: 'wait_for_active_tasks',
+    });
+  }
+
+  const release = await acquireManagedLock(managedBrowserPaths());
+  try {
+    const latestHealth = await httpGetJson(`${proxyUrl}/health`);
+    const latestActiveTasks = Number.isInteger(latestHealth?.activeTasks)
+      ? latestHealth.activeTasks
+      : 0;
+    const managed = await ensureManagedEdge({
+      statusOnly: false,
+      allowRestart: latestActiveTasks === 0,
+      lockHeld: true,
+      diagnostics: diagnostic,
+    });
+    if (!managed.ready) {
+      return makeResult({
+        status: 'browser_not_running',
+        browser,
+        proxyPort,
+        managedBrowser: managed,
+        brokerVersion: BROKER_VERSION,
+        userActionRequired: 'start_managed_browser',
+      });
+    }
+    return ensureManagedProxy(managed, opts);
+  } finally {
+    release();
+  }
+}
+
+async function ensureProxy(browserId, proxyPort, { statusOnly = false } = {}) {
   const browser = typeof browserId === 'string'
     ? knownBrowsers().find((item) => item.id === browserId) || { id: browserId, label: browserId }
     : browserId;
@@ -426,6 +947,16 @@ async function ensureProxy(browserId, proxyPort) {
         reused: true,
       });
     }
+    if (statusOnly) {
+      return makeResult({
+        status: 'stale_proxy',
+        browser,
+        proxyPort,
+        health: initialHealth,
+        reused: true,
+        userActionRequired: 'run_ensure',
+      });
+    }
     diagnostic(`proxy[${browserId}]: 已在 ${proxyUrl} 启动，等待浏览器连接...`);
   } else if (initialHealth) {
     diagnostic(`proxy[${browserId}]: 端口 ${proxyPort} 返回了非 web-access 服务`);
@@ -438,9 +969,17 @@ async function ensureProxy(browserId, proxyPort) {
       existing: true,
     });
   } else {
+    if (statusOnly) {
+      return makeResult({
+        status: 'proxy_not_running',
+        browser,
+        proxyPort,
+        userActionRequired: 'run_ensure',
+      });
+    }
     diagnostic(`proxy[${browserId}]: connecting (${proxyUrl})...`);
     try {
-      startProxyDetached(browserId, proxyPort);
+      startProxyDetached(browserId, proxyPort, { WEB_ACCESS_PROFILE_MODE: 'existing' });
     } catch (error) {
       diagnosticError(`proxy[${browserId}]: 启动失败 — ${error.message}`);
       return makeResult({
@@ -613,10 +1152,30 @@ async function resolveAndReport(override) {
   }
 }
 
-async function ensureOneBrowser(override) {
+async function ensureOneBrowser(override, opts = {}) {
   const resolved = await resolveAndReport(override);
   if (!resolved.proceed) return resolved.result;
-  return ensureProxy(resolved.browser, resolved.proxyPort);
+  return ensureProxy(resolved.browser, resolved.proxyPort, { statusOnly: opts.statusOnly });
+}
+
+async function applyControlProbe(results, opts) {
+  if (!opts.probe) {
+    for (const result of results) result.controlProbe = { passed: null, skipped: true };
+    return results;
+  }
+  for (const result of results) {
+    if (!result.ok || !result.ready || !result.proxy?.port) continue;
+    const probe = await probeBrowserControl(result.proxy.port);
+    result.controlProbe = probe;
+    if (!probe.passed) {
+      result.ok = false;
+      result.ready = false;
+      result.status = probe.code;
+      result.exitCode = 1;
+      result.userActionRequired = 'browser_control';
+    }
+  }
+  return results;
 }
 
 function listSitePatterns() {
@@ -645,6 +1204,8 @@ function jsonSummary(opts, results, node, statusOverride = null) {
     ok,
     status: summaryStatus(results, ok, statusOverride),
     mode: opts?.all ? 'all' : 'single',
+    browserMode: opts?.mode || null,
+    brokerVersion: BROKER_VERSION,
     protocolVersion: EXPECTED_PROTOCOL_VERSION,
     expectedProtocolVersion: EXPECTED_PROTOCOL_VERSION,
     ready: ok && results.every((result) => result.ready),
@@ -670,8 +1231,9 @@ async function main() {
     return;
   }
 
+  let configInfo;
   try {
-    ensureCanonicalConfig(diagnostic);
+    configInfo = ensureCanonicalConfig(diagnostic);
   } catch (error) {
     const status = error instanceof RuntimeConfigError ? error.code : 'config_error';
     diagnosticError(`config: error — ${error.message}`);
@@ -679,9 +1241,31 @@ async function main() {
     return;
   }
   const node = checkNode();
+  opts.mode = opts.mode || configInfo.config.WEB_ACCESS_BROWSER_MODE ||
+    (os.platform() === 'win32' ? 'managed' : 'existing');
 
   let results;
-  if (opts.all) {
+  if (opts.mode === 'managed') {
+    const browserId = opts.browser || configInfo.config.WEB_ACCESS_BROWSER;
+    if (opts.all || browserId !== 'edge') {
+      finish(opts, [], node, 2, 'managed_mode_requires_edge');
+      return;
+    }
+    opts.browser = 'edge';
+    try {
+      const proxyPort = getProxyPort('edge', { diagnostic });
+      results = [await ensureManagedBroker(opts)];
+    } catch (error) {
+      const status = error instanceof ManagedBrowserError ? error.code : 'managed_browser_error';
+      results = [makeResult({
+        status,
+        browser: { id: 'edge', label: 'Microsoft Edge', source: 'managed' },
+        error: error.message,
+        managedBrowser: error instanceof ManagedBrowserError ? error.details : null,
+        brokerVersion: BROKER_VERSION,
+      })];
+    }
+  } else if (opts.all) {
     try {
       const edgePort = getProxyPort('edge', { diagnostic });
       const chromePort = getProxyPort('chrome', { diagnostic });
@@ -693,10 +1277,12 @@ async function main() {
       finish(opts, [], node, 1, 'config_error');
       return;
     }
-    results = await Promise.all(PERSISTENT_BROWSERS.map((browserId) => ensureOneBrowser(browserId)));
+    results = await Promise.all(PERSISTENT_BROWSERS.map((browserId) => ensureOneBrowser(browserId, opts)));
   } else {
-    results = [await ensureOneBrowser(opts.browser)];
+    results = [await ensureOneBrowser(opts.browser, opts)];
   }
+
+  results = await applyControlProbe(results, opts);
 
   const failed = results.filter((result) => !result.ok);
   if (failed.length) {
@@ -714,10 +1300,13 @@ async function main() {
   finish(opts, results, node, 0);
 }
 
-try {
-  await main();
-} catch (error) {
-  diagnosticError(`check-deps: unexpected error — ${error.message}`);
-  const status = error instanceof RuntimeConfigError ? error.code : 'internal_error';
-  finish(null, [makeResult({ status, error: error.message, exitCode: error?.exitCode || 1 })], null, error?.exitCode || 1, status);
+const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
+if (invokedPath === import.meta.url) {
+  try {
+    await main();
+  } catch (error) {
+    diagnosticError(`check-deps: unexpected error — ${error.message}`);
+    const status = error instanceof RuntimeConfigError ? error.code : 'internal_error';
+    finish(null, [makeResult({ status, error: error.message, exitCode: error?.exitCode || 1 })], null, error?.exitCode || 1, status);
+  }
 }

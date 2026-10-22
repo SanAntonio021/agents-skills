@@ -369,6 +369,66 @@
         "登录后回读目标内容，不把点击登录当作成功",
         "仅在系统解锁、MFA、验证码或账号歧义出现时接管"
       ]
+    },
+    {
+      "id": 33,
+      "prompt": "两个独立对话同时要求打开 Edge 页面。两者都没有指定日常浏览器，当前 Windows 还没有受管 Edge 状态文件。",
+      "expected_output": "两个调用通过同一个受管 Broker 串行完成启动或修复；一个创建 Edge、Proxy 和唯一 CDP 连接，另一个核验后复用。之后各自创建 task/token/tab，不用第二个调试连接或备用端口。",
+      "files": [],
+      "expectations": [
+        "两个调用最终返回同一 instanceId、CDP 9222 和 Proxy 3456",
+        "第二个调用返回 reused=true",
+        "两个 task/token/tab 相互隔离",
+        "没有触发第二次远程调试授权或启动第二个 Edge"
+      ]
+    },
+    {
+      "id": 34,
+      "prompt": "第一次调用 check-deps --browser edge --mode managed 返回 managed_profile_busy；用户建议改用日常 Edge 或换一个临时端口先继续。",
+      "expected_output": "报告 Profile 被占用，不结束占用进程、不改端口、不用 existing 日常 Edge 自动回退；只暂停依赖受管 Edge 的任务并保留具体状态。",
+      "files": [],
+      "expectations": [
+        "managed_profile_busy 原样保留",
+        "没有连接或关闭日常 Edge",
+        "没有创建备用端口、第二 Broker 或临时 Profile",
+        "独立工作继续，恢复后再执行真实控制探针"
+      ]
+    },
+    {
+      "id": 35,
+      "prompt": "受管 Edge 的 Proxy 进程意外退出，但 Edge、Profile 和页面仍在；另一对话没有活动 task。请恢复。",
+      "expected_output": "只重启 Proxy，复用同一受管 Edge/Profile 和 CDP 9222；完成控制探针后才 ready。旧 task 不恢复，浏览器页面不关闭，其他对话未受影响的页面保持。",
+      "files": [],
+      "expectations": [
+        "Edge PID 和 Profile 保持不变",
+        "Proxy 重启后 Broker 版本、模式和实例 ID 握手通过",
+        "旧 task/token 失效，页面保留",
+        "新 task 可用且没有关闭 Edge"
+      ]
+    },
+    {
+      "id": 36,
+      "prompt": "同一受管 Edge 的对话 A 完成页面操作并调用 complete keep:false；对话 B 的 task 仍在进行，用户还保留着自己的日常页面。",
+      "expected_output": "只关闭 A 的 tab/popup，保留 B 的 task/token/tab、受管 Edge、Proxy 和用户页面；不把完成 A 当作退出浏览器或服务收尾。",
+      "files": [],
+      "expectations": [
+        "A 的任务进入完成状态且只处理自己的页面",
+        "B 的页面仍可读，Broker 仍 connected",
+        "没有关闭受管 Edge 或 Proxy",
+        "用户页面没有枚举、修改或关闭"
+      ]
+    },
+    {
+      "id": 37,
+      "prompt": "真实控制探针创建 task 后打开 about:blank 成功，但读取页面状态失败；调用方希望把 ready 写成 true 并让业务技能继续。",
+      "expected_output": "返回 control_probe_failed，ready=false；不把健康端点、Edge 启动成功或 task 创建成功当作浏览器可用，也不自动回退到日常 Edge。",
+      "files": [],
+      "expectations": [
+        "controlProbe.passed 为 false",
+        "错误阶段可定位到 eval 或后续真实控制步骤",
+        "失败后清理该探针自己的 task/tab",
+        "业务任务暂停浏览器部分并保留具体 Broker 状态"
+      ]
     }
   ]
 }

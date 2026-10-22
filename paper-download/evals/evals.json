@@ -266,6 +266,62 @@
       "prompt": "超时后原生操作状态查不到，但原Zotero进程仍在，尚无证据证明调用结束；父条目暂时查不到。",
       "expected_output": "标为未知并暂停相关新增，保留有效文件；每轮状态查询最多45秒，不擅自清活动标记、不换入口重试、不重启用户应用，不把无条目当成结束证据。",
       "files": []
+    },
+    {
+      "id": "managed-broker-required",
+      "prompt": "本机日常 Edge 已打开并开启远程调试，但 `%LOCALAPPDATA%\\web-access` 下还没有受管 Profile。请下载一篇需要学校权限的 IEEE 论文。",
+      "expected_output": "通过 `web-access` 创建受管 Edge Profile，运行 `--browser edge --mode managed` 前检和控制探针；不把日常 Edge 当作自动回退，也不要求用户在日常 Edge 的 inspect 页面开启调试。",
+      "files": [],
+      "expectations": [
+        "内部前检固定包含 --browser edge --mode managed",
+        "只有 managedBrowser.ready 和 controlProbe.passed 都为 true 才继续",
+        "不启动或停止日常 Edge，不改用另一个端口"
+      ]
+    },
+    {
+      "id": "broker-vs-publisher-state",
+      "prompt": "两个对话同时下载机构论文。A 的前检返回 proxy_version_mismatch；B 已完成登录但出版社页面显示无订阅。",
+      "expected_output": "A 报 Broker 版本状态并按受管 Proxy 修复边界处理；B 报 access_unavailable/institution_permission。不得把两者合并成“浏览器被拒绝”或“学校未登录”。",
+      "files": [],
+      "expectations": [
+        "代理版本错误与出版社权限错误分别保留原文状态",
+        "A 不结束用户进程或日常 Edge",
+        "B 不重填凭据、不改 Cookie 或换 task 绕过权限"
+      ]
+    },
+    {
+      "id": "multi-task-completion",
+      "prompt": "同一受管 Edge 中对话 A 和 B 各有一个 task，A 完成下载后结束自己的任务；B 仍需继续读取同一学校登录态下的另一篇文章。",
+      "expected_output": "A 只调用本 task 的 complete keep:false，关闭 A 的 tab/popup；B 的 task/token/tab、受管 Edge 和 Proxy 保持运行，B 可继续。",
+      "files": [],
+      "expectations": [
+        "complete 的回执只涉及 A 的任务",
+        "B 的页面仍可读且 Broker 仍 connected",
+        "不关闭 Edge、Proxy 或其他对话页面"
+      ]
+    },
+    {
+      "id": "task-capacity-no-fallback",
+      "prompt": "机构下载前检返回 task_capacity_reached，用户指出 Chrome 还有空闲调试端口，要求改用 Chrome 继续。",
+      "expected_output": "报告当前受管 Broker 的任务容量状态，等待现有任务收尾或按明确授权处理；不使用 Chrome、备用端口或新 Profile 绕过容量限制。",
+      "files": [],
+      "expectations": [
+        "task_capacity_reached 没有被改写成登录或订阅失败",
+        "没有自动回退到 Chrome 或 existing 模式",
+        "保留合法访问边界并等待正确容量恢复"
+      ]
+    },
+    {
+      "id": "unknown-tab-create",
+      "prompt": "机构下载的第一次代理响应是 HTTP 504，错误码为 UNKNOWN_RESULT；用户没有登录或修改页面。",
+      "expected_output": "保留 UNKNOWN_RESULT 原始码，先只读核对同一 task 的 tab。若存在一个新建空白 tab，复用它导航到文章；多个 tab 或无可用 tab 时停止，不创建第二个 task 猜测结果。",
+      "files": [],
+      "expectations": [
+        "不把 UNKNOWN_RESULT 降级成 browser_api_error",
+        "只检查同一 task 拥有的 tab",
+        "空白 tab 可恢复时仍要求后续页面和 PDF 身份核验",
+        "不换 key 重放首次创建或从另一浏览器重新开始"
+      ]
     }
   ]
 }

@@ -108,6 +108,55 @@ def browser_for_session(session: dict[str, Any]) -> BrowserClient:
     )
 
 
+def reconcile_created_tab(
+    client: BrowserClient,
+    requested_url: str,
+    *,
+    timeout_seconds: int = 20,
+) -> dict[str, Any]:
+    """Recover a tab whose create-target result timed out.
+
+    The Proxy may have created the target even when the mutation returns
+    UNKNOWN_RESULT. Only empty tabs owned by this task are eligible.
+    """
+    deadline = time.monotonic() + timeout_seconds
+    blank_since: float | None = None
+    navigate_at: float | None = None
+    while time.monotonic() < deadline:
+        tabs = client.tabs()
+        if len(tabs) > 1:
+            raise BrowserError(
+                "tab_create_ambiguous",
+                "timed-out tab creation produced multiple task tabs",
+            )
+        if tabs:
+            item = tabs[0]
+            target_id = item.get("targetId") or item.get("id")
+            if target_id:
+                detail = client.tab(target_id)
+                url = str(detail.get("url") or item.get("url") or "")
+                if url and url not in {"about:blank", "edge://newtab/"}:
+                    return {**item, **detail, "targetId": target_id}
+                if blank_since is None:
+                    blank_since = time.monotonic()
+                if navigate_at is None and time.monotonic() - blank_since >= 3:
+                    try:
+                        client.navigate(target_id, requested_url)
+                        navigate_at = time.monotonic()
+                    except BrowserError as error:
+                        if error.code == "TARGET_BUSY":
+                            pass
+                        elif error.code == "UNKNOWN_RESULT":
+                            navigate_at = time.monotonic()
+                        else:
+                            raise
+        time.sleep(0.5)
+    raise BrowserError(
+        "tab_create_unknown",
+        "timed-out tab creation did not produce a usable task tab",
+    )
+
+
 def create_session(
     store: Any,
     *,
@@ -137,7 +186,12 @@ def create_session(
     }
     store.write(session_id, session)
     try:
-        tab = client.create_tab(article_url, background=True)
+        try:
+            tab = client.create_tab(article_url, background=True)
+        except BrowserError as error:
+            if error.code != "UNKNOWN_RESULT":
+                raise
+            tab = reconcile_created_tab(client, article_url)
         target_id = tab.get("targetId") or tab.get("id")
         if not target_id:
             raise BrowserError("tab_create_invalid", "browser tab response is invalid")
@@ -210,6 +264,7 @@ def wait_for_page_signal(
     provider: Provider,
 ) -> dict[str, Any]:
     deadline = time.monotonic() + 30
+    login_signal_since: float | None = None
     latest: dict[str, Any] = {}
     while time.monotonic() < deadline:
         latest = page_state(client, target_id)
@@ -218,11 +273,14 @@ def wait_for_page_signal(
             or candidate_pdf_urls(provider, latest)
             or any(latest.get("accessSignals") or [])
             or any(latest.get("openAccessSignals") or [])
-            or any(latest.get("loginSignals") or [])
-            or any(latest.get("denialSignals") or [])
             or latest.get("challenge")
         ):
             return latest
+        if any(latest.get("loginSignals") or []) or any(latest.get("denialSignals") or []):
+            if login_signal_since is None:
+                login_signal_since = time.monotonic()
+            elif time.monotonic() - login_signal_since >= 3:
+                return latest
         if latest.get("readyState") in {"interactive", "complete"}:
             time.sleep(0.5)
         else:
@@ -1078,7 +1136,7 @@ def build_parser() -> argparse.ArgumentParser:
     acquire_parser.add_argument("--doi", required=True)
     acquire_parser.add_argument("--output", required=True)
     acquire_parser.add_argument(
-        "--browser", choices=("auto", "edge", "chrome"), default="auto"
+        "--browser", choices=("auto", "edge"), default="auto"
     )
     acquire_parser.set_defaults(handler=acquire)
     resume_parser = subparsers.add_parser("resume")

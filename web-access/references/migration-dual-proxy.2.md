@@ -117,13 +117,13 @@ curl -s -X POST "http://127.0.0.1:3456/v2/tabs/ID/action" \
 
 ## 旧 Proxy 处理
 
-所有生产副本统一读取 `%LOCALAPPDATA%\web-access\config.env`，Edge/Chrome Proxy 固定为 `3456/3457`。不要保留源码副本、CC Switch 副本或不同 Agent 目录各自的生产端口。生产环境变量只能与固定端口等值；临时端口只允许测试脚本在系统临时目录的隔离根下显式启用 `WEB_ACCESS_TEST_MODE=1`。
+所有生产副本统一读取 `%LOCALAPPDATA%\web-access\config.env`。Windows 默认 `managed`：受管 Edge 使用独立 Profile、CDP `9222` 和 Proxy `3456`；日常 Edge/Chrome 仅在显式 `--mode existing` 时使用 Proxy `3456/3457`。不要保留源码副本、CC Switch 副本或不同 Agent 目录各自的生产端口。生产环境变量只能与固定端口等值；临时端口只允许测试脚本在系统临时目录的隔离根下显式启用 `WEB_ACCESS_TEST_MODE=1`。
 
 启动过程先绑定 Proxy 端口，再连接浏览器 CDP。并发启动只有端口胜者能连接浏览器；收到 `EADDRINUSE` 的进程最多等待现有监听者就绪，并严格核验协议版本、浏览器、Proxy 端口、CDP 端口和 task 隔离能力。核验通过后退出，让调用方复用现有 Proxy；核验失败则失败关闭，不停止占用者、不改用备用端口。
 
 同一 Edge 进程与 `3456` 上的正式 Proxy 都保持存活时，只应存在一条正式 Proxy 到该 Edge CDP 的连接，通常只需授权一次。反复出现“允许对此浏览器实例进行远程调试”时，优先排查第二个 Proxy 端口或进程；关闭浏览器、停止正式 Proxy、迁移旧 Proxy 或连接断开后重建，下一次连接仍可能再次提示。
 
-`check-deps.mjs --json` 发现 `protocolVersion` 不是 `2` 时只报告迁移，不自动结束旧进程。先按输出核对准确浏览器、端口、PID 和操作影响；已有授权明确覆盖这次停止或重启时复用，缺失时才询问。批准候选、安装技能或允许后续测试本身不等于授权运行时重启。授权范围内才显式重启对应 Proxy，浏览器保持打开；首次由新 Proxy 重新连接时，浏览器仍可能再显示一次远程调试授权提示。
+`check-deps.mjs --json` 在 `existing` 模式发现 `protocolVersion` 不是 `2` 时只报告迁移，不自动结束旧进程。受管模式只有在 `/health`、命令行和实例 ID 都能证明是同一受管 Profile 的专用 Proxy、且没有活动 task 时，才可自动修复版本不匹配；无法证明归属或存在活动 task 时停止并报告。先按输出核对准确浏览器、端口、PID 和操作影响；已有授权明确覆盖这次停止或重启时复用，缺失时才询问。关闭受管 Edge 后再次 `ensure` 使用同一 Profile 重启；关闭 Proxy 只重启 Proxy，浏览器和页面保持。
 
 停止已获授权的旧 PID 后，如果同一端口已由不同 PID 监听，不要把它直接判作停止失败，也不要继续终止新 PID。先重新读取新进程的创建时间和命令行，确认脚本路径、浏览器和端口；再检查 `/health` 与 `/capabilities`。只有目标身份一致、`protocolVersion: 2` 且能力握手成功时，才把它视为迁移完成。否则停止后续操作，并针对新的准确 PID 重新取得授权。
 

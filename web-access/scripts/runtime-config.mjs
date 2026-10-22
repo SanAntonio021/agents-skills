@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const DEFAULTS = Object.freeze({
   WEB_ACCESS_BROWSER: 'edge',
+  WEB_ACCESS_BROWSER_MODE: os.platform() === 'win32' ? 'managed' : 'existing',
   WEB_ACCESS_EDGE_PORT: '3456',
   WEB_ACCESS_CHROME_PORT: '3457',
 });
@@ -11,6 +12,8 @@ const DEFAULTS = Object.freeze({
 const DEFAULT_CONFIG = `# web-access canonical user configuration\n` +
   `# Production copies all read this file. Edge and Chrome ports must stay distinct.\n` +
   `WEB_ACCESS_BROWSER=${DEFAULTS.WEB_ACCESS_BROWSER}\n` +
+  `# managed uses a dedicated Edge profile; existing uses the daily browser debug toggle.\n` +
+  `WEB_ACCESS_BROWSER_MODE=${DEFAULTS.WEB_ACCESS_BROWSER_MODE}\n` +
   `WEB_ACCESS_EDGE_PORT=${DEFAULTS.WEB_ACCESS_EDGE_PORT}\n` +
   `WEB_ACCESS_CHROME_PORT=${DEFAULTS.WEB_ACCESS_CHROME_PORT}\n`;
 
@@ -120,6 +123,13 @@ function validateConfig(config, configPath) {
   if (!['edge', 'chrome'].includes(browser)) {
     throw new RuntimeConfigError('config_invalid', `WEB_ACCESS_BROWSER in ${configPath} must be edge or chrome.`);
   }
+  const browserMode = config.WEB_ACCESS_BROWSER_MODE || DEFAULTS.WEB_ACCESS_BROWSER_MODE;
+  if (!['managed', 'existing'].includes(browserMode)) {
+    throw new RuntimeConfigError(
+      'config_invalid',
+      `WEB_ACCESS_BROWSER_MODE in ${configPath} must be managed or existing.`,
+    );
+  }
   const edgePort = parsePort(config.WEB_ACCESS_EDGE_PORT, 'WEB_ACCESS_EDGE_PORT');
   const chromePort = parsePort(config.WEB_ACCESS_CHROME_PORT, 'WEB_ACCESS_CHROME_PORT');
   if (edgePort === chromePort) {
@@ -133,9 +143,23 @@ function validateConfig(config, configPath) {
   }
   return {
     WEB_ACCESS_BROWSER: browser,
+    WEB_ACCESS_BROWSER_MODE: browserMode,
     WEB_ACCESS_EDGE_PORT: String(edgePort),
     WEB_ACCESS_CHROME_PORT: String(chromePort),
   };
+}
+
+function upgradeConfigContent(content) {
+  if (/^\s*WEB_ACCESS_BROWSER_MODE\s*=/m.test(content)) return content;
+  const prefix = content.endsWith('\n') ? content : `${content}\n`;
+  return `${prefix}\n# managed uses a dedicated Edge profile; existing uses the daily browser debug toggle.\n` +
+    `WEB_ACCESS_BROWSER_MODE=${DEFAULTS.WEB_ACCESS_BROWSER_MODE}\n`;
+}
+
+function writeConfigAtomically(configPath, content) {
+  const temporary = `${configPath}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, content, 'utf8');
+  fs.renameSync(temporary, configPath);
 }
 
 export function ensureCanonicalConfig(diagnostic = null) {
@@ -157,9 +181,17 @@ export function ensureCanonicalConfig(diagnostic = null) {
   } catch (error) {
     throw new RuntimeConfigError('config_unavailable', `Unable to read ${configPath}: ${error.message}`);
   }
+  const upgraded = upgradeConfigContent(content);
+  const migrated = upgraded !== content;
+  if (migrated) {
+    writeConfigAtomically(configPath, upgraded);
+    content = upgraded;
+  }
   const config = validateConfig(parseEnvFile(content), configPath);
-  diagnostic?.(`config: ${created ? 'canonical_created' : 'canonical_reused'} (${configPath})`);
-  return { config, configPath, created, environment: runtimeEnvironment() };
+  diagnostic?.(
+    `config: ${created ? 'canonical_created' : migrated ? 'canonical_migrated' : 'canonical_reused'} (${configPath})`,
+  );
+  return { config, configPath, created, migrated, environment: runtimeEnvironment() };
 }
 
 export function readConfig() {

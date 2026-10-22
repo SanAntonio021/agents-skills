@@ -37,10 +37,13 @@ export function knownBrowsers() {
         { id: 'edge',     label: 'Microsoft Edge', devToolsPath: path.join(home, '.config/microsoft-edge/DevToolsActivePort') },
       ];
     case 'win32':
+      const edgeDevToolsPath = process.env.WEB_ACCESS_EDGE_DEVTOOLS_PATH
+        ? path.resolve(process.env.WEB_ACCESS_EDGE_DEVTOOLS_PATH)
+        : path.join(localAppData, 'Microsoft/Edge/User Data/DevToolsActivePort');
       return [
         { id: 'chrome',   label: 'Chrome',         devToolsPath: path.join(localAppData, 'Google/Chrome/User Data/DevToolsActivePort') },
         { id: 'chromium', label: 'Chromium',       devToolsPath: path.join(localAppData, 'Chromium/User Data/DevToolsActivePort') },
-        { id: 'edge',     label: 'Microsoft Edge', devToolsPath: path.join(localAppData, 'Microsoft/Edge/User Data/DevToolsActivePort') },
+        { id: 'edge',     label: 'Microsoft Edge', devToolsPath: edgeDevToolsPath },
       ];
     default:
       return [];

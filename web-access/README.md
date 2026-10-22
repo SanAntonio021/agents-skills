@@ -129,7 +129,7 @@ git clone https://github.com/eze-is/web-access ~/.claude/skills/web-access
 
 选择 CDP Proxy 后才检查 Node.js 22+、受管 Broker 与 `/v2` 协议。Windows 默认使用受管 Edge，生产副本统一使用 `%LOCALAPPDATA%\web-access\config.env`；现有配置升级时原子补充 `WEB_ACCESS_BROWSER_MODE=managed`。受管 Edge 使用独立 Profile、CDP `9222`、Proxy `3456`，由首次任务按需启动并长期复用。日常 Edge/Chrome 的 `existing` 模式仍可按人工要求使用，但不能作为受管失败后的自动回退。
 
-正常新对话先运行 `check-deps.mjs --browser edge --mode managed --json`。只有 `ready:true` 且真实 `controlProbe.passed:true` 才能继续；`--status-only` 只诊断、不启动或修复，`--no-probe` 仅用于隔离测试。`paper-download` 机构模块只消费该入口，不自行启动或停止浏览器。
+正常新对话先运行 `check-deps.mjs --browser edge --mode managed --json`。只有 `ready:true` 且真实 `controlProbe.passed:true` 才能继续；`--status-only` 只诊断，不创建或迁移 `config.env`，也不启动或修复 Broker，`--no-probe` 仅用于隔离测试。`paper-download` 机构模块只消费该入口，不自行启动或停止浏览器。
 
 - [启动与浏览器选择](references/cdp-api.md#启动与浏览器选择)：前检命令、配置、固定端口和授权连接复用。
 - [页面观察与导航](references/cdp-api.md#页面观察与导航)：snapshot/ref、导航、等待和能力限制。

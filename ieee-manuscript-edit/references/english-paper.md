@@ -25,6 +25,6 @@ For section drafting, Discussion restructuring, or cross-section repetition chec
 
 Claims such as “widely used,” “the first,” “state of the art,” or “consistently” require direct evidence and an appropriate comparison set. A citation must remain next to the claim it supports.
 
-Read `D:\BaiduSyncdisk\.agents\vocab\英文\通用.md` and `D:\BaiduSyncdisk\.agents\vocab\英文\论文.md` when available. Read the shared terminology table only when bilingual terms need alignment.
+Read the `vocab/英文/通用.md` and `vocab/英文/论文.md` files shipped with the `style-vocab` skill when available. Read `vocab/术语.md` only when bilingual terms need alignment.
 
 Use [sainani-sentence-review.md](sainani-sentence-review.md) only for a requested full sentence review. Its checks produce candidates, not automatic rewrites.

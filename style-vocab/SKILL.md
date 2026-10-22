@@ -7,7 +7,7 @@ description: 按语言和文稿类型维护、加载和检查个人文风词表�
 
 ## 数据位置
 
-词表由私有 `agents-config` 仓库维护，不复制到公开技能仓库。默认按当前用户主目录定位：`Path.home()/agents-config/vocab/`（Windows 即 `%USERPROFILE%\agents-config\vocab\`）。若不存在，再检查当前用户下的旧 `.agents/vocab/` 布局及技能源码检出中的 `.agents/vocab/` 或 `agents-config/vocab/`；最后兼容旧安装路径 `D:\BaiduSyncdisk\.agents\vocab\`。均未找到时应报告词表不可用，不得当作无命中或跳过正式稿审计。运行审计脚本时可用 `--vocab-root <词表目录>` 覆盖默认位置。
+词表数据随本技能发布，位于当前 `style-vocab` 技能目录下的 `vocab/`。它是词表的唯一维护版本，会随 CC Switch 同步到各台电脑。审计脚本默认优先读取这份随技能发布的词表；过渡期仍兼容旧源码检出和用户目录中的词表。均未找到时应报告词表不可用，不得当作无命中或跳过正式稿审计。运行审计脚本时可用 `--vocab-root <词表目录>` 覆盖默认位置。
 
 词表文件包括：
 
@@ -88,6 +88,8 @@ python -X utf8 ../ieee-manuscript-edit/scripts/audit_writing_memory.py \
   --document-kind general|proposal|research-report|paper|review-response|letter|other \
   --output-format json|markdown
 ```
+
+审计脚本默认读取随 `style-vocab` 技能发布的 `vocab/`。只有需要检查另一份词表时，才显式传入 `--vocab-root <词表目录>`。
 
 状态含义：
 

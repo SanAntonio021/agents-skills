@@ -1,6 +1,6 @@
 # SCI 术语表入口
 
-全局术语表位于 `D:\BaiduSyncdisk\.agents\vocab\术语.md`，固定使用两列：
+全局术语表位于随 `style-vocab` 技能同步的 `vocab/术语.md`，固定使用两列：
 
 ```markdown
 | 中文 | 英文 |

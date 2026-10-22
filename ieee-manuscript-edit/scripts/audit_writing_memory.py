@@ -15,7 +15,8 @@ from typing import Iterable, Sequence
 
 
 AUDIT_VERSION = "2.0"
-LEGACY_VOCAB_ROOT = Path(r"D:\BaiduSyncdisk\.agents\vocab")
+# Transitional fallback for Windows machines that still have the former fixed-location copy.
+LEGACY_VOCAB_ROOT = Path("D:/BaiduSyncdisk/.agents/vocab")
 
 
 def resolve_default_vocab_root(
@@ -23,27 +24,44 @@ def resolve_default_vocab_root(
     legacy_root: Path | None = None,
     script_path: Path | None = None,
 ) -> Path:
-    """Prefer the per-user private config checkout and retain legacy layouts."""
-    user_home = Path.home() if home is None else home
-    primary = user_home / "agents-config" / "vocab"
-    if primary.is_dir():
-        return primary
+    """Prefer the skill-bundled data, then consult transitional layouts."""
+    source_file = (Path(__file__) if script_path is None else script_path).resolve()
+    bundled_default: Path | None = None
 
-    home_legacy = user_home / ".agents" / "vocab"
-    if home_legacy.is_dir():
-        return home_legacy
+    for parent in source_file.parents:
+        if parent.name.casefold() == "style-vocab":
+            bundled = parent / "vocab"
+        elif parent.name.casefold() == "skills":
+            bundled = parent / "style-vocab" / "vocab"
+        else:
+            continue
+        if bundled_default is None:
+            bundled_default = bundled
+        if bundled.is_dir():
+            return bundled
 
-    source_file = Path(__file__) if script_path is None else script_path
-    for parent in source_file.resolve().parents:
+    for parent in source_file.parents:
         if parent.name.casefold() in {".agents", "agents-config"}:
-            source_vocab = parent / "vocab"
-            if source_vocab.is_dir():
-                return source_vocab
+            candidate = parent / "vocab"
+            if candidate.is_dir():
+                return candidate
 
-    legacy = LEGACY_VOCAB_ROOT if legacy_root is None else legacy_root
-    if legacy.is_dir():
-        return legacy
-    return primary
+    user_home = Path.home() if home is None else home
+    for candidate in (
+        user_home / "agents-config" / "vocab",
+        user_home / ".agents" / "vocab",
+    ):
+        if candidate.is_dir():
+            return candidate
+
+    transitional = [legacy_root] if legacy_root is not None else []
+    if sys.platform == "win32":
+        transitional.append(LEGACY_VOCAB_ROOT)
+    for candidate in transitional:
+        if candidate.is_dir():
+            return candidate
+
+    return bundled_default or source_file.parent / "vocab"
 
 
 DOCUMENT_KINDS = (
@@ -534,10 +552,13 @@ def error_result(message: str) -> dict[str, object]:
     }
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(script_path: Path | None = None) -> argparse.ArgumentParser:
     parser = AuditArgumentParser(description=__doc__)
     parser.add_argument("--file", action="append", required=True, help="Markdown or LaTeX file")
-    parser.add_argument("--vocab-root", default=str(resolve_default_vocab_root()))
+    parser.add_argument(
+        "--vocab-root",
+        default=str(resolve_default_vocab_root(script_path=script_path)),
+    )
     parser.add_argument("--language", required=True, choices=("zh", "en"))
     parser.add_argument("--document-kind", required=True, choices=DOCUMENT_KINDS)
     parser.add_argument("--output-format", choices=("json", "markdown"), default="json")

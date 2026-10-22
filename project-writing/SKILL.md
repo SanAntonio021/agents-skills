@@ -68,7 +68,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 - 用具体对象、动作、条件和结果替代空泛评价。
 - 术语保持稳定，不为避重轮换“系统、平台、装置、载体”。
 - 可以写项目必要性和价值，但结论强度必须由差距、场景、指标或验证支撑。
-- 起草或精修时读取 `D:\BaiduSyncdisk\.agents\vocab\中文\通用.md` 和 `D:\BaiduSyncdisk\.agents\vocab\中文\申报书.md`；交付前用 `style-vocab` 做软审计，命中项仍结合文体例外判断。
+- 起草或精修时读取随 `style-vocab` 技能同步的 `vocab/中文/通用.md` 和 `vocab/中文/申报书.md`；交付前用 `style-vocab` 做软审计，命中项仍结合文体例外判断。
 - 黑障或高超声速通信术语按需读取 [专门术语表](references/engineering-glossary-blackout.md)。
 
 ## 文件边界

@@ -32,6 +32,6 @@
 
 ## 审校
 
-起草或精修时读取 `D:\BaiduSyncdisk\.agents\vocab\中文\通用.md` 和 `D:\BaiduSyncdisk\.agents\vocab\中文\论文.md`。术语中英文对应需要统一时再读 `D:\BaiduSyncdisk\.agents\vocab\术语.md`。
+起草或精修时读取随 `style-vocab` 技能同步的 `vocab/中文/通用.md` 和 `vocab/中文/论文.md`。术语中英文对应需要统一时再读 `vocab/术语.md`。
 
 检查每个段落是否推进论点。只有“本文首先……其次……最后……”式目录预告而没有理解价值时删除；复杂章节确需路线图时保留具体内容。

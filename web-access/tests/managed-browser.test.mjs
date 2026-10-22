@@ -17,7 +17,11 @@ import {
   managedProxyIssue,
   probeBrowserControl,
 } from '../scripts/check-deps.mjs';
-import { ensureCanonicalConfig } from '../scripts/runtime-config.mjs';
+import {
+  canonicalConfigPath,
+  ensureCanonicalConfig,
+  inspectCanonicalConfig,
+} from '../scripts/runtime-config.mjs';
 import { BROKER_VERSION } from '../scripts/broker-version.mjs';
 
 test('parseDevToolsActivePort accepts Chrome endpoint files and rejects unsafe values', () => {
@@ -156,6 +160,54 @@ test('canonical config migration preserves existing keys and adds managed mode',
     const updated = fs.readFileSync(configPath, 'utf8');
     assert.match(updated, /^WEB_ACCESS_BROWSER_MODE=managed$/m);
     assert.match(updated, /^CUSTOM_SETTING=keep-me$/m);
+  } finally {
+    for (const [name, value] of Object.entries(previous)) {
+      const envName = {
+        testMode: 'WEB_ACCESS_TEST_MODE',
+        testRoot: 'WEB_ACCESS_TEST_ROOT',
+        localAppData: 'LOCALAPPDATA',
+      }[name];
+      if (value === undefined) delete process.env[envName];
+      else process.env[envName] = value;
+    }
+    fs.rmSync(testRoot, { recursive: true, force: true });
+  }
+});
+
+test('read-only config inspection does not create or migrate files', () => {
+  const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'web-access-read-config-'));
+  const localAppData = path.join(testRoot, 'LocalAppData');
+  fs.mkdirSync(localAppData, { recursive: true });
+  const previous = {
+    testMode: process.env.WEB_ACCESS_TEST_MODE,
+    testRoot: process.env.WEB_ACCESS_TEST_ROOT,
+    localAppData: process.env.LOCALAPPDATA,
+  };
+  try {
+    process.env.WEB_ACCESS_TEST_MODE = '1';
+    process.env.WEB_ACCESS_TEST_ROOT = testRoot;
+    process.env.LOCALAPPDATA = localAppData;
+    const missing = inspectCanonicalConfig();
+    assert.equal(missing.exists, false);
+    assert.equal(missing.config.WEB_ACCESS_BROWSER_MODE, 'managed');
+    assert.equal(fs.existsSync(canonicalConfigPath()), false);
+
+    const configRoot = path.join(localAppData, 'web-access');
+    fs.mkdirSync(configRoot, { recursive: true });
+    const configPath = path.join(configRoot, 'config.env');
+    const original = [
+      'WEB_ACCESS_BROWSER=edge',
+      'WEB_ACCESS_EDGE_PORT=3456',
+      'WEB_ACCESS_CHROME_PORT=3457',
+      'CUSTOM_SETTING=keep-me',
+      '',
+    ].join('\n');
+    fs.writeFileSync(configPath, original, 'utf8');
+    const legacy = inspectCanonicalConfig();
+    assert.equal(legacy.exists, true);
+    assert.equal(legacy.migrated, false);
+    assert.equal(legacy.config.WEB_ACCESS_BROWSER_MODE, 'managed');
+    assert.equal(fs.readFileSync(configPath, 'utf8'), original);
   } finally {
     for (const [name, value] of Object.entries(previous)) {
       const envName = {

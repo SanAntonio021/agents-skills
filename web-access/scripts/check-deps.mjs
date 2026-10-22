@@ -15,7 +15,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getProxyPort, knownBrowsers, selectBrowser } from './browser-discovery.mjs';
-import { ensureCanonicalConfig, RuntimeConfigError } from './runtime-config.mjs';
+import {
+  ensureCanonicalConfig,
+  inspectCanonicalConfig,
+  RuntimeConfigError,
+} from './runtime-config.mjs';
 import { BROKER_VERSION } from './broker-version.mjs';
 import {
   ManagedBrowserError,
@@ -571,7 +575,10 @@ async function ensureManagedProxy(managed, opts) {
   };
   let proxyPort;
   try {
-    proxyPort = getProxyPort('edge', { diagnostic });
+    proxyPort = getProxyPort('edge', {
+      diagnostic,
+      readOnly: opts.statusOnly,
+    });
   } catch (error) {
     return makeResult({
       status: error instanceof RuntimeConfigError ? error.code : 'config_error',
@@ -776,7 +783,10 @@ async function ensureManagedBroker(opts) {
     source: 'managed',
     profileMode: 'managed',
   };
-  const proxyPort = getProxyPort('edge', { diagnostic });
+  const proxyPort = getProxyPort('edge', {
+    diagnostic,
+    readOnly: opts.statusOnly,
+  });
   const proxyUrl = `http://127.0.0.1:${proxyPort}`;
   const initialManaged = await statusManagedEdge();
   const initialHealthResponse = await httpGetJsonResponse(`${proxyUrl}/health`);
@@ -1093,12 +1103,15 @@ function printAvailableHint(detected) {
   }
 }
 
-async function resolveAndReport(override) {
+async function resolveAndReport(override, opts = {}) {
   const result = await selectBrowser(override);
 
   switch (result.kind) {
     case 'ok': {
-      const proxyPort = getProxyPort(result.browser.id, { diagnostic });
+      const proxyPort = getProxyPort(result.browser.id, {
+        diagnostic,
+        readOnly: opts.statusOnly,
+      });
       const sourceTag = result.source === 'override' ? '[--browser 指定]' : '[config.env 偏好]';
       diagnostic(`browser: ok (${result.browser.label}, CDP ${result.browser.port} -> Proxy ${proxyPort}) ${sourceTag}`);
       return { proceed: true, browser: result.browser, proxyPort };
@@ -1129,7 +1142,12 @@ async function resolveAndReport(override) {
       diagnostic(`    2. 若仍失败，在 ${expected}://inspect/#remote-debugging 勾选 "Allow remote debugging for this browser instance"`);
       printAvailableHint(result.detected);
       let proxyPort = null;
-      try { proxyPort = getProxyPort(expected, { diagnostic }); } catch {}
+      try {
+        proxyPort = getProxyPort(expected, {
+          diagnostic,
+          readOnly: opts.statusOnly,
+        });
+      } catch {}
       return {
         proceed: false,
         result: makeResult({
@@ -1153,7 +1171,7 @@ async function resolveAndReport(override) {
 }
 
 async function ensureOneBrowser(override, opts = {}) {
-  const resolved = await resolveAndReport(override);
+  const resolved = await resolveAndReport(override, opts);
   if (!resolved.proceed) return resolved.result;
   return ensureProxy(resolved.browser, resolved.proxyPort, { statusOnly: opts.statusOnly });
 }
@@ -1233,7 +1251,9 @@ async function main() {
 
   let configInfo;
   try {
-    configInfo = ensureCanonicalConfig(diagnostic);
+    configInfo = opts.statusOnly
+      ? inspectCanonicalConfig(diagnostic)
+      : ensureCanonicalConfig(diagnostic);
   } catch (error) {
     const status = error instanceof RuntimeConfigError ? error.code : 'config_error';
     diagnosticError(`config: error — ${error.message}`);
@@ -1253,7 +1273,10 @@ async function main() {
     }
     opts.browser = 'edge';
     try {
-      const proxyPort = getProxyPort('edge', { diagnostic });
+      const proxyPort = getProxyPort('edge', {
+        diagnostic,
+        readOnly: opts.statusOnly,
+      });
       results = [await ensureManagedBroker(opts)];
     } catch (error) {
       const status = error instanceof ManagedBrowserError ? error.code : 'managed_browser_error';
@@ -1267,8 +1290,14 @@ async function main() {
     }
   } else if (opts.all) {
     try {
-      const edgePort = getProxyPort('edge', { diagnostic });
-      const chromePort = getProxyPort('chrome', { diagnostic });
+      const edgePort = getProxyPort('edge', {
+        diagnostic,
+        readOnly: opts.statusOnly,
+      });
+      const chromePort = getProxyPort('chrome', {
+        diagnostic,
+        readOnly: opts.statusOnly,
+      });
       if (edgePort === chromePort) {
         throw new Error(`Edge 与 Chrome Proxy 端口不能相同（当前均为 ${edgePort}）`);
       }

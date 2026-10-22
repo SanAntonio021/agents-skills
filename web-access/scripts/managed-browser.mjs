@@ -506,6 +506,13 @@ export async function stopManagedEdge() {
     if (!(await checkPort(inspection.cdpPort))) break;
     await sleep(250);
   }
+  if (await checkPort(inspection.cdpPort)) {
+    throw new ManagedBrowserError(
+      'managed_browser_stop_failed',
+      'Managed Edge did not release its debugging port after the stop request.',
+      { pid: inspection.process.pid, cdpPort: inspection.cdpPort },
+    );
+  }
   try {
     fs.rmSync(inspection.paths.statePath, { force: true });
   } catch {}

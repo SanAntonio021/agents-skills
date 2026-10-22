@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   acquireManagedLock,
@@ -14,6 +15,7 @@ import {
   proxyCommandMatchesManaged,
 } from '../scripts/managed-browser.mjs';
 import {
+  invokedAsMain,
   managedProxyIssue,
   probeBrowserControl,
 } from '../scripts/check-deps.mjs';
@@ -126,6 +128,21 @@ test('managed instance IDs are stable and do not expose the websocket path', () 
   assert.match(first, /^[0-9a-f]{24}$/);
   assert.equal(first, managedInstanceId(endpoint));
   assert.ok(!first.includes('example-guid'));
+});
+
+test('direct invocation resolves symlinked skill roots', () => {
+  const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'web-access-invocation-'));
+  const skillRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const linkedRoot = path.join(testRoot, 'web-access-link');
+  try {
+    fs.symlinkSync(skillRoot, linkedRoot, os.platform() === 'win32' ? 'junction' : 'dir');
+    const linkedScript = path.join(linkedRoot, 'scripts', 'check-deps.mjs');
+    const moduleUrl = new URL('../scripts/check-deps.mjs', import.meta.url).href;
+    assert.equal(invokedAsMain(moduleUrl, linkedScript), true);
+    assert.equal(invokedAsMain(moduleUrl, path.join(testRoot, 'other.mjs')), false);
+  } finally {
+    fs.rmSync(testRoot, { recursive: true, force: true });
+  }
 });
 
 test('canonical config migration preserves existing keys and adds managed mode', () => {

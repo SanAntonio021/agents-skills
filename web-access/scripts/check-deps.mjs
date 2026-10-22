@@ -40,6 +40,25 @@ const MAX_JSON_RESPONSE_BYTES = 64 * 1024;
 let jsonMode = process.argv.slice(2).includes('--json');
 let jsonWritten = false;
 
+function canonicalInvocationPath(value) {
+  const resolved = path.resolve(value);
+  try {
+    return fs.realpathSync.native(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
+export function invokedAsMain(importMetaUrl, argvPath) {
+  if (!argvPath) return false;
+  const modulePath = canonicalInvocationPath(fileURLToPath(importMetaUrl));
+  const invokedPath = canonicalInvocationPath(argvPath);
+  if (os.platform() === 'win32') {
+    return modulePath.toLowerCase() === invokedPath.toLowerCase();
+  }
+  return modulePath === invokedPath;
+}
+
 function diagnostic(message = '') {
   const stream = jsonMode ? process.stderr : process.stdout;
   stream.write(`${message}\n`);
@@ -1329,8 +1348,7 @@ async function main() {
   finish(opts, results, node, 0);
 }
 
-const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
-if (invokedPath === import.meta.url) {
+if (invokedAsMain(import.meta.url, process.argv[1])) {
   try {
     await main();
   } catch (error) {

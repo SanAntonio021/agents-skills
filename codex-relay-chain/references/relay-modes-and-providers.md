@@ -346,6 +346,17 @@ con = sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)
 只有用户另行明确要求恢复 `legacy-writer + full`，才评估启动 CodexCont、8787 和旧 hook；这会改变
 当前所有权方案，不能从“恢复 CC Switch”自动推导。
 
+#### Windows CLI 的托管接管边界
+
+Windows 上，`cc-switch-cli proxy enable --app codex` 可能直接返回
+`managed sessions are only supported on unix`。这是 CLI 的托管会话能力限制，不表示
+provider、认证或网络链路异常，也不能据此推断桌面版 CC Switch 同样不支持。
+
+`proxy serve` 只能启动独立的本地代理进程。端口正在监听只证明该进程可接收请求，不证明
+CC Switch 已让 Codex 经过它；必须另行核对 CC Switch 的代理路由状态和最终
+`config.toml.base_url`。如果 `base_url` 仍是 provider 远端地址，就如实报告“代理已运行但未接管”，
+不要把两者混为完成。用户未要求改变路由时，保留原直连或停止状态，不为验证代理而强行走 15721。
+
 #### 常见卡点
 
 - **15721 起不来**：只读核对 `proxy_config`、进程和日志，再通过 CC Switch 调整；不要直接写数据库。

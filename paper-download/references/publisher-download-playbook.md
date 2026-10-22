@@ -1,6 +1,6 @@
 # 论文全文入口与出版社下载参考
 
-更新时间：2026-10-08。本文件集中维护检索渠道、后台助手操作与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
+更新时间：2026-10-22。本文件集中维护检索渠道、机构访问与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
 
 ## 全文入口发现
 
@@ -26,55 +26,39 @@
 
 找到并核验目标版本即可停止扩来源。未取得时，当前相关可用渠道已查、机构步骤有实际访问结果或明确阻塞后报告缺口；只保存其他版本时按目标要求决定是否仍待补。不使用无限改写检索式、反复请求同一错误页或固定数量打卡代替查找。宿主明确拒绝的动作遵循 `web-access` 的恢复条件，不能换工具重放；独立获准的公开检索和下载可继续。
 
-## 本机 PaperAccess 助手
+## 公开机构访问模块
 
-Windows 从已展开且非空的绝对 `LOCALAPPDATA` 定位 `PaperAccess/paper_access.py`；其他平台按本机配置发现。不要猜用户名、引用过程目录旧副本或将环境变量名称当解析路径。用本机已核实、具备 PDF 依赖的同一解释器读取 `--help`、预检并执行；中文输出启用 UTF-8，不为一次缺依赖修改公共解释器。
+Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `scripts/institutional_access/run.ps1`。模块依赖同仓库的 `web-access`，首次运行会在 `%LOCALAPPDATA%\PaperDownload\venv` 创建独立 Python 环境。只有短生命周期浏览器 task token 存入 Windows 凭据管理器；学校密码、浏览器密码库、Cookie 和认证头均不读取、不保存。
 
-```powershell
-$paperAccessRoot = $env:LOCALAPPDATA
-if ([string]::IsNullOrWhiteSpace($paperAccessRoot) -or -not [IO.Path]::IsPathRooted($paperAccessRoot)) {
-    throw 'LOCALAPPDATA is missing or is not an absolute path.'
-}
-$paperAccessScript = Join-Path $paperAccessRoot 'PaperAccess/paper_access.py'
-if (-not (Test-Path -LiteralPath $paperAccessScript -PathType Leaf)) {
-    throw 'Configured PaperAccess entry is unavailable.'
-}
-# 使用已核实的 Python 解释器读取该入口 --help。
+推荐流程：
+
+```text
+文章页 -> acquire
+    -> 已有登录：直接寻找官方 PDF
+    -> 需要登录/MFA：激活同一 tab，状态 user_login_required
+用户完成登录并回复
+    -> resume
+    -> 回读页面、尝试官方 PDF、校验 DOI/文件头/页数/哈希
+    -> 入库并回读 Zotero
+    -> complete
 ```
 
-接口和 session 创建、传递方式以当前帮助为准，不据本文拼造命令：
+命令和状态：
 
-| 命令职责 | 操作 |
+| 命令或状态 | 处理 |
 |---|---|
-| `check` / `start` | 检查配置、浏览器服务及依赖，需要时启动已配置服务并复查。 |
-| `adopt`（助手支持时） | 由本机调用进程通过 stdin 交付当前自有 active task；核实任务与 tab 归属后存入本机凭据库，不经模型、命令参数或文件传递令牌。 |
-| `status` / `snapshot` | 读取同一任务的脱敏状态与页面，不取账号密码字段值。 |
-| `login` | 在已核实的受支持机构入口及准确授权内复用或建立登录。 |
-| `navigate` / `download` | 在同一会话进入明确文章及 PDF 入口。 |
-| `resume` / `complete` | 用户验证或工具恢复后接续原任务；核验、入库及待补记录完成后安全收尾。 |
+| `acquire` | 创建或复用同一文章任务；已有合法访问时可直接得到 PDF。 |
+| `user_login_required` | 只表示页面需要用户登录；不证明账号、学校订阅或 PDF 权限。 |
+| `publisher_verification` | 需要用户完成验证码或出版社安全检查。 |
+| `institutional_access` | 页面有机构访问信号，但仍未找到可核验的官方 PDF。 |
+| `access_unavailable` | 用户恢复后仍没有出版社权限；不得绕过。 |
+| `downloaded_identity_verified` | PDF 文件头、页面、DOI 和出版社身份已通过检查。 |
+| `resume` | 用户声称完成登录后必须调用；从同一浏览器 tab 回读页面。 |
+| `complete` | 仅在 PDF 与 Zotero 收尾完成后关闭本任务自己的 tab。 |
 
-### 会话与能力
+仅当页面为 HTTPS 登录页、用户名与密码已由浏览器填好、存在唯一同源 POST 表单和唯一提交控件且没有待确认的必选项时，模块可自动提交一次。账号或机构有歧义、出现 MFA/扫码/短信或邮件验证码、提交失败或结果未知时交给用户。页面激活后由用户确认站点并完成必要步骤；用户回复“已登录”本身不构成成功证据。
 
-1. 预检须同时核实浏览器、凭据及 `pdf_reader_available` 等依赖。ready 仅为环境就绪，不能证明密码正确、已登录、文章有权限、文件版本或 Zotero 保存成功。受限用户看不到凭据不等于宿主未配置，沿宿主支持的审批入口核实同一用户上下文，不导出或改权限。
-2. 支持能力查询时分别检查出版社、登录和下载的适配范围，否则依据当前帮助及实现说明。同一学校的安全凭据执行器可供不同已适配出版社复用；只有登录支持不代表已支持下载。未适配的目标不能报告为学校无权限。
-3. active 才能操作同一任务页面；handoff 遵循当前工具的接管规则，完成后 resume。completed、expired 或归属失效不接管遗留页面；没有有效任务才按正常流程创建新任务，不能重放未知写入或规避拒绝。新 session 不等于完全登出，不为验收注销共享浏览器。
-4. 已有文章权限直接下载；需要登录时按下一节执行。逐篇核验权限、目标版本及入库，未知下载先查原动作/文件，未知导入先查父条目持久化附件，保留已完成结果。处理完或记录阻塞后收尾自有任务，保持用户页面与长期服务。
-5. 页面空白、418 或安全检查须先识别实际页面，不能当登录失败或无订阅。长期隐藏的自有页可在当前工具允许时按准确公开地址定位并激活，再核对检查是否自然结束；不同工具 tab ID 不互相猜用。实际验证按 `web-access` 区分处理：可见的普通字母/数字图形验证码由智能体看图填写、提交并回读，不要求用户听写；需要人工的身份验证、安全警告及宿主强制交接沿用接管流程。
-6. 报告环境、凭据就绪、登录、文章权限、PDF/版本和入库的实际状态，错误分类与临时重试以主技能及 `web-access` 为准。登录、SSO 和写库结果不明时先回读，不套用可重复网络请求的重试。
-
-### 机构授权边界
-
-通用凭据与接管规则使用 `web-access`，本节只说明助手必须核实的机构操作。
-
-- 复用已有浏览器登录态；没有自动填充或原生保存提示后台不可见时，检查已配置且获准确授权的安全助手，不能仅凭空白字段转人工。个人账号、机构标识及 OS 凭据目标仅存本机 `PaperAccess/config.json`，密码只在 OS 凭据库，模型不读取或转储私有配置。首次录入或更新由用户在本机安全输入窗口完成。
-- 填充前、每次填充之间和提交前核对真实 HTTPS 来源、登录路径、指定字段及有效表单目标；按钮覆盖的 formaction/formmethod/formtarget 也须同源。后台填充失败时，本机执行器可在固定、重新核验的字段和唯一控件内精确设置，不降低校验，也不向模型返回密码或属性值。
-- 已有 fillAttempted 而 submitAttempted 尚未记录时，填充错误不证明字段为空。助手先回读来源、账号精确匹配、密码非空、表单和唯一可见控件，仅全部成立才先持久化提交标记、提交一次。控件可为链接，按实际页面识别；已提交或结果未知不清标记、不重填或重复提交。
-- 登录提交后核对已认证账号的可靠页面来源及文章权限；配置账号和点击回执都不是成功证据。带身份标记的显示值只能按已观察结构精确解析，不用包含关系匹配；同一账号在多处重复显示不等于存在多个账号，来源字段仍须明确且可核实。
-- 声明页与属性发布页分别核实全文、来源、出版社路径、接收方及范围，并各用单次提交记录。必选框是唯一无效控件时才设置已授权选项，再核验整表有效；按钮滚入视口后取最新引用，提交前不再改变页面。已有准确同范围披露授权继续有效，不能泛化接受未知协议或扩大接收方。
-- 本机授权记录区分单次披露、同接收方/范围的未来复用、站点记住持续共享，保存用户明确授权来源与用途、机构/接收方标识和允许范围，不保存属性实际值、账号、密码、Cookie、令牌或会话 URL。已有不同授权不覆盖；本机保存记录不等于实际披露，保存时不要求网页仍停在同意页。逐次核对已认证账号来源与绑定、接收方、范围和授权匹配后再执行，session 更新不自动使准确未来授权失效。站点持续共享须有明确覆盖它的授权。
-- 账号或披露范围变化、MFA、扫码、短信/邮件验证码或动态口令、凭据失效或宿主强制交接时报告真实操作，按当前规则接管。提交后只读等待跳转，状态码本身不证明成功；未知事务不重放。工具固定错误码可定位阶段，真实字段值和认证参数不得进入报告。
-
-助手/隔离检查通过、技能发布生效、真实机构登录下载入库是不同证据。仅登录助手实现变更的代表性验收才需要覆盖首次登录及 SSO；本轮只改公开检索或文字归属时，不强制重登。只将实际测试过的机构/出版社路径列为已验证，不推广到全部站点。
+任务处于 handoff 时不得读取、截图或修改页面。未知写入先回读同一任务；不重复提交，不通过换工具或新 task 规避宿主拒绝。登录过期时保留文章身份，重新建立该任务的有效登录状态。
 
 ## IEEE Xplore
 
@@ -90,11 +74,11 @@ if (-not (Test-Path -LiteralPath $paperAccessScript -PathType Leaf)) {
 - `IEEE Access` 虽然是开放获取，也优先通过文章页确认官方 PDF 链接后再下载。
 - 若本机日常浏览器已经有学校登录态，优先复用该浏览器会话；MCP 单独启动的新浏览器资料目录可能没有账号、Cookie 和机构登录状态。
 - 对 IEEE，`stamp/stamp.jsp` 常是外层 HTML wrapper；真正 PDF 往往在页面里的 `iframe`、`embed` 或 `object`，例如 `stampPDF/getPDF.jsp?...`。保存时必须抓内层 PDF，并用 `%PDF-` 文件头确认。
-- 页面机构名称须与本机配置对应；机构名称与 Shibboleth/CARSI entityId 从本机配置使用，不硬编码到公开技能。
+- `Access provided by <institution>` 只作为辅助信号；最终以实际取得并通过 DOI 校验的 PDF 为准。
 - 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
-- 登录方式与需用户参与的步骤沿用上方机构授权边界。
+- 登录方式与需用户参与的步骤沿用上方公开机构访问流程。
 - 授权中断时保留当前浏览器页面和任务状态，用户完成验证后继续原下载，不要重新搜索导致下载到错误版本。
-- `download_with_authorization` 或浏览器代理返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以已登录浏览器页面的 `Access provided by <institution>` 和 PDF 入口可见性判断授权状态。
+- 浏览器代理或出版社返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以同一页面的访问状态和 PDF 入口可见性判断。
 - 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的已授权同源文件取回流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
 
 ## ScienceDirect / Elsevier
@@ -107,7 +91,7 @@ if (-not (Test-Path -LiteralPath $paperAccessScript -PathType Leaf)) {
 
 - 文章页验证码和 PDF 端点验证可能是两道不同风控。
 - 文章页出现学校名称且 `View PDF` 可点时，说明机构访问已经接通。
-- 如果页面显示与本机配置一致的机构名称及 `Full text access` 或 `View PDF`，优先走浏览器授权下载。命令行直接抓 PDF 端点可能因为缺少浏览器 Cookie 而中断或返回网页。
+- 如果页面显示用户所属机构名称及 `Full text access` 或 `View PDF`，优先走浏览器授权下载。命令行直接抓 PDF 端点可能因为缺少浏览器 Cookie 而中断或返回网页。
 - `Ctrl+S`、页面另存或命令行直接抓 `pdfft`，有时会落成 HTML 包装页而不是真 PDF。
 - 对 Elsevier，优先使用浏览器内 PDF 工具栏下载。
 - ScienceDirect 文件常命名为 `1-s2.0-...-main.pdf`；入库沿用 Zotero 附件命名，明确本地交付时再按项目约定命名。
@@ -123,15 +107,13 @@ if (-not (Test-Path -LiteralPath $paperAccessScript -PathType Leaf)) {
 
 推荐路径：
 
-`China CARSI Member Access -> 学校 -> authorized copy / view_article.cfm -> directpdfaccess`
+`出版社机构登录 -> CARSI / OpenAthens / Shibboleth -> 学校 -> authorized copy / view_article.cfm -> directpdfaccess`
 
-PaperAccess 的 Optica 适配可复用本机学校凭据执行器。按当前帮助及能力回执，从真实文章页的机构入口进入；已在自有学校登录页时，支持 `adopt` 的助手可接续原 task，无需重建浏览器会话。普通账号密码登录由本机执行器完成；可见的普通字母/数字图形验证码按 `web-access` 直接看图填写，二次身份验证及实际出现的新授权按通用机构授权流程处理。
-
-Optica 的声明或属性发布须核对实际服务接收方与信息范围，使用独立的 Optica 授权记录。IEEE 的披露授权不能自动套用；已有可访问内容直接复用当前会话，不为建立记录而强制重登。
+Optica 的机构访问同样使用浏览器登录交接。用户自行完成学校/CARSI/OpenAthens 登录和 MFA；工具复用同一浏览器 tab，不读取密码或 Cookie。可见的普通字母/数字图形验证码可按 `web-access` 处理，二次身份验证则交给用户。已有可访问内容直接复用当前会话，不为建立记录而强制重登。
 
 ### 经验
 
-- 常见路径是 `China CARSI Member Access -> Access through <configured institution> -> Continue -> directpdfaccess`。
+- 常见路径是 `Publisher institutional sign-in -> CARSI / OpenAthens -> Access through <institution> -> Continue -> directpdfaccess`。
 - 若页面写着 `Please wait... Your PDF will open shortly` 且明确出现
   `Brought to you by <institution>`，说明学校授权已经成功。
 - 授权成功后出现 `directpdfaccess` URL，是可以保存正式 PDF 的高价值信号。

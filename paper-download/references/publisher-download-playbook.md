@@ -79,7 +79,7 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 - 登录方式与需用户参与的步骤沿用上方公开机构访问流程。
 - 授权中断时保留当前浏览器页面和任务状态，用户完成验证后继续原下载，不要重新搜索导致下载到错误版本。
 - 浏览器代理或出版社返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以同一页面的访问状态和 PDF 入口可见性判断。
-- 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的已授权同源文件取回流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
+- 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的[同源服务器文件字节提取](../../web-access/references/cdp-content.md#同源服务器文件字节提取)流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
 - 机构模块前检返回 `managed_profile_busy`、`managed_cdp_port_conflict`、`managed_browser_launch_failed`、`proxy_version_mismatch`、`control_probe_failed` 或 `task_capacity_reached` 时，按 Broker 故障处理；这些状态不等同于学校登录、MFA、出版社挑战或无订阅。
 
 ## ScienceDirect / Elsevier

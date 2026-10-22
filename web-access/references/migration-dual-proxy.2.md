@@ -20,7 +20,7 @@ HTTP 状态为 `410 Gone`。不要自动降级或临时恢复旧路由；创建 
 3. 所有后续请求发送 `Authorization: Bearer <taskToken>`。
 4. `POST /v2/tabs` 创建自有 tab。不得寻找或接管用户已有 tab。
 5. 读取 snapshot，用最新 generation 的 ref 执行 action；页面变化后重新 snapshot。
-6. 目标账号明确且浏览器已保存凭据时按[登录边界](cdp-api.md#登录与用户接管)继续；需要手动密码、解锁、MFA、验证码或 SSO consent 时 handoff，用户完成后 resume 并重新 snapshot。
+6. 目标账号明确且浏览器已保存凭据时按[登录边界](cdp-lifecycle.md#登录与用户接管)继续；需要手动密码、解锁、MFA、验证码或 SSO consent 时 handoff，用户完成后 resume 并重新 snapshot。
 7. 最后 `POST /v2/tasks/{taskId}/complete`。默认关闭 task 创建的 tab；`keep:true` 才保留并释放。
 
 所有 POST/DELETE 请求都使用 JSON body，并带唯一 `Idempotency-Key`。

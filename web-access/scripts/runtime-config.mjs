@@ -194,6 +194,37 @@ export function ensureCanonicalConfig(diagnostic = null) {
   return { config, configPath, created, migrated, environment: runtimeEnvironment() };
 }
 
+export function inspectCanonicalConfig(diagnostic = null) {
+  const configPath = canonicalConfigPath();
+  let content;
+  try {
+    content = fs.readFileSync(configPath, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      diagnostic?.(`config: canonical_missing (${configPath})`);
+      return {
+        config: { ...DEFAULTS },
+        configPath,
+        created: false,
+        migrated: false,
+        exists: false,
+        environment: runtimeEnvironment(),
+      };
+    }
+    throw new RuntimeConfigError('config_unavailable', `Unable to read ${configPath}: ${error.message}`);
+  }
+  const config = validateConfig(parseEnvFile(content), configPath);
+  diagnostic?.(`config: canonical_present (${configPath})`);
+  return {
+    config,
+    configPath,
+    created: false,
+    migrated: false,
+    exists: true,
+    environment: runtimeEnvironment(),
+  };
+}
+
 export function readConfig() {
   return ensureCanonicalConfig().config;
 }
@@ -204,8 +235,17 @@ function warnOnce(message, diagnostic) {
   diagnostic?.(message);
 }
 
-export function getProxyPort(browserId, { includeLegacyCdpPort = false, diagnostic = null } = {}) {
-  const { config, environment } = ensureCanonicalConfig();
+export function getProxyPort(
+  browserId,
+  {
+    includeLegacyCdpPort = false,
+    diagnostic = null,
+    readOnly = false,
+  } = {},
+) {
+  const { config, environment } = readOnly
+    ? inspectCanonicalConfig(diagnostic)
+    : ensureCanonicalConfig(diagnostic);
   const key = `WEB_ACCESS_${browserId.toUpperCase().replaceAll('-', '_')}_PORT`;
   if (!Object.hasOwn(config, key)) {
     throw new RuntimeConfigError('config_invalid', `Browser ${browserId} has no canonical Proxy port.`);

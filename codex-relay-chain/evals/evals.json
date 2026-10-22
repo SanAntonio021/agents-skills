@@ -318,6 +318,18 @@
         "不沿用旧用户名、不从目录名推断用户名，保留 doctor 的实际 CODEX_HOME",
         "继续最少必要的远程只读取证，不在维护机运行修复或修改无关配置"
       ]
+    },
+    {
+      "id": 29,
+      "prompt": "仅根据以下 Windows 记录判断，不执行：`cc-switch-cli proxy enable --app codex` 返回 `managed sessions are only supported on unix`；另起 `proxy serve` 后 127.0.0.1:15721 健康正常，但 Codex 的 config.toml 仍指向远端 provider，CC Switch 的 Codex 本地代理路由状态为关闭。用户问新版代理是否已经接管 Codex。",
+      "expected_output": "应判定该错误只说明 Windows CLI 不支持托管会话，不能推出 provider、认证、网络或桌面版 CC Switch 故障。15721 健康只证明独立代理进程可接收请求，配置仍指向远端且路由关闭即表示没有接管。没有路由变更授权时保留现状，不直接改 config.toml 或数据库，也不为证明代理而强行走本地代理。",
+      "files": [],
+      "expectations": [
+        "识别 managed sessions 仅支持 Unix 是 CLI 能力边界",
+        "不把错误扩大到 provider、认证、网络或桌面版 CC Switch",
+        "区分端口监听与 Codex 实际路由，依据最终 base_url 判断是否接管",
+        "未获路由变更授权时保留直连或停止状态，不直接改配置或数据库"
+      ]
     }
   ]
 }

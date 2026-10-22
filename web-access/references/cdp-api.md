@@ -13,7 +13,7 @@ CDP 路径需要 Node.js 22+。Windows 首次使用默认创建独立、受管�
 ```bash
 # Windows 默认：受管 Edge，按需启动并复用同一实例
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --json
-# 只诊断，不启动或修复
+# 只诊断，不创建或迁移配置，也不启动或修复
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --status-only --json
 # 只有人工明确要求时才使用日常 Edge；失败不回退
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --json

@@ -53,7 +53,7 @@ Windows 的默认浏览器入口是受管的 Microsoft Edge：
 node "<web-access技能目录>/scripts/check-deps.mjs" --browser edge --mode managed --json
 ```
 
-`--status-only` 只诊断而不启动或修复；`--no-probe` 仅用于隔离测试。正常新对话只有在返回 `ready:true`、`controlProbe.passed:true` 后才能继续。JSON 中的 `mode`、`browserMode`、`brokerVersion`、`managedBrowser`、`instanceId` 和 `userActionRequired` 用于区分 Broker 就绪与页面权限。
+`--status-only` 只诊断，不创建或迁移 `config.env`，也不启动或修复 Broker；`--no-probe` 仅用于隔离测试。正常新对话只有在返回 `ready:true`、`controlProbe.passed:true` 后才能继续。JSON 中的 `mode`、`browserMode`、`brokerVersion`、`managedBrowser`、`instanceId` 和 `userActionRequired` 用于区分 Broker 就绪与页面权限。
 
 日常 Edge 不在受管模式中自动接管或修复。确有人工需要时显式使用 `--mode existing`；失败时停止，不自动回退到日常 Edge，也不为了换入口创建第二套端口或 Proxy。
 

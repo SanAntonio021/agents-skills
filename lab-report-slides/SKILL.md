@@ -4,7 +4,8 @@ description: >
   Generate Chinese advisor daily/weekly research PPTs from recent sessions, project records,
   experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
   生成组会 PPT, or turning recent research work into an advisor report.
-  For daily reports, inventory the period, ask once about unrecorded work, confirm the overview,
+  For daily reports, inventory the period, then show a tentative first-page overview draft in
+  the same turn as the single prompt for unrecorded work, revise and confirm the overview,
   then confirm only the items to expand, and then confirm source materials and any proposed
   cropped, redrawn or generated visuals before producing the deck;
   for group meetings, discuss and confirm each section before making the full deck.
@@ -36,7 +37,7 @@ compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, r
 
 日报取 `Asia/Shanghai` 当天，周报取截至请求日期的最近七个日历日；用户指定范围优先。
 
-日报严格按顺序推进：先只盘点本期会话和项目记录，并保存本次摘要。盘点完成后，先用一句话说明记录范围与摘要位置，再用一句话询问遗漏的口头补充：**“还有记录里没提到、但本期需要汇报的工作吗？比如帮老师做的事。”** 用户已主动补充过时不重复询问，但仍先说明记录位置。用户回答后，先读取[总览页规则](references/chinese-style.md#总览页工作缘由与实际推进)，再展示完整工作总览，供其修改、纳入或排除。此时不查图、不打开飞书素材、不索要缺失文件，也不做详细事实核验。总览确认后才展示拟展开事项清单；第二次确认前仍不查图、不开始制作。第二道确认后，只收集并核实这些事项的素材，在对话中直接显示原始图片、文档页或数据预览，接着展示拟用方式和派生内容提案，供第三道确认；不能只给文件路径。第三道确认前不生成最终图表、示意图或 PPTX。范围、项目或日期明确时尊重其边界；口头补充可作为工作来源，不要求必须有会话或文件证据。
+日报严格按顺序推进：先只盘点本期会话和项目记录，并保存本次摘要。盘点完成后，先读取[总览页规则](references/chinese-style.md#总览页工作缘由与实际推进)，再在同一轮中完成三件事：用一句话说明记录范围与摘要位置；展示清楚标注“待补充”的第一页完整草稿，按当前记录逐项写工作对象、本期具体工作和已经完成的结果；用一句话询问遗漏：**“还有记录里没提到、但本期需要汇报的工作吗？比如帮老师做的事？也可以直接对上面的第一页草稿提出增删改意见。”** 用户已主动补充过时不再重复询问遗漏，但仍展示草稿并请其对草稿增删改。此时不查图、不打开飞书素材、不索要缺失文件，也不做详细事实核验。用户答复后，只更新受影响项；若答复包含补充或修改但未明确接受，重示完整第一页草稿并请确认；答复明确接受，或明确表示无补充并继续时，视为总览确认。总览确认后才展示拟展开事项清单；第二次确认前仍不查图、不开始制作。第二道确认后，只收集并核实这些事项的素材，在对话中直接显示原始图片、文档页或数据预览，接着展示拟用方式和派生内容提案，供第三道确认；不能只给文件路径。第三道确认前不生成最终图表、示意图或 PPTX。范围、项目或日期明确时尊重其边界；口头补充可作为工作来源，不要求必须有会话或文件证据。
 
 组会按原流程执行：范围不明确时先问范围；选定后逐部分讨论和确认。
 
@@ -44,7 +45,7 @@ compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, r
 
 ## 2. 按汇报类型讨论内容
 
-- **每日汇报**：先展示完整工作总览，每项写清工作对象、本期具体工作和已经完成的结果，不能只列项目名或空状态。用户确认纳入、修改和排除项后，再展示“拟展开事项”清单。该清单只列需要展开的事项，不列总览简述项。用户确认后，按展开事项展示原始素材、拟用方式和派生内容提案，供素材确认。工作总览、拟展开事项和素材与生成方式是三道独立确认，任何“直接生成”请求都不替代任何一道确认。素材确认后不再逐页审批。
+- **每日汇报**：盘点后在同一轮展示标注“待补充”的第一页完整草稿，并只问一次遗漏；用户可同时补充遗漏和对草稿增删改。草稿每项写清工作对象、本期具体工作和已经完成的结果，不能只列项目名或空状态。更新受影响项并确认总览后，再展示“拟展开事项”清单。该清单只列需要展开的事项，不列总览简述项。用户确认后，按展开事项展示原始素材、拟用方式和派生内容提案，供素材确认。第一页总览、拟展开事项和素材与生成方式是三道独立确认，任何“直接生成”请求都不替代任何一道确认。素材确认后不再逐页审批。
 - **组会汇报（含周组会）**：先明确各部分及顺序，再逐部分讨论研究问题、主要内容、结果或判断、证据图和必要展开程度。各部分全部确认后，自行安排分页并生成整套，不再增加总览、提纲或逐页的重复审批。
 
 已经在本期对话完成的口头补充问题、总览确认、展开清单确认和素材确认持续有效；局部更正只更新受影响项，不重启整套讨论。用户明确要求逐页讨论或提前制作已确认部分时，沿用相应授权；尚未确认的日报阶段不得跳过。

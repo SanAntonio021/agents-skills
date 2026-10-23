@@ -5,7 +5,8 @@ description: >
   在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
   站点分流、fallback 健康探测、url-test 延迟优先、tolerance 防抖、定时测速仍提前重测或切换、
-  自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、
+  自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、Shadowrocket/小火箭完整配置
+  导入与配置 URL/二维码分享、
   增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链、Edge/Google 搜索位置来源与
   代理出口联合验收，Edge/Chrome 扩展修复后很快又
   显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、切网后全站证书告警、接口跃点、
@@ -25,6 +26,7 @@ description: >
 - 浏览器 DNS 泄露、普通检测站与 AI 出口不同、Fake-IP 与真实解析路径判断：[DNS 隐私验收](references/chain-configuration.md#浏览器-dns-隐私验收)。
 - 扩展提示损坏、更新失败或重启后复发：[浏览器扩展恢复](references/browser-extension-recovery.md)。
 - 门户 DNS、路由排除、PktMon 或自动登录：[本地认证门户](references/local-auth-portal.md)。
+- 将带链的 Clash YAML 交给 Shadowrocket、配置 URL、一键深链接或二维码：[Shadowrocket 配置分享](references/shadowrocket-sharing.md)。
 - url-test、延迟容差、提前测速、自然周期与持续连接：[延迟优先](references/url-test-latency-priority.md)。
 - Google 搜索位置与实际出口不符：[搜索位置](references/google-search-location.md)。
 - 来源与历史依据：[来源登记](references/upstream-sources.md)，仅维护来源时读取。

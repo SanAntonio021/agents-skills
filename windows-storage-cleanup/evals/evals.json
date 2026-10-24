@@ -214,6 +214,30 @@
         "A missing source with insufficient evidence is not reported as successful deletion.",
         "Unknown or damaged journal evidence is preserved; unrelated Recycle Bin entries remain untouched."
       ]
+    },
+    {
+      "id": 18,
+      "prompt": "候选清单我已经确认：把 C:\\Temp\\old-cache 目录按永久删除处理，本地保留副本在 D:\\Verified\\old-cache。先把准备执行的技术清单生成出来并只读检查，不要在准备阶段移入回收站或删除任何文件。",
+      "expected_output": "Create a small selection JSON from the approved path and action, generate the fully enumerated manifest with the bundled generator, then run read-only Check. Do not perform recycling or permanent deletion during generation.",
+      "files": [],
+      "expectations": [
+        "Uses New-StorageCleanupManifest.ps1 with an explicit selection rather than constructing an ad-hoc manifest script.",
+        "The selection contains only the approved source, action, approved roots and applicable retained-copy path.",
+        "The generated manifest includes directory members, empty directories, timestamps and SHA-256 values.",
+        "Check is run after generation, and no recycle, archive or purge operation occurs in the preparation step."
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "昨晚处理两万多个文件的任务中断了，进程已经退出。原清单和状态目录都在；先告诉我它停在哪个阶段、已经处理了多少，不要继续删除。",
+      "expected_output": "Run read-only Status against the original manifest and state, report the durable phase and processed counts, and do not run Resume, Verify or any destructive operation.",
+      "files": [],
+      "expectations": [
+        "Uses Invoke-StorageCleanup.ps1 -Mode Status with the original manifest and state directory.",
+        "Reports a phase such as recycling, staged, purging or attention from durable evidence rather than guessing from process absence.",
+        "Reports processed members and bytes without recalculating every content hash.",
+        "Status does not write state, alter the Recycle Bin or continue deletion."
+      ]
     }
   ]
 }

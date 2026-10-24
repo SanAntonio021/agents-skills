@@ -1,5 +1,7 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
+$script:SCProgressMemberThreshold = 1000
+$script:SCProgressIntervalSeconds = 5
 
 function Initialize-SCNative {
     if ('StorageCleanupNative' -as [type]) { return }
@@ -74,6 +76,178 @@ function Get-SCExpected($Item,[string]$Base) {
         @{path=$p;kind=$m.kind;bytes=[long](Get-SCValue $m bytes 0);lastWriteTimeUtc=$m.lastWriteTimeUtc;sha256=(Get-SCValue $m sha256)}
     }
 }
+function Add-SCRecordIndex($Context,$Record) {
+    if(-not $Context.ContainsKey('recordIndex')){$Context.recordIndex=@{}}
+    $byId=$Context.recordIndex[$Record.type]
+    if(!$byId){$byId=@{};$Context.recordIndex[$Record.type]=$byId}
+    $byId[$Record.id]=$Record
+}
+function Get-SCItemMemberCount($Item) {
+    if($Item.kind -eq 'file'){return 1}
+    @($Item.members).Count
+}
+function Assert-SCNoHardLink([string]$Path) {
+    $links=@([StorageCleanupNative]::Links($Path))
+    if($links.Count -ne 1){throw "Hard-linked file is not supported by manifest generation: $Path"}
+}
+function Initialize-SCProgress($Manifest,[string]$Mode,$Context) {
+    if($Mode -notin @('Execute','Resume')){return $null}
+    $totalMembers=0;$totalBytes=[long]0;$memberMap=@{}
+    foreach($i in $Manifest.items){
+        $totalMembers+=(Get-SCItemMemberCount $i);$totalBytes+=[long]$i.bytes
+        if($i.kind -eq 'file'){$memberMap[$i.source]=@{bytes=[long]$i.bytes;itemId=$i.id}}
+        else{
+            foreach($m in @($i.members|Where-Object kind -eq 'file')){
+                $path=Get-SCPath ([IO.Path]::Combine($i.source,$m.relativePath))
+                $memberMap[$path]=@{bytes=[long]$m.bytes;itemId=$i.id}
+            }
+        }
+    }
+    if($totalMembers -le $script:SCProgressMemberThreshold){return @{enabled=$false}}
+    $payloadRoots=@{}
+    foreach($i in $Manifest.items){
+        $staged=Get-SCRecord $Context 'staged' $i.id
+        if($staged){$payloadRoots[$i.id]=$staged.data.r}
+    }
+    $deleted=@{};foreach($record in $Context.records){if($record.type -eq 'delete_done'){$deleted[$record.id]=$record}}
+    $completed=@{};foreach($i in $Manifest.items){if(Get-SCRecord $Context 'completed' $i.id){$completed[$i.id]=$true}}
+    $partialMembers=@{};$partialBytes=@{}
+    foreach($key in $deleted.Keys){
+        $separator=$key.IndexOf('|');if($separator -lt 1){continue}
+        $itemId=$key.Substring(0,$separator);if($completed.ContainsKey($itemId)){continue}
+        if(-not $partialMembers.ContainsKey($itemId)){$partialMembers[$itemId]=0L;$partialBytes[$itemId]=[long]0}
+        $path=$key.Substring($separator+1)
+        if($payloadRoots.ContainsKey($itemId) -and $path -eq $payloadRoots[$itemId]){continue}
+        $partialMembers[$itemId]++
+        if($memberMap.ContainsKey($path)){$partialBytes[$itemId]+=[long]$memberMap[$path].bytes}
+    }
+    $membersDone=[long]0;$bytesDone=[long]0
+    foreach($i in $Manifest.items){
+        if($completed.ContainsKey($i.id)){$membersDone+=(Get-SCItemMemberCount $i);$bytesDone+=[long]$i.bytes}
+        elseif($partialMembers.ContainsKey($i.id)){$membersDone+=$partialMembers[$i.id];$bytesDone+=$partialBytes[$i.id]}
+    }
+    @{
+        enabled=$true;mode=$Mode;itemsTotal=$Manifest.items.Count;membersTotal=[long]$totalMembers;bytesTotal=$totalBytes
+        itemsCompleted=$completed.Count;membersDone=$membersDone;bytesDone=$bytesDone
+        itemIndex=0;itemId='';itemMembersTotal=0L;itemBytesTotal=0L;itemMembersDone=0L;itemBytesDone=0L
+        partialMembers=$partialMembers;partialBytes=$partialBytes;lastEmitUtc=[datetime]::MinValue
+    }
+}
+function Set-SCCurrentProgress($Progress,$Item,[int]$Index) {
+    if(-not $Progress -or -not $Progress.enabled){return}
+    $Progress.itemIndex=$Index;$Progress.itemId=$Item.id
+    $Progress.itemMembersTotal=[long](Get-SCItemMemberCount $Item);$Progress.itemBytesTotal=[long]$Item.bytes
+    $Progress.itemMembersDone=if($Progress.partialMembers.ContainsKey($Item.id)){[long]$Progress.partialMembers[$Item.id]}else{[long]0}
+    $Progress.itemBytesDone=if($Progress.partialBytes.ContainsKey($Item.id)){[long]$Progress.partialBytes[$Item.id]}else{[long]0}
+}
+function Write-SCProgress($Progress,[string]$Phase,[switch]$Force) {
+    if(-not $Progress -or -not $Progress.enabled){return}
+    $now=[datetime]::UtcNow
+    if(-not $Force -and ($now-$Progress.lastEmitUtc).TotalSeconds -lt $script:SCProgressIntervalSeconds){return}
+    $record=[ordered]@{
+        event='progress';mode=$Progress.mode;phase=$Phase
+        itemsCompleted=$Progress.itemsCompleted;itemsTotal=$Progress.itemsTotal;itemIndex=$Progress.itemIndex;itemId=$Progress.itemId
+        itemMembersDone=$Progress.itemMembersDone;itemMembersTotal=$Progress.itemMembersTotal
+        membersDone=$Progress.membersDone;membersTotal=$Progress.membersTotal
+        bytesDone=$Progress.bytesDone;bytesTotal=$Progress.bytesTotal
+    }
+    [Console]::Error.WriteLine(($record|ConvertTo-Json -Compress))
+    $Progress.lastEmitUtc=$now
+}
+function Record-SCProgressDelete($Progress,$Item,$Entry) {
+    if(-not $Progress -or -not $Progress.enabled){return}
+    $Progress.itemMembersDone++
+    $Progress.membersDone++
+    if($Entry.kind -eq 'file'){$Progress.itemBytesDone+=[long]$Entry.bytes;$Progress.bytesDone+=[long]$Entry.bytes}
+    Write-SCProgress $Progress 'purging'
+}
+function Complete-SCProgressItem($Progress,$Item) {
+    if(-not $Progress -or -not $Progress.enabled){return}
+    $missingMembers=[long]$Progress.itemMembersTotal-$Progress.itemMembersDone
+    if($missingMembers -gt 0){$Progress.itemMembersDone+=$missingMembers;$Progress.membersDone+=$missingMembers}
+    $missingBytes=[long]$Progress.itemBytesTotal-$Progress.itemBytesDone
+    if($missingBytes -gt 0){$Progress.itemBytesDone+=$missingBytes;$Progress.bytesDone+=$missingBytes}
+    $Progress.itemsCompleted++
+    Write-SCProgress $Progress 'completed'
+}
+function Test-SCStatusPath([string]$Path) {
+    try{[void][IO.File]::GetAttributes($Path);return $true}
+    catch{
+        $exception=$_.Exception
+        while($exception.InnerException){$exception=$exception.InnerException}
+        if($exception -is [IO.FileNotFoundException] -or $exception -is [IO.DirectoryNotFoundException]){return $false}
+        return $null
+    }
+}
+function Get-SCStatusResult($Manifest,$Context,$Digest) {
+    $itemIds=@{};foreach($i in $Manifest.items){$itemIds[$i.id]=$true}
+    $lastEvent=@{};$deleteDone=@{}
+    foreach($record in $Context.records){
+        if($record.type -eq 'delete_done'){$deleteDone[$record.id]=$record}
+        $rootId=[string]$record.id;$separator=$rootId.IndexOf('|');if($separator -ge 1){$rootId=$rootId.Substring(0,$separator)}
+        if($itemIds.ContainsKey($rootId)){
+            if(-not $lastEvent.ContainsKey($rootId) -or [datetime]$record.utc -gt [datetime]$lastEvent[$rootId]){$lastEvent[$rootId]=$record.utc}
+        }
+    }
+    $payloadRoots=@{}
+    foreach($i in $Manifest.items){
+        $staged=Get-SCRecord $Context 'staged' $i.id
+        if($staged){$payloadRoots[$i.id]=$staged.data.r}
+    }
+    $memberMap=@{}
+    foreach($i in $Manifest.items){
+        if($i.kind -eq 'file'){$memberMap[$i.source]=@{bytes=[long]$i.bytes;itemId=$i.id}}
+        else{foreach($m in @($i.members|Where-Object kind -eq 'file')){$path=Get-SCPath ([IO.Path]::Combine($i.source,$m.relativePath));$memberMap[$path]=@{bytes=[long]$m.bytes;itemId=$i.id}}}
+    }
+    $doneMembers=@{};$doneBytes=@{}
+    foreach($key in $deleteDone.Keys){
+        $separator=$key.IndexOf('|');if($separator -lt 1){continue}
+        $itemId=$key.Substring(0,$separator)
+        if(-not $doneMembers.ContainsKey($itemId)){$doneMembers[$itemId]=0L;$doneBytes[$itemId]=[long]0}
+        $path=$key.Substring($separator+1)
+        if($payloadRoots.ContainsKey($itemId) -and $path -eq $payloadRoots[$itemId]){continue}
+        $doneMembers[$itemId]++
+        if($memberMap.ContainsKey($path)){$doneBytes[$itemId]+=[long]$memberMap[$path].bytes}
+    }
+    $items=[Collections.Generic.List[object]]::new()
+    foreach($i in $Manifest.items){
+        $complete=Get-SCRecord $Context 'completed' $i.id
+        $staged=Get-SCRecord $Context 'staged' $i.id
+        $purge=Get-SCRecord $Context 'purge_started' $i.id
+        $intent=Get-SCRecord $Context 'recycle_intent' $i.id
+        $sourceExists=Test-SCStatusPath $i.source
+        $metadataExists=$null;$payloadExists=$null
+        if($staged){
+            $metadataExists=Test-SCStatusPath $staged.data.i;$payloadPathExists=Test-SCStatusPath $staged.data.r
+            $payloadExists=$payloadPathExists
+        }
+        $status=if($complete){
+            if($sourceExists -ne $false){'attention'}
+            elseif($i.action -eq 'recycle'){
+                if($metadataExists -eq $true -and $payloadExists -eq $true){'completed'}else{'attention'}
+            }elseif($metadataExists -eq $false -and $payloadExists -eq $false){'completed'}
+            else{'attention'}
+        }elseif($purge){
+            if($metadataExists -eq $false -and $payloadExists -eq $false){'attention'}else{'purging'}
+        }elseif($staged){
+            if($metadataExists -eq $false -or $payloadExists -eq $false){'attention'}else{'staged'}
+        }elseif($intent){
+            if($sourceExists -eq $false){'recycling'}else{'attention'}
+        }elseif($sourceExists){'not_started'}else{'attention'}
+        $membersDone=if($status -eq 'completed'){(Get-SCItemMemberCount $i)}elseif($doneMembers.ContainsKey($i.id)){$doneMembers[$i.id]}else{0L}
+        $bytesDone=if($status -eq 'completed'){[long]$i.bytes}elseif($doneBytes.ContainsKey($i.id)){$doneBytes[$i.id]}else{0L}
+        $items.Add([ordered]@{
+            id=$i.id;status=$status;sourceExists=$sourceExists;recycleMetadataExists=$metadataExists;recyclePayloadExists=$payloadExists
+            membersDone=$membersDone;membersTotal=(Get-SCItemMemberCount $i);bytesDone=$bytesDone;bytesTotal=[long]$i.bytes
+            lastEventUtc=$(if($lastEvent.ContainsKey($i.id)){$lastEvent[$i.id]}else{$null})
+        })
+    }
+    @{
+        schemaVersion=1;batchId=$Manifest.batchId;mode='Status';manifestSha256=$Digest
+        outcome='status';exitCode=$(if(@($items|Where-Object status -eq 'attention').Count){2}else{0})
+        items=$items.ToArray()
+    }
+}
 function Assert-SCContent($Item,[string]$Path,[switch]$IgnoreRootTime,[switch]$IgnoreTimes) {
     $actual=@(Get-SCEntries $Path $Item.kind);$expected=@(Get-SCExpected $Item $Path)
     if($actual.Count -ne $expected.Count){throw "Member count changed: $Path"}
@@ -104,12 +278,20 @@ function Write-SCJournal($Context,[string]$Type,[string]$Id,$Data) {
     $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($record|ConvertTo-Json -Depth 30 -Compress)+"`n")
     for($attempt=0;$attempt -lt 4;$attempt++){
         $writeStarted=$false
-        try{$s=[IO.FileStream]::new($Context.journal,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read);try{$writeStarted=$true;$s.Write($bytes);$s.Flush($true)}finally{$s.Dispose()};$Context.records.Add($record);break}
+        try{$s=[IO.FileStream]::new($Context.journal,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read);try{$writeStarted=$true;$s.Write($bytes);$s.Flush($true)}finally{$s.Dispose()};$Context.records.Add($record);Add-SCRecordIndex $Context $record;break}
         catch{if($writeStarted -or $attempt -eq 3){throw [InvalidOperationException]::new('JOURNAL_FAILURE: '+$_.Exception.Message,$_.Exception)};Start-Sleep -Milliseconds (100*($attempt+1))}
     }
     Invoke-SCCheckpoint $Type
 }
-function Get-SCRecord($Context,[string]$Type,[string]$Id){@($Context.records|Where-Object {$_.type -eq $Type -and $_.id -eq $Id}|Select-Object -Last 1)|Select-Object -First 1}
+function Get-SCRecord($Context,[string]$Type,[string]$Id){
+    if(-not $Context.ContainsKey('recordIndex')){
+        $Context.recordIndex=@{}
+        foreach($record in $Context.records){Add-SCRecordIndex $Context $record}
+    }
+    $byId=$Context.recordIndex[$Type]
+    if($byId -and $byId.ContainsKey($Id)){return $byId[$Id]}
+    return $null
+}
 function Find-SCPair($Item,$Intent) {
     $candidates=@();$bin=$Intent.bin
     if(Test-Path -LiteralPath $bin){foreach($f in Get-ChildItem -LiteralPath $bin -Force -ErrorAction Stop){if($f.Name.StartsWith('$I') -and !$Intent.baseline.Contains($f.Name)){
@@ -149,6 +331,102 @@ function Assert-SCManifest($Manifest,[string]$StateDirectory,[string]$ManifestPa
     for($a=0;$a -lt $paths.Count;$a++){for($b=$a+1;$b -lt $paths.Count;$b++){if((Test-SCWithin $paths[$a] $paths[$b]) -or (Test-SCWithin $paths[$b] $paths[$a])){throw "Overlapping managed paths: $($paths[$a]), $($paths[$b])"}}}
     foreach($i in $Manifest.items){if(Get-SCValue $i retainedCopy){$i.retainedCopy=Get-SCPath $i.retainedCopy;Assert-SCPlain $i.retainedCopy;foreach($p in $paths){if((Test-SCWithin $i.retainedCopy $p) -or (Test-SCWithin $p $i.retainedCopy)){throw 'Retained copy overlaps managed paths'}}}}
     $roots
+}
+function Assert-SCObjectFields($Object,[string[]]$Allowed,[string]$Context) {
+    foreach($key in $Object.Keys){if($Allowed -notcontains $key){throw "Unknown $Context field: $key"}}
+}
+function New-StorageCleanupManifest {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SelectionPath,
+        [Parameter(Mandatory)][string]$OutputPath
+    )
+    Initialize-SCNative
+    $SelectionPath=Get-SCPath $SelectionPath;Assert-SCPlain $SelectionPath
+    $OutputPath=Get-SCPath $OutputPath
+    $OutputPath=Assert-SCTarget $OutputPath @([IO.Path]::GetPathRoot($OutputPath).TrimEnd('\'))
+    if(Test-Path -LiteralPath $OutputPath){throw "Output manifest already exists: $OutputPath"}
+    $raw=[IO.File]::ReadAllBytes($SelectionPath)
+    $selection=[Text.UTF8Encoding]::new($false,$true).GetString($raw).TrimStart([char]0xFEFF)|ConvertFrom-Json -AsHashtable
+    Assert-SCObjectFields $selection @('schemaVersion','batchId','approvedRoots','items') 'selection'
+    if($selection.schemaVersion -ne 1 -or [string]$selection.batchId -notmatch '^[A-Za-z0-9_-]{1,80}$'){throw 'Invalid selection header'}
+    $approvedRoots=@($selection.approvedRoots)
+    if(-not $approvedRoots.Count){throw 'Selection approvedRoots must not be empty'}
+    $approvedRoots=@($approvedRoots|ForEach-Object {Get-SCPath $_})
+    $selectionItems=@($selection.items)
+    if(-not $selectionItems.Count){throw 'Selection items must not be empty'}
+    $items=[Collections.Generic.List[object]]::new()
+    $fileCount=0;$directoryCount=0;$logicalBytes=[long]0
+    for($index=0;$index -lt $selectionItems.Count;$index++){
+        $selected=$selectionItems[$index]
+        Assert-SCObjectFields $selected @('source','action','retainedCopy','archiveDestination') 'selection item'
+        if(-not (Get-SCValue $selected 'source')){throw 'Selection item source is required'}
+        $source=Assert-SCTarget (Get-SCValue $selected 'source') $approvedRoots
+        $action=[string](Get-SCValue $selected 'action')
+        if($action -notin @('recycle','recycle_then_purge','archive_then_purge')){throw "Invalid selection action: $action"}
+        $archiveDestination=Get-SCValue $selected 'archiveDestination'
+        $retainedCopy=Get-SCValue $selected 'retainedCopy'
+        if($action -eq 'archive_then_purge'){
+            if(-not $archiveDestination){throw 'archive_then_purge requires archiveDestination'}
+            if($retainedCopy){throw 'archive_then_purge cannot also specify retainedCopy'}
+        }elseif($archiveDestination){throw 'archiveDestination is only valid for archive_then_purge'}
+        if($retainedCopy){
+            $retainedCopy=Get-SCPath $retainedCopy
+            Assert-SCPlain $retainedCopy
+            if(-not (Test-Path -LiteralPath $retainedCopy)){throw "Retained copy does not exist: $retainedCopy"}
+        }
+        $sourceItem=Get-Item -LiteralPath $source -Force -ErrorAction Stop
+        $item=[ordered]@{
+            id=('item-{0:D3}' -f ($index+1));source=$source
+            kind=$(if($sourceItem.PSIsContainer){'directory'}else{'file'})
+            action=$action;bytes=[long]0;lastWriteTimeUtc=$sourceItem.LastWriteTimeUtc.ToString('o')
+        }
+        if($sourceItem.PSIsContainer){
+            $directoryCount++
+            $members=[Collections.Generic.List[object]]::new()
+            foreach($entry in @(Get-SCEntries $source 'directory')){
+                $relative=[IO.Path]::GetRelativePath($source,$entry.FullName)
+                $member=[ordered]@{
+                    relativePath=$relative;kind=$(if($entry.PSIsContainer){'directory'}else{'file'})
+                    bytes=[long]$(if($entry.PSIsContainer){0}else{$entry.Length})
+                    lastWriteTimeUtc=$entry.LastWriteTimeUtc.ToString('o')
+                }
+                if(-not $entry.PSIsContainer){
+                    Assert-SCNoHardLink $entry.FullName
+                    $member.sha256=Get-SCHash $entry.FullName;$fileCount++;$item.bytes+=[long]$entry.Length
+                }
+                $members.Add($member)
+            }
+            $item.members=$members.ToArray()
+        }else{
+            Assert-SCNoHardLink $source
+            $fileCount++;$item.bytes=[long]$sourceItem.Length;$item.sha256=Get-SCHash $source
+        }
+        $logicalBytes+=[long]$item.bytes
+        if($retainedCopy){$item.retainedCopy=$retainedCopy}
+        if($archiveDestination){$item.archiveDestination=Get-SCPath $archiveDestination}
+        $items.Add($item)
+    }
+    $manifest=[ordered]@{
+        schemaVersion=1;batchId=[string]$selection.batchId;approvedRoots=$approvedRoots;items=$items.ToArray()
+    }
+    [void](Assert-SCManifest $manifest $null $OutputPath)
+    $parent=[IO.Path]::GetDirectoryName($OutputPath)
+    if(-not (Test-Path -LiteralPath $parent -PathType Container)){[void][IO.Directory]::CreateDirectory($parent)}
+    $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($manifest|ConvertTo-Json -Depth 20 -Compress))
+    $digest=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+    $temporary=Join-Path $parent ('.'+[IO.Path]::GetFileName($OutputPath)+'.tmp-'+[guid]::NewGuid().ToString('N'))
+    try{
+        $stream=[IO.FileStream]::new($temporary,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+        try{$stream.Write($bytes);$stream.Flush($true)}finally{$stream.Dispose()}
+        if(Test-Path -LiteralPath $OutputPath){throw "Output manifest appeared during generation: $OutputPath"}
+        [IO.File]::Move($temporary,$OutputPath)
+    }finally{if(Test-Path -LiteralPath $temporary){[IO.File]::Delete($temporary)}}
+    @{
+        schemaVersion=1;batchId=$manifest.batchId;mode='Manifest';outcome='created';exitCode=0
+        manifestPath=$OutputPath;manifestSha256=$digest;approvedRoots=$approvedRoots
+        items=$manifest.items.Count;files=$fileCount;directories=$directoryCount;logicalBytes=$logicalBytes
+    }
 }
 
 function Open-SCRetained($Item) {
@@ -208,10 +486,17 @@ function Invoke-SCPurge($Context,$Item,$Pair) {
         try{
             if($e.kind -eq 'file'){$payloadLock=[IO.FileStream]::new($e.path,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete));if((Get-SCHash $e.path) -ne $e.sha256){throw 'Payload changed immediately before delete'}}
             Write-SCJournal $Context delete_intent $key @{path=$e.path}
+            if($e.kind -eq 'file'){
+                $attributes=[IO.File]::GetAttributes($e.path)
+                if(($attributes -band [IO.FileAttributes]::ReadOnly) -ne 0){
+                    [IO.File]::SetAttributes($e.path,($attributes -band (-bnot [IO.FileAttributes]::ReadOnly)))
+                }
+            }
             if($e.kind -eq 'directory'){[IO.Directory]::Delete($e.path,$false)}else{[IO.File]::Delete($e.path)}
         }finally{if($payloadLock){$payloadLock.Dispose()}}
         Invoke-SCCheckpoint 'after_delete'
         if(Test-Path -LiteralPath $e.path){throw 'Delete failed'};Write-SCJournal $Context delete_done $key @{path=$e.path}
+        if($e.path -ne $Pair.r -and $Context.ContainsKey('progress')){Record-SCProgressDelete $Context.progress $Item $e}
     }
     if(Test-Path -LiteralPath $Pair.i){Assert-SCPair $Item $Pair;Write-SCJournal $Context metadata_delete_intent $Item.id $Pair;[IO.File]::Delete($Pair.i);Invoke-SCCheckpoint 'after_metadata_delete'}
     if((Test-Path -LiteralPath $Pair.r) -or (Test-Path -LiteralPath $Pair.i)){throw 'Purge incomplete'}
@@ -219,7 +504,7 @@ function Invoke-SCPurge($Context,$Item,$Pair) {
 }
 
 function Invoke-StorageCleanup {
-    [CmdletBinding()]param([ValidateSet('Check','Execute','Resume','Verify')][string]$Mode='Check',[Parameter(Mandatory)][string]$ManifestPath,[string]$StateDirectory)
+    [CmdletBinding()]param([ValidateSet('Check','Execute','Resume','Status','Verify')][string]$Mode='Check',[Parameter(Mandatory)][string]$ManifestPath,[string]$StateDirectory)
     $ErrorActionPreference='Stop'
     if(!$IsWindows){throw 'Windows is required'};Initialize-SCNative
     $ManifestPath=Get-SCPath $ManifestPath;Assert-SCPlain $ManifestPath
@@ -237,11 +522,19 @@ function Invoke-StorageCleanup {
             if(Test-Path -LiteralPath $StateDirectory){if(@(Get-ChildItem -LiteralPath $StateDirectory -Force).Count){throw 'Execute requires a new or empty state directory; use Resume'}}else{[void][IO.Directory]::CreateDirectory($StateDirectory)}
         }
         if($mutating){$lock=[IO.FileStream]::new((Join-Path $StateDirectory 'batch.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}
-        if($Mode -in @('Resume','Verify')){
-            $b=[IO.File]::ReadAllBytes($ctx.journal);if(!$b.Length -or $b[-1] -ne 10){throw 'Incomplete journal tail preserved; manual reconciliation required'}
-            foreach($line in [Text.UTF8Encoding]::new($false,$true).GetString($b).Split("`n",[StringSplitOptions]::RemoveEmptyEntries)){$ctx.records.Add(($line|ConvertFrom-Json -AsHashtable))}
-            $start=Get-SCRecord $ctx batch ''
-            if(!$start -or $start.data.manifestSha256 -ne $digest -or $start.data.batchId -ne $manifest.batchId){throw 'Manifest does not match immutable batch binding'}
+        if($Mode -in @('Resume','Status','Verify')){
+            if(Test-Path -LiteralPath $ctx.journal){
+                $b=[IO.File]::ReadAllBytes($ctx.journal);if(!$b.Length -or $b[-1] -ne 10){throw 'Incomplete journal tail preserved; manual reconciliation required'}
+                foreach($line in [Text.UTF8Encoding]::new($false,$true).GetString($b).Split("`n",[StringSplitOptions]::RemoveEmptyEntries)){
+                    $record=$line|ConvertFrom-Json -AsHashtable
+                    $ctx.records.Add($record);Add-SCRecordIndex $ctx $record
+                }
+                $start=Get-SCRecord $ctx batch ''
+                if(!$start -or $start.data.manifestSha256 -ne $digest -or $start.data.batchId -ne $manifest.batchId){throw 'Manifest does not match immutable batch binding'}
+            }elseif($Mode -ne 'Status'){throw 'State journal is required'}
+        }
+        if($Mode -eq 'Status'){
+            return Get-SCStatusResult $manifest $ctx $digest
         }
         $spaceRoots=@($roots)+@($manifest.items|Where-Object action -eq archive_then_purge|ForEach-Object {$_.archiveDestination})
         $before=Get-SCSpace $spaceRoots
@@ -249,7 +542,10 @@ function Invoke-StorageCleanup {
         $results=[Collections.Generic.List[object]]::new();$physical=@{};[long]$logical=0;[long]$estimate=0
         $allFiles=@{};foreach($i in $manifest.items){foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}
         foreach($i in $manifest.items){$known=Get-SCRecord $ctx staged $i.id;if($known){foreach($e in @(Get-SCExpected $i $known.data.r)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}}
+        $ctx.progress=Initialize-SCProgress $manifest $Mode $ctx
+        $itemIndex=0
         foreach($i in $manifest.items){
+            $itemIndex++
             Write-Verbose "$Mode item $($i.id)"
             $held=$null;$sourceLocks=[Collections.Generic.List[IDisposable]]::new()
             try{
@@ -261,6 +557,8 @@ function Invoke-StorageCleanup {
                     if($i.action -eq 'archive_then_purge'){Assert-SCContent $i $i.archiveDestination -IgnoreTimes}
                     $held=Open-SCRetained $i;$results.Add(@{id=$i.id;status='completed';bytes=$i.bytes;action=$i.action});continue
                 }
+                Set-SCCurrentProgress $ctx.progress $i $itemIndex
+                Write-SCProgress $ctx.progress 'starting'
                 if($Mode -eq 'Verify'){throw 'Item has not completed; use Resume after inspection'}
                 if(!$staged -and !(Test-Path -LiteralPath $i.source)){
                     if(!$intent){throw 'Source absent without a recycle intent'};$pair=Find-SCPair $i $intent.data;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
@@ -294,6 +592,7 @@ function Invoke-StorageCleanup {
                 if(!$held){$copy=$i.Clone();if($i.action -eq 'archive_then_purge'){$copy.retainedCopy=$i.archiveDestination};$held=Open-SCRetained $copy}
                 if($i.action -eq 'recycle'){Assert-SCPair $i $staged.data;Assert-SCContent $i $staged.data.r -IgnoreRootTime;Write-SCJournal $ctx completed $i.id @{action=$i.action;pair=$staged.data}}
                 else{Invoke-SCPurge $ctx $i $staged.data}
+                Complete-SCProgressItem $ctx.progress $i
                 $results.Add(@{id=$i.id;status='completed';bytes=$i.bytes;action=$i.action})
             }catch{
                 if($_.Exception.Message -like '*JOURNAL_FAILURE*'){throw}
@@ -314,4 +613,4 @@ function Invoke-StorageCleanup {
         @{schemaVersion=1;batchId=$manifest.batchId;mode=$Mode;manifestSha256=$digest;outcome=$(if($partial){'partial'}elseif($Mode -eq 'Check'){'checked'}elseif($Mode -eq 'Verify'){'verified'}else{'complete'});exitCode=$(if($partial){2}else{0});items=$results.ToArray();logicalBytes=$logical;estimatedReclaimBytes=$estimate;freeSpaceBefore=$before;freeSpaceAfter=$after;batchFreeSpaceBefore=$batchBefore;freeSpaceDelta=$delta;unrelatedRecycleChanges=$baselineChecks.ToArray()}
     }finally{if($lock){$lock.Dispose()};$manifestHandle.Dispose()}
 }
-Export-ModuleMember -Function Invoke-StorageCleanup
+Export-ModuleMember -Function Invoke-StorageCleanup,New-StorageCleanupManifest

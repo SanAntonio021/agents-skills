@@ -13,15 +13,47 @@ pwsh -NoProfile -File <skill>/scripts/Invoke-StorageCleanup.ps1 `
 # 用户已批准清单后执行；状态位置由智能体按本机环境明确选择。
 pwsh -NoProfile -File <skill>/scripts/Invoke-StorageCleanup.ps1 `
   -Mode Execute -ManifestPath <absolute-manifest.json> -StateDirectory <absolute-local-state>
+
+# 中断后只读查看阶段；不重新计算内容哈希。
+pwsh -NoProfile -File <skill>/scripts/Invoke-StorageCleanup.ps1 `
+  -Mode Status -ManifestPath <absolute-manifest.json> -StateDirectory <absolute-local-state>
 ```
 
-`Check` 为默认模式，只读。`Resume` 对账后继续，`Verify` 只读核验，二者使用原清单及原状态目录。
+`Check` 为默认模式，只读。`Resume` 对账后继续，`Verify` 只读核验，二者使用原清单及原状态目录。`Status` 只读显示 `not_started`、`recycling`、`staged`、`purging`、`completed` 或 `attention`，不替代 `Check`/`Verify`。`recycleMetadataExists` 对应 `$I` 文件，`recyclePayloadExists` 对应 `$R` 载荷；受限进程无法读取时对应字段返回 `null`。阶段按持久 journal 与已知路径状态报告，不会把访问未知误报为“不存在”；回收完成仍要求元数据与载荷证据一致。
 标准输出为 JSON，错误为结构化标准错误；退出码 0 表示本次模式检查或处理成功，2 表示有保留/待处理项，1 表示整批受阻。
 不要仅根据退出码声称永久删除成功，须读取每项状态和对应处理方式。
+`Execute`/`Resume` 的清单超过 1,000 个成员时，每 5 秒向 stderr 输出一条聚合 JSON 进度；不包含文件路径，stdout 仍为单个最终 JSON。
 
 状态目录须位于明确确认不参与同步的本地普通目录；与清单源、保留副本和归档位置隔离。
 不要使用网盘目录、待删目录或在两个位置之间自动切换状态。清单路径不应落在任何待处理子树内。
 工具对已知同步位置作防护，但不能发现所有第三方同步软件；位置确认仍是调用者职责。
+
+<a id="manifest-generation"></a>
+## 清单生成
+
+用户批准准确候选后，先写一个小型 selection JSON，再生成含哈希的 manifest：
+
+```powershell
+pwsh -NoProfile -File <skill>/scripts/New-StorageCleanupManifest.ps1 `
+  -SelectionPath <absolute-selection.json> -OutputPath <absolute-manifest.json>
+```
+
+```json
+{
+  "schemaVersion": 1,
+  "batchId": "example-batch",
+  "approvedRoots": ["C:\\ExampleSource"],
+  "items": [
+    {"source": "C:\\ExampleSource\\old-export.bin", "action": "recycle_then_purge"},
+    {"source": "C:\\ExampleSource\\cache", "action": "archive_then_purge",
+     "archiveDestination": "D:\\ExampleArchive\\cache"},
+    {"source": "C:\\ExampleSource\\covered.bin", "action": "recycle",
+     "retainedCopy": "D:\\VerifiedCopy\\covered.bin"}
+  ]
+}
+```
+
+生成器只生成清单，不执行 Check、回收、归档或删除。它生成稳定 ID、完整成员、空目录、大小、UTC 时间和 SHA-256；拒绝未知字段、通配符、范围外或系统路径、重解析点和硬链接、父子重叠目标和已存在的输出文件。`archive_then_purge` 必须且只能提供 `archiveDestination`；它不能同时声明 `retainedCopy`。
 
 ## 清单 v1
 
@@ -75,6 +107,7 @@ SHA-256 绑定的是清单原始字节，重排 JSON 或改空白也会改变批
 归档冲突不覆盖；仅属于本批且核验一致的中间产物允许继续。日志持久化失败停止后续破坏动作；日志损坏或证据不足保留现场并报告，不手工补写“已完成”。
 
 `Resume` 不重新扫描扩大范围，不重写清单，不重跑整批临时脚本。变化、占用、权限不足或未知重解析点只保留相关项；无法可靠记账或清单不匹配则整批停止。
+永久删除时，工具仅对本批已经重新核验的回收站载荷清除 ReadOnly 属性；源文件、普通执行前文件和被进程锁定的文件不受影响。锁定、权限或内容变化仍保留现场。
 永久删除前必须准确识别当前卷、SID 下本批产生的回收记录与负载，歧义不能按“最近一条”猜测。
 部分永久删除必须对账，不能清空全站作为补救。其他用户或任务的回收站变化与本批变化分开报告。
 
@@ -87,5 +120,6 @@ SHA-256 绑定的是清单原始字节，重排 JSON 或改空白也会改变批
 
 使用 `tests/Test-StorageCleanup.ps1` 创建的隔离样本运行测试；不调用真实业务清单做验收。
 运行 `pwsh -NoProfile -File <skill>/tests/Test-StorageCleanup.ps1`；跨卷测试另传 `-CrossVolumeRoot <existing-local-directory-on-another-drive>`。
+大日志性能基准另传 `-LargeBenchmark`；它使用 100,000 条模拟记录和 20,000 次查找，不写入状态或回收站。
 测试自行在给定根下创建随机命名的样本子目录，不将根目录作为清理目标；保留样本和准确回收记录供核验，不清空系统回收站。
 保持已有 WizTree 汇总和应用官方清理能力；本工具首版不替代系统维护、卸载、数据库整理或云端备份核验。

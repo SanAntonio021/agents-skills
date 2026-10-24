@@ -1,7 +1,7 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [ValidateSet('Check', 'Execute', 'Resume', 'Verify')]
+    [ValidateSet('Check', 'Execute', 'Resume', 'Status', 'Verify')]
     [string]$Mode = 'Check',
     [Parameter(Mandatory)]
     [string]$ManifestPath,

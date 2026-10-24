@@ -2,22 +2,22 @@
   "accepted_distributions": [
     {
       "role": "stable",
-      "fork_commit": "025c50fdf1ccd4d3e5057b36d024b4b33c932fdc",
-      "release_tag": "v6.7.0-ccswitch.1",
+      "fork_commit": "28450e6e465a93709d7b09635d4397ade351d713",
+      "release_tag": "v6.7.2-ccswitch.1",
       "codeload": {
-        "members": 1264,
-        "sha256": "bb0e728156c358e00b27c5ba4b5c6fbd903afd902f2f106d1357c9da1708d35f",
-        "size": 52599309
+        "members": 1266,
+        "sha256": "eb0963ae3ed6a303ee1fd459abc2894ec7429c67b3294e7c7d4f55c4ff0cf6a5",
+        "size": 52622737
       },
       "distribution_manifest": {
-        "sha256": "4f0e80cb3c7afe3296386d193b789f05107f02e690c88bbe948334a65d58cb16",
-        "bytes": 44980184,
-        "files": 1000
+        "sha256": "77e6a4c40840556759c61ab3fe4f8cfbb0a72eb585b4b303def2a94bfe87847c",
+        "bytes": 45053150,
+        "files": 1002
       },
       "upstream": {
-        "commit": "b4efe3ddf237a97a42880164759162f8e2412f2f",
+        "commit": "b113d23720260c411ee47b2b05a73615f954deeb",
         "repository": "https://github.com/hugohe3/ppt-master",
-        "version": "6.7.0"
+        "version": "6.7.2"
       }
     }
   ],

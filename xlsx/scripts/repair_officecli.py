@@ -23,13 +23,13 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 
-OFFICECLI_VERSION = "1.0.157"
+OFFICECLI_VERSION = "1.0.158"
 ASSET_NAME = "officecli-win-x64.exe"
-EXPECTED_ASSET_SHA256 = "BD64EBA587E56CC71709CDD1F38AE9AC77CD65A9C8EA744B0996897C0557E343"
-EXPECTED_SUMS_SHA256 = "5DBCEF6DF6AECA56C34B91B410F0E0A04290824A343A99DAF32E3C2A6B3081D5"
-ASSET_URL = "https://github.com/iOfficeAI/OfficeCLI/releases/download/v1.0.157/officecli-win-x64.exe"
-SUMS_URL = "https://github.com/iOfficeAI/OfficeCLI/releases/download/v1.0.157/SHA256SUMS"
-DEFAULT_TARGET = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.157\officecli.exe")
+EXPECTED_ASSET_SHA256 = "117545F3BC817D7C6D2E78A62E4F73F75B918CCD61558E404C60949A8CB9FD1F"
+EXPECTED_SUMS_SHA256 = "AF75864096CFFD2330AA886BA5D3BF0AE4FCCC11692F59B19E980C5A7C46B311"
+ASSET_URL = "https://github.com/iOfficeAI/OfficeCLI/releases/download/v1.0.158/officecli-win-x64.exe"
+SUMS_URL = "https://github.com/iOfficeAI/OfficeCLI/releases/download/v1.0.158/SHA256SUMS"
+DEFAULT_TARGET = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.158\officecli.exe")
 LOCK_NAME = ".officecli_repair.lock"
 LOCK_TIMEOUT_SECONDS = 5.0
 

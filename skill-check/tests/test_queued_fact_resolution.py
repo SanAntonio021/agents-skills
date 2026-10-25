@@ -133,6 +133,22 @@ def test_new_evidence_reopens_review_but_old_close_cannot_apply(tmp_path):
     assert path.read_bytes() == before
 
 
+def test_waiting_evidence_fact_only_finding_can_close(tmp_path):
+    path, state, finding, _ = setup_finding(tmp_path, "queued")
+    finding["status"] = "waiting_evidence"
+    REVIEW.save_state(path, state)
+    payload, code = REVIEW.record_decision_command(
+        command(path, finding, "--facts-outcome", "close")
+    )
+    assert code == 0 and payload["next_status"] == "closed"
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    current = saved["findings"][finding["id"]]
+    assert current["status"] == "closed"
+    assert current["decision"]["value"] == "closed_after_facts"
+    assert current["facts"][-1]["answer_summary"].startswith("Semantic review completed")
+    assert finding["id"] not in saved["queue"]
+
+
 def setup_trigger_hint(tmp_path):
     path, state, finding, item = setup_finding(tmp_path, "deferred")
     finding.update(kind="suspected_missed_use", source="usage")

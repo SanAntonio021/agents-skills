@@ -2786,7 +2786,7 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 }, 0
 
             resolve_queued_facts = (
-                status in {"deferred", "queued"}
+                status in {"deferred", "queued", "waiting_evidence"}
                 and args.facts_outcome in {"close", "wait"}
             )
             # A scan-generated trigger hint is not an approved change proposal.

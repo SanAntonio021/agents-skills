@@ -4,7 +4,7 @@
 官方技能目录作为行为参考：[飞书官方技能目录](https://open.feishu.cn/.well-known/skills/index.json)。
 运行时继续依赖用户安装的 `lark-cli`、`lark-shared` 和 `web-access`；不重新分发其程序或认证信息。
 
-2026-10-01 开发环境 CLI 为 1.0.97，浏览器 Proxy 为 protocol v2。当前页面内部命令签名 `54e7e6de` 是指定命令函数源码的
+2026-10-01 开发环境 CLI 为 1.0.97，浏览器 Proxy 为 protocol v2。当前页面内部命令签名 `15acf339`（2026-10-26 加入 Align/Order 后）是指定命令函数源码的
 FNV-1a 兼容性指纹，不是安全校验或飞书官方版本号。只读 inspect 可显示实际签名，写入只接受已验证签名。
 网页更新导致不一致时重新检查并在隔离画板验证，不能为通过检查直接把当前值加入允许列表。
 
@@ -47,7 +47,7 @@ CLI 对批次外端点返回 2890002（attached object id not found），所以�
 
 2026-10-01 隔离画板验证了原生单标签的改写、多行、清空后重新添加及沿线比例移位。
 已有标签通过 `selectNodeText`、`processInput` 与 `blur` 进入原生文字输入，不先删除连线、不创建覆盖文字。
-该三接口原兼容性指纹为 `7e805832`，当前同时接受隔离验证后的 `d309a450`；首版主命令指纹为 `49cce4b3`，当前加入 Theme/Duplicate 后为 `54e7e6de`。
+该三接口原兼容性指纹为 `7e805832`，当前同时接受隔离验证后的 `d309a450`；首版主命令指纹为 `49cce4b3`，加入 Theme/Duplicate 后为 `54e7e6de`，2026-10-26 加入 Align/Order 后为 `15acf339`。
 位置操作克隆 `captionsProps`（类型 10）并在原生 UpdateNode 事务中更新首个标签的 `t`；当前同时支持定位类型 0/1/2（线上/上方/下方）。
 服务端将清空标签规范为删除 captions、caption_position 和 caption_position_type；再次新增使用默认格式和位置。
 投影保留标签文字数组、位置及定位类型，位置用独立数值容差；raw 比较只放行目标操作字段，检查节点 ID、端点、格式及其他对象。

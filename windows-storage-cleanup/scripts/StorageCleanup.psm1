@@ -507,8 +507,20 @@ function New-StorageCleanupDuplicateScan {
     }
     $objects=@($files|Group-Object identity|ForEach-Object{
         $members=@($_.Group|Sort-Object path)
-        [pscustomobject]@{identity=$_.Name;paths=@($members.path);bytes=[long]$members[0].bytes;modified=$members[0].modified;hash=$null;readable=$true}
+        $allLinks=@($members[0].links|Sort-Object -Unique)
+        $outside=[Collections.Generic.List[string]]::new()
+        foreach($alias in $allLinks){
+            $within=$false
+            foreach($scanRoot in $normalized){if(Test-SCWithin $alias $scanRoot){$within=$true;break}}
+            if(-not $within){$outside.Add($alias)}
+        }
+        $reason=if($outside.Count){'Hard-link alias outside scanned roots' }else{$null}
+        [pscustomobject]@{identity=$_.Name;paths=@($members.path);allLinks=$allLinks;outsideLinks=$outside;bytes=[long]$members[0].bytes;modified=$members[0].modified;hash=$null;readable=$true;skipReason=$reason}
     })
+    foreach($object in @($objects|Where-Object {$_.skipReason})){
+        $skipped.Add([ordered]@{path=($object.paths -join '; ');outcome='skipped';reason=$object.skipReason;bytes=$object.bytes;hardLinkAliases=@($object.outsideLinks)})
+        $object.readable=$false
+    }
     $sizeGroups=@($objects|Group-Object bytes|Where-Object Count -gt 1)
     $hashCache=@{}
     foreach($group in $sizeGroups){

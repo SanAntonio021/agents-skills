@@ -39,7 +39,7 @@ pwsh -NoProfile -File <skill>/scripts/Find-StorageCleanupDuplicates.ps1 `
   [-PreferredRoots <formal-dir>] -OutputPath <absolute-scan.json>
 ```
 
-扫描只读取元数据和可能重复的候选内容，不删除、不移动。根目录、系统目录、重叠根、重解析点与批外扩展不自动加入；默认忽略空文件，可用 `-MinBytes` 调整大小门槛。先按文件大小分组，只对同大小候选计算 SHA-256；同一物理文件对象的多个硬链接只算一个对象，不算可释放副本。
+扫描只读取元数据和可能重复的候选内容，不删除、不移动。根目录、系统目录、重叠根、重解析点与批外扩展不自动加入；默认忽略空文件，可用 `-MinBytes` 调整大小门槛。先按文件大小分组，只对同大小候选计算 SHA-256；同一物理文件对象的多个硬链接只算一个对象，不算可释放副本。若该对象的任一硬链接别名落在本次扫描目录之外，就把整个对象列为 skipped 并从可释放量中排除，避免把共享数据误报成独立副本。
 
 输出按 `reclaimBytes` 从大到小给出每组 `keepPath`、`keepReason`、`deleteItems`、`sha256`、物理大小、跳过原因及精确 `totalReclaimBytes`。保留优先级为正式目录／正式文件名、较新修改时间、较浅路径和更完整文件名。正式位置可在扫描时用 `-PreferredRoots` 指明。路径清单是冻结报告，确认前可重新扫描，不应手工猜改。
 

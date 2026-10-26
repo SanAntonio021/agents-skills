@@ -202,6 +202,14 @@ Test 'Duplicate scan treats hardlink aliases as one physical object' {
     $r=New-StorageCleanupDuplicateScan -Roots @($root)
     Assert (@($r.duplicates).Count -eq 1 -and $r.totalReclaimBytes -eq 204) 'Independent duplicate beside aliases was not counted once.'
 }
+Test 'Duplicate scan excludes objects with hardlink aliases outside scanned roots' {
+    $root=Join-Path $sandbox 'duplicates-outside-links';$a=Join-Path $root 'a';$b=Join-Path $root 'b';$outside=Join-Path $root 'outside';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null;[IO.Directory]::CreateDirectory($outside)|Out-Null
+    $linked=Join-Path $a 'linked.bin';$peer=Join-Path $b 'peer.bin';WriteSample $linked ('O'*400);WriteSample $peer ('O'*400);$null=New-Item -ItemType HardLink -Path (Join-Path $outside 'alias.bin') -Target $linked
+    $r=New-StorageCleanupDuplicateScan -Roots @($a,$b)
+    Assert (@($r.duplicates).Count -eq 0 -and $r.totalReclaimBytes -eq 0) 'A hardlink alias outside the scanned roots was counted as reclaimable duplicate data.'
+    Assert (@($r.skipped|Where-Object {$_.reason -match 'outside scanned roots'}).Count -eq 1) 'Outside hardlink alias was not reported as skipped.'
+    Assert ((Test-Path -LiteralPath $linked) -and (Test-Path -LiteralPath $peer) -and (Test-Path -LiteralPath (Join-Path $outside 'alias.bin'))) 'Duplicate scan changed an outside hardlink.'
+}
 Test 'Duplicate scan reports unreadable and locked candidates without mutation' {
     $root=Join-Path $sandbox 'duplicates-busy';$a=Join-Path $root 'a';$b=Join-Path $root 'b';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null
     $locked=Join-Path $a 'locked.bin';$peer=Join-Path $b 'peer.bin';WriteSample $locked ('Z'*500);WriteSample $peer ('Z'*500)

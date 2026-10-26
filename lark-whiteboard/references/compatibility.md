@@ -129,3 +129,10 @@ Docx/Wiki路由实测：新建文档返回Docx URL，网页自动进入同源Wik
 - 同一隔离图还观察到：短标签在两模块间的默认中间位置可能贴近模块边框，遮挡判断必须看实际预览，不能只按对象存在判定完成。
 - `native_nodes.py` 已统一支持旧 `shapes`/`connectors` 与新的图内容清单 `nodes`/`connections`。端口与语义分组保留在清单中；实际原生分组仍使用已有后台编辑操作，不能作为 RAW 节点导入。
 - 从 `lark-doc` 入口发起系统框图时，画板技能的默认创建链路改为 CLI RAW，不依赖浏览器登录。浏览器编辑器仅用于已有图的局部结构修改，如改字、改接、组合、层级和精确样式。
+
+2026-10-26 浏览器编辑器真实兼容复核（隔离文档 O745d5SqYoAPHaxRq2jceRHnnDf，画板 I02nwlqcqhtoZnbhTWpc45MHn6e）：
+
+- 原生形状编码从实际页面读取：椭圆 2、平行四边形 5、圆角矩形 8、菱形 10、矩形 11。编辑器形状映射必须同时覆盖这五类；只映射矩形与圆角矩形会让椭圆、菱形、平行四边形被读成 unsupported，从而在初始加载阶段与服务端 RAW 不收敛并拒绝写入。该缺陷已修复并加入编辑器形状测试。
+- 原生保存七接口（io.sendAction、io.sendPendingActions、orderChannel.getBaseSeq、addLocalAction、flushLocalActions、保存插件 hasUncommitData、updateSaveState）的连接指纹由 b8586b42 变为 8a287314。逐函数读取后语义未变：getBaseSeq 仍返回 docState.appliedVersion；hasUncommitData 仍判断 saveState 是否为 saving；updateSaveState 仍由 socket 与 HTTP 两个保存状态合成；flushLocalActions 仍消费 localActions。已在隔离画板完成真实写入验证后才更新固定指纹，不动态接受未知值。
+- 真实局部编辑验收通过：修改已有模块文字、改写已有连线标签后，连线 ID 与两端绑定 o1:6 到 o1:7 保持不变；save_status 为 confirmed，verification_status 为 passed。
+- 预览发现改长后的标签被右侧菱形遮挡并裁切；改用线上方放置后文字完整可见。数据层绑定正确不能代替视觉遮挡验收。

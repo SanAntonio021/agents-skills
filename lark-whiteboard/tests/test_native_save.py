@@ -13,7 +13,7 @@ import test_local_edits
 
 
 def saved(version=8, **changes):
-    value = dict(available=True, signature='b8586b42', initialized=True, applied_version=version,
+    value = dict(available=True, signature='8a287314', initialized=True, applied_version=version,
                  pending=0, ordered_pending=0, processing=False, offline=False,
                  save_state='saved', http_pending=0)
     value.update(changes)
@@ -21,7 +21,7 @@ def saved(version=8, **changes):
 
 
 def fence(ack=True):
-    return dict(signature='b8586b42', before_applied_version=8, requires_ack=ack)
+    return dict(signature='8a287314', before_applied_version=8, requires_ack=ack)
 
 
 class NativeSave(unittest.TestCase):
@@ -208,3 +208,4 @@ class NativeSave(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

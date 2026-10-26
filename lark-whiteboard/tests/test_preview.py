@@ -246,7 +246,7 @@ class Preview(unittest.TestCase):
             self.assertFalse((runner.output/'preview.png').exists())
 
     def native_saved_state(self, state):
-        state.update(seq=0,savedSeq=0,native_save=dict(available=True,signature='b8586b42',
+        state.update(seq=0,savedSeq=0,native_save=dict(available=True,signature='8a287314',
                      initialized=True,applied_version=10,pending=0,ordered_pending=0,
                      processing=False,offline=False,save_state='saved',http_pending=0))
 
@@ -370,3 +370,4 @@ class Preview(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

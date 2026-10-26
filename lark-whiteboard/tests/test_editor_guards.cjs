@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 // Explicitly bypass only the production build pin in this synthetic fixture.
 const source=production.replace("if (!['54e7e6de'].includes(signature))",'if (false)')
-  .replace("if(saveSignature!=='b8586b42')",'if(false)');
+  .replace("if(saveSignature!=='8a287314')",'if(false)');
 let contentCalls=0,selected=[];
 const shape=(id,locked=false)=>({id,type:13,page:{info:{locked,baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}});
 const a=shape('a'),b=shape('b',true),group={id:'g',children:[a,b],page:{info:{baseV2:{x:0,y:0,width:200,height:60}}}};
@@ -103,7 +103,7 @@ for(const op of [{kind:'reconnect',id:guardLine.id,end_id:guardLeft.id},
                 {kind:'reconnect',id:guardLine.id,start_id:guardRight.id},
                 {kind:'reconnect',id:guardLine.id,start_id:guardLeft.id,end_id:guardLeft.id}]){
   // Native shape projection retains the type used by the append validator.
-for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+for (const [nativeType, name] of [[2,'ellipse'],[5,'parallelogram'],[8,'round_rect'],[10,'diamond'],[11,'rect']]) {
   app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
     page:{info:{baseV2:{x:0,y:0,width:20,height:20},
       compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
@@ -125,7 +125,7 @@ for(const n of [outside,spare,foreignLine,foreignGroup])app.nodeManager.nodeMap.
 for(const op of [{kind:'delete',ids:[outside.id],delete_ids:[outside.id,foreignLine.id]},
                 {kind:'delete',ids:[foreignLine.id],delete_ids:[foreignLine.id]}]){
   // Native shape projection retains the type used by the append validator.
-for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+for (const [nativeType, name] of [[2,'ellipse'],[5,'parallelogram'],[8,'round_rect'],[10,'diamond'],[11,'rect']]) {
   app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
     page:{info:{baseV2:{x:0,y:0,width:20,height:20},
       compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
@@ -163,7 +163,7 @@ for(const ids of [[guardLeft.id,groupThird.id,guardLine.id],
                  [guardRight.id,groupThird.id,guardLine.id],
                  [groupThird.id,guardLine.id],[groupThird.id,groupHalfStart.id],[groupThird.id,groupHalfEnd.id]]){
   // Native shape projection retains the type used by the append validator.
-for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+for (const [nativeType, name] of [[2,'ellipse'],[5,'parallelogram'],[8,'round_rect'],[10,'diamond'],[11,'rect']]) {
   app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
     page:{info:{baseV2:{x:0,y:0,width:20,height:20},
       compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
@@ -231,7 +231,7 @@ for(const invalid of [undefined,()=>null,()=>({minX:150,minY:30,maxX:150,maxY:13
                      ()=>({minX:150,minY:30,maxX:190,maxY:20})]){
   arrangeB.getBounds=invalid;
   // Native shape projection retains the type used by the append validator.
-for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+for (const [nativeType, name] of [[2,'ellipse'],[5,'parallelogram'],[8,'round_rect'],[10,'diamond'],[11,'rect']]) {
   app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
     page:{info:{baseV2:{x:0,y:0,width:20,height:20},
       compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
@@ -252,3 +252,4 @@ assert.equal(aligned.arrangement_bounds.a.y,30);assert.equal(aligned.arrangement
 assert.equal(aligned.arrangement_bounds.c.y,30);
 assert.equal(arrangeB.page.info.baseV2.angle,90);
 console.log('PASS: missing arrangement bounds reject before content; native selection order is reported unchanged');
+

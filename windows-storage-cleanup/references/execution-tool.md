@@ -28,6 +28,34 @@ pwsh -NoProfile -File <skill>/scripts/Invoke-StorageCleanup.ps1 `
 不要使用网盘目录、待删目录或在两个位置之间自动切换状态。清单路径不应落在任何待处理子树内。
 工具对已知同步位置作防护，但不能发现所有第三方同步软件；位置确认仍是调用者职责。
 
+<a id="duplicate-scan"></a>
+## 重复扫描
+
+用户当次明确给出一个或多个绝对目录后，可跨目录查找内容完全一致的独立副本：
+
+```powershell
+pwsh -NoProfile -File <skill>/scripts/Find-StorageCleanupDuplicates.ps1 `
+  -Roots <absolute-dir-1>,<absolute-dir-2> `
+  [-PreferredRoots <formal-dir>] -OutputPath <absolute-scan.json>
+```
+
+扫描只读取元数据和可能重复的候选内容，不删除、不移动。根目录、系统目录、重叠根、重解析点与批外扩展不自动加入；默认忽略空文件，可用 `-MinBytes` 调整大小门槛。先按文件大小分组，只对同大小候选计算 SHA-256；同一物理文件对象的多个硬链接只算一个对象，不算可释放副本。
+
+输出按 `reclaimBytes` 从大到小给出每组 `keepPath`、`keepReason`、`deleteItems`、`sha256`、物理大小、跳过原因及精确 `totalReclaimBytes`。保留优先级为正式目录／正式文件名、较新修改时间、较浅路径和更完整文件名。正式位置可在扫描时用 `-PreferredRoots` 指明。路径清单是冻结报告，确认前可重新扫描，不应手工猜改。
+
+<a id="duplicate-selection"></a>
+## 重复项转换
+
+用户看过报告并批准全部推荐组或指定组后，从冻结报告生成 selection：
+
+```powershell
+pwsh -NoProfile -File <skill>/scripts/New-StorageCleanupDuplicateSelection.ps1 `
+  -ScanPath <absolute-scan.json> -OutputPath <absolute-selection.json> `
+  [-GroupIds duplicate-001,duplicate-002]
+```
+
+不传 `GroupIds` 表示选择报告中的全部推荐组。生成器为每个待删副本填写 `action: "recycle_then_purge"` 和已验证的 `retainedCopy`；随后仍须经过 [清单生成器](#manifest-generation) 冻结哈希、时间、成员和根目录，并走 `Check → Execute → Resume → Verify`。扫描与 selection 都只准备证据，不能替代用户批准或执行核验。
+
 <a id="manifest-generation"></a>
 ## 清单生成
 
@@ -53,7 +81,7 @@ pwsh -NoProfile -File <skill>/scripts/New-StorageCleanupManifest.ps1 `
 }
 ```
 
-生成器只生成清单，不执行 Check、回收、归档或删除。它生成稳定 ID、完整成员、空目录、大小、UTC 时间和 SHA-256；拒绝未知字段、通配符、范围外或系统路径、重解析点和硬链接、父子重叠目标和已存在的输出文件。`archive_then_purge` 必须且只能提供 `archiveDestination`；它不能同时声明 `retainedCopy`。
+生成器只生成清单，不执行 Check、回收、归档或删除。它生成稳定 ID、完整成员、空目录、大小、UTC 时间和 SHA-256；拒绝未知字段、通配符、范围外或系统路径、重解析点、父子重叠目标和已存在的输出文件。硬链接只有在同一物理对象的全部别名都明确列在同批时才允许生成；发现批外别名就拒绝整批，不静默扩大删除范围。`archive_then_purge` 必须且只能提供 `archiveDestination`；它不能同时声明 `retainedCopy`。
 
 ## 清单 v1
 
@@ -97,7 +125,7 @@ UTF-8 JSON，`schemaVersion: 1`，稳定 `batchId`，`approvedRoots` 为获准�
 ```
 
 清单不得包含通配符、替代数据流、重复或父子重叠目标。目录盘点和哈希计算时不跟随链接、不下载占位文件。
-使用完整盘符路径；首版保守拒绝短文件名别名、网络路径、系统维护目录和安装目录。硬链接的全部别名须在本批明确成员中，否则保留该项。
+使用完整盘符路径；首版保守拒绝短文件名别名、网络路径、系统维护目录和安装目录。硬链接的全部别名须在本批明确成员中，否则拒绝生成或保留该项。
 只读 `Check` 通过不表示批准：将准确范围、方式、恢复限制和物理释放估计展示给用户；批准后冻结清单原始字节。
 SHA-256 绑定的是清单原始字节，重排 JSON 或改空白也会改变批次；不得为了通过续作而修改旧状态哈希。
 
@@ -111,8 +139,8 @@ SHA-256 绑定的是清单原始字节，重排 JSON 或改空白也会改变批
 永久删除前必须准确识别当前卷、SID 下本批产生的回收记录与负载，歧义不能按“最近一条”猜测。
 部分永久删除必须对账，不能清空全站作为补救。其他用户或任务的回收站变化与本批变化分开报告。
 
-硬链接按实际文件对象去重；只删除其中部分别名通常不释放数据空间。
-报告分别展示处理逻辑字节、预计可释放字节及每盘实测变化；后台活动会改变实测值。
+硬链接按实际文件对象去重；只删除其中部分别名通常不释放数据空间。同一批内全部别名明确列出时，主项完成后，随主项消失的别名项可记为 `status: "completed"`，并附 `completionMode: "alias"` 与按主项顺序排列的 `coveredBy` 数组。部分覆盖、覆盖主项失败或动作不同、别名原路径重新出现时仍为 `needs-attention`。该扩展只用于新执行；旧 journal 保持原字节、不补写也不迁移。
+报告分别展示处理逻辑字节、预计可释放字节及每盘实际变化；后台活动会改变实测值。
 预计释放量按源文件对象计算，不包含归档目的盘新增占用；跨盘净变化须同时查看源盘和目的盘。断点续作时，逻辑处理量只反映本次重新检查的源，最终完成范围以逐项结果为准。
 首次使用新机器或回收站格式不支持时，先在隔离样本确认，不能拿用户资料试探。
 

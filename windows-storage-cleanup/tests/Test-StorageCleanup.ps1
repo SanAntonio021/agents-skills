@@ -63,16 +63,16 @@ function Selected([string]$Source, [string]$Action='recycle_then_purge', [string
 function Run($F,[string]$Mode) { $r=Invoke-StorageCleanup -Mode $Mode -ManifestPath $F.manifest -StateDirectory $F.state;if($r.exitCode -ne 0){throw ($r|ConvertTo-Json -Depth 12 -Compress)};return $r }
 function Status($F) { Invoke-StorageCleanup -Mode Status -ManifestPath $F.manifest -StateDirectory $F.state }
 function Attempt($F,[string]$Mode='Execute'){ try { $null=Run $F $Mode } catch { } }
-function Fault([string]$At,[string]$Message='TEST_INTERRUPTION') {
+function Fault([string]$At,[string]$Message='TEST_INTERRUPTION',[string]$RecordId='') {
     $module=Get-Module StorageCleanup
-    & $module {param($At,$Message) $script:testFaultAt=$At;$script:testFaultMessage=$Message
-        function script:Invoke-SCCheckpoint([string]$Name){if($Name -eq $script:testFaultAt){throw $script:testFaultMessage}}
-    } $At $Message
+    & $module {param($At,$Message,$RecordId) $script:testFaultAt=$At;$script:testFaultMessage=$Message;$script:testFaultRecordId=$RecordId
+        function script:Invoke-SCCheckpoint([string]$Name,$Data){if($Name -eq $script:testFaultAt -and (-not $script:testFaultRecordId -or [string]$Data.id -eq $script:testFaultRecordId)){throw $script:testFaultMessage}}
+    } $At $Message $RecordId
 }
-function ResetFault { & (Get-Module StorageCleanup) {if(Get-Variable testJournalLock -Scope Script -ErrorAction SilentlyContinue){if($script:testJournalLock){$script:testJournalLock.Dispose();$script:testJournalLock=$null}};function script:Invoke-SCCheckpoint([string]$Name){}} }
+function ResetFault { & (Get-Module StorageCleanup) {if(Get-Variable testJournalLock -Scope Script -ErrorAction SilentlyContinue){if($script:testJournalLock){$script:testJournalLock.Dispose();$script:testJournalLock=$null}};function script:Invoke-SCCheckpoint([string]$Name,$Data){}} }
 function LockJournalAfterStage($F) {
     & (Get-Module StorageCleanup) {param($Path) $script:testJournalPath=$Path
-        function script:Invoke-SCCheckpoint([string]$Name){if($Name -eq 'staged'){$script:testJournalLock=[IO.File]::Open($script:testJournalPath,'Open','Read','Read')}}
+        function script:Invoke-SCCheckpoint([string]$Name,$Data){if($Name -eq 'staged'){$script:testJournalLock=[IO.File]::Open($script:testJournalPath,'Open','Read','Read')}}
     } (Join-Path $F.state 'journal.jsonl')
 }
 function Records($F){@(Get-Content -LiteralPath (Join-Path $F.state 'journal.jsonl')|ForEach-Object{$_|ConvertFrom-Json})}
@@ -136,9 +136,9 @@ Test 'Manifest generator rejects unsafe or ambiguous selections' {
     $junction=Join-Path $f.source 'junction';$junctionTarget=Join-Path $f.kept 'junction-target';WriteSample (Join-Path $junctionTarget 'item.txt');$null=New-Item -ItemType Junction -Path $junction -Target $junctionTarget
     $cases.Add(@{items=@((Selected $junction));roots=@($f.source);label='junction'})
     $hardSource=Join-Path $f.source 'hard-source.txt';$hardAlias=Join-Path $f.kept 'hard-alias.txt';WriteSample $hardSource 'hard-link sample';$null=New-Item -ItemType HardLink -Path $hardAlias -Target $hardSource
-    $cases.Add(@{items=@((Selected $hardSource 'recycle'));roots=@($f.source,$f.kept);label='hardlink'})
+    $cases.Add(@{items=@((Selected $hardSource 'recycle'));roots=@($f.source,$f.kept);label='hardlink outside list'})
     $hardDirectory=Join-Path $f.source 'hard-directory';$hardMember=Join-Path $hardDirectory 'member.txt';$hardDirectoryAlias=Join-Path $f.kept 'directory-member-alias.txt';WriteSample $hardMember 'directory hard-link sample';$null=New-Item -ItemType HardLink -Path $hardDirectoryAlias -Target $hardMember
-    $cases.Add(@{items=@((Selected $hardDirectory 'recycle'));roots=@($f.source,$f.kept);label='directory hardlink'})
+    $cases.Add(@{items=@((Selected $hardDirectory 'recycle'));roots=@($f.source,$f.kept);label='directory hardlink outside list'})
     $cases.Add(@{items=@((Selected $env:windir 'recycle'));roots=@($env:windir);label='system path'})
     foreach($case in $cases){
         $selection=SaveSelection $f $case.items $case.roots
@@ -166,6 +166,159 @@ Test 'Manifest generator rejects unsafe or ambiguous selections' {
     $null=New-StorageCleanupManifest -SelectionPath $safeSelection -OutputPath $output
     $rejected=$false;try{$null=New-StorageCleanupManifest -SelectionPath $safeSelection -OutputPath $output}catch{$rejected=$true}
     Assert $rejected 'Generator overwrote an existing manifest.'
+
+    $complete=Fixture 'manifest-hardlink-complete';$a=Join-Path $complete.source 'a.txt';$b=Join-Path $complete.kept 'b.txt';WriteSample $a 'all aliases listed';$null=New-Item -ItemType HardLink -Path $b -Target $a
+    $completeSelection=SaveSelection $complete @((Selected $a 'recycle_then_purge'),(Selected $b 'recycle_then_purge'))
+    $completeOutput=Join-Path $complete.control 'complete.json'
+    $completeResult=New-StorageCleanupManifest -SelectionPath $completeSelection -OutputPath $completeOutput
+    $completeManifest=Get-Content -LiteralPath $completeOutput -Raw|ConvertFrom-Json
+    Assert ($completeResult.exitCode -eq 0 -and @($completeManifest.items).Count -eq 2) 'Generator rejected a fully listed hardlink set.'
+    $partialSelection=SaveSelection $complete @((Selected $a 'recycle_then_purge'))
+    $rejected=$false;try{$null=New-StorageCleanupManifest -SelectionPath $partialSelection -OutputPath (Join-Path $complete.control 'partial.json')}catch{$rejected=$true}
+    Assert $rejected 'Generator allowed a hardlink set with an external alias.'
+}
+
+Test 'Duplicate scan finds exact independent copies across roots' {
+    $root=Join-Path $sandbox 'duplicates-basic';$a=Join-Path $root 'formal';$b=Join-Path $root 'other';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null
+    WriteSample (Join-Path $a '同一份资料.txt') ('重复内容'+('x'*4000));WriteSample (Join-Path $b '同一份资料-copy.txt') ('重复内容'+('x'*4000))
+    WriteSample (Join-Path $a 'large.bin') ('L'*100);WriteSample (Join-Path $b 'large.bin') ('L'*100)
+    WriteSample (Join-Path $a 'same-size-a.bin') ('A'*200);WriteSample (Join-Path $b 'same-size-b.bin') ('B'*200)
+    WriteSample (Join-Path $a 'empty-a') '';WriteSample (Join-Path $b 'empty-b') ''
+    $r=New-StorageCleanupDuplicateScan -Roots @($a,$b) -PreferredRoots @($a)
+    Assert ($r.duplicates.Count -eq 2) "Unexpected duplicate group count: $($r.duplicates.Count)"
+    Assert ($r.duplicates[0].reclaimBytes -ge $r.duplicates[1].reclaimBytes) 'Duplicate groups are not sorted by reclaim size.'
+    $unicode=@($r.duplicates|Where-Object {$_.bytes -gt 4000})[0]
+    Assert ($unicode.keepPath -eq (Join-Path $a '同一份资料.txt')) 'Preferred formal path was not retained.'
+    Assert ($unicode.keepReason -match '正式') 'Retain reason is missing.'
+    Assert ($r.totalReclaimBytes -eq 4112) 'Total reclaim bytes are incorrect.'
+}
+Test 'Duplicate scan treats hardlink aliases as one physical object' {
+    $root=Join-Path $sandbox 'duplicates-links';$a=Join-Path $root 'a';$b=Join-Path $root 'b';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null
+    $p=Join-Path $a 'source.bin';$alias=Join-Path $b 'alias.bin';WriteSample $p ('hard'+('x'*200));$null=New-Item -ItemType HardLink -Path $alias -Target $p
+    $r=New-StorageCleanupDuplicateScan -Roots @($root)
+    Assert ($r.fileCount -eq 2 -and $r.physicalObjectCount -eq 1) 'Physical object count included a hardlink alias.'
+    Assert (@($r.duplicates).Count -eq 0 -and $r.totalReclaimBytes -eq 0) 'Hardlink alias was counted as reclaimable duplicate data.'
+    WriteSample (Join-Path $b 'real-copy.bin') ('hard'+('x'*200))
+    $r=New-StorageCleanupDuplicateScan -Roots @($root)
+    Assert (@($r.duplicates).Count -eq 1 -and $r.totalReclaimBytes -eq 204) 'Independent duplicate beside aliases was not counted once.'
+}
+Test 'Duplicate scan reports unreadable and locked candidates without mutation' {
+    $root=Join-Path $sandbox 'duplicates-busy';$a=Join-Path $root 'a';$b=Join-Path $root 'b';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null
+    $locked=Join-Path $a 'locked.bin';$peer=Join-Path $b 'peer.bin';WriteSample $locked ('Z'*500);WriteSample $peer ('Z'*500)
+    $lock=[IO.File]::Open($locked,'Open','ReadWrite','None')
+    try{$r=New-StorageCleanupDuplicateScan -Roots @($a,$b)}finally{$lock.Dispose()}
+    Assert ((Test-Path -LiteralPath $locked) -and (Test-Path -LiteralPath $peer)) 'Duplicate scan mutated locked sources.'
+    Assert ($r.skipped.Count -ge 1) 'Duplicate scan did not report a locked candidate.'
+}
+Test 'Duplicate scan honors minimum size and writes a frozen report' {
+    $root=Join-Path $sandbox 'duplicates-output';$a=Join-Path $root 'a';[IO.Directory]::CreateDirectory($a)|Out-Null
+    WriteSample (Join-Path $a 'tiny1.txt') 'x';WriteSample (Join-Path $a 'tiny2.txt') 'x'
+    WriteSample (Join-Path $a 'large1.bin') ('Q'*2000);WriteSample (Join-Path $a 'large2.bin') ('Q'*2000)
+    $output=Join-Path $root 'scan.json'
+    $r=New-StorageCleanupDuplicateScan -Roots @($a) -MinBytes 1024 -OutputPath $output
+    $saved=Get-Content -LiteralPath $output -Raw|ConvertFrom-Json
+    Assert ($saved.duplicates.Count -eq 1) 'Minimum size was not applied to the frozen report.'
+    Assert ($saved.totalReclaimBytes -eq 2000) 'Frozen report total differs from scan result.'
+    Assert ([IO.File]::ReadAllText($output) -match '"outputPath"') 'Frozen report was computed before its output metadata was added.'
+    $rejected=$false;try{$null=New-StorageCleanupDuplicateScan -Roots @($a) -MinBytes 1024 -OutputPath $output}catch{$rejected=$true}
+    Assert $rejected 'Duplicate report overwrote an existing file.'
+    $inside=Join-Path $a 'scan-inside-root.json'
+    $rejected=$false;try{$null=New-StorageCleanupDuplicateScan -Roots @($a) -MinBytes 1024 -OutputPath $inside}catch{$rejected=$true}
+    Assert ($rejected -and -not(Test-Path -LiteralPath $inside)) 'Duplicate report wrote inside a scanned root.'
+}
+
+Test 'Duplicate scan can produce a selection with retained copies' {
+    $root=Join-Path $sandbox 'duplicates-selection';$a=Join-Path $root 'formal';$b=Join-Path $root 'copy';[IO.Directory]::CreateDirectory($a)|Out-Null;[IO.Directory]::CreateDirectory($b)|Out-Null
+    WriteSample (Join-Path $a 'report.bin') ('S'*300);WriteSample (Join-Path $b 'report-copy.bin') ('S'*300)
+    $scan=Join-Path $root 'scan.json';$null=New-StorageCleanupDuplicateScan -Roots @($a,$b) -PreferredRoots @($a) -OutputPath $scan
+    $selection=Join-Path $root 'selection.json'
+    $r=New-StorageCleanupDuplicateSelection -ScanPath $scan -OutputPath $selection
+    $json=Get-Content -LiteralPath $selection -Raw|ConvertFrom-Json
+    Assert ($r.exitCode -eq 0 -and @($json.items).Count -eq 1) 'Duplicate selection did not contain exactly one delete item.'
+    Assert ($json.items[0].retainedCopy -eq (Join-Path $a 'report.bin')) 'Duplicate selection omitted the validated retained copy.'
+    Assert ($json.items[0].action -eq 'recycle_then_purge') 'Duplicate selection used an unexpected action.'
+}
+Test 'Duplicate scan rejects drive roots and overlapping roots' {
+    Assert ([IO.Path]::GetPathRoot($sandbox).Length -eq 3) 'Fixture root changed.'
+    $driveRoot=[IO.Path]::GetPathRoot($sandbox)
+    $rejected=$false;try{$null=New-StorageCleanupDuplicateScan -Roots @($driveRoot)}catch{$rejected=$true}
+    Assert $rejected 'Duplicate scanner accepted a drive root.'
+    $parent=Join-Path $sandbox 'overlap';$child=Join-Path $parent 'child';[IO.Directory]::CreateDirectory($child)|Out-Null
+    $rejected=$false;try{$null=New-StorageCleanupDuplicateScan -Roots @($parent,$child)}catch{$rejected=$true}
+    Assert $rejected 'Duplicate scanner accepted overlapping roots.'
+}
+Test 'Hardlink aliases require every path in the manifest batch' {
+    $f=Fixture 'hardlink-alias-complete';$p=Join-Path $f.source 'a.bin';$q=Join-Path $f.kept 'b.bin';WriteSample $p 'alias payload';$null=New-Item -ItemType HardLink -Path $q -Target $p
+    SaveManifest $f @((Item $p),(Item $q))
+    $null=Run $f Execute
+    $s=Status $f
+    Assert ($s.items.Count -eq 2) 'Alias batch lost an item.'
+    Assert (@($s.items|Where-Object {$_.status -eq 'completed'}).Count -eq 2) 'All listed hardlink aliases did not complete.'
+    Assert (@($s.items|Where-Object {$_.completionMode -eq 'alias'}).Count -eq 0) 'An existing alias path was incorrectly marked covered by another item.'
+    $verify=Run $f Verify
+    Assert ($verify.exitCode -eq 0) 'Verify rejected direct completion of all listed links.'
+    Assert (-not(Test-Path -LiteralPath $p) -and -not(Test-Path -LiteralPath $q)) 'Listed aliases remain.'
+}
+Test 'Alias completion is recorded only after the second path disappears' {
+    $f=Fixture 'alias-covered';$p=Join-Path $f.source 'a.bin';$q=Join-Path $f.kept 'b.bin';WriteSample $p 'alias covered payload';$null=New-Item -ItemType HardLink -Path $q -Target $p
+    SaveManifest $f @((Item $p),(Item $q))
+    $manifest=Get-Content -LiteralPath $f.manifest -Raw|ConvertFrom-Json
+    $firstId=[string]$manifest.items[0].id;$secondId=[string]$manifest.items[1].id
+    $module=Get-Module StorageCleanup
+    $synthetic=& $module {
+        param($ManifestPath,$StateDirectory,$CoverId,$AliasId,[bool]$SourceExists)
+        $manifest=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($ManifestPath))|ConvertFrom-Json -AsHashtable
+        $alias=@($manifest.items|Where-Object id -eq $AliasId)[0]
+        $alias.source=Join-Path ([string]$StateDirectory) 'alias-that-was-removed.bin'
+        $context=@{records=[Collections.Generic.List[object]]::new();recordIndex=@{};journal=$null}
+        $batch=@{type='batch';id='';data=@{manifestSha256='synthetic';batchId='synthetic'}}
+        $plan=@{type='alias_plan_map';id='';data=@{plans=@(@{id=$AliasId;action='recycle_then_purge';coveredBy=@($CoverId)})}}
+        $done=@{type='completed';id=$CoverId;data=@{action='recycle_then_purge';completionMode='direct'};utc=[datetime]::UtcNow.ToString('o')}
+        foreach($record in @($batch,$plan,$done)){$context.records.Add($record);Add-SCRecordIndex $context $record}
+        $script:originalStatusPath=(Get-Command Test-SCStatusPath).ScriptBlock
+        Set-Item Function:\Test-SCStatusPath -Value {param([string]$Path) return $false}
+        try{(Get-SCStatusResult @{batchId='synthetic';items=@($alias)} $context 'synthetic').items[0]}
+        finally{Set-Item Function:\Test-SCStatusPath -Value $script:originalStatusPath;Remove-Variable originalStatusPath -Scope Script}
+    } $f.manifest $f.state $firstId $secondId $false
+    if(-not ($synthetic.status -eq 'completed' -and $synthetic.completionMode -eq 'alias')){throw ('Synthetic alias result: '+($synthetic|ConvertTo-Json -Depth 8 -Compress))}
+    Assert (@($synthetic.coveredBy).Count -eq 1 -and @($synthetic.coveredBy)[0] -eq $firstId) 'Alias coverage field is incorrect.'
+}
+Test 'Alias completion is not granted after partial or mismatched evidence' {
+    foreach($case in 'partial','failed','mixed'){
+        $f=Fixture ('alias-'+$case);$p=Join-Path $f.source 'a.bin';$q=Join-Path $f.kept 'b.bin';WriteSample $p ('alias-'+$case);$null=New-Item -ItemType HardLink -Path $q -Target $p
+        $actionB=if($case -eq 'mixed'){'recycle'}else{'recycle_then_purge'}
+        SaveManifest $f @((Item $p 'recycle_then_purge'),(Item $q $actionB))
+        if($case -eq 'partial'){Fault 'after_recycle' 'TEST_REPLAY'}
+        elseif($case -eq 'failed'){Fault 'batch' 'TEST_REPLAY'}
+        try{Attempt $f}catch{}
+        ResetFault
+        if($case -eq 'partial'){
+            $status=Status $f
+            Assert ($status.items[0].status -ne 'completed' -or $status.items[1].status -ne 'completed') 'Alias completed after partial evidence.'
+        }else{
+            $status=Status $f
+            $aliasItem=@($status.items|Where-Object {$_.completionMode -eq 'alias'}).Count
+            Assert ($aliasItem -eq 0) 'Alias completion was granted for failed or mixed actions.'
+        }
+    }
+}
+
+Test 'Hardlink scope expansion after freeze is rejected' {
+    $f=Fixture 'alias-scope-freeze';$p=Join-Path $f.source 'a.bin';WriteSample $p 'frozen scope';SaveManifest $f @((Item $p))
+    try{Fault 'batch' 'TEST_SCOPE';Attempt $f}finally{ResetFault}
+    $q=Join-Path $f.kept 'late-alias.bin';$null=New-Item -ItemType HardLink -Path $q -Target $p
+    $blocked=$false;try{$r=Run $f Resume}catch{$blocked=$true}
+    Assert ($blocked -or $r.exitCode -ne 0) 'Resume accepted a hardlink alias added after the frozen plan.'
+    Assert ((Test-Path -LiteralPath $p) -and (Test-Path -LiteralPath $q)) 'Scope-expanded hardlink was changed.'
+}
+Test 'Old journal bytes remain unchanged across status and verify' {
+    $f=Fixture 'journal-readonly';$p=Join-Path $f.source 'a';WriteSample $p 'immutable old journal';SaveManifest $f @((Item $p 'recycle'))
+    $null=Run $f Execute
+    $journal=Join-Path $f.state 'journal.jsonl';$before=(Get-FileHash -LiteralPath $journal).Hash
+    $null=Status $f
+    $null=Run $f Verify
+    $after=(Get-FileHash -LiteralPath $journal).Hash
+    Assert ($before -eq $after) 'Status or Verify rewrote an old journal.'
 }
 Test 'Recycle sentinel remains recoverable' {
     $f=Fixture 'sentinel';$p=Join-Path $f.source 'sentinel.txt';WriteSample $p 'unrelated sentinel';SaveManifest $f @((Item $p 'recycle'))

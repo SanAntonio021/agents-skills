@@ -86,14 +86,97 @@ function Get-SCItemMemberCount($Item) {
     if($Item.kind -eq 'file'){return 1}
     @($Item.members).Count
 }
-function Assert-SCNoHardLink([string]$Path) {
-    $links=@([StorageCleanupNative]::Links($Path))
-    if($links.Count -ne 1){throw "Hard-linked file is not supported by manifest generation: $Path"}
+function Get-SCHardLinkPaths([string]$Path) {
+    @([StorageCleanupNative]::Links($Path) | ForEach-Object { Get-SCPath $_ })
+}
+function Get-SCHardLinkedPathSet($AllFiles) {
+    $hard=@{}
+    foreach($path in @($AllFiles.Keys)){
+        if(-not (Test-Path -LiteralPath $path)){continue}
+        $links=@(Get-SCHardLinkPaths $path)
+        if($links.Count -gt 1){foreach($alias in $links){$hard[$alias]=$true}}
+    }
+    $hard
+}
+function Assert-SCHardLinkScope($AllFiles) {
+    $hard=Get-SCHardLinkedPathSet $AllFiles
+    foreach($path in @($hard.Keys)){if(-not $AllFiles.ContainsKey($path)){throw "Hard-link alias is outside the explicit batch members: $path"}}
+}
+function Get-SCItemFileIdentities($Item,$Context=$null) {
+    $identities=[Collections.Generic.List[string]]::new();$seen=@{}
+    $basePath=$Item.source
+    if($Context){$staged=Get-SCRecord $Context 'staged' $Item.id;if($staged){$basePath=$staged.data.r}}
+    foreach($entry in @(Get-SCExpected $Item $basePath | Where-Object kind -eq file)){
+        $identity=[StorageCleanupNative]::Identity($entry.path)
+        if($seen.ContainsKey($identity)){continue}
+        $seen[$identity]=$true;$identities.Add($identity)
+    }
+    $identities.ToArray()
+}
+function Assert-SCAliasOriginalScope($Context,$CurrentFiles) {
+    $record=Get-SCRecord $Context 'alias_plan_map' ''
+    $originals=@()
+    if($record){$originals=@(Get-SCValue $record.data 'originalFiles' @())}
+    else{
+        $batch=Get-SCRecord $Context 'batch' ''
+        if($batch -and $batch.data.Contains('aliasPlan')){$originals=@(Get-SCValue $batch.data.aliasPlan 'originalFiles' @())}
+    }
+    if(-not $originals.Count){return}
+    $originalSet=@{};foreach($entry in $originals){$originalSet[[string]$entry.path]=$true}
+    $currentHard=Get-SCHardLinkedPathSet $CurrentFiles
+    foreach($path in @($currentHard.Keys)){if(-not $originalSet.ContainsKey($path)){throw "Hard-link member was added outside the frozen batch: $path"}}
+}
+function Get-SCAliasPlanMap($Manifest,$AllFiles,$Context=$null) {
+    Assert-SCHardLinkScope $AllFiles
+    if($Context){Assert-SCAliasOriginalScope $Context $AllFiles}
+    $actions=@{};$order=@{};foreach($i in $Manifest.items){$actions[$i.id]=$i.action;$order[$i.id]=$order.Count}
+    $firstOwner=@{};$plans=[Collections.Generic.List[object]]::new()
+    foreach($i in $Manifest.items){
+        if($i.action -notin @('recycle','recycle_then_purge') -or (Get-SCValue $i retainedCopy) -or (Get-SCValue $i archiveDestination)){continue}
+        try{$identities=@(Get-SCItemFileIdentities $i $Context)}catch{continue}
+        if(-not $identities.Count){continue}
+        $covered=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        $fullyCovered=$true
+        foreach($identity in $identities){
+            if(-not $firstOwner.ContainsKey($identity)){$firstOwner[$identity]=$i.id;$fullyCovered=$false}
+            else{[void]$covered.Add([string]$firstOwner[$identity])}
+        }
+        if(-not $fullyCovered -or -not $covered.Count){continue}
+        $coveredBy=@($covered | Sort-Object { $order[[string]$_] })
+        $sameAction=$true
+        foreach($coverId in $coveredBy){if($actions[[string]$coverId] -ne $i.action){$sameAction=$false;break}}
+        if($sameAction){$plans.Add([ordered]@{id=$i.id;action=$i.action;coveredBy=$coveredBy})}
+    }
+    $plans.ToArray()
+}
+function Get-SCAliasPlanEntry($Context,[string]$ItemId) {
+    $record=Get-SCRecord $Context 'alias_plan_map' ''
+    if($record){
+        foreach($plan in @($record.data.plans)){if([string]$plan.id -eq $ItemId){return $plan}}
+        return $null
+    }
+    $batch=Get-SCRecord $Context 'batch' ''
+    if($batch -and $batch.data.Contains('aliasPlan')){
+        foreach($plan in @($batch.data.aliasPlan.plans)){if([string]$plan.id -eq $ItemId){return $plan}}
+    }
+    return $null
+}
+function Test-SCAliasCoverage($Context,$Item,$Plan) {
+    if(-not $Plan -or [string]$Plan.action -ne [string]$Item.action){return $false}
+    $coveredBy=@($Plan.coveredBy)
+    if(-not $coveredBy.Count){return $false}
+    if((Get-SCRecord $Context 'recycle_intent' $Item.id) -or (Get-SCRecord $Context 'staged' $Item.id) -or (Get-SCRecord $Context 'purge_started' $Item.id)){return $false}
+    foreach($coverId in $coveredBy){
+        $cover=Get-SCRecord $Context 'completed' ([string]$coverId)
+        if(-not $cover -or [string](Get-SCValue $cover.data 'completionMode' 'direct') -eq 'alias' -or [string]$cover.data.action -ne [string]$Item.action){return $false}
+    }
+    return $true
 }
 function Initialize-SCProgress($Manifest,[string]$Mode,$Context) {
     if($Mode -notin @('Execute','Resume')){return $null}
-    $totalMembers=0;$totalBytes=[long]0;$memberMap=@{}
+    $totalMembers=0;$totalBytes=[long]0;$memberMap=@{};$itemMap=@{}
     foreach($i in $Manifest.items){
+        $itemMap[$i.id]=$true
         $totalMembers+=(Get-SCItemMemberCount $i);$totalBytes+=[long]$i.bytes
         if($i.kind -eq 'file'){$memberMap[$i.source]=@{bytes=[long]$i.bytes;itemId=$i.id}}
         else{
@@ -110,7 +193,7 @@ function Initialize-SCProgress($Manifest,[string]$Mode,$Context) {
         if($staged){$payloadRoots[$i.id]=$staged.data.r}
     }
     $deleted=@{};foreach($record in $Context.records){if($record.type -eq 'delete_done'){$deleted[$record.id]=$record}}
-    $completed=@{};foreach($i in $Manifest.items){if(Get-SCRecord $Context 'completed' $i.id){$completed[$i.id]=$true}}
+    $completed=@{};foreach($i in $Manifest.items){if(-not $itemMap.ContainsKey($i.id)){continue};if(Get-SCRecord $Context 'completed' $i.id){$completed[$i.id]=$true}}
     $partialMembers=@{};$partialBytes=@{}
     foreach($key in $deleted.Keys){
         $separator=$key.IndexOf('|');if($separator -lt 1){continue}
@@ -123,11 +206,12 @@ function Initialize-SCProgress($Manifest,[string]$Mode,$Context) {
     }
     $membersDone=[long]0;$bytesDone=[long]0
     foreach($i in $Manifest.items){
+        if(-not $itemMap.ContainsKey($i.id)){continue}
         if($completed.ContainsKey($i.id)){$membersDone+=(Get-SCItemMemberCount $i);$bytesDone+=[long]$i.bytes}
         elseif($partialMembers.ContainsKey($i.id)){$membersDone+=$partialMembers[$i.id];$bytesDone+=$partialBytes[$i.id]}
     }
     @{
-        enabled=$true;mode=$Mode;itemsTotal=$Manifest.items.Count;membersTotal=[long]$totalMembers;bytesTotal=$totalBytes
+        enabled=$true;mode=$Mode;itemsTotal=$itemMap.Count;membersTotal=[long]$totalMembers;bytesTotal=$totalBytes
         itemsCompleted=$completed.Count;membersDone=$membersDone;bytesDone=$bytesDone
         itemIndex=0;itemId='';itemMembersTotal=0L;itemBytesTotal=0L;itemMembersDone=0L;itemBytesDone=0L
         partialMembers=$partialMembers;partialBytes=$partialBytes;lastEmitUtc=[datetime]::MinValue
@@ -221,23 +305,43 @@ function Get-SCStatusResult($Manifest,$Context,$Digest) {
             $metadataExists=Test-SCStatusPath $staged.data.i;$payloadPathExists=Test-SCStatusPath $staged.data.r
             $payloadExists=$payloadPathExists
         }
-        $status=if($complete){
+        $completionMode=$null;$coveredBy=$null
+        if($complete){
+            $completionMode=if(Get-SCValue $complete.data 'completionMode'){[string]$complete.data.completionMode}else{'direct'}
+            $coveredBy=@(Get-SCValue $complete.data 'coveredBy' @())
+        }else{
+        }
+        $status=if($complete -and $completionMode -eq 'alias'){
+            if($sourceExists -ne $false){'attention'}
+            elseif(-not @($coveredBy).Count){'attention'}
+            else{
+                $coverValid=$true
+                foreach($coverId in $coveredBy){
+                    $cover=Get-SCRecord $Context 'completed' ([string]$coverId)
+                    if(-not $cover -or [string](Get-SCValue $cover.data 'completionMode' 'direct') -eq 'alias' -or [string]$cover.data.action -ne [string]$i.action){$coverValid=$false;break}
+                }
+                if($coverValid){'completed'}else{'attention'}
+            }
+        }elseif(!$complete){
+            $planned=Get-SCAliasPlanEntry $Context $i.id
+            $covered=if($planned -and $sourceExists -eq $false -and (Test-SCAliasCoverage $Context $i $planned)){$true}else{$false}
+            if($covered){$completionMode='alias';$coveredBy=@($planned.coveredBy);'completed'}
+            elseif($purge){if($metadataExists -eq $false -and $payloadExists -eq $false){'attention'}else{'purging'}}
+            elseif($staged){if($metadataExists -eq $false -or $payloadExists -eq $false){'attention'}else{'staged'}}
+            elseif($intent){if($sourceExists -eq $false){'recycling'}else{'attention'}}
+            elseif($sourceExists){'not_started'}else{'attention'}
+        }else{
             if($sourceExists -ne $false){'attention'}
             elseif($i.action -eq 'recycle'){
                 if($metadataExists -eq $true -and $payloadExists -eq $true){'completed'}else{'attention'}
             }elseif($metadataExists -eq $false -and $payloadExists -eq $false){'completed'}
             else{'attention'}
-        }elseif($purge){
-            if($metadataExists -eq $false -and $payloadExists -eq $false){'attention'}else{'purging'}
-        }elseif($staged){
-            if($metadataExists -eq $false -or $payloadExists -eq $false){'attention'}else{'staged'}
-        }elseif($intent){
-            if($sourceExists -eq $false){'recycling'}else{'attention'}
-        }elseif($sourceExists){'not_started'}else{'attention'}
+        }
         $membersDone=if($status -eq 'completed'){(Get-SCItemMemberCount $i)}elseif($doneMembers.ContainsKey($i.id)){$doneMembers[$i.id]}else{0L}
         $bytesDone=if($status -eq 'completed'){[long]$i.bytes}elseif($doneBytes.ContainsKey($i.id)){$doneBytes[$i.id]}else{0L}
         $items.Add([ordered]@{
             id=$i.id;status=$status;sourceExists=$sourceExists;recycleMetadataExists=$metadataExists;recyclePayloadExists=$payloadExists
+            completionMode=$completionMode;coveredBy=$coveredBy
             membersDone=$membersDone;membersTotal=(Get-SCItemMemberCount $i);bytesDone=$bytesDone;bytesTotal=[long]$i.bytes
             lastEventUtc=$(if($lastEvent.ContainsKey($i.id)){$lastEvent[$i.id]}else{$null})
         })
@@ -281,7 +385,7 @@ function Write-SCJournal($Context,[string]$Type,[string]$Id,$Data) {
         try{$s=[IO.FileStream]::new($Context.journal,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read);try{$writeStarted=$true;$s.Write($bytes);$s.Flush($true)}finally{$s.Dispose()};$Context.records.Add($record);Add-SCRecordIndex $Context $record;break}
         catch{if($writeStarted -or $attempt -eq 3){throw [InvalidOperationException]::new('JOURNAL_FAILURE: '+$_.Exception.Message,$_.Exception)};Start-Sleep -Milliseconds (100*($attempt+1))}
     }
-    Invoke-SCCheckpoint $Type
+    Invoke-SCCheckpoint $Type $record
 }
 function Get-SCRecord($Context,[string]$Type,[string]$Id){
     if(-not $Context.ContainsKey('recordIndex')){
@@ -334,6 +438,169 @@ function Assert-SCManifest($Manifest,[string]$StateDirectory,[string]$ManifestPa
 }
 function Assert-SCObjectFields($Object,[string[]]$Allowed,[string]$Context) {
     foreach($key in $Object.Keys){if($Allowed -notcontains $key){throw "Unknown $Context field: $key"}}
+}
+
+function Test-SCFormalPath([string]$Path,[string[]]$PreferredRoots,$Depth) {
+    foreach($root in @($PreferredRoots)){if(Test-SCWithin $Path $root){return $true}}
+    $parts=@($Path.Substring(3).Split([char[]]@('\','/'),[StringSplitOptions]::RemoveEmptyEntries))
+    if($Depth -le 2 -and $parts.Count -le 4){return $true}
+    if($Path -match '(?i)\\(Documents|Desktop|Papers?|Projects?|Research|Archive|正式|论文|项目|归档)(\\|$)'){return $true}
+    if($Path -match '(?i)(\|/)(backups?|copy|copies|temp|tmp|cache|downloads?|备份|副本|缓存|临时|下载)(\|/)'){return $false}
+    return $Depth -le 3
+}
+function Get-SCFormalNameScore([string]$Path) {
+    $name=[IO.Path]::GetFileName($Path);$score=0
+    if($name -match '(?i)(^|[\s._-])(copy|副本|backup|bak)([\s._-]|$)'){$score-=2}
+    if($name -match '(?i)(~1|\.tmp$|\.temp$)'){$score-=2}
+    if($name -match '^[\p{L}\p{N}][\p{L}\p{N} ._()\[\]+\-]*\.[A-Za-z0-9]{1,10}$'){$score+=1}
+    $score
+}
+function Sort-SCDuplicateObjectPaths([string[]]$Paths,[string[]]$PreferredRoots) {
+    $ranked=@()
+    foreach($p in $Paths){
+        $depth=@($p.Substring(3).Split([char[]]@('\','/'),[StringSplitOptions]::RemoveEmptyEntries)).Count
+        $info=[IO.FileInfo]::new($p)
+        try{$modified=$info.LastWriteTimeUtc.Ticks}catch{$modified=0}
+        $ranked+=[pscustomobject]@{path=$p;formal=(Test-SCFormalPath $p $PreferredRoots $depth);modified=$modified;depth=$depth;nameScore=(Get-SCFormalNameScore $p)}
+    }
+    @($ranked|Sort-Object @{Expression='formal';Descending=$true},@{Expression='modified';Descending=$true},@{Expression='depth'},@{Expression='nameScore';Descending=$true},@{Expression='path'})
+}
+function New-StorageCleanupDuplicateScan {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string[]]$Roots,
+        [string[]]$PreferredRoots=@(),
+        [string]$OutputPath,
+        [long]$MinBytes=1
+    )
+    Initialize-SCNative
+    if($Roots.Count -lt 1){throw 'At least one explicit scan root is required'}
+    $normalized=[Collections.Generic.List[string]]::new();$seenRoots=@{}
+    foreach($root in $Roots){
+        $p=Get-SCPath $root
+        if(-not (Test-Path -LiteralPath $p -PathType Container)){throw "Scan root is not an existing directory: $p"}
+        Assert-SCPlain $p
+        if($p.Length -le 3){throw "Drive root cannot be scanned: $p"}
+        if($seenRoots.ContainsKey($p)){continue};$seenRoots[$p]=$true;$normalized.Add($p)
+    }
+    for($a=0;$a -lt $normalized.Count;$a++){for($b=$a+1;$b -lt $normalized.Count;$b++){if((Test-SCWithin $normalized[$a] $normalized[$b]) -or (Test-SCWithin $normalized[$b] $normalized[$a])){throw "Scan roots must not overlap: $($normalized[$a]), $($normalized[$b])"}}}
+    $preferred=[Collections.Generic.List[string]]::new();foreach($p in @($PreferredRoots)){if([string]::IsNullOrWhiteSpace($p)){continue};$preferred.Add((Get-SCPath $p))}
+    if($OutputPath){$OutputPath=Get-SCPath $OutputPath;Assert-SCPlain $OutputPath;foreach($root in $normalized){if((Test-SCWithin $OutputPath $root) -or (Test-SCWithin $root $OutputPath)){throw 'Duplicate scan report must be outside scanned roots'}};if(Test-Path -LiteralPath $OutputPath){throw "Duplicate scan output already exists: $OutputPath"}}
+    $files=[Collections.Generic.List[object]]::new();$skipped=[Collections.Generic.List[object]]::new();$directories=0
+    foreach($root in $normalized){
+        $stack=[Collections.Generic.Stack[string]]::new();$stack.Push($root)
+        while($stack.Count){
+            $current=$stack.Pop()
+            try{$children=@(Get-ChildItem -LiteralPath $current -Force -ErrorAction Stop)}catch{$skipped.Add([ordered]@{path=$current;outcome='unreadable';reason=$_.Exception.Message});continue}
+            foreach($entry in $children){
+                try{
+                    $attributes=[IO.File]::GetAttributes($entry.FullName)
+                    if(($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){$skipped.Add([ordered]@{path=$entry.FullName;outcome='skipped';reason='reparse-point'});continue}
+                    if($entry.PSIsContainer){$directories++;$stack.Push($entry.FullName);continue}
+                    if([long]$entry.Length -lt $MinBytes){$skipped.Add([ordered]@{path=$entry.FullName;outcome='skipped';reason='below-minimum-size';bytes=[long]$entry.Length});continue}
+                    $identity=[StorageCleanupNative]::Identity($entry.FullName)
+                    $links=@(Get-SCHardLinkPaths $entry.FullName)
+                    $files.Add([pscustomobject]@{path=$entry.FullName;bytes=[long]$entry.Length;identity=$identity;links=$links;modified=$entry.LastWriteTimeUtc.Ticks;deviationReason=$null})
+                }catch{$skipped.Add([ordered]@{path=$entry.FullName;outcome='skipped';reason=$_.Exception.Message})}
+            }
+        }
+    }
+    $objects=@($files|Group-Object identity|ForEach-Object{
+        $members=@($_.Group|Sort-Object path)
+        [pscustomobject]@{identity=$_.Name;paths=@($members.path);bytes=[long]$members[0].bytes;modified=$members[0].modified;hash=$null;readable=$true}
+    })
+    $sizeGroups=@($objects|Group-Object bytes|Where-Object Count -gt 1)
+    $hashCache=@{}
+    foreach($group in $sizeGroups){
+        foreach($object in $group.Group){
+            try{
+                $hash=$null
+                foreach($path in $object.paths){if((Test-Path -LiteralPath $path) -and [StorageCleanupNative]::Identity($path) -eq $object.identity){$hash=Get-SCHash $path;break}}
+                if(-not $hash){throw 'No readable path for physical object'}
+                $object.hash=$hash
+            }catch{$object.readable=$false;$skipped.Add([ordered]@{path=($object.paths -join '; ');outcome='unreadable';reason=$_.Exception.Message;bytes=$object.bytes})}
+        }
+    }
+    $duplicateGroups=[Collections.Generic.List[object]]::new()
+    foreach($group in $sizeGroups){
+        foreach($h in @($group.Group|Where-Object {$_.readable -and $_.hash}|Group-Object hash)){
+            $objectsInGroup=@($h.Group);if($objectsInGroup.Count -lt 2){continue}
+            $first=$objectsInGroup[0]
+            $candidatePaths=@($objectsInGroup|ForEach-Object {$_.paths}|ForEach-Object {$_})
+            $pathRank=Sort-SCDuplicateObjectPaths $candidatePaths $preferred
+            $objectRank=@($pathRank|ForEach-Object {$rank=$_;$obj=$objectsInGroup|Where-Object {$_.paths -contains $rank.path}|Select-Object -First 1;if(-not $obj){throw 'Duplicate object could not be resolved'};[pscustomobject]@{path=$rank.path;formal=$rank.formal;modified=$obj.modified;depth=$rank.depth;nameScore=$rank.nameScore;object=$obj}})
+            $keepChoice=$objectRank[0];$keepPath=$keepChoice.path;$keepObject=$keepChoice.object
+            $deleteItems=[Collections.Generic.List[object]]::new()
+            foreach($object in $objectsInGroup){
+                if($object.identity -eq $keepObject.identity){continue}
+                foreach($path in $object.paths){$deleteItems.Add([ordered]@{path=$path;bytes=$object.bytes;physicalObject=$object.identity});}
+            }
+            $reasonParts=[Collections.Generic.List[string]]::new()
+            $keepInfo=$objectRank[0]
+            $hasFormal=@($objectRank|Where-Object formal).Count -gt 0
+            if($keepInfo.formal){$reasonParts.Add('优先保留正式目录或正式文件名的副本')}
+            $eligible=if($hasFormal){@($objectRank|Where-Object formal)}else{@($objectRank)}
+            $newest=($eligible|Sort-Object modified -Descending|Select-Object -First 1).modified
+            if($keepInfo.modified -eq $newest){$reasonParts.Add('正式程度相同时保留修改时间较新的副本')}
+            if($reasonParts.Count -eq 0){$reasonParts.Add('正式程度和修改时间相同时保留路径较浅且文件名更完整的副本')}
+            $deleteArray=@($deleteItems|ForEach-Object {[pscustomobject][ordered]@{path=$_.path;bytes=$_.bytes;physicalObject=$_.physicalObject}})
+            $duplicateGroups.Add([pscustomobject][ordered]@{
+                id=('duplicate-{0:D3}' -f ($duplicateGroups.Count+1));bytes=$first.bytes;sha256=$h.Name;copies=$objectsInGroup.Count
+                keepPath=$keepPath;keepIdentity=$keepObject.identity;keepReason=($reasonParts -join '；')
+                deleteItems=$deleteArray;reclaimBytes=([long]$first.bytes*[long]($objectsInGroup.Count-1));deleteCopies=$objectsInGroup.Count-1
+            })
+        }
+    }
+    $sorted=@($duplicateGroups|Sort-Object @{Expression={[long]$_.reclaimBytes};Descending=$true},@{Expression={[long]$_.bytes};Descending=$true},@{Expression={[string]$_.keepPath}})
+    [long]$totalReclaim=0;foreach($d in $sorted){$totalReclaim+=[long]$d.reclaimBytes}
+    $result=[pscustomobject][ordered]@{
+        schemaVersion=1;mode='DuplicateScan';outcome='scanned';exitCode=0
+        roots=$normalized.ToArray();fileCount=$files.Count;physicalObjectCount=$objects.Count;directoryCount=$directories
+        duplicates=@($sorted);totalReclaimBytes=$totalReclaim;skipped=@($skipped|Sort-Object path)
+        note='Read-only scan. Review the groups; only an explicitly approved selection may proceed to manifest Check, Execute, Resume, and Verify.'
+    }
+    if($OutputPath){
+        $parent=[IO.Path]::GetDirectoryName($OutputPath);if(-not(Test-Path -LiteralPath $parent)){[void][IO.Directory]::CreateDirectory($parent)}
+        $result | Add-Member -NotePropertyName outputPath -NotePropertyValue $OutputPath -Force
+        $bytes=([Text.UTF8Encoding]::new($false)).GetBytes(($result|ConvertTo-Json -Depth 20))
+        $result | Add-Member -NotePropertyName outputSha256 -NotePropertyValue ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))) -Force
+        [IO.File]::WriteAllBytes($OutputPath,([Text.UTF8Encoding]::new($false)).GetBytes(($result|ConvertTo-Json -Depth 20)))
+    }
+    $result
+}
+
+function New-StorageCleanupDuplicateSelection {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ScanPath,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [string[]]$GroupIds=@()
+    )
+    $ScanPath=Get-SCPath $ScanPath;Assert-SCPlain $ScanPath
+    $OutputPath=Get-SCPath $OutputPath
+    if(Test-Path -LiteralPath $OutputPath){throw "Duplicate selection output already exists: $OutputPath"}
+    $scan=Get-Content -LiteralPath $ScanPath -Raw -Encoding utf8|ConvertFrom-Json -AsHashtable
+    if($scan.schemaVersion -ne 1 -or $scan.mode -ne 'DuplicateScan' -or -not @($scan.duplicates).Count){throw 'Invalid or empty duplicate scan'}
+    $groups=@($scan.duplicates)
+    if($GroupIds.Count){$groups=@($groups|Where-Object {$GroupIds -contains [string]$_.id});if($groups.Count -ne $GroupIds.Count){throw 'Requested duplicate group is missing'}}
+    $items=[Collections.Generic.List[object]]::new();[long]$deleteBytes=0
+    foreach($group in $groups){
+        if([string]::IsNullOrWhiteSpace([string]$group.keepPath) -or -not (Test-Path -LiteralPath $group.keepPath)){throw "Retained duplicate is unavailable: $($group.keepPath)"}
+        foreach($path in @($group.deleteItems|ForEach-Object {[string]$_.path})){
+            if([string]::IsNullOrWhiteSpace($path) -or $path -eq [string]$group.keepPath){throw 'Invalid duplicate delete path'}
+            if(-not (Test-Path -LiteralPath $path)){throw "Duplicate delete path is unavailable: $path"}
+            $items.Add([ordered]@{source=$path;action='recycle_then_purge';retainedCopy=$group.keepPath})
+        }
+        $deleteBytes+=[long]$group.reclaimBytes
+    }
+    if(-not $items.Count){throw 'No duplicate delete candidates selected'}
+    $roots=@($items|ForEach-Object {[string]$_.source}|ForEach-Object {[IO.Path]::GetDirectoryName($_)}|Sort-Object -Unique)
+    $approved=[Collections.Generic.List[string]]::new();foreach($root in $roots){$covered=$false;foreach($existing in $approved){if(Test-SCWithin $root $existing){$covered=$true;break}};if(-not $covered){$approved.Add($root)}}
+    $selection=[ordered]@{schemaVersion=1;batchId=('duplicates-'+[datetime]::UtcNow.ToString('yyyyMMddHHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8));approvedRoots=$approved.ToArray();items=$items.ToArray()}
+    $parent=[IO.Path]::GetDirectoryName($OutputPath);if(-not(Test-Path -LiteralPath $parent)){[void][IO.Directory]::CreateDirectory($parent)}
+    $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($selection|ConvertTo-Json -Depth 20))
+    [IO.File]::WriteAllBytes($OutputPath,$bytes)
+    [ordered]@{schemaVersion=1;mode='DuplicateSelection';outcome='created';exitCode=0;selectionPath=$OutputPath;groups=$groups.Count;items=$items.Count;deleteBytes=$deleteBytes}
 }
 function New-StorageCleanupManifest {
     [CmdletBinding()]
@@ -392,14 +659,12 @@ function New-StorageCleanupManifest {
                     lastWriteTimeUtc=$entry.LastWriteTimeUtc.ToString('o')
                 }
                 if(-not $entry.PSIsContainer){
-                    Assert-SCNoHardLink $entry.FullName
                     $member.sha256=Get-SCHash $entry.FullName;$fileCount++;$item.bytes+=[long]$entry.Length
                 }
                 $members.Add($member)
             }
             $item.members=$members.ToArray()
         }else{
-            Assert-SCNoHardLink $source
             $fileCount++;$item.bytes=[long]$sourceItem.Length;$item.sha256=Get-SCHash $source
         }
         $logicalBytes+=[long]$item.bytes
@@ -411,6 +676,9 @@ function New-StorageCleanupManifest {
         schemaVersion=1;batchId=[string]$selection.batchId;approvedRoots=$approvedRoots;items=$items.ToArray()
     }
     [void](Assert-SCManifest $manifest $null $OutputPath)
+    $explicitFiles=@{}
+    foreach($i in $manifest.items){foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){$explicitFiles[$e.path]=$i.action}}
+    Assert-SCHardLinkScope $explicitFiles
     $parent=[IO.Path]::GetDirectoryName($OutputPath)
     if(-not (Test-Path -LiteralPath $parent -PathType Container)){[void][IO.Directory]::CreateDirectory($parent)}
     $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($manifest|ConvertTo-Json -Depth 20 -Compress))
@@ -494,7 +762,7 @@ function Invoke-SCPurge($Context,$Item,$Pair) {
             }
             if($e.kind -eq 'directory'){[IO.Directory]::Delete($e.path,$false)}else{[IO.File]::Delete($e.path)}
         }finally{if($payloadLock){$payloadLock.Dispose()}}
-        Invoke-SCCheckpoint 'after_delete'
+        Invoke-SCCheckpoint 'after_delete' $e
         if(Test-Path -LiteralPath $e.path){throw 'Delete failed'};Write-SCJournal $Context delete_done $key @{path=$e.path}
         if($e.path -ne $Pair.r -and $Context.ContainsKey('progress')){Record-SCProgressDelete $Context.progress $Item $e}
     }
@@ -522,9 +790,10 @@ function Invoke-StorageCleanup {
             if(Test-Path -LiteralPath $StateDirectory){if(@(Get-ChildItem -LiteralPath $StateDirectory -Force).Count){throw 'Execute requires a new or empty state directory; use Resume'}}else{[void][IO.Directory]::CreateDirectory($StateDirectory)}
         }
         if($mutating){$lock=[IO.FileStream]::new((Join-Path $StateDirectory 'batch.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}
+        $journalBytes=$null;$journalHash=$null
         if($Mode -in @('Resume','Status','Verify')){
             if(Test-Path -LiteralPath $ctx.journal){
-                $b=[IO.File]::ReadAllBytes($ctx.journal);if(!$b.Length -or $b[-1] -ne 10){throw 'Incomplete journal tail preserved; manual reconciliation required'}
+                $b=[IO.File]::ReadAllBytes($ctx.journal);$journalBytes=[byte[]]$b.Clone();$journalHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($b));if(!$b.Length -or $b[-1] -ne 10){throw 'Incomplete journal tail preserved; manual reconciliation required'}
                 foreach($line in [Text.UTF8Encoding]::new($false,$true).GetString($b).Split("`n",[StringSplitOptions]::RemoveEmptyEntries)){
                     $record=$line|ConvertFrom-Json -AsHashtable
                     $ctx.records.Add($record);Add-SCRecordIndex $ctx $record
@@ -534,14 +803,25 @@ function Invoke-StorageCleanup {
             }elseif($Mode -ne 'Status'){throw 'State journal is required'}
         }
         if($Mode -eq 'Status'){
-            return Get-SCStatusResult $manifest $ctx $digest
+            $result=Get-SCStatusResult $manifest $ctx $digest
+            if($null -ne $journalBytes){[byte[]]$current=[IO.File]::ReadAllBytes($ctx.journal);if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($current)) -ne $journalHash){throw 'Status modified the journal'}}
+            return $result
         }
         $spaceRoots=@($roots)+@($manifest.items|Where-Object action -eq archive_then_purge|ForEach-Object {$_.archiveDestination})
         $before=Get-SCSpace $spaceRoots
-        if($Mode -eq 'Execute'){Write-SCJournal $ctx batch '' @{manifestSha256=$digest;batchId=$manifest.batchId;freeSpace=$before}}
-        $results=[Collections.Generic.List[object]]::new();$physical=@{};[long]$logical=0;[long]$estimate=0
         $allFiles=@{};foreach($i in $manifest.items){foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}
+        $frozenFiles=@{};foreach($path in $allFiles.Keys){$frozenFiles[$path]=$allFiles[$path]}
+        $ctx.frozenFiles=$frozenFiles
+        if($Mode -eq 'Execute'){
+            $plans=@(Get-SCAliasPlanMap $manifest $frozenFiles $ctx)
+            $hardFiles=Get-SCHardLinkedPathSet $frozenFiles
+            $originalFiles=@($hardFiles.Keys|Sort-Object|ForEach-Object {[ordered]@{path=$_;action=[string]$frozenFiles[$_]}})
+            Write-SCJournal $ctx batch '' @{manifestSha256=$digest;batchId=$manifest.batchId;freeSpace=$before;aliasPlan=@{plans=$plans;originalFiles=$originalFiles}}
+        }
+        $results=[Collections.Generic.List[object]]::new();$physical=@{};[long]$logical=0;[long]$estimate=0
+        $replayMode=$Mode -in @('Resume','Verify')
         foreach($i in $manifest.items){$known=Get-SCRecord $ctx staged $i.id;if($known){foreach($e in @(Get-SCExpected $i $known.data.r)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}}
+        if($Mode -in @('Resume','Verify')){Assert-SCAliasOriginalScope $ctx $frozenFiles}
         $ctx.progress=Initialize-SCProgress $manifest $Mode $ctx
         $itemIndex=0
         foreach($i in $manifest.items){
@@ -550,8 +830,23 @@ function Invoke-StorageCleanup {
             $held=$null;$sourceLocks=[Collections.Generic.List[IDisposable]]::new()
             try{
                 $done=Get-SCRecord $ctx completed $i.id;$staged=Get-SCRecord $ctx staged $i.id;$intent=Get-SCRecord $ctx recycle_intent $i.id
+                $aliasPlan=Get-SCAliasPlanEntry $ctx $i.id
+                $sourceForAlias=Test-SCStatusPath $i.source
+                if(-not $done -and $aliasPlan -and $sourceForAlias -eq $false -and (Test-SCAliasCoverage $ctx $i $aliasPlan)){
+                    $data=@{action=$i.action;completionMode='alias';coveredBy=@($aliasPlan.coveredBy)}
+                    Write-SCJournal $ctx completed $i.id $data
+                    Complete-SCProgressItem $ctx.progress $i
+                    $results.Add(@{id=$i.id;status='completed';completionMode='alias';coveredBy=@($aliasPlan.coveredBy);bytes=0;action=$i.action});continue
+                }
                 if($done){
                     if(Test-Path -LiteralPath $i.source){throw 'Previously completed source reappeared; preserved'}
+                    if([string](Get-SCValue $done.data 'completionMode') -eq 'alias'){
+                        $coveredBy=@(Get-SCValue $done.data 'coveredBy' @())
+                        if(-not $coveredBy.Count){throw 'Alias completion has no covering item'}
+                        $aliasCheck=[ordered]@{id=$i.id;action=$i.action;coveredBy=$coveredBy}
+                        if(-not (Test-SCAliasCoverage $ctx $i $aliasCheck)){throw 'Alias completion is no longer covered'}
+                        $results.Add(@{id=$i.id;status='completed';completionMode='alias';coveredBy=$coveredBy;bytes=0;action=$i.action});continue
+                    }
                     if($i.action -eq 'recycle'){Assert-SCPair $i $done.data.pair;Assert-SCContent $i $done.data.pair.r -IgnoreRootTime}
                     elseif((Test-Path -LiteralPath $done.data.pair.i) -or (Test-Path -LiteralPath $done.data.pair.r)){throw 'Completed purge payload reappeared'}
                     if($i.action -eq 'archive_then_purge'){Assert-SCContent $i $i.archiveDestination -IgnoreTimes}
@@ -564,11 +859,12 @@ function Invoke-StorageCleanup {
                     if(!$intent){throw 'Source absent without a recycle intent'};$pair=Find-SCPair $i $intent.data;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
                     Write-SCJournal $ctx staged $i.id $pair;$staged=Get-SCRecord $ctx staged $i.id
                 }
+                if(!$staged -and $replayMode -and !(Test-Path -LiteralPath $i.source) -and !$intent){throw 'Source absent without completed evidence'}
                 if(!$staged){
                     Assert-SCContent $i $i.source;$held=Open-SCRetained $i
                     if($Mode -eq 'Check' -and $i.action -eq 'archive_then_purge' -and (Test-Path -LiteralPath $i.archiveDestination)){throw 'Archive destination already exists'}
                     foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){
-                        $identity=[StorageCleanupNative]::Identity($e.path);$links=@([StorageCleanupNative]::Links($e.path));$covered=$true;$allPurge=$true;foreach($l in $links){if(!$allFiles.ContainsKey($l)){$covered=$false};if($allFiles[$l] -eq 'recycle'){$allPurge=$false}}
+                        $identity=[StorageCleanupNative]::Identity($e.path);$links=@([StorageCleanupNative]::Links($e.path)|ForEach-Object {Get-SCPath $_});$covered=$true;$allPurge=$true;foreach($l in $links){if(!$allFiles.ContainsKey($l)){$covered=$false}elseif($allFiles[$l] -eq 'recycle'){$allPurge=$false}}
                         if(!$covered){throw 'Hard-link alias is outside the explicit batch members'}
                         if(!$physical.ContainsKey($identity)){$physical[$identity]=$true;if($covered -and $allPurge){$estimate+=$e.bytes}}
                         $probe=[IO.FileStream]::new($e.path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::None);$probe.Dispose()
@@ -582,7 +878,7 @@ function Invoke-StorageCleanup {
                     $recycleData=@{bin=$bin;baseline=$baseline;utc=[datetime]::UtcNow.ToString('o')}
                     Write-SCJournal $ctx recycle_intent $i.id $recycleData
                     foreach($h in $sourceLocks){$h.Dispose()};$sourceLocks.Clear()
-                    Invoke-SCRecycle $i;Invoke-SCCheckpoint 'after_recycle'
+                    Invoke-SCRecycle $i;Invoke-SCCheckpoint 'after_recycle' $i
                     if(Test-Path -LiteralPath $i.source){throw 'Source remains after recycle'}
                     $pair=Find-SCPair $i $recycleData;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
                     Write-SCJournal $ctx staged $i.id $pair;$staged=Get-SCRecord $ctx staged $i.id
@@ -599,6 +895,10 @@ function Invoke-StorageCleanup {
                 $results.Add(@{id=$i.id;status='needs-attention';reason=$_.Exception.Message;action=$i.action})
             }finally{if($held){foreach($h in $held){$h.Dispose()}};foreach($h in $sourceLocks){$h.Dispose()}}
         }
+        if($Mode -eq 'Verify'){
+            $partial=@($results|Where-Object status -eq 'needs-attention').Count -gt 0
+            return @{schemaVersion=1;batchId=$manifest.batchId;mode='Verify';manifestSha256=$digest;outcome=$(if($partial){'partial'}else{'verified'});exitCode=$(if($partial){2}else{0});items=$results.ToArray()}
+        }
         $baselineChecks=[Collections.Generic.List[object]]::new()
         foreach($r in @($ctx.records|Where-Object type -eq recycle_intent)){
             $now=Get-SCBaseline $r.data.bin
@@ -613,4 +913,4 @@ function Invoke-StorageCleanup {
         @{schemaVersion=1;batchId=$manifest.batchId;mode=$Mode;manifestSha256=$digest;outcome=$(if($partial){'partial'}elseif($Mode -eq 'Check'){'checked'}elseif($Mode -eq 'Verify'){'verified'}else{'complete'});exitCode=$(if($partial){2}else{0});items=$results.ToArray();logicalBytes=$logical;estimatedReclaimBytes=$estimate;freeSpaceBefore=$before;freeSpaceAfter=$after;batchFreeSpaceBefore=$batchBefore;freeSpaceDelta=$delta;unrelatedRecycleChanges=$baselineChecks.ToArray()}
     }finally{if($lock){$lock.Dispose()};$manifestHandle.Dispose()}
 }
-Export-ModuleMember -Function Invoke-StorageCleanup,New-StorageCleanupManifest
+Export-ModuleMember -Function Invoke-StorageCleanup,New-StorageCleanupManifest,New-StorageCleanupDuplicateScan,New-StorageCleanupDuplicateSelection

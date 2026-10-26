@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -574,7 +575,7 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         alpha = next(item for item in summary["classifications"]["已用"] if item["skill"] == "alpha-skill")
         self.assertEqual(alpha["codex_requests"], 2)
-        self.assertEqual(summary["version"], "skill-usage-audit-v5")
+        self.assertEqual(summary["version"], "skill-usage-audit-v6")
         self.assertEqual(summary["configuration"]["count_unit"], "request")
         self.assertEqual(summary["window"]["kind"], "weekly")
 
@@ -772,6 +773,43 @@ class AuditSkillUsageTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("summary:", result.stdout)
+
+    def test_missing_default_telemetry_spool_is_optional(self) -> None:
+        argv = [
+            "--reports-root",
+            str(self.reports),
+            "--date",
+            "2026-01-03",
+            "--skills-root",
+            str(self.skills_a),
+            "--skills-root",
+            str(self.skills_b),
+            "--codex-sessions-root",
+            str(self.codex),
+            "--claude-projects-root",
+            str(self.claude),
+        ]
+        with patch.object(Path, "home", return_value=self.root):
+            summary = AUDIT.audit(AUDIT.parse_args(argv))
+        self.assertEqual(summary["warnings"]["missing_roots"], [])
+        self.assertEqual(summary["warnings"]["missing_optional_roots"], ["claude-telemetry"])
+        self.assertEqual(
+            summary["configuration"]["claude_telemetry_roots"],
+            ["claude-telemetry"],
+        )
+
+    def test_explicit_missing_telemetry_root_remains_required(self) -> None:
+        required, optional = AUDIT.split_missing_roots(
+            [
+                AUDIT.RootSpec(
+                    "claude-telemetry-1",
+                    self.root / "missing-custom-telemetry",
+                    "claude_telemetry",
+                )
+            ]
+        )
+        self.assertEqual(required, ["claude-telemetry-1"])
+        self.assertEqual(optional, [])
 
     def test_candidate_limit_prioritizes_different_skills(self) -> None:
         collector = AUDIT.CandidateCollector(10)

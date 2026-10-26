@@ -82,7 +82,7 @@ class RequestOriginTests(unittest.TestCase):
         self.assertIn('alpha',result['usage_evidence'])
         self.assertEqual(result['warnings']['subagent_candidate_excluded_count'],1)
 
-    def test_v4_to_v5_semantics_migration_preserves_prior_decisions_and_resets_streak(self):
+    def test_v4_to_current_semantics_migration_preserves_prior_decisions_and_resets_streak(self):
         state=REVIEW.new_state()
         state['usage_semantics_version']=4
         state['unseen_streaks']={'alpha':{'count':3,'last_counted_date':'2026-08-15','last_window_end':'2026-08-15T14:00:00+08:00'}}
@@ -96,7 +96,7 @@ class RequestOriginTests(unittest.TestCase):
         counts, reason=REVIEW.update_unseen_streaks(state,usage,complete=True,scope_value='same',date='2026-08-22')
         self.assertEqual(reason,'usage_semantics_changed')
         self.assertEqual(counts,{'alpha':1})
-        self.assertEqual(state['usage_semantics_version'],5)
+        self.assertEqual(state['usage_semantics_version'],6)
         self.assertEqual((state['findings'],state['batches']),protected)
         counts,reason=REVIEW.update_unseen_streaks(state,usage,complete=True,scope_value='same',date='2026-08-22')
         self.assertEqual(counts,{'alpha':1})

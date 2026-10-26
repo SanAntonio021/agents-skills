@@ -119,6 +119,9 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 限定范围时，可重复传入 `--skills-root`、`--codex-sessions-root`、`--claude-projects-root` 和
 `--claude-telemetry-root`；一旦传入某一类自定义根，该类默认根就不再扫描。
 
+其中 `~/.claude/telemetry` 是首方事件上送失败时的可选 spool；默认目录不存在不影响完整统计。
+显式传入的 telemetry 根仍按必需根校验。
+
 固定证据口径：
 
 - 计数单位是用户请求；同一宿主、同一请求、同一技能无论出现多少条证据，最多计一次。

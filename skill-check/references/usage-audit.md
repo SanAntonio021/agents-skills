@@ -26,7 +26,7 @@
 | `codex-sessions` | `~/.codex/sessions` | 当前 Codex 会话历史 |
 | `codex-archived` | `~/.codex/archived_sessions` | 已归档 Codex 会话历史 |
 | `claude-projects` | `~/.claude/projects` | Claude Code 项目会话历史 |
-| `claude-telemetry` | `~/.claude/telemetry` | Claude 启动时候选加载信号 |
+| `claude-telemetry` | `~/.claude/telemetry` | Claude 首方事件上送失败时保留的动态 spool；可选 |
 
 默认技能根包括源码、Codex 运行时、Claude 运行时、lark 实体层和 Codex 插件缓存。报告按规范化
 `name:` 合并同一技能的多个位置，同时保留每个位置的根代号、相对路径和适用宿主。
@@ -47,6 +47,10 @@ python scripts/audit_skill_usage.py `
   --claude-projects-root C:\Users\SanAn\.claude\projects `
   --claude-telemetry-root C:\Users\SanAn\.claude\telemetry
 ```
+
+默认 `~/.claude/telemetry` 是失败事件 spool，正常上送时可以不创建。目录不存在只在
+`warnings.missing_optional_roots` 记录，不使本次扫描不完整；只有显式传入的
+`--claude-telemetry-root` 或必需历史根缺失，才进入 `warnings.missing_roots`。
 
 ## 证据判定
 
@@ -126,6 +130,9 @@ description 规则要命中两个独立词组或一个六字高区分度词组�
 - 纯图片或附件、没有可扫描文本的 Codex 用户消息：进入 `warnings.non_text_user_records`，单独计数，
   不作为文本字段缺失；
 - 合法但与目标事件无关：静默跳过。
+
+必需历史根缺失会使本次证据不完整；可选 telemetry spool 缺失只说明没有可补扫的失败首方事件，
+不等于 Claude 历史或技能调用缺失。
 
 详细警告最多各保留 200 条，同时保留总数和是否截断。bridge 固定审查副本通过 cwd/path 标记排除，并
 在 `bridge_copy_excluded_count` 中报告数量，避免审查提示词污染用户使用统计。

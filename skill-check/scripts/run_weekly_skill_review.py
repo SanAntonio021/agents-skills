@@ -32,8 +32,9 @@ except ImportError:  # pragma: no cover
 
 
 SCHEMA_VERSION = 1
-USAGE_AUDIT_VERSION = "skill-usage-audit-v5"
-USAGE_SEMANTICS_VERSION = 5
+USAGE_AUDIT_VERSION = "skill-usage-audit-v6"
+SUPPORTED_USAGE_AUDIT_VERSIONS = {"skill-usage-audit-v5", USAGE_AUDIT_VERSION}
+USAGE_SEMANTICS_VERSION = 6
 DEFAULT_USAGE_TIMEZONE = "Asia/Shanghai"
 DEFAULT_USAGE_BOUNDARY_HOUR = 14
 UNSEEN_STREAK_THRESHOLD = 4
@@ -494,6 +495,7 @@ def build_dashboard_snapshot(
         "coverage": {
             "codex_is_observed_lower_bound": True,
             "missing_roots": list(warnings.get("missing_roots", [])),
+            "missing_optional_roots": list(warnings.get("missing_optional_roots", [])),
             "parse_error_count": int(warnings.get("parse_error_count", 0)),
             "unmapped_request_count": int(warnings.get("unmapped_request_count", 0)),
         },
@@ -792,7 +794,12 @@ def summary_is_valid(payload: Any, audit: str, date: str) -> tuple[bool, str | N
         "usage": USAGE_AUDIT_VERSION,
     }
     key = "schema_version" if audit == "upstream" else "version"
-    if payload.get(key) != expected_versions[audit]:
+    version_matches = (
+        payload.get(key) in SUPPORTED_USAGE_AUDIT_VERSIONS
+        if audit == "usage"
+        else payload.get(key) == expected_versions[audit]
+    )
+    if not version_matches:
         return False, f"unexpected {key}: {payload.get(key)!r}"
     if payload.get("date") != date:
         return False, f"summary date {payload.get('date')!r} does not match {date!r}"

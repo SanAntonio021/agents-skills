@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 MAX_WARNING_DETAILS = 200
 MAX_EXCERPT_CHARS = 240
-AUDIT_VERSION = "skill-usage-audit-v5"
+AUDIT_VERSION = "skill-usage-audit-v6"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 BRIDGE_MARKERS = (
     "claude-codex-bridge",
@@ -136,6 +136,7 @@ class RootSpec:
     path: Path
     kind: str
     active_hosts: tuple[str, ...] = ()
+    completeness_required: bool = True
 
 
 @dataclass
@@ -545,6 +546,19 @@ def custom_skill_roots(values: list[str]) -> list[RootSpec]:
         )
         for index, value in enumerate(values, 1)
     ]
+
+
+def split_missing_roots(roots: Iterable[RootSpec]) -> tuple[list[str], list[str]]:
+    required: list[str] = []
+    optional: list[str] = []
+    for root in roots:
+        if root.path.is_dir():
+            continue
+        if root.completeness_required:
+            required.append(root.root_id)
+        else:
+            optional.append(root.root_id)
+    return required, optional
 
 
 def build_inventory(roots: list[RootSpec]) -> tuple[dict[str, SkillInfo], list[str]]:
@@ -1607,7 +1621,14 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     telemetry_roots = (
         custom_roots(args.claude_telemetry_root, "claude-telemetry", "claude_telemetry")
         if args.claude_telemetry_root
-        else [RootSpec("claude-telemetry", user / ".claude" / "telemetry", "claude_telemetry")]
+        else [
+            RootSpec(
+                "claude-telemetry",
+                user / ".claude" / "telemetry",
+                "claude_telemetry",
+                completeness_required=False,
+            )
+        ]
     )
 
     inventory, missing_skill_roots = build_inventory(skill_roots)
@@ -1682,9 +1703,9 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     redundant, hygiene_warning = possible_redundancy(
         Path(args.hygiene_summary) if args.hygiene_summary else None, inventory, usage
     )
-    missing_history_roots = [
-        root.root_id for root in [*codex_roots, *claude_roots, *telemetry_roots] if not root.path.is_dir()
-    ]
+    missing_history_roots, missing_optional_history_roots = split_missing_roots(
+        [*codex_roots, *claude_roots, *telemetry_roots]
+    )
     warning_payload = {
         "codex_implicit_usage_not_captured": True,
         "codex_observed_skill_reads_counted": True,
@@ -1713,6 +1734,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
             or warnings.unmapped_request_count > len(warnings.unmapped_requests)
         ),
         "missing_roots": missing_skill_roots + missing_history_roots,
+        "missing_optional_roots": missing_optional_history_roots,
         "unmatched_claude_startup_candidates": unmatched_loaded,
         "hygiene_summary_warning": hygiene_warning,
     }

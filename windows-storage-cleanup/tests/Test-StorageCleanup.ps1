@@ -1,6 +1,6 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param([string]$ModulePath = (Join-Path $PSScriptRoot '../scripts/StorageCleanup.psm1'), [string]$CrossVolumeRoot, [switch]$LargeBenchmark)
+param([string]$ModulePath = (Join-Path $PSScriptRoot '../scripts/StorageCleanup.psm1'), [string]$CrossVolumeRoot, [switch]$LargeBenchmark, [switch]$InjectFailure)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'These integration tests require Windows.' }
@@ -76,7 +76,9 @@ function LockJournalAfterStage($F) {
     } (Join-Path $F.state 'journal.jsonl')
 }
 function Records($F){@(Get-Content -LiteralPath (Join-Path $F.state 'journal.jsonl')|ForEach-Object{$_|ConvertFrom-Json})}
+$selfTestFailureName=if($InjectFailure){'Test cleanup removes sandboxes and owned recycle pairs'}else{''}
 function Test([string]$Name,[scriptblock]$Body){
+    if($InjectFailure -and $Name -eq $selfTestFailureName){$results.Add([pscustomobject]@{name=$Name;status='FAIL';detail='INJECTED_SELF_TEST_FAILURE'});Write-Host "FAIL $Name : INJECTED_SELF_TEST_FAILURE";return}
     try { & $Body; $results.Add([pscustomobject]@{name=$Name;status='PASS';detail='' }); Write-Host "PASS $Name" }
     catch { $status=if($_.Exception.Message.StartsWith('SKIP:')){'SKIP'}else{'FAIL'};$results.Add([pscustomobject]@{name=$Name;status=$status;detail=$_.Exception.Message }); Write-Host "$status $Name : $($_.Exception.Message)" }
 }
@@ -92,6 +94,87 @@ function BinSnapshot {
 }
 $baseline=BinSnapshot
 $sentinelPairs=@()
+$testArtifacts=[Collections.Generic.List[string]]::new()
+$testArtifacts.AddRange([string[]]@($sandbox))
+if($externalSandbox){$testArtifacts.Add($externalSandbox)}
+function Get-SCDuplicateScanTestSandbox { $sandbox }
+function Test-SCSelfTestMode { [bool]($env:STORAGE_CLEANUP_SELF_TEST -eq '1') }
+function Read-SCTestRecycleInfo([string]$InfoPath) {
+    $b=[IO.File]::ReadAllBytes($InfoPath)
+    if($b.Length -lt 28){throw "Invalid recycle metadata: $InfoPath"}
+    $v=[BitConverter]::ToInt64($b,0)
+    if($v -eq 2){$n=[BitConverter]::ToInt32($b,24);if($n -lt 1 -or (28+2L*$n) -gt $b.Length){throw "Invalid recycle name: $InfoPath"};$name=[Text.Encoding]::Unicode.GetString($b,28,$n*2).TrimEnd([char]0)}
+    elseif($v -eq 1){$name=[Text.Encoding]::Unicode.GetString($b,24,$b.Length-24).TrimEnd([char]0)}else{throw "Unknown recycle format: $v"}
+    if($name.StartsWith('\\?\')){$name=$name.Substring(4)}
+    [pscustomobject]@{original=[IO.Path]::GetFullPath($name);bytes=[BitConverter]::ToInt64($b,8);deletedUtc=[datetime]::FromFileTimeUtc([BitConverter]::ToInt64($b,16));hash=(Get-FileHash -LiteralPath $InfoPath -Algorithm SHA256).Hash}
+}
+function Get-SCTestRecyclePairs([string[]]$Sandboxes){
+    $pairs=[Collections.Generic.List[object]]::new();$unknown=[Collections.Generic.List[string]]::new()
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $drives=@($Sandboxes|ForEach-Object {[IO.Path]::GetPathRoot($_)}|Sort-Object -Unique)
+    foreach($drive in $drives){
+        $bin=Join-Path $drive ('$Recycle.Bin\'+$sid)
+        if(-not(Test-Path -LiteralPath $bin)){continue}
+        foreach($info in @(Get-ChildItem -LiteralPath $bin -Force -File -ErrorAction SilentlyContinue|Where-Object {$_.Name.StartsWith('$I')})){
+            try{$meta=Read-SCTestRecycleInfo $info.FullName}catch{$unknown.Add($info.FullName);continue}
+            $owned=$false
+            foreach($root in $Sandboxes){if($meta.original.Equals($root,[StringComparison]::OrdinalIgnoreCase) -or $meta.original.StartsWith($root+'\',[StringComparison]::OrdinalIgnoreCase)){$owned=$true;break}}
+            if(-not $owned){continue}
+            $payload=Join-Path $bin ('$R'+$info.Name.Substring(2))
+            if(-not(Test-Path -LiteralPath $payload)){continue}
+            $pairs.Add([pscustomobject]@{info=$info.FullName;payload=$payload;original=$meta.original;bytes=$meta.bytes;deletedUtc=$meta.deletedUtc;metadataHash=$meta.hash;bin=$bin})
+        }
+    }
+    [pscustomobject]@{pairs=$pairs.ToArray();unknown=$unknown.ToArray()}
+}
+function Clear-SCTestReadOnly([string]$Path){
+    if(-not(Test-Path -LiteralPath $Path)){return}
+    if(([IO.File]::GetAttributes($Path) -band [IO.FileAttributes]::Directory) -ne 0){return}
+    [IO.File]::SetAttributes($Path,([IO.File]::GetAttributes($Path) -band (-bnot [IO.FileAttributes]::ReadOnly)))
+}
+function Remove-SCTestPath([string]$Path){
+    if(-not(Test-Path -LiteralPath $Path)){return}
+    $attributes=[IO.File]::GetAttributes($Path)
+    if(($attributes -band [IO.FileAttributes]::Directory) -eq 0){Clear-SCTestReadOnly $Path;[IO.File]::Delete($Path);return}
+    $children=@(Get-ChildItem -LiteralPath $Path -Force -ErrorAction Stop)
+    foreach($child in $children){
+        $childAttributes=[IO.File]::GetAttributes($child.FullName)
+        if(($childAttributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+            if(($childAttributes -band [IO.FileAttributes]::Directory) -ne 0){[IO.Directory]::Delete($child.FullName,$false)}
+            else{[IO.File]::Delete($child.FullName)}
+            continue
+        }
+        Remove-SCTestPath $child.FullName
+    }
+    [IO.Directory]::Delete($Path,$false)
+}
+function Remove-SCTestRecyclePairs([object[]]$Pairs){
+    foreach($pair in @($Pairs|Sort-Object {$_.bytes} -Descending)){
+        if(Test-Path -LiteralPath $pair.info){[IO.File]::SetAttributes($pair.info,([IO.File]::GetAttributes($pair.info) -band (-bnot [IO.FileAttributes]::ReadOnly)));[IO.File]::Delete($pair.info)}
+        if(Test-Path -LiteralPath $pair.payload){
+            if(([IO.File]::GetAttributes($pair.payload) -band [IO.FileAttributes]::Directory) -ne 0){Remove-SCTestPath $pair.payload}
+            else{[IO.File]::SetAttributes($pair.payload,([IO.File]::GetAttributes($pair.payload) -band (-bnot [IO.FileAttributes]::ReadOnly)));[IO.File]::Delete($pair.payload)}
+        }
+    }
+}
+function Clear-SCTestArtifacts([string[]]$Sandboxes){
+    $cleanup=[ordered]@{ok=$true;sandboxes=@($Sandboxes);recyclePairs=0;removed=@();retained=@();errors=@()}
+    try{
+        $owned=Get-SCTestRecyclePairs $Sandboxes
+        $cleanup.recyclePairs=@($owned.pairs).Count
+        if(@($owned.unknown).Count){$cleanup.retained+=@($owned.unknown|ForEach-Object {[pscustomobject]@{path=$_;reason='unreadable-recycle-metadata'}})}
+        Remove-SCTestRecyclePairs @($owned.pairs)
+    }catch{$cleanup.ok=$false;$cleanup.errors+=$_.Exception.Message}
+    foreach($path in $Sandboxes){
+        try{Remove-SCTestPath $path;if(Test-Path -LiteralPath $path){$cleanup.ok=$false;$cleanup.retained+=[pscustomobject]@{path=$path;reason='sandbox-remains'}}else{$cleanup.removed+=$path}}catch{$cleanup.ok=$false;$cleanup.errors+=$_.Exception.Message;$cleanup.retained+=[pscustomobject]@{path=$path;reason=$_.Exception.Message}}
+    }
+    $cleanup
+}
+function Write-SCTestFailureSummary($Results,$Cleanup){
+    $failures=@($Results|Where-Object status -eq 'FAIL')
+    $summary=[ordered]@{status='FAIL';failed=$failures.Count;failures=@($failures|ForEach-Object {[ordered]@{name=$_.name;detail=$_.detail}});sandboxes=@($Cleanup.sandboxes);cleanupOk=[bool]$Cleanup.ok;recyclePairs=$Cleanup.recyclePairs;retained=@($Cleanup.retained);errors=@($Cleanup.errors)}
+    Write-Output ($summary|ConvertTo-Json -Depth 8 -Compress)
+}
 Test 'Check and Verify never create state or mutate source' {
     $f=Fixture 'readonly';$p=Join-Path $f.source 'clip.mp4';WriteSample $p 'video extension regression';SaveManifest $f @((Item $p))
     $before=(Get-FileHash -LiteralPath $p).Hash
@@ -677,10 +760,37 @@ if($LargeBenchmark){
         Assert ($result.items -eq 20000 -and $result.seconds -lt 10) 'Large Status benchmark regressed.'
     }
 }
+Test 'Test cleanup removes sandboxes and owned recycle pairs' {
+    $probeRoot=Join-Path $sandbox 'cleanup-selftest-root'
+    $crossProbe=$null
+    if($externalSandbox){$crossProbe=Join-Path $externalSandbox 'cleanup-selftest-root'}
+    $targets=[Collections.Generic.List[string]]::new();$targets.Add($probeRoot);if($crossProbe){$targets.Add($crossProbe)}
+    foreach($target in $targets){$null=[IO.Directory]::CreateDirectory((Join-Path $target 'source'))}
+    $probe=Join-Path $probeRoot 'source/recycle-probe.txt'
+    [IO.File]::WriteAllText($probe,'selftest recycle',[Text.UTF8Encoding]::new($false))
+    $item=Item $probe 'recycle'
+    $manifest=[ordered]@{schemaVersion=1;batchId=[guid]::NewGuid().ToString('N');approvedRoots=@($targets.ToArray());items=@($item)}
+    $manifestPath=Join-Path $sandbox 'cleanup-selftest.json';$state=Join-Path $sandbox 'cleanup-selftest-state'
+    [IO.File]::WriteAllText($manifestPath,($manifest|ConvertTo-Json -Depth 20),[Text.UTF8Encoding]::new($false))
+    $result=Invoke-StorageCleanup -Mode Execute -ManifestPath $manifestPath -StateDirectory $state
+    Assert ($result.exitCode -eq 0) 'Cleanup self-test could not recycle its probe.'
+    Assert (-not(Test-Path -LiteralPath $probe)) 'Cleanup self-test probe was not recycled.'
+    $null=New-StorageCleanupDuplicateScan -Roots @($targets[0])
+    # Remove only this test's own subdirectories; the outer sandbox remains available to the suite.
+    foreach($target in $targets){Remove-SCTestPath $target;Assert (-not(Test-Path -LiteralPath $target)) "Self-test directory remains: $target"}
+    $owned=Get-SCTestRecyclePairs $targets
+    Assert ($owned.pairs.Count -ge 1) 'Cleanup self-test recycle pair was not discoverable.'
+    Remove-SCTestRecyclePairs $owned.pairs
+    $remaining=Get-SCTestRecyclePairs $targets
+    Assert ($remaining.pairs.Count -eq 0) 'Cleanup self-test recycle pair remains after removal.'
+}
 Test 'Preexisting recycle entries unchanged' {
     $now=BinSnapshot
     foreach($key in $baseline.Keys){Assert ($now.ContainsKey($key) -and $now[$key] -eq $baseline[$key]) "Unrelated recycle entry changed: $key"}
 }
-$report=[ordered]@{sandbox=$sandbox;crossVolumeSandbox=$externalSandbox;passed=@($results|Where-Object status -eq PASS).Count;failed=@($results|Where-Object status -eq FAIL).Count;skipped=@($results|Where-Object status -eq SKIP).Count;tests=@($results);note='Generated samples and their recycle entries are retained for inspection. Never empty the whole recycle bin.'}
+$cleanup=Clear-SCTestArtifacts @($testArtifacts)
+$report=[ordered]@{sandbox=$sandbox;crossVolumeSandbox=$externalSandbox;passed=@($results|Where-Object status -eq PASS).Count;failed=@($results|Where-Object status -eq FAIL).Count;skipped=@($results|Where-Object status -eq SKIP).Count;tests=@($results);cleanup=[ordered]@{ok=$cleanup.ok;recyclePairs=$cleanup.recyclePairs;removed=@($cleanup.removed);retained=@($cleanup.retained);errors=@($cleanup.errors)}}
+if($report.failed){Write-SCTestFailureSummary $results $cleanup}
 $report|ConvertTo-Json -Depth 10
-if($report.failed){throw "$($report.failed) integration tests failed; samples retained at $sandbox"}
+if($report.failed){exit 1}
+if(-not $cleanup.ok){throw 'Test cleanup failed; see cleanup.retained and cleanup.errors'}

@@ -136,3 +136,11 @@ Docx/Wiki路由实测：新建文档返回Docx URL，网页自动进入同源Wik
 - 原生保存七接口（io.sendAction、io.sendPendingActions、orderChannel.getBaseSeq、addLocalAction、flushLocalActions、保存插件 hasUncommitData、updateSaveState）的连接指纹由 b8586b42 变为 8a287314。逐函数读取后语义未变：getBaseSeq 仍返回 docState.appliedVersion；hasUncommitData 仍判断 saveState 是否为 saving；updateSaveState 仍由 socket 与 HTTP 两个保存状态合成；flushLocalActions 仍消费 localActions。已在隔离画板完成真实写入验证后才更新固定指纹，不动态接受未知值。
 - 真实局部编辑验收通过：修改已有模块文字、改写已有连线标签后，连线 ID 与两端绑定 o1:6 到 o1:7 保持不变；save_status 为 confirmed，verification_status 为 passed。
 - 预览发现改长后的标签被右侧菱形遮挡并裁切；改用线上方放置后文字完整可见。数据层绑定正确不能代替视觉遮挡验收。
+
+2026-10-26 常用画板操作补齐（隔离文档 O745d5SqYoAPHaxRq2jceRHnnDf，画板 I02nwlqcqhtoZnbhTWpc45MHn6e）：
+
+- 新增批量改字号（font 接受 id 或 ids）、六种边缘/中线对齐（左、右、水平居中、顶、底、垂直居中）和两种等距（水平、垂直），以及图层四档（置顶、置底、上移一层、下移一层）。
+- 编辑器指纹命令集合加入 Align 与 Order 后，主指纹由 54e7e6de 变为 15acf339。已在隔离画板完成真实写入验证后才更新固定值，不动态接受未知指纹。
+- 真实画板行为记录：Order 的 BringForward 提高 z_index（更靠前），SendBackward 降低 z_index；置顶/置底把指定对象移到同级最前或最后。未请求对象之间的相对层序保持不变。服务端会重排整个 z_index 序列，因此保护器只要求未请求对象相对顺序不变，并放行 z_index 变化，其他字段仍严格比较。
+- 八种对齐、批量改字号、四档图层全部在真实画板执行成功：每步 save_status 为 confirmed、verification_status 为 passed，并导出预览实际查看。
+- 对齐按原生 getBounds() 外框计算；高度不同的模块必须用垂直居中才能让中线对齐，顶对齐只对齐上边缘。"

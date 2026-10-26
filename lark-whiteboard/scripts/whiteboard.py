@@ -115,8 +115,18 @@ ARROW_STYLES = {'none', 'line_arrow', 'triangle_arrow', 'empty_triangle_arrow', 
                 'empty_circle_arrow', 'diamond_arrow', 'empty_diamond_arrow', 'single_arrow',
                 'multi_arrow', 'exact_single_arrow', 'zero_or_single_arrow', 'single_or_multi_arrow',
                 'zero_or_multi_arrow', 'x_arrow'}
+ALIGN_MODES = {
+    'align_left': ('x', 'min_edge'), 'align_right': ('x', 'max_edge'),
+    'align_horizontal_center': ('x', 'center'), 'align_top': ('y', 'min_edge'),
+    'align_bottom': ('y', 'max_edge'), 'align_vertical_center': ('y', 'center'),
+    'distribute_horizontal': ('x', 'distribute'), 'distribute_vertical': ('y', 'distribute'),
+}
+ORDER_ACTIONS = {
+    'bring_to_front': 'BringToFront', 'send_to_back': 'SendToBack',
+    'bring_forward': 'BringForward', 'send_backward': 'SendBackward',
+}
 OPERATION_FIELDS = {
-    'text': ({'id', 'text'}, set()), 'font': ({'id', 'font_size'}, set()),
+    'text': ({'id', 'text'}, set()), 'font': (set(), {'id', 'ids', 'font_size'}),
     'resize': ({'id', 'width', 'height'}, set()), 'move': ({'ids', 'dx', 'dy'}, set()),
     'arrow': ({'id', 'start', 'end'}, set()), 'caption': ({'id', 'text'}, set()),
     'caption_position': ({'id'}, {'position', 'placement'}),
@@ -129,6 +139,10 @@ OPERATION_FIELDS = {
     'distribute_horizontal': ({'ids'}, set()), 'delete': ({'ids', 'delete_ids'}, set()),
     'undo': (set(), set()),
 }
+for _kind in ALIGN_MODES:
+    OPERATION_FIELDS[_kind] = ({'ids'}, set())
+for _kind in ORDER_ACTIONS:
+    OPERATION_FIELDS[_kind] = ({'ids'}, set())
 
 
 def safe_cli_error(payload):
@@ -230,12 +244,17 @@ def validate_operation_parameters(op):
                           or any(not identifier(i) for i in op[key]) or len(set(op[key])) != len(op[key])):
             raise VerificationError('Object list must contain unique nonempty string IDs')
     minimum = {'group': 2, 'align_top': 2, 'distribute_horizontal': 3}.get(kind, 1)
+    if kind in ALIGN_MODES:
+        minimum = 3 if ALIGN_MODES[kind][1] == 'distribute' else 2
     if 'ids' in op and len(op['ids']) < minimum:
         raise VerificationError('Insufficient object selection for ' + kind)
     if kind in ('text', 'caption') and not isinstance(op['text'], str):
         raise VerificationError('Text must be a string')
-    if kind == 'font' and (not finite_number(op['font_size']) or not 4 <= op['font_size'] <= 999):
-        raise VerificationError('Font size must be a finite number in [4, 999]')
+    if kind == 'font':
+        if ('id' in op) == ('ids' in op):
+            raise VerificationError('Font requires exactly one of id or ids')
+        if not finite_number(op.get('font_size')) or not 4 <= op['font_size'] <= 999:
+            raise VerificationError('Font size must be a finite number in [4, 999]')
     if kind == 'resize' and not all(finite_number(op[k], True) for k in ('width', 'height')):
         raise VerificationError('Dimensions must be positive and finite')
     if kind == 'move' and not all(finite_number(op[k]) for k in ('dx', 'dy')):
@@ -287,6 +306,8 @@ def projection(raw):
     for n in nodes:
         kind = {'composite_shape': 'shape', 'text_shape': 'text', 'connector': 'connector', 'group': 'group'}.get(n.get('type'), 'other')
         v = dict(id=n['id'], kind=kind, **{k: n.get(k, 0) for k in ('x', 'y', 'width', 'height')})
+        if isinstance(n.get('z_index'), int) and not isinstance(n.get('z_index'), bool):
+            v['z_index'] = n['z_index']
         v['style'] = {k: value.lower() if k.endswith('_color') else value for k, value in n.get('style', {}).items() if k in STYLE_FIELDS}
         if 'text' in n:
             v.update(text=n['text'].get('text', ''), font_size=n['text'].get('font_size', 0))
@@ -382,6 +403,11 @@ def check_scope(before, after, op, *, from_raw=False, group_evidence=None, arran
         if len(lookup) != len(before) or len({n['id'] for n in after}) != len(after):
             raise VerificationError('Local edit requires unique object IDs')
         allowed = {op.get('id')}
+    if op['kind'] in ORDER_ACTIONS:
+        def without_layer(nodes):
+            return [{k: v for k, v in n.items() if k != 'z_index'} for n in nodes]
+        delta = differences(without_layer(before), without_layer(after))
+        allowed = set(ids)
     allowed.update(check_group_bounds(before, after, op, group_evidence=group_evidence))
     if op['kind'] == 'connect':
         if len(delta['added']) != 1 or delta['removed'] or delta['changed']:
@@ -521,7 +547,8 @@ def validate_local_operation(nodes, op):
     elif kind == 'curve_point':
         curve_handle(node, op)
     elif kind in ('text', 'font', 'resize'):
-        if not node or node.get('kind') not in ('shape', 'text'):
+        targets = [lookup.get(i) for i in op.get('ids', [])] if kind == 'font' and 'ids' in op else [node]
+        if any(t is None or t.get('kind') not in ('shape', 'text') for t in targets):
             raise VerificationError('Text or size edit requires a native shape or text shape')
         if kind == 'text' and not isinstance(op.get('text'), str):
             raise VerificationError('Text must be a string')
@@ -584,9 +611,12 @@ def validate_local_operation(nodes, op):
             raise VerificationError('Self connection is not supported')
         if op.get('template_id') and lookup.get(op['template_id'], {}).get('kind') != 'connector':
             raise VerificationError('Connection template requires an existing connector')
-    elif kind in ('align_top', 'distribute_horizontal'):
+    elif kind in ALIGN_MODES:
         if any(lookup[i].get('kind') != 'shape' for i in op['ids']):
             raise VerificationError('Alignment and distribution require native shapes')
+    elif kind in ORDER_ACTIONS:
+        if any(lookup[i].get('kind') not in ('shape', 'text', 'connector', 'group') for i in op['ids']):
+            raise VerificationError('Layer order requires supported native objects')
     elif kind == 'move':
         if any(lookup[i].get('kind') not in ('shape', 'text', 'connector', 'group') for i in op['ids']):
             raise VerificationError('Movement requires supported native objects')
@@ -653,8 +683,10 @@ def check_intent(before, after, op, delta=None, *, from_raw=False, arrangement_e
         require(isinstance(op.get('text'), str))
     if kind == 'font':
         require(finite_number(op.get('font_size'), True))
-        require(ident in b and caption_position_equivalent(b[ident].get('font_size'), op['font_size']))
-    if kind in ('text', 'font'):
+        font_targets = op['ids'] if 'ids' in op else [ident]
+        require(all(i in b and caption_position_equivalent(b[i].get('font_size'), op['font_size'])
+                    for i in font_targets))
+    if kind in ('text', 'font') and 'id' in op:
         validate_local_operation(before, op)
         require(ident in b)
         old, new = a[ident], b[ident]
@@ -804,7 +836,7 @@ def check_intent(before, after, op, delta=None, *, from_raw=False, arrangement_e
                     require(equivalent({field: line.get(field)}, {field: template[field]}))
     if kind == 'ungroup':
         require(ident not in b and all(i in b and not b[i].get('parent_id') for i in a[ident].get('children', [])))
-    if kind in ('align_top', 'distribute_horizontal'):
+    if kind in ALIGN_MODES:
         require(all(i in a and i in b for i in op['ids']))
         geometry = ('x', 'y', 'width', 'height')
         if arrangement_evidence is None:
@@ -819,18 +851,28 @@ def check_intent(before, after, op, delta=None, *, from_raw=False, arrangement_e
             order = arrangement_evidence.get('order')
             require(isinstance(order, list) and all(isinstance(i, str) for i in order)
                     and len(order) == len(op['ids']) and set(order) == set(op['ids']))
-        axis = 'y' if kind == 'align_top' else 'x'
-        if kind == 'align_top':
-            positions = {i:min(left[j]['y'] for j in op['ids']) for i in op['ids']}
-        else:
-            ordered = sorted(order, key=lambda i:left[i]['x'])
-            position = min(left[i]['x'] for i in ordered)
-            span = max(left[i]['x']+left[i]['width'] for i in ordered) - position
-            gap = (span-sum(left[i]['width'] for i in ordered))/(len(ordered)-1)
+        axis, mode = ALIGN_MODES[kind]
+        size = 'width' if axis == 'x' else 'height'
+        if mode == 'distribute':
+            ordered = sorted(order, key=lambda i:left[i][axis])
+            position = min(left[i][axis] for i in ordered)
+            span = max(left[i][axis]+left[i][size] for i in ordered) - position
+            gap = (span-sum(left[i][size] for i in ordered))/(len(ordered)-1)
             positions = {}
             for i in ordered:
                 positions[i] = position
-                position += left[i]['width']+gap
+                position += left[i][size]+gap
+        else:
+            if mode == 'min_edge':
+                target = min(left[i][axis] for i in op['ids'])
+            elif mode == 'max_edge':
+                target = max(left[i][axis]+left[i][size] for i in op['ids'])
+            else:
+                target = (min(left[i][axis] for i in op['ids'])
+                          + max(left[i][axis]+left[i][size] for i in op['ids']))/2
+            positions = {}
+            for i in op['ids']:
+                positions[i] = target - (left[i][size]/2 if mode == 'center' else (0 if mode == 'min_edge' else left[i][size]))
         for i in op['ids']:
             displacement = positions[i]-left[i][axis]
             require(equivalent(right[i][axis], positions[i])
@@ -848,6 +890,37 @@ def check_intent(before, after, op, delta=None, *, from_raw=False, arrangement_e
                 require(equivalent(new_world[axis], old_world[axis]+displacement)
                         and all(math.isclose(old_world[k], new_world[k], rel_tol=0, abs_tol=1e-6)
                                 for k in old_world if k != axis))
+    if kind in ORDER_ACTIONS:
+        require(all(i in a and i in b for i in op['ids']))
+        editable = {'z_index'}
+        for i in op['ids']:
+            require(equivalent({k:v for k,v in a[i].items() if k not in editable},
+                               {k:v for k,v in b[i].items() if k not in editable}))
+        require(not any(not finite_number(b[i].get('z_index')) for i in op['ids']))
+        requested = list(op['ids'])
+        action = ORDER_ACTIONS[kind]
+        parents = raw_parent_ids(before)
+        after_parents = raw_parent_ids(after)
+        for i in requested:
+            require(parents.get(i, '') == after_parents.get(i, ''))
+        for parent in {parents.get(i, '') for i in requested}:
+            siblings = sorted([i for i in a if parents.get(i, '') == parent],
+                              key=lambda i:(a[i].get('z_index', 0), i))
+            after_siblings = sorted([i for i in b if after_parents.get(i, '') == parent],
+                                    key=lambda i:(b[i].get('z_index', 0), i))
+            require(set(siblings) == set(after_siblings))
+            # Unrequested siblings keep their mutual order.
+            require([i for i in siblings if i not in requested]
+                    == [i for i in after_siblings if i not in requested])
+            if action in ('BringToFront', 'SendToBack'):
+                others = [i for i in siblings if i not in requested]
+                wanted = (others + requested) if action == 'BringToFront' else (requested + others)
+                require(after_siblings == wanted)
+            else:
+                for i in requested:
+                    old_pos, new_pos = siblings.index(i), after_siblings.index(i)
+                    delta = 1 if action == 'BringForward' else -1
+                    require(new_pos == old_pos + delta)
     if kind == 'delete':
         require(set(a) - set(b) == set(op['delete_ids']))
 
@@ -867,7 +940,7 @@ def operation_target_ids(nodes, op):
             if child not in ids:
                 ids.add(child)
                 pending.append(child)
-    if op['kind'] in ('move', 'resize', 'align_top', 'distribute_horizontal', 'delete', 'anchors', 'reconnect', 'connect'):
+    if op['kind'] in ('move', 'resize', 'delete', 'anchors', 'reconnect', 'connect') or op['kind'] in ALIGN_MODES:
         ids.update(n['id'] for n in nodes if n.get('kind') == 'connector'
                    and (n.get('start_id') in ids or n.get('end_id') in ids))
     return ids
@@ -1143,7 +1216,7 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
     if len(a) != len(before['nodes']) or len(b) != len(after['nodes']):
         raise VerificationError('Raw readback requires unique object IDs')
     kind = op['kind']
-    if kind in ('align_top', 'distribute_horizontal'):
+    if kind in ALIGN_MODES:
         if arrangement_evidence is None and any(a[i].get('angle', 0) or b[i].get('angle', 0) for i in op['ids']):
             raise VerificationError('Rotated arrangement requires native bounds evidence')
         check_intent(projection(before), projection(after), op, from_raw=True, arrangement_evidence=arrangement_evidence)
@@ -1389,11 +1462,13 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
             paths += [('x',), ('y',)]
         elif ident in ids and kind == 'resize':
             paths += [('width',), ('height',)]
-        elif ident in ids and kind == 'align_top':
+        elif ident in ids and kind in ALIGN_MODES and ALIGN_MODES[kind][0] == 'y':
             paths += [('y',)]
-        elif ident in ids and kind == 'distribute_horizontal':
+        elif ident in ids and kind in ALIGN_MODES and ALIGN_MODES[kind][0] == 'x':
             paths += [('x',)]
-        if connected and ident not in ids and kind in ('move','resize','align_top','distribute_horizontal'):
+        elif kind in ORDER_ACTIONS:
+            paths += [('z_index',)]
+        if connected and ident not in ids and (kind in ('move','resize') or kind in ALIGN_MODES):
             paths += [(k,) for k in ('x','y','width','height')]
             if c:
                 paths += [('connector','turning_points')]
@@ -1419,6 +1494,16 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
         preserved = json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
         if not preserved:
             raise VerificationError('Unexpected raw property change on object ' + ident)
+    if kind in ORDER_ACTIONS:
+        requested = set(op['ids'])
+        old_parents, new_parents = raw_parent_ids(before['nodes']), raw_parent_ids(after['nodes'])
+        for parent in {old_parents.get(i, '') for i in requested}:
+            siblings = [i for i in a if i not in requested and old_parents.get(i, '') == parent]
+            if any(new_parents.get(i, '') != parent for i in siblings):
+                raise VerificationError('Unrequested objects changed parent during layer order')
+            order = lambda lookup: sorted(siblings, key=lambda i:(lookup[i].get('z_index', 0), i))
+            if order(a) != order(b):
+                raise VerificationError('Unrequested objects changed their relative layer order')
     # Operations above preserve absolute layers as well as their order.
     untouched = (a.keys() & b.keys()) - ids
     old_parents, new_parents = raw_parent_ids(before['nodes']), raw_parent_ids(after['nodes'])
@@ -2251,8 +2336,7 @@ class Runner:
 
     @staticmethod
     def affected_bindings(before, after, op):
-        if op['kind'] not in ('move', 'resize', 'align_top', 'distribute_horizontal',
-                              'anchors', 'reconnect', 'connect', 'append'):
+        if op['kind'] not in ('move', 'resize', 'anchors', 'reconnect', 'connect', 'append') and op['kind'] not in ALIGN_MODES:
             return set()
         targets = set(op.get('ids', [])) | ({op['id']} if op.get('id') else set())
         for node in before:
@@ -2543,7 +2627,7 @@ class Runner:
                 actual = dict(op)
                 reject_nested_groups(state['nodes'], op)
                 validate_local_operation(state['nodes'], op)
-                if op['kind'] in ('align_top', 'distribute_horizontal'):
+                if op['kind'] in ALIGN_MODES:
                     actual['arrangement_bounds'] = validate_arrangement_bounds(op, state.get('arrangement_bounds'))
                     world = state.get('world_geometry')
                     if not isinstance(world, dict) or any(not isinstance(world.get(i), dict)
@@ -2583,7 +2667,7 @@ class Runner:
                             group_cache_normalizations=self.group_cache_evidence(saved_raw, result))
                 phase = 'protection'
                 arrangement_evidence = None
-                if op['kind'] in ('align_top', 'distribute_horizontal'):
+                if op['kind'] in ALIGN_MODES:
                     if not equivalent(actual['arrangement_bounds'], result.get('arrangement_before_bounds')):
                         raise VerificationError('Native arrangement pre-submit bounds differ from the inspected target')
                     arrangement_evidence = {

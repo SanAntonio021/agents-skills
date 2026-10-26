@@ -50,6 +50,7 @@
     const v = {id: n.id, kind: i.connectorV2 ? 'connector' : n.type===3 ? 'text' : n.type===13 ? 'shape' : n.children?.length ? 'group' : 'other',
       x:b.x, y:b.y, width:b.width, height:b.height};
     if (i.textV2) {v.text = i.textV2.text; v.font_size = i.textV2.fontSize;}
+    if (Number.isInteger(n.zIndex)) v.z_index = n.zIndex;
     const theme=i.theme||{}, hex=c=>'#'+(c&0xffffff).toString(16).padStart(6,'0');
     v.style={};
     const border=i.connectorV2?theme.connectColor:theme.borderColorCode;
@@ -87,7 +88,7 @@
     }
     return v;
   }).sort((x,y) => x.id.localeCompare(y.id, 'en'));
-  const sources = ['Select','Move','TextFontSize','Delete','Group','UnGroup','LineArrow','LineType','LineTextAdd','Theme','Duplicate']
+  const sources = ['Select','Move','TextFontSize','Delete','Group','UnGroup','LineArrow','LineType','LineTextAdd','Theme','Duplicate','Align','Order']
     .map(k => a.commandManager.handlers.get(k)?.execute?.toString() || '').join('\n')
     + a.actionManager.execAction.toString();
   let h = 2166136261; for (let j = 0; j < sources.length; j++) {h ^= sources.charCodeAt(j); h = Math.imul(h, 16777619);}
@@ -182,7 +183,7 @@
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
-  if (!['54e7e6de'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
+  if (!['15acf339'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
   const saveBefore=nativeSave();
   if(!saveBefore.available)fail(saveBefore.reason);
   if(!nativeSaveReady(saveBefore))fail('UNSAVED_NATIVE_IO_STATE');
@@ -362,7 +363,11 @@
       if(a.inputManager.textInfo?.node?.id!==n.id||a.inputManager.inputStatus!=='focusing')fail('TEXT_INPUT_TARGET_MISMATCH');
       contentWriteStarted=true;a.inputManager.processInput(op.text);a.inputManager.blur();break;
     }
-    case 'font': textNode(op.id);number(op.font_size,true);selected([op.id]);cmd('TextFontSize',{fontSize:op.font_size});break;
+    case 'font': {
+      const targets=(op.ids||[op.id]);if(!targets.length)fail('FONT_TARGET_REQUIRED');
+      targets.forEach(textNode);number(op.font_size,true);
+      selected(targets);cmd('TextFontSize',{fontSize:op.font_size});break;
+    }
     case 'move': {
       number(op.dx);number(op.dy);
       const moving=new Set(ids);for(const id of ids)for(const child of node(id).children||[])moving.add(child.id);
@@ -549,15 +554,27 @@
       selected(ids);cmd('Group');break;
     }
     case 'ungroup': if(!node(op.id).children?.length)fail('GROUP_REQUIRED');selected([op.id]);cmd('UnGroup');break;
-    case 'align_top': case 'distribute_horizontal': {
-      if(ids.length<(op.kind==='align_top'?2:3))fail('INSUFFICIENT_SELECTION');
-      ids.forEach(shape);const method=op.kind==='align_top'?'alignTop':'alignDistributeHorizontal';
+    case 'align_left': case 'align_right': case 'align_horizontal_center':
+    case 'align_top': case 'align_bottom': case 'align_vertical_center':
+    case 'distribute_horizontal': case 'distribute_vertical': {
+      const distributing=['distribute_horizontal','distribute_vertical'].includes(op.kind);
+      if(ids.length<(distributing?3:2))fail('INSUFFICIENT_SELECTION');
+      ids.forEach(shape);
+      const method={align_left:'alignLeft',align_right:'alignRight',align_horizontal_center:'alignHorizontalCenter',
+        align_top:'alignTop',align_bottom:'alignBottom',align_vertical_center:'alignVerticalCenter',
+        distribute_horizontal:'alignDistributeHorizontal',distribute_vertical:'alignDistributeVertical'}[op.kind];
       const handler=a.commandManager.handlers.get('Align');if(typeof handler?.[method]!=='function')fail('ALIGN_INTERFACE_MISMATCH');
       selected(ids);const selection=a.api.getSelectNodes(),bounds=arrangementBounds();
       if(selection.some(n=>!bounds[n.id]))fail('ARRANGEMENT_BOUNDS_UNAVAILABLE');
       arrangementOrder=selection.map(n=>n.id);arrangementBeforeBounds=Object.fromEntries(arrangementOrder.map(id=>[id,bounds[id]]));
       if(op.arrangement_bounds&&stable(op.arrangement_bounds)!==stable(arrangementBeforeBounds))fail('STALE_ARRANGEMENT_BOUNDS');
       contentWriteStarted=true;handler[method](selection,a.interactCtx);break;
+    }
+    case 'bring_to_front': case 'send_to_back': case 'bring_forward': case 'send_backward': {
+      ids.forEach(n=>{const t=node(n);if(t.type!==13&&t.type!==3&&!a.api.graphicNodeToPageNode(t).info.connectorV2&&!t.children?.length)fail('ORDER_TARGET_UNSUPPORTED');});
+      const handler=a.commandManager.handlers.get('Order');if(!handler?.execute)fail('ORDER_INTERFACE_MISMATCH');
+      const action={bring_to_front:'BringToFront',send_to_back:'SendToBack',bring_forward:'BringForward',send_backward:'SendBackward'}[op.kind];
+      contentWriteStarted=true;handler.execute(a,{action,nodeIds:ids});break;
     }
     case 'delete': {
       const removed=new Set(ids), visit=id=>{for(const child of node(id).children||[]){removed.add(child.id);visit(child.id);}};ids.forEach(visit);
@@ -581,7 +598,10 @@
   }
   const count=depth()-depthBefore;
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
-  const max=(['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3:['move','resize','caption','caption_format','style'].includes(op.kind)?2:1)+(refreshedGroups.length?1:0);
+  const orderKinds=['bring_to_front','send_to_back','bring_forward','send_backward'];
+  const max=(['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3
+    :orderKinds.includes(op.kind)?3
+    :['move','resize','caption','caption_format','style'].includes(op.kind)?2:1)+(refreshedGroups.length?1:0);
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');
   const changed=stable(before)!==stable(snapshot())||stable(beforeAlpha)!==stable(renderAlpha())||stable(beforeEnds)!==stable(lineEndpoints());
   return {...result(), before, content_write_started:contentWriteStarted,

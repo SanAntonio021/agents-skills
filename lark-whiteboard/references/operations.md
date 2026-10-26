@@ -101,7 +101,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | kind | 参数 |
 |---|---|
 | text | id, text（形状自身文字或独立文本框；独立文本框仅接受非空字符串，原生清空会删除节点，入口写前拒绝） |
-| font | id, font_size |
+| font | id 或 ids 二选一，加 font_size；一次把多个对象改成同一字号 |
 | resize | id, width, height |
 | move | ids, dx, dy |
 | arrow | id, start/end；取值见下方箭头列表 |
@@ -117,10 +117,16 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | connect | start_id/end_id 为两端形状；template_id 可选。省略时使用默认实线箭头，新 ID 由保存回读取得 |
 | group | ids；返回新增 group ID，再据其发起后续操作 |
 | ungroup | id 为 group |
-| align_top | ids，至少两个形状 |
-| distribute_horizontal | ids，至少三个形状 |
+| align_left / align_right / align_horizontal_center | ids，至少两个形状；左边缘、右边缘、水平中线对齐 |
+| align_top / align_bottom / align_vertical_center | ids，至少两个形状；上边缘、下边缘、垂直中线对齐 |
+| distribute_horizontal / distribute_vertical | ids，至少三个形状；水平或垂直等距 |
+| bring_to_front / send_to_back | ids；置顶或置底，可指定多个对象 |
+| bring_forward / send_backward | ids；上移一层或下移一层，可指定多个对象 |
 | delete | ids 为选择对象；delete_ids 为预期消失的全部 ID，包含子对象及关联线 |
 | undo | 仅放在同一次请求中的 delete 后一步；撤销该删除 |
+
+对齐按原生 `getBounds()` 外框执行，高度不同的模块用垂直居中才会让中线对齐；顶对齐只对齐上边缘。等距按整个选择范围与原生实际顺序计算间距。
+层序命令按服务端规则重排 `z_index`；未请求对象之间的相对层序保持不变，几何、文字、样式和绑定都不改。
 
 独立旋转模块的排列使用原生 `getBounds()` 外框，顶对齐核对可见顶部，水平等距按整个选择范围、各外框宽度与原生实际选择顺序核对。坐标可以不相同，外框必须满足排列要求。`arrangement_bounds` 是内部读数，不替换组合的 `object_bounds`；步骤中的 `arrangement_evidence` 和 `arrangement_reopened_bounds` 保存前后与重开核验依据。缺少边界或边界在提交前改变时拒绝写入。
 

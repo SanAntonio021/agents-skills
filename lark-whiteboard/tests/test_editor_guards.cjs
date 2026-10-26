@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 // Explicitly bypass only the production build pin in this synthetic fixture.
-const source=production.replace("if (!['54e7e6de'].includes(signature))",'if (false)')
+const source=production.replace("if (!['15acf339'].includes(signature))",'if (false)')
   .replace("if(saveSignature!=='8a287314')",'if(false)');
 let contentCalls=0,selected=[];
 const shape=(id,locked=false)=>({id,type:13,page:{info:{locked,baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}});

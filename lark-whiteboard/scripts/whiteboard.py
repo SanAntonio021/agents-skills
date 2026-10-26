@@ -1503,8 +1503,8 @@ def validate_append_payload(payload):
             raise ValueError('Append geometry must be finite and have valid dimensions')
         if kind == 'composite_shape':
             fields(n.get('composite_shape'), {'type'}, 'composite shape')
-            if not isinstance(n.get('composite_shape'),dict) or n['composite_shape'].get('type') not in ('rect','round_rect'):
-                raise ValueError('Append supports rect and round_rect native shapes')
+            if not isinstance(n.get('composite_shape'),dict) or n['composite_shape'].get('type') not in ('rect','round_rect','ellipse','diamond','parallelogram'):
+                raise ValueError('Append supports rect, round_rect, ellipse, diamond and parallelogram native shapes')
         if kind in ('composite_shape','text_shape'):
             text(n.get('text'))
         if 'style' in n:

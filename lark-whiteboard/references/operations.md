@@ -5,52 +5,77 @@
 
 ## 读取与创建
 
-先运行 `lark-cli whiteboard +export --help` 和 `lark-cli whiteboard +update --help` 核对当前 CLI。
-CLI 文件路径相对于 cwd；例：
+先运行 `lark-cli whiteboard +export --help` 和 `lark-cli whiteboard +update --help` 核对当前 CLI。CLI 输入和输出路径受当前 cwd、账户临时目录或账户 `files` 目录限制；任务证据保存到当前任务过程目录时，必要时先写到允许目录再移动到过程目录。
 
 ```text
 lark-cli whiteboard +export --whiteboard-token <board> --output-type raw --output before.json --as user
 lark-cli whiteboard +export --whiteboard-token <board> --output-type preview --output preview.jpg --as user
 ```
 
-新画板由 `lark-doc` 插入 `<whiteboard type="blank"></whiteboard>`，从返回值取得文档链接和画板标识。
-矩形、圆角矩形及连线使用 `native_nodes.py`，具体命令以 `--help` 为准。输入结构：
+新画板由 `lark-doc` 插入 `<whiteboard type="blank"></whiteboard>`，从返回结果取得文档 URL/token、画板 token 和 block ID。一张语义完整的系统图使用一个独立画板。
+
+### 图内容清单
+
+写入前先建立图内容清单。它是普通的 JSON，不是另一种画板格式；保存模块、文字、端口、连线、标签和分组，既是写入输入，也是回读验收依据。放在当前任务过程目录。
 
 ```json
 {
-  "shapes": [
-    {"id":"o74001:1","text":"信号源","shape":"round_rect","x":80,"y":100,"width":180,"height":80,"font_size":20},
-    {"id":"o74001:2","text":"处理模块","shape":"rect","x":400,"y":100,"width":180,"height":80,"font_size":20}
+  "diagram": {"title": "发射链路"},
+  "nodes": [
+    {"id": "src", "type": "shape", "shape": "ellipse", "x": 60, "y": 80, "width": 180, "height": 90,
+     "text": "IF 信号源\n750 MBaud", "ports": [{"id": "out", "side": "right", "offset": 0.5}]},
+    {"id": "bpf", "type": "shape", "shape": "parallelogram", "x": 340, "y": 80, "width": 190, "height": 90,
+     "text": "BPF 98–105 GHz"},
+    {"id": "note", "type": "text", "x": 60, "y": 220, "width": 300, "height": 40, "text": "标定时换接"}
   ],
-  "connectors": [{"id":"c74001:1","start_id":"o74001:1","end_id":"o74001:2"}]
+  "groups": [{"id": "tx", "label": "TX", "members": ["src", "bpf"]}],
+  "connections": [
+    {"id": "c1", "start_id": "src", "end_id": "bpf", "start_anchor": {"side": "right"},
+     "end_anchor": {"side": "left"}, "label": "8× LO", "shape": "straight",
+     "start_arrow": "none", "end_arrow": "line_arrow"}
+  ]
 }
 ```
 
-为每次新图选择未使用的 ID，不能照抄示例 ID 到已有画板。原生 raw 在形状节点的**顶层 `text` 字段**放文字，
-不是 `composite_shape.text`。追加用 runner 的 `--append-raw`；它不提供 overwrite 开关。
-创建参数（均可省略，旧输入仍可使用）：
-
-| 对象 | 字段 | 取值 |
-|---|---|---|
-| 形状 | border_color / fill_color / text_color | `#RRGGBB` |
-| 连线 | border_color | `#RRGGBB` |
-| 连线 | border_style | solid / dash / dot |
-| 连线 | shape | straight / right_angled_polyline（服务端自动布线，不指定任意拐点） |
-| 连线 | start_anchor / end_anchor | `{ "side":"top", "offset":0.5 }`；side 为 left/right/top/bottom，offset 为沿边的 0～1 比例 |
-| 连线 | label | 首个线标签文本 |
-
-默认起点在右侧中点、终点在左侧中点。指定锚点后允许向上、向下和向左连接，包围框尺寸保持非负。
-例如驱动从模块下方接入，可用 `start_anchor:{"side":"top"}`、`end_anchor:{"side":"bottom"}`。
-颜色、虚线、锚点与线标签仍须用线上 raw 和预览验收；下表后台编辑接口与本创建接口分开，不表示已有节点自动支持所有创建参数。
-CLI 创建接口不支持连线引用本批次以外的旧形状。给已有图增加模块时，先仅追加新形状；
-已有形状之间新增连线用 `connect`。有模板时复用其样式；无模板时只追加一条坐标线，再在重新加载的原生编辑器中绑定两端，不能把旧形状复制进追加批次。
+编译：
 
 ```text
 python <skill>/scripts/native_nodes.py --input diagram.json --output native.json
-python <skill>/scripts/whiteboard.py --request target.json --append-raw native.json --output-dir <new-evidence-directory> --proxy-url <proxyUrl>
 ```
 
-追加请求的 `operations` 为空。先验收追加并取得服务端实际 ID，再用新会话编辑，不沿用可能已过期的页面缓存。
+支持的原生对象：
+
+| 对象 | `shape` / `type` | 说明 |
+|---|---|---|
+| 矩形 | `rect` | 设备、处理模块 |
+| 圆角矩形 | `round_rect` | 关键设备或外部单元 |
+| 椭圆 | `ellipse` | 信号源、本振、测量源 |
+| 菱形 | `diamond` | 判断、选择或条件 |
+| 平行四边形 | `parallelogram` | 滤波器、参数或数据 |
+| 独立文本 | `type: "text"` | 参考面、备注、图例 |
+| 绑定连线 | `connections` | 必须有 `start_id`、`end_id`，可选锚点、线型、箭头和标签 |
+
+`ports` 和 `groups` 是清单语义，不是 RAW 对象。`ports` 可在清单中记录模块端口；RAW 中仍是连线两端的 `start_object` / `end_object`。`groups` 表示预期分区或编辑组合，真正形成原生组合必须通过已验证的 `group` 编辑操作。不要伪造 `type: "group"` 的 RAW 节点。
+
+旧的 `shapes` / `connectors` 输入仍可编译，以兼容已有调用；新增图优先使用上面的 `nodes` / `connections` 清单。文字属于形状节点的顶层 `text`；不要用独立文本框覆盖形状文字。每次新图使用未占用的 ID，不能把示例 ID 复制到已有画板。
+
+### 新画板写入
+
+```text
+python <skill>/scripts/native_nodes.py --input diagram.json --output native.json
+lark-cli whiteboard +update --whiteboard-token <board> --input_format raw --source @native.json --as user
+```
+
+写入成功后导出 RAW 和预览：
+
+```text
+lark-cli whiteboard +export --whiteboard-token <board> --output-type raw --output after.json --as user
+lark-cli whiteboard +export --whiteboard-token <board> --output-type preview --output preview.jpg --as user
+```
+
+按清单核对对象身份和数量、形状文字、连线两端 ID、锚点、箭头、标签和层序；再实际查看预览中的模块文字、端口、频率、标签遮挡和支路含义。不能用“编译成功”或“CLI 返回成功”代替这两步。
+
+已有画板追加时，CLI 不能在同一批次里引用旧形状。先追加新形状，再在重新加载的原生编辑器中用 `connect` 添加绑定线，或用 `reconnect` 改接已有连线。已有画板覆盖必须明确授权，不能作为局部写入失败后的替代方案。
 
 ## 后台编辑请求
 
@@ -131,6 +156,27 @@ CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线控制点变�
 长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。
+
+## 已有图的局部结构编辑
+
+已有画板先在只读 inspect 中读取最新对象和实际 `z_index`，按准确对象 ID 建立修改计划。常用组合：
+
+```json
+{
+  "operations": [
+    {"kind": "connect", "start_id": "<existing-mmIQ>", "end_id": "<existing-source>"},
+    {"kind": "caption", "id": "<existing-line>", "text": "TX I/Q\n基频 LO"},
+    {"kind": "reconnect", "id": "<existing-line>", "end_id": "<same-existing-mmIQ>"}
+  ]
+}
+```
+
+- 新增连线可以引用已有模块；`connect` 会先追加一条游离线，再由原生编辑器绑定两端。`reconnect` 只改指定端点，未指定端和已有锚点保持。
+- 换标签用 `caption` 改写原连线的标签，不删除旧线、不新建独立文本框，因此中间态不会断链。
+- 删除前必须先读取对象关系和 `delete_ids`；绑定线会随模块级联删除。如果计划只是更换标签，不把旧线放入删除集合。
+- 当前 CLI 没有直接改已有节点 `z_index` 的接口，页面编辑器也已验证的命令集不含“置顶/置底”。图层问题按实际原生编辑器能力处理并复核，不能通过整板覆盖或重放已确认结果来规避。
+- 数据层绑定正确不代表画面能看到连线。外框不透明填充、标签位置和遮挡必须用实际预览确认；必要时调整填充、尺寸、位置或已支持的结构属性，再重新回读和看图。
+- 每次局部编辑完成后核对节点 ID、两端绑定、锚点和 `z_index`，再实际打开最新预览。不能把 inspect 的成功、RAW 的绑定 ID 或 `visual_status:needs_review` 单独当作完成。
 
 ## 失败后
 

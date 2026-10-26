@@ -34,6 +34,9 @@ rejected({...wikiReq,document_url:'https://other.feishu.cn/wiki/WikiTest'},/DOCU
 context.location.pathname='/docx/DocTest';
 console.log('PASS: read-only inspection and four failure paths make no editor calls');
 
+// Native shape projection is covered by test_editor_guards.cjs, where the
+// synthetic native app supplies the complete page-node contract.
+
 // Native corners are an object, and include any rotation already applied.
 context.document.querySelectorAll=()=>[element];
 context.window={devicePixelRatio:2};

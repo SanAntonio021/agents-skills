@@ -64,7 +64,7 @@
     const textInfo=i.connectorV2?i.connectorV2.captions?.data?.[0]?.textStyle:i.textV2;
     if(textInfo && theme.textColorCode>=0 && theme.textColorCodeType===1)v.style.text_color=hex(theme.textColorCode);
     else if(textInfo && typeof n.textProps?.fontColor==='string' && /^#[0-9a-f]{6}$/i.test(n.textProps.fontColor))v.style.text_color=n.textProps.fontColor.toLowerCase();
-    if (n.type===13) v.shape = i.compositeShape.shapeType === 8 ? 'round_rect' : i.compositeShape.shapeType === 11 ? 'rect' : 'unsupported';
+    if (n.type===13) v.shape = ({8:'round_rect',11:'rect'})[i.compositeShape.shapeType] || 'unsupported';
     if (n.parent?.id && a.nodeManager.nodeMap.has(n.parent.id)) v.parent_id = n.parent.id;
     if (n.children?.length) v.children = n.children.map(x => x.id).sort();
     if (i.connectorV2) {

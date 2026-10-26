@@ -102,7 +102,15 @@ for(const n of [guardLeft,guardRight,guardLine])app.nodeManager.nodeMap.set(n.id
 for(const op of [{kind:'reconnect',id:guardLine.id,end_id:guardLeft.id},
                 {kind:'reconnect',id:guardLine.id,start_id:guardRight.id},
                 {kind:'reconnect',id:guardLine.id,start_id:guardLeft.id,end_id:guardLeft.id}]){
-  const rejected=run(op);
+  // Native shape projection retains the type used by the append validator.
+for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+  app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
+    page:{info:{baseV2:{x:0,y:0,width:20,height:20},
+      compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
+  const inspected=adapter(req).nodes.find(n=>n.id==='shape');
+  assert.equal(inspected.shape,name);
+  app.nodeManager.nodeMap.delete('shape');
+}const rejected=run(op);
   assert.match(rejected.adapter_error,/SELF_CONNECTION_NOT_VERIFIED/);
   assert.equal(rejected.content_write_started,false);
 }
@@ -116,7 +124,15 @@ spare.parent=foreignGroup;foreignLine.parent=foreignGroup;
 for(const n of [outside,spare,foreignLine,foreignGroup])app.nodeManager.nodeMap.set(n.id,n);
 for(const op of [{kind:'delete',ids:[outside.id],delete_ids:[outside.id,foreignLine.id]},
                 {kind:'delete',ids:[foreignLine.id],delete_ids:[foreignLine.id]}]){
-  const rejected=run(op);
+  // Native shape projection retains the type used by the append validator.
+for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+  app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
+    page:{info:{baseV2:{x:0,y:0,width:20,height:20},
+      compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
+  const inspected=adapter(req).nodes.find(n=>n.id==='shape');
+  assert.equal(inspected.shape,name);
+  app.nodeManager.nodeMap.delete('shape');
+}const rejected=run(op);
   assert.match(rejected.adapter_error,/GROUP_MEMBER_DELETE_NOT_VERIFIED/);
   assert.equal(rejected.content_write_started,false);
 }
@@ -146,7 +162,15 @@ for(const n of [groupThird,groupFree,groupHalfStart,groupHalfEnd])app.nodeManage
 for(const ids of [[guardLeft.id,groupThird.id,guardLine.id],
                  [guardRight.id,groupThird.id,guardLine.id],
                  [groupThird.id,guardLine.id],[groupThird.id,groupHalfStart.id],[groupThird.id,groupHalfEnd.id]]){
-  const rejected=run({kind:'group',ids});
+  // Native shape projection retains the type used by the append validator.
+for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+  app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
+    page:{info:{baseV2:{x:0,y:0,width:20,height:20},
+      compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
+  const inspected=adapter(req).nodes.find(n=>n.id==='shape');
+  assert.equal(inspected.shape,name);
+  app.nodeManager.nodeMap.delete('shape');
+}const rejected=run({kind:'group',ids});
   assert.match(rejected.adapter_error,/GROUP_BOUND_ENDPOINT_OUTSIDE_SELECTION/);
   assert.equal(rejected.content_write_started,false);
 }
@@ -206,7 +230,15 @@ for(const invalid of [undefined,()=>null,()=>({minX:150,minY:30,maxX:150,maxY:13
                      ()=>({minX:NaN,minY:30,maxX:190,maxY:130}),
                      ()=>({minX:150,minY:30,maxX:190,maxY:20})]){
   arrangeB.getBounds=invalid;
-  const rejected=arrangeRun({kind:'align_top',ids:['a','b','c']});
+  // Native shape projection retains the type used by the append validator.
+for (const [nativeType, name] of [[8,'round_rect'],[11,'rect']]) {
+  app.nodeManager.nodeMap.set('shape',{id:'shape',type:13,
+    page:{info:{baseV2:{x:0,y:0,width:20,height:20},
+      compositeShape:{shapeType:nativeType},textV2:{text:'module',fontSize:20},theme:{}}}});
+  const inspected=adapter(req).nodes.find(n=>n.id==='shape');
+  assert.equal(inspected.shape,name);
+  app.nodeManager.nodeMap.delete('shape');
+}const rejected=arrangeRun({kind:'align_top',ids:['a','b','c']});
   assert.match(rejected.adapter_error,/ARRANGEMENT.*BOUNDS|BOUNDS.*ARRANGEMENT/);
   assert.equal(rejected.content_write_started,false);assert.equal(arrangementCalls,0);
 }

@@ -116,7 +116,12 @@ def test_local_edit_is_manual_signal_and_failed_source_check_preserves_claims():
     assert state["discovery"]["snapshots"]["public:a"]["adopted"]
     assert "不能证明行为退化" in row["summary"]
     again = update(state, inv)
-    assert again["reviews"] == report["reviews"]
+    assert again["reviews"] == []
+    assert state["discovery"]["reviews"][row["id"]]["evidence"] == row["evidence"]
+    inv["public:a"]["local_digest"] = "v3"
+    reopened = update(state, inv)
+    assert len(reopened["reviews"]) == 1
+    assert reopened["reviews"][0]["evidence"]["after"] == "v3"
 
 
 def test_manual_review_closed_via_existing_facts_does_not_requeue(tmp_path):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import subprocess
@@ -178,6 +179,41 @@ class WeeklySkillReviewTests(unittest.TestCase):
                 {"skill": skill, "active_hosts": ["claude", "codex"], "locations": []}
             ],
         }
+
+    def test_missed_use_alerts_only_after_adjacent_weeks(self) -> None:
+        first = {
+            "window": {"start": "2026-08-01T14:00:00+08:00", "end": "2026-08-08T14:00:00+08:00"},
+            "classifications": {"疑似漏用": [{"skill": "alpha", "host": "claude", "source": {"path": "a.jsonl", "line": 1}}]},
+        }
+        second = {
+            "window": {"start": "2026-08-08T14:00:00+08:00", "end": "2026-08-15T14:00:00+08:00"},
+            "classifications": {"疑似漏用": [{"skill": "alpha", "host": "claude", "source": {"path": "a.jsonl", "line": 2}}]},
+        }
+        state = REVIEW.new_state()
+        one = REVIEW.extract_usage_observations(first, "usage/one.json", self.skills, {})
+        self.assertEqual(one[0]["queueable"], False)
+        REVIEW.remember_missed_use_history(state, first)
+        two = REVIEW.extract_usage_observations(second, "usage/two.json", self.skills, {}, state["missed_use_history"])
+        self.assertEqual(two[0]["queueable"], True)
+        self.assertIsNotNone(two[0]["proposal"])
+
+    def test_batch_approval_requires_each_fingerprint(self) -> None:
+        observations = [self.observation("alpha", purpose="p1"), self.observation("beta", purpose="p2")]
+        state = self.seed(observations)
+        for item in observations:
+            state["findings"][item["id"]]["status"] = "awaiting_decision"
+            state["queue"].append(item["id"])
+        self.save(state)
+        selections = json.dumps([
+            {"finding_id": item["id"], "expected_evidence_fingerprint": item["evidence_fingerprint"],
+             "expected_proposal_fingerprint": item["proposal_fingerprint"]} for item in observations
+        ])
+        result, code = REVIEW.record_batch_decisions(REVIEW.parse_args([
+            "approve-batch", "--state", str(self.state_path), "--selections", selections
+        ]))
+        self.assertEqual(code, 0, result)
+        saved = self.load()
+        self.assertTrue(all(saved["findings"][item["id"]]["status"] == "approved" for item in observations))
 
     def test_four_complete_weeks_and_reset_conditions(self) -> None:
         state = REVIEW.new_state()
@@ -639,6 +675,63 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertEqual(REVIEW.classify_answer("暂不批准"), "reject")
         self.assertEqual(REVIEW.classify_answer("没看懂"), "explain")
         self.assertEqual(REVIEW.classify_answer("可以，但只改触发边界"), "adjust")
+
+    def test_closed_hygiene_fact_is_reused_only_for_the_same_paths(self) -> None:
+        paths = ["过程文件/a", "过程文件/b"]
+        observation = REVIEW.make_observation(
+            kind="hygiene_directory_structure",
+            source="hygiene",
+            subject="过程文件",
+            purpose="人工复核:directory_structure",
+            severity="critical",
+            title="技能目录嵌套太深",
+            evidence_summary="2 个独立位置",
+            evidence={"paths": paths},
+            suggested_proposal=REVIEW.proposal("人工复核", "人工复核", ["过程文件"], skills=["过程文件"]),
+            report_refs=["test/summary.json"],
+            needs_facts=True,
+            fact_questions=("事实一", "事实二"),
+            skills_root=self.skills,
+        )
+        observation["evidence_items"] = [
+            {"kind": "directory_structure", "path": path} for path in paths
+        ]
+        self.seed([observation])
+        question, _ = self.invoke("next-question")
+        self.invoke(
+            "record-decision",
+            "--finding-id",
+            observation["id"],
+            "--expected-evidence-fingerprint",
+            question["expected_evidence_fingerprint"],
+            "--expected-proposal-fingerprint",
+            question["expected_proposal_fingerprint"],
+            "--answer",
+            "事实回答",
+            "--facts-outcome",
+            "close",
+        )
+        state = self.load()
+        self.assertEqual(state["findings"][observation["id"]]["status"], "closed")
+
+        # Same paths, re-aggregated evidence fingerprint: keep the closure.
+        reordered = copy.deepcopy(observation)
+        reordered["evidence_items"] = list(reversed(reordered["evidence_items"]))
+        reordered["evidence_fingerprint"] = REVIEW.fingerprint(reordered["evidence_items"])
+        reordered["source_fingerprint"] = "0" * 64
+        REVIEW.merge_observations(state, [reordered], "2026-08-16")
+        self.assertEqual(state["findings"][observation["id"]]["status"], "closed")
+        self.assertNotIn(observation["id"], state["queue"])
+
+        # A newly added path is new evidence and reopens the item.
+        widened = copy.deepcopy(reordered)
+        widened["evidence_items"] = widened["evidence_items"] + [
+            {"kind": "directory_structure", "path": "过程文件/c"}
+        ]
+        widened["evidence_fingerprint"] = REVIEW.fingerprint(widened["evidence_items"])
+        REVIEW.merge_observations(state, [widened], "2026-08-17")
+        self.assertEqual(state["findings"][observation["id"]]["status"], "queued")
+        self.assertIn(observation["id"], state["queue"])
         self.assertEqual(
             REVIEW.normalize_targets(["alpha/SKILL.md", "C:/outside", "/outside", "../outside"]),
             ["alpha/SKILL.md"],

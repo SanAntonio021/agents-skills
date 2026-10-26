@@ -1240,6 +1240,20 @@ def scan_codex_history(
     return scanned_files, excluded_sessions, approval_review_sessions, subagent_sessions
 
 
+def claude_user_record_is_internal(row: dict[str, Any], text: str) -> bool:
+    """Return True for host-injected companion records, not user requests."""
+    if row.get("isMeta") is True:
+        return True
+    if row.get("turnCompanion") is True:
+        return True
+    if row.get("sourceToolUseID"):
+        return True
+    if str(row.get("type") or "") == "attachment":
+        return True
+    normalized = text.lstrip()
+    return normalized.startswith("Base directory for this skill:")
+
+
 def claude_text_content(message: Any) -> str:
     if not isinstance(message, dict):
         return ""
@@ -1317,7 +1331,7 @@ def scan_claude_history(
 
                 if row_type == "user":
                     text_value = claude_text_content(row.get("message"))
-                    if text_value.strip():
+                    if text_value.strip() and not claude_user_record_is_internal(row, text_value):
                         user_key = row_id or f"line-{line_number}"
                         users[user_key] = MessageRecord(
                             host="claude",

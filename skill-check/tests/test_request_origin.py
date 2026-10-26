@@ -49,6 +49,27 @@ class RequestOriginTests(unittest.TestCase):
                 '--claude-projects-root',str(root/'claude'),'--claude-telemetry-root',str(root/'telemetry')])
             return AUDIT.audit(args)
 
+    def test_claude_skill_companion_records_are_not_user_requests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            for folder in ['skills/alpha', 'codex', 'claude', 'telemetry']:
+                (root / folder).mkdir(parents=True)
+            (root/'skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: alpha task\n---\n',encoding='utf-8')
+            rows=[
+                {'type':'user','uuid':'request','sessionId':'s','timestamp':'2026-01-01T00:00:30Z',
+                 'message':{'role':'user','content':[{'type':'text','text':'请完成普通回答'}]}},
+                {'type':'user','uuid':'companion','parentUuid':'request','sessionId':'s','isMeta':True,
+                 'turnCompanion':True,'sourceToolUseID':'tool-1','timestamp':'2026-01-01T00:01:00Z',
+                 'message':{'role':'user','content':[{'type':'text','text':'Base directory for this skill: X\n\n# alpha rules'}]}},
+            ]
+            (root/'claude/sample.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows),encoding='utf-8')
+            args=AUDIT.parse_args(['--reports-root',str(root/'reports'),'--date','2026-01-03',
+                '--window-start','2025-12-27T14:00:00+08:00','--window-end','2026-01-03T14:00:00+08:00',
+                '--skills-root',str(root/'skills'),'--codex-sessions-root',str(root/'codex'),
+                '--claude-projects-root',str(root/'claude'),'--claude-telemetry-root',str(root/'telemetry')])
+            result=AUDIT.audit(args)
+            assert all('alpha rules' not in item.get('excerpt','') for item in result['classifications']['疑似漏用'])
+
     def test_guardian_origins_exclude_entire_request(self):
         origins = [
             {'source':{'subagent':{'other':'guardian'}},'thread_source':'guardian_review'},

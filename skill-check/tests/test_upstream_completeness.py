@@ -125,3 +125,38 @@ def test_failed_source_never_counts_as_complete_week_but_healthy_source_continue
     assert validation["valid"] is True and validation["checks_complete"] is False
     checked = {row["source"]: row["remote_checked"] for row in validation["source_checks"]}
     assert checked == {"failed": False, "healthy": True}
+
+def test_benign_source_observation_retires_prior_review_required(tmp_path):
+    observed = REVIEW.make_observation(
+        kind="upstream_review_required", source="upstream", subject="beta:healthy",
+        purpose="prepare-isolated-candidate", severity="medium", title="review",
+        evidence={"status": "review_required", "changed": ["SKILL.md"]},
+        evidence_summary="review", suggested_proposal=REVIEW.proposal("prepare", "review", ["beta"], skills=["beta"]),
+        report_refs=["upstream.json"], queueable=False, skills_root=tmp_path,
+    )
+    healthy = {
+        "id": "upstream-source-benign-beta-healthy",
+        "kind": "upstream_source_benign",
+        "source": "upstream",
+        "subject": "beta:healthy",
+        "purpose": "retire-resolved-upstream-review",
+        "severity": "medium",
+        "title": "healthy",
+        "evidence": {"status": "already_reviewed"},
+        "evidence_summary": "already reviewed",
+        "evidence_fingerprint": "healthy",
+        "proposal": None,
+        "proposal_fingerprint": None,
+        "source_fingerprint": "healthy",
+        "report_refs": ["upstream.json"],
+        "queueable": False,
+        "needs_facts": False,
+        "fact_questions": [],
+    }
+    state = REVIEW.new_state()
+    REVIEW.merge_observations(state, [observed], "2026-09-01", authoritative_sources={"upstream"})
+    REVIEW.merge_observations(state, [healthy], "2026-09-08", authoritative_sources={"upstream"})
+    finding = state["findings"][observed["id"]]
+    assert finding["status"] == "archived"
+    assert finding["archive_reason"]
+    assert any(row.get("event") == "archived" for row in finding["history"])

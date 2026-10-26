@@ -136,6 +136,7 @@ def update_discovery(state: dict, *, inventory: dict, date_value: str, intake: A
 
     # Only explicitly unresolved provenance triggers research. A self-created
     # skill registered as none is a normal state, as is an absent registry entry.
+    active_review_ids: set[str] = set()
     for key, row in inventory.items():
         if row["status"] in {"pending", "unknown", "needs_research"}:
             add_trigger({"skill_key": key, "trigger": "source_unknown",
@@ -150,6 +151,7 @@ def update_discovery(state: dict, *, inventory: dict, date_value: str, intake: A
                 prior = {"local_digest": next(iter(accepted)), "adopted": row["adopted"]}
         if prior and prior["local_digest"] != row["local_digest"] and (prior.get("adopted") or row["adopted"]):
             review_id = "local-" + digest(key)[:20]
+            active_review_ids.add(review_id)
             reviews[review_id] = {
                 "id": review_id, "kind": "local_capability_review", "skill_key": key,
                 "evidence": {"before": prior["local_digest"], "after": row["local_digest"],
@@ -218,6 +220,10 @@ def update_discovery(state: dict, *, inventory: dict, date_value: str, intake: A
     return {"week": week, "limits": {"skills": SKILL_LIMIT, "candidates_per_skill": CANDIDATE_LIMIT},
             "admitted_skills": budget["skills"], "research_tasks": selected,
             "deferred_task_ids": [t["id"] for t in pending if t["skill_key"] not in budget["skills"]],
-            "inventory": list(inventory.values()), "reviews": list(reviews.values()),
+            "inventory": list(inventory.values()),
+            "reviews": [
+                r for rid, r in reviews.items()
+                if r.get("kind") == "discovery_candidate" or rid in active_review_ids
+            ],
             "outcomes": [{"task_id": t["id"], "skill_key": t["skill_key"], "status": t["status"]}
                          for t in tasks.values() if t["status"] != "pending"]}

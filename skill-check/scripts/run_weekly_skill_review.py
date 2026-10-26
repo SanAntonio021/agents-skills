@@ -62,13 +62,23 @@ INVALIDATABLE_BATCH_STATUSES = {
     "blocked",
 }
 TERMINAL_FINDING_STATUSES = {
+    "archived",
     "closed",
     "completed",
     "execution_declined",
+    "historical",
     "rejected",
     "resolved",
     "waiting_evidence",
 }
+HISTORICAL_FINDING_STATUSES = {"archived", "historical"}
+BENIGN_UPSTREAM_STATUSES = {
+    "already_reviewed",
+    "no_relevant_change",
+    "provenance_only",
+    "up_to_date",
+}
+MISSED_USE_ALERT_WEEKS = 2
 
 SCRIPT_PATH = Path(__file__).resolve()
 _discovery_spec = importlib.util.spec_from_file_location("weekly_discovery", SCRIPT_PATH.with_name("weekly_discovery.py"))
@@ -484,6 +494,31 @@ def build_dashboard_snapshot(
         "source_only": sum(row["status"] == "source_only" for row in rows),
     }
     warnings = usage.get("warnings", {})
+    findings = state.get("findings", {})
+    current_findings: list[dict[str, Any]] = []
+    historical_count = 0
+    status_counts: dict[str, int] = {}
+    for finding in findings.values():
+        if not isinstance(finding, dict):
+            continue
+        status = str(finding.get("status") or "")
+        status_counts[status] = status_counts.get(status, 0) + 1
+        if status in HISTORICAL_FINDING_STATUSES:
+            historical_count += 1
+            continue
+        if status in TERMINAL_FINDING_STATUSES or status in {"observed", ""}:
+            continue
+        current_findings.append(
+            {
+                "id": finding.get("id"),
+                "title": compact_text(finding.get("title"), 200),
+                "skill": compact_text((finding.get("proposal") or {}).get("skills", [""])[:1] or finding.get("subject"), 200),
+                "status": status,
+                "severity": finding.get("severity"),
+                "source": finding.get("source"),
+            }
+        )
+    current_findings.sort(key=lambda item: (str(item.get("severity") or ""), str(item.get("skill") or "")))
     return {
         "schema_version": 1,
         "date": date,
@@ -500,6 +535,12 @@ def build_dashboard_snapshot(
             "unmapped_request_count": int(warnings.get("unmapped_request_count", 0)),
         },
         "counts": counts,
+        "findings": {
+            "current": current_findings,
+            "current_count": len(current_findings),
+            "historical_count": historical_count,
+            "by_status": dict(sorted(status_counts.items())),
+        },
         "skills": sorted(rows, key=lambda row: row["skill"].lower()),
     }
 
@@ -711,6 +752,20 @@ def fatal_payload(kind: str, detail: str, state_path: Path) -> dict[str, Any]:
             "suggested_action": "保留原状态文件，修复格式或解除锁冲突后重试；不要自动重建。",
         },
     }
+
+
+def missed_use_alertable(evidences: list[dict[str, Any]]) -> bool:
+    """Return True only for a genuine miss observed in adjacent complete weeks."""
+    if not evidences:
+        return False
+    dates = sorted({str(item.get("week_start") or "") for item in evidences if item.get("week_start")})
+    if len(dates) < MISSED_USE_ALERT_WEEKS:
+        return False
+    try:
+        parsed = [datetime.fromisoformat(value).date() for value in dates[-MISSED_USE_ALERT_WEEKS:]]
+    except ValueError:
+        return False
+    return (parsed[-1] - parsed[-2]).days == 7
 
 
 def proposal(
@@ -1210,6 +1265,26 @@ def extract_upstream_observations(
         source_id = str(row.get("source") or row.get("mirror") or "unknown-source")
         subject = f"{skill}:{source_id}"
         if status in benign_statuses:
+            observations.append(
+                make_observation(
+                    kind="upstream_source_benign",
+                    source="upstream",
+                    subject=subject,
+                    purpose="retire-resolved-upstream-review",
+                    severity="medium",
+                    title=f"{skill} 的来源已回到已审核或最新状态",
+                    evidence_summary=f"上游来源 {source_id} 当前为 {status}。",
+                    evidence={
+                        "status": status,
+                        "current_commit": row.get("current_commit"),
+                        "last_reviewed_commit": row.get("last_reviewed_commit"),
+                    },
+                    suggested_proposal=None,
+                    report_refs=[report_ref],
+                    queueable=False,
+                    skills_root=skills_root,
+                )
+            )
             continue
         if status == "review_required":
             observations.append(
@@ -1561,6 +1636,7 @@ def extract_usage_observations(
     report_ref: str,
     skills_root: Path,
     unseen_counts: dict[str, int],
+    missed_history: dict[str, list[dict[str, Any]]] | None = None,
 ) -> list[dict[str, Any]]:
     observations: list[dict[str, Any]] = []
     classifications = summary.get("classifications", {})
@@ -1576,9 +1652,14 @@ def extract_usage_observations(
                 "source": item.get("source"),
                 "matched_terms": item.get("matched_terms"),
                 "score": item.get("score"),
+                "week_start": summary.get("window", {}).get("start"),
             }
             for item in items[:5]
         ]
+        previous = (missed_history or {}).get(skill, [])
+        combined = [*previous, *evidence_rows]
+        alertable = missed_use_alertable(combined)
+        proposal_ready = alertable
         observations.append(
             make_observation(
                 kind="suspected_missed_use",
@@ -1586,21 +1667,25 @@ def extract_usage_observations(
                 subject=skill,
                 purpose="repair-trigger-boundary",
                 severity="medium",
-                title=f"{skill} 可能存在漏触发",
-                evidence_summary=f"发现 {len(items)} 条确定性规则候选；候选不是实际漏触发结论。",
+                title=f"{skill} 真实漏用已进入面板",
+                evidence_summary=(
+                    f"发现 {len(items)} 条已排除内部正文和规则正文的候选；"
+                    + ("相邻两周均出现，进入人工复核。" if alertable else "首次出现只记录，不主动询问。")
+                ),
                 evidence=evidence_rows,
-                suggested_proposal=proposal(
-                    "补触发边界",
-                    f"若真实使用习惯确认需要自动触发，则收紧或补充 {skill} 的 description，并补正反触发测试。",
-                    [skill],
-                    skills=[skill],
+                suggested_proposal=(
+                    proposal(
+                        "复核真实漏用",
+                        f"{skill} 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+                        [skill],
+                        skills=[skill],
+                    )
+                    if proposal_ready
+                    else None
                 ),
                 report_refs=[report_ref],
-                needs_facts=True,
-                fact_questions=[
-                    f"这些请求是否确实应该自动触发 `{skill}`，而不是由普通能力直接处理？",
-                    f"你通常希望自动触发 `{skill}`，还是只在显式点名时使用？",
-                ],
+                queueable=alertable,
+                needs_facts=False,
                 skills_root=skills_root,
             )
         )
@@ -1670,6 +1755,45 @@ def extract_usage_observations(
             )
         )
     return observations
+
+
+def remember_missed_use_history(state: dict[str, Any], usage: dict[str, Any]) -> None:
+    """Retain only the current and immediately previous complete week."""
+    window = usage.get("window") or {}
+    week_start = str(window.get("start") or "")
+    if not week_start:
+        return
+    history = state.setdefault("missed_use_history", {})
+    current: dict[str, list[dict[str, Any]]] = {}
+    for item in usage.get("classifications", {}).get("疑似漏用", []):
+        if not isinstance(item, dict) or not item.get("skill"):
+            continue
+        row = {
+            "host": item.get("host"),
+            "source": item.get("source"),
+            "matched_terms": item.get("matched_terms"),
+            "score": item.get("score"),
+            "week_start": week_start,
+        }
+        current.setdefault(str(item["skill"]), []).append(row)
+    try:
+        current_date = datetime.fromisoformat(week_start).date()
+    except ValueError:
+        return
+    for skill in set(history) | set(current):
+        rows = [*history.get(skill, []), *current.get(skill, [])]
+        kept = []
+        for row in rows:
+            try:
+                row_date = datetime.fromisoformat(str(row.get("week_start"))).date()
+            except ValueError:
+                continue
+            if (current_date - row_date).days in {0, 7}:
+                kept.append(row)
+        if kept:
+            history[skill] = kept[-20:]
+        else:
+            history.pop(skill, None)
 
 
 def invalidate_batches_for_finding(
@@ -1897,12 +2021,104 @@ def verified_release_source_fingerprint(
     return None
 
 
+def archive_finding(finding: dict[str, Any], date: str, reason: str) -> None:
+    previous_status = finding.get("status")
+    finding["status"] = "archived"
+    finding["archived_date"] = date
+    finding["archive_reason"] = compact_text(reason, 500)
+    finding.setdefault("history", []).append({
+        "event": "archived",
+        "date": date,
+        "previous_status": previous_status,
+        "reason": compact_text(reason, 500),
+    })
+
+
+def upstream_source_is_benign(finding: dict[str, Any], observations: list[dict[str, Any]]) -> bool:
+    subject = str(finding.get("subject") or "")
+    for observation in observations:
+        if observation.get("subject") != subject or observation.get("source") != "upstream":
+            continue
+        if observation.get("kind") != "upstream_source_benign":
+            continue
+        evidence = observation.get("evidence") or {}
+        if evidence.get("status") in BENIGN_UPSTREAM_STATUSES:
+            return True
+    return False
+
+
 def finding_changed(previous: dict[str, Any], observation: dict[str, Any]) -> bool:
     return (
         previous.get("evidence_fingerprint") != observation.get("evidence_fingerprint")
         or previous.get("proposal_fingerprint") != observation.get("proposal_fingerprint")
         or previous.get("source_fingerprint") != observation.get("source_fingerprint")
     )
+
+
+def hygiene_paths(item: dict[str, Any]) -> tuple[str, ...]:
+    """Normalized evidence paths for a directory-shape finding."""
+    raw_paths: list[str] = []
+    items = item.get("evidence_items")
+    if isinstance(items, list):
+        for entry in items:
+            if isinstance(entry, dict) and entry.get("path"):
+                raw_paths.append(str(entry["path"]))
+    evidence = item.get("evidence")
+    if isinstance(evidence, dict) and evidence.get("path"):
+        raw_paths.append(str(evidence["path"]))
+    normalized = {
+        path.replace("\\", "/").strip().strip("/")
+        for path in raw_paths
+    }
+    normalized.discard("")
+    return tuple(sorted(normalized))
+
+
+def _closed_hygiene_state(candidate: dict[str, Any]) -> bool:
+    if candidate.get("status") not in TERMINAL_FINDING_STATUSES:
+        return False
+    decision = candidate.get("decision") or {}
+    if decision.get("value") not in {"closed_after_facts", "rejected"}:
+        return False
+    return not (
+        candidate.get("execution")
+        or candidate.get("pending_revision")
+        or candidate.get("requested_adjustment")
+    )
+
+
+def reusable_hygiene_close(
+    previous: dict[str, Any], observation: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Reuse a fact-based closure when the same paths still raise the same finding.
+
+    Aggregation order and unrelated sibling entries can change the evidence
+    fingerprint without changing the underlying directory fact. Only a
+    fact-based closure of the same hygiene kind over the same path set is
+    reused; approvals and execution records are never reused. A newly added
+    path is new evidence and still reopens the finding.
+    """
+    if previous.get("source") not in {"hygiene", "hygiene_private"}:
+        return None
+    if observation.get("source") not in {"hygiene", "hygiene_private"}:
+        return None
+    if previous.get("kind") != observation.get("kind"):
+        return None
+    current_paths = hygiene_paths(observation)
+    if not current_paths:
+        return None
+    candidates: list[dict[str, Any]] = [previous]
+    for entry in previous.get("history", []) or []:
+        reviewed = entry.get("previous") if isinstance(entry, dict) else None
+        if isinstance(reviewed, dict):
+            candidates.append(reviewed)
+    for candidate in candidates:
+        if not _closed_hygiene_state(candidate):
+            continue
+        previous_paths = hygiene_paths(candidate)
+        if previous_paths and set(current_paths).issubset(set(previous_paths)):
+            return candidate
+    return None
 
 
 def merge_observations(
@@ -1925,6 +2141,8 @@ def merge_observations(
 
     for observation in observations:
         finding_id = observation["id"]
+        if observation.get("kind") == "upstream_source_benign":
+            continue
         seen_ids.add(finding_id)
         previous = findings.get(finding_id)
         changed = False
@@ -1945,12 +2163,6 @@ def merge_observations(
             if not observation["queueable"]:
                 continue
         else:
-            changed = finding_changed(previous, observation)
-            previous_fingerprints = {
-                "evidence_fingerprint": previous.get("evidence_fingerprint"),
-                "proposal_fingerprint": previous.get("proposal_fingerprint"),
-                "source_fingerprint": previous.get("source_fingerprint"),
-            }
             # Keep the rationale and facts attached to their old evidence before
             # invalidating the active decision. Hashes alone cannot recover it.
             previous_review = {
@@ -1960,6 +2172,27 @@ def merge_observations(
                     "pending_revision", "requested_adjustment", "evidence_summary", "evidence_items",
                 )
                 if key in previous
+            }
+            changed = finding_changed(previous, observation)
+            reusable = reusable_hygiene_close(previous, observation)
+            if reusable is not None:
+                # The same directory fact was already closed after facts. A
+                # re-aggregated evidence fingerprint is not new evidence, so
+                # keep the closure instead of re-queuing the same hygiene item.
+                previous.update(copy.deepcopy(observation))
+                previous.update(
+                    {
+                        "decision": copy.deepcopy(reusable.get("decision")),
+                        "facts": copy.deepcopy(reusable.get("facts", [])),
+                        "status": "closed",
+                        "last_seen": date,
+                    }
+                )
+                continue
+            previous_fingerprints = {
+                "evidence_fingerprint": previous.get("evidence_fingerprint"),
+                "proposal_fingerprint": previous.get("proposal_fingerprint"),
+                "source_fingerprint": previous.get("source_fingerprint"),
             }
             preserved = {
                 key: copy.deepcopy(previous.get(key))
@@ -2065,6 +2298,15 @@ def merge_observations(
         if finding.get("source") not in authoritative_sources:
             continue
         if finding.get("status") in {"execution_failed", "retry_pending", "completed"}:
+            continue
+        if (
+            finding.get("source") == "upstream"
+            and finding.get("kind") == "upstream_review_required"
+            and upstream_source_is_benign(finding, observations)
+        ):
+            archive_finding(finding, date, "upstream source is already reviewed or up to date")
+            continue
+        if finding.get("source") == "discovery" and finding.get("status") in HISTORICAL_FINDING_STATUSES:
             continue
         if finding.get("status") == "execution_pending" and any(
             batch.get("status") in {"ready", "partial_failed"}
@@ -2321,6 +2563,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                         validation["usage"]["report_ref"],
                         skills_root,
                         unseen_counts,
+                        state.get("missed_use_history", {}),
                     )
                 )
             authoritative_sources = {
@@ -2335,6 +2578,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                 args.date,
                 authoritative_sources=authoritative_sources,
             )
+            if summaries["usage"] and usage_complete:
+                remember_missed_use_history(state, summaries["usage"])
             run_record = {
                 "date": args.date,
                 "completed_at": now_iso(),
@@ -2429,7 +2674,7 @@ def pending_approved_findings(state: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def select_queue_item(state: dict[str, Any]) -> dict[str, Any] | None:
+def select_queue_items(state: dict[str, Any]) -> list[dict[str, Any]]:
     candidates = [
         state["findings"].get(finding_id)
         for finding_id in state["queue"]
@@ -2438,15 +2683,43 @@ def select_queue_item(state: dict[str, Any]) -> dict[str, Any] | None:
     candidates = [item for item in candidates if item]
     critical = [item for item in candidates if item.get("severity") == "critical"]
     if critical:
-        return critical[0]
+        return critical
     retries = [item for item in candidates if item.get("status") == "retry_pending"]
     if retries:
-        return retries[0]
-    return candidates[0] if candidates else None
+        return retries
+    return candidates
+
+
+def select_queue_item(state: dict[str, Any]) -> dict[str, Any] | None:
+    items = select_queue_items(state)
+    return items[0] if items else None
 
 
 def fact_question_limit(finding: dict[str, Any]) -> int:
     return min(2, len(finding.get("fact_questions", [])))
+
+
+def batch_question_payload(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    items=[]
+    for finding in findings:
+        proposed = finding.get("pending_revision") or finding.get("proposal") or {}
+        items.append({
+            "finding_id": finding["id"],
+            "title": finding["title"],
+            "skill": (proposed.get("skills") or [""])[0],
+            "summary": proposed.get("summary") or finding["title"],
+            "evidence": finding.get("evidence_summary", ""),
+            "expected_evidence_fingerprint": finding["evidence_fingerprint"],
+            "expected_proposal_fingerprint": finding.get("proposal_fingerprint"),
+        })
+    return {
+        "status": "question",
+        "question_type": "batch_decision",
+        "batch_size": len(items),
+        "items": items,
+        "question": "以下已核实的修改建议可以一起确认；每项仍独立保留证据、测试和批准记录。是否全部批准？",
+        "choices": ["全部批准", "逐项处理", "解释一下"],
+    }
 
 
 def question_payload(finding: dict[str, Any]) -> dict[str, Any]:
@@ -2498,7 +2771,8 @@ def next_question_command(args: argparse.Namespace) -> tuple[dict[str, Any], int
                     "status": "not_initialized",
                     "message": "尚未运行完整周检。",
                 }, 2
-            finding = select_queue_item(state)
+            selected = select_queue_items(state)
+            finding = selected[0] if selected else None
             if finding is None:
                 approved = pending_approved_findings(state)
                 if approved:
@@ -2523,6 +2797,16 @@ def next_question_command(args: argparse.Namespace) -> tuple[dict[str, Any], int
                 changed = True
             if changed:
                 save_state(state_path, state)
+            if (
+                finding.get("status") == "awaiting_decision"
+                and len(selected) > 1
+                and all(
+                    item.get("status") == "awaiting_decision"
+                    and item.get("severity") != "critical"
+                    for item in selected
+                )
+            ):
+                return batch_question_payload(selected), 0
             return question_payload(finding), 0
     except (StateError, LockConflict, OSError) as exc:
         return fatal_payload(exc.__class__.__name__, str(exc), state_path), 3
@@ -2593,6 +2877,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     record.add_argument("--facts-outcome", choices=("close", "propose", "wait"))
     record.add_argument("--revised-proposal-json")
+
+    batch_approve = subparsers.add_parser(
+        "approve-batch",
+        help="Approve all items in an already rendered decision list, with per-item fingerprint checks.",
+    )
+    add_state_arguments(batch_approve)
+    batch_approve.add_argument("--selections", required=True)
+    batch_approve.add_argument("--reason")
 
     prepare = subparsers.add_parser(
         "prepare-execution", help="Freeze approved findings and handle the one batch confirmation."
@@ -2748,6 +3040,52 @@ def ensure_in_queue(state: dict[str, Any], finding_id: str, *, front: bool = Fal
         state["queue"].insert(0, finding_id)
     else:
         state["queue"].append(finding_id)
+
+
+def record_batch_decisions(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    state_path = args.state.resolve()
+    try:
+        selections = json.loads(args.selections)
+        if not isinstance(selections, list) or not selections:
+            raise ValueError("selections must be a non-empty JSON list")
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        return {"status": "invalid_request", "error": str(exc)}, 2
+    try:
+        with StateLock(state_path, args.lock_timeout):
+            state, created = load_state(state_path)
+            if created:
+                return {"status": "not_initialized", "message": "尚未运行完整周检。"}, 2
+            checked=[]
+            for row in selections:
+                if not isinstance(row, dict):
+                    return {"status": "invalid_request", "error": "each selection must be an object"}, 2
+                fid=str(row.get("finding_id") or "")
+                finding=state["findings"].get(fid)
+                if finding is None:
+                    return {"status": "not_found", "finding_id": fid}, 2
+                if finding.get("status") != "awaiting_decision":
+                    return {"status": "invalid_state", "finding_id": fid, "current_status": finding.get("status")}, 2
+                if row.get("expected_evidence_fingerprint") != finding.get("evidence_fingerprint"):
+                    return {"status": "stale_fingerprint", "field": "evidence", "finding_id": fid}, 4
+                if row.get("expected_proposal_fingerprint") != finding.get("proposal_fingerprint"):
+                    return {"status": "stale_fingerprint", "field": "proposal", "finding_id": fid}, 4
+                checked.append(finding)
+            timestamp=now_iso()
+            for finding in checked:
+                finding["status"]="approved"
+                finding["decision"]={
+                    "value":"approved",
+                    "reason_summary":compact_text(args.reason or "用户一次批准完整清单中的独立修改项"),
+                    "evidence_fingerprint":finding["evidence_fingerprint"],
+                    "proposal_fingerprint":finding.get("proposal_fingerprint"),
+                    "recorded_at":timestamp,
+                    "batch_reason":"batch_approval",
+                }
+                remove_from_queue(state,finding["id"])
+            save_state(state_path,state)
+            return {"status":"recorded","decision":"approved","approved_count":len(checked),"approved_finding_ids":[f["id"] for f in checked]},0
+    except (StateError, LockConflict, OSError) as exc:
+        return fatal_payload(exc.__class__.__name__, str(exc), state_path), 3
 
 
 def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
@@ -3639,6 +3977,7 @@ def main(argv: list[str] | None = None) -> int:
         "scan": scan_command,
         "next-question": next_question_command,
         "record-decision": record_decision_command,
+        "approve-batch": record_batch_decisions,
         "prepare-execution": prepare_execution_command,
         "record-execution": record_execution_command,
     }

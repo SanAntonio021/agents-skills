@@ -64,7 +64,13 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 - 任一 fingerprint 变化：旧批准和相关活动批次失效，重新进入队列；
 - `none`/`null` 只表示没有方案 fingerprint，不能当作普通字符串。
 
-`next-question` 永远只返回一项：
+`next-question` 的事实追问每次只返回一项；已经核实、明确需要批准的多个技能修改可以合成一张完整清单一次展示，但每项仍保留独立 fingerprint 和批准记录。
+
+成批确认使用 `approve-batch`，输入为 `--selections` 的 JSON 数组，每项必须带 `finding_id`、
+`expected_evidence_fingerprint` 和 `expected_proposal_fingerprint`。任一项 fingerprint 不匹配即整体拒绝写入；
+该命令只记录批准，不创建执行批次，也不替用户回答事实问题。
+
+`next-question` 的基本返回：
 
 - `批准`：记录当前 fingerprint 的批准；
 - `不批准`：记录拒绝，不自动删除、归档或降级；
@@ -228,7 +234,9 @@ python scripts/run_weekly_skill_review.py scan --date <同轮日期> --reuse-rep
 本地能力复核比较每个维护技能的内容指纹，排除工具缓存和自动生成的来源页。首次无可核验接受指纹时只建
 观察快照，不声称已通过语义审核。此后内容变化且登记曾包含已吸收能力时，生成 `local_capability_review`
 事实复核项：人工比较正文、触发条件、完成路径和必要评测。有意删除更新登记说明；疑似退化先评测，不自动
-补回。上游扫描失败保留上次已吸收内容，不把空报告解释为能力消失。
+补回。已处理过的复核保留为历史，不再重复进入当周；只有内容再次变化时才重新复核。上游扫描失败保留上次
+已吸收内容，不把空报告解释为能力消失。上游来源从 `review_required` 回到 `already_reviewed` 或
+`up_to_date` 时，旧观察原地归档，保留证据、决定和历史。
 
 研究候选和本地复核复用 `next-question` 逐项入口。已有授权足以完成只读语义复核时，由当前任务记录真实
 证据，不让用户代读代码。确认无需修改可复用既有事实关闭接口：
@@ -242,7 +250,9 @@ python scripts/run_weekly_skill_review.py record-decision --finding-id <finding-
 未问清用 `--facts-outcome wait` 并记录缺少的证据。需要修改则进入既有来源确认、隔离候选和逐项批准流程，
 不能把人工复核项直接解释成批准修改。关闭或等待状态遇到相同证据不重问，证据变化才重新排队。
 
-已逐项核实为误报的 `suspected_missed_use`，即使处于 `deferred` 或 `queued`，也可用当前
+真实漏用先只进入离线面板和报告，不在首次出现时主动询问。同一技能在相邻两个完整周都出现真实漏用时，
+才进入一次人工复核；技能正文、规则正文、接管摘要和内部上下文不生成候选。不同技能分别计数，证据不完整
+或不是相邻周时不提醒。已逐项核实为误报的 `suspected_missed_use`，即使处于 `deferred` 或 `queued`，也可用当前
 evidence/proposal fingerprint、`--classification auto --facts-outcome close` 和具体核查证据直接关闭，
 不占用新增待审额度。此例外仅接受扫描原样生成的触发边界提示、`needs_facts=true` 且没有修订方案；
 保留原提示、事实记录和历史，不产生修改批准或执行批次。具体修订方案、批准/拒绝请求及其他带方案事项

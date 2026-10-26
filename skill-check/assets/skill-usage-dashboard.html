@@ -416,6 +416,42 @@
       font-size: 12px;
     }
 
+    .findings-panel { margin-top: 14px; }
+
+    .findings-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .findings-panel h2 { margin: 0; font-size: 17px; }
+
+    .findings-summary { color: var(--muted); font-size: 12px; }
+
+    .findings-list { margin-top: 12px; display: grid; gap: 8px; }
+
+    .finding-item {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--codex);
+      border-radius: 9px;
+      background: var(--surface-soft);
+    }
+
+    .finding-name { overflow-wrap: anywhere; font-size: 13px; font-weight: 800; }
+    .finding-detail { margin-top: 4px; color: var(--muted); font-size: 12px; }
+
+    .findings-empty {
+      padding: 14px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 9px;
+      background: var(--surface-soft);
+      font-size: 13px;
+    }
+
     .footer {
       display: flex;
       justify-content: space-between;
@@ -534,6 +570,14 @@
       </aside>
     </section>
 
+    <section class="panel findings-panel" aria-labelledby="findingsTitle">
+      <div class="findings-head">
+        <h2 id="findingsTitle">当前有效问题</h2>
+        <span class="findings-summary" id="findingsSummary">正在载入</span>
+      </div>
+      <div class="findings-list" id="findingsList"></div>
+    </section>
+
     <p class="method">统计单位：用户请求；同一请求内，同一技能只计 1 次。Codex 数据为可观测下界。</p>
 
     <footer class="footer">
@@ -554,6 +598,8 @@
       spectrumList: document.getElementById("spectrumList"),
       reviewList: document.getElementById("reviewList"),
       reviewCount: document.getElementById("reviewCount"),
+      findingsList: document.getElementById("findingsList"),
+      findingsSummary: document.getElementById("findingsSummary"),
       statusLine: document.getElementById("statusLine"),
       conclusionTitle: document.getElementById("conclusionTitle"),
       conclusionDetail: document.getElementById("conclusionDetail"),
@@ -708,6 +754,27 @@
       elements.generatedAt.textContent = `生成时间：${formatDate(week.generated_at, true)}`;
     }
 
+    function renderFindings(week) {
+      const summary = week.findings || {};
+      const rows = Array.isArray(summary.current) ? summary.current : [];
+      elements.findingsSummary.textContent =
+        `当前有效 ${number.format(summary.current_count || 0)} 项 · 历史归档 ${number.format(summary.historical_count || 0)} 项`;
+      elements.findingsList.replaceChildren();
+      if (!rows.length) {
+        elements.findingsList.append(el("div", "findings-empty", "当前没有需要处理的有效问题。"));
+        return;
+      }
+      rows.forEach(row => {
+        const item = el("div", "finding-item");
+        item.append(el("div", "finding-name", String(row.title || row.skill || "未命名问题")));
+        const detail = [row.skill ? `技能：${row.skill}` : "", row.status ? `状态：${row.status}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        item.append(el("div", "finding-detail", detail));
+        elements.findingsList.append(item);
+      });
+    }
+
     function render() {
       const week = currentWeek();
       if (!week) {
@@ -716,6 +783,8 @@
         elements.spectrumList.replaceChildren(el("div", "empty", "暂无数据。"));
         elements.reviewList.replaceChildren(el("div", "review-empty", "暂无数据。"));
         elements.reviewCount.textContent = "0 个复核候选";
+        elements.findingsList.replaceChildren(el("div", "findings-empty", "暂无数据。"));
+        elements.findingsSummary.textContent = "暂无数据";
         return;
       }
       renderConclusion(week);
@@ -723,6 +792,7 @@
       renderMetrics(week);
       renderSpectrum(week);
       renderReview(week);
+      renderFindings(week);
       renderCoverage(week);
     }
 

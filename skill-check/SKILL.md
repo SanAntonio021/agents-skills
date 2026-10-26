@@ -312,7 +312,8 @@ python scripts/run_weekly_skill_review.py approve-batch --selections <JSON> --js
 
 融合周检还输出 `usage/dashboard/data/<date>.json` 和稳定入口 `usage/dashboard/index.html`。dashboard
 只含技能名、宿主、聚合请求次数、连续零周数、状态、证据类型和覆盖警告，不含提示词片段、session
-来源路径或本机绝对路径。
+来源路径或本机绝对路径。面板另按状态汇总周检 finding，并分开显示“当前有效问题”和“历史归档”：
+当前有效问题只列标题、技能名、状态、严重度和来源，不展开证据正文。
 
 默认汇报顺序是：
 

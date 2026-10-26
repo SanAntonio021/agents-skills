@@ -45,7 +45,9 @@ python scripts/run_weekly_skill_review.py next-question --json
 按 `(host, request_id, skill)` 去重，Codex 与 Claude 分列并提供合计。稳定离线页面写入
 `<reports-root>/usage/dashboard/index.html`，每周聚合快照写入
 `<reports-root>/usage/dashboard/data/<date>.json`；页面内嵌最近 12 周快照，不启动服务、不访问网络，
-也不写入提示词片段和来源路径。
+也不写入提示词片段和来源路径。面板另按 finding 状态汇总，分开显示“当前有效问题”和“历史归档”：
+只有非终态、非 `observed` 的 finding 进入当前有效问题，`archived` 与 `historical` 只计入历史归档，
+两者都不展开证据正文。
 
 上游 `review_required` 先在本周日期目录下执行 `prepare-review`、收益/许可证/测试/风险四门和
 `finalize-review`，只在隔离候选副本内完成。候选成为 `awaiting_approval` 后重新运行周检，才会形成

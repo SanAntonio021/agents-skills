@@ -143,4 +143,5 @@ Docx/Wiki路由实测：新建文档返回Docx URL，网页自动进入同源Wik
 - 编辑器指纹命令集合加入 Align 与 Order 后，主指纹由 54e7e6de 变为 15acf339。已在隔离画板完成真实写入验证后才更新固定值，不动态接受未知指纹。
 - 真实画板行为记录：Order 的 BringForward 提高 z_index（更靠前），SendBackward 降低 z_index；置顶/置底把指定对象移到同级最前或最后。未请求对象之间的相对层序保持不变。服务端会重排整个 z_index 序列，因此保护器只要求未请求对象相对顺序不变，并放行 z_index 变化，其他字段仍严格比较。
 - 八种对齐、批量改字号、四档图层全部在真实画板执行成功：每步 save_status 为 confirmed、verification_status 为 passed，并导出预览实际查看。
-- 对齐按原生 getBounds() 外框计算；高度不同的模块必须用垂直居中才能让中线对齐，顶对齐只对齐上边缘。"
+- 对齐按原生 getBounds() 外框计算；高度不同的模块必须用垂直居中才能让中线对齐，顶对齐只对齐上边缘。
+- 在第二块干净隔离画板（文档 BZtvdOlnfoMvQuxfK5kcUFsdnkg，画板 NHWdwqLO2hNfqybW8I5cEWUbnNf）复验并实际查看预览：批量改字号、垂直居中、水平等距、上移一层均通过。观察到批量改字号只改字号不改框尺寸，框高不足时第二行文字被裁切；该限制已写入调用方法。"

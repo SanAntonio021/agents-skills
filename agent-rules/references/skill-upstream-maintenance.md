@@ -233,6 +233,8 @@ python <script> complete-review `
 
 发布失败或回执缺失时，保留原参数、回执与差异，先执行同参数只读核验；已满足生效条件时继续剩余交付，否则按现有工具说明恢复或重试。保护用户的新修改；重复失败先诊断，不无限重跑、不重复索取已有授权。通过受支持流程处理备份和恢复，不手工覆盖运行副本、直接修改数据库或擅自结束客户端。只暂停受阻步骤，恢复后重新核验。
 
+定向更新报 `Installed SSOT has local edits; refusing update` 时，先区分真实用户改动与发布后基线滞后：按该技能记录的旧基线备份并恢复安装目录，再走正常定向更新；不得直接改数据库或覆盖运行副本。更新后以同一提交执行 `-VerifyOnly`，确认 `runtime_active`，并核对源码、CC Switch、Claude、Codex 四层文件哈希一致。
+
 固定提交更新报 `Pinned update requires an exact GitHub source path in readme_url`，或普通归档更新因仓库内同名过程副本报 `Remote Skill directory ... is ambiguous` 时，先核对来源仓库、登记分支、`readme_url` 和同名目录，区分路径解析缺口与真实源码冲突。保留原提交及参数，通过受支持流程创建配置备份；直接更新无法解析唯一目录时，用完整键 `<owner>/<repo>:<directory>` 从登记的发布分支重装目标技能，恢复原启用矩阵后执行普通或固定提交更新。不要手工修改数据库或运行副本，也不要把归档回退到的别名分支当成预期来源。最终仍用原提交和完整技能集合执行 `-VerifyOnly`。
 
 ## 记录已审核提交

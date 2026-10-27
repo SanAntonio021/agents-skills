@@ -197,6 +197,8 @@ claude -p --no-session-persistence --permission-mode plan --no-chrome
 
 后台入口、备份、重试与恢复以 [agent-rules 的定向发布流程](../../agent-rules/references/skill-upstream-maintenance.md) 为准。保持同一提交、精确 Skill 集合和本机文件声明；失败时先保留 JSON 回执和阶段信息，再只读核验实际状态，不为追求成功而扩大更新范围。
 
+如果回执是 `Installed SSOT has local edits; refusing update`，按上述发布流程处理基线滞后；不要通过手工编辑安装目录、数据库或绕过 helper 来消除报错。
+
 临时故障恢复后，原授权覆盖受支持流程的重试，不另设批准关口。先核对当前源码及运行副本，已对齐目标只核验；部分成功仍保留原完整验收集合，由 helper 跳过对齐目标。源码新修改、来源登记错误和文件冲突先查明并处理，保护用户新内容；同错反复出现先诊断，有恢复依据再继续。新尝试另存回执，回执丢失不能代替实际状态检查。
 
 按该流程执行的后台更新与随后 `-VerifyOnly` 均须退出 `0`、返回 `runtime_active`，且 `cc_switch_metadata.valid = true`、问题为空，目标文件集合、哈希、来源和启用状态一致。缺少核验时报告具体未完成部分，不把单步成功当作完整生效。

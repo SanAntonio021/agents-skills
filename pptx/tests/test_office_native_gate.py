@@ -558,6 +558,56 @@ class NativeGateTests(unittest.TestCase):
             self.assertEqual(runtime.uninitialize_calls, 1)
             self.assertEqual(getattr(app, "quit_calls", 0), 0)
 
+    def test_render_slides_exports_only_selected_pages(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "pages"
+            app = FakePowerPoint(slide_count=9)
+            result = self._check(source, "pptx", app, require_render=True,
+                                 render_output_dir=output, render_slides=[9])
+            self.assertEqual(result["status"], "PASS")
+            render = result["details"]["native_render"]
+            self.assertEqual(render["expected"], 1)
+            self.assertEqual(render["slides"], [9])
+            self.assertEqual([p.name for p in sorted(output.glob("*.png"))], ["slide-0009.png"])
+
+    def test_render_slides_rejects_out_of_range_page(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            output = Path(temp_dir) / "pages"
+            app = FakePowerPoint(slide_count=2)
+            result = self._check(source, "pptx", app, require_render=True,
+                                 render_output_dir=output, render_slides=[9])
+            self.assertEqual(result["status"], "FAIL_RENDER")
+            self.assertFalse(output.exists())
+
+    def test_render_slides_requires_pptx_render(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = self._source(temp_dir, ".pptx")
+            dispatch = unittest.mock.Mock()
+            result = native_gate.check_file(source, "pptx", allow_office_com=True,
+                require_render=False, render_slides=[1], dispatch_ex=dispatch)
+            self.assertEqual(result["status"], "UNVERIFIED")
+            self.assertIn("--render-slides", result["error"])
+            dispatch.assert_not_called()
+
+
+class SlideSelectionParseTests(unittest.TestCase):
+    def test_single_list_and_range(self):
+        self.assertEqual(native_gate.parse_slide_selection("9"), [9])
+        self.assertEqual(native_gate.parse_slide_selection("2,5-7"), [2, 5, 6, 7])
+        self.assertEqual(native_gate.parse_slide_selection("3,3,1"), [1, 3])
+
+    def test_upper_bound_optional(self):
+        self.assertEqual(native_gate.parse_slide_selection("5", slide_count=6), [5])
+        with self.assertRaises(ValueError):
+            native_gate.parse_slide_selection("7", slide_count=6)
+
+    def test_rejects_malformed(self):
+        for bad in ("", "0", "-1", "a", "3-1", "2,"):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                native_gate.parse_slide_selection(bad)
+
 
 @unittest.skipUnless(
     sys.platform == "win32" and os.environ.get("OFFICE_NATIVE_GATE_INTEGRATION") == "1",

@@ -474,8 +474,52 @@ def _close_document(
         raise GateFailure("UNVERIFIED", "cleanup", f"could not close isolated Office document: {_exception_text(exc)}") from exc
 
 
-def _render_pptx(presentation: Any, export_dir: Path, slide_count: int) -> dict[str, Any]:
-    for index in range(1, slide_count + 1):
+def parse_slide_selection(spec: str, slide_count: int | None = None) -> list[int]:
+    """Parse a 1-based slide selection like "9" or "2,5-7" into sorted unique pages.
+
+    Validates syntax and that every page is >= 1. When ``slide_count`` is given,
+    also rejects pages above it; otherwise the upper bound is checked later once
+    PowerPoint reports the real slide count.
+    """
+    selected: set[int] = set()
+    tokens = [token.strip() for token in str(spec).split(",")]
+    for token in tokens:
+        if not token:
+            raise ValueError(f"empty slide token in selection {spec!r}")
+        if "-" in token:
+            start_text, _, end_text = token.partition("-")
+            try:
+                start, end = int(start_text), int(end_text)
+            except ValueError as exc:
+                raise ValueError(f"invalid slide range {token!r}") from exc
+            if start > end:
+                raise ValueError(f"descending slide range {token!r}")
+            page_iter = range(start, end + 1)
+        else:
+            try:
+                page = int(token)
+            except ValueError as exc:
+                raise ValueError(f"invalid slide number {token!r}") from exc
+            page_iter = range(page, page + 1)
+        for page in page_iter:
+            if page < 1:
+                raise ValueError(f"slide {page} is not a positive page number")
+            if slide_count is not None and page > slide_count:
+                raise ValueError(f"slide {page} is outside 1..{slide_count}")
+            selected.add(page)
+    if not selected:
+        raise ValueError(f"no slides selected from {spec!r}")
+    return sorted(selected)
+
+
+def _render_pptx(
+    presentation: Any,
+    export_dir: Path,
+    slide_count: int,
+    slides: Sequence[int] | None = None,
+) -> dict[str, Any]:
+    indices = list(slides) if slides is not None else list(range(1, slide_count + 1))
+    for index in indices:
         output = _new_output(export_dir / f"slide-{index:04d}.png")
         try:
             presentation.Slides(index).Export(str(output), "PNG", 1920, 1080)
@@ -486,8 +530,11 @@ def _render_pptx(presentation: Any, export_dir: Path, slide_count: int) -> dict[
                 f"PowerPoint failed to export slide {index}: {_exception_text(exc)}",
                 details={"slide": index},
             ) from exc
-    files = _verify_files(export_dir, "slide-*.png", slide_count)
-    return {"export": "native_png", "expected": slide_count, "files": len(files)}
+    files = _verify_files(export_dir, "slide-*.png", len(indices))
+    result: dict[str, Any] = {"export": "native_png", "expected": len(indices), "files": len(files)}
+    if slides is not None:
+        result["slides"] = indices
+    return result
 
 
 def _resolve_pdftoppm() -> Path | None:
@@ -524,7 +571,13 @@ def rasterize_pdf(pdf_path: Path, export_dir: Path, expected_pages: int) -> dict
     return {"rasterizer": str(executable), "expected": expected_pages, "files": len(files)}
 
 
-def _check_pptx(application: Any, isolated: Path, export_dir: Path, require_render: bool) -> dict[str, Any]:
+def _check_pptx(
+    application: Any,
+    isolated: Path,
+    export_dir: Path,
+    require_render: bool,
+    render_slides: Sequence[int] | None = None,
+) -> dict[str, Any]:
     presentation = _open_pptx(application, isolated)
     primary_error: BaseException | None = None
     try:
@@ -536,7 +589,17 @@ def _check_pptx(application: Any, isolated: Path, export_dir: Path, require_rend
             raise StageFailure("FAIL_OPEN", "open", "PowerPoint opened the file but reported no slides")
         result: dict[str, Any] = {"slides": slide_count, "native_open": True}
         if require_render:
-            result["native_render"] = _render_pptx(presentation, export_dir, slide_count)
+            selected: Sequence[int] | None = render_slides
+            if selected is not None:
+                out_of_range = [p for p in selected if p > slide_count]
+                if out_of_range:
+                    raise StageFailure(
+                        "FAIL_RENDER",
+                        "render",
+                        f"requested slides {out_of_range} exceed slide count {slide_count}",
+                        details={"slides": list(selected), "slide_count": slide_count},
+                    )
+            result["native_render"] = _render_pptx(presentation, export_dir, slide_count, selected)
         return result
     except BaseException as exc:
         primary_error = exc
@@ -659,6 +722,7 @@ def check_file(
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
     powerpoint_executable: str | Path | None = None,
     render_output_dir: str | Path | None = None,
+    render_slides: Sequence[int] | None = None,
 ) -> dict[str, Any]:
     """Run a native gate; dependency injection keeps tests off real COM."""
 
@@ -701,6 +765,11 @@ def check_file(
         return result
     if format_name == "xlsx" and require_render:
         result["error"] = "XLSX native gate is open-only; --require-render is not supported"
+        result["source_sha256_after"] = before
+        return result
+
+    if render_slides is not None and (format_name != "pptx" or not require_render):
+        result["error"] = "--render-slides requires PPTX --require-render"
         result["source_sha256_after"] = before
         return result
 
@@ -750,7 +819,7 @@ def check_file(
             powerpoint_executable=Path(powerpoint_executable) if powerpoint_executable is not None else None,
         ) as (application, _owner):
             if format_name == "pptx":
-                details = _check_pptx(application, isolated, exports, require_render)
+                details = _check_pptx(application, isolated, exports, require_render, render_slides)
             elif format_name == "docx":
                 details = _check_docx(application, isolated, exports, require_render, rasterizer or rasterize_pdf)
             else:
@@ -830,12 +899,28 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--allow-office-com", action="store_true")
     check.add_argument("--require-render", action="store_true")
     check.add_argument("--render-output-dir", help="retain PPTX slide PNGs in a new directory")
+    check.add_argument(
+        "--render-slides",
+        help='export only these 1-based PPTX slides, e.g. "9" or "2,5-7"; '
+        "default exports every slide. Requires PPTX --require-render",
+    )
     check.add_argument("--powerpoint-exe", help="explicit Microsoft POWERPNT.EXE for this PPTX check only")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    render_slides: list[int] | None = None
+    if args.render_slides is not None:
+        try:
+            render_slides = parse_slide_selection(args.render_slides)
+        except ValueError as exc:
+            message = f"invalid --render-slides value: {exc}"
+            if args.json:
+                print(json.dumps({"status": "UNVERIFIED", "phase": "preflight", "error": message}, ensure_ascii=False, indent=2))
+            else:
+                print(f"UNVERIFIED [preflight]: {message}")
+            return 2
     result = check_file(
         args.file,
         args.format,
@@ -843,6 +928,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         require_render=args.require_render,
         powerpoint_executable=args.powerpoint_exe,
         render_output_dir=args.render_output_dir,
+        render_slides=render_slides,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))

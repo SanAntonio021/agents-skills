@@ -145,7 +145,16 @@ Keep these records separate:
   actual status separate; an unrun check is not a pass.
 - `NATIVE_OPEN_PASS`: the independent gate opened an isolated copy with PowerPoint and read
   `Slides.Count`.
-- `NATIVE_RENDER_PASS`: the same gate exported every slide to a new non-empty PNG.
+- `NATIVE_RENDER_PASS`: the same gate exported the target slides to new non-empty PNGs. By default
+  it exports every slide; when a change touches only a few slides, pass `--render-slides` (e.g. `9`
+  or `2,5-7`) to export just the affected pages for visual review while the rest still clear
+  `STATIC_PASS`. The acceptance still requires inspecting the actual exported pages.
+
+For routine PPTX edits, make the native gate's PowerPoint PNG export the default visual check;
+do not read LibreOffice output to judge layout, because its text wrapping and line breaks can
+differ from PowerPoint. Reserve LibreOffice (`LO_RENDER_PASS`) for when PowerPoint is unavailable
+(then state the render is LibreOffice and may differ from PowerPoint) or for a deliberate
+PowerPoint-vs-LibreOffice compatibility diagnosis.
 
 OfficeCLI `validate` passing proves only `STATIC_PASS`; it does **not** prove that PowerPoint can
 open the file. A failed OfficeCLI native probe is reported as
@@ -160,6 +169,9 @@ python <skill-root>\scripts\office_native_gate.py check input.pptx `
 python <skill-root>\scripts\office_native_gate.py check input.pptx `
   --format pptx --json --allow-office-com --require-render `
   --render-output-dir <new-task-owned-png-directory>
+python <skill-root>\scripts\office_native_gate.py check input.pptx `
+  --format pptx --json --allow-office-com --require-render `
+  --render-output-dir <new-task-owned-png-directory> --render-slides 9
 ```
 
 The gate returns `PASS`, `FAIL_OPEN`, `FAIL_RENDER`, `APP_UNAVAILABLE`, `UNVERIFIED`, or

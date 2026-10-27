@@ -34,3 +34,11 @@ Thumbs.db
 /过程文件/docx-workspace/
 /过程文件/ieee-journal-submission-workspace/
 /过程文件/journal-submission-workspace/
+
+# Process material never belongs in the skill repo (cleanup 2026-10-27).
+# These caused an 86 MB history, 171 over-long paths and failing checkouts.
+/writing-router-workspace/
+/过程文件/
+/archive/
+*.baiduyun.uploading.cfg
+.baiduyun.uploading.cfg

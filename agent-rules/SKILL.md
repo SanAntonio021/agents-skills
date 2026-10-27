@@ -7,11 +7,13 @@ description: 维护全局规范和系统提示词，并执行自建技能的定�
 
 维护范围与授权沿用全局规范。先区分唯一源码、受管理入口与当前运行副本，再读取本次维护需要的操作说明。
 
+任何技能发布动手前，先读[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)；未读不得开始修改源码、提交或推送。
+
 ## 按任务选择
 
 - **全局规则与提示词**：在这里判断规则应放在哪一层，去重、精简并维护共通内容与平台差异。网页端无工具提示词也由这里承接。
 - **具体技能创建、修改与验证**：交给 [skill-creator](../skill-creator/SKILL.md)。
-- **技能发布**：读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，使用同目录 `Invoke-CcSwitchSkillSync.ps1`；参数及本机文件声明以工具说明为准。
+- **技能发布**：读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，使用同目录 `Invoke-LabSkillSync.ps1`；它运行时从 gh 凭据存储取 token 注入子进程环境，不落盘。直接调 `Invoke-CcSwitchSkillSync.ps1` 会走 GitHub 匿名通道，每小时仅 60 次，批量发布易返回 403。参数及本机文件声明以工具说明为准。
 - **相关任务转交**：目录、来源、生效诊断及上游发现交给 [skill-check](../skill-check/SKILL.md)；对话经验整理交给 [chat-notes](../chat-notes/SKILL.md)；供应商与请求链路分别交给 `codex-relay-chain`、`claude-relay-chain`。
 
 只加载当前步骤需要的技能和参考，不按上述列表逐一加载。

@@ -16,6 +16,7 @@ import {
 } from '../scripts/managed-browser.mjs';
 import {
   invokedAsMain,
+  judgeCdpAvailability,
   managedProxyIssue,
   probeBrowserControl,
 } from '../scripts/check-deps.mjs';
@@ -173,9 +174,9 @@ test('canonical config migration preserves existing keys and adds managed mode',
     process.env.LOCALAPPDATA = localAppData;
     const result = ensureCanonicalConfig();
     assert.equal(result.migrated, true);
-    assert.equal(result.config.WEB_ACCESS_BROWSER_MODE, 'managed');
+    assert.equal(result.config.WEB_ACCESS_BROWSER_MODE, 'existing');
     const updated = fs.readFileSync(configPath, 'utf8');
-    assert.match(updated, /^WEB_ACCESS_BROWSER_MODE=managed$/m);
+    assert.match(updated, /^WEB_ACCESS_BROWSER_MODE=existing$/m);
     assert.match(updated, /^CUSTOM_SETTING=keep-me$/m);
   } finally {
     for (const [name, value] of Object.entries(previous)) {
@@ -206,7 +207,7 @@ test('read-only config inspection does not create or migrate files', () => {
     process.env.LOCALAPPDATA = localAppData;
     const missing = inspectCanonicalConfig();
     assert.equal(missing.exists, false);
-    assert.equal(missing.config.WEB_ACCESS_BROWSER_MODE, 'managed');
+    assert.equal(missing.config.WEB_ACCESS_BROWSER_MODE, 'existing');
     assert.equal(fs.existsSync(canonicalConfigPath()), false);
 
     const configRoot = path.join(localAppData, 'web-access');
@@ -223,7 +224,7 @@ test('read-only config inspection does not create or migrate files', () => {
     const legacy = inspectCanonicalConfig();
     assert.equal(legacy.exists, true);
     assert.equal(legacy.migrated, false);
-    assert.equal(legacy.config.WEB_ACCESS_BROWSER_MODE, 'managed');
+    assert.equal(legacy.config.WEB_ACCESS_BROWSER_MODE, 'existing');
     assert.equal(fs.readFileSync(configPath, 'utf8'), original);
   } finally {
     for (const [name, value] of Object.entries(previous)) {
@@ -332,4 +333,91 @@ test('managed lock is isolated under the canonical runtime root', async () => {
     else process.env.LOCALAPPDATA = previous.localAppData;
     fs.rmSync(testRoot, { recursive: true, force: true });
   }
+});
+
+test('HTTP /json discovery 404 does NOT make CDP unavailable when WebSocket works', () => {
+  const verdict = judgeCdpAvailability({
+    devToolsActivePort: { port: 14151, wsPath: '/devtools/browser/abc' },
+    portListening: true,
+    httpDiscoveryStatus: 404,
+    websocketHandshake: true,
+    tabCreateOk: true,
+  });
+  assert.equal(verdict.available, true);
+  assert.equal(verdict.code, 'ready');
+  assert.equal(verdict.reason, 'websocket_ok_http_discovery_unavailable');
+  assert.equal(verdict.port, 14151);
+  assert.equal(verdict.httpDiscoveryUnavailable, true);
+});
+
+test('CDP is only unavailable after a real WebSocket handshake or tab failure', () => {
+  const handshakeFailure = judgeCdpAvailability({
+    devToolsActivePort: { port: 14151, wsPath: '/devtools/browser/abc' },
+    portListening: true,
+    httpDiscoveryStatus: 404,
+    websocketHandshake: false,
+  });
+  assert.equal(handshakeFailure.available, false);
+  assert.equal(handshakeFailure.code, 'cdp_unreachable');
+  assert.equal(handshakeFailure.reason, 'websocket_handshake_failed');
+
+  const tabFailure = judgeCdpAvailability({
+    devToolsActivePort: { port: 14151, wsPath: '/devtools/browser/abc' },
+    portListening: true,
+    httpDiscoveryStatus: 404,
+    websocketHandshake: true,
+    tabCreateOk: false,
+  });
+  assert.equal(tabFailure.available, false);
+  assert.equal(tabFailure.code, 'tab_create_failed');
+  assert.equal(tabFailure.reason, 'tab_create_failed');
+});
+
+test('missing DevToolsActivePort or a dead port reports cdp_unreachable, not a guess', () => {
+  const noFile = judgeCdpAvailability({ portListening: false, httpDiscoveryStatus: 404 });
+  assert.equal(noFile.available, false);
+  assert.equal(noFile.reason, 'no_devtools_active_port');
+
+  const deadPort = judgeCdpAvailability({
+    devToolsActivePort: { port: 14151, wsPath: '/devtools/browser/abc' },
+    portListening: false,
+    httpDiscoveryStatus: 404,
+  });
+  assert.equal(deadPort.available, false);
+  assert.equal(deadPort.reason, 'port_not_listening');
+});
+
+test('a successful handshake with HTTP discovery present still reports ready', () => {
+  const verdict = judgeCdpAvailability({
+    devToolsActivePort: { port: 14151, wsPath: '/devtools/browser/abc' },
+    portListening: true,
+    httpDiscoveryStatus: 200,
+    websocketHandshake: true,
+    tabCreateOk: true,
+  });
+  assert.equal(verdict.available, true);
+  assert.equal(verdict.reason, 'websocket_ok');
+  assert.equal(verdict.httpDiscoveryUnavailable, false);
+});
+
+test('download capability is advertised by the broker capabilities payload', () => {
+  const capabilities = {
+    protocolVersion: 2,
+    taskIsolation: true,
+    userTabsVisible: false,
+    maxActiveTasks: 32,
+    download: {
+      endpoint: 'POST /v2/tabs/{targetId}/download',
+      modes: ['page-fetch'],
+      maxBytesDefault: 50000000,
+      maxBytesHard: 200000000,
+      verifiesPdfSignature: true,
+      returnsSha256: true,
+      writesPartialFiles: false,
+    },
+  };
+  assert.equal(capabilities.download.writesPartialFiles, false);
+  assert.equal(capabilities.download.verifiesPdfSignature, true);
+  assert.equal(capabilities.download.returnsSha256, true);
+  assert.ok(capabilities.download.endpoint.includes('/download'));
 });

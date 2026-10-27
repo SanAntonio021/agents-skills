@@ -49,6 +49,72 @@ function canonicalInvocationPath(value) {
   }
 }
 
+// Availability judgement for the current Edge instance.
+//
+// HTTP /json/version (and /json/list) may return 404 while the WebSocket CDP
+// endpoint is perfectly usable. A 404 from the HTTP discovery endpoint is NOT
+// evidence that CDP is down. Only an actual WebSocket handshake failure (or a
+// failed background tab creation) means the control channel is unavailable.
+export function judgeCdpAvailability({
+  devToolsActivePort = null,
+  portListening = false,
+  httpDiscoveryStatus = null,
+  websocketHandshake = null,
+  tabCreateOk = null,
+} = {}) {
+  const port = Number.isInteger(devToolsActivePort?.port) ? devToolsActivePort.port : null;
+  const wsPath = devToolsActivePort?.wsPath || null;
+  const httpDiscoveryUnavailable = httpDiscoveryStatus === 404
+    || httpDiscoveryStatus === null
+    || httpDiscoveryStatus === undefined;
+
+  if (!port) {
+    return {
+      available: false,
+      code: 'cdp_unreachable',
+      reason: 'no_devtools_active_port',
+      port: null,
+      httpDiscoveryUnavailable,
+    };
+  }
+  if (!portListening) {
+    return {
+      available: false,
+      code: 'cdp_unreachable',
+      reason: 'port_not_listening',
+      port,
+      httpDiscoveryUnavailable,
+    };
+  }
+  if (websocketHandshake === false || tabCreateOk === false) {
+    return {
+      available: false,
+      code: websocketHandshake === false ? 'cdp_unreachable' : 'tab_create_failed',
+      reason: websocketHandshake === false ? 'websocket_handshake_failed' : 'tab_create_failed',
+      port,
+      httpDiscoveryUnavailable,
+    };
+  }
+  if (websocketHandshake === true) {
+    return {
+      available: true,
+      code: 'ready',
+      // HTTP discovery being 404 is explicitly not a failure.
+      reason: httpDiscoveryUnavailable ? 'websocket_ok_http_discovery_unavailable' : 'websocket_ok',
+      port,
+      wsPathAvailable: Boolean(wsPath),
+      httpDiscoveryUnavailable,
+    };
+  }
+  return {
+    available: null,
+    code: 'cdp_unknown',
+    reason: 'handshake_not_attempted',
+    port,
+    httpDiscoveryUnavailable,
+  };
+}
+
 export function invokedAsMain(importMetaUrl, argvPath) {
   if (!argvPath) return false;
   const modulePath = canonicalInvocationPath(fileURLToPath(importMetaUrl));
@@ -399,6 +465,19 @@ function sanitizeCapabilities(value) {
     if (items) output[key] = items;
   }
 
+  if (value.download && typeof value.download === 'object' && !Array.isArray(value.download)) {
+    output.download = {};
+    if (typeof value.download.endpoint === 'string') output.download.endpoint = value.download.endpoint.slice(0, 128);
+    const modes = sanitizeStringArray(value.download.modes);
+    if (modes) output.download.modes = modes;
+    for (const key of ['maxBytesDefault', 'maxBytesHard']) {
+      if (Number.isInteger(value.download[key])) output.download[key] = value.download[key];
+    }
+    for (const key of ['verifiesPdfSignature', 'returnsSha256', 'writesPartialFiles']) {
+      if (typeof value.download[key] === 'boolean') output.download[key] = value.download[key];
+    }
+  }
+
   if (value.security && typeof value.security === 'object' && !Array.isArray(value.security)) {
     output.security = {};
     if (typeof value.security.bind === 'string') output.security.bind = value.security.bind.slice(0, 128);
@@ -441,6 +520,21 @@ function proxyDetails(proxyPort, health = null) {
   };
 }
 
+function cdpDetails(health) {
+  if (!health || typeof health !== 'object') return null;
+  const cdp = health.cdp && typeof health.cdp === 'object' ? health.cdp : null;
+  const port = cdp && Number.isInteger(cdp.port) ? cdp.port : (Number.isInteger(health.chromePort) ? health.chromePort : null);
+  const connected = cdp && typeof cdp.connected === 'boolean' ? cdp.connected : (typeof health.connected === 'boolean' ? health.connected : null);
+  return {
+    connected,
+    port,
+    wsPathAvailable: cdp && typeof cdp.wsPathAvailable === 'boolean' ? cdp.wsPathAvailable : null,
+    lastHandshakeAt: cdp && typeof cdp.lastHandshakeAt === 'string' ? cdp.lastHandshakeAt : null,
+    // HTTP /json discovery is optional and is not the availability authority.
+    httpDiscoveryRequired: false,
+  };
+}
+
 function makeResult({
   ok = false,
   status,
@@ -460,6 +554,7 @@ function makeResult({
     reused,
     browser: browserDetails(browser, health),
     proxy: proxyDetails(proxyPort, health),
+    cdp: cdpDetails(health),
     capabilities,
     exitCode,
     ...extra,
@@ -1280,8 +1375,7 @@ async function main() {
     return;
   }
   const node = checkNode();
-  opts.mode = opts.mode || configInfo.config.WEB_ACCESS_BROWSER_MODE ||
-    (os.platform() === 'win32' ? 'managed' : 'existing');
+  opts.mode = opts.mode || configInfo.config.WEB_ACCESS_BROWSER_MODE || 'existing';
 
   let results;
   if (opts.mode === 'managed') {

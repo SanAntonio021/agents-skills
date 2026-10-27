@@ -4,7 +4,9 @@ import path from 'node:path';
 
 const DEFAULTS = Object.freeze({
   WEB_ACCESS_BROWSER: 'edge',
-  WEB_ACCESS_BROWSER_MODE: os.platform() === 'win32' ? 'managed' : 'existing',
+  // Windows defaults to the running daily Edge (existing) so tasks reuse the
+  // user's real login state. managed remains an explicit opt-in only.
+  WEB_ACCESS_BROWSER_MODE: 'existing',
   WEB_ACCESS_EDGE_PORT: '3456',
   WEB_ACCESS_CHROME_PORT: '3457',
 });

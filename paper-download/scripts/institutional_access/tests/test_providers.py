@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
+from urllib.request import Request
 
 from institutional_access.providers import (
     IEEE,
     OPTICA,
+    _DoiRedirectHandler,
     candidate_pdf_urls,
     get_provider,
     normalize_doi,
     pdf_button_node,
+    resolve_article_url,
     safe_url,
 )
 
@@ -131,6 +135,37 @@ class ProviderTests(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             normalize_doi("not-a-doi")
+
+    def test_doi_url_resolves_to_supported_article(self):
+        class _Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def geturl(self):
+                return "https://ieeexplore.ieee.org/document/11527108/?tracking=1"
+
+        opener = unittest.mock.Mock()
+        opener.open.return_value = _Response()
+        with patch("institutional_access.providers.urllib.request.build_opener", return_value=opener):
+            provider, article = resolve_article_url(
+                "https://doi.org/10.1109/TTHZ.2026.3695375"
+            )
+        self.assertEqual(provider, IEEE)
+        self.assertEqual(article, "https://ieeexplore.ieee.org/document/11527108/")
+        (request,) = opener.open.call_args.args
+        self.assertEqual(request.full_url, "https://doi.org/10.1109/tthz.2026.3695375")
+        self.assertEqual(opener.open.call_args.kwargs["timeout"], 15)
+
+    def test_doi_redirect_cannot_leave_supported_hosts(self):
+        handler = _DoiRedirectHandler()
+        request = Request("https://doi.org/10.1109/example")
+        with self.assertRaisesRegex(ValueError, "unsupported host"):
+            handler.redirect_request(
+                request, None, 302, "Found", {}, "https://127.0.0.1/private"
+            )
 
     def test_safe_url_keeps_only_optics_article_identity(self):
         self.assertEqual(

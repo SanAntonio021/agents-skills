@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import io
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from pypdf import PdfReader
 
+
+logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 MAX_PDF_BYTES = 50_000_000
 

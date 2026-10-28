@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
+import urllib.error
+import urllib.request
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 
 
 OPTICA_JOURNALS = (
@@ -20,6 +22,8 @@ OPTICA_JOURNALS = (
     "osac",
     "aop",
 )
+DOI_HOSTS = {"doi.org", "dx.doi.org"}
+ARTICLE_HOSTS = {"ieeexplore.ieee.org", "opg.optica.org"}
 
 
 @dataclass(frozen=True)
@@ -77,18 +81,68 @@ OPTICA = Provider(
 )
 
 
-def get_provider(url: str) -> Provider:
+class _DoiRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        try:
+            parsed = urlsplit(newurl)
+            allowed = (
+                parsed.scheme == "https"
+                and parsed.hostname in DOI_HOSTS | ARTICLE_HOSTS
+                and not parsed.username
+                and not parsed.password
+                and parsed.port in (None, 443)
+            )
+        except ValueError:
+            allowed = False
+        if not allowed:
+            raise ValueError("DOI URL redirected to an unsupported host")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def resolve_article_url(url: str) -> tuple[Provider, str]:
     try:
-        host = urlsplit(url).hostname
+        parsed = urlsplit(url)
+        host = parsed.hostname
     except ValueError as error:
         raise ValueError("article URL is invalid") from error
+    if host in DOI_HOSTS:
+        if (
+            parsed.scheme != "https"
+            or parsed.username
+            or parsed.password
+            or parsed.port not in (None, 443)
+        ):
+            raise ValueError("DOI URL must use HTTPS without credentials")
+        doi = normalize_doi(unquote(parsed.path.lstrip("/")))
+        opener = urllib.request.build_opener(_DoiRedirectHandler())
+        request = urllib.request.Request(
+            f"https://doi.org/{doi}",
+            headers={"User-Agent": "paper-download/1.0"},
+        )
+        try:
+            with opener.open(request, timeout=15) as response:
+                url = response.geturl()
+        except urllib.error.HTTPError as error:
+            raise ValueError(f"DOI resolver returned HTTP {error.code}") from error
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            raise ValueError("DOI URL could not be resolved") from error
+        try:
+            host = urlsplit(url).hostname
+        except ValueError as error:
+            raise ValueError("DOI resolved to an invalid article URL") from error
     if host == IEEE.host:
         IEEE.normalize_article_url(url)
-        return IEEE
+        return IEEE, IEEE.normalize_article_url(url)
     if host == OPTICA.host:
         OPTICA.normalize_article_url(url)
-        return OPTICA
+        return OPTICA, OPTICA.normalize_article_url(url)
+    if parsed.hostname in DOI_HOSTS:
+        raise ValueError("DOI did not resolve to a supported IEEE Xplore or Optica article page")
     raise ValueError("only IEEE Xplore and Optica article URLs are supported")
+
+
+def get_provider(url: str) -> Provider:
+    return resolve_article_url(url)[0]
 
 
 def normalize_doi(value: str) -> str:

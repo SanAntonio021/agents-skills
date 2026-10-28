@@ -24,6 +24,7 @@ from .providers import (
     page_state_expression,
     pdf_button_node,
     public_page_identity,
+    resolve_article_url,
     safe_url,
 )
 from .session_store import (
@@ -596,8 +597,7 @@ def observe_and_continue(
 
 
 def acquire(args: argparse.Namespace) -> dict[str, Any]:
-    provider = get_provider(args.url)
-    article_url = provider.normalize_article_url(args.url)
+    provider, article_url = resolve_article_url(args.url)
     doi = normalize_doi(args.doi)
     output = Path(args.output).expanduser().resolve()
     if output.exists():
@@ -785,7 +785,16 @@ def main() -> int:
             )
         )
         return 1
-    except (ValueError, OSError):
+    except ValueError as error:
+        print(
+            json.dumps(
+                {"stage": "operation_failed", "reason": str(error)},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+        )
+        return 1
+    except OSError:
         print(
             json.dumps(
                 {"stage": "operation_failed", "reason": "local operation failed"},

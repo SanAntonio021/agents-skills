@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -31,6 +32,9 @@ class _Reader:
 
 
 class PdfTests(unittest.TestCase):
+    def test_pypdf_font_warnings_are_suppressed(self):
+        self.assertEqual(logging.getLogger("pypdf").level, logging.ERROR)
+
     def test_identity_verification(self):
         raw = b"%PDF-1.7\nsynthetic bytes"
         with patch("institutional_access.pdf_tools.PdfReader", _Reader):

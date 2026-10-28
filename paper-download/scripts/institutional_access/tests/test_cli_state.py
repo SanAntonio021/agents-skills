@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import io
+import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
 from institutional_access.browser import BrowserError
 from institutional_access.cli import (
+    main,
     observe_and_continue,
     reconcile_created_tab,
     session_summary,
@@ -72,6 +76,26 @@ class _UnknownCreateClient:
 
 
 class CliStateTests(unittest.TestCase):
+    def test_value_error_reason_is_returned_to_caller(self):
+        class _Args:
+            session = "test"
+            handler = staticmethod(lambda _args: (_ for _ in ()).throw(ValueError("DOI is invalid")))
+
+        class _Parser:
+            def parse_args(self):
+                return _Args()
+
+        output = io.StringIO()
+        with patch("institutional_access.cli.build_parser", return_value=_Parser()), patch(
+            "institutional_access.cli.session_lock"
+        ), redirect_stdout(output):
+            code = main()
+        self.assertEqual(code, 1)
+        self.assertEqual(
+            json.loads(output.getvalue()),
+            {"stage": "operation_failed", "reason": "DOI is invalid"},
+        )
+
     def session(self):
         return {
             "schemaVersion": 1,

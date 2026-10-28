@@ -19,19 +19,15 @@ Query 可选 `format=png|jpeg`。响应是图片二进制；`file` query 被拒�
 
 ## 同源服务器文件字节提取
 
-task 自有 tab 已到达 PDF 或其他二进制文件 URL、但浏览器没有产生可用的本地下载时，可以通过 `/eval` 在页面同源上下文中取回响应体。该流程不是下载管理，也不能用来跨越登录、付费或站点权限；只用于公开资源或用户当前已授权访问的内容。
+PDF 统一通过 `POST /v2/tabs/{targetId}/download` 取回，由 `web-access` Broker 在当前 Edge 的 task 自有页面执行；业务技能不通过 `/eval` 再实现 fetch、Base64 分块或 CDP 下载。接口与头字段见 [下载契约](cdp-protocol.md#post-v2tabstargetiddownload)。本节保留原锚点，供已有引用继续使用；它不是绕过登录、付费或站点权限的方法。
 
-固定顺序：
+1. 回读 task 自有页的最终 URL、访问状态及预期资源。默认使用当前 Edge 的已有会话；需要登录或验证时先调用 `/access`，按 [访问契约](cdp-protocol.md#post-v2tabstargetidaccess) 交给 `web-access` 处理。只在当前浏览器内复用会话，不复制 Profile、Cookie、密码或认证令牌。
+2. 发送 Bearer task token、JSON body 与幂等键，body 包含准确 `url`、`timeoutMs`、`maxBytes`。同源须包含 scheme/host/port；跨源只允许已经确认的出版社 PDF 主机，通过 `allowedHosts` 传入。跳转及 wrapper 内层链接仍须校验，不猜签名参数、不先请求未确认主机。
+3. Broker 在有限超时和大小预算内读取响应，检查 HTTP 状态、PDF 文件头及完整长度；HTML wrapper 只能用于定位受同一策略约束的实际 PDF，不能直接作为 PDF 返回。流中断、超限或超时取消请求并清理暂存，不写半截文件。上限以 `/capabilities.download` 为准，不在调用方复制另一套下载实现。
+4. 只接收完整二进制与最终 URL、字节数、SHA-256。客户端 URL 解码 `X-Download-Final-Url`，复核 `%PDF-`、`X-Download-Bytes` 与 `X-Download-Sha256`；再按任务用 PDF 解析器检查页数、可读性及正文，论文身份/DOI/版本由 `paper-download` 核验。全部通过后才保存至目标位置，不能仅凭 MIME 或文件后缀认定成功。
+5. 下载返回 `UNKNOWN_RESULT` 时保留同一 task 与幂等键，先查原请求/任务状态，不换 key 原样重放。401/403/429/418 或检查页保留站点原因；`not_pdf`、`incomplete`、`too_large`、`download_timeout` 保留文件原因，身份不匹配不能入库。不要把它们改写为 CDP 故障或学校无订阅。
 
-1. 用 `GET /v2/tabs/{targetId}` 和只读 `/eval` 复核最终 `location.href`、页面 origin 与预期文件名。完整 URL 的 query 必须原样保留给浏览器，但签名或会话参数不进入日志和交付文本。页面没有实际到达目标文件、需要跨 origin 请求、授权状态不清或响应仍受访问控制时停止。
-2. 在本地生成任务级随机键，例如 `__waFile_<random>`；首次 `/eval` 先把该键置为 `pending`，再 fetch 当前准确 URL。公开资源优先使用 `credentials: 'omit'`；用户已授权的内容只允许在同一 origin 使用 `same-origin` 凭据。不要读取或导出 Cookie、Authorization 或无关响应头。
-3. 先检查 HTTP 状态、`Content-Type` 和可用的 `Content-Length`。非 2xx、预期 PDF/二进制却返回 HTML/JSON，或类型与目标明显不符时停止。默认原始响应体上限为 `50331648` 字节，对应 Base64 总上限 `67108864` 字符；`Content-Length` 缺失或不可信时按流累计，超过上限立即取消，不使用无界 `arrayBuffer()`。
-4. 在页面内计算响应体 SHA-256，按小块编码 Base64，把 `state`、HTTP 状态、MIME、字节数、Base64 长度、SHA-256 和文件头暂存在随机键下。首次调用只返回这些元数据，不返回整段 Base64。
-5. 首次 `/eval` 返回 `UNKNOWN_RESULT` 时，用新的只读表达式检查同一随机键。`pending` 时只做有界状态探测，`done` 时继续，`error` 时停止；随机键不存在且结果仍不确定时也停止。不得换幂等 key 原样重跑创建或 fetch 动作。
-6. `done` 后按固定偏移读取 Base64，每块最多 `262144` 个字符，总量不得超过上述上限。每个新的分块读取使用独立幂等 key；某一块结果不确定时只用原 key 重放。调用方在本地缓冲，不把块内容输出到终端、聊天、日志或错误信息，并核对每块长度、偏移、总长度和结尾。
-7. 在本地一次解码，复核文件头、字节数和 SHA-256；PDF 至少检查 `%PDF-`，再按任务需要用 `pdfinfo` 核对页数，并抽取文本或渲染页面确认内容。全部通过后才保存到目标位置。随后清除页面随机键并完成 task；缺块、长度或哈希不一致时丢弃候选文件。
-
-这种方式取得的是浏览器收到的完整服务器响应字节，可以按服务器文件交付。它与 canvas 重新编码、视口截图仍要明确区分。
+这是完整服务器响应字节，不同于 canvas 重新编码或截图。最终 URL 可能含签名，只保留任务必需的内部元数据，不把认证参数、token 或二进制块输出到聊天、日志。非 PDF 媒体不冒用此 PDF 专用接口；使用站点现有下载或宿主已提供的资源接口，缺能力时说明，不在领域技能中新增通用字节提取器。
 
 ## 自然尺寸图片像素导出
 
@@ -51,4 +47,4 @@ canvas 结果必须标为“浏览器像素导出并重新编码”。只有直�
 
 在任务自有页面正文位于跨域 iframe 时，先用 `GET /v2/tabs/{id}/frames`（Bearer task token）列出该页面主文档的直接 iframe，再用 `POST /v2/tabs/{id}/frame-text`，JSON 为 `{"frameId":"列表中的 frameId"}`，带同一 token 与新幂等键读取标题、当前 URL 和最多 100000 字符正文。
 
-此回退只读取文本，不接受任意表达式、坐标或点击。每次重新验证 frame 属于当前 task 自有页；跨进程 iframe 使用子 session 的隔离 world，同进程 iframe 使用页面 session 的对应 world。列表不覆盖嵌套 iframe 或 shadow root，未加载 frameId 为 null；目标改变或不可用时重新列举，不猜 target ID。登录、密码、MFA 或访问限制仍按既有 handoff 边界处理，不能因读到了 iframe 就宣称已取得授权或完成用户动作。
+此回退只读取文本，不接受任意表达式、坐标或点击。每次重新验证 frame 属于当前 task 自有页；跨进程 iframe 使用子 session 的隔离 world，同进程 iframe 使用页面 session 的对应 world。列表不覆盖嵌套 iframe 或 shadow root，未加载 frameId 为 null；目标改变或不可用时重新列举，不猜 target ID。登录与访问限制统一交给 `/access` 和 `web-access` 页面动作；图形/滑块/邮箱验证不默认 handoff，真正短信、动态口令、刷脸或系统验证才交还用户。iframe 可读不证明授权成功或已完成身份验证。

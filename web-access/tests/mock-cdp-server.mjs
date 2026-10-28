@@ -79,6 +79,7 @@ function createDocumentState(browserId, targetId) {
       [106, { role: 'combobox', name: 'Multi Choice', value: ['one'], tag: 'SELECT', visible: true, enabled: true, obscured: false, multiple: true }],
     ]),
     frameId: `${browserId}-frame-${targetId}`,
+    downloads: new Map(),
   };
 }
 
@@ -188,6 +189,49 @@ export async function startMockCdpServer(browserId, options = {}) {
     const targetId = sessionTarget(sessionId);
     const target = targets.get(targetId);
     const document = documents.get(targetId);
+    const downloadStart = /\)\((\{"key":"__webAccessDownload_[^\n]+\})\)$/.exec(expression);
+    if (downloadStart && expression.includes("window[key] = job")) {
+      const downloadOptions = JSON.parse(downloadStart[1]);
+      const key = downloadOptions.key;
+      const url = new URL(downloadOptions.startUrl);
+      const fixture = options.downloadFixtures?.[url.pathname] || options.downloadFixture;
+      if (!fixture) {
+        document.downloads.set(key, { state: 'error', code: 'download_failed' });
+      } else if (fixture.error) {
+        document.downloads.set(key, { state: 'error', code: fixture.error });
+      } else {
+        const bytes = Buffer.from(fixture.bytes ?? '%PDF-1.7\nmock');
+        const data = bytes.toString('base64');
+        document.downloads.set(key, {
+          state: 'done',
+          data,
+          chars: data.length,
+          bytes: bytes.length,
+          sha256: fixture.sha256 || crypto.createHash('sha256').update(bytes).digest('hex'),
+          mime: fixture.mime || 'application/pdf',
+          isPdf: fixture.isPdf ?? bytes.subarray(0, 5).equals(Buffer.from('%PDF-')),
+          finalUrl: fixture.finalUrl || url.href,
+        });
+      }
+      return true;
+    }
+    const downloadPoll = /const x = window\[("(?:\\.|[^"])*")\]/.exec(expression);
+    if (downloadPoll && expression.includes('return rest')) {
+      const value = document.downloads.get(JSON.parse(downloadPoll[1]));
+      if (!value) return null;
+      const { data, ...metadata } = value;
+      return metadata;
+    }
+    const downloadChunk = /window\[("(?:\\.|[^"])*")\]\.data\.slice\((\d+),\s*(\d+)\)/.exec(expression);
+    if (downloadChunk) {
+      const value = document.downloads.get(JSON.parse(downloadChunk[1]));
+      return value?.data?.slice(Number(downloadChunk[2]), Number(downloadChunk[3])) ?? null;
+    }
+    const downloadDelete = /delete window\[("(?:\\.|[^"])*")\]/.exec(expression);
+    if (downloadDelete) {
+      document.downloads.delete(JSON.parse(downloadDelete[1]));
+      return true;
+    }
     if (expression.includes('never-appears')) return false;
     if (expression.includes('document.readyState') && expression.includes('===')) {
       if (expression.includes('interactive')) return true;

@@ -1,7 +1,7 @@
 ---
 name: paper-download
 license: MIT
-description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目、附件和任务本地资料，只补请求的缺项；入库前控制非请求的自动抓取，超时先核实原操作。Use when 用户给出题名、DOI、论文 URL、作者主页、论文列表、本地 PDF 或 paper-search 结果，要求下载、保存到 Zotero、整理已有论文或继续机构授权下载。研究问题检索与引用元数据核验用 paper-search；原文技术核对用 paper-review。联网由 web-access 路由；Windows 版内置公开机构访问模块，使用用户已有浏览器登录态并支持登录交接。
+description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目、附件和任务本地资料，只补请求的缺项；入库前控制非请求的自动抓取，超时先核实原操作。Use when 用户给出题名、DOI、论文 URL、作者主页、论文列表、本地 PDF 或 paper-search 结果，要求下载、保存到 Zotero、整理已有论文或继续机构授权下载。研究问题检索与引用元数据核验用 paper-search；原文技术核对用 paper-review。联网由 web-access 路由；Windows 版机构模块通过 web-access HTTP Broker 复用当前 Edge 会话，负责出版物核验，不自行执行浏览器登录或验证码。
 ---
 
 # 论文 PDF 获取与入库
@@ -15,7 +15,7 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 - Zotero 是默认文献库；未指定资料库时用个人库，不猜当前选中分类。文章或持续调研的归类遵循 [paper-search](../paper-search/SKILL.md#按研究任务组织文献)，同一任务共用已确定分类，不复制条目或附件。
 - 用户明确只要本地文件时按指定位置交付；要求项目副本时从 Zotero 导出。索引仅在用户要求或有效项目约定需要时维护，不默认创建 `paper_index.md`、引用账本或另一套 PDF 库。
 - 阅读复用已有笔记。文献本身的方法、结果、局限及原文位置留在 Zotero；当前文章的引用用途和待核问题留在工作区已有材料，不默认批量重做精读。
-- Windows 公开机构访问模块只复用用户已有合法访问。用户自己的学校/CARSI/OpenAthens/MFA 登录由用户完成；不得读取或保存学校密码、浏览器密码库、Cookie 或认证令牌。
+- Windows 机构访问只复用用户已有合法权限；`web-access` 是唯一浏览器执行层，默认当前 Edge 的 `existing` 会话。常规登录、验证和下载按任务授权由该层处理，不复制 Profile，不读取或导出学校密码、浏览器密码库、Cookie 或认证令牌；真正短信、动态口令、刷脸或系统级验证才交还用户。
 
 ## 目标版本
 
@@ -28,7 +28,7 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 1. **查重与定位**：用现有 Zotero 工具检查可用性，先按 DOI 等稳定标识找条目，再核对题名、作者和年份。通用搜索可能不覆盖 DOI 字段，空结果时改用题名、作者找候选并读取实际 DOI，不能凭一次空结果新建条目。读取现有正文附件、版本、分类与阅读内容；再核对本任务已知的索引、BibTeX、PDF 和上一步交接的本地路径，不全盘扫描。
 2. **核实身份与目标**：复用可定位、未变化的已核实信息；缺口交 `paper-search`，未知字段不猜。需要获取或升级已发表论文时，读取出版社当前记录，核对 DOI、卷期页码或文章号和当前版本，再判断已有文件是否满足请求。已有可读目标版本优先复用；库内缺 PDF 而本地已有时，直接核验本地文件并入库，缺父条目不等于缺全文。纯本地整理不触发升级下载。已有附件的冗余检查按下文执行。
 3. **发现全文入口**：尚缺目标文件时，按 [全文入口发现](references/publisher-download-playbook.md#全文入口发现) 查找。默认正式版先查出版社公开入口和已配置、获授权的机构渠道；受阻后主动扩展公开来源，不等用户提醒。访问机构资源失败时，先核对实际登录态（页面是否显示机构名称或「Access provided by」字样），未登录或登录态已失效时按 `web-access` 重新完成机构登录再重试，不得在未确认登录态的情况下断言机构无订阅。未适配的助手、工具故障或页面访问检查不能当成学校无订阅。找到可靠目标版本即可停止扩渠道；保存其他版本不自动结束正式版补齐。
-4. **取得并核验 PDF**：具体论文页面及 PDF 统一走 `web-access` 的受管浏览器；搜索与公开元数据按 `web-access` 选择工具。IEEE Xplore 或 Optica 文章需要机构访问时，优先使用本技能的 [公开机构访问模块](scripts/institutional_access/README.md)。依赖登录、动态按钮或访问检查时直接用相应入口，不先盲目直抓。下载到本次任务暂存目录，按下文核验文件身份、可读性及版本。
+4. **取得并核验 PDF**：具体论文页面及 PDF 统一走 `web-access`，默认当前 Edge 的 `existing` 会话；机构模块消费 HTTP Broker 的 `/access` 与 `/download`，不重写浏览器或认证逻辑。搜索与公开元数据按 `web-access` 选择工具。IEEE Xplore 或 Optica 文章需要机构访问时，优先使用本技能的 [公开机构访问模块](scripts/institutional_access/README.md)。依赖登录、动态按钮或访问检查时直接用相应入口，不先盲目直抓。下载到本次任务暂存目录，按下文核验文件身份、可读性及版本。
 5. **原生入库与回读**：关闭本次 PDF 读取句柄，按 [共享入库流程](references/zotero-storage.md) 检查自动抓取和原操作状态，再创建缺少的父条目或补附件；仅导入元数据也执行这项检查。批量按篇串行查重、保存并记录查询线索，不重投结果未知的整批导入。回读归属、实际路径、文件和哈希，核对所需版本确实保存。请求超时不代表 Zotero 停止执行，先查询同一操作和持久化结果；每轮状态检查最多 45 秒，仍未知时保留有效文件并报告待续。Zotero 不可用时报告待入库，不换建长期文献库。
 6. **版本去重与收尾**：目标版本入库或复用核验成功后，仅按下文规则把可清理的冗余正文附件原生移入回收站；再次核对保留文件、分类、标签和笔记。成功后清理本次自有暂存，移动导入则确认原临时路径消失；失败时保留有效文件和旧附件。按 `web-access` 收尾自有会话和页面，保留用户页面及长期服务。
 
@@ -36,9 +36,9 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 
 ## 机构访问模块
 
-第一版机构下载仅支持 Windows、Python 3.10+、Node.js 22+、`web-access` 受管 Edge、IEEE Xplore 和 Optica Publishing Group。必须同时安装同一仓库的 `web-access` 技能；模块通过 `%LOCALAPPDATA%\PaperDownload\venv` 创建独立 Python 环境，并把浏览器任务令牌保存在 Windows 凭据管理器。学校密码不进入该环境或配置。日常 Edge 或 Chrome 的 `existing` 模式不用于机构下载；`web-access` 失败时不会自动回退到日常浏览器。
+Windows 机构模块支持 Python 3.10+、Node.js 22+、IEEE Xplore 和 Optica Publishing Group，依赖同仓库的 `web-access`。Python 环境位于 `%LOCALAPPDATA%\PaperDownload\venv`；短生命周期 Broker task token 保存在 Windows 凭据管理器，不是出版社认证令牌。模块只保留出版物识别、身份/PDF/版本验证与既有 CLI，入库继续使用共享 Zotero 流程。
 
-受管 Edge 的独立 Profile 位于 `%LOCALAPPDATA%\web-access\managed-edge-profile`，CDP 端口为 `9222`，长期 Proxy 端口为 `3456`。首次任务按需启动，登录 Cookie 随该 Profile 持久化；本模块只创建和关闭自己的 task/tab，不停止 Broker、不关闭其他对话或用户页面。
+默认前检 `check-deps.mjs --browser edge --mode existing --json`，由 `web-access` 从 `DevToolsActivePort` 发现当前 Edge 的实际 CDP 地址，连接 HTTP Broker（通常 `127.0.0.1:3456`）。每个任务新建后台 tab，保留用户原有活动页；收尾只关闭自有页，不停止 Broker 或 Edge。`managed` 仅显式隔离任务可用，不是默认或自动回退。模块不启动、探测修复或另接浏览器，不复制 Profile 或登录数据。HTTP `/json/version` 404 不等于 CDP 失败，控制判定和恢复交给 `web-access`。
 
 同一 `--session` 一次只允许一个命令运行；并发调用返回会话占用，不并行操作同一页面。
 
@@ -52,12 +52,12 @@ $ia = Join-Path $skillRoot 'scripts/institutional_access/run.ps1'
 ```
 
 - `acquire` 返回 `downloaded_identity_verified` 时复用同一 PDF，不再启动第二条机构下载路径。
-- 内部前检固定运行 `web-access check-deps.mjs --browser edge --mode managed --json`，并要求真实控制探针通过。返回 `managed_profile_busy`、`managed_cdp_port_conflict`、`managed_browser_launch_failed`、`proxy_version_mismatch`、`control_probe_failed`、`task_capacity_reached` 等 Broker 故障时，保留具体状态；不要把它们改写成学校登录或订阅失败。
-- 返回 `user_login_required` 时，浏览器标签已经激活。告知用户完成学校/CARSI/OpenAthens 登录或 MFA，完成后只记录“用户报告完成”；用户回复后必须调用 `resume` 回读页面，不能把回复本身当作授权或下载成功。
-- 仅当页面是 HTTPS 登录页、用户名与密码已由浏览器填好、表单和唯一提交控件同源且没有待确认的必选项时，本模块可自动提交一次。它不读取或返回字段值；账号、机构或表单有歧义、需要 MFA/验证码或提交结果未知时仍交给用户，完成后回复再 `resume`。
-- 返回 `publisher_verification` 时等待用户完成验证码或安全验证，再 `resume`。
-- 返回 `access_unavailable` 表示登录后仍没有出版社权限；不要改代理、Cookie 或命令行端点绕过。
-- 返回 `institutional_access` 但无 PDF 时保留同一页面和会话，报告 PDF 入口缺口，不重新建任务。
+- 前检要求 `ready:true`、请求的模式与 Edge 身份一致、控制探针通过；`proxy_version_mismatch`、`control_probe_failed`、`task_capacity_reached` 等保留原状态，不改写成学校未登录或无订阅。
+- 访问状态通过 `POST /v2/tabs/{targetId}/access` 取得脱敏 `state`、`failureCode`、`handoffRequired`、`interactionRequired`。先核对 Broker 能力；缺接口是环境/版本缺口，不在本模块重建登录、验证码或 CDP 执行路径。
+- 常规保存账号自动填充与登录提交由 Broker 完成；图形/滑块验证由 `web-access` 页面动作、邮箱验证码由获授权邮件工具按实际能力处理。`interactionRequired` 或兼容状态 `user_login_required`、`publisher_verification` 不自动等于人工接管，也不保证脚本能解决所有验证。
+- 真正短信、动态口令、刷脸或系统级验证才根据 `handoffRequired` 保留现场交还用户。handoff 期间禁读、禁截图、禁修改；用户完成后调用 `resume` 回读同一任务，不能把回复当作登录、权限或 PDF 成功证据。工具限制、账号歧义或能力不足单独报告，不冒充强验证；发送消息、申请权限或付款不属于常规登录授权。
+- PDF 统一调用 `POST /v2/tabs/{targetId}/download`，提供准确 `url`、有限 `timeoutMs` 和 `maxBytes`，仅允许同源或已确认的出版社 PDF 主机。复核完整二进制、解码后的最终 URL、长度与 SHA-256，再进行身份/版本检查；不保留页内 fetch/Base64 分块或另一套 CDP 下载实现。
+- `access_unavailable` 需结合实际页面判断；只有确认当前机构登录有效且存在相应权限拒绝证据，才报告订阅不足。401/403/429/418、挑战和控制失败分别记录，不靠重复登录、改代理、Cookie 或端点绕过。返回 `institutional_access` 但无 PDF 时保留同一任务，报告入口缺口。
 - 下载成功仍需按本技能主流程核对文件、DOI、版本、Zotero 附件和回读。Zotero 保存完成后才调用 `complete`；会话处于 handoff 时不能直接关闭。
 - 已确认本次不再重试的活动任务也应在用户结束该分支后调用 `complete`。handoff 中的任务不能绕过恢复屏障强制关闭；若用户明确取消，保留给用户关闭，或等待任务到期释放。
 
@@ -93,6 +93,7 @@ Zotero 管理的文件沿用库内命名设置，不直接重命名 storage 文�
 - `access_status`：`open`、`institutional`、`request-only`、`unresolved`。
 - `download_status`：`downloaded`、`pending`、`failed`、`skipped`，只表示相应文件状态。
 - `official_status`：`obtained`、`pending`、`not_applicable`；用户指定非正式目标或确认仅有预印本时用 `not_applicable`，不把它解释为论文未正式发表。
+- 既有 CLI 命令、业务状态与 `version` 等枚举保持兼容；新增 `failure_code` 保留 Broker 的控制/站点/文件分类，不覆盖旧状态。`not_pdf`、`incomplete`、`identity_mismatch`、`too_large`、`download_timeout` 均不能作为下载或入库成功。
 - 受阻时附具体原因：`host_policy`、`environment`、`user_verification`、`institution_permission`、`transport`、`pdf_validation` 或 `zotero_write_unknown`。文件占用属于本地环境；未知写入与已确认失败分开，不把各类阻塞统称为学校登录失败。
 
 技能维护按 `skill-creator`，发布按 `agent-rules`；普通下载不自动修改技能，也不把单机或单一机构验收推广为全部出版社均可用。

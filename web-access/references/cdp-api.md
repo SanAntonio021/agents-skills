@@ -15,18 +15,18 @@
 
 ## 前检
 
-Windows 默认使用受管 Edge。先读 [生命周期参考](cdp-lifecycle.md#启动与浏览器选择)，再运行：
+Windows 默认控制当前 Edge。先读 [生命周期参考](cdp-lifecycle.md#启动与浏览器选择)，再运行：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --json
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --json
 ```
 
-只有 `ready:true` 且正常任务的控制探针通过后才创建页面。`--status-only` 只诊断，不创建或迁移配置，也不启动或修复 Broker。
+只有 `ready:true` 且正常任务的控制探针通过后才创建页面。`--status-only` 只诊断，不创建或迁移配置，也不启动或修复 Broker。HTTP `/json/version` 返回 404 不代表 CDP 不可用；以 WebSocket 握手和后台 tab 控制探针为准。
 
 ## 共同约束
 
 - 每个对话或子 Agent 使用独立 task/token，只操作自己的 tab 和 popup。
-- 多个对话共享受管 Edge 和长期 Proxy，但任务结束只关闭本 task 的页面。
+- 多个对话共享当前 Edge 和长期 Proxy，但任务结束只关闭本 task 的页面。
 - `/health`、`/capabilities` 和创建 task 之外的 `/v2` 请求都要发送 `Authorization: Bearer <taskToken>`。
 - 所有 POST/DELETE 都要发送 `Content-Type: application/json` 和 `Idempotency-Key`。
 - token 不能进入 URL、日志、错误信息或交付文本。

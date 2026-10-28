@@ -1,1 +1,1 @@
-export const BROKER_VERSION = 'managed-edge.1';
+export const BROKER_VERSION = 'existing-edge.2';

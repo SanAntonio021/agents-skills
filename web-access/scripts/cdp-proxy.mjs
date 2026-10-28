@@ -2,6 +2,8 @@
 // web-access dual-proxy.2: task-scoped CDP proxy protocol v2.
 
 import crypto from 'node:crypto';
+import { startPageDownload, downloadUrlAllowed } from './download-page.mjs';
+import { loginAutofillExpression, accessProbe } from './browser-access.mjs';
 import { createPageFrames, FrameError } from './page-frames.mjs';
 import http from 'node:http';
 import os from 'node:os';
@@ -94,6 +96,9 @@ const sessions = new Map();
 const sessionTargets = new Map();
 const initializedSessions = new Set();
 const guardedSessions = new Set();
+const downloadPolicies = new Map();
+const loginAttempts = new Map();
+let controlProbe = { passed: null, checkedAt: null };
 const tasks = new Map();
 const tokenTasks = new Map();
 const tabOwners = new Map();
@@ -249,6 +254,9 @@ function clearLogicalOwnership() {
   sessionTargets.clear();
   initializedSessions.clear();
   guardedSessions.clear();
+  downloadPolicies.clear();
+  loginAttempts.clear();
+  controlProbe = { passed: null, checkedAt: null };
 }
 
 async function connect() {
@@ -305,6 +313,7 @@ async function connect() {
         }
       });
     });
+    await sendCDP('Browser.getVersion');
     await sendCDP('Target.setDiscoverTargets', { discover: true });
     initialized = true;
     cdpHandshakeAt = new Date().toISOString();
@@ -409,9 +418,12 @@ function handleCdpMessage(message) {
   } else if (method === 'DOM.documentUpdated') {
     invalidateTarget(targetId, 'document_updated');
   } else if (method === 'Fetch.requestPaused') {
-    void sendCDP('Fetch.failRequest', {
-      requestId: params.requestId,
-      errorReason: 'ConnectionRefused',
+    const policy = downloadPolicies.get(sessionId);
+    const permitted = policy && downloadUrlAllowed(params.request?.url, policy) &&
+      !isProtectedDownloadUrl(params.request?.url);
+    if (policy && !permitted) policy.blocked = true;
+    void sendCDP(permitted ? 'Fetch.continueRequest' : 'Fetch.failRequest', {
+      requestId: params.requestId, ...(permitted ? {} : { errorReason: 'BlockedByClient' }),
     }, sessionId).catch(() => {});
   }
 }
@@ -900,6 +912,7 @@ function capabilities() {
     brokerVersion: BROKER_VERSION,
     profileMode: PROFILE_MODE,
     taskIsolation: true,
+    access: { endpoint: 'POST /v2/tabs/{targetId}/access', savedLoginSubmission: true, exportsCredentials: false },
     userTabsVisible: false,
     maxActiveTasks: TASK_LIMIT,
     snapshot: { source: 'cdp-ax', modes: ['interactive', 'all'], defaultDepth: 12, defaultMaxNodes: 300, hardMaxNodes: 1000 },
@@ -1468,6 +1481,14 @@ function downloadFailure(code, message, details) {
   return new ApiError(422, code, message, details);
 }
 
+function isProtectedDownloadUrl(raw) {
+  try {
+    const url = new URL(raw);
+    return ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) &&
+      [String(PORT), String(chromePort)].includes(url.port);
+  } catch { return true; }
+}
+
 async function downloadViaPage(task, targetId, body) {
   if (typeof body.url !== 'string' || !body.url) {
     throw new ApiError(400, 'URL_REQUIRED', 'download requires url.');
@@ -1491,119 +1512,22 @@ async function downloadViaPage(task, targetId, body) {
     ? Math.min(Math.max(1000, Math.floor(Number(body.timeoutMs))), 300000)
     : 120000;
   const pageInfo = await targetInfo(targetId);
-  const allowedHosts = new Set();
-  try {
-    const pageHost = new URL(pageInfo?.url || 'about:blank').hostname.toLowerCase();
-    if (pageHost) allowedHosts.add(pageHost);
-  } catch {}
-  if (Array.isArray(body.allowedHosts)) {
-    for (const raw of body.allowedHosts.slice(0, DOWNLOAD_ALLOWED_HOSTS_LIMIT)) {
-      const host = normalizeAllowedHost(raw);
-      if (host) allowedHosts.add(host);
-    }
-  }
-  if (!allowedHosts.size || !hostAllowed(requested.hostname, [...allowedHosts])) {
-    throw new ApiError(403, 'DOWNLOAD_HOST_NOT_ALLOWED', 'Download host is not the current page origin or a confirmed publisher host.');
+  let pageOrigin;
+  try { pageOrigin = new URL(pageInfo?.url || 'about:blank').origin; } catch { pageOrigin = null; }
+  const allowedHosts = Array.isArray(body.allowedHosts)
+    ? body.allowedHosts.slice(0, DOWNLOAD_ALLOWED_HOSTS_LIMIT).map(normalizeAllowedHost).filter(Boolean) : [];
+  const policy = { pageOrigin, allowedHosts };
+  if (requested.protocol !== 'https:' && requested.origin !== pageOrigin) throw new ApiError(403, 'DOWNLOAD_HOST_NOT_ALLOWED', 'Cross-origin downloads must use HTTPS.');
+  if (!downloadUrlAllowed(requested.href, policy) || isProtectedDownloadUrl(requested.href)) {
+    throw new ApiError(403, 'DOWNLOAD_HOST_NOT_ALLOWED', 'Download URL is not the current origin or a confirmed HTTPS publisher host.');
   }
   const sessionId = await ensureSession(targetId);
   const key = `__webAccessDownload_${crypto.randomUUID().replace(/-/g, '')}`;
-  const allowedHostList = [...allowedHosts];
-  const script = `(() => {
-    const key = ${JSON.stringify(key)};
-    const startUrl = ${JSON.stringify(requested.href)};
-    const allowedHosts = ${JSON.stringify(allowedHostList)};
-    const maxBytes = ${maxBytes};
-    const timeoutMs = ${timeoutMs};
-    const maxDepth = ${DOWNLOAD_MAX_WRAPPER_DEPTH};
-    const hostAllowed = (host) => allowedHosts.some((allowed) => {
-      const target = String(host || '').toLowerCase();
-      return target === allowed || target.endsWith('.' + allowed);
-    });
-    window[key] = { state: 'pending' };
-    (async () => {
-      try {
-        const visit = async (url, depth) => {
-          if (depth > maxDepth) throw new Error('too_many_wrappers');
-          const expected = new URL(url);
-          if (!['http:', 'https:'].includes(expected.protocol)) throw new Error('unexpected_origin');
-          if (expected.username || expected.password) throw new Error('unexpected_origin');
-          if (!hostAllowed(expected.hostname)) throw new Error('unexpected_origin');
-          const response = await fetch(url, {
-            credentials: 'include',
-            redirect: 'follow',
-            signal: AbortSignal.timeout(timeoutMs),
-          });
-          if (!response.ok) throw new Error('http_' + response.status);
-          const finalUrl = new URL(response.url);
-          if (!['http:', 'https:'].includes(finalUrl.protocol)) throw new Error('unexpected_final_origin');
-          if (finalUrl.username || finalUrl.password) throw new Error('unexpected_final_origin');
-          if (!hostAllowed(finalUrl.hostname)) throw new Error('unexpected_final_origin');
-          const mime = (response.headers.get('content-type') || '').toLowerCase();
-          if (mime.includes('text/html')) {
-            const html = await response.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const nodes = [...doc.querySelectorAll('iframe[src],embed[src],object[data]')];
-            for (const node of nodes) {
-              let next;
-              try {
-                next = new URL(node.getAttribute('src') || node.getAttribute('data'), url).href;
-              } catch { continue; }
-              if (hostAllowed(new URL(next).hostname)) return visit(next, depth + 1);
-            }
-            throw new Error('wrapper_source_not_found');
-          }
-          const declared = Number(response.headers.get('content-length') || 0);
-          if (declared > maxBytes) throw new Error('too_large');
-          const reader = response.body.getReader();
-          const chunks = [];
-          let total = 0;
-          while (true) {
-            const part = await reader.read();
-            if (part.done) break;
-            total += part.value.byteLength;
-            if (total > maxBytes) {
-              await reader.cancel();
-              throw new Error('too_large');
-            }
-            chunks.push(part.value);
-          }
-          const bytes = new Uint8Array(total);
-          let offset = 0;
-          for (const chunk of chunks) {
-            bytes.set(chunk, offset);
-            offset += chunk.byteLength;
-          }
-          const signature = String.fromCharCode(...bytes.slice(0, 5));
-          const isPdf = signature === '%PDF-';
-          if (!isPdf && !mime.includes('octet-stream')) throw new Error('not_pdf');
-          const sha256 = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
-            .map((value) => value.toString(16).padStart(2, '0')).join('');
-          const blob = new Blob([bytes], { type: isPdf ? 'application/pdf' : (mime || 'application/octet-stream') });
-          const dataUrl = await new Promise((resolve, reject) => {
-            const reader2 = new FileReader();
-            reader2.onload = () => resolve(reader2.result);
-            reader2.onerror = () => reject(reader2.error || new Error('file_reader_failed'));
-            reader2.readAsDataURL(blob);
-          });
-          const data = String(dataUrl).slice(String(dataUrl).indexOf(',') + 1);
-          window[key] = {
-            state: 'done',
-            data,
-            chars: data.length,
-            bytes: bytes.length,
-            sha256,
-            mime: mime || '',
-            isPdf,
-            finalUrl: finalUrl.href,
-          };
-        };
-        await visit(startUrl, 0);
-      } catch (error) {
-        window[key] = { state: 'error', code: (error && error.message) || 'download_failed' };
-      }
-    })();
-    return true;
-  })()`;
+  const script = `(${startPageDownload.toString()})(${JSON.stringify({ key, startUrl: requested.href,
+    pageOrigin, allowedHosts, maxBytes, timeoutMs, maxDepth: DOWNLOAD_MAX_WRAPPER_DEPTH })})`;
+  downloadPolicies.set(sessionId, policy);
+  try {
+    await sendCDP('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] }, sessionId);
   try {
     await fallbackEval(sessionId, script);
   } catch (error) {
@@ -1612,15 +1536,16 @@ async function downloadViaPage(task, targetId, body) {
   const deadline = Date.now() + timeoutMs + 10000;
   let metadata = null;
   while (Date.now() < deadline) {
-    const probe = await fallbackEval(sessionId, `(() => { const x = window[${JSON.stringify(key)}]; if (!x || x.state === 'pending') return null; const { data, ...rest } = x; return rest; })()`);
+    const { value: probe } = await fallbackEval(sessionId, `(() => { const x = window[${JSON.stringify(key)}]; if (!x || x.state === 'pending') return null; const { data, controller, ...rest } = x; return rest; })()`);
     if (probe && typeof probe === 'object') {
       if (probe.state !== 'done') {
-        await fallbackEval(sessionId, `delete window[${JSON.stringify(key)}]`).catch(() => {});
-        const code = String(probe.code || 'download_failed');
-        const mapped = code.startsWith('http_') ? 'access_denied'
-          : code === 'too_large' ? 'too_large'
-            : code === 'not_pdf' ? 'not_pdf'
-              : 'download_failed';
+        const code = policy.blocked ? 'unexpected_origin' : String(probe.code || 'download_failed');
+        const mapped = code === 'http_401' ? 'auth_required'
+          : code === 'http_403' ? 'access_denied'
+            : ['http_418', 'http_429'].includes(code) ? 'challenge'
+              : code.startsWith('http_') ? 'access_denied'
+                : ['too_large', 'not_pdf', 'incomplete', 'download_timeout'].includes(code) ? code
+                  : 'download_failed';
         throw downloadFailure(mapped, `Browser download failed: ${code}`, { reason: code });
       }
       metadata = probe;
@@ -1629,31 +1554,29 @@ async function downloadViaPage(task, targetId, body) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   if (!metadata) {
-    await fallbackEval(sessionId, `delete window[${JSON.stringify(key)}]`).catch(() => {});
     throw new ApiError(504, 'download_timeout', 'Browser download timed out.');
   }
   const chars = Number(metadata.chars);
   const size = Number(metadata.bytes);
   const sha256 = String(metadata.sha256 || '');
-  if (!Number.isInteger(chars) || !Number.isInteger(size) || size < 5 || size > maxBytes || !/^[a-f0-9]{64}$/.test(sha256)) {
-    await fallbackEval(sessionId, `delete window[${JSON.stringify(key)}]`).catch(() => {});
-    throw downloadFailure('incomplete', 'Browser download metadata is invalid.');
+  if (!Number.isSafeInteger(chars) || !Number.isSafeInteger(size) || size < 5 || size > maxBytes ||
+      chars !== 4 * Math.ceil(size / 3) || !/^[a-f0-9]{64}$/.test(sha256) ||
+      !downloadUrlAllowed(metadata.finalUrl, policy) || isProtectedDownloadUrl(metadata.finalUrl)) {
+    throw downloadFailure(size > maxBytes ? 'too_large' : 'incomplete', 'Browser download metadata is invalid.');
   }
   const parts = [];
   for (let offset = 0; offset < chars; offset += DOWNLOAD_CHUNK_CHARS) {
-    const part = await fallbackEval(sessionId, `window[${JSON.stringify(key)}].data.slice(${offset}, ${offset + DOWNLOAD_CHUNK_CHARS})`);
+    const { value: part } = await fallbackEval(sessionId, `window[${JSON.stringify(key)}].data.slice(${offset}, ${offset + DOWNLOAD_CHUNK_CHARS})`);
     if (typeof part !== 'string') {
-      await fallbackEval(sessionId, `delete window[${JSON.stringify(key)}]`).catch(() => {});
-      throw downloadFailure('incomplete', 'Browser download chunk is invalid.');
+        throw downloadFailure('incomplete', 'Browser download chunk is invalid.');
     }
     parts.push(part);
   }
-  await fallbackEval(sessionId, `delete window[${JSON.stringify(key)}]`).catch(() => {});
   const raw = Buffer.from(parts.join(''), 'base64');
   if (raw.length !== size) throw downloadFailure('incomplete', 'Browser download length mismatch.');
   const actual = crypto.createHash('sha256').update(raw).digest('hex');
   if (actual !== sha256) throw downloadFailure('incomplete', 'Browser download integrity check failed.');
-  if (metadata.isPdf && !raw.subarray(0, 5).equals(Buffer.from('%PDF-'))) {
+  if (!raw.subarray(0, 5).equals(Buffer.from('%PDF-'))) {
     throw downloadFailure('not_pdf', 'Browser download is not a PDF.');
   }
   return binaryResponse(200, raw, metadata.isPdf ? 'application/pdf' : 'application/octet-stream', {
@@ -1662,6 +1585,31 @@ async function downloadViaPage(task, targetId, body) {
     'X-Download-Is-Pdf': metadata.isPdf ? 'true' : 'false',
     'X-Download-Final-Url': encodeURIComponent(String(metadata.finalUrl || requested.href)),
   });
+  } finally {
+    await fallbackEval(sessionId, `(() => { const x = window[${JSON.stringify(key)}]; if (x?.controller) x.controller.abort(); delete window[${JSON.stringify(key)}]; })()`).catch(() => {});
+    downloadPolicies.delete(sessionId);
+    await sendCDP('Fetch.enable', { patterns: chromePort ? [
+      { urlPattern: `http://127.0.0.1:${chromePort}/*`, requestStage: 'Request' },
+      { urlPattern: `http://localhost:${chromePort}/*`, requestStage: 'Request' },
+    ] : [] }, sessionId).catch(() => {});
+  }
+
+}
+
+async function handleBrowserAccess(task, targetId, body) {
+  const sessionId = await ensureSession(targetId);
+  const { value: probe } = await fallbackEval(sessionId, `(${accessProbe.toString()})()`);
+  if (!probe || typeof probe !== 'object') throw new ApiError(502, 'action_timeout', 'Access probe did not return a state.');
+  if (probe.handoffRequired || !body.allowAutofill || probe.state !== 'auth_required') return probe;
+  const { value: form } = await fallbackEval(sessionId, loginAutofillExpression(false));
+  if (form?.status !== 'ready') return { ...probe, autofillStatus: form?.status || 'unavailable' };
+  const attemptKey = `${task.id}:${targetId}:${form.host}:${form.path}`;
+  if (loginAttempts.has(attemptKey)) return { ...probe, autofillStatus: 'already_attempted' };
+  // Record before the mutation. An ambiguous timeout must never replay a login.
+  loginAttempts.set(attemptKey, Date.now());
+  const { value: submitted } = await fallbackEval(sessionId, loginAutofillExpression(true));
+  return { ...probe, state: submitted?.status === 'submitted' ? 'login_submitted' : probe.state,
+    autofillStatus: submitted?.status || 'submit_unknown' };
 }
 
 async function fallbackEval(sessionId, expression) {
@@ -1689,6 +1637,7 @@ async function handleRoute(req, parsed, rawBody) {
       managedTabs: tabOwners.size,
       activeTasks: activeTaskCount(),
       chromePort,
+      controlProbe,
       cdp: {
         connected: websocketOpen(),
         port: chromePort,
@@ -1765,6 +1714,7 @@ async function handleRoute(req, parsed, rawBody) {
       if (!result.targetId) throw new Error('Target.createTarget returned no targetId.');
       ownTab(task, result.targetId, 'created', null, { url: 'about:blank' });
       await navigateCreatedTarget(result.targetId, url);
+      if (url === 'about:blank') controlProbe = { passed: true, checkedAt: new Date().toISOString(), background: body.background !== false };
       task.lastActivity = Date.now();
       return jsonResponse(201, { targetId: result.targetId, kind: 'created' });
     });
@@ -1777,7 +1727,7 @@ async function handleRoute(req, parsed, rawBody) {
     return jsonResponse(200, await listTaskTabs(task));
   }
 
-  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|set-files|setFiles|scroll|screenshot|frames|frame-text|download))?$/.exec(pathname);
+  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|set-files|setFiles|scroll|screenshot|frames|frame-text|download|access))?$/.exec(pathname);
   if (!tabMatch) throw new ApiError(404, 'NOT_FOUND', 'Endpoint was not found.');
   const targetId = decodeURIComponent(tabMatch[1]);
   const operation = tabMatch[2] || null;
@@ -1852,6 +1802,7 @@ async function handleRoute(req, parsed, rawBody) {
       throw new ApiError(409, 'DIALOG_OPEN', 'Handle the JavaScript dialog before continuing.');
     }
     if (operation === 'download') return await downloadViaPage(task, targetId, body);
+    if (operation === 'access') return jsonResponse(200, await handleBrowserAccess(task, targetId, body));
     if (operation === 'action') return jsonResponse(200, await performAction(task, targetId, body));
     if (operation === 'wait') return jsonResponse(200, await waitForCondition(task, targetId, body));
     if (operation === 'frame-text') {

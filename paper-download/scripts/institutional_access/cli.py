@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import base64
-import hashlib
 import json
 import os
 import re
@@ -56,8 +54,9 @@ def session_summary(session: dict[str, Any]) -> dict[str, Any]:
         "doi": session.get("doi"),
         "browser": session.get("browser"),
         "updated_at": session.get("updatedAt"),
-        "user_action_required": session.get("stage")
-        in {"user_login_required", "publisher_verification"},
+        "user_action_required": bool(session.get("userHandoffRequired", session.get("stage") == "user_login_required")),
+        "failure_code": session.get("failure_code"),
+        "browser_interaction_required": bool(session.get("browserInteraction")),
     }
 
 
@@ -288,174 +287,24 @@ def wait_for_page_signal(
     return latest
 
 
-def login_autofill_expression(*, submit: bool) -> str:
-    expression = r"""(() => {
-      const submitRequested = __SUBMIT__;
-      const visible = e => !!e && e.getClientRects().length > 0;
-      const matches = (element, selector) => {
-        try { return element.matches(selector); } catch (_) { return false; }
-      };
-      const autofilled = element =>
-        matches(element, ':-webkit-autofill') || matches(element, ':autofill');
-      if (location.protocol !== 'https:') return {status: 'not_https'};
-      const pageText = (
-        (document.title || '') + '\n' +
-        ((document.body && document.body.innerText) || '').slice(0, 12000)
-      );
-      if (!/(?:sign in|log in|login|single sign-on|\bsso\b|登录|统一身份认证)/i.test(pageText))
-        return {status: 'not_login_page'};
-
-      const passwords = [...document.querySelectorAll('input[type="password"]')]
-        .filter(visible);
-      if (!passwords.length) return {status: 'no_password_form'};
-      const forms = [...new Set(passwords.map(input => input.form).filter(Boolean))];
-      if (
-        forms.length !== 1 ||
-        passwords.filter(input => input.form === forms[0]).length !== 1
-      )
-        return {status: 'ambiguous_form'};
-
-      const form = forms[0];
-      let action;
-      try {
-        action = new URL(form.getAttribute('action') || location.href, location.href);
-      } catch (_) {
-        return {status: 'insecure_form'};
-      }
-      if (
-        action.protocol !== 'https:' ||
-        action.origin !== location.origin ||
-        (form.method || 'get').toLowerCase() !== 'post' ||
-        !['', '_self'].includes((form.target || '').toLowerCase())
-      )
-        return {status: 'insecure_form'};
-
-      const identityFields = [...form.querySelectorAll('input')]
-        .filter(input => {
-          if (!visible(input)) return false;
-          const type = (input.type || 'text').toLowerCase();
-          if (!['text', 'email', 'tel'].includes(type)) return false;
-          const hint = [
-            input.type,
-            input.name,
-            input.id,
-            input.getAttribute('autocomplete')
-          ].filter(Boolean).join(' ');
-          return type === 'email' ||
-            /user(?:name)?|e-?mail|login|account|uid|学号|工号/i.test(hint);
-        });
-      if (identityFields.length !== 1) return {status: 'ambiguous_identity'};
-      if (!autofilled(identityFields[0]))
-        return {status: 'identity_not_filled'};
-      if (!autofilled(passwords[0]))
-        return {status: 'password_not_filled'};
-
-      const requiredChoices = [
-        ...form.querySelectorAll(
-          'input[type="checkbox"][required],input[type="radio"][required]'
-        )
-      ].filter(visible);
-      if (requiredChoices.some(input => !input.checked))
-        return {status: 'consent_required'};
-
-      const submitControls = [
-        ...form.querySelectorAll('button,input[type="submit"],input[type="image"]')
-      ].filter(control => {
-        if (!visible(control) || control.disabled) return false;
-        if ((control.tagName || '').toLowerCase() === 'button') {
-          return ['', 'submit'].includes(
-            (control.getAttribute('type') || '').toLowerCase()
-          );
-        }
-        return true;
-      });
-      if (submitControls.length !== 1) return {status: 'ambiguous_submit'};
-
-      if (submitRequested) {
-        try {
-          form.requestSubmit(submitControls[0]);
-        } catch (_) {
-          return {status: 'submit_failed'};
-        }
-        return {status: 'submitted', host: location.hostname, path: location.pathname};
-      }
-      return {status: 'ready', host: location.hostname, path: location.pathname};
-    })()"""
-    return expression.replace("__SUBMIT__", "true" if submit else "false")
-
-
-_AUTOFILL_NON_SUBMIT_STATUSES = {
-    "not_https",
-    "not_login_page",
-    "no_password_form",
-    "ambiguous_form",
-    "insecure_form",
-    "ambiguous_identity",
-    "identity_not_filled",
-    "password_not_filled",
-    "consent_required",
-    "ambiguous_submit",
-    "submit_failed",
-}
-
-
-def try_submit_autofilled_login(
-    store: Any,
-    session: dict[str, Any],
-    client: BrowserClient,
-) -> str:
-    """Submit one uniquely identified, already-filled login form.
-
-    The page script only returns booleans and page identity. It never returns
-    account, password, cookie, or arbitrary form values.
-    """
-    if session.get("loginSubmitAttempted"):
-        return "already_attempted"
-    detected = client.eval(
-        session["targetId"],
-        login_autofill_expression(submit=False),
-    )
-    status = str(detected.get("status") or "") if isinstance(detected, dict) else ""
-    if status != "ready":
-        return status or "autofill_unavailable"
-
-    session["loginSubmitAttempted"] = True
-    session["loginSubmitAt"] = utc_now()
-    session["loginSubmitHost"] = str(detected.get("host") or "")[:255]
-    store.write(session["sessionId"], session)
-    key = str(uuid.uuid4())
-    try:
-        submitted = client.eval(
-            session["targetId"],
-            login_autofill_expression(submit=True),
-            idempotency_key=key,
-        )
-    except BrowserError as error:
-        if error.code == "UNKNOWN_RESULT":
-            session["loginSubmitResult"] = "unknown"
-            store.write(session["sessionId"], session)
-            return "submit_unknown"
-        session["loginSubmitResult"] = "failed"
-        store.write(session["sessionId"], session)
-        return "submit_failed"
-
-    submitted_status = (
-        str(submitted.get("status") or "") if isinstance(submitted, dict) else ""
-    )
-    if submitted_status == "submitted":
-        session["loginSubmitResult"] = "submitted"
-        store.write(session["sessionId"], session)
-        return "submitted"
-    if submitted_status in _AUTOFILL_NON_SUBMIT_STATUSES:
-        session["loginSubmitAttempted"] = False
-        session.pop("loginSubmitAt", None)
-        session.pop("loginSubmitHost", None)
-        session["loginSubmitResult"] = submitted_status
-        store.write(session["sessionId"], session)
-        return submitted_status
-    session["loginSubmitResult"] = "unknown"
-    store.write(session["sessionId"], session)
-    return "submit_unknown"
+def continue_browser_access(store: Any, session: dict[str, Any], client: BrowserClient,
+                            *, allow_autofill: bool) -> dict[str, Any] | None:
+    """Delegate authentication and challenge decisions to web-access."""
+    access = client.access(session["targetId"], allow_autofill=allow_autofill)
+    if access.get("state") == "ready":
+        return None
+    session["browserInteraction"] = not bool(access.get("handoffRequired"))
+    session["userHandoffRequired"] = bool(access.get("handoffRequired"))
+    session["failure_code"] = access.get("failureCode")
+    if access.get("handoffRequired"):
+        return set_handoff(store, session, client, stage="user_login_required",
+                           reason=str(access.get("reason") or "strong authentication required"),
+                           instruction="请完成当前页面的短信、动态口令、刷脸或系统身份验证，随后继续原任务。")
+    return save_stage(store, session,
+                      "publisher_verification" if access.get("state") in {"verification_required", "challenge"} else "user_login_required",
+                      reason=str(access.get("reason") or access.get("state") or "browser interaction required"),
+                      failure_code=access.get("failureCode") or "auth_required",
+                      browser_interaction=access)
 
 
 def click_pdf_control(client: BrowserClient, target_id: str, provider: Provider) -> bool:
@@ -568,195 +417,6 @@ def restore_pdf_fetch_context(
     return wait_for_page_signal(client, session["targetId"], provider)
 
 
-def fetch_pdf_bytes(
-    client: BrowserClient,
-    target_id: str,
-    candidate: str,
-    provider: Provider,
-    *,
-    timeout_seconds: int = 60,
-) -> bytes:
-    key = "__paperDownload_" + uuid.uuid4().hex
-    script = r"""(() => {
-      const key = __KEY__;
-      const startUrl = __URL__;
-      const expectedHost = __HOST__;
-      const maxBytes = __MAX__;
-      const expectedOrigin = new URL(startUrl).origin;
-      window[key] = {state: 'pending'};
-      (async () => {
-        try {
-          const visit = async (url, depth = 0) => {
-            if (depth > 2) throw new Error('too_many_wrappers');
-            const expected = new URL(url);
-            if (
-              expected.protocol !== 'https:' ||
-              expected.hostname !== expectedHost ||
-              expected.origin !== expectedOrigin ||
-              expected.username ||
-              expected.password
-            )
-              throw new Error('unexpected_pdf_origin');
-            const response = await fetch(url, {
-              credentials: 'same-origin',
-              signal: AbortSignal.timeout(__TIMEOUT_MS__)
-            });
-            if (!response.ok) throw new Error('pdf_http_error');
-            const finalUrl = new URL(response.url);
-            if (
-              finalUrl.protocol !== 'https:' ||
-              finalUrl.hostname !== expectedHost ||
-              finalUrl.origin !== expectedOrigin ||
-              finalUrl.username ||
-              finalUrl.password
-            )
-              throw new Error('unexpected_final_pdf_origin');
-            const mime = (response.headers.get('content-type') || '').toLowerCase();
-            if (mime.includes('text/html')) {
-              const html = await response.text();
-              const doc = new DOMParser().parseFromString(html, 'text/html');
-              const nodes = [...doc.querySelectorAll('iframe[src],embed[src],object[data]')];
-              for (const node of nodes) {
-                const next = new URL(node.getAttribute('src') || node.getAttribute('data'), url).href;
-                if (new URL(next).hostname === expectedHost) return visit(next, depth + 1);
-              }
-              throw new Error('pdf_source_not_found');
-            }
-            if (!(mime.includes('pdf') || mime.includes('octet-stream')))
-              throw new Error('unexpected_pdf_content_type');
-            const declared = Number(response.headers.get('content-length') || 0);
-            if (declared > maxBytes) throw new Error('pdf_too_large');
-            const reader = response.body.getReader();
-            const chunks = [];
-            let total = 0;
-            while (true) {
-              const part = await reader.read();
-              if (part.done) break;
-              total += part.value.byteLength;
-              if (total > maxBytes) {
-                await reader.cancel();
-                throw new Error('pdf_too_large');
-              }
-              chunks.push(part.value);
-            }
-            const bytes = new Uint8Array(total);
-            let offset = 0;
-            for (const chunk of chunks) {
-              bytes.set(chunk, offset);
-              offset += chunk.byteLength;
-            }
-            if (bytes.length < 5 || String.fromCharCode(...bytes.slice(0, 5)) !== '%PDF-')
-              throw new Error('invalid_pdf_signature');
-            const sha256 = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
-              .map(value => value.toString(16).padStart(2, '0')).join('');
-            const blob = new Blob([bytes], {type: 'application/pdf'});
-            const dataUrl = await new Promise((resolve, reject) => {
-              const fileReader = new FileReader();
-              fileReader.onload = () => resolve(fileReader.result);
-              fileReader.onerror = () => reject(fileReader.error || new Error('file_reader_failed'));
-              fileReader.readAsDataURL(blob);
-            });
-            const data = String(dataUrl).slice(String(dataUrl).indexOf(',') + 1);
-            window[key] = {
-              state: 'done', data, chars: data.length, bytes: bytes.length,
-              sha256, mime: mime, source: finalUrl.origin + finalUrl.pathname
-            };
-          };
-          await visit(startUrl);
-        } catch (_) {
-          window[key] = {state: 'error'};
-        }
-      })();
-      return true;
-    })()"""
-    script = (
-        script.replace("__KEY__", json.dumps(key))
-        .replace("__URL__", json.dumps(candidate))
-        .replace("__HOST__", json.dumps(provider.host))
-        .replace("__MAX__", str(MAX_PDF_BYTES))
-        .replace("__TIMEOUT_MS__", str(timeout_seconds * 1000))
-    )
-    try:
-        client.eval(
-            target_id,
-            script,
-            idempotency_key=str(uuid.uuid4()),
-        )
-    except BrowserError as error:
-        if error.code != "UNKNOWN_RESULT":
-            raise
-    deadline = time.monotonic() + timeout_seconds + 10
-    metadata: dict[str, Any] | None = None
-    while time.monotonic() < deadline:
-        value = client.eval(
-            target_id,
-            "(()=>{const x=window["
-            + json.dumps(key)
-            + "];if(!x||x.state==='pending')return null;"
-            "const {data,...rest}=x;return rest;})()",
-        )
-        if isinstance(value, dict):
-            if value.get("state") != "done":
-                client.eval(target_id, "delete window[" + json.dumps(key) + "]")
-                raise OperationError(
-                    "pdf_download_failed",
-                    "browser PDF response was not usable",
-                )
-            metadata = value
-            break
-        time.sleep(0.25)
-    if metadata is None:
-        raise OperationError("pdf_download_timeout", "browser PDF fetch timed out")
-    chars = metadata.get("chars")
-    size = metadata.get("bytes")
-    expected_sha = metadata.get("sha256")
-    if (
-        not isinstance(chars, int)
-        or not isinstance(size, int)
-        or not 5 <= size <= MAX_PDF_BYTES
-        or not isinstance(expected_sha, str)
-    ):
-        raise OperationError("pdf_download_invalid", "browser PDF metadata is invalid")
-    chunks: list[str] = []
-    for offset in range(0, chars, 262144):
-        expression = (
-            "window["
-            + json.dumps(key)
-            + "].data.slice("
-            + str(offset)
-            + ","
-            + str(offset + 262144)
-            + ")"
-        )
-        read_key = str(uuid.uuid4())
-        try:
-            chunk = client.eval(
-                target_id,
-                expression,
-                idempotency_key=read_key,
-            )
-        except BrowserError as error:
-            if error.code != "UNKNOWN_RESULT":
-                raise
-            chunk = client.eval(
-                target_id,
-                expression,
-                idempotency_key=read_key,
-            )
-        if not isinstance(chunk, str):
-            raise OperationError("pdf_download_invalid", "browser PDF chunk is invalid")
-        chunks.append(chunk)
-    client.eval(target_id, "delete window[" + json.dumps(key) + "]")
-    raw = base64.b64decode("".join(chunks), validate=True)
-    if (
-        len(raw) != size
-        or hashlib.sha256(raw).hexdigest() != expected_sha
-        or not raw.startswith(b"%PDF-")
-    ):
-        raise OperationError("pdf_download_invalid", "browser PDF integrity check failed")
-    return raw
-
-
 def try_download(
     store: Any,
     session: dict[str, Any],
@@ -783,19 +443,22 @@ def try_download(
     identity = public_page_identity(state, session["doi"], provider)
     candidates = candidates[:5]
     overall_deadline = time.monotonic() + 120
+    last_failure: str | None = None
     for candidate in candidates:
-        if urlsplit(candidate).hostname != provider.host:
+        candidate_parts = urlsplit(candidate)
+        if candidate_parts.scheme != "https" or candidate_parts.hostname != provider.host:
             continue
         remaining = int(overall_deadline - time.monotonic())
         if remaining < 5:
             break
         try:
-            raw = fetch_pdf_bytes(
-                client,
+            raw, _download_metadata = client.download(
                 session["targetId"],
                 candidate,
-                provider,
-                timeout_seconds=min(60, remaining),
+                allowed_hosts=[provider.host],
+                timeout_ms=min(60_000, remaining * 1000),
+                max_bytes=MAX_PDF_BYTES,
+                idempotency_key=str(uuid.uuid4()),
             )
             validation = validate_pdf_bytes(
                 raw,
@@ -827,14 +490,19 @@ def try_download(
                 access=session.get("accessEvidence", "unknown"),
                 version="official",
             )
-        except (BrowserError, OperationError, ValueError):
+        except BrowserError as error:
+            last_failure = error.code
+            continue
+        except (OperationError, ValueError):
+            last_failure = "pdf_validation_failed"
             continue
     return save_stage(
         store,
         session,
         "pdf_download_failed",
         source=safe_url(session["requestedArticle"]),
-        reason="authorized PDF response was not usable",
+        reason=last_failure or "authorized PDF response was not usable",
+        failure_code=last_failure or "not_pdf",
     )
 
 
@@ -866,40 +534,11 @@ def observe_and_continue(
         tab_url = str(tab.get("url") or "")
         parsed = urlsplit(tab_url)
     if parsed.hostname != provider.host:
-        autofill = (
-            try_submit_autofilled_login(store, session, client)
-            if allow_autofill
-            else "already_attempted"
-        )
-        if autofill == "submitted":
-            time.sleep(2)
-            return observe_and_continue(
-                store,
-                session,
-                client,
-                provider,
-                output,
-                after_user_login=after_user_login,
-                allow_autofill=False,
-            )
-        reason = "browser is at the school or institution login flow"
-        if autofill == "consent_required":
-            reason = "login form requires the user to confirm a required choice"
-        elif autofill in {"submit_unknown", "submit_failed"}:
-            reason = "automatic login submission requires user verification"
-        elif autofill == "already_attempted":
-            reason = "the login form was already submitted and still requires user action"
-        return set_handoff(
-            store,
-            session,
-            client,
-            stage="user_login_required",
-            reason=reason,
-            instruction=(
-                "请在已打开的浏览器页面完成学校/CARSI/OpenAthens 登录。"
-                "完成后回复“已登录”，再继续原下载任务。"
-            ),
-        )
+        result = continue_browser_access(store, session, client, allow_autofill=allow_autofill)
+        if result is not None:
+            return result
+        return save_stage(store, session, "user_login_required",
+                          reason="web-access must continue the institutional redirect", failure_code="auth_required")
     client.wait_load(session["targetId"], timeout_ms=15000)
     state_data = wait_for_page_signal(client, session["targetId"], provider)
     if any(state_data.get("accessSignals") or []):
@@ -922,14 +561,8 @@ def observe_and_continue(
     if downloaded is not None:
         return downloaded
     if state_data.get("challenge"):
-        return set_handoff(
-            store,
-            session,
-            client,
-            stage="publisher_verification",
-            reason="publisher security verification is required",
-            instruction="请在已打开的出版社页面完成验证，然后回复“已完成”。",
-        )
+        return continue_browser_access(store, session, client, allow_autofill=allow_autofill) or save_stage(
+            store, session, "publisher_verification", reason="site challenge requires web-access page interaction", failure_code="challenge")
     access = any(state_data.get("accessSignals") or [])
     if access:
         return save_stage(
@@ -948,17 +581,8 @@ def observe_and_continue(
             page=public_page_identity(state_data, session["doi"], provider),
         )
     if any(state_data.get("loginSignals") or []):
-        return set_handoff(
-            store,
-            session,
-            client,
-            stage="user_login_required",
-            reason="publisher page still requires institutional sign-in",
-            instruction=(
-                "请在已打开的出版社页面完成学校/CARSI/OpenAthens 登录。"
-                "完成后回复“已登录”，再继续原下载任务。"
-            ),
-        )
+        return continue_browser_access(store, session, client, allow_autofill=allow_autofill) or save_stage(
+            store, session, "user_login_required", reason="institutional sign-in requires web-access", failure_code="auth_required")
     if after_user_login:
         return save_stage(
             store,
@@ -967,38 +591,8 @@ def observe_and_continue(
             reason="publisher page is reachable but institutional PDF access is absent",
             page=public_page_identity(state_data, session["doi"], provider),
         )
-    autofill = (
-        try_submit_autofilled_login(store, session, client)
-        if allow_autofill
-        else "already_attempted"
-    )
-    if autofill == "submitted":
-        time.sleep(2)
-        return observe_and_continue(
-            store,
-            session,
-            client,
-            provider,
-            output,
-            after_user_login=False,
-            allow_autofill=False,
-        )
-    reason = "publisher page does not expose an institutional PDF"
-    if autofill == "consent_required":
-        reason = "publisher login form requires the user to confirm a required choice"
-    elif autofill in {"submit_unknown", "submit_failed"}:
-        reason = "automatic login submission requires user verification"
-    return set_handoff(
-        store,
-        session,
-        client,
-        stage="user_login_required",
-        reason=reason,
-        instruction=(
-            "请在已打开的出版社页面选择 Institutional Sign In 或学校/CARSI 登录。"
-            "登录完成后回复“已登录”，再继续原下载任务。"
-        ),
-    )
+    return continue_browser_access(store, session, client, allow_autofill=allow_autofill) or save_stage(
+        store, session, "user_login_required", reason="publisher does not expose an authorized PDF", failure_code="auth_required")
 
 
 def acquire(args: argparse.Namespace) -> dict[str, Any]:

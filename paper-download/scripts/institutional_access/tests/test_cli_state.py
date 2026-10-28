@@ -10,7 +10,7 @@ from institutional_access.cli import (
     observe_and_continue,
     reconcile_created_tab,
     session_summary,
-    try_submit_autofilled_login,
+    continue_browser_access,
 )
 from institutional_access.providers import IEEE
 from institutional_access.session_store import FileSessionStore
@@ -42,30 +42,16 @@ class _FakeClient:
         self.page_reads += 1
         return self._state
 
+    def access(self, _target_id, *, allow_autofill=True):
+        self.page_reads += 1
+        if self._state.get("challenge"):
+            return {"state": "challenge", "failureCode": "challenge", "handoffRequired": False, "interactionRequired": True}
+        if self._state.get("strong_auth"):
+            return {"state": "user_handoff_required", "failureCode": "user_handoff_required", "handoffRequired": True}
+        return {"state": "auth_required", "failureCode": "auth_required", "handoffRequired": False, "interactionRequired": True}
+
     def snapshot(self, _target_id):
         return {"nodes": []}
-
-
-class _AutofillClient(_FakeClient):
-    def eval(self, _target_id, expression, **_kwargs):
-        self.page_reads += 1
-        if "const submitRequested = false;" in expression:
-            return {"status": "ready", "host": "idp.example.edu", "path": "/login"}
-        if "const submitRequested = true;" in expression:
-            return {
-                "status": "submitted",
-                "host": "idp.example.edu",
-                "path": "/login",
-            }
-        return self._state
-
-
-class _UnknownAutofillClient(_AutofillClient):
-    def eval(self, target_id, expression, **kwargs):
-        if "const submitRequested = true;" in expression:
-            self.page_reads += 1
-            raise BrowserError("UNKNOWN_RESULT", "unknown")
-        return super().eval(target_id, expression, **kwargs)
 
 
 class _UnknownCreateClient:
@@ -103,7 +89,7 @@ class CliStateTests(unittest.TestCase):
             "updatedAt": "now",
         }
 
-    def test_school_page_enters_handoff(self):
+    def test_school_page_delegates_to_web_access(self):
         with tempfile.TemporaryDirectory() as root:
             store = FileSessionStore(Path(root))
             session = self.session()
@@ -118,7 +104,7 @@ class CliStateTests(unittest.TestCase):
                 after_user_login=False,
             )
             self.assertEqual(result["stage"], "user_login_required")
-            self.assertEqual(client.handoff_calls, ["target"])
+            self.assertEqual(client.handoff_calls, [])
             self.assertEqual(store.read("test")["stage"], "user_login_required")
 
     def test_unknown_create_reconciles_one_owned_blank_tab(self):
@@ -181,7 +167,7 @@ class CliStateTests(unittest.TestCase):
             self.assertEqual(result["stage"], "access_unavailable")
             self.assertFalse((Path(root) / "paper.pdf").exists())
 
-    def test_publisher_challenge_enters_handoff(self):
+    def test_publisher_challenge_delegates_without_user_handoff(self):
         with tempfile.TemporaryDirectory() as root:
             store = FileSessionStore(Path(root))
             session = self.session()
@@ -213,9 +199,9 @@ class CliStateTests(unittest.TestCase):
                 after_user_login=False,
             )
             self.assertEqual(result["stage"], "publisher_verification")
-            self.assertEqual(client.handoff_calls, ["target"])
+            self.assertEqual(client.handoff_calls, [])
 
-    def test_same_host_login_after_user_claim_returns_to_handoff(self):
+    def test_same_host_login_still_requires_access_readback(self):
         with tempfile.TemporaryDirectory() as root:
             store = FileSessionStore(Path(root))
             session = self.session()
@@ -247,47 +233,28 @@ class CliStateTests(unittest.TestCase):
                 after_user_login=True,
             )
             self.assertEqual(result["stage"], "user_login_required")
-            self.assertEqual(client.handoff_calls, ["target"])
+            self.assertEqual(client.handoff_calls, [])
 
-    def test_autofilled_login_submits_once_but_still_needs_access_readback(self):
+    def test_only_strong_authentication_enters_real_handoff(self):
         with tempfile.TemporaryDirectory() as root:
             store = FileSessionStore(Path(root))
             session = self.session()
-            store.write("test", session)
-            client = _AutofillClient(url="https://idp.example.edu/login")
-            with patch("institutional_access.cli.time.sleep"):
-                result = observe_and_continue(
-                    store,
-                    session,
-                    client,
-                    IEEE,
-                    Path(root) / "paper.pdf",
-                    after_user_login=False,
-                )
-            saved = store.read("test")
-            self.assertEqual(result["stage"], "user_login_required")
-            self.assertTrue(saved["loginSubmitAttempted"])
-            self.assertEqual(saved["loginSubmitResult"], "submitted")
+            client = _FakeClient(url="https://idp.example.edu/login", state={"strong_auth": True})
+            result = continue_browser_access(store, session, client, allow_autofill=True)
+            self.assertTrue(result["user_action_required"])
             self.assertEqual(client.handoff_calls, ["target"])
+            self.assertEqual(result["failure_code"], "user_handoff_required")
 
-    def test_unknown_login_submit_is_never_replayed(self):
+    def test_routine_login_stays_active_for_web_access(self):
         with tempfile.TemporaryDirectory() as root:
             store = FileSessionStore(Path(root))
             session = self.session()
-            store.write("test", session)
-            client = _UnknownAutofillClient(url="https://idp.example.edu/login")
-            result = try_submit_autofilled_login(store, session, client)
-            self.assertEqual(result, "submit_unknown")
-            self.assertTrue(store.read("test")["loginSubmitAttempted"])
-            self.assertEqual(
-                try_submit_autofilled_login(
-                    store,
-                    store.read("test"),
-                    client,
-                ),
-                "already_attempted",
-            )
-            self.assertEqual(client.page_reads, 2)
+            client = _FakeClient(url="https://idp.example.edu/login")
+            result = continue_browser_access(store, session, client, allow_autofill=True)
+            self.assertFalse(result["user_action_required"])
+            self.assertTrue(result["browser_interaction_required"])
+            self.assertEqual(client.handoff_calls, [])
+            self.assertEqual(client._task, "active")
 
     def test_status_summary_excludes_task_secrets_and_query_parameters(self):
         session = self.session()

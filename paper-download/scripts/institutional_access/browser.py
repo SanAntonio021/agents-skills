@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import http.client
+import socket
 import json
 import os
 import re
@@ -9,6 +12,7 @@ import shutil
 import subprocess
 import urllib.error
 import urllib.request
+from urllib.parse import unquote
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,9 +31,10 @@ class ProxyInfo:
     proxy_url: str
     browser: str
     protocol_version: int
-    mode: str = "managed"
+    mode: str = "existing"
     broker_version: str | None = None
     instance_id: str | None = None
+    cdp_port: int | None = None
 
 
 def discover_web_access_checker() -> Path:
@@ -87,8 +92,17 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
     selected = (browser or os.environ.get("PAPER_DOWNLOAD_BROWSER") or "auto").lower()
     if selected not in {"auto", "edge"}:
         raise BrowserError(
-            "managed_edge_required",
-            "paper-download institutional access uses managed Edge only",
+            "unsupported_browser",
+            "paper-download institutional access supports Microsoft Edge only",
+        )
+    # Browser control lives in web-access. Default to the running daily Edge
+    # (existing mode) so the task reuses the user's real login state; managed
+    # stays available only when explicitly requested.
+    mode = (os.environ.get("PAPER_DOWNLOAD_BROWSER_MODE") or "existing").lower()
+    if mode not in {"existing", "managed"}:
+        raise BrowserError(
+            "invalid_browser_mode",
+            "PAPER_DOWNLOAD_BROWSER_MODE must be existing or managed",
         )
     command = [
         node,
@@ -96,7 +110,7 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         "--browser",
         "edge",
         "--mode",
-        "managed",
+        mode,
         "--json",
     ]
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -137,7 +151,7 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         result.returncode != 0
         or parsed.get("ready") is not True
         or parsed.get("protocolVersion") != 2
-        or parsed.get("browserMode") != "managed"
+        or parsed.get("browserMode") != mode
     ):
         raise BrowserError(
             str(parsed.get("status") or "browser_preflight_failed"),
@@ -156,8 +170,8 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         and isinstance(item.get("browser"), dict)
         and isinstance(item.get("proxy"), dict)
         if item.get("ready") is True
+        and (item.get("browser") or {}).get("id") == "edge"
         and (item.get("proxy") or {}).get("protocolVersion") == 2
-        and (item.get("managedBrowser") or {}).get("ready") is True
         and (item.get("controlProbe") or {}).get("passed") is True
     ]
     if not ready:
@@ -170,9 +184,10 @@ def check_web_access(browser: str | None = None) -> ProxyInfo:
         proxy_url=selected_result["proxy"]["url"].rstrip("/"),
         browser=selected_result["browser"]["id"],
         protocol_version=2,
-        mode="managed",
+        mode=str(parsed.get("browserMode") or mode),
         broker_version=parsed.get("brokerVersion"),
         instance_id=selected_result.get("instanceId"),
+        cdp_port=(selected_result.get("browser") or {}).get("cdpPort"),
     )
 
 
@@ -242,11 +257,12 @@ class BrowserClient:
             except Exception:
                 pass
             raise BrowserError(code, f"browser API HTTP {error.code}", status=error.code)
-        except (urllib.error.URLError, TimeoutError) as error:
-            raise BrowserError(
-                "browser_transport_failed",
-                "browser API transport failed",
-            ) from error
+        except http.client.IncompleteRead as error:
+            raise BrowserError("incomplete", "browser download transport was interrupted") from error
+        except (TimeoutError, socket.timeout) as error:
+            raise BrowserError("download_timeout", "browser download timed out") from error
+        except (urllib.error.URLError, ConnectionError, http.client.HTTPException) as error:
+            raise BrowserError("browser_transport_failed", "browser API transport failed") from error
 
     def create_task(self, label: str) -> dict[str, Any]:
         task = self._request(
@@ -356,3 +372,123 @@ class BrowserClient:
             f"/v2/tasks/{self.task_id}/complete",
             {"keep": False},
         )
+
+    def access(self, target_id: str, *, allow_autofill: bool = True) -> dict[str, Any]:
+        return self._request("POST", f"/v2/tabs/{target_id}/access", {"allowAutofill": allow_autofill})
+
+    def download(
+        self,
+        target_id: str,
+        url: str,
+        *,
+        allowed_hosts: list[str] | None = None,
+        timeout_ms: int = 120_000,
+        max_bytes: int | None = None,
+        idempotency_key: str | None = None,
+    ) -> tuple[bytes, dict[str, Any]]:
+        """Fetch bytes through the web-access broker download endpoint.
+
+        The broker validates the host, unwraps HTML wrappers, enforces the size
+        cap, verifies the PDF signature and returns a SHA-256. It never writes a
+        partial file, so a non-2xx response always means no usable bytes.
+        """
+        body: dict[str, Any] = {"url": url, "timeoutMs": int(timeout_ms)}
+        if allowed_hosts:
+            body["allowedHosts"] = list(allowed_hosts)
+        if max_bytes is not None:
+            body["maxBytes"] = int(max_bytes)
+        raw, headers, status = self._request_raw(
+            "POST",
+            f"/v2/tabs/{target_id}/download",
+            body,
+            idempotency_key=idempotency_key,
+            timeout=max(30.0, timeout_ms / 1000 + 30.0),
+            max_bytes=max_bytes if max_bytes is not None else 50_000_000,
+        )
+        if status < 200 or status >= 300:
+            raise BrowserError("download_failed", f"browser download HTTP {status}")
+        if not raw.startswith(b"%PDF-") or headers.get("x-download-is-pdf") != "true":
+            raise BrowserError("not_pdf", "browser download did not return a PDF")
+        try:
+            expected_bytes = int(headers.get("x-download-bytes", ""))
+        except ValueError as error:
+            raise BrowserError("incomplete", "browser download length metadata is invalid") from error
+        expected_sha = headers.get("x-download-sha256", "")
+        if expected_bytes != len(raw) or expected_bytes < 5:
+            raise BrowserError("incomplete", "browser download length does not match")
+        if len(raw) > (max_bytes if max_bytes is not None else 50_000_000):
+            raise BrowserError("too_large", "browser download exceeded the size limit")
+        if not re.fullmatch(r"[a-f0-9]{64}", expected_sha) or hashlib.sha256(raw).hexdigest() != expected_sha:
+            raise BrowserError("incomplete", "browser download SHA-256 does not match")
+        meta = {
+            "sha256": expected_sha,
+            "bytes": expected_bytes,
+            "is_pdf": True,
+            "final_url": unquote(headers.get("x-download-final-url", "")),
+        }
+        return raw, meta
+
+    def _request_raw(
+        self,
+        method: str,
+        path: str,
+        body: dict[str, Any] | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float = 180.0,
+        max_bytes: int = 50_000_000,
+    ) -> tuple[bytes, dict[str, str], int]:
+        if not self.task_token:
+            raise BrowserError("task_token_missing", "browser task token is missing")
+        payload = None if body is None else json.dumps(body).encode("utf-8")
+        headers = {
+            "Authorization": f"Bearer {self.task_token}",
+            "Accept": "*/*",
+        }
+        if payload is not None:
+            headers["Content-Type"] = "application/json"
+        if method in {"POST", "DELETE"}:
+            headers["Idempotency-Key"] = idempotency_key or str(uuid.uuid4())
+        request = urllib.request.Request(
+            self.proxy_url + path,
+            data=payload,
+            headers=headers,
+            method=method,
+        )
+        try:
+            with self.opener.open(request, timeout=timeout) as response:
+                chunks: list[bytes] = []
+                received = 0
+                while True:
+                    chunk = response.read(min(262_144, max_bytes - received + 1))
+                    if not chunk:
+                        break
+                    received += len(chunk)
+                    if received > max_bytes:
+                        raise BrowserError("too_large", "browser download exceeded the size limit")
+                    chunks.append(chunk)
+                return (
+                    b"".join(chunks),
+                    {key.lower(): value for key, value in response.headers.items()},
+                    response.status,
+                )
+        except urllib.error.HTTPError as error:
+            code = "browser_api_error"
+            try:
+                body_data = json.loads(error.read(8192).decode("utf-8"))
+                error_value = body_data.get("error") if isinstance(body_data, dict) else None
+                if isinstance(error_value, dict):
+                    code = str(error_value.get("code") or code)
+                elif isinstance(error_value, str) and error_value:
+                    code = error_value
+                if isinstance(body_data, dict) and body_data.get("code"):
+                    code = str(body_data["code"])
+            except Exception:
+                pass
+            raise BrowserError(code, f"browser API HTTP {error.code}", status=error.code)
+        except http.client.IncompleteRead as error:
+            raise BrowserError("incomplete", "browser download transport was interrupted") from error
+        except (TimeoutError, socket.timeout) as error:
+            raise BrowserError("download_timeout", "browser download timed out") from error
+        except (urllib.error.URLError, ConnectionError, http.client.HTTPException) as error:
+            raise BrowserError("browser_transport_failed", "browser API transport failed") from error

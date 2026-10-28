@@ -1,6 +1,6 @@
 # 论文全文入口与出版社下载参考
 
-更新时间：2026-10-22。本文件集中维护检索渠道、机构访问与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
+更新时间：2026-10-27。本文件集中维护检索渠道、机构访问与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
 
 ## 全文入口发现
 
@@ -28,37 +28,39 @@
 
 ## 公开机构访问模块
 
-Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `scripts/institutional_access/run.ps1`。模块依赖同仓库的 `web-access`，首次运行会在 `%LOCALAPPDATA%\PaperDownload\venv` 创建独立 Python 环境。浏览器固定使用受管 Edge：Profile 为 `%LOCALAPPDATA%\web-access\managed-edge-profile`，CDP 为 `9222`，Proxy 为 `3456`；首次任务按需启动，后续任务复用同一 Broker。只有短生命周期浏览器 task token 存入 Windows 凭据管理器；学校密码、浏览器密码库、Cookie 和认证头均不读取、不保存。
+Windows 机构模块支持 IEEE Xplore 和 Optica Publishing Group，通过 `scripts/institutional_access/run.ps1` 保留 `acquire/status/resume/complete` CLI。模块依赖同仓库 `web-access`，Python 环境位于 `%LOCALAPPDATA%\PaperDownload\venv`；浏览器发现、连接、页面、登录、验证、下载及恢复只有 `web-access` 一套实现。默认当前运行 Edge 的 `existing` 会话，CDP 从 `DevToolsActivePort` 动态发现，HTTP Broker 通常 `127.0.0.1:3456`。`managed` 仅明确要求隔离时使用，不作自动回退。
+
+每个任务创建独立后台 tab，不改用户原有活动页；只把短生命周期 Broker task token 存入 Windows 凭据管理器，不复制 Profile，不读取或导出密码库、Cookie 或认证令牌。主前检 `check-deps.mjs --browser edge --mode existing --json` 必须确认 Edge 身份及控制探针；HTTP `/json/version` 404 不证明 CDP 不可用，WebSocket 和后台建 tab 的验证交给 `web-access`。
 
 推荐流程：
 
 ```text
-文章页 -> acquire
-    -> 已有登录：直接寻找官方 PDF
-    -> 需要登录/MFA：激活同一 tab，状态 user_login_required
-用户完成登录并回复
-    -> resume
-    -> 回读页面、尝试官方 PDF、校验 DOI/文件头/页数/哈希
-    -> 入库并回读 Zotero
-    -> complete
+文章页 -> acquire -> 当前 Edge 内新建后台任务页
+    -> Broker /access 返回脱敏访问状态
+    -> 已有登录可用：寻找官方 PDF
+    -> 常规登录：Broker 复用保存账号并提交，随后回读
+    -> 图形/滑块/邮箱验证：web-access 页面动作/获授权邮件工具
+    -> 真正短信/动态口令/刷脸/系统验证：handoff，完成后 resume
+    -> Broker /download 返回完整二进制、最终 URL、长度、SHA-256
+    -> 本技能核验身份/版本/PDF，Zotero 入库并回读 -> complete
 ```
 
-命令和状态：
+`POST /v2/tabs/{targetId}/access` 返回 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，不返回凭据。`interactionRequired` 不等于人工；能力不足或工具限制如实报告，不承诺所有验证码都能自动通过。接口缺失或未声明能力是环境/版本缺口，不能在机构模块另写登录脚本。常规登录以外的消息、申请、权限变更和付款仍须核对准确目标及授权。
 
-| 命令或状态 | 处理 |
+| 命令或兼容状态 | 处理 |
 |---|---|
-| `acquire` | 创建或复用同一文章任务；已有合法访问时可直接得到 PDF。 |
-| `user_login_required` | 只表示页面需要用户登录；不证明账号、学校订阅或 PDF 权限。 |
-| `publisher_verification` | 需要用户完成验证码或出版社安全检查。 |
-| `institutional_access` | 页面有机构访问信号，但仍未找到可核验的官方 PDF。 |
-| `access_unavailable` | 用户恢复后仍没有出版社权限；不得绕过。 |
-| `downloaded_identity_verified` | PDF 文件头、页面、DOI 和出版社身份已通过检查。 |
-| `resume` | 用户声称完成登录后必须调用；从同一浏览器 tab 回读页面。 |
-| `complete` | 仅在 PDF 与 Zotero 收尾完成后关闭本任务自己的 tab；不停止 Broker、不关闭受管 Edge 或其他对话页面。 |
+| `acquire` | 创建或复用同一文章任务；先消费 `/access`，已有合法访问时直接寻找 PDF。 |
+| `user_login_required` | 保留兼容状态；结合 Broker 探针确定可执行登录、能力缺口或真正 handoff，不等同于学校无订阅。 |
+| `publisher_verification` | 保留兼容状态；验证执行归 `web-access`，不默认所有验证码都交给用户。 |
+| `institutional_access` | 页面有机构信号，但仍未取得可核验的目标 PDF。 |
+| `access_unavailable` | 保留实际站点原因；确认登录有效与明确权限拒绝后才能报告订阅不足。 |
+| `downloaded_identity_verified` | 完整 PDF、正文、身份和目标版本已核验；仍须完成请求的 Zotero 入库回读。 |
+| `resume` | 真正用户接管结束后恢复同一任务并回读，不把用户回复当成功证据。 |
+| `complete` | 正常收尾只关闭本任务 tab/popup；不停止 Broker、Edge 或其他任务。 |
 
-仅当页面为 HTTPS 登录页、用户名与密码已由浏览器填好、存在唯一同源 POST 表单和唯一提交控件且没有待确认的必选项时，模块可自动提交一次。账号或机构有歧义、出现 MFA/扫码/短信或邮件验证码、提交失败或结果未知时交给用户。页面激活后由用户确认站点并完成必要步骤；用户回复“已登录”本身不构成成功证据。
+下载只通过 `POST /v2/tabs/{targetId}/download`，body 含 `url`、`timeoutMs`、`maxBytes`；同源按 scheme/host/port 判断，额外 PDF 主机须已确认，跳转及 wrapper 内层 URL 受同样约束。完整二进制、长度与 SHA-256 复核后才做 DOI/题名/版本检查；HTML 包装和截断数据不得保存为成功 PDF，不再在本模块重写 CDP/fetch/Base64 下载。
 
-任务处于 handoff 时不得读取、截图或修改页面。未知写入先回读同一任务；不重复提交，不通过换工具或新 task 规避宿主拒绝。登录过期时保留文章身份，重新建立该任务的有效登录状态。
+handoff 期间不得读取、截图或修改页面；未知登录提交不重复，先查原任务，不能换幂等键或另建任务猜测结果。401/403/429/418、访问检查或挑战按站点层有界处理，与 CDP 控制故障和机构订阅不足分开；文件层保留 `not_pdf`、`incomplete`、`identity_mismatch`、`too_large`、`download_timeout`。本页是流程与历史经验，不是当前真实验收或发布通过记录。
 
 ## IEEE Xplore
 
@@ -72,15 +74,15 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 - `Access provided by <institution>` 是是否真正接通权限的高价值信号。
 - 对受限条目，命令行直抓 `stampPDF/getPDF.jsp` 常被风控或返回包装页；浏览器内下载更稳。
 - `IEEE Access` 虽然是开放获取，也优先通过文章页确认官方 PDF 链接后再下载。
-- 首次使用时在受管 Edge 中完成学校登录，之后 Cookie 随独立 Profile 持久化；不要改用日常浏览器或另一个临时 Profile 重做登录。
+- 默认复用当前 Edge 的已有会话，通过 `web-access` 在新后台任务页进入授权流程；不复制 Profile，也不为 IEEE 另开受管或临时浏览器重做登录。
 - 对 IEEE，`stamp/stamp.jsp` 常是外层 HTML wrapper；真正 PDF 往往在页面里的 `iframe`、`embed` 或 `object`，例如 `stampPDF/getPDF.jsp?...`。保存时必须抓内层 PDF，并用 `%PDF-` 文件头确认。
 - `Access provided by <institution>` 只作为辅助信号；最终以实际取得并通过 DOI 校验的 PDF 为准。
 - 机构登录已经接通后，后续 IEEE Xplore PDF 下载通常不需要二次登录；仍需逐篇确认拿到的是 `%PDF-`，不是 `stamp/stamp.jsp` 外层 HTML。
 - 登录方式与需用户参与的步骤沿用上方公开机构访问流程。
 - 授权中断时保留当前浏览器页面和任务状态，用户完成验证后继续原下载，不要重新搜索导致下载到错误版本。
 - 浏览器代理或出版社返回 `502 Bad Gateway`，不等于 IEEE 授权失败；先以同一页面的访问状态和 PDF 入口可见性判断。
-- 浏览器 PDF viewer 或下载按钮卡住时，按 `web-access` 的[同源服务器文件字节提取](../../web-access/references/cdp-content.md#同源服务器文件字节提取)流程处理；不导出 Cookie 到命令行或关闭证书检查。取回失败时保留当前状态并报告具体缺口。
-- 机构模块前检返回 `managed_profile_busy`、`managed_cdp_port_conflict`、`managed_browser_launch_failed`、`proxy_version_mismatch`、`control_probe_failed` 或 `task_capacity_reached` 时，按 Broker 故障处理；这些状态不等同于学校登录、MFA、出版社挑战或无订阅。
+- PDF viewer 或按钮卡住时，通过 `web-access` 的[统一下载接口](../../web-access/references/cdp-content.md#同源服务器文件字节提取)取回；不在本模块重写字节提取，不导出 Cookie 或关闭证书检查。失败保留具体状态。
+- 前检的 `cdp_unreachable`、`tab_create_failed`、`proxy_version_mismatch`、`control_probe_failed` 或 `task_capacity_reached` 属控制/Broker 问题；显式隔离任务的 `managed_*` 亦单独保留，不能改写为学校未登录、出版社挑战或无订阅。
 
 ## ScienceDirect / Elsevier
 
@@ -110,7 +112,7 @@ Windows 第一版支持 IEEE Xplore 和 Optica Publishing Group，使用 `script
 
 `出版社机构登录 -> CARSI / OpenAthens / Shibboleth -> 学校 -> authorized copy / view_article.cfm -> directpdfaccess`
 
-Optica 的机构访问同样使用浏览器登录交接。用户自行完成学校/CARSI/OpenAthens 登录和 MFA；工具复用同一浏览器 tab，不读取密码或 Cookie。可见的普通字母/数字图形验证码可按 `web-access` 处理，二次身份验证则交给用户。已有可访问内容直接复用当前会话，不为建立记录而强制重登。
+Optica 同样使用当前 Edge 的任务自有页，访问状态、常规登录与验证由 `web-access` 执行。图形/滑块验证通过页面动作，邮箱验证码通过获授权邮件工具按实际能力处理；真正短信、动态口令、刷脸或系统验证才 handoff。已有可访问内容直接复用，不强制退出或重登，不读取密码或 Cookie。
 
 ### 经验
 

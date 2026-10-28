@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -642,6 +643,64 @@ try {
     const host = await rawHostRequest(edgeProxyPort, 'untrusted-page.test');
     assertStatus(host, 403);
     return { protocolVersion: 2, originRejected: true, hostRejected: true };
+  });
+
+  await runTest('broker-download-validates-pdf-size-and-access-failures', async () => {
+    const pdf = Buffer.from('%PDF-1.7\nlocal fixture');
+    const mock = await startMockCdpServer('edge', {
+      downloadFixtures: {
+        '/ok': { bytes: pdf, finalUrl: 'https://publisher.test/final.pdf' },
+        '/html': { error: 'not_pdf' },
+        '/large': { error: 'too_large' },
+        '/truncated': { error: 'incomplete' },
+        '/unauthorized': { error: 'http_401' },
+        '/forbidden': { error: 'http_403' },
+        '/challenge': { error: 'http_418' },
+      },
+    });
+    const instance = await startIsolatedProxy(mock);
+    try {
+      const task = await createTask(instance.base);
+      const tab = await createTab(instance.base, task, 'https://publisher.test/article');
+      const endpoint = `/v2/tabs/${encodeURIComponent(tab.targetId)}/download`;
+      const valid = await postJson(instance.base, endpoint, {
+        url: 'https://publisher.test/ok',
+        timeoutMs: 5000,
+        maxBytes: 1024,
+      }, { token: task.taskToken });
+      assertStatus(valid, 200);
+      assert.deepEqual(valid.raw, pdf);
+      assert.equal(valid.headers.get('x-download-bytes'), String(pdf.length));
+      assert.equal(valid.headers.get('x-download-sha256'), crypto.createHash('sha256').update(pdf).digest('hex'));
+      assert.equal(decodeURIComponent(valid.headers.get('x-download-final-url')), 'https://publisher.test/final.pdf');
+
+      const wrongHost = await postJson(instance.base, endpoint, {
+        url: 'https://unconfirmed.test/paper.pdf',
+      }, { token: task.taskToken });
+      assertError(wrongHost, 403, 'DOWNLOAD_HOST_NOT_ALLOWED');
+
+      for (const [pathname, expected] of [
+        ['/html', 'not_pdf'],
+        ['/large', 'too_large'],
+        ['/truncated', 'incomplete'],
+        ['/unauthorized', 'auth_required'],
+        ['/forbidden', 'access_denied'],
+        ['/challenge', 'challenge'],
+      ]) {
+        const failed = await postJson(instance.base, endpoint, {
+          url: `https://publisher.test${pathname}`,
+          timeoutMs: 5000,
+          maxBytes: 1024,
+        }, { token: task.taskToken });
+        assertError(failed, 422, expected);
+      }
+      const completed = await taskTransition(instance.base, task, 'complete', { keep: false });
+      assertStatus(completed, 200);
+      return { pdfBytes: pdf.length, rejectedNonPdf: true, rejectedUnconfirmedHost: true, categorizedFailures: 6 };
+    } finally {
+      await stopIsolatedProxy(instance);
+      await mock.close();
+    }
   });
 
   await runTest('legacy-routes-disabled', async () => {

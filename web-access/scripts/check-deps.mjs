@@ -1035,6 +1035,64 @@ async function ensureProxy(browserId, proxyPort, { statusOnly = false } = {}) {
     reused = true;
     const runningId = healthBrowserId(initialHealth);
     const runningLabel = initialHealth.browser?.label || runningId || 'unknown';
+
+    // Migration: a proxy left over from the old managed default occupies the
+    // canonical port. Only a proxy verified as this machine's own managed
+    // instance may be replaced, and never while it owns active tasks.
+    if (
+      initialHealth.profileMode === 'managed' &&
+      initialHealth.managedProfile === true &&
+      initialHealth.requestedBrowser === 'edge' &&
+      initialHealth.browser?.id === 'edge' &&
+      initialHealth.proxyPort === proxyPort
+    ) {
+      const activeTasks = Number.isInteger(initialHealth.activeTasks) ? initialHealth.activeTasks : 0;
+      if (statusOnly) {
+        return makeResult({
+          status: activeTasks > 0 ? 'managed_proxy_blocks_existing_mode' : 'managed_proxy_migration_available',
+          browser,
+          proxyPort,
+          health: initialHealth,
+          userActionRequired: activeTasks > 0 ? 'wait_for_active_tasks' : 'run_ensure',
+          existing: true,
+        });
+      }
+      if (activeTasks > 0 && Number(initialHealth.sessions || 0) === 0 && Number(initialHealth.managedTabs || 0) === 0) {
+        diagnostic('proxy[edge]: 旧 managed Proxy 只有遗留 activeTasks 计数、没有 session/tab；按安全回收处理');
+        if (await stopVerifiedProxy(initialHealth, proxyPort, initialHealth.managedInstanceId)) {
+          reused = false;
+          lastHealth = null;
+          return ensureProxy(browser, proxyPort, { statusOnly });
+        }
+      }
+      if (activeTasks > 0) {
+        diagnostic(`proxy[${browserId}]: managed 模式 Proxy 仍有 ${activeTasks} 个活动任务，暂不迁移`);
+        return makeResult({
+          status: 'proxy_repair_blocked_active_tasks',
+          browser,
+          proxyPort,
+          health: initialHealth,
+          userActionRequired: 'wait_for_active_tasks',
+          existing: true,
+        });
+      }
+      diagnostic(`proxy[${browserId}]: 迁移旧 managed 默认 → existing（停止经验证的旧 Proxy 后重启）`);
+      if (await stopVerifiedProxy(initialHealth, proxyPort, initialHealth.managedInstanceId)) {
+        reused = false;
+        lastHealth = null;
+        return ensureProxy(browser, proxyPort, { statusOnly });
+      }
+      diagnostic('  旧 Proxy 未被确认为本机受管实例，不停止；请显式处理。');
+      return makeResult({
+        status: 'proxy_repair_unverified',
+        browser,
+        proxyPort,
+        health: initialHealth,
+        userActionRequired: 'inspect_proxy',
+        existing: true,
+      });
+    }
+
     const identityIssue = browserIdentityIssue(initialHealth, browser);
     if (identityIssue) {
       diagnostic(`proxy[${browserId}]: 端口 ${proxyPort} 已连接 ${runningLabel}，与专用浏览器不一致`);
@@ -1343,6 +1401,10 @@ function jsonSummary(opts, results, node, statusOverride = null) {
     ready: ok && results.every((result) => result.ready),
     reused: ok && results.every((result) => result.reused),
     node: node || null,
+    cdpPort: results.length === 1 ? (results[0].browser?.cdpPort || results[0].cdp?.port || null) : null,
+    proxyUrl: results.length === 1 ? (results[0].proxy?.url || null) : null,
+    browser: results.length === 1 ? results[0].browser || null : null,
+    controlProbe: results.length === 1 ? results[0].controlProbe || null : null,
     results,
   };
 }

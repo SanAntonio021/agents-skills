@@ -25,7 +25,7 @@ description: >
 - 单域名下载、TLS、双网卡、TUN、命名管道、临时切换或链路故障自行恢复：[网络诊断](references/network-diagnostics.md)。
 - 同一 Wi-Fi 下让 iPhone/iPad 使用电脑 Mihomo 代理，或判断 LAN 代理与热点/ICS：[网络诊断](references/network-diagnostics.md#同一-wi-fi-下的-ipad-局域网代理)。
 - 多上游、多出口，手动控制出口与供应商、供应商内部自动选节点：[手动多出口架构](references/manual-multi-exit.md)。
-- 前置与落地链、AI 分流、订阅重导入、DNS 覆写未生效、脚本生成报错、TUN 受管字段冲突及 select / fallback 验收：[链路配置](references/chain-configuration.md)。
+- 前置与落地链、AI 分流、订阅重导入、DNS 覆写未生效、全局 DNS 页面覆盖脚本、脚本生成报错、TUN 受管字段冲突及 select / fallback 验收：[链路配置](references/chain-configuration.md)。
 - 浏览器 DNS 泄露、普通检测站与 AI 出口不同、Fake-IP 与真实解析路径判断：[DNS 隐私验收](references/chain-configuration.md#浏览器-dns-隐私验收)。
 - 扩展提示损坏、更新失败或重启后复发：[浏览器扩展恢复](references/browser-extension-recovery.md)。
 - 门户 DNS、路由排除、PktMon 或自动登录：[本地认证门户](references/local-auth-portal.md)。
@@ -42,8 +42,9 @@ description: >
 2. 读取启动环境已展开的 `APPDATA` 下 `io.github.clash-verge-rev.clash-verge-rev/profiles.yaml`，核对 `current`、目标 `uid / name / file / option`。
 3. 按问题读取当前 profile 绑定的 `merge / proxies / groups / rules / script`。节点看 proxies、组结构看 groups、分流看 rules/script；保留订阅更新后仍需存在的改动应写入对应持久增强源。
 4. 对照 `clash-verge-check.yaml`、`clash-verge.yaml` 和 `logs/service/service_latest.log`，核对本次目标的实际运行路径。只读诊断不连接写入接口、不改节点、文件或系统配置。
-5. 写前重新读取相关文件并保存必要备份，保留用户新修改、当前选择和无关订阅。能从当前文件和日志查明的差异自行处理；无法查明且会改变网络范围或出口要求时才询问。
-6. 按下面规则刷新并验证受影响部分，交付实际结果和必要文件位置。仅阻塞依赖缺失权限、接口或未决事项的步骤，继续独立工作。
+5. 涉及 DNS 未生效或主动修改 DNS 时，先按[链路配置](references/chain-configuration.md#dns-持久源与覆盖顺序)确认覆盖来源：读取当前 profile、其绑定 script 的输入、`dns_config.yaml`、两份生成配置和运行态。未确认来源前不得只改 script；全局 DNS 开关按 profile 保存，关闭也不排除 merge、全局脚本、profile 绑定或实际生成顺序中的其他覆盖源。
+6. 写前重新读取相关文件并保存必要备份，保留用户新修改、当前选择和无关订阅。能从当前文件和日志查明的差异自行处理；无法查明且会改变网络范围或出口要求时才询问。
+7. 按下面规则刷新并验证受影响部分，交付实际结果和必要文件位置。仅阻塞依赖缺失权限、接口或未决事项的步骤，继续独立工作。
 
 ## 刷新与重启
 

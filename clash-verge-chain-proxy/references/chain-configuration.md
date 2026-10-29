@@ -320,6 +320,19 @@ Mihomo `v1.19.32` 的相关实现：[Fake-IP 查询处理](https://github.com/Me
 如果生成配置仍是旧内容，先核对当前 profile 绑定、生成错误和后处理脚本，再使用经核实可用的后台刷新方式。按入口的刷新与重启规则处理，不由文件未刷新直接推出需要重启 GUI。
 
 
+## DNS 持久源与覆盖顺序
+
+以下顺序已在 Clash Verge Rev `v2.5.8` 核对源码；其他版本先核对实际生成顺序与对应源码，不直接套用本节结论。
+
+1. **先核来源，不先改脚本。** DNS 未生效或需要主动修改 DNS 时，依次读取当前 profile、其绑定的 `script` 输入与输出、应用目录下的 `dns_config.yaml`、最终 `clash-verge.yaml` 和当前运行态。先确认目标字段实际由哪一层提供；未确认覆盖来源前不得只改 `config.dns`。
+2. **理解 2.5.8 的顺序与覆盖边界。** 订阅、全局 merge/script 和 profile merge/script 先生成配置；随后应用全局 DNS 页面配置。`dns_config.yaml` 中实际提供的非空 DNS 字段会合并并覆盖此前结果，未提供的字段仍可来自订阅或脚本。不要把“脚本已执行”当作字段已生效，也不要把“全局 DNS 开关关闭”当作排除其他覆盖源。
+3. **按 profile 判断 DNS 页面开关。** 该开关按 profile 保存，不能只读全局偏好或另一个 profile 的状态。开关关闭时，继续核对 merge、全局 script、profile 绑定和实际生成顺序；仍有差异时追到真实来源，不能把关闭状态直接判为根因。
+4. **修改持久源。** 需要长期保留的 DNS 修改写入 `dns_config.yaml`，保留其现有非空字段、无关配置和其他 DNS 服务器；同一 DNS 键由页面提供时按整键替换，不自动逐项合并列表或策略，修改前须显式保留仍需的条目。不要直接编辑 `clash-verge.yaml` 作为长期修复，也不要用生成文件反向覆盖持久源。订阅自带的 DNS 保护和脚本兼容规则仍按下一节执行。
+5. **核对最终行为。** `respect-rules`、`nameserver-policy` 和 fake-IP 例外以合并后的最终 DNS 配置为准，不能只看源文件或脚本片段判断实际路由。重新生成后核对两份最终配置中目标字段的来源、值和引用，再按需运行 Mihomo 语法检查；涉及实际解析路径时，另按浏览器 DNS 隐私验收取证。
+
+版本依据：[2.5.8 增强顺序与 DNS 合并](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.8/src-tauri/src/enhance/mod.rs)、
+[2.5.8 DNS 覆写状态](https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.8/src-tauri/src/config/dns.rs)。
+
 ## 订阅 DNS、脚本异常与应用受管字段
 
 以下机制已在 Clash Verge Rev `v2.5.6` 核实；其他版本先核对实际行为与对应源码。

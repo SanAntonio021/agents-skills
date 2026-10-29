@@ -353,6 +353,32 @@
         "给出 iPad 手动 HTTP 代理设置与 Mihomo 日志验证方式。",
         "说明它不是设备级 VPN，不能保证所有 App、UDP、DNS 或系统策略与电脑一致。"
       ]
+    },
+    {
+      "id": 33,
+      "prompt": "仅根据虚构材料规划，不执行真实网络或配置修改：Clash Verge Rev 2.5.8 中，profile 绑定的 script 已修改 config.dns，但最终 clash-verge.yaml 仍是旧 DNS；应用目录里的 dns_config.yaml 提供了同名字段。请给出持久修复和验收步骤。",
+      "expected_output": "应先核对当前 profile、script 实际输入与输出、dns_config.yaml、最终生成配置和运行态，确认全局 DNS 页面的非空字段在后处理阶段覆盖了脚本结果；不能直接改生成 YAML 或只重复修改 script。持久修改写入 dns_config.yaml，保留现有非空字段和无关配置，重新生成后核对目标字段值与引用，再按需执行 Mihomo 语法检查和实际 DNS 路径验收。",
+      "files": [],
+      "expectations": [
+        "先读取 profile、script 输入输出、dns_config.yaml 和最终生成配置，确认覆盖来源。",
+        "明确 Clash Verge Rev 2.5.8 中全局 DNS 配置在订阅和脚本之后合并，非空字段可覆盖脚本结果。",
+        "持久修改落在 dns_config.yaml，保留现有字段，不直接改生成 YAML 作为长期修复。",
+        "重新生成后核对最终字段与引用，并区分静态配置检查和实际运行态验收。",
+        "不输出凭据或敏感配置内容。"
+      ]
+    },
+    {
+      "id": 34,
+      "prompt": "仅根据虚构材料判断，不执行：Clash Verge Rev 2.5.8 的全局 DNS 页面开关对当前 profile 显示关闭，但 script 里修改的 config.dns 仍未出现在最终生成配置。有人建议直接判定为开关问题。请说明下一步如何定位和修复。",
+      "expected_output": "不能把 DNS 页面开关关闭直接判为根因。应先核对当前 profile 的 DNS 设置、profile 绑定、全局 merge/script、profile merge/script、dns_config.yaml、两份生成配置和运行态，继续追查实际覆盖来源；修复时改正确的持久源并保留无关配置，重新生成后核对最终 DNS 字段、引用和实际解析路径。",
+      "files": [],
+      "expectations": [
+        "说明 DNS 页面开关按 profile 保存，不能只看总开关或另一个 profile。",
+        "开关关闭不等于排除其他覆盖源，必须继续核对 merge、全局脚本、profile 绑定和生成顺序。",
+        "不在未确认来源前只改 script，也不直接改生成 YAML。",
+        "修改正确的持久源后核对最终配置、Mihomo 语法和实际运行态。",
+        "不泄露凭据，不扩大到未要求的网络或出口测试。"
+      ]
     }
   ]
 }

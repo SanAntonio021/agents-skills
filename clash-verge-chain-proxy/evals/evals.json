@@ -340,6 +340,19 @@
         "不把未经实机验证的节点订阅说成能保留全部组和 dialer-proxy。",
         "没有公网授权时不发布真实 YAML。"
       ]
+    },
+    {
+      "id": 32,
+      "prompt": "仅给出配置指导，不执行真实网络、系统防火墙或 Mihomo 修改：我的 Windows 电脑和 iPad 已经连着同一个 Wi-Fi，我希望 iPad 按电脑 Mihomo 当前规则访问网络。请告诉我应该优先采用什么方案、需要核对哪些配置和连接条件，以及如何验证；不要让我改用移动热点。",
+      "expected_output": "应优先选择同一 Wi-Fi 下 iPad 连接电脑 WLAN 地址和 Mihomo HTTP/mixed 代理端口的方案，而不是移动热点或 ICS。指导核对当前生效配置中的 allow-lan、bind-address、实际 HTTP/mixed 监听端口、电脑当前 WLAN IPv4、Windows 防火墙入站 TCP 范围和路由器 AP/client isolation；通过 iPad 手动 HTTP 代理并以 Mihomo 日志验证请求。明确仅遵循系统 HTTP 代理的流量会经过代理，不保证所有 App、UDP、DNS 或设备级策略完全相同，也不是完整 VPN。",
+      "files": [],
+      "expectations": [
+        "优先选择同 Wi-Fi 的手动 HTTP 代理路径，不误导到移动热点或 ICS。",
+        "核对 allow-lan、bind-address、HTTP/mixed 端口、当前 WLAN IPv4、Windows 防火墙及 AP/client isolation。",
+        "防火墙建议限于可信 Private 网络和本地子网，不建议关闭防火墙或公网开放代理端口。",
+        "给出 iPad 手动 HTTP 代理设置与 Mihomo 日志验证方式。",
+        "说明它不是设备级 VPN，不能保证所有 App、UDP、DNS 或系统策略与电脑一致。"
+      ]
     }
   ]
 }

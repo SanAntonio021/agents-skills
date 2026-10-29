@@ -1,15 +1,16 @@
 ---
 name: clash-verge-chain-proxy
-disable-model-invocation: true
 description: >
-  在 Windows 上处理 Clash Verge Rev 的链式代理、前置节点、订阅增强配置和 AI 分流。遇到
+  在 Windows 上自动处理 Clash Verge Rev / Mihomo 的代理配置、链式代理、TUN、系统网络共享和局域网接入。遇到
   Clash Verge、Mihomo、dialer-proxy、前置节点、良心云/Flower/Nov 这类多订阅链式代理、AI
   站点分流、fallback 健康探测、url-test 延迟优先、tolerance 防抖、定时测速仍提前重测或切换、
   自动故障转移、订阅重导入后配置丢失、节点或分组在 UI 不显示、Shadowrocket/小火箭完整配置
   导入与配置 URL/二维码分享、
   增强文件没有生效、生成脚本覆盖增强组、需要确认日志里真实走哪条链、Edge/Google 搜索位置来源与
   代理出口联合验收，Edge/Chrome 扩展修复后很快又
-  显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、切网后全站证书告警、接口跃点、
+  显示损坏、扩展商店更新异常、Windows 双网卡或临时手机共享、iPhone/iPad 与电脑同 Wi-Fi 并通过 Mihomo
+  HTTP 代理上网、`allow-lan` / `mixed-port` / 监听端口或防火墙排查、热点与 ICS 的路径选择、
+  切网后全站证书告警、接口跃点、
   Clash 核心受控重启、`external-controller-pipe` 命名管道查询、临时切换 selector、GitHub TLS/
   推送线路归因时，优先使用本技能。
 ---
@@ -17,10 +18,12 @@ description: >
 # Clash Verge 链式代理
 
 处理当前 Clash Verge / Mihomo 配置、链式代理、分流和相关网络故障。复用任务中已明确的架构、节点范围及授权。
+仅在问题涉及 Clash Verge / Mihomo 或其 TUN、局域网代理、Windows 共享网络链路时自动接管；普通 VPN、其他代理软件和无关的通用网络共享不在本技能范围内。
 
 ## 按问题读取
 
 - 单域名下载、TLS、双网卡、TUN、命名管道、临时切换或链路故障自行恢复：[网络诊断](references/network-diagnostics.md)。
+- 同一 Wi-Fi 下让 iPhone/iPad 使用电脑 Mihomo 代理，或判断 LAN 代理与热点/ICS：[网络诊断](references/network-diagnostics.md#同一-wi-fi-下的-ipad-局域网代理)。
 - 多上游、多出口，手动控制出口与供应商、供应商内部自动选节点：[手动多出口架构](references/manual-multi-exit.md)。
 - 前置与落地链、AI 分流、订阅重导入、DNS 覆写未生效、脚本生成报错、TUN 受管字段冲突及 select / fallback 验收：[链路配置](references/chain-configuration.md)。
 - 浏览器 DNS 泄露、普通检测站与 AI 出口不同、Fake-IP 与真实解析路径判断：[DNS 隐私验收](references/chain-configuration.md#浏览器-dns-隐私验收)。

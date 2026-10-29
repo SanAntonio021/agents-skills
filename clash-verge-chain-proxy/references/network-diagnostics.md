@@ -2,6 +2,18 @@
 
 只执行当前故障相关的步骤；通用范围、授权和刷新规则见 [技能入口](../SKILL.md)。
 
+## 同一 Wi-Fi 下的 iPad 局域网代理
+
+如果电脑和 iPad 已连接同一个可信 Wi-Fi，优先判断是否可让 iPad 直接连接电脑 Mihomo 的 LAN HTTP 代理；这与 Windows 移动热点、Internet Connection Sharing (ICS) 是不同路径，不要把启用热点或调整默认路由跃点当作前置步骤。
+
+1. 只读核对当前生效的 Mihomo 配置及实际监听：`allow-lan` 是否为 `true`；`bind-address` 是否允许从 WLAN 地址访问而非仅绑定回环；HTTP 代理端口是 `port` 还是 `mixed-port`。不要把仅供 SOCKS、redir、TProxy 或控制器使用的端口误填为 HTTP 代理端口。
+2. 通过当前活动的 WLAN 网卡读取电脑 IPv4 地址，不沿用旧地址；确认 iPad 连接同一 Wi-Fi，且路由器没有启用阻止设备互访的 AP/client isolation。若电脑同时连其他网卡，防火墙规则和监听绑定范围应只覆盖所需的可信 WLAN。
+3. 检查 Windows Defender Firewall 的入站 TCP 规则是否允许该代理端口，并尽量限定为 Private 网络配置文件和本地子网。不要关闭防火墙，也不要为此开放 Public 配置文件或把代理端口暴露到互联网。若局域网并非完全可信，启用 Mihomo 支持的代理认证，并限制允许访问的来源网段；不要在回复或日志中暴露密码。
+4. 在 iPad 打开“设置 > Wi-Fi > 当前网络详情 > 配置代理 > 手动”，填写电脑当前 WLAN IPv4 地址和 Mihomo 的 HTTP 或 mixed 代理端口；按需填写认证信息。iPad 菜单名称可能随 iPadOS 版本略有不同。
+5. 用 iPad 上遵循系统 HTTP 代理设置的浏览器访问一个可验证目标，并同时检查 Mihomo 请求日志中的规则、代理组和节点。连通失败时依次核对 IP/端口、`allow-lan`/绑定、Windows 防火墙和 AP 隔离；不通过关闭防火墙、开放全网端口或重置路由来试错。
+
+此方案只是 iPad 当前 Wi-Fi 的手动 HTTP 代理设置，不是设备级 VPN。它只能代理遵循系统 HTTP 代理的流量；部分 App 可能绕过代理，UDP 或其他协议、应用自有 DNS/DoH 与设备级网络策略也不保证经过同一路径。因此不能承诺 iPad 所有 App、所有协议或 DNS 行为都与电脑完全相同。若目标是整台 iPad 的全流量经 VPN，应在 iPad 上使用 VPN 客户端，或另行设计路由器级网关方案。
+
 ## Windows 双出口、手机共享与全站证书告警
 
 Windows 同时保留有线网和临时手机 USB/Wi-Fi 共享时，浏览器直连、系统代理和 Mihomo TUN

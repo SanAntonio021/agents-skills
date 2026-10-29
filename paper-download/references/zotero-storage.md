@@ -140,9 +140,9 @@ return job ? JSON.parse(JSON.stringify(job)) : null;
 
 调用返回不明时，先按原始标识读取附件当前状态及文件，已入库或已移入回收站的对象不重复操作。若目标版本未核验、文件不可读或导入失败，保留旧附件和有效暂存，不进入清理。此流程复用现有 Zotero 接口，不新增后台服务，也不改写第三方 Zotero 插件。
 
-## 任务分类操作
+## 工作区集合操作
 
-以资料库和 collection key 定位已确认分类；新建前先查询，续做复用同一 key。使用 Zotero 原生分类接口创建必要分类，通过条目的 `addToCollection(collectionID)` 和 `saveTx()` 添加归类。回读 `getCollections()` 检查目标关系及原有归类仍在；不使用仅含新分类的 `setCollections()` 覆盖原关系。同一资料库内复用原条目和附件，不为不同任务复制 PDF；跨资料库不能直接套用此关系操作，需另行确定目标，不自动复制整套文献。
+按 [`zotero-workspace-library`](../../zotero-workspace-library/SKILL.md) 确定工作区和资料类型集合，再以资料库及 collection key 定位；新建前先查询，续做复用同一 key。使用 Zotero 原生集合接口创建实际需要的集合，通过条目的 `addToCollection(collectionID)` 和 `saveTx()` 添加归类。回读 `getCollections()` 检查目标关系及原有归类仍在；不使用仅含新集合的 `setCollections()` 覆盖原关系。同一资料库内复用原条目和附件；多个工作区共用同一条目时增加集合关系，不复制 PDF。跨资料库不能套用此关系操作，不自动复制条目或附件，先确定共用资料库或其他处理方式。
 
 重复执行前先回读，分类已经存在或条目已在其中时复用。不自动重组历史分类。测试清理只针对本次新建且身份已核对的对象，移除测试分类不应删除用户文献。
 

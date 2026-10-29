@@ -1,0 +1,71 @@
+{
+  "skill_name": "zotero-workspace-library",
+  "evals": [
+    {
+      "id": "single-paper-direction",
+      "prompt": "工作区内有一个稳定研究方向，已经有多篇候选论文。接下来继续补论文资料时，应该放在哪里？",
+      "expected_output": "多篇论文统一归入该工作区的“论文”集合，不按文章或检索任务拆集合；项目 README 在集合存在且链接形式经核实后提供入口。",
+      "files": [],
+      "expectations": [
+        "采用工作区/论文集合",
+        "不按每篇论文或检索任务建立集合",
+        "不猜测 Zotero 集合链接"
+      ]
+    },
+    {
+      "id": "multiple-stable-directions",
+      "prompt": "同一工作区现在长期研究两个相对独立的方向，每个方向都在积累论文。怎么分类？",
+      "expected_output": "在工作区“论文”集合下按两个稳定研究方向建立子集合；不按单篇文章、搜索批次或临时问题再拆。",
+      "files": [],
+      "expectations": [
+        "方向子集合位于工作区论文集合之下",
+        "仅因多个稳定独立方向而细分",
+        "不建立临时搜索任务集合"
+      ]
+    },
+    {
+      "id": "same-source-multiple-workspaces",
+      "prompt": "同一份公开技术手册被两个工作区长期引用，两个工作区都要从 Zotero 找到它。",
+      "expected_output": "在同一 Zotero 资料库中只保留一个条目和一份 PDF，通过两个工作区对应集合关联；不复制附件。若目标是不同资料库，先说明无法跨库关联并询问目标，不自动复制。",
+      "files": [],
+      "expectations": [
+        "同一资料库中共享一个条目和一个附件",
+        "通过多集合关联工作区",
+        "不同资料库时不自动复制"
+      ]
+    },
+    {
+      "id": "supplier-document-restriction",
+      "prompt": "供应商发来一份用于器件比较的技术规格书，但文件注明仅限内部评估且不得上传第三方云服务。应该如何归档？",
+      "expected_output": "限制未澄清前不上传 Zotero；说明具体存储限制，并按用户或项目批准的受限位置处理，不能把技术用途当作上传授权。",
+      "files": [],
+      "expectations": [
+        "识别存储限制并阻止 Zotero 上传",
+        "不因工作区归档规则覆盖供应商限制",
+        "商务或受限资料不混入普通公开参考集合"
+      ]
+    },
+    {
+      "id": "zotero-unavailable-readonly",
+      "prompt": "只读讨论中 Zotero 暂不可用。请基于我给的手册摘录比较两个器件，不要修改项目或 Zotero。",
+      "expected_output": "只根据已给摘录进行比较并标明证据边界，不访问或写入 Zotero、不改项目文件；如需继续长期引用该手册，另行记录归档待办，但本轮不执行。",
+      "files": [],
+      "expectations": [
+        "遵守只读边界",
+        "不因 Zotero 不可用而创建本地长期副本或替代库",
+        "区分当前答复与后续可能的归档事项"
+      ]
+    },
+    {
+      "id": "external-reference-vs-project-output",
+      "prompt": "工作区要保存一个公开标准 PDF、一份厂家数据手册、项目自产的仿真结果和采购报价邮件。分别放在哪里？",
+      "expected_output": "公开标准和厂家手册作为外部参考资料归 Zotero；项目自产仿真结果留项目；报价邮件按项目商务记录规则保存，不作为 Zotero 参考资料。",
+      "files": [],
+      "expectations": [
+        "外部标准和厂家手册归 Zotero",
+        "项目自产仿真结果留项目",
+        "报价邮件不归入参考文献库"
+      ]
+    }
+  ]
+}

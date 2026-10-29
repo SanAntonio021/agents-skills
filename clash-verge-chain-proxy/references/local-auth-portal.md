@@ -51,8 +51,9 @@ TUN `auto-route` 或接口绑定 DNS 时，使用本检查表。目标是让门�
 
 不要只看 Clash Verge 的全局 DNS 覆写开关。按当前 profile UID 核对该 profile 的覆写状态、
 `dns_config.yaml`、订阅原始 `dns`、绑定 `script` 的实际输入和两份生成 YAML。技能已核实的 Clash Verge
-Rev `v2.5.8` 会在订阅及增强脚本生成后应用 DNS 设置页提供的非空字段，同一 DNS 键可能覆盖前序值；
-门户项缺失时应沿实际生成顺序追到缺项层，不能从全局偏好或脚本片段推断。其他版本按对应源码确认。
+Rev `v2.5.8` 会先加载订阅并应用 DNS 设置页提供的非空字段，再执行全局与 profile merge/script，最后恢复
+这些受管字段；同一 DNS 键最终以设置页为准。门户项缺失时应沿实际生成顺序追到缺项层，不能从全局偏好
+或脚本片段推断。其他版本按对应源码确认。
 订阅 DNS 保护也可能使当前 profile 的覆写未生效，详见[DNS 持久源与覆盖顺序](chain-configuration.md#dns-持久源与覆盖顺序)
 及[订阅 DNS、脚本异常与应用受管字段](chain-configuration.md#订阅-dns脚本异常与应用受管字段)。
 

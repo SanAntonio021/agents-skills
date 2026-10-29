@@ -53,6 +53,22 @@ class RenderDeckTests(unittest.TestCase):
             render_deck.validate_deck({"allow_text_only": True, "slides": [
                 {"type": "overview", "body": "已有正文", "overview_items": [{"lead": "短句"}]}]}, Path.cwd())
 
+    def test_overview_continuation_uses_same_font_and_spacing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            deck = {"allow_text_only": True, "slides": [
+                {"type": "overview", "title": "今日工作总览", "font_sizes": {"body": 22},
+                 "overview_items": [{"lead": "第一项", "text": "说明一"}]},
+                {"type": "overview", "title": "今日工作总览（续）", "font_sizes": {"body": 22},
+                 "overview_items": [{"lead": "第二项", "text": "说明二"}]}]}
+            path = root / "overview_continuation.pptx"
+            render_deck.make_pptx(deck, render_deck.validate_deck(deck, root), path)
+            prs = Presentation(path)
+            self.assertEqual(len(prs.slides), 2)
+            for slide in prs.slides:
+                body = next(sh for sh in slide.shapes if sh.has_text_frame and sh.text_frame.text.startswith("1."))
+                self.assertEqual(body.text_frame.paragraphs[0].runs[0].font.size.pt, 22)
+
     def test_overview_does_not_reduce_font_or_spacing_when_crowded(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -371,3 +387,4 @@ class RenderDeckTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

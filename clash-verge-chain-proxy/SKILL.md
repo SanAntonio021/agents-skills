@@ -42,7 +42,7 @@ description: >
 2. 读取启动环境已展开的 `APPDATA` 下 `io.github.clash-verge-rev.clash-verge-rev/profiles.yaml`，核对 `current`、目标 `uid / name / file / option`。
 3. 按问题读取当前 profile 绑定的 `merge / proxies / groups / rules / script`。节点看 proxies、组结构看 groups、分流看 rules/script；保留订阅更新后仍需存在的改动应写入对应持久增强源。
 4. 对照 `clash-verge-check.yaml`、`clash-verge.yaml` 和 `logs/service/service_latest.log`，核对本次目标的实际运行路径。只读诊断不连接写入接口、不改节点、文件或系统配置。
-5. 涉及 DNS 未生效或主动修改 DNS 时，先按[链路配置](references/chain-configuration.md#dns-持久源与覆盖顺序)确认覆盖来源：读取当前 profile、其绑定 script 的输入、`dns_config.yaml`、两份生成配置和运行态。未确认来源前不得只改 script；全局 DNS 开关按 profile 保存，关闭也不排除 merge、全局脚本、profile 绑定或实际生成顺序中的其他覆盖源。
+5. 涉及 DNS 未生效或主动修改 DNS 时，先按[链路配置](references/chain-configuration.md#dns-持久源与覆盖顺序)确认覆盖来源：读取当前 profile、其绑定 script 的输入与输出、`dns_config.yaml`、两份生成配置和运行态。未确认来源前不得只改 script；全局 DNS 开关按 profile 保存，关闭也不排除 merge、全局脚本、profile 绑定或实际生成顺序中的其他覆盖源。
 6. 写前重新读取相关文件并保存必要备份，保留用户新修改、当前选择和无关订阅。能从当前文件和日志查明的差异自行处理；无法查明且会改变网络范围或出口要求时才询问。
 7. 按下面规则刷新并验证受影响部分，交付实际结果和必要文件位置。仅阻塞依赖缺失权限、接口或未决事项的步骤，继续独立工作。
 

@@ -2,9 +2,57 @@
 
 ## 连接与接口选择
 
-开始 Zotero 操作前，查看本会话实际可用的 Zotero 工具及其说明，确认支持的操作和目标资料库。只有接口文档明确提供 `status --json` 时才调用该命令；否则不猜测命令名，按已记录的本地 API 或后台接口做只读检查。库内检索、条目和附件读取使用本地 API；写入使用已配置且支持该操作的 Connector 或后台桥接调用 Zotero 原生 API。不直接修改数据库或 storage 文件。
+开始 Zotero 操作前，按下方快速入口确认本会话实际可用的后台接口和目标资料库。库内检索、条目和附件读取使用本地 API；写入使用已配置且支持该操作的 Connector 或后台桥接调用 Zotero 原生 API。不直接修改数据库或 storage 文件。
 
-Connector 没有当前操作的调用入口，或接口尚未确认时，继续核对其他可用的后台接口，不转去操作窗口。确认后台接口不支持目标操作时，说明具体缺口；未经用户明确同意，不操作窗口或抢焦点。
+### 后台快速入口
+
+默认使用本技能自带的 [只读状态脚本](../scripts/zotero_local_status.py)，Python 3.10+ 标准库即可运行。`$paperDownloadRoot` 取本次实际读取的 `paper-download/SKILL.md` 所在目录；`$pythonExe` 使用本机已确认的解释器，例如 Windows PowerShell：
+
+```powershell
+& $pythonExe (Join-Path $paperDownloadRoot 'scripts/zotero_local_status.py') status --json
+```
+
+不依赖 Zotero 专用插件是否向会话暴露，也不要求本机登记辅助脚本路径。脚本缺失或解释器不能执行时，报告“状态入口不可用”及具体缺项，不转去搜索插件缓存、扫描端口或翻历史对话。已配置的其他后台工具仍可按其说明使用，但不替代下面的地址验证。
+
+脚本先从 Zotero 标准位置的 `profiles.ini` 解析 Profile，读取指定的 API 开关、端口和桥接令牌，不执行偏好脚本。Windows 优先 `%APPDATA%/Zotero/Zotero/profiles.ini`，其次 `%APPDATA%/Zotero/profiles.ini`；按唯一安装默认、唯一默认 Profile 或仅有的 Profile 定位。多 Profile 无法唯一确定时报告 `profile_ambiguous`，用 `status --json --profile <已核实的Profile目录>` 指定，不按修改时间任选。
+
+地址优先级为 `--base-url`、`ZOTERO_LOCAL_BASE_URL`、所选 Profile 的 `extensions.zotero.httpServer.port`、脚本内的默认候选 `http://127.0.0.1:23119`。只检查选定的这一个地址；默认候选也必须通过验证，连接失败不轮换端口。显式配置错误或 Profile 有歧义时报告缺口，不用默认值掩盖。参数只影响本次调用，不修改持久设置。
+
+JSON 保留 `base_url`、API／Connector 状态、版本、`profile`、`prefs_file` 和 `local_api_enabled_pref`，另含 `base_url_source`、`schema_verified`、`read_only_ready`、`entry_verified` 和 Debug Bridge 能力。`base_url` 只是本次候选；`read_only_ready` 表示 API 身份和 schema 已验证且偏好未明确关闭，`entry_verified` 表示 API、schema、Connector 全部通过。退出码 `0` 只表示可读取，不能代替检查 Connector 和桥接字段；退出码 `1` 表示读取入口未就绪。Windows 进程检查只报告 `process.state`、PID 和程序路径，不启动或重启 Zotero；其他平台的进程检查暂报 `unknown`。
+
+脚本用三个小请求完成地址确认，不运行会遍历条目、全文和标签的全库 `probe` 或 `inventory`：
+
+| 请求 | 通过条件 |
+|---|---|
+| `GET <base_url>/api/` | 返回成功，响应头含 `Zotero-API-Version` 或 `X-Zotero-Version` |
+| `GET <base_url>/api/schema` | 返回可解析的 JSON，含 `version` 和 `itemTypes` 等 Zotero schema 字段 |
+| `GET <base_url>/connector/ping` | 返回成功且内容确认 Zotero 正在运行；请求带 `X-Zotero-Connector-API-Version: 3` |
+
+本机 API 请求带 `Zotero-API-Version: 3`。状态命令已取得的响应直接复用，不重复请求。只有三个请求全部符合，才确认完整的 API／Connector 入口；Connector 不可用时可保留独立验证通过的只读能力。只返回 HTTP 200 的其他服务不算通过。本机请求仅接受回环地址，不经外部代理，不跟随任何重定向。默认每个请求超时 3 秒，不自动重试；`--timeout` 可设为大于 0 且不超过 10 秒。正常结果在同一进程的本次任务内复用，失败、配置变化或进程重启时再检查，不逐份 PDF 重做入口发现。
+
+读写按能力选路，Connector 可用不等于本地 PDF 导入可用：
+
+| 操作 | 已确认的后台入口 |
+|---|---|
+| 条目、附件、集合读取 | `<base_url>/api/` 下的本机 Local API |
+| 元数据或 BibTeX／RIS 导入 | 已配置的 Connector；`POST /connector/saveItems` 或 `POST /connector/import?session=<uuid>`，沿用实际接口说明。导入可能使用当前选中集合，须先核对目标，不能猜当前选择符合任务 |
+| 本地 PDF 附件导入、原生集合操作 | 已配置的 Zotero Debug Bridge；`POST <base_url>/debug-bridge/execute`，调用 Zotero 原生 API |
+
+状态脚本仅在 API 身份与 schema 验证通过、API 偏好未明确关闭且所选 Profile 已配置令牌时，自动执行一次 Debug Bridge 只读探测。当前已核实的插件标识是 `debug-bridge@iris-advies.com`，请求体为 UTF-8 JavaScript 源码，使用 `Content-Type: text/plain`，鉴权头为 `Authorization: Bearer <token>`。令牌从所选 Profile 的 `extensions.zotero.debug-bridge.token` 在内存中解析，不输出配置原文、令牌、鉴权头或服务端错误正文；不把令牌放入命令行、技能或日志。正常结果直接复用，不另发一次同样的桥接查询。
+
+```javascript
+return {
+  version: Zotero.version,
+  libraryID: Zotero.Libraries.userLibraryID,
+  importFromFileAvailable: typeof Zotero.Attachments.importFromFile === "function"
+};
+```
+
+当前桥接成功返回 `201` 和 JSON；核对版本、原生资料库标识及附件函数是否可用。以上探测不写文库；实际导入仍按下文查重、自动抓取保护和 `Zotero.Attachments.importFromFile({file, parentItemID, contentType: "application/pdf"})` 执行。桥接 `404` 表示该入口不可用，`401` 表示鉴权未通过；`500` 可能是令牌未配置或执行出错，只报告脱敏后的具体原因。API 可读但桥接不可用时继续只读，暂停依赖原生写入的步骤，不自动安装桥接、改设置或换云端入口。
+
+异常只处理受影响的入口。状态命令不可用与 Zotero 未运行分开判断；程序未运行时执行下方已有唤醒规则。后台缺少目标操作时说明具体缺口，未经用户同意不操作窗口或抢焦点。写入超时或返回不明时按“自动抓取与原操作检查”查询同一操作和持久化结果，不把等待超时当作失败重新投递。
+
+### 运行状态与资料库
 
 本机 API 的偏好开关与运行状态分别判断。`local_api_enabled_pref` 已确认关闭时，不自动改设置；本机 API 不作为可用入口，只有其他已确认支持当前操作的本机后台接口可继续使用，否则报告状态并停止依赖该接口的步骤。偏好状态未知时不猜测或修改设置；只继续使用实际确认可用且支持当前操作的本机后台接口，否则报告偏好、进程、API 与 Connector 状态并停止依赖 Zotero 的步骤。
 

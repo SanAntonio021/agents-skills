@@ -6,7 +6,7 @@ description: >
   Developer Mode、Configure Third-Party Inference、ANTHROPIC_BASE_URL、Anthropic Messages
   API、/v1/messages、/v1/models、127.0.0.1:15721、Claude Desktop 模型发现、CC Switch
   直连模式或本地路由/模型映射模式、OpenAI/Gemini 接口转换、配置能回复但另一入口失败，
-  或要求导入/切换/排查 Claude 中转供应商时，优先使用本技能。
+  或要求导入/切换/排查 Claude 中转供应商、切回官方后遇到 OAuth 401 或登录提示缺失时，优先使用本技能。
   需要核对 CC Switch 的 Claude 后台工具就绪状态并继续只读链路诊断时，也使用本技能。
 compatibility: Windows PowerShell 5.1 or later; Python 3 is optional for read-only CC Switch database inspection.
 ---
@@ -32,7 +32,7 @@ CC Switch 操作全程不切换窗口、不模拟键鼠、不驱动交互式终�
 按问题诊断以下链路，已有准确修复授权时完成必要配置变更及验证：
 
 ```text
-独立 Claude Code / VS Code 扩展 -> CC Switch Claude -> 第三方中转站
+独立 Claude Code / VS Code 扩展 -> CC Switch Claude -> 官方账号认证或第三方中转站
 Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 CC Switch Claude Desktop -> 第三方中转站
 ```
 
@@ -79,6 +79,8 @@ Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 
 
 先从当前对话、文件和日志查明失败对象：局部模型映射问题只看对应 provider、渲染配置及必要请求日志；
 Desktop 模型发现问题看对应 profile、路由和模型列表。只有相关线索指向另一入口时才只读扩查。
+官方账号出现 `OAuth access token is invalid`、刷新失败或没有登录提示时，按
+[官方 OAuth 401 与登录提示](references/verification-and-known-issues.md#官方-oauth-401-与登录提示)检查实际认证来源、有效期、刷新令牌和扩展设置。
 明确要求完整审计或现有线索不足以定位链路时，可运行现有全量只读脚本：
 
 ```powershell
@@ -124,6 +126,7 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 
 | 现象 | 首要检查 | 不足以证明 |
 |---|---|---|
+| 切回官方后 OAuth 401，或未提示登录 | 实际认证来源、OAuth 有效期与刷新日志、VS Code 登录提示设置 | 选中官方 provider 或未弹登录框不证明凭据有效 |
 | 独立 Claude Code 能回复，Desktop 失败 | Desktop applied profile、managed policy、Desktop provider | `.claude\settings.json` 正常不证明 Desktop 正常 |
 | Desktop 能回复，独立 Claude Code 失败 | CC Switch `Claude` provider、`.claude\settings.json`、扩展进程环境 | Desktop profile 正常不证明 CLI 正常 |
 | Cowork 正常，内置 Code 无模型 | `/v1/models`、`inferenceModels`、模型 ID、已知 prefix 问题 | `/v1/messages` 成功不证明 model discovery 成功 |

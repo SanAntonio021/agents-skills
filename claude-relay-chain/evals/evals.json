@@ -144,6 +144,43 @@
         "必要问题只针对安全重载时机，不要求再次批准已有配置修改，不未经请求创建定时任务",
         "只按虚构资料推演，不读取真实配置、不执行真实重载或发送请求"
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "用隔离材料排查，不读真实配置、不联网、不修改：CC Switch 的 app_type=claude 当前为官方，渲染配置无第三方地址和密钥，扩展环境变量为空。VS Code 报 401 OAuth access token is invalid，日志还有 No refresh token available 和刷新失败后继续使用旧令牌。凭据 expiresAt 对应 2026-05-25，演练日期 2026-10-30，无 refreshToken。VS Code 的 claudeCode.disableLoginPrompt=true。为什么切了官方仍不能用？",
+      "expected_output": "结合凭据时间和刷新失败日志定位为官方 OAuth 失效且无法自动刷新；把 disableLoginPrompt 解释为隐藏重新登录提示，而不是令牌失效原因。选中官方不等于完成账号认证。给出适用的恢复登录提示与官方重新授权建议，遵从只读，不修改或导出令牌。",
+      "files": [],
+      "expectations": [
+        "区分 CC Switch provider 选择、实际官方 OAuth 认证、VS Code 登录提示三个状态",
+        "用到期时间及 No refresh token available 日志共同支持失效与刷新失败的结论",
+        "明确 disableLoginPrompt=true 隐藏认证提示，不能据此认定已登录，也不把该设置说成令牌失效原因",
+        "仅分析给定材料，不读真实配置、不改设置、不联网、不导出令牌"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "在隔离样本中修复 VS Code 官方 OAuth 401。已授权备份并只恢复登录提示、使用样本提供的官方登录模拟器重新授权；保留其它设置和 provider。真实账号、真实配置和网络均不在范围内。样本模拟器支持帮助查询与 auth status/login，浏览器授权由模拟器完成；修复后暂无目标 VS Code 交互通道。完成能做的修复和检查，不重复索取同范围授权。",
+      "expected_output": "实际读取技能与样本，备份设置并核验，只将 disableLoginPrompt 改为 false，核验模拟器命令后走订阅登录，回查登录结果、状态、有效期与刷新令牌存在性。保护无关字段，不自行写凭据或导出令牌，不改为 Console 计费；明确模拟成功不等于真实认证，且目标 VS Code 尚未得到实际回复。",
+      "files": [],
+      "expectations": [
+        "实际执行隔离样本的设置备份和最小修改，保留其它字段及 provider",
+        "核验模拟命令能力，使用订阅登录入口；由模拟器管理凭据，不手写或恢复旧令牌",
+        "按保存结果、脱敏认证状态、有效期和刷新令牌存在性检查，不因打开浏览器就宣布成功",
+        "不重复索取已明确的修复授权，不操作真实账号、配置或网络，不输出完整凭据",
+        "明确隔离模拟结果与真实修复的边界，CLI 状态通过不能冒充 VS Code 实际回复通过"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "仅按以下虚构证据判断，不操作本机：CC Switch 显示官方，VS Code 报 OAuth access token is invalid；本地保存的官方 OAuth 凭据未过期且有 refreshToken，但扩展的 claudeCode.environmentVariables 仍设置 CLAUDE_CODE_OAUTH_TOKEN，来源令牌是否有效尚未知。disableLoginPrompt=false。要不要把 .credentials.json 删掉并重新登录？",
+      "expected_output": "先定位扩展环境变量中的认证覆盖来源，说明本地凭据有效不代表请求用的就是它；不因官方 provider 名称或 OAuth 401 就删凭据、清空环境或盲目重登。建议核实实际来源和归属后做最小处理，并说明后续切换不需要每次退出重登，也不能保证永不失效。",
+      "files": [],
+      "expectations": [
+        "识别 CLAUDE_CODE_OAUTH_TOKEN 可能覆盖本地账号登录，优先定位实际请求认证来源",
+        "不把本地未过期和有刷新令牌等同服务端必然接受，不无证据判定该环境令牌已过期",
+        "不删除或恢复 .credentials.json，不盲目重新登录、清空变量或关闭登录提示",
+        "遵从虚构只读边界，不联网、不读真实配置、不承诺以后不会再出现认证失败"
+      ]
     }
   ]
 }

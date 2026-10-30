@@ -6,6 +6,37 @@
 计费请求按已确定的目标、模型、次数和费用上限执行，不重复确认同一范围；缺少必要授权才询问，
 并继续其余可做的检查。凭据仅在进程内使用，不写入命令行、日志或输出文件。
 
+## 官方 OAuth 401 与登录提示
+
+适用于独立 Claude Code 或 VS Code 扩展使用官方账号时出现 `OAuth access token is invalid`、
+`No refresh token available` 或登录提示缺失。第三方供应商的 401 先按其实际认证方式排查，不直接套用官方重新登录。
+
+1. **先确认实际认证来源。** 对照 `app_type = 'claude'` 当前 provider、有效 Claude 配置、扩展的
+   `claudeCode.environmentVariables` 和进程环境；只报告 `ANTHROPIC_BASE_URL` 的安全地址及
+   `ANTHROPIC_API_KEY`、`ANTHROPIC_AUTH_TOKEN`、`CLAUDE_CODE_OAUTH_TOKEN`、`apiKeyHelper` 的存在性。
+   选择官方 provider 只说明切换意图，不等于官方账号已登录；仍有覆盖来源时，先定位归属，不盲目重登或清空变量。
+2. **核对凭据与日志。** 核验所用 Claude 二进制及 `auth --help`，用支持的 `auth status --json` 读取状态，
+   只输出退出码、`loggedIn`、`authMethod`、`apiProvider` 等必要脱敏字段。Windows 按实际 `CLAUDE_CONFIG_DIR`
+   定位 `.credentials.json`，未覆盖时才使用 `%USERPROFILE%\.claude`；只在内存中读取 OAuth 到期时间、
+   是否过期和刷新令牌是否存在，结合目标扩展日志的 401、刷新失败判断。字段缺失标为未验证；
+   不能仅凭文件存在、到期时间或 `loggedIn: true` 断言服务端接受当前令牌，也不输出或复制认证 JSON。
+3. **解释登录提示。** 检查实际 VS Code 设置中的 `claudeCode.disableLoginPrompt`；`true` 只跳过认证提示，
+   不代表认证成功，也不是令牌失效的原因。区分请求失败的凭据问题与重新登录入口被隐藏的问题。
+4. **按授权恢复。** 仅诊断时给结论和具体建议；已授权修复时，备份将修改的 VS Code 设置并核对哈希，
+   仅将适用的 `disableLoginPrompt` 恢复为 `false`，保留其它设置。通过已核验二进制的官方登录入口重新授权；
+   先查 `auth login --help`，Claude 订阅账号用支持的 `auth login --claudeai`，不擅自改为 Console/API 计费。
+   让官方客户端管理凭据，不手写、删除或从旧备份恢复令牌，不把普通修复变成 `setup-token` 导出。
+   浏览器需确认账号或授权时告知用户；密码、验证码和授权码留在官方流程，不要求发到聊天。
+   浏览器打开或用户确认授权均不是成功证据，先回查登录命令结果及实际凭据保存状态。
+5. **分层验收。** 回读设置，核对官方认证状态、新凭据有效期及刷新令牌存在性；缺失刷新令牌不能宣称可自动续期。
+   这些只证明认证材料已更新，最后仍要在失败的 VS Code 表面新建会话并得到实际回复，或取得用户已恢复使用的确认。
+   仍加载旧配置时，按入口的运行任务保护要求再重载；不要强停进程。仅 CLI 状态通过时明确目标应用尚未验证。
+   切换供应商本身不要求每次退出重登；重新授权也不保证后续永不撤销、失效或被其它认证来源覆盖。
+
+官方依据：[Authentication](https://code.claude.com/docs/en/authentication)、
+[VS Code 设置](https://code.claude.com/docs/en/vs-code#extension-settings)、
+[CLI reference](https://code.claude.com/docs/en/cli-reference)。命令参数和存储结构以本机版本核验为准。
+
 ## 验证层级
 
 ### 1. 静态配置

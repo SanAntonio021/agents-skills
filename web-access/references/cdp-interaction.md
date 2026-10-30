@@ -18,6 +18,8 @@ snapshot/ref 不足时使用 CSS `/click`，必要时才用 `/eval`。结构化�
 
 连续浏览用 ref 点击；并行读取时，在同一 task 用 `POST /v2/tabs` 和完整 URL 新建自有 tab。Proxy 先创建空白页并初始化，再导航；popup 按 `openerId` 继承 task。带签名或会话参数的 URL 只在任务内部使用，不写入交付文本。
 
+当前标签网址读取失败时，按[技能入口的失败处理](../SKILL.md#失败处理)判断是否可用可信完整网址重新开页；明确安全停止不能这样恢复。新页创建或导航回执只证明请求已接收，仍须等待并从页面回读实际 URL、标题和业务对象，再重新 snapshot。`about:blank`、登录页、意外 origin 或对象不符都不算到达目标；登录按既有流程处理，未知写入先核对实际结果。
+
 折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；iframe 正文按 [内容提取参考](cdp-content.md#iframe-正文读取) 在隔离上下文中提取。同源 Shadow DOM/iframe 必要时可用 CSS 或 `/eval`，不宣称可穿越所有 frame。
 
 ## AX snapshot/ref

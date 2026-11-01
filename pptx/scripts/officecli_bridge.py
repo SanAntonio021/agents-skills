@@ -22,9 +22,9 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 
-OFFICECLI_VERSION = "1.0.158"
-OFFICECLI_SHA256 = "117545F3BC817D7C6D2E78A62E4F73F75B918CCD61558E404C60949A8CB9FD1F"
-DEFAULT_EXE = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.158\officecli.exe")
+OFFICECLI_VERSION = "1.0.160"
+OFFICECLI_SHA256 = "C590CA9D464F2B03362825B0F2615EFCAE33CE3FC0EDAEEEF29F7DDACB4C5424"
+DEFAULT_EXE = Path(r"D:\BaiduSyncdisk\.agents\tools\officecli\v1.0.160\officecli.exe")
 OFFICE_PROCESSES = {
     ".pptx": "POWERPNT.EXE",
     ".potx": "POWERPNT.EXE",
@@ -235,7 +235,7 @@ def ensure_new_output(path_text: str) -> Path:
 
 
 def office_command(exe: Path, verb: str, file_path: Path, args: Sequence[str]) -> list[str]:
-    # OfficeCLI 1.0.158 compact queries are plain text and reject --json.
+    # OfficeCLI 1.0.160 compact queries are plain text and reject --json.
     json_flags = [] if verb == "query" and "--compact" in args else ["--json"]
     return [str(exe), *json_flags, verb, str(file_path), *args]
 

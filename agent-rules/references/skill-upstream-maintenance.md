@@ -262,6 +262,10 @@ python <script> record-review --state <reports-root>/state.json `
 没有新证据、实质变化或用户待办时保持安静，不为重复报告而重复询问。
 每次只展示一项问题；用户不需要阅读完整周报，报告路径只保留为可核验证据。
 
+## 已接管的非 Git 官方包
+
+`status = "localized"` 表示已有来源证据的非 Git 官方包已本地接管。来源索引、实际接受快照和维护边界必须保留在 `notes`；该项不填写虚构 Git source。官方完整包的逐文件检查单独记录，不能把 registry 校验通过解释为官方检查已完成。`confirmed` 和 `none` 的含义及 Git 来源校验保持原样。
+
 ## 入口搬迁伴随正文变化
 
 同一仓库中入口移动且正文变化时，可保留仓库跟踪根，用 `skill_entry_path` 指向当前入口、`accepted_skill_entry_path` 保留已接受提交中的旧入口，并在 `tracked_paths` 同时跟踪两者。不得把R099称为同树迁移，不推进接受提交；当前变化继续进入内容审核。正式吸收并完成复测后移除旧入口覆盖；空字段不改变既有来源身份。

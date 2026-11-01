@@ -21,7 +21,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-ALLOWED_SKILL_STATUSES = {"confirmed", "none"}
+ALLOWED_SKILL_STATUSES = {"confirmed", "none", "localized"}
 ALLOWED_DISPOSITIONS = {"rejected", "no-impact"}
 ALWAYS_IGNORED_NAMES = {
     "changelog",
@@ -441,6 +441,8 @@ def validate_registry(
             errors.append(f"{skill.name}: unsupported status {skill.status}")
         if skill.status == "confirmed" and not skill.sources:
             errors.append(f"{skill.name}: confirmed status requires at least one source")
+        if skill.status == "localized" and (skill.sources or not skill.notes.strip()):
+            errors.append(f"{skill.name}: localized status requires provenance notes and separate non-Git review; Git sources are not allowed")
         if skill.status == "none" and skill.sources:
             errors.append(f"{skill.name}: none status cannot contain sources")
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", skill.last_review_date):
@@ -694,6 +696,9 @@ def render_skill_reference(skill: SkillRecord) -> str:
             "每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。",
         ]
     )
+    if skill.status == "localized":
+        lines.extend(["", "非 Git 官方包已本地接管；官方完整包与接受快照单独比对，不由 Git 镜像扫描代替，也不自动推进接受基线。", ""])
+        return "\n".join(lines).rstrip() + "\n"
     if not skill.sources:
         lines.extend(
             [

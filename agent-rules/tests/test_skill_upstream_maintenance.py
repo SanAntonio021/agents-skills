@@ -159,6 +159,30 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
     def load(self):
         return MODULE.load_sources(self.registry), MODULE.load_mirrors(self.mirrors)
 
+    def test_localized_non_git_provenance_keeps_identity_without_git_source(self) -> None:
+        text = self.registry.read_text(encoding="utf-8").replace('name = "beta"\nstatus = "none"', 'name = "beta"\nstatus = "localized"')
+        self.registry.write_text(text, encoding="utf-8")
+        skills, mirrors = self.load()
+        result = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(result["status"], "ok", result)
+        beta = next(item for item in skills if item.name == "beta")
+        rendered = MODULE.render_skill_reference(beta)
+        self.assertIn("`localized`", rendered)
+        self.assertIn("非 Git 官方包", rendered)
+        self.assertNotIn("当前没有经用户确认", rendered)
+        self.assertEqual(result["source_count"], 1)
+
+    def test_localized_requires_notes_and_cannot_bypass_git_validation(self) -> None:
+        from dataclasses import replace
+        skills, mirrors = self.load()
+        beta = next(item for item in skills if item.name == "beta")
+        alpha = next(item for item in skills if item.name == "alpha")
+        for changed in (replace(beta, status="localized", notes=""), replace(alpha, status="localized")):
+            values = [changed if item.name == changed.name else item for item in skills]
+            result = MODULE.validate_registry(values, mirrors, self.skills)
+            self.assertEqual(result["status"], "invalid")
+            self.assertTrue(any("localized status requires" in value for value in result["errors"]))
+
     def test_entry_relocation_with_content_changes_preserves_accepted_baseline(self) -> None:
         entry = self.mirror / "skills/source-skill/SKILL.md"
         entry.rename(self.mirror / "skills/source-skill/NEW-SKILL.md")

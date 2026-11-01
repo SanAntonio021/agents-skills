@@ -645,6 +645,89 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
         self.assertIn("技能来源登记覆盖缺口", summary_markdown)
         self.assertIn("继续刷新镜像并生成完整", summary_markdown)
 
+    def test_source_validation_failure_keeps_healthy_review_and_success_baseline(self) -> None:
+        skills, mirrors = self.load()
+        skills, mirrors, second_mirror, secondary = self.add_second_source(skills, mirrors)
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        previous = {"schema_version": 1, "sources": {"example-source": {
+            "last_successful_check_at": "2026-07-01T00:00:00+00:00",
+            "last_successful_check_commit": self.baseline}}, "history": []}
+        MODULE.write_json(state_path, previous)
+        validation = {"source_errors": {"example-source": ["alpha/example-source: skill entry missing"]}}
+        payload = MODULE.build_report(skills, mirrors, reports, "2026-07-25", state_path,
+                                      preflight_validation=validation, skills_root=self.skills)
+        statuses = {row["source"]: row["status"] for row in payload["sources"]}
+        self.assertEqual(statuses["example-source"], "source_validation_failed")
+        self.assertEqual(statuses[secondary.id], "up_to_date")
+        self.assertTrue(payload["report_fresh"])
+        self.assertFalse(payload["report_complete"])
+        state = MODULE.read_state(state_path)
+        self.assertEqual(state["sources"]["example-source"]["last_successful_check_at"],
+                         "2026-07-01T00:00:00+00:00")
+        self.assertEqual(payload["sources"][0]["accepted_commit"], self.baseline)
+
+    def test_source_io_error_does_not_stop_healthy_source_or_advance_success(self) -> None:
+        skills, mirrors = self.load()
+        skills, mirrors, second_mirror, secondary = self.add_second_source(skills, mirrors)
+        reports = self.root / "reports"
+        state_path = reports / "state.json"
+        original = MODULE.inspect_mirror
+        def inspect(mirror):
+            if mirror.id == skills[0].sources[0].mirror_id:
+                raise OSError("isolated source unavailable")
+            return original(mirror)
+        with patch.object(MODULE, "inspect_mirror", side_effect=inspect):
+            payload = MODULE.build_report(skills, mirrors, reports, "2026-07-25", state_path,
+                                          skills_root=self.skills)
+        statuses = {row["source"]: row["status"] for row in payload["sources"]}
+        self.assertEqual(statuses["example-source"], "source_check_failed")
+        self.assertEqual(statuses[secondary.id], "up_to_date")
+        self.assertFalse(payload["report_complete"])
+        self.assertNotIn("last_successful_check_at", MODULE.read_state(state_path)["sources"]["example-source"])
+        original_git = MODULE.git
+        def source_git(mirror, args, **kwargs):
+            if mirror == self.mirror:
+                raise OSError("source filesystem failure")
+            return original_git(mirror, args, **kwargs)
+        with patch.object(MODULE, "git", side_effect=source_git):
+            validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertIn("example-source", validation["source_errors"])
+        self.assertEqual(validation["fatal_errors"], [])
+
+    def test_missing_entry_is_source_error_but_unsafe_registry_is_fatal(self) -> None:
+        from dataclasses import replace
+        (self.mirror / "skills/source-skill/SKILL.md").unlink()
+        commit_all(self.mirror, "remove entry")
+        skills, mirrors = self.load()
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertIn("example-source", validation["source_errors"])
+        self.assertEqual(validation["fatal_errors"], [])
+        invalid = replace(skills[0], sources=(replace(skills[0].sources[0], upstream_path="../escape"),))
+        validation = MODULE.validate_registry([invalid, skills[1]], mirrors, self.skills)
+        self.assertTrue(any("safe repository-relative" in error for error in validation["fatal_errors"]))
+        reports = self.root / "reports"
+        code, payload = self.run_cli("report", "--registry", str(self.registry),
+            "--mirrors-registry", str(self.mirrors), "--skills-root", str(self.skills),
+            "--reports-root", str(reports), "--date", "2026-07-25", "--json")
+        self.assertEqual(code, 2)
+        self.assertTrue(payload["report_fresh"])
+        self.assertEqual(payload["sources"][0]["status"], "source_validation_failed")
+
+    def test_invalid_registry_marks_retained_summary_stale_without_replacing_it(self) -> None:
+        reports = self.root / "reports"
+        summary = reports / "2026-07-25/summary.json"
+        summary.parent.mkdir(parents=True)
+        summary.write_bytes(b'{"old":true}')
+        self.registry.write_text('skill = ["bad"]', encoding="utf-8")
+        code, payload = self.run_cli("report", "--registry", str(self.registry),
+            "--mirrors-registry", str(self.mirrors), "--skills-root", str(self.skills),
+            "--reports-root", str(reports), "--date", "2026-07-25", "--json")
+        self.assertEqual(code, 2)
+        self.assertFalse(payload["report_fresh"])
+        self.assertEqual(payload["summary_status"], "stale_previous_summary")
+        self.assertEqual(summary.read_bytes(), b'{"old":true}')
+
     def test_weekly_run_structural_error_writes_preflight_and_blocks_refresh(self) -> None:
         text = self.registry.read_text(encoding="utf-8").replace(
             'name = "beta"\nstatus = "none"',

@@ -36,6 +36,8 @@ SUCCESSFUL_MIRROR_REFRESH_STATUSES = frozenset(
 )
 DIAGNOSTIC_STATUSES = frozenset(
     {
+        "source_validation_failed",
+        "source_check_failed",
         "mirror_missing",
         "mirror_error",
         "mirror_blocked",
@@ -409,6 +411,12 @@ def validate_registry(
     skill_name: str | None = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
+    source_errors: dict[str, list[str]] = {}
+
+    def source_error(source_id: str, message: str) -> None:
+        errors.append(message)
+        source_errors.setdefault(source_id, []).append(message)
+
     warnings: list[str] = []
     coverage_gaps: list[str] = []
     local_skills = list_local_skills(skills_root, skill_name)
@@ -527,133 +535,136 @@ def validate_registry(
                     errors.append(f"{skill.name}/{source.id}: evidence file escapes agents root: {evidence_file}")
                     continue
                 if not evidence_path.is_file():
-                    errors.append(f"{skill.name}/{source.id}: evidence file missing: {evidence_file}")
-            if mirror.local_path.exists():
-                upstream_root = mirror.local_path if source.upstream_path == "." else mirror.local_path / source.upstream_path
-                if not upstream_root.exists():
-                    if source.update_policy == "provenance_only":
-                        warnings.append(
-                            f"{skill.name}/{source.id}: provenance-only upstream path not present in current checkout"
-                        )
-                    else:
-                        warnings.append(f"{skill.name}/{source.id}: upstream path not present in current checkout")
-                commit = git(mirror.local_path, ["cat-file", "-e", f"{source.accepted_commit}^{{commit}}"])
-                if commit.returncode != 0:
-                    warnings.append(f"{skill.name}/{source.id}: accepted commit unavailable in local mirror")
-                else:
-                    baseline_path = git(mirror.local_path, ["cat-file", "-e", git_object(
-                        source.accepted_commit, source_repo_path(source, accepted=True)
-                    )])
-                    if baseline_path.returncode != 0:
-                        errors.append(f"{skill.name}/{source.id}: upstream path missing at accepted commit")
-                    accepted_entry = source_skill_entry_path(source, accepted=True)
-                    if git(
-                        mirror.local_path,
-                        ["cat-file", "-e", git_object(source.accepted_commit, accepted_entry)],
-                    ).returncode != 0:
-                        errors.append(
-                            f"{skill.name}/{source.id}: skill entry missing at accepted commit: {accepted_entry}"
-                        )
-                    mirror_head = current_head(mirror.local_path)
-                    current_entry = source_skill_entry_path(source)
-                    if mirror_head and source.update_policy != "provenance_only" and git(
-                        mirror.local_path,
-                        ["cat-file", "-e", git_object(mirror_head, current_entry)],
-                    ).returncode != 0:
-                        errors.append(
-                            f"{skill.name}/{source.id}: skill entry missing at current HEAD: {current_entry}"
-                        )
-                    for tracked_path in source.tracked_paths:
-                        tracked_blob = git(
-                            mirror.local_path,
-                            ["cat-file", "-e", git_object(
-                                source.accepted_commit,
-                                source_repo_path(source, tracked_path, accepted=True),
-                            )],
-                        )
-                        if tracked_blob.returncode != 0:
-                            mirror_head = current_head(mirror.local_path)
-                            current_tracked_blob = (
-                                git(
-                                    mirror.local_path,
-                                    [
-                                        "cat-file",
-                                        "-e",
-                                        git_object(
-                                            mirror_head,
-                                            source_repo_path(source, tracked_path),
-                                        ),
-                                    ],
-                                )
-                                if mirror_head
-                                else None
-                            )
-                            if current_tracked_blob is None or current_tracked_blob.returncode != 0:
-                                errors.append(
-                                    f"{skill.name}/{source.id}: tracked path missing at accepted commit and current HEAD: {tracked_path}"
-                                )
-                    for license_path in source.license_paths:
-                        license_blob = git(
-                            mirror.local_path,
-                            ["cat-file", "-e", f"{source.accepted_commit}:{license_path}"],
-                        )
-                        if license_blob.returncode != 0:
-                            errors.append(
-                                f"{skill.name}/{source.id}: license path missing at accepted commit: {license_path}"
-                            )
-                    if paths_migrated and SHA_PATTERN.fullmatch(source.path_migration_commit):
-                        migration = source.path_migration_commit
-                        migration_exists = git(
-                            mirror.local_path,
-                            ["cat-file", "-e", f"{migration}^{{commit}}"],
-                        )
-                        if migration_exists.returncode != 0:
-                            errors.append(
-                                f"{skill.name}/{source.id}: path migration commit unavailable"
+                    source_error(source.id,f"{skill.name}/{source.id}: evidence file missing: {evidence_file}")
+            try:
+                if mirror.local_path.exists():
+                    upstream_root = mirror.local_path if source.upstream_path == "." else mirror.local_path / source.upstream_path
+                    if not upstream_root.exists():
+                        if source.update_policy == "provenance_only":
+                            warnings.append(
+                                f"{skill.name}/{source.id}: provenance-only upstream path not present in current checkout"
                             )
                         else:
-                            accepted_ancestor = git(
-                                mirror.local_path,
-                                ["merge-base", "--is-ancestor", source.accepted_commit, migration],
+                            warnings.append(f"{skill.name}/{source.id}: upstream path not present in current checkout")
+                    commit = git(mirror.local_path, ["cat-file", "-e", f"{source.accepted_commit}^{{commit}}"])
+                    if commit.returncode != 0:
+                        warnings.append(f"{skill.name}/{source.id}: accepted commit unavailable in local mirror")
+                    else:
+                        baseline_path = git(mirror.local_path, ["cat-file", "-e", git_object(
+                            source.accepted_commit, source_repo_path(source, accepted=True)
+                        )])
+                        if baseline_path.returncode != 0:
+                            source_error(source.id,f"{skill.name}/{source.id}: upstream path missing at accepted commit")
+                        accepted_entry = source_skill_entry_path(source, accepted=True)
+                        if git(
+                            mirror.local_path,
+                            ["cat-file", "-e", git_object(source.accepted_commit, accepted_entry)],
+                        ).returncode != 0:
+                            source_error(source.id,
+                                f"{skill.name}/{source.id}: skill entry missing at accepted commit: {accepted_entry}"
                             )
-                            current_head_value = current_head(mirror.local_path)
-                            migration_ancestor = (
-                                git(
+                        mirror_head = current_head(mirror.local_path)
+                        current_entry = source_skill_entry_path(source)
+                        if mirror_head and source.update_policy != "provenance_only" and git(
+                            mirror.local_path,
+                            ["cat-file", "-e", git_object(mirror_head, current_entry)],
+                        ).returncode != 0:
+                            source_error(source.id,
+                                f"{skill.name}/{source.id}: skill entry missing at current HEAD: {current_entry}"
+                            )
+                        for tracked_path in source.tracked_paths:
+                            tracked_blob = git(
+                                mirror.local_path,
+                                ["cat-file", "-e", git_object(
+                                    source.accepted_commit,
+                                    source_repo_path(source, tracked_path, accepted=True),
+                                )],
+                            )
+                            if tracked_blob.returncode != 0:
+                                mirror_head = current_head(mirror.local_path)
+                                current_tracked_blob = (
+                                    git(
+                                        mirror.local_path,
+                                        [
+                                            "cat-file",
+                                            "-e",
+                                            git_object(
+                                                mirror_head,
+                                                source_repo_path(source, tracked_path),
+                                            ),
+                                        ],
+                                    )
+                                    if mirror_head
+                                    else None
+                                )
+                                if current_tracked_blob is None or current_tracked_blob.returncode != 0:
+                                    source_error(source.id,
+                                        f"{skill.name}/{source.id}: tracked path missing at accepted commit and current HEAD: {tracked_path}"
+                                    )
+                        for license_path in source.license_paths:
+                            license_blob = git(
+                                mirror.local_path,
+                                ["cat-file", "-e", f"{source.accepted_commit}:{license_path}"],
+                            )
+                            if license_blob.returncode != 0:
+                                source_error(source.id,
+                                    f"{skill.name}/{source.id}: license path missing at accepted commit: {license_path}"
+                                )
+                        if paths_migrated and SHA_PATTERN.fullmatch(source.path_migration_commit):
+                            migration = source.path_migration_commit
+                            migration_exists = git(
+                                mirror.local_path,
+                                ["cat-file", "-e", f"{migration}^{{commit}}"],
+                            )
+                            if migration_exists.returncode != 0:
+                                source_error(source.id,
+                                    f"{skill.name}/{source.id}: path migration commit unavailable"
+                                )
+                            else:
+                                accepted_ancestor = git(
                                     mirror.local_path,
-                                    ["merge-base", "--is-ancestor", migration, current_head_value],
+                                    ["merge-base", "--is-ancestor", source.accepted_commit, migration],
                                 )
-                                if current_head_value
-                                else None
-                            )
-                            if accepted_ancestor.returncode != 0:
-                                errors.append(
-                                    f"{skill.name}/{source.id}: migration commit does not descend from accepted_commit"
+                                current_head_value = current_head(mirror.local_path)
+                                migration_ancestor = (
+                                    git(
+                                        mirror.local_path,
+                                        ["merge-base", "--is-ancestor", migration, current_head_value],
+                                    )
+                                    if current_head_value
+                                    else None
                                 )
-                            if migration_ancestor is None or migration_ancestor.returncode != 0:
-                                errors.append(
-                                    f"{skill.name}/{source.id}: current mirror HEAD does not contain path migration commit"
+                                if accepted_ancestor.returncode != 0:
+                                    source_error(source.id,
+                                        f"{skill.name}/{source.id}: migration commit does not descend from accepted_commit"
+                                    )
+                                if migration_ancestor is None or migration_ancestor.returncode != 0:
+                                    source_error(source.id,
+                                        f"{skill.name}/{source.id}: current mirror HEAD does not contain path migration commit"
+                                    )
+                                old_tree = git(
+                                    mirror.local_path,
+                                    [
+                                        "rev-parse",
+                                        f"{migration}^:{source_repo_path(source, accepted=True)}",
+                                    ],
                                 )
-                            old_tree = git(
-                                mirror.local_path,
-                                [
-                                    "rev-parse",
-                                    f"{migration}^:{source_repo_path(source, accepted=True)}",
-                                ],
-                            )
-                            new_tree = git(
-                                mirror.local_path,
-                                ["rev-parse", f"{migration}:{source_repo_path(source)}"],
-                            )
-                            if (
-                                old_tree.returncode != 0
-                                or new_tree.returncode != 0
-                                or old_tree.stdout.strip() != new_tree.stdout.strip()
-                            ):
-                                errors.append(
-                                    f"{skill.name}/{source.id}: migration commit does not preserve the upstream skill tree"
+                                new_tree = git(
+                                    mirror.local_path,
+                                    ["rev-parse", f"{migration}:{source_repo_path(source)}"],
                                 )
-            else:
-                warnings.append(f"{skill.name}/{source.id}: mirror is not initialized")
+                                if (
+                                    old_tree.returncode != 0
+                                    or new_tree.returncode != 0
+                                    or old_tree.stdout.strip() != new_tree.stdout.strip()
+                                ):
+                                    source_error(source.id,
+                                        f"{skill.name}/{source.id}: migration commit does not preserve the upstream skill tree"
+                                    )
+                else:
+                    warnings.append(f"{skill.name}/{source.id}: mirror is not initialized")
+            except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+                source_error(source.id, f"{skill.name}/{source.id}: source inspection failed: {type(exc).__name__}: {exc}")
 
     if skill_name is None:
         duplicate_sources = sorted(name for name, count in Counter(source_ids).items() if count > 1)
@@ -674,6 +685,8 @@ def validate_registry(
         "missing_skills": missing,
         "coverage_gaps": coverage_gaps,
         "errors": errors,
+        "fatal_errors": [message for message in errors if message not in {value for values in source_errors.values() for value in values}],
+        "source_errors": source_errors,
         "warnings": warnings,
     }
 
@@ -1566,7 +1579,14 @@ def diagnose_report_row(
     actual_branch = compact_report_text(details.get("actual_branch") or details.get("local_branch")) or "未知"
     actual_origin = compact_report_text(details.get("actual_origin") or details.get("local_origin")) or "未知"
 
-    if effective_status == "blocked_missing_git_dir":
+    if effective_status in {"source_validation_failed", "source_check_failed"}:
+        problem = f"来源 `{source.id if source else mirror.id}` 的证据或检查不可用：{error}"
+        impact = "本来源本轮检查不完整；保留最近成功时间、审核结论和接受基线，其他健康来源继续汇总。"
+        repair_plan = ["按本项原始错误核对准确提交、入口和证据文件；不把入口迁移当作接受正文变化。",
+                       "补齐证据或修复已授权的问题后重新检查该来源并刷新摘要；不从旧摘要推断本轮成功。"]
+        approval_required = False
+        approval_reason = "只读诊断及已有准确授权范围内的修复继续执行；来源身份或接受范围改变另行批准。"
+    elif effective_status == "blocked_missing_git_dir":
         problem = (
             f"镜像工作树 `{mirror_path}` 不存在，登记表也未配置外置 `git_dir_path`；"
             "为避免在同步盘内重新创建 `.git`，检查和同步均已停止。"
@@ -1879,88 +1899,101 @@ def build_report(
             mirror = mirrors[source.mirror_id]
             source_state = state["sources"].setdefault(source.id, {})
             refresh_result = mirror_results.get(source.mirror_id) if mirror_results else None
-            if refresh_result and refresh_result.get("status") not in SUCCESSFUL_MIRROR_REFRESH_STATUSES:
-                row = {
-                    "skill": skill.name,
-                    "source": source.id,
-                    "status": "mirror_blocked",
-                    "current_commit": refresh_result.get("local_head") or refresh_result.get("after_head"),
-                    "changed": [],
-                    "mirror_status": refresh_result.get("status"),
-                    "error": refresh_result.get("error") or refresh_result.get("remote_error"),
-                    "mirror_details": mirror_result_details(refresh_result),
-                }
-            else:
-                health = inspect_mirror(mirror)
-                head = health["head"]
-                if health["status"] != "healthy":
+            try:
+                validation_errors = (preflight_validation or {}).get("source_errors", {}).get(source.id, [])
+                if validation_errors:
+                    row = {
+                        "skill": skill.name, "source": source.id,
+                        "status": "source_validation_failed", "current_commit": None,
+                        "changed": [], "error": "; ".join(validation_errors),
+                        "validation_errors": validation_errors,
+                    }
+                elif refresh_result and refresh_result.get("status") not in SUCCESSFUL_MIRROR_REFRESH_STATUSES:
                     row = {
                         "skill": skill.name,
                         "source": source.id,
-                        "status": health["status"],
-                        "current_commit": head,
+                        "status": "mirror_blocked",
+                        "current_commit": refresh_result.get("local_head") or refresh_result.get("after_head"),
                         "changed": [],
-                        "mirror_details": health.get("mirror_details", {}),
+                        "mirror_status": refresh_result.get("status"),
+                        "error": refresh_result.get("error") or refresh_result.get("remote_error"),
+                        "mirror_details": mirror_result_details(refresh_result),
                     }
-                elif source.update_policy == "provenance_only":
-                    row = {
-                        "skill": skill.name,
-                        "source": source.id,
-                        "status": "provenance_only",
-                        "current_commit": head,
-                        "changed": [],
-                        "impact": "该来源只保留来源证据，不参与更新候选、许可证吸收或接受基线推进。",
-                        "automatic_action": "保留登记与最近观测提交；跳过许可证变化和内容吸收。",
-                        "approval_required": False,
-                    }
-                elif head == source.accepted_commit:
-                    row = {"skill": skill.name, "source": source.id, "status": "up_to_date", "current_commit": head, "changed": []}
-                elif candidate := candidates.get(
-                    (skill.name, source.id, source.accepted_commit, str(head).lower())
-                ):
-                    row = {
-                        "skill": skill.name,
-                        "source": source.id,
-                        "status": "awaiting_approval",
-                        "current_commit": head,
-                        "changed": [],
-                        "review_workspace": candidate["workspace"],
-                        "candidate_finalized_at": candidate["finalized_at"],
-                        "review_source_count": candidate["source_count"],
-                        "approval_required": True,
-                    }
-                elif (
-                    source_state.get("last_reviewed_commit") == head
-                    and source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
-                ):
-                    row = {"skill": skill.name, "source": source.id, "status": "already_reviewed", "current_commit": head, "changed": []}
                 else:
-                    comparison_base = None
-                    reviewed_commit = source_state.get("last_reviewed_commit")
-                    if (
-                        source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
-                        and isinstance(reviewed_commit, str)
-                        and SHA_PATTERN.fullmatch(reviewed_commit)
-                        and git(mirror.local_path, ["merge-base", "--is-ancestor", reviewed_commit, head]).returncode == 0
+                    health = inspect_mirror(mirror)
+                    head = health["head"]
+                    if health["status"] != "healthy":
+                        row = {
+                            "skill": skill.name,
+                            "source": source.id,
+                            "status": health["status"],
+                            "current_commit": head,
+                            "changed": [],
+                            "mirror_details": health.get("mirror_details", {}),
+                        }
+                    elif source.update_policy == "provenance_only":
+                        row = {
+                            "skill": skill.name,
+                            "source": source.id,
+                            "status": "provenance_only",
+                            "current_commit": head,
+                            "changed": [],
+                            "impact": "该来源只保留来源证据，不参与更新候选、许可证吸收或接受基线推进。",
+                            "automatic_action": "保留登记与最近观测提交；跳过许可证变化和内容吸收。",
+                            "approval_required": False,
+                        }
+                    elif head == source.accepted_commit:
+                        row = {"skill": skill.name, "source": source.id, "status": "up_to_date", "current_commit": head, "changed": []}
+                    elif candidate := candidates.get(
+                        (skill.name, source.id, source.accepted_commit, str(head).lower())
                     ):
-                        comparison_base = reviewed_commit
-                    diff = source_diff(mirror.local_path, source, head, comparison_base=comparison_base)
-                    row = {"skill": skill.name, "source": source.id, "current_commit": head, **diff}
-                    if diff["status"] == "no_relevant_change":
-                        source_state["last_reviewed_commit"] = head
-                        source_state["reviewed_against_accepted_commit"] = source.accepted_commit
-                        source_state["last_disposition"] = "no-impact"
-                        source_state["last_reviewed_at"] = now
-                        state["history"].append(
-                            {
-                                "source": source.id,
-                                "commit": head,
-                                "accepted_baseline": source.accepted_commit,
-                                "disposition": "no-impact",
-                                "reviewed_at": now,
-                                "automatic": True,
-                            }
-                        )
+                        row = {
+                            "skill": skill.name,
+                            "source": source.id,
+                            "status": "awaiting_approval",
+                            "current_commit": head,
+                            "changed": [],
+                            "review_workspace": candidate["workspace"],
+                            "candidate_finalized_at": candidate["finalized_at"],
+                            "review_source_count": candidate["source_count"],
+                            "approval_required": True,
+                        }
+                    elif (
+                        source_state.get("last_reviewed_commit") == head
+                        and source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
+                    ):
+                        row = {"skill": skill.name, "source": source.id, "status": "already_reviewed", "current_commit": head, "changed": []}
+                    else:
+                        comparison_base = None
+                        reviewed_commit = source_state.get("last_reviewed_commit")
+                        if (
+                            source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
+                            and isinstance(reviewed_commit, str)
+                            and SHA_PATTERN.fullmatch(reviewed_commit)
+                            and git(mirror.local_path, ["merge-base", "--is-ancestor", reviewed_commit, head]).returncode == 0
+                        ):
+                            comparison_base = reviewed_commit
+                        diff = source_diff(mirror.local_path, source, head, comparison_base=comparison_base)
+                        row = {"skill": skill.name, "source": source.id, "current_commit": head, **diff}
+                        if diff["status"] == "no_relevant_change":
+                            source_state["last_reviewed_commit"] = head
+                            source_state["reviewed_against_accepted_commit"] = source.accepted_commit
+                            source_state["last_disposition"] = "no-impact"
+                            source_state["last_reviewed_at"] = now
+                            state["history"].append(
+                                {
+                                    "source": source.id,
+                                    "commit": head,
+                                    "accepted_baseline": source.accepted_commit,
+                                    "disposition": "no-impact",
+                                    "reviewed_at": now,
+                                    "automatic": True,
+                                }
+                            )
+            except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+                row = {"skill": skill.name, "source": source.id, "status": "source_check_failed",
+                       "current_commit": None, "changed": [],
+                       "error": f"{type(exc).__name__}: {exc}"}
             if row["status"] in DIAGNOSTIC_STATUSES:
                 row.update(diagnose_report_row(row, source, mirror))
             observed_commit = row.get("current_commit")
@@ -2064,6 +2097,8 @@ def build_report(
         "schema_version": 1,
         "date": date,
         "generated_at": now,
+        "report_fresh": True,
+        "report_complete": check_error_count == 0,
         "source_count": len(rows),
         "awaiting_approval_skill_count": len(awaiting_groups),
         "candidate_conflict_count": len(candidate_conflicts),
@@ -3268,6 +3303,9 @@ def emit(payload: dict[str, Any], as_json: bool) -> None:
 
 def invalid_preflight_payload(error: Exception) -> dict[str, Any]:
     return {
+        "report_fresh": False,
+        "report_complete": False,
+        "summary_status": "stale_previous_summary",
         "status": "invalid",
         "skill_count": 0,
         "confirmed_skill_count": 0,
@@ -3356,7 +3394,11 @@ def main() -> int:
                 emit(validation, args.json)
                 return 2
             write_json(reports_root / args.date / "preflight-validation.json", validation)
-            if validation["errors"]:
+            if validation.get("fatal_errors", validation["errors"]):
+                validation["report_fresh"] = False
+                validation["report_complete"] = False
+                validation["summary_status"] = "stale_previous_summary"
+                write_json(reports_root / args.date / "preflight-validation.json", validation)
                 emit(validation, args.json)
                 return 2
             state_path = args.state.resolve() if args.state else reports_root / "state.json"
@@ -3386,7 +3428,7 @@ def main() -> int:
             )
             emit(payload, args.json)
             refresh_failed = bool(refresh_payload and refresh_payload["exit_code"] != 0)
-            return 2 if refresh_failed or validation["coverage_gaps"] else 0
+            return 2 if refresh_failed or validation["coverage_gaps"] or payload["check_error_count"] else 0
         if args.command == "prepare-review":
             payload = prepare_review(
                 skills,

@@ -43,8 +43,12 @@ PDF 统一通过 `POST /v2/tabs/{targetId}/download` 取回，由 `web-access` B
 
 canvas 结果必须标为“浏览器像素导出并重新编码”。只有直接取得服务器响应字节时，才可标为原始文件字节。`/eval` 返回 `UNKNOWN_RESULT` 时，先用新的只读表达式检查随机键和已生成元数据；不得换幂等 key 原样重跑创建动作。分块读取的不确定结果使用原幂等 key 重放，仍无法确认时停止。
 
-## iframe 正文读取
+## iframe 内容与受限交互
 
 在任务自有页面正文位于跨域 iframe 时，先用 `GET /v2/tabs/{id}/frames`（Bearer task token）列出该页面主文档的直接 iframe，再用 `POST /v2/tabs/{id}/frame-text`，JSON 为 `{"frameId":"列表中的 frameId"}`，带同一 token 与新幂等键读取标题、当前 URL 和最多 100000 字符正文。
 
-此回退只读取文本，不接受任意表达式、坐标或点击。每次重新验证 frame 属于当前 task 自有页；跨进程 iframe 使用子 session 的隔离 world，同进程 iframe 使用页面 session 的对应 world。列表不覆盖嵌套 iframe 或 shadow root，未加载 frameId 为 null；目标改变或不可用时重新列举，不猜 target ID。登录与访问限制统一交给 `/access` 和 `web-access` 页面动作；图形/滑块/邮箱验证不默认 handoff，真正短信、动态口令、刷脸或系统验证才交还用户。iframe 可读不证明授权成功或已完成身份验证。
+`/frame-text` 仍是只读回退，不接受任意表达式、坐标或点击。需要在 iframe DOM 中读取或执行受限表达式时，可用 `POST /v2/tabs/{id}/eval` 的可选 `frameId`：表达式在当前页面 `/frames` 返回的对应 iframe 隔离环境中执行并按 `/eval` 原有边界返回值；不能传入其他 target、session 或自造 frameId。每次请求都会重新验证 frame 属于当前 task 自有页；跨进程 iframe 使用子 session 的隔离 world，同进程 iframe 使用页面 session 的对应 world。
+
+需要按页面视口坐标操作 iframe 内控件时，可用 `POST /v2/tabs/{id}/click-at`，JSON 为 `{"x":100,"y":200}`。坐标以主页面视觉视口为准，Broker 会沿同进程或跨进程 iframe 路由并换算坐标，最多进入 5 层嵌套 iframe；无效坐标或视口外坐标直接拒绝，不发出点击。该接口是页面写操作，仍需 task token、页面所有权和幂等键，并不能绕过站点权限或替代用户授权。
+
+`/frames` 只列出当前页面主文档的直接 iframe/frame，列表不覆盖嵌套 iframe 或 shadow root，未加载 frameId 为 null；目标改变或不可用时重新列举，不猜 target ID。登录与访问限制统一交给 `/access` 和 `web-access` 页面动作；图形/滑块/邮箱验证不默认 handoff，真正短信、动态口令、刷脸或系统验证才交还用户。iframe 可读或可执行不证明授权成功或已完成身份验证。

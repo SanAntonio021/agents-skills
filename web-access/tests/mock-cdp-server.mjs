@@ -62,11 +62,13 @@ function axProperty(name, value, type = 'boolean') {
   return { name, value: { type, value } };
 }
 
-function createDocumentState(browserId, targetId) {
+function createDocumentState(browserId, targetId, fixture = {}) {
   return {
     generation: 1,
-    title: 'Mock Page',
-    text: 'Mock page Ready Submit Remember Choice',
+    title: fixture.title || 'Mock Page',
+    text: fixture.text || 'Mock page Ready Submit Remember Choice',
+    viewport: fixture.viewport || [1280, 720],
+    iframes: fixture.iframes || [],
     focusedBackendNodeId: null,
     selectAll: false,
     dialog: null,
@@ -78,7 +80,7 @@ function createDocumentState(browserId, targetId) {
       [105, { role: 'textbox', name: 'Notes', value: '', tag: 'DIV', visible: true, enabled: true, obscured: false, contentEditable: true }],
       [106, { role: 'combobox', name: 'Multi Choice', value: ['one'], tag: 'SELECT', visible: true, enabled: true, obscured: false, multiple: true }],
     ]),
-    frameId: `${browserId}-frame-${targetId}`,
+    frameId: fixture.frameId || `${browserId}-frame-${targetId}`,
     downloads: new Map(),
   };
 }
@@ -120,6 +122,7 @@ export async function startMockCdpServer(browserId, options = {}) {
   const targets = new Map();
   const documents = new Map();
   const sessions = new Map();
+  const contexts = new Map();
   const commands = [];
   const sockets = new Set();
   let targetSequence = 0;
@@ -185,8 +188,37 @@ export async function startMockCdpServer(browserId, options = {}) {
     return element ? { targetId, backendDOMNodeId, document, element } : null;
   }
 
-  function evaluateExpression(expression, sessionId) {
-    const targetId = sessionTarget(sessionId);
+  function targetForContext(sessionId, contextId) {
+    return contexts.get(contextId)?.targetId || sessionTarget(sessionId);
+  }
+
+  function iframeObjectId(targetId, index) {
+    return `iframe:${targetId}:${index}`;
+  }
+
+  function iframeFromObjectId(objectId) {
+    const match = /^iframe:(.+):(\d+)$/.exec(objectId || '');
+    if (!match) return null;
+    const targetId = match[1];
+    const index = Number(match[2]);
+    const iframe = documents.get(targetId)?.iframes?.[index];
+    return iframe ? { targetId, index, iframe } : null;
+  }
+
+  function elementFromPointObjectId(targetId, x, y) {
+    const document = documents.get(targetId);
+    if (!document) return null;
+    const [width, height] = document.viewport || [];
+    if (!(x >= 0 && y >= 0 && x < width && y < height)) return null;
+    const iframeIndex = (document.iframes || []).findIndex((iframe) => {
+      const [left, top, right, , , bottom] = iframe.content || [];
+      return x >= left && x < right && y >= top && y < bottom;
+    });
+    return iframeIndex >= 0 ? iframeObjectId(targetId, iframeIndex) : `element:${targetId}:button`;
+  }
+
+  function evaluateExpression(expression, sessionId, contextId = null) {
+    const targetId = targetForContext(sessionId, contextId);
     const target = targets.get(targetId);
     const document = documents.get(targetId);
     const downloadStart = /\)\((\{"key":"__webAccessDownload_[^\n]+\})\)$/.exec(expression);
@@ -240,6 +272,16 @@ export async function startMockCdpServer(browserId, options = {}) {
     if (expression === 'document.readyState' || expression.includes('document.readyState')) return 'complete';
     if (expression === 'document.title') return document?.title || 'Mock Page';
     if (expression === 'location.href' || expression === 'document.URL') return target?.url || 'about:blank';
+    if (expression.includes("document.querySelectorAll('iframe, frame')")) return { objectId: `iframes:${targetId}` };
+    if (expression.includes('elementFromPoint')) {
+      const match = /elementFromPoint\(([^,]+),\s*([^)]+)\)/.exec(expression);
+      const objectId = match ? elementFromPointObjectId(targetId, Number(match[1]), Number(match[2])) : null;
+      return objectId ? { objectId } : null;
+    }
+    if (expression === '[innerWidth, innerHeight]') return document?.viewport || [1280, 720];
+    if (expression.includes('({ title: document.title')) {
+      return { title: document?.title || 'Mock Page', url: target?.url || 'about:blank', text: document?.text || '' };
+    }
     if (expression.includes('JSON.stringify({title:')) {
       return JSON.stringify({ title: document?.title || 'Mock Page', url: target?.url || 'about:blank', ready: 'complete' });
     }
@@ -339,6 +381,7 @@ export async function startMockCdpServer(browserId, options = {}) {
       case 'Fetch.enable':
       case 'DOM.scrollIntoViewIfNeeded':
       case 'Runtime.releaseObject':
+      case 'Runtime.releaseObjectGroup':
         return {};
       case 'Target.getTargets':
         return { targetInfos: [...targets.values()] };
@@ -385,12 +428,32 @@ export async function startMockCdpServer(browserId, options = {}) {
         });
         return { frameId };
       }
+      case 'Page.getFrameTree': {
+        const document = targetDocument(sessionId);
+        return { frameTree: { frame: { id: document?.frameId } } };
+      }
+      case 'Page.createIsolatedWorld': {
+        const executionContextId = ++sessionSequence + 10000;
+        contexts.set(executionContextId, { targetId: sessionTarget(sessionId), frameId: params.frameId });
+        return { executionContextId };
+      }
       case 'Page.getNavigationHistory':
         return { currentIndex: 1, entries: [{ id: 1, url: 'https://example.test/previous' }, { id: 2, url: targets.get(sessionTarget(sessionId))?.url }] };
       case 'Page.navigateToHistoryEntry':
         return {};
       case 'Runtime.evaluate':
-        return { result: { type: 'object', value: evaluateExpression(params.expression || '', sessionId) } };
+        {
+          const evaluated = evaluateExpression(params.expression || '', sessionId, params.contextId);
+          if (evaluated && Object.hasOwn(evaluated, 'objectId')) return { result: evaluated };
+          return { result: { type: typeof evaluated, value: evaluated } };
+        }
+      case 'Runtime.getProperties': {
+        const match = /^iframes:(.+)$/.exec(params.objectId || '');
+        if (!match) return { result: [] };
+        const targetId = match[1];
+        const iframes = documents.get(targetId)?.iframes || [];
+        return { result: iframes.map((_, index) => ({ name: String(index), value: { objectId: iframeObjectId(targetId, index) } })) };
+      }
       case 'Runtime.callFunctionOn':
         return callFunction(params);
       case 'Accessibility.getFullAXTree':
@@ -407,6 +470,23 @@ export async function startMockCdpServer(browserId, options = {}) {
       case 'DOM.describeNode': {
         const targetId = sessionTarget(sessionId);
         const document = documents.get(targetId);
+        const iframe = iframeFromObjectId(params.objectId);
+        if (iframe) {
+          const attributes = Object.entries(iframe.iframe.attributes || {}).flat();
+          return {
+            node: {
+              nodeId: `${iframe.targetId}-iframe-${iframe.index}`,
+              backendNodeId: 2000 + iframe.index,
+              nodeName: 'IFRAME',
+              localName: 'iframe',
+              nodeType: 1,
+              attributes,
+              frameId: iframe.iframe.frameId,
+            },
+          };
+        }
+        const elementObject = /^element:(.+):button$/.exec(params.objectId || '');
+        if (elementObject) return { node: { nodeName: 'BUTTON', localName: 'button', nodeType: 1, attributes: [] } };
         const element = document?.elements.get(params.backendNodeId);
         return {
           node: {
@@ -425,8 +505,14 @@ export async function startMockCdpServer(browserId, options = {}) {
         const backendDOMNodeId = params.backendNodeId || params.nodeId;
         return { object: { type: 'object', subtype: 'node', objectId: `node:${targetId}:${backendDOMNodeId}` } };
       }
-      case 'DOM.getBoxModel':
+      case 'DOM.getBoxModel': {
+        const iframe = iframeFromObjectId(params.objectId);
+        if (iframe) {
+          const [left, top, right, , , bottom] = iframe.iframe.content;
+          return { model: { content: iframe.iframe.content, width: right - left, height: bottom - top } };
+        }
         return { model: { content: [10, 10, 110, 10, 110, 40, 10, 40], width: 100, height: 30 } };
+      }
       case 'DOM.getContentQuads':
         return { quads: [[10, 10, 110, 10, 110, 40, 10, 40]] };
       case 'DOM.getNodeForLocation':
@@ -528,6 +614,30 @@ export async function startMockCdpServer(browserId, options = {}) {
   });
 
   const port = server.address().port;
+  function installIframeFixture(parentTargetId, fixture = {}) {
+    const parent = documents.get(parentTargetId);
+    if (!parent) throw new Error(`未知 target: ${parentTargetId}`);
+    parent.viewport = fixture.viewport || parent.viewport;
+    parent.iframes = fixture.iframes || [];
+    for (const iframe of parent.iframes) {
+      if (!iframe.crossProcess) continue;
+      const frameId = iframe.frameId;
+      targets.set(frameId, {
+        targetId: frameId,
+        type: 'iframe',
+        title: iframe.title || 'Mock iframe',
+        url: iframe.url || 'https://iframe.test/',
+        attached: false,
+      });
+      documents.set(frameId, createDocumentState(browserId, frameId, {
+        ...iframe,
+        frameId,
+        text: iframe.text || `iframe ${frameId} Ready`,
+      }));
+      installIframeFixture(frameId, iframe);
+    }
+  }
+
   return {
     browserId,
     port,
@@ -535,6 +645,9 @@ export async function startMockCdpServer(browserId, options = {}) {
     documents,
     commands,
     get activeTargetId() { return activeTargetId; },
+    sessionForTarget(targetId) {
+      return [...sessions].find(([, attachedTargetId]) => attachedTargetId === targetId)?.[0] || null;
+    },
     get totalConnections() { return totalConnections; },
     createPopup(openerId, url = 'https://popup.test/', { delayMs = 0, emitEvent = true } = {}) {
       const targetId = `${browserId}-popup-${++popupSequence}`;
@@ -585,6 +698,9 @@ export async function startMockCdpServer(browserId, options = {}) {
       const document = documents.get(targetId);
       if (!document) throw new Error(`未知 target: ${targetId}`);
       document.text = text;
+    },
+    setIframeFixture(targetId, fixture) {
+      installIframeFixture(targetId, fixture);
     },
     disconnectAll() {
       for (const socket of sockets) socket.destroy();

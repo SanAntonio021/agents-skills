@@ -139,3 +139,137 @@ for (const [frameId, pattern] of [
   });
 }
 
+// routePoint 的假浏览器：按 frame 描述布局。每个 frame 记录它所在的 session、命中的元素、
+// 元素指向的子 frame、子 frame 元素的内容框（session 根视口坐标）和子 frame 的视口尺寸。
+function routeFake(layout, { oopifs = [] } = {}) {
+  const calls = [];
+  const sessionOf = frameId => (frameId === 'page-1' || !oopifs.includes(frameId) ? 'page-session' : `${frameId}-session`);
+  const contextFrame = new Map();
+  let contextSeq = 0;
+  const send = async (method, params = {}, sessionId = null) => {
+    calls.push({ method, params, sessionId });
+    switch (method) {
+      case 'Page.getFrameTree': return { result: { frameTree: { frame: { id: 'page-1' } } } };
+      case 'Page.createIsolatedWorld': {
+        const id = ++contextSeq;
+        contextFrame.set(id, params.frameId);
+        return { result: { executionContextId: id } };
+      }
+      case 'Runtime.evaluate': {
+        const frame = layout[contextFrame.get(params.contextId)] || {};
+        if (params.expression.includes('elementFromPoint')) {
+          return { result: { result: frame.hit ? { objectId: `${contextFrame.get(params.contextId)}:hit` } : { type: 'object', subtype: 'null' } } };
+        }
+        if (params.expression.includes('innerWidth')) return { result: { result: { value: frame.viewport } } };
+        break;
+      }
+      case 'DOM.describeNode': {
+        const frame = layout[params.objectId.split(':')[0]];
+        return { result: { node: { attributes: [], ...(frame.child ? { frameId: frame.child } : {}) } } };
+      }
+      case 'DOM.getBoxModel': return { result: { model: { content: layout[params.objectId.split(':')[0]].content } } };
+      case 'Target.getTargets': return { result: { targetInfos: oopifs.map(targetId => ({ targetId, type: 'iframe', url: 'x' })) } };
+      case 'Page.captureScreenshot': return { result: { data: 'AA==' } };
+    }
+    return { result: {} };
+  };
+  const ensureSession = async targetId => sessionOf(targetId);
+  return { frames: createPageFrames({ send, ensureSession }), calls };
+}
+
+const quad = (left, top, width, height) => [left, top, left + width, top, left + width, top + height, left, top + height];
+const hitPoints = calls => calls
+  .filter(call => call.method === 'Runtime.evaluate' && call.params.expression.includes('elementFromPoint'))
+  .map(call => [call.sessionId, call.params.expression.match(/elementFromPoint\(([^,]+), ([^)]+)\)/).slice(1).map(Number)]);
+
+test('routePoint：坐标不在页面视口内时抛 FrameError，不路由', async () => {
+  const { frames, calls } = routeFake({ 'page-1': {} });
+  await assert.rejects(frames.routePoint('page-1', 5000, 5000), error => error instanceof FrameError && /不在页面视口内/.test(error.message));
+  assert.ok(!methods(calls).includes('DOM.describeNode'));
+});
+
+test('routePoint：命中普通元素时坐标不变发给页面', async () => {
+  const { frames, calls } = routeFake({ 'page-1': { hit: true } });
+  assert.deepEqual(await frames.routePoint('page-1', 12, 34), { sessionId: 'page-session', x: 12, y: 34 });
+  assert.ok(!methods(calls).includes('Page.captureScreenshot'));
+  assert.deepEqual(releasedGroups(calls), ['web-access-click']);
+});
+
+test('routePoint：跨进程 iframe 按内容框原点换算坐标', async () => {
+  const { frames } = routeFake({
+    'page-1': { hit: true, child: 'oopif-frame', content: quad(75, 85, 300, 250) },
+    'oopif-frame': { hit: true, viewport: [300, 250] },
+  }, { oopifs: ['oopif-frame'] });
+  assert.deepEqual(await frames.routePoint('page-1', 135, 115), {
+    sessionId: 'oopif-frame-session', x: 60, y: 30, frameId: 'oopif-frame', crossProcess: true, depth: 1,
+  });
+});
+
+test('routePoint：iframe 被 transform 或 zoom 放大时按比例换算', async () => {
+  const { frames } = routeFake({
+    'page-1': { hit: true, child: 'oopif-frame', content: quad(57.5, 67.5, 450, 375) },
+    'oopif-frame': { hit: true, viewport: [300, 250] },
+  }, { oopifs: ['oopif-frame'] });
+  const route = await frames.routePoint('page-1', 147.5, 112.5);
+  assert.equal(route.sessionId, 'oopif-frame-session');
+  assert.deepEqual([route.x, route.y], [60, 30]);
+});
+
+test('routePoint：落在 iframe 边框或内边距上时留在当前 frame', async () => {
+  const { frames, calls } = routeFake({
+    'page-1': { hit: true, child: 'oopif-frame', content: quad(75, 85, 300, 250) },
+    'oopif-frame': { hit: true, viewport: [300, 250] },
+  }, { oopifs: ['oopif-frame'] });
+  assert.deepEqual(await frames.routePoint('page-1', 60, 70), { sessionId: 'page-session', x: 60, y: 70 });
+  assert.ok(!calls.some(call => call.sessionId === 'oopif-frame-session'));
+});
+
+test('routePoint：同进程 iframe 的鼠标坐标保持页面坐标，命中测试换算到 frame 内', async () => {
+  const { frames, calls } = routeFake({
+    'page-1': { hit: true, child: 'local-frame', content: quad(512, 72, 300, 250) },
+    'local-frame': { hit: true, viewport: [300, 250] },
+  });
+  assert.deepEqual(await frames.routePoint('page-1', 572, 102), {
+    sessionId: 'page-session', x: 572, y: 102, frameId: 'local-frame', crossProcess: false, depth: 1,
+  });
+  assert.deepEqual(hitPoints(calls), [['page-session', [572, 102]], ['page-session', [60, 30]]]);
+  assert.equal(calls.filter(call => call.method === 'Page.captureScreenshot').length, 1);
+});
+
+test('routePoint：逐层进入嵌套的跨进程 iframe', async () => {
+  const { frames, calls } = routeFake({
+    'page-1': { hit: true, child: 'frame-a', content: quad(55, 65, 300, 250) },
+    'frame-a': { hit: true, child: 'frame-b', content: quad(30, 90, 200, 100), viewport: [300, 250] },
+    'frame-b': { hit: true, viewport: [200, 100] },
+  }, { oopifs: ['frame-a', 'frame-b'] });
+  assert.deepEqual(await frames.routePoint('page-1', 145, 185), {
+    sessionId: 'frame-b-session', x: 60, y: 30, frameId: 'frame-b', crossProcess: true, depth: 2,
+  });
+  assert.deepEqual(hitPoints(calls), [['page-session', [145, 185]], ['frame-a-session', [90, 120]], ['frame-b-session', [60, 30]]]);
+  assert.deepEqual(releasedGroups(calls), ['web-access-click', 'web-access-click', 'web-access-click']);
+  assert.ok(!methods(calls).includes('Page.captureScreenshot'));
+});
+
+test('routePoint：同进程 iframe 里嵌的跨进程 iframe 也能进入', async () => {
+  const { frames, calls } = routeFake({
+    'page-1': { hit: true, child: 'local-frame', content: quad(512, 72, 300, 250) },
+    'local-frame': { hit: true, child: 'inner-oopif', content: quad(537, 107, 250, 150), viewport: [300, 250] },
+    'inner-oopif': { hit: true, viewport: [250, 150] },
+  }, { oopifs: ['inner-oopif'] });
+  const route = await frames.routePoint('page-1', 597, 137);
+  assert.deepEqual(route, {
+    sessionId: 'inner-oopif-session', x: 60, y: 30, frameId: 'inner-oopif', crossProcess: true, depth: 2,
+  });
+  assert.deepEqual(hitPoints(calls)[1], ['page-session', [85, 65]]);
+  assert.ok(!methods(calls).includes('Page.captureScreenshot'));
+});
+
+test('routePoint：嵌套层数最多进入 5 层', async () => {
+  const layout = { 'page-1': { hit: true, child: 'f1', content: quad(0, 0, 100, 100) } };
+  for (let i = 1; i <= 8; i++) layout[`f${i}`] = { hit: true, child: `f${i + 1}`, content: quad(0, 0, 100, 100), viewport: [100, 100] };
+  const { frames } = routeFake(layout, { oopifs: Array.from({ length: 9 }, (_, i) => `f${i + 1}`) });
+  const route = await frames.routePoint('page-1', 10, 10);
+  assert.equal(route.depth, 5);
+  assert.equal(route.sessionId, 'f5-session');
+});
+

@@ -1,5 +1,4 @@
 // Adapted from eze-is/web-access d173a75978ceb2c63fa0b27f7408cd2bf7fe4310 (MIT).
-// Local scope: direct frame listing and isolated context only; no coordinate actions.
 // 页面直属 iframe 的列举和隔离读取上下文。唯一 CDP 连接仍由本地 Proxy 持有。
 // DOM.describeNode 返回 frameId；跨进程 iframe 的 frameId 同时对应 iframe targetId。
 // Page.getFrameTree 不包含 OOPIF，当前 URL 从 Target.getTargets 读取。
@@ -13,6 +12,7 @@ export class FrameError extends Error {}
 
 const FRAME_ID = /^[A-Za-z0-9._-]{1,128}$/;
 const WORLD_NAME = 'web-access';
+const MAX_NESTING = 5;
 
 export function createPageFrames({ send, ensureSession }) {
   // CDP 错误一律抛出，带上方法名
@@ -105,5 +105,77 @@ export function createPageFrames({ send, ensureSession }) {
     return { sessionId, contextId: world.executionContextId, frame };
   }
 
-  return { listFrames, frameContext };
+  // 将页面视口坐标路由到实际命中的 frame。跨进程 iframe 使用子 session，
+  // 同进程 iframe 仍向页面 session 发鼠标事件，但命中测试坐标换算到 frame 视口。
+  async function routePoint(targetId, x, y) {
+    const pageSession = await ensureSession(targetId);
+    let frameId = (await frameTree(pageSession)).frame.id;
+    let sessionId = pageSession;
+    let contextId = await isolatedWorld(sessionId, frameId);
+    let rootX = x;
+    let rootY = y;
+    let frameX = x;
+    let frameY = y;
+    let entered = null;
+    let paint = false;
+    let oopifs = null;
+    const scopes = new Map();
+    const groupFor = sid => {
+      if (!scopes.has(sid)) scopes.set(sid, `web-access-click-${randomUUID()}`);
+      return scopes.get(sid);
+    };
+    try {
+      for (let depth = 0; depth <= MAX_NESTING; depth++) {
+        const hit = await call('Runtime.evaluate', {
+          expression: `document.elementFromPoint(${frameX}, ${frameY})`,
+          objectGroup: groupFor(sessionId),
+          contextId,
+        }, sessionId);
+        const objectId = hit.result?.objectId;
+        if (!objectId) {
+          if (depth === 0) throw new FrameError(`坐标 (${x}, ${y}) 不在页面视口内，没有发出点击`);
+          break;
+        }
+        const { node } = await call('DOM.describeNode', { objectId }, sessionId);
+        if (!node.frameId || depth === MAX_NESTING) break;
+        const { model } = await call('DOM.getBoxModel', { objectId }, sessionId);
+        const [left, top, right, , , bottom] = model.content;
+        if (rootX < left || rootX >= right || rootY < top || rootY >= bottom) break;
+        oopifs ??= await iframeTargets();
+        const crossProcess = oopifs.has(node.frameId);
+        const childSession = crossProcess ? await ensureSession(node.frameId) : sessionId;
+        const childContext = await isolatedWorld(childSession, node.frameId);
+        const viewport = await call('Runtime.evaluate', {
+          expression: '[innerWidth, innerHeight]',
+          returnByValue: true,
+          contextId: childContext,
+        }, childSession);
+        const [width, height] = viewport.result?.value || [];
+        if (!(width > 0 && height > 0)) throw new Error('iframe 视口尺寸不可用');
+        frameX = (rootX - left) / ((right - left) / width);
+        frameY = (rootY - top) / ((bottom - top) / height);
+        if (crossProcess) {
+          sessionId = childSession;
+          rootX = frameX;
+          rootY = frameY;
+          paint = false;
+        } else {
+          paint = true;
+        }
+        frameId = node.frameId;
+        contextId = childContext;
+        entered = { frameId, crossProcess, depth: depth + 1 };
+      }
+      if (paint) {
+        await call('Page.captureScreenshot', { format: 'jpeg', quality: 1, captureBeyondViewport: false }, sessionId);
+      }
+      return { sessionId, x: rootX, y: rootY, ...(entered || {}) };
+    } finally {
+      for (const [sid, group] of scopes) {
+        await send('Runtime.releaseObjectGroup', { objectGroup: group }, sid).catch(() => {});
+      }
+    }
+  }
+
+  return { listFrames, frameContext, routePoint };
 }

@@ -20,7 +20,7 @@ snapshot/ref 不足时使用 CSS `/click`，必要时才用 `/eval`。结构化�
 
 当前标签网址读取失败时，按[技能入口的失败处理](../SKILL.md#失败处理)判断是否可用可信完整网址重新开页；明确安全停止不能这样恢复。新页创建或导航回执只证明请求已接收，仍须等待并从页面回读实际 URL、标题和业务对象，再重新 snapshot。`about:blank`、登录页、意外 origin 或对象不符都不算到达目标；登录按既有流程处理，未知写入先核对实际结果。
 
-折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；iframe 正文按 [内容提取参考](cdp-content.md#iframe-正文读取) 在隔离上下文中提取。同源 Shadow DOM/iframe 必要时可用 CSS 或 `/eval`，不宣称可穿越所有 frame。
+折叠内容可能已在 DOM 中，也可能尚未加载，按实际状态判断。懒加载时按需滚动再读取。snapshot/ref 不支持跨域 OOPIF；iframe 内容与受限交互按 [内容提取参考](cdp-content.md#iframe-内容与受限交互) 在隔离上下文或页面坐标路由中处理。同源 Shadow DOM/iframe 必要时可用 CSS 或带 `frameId` 的 `/eval`，不宣称可穿越所有 frame。
 
 ## AX snapshot/ref
 
@@ -125,7 +125,8 @@ JavaScript dialog 的处理按上文执行；接口要求确认参数时依据�
 | POST | `/v2/tabs/{id}/navigate` | `{"url":"https://example.com"}` |
 | POST | `/v2/tabs/{id}/back` | `{}` |
 | POST | `/v2/tabs/{id}/click` | `{"selector":"button.submit"}` |
-| POST | `/v2/tabs/{id}/eval` | `{"expression":"document.title"}` |
+| POST | `/v2/tabs/{id}/eval` | `{"expression":"document.title"}`，可选 `frameId` |
+| POST | `/v2/tabs/{id}/click-at` | `{"x":100,"y":200}`，主页面视口坐标，最多路由 5 层 iframe |
 | POST | `/v2/tabs/{id}/scroll` | `{"direction":"bottom"}` 或 `{"y":3000}` |
 | POST | `/v2/tabs/{id}/set-files` | `{"selector":"input[type=file]","files":["C:\\\\path\\\\file.png"]}` |
 

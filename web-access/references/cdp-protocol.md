@@ -44,7 +44,7 @@
 
 ### `GET /capabilities`
 
-返回协议版本、snapshot/action/wait、`download`、`access` 能力、任务上限、Broker 版本、Profile 模式和明确不支持项。调用方必须确认 `protocolVersion === 2`、`brokerVersion` 与所用源码相符、浏览器身份为请求目标且 `profileMode` 与请求模式一致，默认是 `existing`。新增接口须先核对能力声明；接口缺失属于环境/版本缺口，不回退到业务技能的第二套实现。
+返回协议版本、snapshot/action/wait、`download`、`access`、iframe 能力、任务上限、Broker 版本、Profile 模式和明确不支持项。iframe 能力包含 `/frames`、只读 `/frame-text`、带可选 `frameId` 的 `/eval`、坐标 `/click-at` 及最大嵌套层数。调用方必须确认 `protocolVersion === 2`、`brokerVersion` 与所用源码相符、浏览器身份为请求目标且 `profileMode` 与请求模式一致，默认是 `existing`。新增接口须先核对能力声明；接口缺失属于环境/版本缺口，不回退到业务技能的第二套实现。
 
 ## Task
 
@@ -114,6 +114,34 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 
 只返回当前 task 创建的 tab 和 popup。用户已有 tab、其他 task tab 完全隐藏。
 
+### `GET /v2/tabs/{targetId}/frames`
+
+列出当前 task 自有页面主文档的直接 `iframe`/`frame`，返回每项的 `index`、`frameId`、`crossProcess`、URL 和可用的 `id`、`name`、`src`。`frameId` 为 `null` 表示 frame 尚未加载出文档；不会返回其他 task 或用户页面的 frame，也不遍历嵌套 frame 或 shadow root。该读取接口仍需当前 task token。
+
+### `POST /v2/tabs/{targetId}/frame-text`
+
+```json
+{"frameId":"FRAME_ID"}
+```
+
+这是只读的 iframe 文本回退。`frameId` 必须是同一页面最近一次 `/frames` 返回的直接 iframe；Broker 在对应同进程或跨进程 session 的隔离 world 中读取标题、URL 和最多 100000 字符正文。请求不接受表达式、坐标或其他字段，仍须 JSON、task token 和幂等键。
+
+### `POST /v2/tabs/{targetId}/eval`
+
+```json
+{"expression":"document.body.innerText","frameId":"FRAME_ID"}
+```
+
+`frameId` 可选。未提供时沿用页面主文档 `/eval`；提供时必须来自当前页面 `/frames`，表达式在该 iframe 的隔离执行环境中运行，并沿用主文档 `/eval` 的返回和错误边界。Broker 每次重新验证 frame 归属，不接受 caller 指定 session、target 或任意其他执行上下文。
+
+### `POST /v2/tabs/{targetId}/click-at`
+
+```json
+{"x":100,"y":200}
+```
+
+`x`、`y` 是主页面视觉视口中的有限非负数。Broker 先确认坐标落在页面视口内，再沿同进程或跨进程 iframe 路由鼠标事件并换算到命中的 frame，最多进入 5 层嵌套 iframe；视口外或无效坐标返回错误且不点击。该操作属于页面写操作，仍受当前 task 的页面所有权、目标锁和幂等键保护。
+
 ### `GET /v2/tabs/{targetId}`
 
 返回当前 task tab 的 `type`、`title`、`url`、`kind`、snapshot `generation` 和待处理 `dialog`（没有时为 `null`）。猜中其他 task 或用户 targetId 仍统一返回 `404 TARGET_NOT_FOUND`。
@@ -159,6 +187,8 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 | 401 | `UNAUTHORIZED` | token 无效、跨 Proxy 或 Proxy 已重启 |
 | 403 | `INVALID_HOST` / `ORIGIN_FORBIDDEN` | 不从网页 origin 调用 Proxy |
 | 404 | `TARGET_NOT_FOUND` | 不探测其他 task；检查自己的 tab |
+| 400 | `INVALID_FRAME` / `INVALID_FRAME_REQUEST` | 重新 `/frames`，只使用当前页面返回的 frameId |
+| 400 | `INVALID_COORDINATES` / `COORDINATE_OUT_OF_VIEWPORT` | 检查主页面视口坐标；拒绝时没有发出点击 |
 | 408 | `WAIT_TIMEOUT` | 重新判断条件或流程 |
 | 409 | `TARGET_BUSY` | 等当前 target 操作结束 |
 | 409 | `STALE_REF` | 重新 snapshot |

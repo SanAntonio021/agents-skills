@@ -44,7 +44,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 - 多对话 task/token/tab 隔离，共享当前 Edge 与长期 Proxy。
 - AX snapshot/ref、结构化 click/fill/type/press/check/select/hover、wait 和 dialog。
 - 用户登录/接管、表单写入保护、敏感操作授权和完整结果回读。
-- 书签/历史定位、服务器文件字节取回、图片像素导出、截图和 iframe 正文。
+- 书签/历史定位、服务器文件字节取回、图片像素导出、截图和 iframe 内容/交互。
 - 本地站点经验与旧 Proxy 迁移说明。
 
 ## 文档入口
@@ -54,7 +54,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 - [生命周期与任务隔离](references/cdp-lifecycle.md)：启动、恢复、并发、登录交接和收尾。
 - [协议参考](references/cdp-protocol.md)：健康、能力、task/tab、错误码和隔离边界。
 - [交互参考](references/cdp-interaction.md)：页面观察、动作、等待、dialog 和本地历史。
-- [内容提取](references/cdp-content.md)：PDF/二进制、图片、截图和 iframe。
+- [内容提取](references/cdp-content.md)：PDF/二进制、图片、截图和 iframe 内容与受限交互。
 - [旧 Proxy 迁移](references/migration-dual-proxy.2.md)。
 
 ## 边界

@@ -918,7 +918,14 @@ function capabilities() {
     snapshot: { source: 'cdp-ax', modes: ['interactive', 'all'], defaultDepth: 12, defaultMaxNodes: 300, hardMaxNodes: 1000 },
     actions: ['click', 'fill', 'type', 'press', 'check', 'uncheck', 'select', 'hover'],
     waits: ['selector', 'text', 'url', 'domcontentloaded', 'load'],
-    fallbacks: ['eval', 'click', 'navigate', 'back', 'scroll', 'set-files'],
+    fallbacks: ['eval', 'click', 'click-at', 'navigate', 'back', 'scroll', 'set-files'],
+    iframe: {
+      frames: 'GET /v2/tabs/{targetId}/frames',
+      frameText: 'POST /v2/tabs/{targetId}/frame-text',
+      frameEval: 'POST /v2/tabs/{targetId}/eval with optional frameId',
+      clickAt: 'POST /v2/tabs/{targetId}/click-at',
+      maxNesting: 5,
+    },
     download: {
       endpoint: 'POST /v2/tabs/{targetId}/download',
       modes: ['page-fetch'],
@@ -1727,7 +1734,7 @@ async function handleRoute(req, parsed, rawBody) {
     return jsonResponse(200, await listTaskTabs(task));
   }
 
-  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|set-files|setFiles|scroll|screenshot|frames|frame-text|download|access))?$/.exec(pathname);
+  const tabMatch = /^\/v2\/tabs\/([^/]+)(?:\/(snapshot|action|wait|dialog|navigate|back|eval|click|click-at|set-files|setFiles|scroll|screenshot|frames|frame-text|download|access))?$/.exec(pathname);
   if (!tabMatch) throw new ApiError(404, 'NOT_FOUND', 'Endpoint was not found.');
   const targetId = decodeURIComponent(tabMatch[1]);
   const operation = tabMatch[2] || null;
@@ -1823,6 +1830,27 @@ async function handleRoute(req, parsed, rawBody) {
       if (result.exceptionDetails) throw new ApiError(400, 'FRAME_READ_FAILED', result.exceptionDetails.text || 'Frame reading failed.');
       return jsonResponse(200, { frameId: body.frameId, crossProcess: frame.frame.crossProcess, value: result.result?.value });
     }
+    if (operation === 'click-at') {
+      if (typeof body.x !== 'number' || typeof body.y !== 'number' || !Number.isFinite(body.x) || !Number.isFinite(body.y) || body.x < 0 || body.y < 0) {
+        throw new ApiError(400, 'INVALID_COORDINATES', 'click-at requires finite non-negative numeric x and y viewport coordinates.');
+      }
+      let route;
+      try { route = await pageFrames.routePoint(targetId, body.x, body.y); }
+      catch (error) {
+        if (error instanceof FrameError) throw new ApiError(400, 'COORDINATE_OUT_OF_VIEWPORT', error.message);
+        throw error;
+      }
+      await sendCDP('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: route.x, y: route.y, button: 'none', buttons: 0, clickCount: 0,
+      }, route.sessionId);
+      await mouseClick(route.sessionId, route.x, route.y, targetId);
+      return jsonResponse(200, {
+        clicked: true,
+        x: body.x,
+        y: body.y,
+        ...(route.frameId ? { frameId: route.frameId, crossProcess: route.crossProcess, depth: route.depth } : {}),
+      });
+    }
     const sessionId = await ensureSession(targetId);
     if (operation === 'dialog') {
       const current = dialogs.get(targetId);
@@ -1856,6 +1884,22 @@ async function handleRoute(req, parsed, rawBody) {
     }
     if (operation === 'eval') {
       if (typeof body.expression !== 'string') throw new ApiError(400, 'EXPRESSION_REQUIRED', 'eval requires expression.');
+      if (body.frameId !== undefined) {
+        let frame;
+        try { frame = await pageFrames.frameContext(targetId, body.frameId); }
+        catch (error) {
+          if (error instanceof FrameError) throw new ApiError(400, 'INVALID_FRAME', error.message);
+          throw error;
+        }
+        const result = await sendCDP('Runtime.evaluate', {
+          expression: body.expression,
+          returnByValue: true,
+          awaitPromise: true,
+          contextId: frame.contextId,
+        }, frame.sessionId);
+        if (result.exceptionDetails) throw new ApiError(400, 'EVAL_FAILED', result.exceptionDetails.text || 'Evaluation failed.');
+        return jsonResponse(200, { value: result.result?.value, frameId: body.frameId, crossProcess: frame.frame.crossProcess });
+      }
       return jsonResponse(200, await fallbackEval(sessionId, body.expression));
     }
     if (operation === 'click') {

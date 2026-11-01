@@ -1071,6 +1071,71 @@ try {
     return { apiChecks: ['navigate', 'eval', 'click', 'set-files', 'scroll', 'back', 'screenshot'], screenshotBytes: screenshot.raw.length };
   });
 
+  await runTest('iframe-eval-click-at-and-ownership-guards', async () => {
+    const task = await createTask(edgeBase);
+    const tab = await createTab(edgeBase, task, 'https://example.test/iframe');
+    const frameId = 'edge-oopif-integration-frame';
+    edgeMock.setIframeFixture(tab.targetId, {
+      viewport: [800, 600],
+      iframes: [{
+        frameId,
+        crossProcess: true,
+        title: 'Integration iframe',
+        url: 'https://iframe.example.test/form',
+        text: 'iframe integration content',
+        attributes: { id: 'embedded-form', src: 'https://iframe.example.test/form' },
+        content: [100, 120, 400, 120, 400, 320, 100, 320],
+        viewport: [300, 200],
+      }],
+    });
+
+    const targetPath = `/v2/tabs/${encodeURIComponent(tab.targetId)}`;
+    const frames = await getJson(edgeBase, `${targetPath}/frames`, task.taskToken);
+    assert.equal(frames.status, 200, JSON.stringify(frames.body));
+    assert.deepEqual(frames.body.frames, [{
+      index: 0,
+      frameId,
+      crossProcess: true,
+      url: 'https://iframe.example.test/form',
+      id: 'embedded-form',
+      src: 'https://iframe.example.test/form',
+    }]);
+
+    const frameText = await postJson(edgeBase, `${targetPath}/frame-text`, { frameId }, { token: task.taskToken });
+    assert.equal(frameText.status, 200, JSON.stringify(frameText.body));
+    assert.equal(frameText.body.value.text, 'iframe integration content');
+
+    const frameEval = await postJson(edgeBase, `${targetPath}/eval`, {
+      expression: 'document.body.innerText',
+      frameId,
+    }, { token: task.taskToken });
+    assert.equal(frameEval.status, 200, JSON.stringify(frameEval.body));
+    assert.equal(frameEval.body.value, 'iframe integration content');
+    assert.equal(frameEval.body.crossProcess, true);
+
+    const click = await postJson(edgeBase, `${targetPath}/click-at`, { x: 160, y: 150 }, { token: task.taskToken });
+    assert.equal(click.status, 200, JSON.stringify(click.body));
+    assert.deepEqual({ frameId: click.body.frameId, depth: click.body.depth, crossProcess: click.body.crossProcess }, {
+      frameId, depth: 1, crossProcess: true,
+    });
+    const childSession = edgeMock.sessionForTarget(frameId);
+    assert.ok(childSession, 'click-at 应在跨进程 iframe session 发出鼠标事件');
+    assert.equal(edgeMock.commands.filter((command) => command.method === 'Input.dispatchMouseEvent' && command.sessionId === childSession).length, 3);
+
+    const invalidFrame = await postJson(edgeBase, `${targetPath}/eval`, {
+      expression: 'document.title', frameId: 'not-a-frame',
+    }, { token: task.taskToken });
+    assertError(invalidFrame, 400, 'INVALID_FRAME');
+
+    const outside = await postJson(edgeBase, `${targetPath}/click-at`, { x: 801, y: 600 }, { token: task.taskToken });
+    assertError(outside, 400, 'COORDINATE_OUT_OF_VIEWPORT');
+
+    const otherTask = await createTask(edgeBase);
+    const otherTaskFrames = await getJson(edgeBase, `${targetPath}/frames`, otherTask.taskToken);
+    assertError(otherTaskFrames, 404, 'TARGET_NOT_FOUND');
+    return { frameEval: true, clickAt: true, invalidFrame: true, outsideViewport: true, ownership: true };
+  });
+
   await runTest('element-state-guards-react-contenteditable-and-multiselect', async () => {
     const task = await createTask(edgeBase);
     const tab = await createTab(edgeBase, task, 'https://example.test/interactive-states');

@@ -159,6 +159,56 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
     def load(self):
         return MODULE.load_sources(self.registry), MODULE.load_mirrors(self.mirrors)
 
+    def test_entry_relocation_with_content_changes_preserves_accepted_baseline(self) -> None:
+        entry = self.mirror / "skills/source-skill/SKILL.md"
+        entry.rename(self.mirror / "skills/source-skill/NEW-SKILL.md")
+        (self.mirror / "skills/source-skill/NEW-SKILL.md").write_text("# Changed scientific review\n", encoding="utf-8")
+        current = commit_all(self.mirror, "move and change entry")
+        text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            'upstream_path = "skills/source-skill"\nskill_entry_path = "skills/source-skill/NEW-SKILL.md"\naccepted_skill_entry_path = "skills/source-skill/SKILL.md"')
+        text = text.replace('tracked_paths = ["SKILL.md", "scripts", "references"]',
+                            'tracked_paths = ["SKILL.md", "NEW-SKILL.md", "scripts", "references"]')
+        self.registry.write_text(text, encoding="utf-8")
+        skills, mirrors = self.load()
+        source = skills[0].sources[0]
+        validation = MODULE.validate_registry(skills, mirrors, self.skills)
+        self.assertEqual(validation["status"], "ok", validation)
+        self.assertEqual(source.accepted_commit, self.baseline)
+        self.assertEqual(MODULE.source_skill_entry_path(source, accepted=True), "skills/source-skill/SKILL.md")
+        self.assertEqual(MODULE.source_diff(self.mirror, source, current)["status"], "review_required")
+        with self.assertRaisesRegex(ValueError, "Source identity changed"):
+            from dataclasses import replace
+            changed = replace(skills[0], sources=(replace(source, accepted_skill_entry_path="skills/source-skill/NEW-SKILL.md"),))
+            MODULE.validate_review_source_contexts_current(changed, mirrors, {
+                "source": source.id, "accepted_commit": source.accepted_commit,
+                "current_upstream_commit": current,
+                "source_identity": MODULE.source_identity_payload(source)})
+
+    def test_accepted_entry_rejects_unsafe_path_and_preserves_legacy_identity(self) -> None:
+        from dataclasses import replace
+        skills, mirrors = self.load()
+        source = skills[0].sources[0]
+        self.assertNotIn("accepted_skill_entry_path", MODULE.source_identity_payload(source))
+        changed = replace(skills[0], sources=(replace(source, accepted_skill_entry_path="../SKILL.md"),))
+        result = MODULE.validate_registry([changed, skills[1]], mirrors, self.skills)
+        self.assertEqual(result["status"], "invalid")
+        self.assertTrue(any("accepted_skill_entry_path" in error for error in result["errors"]))
+
+    def test_complete_acceptance_removes_old_entry_override(self) -> None:
+        text = self.registry.read_text(encoding="utf-8").replace(
+            'upstream_path = "skills/source-skill"',
+            'upstream_path = "skills/source-skill"\naccepted_skill_entry_path = "skills/source-skill/SKILL.md"')
+        self.registry.write_text(text, encoding="utf-8")
+        skills, mirrors = self.load()
+        (self.mirror / "skills/source-skill/SKILL.md").write_text("# v2\n", encoding="utf-8")
+        current = commit_all(self.mirror, "new entry content")
+        workspace = self.finalize_and_apply_candidate(skills, mirrors, current)
+        result = MODULE.complete_review(skills, mirrors, self.registry, self.skills, workspace,
+                                        "alpha", "example-source", "2026-07-25", True)
+        self.assertEqual(result["status"], "completed")
+        self.assertNotIn("accepted_skill_entry_path =", self.registry.read_text(encoding="utf-8"))
+
     def test_check_review_and_acceptance_are_separate_and_legacy_state_survives(self) -> None:
         skills, mirrors = self.load()
         reports = self.root / "reports"

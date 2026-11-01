@@ -90,6 +90,7 @@ class SourceRecord:
     excluded: tuple[str, ...]
     accepted_local_digest: str = ""
     accepted_at: str = ""
+    accepted_skill_entry_path: str = ""
 
 
 @dataclass(frozen=True)
@@ -251,6 +252,7 @@ def load_sources(path: Path) -> list[SkillRecord]:
                 repo_url=str(source["repo_url"]),
                 upstream_path=str(source["upstream_path"]).strip("/"),
                 skill_entry_path=str(source.get("skill_entry_path", "")).strip("/"),
+                accepted_skill_entry_path=str(source.get("accepted_skill_entry_path", "")).strip("/"),
                 accepted_upstream_path=str(
                     source.get("accepted_upstream_path", source["upstream_path"])
                 ).strip("/"),
@@ -341,6 +343,8 @@ def source_repo_path(
 
 
 def source_skill_entry_path(source: SourceRecord, *, accepted: bool = False) -> str:
+    if accepted and source.accepted_skill_entry_path:
+        return source.accepted_skill_entry_path
     if source.skill_entry_path:
         return source.skill_entry_path
     return source_repo_path(source, "SKILL.md", accepted=accepted)
@@ -473,6 +477,8 @@ def validate_registry(
                 errors.append(
                     f"{skill.name}/{source.id}: skill_entry_path must be a safe repository-relative path"
                 )
+            if source.accepted_skill_entry_path and not is_safe_repo_path(source.accepted_skill_entry_path):
+                errors.append(f"{skill.name}/{source.id}: accepted_skill_entry_path must be a safe repository-relative path")
             if source.update_policy not in {"review", "provenance_only"}:
                 errors.append(
                     f"{skill.name}/{source.id}: unsupported update_policy {source.update_policy}"
@@ -707,6 +713,7 @@ def render_skill_reference(skill: SkillRecord) -> str:
                 f"- 当前上游路径：`{source.upstream_path}`",
                 f"- 接受时上游路径：`{source.accepted_upstream_path}`",
                 f"- 技能入口：`{source_skill_entry_path(source)}`",
+                *([f"- 接受时技能入口：`{source_skill_entry_path(source, accepted=True)}`"] if source.accepted_skill_entry_path else []),
                 f"- 已接受提交：`{source.accepted_commit}`",
                 *([f"- 实际接受时间：`{source.accepted_at}`"] if source.accepted_at else []),
                 f"- 基线类型：`{source.baseline_kind}`",
@@ -1243,6 +1250,7 @@ def mirror_result_details(result: dict[str, Any]) -> dict[str, Any]:
 def source_identity_payload(source: SourceRecord) -> dict[str, Any]:
     return {
         "id": source.id,
+        **({"accepted_skill_entry_path": source.accepted_skill_entry_path} if source.accepted_skill_entry_path else {}),
         "mirror_id": source.mirror_id,
         "repo_url": source.repo_url,
         "upstream_path": source.upstream_path,
@@ -2817,6 +2825,7 @@ def update_registry_acceptance_text(
                     insert_after="accepted_commit",
                 )
             for redundant_key in (
+                "accepted_skill_entry_path",
                 "accepted_upstream_path",
                 "path_migration_commit",
                 "path_migration_evidence",
@@ -2840,7 +2849,7 @@ def update_registry_acceptance_text(
             raise ValueError(f"Updated registry source did not round-trip through TOML: {source_id}")
         if any(
             key in parsed_source
-            for key in ("accepted_upstream_path", "path_migration_commit", "path_migration_evidence")
+            for key in ("accepted_skill_entry_path", "accepted_upstream_path", "path_migration_commit", "path_migration_evidence")
         ):
             raise ValueError(f"Redundant path migration metadata remains for {source_id}.")
     return updated_text
@@ -3090,6 +3099,7 @@ def complete_review(
                 accepted_local_digest=accepted_local_digest,
                 accepted_at=accepted_at,
                 accepted_upstream_path=current_source.upstream_path,
+                accepted_skill_entry_path="",
                 path_migration_commit="",
                 path_migration_evidence=(),
             )

@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-07-22`
 - 最近来源登记审核：`2026-07-22`
-- 说明：旧说明中的 labarba/sentence-polish URL 已核实为错误；真实仓库是 labarba/sciwrite，根技能名为 manuscript-writing-review。
+- 说明：旧说明中的 labarba/sentence-polish URL 已核实为错误；真实仓库是 labarba/sciwrite，根技能名为 manuscript-writing-review。sentence-polish 于 2026-08-10 并入本技能。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -14,20 +14,25 @@
 - 仓库：https://github.com/labarba/sciwrite.git
 - 当前上游路径：`.`
 - 接受时上游路径：`.`
+- 技能入口：`skills/sciwrite/SKILL.md`
+- 接受时技能入口：`SKILL.md`
 - 已接受提交：`8a57fa73d541bdcf7d8501db61c018cb454e9afa`
 - 基线类型：`exact`
+- 更新策略：`review`
 - 许可证：`CC BY 4.0`
 - 镜像登记：`labarba-sciwrite`
 
 ### 证据
 
 - 本地说明记录五项语言质量复查已吸收到论文精修流程。
+- 2026-11-01 仅修正入口定位：迁移提交29ee693为R099且同时修改正文，保留8a57fa73接受提交及根SKILL.md旧入口；新增入口仍需内容审核，不声明同树迁移或已吸收。
 - 本地证据文件：`ieee-manuscript-edit/references/upstream-skill-notes.md`
 - 本地证据文件：`ieee-manuscript-edit/references/manuscript-refinement-checklist.md`
+- 本地证据文件：`ieee-manuscript-edit/references/sainani-sentence-review.md`
 
 ### 已吸收
 
-- Sainani 五轮句子质量检查，作为完整论文精修中的语言复查步骤。
+- Sainai 五轮句子质量检查（含 full-review/section-review/targeted/interactive 四种审查模式和 CRITICAL/MAJOR/MINOR 三级严重度），作为完整论文精修中的语言复查步骤；sentence-polish 已并入。
 
 ### 明确不吸收
 
@@ -36,13 +41,10 @@
 ### 跟踪范围
 
 - `SKILL.md`
+- `skills/sciwrite/SKILL.md`
 
 ### 许可证监控
 
 - `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
-
-## 合并记录
-
-2026-08-10，原 `sentence-polish` 技能已并入本技能。完整 Sainani 五轮句子质量审查及其 full-review、section-review、targeted、interactive 四种审查模式和 CRITICAL、MAJOR、MINOR 严重程度分级，已合并到 [references/sainani-sentence-review.md](sainani-sentence-review.md)。上游来源仍为 labarba/sciwrite（CC BY 4.0，commit `8a57fa73`），未新增上游条目；原 `sentence-polish` 源目录将在集中登记更新并验证通过后删除。

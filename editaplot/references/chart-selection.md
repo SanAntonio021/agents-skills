@@ -12,7 +12,7 @@ is the current fully verified baseline.
 
 For standalone scientific plotting, prefer an editable Origin delivery when the selected route satisfies the full request. Check required axis scales, reference lines, markers, panels, and export formats before rendering. Route verification is not proof that every option is implemented. Report unsupported requirements rather than substituting linear axes or dropping elements. Simulation/measurement automatic plots and explicitly selected Python/MATLAB sources keep their existing implementation.
 
-The registry exposes 40 public plotting routes. Some table rows group closely related candidates,
+The registry exposes 45 public plotting routes. Some table rows group closely related candidates,
 so the number of rows is not the route count.
 我已验证 `density_ridgeline3d` 的完整 Origin 路线；它仍只接受冻结的六角色表，并遵守下面的
 数据与焦点边界。
@@ -28,6 +28,10 @@ so the number of rows is not the route count.
 | Absolute/relative composition | `stacked_bar`, `percent_stacked_bar` | category + >=2 nonnegative series | Confirm denominator for percent |
 | Small part-to-whole | `pie` | category + one nonnegative series | Prefer bar when categories are many |
 | Relationship | `scatter` | numeric X + numeric Y series | Do not auto-fit or delete outliers |
+| FLIM phasor distribution | `flim_phasor` | supplied G + S + explicit Group; 1–8 groups | Equal physical G/S scale; mathematical semicircle only; preserve outside points; no lifetime inversion, fitting or unmixing |
+| Supplied time–frequency field | `time_frequency` | complete uniform Time + Frequency + Power/Value long table, units in headers | Numeric physical axes, all cells, detached scale; no signal analysis or interpolation; negative dB is not automatically a signed change |
+| Multichannel signal comparison | `signal_stack` | Time + Channel/ROI + Amplitude/Intensity long table with explicit units | Preserve all samples, channel order and common amplitude units; confirm display offsets and unit ruler; no filtering, alignment, centering or normalization |
+| Supplied event timing across trials | `event_raster` | Time/unit + Trial + Condition long table; blank Time may declare inventory | Keep every event/empty trial and source-first order; confirm ordinal display positions; no event detection, PSTH/rates or response-based sorting |
 | Trend with uncertainty | `line_error` | X + value/error pairs | Define SD/SE/SEM/custom |
 | Ordered progression without uncertainty | `trend` | ordered numeric X + one or more numeric series | Preserve source order; do not smooth |
 | Comparable multimetric profile | `radar` | metric labels + >=2 nonnegative series; >=3 metrics | Confirm scales are comparable; never auto-normalize |
@@ -48,6 +52,7 @@ so the number of rows is not the route count.
 | Grouped raw distributions | `grouped_box` | raw columns named `Category | Group` | Preserve category/group text verbatim; show every point and exact n; never invent p-values, brackets, or stars |
 | Distribution with raw evidence and compact summary | `raincloud` | one or more raw numeric group columns, at least 5 observations/group | Half violin + all raw points + mean ± 1 SD; do not remove outliers |
 | Model feature contribution | `shap_summary` | Feature + precomputed SHAP value + numeric Feature value; optional order, Mean\|SHAP\|, group, group % | Never run SHAP; preserve SHAP X; confirm every display/helper summary derivation |
+| Side-by-side model importance and hierarchical contribution | `shap_dashboard` | Precomputed SHAP long table plus explicit Feature Group; 2–20 features, 2–5 groups | Left importance/percentages, right beeswarm, outer group and inner feature rings. Choose dashboard_blue_red, dashboard_viridis or dashboard_red_blue in the mapping mode; confirm the common percentage denominator |
 | Steady-state or time-resolved photoluminescence | `pl` | Wavelength or Time + one or more PL series; optional explicitly paired Fit columns | Preserve multi-condition order; TRPL uses log Y; never calculate lifetime or fit curves |
 | UV–Vis spectrum with optional Tauc evidence | `uv_vis` | Wavelength + one or more comparable Absorbance or Transmittance series; optional Photon energy + Tauc value/fit/Eg | Do not mix signal definitions without an explicit axis contract; never calculate photon energy, exponent, fit, or band gap |
 | Multi-condition 3D Nyquist trajectory | `trajectory3d` | Long table: explicit Zreal + real third variable with meaning/unit + explicit -Zimag + Series; 1–6 groups | Never create decorative depth, fit circuits, or infer the third variable |

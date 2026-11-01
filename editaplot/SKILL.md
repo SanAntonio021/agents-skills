@@ -40,12 +40,18 @@ rendering, exporting, and readback.
 
 ## Start with the beginner path
 
-1. Reject unsupported platforms before installing anything. Support the CLI/dependency layer only
-   on physical Windows 10/11 x64 with 64-bit CPython 3.10–3.12. Target Origin/OriginPro 2021 and
+1. Reject unsupported platforms before installing anything. Support the secure CLI/dependency layer only
+   on physical Windows 10/11 x64 with 64-bit CPython 3.11 or 3.12; recommend 3.12 for new installs.
+   The locked Pillow version is 13.0.0; CPython 3.10 is no longer supported by this secure runtime.
+   Target Origin/OriginPro 2021 and
    later through external `originpro`; Origin 2020b and earlier are unsupported by this route.
-   The fully verified live baseline is CPython 3.10 + Origin 2024b / 10.15. Treat another 2021+
-   version as capability-gated, not automatically verified, until its smoke and complete artifacts
-   pass. State plainly that macOS (Intel/Apple Silicon), Linux, WSL,
+   Retain the complete CPython 3.10 + Origin 2024b / 10.15 record as historical evidence only.
+   The current CPython 3.12.14 + Pillow 13.0.0 + Origin 2024b / 10.15.132 live regression covers
+   six representative cases with smoke, complete artifacts, independent saved-project reopening,
+   data/axis/physical-geometry readback, and re-exported PNG pixel identity checks. It does not
+   verify every route or Origin version; Python 3.11 has no live-verification claim. Require the
+   current workflow's smoke and artifact gates, and keep other 2021+ hosts capability-gated.
+   State plainly that macOS (Intel/Apple Silicon), Linux, WSL,
    Wine/CrossOver, Parallels, and other VMs are unsupported in V1. `doctor` cannot reliably detect
    every VM, so ask the user to confirm a physical Windows host when that fact is unknown.
 2. Locate `editaplot.cmd` in the installed Skill directory; when working from a cloned repository,
@@ -58,7 +64,7 @@ rendering, exporting, and readback.
    directories. If validation reports a stale or missing engine, repair the source distribution and
    resync it through CC Switch instead of patching a runtime copy. Read `references/runtime.md` for
    discovery, update, and command details.
-4. Reuse an existing compatible Python. If none exists, explain in Chinese that installing Python
+4. Reuse an existing compatible Python 3.11 or 3.12. Prepare the new locked environment through the authorized CC Switch source-distribution workflow; retain the old environment for recovery, but never select it automatically after a failed upgrade. If none exists, explain in Chinese that installing Python
    is a system-level change. Run `winget show` first and explain the exact publisher, source, and
    agreements. Only explicit user confirmation permits a later non-interactive installation of
    `Python.Python.3.12` with user scope and x64 architecture. If winget is unavailable, provide the
@@ -211,10 +217,23 @@ figures remain in PPT/SVG workflows.
   Neither a user style request nor a reference image may change source values or column roles, the
   high-to-low binding-energy axis contract, component identity, residual disposition, or the
   verified single-region `set_fill_area(..., type=9)` / `-pfm 3` fill implementation.
+- For FLIM, use `flim_phasor` for upstream G/S coordinates with optional groups. Keep every point,
+  including points outside the reference semicircle. Confirm the mathematical semicircle helper;
+  preserve equal physical G/S scales. Do not infer lifetimes, fit decays, unmix or cluster.
+- For supplied event times, use `event_raster` with explicit Time/unit, Trial and Condition. Confirm
+  source-order trial ordinals; blank Time entries declare inventory, not events at zero. Preserve
+  every event and empty lane, and retain zero-event conditions in the borderless outside legend.
+  Never detect events, calculate PSTH/rates or reorder trials by response. Read the event-table
+  section of `references/data-contracts.md`; only condition-compatible palettes may replace the default.
 - For SHAP, accept only externally precomputed per-sample contributions. Never train a model or
   invoke SHAP. Mean |SHAP| and optional group percentages may only summarize those supplied rows
   with the allow-listed formulas recorded in the semantic proposal and explicitly approved; never
   invent contributions or silently reorder features.
+- When the user requests separate importance bars, a beeswarm and a two-level contribution ring,
+  select `shap_dashboard`. Require explicit Feature Group, confirm feature/group percentages using
+  one total Mean |SHAP| denominator, and offer blue–white–wine, purple–green–yellow, or red–yellow–blue.
+  Freeze the selection as mapping plot_mode `dashboard_blue_red`, `dashboard_viridis`, or
+  `dashboard_red_blue`; do not substitute a general categorical palette for this continuous scale.
 - Confirm unknown units, error semantics, percentage denominators, meaningful order, dual axes,
   and any other choice that can change the claim.
 - Recommend from the scientific question and data structure, not aesthetics alone. Refuse a
@@ -239,6 +258,20 @@ figures remain in PPT/SVG workflows.
   medical image editor, or merged editable Origin project. Preserve every verified subproject.
 
 ## Apply the publication-informed contract
+
+For supplied time–frequency tables, choose `time_frequency` only when time, frequency and value
+columns explicitly state their units and form a complete uniform grid. Preserve both coordinate
+directions and every cell; use the numeric physical-axis route, not categorical `heatmap`.
+The route shows sequential value magnitude with a detached scale; it performs no FFT/STFT/wavelet,
+filtering, interpolation, baseline or dB conversion. A raw EEG voltage table needs upstream
+processing, not an invented frequency column. Read `references/data-contracts.md` for the input
+and unit contract; confirm any extra columns instead of silently drawing them.
+
+For multichannel EEG or fluorescence traces already supplied as a table, choose `signal_stack`.
+Require explicit Time/Channel/Amplitude roles and units, keep every observation and the channel
+order, and confirm the additive display offsets and common unit ruler. Channel/ROI identities
+remain text, including leading zeros. Do not filter, align, center, normalize, infer events or
+decode acquisition files. Direct names and the ruler live outside the true time-axis data range.
 
 - Make every chart defend one explicit conclusion or evidence role.
 - Use a white background, Arial, restrained color families, clear hierarchy, and no rainbow palette,

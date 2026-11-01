@@ -14,11 +14,17 @@
 
 ## Supported environment
 
-Support the CLI and locked dependency layer on physical Windows 10/11 x64 computers with 64-bit
-CPython 3.10, 3.11, or 3.12. Target Origin/OriginPro 2021 and later; Origin 2020b and earlier are
-unsupported by the current external `originpro` route. The fully verified live baseline is
-CPython 3.10 with Origin 2024b / 10.15. Other 2021+ versions are capability-gated, and
-Python 3.11/3.12 rendering needs the same full-artifact verification before it is claimed.
+Support the secure CLI and locked dependency layer on physical Windows 10/11 x64 computers with
+64-bit CPython 3.11 or 3.12; recommend 3.12 for new installations. The lock pins Pillow 13.0.0,
+and CPython 3.10 is no longer a supported secure runtime. Target Origin/OriginPro 2021 and later;
+Origin 2020b and earlier are unsupported by the current external `originpro` route. The complete
+CPython 3.10 with Origin 2024b / 10.15 record is historical evidence only. The current CPython
+3.12.14 + Pillow 13.0.0 + Origin 2024b / 10.15.132 regression covers six representative cases:
+XPS fit/comparison, error bars, time–frequency matrix, event raster, and 3D. Smoke, complete artifacts,
+independent saved-project reopening, data/axes/physical geometry, and re-exported PNG pixel identity
+checks passed. This does not verify every route or Origin version; Python 3.11 has no live claim.
+Each workflow still requires live smoke and complete artifact/visual gates; other 2021+ hosts remain
+capability-gated.
 Do not attempt setup on macOS (Intel or Apple Silicon), Linux, WSL, Wine/CrossOver, Parallels,
 or other virtual machines. A local Origin/OriginPro application must expose a working Automation
 entry when rendering is requested.
@@ -44,6 +50,17 @@ DCOM, registry, firewall, user-group, or Origin-installation changes. When a pro
 organization policy, cloud-sync client, or security tool blocks writing, request access only to the
 specific repository/data folder or ask the user for an explicit writable destination.
 
+A normal Codex desktop command may initially run under an isolated account even when inherited
+profile variables look like the signed-in user. The Origin worker checks its real Windows token and
+stops before COM with `origin_codex_sandbox_context` when the current process is the Codex sandbox.
+This also covers AppContainer processes that retain the signed-in account name.
+Codex must then submit a formal, narrowly scoped local-execution request for the same exact
+`origin-smoke` or `render` command. Rerun it only if that exact request is approved, either by the
+user when prompted or by the configured Codex auto-reviewer. Approval is not guaranteed; auto-review
+evaluates one request and does not pre-grant unrestricted Origin access. This is not a sandbox
+bypass. Do not send a beginner to a separate PowerShell window, request administrator rights, or
+change DCOM, the registry, or other system configuration.
+
 The bundled runtime and Origin process do not initiate a network upload of selected files. A file
 explicitly supplied through Codex remains subject to the user's Codex account, organization, and
 retention policies. Require deidentification and burned-in-text confirmation before inspecting
@@ -58,7 +75,13 @@ Do not ask a beginner to choose a Python executable or call `scripts/editaplot.p
 The launcher first honors an explicitly configured compatible interpreter, then reuses an existing
 valid EditaPlot managed environment. If neither is available, it probes Windows `py`, PATH, standard
 installation locations, and the Python registry entries together, then selects the highest compatible
-64-bit CPython from 3.10–3.12. It does not modify the selected base interpreter.
+64-bit CPython from 3.11–3.12. It does not modify the selected base interpreter. A Python 3.10
+managed environment is not a compatible candidate even when it satisfied an older dependency lock.
+
+An installed Skill reads setup's external runtime pointer before searching for global Python.
+Its small local PowerShell helper preserves Unicode paths and forwards arguments directly; the
+Python bootstrap still validates the managed fingerprint and dependency lock. A missing or stale
+pointer continues normal discovery. No PATH, registry, or persistent PowerShell policy is changed.
 
 If no compatible candidate exists, explain that Python installation is a system-level change.
 Inspect the exact package first:
@@ -107,6 +130,16 @@ are reviewed in the comparison-only mirror, then exported from the accepted comm
 versioned snapshot and distributed through the tracked pointer. Do not package `.editaplot-venv`
 into the Skill repository.
 
+For an older environment in this personal distribution, prepare the new versioned runtime through the authorized CC Switch source-distribution workflow; do not run setup against an installed Skill copy. It must select a
+compatible interpreter rather than try to install Pillow 13.0.0 into Python 3.10. Successful
+migration retains the previous environment under `.editaplot-venv.retained-*`; later repairs do
+not purge these archives, and discovery/recovery never selects them automatically. A failed staged
+installation stops with diagnostics and may restore the previous environment to its original
+location, but it must not execute that older vulnerable dependency set as a fallback. If no
+compatible interpreter exists, stop before environment replacement and use the explicit-consent
+Python installation flow above. Never edit global packages, PATH, registry, Origin, or the current
+permission/Origin-job-queue policy as part of this migration.
+
 `--diagnose` reports launcher/Python discovery. Doctor separately reports Windows, engine, dependency,
 and local Origin Automation registration discovery. It is read-only and never launches Origin.
 `ready_for_render` means that the prerequisites for attempting the default isolated launch were
@@ -148,10 +181,11 @@ do not expose the internal pipeline to a beginner.
 
 `understand` is the mandatory pre-plan semantic gate. It classifies every source column, proposes
 visible figure elements and explicitly lists derived helpers and unresolved questions. If a corrected
-column mapping is required, pass the same `--mapping-json` to both `understand` and `plan`. Ask the
-user to confirm the short checklist, then pass the exact hash-bound
+column mapping is required, pass the same `--mapping-json` to both `understand` and `plan`. Reuse already authorized scientific choices; ask only about unresolved meaning, then pass the exact hash-bound
 `confirmation_payload_template` back as `--semantic-confirmation-json`. A source or mapping change
 invalidates that confirmation.
+After an update, an older frozen plan can report `analysis_changed`. Rerun `understand`, obtain a
+a fresh hash-bound payload reusing still-valid authorized choices, and generate a new plan rather than hand-editing JSON to bypass the gate.
 
 ## Advanced commands
 

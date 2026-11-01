@@ -27,4 +27,4 @@ Claims such as “widely used,” “the first,” “state of the art,” or �
 
 Read the `vocab/英文/通用.md` and `vocab/英文/论文.md` files shipped with the `style-vocab` skill when available. Read `vocab/术语.md` only when bilingual terms need alignment.
 
-Use [sainani-sentence-review.md](sainani-sentence-review.md) only for a requested full sentence review. Its checks produce candidates, not automatic rewrites.
+For a requested English sentence, paragraph, or abstract writing review, use [sainani-sentence-review.md](sainani-sentence-review.md), limited to the requested scope. For an abstract, also use its abstract checks. Findings are candidates for review; they do not authorize automatic rewrites or a whole-manuscript audit.

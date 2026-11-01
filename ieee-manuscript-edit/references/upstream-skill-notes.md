@@ -7,18 +7,22 @@
 链接：https://github.com/labarba/sciwrite
 许可：CC BY 4.0
 
-**当前状态（2026-08-10 更新）：** sentence-polish 已于 2026-08-10 并入本技能。完整 Sainani 五轮审查及其四种模式和三级严重度现存于 `references/sainani-sentence-review.md`。
+**历史基线：** sentence-polish 已于 2026-08-10 并入本技能。完整 Sainani 五轮审查及其四种模式和三级严重度现存于 [句子审查参考](sainani-sentence-review.md)。集中登记的旧接受提交是 `8a57fa73d541bdcf7d8501db61c018cb454e9afa`；入口修复不代表吸收正文。
 
 **分工：**
 - `ieee-manuscript-edit` 同时管内容层面精修和纯英文句子质量审查。内容精修走主流程；独立句子审查（full-review/section-review/targeted/interactive）读 `references/sainani-sentence-review.md`。
 
-**已吸收到 ieee-manuscript-edit 的内容保留不动：**
+**原有吸收落点：**
 - `SKILL.md` 主流程中的五项语言质量复查步骤。
 - `references/manuscript-refinement-checklist.md` 中融合的具体检查项。
 
-**原始背景：**
-- 仓库规模小，维护不活跃，核心内容是基于 Sainani 课程的静态方法论提炼。
-- IEEE 风格、通信硬件论文图文对应和本地术语库流程仍由 ieee-manuscript-edit 本地规则承担。
+**本轮正文适配：** 正式 release 为 `v1.0.0`，tag commit `07ff1389f4394d19c21ff4ffba50ee2c0b40fb2d`（2026-10-28）；审核 HEAD 为 `347306c514619fa2806e96c8e0aa1c2db162e76f`。当前 `skills/sciwrite/SKILL.md`、`references/summary-paragraph.md`、`references/section-guidance.md` 与内容 LICENSE 均与该 release 相同，不能把 HEAD 本身称为 release。上游已有新正文与拆分参考，不再沿用历史“维护不活跃”的描述。
+
+- 选择吸收：源码标记及精确定位保护、保留拼写风格和技术名；图像核验须有图像或数据；悬垂修饰、歧义指代、段落主线和伪转折；重复发现合并及重要问题可操作定位；摘要结果存在性与信息功能检查。落在 [句子、段落与摘要参考](sainani-sentence-review.md)，英文入口按需加载。
+- 不采用：自动改数学数字、机械否定转肯定、猜测执行者、默认整稿审查；未知期刊套用 Nature 七 moves、句数、字数及引用政策，或强制删工程参数与缩写。保留本地科学事实、任务范围、中文/英文分流和期刊核实规则。
+- 章节功能与合并 Results and Discussion 的处理已有本地 [分节审查](section-by-section-review.md)，不复制第二套章节规范，不强制拆节。没有吸收其禁用新写/翻译的路由范围，IEEE 格式、通信硬件图文关系及术语库仍走本地流程。
+- 署名：Lorena A. Barba，原作 [labarba/sciwrite v1.0.0](https://github.com/labarba/sciwrite/tree/v1.0.0/skills/sciwrite)，内容 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)，本地改编 Wang Weipeng (UESTC)。没有复制上游 Python/CI 代码（另为 BSD-3-Clause），也未复制 Nature PDF 原文。
+- 本页记录源码适配范围；正式接受提交与来源跟踪路径由集中维护串行回填，运行时同步另行执行，不能由本页推定已发布。
 
 ## ailabs-393/research-paper-writer
 

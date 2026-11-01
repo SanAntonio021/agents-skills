@@ -63,7 +63,7 @@ metadata:
 
 只有当前任务确实需要时才加载：
 
-- 独立英文句子审查：[Sainani 五轮检查](references/sainani-sentence-review.md)。
+- 独立英文句子、段落或摘要表达审查：[Sainani 五轮检查与摘要检查](references/sainani-sentence-review.md)；仅在当前英文授权范围内使用。
 - IEEE 结构、引用和图表：[IEEE 结构与风格](references/ieee-structure-and-style.md)。
 - 目标 IEEE 模板：[官方模板缓存](references/ieee-official-template-cache.md)。
 - 术语长期维护：[写作记忆结构](references/writing-memory-schema.md)。

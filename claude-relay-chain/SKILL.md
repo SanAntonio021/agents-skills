@@ -8,7 +8,7 @@ description: >
   直连模式或本地路由/模型映射模式、OpenAI/Gemini 接口转换、配置能回复但另一入口失败，
   或要求导入/切换/排查 Claude 中转供应商、切回官方后遇到 OAuth 401 或登录提示缺失时，优先使用本技能。
   需要核对 CC Switch 的 Claude 后台工具就绪状态并继续只读链路诊断时，也使用本技能。
-compatibility: Windows PowerShell 5.1 or later; Python 3 is optional for read-only CC Switch database inspection.
+compatibility: Windows PowerShell 5.1 or later; Official desktop diagnostics require the maintained desktop bridge and its Python runtime; file checks remain independent.
 ---
 
 # Claude 中转链排障
@@ -18,10 +18,10 @@ compatibility: Windows PowerShell 5.1 or later; Python 3 is optional for read-on
 需要后台组件时，按用户指定位置、当前项目说明或已核实的维护目录定位
 `automation/ccswitch-background/README.md`；入口为同目录 `Invoke-CcSwitchBackground.ps1`。
 启动用户主目录下 `.agent-rules/local.md` 存在时可补充“规则维护目录”，缺失不要求创建，也不阻止独立的只读诊断。
-使用已经展开并核验的绝对路径；组件找不到或固定 CLI 校验失败时，只暂停依赖组件的操作并报告原因，不猜路径、不从 PATH
+使用已经展开并核验的绝对路径；组件找不到或所选后端身份校验失败时，只暂停依赖组件的操作并报告原因，不猜路径、不从 PATH
 替换同名程序。步骤以共用指南为准，此处不复制配置维护实现。
 
-共用入口本轮仅支持 `-App claude -Mode Inspect`，用于确认固定后台工具就绪；不提供 Claude 配置
+共用入口本轮仅支持 `-App claude -Mode Inspect`，用于确认所选后台工具就绪；候选入口不代表已通过完整验收；不提供 Claude 配置
 写入能力，也不代替下文 `audit-claude-relay.ps1` 的供应商、双入口、模型映射及请求链路审计。
 保留现有诊断和已授权配置维护职责；不能把 Codex 的 Preview/Apply 用于 Claude 配置。
 CC Switch 操作全程不切换窗口、不模拟键鼠、不驱动交互式终端。未覆盖的修改先查受支持后台接口；
@@ -70,7 +70,7 @@ Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 
    - 默认兜底：`ANTHROPIC_MODEL`。它用于未明确指定 Sonnet、Opus、Fable、Haiku 角色的请求；它不是自动故障转移，也不会替代一个已明确选择的角色。
 2. `model: "opus"`、`/model` 的 `Default` 或 `Opus` 走 `ANTHROPIC_DEFAULT_OPUS_MODEL`，而不是 `ANTHROPIC_MODEL`。因此，若用户把兜底设为 `claude-opus-4-6`，但 Opus 角色仍指向另一模型，Default/Opus 不会自动改为 4.6。以当前 Claude Code 的本地变更记录和实际请求日志为准，不凭界面文案猜测。
 3. CC Switch 的 Sonnet、Opus、Fable、Haiku 是独立角色槽位。不要为了保留第二个 Opus 变体而擅自占用 Fable；若用户同时要保留 Fable 和两个 Opus 变体，说明当前角色菜单没有额外槽位，建议另建明确用途的 provider/configuration，或仅在目标客户端确实支持时使用直接模型 ID。
-4. 判断有效映射时，按三个层次对照：当前 `providers.is_current` 记录、CC Switch 渲染出的 `%USERPROFILE%\.claude\settings.json`、以及本地代理日志或 `proxy_request_logs` 的 `request_model` 与实际 `model`。三者不一致是配置漂移；不能因数据库或截图其中之一正确，就声称端到端使用了该模型。
+4. 判断有效映射时，按三个层次对照：官方查询的当前 provider、CC Switch 渲染出的 `%USERPROFILE%\.claude\settings.json`、以及可用的本地代理日志或已验收官方请求记录中的请求模型与实际模型。三者不一致是配置漂移；缺少任一层证据时保留未验证，不能因当前配置或截图正确就声称端到端使用了该模型。
 5. `1M` 复选框、`[1m]` 模型后缀或网关接受该 ID，只表示客户端/网关接受了 1M 变体请求，不证明上游实际提供 1M 上下文。优先查返回元数据中的 `context_window`；没有该字段时，只有经用户同意且成本可接受的超过 200K token 受控边界测试才能确认。模型列表出现、请求成功，或后端静默改写为另一模型，均不能替代该验证。
 
 ## 工作流程
@@ -87,7 +87,7 @@ Desktop 模型发现问题看对应 profile、路由和模型列表。只有相�
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\audit-claude-relay.ps1"
 ```
 
-需要机器可读结果时加 `-AsJson`。脚本只读取配置、注册表存在性、监听端口和 CC Switch DB 的脱敏字段；不会发送网络请求或修改文件。
+需要机器可读结果时加 `-AsJson`。脚本读取配置、注册表存在性和监听端口，并通过官方桌面通道返回脱敏供应商摘要，不访问数据库。新增 `-DesktopBridge` 指向已核验的 `CcSwitchDesktop.psm1`（或设置进程变量 `CCSWITCH_DESKTOP_MODULE`），`-DesktopStateRoot` 可指定私有连接状态；维护源码可按相对位置找到组件，运行副本找不到时标为 `UNAVAILABLE`。原 `-CcSwitchDb` 仅兼容接受，不打开。回执 schema 为 2，标明官方来源及 `databaseRead=false`。
 
 完整审计覆盖以下项目；局部检查只取与当前问题有关的项目，不修改脚本接口：
 
@@ -98,25 +98,25 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\audit-claude-
 - `_meta.json` 的 `appliedId`、实际 profile、gateway base URL、认证方案和凭据存在性。
 - CC Switch 当前 Claude Desktop provider 的 `meta.claudeDesktopMode`、`meta.apiFormat` 和模型映射数量。
 
-若 Python 3 不存在，脚本仍完成文件、注册表和端口检查，但把 CC Switch DB 检查标为 `UNAVAILABLE`，不能据此猜测模式。
+若桥接组件、Python 或已核验调试通道不可用，脚本仍完成文件、注册表和端口检查，官方查询部分标为 `UNAVAILABLE`，不能据此猜测模式。代理监听字段来自官方运行态；缺少该证据时默认端口仅用于观察，不能据此声称配置已核实。
 
 #### 自动故障转移专项审计
 
 用户询问自动切换，或日志提示故障转移与当前问题有关时执行本节。不能把“当前 provider 没变”当成“期间没有发生切换”。记录所查时段；现场观察时记下 `audit_started_at`（使用本机北京时间），并核对以下资料：
 
-1. `proxy_config.auto_failover_enabled`：报告当前开关；字段缺失时写 `未验证`。
-2. 当前 Claude provider 的 `providers.in_failover_queue`、`provider_health` 和 `proxy_request_logs`：只读出 provider ID、`app_type`、状态/错误类别、时间和模型等脱敏字段，不输出凭据或完整请求内容。表或列不存在时记录 `UNAVAILABLE`，不得用缺失当作“没有故障”。
+1. 仅通过已核对副作用的官方接口查询自动故障转移配置、健康与事件状态；当前诊断契约未暴露的字段标为 `UNAVAILABLE`，不查表补齐。
+2. 当前 provider 来自 `get_current_provider` 和 `get_providers`；这是当前状态，不能证明历史切换事件。官方请求历史查询尚未验收，不把接口缺失当作“没有故障”。
 3. CC Switch 日志中的 `[FO-001]`：把它作为实际发生的 provider 切换证据，记录事件时间、脱敏的源/目标 provider 和结果。
 
-按 `audit_started_at` 将 `[FO-001]` 和请求日志分成“审计前历史”和“审计窗口新增”。即使 provider 后来切回原值，只要窗口内出现过 `[FO-001]`，仍必须报告实际发生过自动切换；最终 provider 只描述当前状态，不能覆盖事件证据。若只能确认配置开关、不能确认事件，分别写清“配置状态已证实、实际切换未证实”，不要推断。
+按 `audit_started_at` 将 `[FO-001]` 和可用的官方请求记录分成“审计前历史”和“审计窗口新增”。即使 provider 后来切回原值，只要窗口内出现过 `[FO-001]`，仍必须报告实际发生过自动切换；最终 provider 只描述当前状态，不能覆盖事件证据。若只能确认配置开关、不能确认事件，分别写清“配置状态已证实、实际切换未证实”，不要推断。
 
 ### 2. 自动判断 CC Switch 模式
 
-问题涉及 Desktop 时，以 CC Switch DB 当前 `app_type = 'claude-desktop'` provider 的结构化字段为准：
+问题涉及 Desktop 时，以官方 `get_current_provider` / `get_providers` 返回的 `claude-desktop` 当前 provider 结构化字段为准：
 
 - `meta.claudeDesktopMode = direct`：直连模式。Desktop profile 应指向供应商远端 `ANTHROPIC_BASE_URL`。只支持原生 Anthropic Messages API；`meta.apiFormat` 应为 `anthropic`。
 - `meta.claudeDesktopMode = proxy`：本地路由/模型映射模式。Desktop profile 应指向 `http://127.0.0.1:<port>/claude-desktop`，CC Switch 再按模型映射转发或转换接口。
-- 字段缺失、DB 无当前 provider、profile 与预期地址不一致：状态不明确或配置漂移。不要靠 provider 名称推断。
+- 字段缺失、官方查询无当前 provider 或查询不可用、profile 与预期地址不一致：状态不明确或配置漂移。不要靠 provider 名称推断。
 
 本地路由模式可承接 CC Switch 支持转换的 Anthropic、OpenAI、Gemini 等上游格式；是否可用仍必须由该版本 CC Switch 的实际 provider `apiFormat`、模型映射和端到端请求证明。
 
@@ -157,8 +157,8 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 
 执行顺序固定：
 
-1. 重新读取目标文件和 DB 状态，确认没有从审计后发生变化。
-2. 备份这次将修改的具体对象；数据库备份必须可打开，文件备份记录 SHA-256。
+1. 重新读取目标文件和官方查询状态，确认没有从审计后发生变化。
+2. 备份这次将修改的具体对象；通过官方受支持入口保存恢复材料，文件备份记录 SHA-256，不自行访问或复制生产数据库。
 3. 通过当前确实支持该动作的后台接口做最小改动，保持 CC Switch 的配置归属；Inspect 不能用于写入，接口不可用时按开头规定报告。
 4. 需要重新加载配置时，只处理受影响的应用。先核对运行任务与未保存工作及已有授权，避免中断用户工作；具备条件才正常重载或退出重开，不强停进程。暂不能重载时先完成静态检查，标明运行态尚未验证。
 5. 按本次目标验证；失败先查原因，在原范围内修正和必要重试，超出范围的修改单独处理。
@@ -195,4 +195,4 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 - 把 issue 已关闭或出现修复提交，当成当前安装版本已经修复。
 - 仅看到一次文本回复就声称已完成包含 streaming、tool use 和目标应用的整条链路验收。
 - 直接改生成的 `.claude\settings.json`，忽略 CC Switch 重新渲染造成的字段丢失；历史观察及当前归属核对见配置参考。
-- 输出完整 key、完整 profile、完整 DB JSON 或把 key 放进命令行参数。
+- 输出完整 key、完整 profile、完整供应商 JSON 或把 key 放进命令行参数。

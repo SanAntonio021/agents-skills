@@ -104,15 +104,9 @@ mode = "passthrough"
 
 ### 4. 检查 CC Switch 当前 provider
 
-用 SQLite 读 `%USERPROFILE%\.cc-switch\cc-switch.db`。只输出 key mask，不输出完整 key。
+通过已核验的官方桌面通道查询 `get_providers`、`get_current_provider` 及官方代理状态接口，保留目标对象的私有基线。只输出身份、状态和认证摘要，不输出完整 key。通道不可用或该状态没有受支持的查询接口时标记受阻，不改用 SQLite 读取生产数据库。
 
-重点表：
-
-- `providers`：当前 provider、配置和 key。
-- `proxy_config`：本地代理和 live takeover 状态。
-- `proxy_live_backup`：CC Switch 接管 Codex 配置时保存的备份。
-
-`providers.settings_config` 里通常有：
+官方 provider 返回的 `settingsConfig` 里通常有：
 
 ```json
 {
@@ -126,23 +120,20 @@ mode = "passthrough"
 
 #### 切换前检查目标 provider 地址
 
-新版 CC Switch 不一定有独立的 `providers.base_url` 列。真实地址可能位于
-`providers.settings_config` 的 JSON 内，再嵌套在 `config` TOML 字符串中。用 JSON 和
-TOML 解析器读取，不要假设列名，也不要用字符串拼接读取 API key。
+真实地址可能位于官方查询返回的 `settingsConfig` 内，再嵌套在 `config` TOML 字符串中。
+用 JSON 和 TOML 解析器读取，不依赖数据库列名，也不要用字符串拼接读取 API key。
 
 切换目标 provider 前确认它的远端 `base_url`：
 
 - 远端 provider 不应指向 `http://127.0.0.1:8787/v1` 或 `http://127.0.0.1:15721/v1`。
 - 如果目标 provider 指向 `8787`，链路会变成 `8787 -> 15721 -> 8787`，最终超时或返回 502/504。
-- 更正前记录 `cc-switch.db` 哈希；在 CC Switch 中只修正该 provider 的远端地址并保留原 API key，
-  不直接写数据库。
+- 更正前保存官方查询得到的目标 provider 私有基线和安全摘要；只经受支持接口修正目标远端地址并保留原 API key。保护契约不能满足时写前停止。
 - 远端地址必须来自历史配置、备份或 provider 官方信息，不凭名称猜测。
 
 切换完成后同时核对：
 
-- `%USERPROFILE%\.cc-switch\settings.json` 的 `currentProviderCodex`。
-- `providers.is_current`。
-- 两者都指向目标 provider，且目标 provider 的远端地址没有被 watcher 改成本地端口。
+- 官方 `get_current_provider` 返回的当前身份与 provider 清单一致。
+- 实际应用文件和代理状态符合目标链路，目标 provider 的远端地址没有被 watcher 改成本地端口。
 
 #### 官网状态、健康探测和熔断状态不是同一件事
 
@@ -290,26 +281,14 @@ Desktop 自管状态。
   Get-ScheduledTask | Where-Object { $_.TaskName -match "Codex|CC.?Switch" } | Select-Object TaskName, State
   ```
   即使脚本源文件已被删除、路径不存在，进程仍可能常驻并继续生效——不要只看计划任务，也要看当前运行进程的命令行。
-- **(b) CC Switch 自身的本地代理接管**：`proxy_config` 表里对应 `app_type` 的
-  `proxy_enabled`/`enabled` 为 1 时，CC Switch 会把 `config.toml` 输出为自己的本地代理端口
-  （通常 15721）。这与 (a) 无关，在 `ccswitch-owned` 下属于 CC Switch 的正常职责。只读排查：
-  ```python
-  import sqlite3
-  import os
-from pathlib import Path
-db = Path(os.environ["USERPROFILE"]) / ".cc-switch" / "cc-switch.db"
-con = sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)
-  cur = con.cursor()
-  cur.execute("SELECT app_type, proxy_enabled, enabled FROM proxy_config")
-  print(cur.fetchall())
-  ```
+- **(b) CC Switch 自身的本地代理接管**：通过官方代理状态接口核对当前应用的代理意愿和实际接管。CC Switch 可能将 `config.toml` 输出为自己的本地代理端口（通常 15721）；在 `ccswitch-owned` 下这是其正常职责。与实际监听和配置投影相互核对，接口缺失时保留未核实状态，不读取生产数据库表。
 
 先停掉 (a) 后短时间稳定，不代表 (b) 不存在；验证至少等待 60 秒。但如果目标仍是
 `ccswitch-owned`，发现 (b) 后不应关闭或直接改库，而应回到 CC Switch 设置目标 provider 与代理模式。
 
 #### `ccswitch-owned` 落地顺序
 
-1. 保存 DB、Common Config、`config.toml`、`auth.json` 语义和任务 XML 的只读基线。
+1. 保存官方查询的 provider、Common 和代理私有基线，以及 `config.toml`、`auth.json` 语义和任务 XML；不读取生产数据库结构。
 2. 停用已确认的外部 writer 或 CodexCont 任务；保留安装文件和可逆任务定义。
 3. 在 CC Switch 中选择直连上游的 provider，设置该 provider 的认证与模型；通用推理强度和
    `show-context-window-usage` 继续由 Common Config 管理。

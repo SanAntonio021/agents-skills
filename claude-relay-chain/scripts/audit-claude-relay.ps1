@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 
 [CmdletBinding()]
 param(
@@ -6,7 +6,9 @@ param(
     [string]$CcSwitchSettings = (Join-Path $env:USERPROFILE '.cc-switch\settings.json'),
     [string]$ClaudeSettings = (Join-Path $env:USERPROFILE '.claude\settings.json'),
     [string]$DesktopConfigLibrary = (Join-Path $env:LOCALAPPDATA 'Claude-3p\configLibrary'),
-    [switch]$AsJson
+    [switch]$AsJson,
+    [string]$DesktopBridge,
+    [string]$DesktopStateRoot = (Join-Path $env:LOCALAPPDATA 'ccswitch-desktop')
 )
 
 Set-StrictMode -Version Latest
@@ -179,148 +181,43 @@ function Get-RegistryPolicySummary {
     return [pscustomobject]$summary
 }
 
-function Invoke-CcSwitchDbAudit {
-    param([string]$Path)
-
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        return [pscustomobject]@{
-            available = $false
-            reason = 'database file not found'
-            providers = @()
-            proxyConfig = @()
-        }
+function Invoke-CcSwitchDesktopAudit {
+    # CcSwitchDb is retained for compatibility and is never opened.
+    $unavailable = [ordered]@{
+        available = $false
+        reason = 'desktop_bridge_unavailable'
+        source = 'official-desktop-cdp'
+        databaseRead = $false
+        providers = @()
+        proxyConfig = @()
     }
-
-    $python = Get-Command python -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -eq $python) {
-        return [pscustomobject]@{
-            available = $false
-            reason = 'Python 3 not found; SQLite inspection skipped'
-            providers = @()
-            proxyConfig = @()
-        }
-    }
-
-    $pythonCode = @'
-import json
-import os
-import sqlite3
-from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
-
-
-def parse_json(raw):
-    if not raw:
-        return {}
-    try:
-        value = json.loads(raw)
-        return value if isinstance(value, dict) else {}
-    except Exception:
-        return {}
-
-
-def safe_url(value):
-    if not isinstance(value, str) or not value.strip():
-        return "absent"
-    try:
-        parts = urlsplit(value.strip())
-        if not parts.scheme or not parts.hostname:
-            return "<invalid or redacted>"
-        host = parts.hostname
-        if ":" in host and not host.startswith("["):
-            host = f"[{host}]"
-        if parts.port is not None:
-            host = f"{host}:{parts.port}"
-        path = parts.path.rstrip("/")
-        return urlunsplit((parts.scheme.lower(), host.lower(), path, "", ""))
-    except Exception:
-        return "<invalid or redacted>"
-
-
-def route_summary(routes):
-    if not isinstance(routes, dict):
-        return 0, 0, []
-    non_identity = 0
-    pairs = []
-    for source, config in routes.items():
-        target = config.get("model") if isinstance(config, dict) else None
-        if isinstance(target, str) and target and target != source:
-            non_identity += 1
-        pairs.append({"source": str(source), "target": str(target or "absent")})
-    return len(routes), non_identity, pairs
-
-
-db_path = Path(os.environ["CLAUDE_RELAY_AUDIT_DB"]).resolve().as_posix()
-connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-connection.row_factory = sqlite3.Row
-
-providers = []
-for row in connection.execute(
-    "SELECT id, app_type, name, provider_type, settings_config, meta, is_current "
-    "FROM providers WHERE app_type IN ('claude', 'claude-desktop') AND is_current = 1 "
-    "ORDER BY app_type"
-):
-    settings = parse_json(row["settings_config"])
-    meta = parse_json(row["meta"])
-    env = settings.get("env") if isinstance(settings.get("env"), dict) else {}
-    routes = meta.get("claudeDesktopModelRoutes")
-    route_count, non_identity_count, route_pairs = route_summary(routes)
-    providers.append({
-        "id": row["id"],
-        "appType": row["app_type"],
-        "name": row["name"],
-        "providerType": row["provider_type"],
-        "baseUrl": safe_url(env.get("ANTHROPIC_BASE_URL")),
-        "credentialPresent": bool(env.get("ANTHROPIC_AUTH_TOKEN") or env.get("ANTHROPIC_API_KEY")),
-        "model": settings.get("model") or env.get("ANTHROPIC_MODEL") or "absent",
-        "desktopMode": meta.get("claudeDesktopMode") or "unknown",
-        "apiFormat": meta.get("apiFormat") or "unknown",
-        "routeCount": route_count,
-        "nonIdentityRouteCount": non_identity_count,
-        "routes": route_pairs,
-    })
-
-proxy_config = []
-columns = {row[1] for row in connection.execute("PRAGMA table_info(proxy_config)")}
-wanted = [
-    "app_type", "proxy_enabled", "enabled", "listen_address", "listen_port",
-    "auto_failover_enabled", "live_takeover_active"
-]
-selected = [name for name in wanted if name in columns]
-if selected:
-    sql = "SELECT " + ", ".join(selected) + " FROM proxy_config WHERE app_type IN ('claude', 'claude-desktop')"
-    for row in connection.execute(sql):
-        proxy_config.append({name: row[name] for name in selected})
-
-connection.close()
-print(json.dumps({"available": True, "providers": providers, "proxyConfig": proxy_config}, ensure_ascii=False))
-'@
-
-    $oldDbEnvironment = [Environment]::GetEnvironmentVariable('CLAUDE_RELAY_AUDIT_DB', 'Process')
-    $oldPythonIoEncoding = [Environment]::GetEnvironmentVariable('PYTHONIOENCODING', 'Process')
-    $oldPythonUtf8 = [Environment]::GetEnvironmentVariable('PYTHONUTF8', 'Process')
     try {
-        [Environment]::SetEnvironmentVariable('CLAUDE_RELAY_AUDIT_DB', $Path, 'Process')
-        [Environment]::SetEnvironmentVariable('PYTHONIOENCODING', 'utf-8', 'Process')
-        [Environment]::SetEnvironmentVariable('PYTHONUTF8', '1', 'Process')
-        $rawOutput = $pythonCode | & $python.Source - 2>$null
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace(($rawOutput -join ''))) {
-            throw 'Python SQLite audit failed'
+        $bridgePath = $DesktopBridge
+        if ([string]::IsNullOrWhiteSpace($bridgePath)) {
+            $bridgePath = $env:CCSWITCH_DESKTOP_MODULE
         }
-        return (($rawOutput -join "`n") | ConvertFrom-Json)
+        if ([string]::IsNullOrWhiteSpace($bridgePath)) {
+            # Works in the maintained source tree. Runtime copies use an explicit path.
+            $bridgePath = Join-Path $PSScriptRoot '..\..\..\automation\ccswitch-desktop\CcSwitchDesktop.psm1'
+        }
+        if (-not [IO.Path]::IsPathRooted($bridgePath) -or
+            -not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
+            return [pscustomobject]$unavailable
+        }
+        $bridge = Import-Module -Name $bridgePath -Scope Local -PassThru -ErrorAction Stop
+        $invoke = $bridge.ExportedCommands['Invoke-CcSwitchDesktopRequest']
+        if ($null -eq $invoke) { return [pscustomobject]$unavailable }
+        $receipt = & $invoke -Action 'claude-diagnostics' -Request @{TimeoutSeconds=5} -StateRoot $DesktopStateRoot
+        if ((Get-PropertyValue -Object $receipt -Name 'exit_code') -ne 0 -or
+            (Get-PropertyValue -Object $receipt -Name 'diagnostic_schema_version') -ne 2) {
+            $reason = [string](Get-PropertyValue -Object $receipt -Name 'error_code')
+            if ($reason -match '^[a-z_]{1,100}$') { $unavailable.reason = $reason }
+            return [pscustomobject]$unavailable
+        }
+        return $receipt
     }
     catch {
-        return [pscustomobject]@{
-            available = $false
-            reason = $_.Exception.Message
-            providers = @()
-            proxyConfig = @()
-        }
-    }
-    finally {
-        [Environment]::SetEnvironmentVariable('CLAUDE_RELAY_AUDIT_DB', $oldDbEnvironment, 'Process')
-        [Environment]::SetEnvironmentVariable('PYTHONIOENCODING', $oldPythonIoEncoding, 'Process')
-        [Environment]::SetEnvironmentVariable('PYTHONUTF8', $oldPythonUtf8, 'Process')
+        return [pscustomobject]$unavailable
     }
 }
 
@@ -479,20 +376,25 @@ catch {
     Add-Check -Area 'Desktop 3P applied profile' -Status 'WARN' -Detail ("could not inspect local profile: {0}" -f $_.Exception.GetType().Name)
 }
 
-# CC Switch database
-$dbAudit = Invoke-CcSwitchDbAudit -Path $CcSwitchDb
-$surfaces.ccSwitch.dbAuditAvailable = [bool](Get-PropertyValue -Object $dbAudit -Name 'available')
+# Official desktop query; the legacy database argument is never accessed.
+$desktopAudit = Invoke-CcSwitchDesktopAudit
+$surfaces.ccSwitch.dbAuditAvailable = $false
+$surfaces.ccSwitch.databaseRead = $false
+$surfaces.ccSwitch.auditSource = 'official-desktop-cdp'
+$surfaces.ccSwitch.desktopAuditAvailable = [bool](Get-PropertyValue -Object $desktopAudit -Name 'available')
 $desktopProvider = $null
 $claudeProvider = $null
 $proxyRow = $null
-if (-not $surfaces.ccSwitch.dbAuditAvailable) {
-    $reason = Get-PropertyValue -Object $dbAudit -Name 'reason'
-    Add-Check -Area 'CC Switch database' -Status 'UNAVAILABLE' -Detail ([string]$reason)
-    Add-Recommendation 'Do not infer CC Switch direct/proxy mode until the database can be inspected read-only.'
+if (-not $surfaces.ccSwitch.desktopAuditAvailable) {
+    $reason = Get-PropertyValue -Object $desktopAudit -Name 'reason'
+    Add-Check -Area 'CC Switch official desktop' -Status 'UNAVAILABLE' -Detail ([string]$reason)
+    Add-Recommendation 'Do not infer CC Switch direct/proxy mode until official desktop queries are available.'
 }
 else {
-    Add-Check -Area 'CC Switch database' -Status 'PASS' -Detail 'opened with SQLite mode=ro; only redacted fields were returned.'
-    foreach ($provider in @(Get-PropertyValue -Object $dbAudit -Name 'providers')) {
+    Add-Check -Area 'CC Switch official desktop' -Status 'PASS' -Detail 'official queries succeeded; only redacted fields were returned; database was not opened.'
+    $surfaces.ccSwitch.unavailableFields = @(Get-PropertyValue -Object $desktopAudit -Name 'unavailableFields')
+    Add-Check -Area 'CC Switch historical failover evidence' -Status 'UNAVAILABLE' -Detail 'Auto-failover configuration, provider health and request history are not exposed by this diagnostic contract.'
+    foreach ($provider in @(Get-PropertyValue -Object $desktopAudit -Name 'providers')) {
         $appType = Get-PropertyValue -Object $provider -Name 'appType'
         if ($appType -eq 'claude-desktop') {
             $desktopProvider = $provider
@@ -501,7 +403,7 @@ else {
             $claudeProvider = $provider
         }
     }
-    foreach ($row in @(Get-PropertyValue -Object $dbAudit -Name 'proxyConfig')) {
+    foreach ($row in @(Get-PropertyValue -Object $desktopAudit -Name 'proxyConfig')) {
         if ((Get-PropertyValue -Object $row -Name 'app_type') -eq 'claude') {
             $proxyRow = $row
             break
@@ -558,21 +460,22 @@ else {
     }
 }
 
-# Listener state, based on DB when available
+# Listener state; runtime address when available, otherwise an unverified default
 $listenAddress = '127.0.0.1'
 $listenPort = 15721
 if ($null -ne $proxyRow) {
-    $dbAddress = Get-PropertyValue -Object $proxyRow -Name 'listen_address'
-    $dbPort = Get-PropertyValue -Object $proxyRow -Name 'listen_port'
-    if (-not [string]::IsNullOrWhiteSpace([string]$dbAddress)) {
-        $listenAddress = [string]$dbAddress
+    $runtimeAddress = Get-PropertyValue -Object $proxyRow -Name 'listen_address'
+    $runtimePort = Get-PropertyValue -Object $proxyRow -Name 'listen_port'
+    if (-not [string]::IsNullOrWhiteSpace([string]$runtimeAddress)) {
+        $listenAddress = [string]$runtimeAddress
     }
-    if ($null -ne $dbPort) {
-        $listenPort = [int]$dbPort
+    if ($null -ne $runtimePort) {
+        $listenPort = [int]$runtimePort
     }
     $surfaces.ccSwitch.proxyConfig = $proxyRow
 }
 
+$surfaces.ccSwitch.listenerSource = $(if ($null -ne $proxyRow) { 'official_runtime' } else { 'unverified_default' })
 $listenerFound = $false
 try {
     if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
@@ -588,32 +491,32 @@ $surfaces.ccSwitch.listenAddress = $listenAddress
 $surfaces.ccSwitch.listenPort = $listenPort
 $surfaces.ccSwitch.listenerFound = $listenerFound
 if ($listenerFound) {
-    Add-Check -Area 'CC Switch listener' -Status 'PASS' -Detail ("port {0} is listening; configured address={1}." -f $listenPort, $listenAddress)
+    Add-Check -Area 'CC Switch listener' -Status 'PASS' -Detail ("port {0} is listening; observed/default address={1}." -f $listenPort, $listenAddress)
 }
 else {
-    Add-Check -Area 'CC Switch listener' -Status 'WARN' -Detail ("port {0} is not listening; configured address={1}." -f $listenPort, $listenAddress)
+    Add-Check -Area 'CC Switch listener' -Status 'WARN' -Detail ("port {0} is not listening; observed/default address={1}." -f $listenPort, $listenAddress)
 }
 
-# Cross-check CC Switch selectors against current DB records.
+# Cross-check file selectors against official current-provider queries.
 if ($null -ne $ccSettings -and $null -ne $desktopProvider) {
     $selector = [string](Get-PropertyValue -Object $ccSettings -Name 'currentProviderClaudeDesktop')
-    $dbId = [string](Get-PropertyValue -Object $desktopProvider -Name 'id')
-    if ($selector -eq $dbId) {
-        Add-Check -Area 'Claude Desktop provider selector consistency' -Status 'PASS' -Detail 'settings.json selector matches providers.is_current.'
+    $queriedId = [string](Get-PropertyValue -Object $desktopProvider -Name 'id')
+    if ($selector -eq $queriedId) {
+        Add-Check -Area 'Claude Desktop provider selector consistency' -Status 'PASS' -Detail 'settings.json selector matches official get_current_provider.'
     }
     else {
-        Add-Check -Area 'Claude Desktop provider selector consistency' -Status 'FAIL' -Detail 'settings.json selector does not match providers.is_current.'
+        Add-Check -Area 'Claude Desktop provider selector consistency' -Status 'FAIL' -Detail 'settings.json selector does not match official get_current_provider.'
         Add-Recommendation 'Re-apply the intended Claude Desktop provider after explicit approval; do not hand-edit both stores blindly.'
     }
 }
 if ($null -ne $ccSettings -and $null -ne $claudeProvider) {
     $selector = [string](Get-PropertyValue -Object $ccSettings -Name 'currentProviderClaude')
-    $dbId = [string](Get-PropertyValue -Object $claudeProvider -Name 'id')
-    if ($selector -eq $dbId) {
-        Add-Check -Area 'Claude provider selector consistency' -Status 'PASS' -Detail 'settings.json selector matches providers.is_current.'
+    $queriedId = [string](Get-PropertyValue -Object $claudeProvider -Name 'id')
+    if ($selector -eq $queriedId) {
+        Add-Check -Area 'Claude provider selector consistency' -Status 'PASS' -Detail 'settings.json selector matches official get_current_provider.'
     }
     else {
-        Add-Check -Area 'Claude provider selector consistency' -Status 'FAIL' -Detail 'settings.json selector does not match providers.is_current.'
+        Add-Check -Area 'Claude provider selector consistency' -Status 'FAIL' -Detail 'settings.json selector does not match official get_current_provider.'
     }
 }
 
@@ -624,7 +527,7 @@ if ($desktopConfigSource -eq 'local configLibrary' -and $null -ne $desktopProvid
     if ($mode -eq 'direct') {
         $expectedBaseUrl = [string](Get-PropertyValue -Object $desktopProvider -Name 'baseUrl')
     }
-    elseif ($mode -eq 'proxy') {
+    elseif ($mode -eq 'proxy' -and $null -ne $proxyRow) {
         $hostForProfile = $listenAddress
         if ($hostForProfile -in @('0.0.0.0', '::', '[::]')) {
             $hostForProfile = '127.0.0.1'
@@ -669,7 +572,9 @@ else {
 
 $result = [pscustomobject][ordered]@{
     tool = 'audit-claude-relay'
-    schemaVersion = 1
+    schemaVersion = 2
+    ccSwitchSource = 'official-desktop-cdp'
+    databaseRead = $false
     generatedAt = (Get-Date).ToUniversalTime().ToString('o')
     readOnly = $true
     secretsRedacted = $true
@@ -703,6 +608,6 @@ foreach ($item in $recommendations) {
     Write-Output ('- ' + $item)
 }
 Write-Output ''
-Write-Output 'No files, registry values, database rows, processes, or network endpoints were changed.'
+Write-Output 'No business configuration was changed. Official queries use the local desktop channel; the database was not opened.'
 
 exit 0

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass
 from itertools import combinations
@@ -91,6 +92,8 @@ def parse_args() -> argparse.Namespace:
     scan.add_argument("--root", required=True, help="Skill root to scan.")
     scan.add_argument("--reports-root", required=True, help="Directory for generated reports.")
     scan.add_argument("--date", required=True, help="Report date in YYYY-MM-DD format.")
+    scan.add_argument("--dependency-root", type=Path, action="append", default=[],
+                      help="Explicit installed skill root for sibling SKILL.md dependencies; repeatable.")
     scan.add_argument("--json", action="store_true", help="Print summary JSON to stdout.")
 
     return parser.parse_args()
@@ -453,7 +456,27 @@ def resolve_local_target(base_dir: Path, raw_target: str) -> Path | None:
     return target_path
 
 
-def scan_link_or_path_issues(records: list[SkillRecord]) -> list[dict[str, str]]:
+def resolve_sibling_dependency(record: SkillRecord, target: str,
+                               dependency_roots: tuple[Path, ...]) -> Path | None:
+    # Only absent sibling packages qualify. Never mask a broken local package,
+    # internal reference, absolute path, or arbitrary parent traversal.
+    match = re.fullmatch(r"\.\./([A-Za-z0-9][A-Za-z0-9_-]*)/SKILL\.md", clean_target(target))
+    if not match or os.path.lexists(record.path.parent / match[1]):
+        return None
+    for root in dependency_roots:
+        try:
+            root = root.resolve()
+            candidate = (root / match[1] / "SKILL.md").resolve()
+        except (OSError, RuntimeError):
+            continue
+        if candidate.is_relative_to(root) and candidate.is_file():
+            return candidate
+    return None
+
+
+def scan_link_or_path_issues(records: list[SkillRecord],
+                             dependency_roots: tuple[Path, ...] = (),
+                             dependency_receipts: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
     for record in records:
         if not record.is_active:
@@ -461,6 +484,12 @@ def scan_link_or_path_issues(records: list[SkillRecord]) -> list[dict[str, str]]
         for target in record.local_targets:
             resolved = resolve_local_target(record.path, target)
             if resolved is None or resolved.exists():
+                continue
+            dependency = resolve_sibling_dependency(record, target, dependency_roots)
+            if dependency is not None:
+                if dependency_receipts is not None:
+                    dependency_receipts.append({"skill": record.relative_path,
+                                                "target": target, "resolved": str(dependency)})
                 continue
             findings.append(
                 finding(
@@ -727,7 +756,8 @@ def build_report(
     return "\n".join(sections)
 
 
-def scan(root: Path, reports_root: Path, date: str) -> dict[str, Any]:
+def scan(root: Path, reports_root: Path, date: str,
+         dependency_roots: tuple[Path, ...] = ()) -> dict[str, Any]:
     root = root.resolve()
     reports_root = reports_root.resolve()
     records = discover_skill_records(root)
@@ -735,7 +765,8 @@ def scan(root: Path, reports_root: Path, date: str) -> dict[str, Any]:
     broken_items = scan_broken_items(root, records)
     duplicates, overlaps = compare_active_pairs(records)
     name_mismatch = scan_name_mismatch(records)
-    link_or_path_issues = scan_link_or_path_issues(records)
+    dependency_receipts: list[dict[str, str]] = []
+    link_or_path_issues = scan_link_or_path_issues(records, dependency_roots, dependency_receipts)
     active_skills = build_active_skill_list(records)
     no_action_notes = build_no_action_notes(records)
     counts = build_counts(
@@ -753,6 +784,8 @@ def scan(root: Path, reports_root: Path, date: str) -> dict[str, Any]:
         "date": date,
         "root": str(root),
         "reports_root": str(reports_root),
+        "dependency_roots": [str(path.resolve()) for path in dependency_roots],
+        "resolved_sibling_dependencies": dependency_receipts,
         "directory_rule": "顶层目录里有 SKILL.md 才算技能；工作材料和历史材料不算当前技能。",
         "counts": counts,
         "active_skills": active_skills,
@@ -793,7 +826,7 @@ def scan(root: Path, reports_root: Path, date: str) -> dict[str, Any]:
 def main() -> int:
     args = parse_args()
     if args.command == "scan":
-        summary = scan(Path(args.root), Path(args.reports_root), args.date)
+        summary = scan(Path(args.root), Path(args.reports_root), args.date, tuple(args.dependency_root))
         if args.json:
             print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
         else:

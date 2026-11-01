@@ -1122,6 +1122,7 @@ def run_audits(
     reuse_reports: bool,
     private_skills_root: Path | None = None,
     private_registry: Path | None = None,
+    dependency_roots: tuple[Path, ...] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Path]]:
     paths = {
         "upstream": reports_root / date / "summary.json",
@@ -1147,6 +1148,13 @@ def run_audits(
             for name, path in paths.items()
         }, paths
 
+    # The distribution root is read-only evidence of separately installed siblings.
+    # Explicit roots replace this default; an empty tuple disables fallback.
+    if dependency_roots is None:
+        installed = Path.home() / ".cc-switch" / "skills"
+        dependency_roots = (installed,) if installed.is_dir() else ()
+    dependency_options = [arg for root in dependency_roots
+                          for arg in ("--dependency-root", str(root.resolve()))]
     python = sys.executable
     commands = {
         "upstream": [
@@ -1220,6 +1228,9 @@ def run_audits(
             "scan", "--root", str(private_skills_root), "--reports-root", str(reports_root / "private"),
             "--date", date, "--json",
         ]
+    for name in ("hygiene", "hygiene_private"):
+        if name in commands:
+            commands[name].extend(dependency_options)
     for name in paths:
         results[name] = run_process(name, commands[name], agents_root, paths[name])
     return results, paths
@@ -2556,6 +2567,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         reuse_reports=args.reuse_reports,
         private_skills_root=private_root,
         private_registry=args.private_registry or agents_root / "upstream" / "private-skill-sources.toml",
+        dependency_roots=(() if args.no_installed_dependencies else
+                          tuple(args.dependency_root) if args.dependency_root else None),
     )
     summaries: dict[str, dict[str, Any] | None] = {}
     validation: dict[str, Any] = {}
@@ -2971,6 +2984,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scan.add_argument("--skills-root", type=Path, default=DEFAULT_SKILLS_ROOT)
     scan.add_argument("--private-skills-root", type=Path, help="Defaults to agents-root/private-skills when present.")
     scan.add_argument("--private-registry", type=Path, help="Defaults to agents-root/upstream/private-skill-sources.toml.")
+    dependency_group = scan.add_mutually_exclusive_group()
+    dependency_group.add_argument("--dependency-root", type=Path, action="append", default=[],
+                                  help="Read-only installed sibling root; repeatable, replaces the default existing ~/.cc-switch/skills.")
+    dependency_group.add_argument("--no-installed-dependencies", action="store_true",
+                                  help="Audit source links without installed sibling fallback.")
     scan.add_argument("--discovery-input", type=Path, help="Optional offline research triggers/results JSON; see weekly-review.md.")
     scan.add_argument("--reports-root", type=Path, default=DEFAULT_REPORTS_ROOT)
     scan.add_argument("--publication-report", type=Path, action="append", default=[],

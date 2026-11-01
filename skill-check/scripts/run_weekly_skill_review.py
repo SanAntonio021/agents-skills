@@ -424,6 +424,100 @@ def atomic_write_json(path: Path, payload: Any) -> None:
     atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
 
 
+def report_freshness(payload: Any, *, date: str, reused: bool) -> dict[str, Any]:
+    """Describe report age independently of scan completeness or publication."""
+    payload = payload if isinstance(payload, dict) else {}
+    stamp = payload.get("generated_at")
+    status = "unknown"
+    age_seconds = None
+    try:
+        generated = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        if generated.tzinfo is not None:
+            age_seconds = (datetime.now(generated.tzinfo) - generated).total_seconds()
+            report_day = generated.astimezone(ZoneInfo(DEFAULT_USAGE_TIMEZONE)).date().isoformat()
+            status = "report_day" if report_day == date else "older" if report_day < date else "later"
+    except (ValueError, TypeError):
+        pass
+    return {"status": status, "generated_at": stamp, "age_seconds": age_seconds,
+            "requested_date": date, "report_date": payload.get("date"), "reused": reused}
+
+
+def audit_components(validation: dict[str, Any], *, usage_complete: bool,
+                     usage_reasons: list[str]) -> dict[str, Any]:
+    components = {}
+    for audit, result in validation.items():
+        reasons = [] if result["valid"] else [result.get("error") or "invalid report"]
+        reasons.extend(result.get("check_reasons", []))
+        if audit == "usage":
+            reasons.extend(usage_reasons)
+        complete = bool(result["valid"] and result.get("checks_complete", True)
+                        and (audit != "usage" or usage_complete))
+        components[audit] = {"complete": complete, "reasons": reasons,
+                             "report_ref": result.get("report_ref"),
+                             "freshness": result.get("freshness", {"status": "unknown"})}
+    return components
+
+
+def publication_status(state: dict[str, Any], report_paths: Iterable[Path] = ()) -> dict[str, Any]:
+    """Read recorded execution/optional external report receipts; never publish."""
+    items = []
+    for finding in state.get("findings", {}).values():
+        execution = finding.get("execution") or {}
+        requires_sync = (finding.get("proposal") or {}).get("requires_runtime_sync", True)
+        if not requires_sync:
+            continue
+        if not execution and finding.get("status") not in {"approved", "execution_pending", "retry_pending"}:
+            continue
+        outcome = execution.get("outcome")
+        verified = (outcome == "success" and execution.get("sync_status") == "verified"
+                    and bool(SHA40_PATTERN.fullmatch(str(execution.get("remote_sha") or ""))))
+        status = "verified" if verified else outcome if outcome in {"failed", "blocked"} else "unknown"
+        items.append({"finding_id": finding["id"], "status": status,
+                      "known": status != "unknown", "source": "execution",
+                      "recorded_at": execution.get("recorded_at"),
+                      "reasons": [compact_text(execution.get("details"))] if execution.get("details") else []})
+    for path in report_paths:
+        report, error = load_json_file(path)
+        # Existing final-status receipts keep source/runtime blockers under
+        # unfinished. A completed isolated test is deliberately not publication.
+        if error or not isinstance(report, dict) or not isinstance(report.get("unfinished"), list):
+            items.append({"status": "unknown", "known": False, "source": "report",
+                          "reasons": [error or "unsupported publication report"]})
+            continue
+        matched = False
+        for row in report["unfinished"]:
+            if not isinstance(row, dict) or "publication" not in str(row.get("object", "")).lower():
+                continue
+            matched = True
+            blocked = bool(row.get("blocker"))
+            items.append({"status": "blocked" if blocked else "unknown", "known": blocked,
+                          "source": "report", "object": compact_text(row.get("object")),
+                          "recorded_at": report.get("checked_at"),
+                          "reasons": [compact_text(row.get("stage")), compact_text(row.get("blocker"))]})
+        if not matched:
+            items.append({"status": "unknown", "known": False, "source": "report",
+                          "reasons": ["report has no publication receipt"]})
+    status = ("blocked" if any(item["status"] == "blocked" for item in items)
+              else "failed" if any(item["status"] == "failed" for item in items)
+              else "verified" if items and all(item["status"] == "verified" for item in items)
+              else "unknown")
+    return {"status": status, "known": status != "unknown", "items": items,
+            "reasons": [] if items else ["no publication receipts"],
+            "basis": "recorded_receipts_only"}
+
+
+def dashboard_checks(components: dict[str, Any], publication: dict[str, Any]) -> dict[str, Any]:
+    def safe(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: safe(item) for key, item in value.items() if key != "report_ref"}
+        if isinstance(value, list):
+            return [safe(item) for item in value]
+        if isinstance(value, str):
+            return re.sub(r"(?:[A-Za-z]:[\\/]|(?<!\w)/)[^\s;]+", "[path]", value)
+        return value
+    return {"components": safe(components), "publication": safe(publication)}
+
+
 def build_dashboard_snapshot(
     usage: dict[str, Any],
     state: dict[str, Any],
@@ -431,6 +525,8 @@ def build_dashboard_snapshot(
     date: str,
     complete: bool,
     streak_reset_reason: str | None,
+    components: dict[str, Any] | None = None,
+    publication: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     used = {
         str(item.get("skill")): item
@@ -524,6 +620,7 @@ def build_dashboard_snapshot(
         "date": date,
         "generated_at": now_iso(),
         "complete": complete,
+        **dashboard_checks(components or {}, publication or publication_status(state)),
         "streak_reset_reason": streak_reset_reason,
         "window": usage.get("window"),
         "count_unit": usage.get("configuration", {}).get("count_unit"),
@@ -553,6 +650,8 @@ def render_usage_dashboard(
     date: str,
     complete: bool,
     streak_reset_reason: str | None,
+    components: dict[str, Any] | None = None,
+    publication: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     dashboard_root = reports_root / "usage" / "dashboard"
     data_root = dashboard_root / "data"
@@ -562,6 +661,8 @@ def render_usage_dashboard(
         date=date,
         complete=complete,
         streak_reset_reason=streak_reset_reason,
+        components=components,
+        publication=publication,
     )
     snapshot_path = data_root / f"{date}.json"
     atomic_write_json(snapshot_path, snapshot)
@@ -2127,6 +2228,7 @@ def merge_observations(
     date: str,
     *,
     authoritative_sources: set[str] | None = None,
+    skills_root: Path | None = None,
 ) -> dict[str, Any]:
     if authoritative_sources is None:
         authoritative_sources = {"upstream", "hygiene", "usage"}
@@ -2145,6 +2247,23 @@ def merge_observations(
             continue
         seen_ids.add(finding_id)
         previous = findings.get(finding_id)
+        # Compare scanner output with the scanner baseline, not with the
+        # concrete proposal produced by record-decision's factual review.
+        scan_baseline = {key: observation.get(key) for key in (
+            "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint"
+        )}
+        binding = previous.get("reviewed_proposal") if previous else None
+        if binding and skills_root is not None and (
+            binding.get("scan_baseline") == scan_baseline
+            and binding.get("proposal_fingerprint") == previous.get("proposal_fingerprint")
+            and previous.get("proposal_fingerprint") == fingerprint(previous.get("proposal"))
+            and binding.get("source_fingerprint") == previous.get("source_fingerprint")
+        ):
+            observation = copy.deepcopy(observation)
+            observation["proposal"] = copy.deepcopy(previous["proposal"])
+            observation["proposal_fingerprint"] = previous["proposal_fingerprint"]
+            observation["source_fingerprint"] = source_fingerprint(
+                skills_root, previous["proposal"].get("targets", []))
         changed = False
         reappeared = False
         previous_status = previous.get("status") if previous else None
@@ -2170,6 +2289,7 @@ def merge_observations(
                 for key in (
                     "decision", "execution", "facts", "status", "proposal",
                     "pending_revision", "requested_adjustment", "evidence_summary", "evidence_items",
+                    "reviewed_proposal", "scan_baseline",
                 )
                 if key in previous
             }
@@ -2231,6 +2351,7 @@ def merge_observations(
                 current.pop("execution", None)
                 current.pop("pending_revision", None)
                 current.pop("requested_adjustment", None)
+                current.pop("reviewed_proposal", None)
                 current["facts"] = []
                 current["status"] = "deferred" if current["queueable"] else "observed"
             elif (
@@ -2245,6 +2366,7 @@ def merge_observations(
                 current["status"] = "deferred" if current["queueable"] else "observed"
                 current.pop("resolved_date", None)
 
+        current["scan_baseline"] = scan_baseline
         if (
             current.get("status") in {"deferred", "queued", "facts", "observed"}
             and not current.get("decision")
@@ -2388,6 +2510,8 @@ def build_scan_report(
     observations: list[dict[str, Any]],
     merge_result: dict[str, Any] | None,
     dashboard: dict[str, Any],
+    components: dict[str, Any] | None = None,
+    publication: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
@@ -2395,6 +2519,8 @@ def build_scan_report(
         "generated_at": now_iso(),
         "complete": complete,
         "completeness_reasons": completeness_reasons,
+        "components": components or {},
+        "publication": publication or publication_status({}),
         "scope_fingerprint": scope_value,
         "streak_reset_reason": streak_reset_reason,
         "commands": command_results,
@@ -2468,6 +2594,7 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             "error": error,
             "command_detail": compact_text(command_detail, 1000) if command_detail else None,
             "report_ref": relative_report_ref(summary_paths[audit], reports_root),
+            "freshness": report_freshness(payload, date=args.date, reused=args.reuse_reports),
         }
         if not valid:
             completeness_reasons.append(f"{audit}: {error}")
@@ -2515,6 +2642,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     complete = all(summaries.values()) and usage_complete and all(
         entry.get("checks_complete", True) for entry in validation.values()
     )
+    components = audit_components(validation, usage_complete=usage_complete, usage_reasons=usage_reasons)
+    publication = publication_status({})
     scope_value = None
     if all(summaries.values()):
         scope_value = evidence_scope_fingerprint(
@@ -2577,13 +2706,17 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                 observations,
                 args.date,
                 authoritative_sources=authoritative_sources,
+                skills_root=skills_root,
             )
             if summaries["usage"] and usage_complete:
                 remember_missed_use_history(state, summaries["usage"])
+            publication = publication_status(state, getattr(args, "publication_report", []))
             run_record = {
                 "date": args.date,
                 "completed_at": now_iso(),
                 "complete": complete,
+                "components": components,
+                "publication": publication,
                 "scope_fingerprint": scope_value,
                 "streak_reset_reason": streak_reset_reason,
                 "report_ref": relative_report_ref(report_path, reports_root),
@@ -2613,25 +2746,28 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             observations=observations,
             merge_result=None,
             dashboard={"valid": False, "error": "weekly review state is blocked"},
+            components=components,
+            publication=publication,
         )
         atomic_write_json(report_path, report)
         return {**failure, "scan_report": relative_report_ref(report_path, reports_root)}, 3
 
-    if summaries["usage"]:
-        try:
-            dashboard_result = render_usage_dashboard(
-                summaries["usage"],
-                state,
-                reports_root,
-                date=args.date,
-                complete=complete,
-                streak_reset_reason=streak_reset_reason,
-            )
-        except (OSError, UnicodeError, ValueError, StateError, json.JSONDecodeError) as exc:
-            dashboard_result = {
-                "valid": False,
-                "error": compact_text(f"{exc.__class__.__name__}: {exc}", 1000),
-            }
+    try:
+        dashboard_result = render_usage_dashboard(
+            summaries["usage"] or {},
+            state,
+            reports_root,
+            date=args.date,
+            complete=complete,
+            streak_reset_reason=streak_reset_reason,
+            components=components,
+            publication=publication,
+        )
+    except (OSError, UnicodeError, ValueError, StateError, json.JSONDecodeError) as exc:
+        dashboard_result = {
+            "valid": False,
+            "error": compact_text(f"{exc.__class__.__name__}: {exc}", 1000),
+        }
 
     report = build_scan_report(
         date=args.date,
@@ -2644,6 +2780,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         observations=observations,
         merge_result=merge_result,
         dashboard=dashboard_result,
+        components=components,
+        publication=publication,
     )
     report["discovery"] = discovery_result
     atomic_write_json(report_path, report)
@@ -2652,6 +2790,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "date": args.date,
         "complete": complete,
         "completeness_reasons": completeness_reasons,
+        "components": components,
+        "publication": publication,
         "scan_report": relative_report_ref(report_path, reports_root),
         "state": relative_report_ref(state_path, reports_root),
         "merge": merge_result,
@@ -2833,6 +2973,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scan.add_argument("--private-registry", type=Path, help="Defaults to agents-root/upstream/private-skill-sources.toml.")
     scan.add_argument("--discovery-input", type=Path, help="Optional offline research triggers/results JSON; see weekly-review.md.")
     scan.add_argument("--reports-root", type=Path, default=DEFAULT_REPORTS_ROOT)
+    scan.add_argument("--publication-report", type=Path, action="append", default=[],
+                      help="Read an existing final-status publication blocker receipt; repeatable, read-only.")
     scan.add_argument(
         "--usage-window-end",
         help=(
@@ -2897,6 +3039,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     prepare.add_argument(
         "--decision", choices=("ask", "approve", "reject", "explain"), default="ask"
     )
+    prepare.add_argument("--finding-id", action="append", default=[],
+                         help="Select exact approved findings (repeatable; ask only)")
     prepare.add_argument("--batch-id")
     prepare.add_argument("--expected-batch-fingerprint")
 
@@ -3210,6 +3354,11 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     }
                     remove_from_queue(state, finding["id"])
                 elif outcome == "propose":
+                    scan_baseline = copy.deepcopy(finding.get("scan_baseline") or {
+                        key: finding.get(key) for key in (
+                            "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint"
+                        )
+                    })
                     if revised is not None:
                         finding["proposal"] = revised
                     previous_source = finding.get("source_fingerprint")
@@ -3224,6 +3373,12 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                             "targets": normalize_targets(targets),
                         })
                     finding["proposal_fingerprint"] = fingerprint(finding.get("proposal"))
+                    finding["reviewed_proposal"] = {
+                        "scan_baseline": scan_baseline,
+                        "proposal_fingerprint": finding["proposal_fingerprint"],
+                        "source_fingerprint": finding["source_fingerprint"],
+                        "recorded_at": timestamp,
+                    }
                     finding["status"] = "awaiting_decision"
                     ensure_in_queue(state, finding["id"])
                 else:
@@ -3308,8 +3463,27 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     pending = finding.pop("pending_revision", None)
                     if not pending:
                         return {"status": "invalid_state", "error": "no pending revision"}, 2
+                    scan_baseline = copy.deepcopy(finding.get("scan_baseline") or {
+                        key: finding.get(key) for key in (
+                            "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint"
+                        )
+                    })
                     finding["proposal"] = pending
                     finding["proposal_fingerprint"] = fingerprint(pending)
+                    previous_source = finding.get("source_fingerprint")
+                    finding["source_fingerprint"] = source_fingerprint(skills_root, pending.get("targets", []))
+                    finding["reviewed_proposal"] = {
+                        "scan_baseline": scan_baseline,
+                        "proposal_fingerprint": finding["proposal_fingerprint"],
+                        "source_fingerprint": finding["source_fingerprint"],
+                        "recorded_at": timestamp,
+                    }
+                    finding.setdefault("history", []).append({
+                        "event": "revision_proposal_source_bound", "recorded_at": timestamp,
+                        "previous_source_fingerprint": previous_source,
+                        "source_fingerprint": finding["source_fingerprint"],
+                        "targets": normalize_targets(pending.get("targets", [])),
+                    })
                 finding["status"] = "approved"
                 finding["decision"] = {
                     "value": "approved",
@@ -3383,9 +3557,14 @@ def batch_fingerprint(items: list[dict[str, Any]]) -> str:
     )
 
 
-def build_batch_items(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def build_batch_items(
+    findings: list[dict[str, Any]], *, preserve_order: bool = False
+) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
-    for finding in sorted(findings, key=lambda item: (item.get("first_seen", ""), item["id"])):
+    ordered = findings if preserve_order else sorted(
+        findings, key=lambda item: (item.get("first_seen", ""), item["id"])
+    )
+    for finding in ordered:
         proposed = finding.get("proposal") or {}
         explicit_dependencies = list(proposed.get("dependencies", []))
         overlap_dependencies = [
@@ -3443,11 +3622,91 @@ def unique_batch_id(state: dict[str, Any], base: str) -> str:
     return f"{base}-{counter}"
 
 
+def prepare_selected_execution(
+    args: argparse.Namespace, state: dict[str, Any], state_path: Path,
+    skills_root: Path, helper_path: Path,
+) -> tuple[dict[str, Any], int]:
+    """Validate an exact selection without changing unrelated findings or queues."""
+    selected_ids = set(args.finding_id)
+    selected = []
+    for finding_id in sorted(selected_ids):
+        finding = state["findings"].get(finding_id)
+        if not finding or finding.get("status") != "approved":
+            return {"status": "invalid_selection", "finding_id": finding_id,
+                    "reason": "selected finding must be approved"}, 2
+        decision = finding.get("decision") or {}
+        proposed = finding.get("proposal")
+        if (not proposed or decision.get("value") != "approved"
+                or any(decision.get(field) != finding.get(field)
+                       for field in ("evidence_fingerprint", "proposal_fingerprint"))
+                or fingerprint(proposed) != finding.get("proposal_fingerprint")
+                or outside_root_targets(skills_root, proposed.get("targets", []))
+                or source_fingerprint(skills_root, proposed.get("targets", []))
+                != finding.get("source_fingerprint")):
+            return {"status": "stale_fingerprint", "finding_id": finding_id,
+                    "field": "selection"}, 4
+        selected.append(finding)
+
+    # Topological order precedes overlap serialization, avoiding reverse dependencies.
+    ordered = []
+    remaining = list(selected)
+    while remaining:
+        ready = []
+        for finding in remaining:
+            dependencies = (finding.get("proposal") or {}).get("dependencies", [])
+            unavailable = [dependency for dependency in dependencies
+                           if dependency not in selected_ids
+                           and state["findings"].get(dependency, {}).get("status") != "completed"]
+            if unavailable:
+                return {"status": "blocked_dependency", "finding_id": finding["id"],
+                        "unavailable_dependencies": unavailable}, 2
+            if not any(dependency in {item["id"] for item in remaining}
+                       for dependency in dependencies):
+                ready.append(finding)
+        if not ready:
+            return {"status": "blocked_dependency", "reason": "cyclic selected dependencies"}, 2
+        for finding in ready:
+            ordered.append(finding)
+            remaining.remove(finding)
+    items = build_batch_items(ordered, preserve_order=True)
+    identity = batch_fingerprint(items)
+    existing = None
+    for batch in state["batches"]:
+        if batch.get("status") not in ACTIVE_BATCH_STATUSES:
+            continue
+        batch_ids = {item["finding_id"] for item in batch["items"]}
+        if (batch.get("status") == "awaiting_confirmation" and batch_ids == selected_ids
+                and batch.get("batch_fingerprint") == identity):
+            existing = batch
+            continue
+        if batch_ids & selected_ids or any(
+            targets_overlap(item.get("targets", []), other.get("targets", []))
+            for item in items for other in batch["items"]
+        ):
+            return {"status": "blocked_batch_conflict", "batch_id": batch["id"]}, 2
+    if existing is None:
+        helper_identity = sync_helper_fingerprint(helper_path)
+        existing = {
+            "id": unique_batch_id(state, f"batch-{args.date}-{identity[:12]}-{helper_identity[:8]}"),
+            "date": args.date, "created_at": now_iso(), "status": "awaiting_confirmation",
+            "batch_fingerprint": identity, "sync_helper_fingerprint": helper_identity,
+            "items": items,
+        }
+        state["batches"].append(existing)
+        save_state(state_path, state)
+    payload = execution_confirmation_payload(state, existing)
+    payload["selected_finding_ids"] = [item["finding_id"] for item in existing["items"]]
+    return payload, 0
+
+
 def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     args = normalize_cli_fingerprints(args)
     state_path = args.state.resolve()
     skills_root = args.skills_root.resolve()
     helper_path = args.sync_helper.resolve()
+    if args.finding_id and args.decision != "ask":
+        return {"status": "invalid_request",
+                "error": "--finding-id is only supported with --decision ask; approve by batch identity"}, 2
     if args.decision != "ask" and (
         not args.batch_id or not args.expected_batch_fingerprint
     ):
@@ -3465,6 +3724,8 @@ def prepare_execution_command(args: argparse.Namespace) -> tuple[dict[str, Any],
                 return {"status": "not_initialized", "message": "尚未运行完整周检。"}, 2
 
             if args.decision == "ask":
+                if args.finding_id:
+                    return prepare_selected_execution(args, state, state_path, skills_root, helper_path)
                 recovered_retry_ids = recover_legacy_retry_source_baselines(
                     state, skills_root
                 )

@@ -516,6 +516,11 @@
       <div class="status-line" id="statusLine" aria-live="polite"></div>
     </section>
 
+    <section class="panel findings-panel" aria-labelledby="checksTitle">
+      <div class="findings-head"><h2 id="checksTitle">分项完整性与发布验收</h2></div>
+      <div class="findings-list" id="checksList"></div>
+    </section>
+
     <section class="metrics" aria-label="核心指标">
       <article class="metric"><span class="metric-label">调用请求</span><span class="metric-value" id="metricTotal">—</span></article>
       <article class="metric"><span class="metric-label">Codex</span><span class="metric-value" id="metricCodex">—</span></article>
@@ -605,7 +610,8 @@
       conclusionDetail: document.getElementById("conclusionDetail"),
       resultSummary: document.getElementById("resultSummary"),
       coverageNote: document.getElementById("coverageNote"),
-      generatedAt: document.getElementById("generatedAt")
+      generatedAt: document.getElementById("generatedAt"),
+      checksList: document.getElementById("checksList")
     };
 
     const number = new Intl.NumberFormat("zh-CN");
@@ -666,6 +672,34 @@
       setMetric("metricClaude", rows.reduce((sum, row) => sum + Number(row.counts?.claude || 0), 0));
       setMetric("metricZero", week.counts?.zero || 0);
       setMetric("metricReview", week.counts?.review || 0);
+    }
+
+    function renderChecks(week) {
+      elements.checksList.replaceChildren();
+      const labels = {usage: "触发统计", upstream: "上游检查", hygiene: "目录检查",
+        upstream_private: "私有上游检查", hygiene_private: "私有目录检查"};
+      const components = week.components || {};
+      const names = [...new Set(["usage", "upstream", "hygiene", ...Object.keys(components)])];
+      names.forEach(name => {
+        const item = components[name];
+        const row = el("div", "finding-item");
+        row.append(el("div", "finding-name", `${labels[name] || name}：${!item ? "未知" : item.complete ? "完整" : "不完整"}`));
+        const freshness = item?.freshness || {};
+        const timing = {report_day: "与报告日期同日", older: "早于报告日期", later: "晚于报告日期", unknown: "时间未知"};
+        const reasons = item?.reasons?.length ? item.reasons.join("；") : item ? "无完整性缺口" : "旧快照没有分项回执";
+        row.append(el("div", "finding-detail", reasons));
+        row.append(el("div", "finding-detail", `报告生成：${formatDate(freshness.generated_at, true)} · ${timing[freshness.status] || "时间未知"} · ${freshness.reused ? "复用报告" : "本轮读取"} · 扫描时报告年龄：${Number.isFinite(freshness.age_seconds) ? Math.round(freshness.age_seconds / 3600) + " 小时" : "未知"}`));
+        elements.checksList.append(row);
+      });
+      const publication = week.publication || {status: "unknown", known: false};
+      const statuses = {verified: "已知：回执已验证", blocked: "已知：阻断", failed: "已知：失败", unknown: "未知"};
+      const row = el("div", "finding-item");
+      row.append(el("div", "finding-name", `发布验收：${statuses[publication.status] || "未知"}`));
+      row.append(el("div", "finding-detail", "仅依据已记录回执；扫描 complete 不代表发布成功，历史回执不代表当前运行副本重新验收。"));
+      const details = [...(publication.reasons || []), ...(publication.items || []).flatMap(item =>
+        [`${item.object || item.finding_id || "外部回执"}：${statuses[item.status] || "未知"} · ${formatDate(item.recorded_at, true)}`, ...(item.reasons || [])])];
+      if (details.length) row.append(el("div", "finding-detail", details.join("；")));
+      elements.checksList.append(row);
     }
 
     function statusMatches(row) {
@@ -750,7 +784,7 @@
       if (week.coverage?.missing_roots?.length) parts.push(`缺失 ${week.coverage.missing_roots.length} 个数据源`);
       if (week.coverage?.parse_error_count) parts.push(`${week.coverage.parse_error_count} 条解析错误`);
       if (week.coverage?.unmapped_request_count) parts.push(`${week.coverage.unmapped_request_count} 条记录无法关联请求`);
-      elements.coverageNote.textContent = parts.length ? `覆盖异常：${parts.join("；")}` : "数据覆盖完整";
+      elements.coverageNote.textContent = parts.length ? `触发统计覆盖异常：${parts.join("；")}` : week.components?.usage?.complete ? "触发统计覆盖完整" : "触发统计覆盖未确认";
       elements.generatedAt.textContent = `生成时间：${formatDate(week.generated_at, true)}`;
     }
 
@@ -785,11 +819,13 @@
         elements.reviewCount.textContent = "0 个复核候选";
         elements.findingsList.replaceChildren(el("div", "findings-empty", "暂无数据。"));
         elements.findingsSummary.textContent = "暂无数据";
+        elements.checksList.replaceChildren(el("div", "findings-empty", "暂无分项回执，发布验收未知。"));
         return;
       }
       renderConclusion(week);
       renderStatus(week);
       renderMetrics(week);
+      renderChecks(week);
       renderSpectrum(week);
       renderReview(week);
       renderFindings(week);

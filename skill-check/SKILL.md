@@ -339,6 +339,11 @@ python scripts/run_weekly_skill_review.py approve-batch --selections <JSON> --js
 
 ## 维护
 
+融合周检区分扫描建议与事实复核后的明确提案，同证据重扫保留已绑定提案，真实指纹变化仍使批准和批次失效。
+离线面板分开显示触发统计、上游、目录完整性和独立发布回执；总 `complete` 不表示发布成功。
+`prepare-execution --finding-id` 可重复精确选择已批准独立项，保留无关未决问题；默认队列门槛不变。
+字段及可选外部阻断报告入口见 [周检说明](references/weekly-review.md#分项完整性与发布回执)。
+
 - 如果路径、同步方式或启用链路变化，先更新 [references/skill-hygiene.md](references/skill-hygiene.md) 和脚本，再同步这里。
 - 如果本地目录方案变化，先改脚本和参考文件，再同步这里。
 - 如果以后接 automation，优先复用现有 CLI 入口，不把调度信息写进 `SKILL.md`。

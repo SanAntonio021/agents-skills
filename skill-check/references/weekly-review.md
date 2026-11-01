@@ -66,6 +66,12 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 - 任一 fingerprint 变化：旧批准和相关活动批次失效，重新进入队列；
 - `none`/`null` 只表示没有方案 fingerprint，不能当作普通字符串。
 
+事实提案与扫描建议分别绑定。`record-decision --facts-outcome propose` 及 `adjust → approve`
+会保存 `reviewed_proposal`，关联当时的 `scan_baseline`、明确提案指纹和按新 targets 重算的源码指纹。
+重扫只有在扫描建议、证据、扫描源码基线均未变，且明确提案和其全部目标源码仍匹配时才保留提案与批准。
+扫描建议本身发生变化仍属方案漂移；目标源码或证据变化仍使批准及活动批次失效，旧提案和决定保留在历史。
+该关联由新版本的决定接口建立；缺少可核验关联的旧状态不推测授权，也不从历史恢复旧批准。
+
 `next-question` 的事实追问每次只返回一项；已经核实、明确需要批准的多个技能修改可以合成一张完整清单一次展示，但每项仍保留独立 fingerprint 和批准记录。
 
 成批确认使用 `approve-batch`，输入为 `--selections` 的 JSON 数组，每项必须带 `finding_id`、
@@ -92,6 +98,20 @@ finding ID 由类型、技能和独立修改目的稳定生成。证据、方案
 ```powershell
 python scripts/run_weekly_skill_review.py prepare-execution --json
 ```
+
+还有无关未决问题时，可精确选择已批准独立项，不必关闭其他队列项：
+
+```powershell
+python scripts/run_weekly_skill_review.py prepare-execution `
+  --finding-id <approved-finding-1> --finding-id <approved-finding-2> --json
+```
+
+`--finding-id` 可重复，仅用于 `--decision ask`；不传时保留全部队列先完成决定的原行为。
+选择路径只接受有匹配批准记录、当前 evidence/proposal/source 指纹的 approved 项，不修改未选 finding
+或队列，也不自动纳入依赖。外部依赖须已 completed，否则拒绝建批；所选依赖先排序，同批文件重叠串行。
+依赖环、与其他活动批次的项或目标重叠均拒绝。相同精确集合可复用原确认批次，不返回其他集合的批次。
+随后按返回的 `batch_id` 和 `batch_fingerprint` 执行 `--decision approve`，不重传 `--finding-id`；
+仍按该批次逐项核验漂移与依赖，无关未决问题继续保留。选择校验失败不写入部分状态。
 
 只有存在已批准项时才创建批次。`awaiting_confirmation` 是兼容接口状态；当前准确逐项授权已覆盖执行时，由智能体复用该授权继续 `--decision approve`，不再次向用户提问。非 `ask` 的决定必须同时提供 `--batch-id` 和
 `--expected-batch-fingerprint`；fingerprint 不匹配时拒绝写入。
@@ -136,14 +156,31 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 `next-question`；`explain` 不推进队列，调整意见先让旧方案和批次失效，展示修订方案后再问批准。
 如果调整意见出现在最终执行确认阶段，先定位它涉及的 finding，再用该 finding 的当前 fingerprint 调用
 `record-decision --classification adjust`，不能把调整意见当作批次批准。
-全部决定完成后，已有准确执行授权直接使用，不追加最终执行确认。无批准项时只输出：
-
-```text
-本周没有需要决定的修改。
-```
+全部决定完成后，已有准确执行授权直接使用，不追加最终执行确认。无待批准项只表示当前没有需要用户批准的新方案；仍须披露尚未完成、受阻、待验证及顺延待查事项。只有维护范围内也不存在这些事项时，才可说“本周没有需要决定的修改。”
 
 不要把完整周报作为用户必须阅读的交付物；默认给出离线 dashboard 的稳定路径，报告路径只作为证据
 引用保留在状态和最终摘要中。
+
+## 分项完整性与发布回执
+
+扫描返回、周检报告、run 记录和离线面板增加 `components`。`usage`、`upstream`、`hygiene`
+以及启用的私有检查各自包含 `complete`、`reasons`、`report_ref` 和 `freshness`。时效字段记录报告
+`generated_at`、扫描时 `age_seconds`、请求日期、报告日期及是否复用；`status` 的 `report_day`、
+`older`、`later` 只比较生成日期与请求日期，缺少带时区时间则为 `unknown`，不证明远端已刷新。
+上游远端核实继续使用已有逐来源回执判断。分项只补充诊断，不改变总 `complete`、退出码或四完整周门槛；
+触发统计完整而上游失败时，usage 可单独显示完整，总体仍不完整。
+
+发布验收使用独立 `publication`，与扫描完整性无关。最低读取现有 finding 的 `execution`：成功回执须
+同时有 `outcome=success`、`sync_status=verified` 和完整远端 SHA，才显示回执 `verified`；失败及阻断
+分别显示 `failed`、`blocked`。没有回执、只有批准或回执不足则为 `unknown`，不把 `completed` 或
+`complete=true` 当作发布成功。`known` 标明是否有已知结论，`items` 保留混合状态和回执时间；存在阻断
+优先显示阻断，其次失败，全部回执验证才汇总为 verified，其余未知。历史回执不代表重新验收当前运行副本。
+
+外部发布阻断可通过重复 `scan --publication-report <existing-final-status.json>` 只读导入。
+当前兼容已有 `final-status` 的 `unfinished` 数组中 `object` 含 `publication` 的项：有 `blocker`
+显示阻断，其他情况未知。OfficeCLI 隔离测试或侧装成功不构成发布验收；不从 `completed` 数组推断发布。
+缺文件、损坏或不支持的报告结构只显示未知，不修改回执、不生成 execution 成功、不影响扫描退出码。
+面板展示分项原因及报告时效，去除报告引用和原因内的绝对路径；旧快照没有这些字段时显示未知。
 
 内部 fingerprint 用于发现变化。变化后重新核实当前内容、工具来源和授权范围；若实质动作未变，可依据原准确授权重建批次，不向用户要求粘贴哈希。
 

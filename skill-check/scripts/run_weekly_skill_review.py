@@ -3307,19 +3307,60 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 and revised is None
                 and finding.get("kind") == "suspected_missed_use"
                 and finding.get("source") == "usage"
-                and finding.get("proposal") == proposal(
-                    "补触发边界",
-                    f"若真实使用习惯确认需要自动触发，则收紧或补充 {subject} 的 description，并补正反触发测试。",
-                    [subject], skills=[subject],
+                and (
+                    finding.get("proposal") == proposal(
+                        "补触发边界",
+                        f"若真实使用习惯确认需要自动触发，则收紧或补充 {subject} 的 description，并补正反触发测试。",
+                        [subject], skills=[subject],
+                    )
+                    or (finding.get("needs_facts") is False
+                        and finding.get("proposal") == proposal(
+                            "复核真实漏用",
+                            f"{subject} 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+                            [subject], skills=[subject],
+                        ))
+                )
+            )
+            # Legacy scan hints used needs_facts=False. Only untouched hints
+            # without a user review or any execution-batch reference may close.
+            legacy_close_trigger_hint = (
+                close_trigger_hint
+                and finding.get("needs_facts") is False
+                and finding.get("proposal_fingerprint") == fingerprint(finding["proposal"])
+                and isinstance(finding.get("history", []), list)
+                and all(
+                    isinstance(entry, dict)
+                    and isinstance(entry.get("previous", {}), dict)
+                    and all(
+                        snapshot.get("status") not in {"approved", "execution_pending", "completed"}
+                        and isinstance(snapshot.get("decision") or {}, dict)
+                        and (snapshot.get("decision") or {}).get("value") != "approved"
+                        and not any(snapshot.get(key) is not None for key in (
+                            "reviewed_proposal", "approval", "execution", "batch_id",
+                            "pending_revision", "requested_adjustment",
+                        ))
+                        for snapshot in (entry, entry.get("previous", {}))
+                    )
+                    for entry in finding.get("history", [])
+                )
+                and status in {"deferred", "queued", "waiting_evidence"}
+                and not any(finding.get(key) is not None for key in (
+                    "reviewed_proposal", "decision", "approval", "batch_id",
+                    "pending_revision", "requested_adjustment", "execution",
+                ))
+                and not any(
+                    item.get("finding_id") == finding["id"]
+                    for batch in state["batches"] for item in batch["items"]
                 )
             )
             if resolve_queued_facts and not (
-                finding.get("needs_facts") is True
-                and (
-                    (finding.get("proposal") is None
-                     and finding.get("proposal_fingerprint") is None)
-                    or close_trigger_hint
-                )
+                (finding.get("needs_facts") is True
+                 and (
+                     (finding.get("proposal") is None
+                      and finding.get("proposal_fingerprint") is None)
+                     or close_trigger_hint
+                 ))
+                or legacy_close_trigger_hint
             ):
                 return {
                     "status": "invalid_state",

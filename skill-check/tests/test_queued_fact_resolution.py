@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -177,7 +178,7 @@ def test_deferred_trigger_false_positive_closes_without_admission(tmp_path):
     assert current.get("routine_admitted_date") == finding.get("routine_admitted_date")
 
 
-@pytest.mark.parametrize("case", ["approve", "wait", "changed_proposal", "stale_evidence", "stale_proposal", "not_facts"])
+@pytest.mark.parametrize("case", ["approve", "wait", "changed_proposal", "stale_evidence", "stale_proposal"])
 def test_trigger_hint_exception_does_not_bypass_guards(tmp_path, case):
     path, state, finding = setup_trigger_hint(tmp_path)
     options = ["--facts-outcome", "close"]
@@ -189,12 +190,140 @@ def test_trigger_hint_exception_does_not_bypass_guards(tmp_path, case):
         finding["proposal"]["summary"] = "Concrete revised modification"
         finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
         REVIEW.save_state(path, state)
-    elif case == "not_facts":
-        finding["needs_facts"] = False
-        REVIEW.save_state(path, state)
     else:
         options += [f"--expected-{case.removeprefix('stale_')}-fingerprint", "stale"]
     before = path.read_bytes()
     _, code = REVIEW.record_decision_command(command(path, finding, *options))
     assert code in {2, 4}
     assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("status", ["deferred", "queued", "waiting_evidence"])
+@pytest.mark.parametrize("template", ["old", "current"])
+def test_legacy_false_positive_closes_preserving_history(tmp_path, status, template):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    finding.update(needs_facts=False, status=status)
+    if template == "current":
+        subject = finding["subject"]
+        finding["proposal"] = REVIEW.proposal("复核真实漏用",
+            f"{subject} 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+            [subject], skills=[subject])
+        finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
+    finding["history"] = [{"event": "old_scan", "previous": {"decision": {"value": "rejected"}}}]
+    finding["facts"] = [{"answer_summary": "Previous evidence", "recorded_at": "old"}]
+    if status == "queued":
+        REVIEW.ensure_in_queue(state, finding["id"])
+    REVIEW.save_state(path, state)
+    original = copy.deepcopy(finding)
+    payload, code = REVIEW.record_decision_command(command(path, finding, "--facts-outcome", "close"))
+    assert code == 0 and payload["next_status"] == "closed"
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    current = saved["findings"][finding["id"]]
+    assert current["decision"]["value"] == "closed_after_facts"
+    assert current["facts"][:-1] == original["facts"]
+    assert len(current["facts"]) == len(original["facts"]) + 1
+    for key in original:
+        if key not in {"status", "facts", "decision"}:
+            assert current[key] == original[key]
+    assert current["needs_facts"] is False
+    assert saved["queue"] == [fid for fid in state["queue"] if fid != finding["id"]]
+    assert saved["batches"] == state["batches"]
+    assert {k:v for k,v in saved["findings"].items() if k != finding["id"]} == {
+        k:v for k,v in state["findings"].items() if k != finding["id"]}
+
+
+@pytest.mark.parametrize("case", [
+    "wait", "propose", "approve", "reject", "answer_approve", "answer_reject", "empty_answer",
+    "revised", "changed_summary", "changed_target", "extra_proposal_key", "no_proposal",
+    "other_source", "other_kind", "missing_needs_facts", "null_needs_facts", "numeric_needs_facts",
+    "reviewed_proposal", "decision", "approval", "batch_id", "pending_revision",
+    "requested_adjustment", "execution", "batch", "stale_evidence", "stale_proposal",
+    "observed", "closed", "archived", "completed", "rejected",
+    "history_approved", "history_executed", "history_reviewed", "inconsistent_fingerprint",
+    "invalid_batches", "invalid_batch_items", "invalid_batch_item",
+])
+@pytest.mark.parametrize("template", ["old", "current"])
+def test_legacy_false_positive_rejects_outside_exact_gate(tmp_path, case, template):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    finding["needs_facts"] = False
+    if template == "current":
+        subject = finding["subject"]
+        finding["proposal"] = REVIEW.proposal("复核真实漏用",
+            f"{subject} 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+            [subject], skills=[subject])
+        finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
+    options = ["--facts-outcome", "close"]
+    if case in {"wait", "propose"}:
+        options = ["--facts-outcome", case]
+    elif case in {"approve", "reject"}:
+        options += ["--classification", case]
+    elif case in {"answer_approve", "answer_reject"}:
+        options += ["--answer", "yes" if case == "answer_approve" else "no"]
+    elif case == "empty_answer":
+        options += ["--answer", " "]
+    elif case == "revised":
+        options += ["--revised-proposal-json", json.dumps(finding["proposal"], ensure_ascii=False)]
+    elif case in {"changed_summary", "changed_target", "extra_proposal_key", "no_proposal"}:
+        if case == "changed_summary": finding["proposal"]["summary"] += " revised"
+        elif case == "changed_target": finding["proposal"]["targets"] = ["other"]
+        elif case == "extra_proposal_key": finding["proposal"]["reviewed"] = True
+        else: finding["proposal"] = None
+        finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"]) if finding["proposal"] else None
+    elif case == "other_source": finding["source"] = "discovery"
+    elif case == "other_kind": finding["kind"] = "other"
+    elif case == "missing_needs_facts": finding.pop("needs_facts")
+    elif case == "null_needs_facts": finding["needs_facts"] = None
+    elif case == "numeric_needs_facts": finding["needs_facts"] = 0
+    elif case in {"reviewed_proposal", "decision", "approval", "batch_id", "pending_revision", "requested_adjustment", "execution"}:
+        finding[case] = {} if case != "batch_id" else "old-batch"
+    elif case == "batch":
+        state["batches"].append({"id": "old-batch", "status": "completed", "items": [{"finding_id": finding["id"]}]})
+    elif case == "history_approved":
+        finding["history"] = [{"event": "old_scan", "previous": {"decision": {"value": "approved"}}}]
+    elif case == "history_executed":
+        finding["history"] = [{"event": "old_scan", "previous": {"execution": {"outcome": "success"}}}]
+    elif case == "history_reviewed":
+        finding["history"] = [{"event": "old_scan", "previous": {"reviewed_proposal": {}}}]
+    elif case == "inconsistent_fingerprint": finding["proposal_fingerprint"] = "not-the-default-proposal-hash"
+    elif case == "invalid_batches": state["batches"] = {}
+    elif case == "invalid_batch_items": state["batches"] = [{"id": "bad", "status": "completed", "items": {}}]
+    elif case == "invalid_batch_item": state["batches"] = [{"id": "bad", "status": "completed", "items": [None]}]
+    elif case.startswith("stale_"):
+        options += [f"--expected-{case.removeprefix('stale_')}-fingerprint", "stale"]
+    else:
+        finding["status"] = case
+    if case.startswith("invalid_batch"):
+        path.write_text(json.dumps(state), encoding="utf-8")
+    else:
+        REVIEW.save_state(path, state)
+    before = path.read_bytes()
+    payload, code = REVIEW.record_decision_command(command(path, finding, *options))
+    expected = 3 if case.startswith("invalid_batch") else (4 if case.startswith("stale_") else 2)
+    assert code == expected, payload
+    assert path.read_bytes() == before
+
+
+@pytest.mark.skipif(not os.environ.get("WEEKLY_REVIEW_BASELINE"), reason="optional baseline comparison")
+@pytest.mark.parametrize("status", ["facts", "awaiting_decision", "revising", "retry_pending", "approved", "execution_pending"])
+def test_other_states_keep_original_behavior(tmp_path, monkeypatch, status):
+    # Exercise original branches without changing their semantics or accepted states.
+    # The original imports a sibling helper; load identical baseline beside helper instead.
+    import shutil
+    original_path = tmp_path / "original" / SCRIPT.name
+    original_path.parent.mkdir()
+    shutil.copyfile(Path(os.environ["WEEKLY_REVIEW_BASELINE"]), original_path)
+    shutil.copyfile(SCRIPT.with_name("weekly_discovery.py"), original_path.with_name("weekly_discovery.py"))
+    spec = importlib.util.spec_from_file_location("original_review_gate", original_path)
+    original = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(original)
+    monkeypatch.setattr(original, "now_iso", lambda: "2026-11-01T12:00:00+08:00")
+    monkeypatch.setattr(REVIEW, "now_iso", original.now_iso)
+    path, state, finding = setup_trigger_hint(tmp_path)
+    finding.update(needs_facts=False, status=status)
+    REVIEW.save_state(path, state)
+    other = tmp_path / "original-state.json"
+    shutil.copyfile(path, other)
+    expected = original.record_decision_command(command(other, finding, "--facts-outcome", "close"))
+    actual = REVIEW.record_decision_command(command(path, finding, "--facts-outcome", "close"))
+    assert actual == expected
+    assert json.loads(path.read_text(encoding="utf-8")) == json.loads(other.read_text(encoding="utf-8"))

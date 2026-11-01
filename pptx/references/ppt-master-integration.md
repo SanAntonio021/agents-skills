@@ -129,3 +129,11 @@ switch silently. An upstream review mirror is source-review evidence only, never
 
 Never modify `.cc-switch`, `.codex`, or `.claude` runtime copies directly. Fork publication, local
 pin publication, CC Switch installation, and per-client runtime activation are separate gates.
+
+The current source transition retains `v6.7.2-ccswitch.1` as the stable distribution and adds
+`v6.8.0-ccswitch.1` (`4f2d414063010dad6358756b85888f9b090ada84`) as the audited candidate.
+The 6.8.0 adaptation preserves the accepted Fork handoff and provider defaults while incorporating
+reviewed formula, chart, import/export, animation, content-survival, and image-request fixes.
+The remote exact-commit archive, two independent builds, offline regression suite, and selected
+native PowerPoint formula/chart cases passed. This source acceptance does not assert CC Switch
+installation or per-client runtime activation; keep both pin entries until those gates pass.

@@ -11,12 +11,49 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 public static class StorageCleanupNative {
- [ComImport,Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IShellItem { void BindToHandler(); void GetParent(); void GetDisplayName(); void GetAttributes(); void Compare(); }
+ [ComImport,Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface IShellItem { void BindToHandler(); void GetParent(); void GetDisplayName(); void GetAttributes(); void Compare(); }
+ [ComImport,Guid("04b0f1a7-9490-44bc-96e1-4296a31252e2"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface IFileOperationProgressSink {
+  [PreserveSig] int StartOperations(); [PreserveSig] int FinishOperations(int result);
+  [PreserveSig] int PreRenameItem(uint flags,IShellItem item,[MarshalAs(UnmanagedType.LPWStr)]string name);
+  [PreserveSig] int PostRenameItem(uint flags,IShellItem item,[MarshalAs(UnmanagedType.LPWStr)]string name,int result,IShellItem created);
+  [PreserveSig] int PreMoveItem(uint flags,IShellItem item,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name);
+  [PreserveSig] int PostMoveItem(uint flags,IShellItem item,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name,int result,IShellItem created);
+  [PreserveSig] int PreCopyItem(uint flags,IShellItem item,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name);
+  [PreserveSig] int PostCopyItem(uint flags,IShellItem item,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name,int result,IShellItem created);
+  [PreserveSig] int PreDeleteItem(uint flags,IShellItem item);
+  [PreserveSig] int PostDeleteItem(uint flags,IShellItem item,int result,IShellItem created);
+  [PreserveSig] int PreNewItem(uint flags,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name);
+  [PreserveSig] int PostNewItem(uint flags,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name,[MarshalAs(UnmanagedType.LPWStr)]string template,uint attributes,int result,IShellItem created);
+  [PreserveSig] int UpdateProgress(uint total,uint completed); [PreserveSig] int ResetTimer(); [PreserveSig] int PauseTimer(); [PreserveSig] int ResumeTimer();
+ }
+ [ComVisible(true),ClassInterface(ClassInterfaceType.None)] public sealed class RecycleGuard : IFileOperationProgressSink {
+  const int Abort=unchecked((int)0x80004004); public int BeforeCount,AfterCount; public string Failure;
+  int Reject(string message){Failure=message;return Abort;}
+  public int StartOperations(){return 0;} public int FinishOperations(int result){return result<0?Reject("Shell operation failed"):0;}
+  public int PreDeleteItem(uint flags,IShellItem item){if((flags&0x80)==0)return Reject("Shell did not select recycle; permanent deletion refused");BeforeCount++;return 0;}
+  public int PostDeleteItem(uint flags,IShellItem item,int result,IShellItem created){if(result<0||created==null)return Reject("Shell did not return a recycled item");AfterCount++;return 0;}
+  public int PreRenameItem(uint f,IShellItem i,string n){return Reject("Unexpected rename");} public int PostRenameItem(uint f,IShellItem i,string n,int r,IShellItem c){return 0;}
+  public int PreMoveItem(uint f,IShellItem i,IShellItem d,string n){return Reject("Unexpected move");} public int PostMoveItem(uint f,IShellItem i,IShellItem d,string n,int r,IShellItem c){return 0;}
+  public int PreCopyItem(uint f,IShellItem i,IShellItem d,string n){return Reject("Unexpected copy");} public int PostCopyItem(uint f,IShellItem i,IShellItem d,string n,int r,IShellItem c){return 0;}
+  public int PreNewItem(uint f,IShellItem d,string n){return Reject("Unexpected creation");} public int PostNewItem(uint f,IShellItem d,string n,string t,uint a,int r,IShellItem c){return 0;}
+  public int UpdateProgress(uint t,uint c){return 0;} public int ResetTimer(){return 0;} public int PauseTimer(){return 0;} public int ResumeTimer(){return 0;}
+  public void Validate(){if(Failure!=null||BeforeCount==0||AfterCount!=BeforeCount)throw new InvalidOperationException(Failure??"Recycle callbacks were incomplete");}
+ }
  [ComImport,Guid("947AAB5F-0A5C-4C13-B4D6-4BF7836FC9F8"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IFileOperation {
- void Advise(IntPtr sink,out uint cookie); void Unadvise(uint cookie); void SetOperationFlags(uint flags); void SetProgressMessage([MarshalAs(UnmanagedType.LPWStr)]string msg);void SetProgressDialog(IntPtr p);void SetProperties(IntPtr p);void SetOwnerWindow(uint hwnd);void ApplyPropertiesToItem(IShellItem i);void ApplyPropertiesToItems(IntPtr p);void RenameItem(IShellItem i,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void RenameItems(IntPtr p,[MarshalAs(UnmanagedType.LPWStr)]string n);void MoveItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void MoveItems(IntPtr p,IShellItem d);void CopyItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void CopyItems(IntPtr p,IShellItem d);void DeleteItem(IShellItem i,IntPtr s);void DeleteItems(IntPtr p);void NewItem(IShellItem d,uint a,[MarshalAs(UnmanagedType.LPWStr)]string n,[MarshalAs(UnmanagedType.LPWStr)]string t,IntPtr s);void PerformOperations();void GetAnyOperationsAborted([MarshalAs(UnmanagedType.Bool)]out bool aborted);
+ void Advise(IntPtr sink,out uint cookie); void Unadvise(uint cookie); void SetOperationFlags(uint flags); void SetProgressMessage([MarshalAs(UnmanagedType.LPWStr)]string msg);void SetProgressDialog(IntPtr p);void SetProperties(IntPtr p);void SetOwnerWindow(uint hwnd);void ApplyPropertiesToItem(IShellItem i);void ApplyPropertiesToItems(IntPtr p);void RenameItem(IShellItem i,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void RenameItems(IntPtr p,[MarshalAs(UnmanagedType.LPWStr)]string n);void MoveItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void MoveItems(IntPtr p,IShellItem d);void CopyItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void CopyItems(IntPtr p,IShellItem d);void DeleteItem(IShellItem i,[MarshalAs(UnmanagedType.Interface)]IFileOperationProgressSink s);void DeleteItems(IntPtr p);void NewItem(IShellItem d,uint a,[MarshalAs(UnmanagedType.LPWStr)]string n,[MarshalAs(UnmanagedType.LPWStr)]string t,IntPtr s);void PerformOperations();void GetAnyOperationsAborted([MarshalAs(UnmanagedType.Bool)]out bool aborted);
  }
  [DllImport("shell32.dll",CharSet=CharSet.Unicode,PreserveSig=false)] static extern void SHCreateItemFromParsingName(string path,IntPtr binding,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellItem item);
- public static void Recycle(string path) { Exception error=null;var thread=new System.Threading.Thread(()=>{object obj=null;IShellItem item=null;try {obj=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("3ad05575-8857-4850-9277-11b85bdb8e09")));var op=(IFileOperation)obj;op.SetOperationFlags(0x00080000|0x00100000|0x00000400|0x00000010|0x00000004);var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(path,IntPtr.Zero,ref id,out item);op.DeleteItem(item,IntPtr.Zero);op.PerformOperations();bool aborted;op.GetAnyOperationsAborted(out aborted);if(aborted)throw new InvalidOperationException("Recycle operation aborted");}catch(Exception e){error=e;}finally{if(item!=null)Marshal.FinalReleaseComObject(item);if(obj!=null)Marshal.FinalReleaseComObject(obj);}});thread.SetApartmentState(System.Threading.ApartmentState.STA);thread.Start();thread.Join();if(error!=null)throw new InvalidOperationException("Recycle failed: "+error.Message,error); }
+ public static void Recycle(string path) {
+  if(path.Length>=248)throw new InvalidOperationException("Long Shell path preserved");
+  Exception error=null;var thread=new System.Threading.Thread(()=>{object obj=null;IShellItem item=null;try {
+   obj=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("3ad05575-8857-4850-9277-11b85bdb8e09")));var op=(IFileOperation)obj;
+   op.SetOperationFlags(0x00080000|0x00100000|0x00000400|0x00000010|0x00000004|0x00000040|0x00002000);
+   var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(path,IntPtr.Zero,ref id,out item);
+   var guard=new RecycleGuard();op.DeleteItem(item,guard);op.PerformOperations();bool aborted;op.GetAnyOperationsAborted(out aborted);
+   if(aborted)throw new InvalidOperationException("Recycle operation aborted");guard.Validate();GC.KeepAlive(guard);
+  }catch(Exception e){error=e;}finally{if(item!=null)Marshal.FinalReleaseComObject(item);if(obj!=null)Marshal.FinalReleaseComObject(obj);}});
+  thread.SetApartmentState(System.Threading.ApartmentState.STA);thread.Start();thread.Join();if(error!=null)throw new InvalidOperationException("Recycle failed: "+error.Message,error);
+ }
  [StructLayout(LayoutKind.Sequential)] public struct Info { public uint Attr; public System.Runtime.InteropServices.ComTypes.FILETIME Creation,Access,Write; public uint Volume,High,Low,Links,IndexHigh,IndexLow; }
  [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern SafeFileHandle CreateFileW(string p,uint a,uint s,IntPtr sec,uint c,uint f,IntPtr t);
  [DllImport("kernel32.dll",SetLastError=true)] static extern bool GetFileInformationByHandle(SafeFileHandle h,out Info i);
@@ -413,6 +450,12 @@ function Assert-SCPair($Item,$Pair){
 function Invoke-SCRecycle($Item){
     [StorageCleanupNative]::Recycle($Item.source)
 }
+function Assert-SCRecyclePaths($Item){
+    if($Item.source.Length -ge 248){throw 'Long Shell path preserved; recycle not attempted'}
+    foreach($entry in @(Get-SCExpected $Item $Item.source)){
+        if($entry.path.Length -ge 248){throw 'Long Shell member path preserved; recycle not attempted'}
+    }
+}
 function Get-SCSpace($Roots){$r=@{};foreach($root in $Roots){$drive=[IO.Path]::GetPathRoot($root);if(!$r.ContainsKey($drive)){$r[$drive]=[IO.DriveInfo]::new($drive).AvailableFreeSpace}};$r}
 
 function Assert-SCManifest($Manifest,[string]$StateDirectory,[string]$ManifestPath) {
@@ -784,7 +827,7 @@ function Invoke-SCPurge($Context,$Item,$Pair) {
 }
 
 function Invoke-StorageCleanup {
-    [CmdletBinding()]param([ValidateSet('Check','Execute','Resume','Status','Verify')][string]$Mode='Check',[Parameter(Mandatory)][string]$ManifestPath,[string]$StateDirectory)
+    [CmdletBinding()]param([ValidateSet('Check','Execute','Resume','Status','Verify')][string]$Mode='Check',[Parameter(Mandatory)][string]$ManifestPath,[string]$StateDirectory,[string[]]$ItemIds)
     $ErrorActionPreference='Stop'
     if(!$IsWindows){throw 'Windows is required'};Initialize-SCNative
     $ManifestPath=Get-SCPath $ManifestPath;Assert-SCPlain $ManifestPath
@@ -796,6 +839,15 @@ function Invoke-StorageCleanup {
         if($Mode -ne 'Check' -and !$StateDirectory){throw 'Explicit, confirmed non-synchronized StateDirectory is required'}
         if($StateDirectory){$StateDirectory=Get-SCPath $StateDirectory}
         $roots=@(Assert-SCManifest $manifest $StateDirectory $ManifestPath)
+        $selectedIds=$null;$activeManifest=$manifest
+        if($PSBoundParameters.ContainsKey('ItemIds')){
+            if($Mode -notin @('Resume','Verify') -or @($manifest.items|Where-Object action -ne recycle).Count){throw 'ItemIds requires Resume/Verify and an entirely recycle-only manifest'}
+            if(-not $ItemIds.Count){throw 'ItemIds must not be empty'}
+            $availableIds=@{};foreach($i in $manifest.items){$availableIds[$i.id]=$true}
+            $selectedIds=@{}
+            foreach($id in $ItemIds){if([string]::IsNullOrWhiteSpace($id) -or -not $availableIds.ContainsKey($id) -or $selectedIds.ContainsKey($id)){throw 'Unknown, empty or duplicate ItemIds'};$selectedIds[$id]=$true}
+            $activeManifest=@{items=@($manifest.items|Where-Object {$selectedIds.ContainsKey($_.id)})}
+        }
         $ctx=@{records=[Collections.Generic.List[object]]::new();journal=$(if($StateDirectory){Join-Path $StateDirectory 'journal.jsonl'}else{$null})}
         $mutating=$Mode -in @('Execute','Resume')
         if($Mode -eq 'Execute'){
@@ -821,7 +873,7 @@ function Invoke-StorageCleanup {
         }
         $spaceRoots=@($roots)+@($manifest.items|Where-Object action -eq archive_then_purge|ForEach-Object {$_.archiveDestination})
         $before=Get-SCSpace $spaceRoots
-        $allFiles=@{};foreach($i in $manifest.items){foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}
+        $allFiles=@{};foreach($i in $activeManifest.items){foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}
         $frozenFiles=@{};foreach($path in $allFiles.Keys){$frozenFiles[$path]=$allFiles[$path]}
         $ctx.frozenFiles=$frozenFiles
         if($Mode -eq 'Execute'){
@@ -832,16 +884,18 @@ function Invoke-StorageCleanup {
         }
         $results=[Collections.Generic.List[object]]::new();$physical=@{};[long]$logical=0;[long]$estimate=0
         $replayMode=$Mode -in @('Resume','Verify')
-        foreach($i in $manifest.items){$known=Get-SCRecord $ctx staged $i.id;if($known){foreach($e in @(Get-SCExpected $i $known.data.r)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}}
+        foreach($i in $activeManifest.items){$known=Get-SCRecord $ctx staged $i.id;if($known){foreach($e in @(Get-SCExpected $i $known.data.r)|Where-Object kind -eq file){$allFiles[$e.path]=$i.action}}}
         if($Mode -in @('Resume','Verify')){Assert-SCAliasOriginalScope $ctx $frozenFiles}
-        $ctx.progress=Initialize-SCProgress $manifest $Mode $ctx
+        $ctx.progress=Initialize-SCProgress $activeManifest $Mode $ctx
         $itemIndex=0
         foreach($i in $manifest.items){
+            if($null -ne $selectedIds -and -not $selectedIds.ContainsKey($i.id)){$results.Add(@{id=$i.id;status='deferred';action=$i.action;reason='Excluded from this invocation; original manifest and journal retained'});continue}
             $itemIndex++
             Write-Verbose "$Mode item $($i.id)"
-            $held=$null;$sourceLocks=[Collections.Generic.List[IDisposable]]::new()
+            $held=$null;$sourceLocks=[Collections.Generic.List[IDisposable]]::new();$recycleInFlight=$false
             try{
                 $done=Get-SCRecord $ctx completed $i.id;$staged=Get-SCRecord $ctx staged $i.id;$intent=Get-SCRecord $ctx recycle_intent $i.id
+                if($mutating -and ($done -or $staged)){$recycleInFlight=$true}
                 $aliasPlan=Get-SCAliasPlanEntry $ctx $i.id
                 $sourceForAlias=Test-SCStatusPath $i.source
                 if(-not $done -and $aliasPlan -and $sourceForAlias -eq $false -and (Test-SCAliasCoverage $ctx $i $aliasPlan)){
@@ -868,11 +922,12 @@ function Invoke-StorageCleanup {
                 Write-SCProgress $ctx.progress 'starting'
                 if($Mode -eq 'Verify'){throw 'Item has not completed; use Resume after inspection'}
                 if(!$staged -and !(Test-Path -LiteralPath $i.source)){
-                    if(!$intent){throw 'Source absent without a recycle intent'};$pair=Find-SCPair $i $intent.data;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
+                    if(!$intent){throw 'Source absent without a recycle intent'};$recycleInFlight=$true;$pair=Find-SCPair $i $intent.data;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
                     Write-SCJournal $ctx staged $i.id $pair;$staged=Get-SCRecord $ctx staged $i.id
                 }
                 if(!$staged -and $replayMode -and !(Test-Path -LiteralPath $i.source) -and !$intent){throw 'Source absent without completed evidence'}
                 if(!$staged){
+                    Assert-SCRecyclePaths $i
                     Assert-SCContent $i $i.source;$held=Open-SCRetained $i
                     if($Mode -eq 'Check' -and $i.action -eq 'archive_then_purge' -and (Test-Path -LiteralPath $i.archiveDestination)){throw 'Archive destination already exists'}
                     foreach($e in @(Get-SCExpected $i $i.source)|Where-Object kind -eq file){
@@ -890,6 +945,7 @@ function Invoke-StorageCleanup {
                     $recycleData=@{bin=$bin;baseline=$baseline;utc=[datetime]::UtcNow.ToString('o')}
                     Write-SCJournal $ctx recycle_intent $i.id $recycleData
                     foreach($h in $sourceLocks){$h.Dispose()};$sourceLocks.Clear()
+                    $recycleInFlight=$true
                     Invoke-SCRecycle $i;Invoke-SCCheckpoint 'after_recycle' $i
                     if(Test-Path -LiteralPath $i.source){throw 'Source remains after recycle'}
                     $pair=Find-SCPair $i $recycleData;Assert-SCPair $i $pair;Assert-SCContent $i $pair.r -IgnoreRootTime
@@ -904,11 +960,12 @@ function Invoke-StorageCleanup {
                 $results.Add(@{id=$i.id;status='completed';bytes=$i.bytes;action=$i.action})
             }catch{
                 if($_.Exception.Message -like '*JOURNAL_FAILURE*'){throw}
+                if($mutating -and $recycleInFlight){throw [InvalidOperationException]::new("RECYCLE_SAFETY_FAILURE for item $($i.id): "+$_.Exception.Message,$_.Exception)}
                 $results.Add(@{id=$i.id;status='needs-attention';reason=$_.Exception.Message;action=$i.action})
             }finally{if($held){foreach($h in $held){$h.Dispose()}};foreach($h in $sourceLocks){$h.Dispose()}}
         }
         if($Mode -eq 'Verify'){
-            $partial=@($results|Where-Object status -eq 'needs-attention').Count -gt 0
+            $partial=@($results|Where-Object {$_.status -in @('needs-attention','deferred')}).Count -gt 0
             return @{schemaVersion=1;batchId=$manifest.batchId;mode='Verify';manifestSha256=$digest;outcome=$(if($partial){'partial'}else{'verified'});exitCode=$(if($partial){2}else{0});items=$results.ToArray()}
         }
         $baselineChecks=[Collections.Generic.List[object]]::new()
@@ -921,7 +978,7 @@ function Invoke-StorageCleanup {
             }}
         }
         $batchRecord=Get-SCRecord $ctx batch ''; $batchBefore=if($batchRecord){$batchRecord.data.freeSpace}else{$before}; $after=Get-SCSpace $spaceRoots; $delta=@{}; foreach($drive in $after.Keys){$delta[$drive]=$after[$drive]-$batchBefore[$drive]}
-        $partial=@($results|Where-Object status -eq 'needs-attention').Count -gt 0 -or $baselineChecks.Count -gt 0
+        $partial=@($results|Where-Object {$_.status -in @('needs-attention','deferred')}).Count -gt 0 -or $baselineChecks.Count -gt 0
         @{schemaVersion=1;batchId=$manifest.batchId;mode=$Mode;manifestSha256=$digest;outcome=$(if($partial){'partial'}elseif($Mode -eq 'Check'){'checked'}elseif($Mode -eq 'Verify'){'verified'}else{'complete'});exitCode=$(if($partial){2}else{0});items=$results.ToArray();logicalBytes=$logical;estimatedReclaimBytes=$estimate;freeSpaceBefore=$before;freeSpaceAfter=$after;batchFreeSpaceBefore=$batchBefore;freeSpaceDelta=$delta;unrelatedRecycleChanges=$baselineChecks.ToArray()}
     }finally{if($lock){$lock.Dispose()};$manifestHandle.Dispose()}
 }

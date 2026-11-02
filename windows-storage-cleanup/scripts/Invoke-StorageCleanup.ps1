@@ -5,7 +5,8 @@ param(
     [string]$Mode = 'Check',
     [Parameter(Mandatory)]
     [string]$ManifestPath,
-    [string]$StateDirectory
+    [string]$StateDirectory,
+    [string[]]$ItemIds
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,6 +15,7 @@ try {
     Import-Module (Join-Path $PSScriptRoot 'StorageCleanup.psm1') -Force
     $arguments = @{ Mode = $Mode; ManifestPath = $ManifestPath }
     if ($StateDirectory) { $arguments.StateDirectory = $StateDirectory }
+    if ($PSBoundParameters.ContainsKey('ItemIds')) { $arguments.ItemIds = @($ItemIds | ForEach-Object { $_.Split(',') }) }
     $result = Invoke-StorageCleanup @arguments
     $result | ConvertTo-Json -Depth 32
     exit $result.exitCode

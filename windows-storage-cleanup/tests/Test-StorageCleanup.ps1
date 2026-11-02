@@ -512,9 +512,74 @@ Test 'Junction ancestor is rejected without touching target content' {
     $alias=Join-Path $junction 'a';SaveManifest $f @((Item $alias));Attempt $f
     Assert ((Test-Path -LiteralPath $alias) -and [IO.File]::ReadAllText($p) -eq 'protected synthetic target') 'Junction target was changed.'
 }
-Test 'Unicode long path remains within explicit root' {
+Test 'Unicode long path is preserved without a recycle intent' {
     $f=Fixture 'long';$p=$f.source;foreach($n in 1..5){$p=Join-Path $p (('中文资料'+('x'*35))+$n)};$p=Join-Path $p '视频.mp4';WriteSample $p
-    SaveManifest $f @((Item $p));$null=Run $f Execute;Assert (-not(Test-Path -LiteralPath $p)) 'Supported long path was not processed.'
+    SaveManifest $f @((Item $p));$r=Invoke-StorageCleanup -Mode Check -ManifestPath $f.manifest
+    Assert ($r.exitCode -eq 2) 'Check accepted an unsafe Shell path.'
+    Attempt $f;Assert (Test-Path -LiteralPath $p) 'Long path was removed.'
+    Assert (@(Records $f|Where-Object type -eq recycle_intent).Count -eq 0) 'Long path reached the Shell boundary.'
+}
+Test 'Short directory with a long member is preserved' {
+    $f=Fixture 'long-member';$dir=Join-Path $f.source 'tree';$p=$dir
+    foreach($n in 1..5){$p=Join-Path $p (('member'+('x'*35))+$n)};$p=Join-Path $p 'original.txt';WriteSample $p 'long member content'
+    $hash=(Get-FileHash -LiteralPath $p).Hash
+    SaveManifest $f @((Item $dir 'recycle'));Attempt $f
+    Assert ((Test-Path -LiteralPath $dir) -and (Get-FileHash -LiteralPath $p).Hash -eq $hash) 'Long member was changed.'
+    Assert (@(Records $f|Where-Object type -eq recycle_intent).Count -eq 0) 'Long member reached the Shell boundary.'
+}
+Test 'Recycle callback rejects a permanent-delete choice and incomplete callbacks' {
+    $guard=[StorageCleanupNative+RecycleGuard]::new()
+    Assert ($guard.PreDeleteItem(0,$null) -lt 0) 'Permanent-delete choice was accepted.'
+    $blocked=$false;try{$guard.Validate()}catch{$blocked=$true};Assert $blocked 'Rejected choice validated.'
+    $guard=[StorageCleanupNative+RecycleGuard]::new()
+    $blocked=$false;try{$guard.Validate()}catch{$blocked=$true};Assert $blocked 'Missing callbacks validated.'
+}
+Test 'Recycle verification failure stops the batch and reconciles on Resume' {
+    $f=Fixture 'stop-after-recycle';$p=Join-Path $f.source 'a';$q=Join-Path $f.source 'b';WriteSample $p;WriteSample $q
+    $a=Item $p 'recycle';$b=Item $q 'recycle';SaveManifest $f @($a,$b)
+    & (Get-Module StorageCleanup) {
+        $script:testOriginalFindPair=${function:Find-SCPair}
+        function script:Find-SCPair($Item,$Intent){throw 'TEST_PAIR_UNAVAILABLE'}
+    }
+    $message=''
+    try{try{$null=Run $f Execute}catch{$message=$_.Exception.Message}}
+    finally{& (Get-Module StorageCleanup) {Set-Item Function:script:Find-SCPair -Value $script:testOriginalFindPair}}
+    Assert ($message -like '*RECYCLE_SAFETY_FAILURE*TEST_PAIR_UNAVAILABLE*') 'Post-recycle failure did not block the batch.'
+    Assert (Test-Path -LiteralPath $q) 'Later item was processed after recycle verification failed.'
+    Assert (@(Records $f|Where-Object {$_.type -eq 'recycle_intent' -and $_.id -eq $b.id}).Count -eq 0) 'Later item received a recycle intent.'
+    $null=Run $f Resume;$null=Run $f Verify
+}
+Test 'Recycle-only subset resumes the original journal and defers excluded items' {
+    $f=Fixture 'subset';$p=Join-Path $f.source 'a';$q=Join-Path $f.source 'b';$r=Join-Path $f.source 'c';WriteSample $p;WriteSample $q;WriteSample $r
+    $a=Item $p 'recycle';$b=Item $q 'recycle';$c=Item $r 'recycle';SaveManifest $f @($a,$b,$c)
+    $manifestHash=(Get-FileHash -LiteralPath $f.manifest).Hash
+    try{Fault 'after_recycle';Attempt $f}finally{ResetFault}
+    $journalPath=Join-Path $f.state 'journal.jsonl';$prefix=[IO.File]::ReadAllBytes($journalPath)
+    $resume=Invoke-StorageCleanup -Mode Resume -ManifestPath $f.manifest -StateDirectory $f.state -ItemIds @($a.id,$c.id)
+    Assert ($resume.exitCode -eq 2 -and @($resume.items|Where-Object status -eq completed).Count -eq 2 -and @($resume.items|Where-Object status -eq deferred).Count -eq 1) 'Subset result is incorrect.'
+    Assert ((Test-Path -LiteralPath $q) -and -not(Test-Path -LiteralPath $p) -and -not(Test-Path -LiteralPath $r)) 'Subset changed an excluded source.'
+    Assert (@(Records $f|Where-Object id -eq $b.id).Count -eq 0) 'Subset appended records for an excluded item.'
+    Assert ((Get-FileHash -LiteralPath $f.manifest).Hash -eq $manifestHash) 'Subset rewrote the frozen manifest.'
+    $after=[IO.File]::ReadAllBytes($journalPath)
+    Assert ([Convert]::ToBase64String($after[0..($prefix.Length-1)]) -eq [Convert]::ToBase64String($prefix)) 'Subset rewrote old journal bytes.'
+    $verify=Invoke-StorageCleanup -Mode Verify -ManifestPath $f.manifest -StateDirectory $f.state -ItemIds @($a.id,$c.id)
+    Assert ($verify.exitCode -eq 2 -and @($verify.items|Where-Object status -eq completed).Count -eq 2) 'Subset verification failed.'
+    foreach($ids in @(@(),@('unknown'),@($a.id,$a.id))){
+        $blocked=$false;try{$null=Invoke-StorageCleanup -Mode Resume -ManifestPath $f.manifest -StateDirectory $f.state -ItemIds $ids}catch{$blocked=$true}
+        Assert $blocked 'Invalid subset was accepted.'
+    }
+    $null=Run $f Resume;$null=Run $f Verify
+}
+Test 'Subset rejects Execute and any manifest containing purge actions' {
+    foreach($action in @('recycle','recycle_then_purge')){
+        $f=Fixture ('subset-reject-'+$action);$p=Join-Path $f.source 'a';WriteSample $p;$i=Item $p $action;SaveManifest $f @($i)
+        foreach($mode in @('Execute','Resume','Verify')){
+            if($action -eq 'recycle' -and $mode -ne 'Execute'){continue}
+            $blocked=$false;try{$null=Invoke-StorageCleanup -Mode $mode -ManifestPath $f.manifest -StateDirectory $f.state -ItemIds @($i.id)}catch{$blocked=$true}
+            Assert $blocked 'Unsafe subset mode/action was accepted.'
+            Assert (Test-Path -LiteralPath $p) 'Rejected subset changed source.'
+        }
+    }
 }
 Test 'Hardlink outside listed targets prevents destructive processing' {
     $f=Fixture 'hardlink';$p=Join-Path $f.source 'a';$alias=Join-Path $f.kept 'alias';WriteSample $p

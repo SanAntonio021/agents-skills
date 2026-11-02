@@ -79,7 +79,7 @@ python $zl operation resume --id '<原操作UUID>'
 
 写入前把操作编号和非凭据回执写入本机操作目录。命令返回 `running/unknown` 或退出码 2 时，保存原编号和 PDF，先查询同一操作；只有原操作确已终止才允许 `resume` 补缺。同一编号不同请求拒绝。原进程仍在但内存标记丢失时保持未知；进程结束后先查持久化结果。设置恢复未知或存在外部修改时保留现状并报告 `recovery_required`。
 
-HTTP 超时不终止任务、不提前恢复设置、不更换接口。当前没有提供满足同等保护的 Connector 写入适配器。出现 `automatic_fetch_policy_unverified` 时报告缺口并保留文件，不临时创建或修改策略；业务任务不得根据插件名称生成空偏好列表或虚构已审核依据。
+HTTP 超时不终止任务、不提前恢复设置、不更换接口。当前没有提供满足同等保护的 Connector 写入适配器。技能默认使用随附、按精确插件版本审查过的 `references/automatic_fetch_policy.json`；显式 `--policy` 可指定隔离环境策略。出现 `automatic_fetch_policy_unverified` 时报告缺口并保留文件，不临时创建或修改策略；插件版本或启用清单变化后重新审查并更新该文件。
 
 ## 阅读内容与清理
 

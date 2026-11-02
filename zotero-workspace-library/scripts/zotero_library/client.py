@@ -12,6 +12,9 @@ from .request import KEY, digest, require
 from .identity import normalize_doi, normalize_text, match_identity, related
 
 
+DEFAULT_POLICY = Path(__file__).resolve().parents[2] / 'references' / 'automatic_fetch_policy.json'
+
+
 class Client:
     def __init__(self, profile=None, base_url=None, timeout=3, policy=None):
         self.status = connection.status_payload(profile, base_url, timeout)
@@ -21,7 +24,9 @@ class Client:
         self.profile = self.status['profile']
         self.binding = {'base_url': self.base, 'profile': self.profile}
         self.timeout = timeout
-        self.policy = policy
+        # Reuse the version-pinned source audit by default. Explicit --policy
+        # remains available for an isolated or separately reviewed install.
+        self.policy = policy or (str(DEFAULT_POLICY) if DEFAULT_POLICY.is_file() else None)
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), connection.NoRedirect())
 
     def read(self, path, params=None):

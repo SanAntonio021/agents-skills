@@ -272,6 +272,28 @@ class NativeExecutionTests(unittest.TestCase):
         self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 0)
         self.assertEqual(result['native']['preferenceRecovery'][0]['recovery'], 'preserved_external_change')
 
+    def test_current_audited_addons_allow_write_without_separate_policy(self):
+        # These exact versions were reviewed in the shipped maintenance policy.
+        addons = [
+            {'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1'},
+            {'id': 'better-bibtex@iris-advies.com', 'version': '9.0.74'},
+            {'id': 'jasminum@linxzh.com', 'version': '1.1.43'},
+            {'id': 'register02@cn.nutstore.net', 'version': '2.1.2'},
+            {'id': 'tara@linxzh.com', 'version': '1.0.11'},
+            {'id': 'zoplicate@chenglongma.com', 'version': '5.1.1'},
+            {'id': 'zotero-format-metadata@northword.cn', 'version': '4.0.4'},
+            {'id': 'zoteroAddons@ytshen.com', 'version': '11.0.1'},
+            {'id': 'zoterocitation@polygon.org', 'version': '0.5.11'},
+            {'id': 'zoteroif@qnscholar', 'version': '7.1.3.1'},
+        ]
+        self.f.control(addons=addons)
+        executor = self.f.executor()
+        result = executor.run(self.f.request())
+        self.assertEqual(result['state'], 'completed', result)
+        state = self.f.control()
+        self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 1)
+        self.assertFalse(any(x['event'] == 'pref' for x in state['events']))
+
     def test_unknown_addon_blocks_write(self):
         self.f.control(addons=[{'id': 'unknown@invalid', 'version': '99'}])
         with self.assertRaisesRegex(LibraryError, 'automatic_fetch_policy_unverified'):

@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "addons": [
+    {
+      "id": "better-bibtex@iris-advies.com",
+      "version": "9.0.74",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version for item-add hooks and attachment import paths; citation and export functionality does not automatically retrieve new-item PDFs."
+    },
+    {
+      "id": "jasminum@linxzh.com",
+      "version": "1.1.43",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version: autoUpdateMetadata processes only top-level Chinese-named attachments; this archive creates child attachments and the addon has no automatic PDF retrieval for new regular items."
+    },
+    {
+      "id": "register02@cn.nutstore.net",
+      "version": "2.1.2",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version for item-add hooks and attachment import paths; Nutstore sync integration does not automatically retrieve PDFs for new items."
+    },
+    {
+      "id": "tara@linxzh.com",
+      "version": "1.0.11",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version; attachment import is part of the explicit backup action and is not triggered automatically by new Zotero items."
+    },
+    {
+      "id": "zoplicate@chenglongma.com",
+      "version": "5.1.1",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version; duplicate handling is user-directed and no automatic new-item PDF retrieval handler was found."
+    },
+    {
+      "id": "zotero-format-metadata@northword.cn",
+      "version": "4.0.4",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version; item notifications are used for metadata linting and correction, with no automatic PDF retrieval handler."
+    },
+    {
+      "id": "zoteroAddons@ytshen.com",
+      "version": "11.0.1",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version for item-add hooks and attachment import paths; addon management does not automatically retrieve new-item PDFs."
+    },
+    {
+      "id": "zoterocitation@polygon.org",
+      "version": "0.5.11",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version for item-add hooks and attachment import paths; citation functionality does not automatically retrieve new-item PDFs."
+    },
+    {
+      "id": "zoteroif@qnscholar",
+      "version": "7.1.3.1",
+      "preference_keys": [],
+      "evidence": "Reviewed installed version for automatic PDF retrieval; the exposed new-item automation is AI interpretation and note-related behavior, not attachment acquisition."
+    }
+  ]
+}

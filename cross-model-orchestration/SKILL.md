@@ -4,6 +4,7 @@ description: >
   Codex 与 Claude 的正式计划互审、用户明确要求的对端审查或执行，以及跨模型科研循环。
   科研循环仅在用户明确要求其他模型参与多轮科研监督、仿真或实验流水线、论文流水线、逐里程碑互审时启用。
   文件与消息材料统一通过 claude-codex-bridge v3；消息单轮交流，文件审查可直接修改，作者修改后只追加一次终审。
+  每次独立模型调用前确认思考强度；同一 series 的终审沿用首审模型和强度。
   普通分析、单次或批量仿真、论文润色、计划执行、测试、提交和交付不自动触发；单次互审不扩展成科研循环。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP on the current host. Protocol v3 is the
@@ -31,10 +32,20 @@ allowed-tools:
 两端使用共享 MCP `http://127.0.0.1:43123/mcp` 与
 `CLAUDE_CODEX_BRIDGE_TOKEN`。共享 token 只认证本机访问，`author` 是调用方声明：
 
-| 原作者 | `author` | `target` | 默认模型 |
-| --- | --- | --- | --- |
-| Codex | `codex` | `claude` | `claude-opus-5/max` |
-| Claude | `claude` | `codex` | `gpt-5.6-sol/max` |
+| 原作者 | `author` | `target` | 默认质量模型 | 默认强度 |
+| --- | --- | --- | --- | --- |
+| Codex | `codex` | `claude` | `claude-opus-5-5` | `high` |
+| Claude | `claude` | `codex` | `gpt-5.6-sol` | `xhigh` |
+
+每次独立模型调用都必须在提交前确定 `model` 和 `reasoningEffort`。用户在当前请求中明确指定时直接采用；
+未指定时先询问思考强度，向用户提供目标侧默认值作为首选，用户选择“默认”也按该值提交。执行、首轮审查、
+作者复查和终审都要记录实际请求模型、请求强度和运行时回执。`balanced`、`high_volume` 等 profile 的既有
+低成本路由保持不变，不因质量默认变化而提升档位。
+
+用户指定的跨模型流程可按以下顺序组织：Claude 规划 → GPT 首审并允许修改 → Claude 复查并按授权修改 →
+必要时 GPT 终审。首审可修改文件；终审由 bridge 强制 `check-only`。首审创建 `series` 后，后续 checkpoint
+和终审必须复用首审的精确模型与强度。终审前可以再次询问强度，但如果用户选择不同值，必须说明同一
+`series` 不允许换档并沿用首审值；不得通过新建 series 绕过终审约束。
 
 先调用 `v3_peer_status`，要求 `active=true`、`fullNativeTools=true`、
 `realProjectCwd=true`、`directProjectWrites=true` 和
@@ -57,13 +68,13 @@ task
 acceptanceCriteria = 可选；省略或空数组均可
 constraints = 可选
 model = 目标侧精确模型
-reasoningEffort = 可选；默认使用质量档
+reasoningEffort = 已在本次调用前确认的合法强度
 ```
 
 `author`、`target`、`projectRoot`、`task`、`model` 仍必填。不传文件字节数、正文哈希、文件白名单、
 sandbox 或工具列表。提供 `artifactPath` 时走 file 分支：bridge 解析真实项目、确认主文件存在，
 自行读取和记录最新 SHA-256；`artifactContent/context` 可作为补充，但不替代磁盘文件。
-`artifactPath` 只标识主文件，不限制对端读取或修改项目中的其他内容。
+`artifactPath` 只标识主文件，不限制对端读取或修改项目中的其他内容。文件审查首轮不传 `artifactContent`。
 
 省略 `artifactPath` 时走 message 分支，直接传 `artifactContent/context`，也可只提供完整 `task`。
 消息只交流一轮，不为满足桥格式建文件，不生成主文件哈希、不调用 checkpoint、不追加终审。
@@ -74,12 +85,12 @@ sandbox 或工具列表。提供 `artifactPath` 时走 file 分支：bridge 解�
 1. 原作者先完成可审查的落盘文件，再提交 `v3_review_peer`。
 2. 在当前任务中循环 `v3_await_peer(job_id, timeout_ms<=45000)`，并用
    `v3_peer_result(job_id)` 读取最新状态。单次等待超时只是 pending，不另开 job。
-3. 首轮对端使用完整原生工具读取真实项目、审查并可直接修改。终态必须记录精确请求模型；模型回执
+3. 首轮对端使用完整原生工具读取真实项目、审查并可直接修改。终态必须记录精确请求模型和强度；模型回执
    缺失或不匹配按失败处理。
 4. 原作者重新读取最新文件和 review 结果，检查对端改动，并可自行修改。完成后用首轮返回的
    `series_id`、`series_version` 和 `latest_job_id` 调用 `v3_author_checkpoint`。
 5. 若 `author_modified=false`，不再调用模型，交付最新文件、结论和未决项；科研里程碑按科研分支判断是否继续。
-6. 若 `author_modified=true`，使用与首轮完全相同的项目、文件、任务、验收、约束和模型字段，加上
+6. 若 `author_modified=true`，使用与首轮完全相同的项目、文件、任务、验收、约束、模型和强度字段，加上
    checkpoint 返回的 `seriesId/seriesVersion/latestJobId`，再次调用 `v3_review_peer`。这一轮对端
    只检查，不修改。
 7. 终审后原作者重读最新文件和结果，依据证据采纳、修正或不采纳意见，并完成相关验证。小问题和
@@ -107,8 +118,7 @@ v3 默认拥有完整工具、项目规则、技能、插件、MCP 和网络能�
 实际目标和文件保护规则行动；超出授权时由执行模型询问用户。不要额外加只读、快照、文件白名单或
 sandbox 限制；终审仍只检查，不修改。
 
-历史审批记录、类型及 `v3_resolve_approval` 接口保持兼容，不自动批准旧的待审批动作。沿用其 action、
-完整 targets、approval ID、fingerprint 和失效时间；用户明确决定后原样提交，不改写目标。
+历史审批记录、类型及 `v3_resolve_approval` 接口保持兼容，不自动批准旧的待审批动作。沿用其 action、完整 targets、approval ID、fingerprint 和失效时间；用户明确决定后原样提交，不改写目标。
 迁移后明确 resolve 只在 schema 4 记录中保存决策，不恢复旧任务执行；切换前旧 daemon 的审批拒绝或
 过期本身不是 job 终态，继续查询同一 job，只有实际终态失败才按失败报告。
 发布切换前等待活动任务结束，不为取消新任务审批而推进旧任务。

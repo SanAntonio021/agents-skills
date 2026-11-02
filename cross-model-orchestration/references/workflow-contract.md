@@ -40,6 +40,17 @@ bridge 对 `projectRoot` 取 realpath；有 `artifactPath` 即 file 分支，拒
 不存在的主文件；`artifactContent/context` 是补充内容，磁盘文件仍为主文件依据。无 `artifactPath`
 即 message 分支，可直接传正文和上下文，也可只传完整任务，不因缺少文件、验收或类型而拒绝。
 
+## 模型与强度确认
+
+每次独立模型调用都必须在创建 job 前确定 `model` 和 `reasoningEffort`。当前质量默认是 Claude
+`claude-opus-5-5/high`、Codex `gpt-5.6-sol/xhigh`；`balanced`、`high_volume` 等 profile 继续使用各自
+已有路由。用户在当前请求中明确指定模型或强度时直接采用；没有明确指定强度时，调用方先询问用户，
+并将目标侧默认值作为推荐选项。调用记录同时保存请求模型、请求强度和运行时回执，三者不一致按失败处理。
+
+首审建立 `series` 后，所有 checkpoint 和终审必须复用首审的模型与强度。终审前可以再次询问，但用户若
+选择不同强度，调用方必须说明同一 `series` 不允许换档并沿用首审值；不得为了换档另开 series。首审可按
+任务授权修改文件，作者复查也可修改；`final_check` 由 bridge 强制 `check-only`，只能检查，不能修改。
+
 ## 能力门
 
 调用 `v3_peer_status` 后至少验证：
@@ -94,7 +105,7 @@ SHA-256。message 不建主文件、不计算主文件哈希、不进入作者 c
 }
 ```
 
-请求模型必须由对端运行时精确回报；缺失或不同即失败。单次 await 返回非终态时继续等待同一 job，
+请求模型和请求强度必须由对端运行时精确回报；缺失或不同即失败。单次 await 返回非终态时继续等待同一 job，
 不另开 job、不换模型、不降档。
 
 ## 作者复查与终审
@@ -113,10 +124,10 @@ SHA-256。message 不建主文件、不计算主文件哈希、不进入作者 c
 
 - `author_modified=false`：不再调用模型，呈现最新文件和首轮结论，按下述主模型收尾规则处理意见；
   已授权科研里程碑按科研分支继续。
-- `author_modified=true`：用首轮完全相同的身份、任务、验收、约束和路由字段，加 checkpoint
+- `author_modified=true`：用首轮完全相同的身份、任务、验收、约束、模型和强度字段，加 checkpoint
   返回的 `seriesId/seriesVersion/latestJobId` 再调用 `v3_review_peer`。
 
-第二次 peer job 的 stage 为 `final_check`，只能检查，不能修改。主文件在终审中变化时 job 失败。
+第二次 peer job 的 stage 为 `final_check`，必须使用首轮相同的模型和强度，只能检查，不能修改。主文件在终审中变化时 job 失败。
 终审后不追加审查阶段，也不另开 series。原作者重读最新文件和结果，依据证据采纳、修正或不采纳
 needs_changes 或 disagreement 中的意见，完成相关验证。小问题和技术分歧自行处理；只有目标、范围
 或重要取舍需要用户决定时暂停依赖步骤。科研里程碑按科研分支继续条件处理。
@@ -170,7 +181,7 @@ Claude session 或 Codex ephemeral App Server process 保留到本轮和单次�
 ## 记录与秘密
 
 长期 v3 记录保存输入元数据、路径、模型、路由、file 各轮哈希、耗时、尝试/重试计数、审批元数据、
-结果和错误；完整最终回复可以保留，其中允许正文、代码和修订稿。新输入
+结果和错误；完整最终回复可以保留，其中允许正文、代码和修订稿。长期不得保存文件正文；新输入
 `task/acceptanceCriteria/constraints/artifactContent/context` 正文只在当前会话使用，长期仅存
 `inputMetadata`；完整 prompt、transcript、原始工具参数和输出不长期留存，旧记录原样保留。
 

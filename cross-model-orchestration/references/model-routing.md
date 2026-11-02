@@ -2,13 +2,13 @@
 
 ## 结论
 
-截至 2026-08-15，质量优先路由保持：
+当前质量优先路由为：
 
-- Claude：`claude-opus-5` / `max`
-- Codex：`gpt-5.6-sol` / `max`
+- Claude：`claude-opus-5-5` / `high`
+- Codex：`gpt-5.6-sol` / `xhigh`
 
-文字、创意写作和长文任务不自动路由到 Opus 4.6。当前公开写作评测中，Opus 5 已高于
-Opus 4.6；`claude-opus-4-6` / `max` 只保留为调用方明确选择的兼容项。
+这是本地 Bridge 的质量默认配置，不把现有公开评测快照解释为 Claude Opus 5.5 的直接性能证明。
+`claude-opus-4-6` / `max` 以及其他旧模型仍保留为调用方明确选择的兼容项。
 
 ## 评测快照
 
@@ -40,14 +40,16 @@ Artificial Analysis Intelligence Index 的同日快照：
 
 | `taskProfile` | Claude target | Codex target | 用途 |
 | --- | --- | --- | --- |
-| `quality` | Opus 5 / max | Sol / max | 默认质量优先 |
-| `writing`、`creative_writing` | Opus 5 / max | Sol / max | 正式写作、创意写作、长文 |
-| `coding`、`research`、`knowledge_work` | Opus 5 / max | Sol / max | 代码、研究、知识工作 |
+| `quality` | Opus 5.5 / high | Sol / xhigh | 默认质量优先 |
+| `writing`、`creative_writing` | Opus 5.5 / high | Sol / xhigh | 正式写作、创意写作、长文 |
+| `coding`、`research`、`knowledge_work` | Opus 5.5 / high | Sol / xhigh | 代码、研究、知识工作 |
 | `balanced` | Sonnet 5 / high | Terra / max | 明确接受一定质量取舍以平衡速度/成本 |
 | `high_volume` | Sonnet 5 / medium | Luna / max | 大批量、低风险、可独立复核的任务 |
 
-显式 `model` 或 `reasoningEffort` 优先于 profile；未提供时才走 profile 或质量默认。路由只在
-已经选定的 `target=claude|codex` 内选模型，不得把跨模型互审改成同源自审。
+显式 `model` 或 `reasoningEffort` 优先于 profile；未提供时才走 profile 或质量默认。每次独立模型调用前，
+若用户没有明确强度，先询问并把目标侧默认值作为推荐项。调用方必须记录请求值和运行时回执。路由只在
+已经选定的 `target=claude|codex` 内选模型，不得把跨模型互审改成同源自审。创建 `series` 后，终审必须
+沿用首审的精确模型和强度。
 
 ## 来源
 

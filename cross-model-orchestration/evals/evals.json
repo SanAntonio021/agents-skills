@@ -4,16 +4,16 @@
     {
       "id": 1,
       "prompt": "当前在 Claude Code，正式计划已保存到项目 docs/plan.md。让 Codex 审查后等我确认。",
-      "expected_output": "调用共享 MCP 的 v3_review_peer，author=claude、target=codex，传真实 projectRoot 和相对 artifactPath。Codex 使用完整工具并可直接修改项目；互审结束后仍停在用户确认门。",
+      "expected_output": "调用共享 MCP 的 v3_review_peer，author=claude、target=codex，传真实 projectRoot 和相对 artifactPath。Codex 使用完整工具并可直接修改项目；默认质量路由为 gpt-5.6-sol/xhigh；互审结束后仍停在用户确认门。",
       "files": ["evals/fixtures/sample-skill-alpha.md"],
-      "expectations": ["正文可作补充，不传文件白名单或 sandbox。", "精确核对 gpt-5.6-sol/max 模型回执。"]
+      "expectations": ["正文可作补充，不传文件白名单或 sandbox。", "未明确强度时先询问，精确核对 gpt-5.6-sol/xhigh 模型和强度回执。"]
     },
     {
       "id": 2,
       "prompt": "当前在 Codex Desktop，论文计划已落盘，请 Opus 审查并允许它直接修正。",
-      "expected_output": "调用 v3_review_peer，author=codex、target=claude，Claude CLI 以真实项目为 cwd，使用完整工具并可直接修改；默认精确路由 claude-opus-5/max。",
+      "expected_output": "调用 v3_review_peer，author=codex、target=claude，Claude CLI 以真实项目为 cwd，使用完整工具并可直接修改；默认质量路由 claude-opus-5-5/high。",
       "files": ["evals/fixtures/technical-note.md"],
-      "expectations": ["不直接调用 claude -p。", "artifactPath 只标识主文件，不是访问白名单。"]
+      "expectations": ["不直接调用 claude -p。", "artifactPath 只标识主文件，不是访问白名单。", "未明确强度时先询问并记录 high。"]
     },
     {
       "id": 3,
@@ -46,9 +46,9 @@
     {
       "id": 10,
       "prompt": "首轮 peer 后作者修改了主计划。",
-      "expected_output": "v3_author_checkpoint 返回 author_modified=true 后，使用同 series 和相同请求字段发起一次 final_check；对端只能检查，不能修改。",
+      "expected_output": "v3_author_checkpoint 返回 author_modified=true 后，使用同 series、相同模型和相同强度发起一次 final_check；对端只能检查，不能修改。",
       "files": [],
-      "expectations": ["终审后不再循环。"]
+      "expectations": ["终审后不再循环。", "终审前再次确认若用户选择不同强度，说明同一 series 不得换档。"]
     },
     {
       "id": 11,
@@ -287,6 +287,34 @@
       "expected_output": "可调用兼容 v3_resolve_approval 精确保存用户决策到 schema 4，不修改旧 schema 3，不恢复旧任务执行。",
       "files": [],
       "expectations": ["只读旧存储不等于禁止显式历史 resolve。", "不自动批准，也不改目标。"]
+    },
+    {
+      "id": 58,
+      "prompt": "这次请 Claude 做规划，但思考强度由我决定；如果我没有指定，就用默认值。",
+      "expected_output": "在独立 Claude 调用提交前询问思考强度；未指定时推荐 claude-opus-5-5/high，用户明确指定时采用用户值，并记录请求值和运行时回执。",
+      "files": [],
+      "expectations": ["不把每次调用默认静默成 max。", "显式 reasoningEffort 优先。"]
+    },
+    {
+      "id": 59,
+      "prompt": "Claude 已经规划完，交给 GPT 首审并允许它直接修改计划。",
+      "expected_output": "调用 Codex 侧的 v3 首审，默认使用 gpt-5.6-sol/xhigh；首审可修改文件，并记录模型、强度和回执。",
+      "files": [],
+      "expectations": ["首审不是 check-only。", "未明确强度时先询问。"]
+    },
+    {
+      "id": 60,
+      "prompt": "GPT 首审后我修改了计划，终审前我想把强度改成 max。",
+      "expected_output": "说明同一 series 的终审必须沿用 GPT 首审的模型和强度，不能换成 max；不自动新建 series，继续按首审配置执行终审。",
+      "files": [],
+      "expectations": ["final_check 由 bridge 强制只检查。", "不能通过新 series 绕过锁定。"]
+    },
+    {
+      "id": 61,
+      "prompt": "这批大量低风险任务使用 high_volume，别把它们切成质量默认路由。",
+      "expected_output": "保留 high_volume 的既有低成本模型和强度，不因 Claude Opus 5.5/high 与 GPT Sol/xhigh 的质量默认而升级。",
+      "files": [],
+      "expectations": ["profile 路由与质量默认分开。"]
     }
   ]
 }

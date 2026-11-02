@@ -25,7 +25,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed 
 
 `existing` 使用当前 Edge 的调试端口和 Proxy `3456`；端口从 `DevToolsActivePort` 读取，不硬编码。`managed` 使用 `%LOCALAPPDATA%\web-access\managed-edge-profile` 的独立实例。每个任务都在后台创建自有 tab，不修改现有用户页面；任务完成只关闭自有 tab/popup。
 
-正常页面操作不加全局锁。多个对话共享当前 Edge、CDP 连接和 Proxy，但各自创建独立 task/token/tab；后续调用复用现有连接。
+正常页面操作不加全局锁。多个对话共享当前 Edge、CDP 连接和 Proxy，但各自创建独立 task/token/tab；后续调用复用现有连接。若当前任务的旧目标 tab 无法可靠读取，可按技能正文用可信完整网址新建后台 tab；新页核实成功后，当前 task 可清理自有旧 tab。CDP 不允许当前 task 关闭其他 task 或用户 tab；非本 task 的旧页只有宿主另有获准的精确句柄关闭接口时才处理，不能用原始 CDP 绕过；不具备该能力时保留旧页。
 
 `check-deps` 只有在 Broker、浏览器身份和真实后台 task/tab 控制探针都通过后才返回 `ready:true`。任务创建使用 `background:true`，不主动激活或抢占用户当前页面。
 

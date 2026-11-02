@@ -32,7 +32,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 | CDP 端口 | 从 `DevToolsActivePort` 发现 |
 | Broker Proxy | `127.0.0.1:3456` |
 
-- 任务在后台新建标签页，不切换或修改用户现有页面；结束时只关闭本任务页面。
+- 任务在后台新建标签页，不切换或修改无关页面；可信目标页恢复并核实后，可按获准接口关闭唯一确定的旧目标页。CDP Proxy 只关闭当前 task 自有页面；其他 task/用户标签仅能由宿主提供的获准精确句柄接口关闭，不用原始 CDP 绕过。
 - 复用当前 Edge 内的已有登录态；不复制或导出浏览器 Profile、密码库、Cookie 或认证令牌。
 - `managed` 保留为显式隔离模式，不作为默认或自动回退。
 - 任务结束调用 `complete keep:false`，只关闭本 task 的 tab/popup；不停止 Broker、不关闭 Edge 或其他任务页面。
@@ -63,7 +63,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 - task token 只用于减少多个对话之间的误操作，不是本机安全边界。
 - 受管启动和修复只使用全局锁；正常页面操作通过独立 task/token 并发。
 - 端口或 Profile 被其他程序占用时报告具体状态，不结束用户进程、不创建备用端口。
-- 浏览器控制只操作本 task 后台创建的页面；不改变已有用户标签页。
+- 浏览器控制优先操作本 task 页面；无法确认旧目标页时按技能正文恢复，未经授权、接口拒绝或无法唯一定位时不关闭已有页面。
 
 ## 来源与许可
 

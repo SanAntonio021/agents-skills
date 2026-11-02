@@ -82,7 +82,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线 Light, 14pt
+- Font: 黑体, 14pt
 - Paragraph: align=1, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=10pt
 
 ### 标题
@@ -127,7 +127,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 14pt
+- Font: 黑体, 14pt
 - Paragraph: align=3, before=4pt, after=2pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 标题 5
@@ -136,7 +136,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 12pt
+- Font: 黑体, 12pt
 - Paragraph: align=3, before=4pt, after=2pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 标题 6
@@ -145,7 +145,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 10.5pt, bold
+- Font: 黑体, 10.5pt, bold
 - Paragraph: align=3, before=2pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 标题 7
@@ -154,7 +154,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 10.5pt, bold
+- Font: 黑体, 10.5pt, bold
 - Paragraph: align=3, before=2pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 标题 8
@@ -163,7 +163,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 10.5pt
+- Font: 黑体, 10.5pt
 - Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 标题 9
@@ -172,7 +172,7 @@
 - Built-in: `True`
 - Base style: `正文`
 - Next style: `正文`
-- Font: 等线, 10.5pt
+- Font: 黑体, 10.5pt
 - Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
 
 ### 正文

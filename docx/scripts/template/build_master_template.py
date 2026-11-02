@@ -90,6 +90,7 @@ def configure_style(doc, style_ref, **spec):
         size=spec.get("font_size"),
         bold=spec.get("bold"),
     )
+    style.Font.Color = 0
     set_paragraph_format(
         style.ParagraphFormat,
         alignment=spec.get("alignment"),
@@ -328,6 +329,23 @@ def build_template(allow_office_com: bool):
             configure_style(doc, constants.wdStyleHeading1, next_style="Master Body")
             configure_style(doc, constants.wdStyleHeading2, next_style="Master Body")
             configure_style(doc, constants.wdStyleHeading3, next_style="Master Body")
+
+            for style_ref in (
+                constants.wdStyleSubtitle,
+                constants.wdStyleHeading4,
+                constants.wdStyleHeading5,
+                constants.wdStyleHeading6,
+                constants.wdStyleHeading7,
+                constants.wdStyleHeading8,
+                constants.wdStyleHeading9,
+            ):
+                configure_style(
+                    doc,
+                    style_ref,
+                    font_name="SimHei",
+                    font_ascii="SimHei",
+                    font_far_east="SimHei",
+                )
 
             append_paragraph(doc, "MASTER REPORT TITLE", title_name)
             append_paragraph(doc, "Contract Name: XXXXX", "Master Cover Field")

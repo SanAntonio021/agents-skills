@@ -42,7 +42,8 @@ Windows 机构模块支持 IEEE Xplore 和 Optica Publishing Group，通过 `scr
     -> 图形/滑块/邮箱验证：web-access 页面动作/获授权邮件工具
     -> 真正短信/动态口令/刷脸/系统验证：handoff，完成后 resume
     -> Broker /download 返回完整二进制、最终 URL、长度、SHA-256
-    -> 本技能核验身份/版本/PDF，Zotero 入库并回读 -> complete
+    -> 本技能核验身份/版本/PDF -> finalize --session --request
+    -> 公共层 Zotero 归档与回读通过 -> 内部 complete
 ```
 
 `POST /v2/tabs/{targetId}/access` 返回 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，不返回凭据。`interactionRequired` 不等于人工；能力不足或工具限制如实报告，不承诺所有验证码都能自动通过。接口缺失或未声明能力是环境/版本缺口，不能在机构模块另写登录脚本。常规登录以外的消息、申请、权限变更和付款仍须核对准确目标及授权。
@@ -56,7 +57,8 @@ Windows 机构模块支持 IEEE Xplore 和 Optica Publishing Group，通过 `scr
 | `access_unavailable` | 保留实际站点原因；确认登录有效与明确权限拒绝后才能报告订阅不足。 |
 | `downloaded_identity_verified` | 完整 PDF、正文、身份和目标版本已核验；仍须完成请求的 Zotero 入库回读。 |
 | `resume` | 真正用户接管结束后恢复同一任务并回读，不把用户回复当成功证据。 |
-| `complete` | 正常收尾只关闭本任务 tab/popup；不停止 Broker、Edge 或其他任务。 |
+| `finalize` | 使用已核实请求归档，回读通过后关闭本任务；入库成功而收尾失败时只重试收尾。 |
+| `complete` | 保留独立收尾和已授权取消分支，只关闭本任务 tab/popup；不停止 Broker、Edge 或其他任务。 |
 
 下载只通过 `POST /v2/tabs/{targetId}/download`，body 含 `url`、`timeoutMs`、`maxBytes`；同源按 scheme/host/port 判断，额外 PDF 主机须已确认，跳转及 wrapper 内层 URL 受同样约束。完整二进制、长度与 SHA-256 复核后才做 DOI/题名/版本检查；HTML 包装和截断数据不得保存为成功 PDF，不再在本模块重写 CDP/fetch/Base64 下载。
 

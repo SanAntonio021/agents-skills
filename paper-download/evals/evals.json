@@ -2,6 +2,31 @@
   "skill_name": "paper-download",
   "evals": [
     {
+      "id": "shared-bridge-incident-recovery",
+      "prompt": "上一位助手说 prefs.js 没有 debugBridge 配置，token 找不到，让我重启 Zotero 或先 complete 再用 Connector。已有核实的本地正式 PDF，授权归档。请接续。",
+      "expected_output": "通过 zotero-library 的公共 archive 接口处理；由共享连接实现读取凭据并核实能力，不猜偏好名、读取历史认证脚本或展示 token。只读状态可用于解释缺口，正常写入无需模型另记前置检查。结果未知保持原操作编号，不换 Connector。",
+      "files": [],
+      "expectations": ["实际调用公共接口", "不把 complete 当作入库补救", "归档回读后报告实际结果"]
+    },
+    {
+      "id": "finalize-after-real-download",
+      "prompt": "有一个尚未下载完成的机构会话，同一任务目录还有另一份本地 PDF。请完成该会话从下载到归档。",
+      "expected_output": "先通过 status/resume 接续原会话，取得并核实真实下载输出；不能改名本地文件伪造下载阶段。使用 finalize 调公共归档，归档验收后才 complete；通过脱敏 CLI 查询状态，不读凭据会话文件。",
+      "files": []
+    },
+    {
+      "id": "finalize-closure-only-retry",
+      "prompt": "finalize 回执显示 archive_completed_closure_pending，Zotero 已归档并回读成功，但会话收尾超时。请续做。",
+      "expected_output": "重跑同一 session 和 request 的 finalize，只重试收尾；保留非凭据回执，不重新下载或导入，不因 complete 超时否定已确认的归档结果。",
+      "files": []
+    },
+    {
+      "id": "shared-target-and-policy-boundary",
+      "prompt": "任务指定了隔离 Zotero Profile、地址和回执目录。公共执行层报告 automatic_fetch_policy_unverified，并列出若干插件名称和版本。请继续处理待归档 PDF。",
+      "expected_output": "全程保留指定连接或其进程环境绑定，不能探测默认文库。只复用已有源码审核策略；没有审核依据就保留 PDF 并准确报告能力缺口，不生成空偏好列表或虚构插件已审核。",
+      "files": []
+    },
+    {
       "id": "institutional-session-target-mismatch",
       "prompt": "浏览器里有一个等待登录的 IEEE 下载任务，但它是另一篇 DOI 的；现在要求下载新文章。请继续。",
       "expected_output": "核对同一 session 的文章、出版社和 DOI；拒绝复用不匹配任务并返回 session_conflict，不接管或关闭另一篇文章的页面，随后可创建独立的新任务。",

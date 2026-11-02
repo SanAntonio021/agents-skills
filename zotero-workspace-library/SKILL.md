@@ -1,11 +1,11 @@
 ---
 name: zotero-workspace-library
-description: 统一工作区中的 Zotero 分类、参考资料归属、跨工作区关联和项目入口。Use when deciding where a paper, standard, manufacturer document, device manual, or other external reference belongs in Zotero, or when setting a workspace README reference-library pointer. Actual Zotero reads and writes follow the existing Zotero operation guidance; paper search/download and laboratory-manual workflows remain with their specialist skills.
+description: 统一工作区中的 Zotero 分类、参考资料归属、跨工作区关联和项目入口。Use when deciding where a paper, standard, manufacturer document, device manual, or other external reference belongs in Zotero, or when setting a workspace README reference-library pointer. Actual Zotero operations use the shared zotero-library execution layer; paper search/download and laboratory-manual workflows remain with their specialist skills.
 ---
 
 # Zotero 工作区资料归档
 
-本技能统一 Zotero 的分类和工作区入口。Zotero 接口选择、查重、写入保护、超时恢复及回读按 [`paper-download` 的 Zotero 操作细则](../paper-download/references/zotero-storage.md)执行；论文检索和下载分别由 `paper-search`、`paper-download` 负责，设备手册由 `lab-resources` 负责。
+本技能统一 Zotero 的分类和工作区入口。Zotero 接口选择、查重、写入保护、超时恢复及回读按 [`zotero-library` 公共执行层](../zotero-library/SKILL.md)执行；论文检索和下载分别由 `paper-search`、`paper-download` 负责，设备手册由 `lab-resources` 负责。
 
 ## 分类
 
@@ -29,6 +29,10 @@ description: 统一工作区中的 Zotero 分类、参考资料归属、跨工�
 工作区 `README.md` 可在对应集合建立后提供 Zotero 入口。先核实当前 Zotero 环境支持的集合链接形式；只有读回确认有效后才写可点击链接。若没有经验证的链接形式，写明集合层级名称和 Zotero 内检索方式，不猜 URI 或 key。
 
 论文工程中的 `.bib`、DOI、引用键及具体章节用途仍留在论文工程或研究材料中；Zotero 集合用于资料归属，不代表条目已被某篇稿件引用。
+
+## 执行交接
+
+本技能只决定分类与归属。使用公共 `collections` 查询，实际创建和关联通过 `archive --request` 的 `collections` 执行；已有条目传 `parent_key`，集合关系只增加。将同一条目关联多个工作区，不复制附件。请求格式见 [公共契约](../zotero-library/references/contract.md)。
 
 ## 写入边界
 

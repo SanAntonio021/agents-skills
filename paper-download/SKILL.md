@@ -10,7 +10,7 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 
 获取或复用用户请求的论文版本，核验后保存为 Zotero 管理的附件。已知论文下载和本地 PDF 入库使用本技能；筛选论文或寻找论断证据先用 `paper-search`，技术核对用 `paper-review`。只问访问状态时保持只读。
 
-沿用检索交接的题名、稳定标识、已核实来源、资料库、工作区集合、父条目及版本要求；已有父条目只补附件，未建条目则查重后建立一次。仅在身份或目标确有关键歧义时询问，不重复确认已授权的入库和归类。
+沿用检索交接的题名、稳定标识、已核实来源、资料库、工作区集合、父条目及版本要求；交接 key 仍需回读身份。已有父条目只补附件，未建条目则查重后建立一次。助手给错 key 且请求论文和同库正确目标均能唯一确认时直接纠正并说明；用户明确指定的 key 或资料库与论文冲突，或候选仍有歧义时先询问。不重复确认已授权的入库和归类。
 
 - Zotero 是默认文献库；未指定资料库时用个人库，不猜当前选中分类。论文沿用 [`zotero-workspace-library`](../zotero-workspace-library/SKILL.md) 确定的工作区集合；同一资料复用条目和附件，不按文章或检索任务复制分类。
 - 用户明确只要本地文件时按指定位置交付；要求项目副本时从 Zotero 导出。索引仅在用户要求或有效项目约定需要时维护，不默认创建 `paper_index.md`、引用账本或另一套 PDF 库。
@@ -25,22 +25,24 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 
 ## 执行流程
 
-1. **查重与定位**：先用本技能自带的 [只读状态脚本](scripts/zotero_local_status.py) 执行 `status --json`，按 [连接与接口选择](references/zotero-storage.md#连接与接口选择) 取得并验证本机地址和各后台能力，无需另找 Zotero 专用插件或缓存脚本。条目和附件检索、读取使用本地 API，写入使用已配置且支持该操作的 Connector 或后台桥接。后台缺少目标能力时说明具体缺口，未经用户明确同意不操作窗口或抢焦点。确认接口后，先按 DOI 等稳定标识找条目，再核对题名、作者和年份。通用搜索可能不覆盖 DOI 字段，空结果时改用题名、作者找候选并读取实际 DOI，不能凭一次空结果新建条目。读取现有正文附件、版本、分类与阅读内容；再核对本任务已知的索引、BibTeX、PDF 和上一步交接的本地路径，不全盘扫描。
+1. **查重与定位**：使用 [zotero-library](../zotero-library/SKILL.md) 的 `find/get/collections` 查询条目、附件、阅读内容及集合，`find --request` 可按公共身份规则只读定位。命令内置连接检查，无需先猜地址或凭据。交接 key 先读取完整题名、DOI、作者、年份及来源；正确 key 可直接复用，不为重复核验扫描全库。无 key 或稳定标识未命中时用完整题名、作者找候选并读取实际 DOI，再核对本任务已知的本地 PDF。缺 DOI 不等于可以新建，多匹配或未决冲突不能任选。执行层缺失时报告 `dependency_missing_zotero_library`，不恢复独立旧实现。
 2. **核实身份与目标**：复用可定位、未变化的已核实信息；缺口交 `paper-search`，未知字段不猜。需要获取或升级已发表论文时，读取出版社当前记录，核对 DOI、卷期页码或文章号和当前版本，再判断已有文件是否满足请求。已有可读目标版本优先复用；库内缺 PDF 而本地已有时，直接核验本地文件并入库，缺父条目不等于缺全文。纯本地整理不触发升级下载。已有附件的冗余检查按下文执行。
 3. **发现全文入口**：尚缺目标文件时，按 [全文入口发现](references/publisher-download-playbook.md#全文入口发现) 查找。默认正式版先查出版社公开入口和已配置、获授权的机构渠道；受阻后主动扩展公开来源，不等用户提醒。访问机构资源失败时，先核对实际登录态（页面是否显示机构名称或「Access provided by」字样），未登录或登录态已失效时按 `web-access` 重新完成机构登录再重试，不得在未确认登录态的情况下断言机构无订阅。未适配的助手、工具故障或页面访问检查不能当成学校无订阅。找到可靠目标版本即可停止扩渠道；保存其他版本不自动结束正式版补齐。
 4. **取得并核验 PDF**：具体论文页面及 PDF 统一走 `web-access`，默认当前 Edge 的 `existing` 会话；机构模块消费 HTTP Broker 的 `/access` 与 `/download`，不重写浏览器或认证逻辑。搜索与公开元数据按 `web-access` 选择工具。IEEE Xplore 或 Optica 文章需要机构访问时，优先使用本技能的 [公开机构访问模块](scripts/institutional_access/README.md)。依赖登录、动态按钮或访问检查时直接用相应入口，不先盲目直抓。下载到本次任务暂存目录，按下文核验文件身份、可读性及版本。
-5. **原生入库与回读**：关闭本次 PDF 读取句柄，按 [共享入库流程](references/zotero-storage.md) 检查自动抓取和原操作状态，再创建缺少的父条目或补附件；仅导入元数据也执行这项检查。批量按篇串行查重、保存并记录查询线索，不重投结果未知的整批导入。回读归属、实际路径、文件和哈希，核对所需版本确实保存。请求超时不代表 Zotero 停止执行，先查询同一操作和持久化结果；每轮状态检查最多 45 秒，仍未知时保留有效文件并报告待续。Zotero 不可用时报告待入库，不换建长期文献库。
-6. **版本去重与收尾**：目标版本入库或复用核验成功后，仅按下文规则把可清理的冗余正文附件原生移入回收站；再次核对保留文件、分类、标签和笔记。成功后清理本次自有暂存，移动导入则确认原临时路径消失；失败时保留有效文件和旧附件。按 `web-access` 收尾自有会话和页面，保留用户页面及长期服务。
+5. **原生入库与回读**：本地文件通过 [下载归档入口](scripts/zotero_archive.py) 的 `--request` 提交，机构下载使用 `finalize --session --request`；两者调用同一公共身份定位和归档实现。指定 `--required-version` 保留请求版本，`--parent-key-source` 默认 `user`；只有 key 确实来自助手交接时才传 `assistant`。业务入口复核 PDF 身份，助手错 key 仅在同库唯一目标时纠正；输出原 key、采用的 key 和依据，错误条目及其附件、集合、标签、笔记、批注保持原样。用户冲突或无唯一目标返回 `identity_review_required`，先说明差异再询问。原操作未知或仍在运行时查询原编号；只有明确终止且确认零内容写入才可提交纠正后的新请求。`finalize` 在归档与回读通过后才执行既有 `complete`；入库成功而收尾失败时再次运行同一命令，只续做收尾。请求超时保留 operation 编号及有效文件，先 `operation status`，确认原操作结束后才 `operation resume`；不重放或切换 Connector。
+6. **版本去重与收尾**：目标版本入库或复用核验成功后，仅按下文核实冗余候选并调用公共 `prune --request` 移入回收站；再次核对保留文件、分类、标签和笔记。公共层复制导入，成功验收后才清理本次自有暂存；失败时保留有效文件和旧附件。按 `web-access` 收尾自有会话和页面，保留用户页面及长期服务。
 
 准确机构登录授权、用户接管、网络重试和宿主拒绝边界统一遵循 [web-access](../web-access/SKILL.md)；站点操作见 [下载参考流程](references/publisher-download-playbook.md#公开机构访问模块)。不读取或导出密码、Cookie、令牌，不通过其他工具重放宿主明确拒绝的动作；独立获准的公开查找可继续。
 
 ## 机构访问模块
 
-Windows 机构模块支持 Python 3.10+、Node.js 22+、IEEE Xplore 和 Optica Publishing Group，依赖同仓库的 `web-access`。Python 环境位于 `%LOCALAPPDATA%\PaperDownload\venv`；短生命周期 Broker task token 保存在 Windows 凭据管理器，不是出版社认证令牌。模块只保留出版物识别、身份/PDF/版本验证与既有 CLI，入库继续使用共享 Zotero 流程。
+Windows 机构模块支持 Python 3.10+、Node.js 22+、IEEE Xplore 和 Optica Publishing Group，依赖同仓库的 `web-access`。Python 环境位于 `%LOCALAPPDATA%\PaperDownload\venv`；短生命周期 Broker task token 保存在 Windows 凭据管理器，不是出版社认证令牌。模块只保留出版物识别、身份/PDF/版本验证与既有 CLI，入库使用 `zotero-library`，请求格式见其接口契约。
 
 默认前检 `check-deps.mjs --browser edge --mode existing --json`，由 `web-access` 从 `DevToolsActivePort` 发现当前 Edge 的实际 CDP 地址，连接 HTTP Broker（通常 `127.0.0.1:3456`）。每个任务新建后台 tab，保留用户原有活动页；收尾只关闭自有页，不停止 Broker 或 Edge。`managed` 仅显式隔离任务可用，不是默认或自动回退。模块不启动、探测修复或另接浏览器，不复制 Profile 或登录数据。HTTP `/json/version` 404 不等于 CDP 失败，控制判定和恢复交给 `web-access`。
 
 同一 `--session` 一次只允许一个命令运行；并发调用返回会话占用，不并行操作同一页面。
+
+活动会话先用 `status/resume` 接续取得 PDF。`finalize` 要求原会话已有下载完成阶段、输出路径及文件哈希；把别的本地 PDF 改名不能代替下载完成。本地文件使用 `scripts/zotero_archive.py --request`，不借用未完成的下载会话。只通过 CLI 读取脱敏状态，不打开凭据会话文件。
 
 ```powershell
 $skillRoot = '<已解析的 paper-download 技能目录>'
@@ -48,7 +50,10 @@ $ia = Join-Path $skillRoot 'scripts/institutional_access/run.ps1'
 & $ia acquire --session <唯一任务名> --url <文章页> --doi <DOI> --output <新PDF路径>
 & $ia status --session <唯一任务名>
 & $ia resume --session <唯一任务名> --doi <DOI> --output <新PDF路径>
-& $ia complete --session <唯一任务名>
+& $ia finalize --session <唯一任务名> --request <已核实归档请求.json>
+# 助手交接 key 时附 --parent-key-source assistant；版本明确时附 --required-version official 等
+python (Join-Path $skillRoot 'scripts/zotero_archive.py') --request <已核实归档请求.json>
+# complete 保留为取消下载等已授权分支的会话收尾接口
 ```
 
 - `acquire` 返回 `downloaded_identity_verified` 时复用同一 PDF，不再启动第二条机构下载路径。
@@ -58,7 +63,7 @@ $ia = Join-Path $skillRoot 'scripts/institutional_access/run.ps1'
 - 真正短信、动态口令、刷脸或系统级验证才根据 `handoffRequired` 保留现场交还用户。handoff 期间禁读、禁截图、禁修改；用户完成后调用 `resume` 回读同一任务，不能把回复当作登录、权限或 PDF 成功证据。工具限制、账号歧义或能力不足单独报告，不冒充强验证；发送消息、申请权限或付款不属于常规登录授权。
 - PDF 统一调用 `POST /v2/tabs/{targetId}/download`，提供准确 `url`、有限 `timeoutMs` 和 `maxBytes`，仅允许同源或已确认的出版社 PDF 主机。复核完整二进制、解码后的最终 URL、长度与 SHA-256，再进行身份/版本检查；不保留页内 fetch/Base64 分块或另一套 CDP 下载实现。
 - `access_unavailable` 需结合实际页面判断；只有确认当前机构登录有效且存在相应权限拒绝证据，才报告订阅不足。401/403/429/418、挑战和控制失败分别记录，不靠重复登录、改代理、Cookie 或端点绕过。返回 `institutional_access` 但无 PDF 时保留同一任务，报告入口缺口。
-- 下载成功仍需按本技能主流程核对文件、DOI、版本、Zotero 附件和回读。Zotero 保存完成后才调用 `complete`；会话处于 handoff 时不能直接关闭。
+- 下载成功仍需按本技能主流程核对文件、DOI、版本、Zotero 附件和回读。正常下载到归档使用 `finalize`，其内部在 Zotero 保存验收后调用 `complete`；会话处于 handoff 时不能直接关闭。
 - 已确认本次不再重试的活动任务也应在用户结束该分支后调用 `complete`。handoff 中的任务不能绕过恢复屏障强制关闭；若用户明确取消，保留给用户关闭，或等待任务到期释放。
 
 ## PDF 身份与版本核验

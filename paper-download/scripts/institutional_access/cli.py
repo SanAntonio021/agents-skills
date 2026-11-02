@@ -683,7 +683,7 @@ def status(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
-def complete(args: argparse.Namespace) -> dict[str, Any]:
+def complete(args: argparse.Namespace, *, retain_session: bool = False) -> dict[str, Any]:
     store = get_session_store()
     session = load_session(store, args.session)
     client = browser_for_session(session)
@@ -714,7 +714,8 @@ def complete(args: argparse.Namespace) -> dict[str, Any]:
                 "task_state": state,
             }
     if state in {"completed", "expired"}:
-        store.delete(args.session)
+        if not retain_session:
+            store.delete(args.session)
         return {"stage": "completed", "task_state": state}
     return {"stage": "completion_requires_inspection", "task_state": state}
 
@@ -744,6 +745,16 @@ def build_parser() -> argparse.ArgumentParser:
     complete_parser = subparsers.add_parser("complete")
     complete_parser.add_argument("--session", required=True)
     complete_parser.set_defaults(handler=complete)
+    finalize_parser = subparsers.add_parser("finalize")
+    finalize_parser.add_argument("--session", required=True)
+    finalize_parser.add_argument("--request", required=True)
+    finalize_parser.add_argument("--parent-key-source", choices=("user", "assistant"), default="user")
+    finalize_parser.add_argument("--required-version", choices=("official", "accepted_manuscript", "preprint", "temporary_preprint", "unresolved"))
+    for option in ("profile", "base-url", "policy", "state-dir"):
+        finalize_parser.add_argument("--" + option)
+    finalize_parser.add_argument("--timeout", type=float, default=3)
+    from .finalize import finalize
+    finalize_parser.set_defaults(handler=finalize)
     return parser
 
 
@@ -753,6 +764,8 @@ def main() -> int:
         with session_lock(args.session):
             result = args.handler(args)
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        if args.command == "finalize" and result.get("stage") != "completed":
+            return 2
         return 0
     except OperationError as error:
         print(

@@ -43,7 +43,7 @@ def validate_pdf_bytes(
             extracted.append("")
     text = "\n".join(extracted)
     printable = text[:120000]
-    doi_found = compact_text(doi) in compact_text(printable)
+    doi_found = bool(doi) and compact_text(doi) in compact_text(printable)
     title_fragment = compact_text(title)[:160]
     title_found = bool(title_fragment) and title_fragment in compact_text(printable)
     identity_verified = provider_identity_match and (doi_found or title_found)

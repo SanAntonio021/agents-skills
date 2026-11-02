@@ -3,8 +3,9 @@
 This optional module supports IEEE Xplore and Optica Publishing Group article
 pages on Windows. `web-access` is the only browser execution layer; this module
 handles publication identification, PDF identity/version validation and the
-compatible `acquire`, `status`, `resume` and `complete` CLI workflow. Zotero
-import follows the parent skill's shared storage workflow.
+compatible `acquire`, `status`, `resume` and `complete` CLI workflow. `finalize`
+archives through the sibling `zotero-library` and closes the task only after
+library readback passes.
 
 The module does not capture, return, log or store school passwords, browser
 passwords, cookies or authorization headers, and does not copy browser profiles.
@@ -18,12 +19,47 @@ Run through the PowerShell wrapper:
 .\run.ps1 acquire --session SESSION --url ARTICLE_URL --doi DOI --output PDF
 .\run.ps1 status --session SESSION
 .\run.ps1 resume --session SESSION --doi DOI --output PDF
+.\run.ps1 finalize --session SESSION --request VERIFIED_ARCHIVE_REQUEST.json
+# complete remains available for an authorized cancellation or standalone closure
 .\run.ps1 complete --session SESSION
 ```
 
 `run.ps1` requires Python 3.10 or newer, creates a private Python environment under
 `%LOCALAPPDATA%\PaperDownload\venv` and installs the pinned `pypdf` when needed.
-The sibling `web-access` skill and Node.js 22 or newer are required.
+The sibling `web-access` skill and Node.js 22 or newer are required for downloading.
+Install the sibling `zotero-library` before using `finalize`; a missing shared
+dependency is reported without restoring a separate implementation.
+
+## Archive and closure recovery
+
+`finalize` accepts the shared archive request and optional `--profile`,
+`--base-url`, `--timeout`, `--state-dir` and `--policy` arguments. Verify the DOI,
+PDF version and workspace collection first; the CLI also checks the session DOI,
+output path and recorded file hash. An active task without a successful download
+receipt must use `resume` first; renaming an unrelated local PDF does not complete
+the download. Use CLI `status` for sanitized session state, never read the
+credential session file. See the [shared contract](../../../zotero-library/references/contract.md).
+
+Both `finalize` and the local-PDF business entry point
+[`../zotero_archive.py`](../zotero_archive.py) use the shared identity resolver.
+`--parent-key-source` defaults to `user`; use `assistant` only for a key supplied
+by an assistant. A wrong assistant key is corrected only when the verified paper
+has one unambiguous match in the same library. User target conflicts and ambiguous
+candidates return `identity_review_required` without changing library content.
+`--required-version` preserves the requested version; a mismatch or unverified
+PDF identity prevents archive and closure. PDF text checks supplement the business
+review of authors, source and publication version. The corrected request is frozen
+in the finalization receipt. An original unknown operation is reconciled before
+any correction; closure retries never archive again.
+
+The nonsecret finalization receipt is saved under
+`%LOCALAPPDATA%/PaperDownload/finalizations`. Archive failure or an unknown result
+keeps the original browser task and returns the shared operation ID. Inspect that
+same operation and resume it only after its original attempt has ended, then run
+the same `finalize` again. A durable `archive_completed_closure_pending` receipt
+means subsequent calls retry only task closure, even if Zotero is unavailable.
+The credential session is deleted after the completed receipt has been committed.
+Exit code 0 means completion, 2 means unfinished, and 1 means an input or dependency error.
 
 ## Browser execution contract
 

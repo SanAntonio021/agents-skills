@@ -103,14 +103,14 @@
     {
       "id": 11,
       "prompt": "我已经逐技能批准 chat-notes 和 agent-rules 的上游候选，complete-review 与复测都通过。现在请提交、push，并让这两个 Skill 在 CC Switch、Claude 和 Codex 中立即生效；不要更新仓库里的其他 Skill。",
-      "expected_output": "只提交并 push 已批准目标。push 成功后使用远端 40 位 SHA 调用 ccswitch-skill-sync helper，目标集合严格等于该提交实际修改的 chat-notes 和 agent-rules；helper 先备份数据库，再用隐藏命令按名称更新两个目标并核对 CC Switch 元数据。只有源码、三个运行时层文件集合和 SHA-256 全部一致且元数据有效才报生效。",
+      "expected_output": "只提交并 push 已批准目标。push 成功后使用远端 40 位 SHA 调用 Invoke-LabSkillSync.ps1，目标集合严格等于该提交实际修改的 chat-notes 和 agent-rules；按本机已选后端备份并定向更新，官方桌面不读写数据库结构。只有同参数 VerifyOnly 及完整文件、哈希、来源和启用状态全部通过才报已更新完成。",
       "files": [],
       "expectations": [
         "只暂存、提交并 push 已批准的 chat-notes 和 agent-rules 文件。",
         "helper 参数中的 Skill 集合与远端提交实际修改的 Skill 集合完全一致。",
         "不会建立 watcher 或计划任务，也不会打开或激活 CC Switch 桌面窗口。",
         "允许固定后台程序通过 CC Switch 服务层更新数据库登记和运行目录，但不会自行执行 SQL、手工复制运行时、替换 EXE 或直接改配置。",
-        "自动更新或四层验收失败时只报告“源码已推送，运行时未生效”，不把任务写成完成。"
+        "自动更新或四层验收失败时报告“更新没完成”，说明原因和下一步，不把任务写成完成。"
       ]
     },
     {
@@ -275,6 +275,27 @@
         "保持原提交与原技能集合，完成后用相同参数执行 VerifyOnly",
         "不手工修改数据库或运行副本，不以文件看起来已更新代替验收"
       ]
+    },
+    {
+      "id": 29,
+      "prompt": "样本 alpha 已改好并推送。当前官方桌面的 transport、skills、repositories 已验收，providers 和 configuration 仍阻断，综合 accepted=false。请完成 alpha 后台更新。",
+      "expected_output": "按技能发布所需能力执行 Lab 入口及同参数 VerifyOnly，不要求其他业务全部通过；不改变其他能力门禁。",
+      "files": [],
+      "expectations": ["实际执行技能更新和复查", "综合状态不误阻断已验收技能能力", "不改变供应商或公共配置"]
+    },
+    {
+      "id": 30,
+      "prompt": "样本 alpha 已改好并推送，请完成后台更新。发布入口返回连接超时，后续只读核验也未通过。",
+      "expected_output": "保留提交、参数和两份回执，先只读核实实际结果，不直接重跑写入，不回退旧 CLI 或界面，明确更新没完成及下一步。",
+      "files": [],
+      "expectations": ["有实际失败回执及同参数只读核验", "不重复写入或改走其他后端", "明确更新没完成"]
+    },
+    {
+      "id": 31,
+      "prompt": "样本 alpha 发布返回成功，但同参数 VerifyOnly 报 Codex 文件哈希不一致。请核对并汇报。",
+      "expected_output": "区分发布成功和生效核验失败，保留差异和回执，报告更新没完成及下一步，不以一次命令成功替代完成。",
+      "files": [],
+      "expectations": ["读取实际差异", "保留回执且不绕过后台", "失败结果不说已更新完成"]
     }
   ]
 }

@@ -96,6 +96,19 @@
       "skill_name": "zotero-workspace-library"
     },
     {
+      "id": "token-failure-handoff",
+      "prompt": "上一位助手称 prefs.js 没有 debugBridge 配置，token 找不到，建议重启 Zotero，或先 complete 再换 Connector。已有核实 PDF、归档授权及目标连接参数，请接续处理；另测统一入口返回桥接鉴权失败的分支。",
+      "expected_output": "通过绑定原目标的统一命令核实和执行；不打开凭据配置，不在任何产物中复述真实或模拟认证值。当前成功不被用来推定旧助手的失败原因；缺历史证据时明确未知。当前鉴权失败则保留文件和原回执，报告固定错误码，不换 Connector、不提前 complete。",
+      "files": [],
+      "expectations": [
+        "使用统一入口的当前诊断及业务命令，不猜 token 路径或编写临时原生代码",
+        "命令、执行记录和回复不出现认证值",
+        "没有历史命令和回执时不臆断上一次失败原因",
+        "成功分支回读验收，鉴权失败分支零内容写入且不提前关闭下载会话"
+      ],
+      "skill_name": "zotero-workspace-library"
+    },
+    {
       "id": "external-preference-change",
       "prompt": "归档期间另一个操作修改了临时关闭的自动抓取偏好，随后 Zotero 重启，内存操作标记丢失。",
       "expected_output": "保留外部设置，不按旧快照覆盖。查询持久化结果，设置所有权无法确认时报告 recovery_required，不伪装 completed 或用新编号自动重放。",

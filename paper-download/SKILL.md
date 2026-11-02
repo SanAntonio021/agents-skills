@@ -25,7 +25,7 @@ description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目�
 
 ## 执行流程
 
-1. **查重与定位**：使用 [zotero-workspace-library](../zotero-workspace-library/SKILL.md) 的 `find/get/collections` 查询条目、附件、阅读内容及集合，`find --request` 可按公共身份规则只读定位。命令内置连接检查，无需先猜地址或凭据。交接 key 先读取完整题名、DOI、作者、年份及来源；正确 key 可直接复用，不为重复核验扫描全库。无 key 或稳定标识未命中时用完整题名、作者找候选并读取实际 DOI，再核对本任务已知的本地 PDF。缺 DOI 不等于可以新建，多匹配或未决冲突不能任选。执行层缺失时报告 `dependency_missing_zotero_library`，不恢复独立旧实现。
+1. **查重与定位**：使用 [zotero-workspace-library](../zotero-workspace-library/SKILL.md) 的 `find/get/collections` 查询条目、附件、阅读内容及集合，`find --request` 可按公共身份规则只读定位。命令内置连接检查，无需先猜地址或凭据。接手 token 或配置故障时先按其“故障交接”核实，不自行翻配置或推定历史原因。交接 key 先读取完整题名、DOI、作者、年份及来源；正确 key 可直接复用，不为重复核验扫描全库。无 key 或稳定标识未命中时用完整题名、作者找候选并读取实际 DOI，再核对本任务已知的本地 PDF。缺 DOI 不等于可以新建，多匹配或未决冲突不能任选。执行层缺失时报告 `dependency_missing_zotero_library`，不恢复独立旧实现。
 2. **核实身份与目标**：复用可定位、未变化的已核实信息；缺口交 `paper-search`，未知字段不猜。需要获取或升级已发表论文时，读取出版社当前记录，核对 DOI、卷期页码或文章号和当前版本，再判断已有文件是否满足请求。已有可读目标版本优先复用；库内缺 PDF 而本地已有时，直接核验本地文件并入库，缺父条目不等于缺全文。纯本地整理不触发升级下载。已有附件的冗余检查按下文执行。
 3. **发现全文入口**：尚缺目标文件时，按 [全文入口发现](references/publisher-download-playbook.md#全文入口发现) 查找。默认正式版先查出版社公开入口和已配置、获授权的机构渠道；受阻后主动扩展公开来源，不等用户提醒。访问机构资源失败时，先核对实际登录态（页面是否显示机构名称或「Access provided by」字样），未登录或登录态已失效时按 `web-access` 重新完成机构登录再重试，不得在未确认登录态的情况下断言机构无订阅。未适配的助手、工具故障或页面访问检查不能当成学校无订阅。找到可靠目标版本即可停止扩渠道；保存其他版本不自动结束正式版补齐。
 4. **取得并核验 PDF**：具体论文页面及 PDF 统一走 `web-access`，默认当前 Edge 的 `existing` 会话；机构模块消费 HTTP Broker 的 `/access` 与 `/download`，不重写浏览器或认证逻辑。搜索与公开元数据按 `web-access` 选择工具。IEEE Xplore 或 Optica 文章需要机构访问时，优先使用本技能的 [公开机构访问模块](scripts/institutional_access/README.md)。依赖登录、动态按钮或访问检查时直接用相应入口，不先盲目直抓。下载到本次任务暂存目录，按下文核验文件身份、可读性及版本。

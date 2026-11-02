@@ -8,7 +8,7 @@ param(
     [string]$DesktopConfigLibrary = (Join-Path $env:LOCALAPPDATA 'Claude-3p\configLibrary'),
     [switch]$AsJson,
     [string]$DesktopBridge,
-    [string]$DesktopStateRoot = (Join-Path $env:LOCALAPPDATA 'ccswitch-desktop')
+    [string]$DesktopStateRoot
 )
 
 Set-StrictMode -Version Latest

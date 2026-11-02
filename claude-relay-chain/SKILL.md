@@ -87,7 +87,7 @@ Desktop 模型发现问题看对应 profile、路由和模型列表。只有相�
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\audit-claude-relay.ps1"
 ```
 
-需要机器可读结果时加 `-AsJson`。脚本读取配置、注册表存在性和监听端口，并通过官方桌面通道返回脱敏供应商摘要，不访问数据库。新增 `-DesktopBridge` 指向已核验的 `CcSwitchDesktop.psm1`（或设置进程变量 `CCSWITCH_DESKTOP_MODULE`），`-DesktopStateRoot` 可指定私有连接状态；维护源码可按相对位置找到组件，运行副本找不到时标为 `UNAVAILABLE`。原 `-CcSwitchDb` 仅兼容接受，不打开。回执 schema 为 2，标明官方来源及 `databaseRead=false`。
+需要机器可读结果时加 `-AsJson`。脚本读取配置、注册表存在性和监听端口，并通过官方桌面通道返回脱敏供应商摘要，不访问数据库。新增 `-DesktopBridge` 指向已核验的 `CcSwitchDesktop.psm1`（或设置进程变量 `CCSWITCH_DESKTOP_MODULE`），连接状态目录默认由公共桥接组件统一定位，`-DesktopStateRoot` 可显式指定私有连接状态；维护源码可按相对位置找到组件，运行副本找不到时标为 `UNAVAILABLE`。原 `-CcSwitchDb` 仅兼容接受，不打开。回执 schema 为 2，标明官方来源及 `databaseRead=false`。
 
 完整审计覆盖以下项目；局部检查只取与当前问题有关的项目，不修改脚本接口：
 

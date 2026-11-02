@@ -37,6 +37,8 @@
 [VS Code 设置](https://code.claude.com/docs/en/vs-code#extension-settings)、
 [CLI reference](https://code.claude.com/docs/en/cli-reference)。命令参数和存储结构以本机版本核验为准。
 
+切换官方与中转后，如果新对话正常、旧对话报 thinking 相关错误，优先考虑旧记录兼容问题。先建议新开对话并带上任务进度；用户需要保留完整旧历史时，再检查修复办法。
+
 ## 验证层级
 
 ### 1. 静态配置

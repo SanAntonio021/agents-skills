@@ -1,311 +1,313 @@
-# Word Template Profile
+# Word 模板样式说明
 
-- Template source: public repo ships the style profile only; original sample document omitted.
-- Generated: `2026-03-11T02:11:14.753438+00:00`
-- Styles captured: `30`
+- 模板来源：公开仓库仅提供样式配置，未附原始示例文档。
+- 样式采集时间（UTC）：`2026-03-11T02:11:14.753438+00:00`
+- 样式数量：30
 
-## Page Setup
+## 页面设置
 
-| Rule | Value |
+| 项目 | 设置 |
 | --- | --- |
-| Page size | 595.3 pt (8.27 in) x 841.9 pt (11.69 in) |
-| Margins | top 93.55 pt (1.30 in), bottom 100.95 pt (1.40 in), left 86.45 pt (1.20 in), right 79.1 pt (1.10 in) |
-| Header distance | 42.55 pt (0.59 in) |
-| Footer distance | 49.6 pt (0.69 in) |
-| Orientation | 0 |
+| 页面大小（宽 × 高） | 595.3 磅（8.27 英寸） × 841.9 磅（11.69 英寸） |
+| 页边距 | 上：93.55 磅（1.30 英寸）；下：100.95 磅（1.40 英寸）；左：86.45 磅（1.20 英寸）；右：79.1 磅（1.10 英寸） |
+| 页眉距边界 | 42.55 磅（0.59 英寸） |
+| 页脚距边界 | 49.6 磅（0.69 英寸） |
+| 页面方向 | 纵向 |
 
-## Recommended Style Map
+## 推荐样式对应表
 
-| Role | Style |
+| 用途 | Word 样式 |
 | --- | --- |
-| body | Master Body |
-| body_text | 正文文本 |
-| caption | 题注 |
-| heading_1 | 标题 1 |
-| heading_2 | 标题 2 |
-| heading_3 | 标题 3 |
-| heading_4 | 标题 4 |
-| heading_5 | 标题 5 |
-| heading_6 | 标题 6 |
-| heading_7 | 标题 7 |
-| heading_8 | 标题 8 |
-| heading_9 | 标题 9 |
-| list_paragraph | 列表段落 |
-| normal | 正文 |
-| subtitle | 副标题 |
-| title | 标题 |
-| toc_1 | TOC 1 |
-| toc_2 | TOC 2 |
-| toc_3 | TOC 3 |
+| 默认正文 | 默认正文（`Master Body`） |
+| 正文文本 | `正文文本` |
+| 题注 | `题注` |
+| 一级标题 | `标题 1` |
+| 二级标题 | `标题 2` |
+| 三级标题 | `标题 3` |
+| 四级标题 | `标题 4` |
+| 五级标题 | `标题 5` |
+| 六级标题 | `标题 6` |
+| 七级标题 | `标题 7` |
+| 八级标题 | `标题 8` |
+| 九级标题 | `标题 9` |
+| 列表段落 | `列表段落` |
+| 常规段落 | `正文` |
+| 副标题 | `副标题` |
+| 文档标题 | `标题` |
+| 一级目录 | 一级目录（`TOC 1`） |
+| 二级目录 | 二级目录（`TOC 2`） |
+| 三级目录 | 三级目录（`TOC 3`） |
 
-## Styles
+样式名称中的英文为 Word 内的原始标识，便于查找和应用。
 
-### TOC 1
+## 各样式设置
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `TOC 1`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=0, before=0pt, after=6pt, lineRule=4, line=18pt, firstLine=0pt
+### 一级目录（`TOC 1`）
 
-### TOC 2
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：一级目录（`TOC 1`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：6 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `TOC 2`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=0, before=0pt, after=3pt, lineRule=4, line=18pt, firstLine=0pt
+### 二级目录（`TOC 2`）
 
-### TOC 3
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：二级目录（`TOC 2`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：3 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `TOC 3`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=0, before=0pt, after=3pt, lineRule=4, line=18pt, firstLine=0pt
+### 三级目录（`TOC 3`）
 
-### 列表段落
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：三级目录（`TOC 3`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：3 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `列表段落`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `列表段落`
 
-### 副标题
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`列表段落`
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 14pt
-- Paragraph: align=1, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=10pt
+### `副标题`
 
-### 标题
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：10 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `Master Cover Field`
-- Font: 方正小标宋简体, 28pt
-- Paragraph: align=1, before=0pt, after=18pt, lineRule=4, line=28pt, firstLine=0pt
+### `标题`
 
-### 标题 1
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：封面信息（`Master Cover Field`）
+- 字体设置：中文字体：方正小标宋简体；西文字体：方正小标宋简体；字号：28 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：0 磅；段后：18 磅；行距规则：固定值；行距：28 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `Master Body`
-- Font: 黑体, 14pt
-- Paragraph: align=0, before=18pt, after=0pt, lineRule=4, line=18pt, firstLine=0pt
+### `标题 1`
 
-### 标题 2
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：默认正文（`Master Body`）
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：18 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `Master Body`
-- Font: 黑体, 10.5pt
-- Paragraph: align=0, before=12pt, after=0pt, lineRule=4, line=18pt, firstLine=0pt
+### `标题 2`
 
-### 标题 3
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：默认正文（`Master Body`）
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：12 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `Master Body`
-- Font: 楷体_GB2312, 10.5pt, bold
-- Paragraph: align=0, before=12pt, after=0pt, lineRule=4, line=18pt, firstLine=0pt
+### `标题 3`
 
-### 标题 4
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：默认正文（`Master Body`）
+- 字体设置：中文字体：楷体_GB2312；西文字体：楷体_GB2312；字号：10.5 磅；加粗：是；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：12 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 14pt
-- Paragraph: align=3, before=4pt, after=2pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 4`
 
-### 标题 5
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：4 磅；段后：2 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 12pt
-- Paragraph: align=3, before=4pt, after=2pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 5`
 
-### 标题 6
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：12 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：4 磅；段后：2 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 10.5pt, bold
-- Paragraph: align=3, before=2pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 6`
 
-### 标题 7
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：10.5 磅；加粗：是；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：2 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 10.5pt, bold
-- Paragraph: align=3, before=2pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 7`
 
-### 标题 8
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：10.5 磅；加粗：是；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：2 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 8`
 
-### 标题 9
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 黑体, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `标题 9`
 
-### 正文
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `-`
-- Next style: `正文`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `正文`
 
-### 正文文本
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：无
+- 后续段落样式：`正文`
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文文本`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### `正文文本`
 
-### 题注
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文文本`
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `True`
-- Base style: `正文`
-- Next style: `正文`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=1, before=12pt, after=12pt, lineRule=4, line=18pt, firstLine=0pt
+### `题注`
 
-### Master Appendix Title
+- 样式类型：段落样式
+- 内置样式：是
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：12 磅；段后：12 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `标题 1`
-- Next style: `正文`
-- Font: 黑体, 14pt
-- Paragraph: align=1, before=18pt, after=18pt, lineRule=4, line=18pt, firstLine=0pt
+### 附录标题（`Master Appendix Title`）
 
-### Master Body
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`标题 1`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：18 磅；段后：18 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `Master Body`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=21pt
+### 默认正文（`Master Body`）
 
-### Master Body No Indent
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：默认正文（`Master Body`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：21 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `Master Body`
-- Next style: `Master Body No Indent`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=3, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=0pt
+### 无首行缩进正文（`Master Body No Indent`）
 
-### Master Cover Field
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：默认正文（`Master Body`）
+- 后续段落样式：无首行缩进正文（`Master Body No Indent`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：两端对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `Master Cover Field`
-- Font: 楷体_GB2312, 14pt
-- Paragraph: align=0, before=0pt, after=0pt, lineRule=4, line=22pt, firstLine=0pt
+### 封面信息（`Master Cover Field`）
 
-### Master Cover Footer
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：封面信息（`Master Cover Field`）
+- 字体设置：中文字体：楷体_GB2312；西文字体：楷体_GB2312；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：22 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `正文`
-- Font: 楷体_GB2312, 16pt
-- Paragraph: align=1, before=0pt, after=0pt, lineRule=4, line=23pt, firstLine=0pt
+### 封面底部文字（`Master Cover Footer`）
 
-### Master Cover Signature
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：楷体_GB2312；西文字体：楷体_GB2312；字号：16 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：0 磅；段后：0 磅；行距规则：固定值；行距：23 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `Master Cover Signature`
-- Font: 楷体_GB2312, 14pt
-- Paragraph: align=0, before=0pt, after=0pt, lineRule=4, line=30pt, firstLine=0pt
+### 封面署名（`Master Cover Signature`）
 
-### Master Figure Caption
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：封面署名（`Master Cover Signature`）
+- 字体设置：中文字体：楷体_GB2312；西文字体：楷体_GB2312；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：30 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `题注`
-- Next style: `正文`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=1, before=12pt, after=12pt, lineRule=4, line=18pt, firstLine=0pt
+### 图题（`Master Figure Caption`）
 
-### Master References Body
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`题注`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：12 磅；段后：12 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `Master References Body`
-- Font: Times New Roman, 9pt
-- Paragraph: align=0, before=0pt, after=0pt, lineRule=4, line=18pt, firstLine=17pt
+### 参考文献正文（`Master References Body`）
 
-### Master References Title
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：参考文献正文（`Master References Body`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：9 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：0 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：17 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `标题 1`
-- Next style: `正文`
-- Font: 黑体, 14pt
-- Paragraph: align=0, before=18pt, after=0pt, lineRule=4, line=18pt, firstLine=0pt
+### 参考文献标题（`Master References Title`）
 
-### Master Table Caption
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`标题 1`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：14 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：左对齐；段前：18 磅；段后：0 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `题注`
-- Next style: `正文`
-- Font: Times New Roman, 10.5pt
-- Paragraph: align=1, before=12pt, after=12pt, lineRule=4, line=18pt, firstLine=0pt
+### 表题（`Master Table Caption`）
 
-### Master Table Text
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`题注`
+- 后续段落样式：`正文`
+- 字体设置：中文字体：黑体；西文字体：Times New Roman；字号：10.5 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：12 磅；段后：12 磅；行距规则：固定值；行距：18 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `正文`
-- Next style: `Master Table Text`
-- Font: Times New Roman, 9pt
-- Paragraph: align=1, before=0pt, after=0pt, lineRule=4, line=12pt, firstLine=0pt
+### 表格文字（`Master Table Text`）
 
-### Master TOC Title
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`正文`
+- 后续段落样式：表格文字（`Master Table Text`）
+- 字体设置：中文字体：宋体；西文字体：Times New Roman；字号：9 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：0 磅；段后：0 磅；行距规则：固定值；行距：12 磅；首行缩进：0 磅
 
-- Type: `paragraph`
-- Built-in: `False`
-- Base style: `标题 1`
-- Next style: `TOC 1`
-- Font: 黑体, 16pt
-- Paragraph: align=1, before=18pt, after=18pt, lineRule=4, line=24pt, firstLine=0pt
+### 目录标题（`Master TOC Title`）
+
+- 样式类型：段落样式
+- 内置样式：否
+- 基于样式：`标题 1`
+- 后续段落样式：一级目录（`TOC 1`）
+- 字体设置：中文字体：黑体；西文字体：黑体；字号：16 磅；加粗：否；颜色：黑色（#000000）
+- 段落设置：对齐方式：居中；段前：18 磅；段后：18 磅；行距规则：固定值；行距：24 磅；首行缩进：0 磅

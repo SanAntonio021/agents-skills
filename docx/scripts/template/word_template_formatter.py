@@ -539,79 +539,135 @@ def format_points(value: Any) -> str:
         inches = float(value) / 72.0
     except (TypeError, ValueError):
         return str(value)
-    return f"{value} pt ({inches:.2f} in)"
+    return f"{value} 磅（{inches:.2f} 英寸）"
 
 
 def paragraph_summary(paragraph: dict[str, Any]) -> str:
+    alignments = {0: "左对齐", 1: "居中", 2: "右对齐", 3: "两端对齐", 4: "分散对齐"}
+    line_rules = {0: "单倍行距", 1: "1.5 倍行距", 2: "双倍行距", 3: "最小值", 4: "固定值", 5: "多倍行距"}
     parts = []
     if paragraph.get("alignment") is not None:
-        parts.append(f"align={paragraph['alignment']}")
+        value = paragraph["alignment"]
+        parts.append(f"对齐方式：{alignments.get(value, value)}")
     if paragraph.get("space_before_pt") is not None:
-        parts.append(f"before={paragraph['space_before_pt']}pt")
+        parts.append(f"段前：{paragraph['space_before_pt']} 磅")
     if paragraph.get("space_after_pt") is not None:
-        parts.append(f"after={paragraph['space_after_pt']}pt")
+        parts.append(f"段后：{paragraph['space_after_pt']} 磅")
     if paragraph.get("line_spacing_rule") is not None:
-        parts.append(f"lineRule={paragraph['line_spacing_rule']}")
+        value = paragraph["line_spacing_rule"]
+        parts.append(f"行距规则：{line_rules.get(value, value)}")
     if paragraph.get("line_spacing_pt") is not None:
-        parts.append(f"line={paragraph['line_spacing_pt']}pt")
+        parts.append(f"行距：{paragraph['line_spacing_pt']} 磅")
     if paragraph.get("first_line_indent_pt") is not None:
-        parts.append(f"firstLine={paragraph['first_line_indent_pt']}pt")
-    return ", ".join(parts) or "-"
+        parts.append(f"首行缩进：{paragraph['first_line_indent_pt']} 磅")
+    return "；".join(parts) or "未记录"
 
 
 def font_summary(font: dict[str, Any]) -> str:
     parts = []
-    if font.get("name"):
-        parts.append(font["name"])
+    if font.get("name_far_east"):
+        parts.append(f"中文字体：{font['name_far_east']}")
+    if font.get("name_ascii"):
+        parts.append(f"西文字体：{font['name_ascii']}")
+    if not parts and font.get("name"):
+        parts.append(f"字体：{font['name']}")
     if font.get("size_pt") is not None:
-        parts.append(f"{font['size_pt']}pt")
-    if font.get("bold"):
-        parts.append("bold")
+        parts.append(f"字号：{font['size_pt']} 磅")
+    if font.get("bold") is not None:
+        parts.append(f"加粗：{'是' if font['bold'] else '否'}")
     if font.get("italic"):
-        parts.append("italic")
+        parts.append("斜体：是")
     if font.get("color_hex"):
-        parts.append(font["color_hex"])
-    return ", ".join(parts) or "-"
+        color = font["color_hex"]
+        parts.append(f"颜色：黑色（{color}）" if color.upper() == "#000000" else f"颜色：{color}")
+    return "；".join(parts) or "未记录"
+
+
+def report_style_name(name: str | None) -> str:
+    if not name:
+        return "无"
+    labels = {
+        "Master Appendix Title": "附录标题",
+        "Master Body": "默认正文",
+        "Master Body No Indent": "无首行缩进正文",
+        "Master Cover Field": "封面信息",
+        "Master Cover Footer": "封面底部文字",
+        "Master Cover Signature": "封面署名",
+        "Master Figure Caption": "图题",
+        "Master References Body": "参考文献正文",
+        "Master References Title": "参考文献标题",
+        "Master Table Caption": "表题",
+        "Master Table Text": "表格文字",
+        "Master TOC Title": "目录标题",
+        "TOC 1": "一级目录",
+        "TOC 2": "二级目录",
+        "TOC 3": "三级目录",
+    }
+    return f"{labels[name]}（`{name}`）" if name in labels else f"`{name}`"
 
 
 def profile_report(profile: dict[str, Any]) -> str:
     page_setup = profile["document"]["page_setup"]
+    template = profile["template"]
+    template_source = (
+        "- 模板来源：公开仓库仅提供样式配置，未附原始示例文档。"
+        if template.startswith("<profile-only-template>/")
+        else f"- 模板文件：`{template}`"
+    )
+    roles = {
+        "body": "默认正文",
+        "body_text": "正文文本",
+        "caption": "题注",
+        "list_paragraph": "列表段落",
+        "normal": "常规段落",
+        "subtitle": "副标题",
+        "title": "文档标题",
+        "toc_1": "一级目录",
+        "toc_2": "二级目录",
+        "toc_3": "三级目录",
+    }
+    for level, numeral in enumerate("一二三四五六七八九", start=1):
+        roles[f"heading_{level}"] = f"{numeral}级标题"
+    style_types = {"paragraph": "段落样式", "character": "字符样式", "table": "表格样式", "list": "列表样式"}
+    orientation = page_setup.get("orientation")
     lines = [
-        "# Word Template Profile",
+        "# Word 模板样式说明",
         "",
-        f"- Template: `{profile['template']}`",
-        f"- Generated: `{profile['generated_at_utc']}`",
-        f"- Styles captured: `{profile['document']['style_count']}`",
+        template_source,
+        f"- 样式采集时间（UTC）：`{profile['generated_at_utc']}`",
+        f"- 样式数量：{profile['document']['style_count']}",
         "",
-        "## Page Setup",
+        "## 页面设置",
         "",
-        "| Rule | Value |",
+        "| 项目 | 设置 |",
         "| --- | --- |",
-        f"| Page size | {format_points(page_setup.get('page_width_pt'))} x {format_points(page_setup.get('page_height_pt'))} |",
-        f"| Margins | top {format_points(page_setup.get('top_margin_pt'))}, bottom {format_points(page_setup.get('bottom_margin_pt'))}, left {format_points(page_setup.get('left_margin_pt'))}, right {format_points(page_setup.get('right_margin_pt'))} |",
-        f"| Header distance | {format_points(page_setup.get('header_distance_pt'))} |",
-        f"| Footer distance | {format_points(page_setup.get('footer_distance_pt'))} |",
-        f"| Orientation | {page_setup.get('orientation', '-')} |",
+        f"| 页面大小（宽 × 高） | {format_points(page_setup.get('page_width_pt'))} × {format_points(page_setup.get('page_height_pt'))} |",
+        f"| 页边距 | 上：{format_points(page_setup.get('top_margin_pt'))}；下：{format_points(page_setup.get('bottom_margin_pt'))}；左：{format_points(page_setup.get('left_margin_pt'))}；右：{format_points(page_setup.get('right_margin_pt'))} |",
+        f"| 页眉距边界 | {format_points(page_setup.get('header_distance_pt'))} |",
+        f"| 页脚距边界 | {format_points(page_setup.get('footer_distance_pt'))} |",
+        f"| 页面方向 | { {0: '纵向', 1: '横向'}.get(orientation, orientation if orientation is not None else '未记录')} |",
         "",
-        "## Recommended Style Map",
+        "## 推荐样式对应表",
         "",
-        "| Role | Style |",
+        "| 用途 | Word 样式 |",
         "| --- | --- |",
     ]
     for role, style_name_value in sorted(profile["recommended_map"].items()):
-        lines.append(f"| {role} | {style_name_value or '-'} |")
-    lines.extend(["", "## Styles", ""])
+        lines.append(f"| {roles.get(role, role)} | {report_style_name(style_name_value)} |")
+    lines.extend(["", "样式名称中的英文为 Word 内的原始标识，便于查找和应用。", "", "## 各样式设置", ""])
     for style in profile["styles"]:
+        style_type = style.get("type")
+        built_in = style.get("built_in")
         lines.extend(
             [
-                f"### {style['name']}",
+                f"### {report_style_name(style['name'])}",
                 "",
-                f"- Type: `{style.get('type') or '-'}`",
-                f"- Built-in: `{style.get('built_in')}`",
-                f"- Base style: `{style.get('base_style') or '-'}`",
-                f"- Next style: `{style.get('next_style') or '-'}`",
-                f"- Font: {font_summary(style.get('font') or {})}",
-                f"- Paragraph: {paragraph_summary(style.get('paragraph') or {})}",
+                f"- 样式类型：{style_types.get(style_type, style_type or '未记录')}",
+                f"- 内置样式：{'是' if built_in is True else '否' if built_in is False else '未记录'}",
+                f"- 基于样式：{report_style_name(style.get('base_style'))}",
+                f"- 后续段落样式：{report_style_name(style.get('next_style'))}",
+                f"- 字体设置：{font_summary(style.get('font') or {})}",
+                f"- 段落设置：{paragraph_summary(style.get('paragraph') or {})}",
                 "",
             ]
         )

@@ -239,7 +239,7 @@ class Executor:
             try:
                 job = self.client.native({'action': 'start', 'kind': kind, 'request': request,
                     'operationId': operation_id, 'attemptId': attempt_id, 'requestHash': request_hash,
-                    'processIdentity': caps['processIdentity'], 'addons': caps['addons'],
+                    'processIdentity': caps['processIdentity'],
                     'candidateKeys': caps['candidateKeys'],
                     'preferenceKeys': caps['preferenceKeys'], 'files': files})
                 receipt = self._verify(receipt, job)

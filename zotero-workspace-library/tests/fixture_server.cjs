@@ -8,7 +8,8 @@ const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const root = process.argv[2]; fs.mkdirSync(root, {recursive:true});
 const items = new Map(), collections = new Map(), events = [];
 let nextID=0, nextObserver=0, epoch=1, inTransaction=false;
-let config = {delay:0, failImport:0, auth:201, replyDelay:0, external:false, noImport:false};
+let config = {delay:0, failImport:0, auth:201, replyDelay:0, external:false, noImport:false,
+  addonsOnStart:null};
 let addons = [{id:'debug-bridge@iris-advies.com',version:'3.0.1',isActive:true}];
 const prefs = new Map([['extensions.fixture.auto',true]]), observers = new Map();
 let browserTaskState = 'active';
@@ -171,6 +172,9 @@ const server=http.createServer(async(req,res)=>{
       if(config.auth!==201) return send(config.auth,{error:'server synthetic-token-do-not-print'});
       if(req.headers.authorization!=='Bearer synthetic-fixture-credential') return send(401,{});
       const isStart=body.includes('"action": "start"');
+      if(isStart && config.addonsOnStart) {
+        addons=config.addonsOnStart.map(a=>({...a,isActive:true})); config.addonsOnStart=null;
+      }
       const result=await new AsyncFunction('Zotero','Services','ChromeUtils','Components',body)(Zotero,Services,ChromeUtils,Components);
       if(isStart && config.replyDelay) {const delay=config.replyDelay;config.replyDelay=0;await sleep(delay);}
       return send(201,result);

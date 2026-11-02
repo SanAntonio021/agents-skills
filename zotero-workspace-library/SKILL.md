@@ -61,7 +61,7 @@ python $zl operation status --id '<原操作UUID>'
 python $zl operation resume --id '<原操作UUID>'
 ```
 
-`status` 沿用原状态字段与退出码，0 只表示可读。`--capabilities` 增补原生能力、进程身份、活动插件及自动抓取保护缺口，不改变旧状态语义。写入无需另跑状态命令。读取默认个人库，群组用 `--group <群组ID>`；请求中的群组 ID 不是原生 libraryID。
+`status` 沿用原状态字段与退出码，0 只表示可读。`--capabilities` 增补原生能力、进程身份和活动插件信息；插件名单只用于识别已知偏好，不作为写入门槛。写入无需另跑状态命令。读取默认个人库，群组用 `--group <群组ID>`；请求中的群组 ID 不是原生 libraryID。
 
 任务提供了连接参数时，全程保留该目标，包括下载 `finalize` 和 operation 查询。可用同一进程环境 `ZOTERO_PROFILE`、`ZOTERO_LOCAL_BASE_URL`、`ZOTERO_LIBRARY_STATE_DIR` 绑定 Profile、地址和回执目录；显式命令参数优先。配置无效就停止，不探测默认文库。
 
@@ -73,13 +73,13 @@ python $zl operation resume --id '<原操作UUID>'
 
 集合只增加。`collections` 可指定已核实 key，或需要建立的实际路径；不按搜索批次新建集合。同库复用条目和文件，跨库不自动复制。已有可读目标版本但字节不同时，由业务层核实版本等价后以 `reuse_pdf` 指定附件；不能仅凭版本名或标题判定等价。
 
-每个写入命令内部完成：连接检查、原操作核实、查重、自动抓取保护、保存、回读验收和设置恢复核实。原生任务在 Zotero 进程内串行，识别旧 `__paperDownloadBatches` 标记；迁移期间不能同时运行旧脚本。Local API 用于库内读取，Debug Bridge 用于固定原生操作。
+每个写入命令内部完成：连接检查、原操作核实、查重、已知偏好的临时处理、保存、回读验收和设置恢复核实。未知插件或插件版本变化不会阻止归档；执行层不会猜测未知插件的偏好名。原生任务在 Zotero 进程内串行，识别旧 `__paperDownloadBatches` 标记；迁移期间不能同时运行旧脚本。Local API 用于库内读取，Debug Bridge 用于固定原生操作。
 
 ## 失败与恢复
 
 写入前把操作编号和非凭据回执写入本机操作目录。命令返回 `running/unknown` 或退出码 2 时，保存原编号和 PDF，先查询同一操作；只有原操作确已终止才允许 `resume` 补缺。同一编号不同请求拒绝。原进程仍在但内存标记丢失时保持未知；进程结束后先查持久化结果。设置恢复未知或存在外部修改时保留现状并报告 `recovery_required`。
 
-HTTP 超时不终止任务、不提前恢复设置、不更换接口。当前没有提供满足同等保护的 Connector 写入适配器。技能默认使用随附、按精确插件版本审查过的 `references/automatic_fetch_policy.json`；显式 `--policy` 可指定隔离环境策略。出现 `automatic_fetch_policy_unverified` 时报告缺口并保留文件，不临时创建或修改策略；插件版本或启用清单变化后重新审查并更新该文件。
+HTTP 超时不终止任务、不提前恢复设置、不更换接口。当前没有提供满足同等保护的 Connector 写入适配器。技能随附的 `references/automatic_fetch_policy.json` 只列出可处理的已知偏好；未知插件、插件新增或版本变化不再拒绝写入。已知偏好若被外部修改，仍保留外部值并按恢复状态报告。
 
 ## 阅读内容与清理
 

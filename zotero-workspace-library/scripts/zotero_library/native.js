@@ -193,7 +193,6 @@ async function run() {
     let parent = null, lib = null;
     let terminal = "failed";
     const beforeWrite = async () => {
-        needed(JSON.stringify(await inventory()) === JSON.stringify(q.addons), "addon_inventory_changed");
         needed(store.active === q.attemptId && !Zotero.__paperDownloadBatches?.active, "batch_ownership_lost");
         for (const p of prefs) needed(!p.external && Zotero.Prefs.get(p.key, true) === false,
             "automatic_preference_changed");
@@ -206,8 +205,7 @@ async function run() {
         needed(lib.editable && (!q.request.pdf || lib.filesEditable), "library_not_editable");
         parent = await findParent(lib);
         const baseline = await protect(parent);
-        // Policy is resolved by the internal connection layer, with exact live versions.
-        needed(JSON.stringify(await inventory()) === JSON.stringify(q.addons), "addon_inventory_changed");
+        // Recognized preference keys are handled below; the add-on inventory is not a write gate.
         for (const key of q.preferenceKeys) {
             const original = Zotero.Prefs.get(key, true);
             needed(typeof original === "boolean", "automatic_preference_unknown");

@@ -294,11 +294,18 @@ class NativeExecutionTests(unittest.TestCase):
         self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 1)
         self.assertFalse(any(x['event'] == 'pref' for x in state['events']))
 
-    def test_unknown_addon_blocks_write(self):
+    def test_unknown_addon_does_not_block_write(self):
         self.f.control(addons=[{'id': 'unknown@invalid', 'version': '99'}])
-        with self.assertRaisesRegex(LibraryError, 'automatic_fetch_policy_unverified'):
-            self.f.executor().run(self.f.request())
-        self.assertEqual(self.f.control()['events'], [])
+        result = self.f.executor().run(self.f.request())
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
+
+    def test_addon_version_change_during_write_does_not_block(self):
+        self.f.control(addons=[{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1'}],
+                       config={'addonsOnStart': [{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.2'}]})
+        result = self.f.executor().run(self.f.request())
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
 
     def test_owned_preferences_restore_after_success_and_import_failure(self):
         addon = {'id': 'fixture@invalid', 'version': '1'}

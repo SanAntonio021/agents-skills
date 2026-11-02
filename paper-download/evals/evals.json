@@ -21,9 +21,9 @@
       "files": []
     },
     {
-      "id": "shared-target-and-policy-boundary",
-      "prompt": "任务指定了隔离 Zotero Profile、地址和回执目录。公共执行层报告 automatic_fetch_policy_unverified，并列出若干插件名称和版本。请继续处理待归档 PDF。",
-      "expected_output": "全程保留指定连接或其进程环境绑定，不能探测默认文库。只复用已有源码审核策略；没有审核依据就保留 PDF 并准确报告能力缺口，不生成空偏好列表或虚构插件已审核。",
+      "id": "shared-target-and-unknown-addon",
+      "prompt": "任务指定了隔离 Zotero Profile、地址和回执目录。执行层检测到新增插件或插件版本变化。请继续处理已核实并授权归档的 PDF。",
+      "expected_output": "全程保留指定连接或其进程环境绑定，不探测默认文库；未知插件或版本变化不阻止归档，不猜测其偏好名。正常查重、写入、回读及结果未知续做规则仍适用。",
       "files": []
     },
     {

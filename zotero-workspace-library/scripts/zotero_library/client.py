@@ -24,8 +24,9 @@ class Client:
         self.profile = self.status['profile']
         self.binding = {'base_url': self.base, 'profile': self.profile}
         self.timeout = timeout
-        # Reuse the version-pinned source audit by default. Explicit --policy
-        # remains available for an isolated or separately reviewed install.
+        # The policy only identifies known automatic-fetch preferences to pause.
+        # Unlisted add-ons or versions never block a write; no preference names
+        # are inferred for them.
         self.policy = policy or (str(DEFAULT_POLICY) if DEFAULT_POLICY.is_file() else None)
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), connection.NoRedirect())
 
@@ -188,14 +189,10 @@ class Client:
             except (OSError, ValueError, TypeError, KeyError):
                 raise LibraryError('invalid_automatic_fetch_policy') from None
         keys = []
-        unknown = []
         for addon in caps.get('addons', []):
             entry = next((x for x in reviewed if (x['id'], x['version']) == (addon['id'], addon['version'])), None)
-            if entry is None:
-                unknown.append(addon['id'])
-            else:
+            if entry is not None:
                 keys.extend(entry['preference_keys'])
-        require(not unknown, 'automatic_fetch_policy_unverified')
         caps['preferenceKeys'] = sorted(set(keys))
         # Include title/author candidates even when the DOI lookup is empty.
         identity = request.get('identity', {})

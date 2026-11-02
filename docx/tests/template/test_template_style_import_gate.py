@@ -51,11 +51,12 @@ class TemplateStyleImportGateTests(unittest.TestCase):
         self.assertFalse(args.allow_template_style_import)
         self.assertIsNone(args.preset)
 
-    def test_apply_requires_an_explicit_format_source(self) -> None:
+    @patch("word_template_formatter.word_application", side_effect=RuntimeError("Word reached"))
+    def test_authorized_apply_uses_default_format_source(self, word_application_mock) -> None:
         with tempfile.TemporaryDirectory() as directory:
             input_path = Path(directory) / "input.docx"
             input_path.write_bytes(b"fixture")
-            with self.assertRaisesRegex(SystemExit, "No formatting source selected"):
+            with self.assertRaisesRegex(RuntimeError, "Word reached"):
                 apply_command(
                     argparse.Namespace(
                         allow_template_style_import=True,
@@ -64,8 +65,10 @@ class TemplateStyleImportGateTests(unittest.TestCase):
                         profile=None,
                         template=None,
                         preset=None,
+                        allow_office_com=True,
                     )
                 )
+            word_application_mock.assert_called_once_with(allow_office_com=True)
 
     def test_apply_parser_accepts_explicit_import_permission(self) -> None:
         args = self.parse_apply("--allow-template-style-import")

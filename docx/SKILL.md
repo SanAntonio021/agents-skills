@@ -62,8 +62,8 @@ do not reload the entire workflow for each accepted paragraph.
 
 ### Word/DOCX 导出前的格式确认
 
-新建 Word 或用户明确要求整稿更换模板时，先核对已指定或确认的模板。尚未确认时，根据用途和读者，
-从[现有 10 套模板](references/template/template-presets.md)推荐一套，说明理由并确认格式需求；同任务后续沿用。
+新建 Word 或用户明确要求整稿更换模板时，先核对已指定或确认的模板。未指定时自动采用通用默认模板
+`tongyong-moren`，无需另行询问；有明确格式要求或指定其他模板时按要求处理，同任务后续沿用。
 已有 Word 的文字回填沿用最新原件的样式与结构，不重新选模板；用户要求调整格式时只修改相应范围。
 模板只控制排版，不擅自增加版本、日期或说明文字。
 
@@ -199,7 +199,8 @@ when the user explicitly requests a whole-document template replacement. Read
 governance are documented in [Template presets](references/template/template-presets.md) and
 [Template governance](references/template/template-governance.md).
 
-Use the confirmed template: one of the ten bundled profiles, a supplied template/reference `.docx`,
+Use `tongyong-moren` automatically when no formatting source is specified. Otherwise use the selected template:
+one of the ten bundled profiles, a supplied template/reference `.docx`,
 or the user's `Normal.dotm` when explicitly requested. The complete names and uses are in
 [Template presets](references/template/template-presets.md); legacy aliases remain accepted.
 Bundled templates store reusable styles and page settings; original sample documents are omitted.
@@ -225,10 +226,9 @@ python scripts/template/word_template_formatter.py apply `
   --allow-template-style-import `
   --allow-office-com
 
-# Convert Markdown with an explicitly selected preset, then land the result in Word formatting.
+# Convert Markdown using the automatic tongyong-moren preset.
 powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_word.ps1 `
   C:\path\draft.md `
-  -Preset qiye-shenbao `
   -AllowOfficeCom
 
 # Use Normal.dotm only when the user explicitly requests their Word defaults.

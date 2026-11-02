@@ -36,7 +36,7 @@ function Resolve-PresetName {
     param([Parameter(Mandatory = $true)][string]$PresetName)
 
     $canonicalPresetMap = @{
-        "default" = "qiye-shenbao"
+        "default" = "tongyong-moren"
         "master-default" = "tongyong-moren"
         "technical-summary" = "jishu-zongjie"
         "work-summary" = "gongzuo-zongjie"
@@ -217,7 +217,9 @@ elseif ($PSBoundParameters.ContainsKey("TemplatePath")) {
     }
 }
 else {
-    throw "A formatting source is required. Pass -Preset or -TemplatePath explicitly after confirming the Word format."
+    $Preset = Resolve-PresetName -PresetName "tongyong-moren"
+    $templateMode = "docx-preset"
+    $pythonPath = Resolve-PythonPath
 }
 
 $resolvedInputs = @()

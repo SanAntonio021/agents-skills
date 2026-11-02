@@ -36,8 +36,8 @@ QIYE_SHENBAO_PROFILE_PATH = (
 QIYE_SHENBAO_REPORT_PATH = (
     TEMPLATE_REFERENCES_DIR / "qiye-shenbao-template-profile.md"
 )
-# No preset is selected implicitly. Callers must choose a preset or provide a template.
-DEFAULT_PRESET: str | None = None
+# Fall back only after checking explicit template, preset and profile arguments.
+DEFAULT_PRESET = "tongyong-moren"
 PRESET_PATHS = {
     "tongyong-moren": {
         "template": MASTER_TEMPLATE_PATH,
@@ -75,7 +75,7 @@ for _profile_stem in (
     }
 
 PRESET_ALIASES = {
-    "default": "qiye-shenbao",
+    "default": "tongyong-moren",
     "master-default": "tongyong-moren",
     "technical-summary": "jishu-zongjie",
     "work-summary": "gongzuo-zongjie",
@@ -1066,11 +1066,7 @@ def preset_name_for_template(template_path: Path) -> str | None:
 
 def resolve_template_path(template_arg: Path | None, preset: str | None) -> Path:
     if template_arg is None:
-        if not preset:
-            raise SystemExit(
-                "No formatting source selected. Pass --template or --preset explicitly."
-            )
-        preset_name = canonical_preset_name(preset)
+        preset_name = canonical_preset_name(preset or DEFAULT_PRESET)
         if preset_name not in PRESET_PATHS:
             raise SystemExit(
                 f"Unknown preset: {preset_name}. Canonical presets: {', '.join(PRESET_PATHS)}."
@@ -1172,8 +1168,8 @@ def apply_command(args: argparse.Namespace) -> int:
 
     if args.template is not None:
         template_path = resolve_template_path(args.template, None)
-    elif args.preset:
-        preset_name = canonical_preset_name(args.preset)
+    elif args.preset or profile_path is None:
+        preset_name = canonical_preset_name(args.preset or DEFAULT_PRESET)
         if preset_name not in PRESET_PATHS:
             raise SystemExit(
                 f"Unknown preset: {preset_name}. Canonical presets: {', '.join(PRESET_PATHS)}."
@@ -1184,10 +1180,6 @@ def apply_command(args: argparse.Namespace) -> int:
             template_path = candidate_template
         elif profile_path is None and preset_paths["profile"].exists():
             profile_path = preset_paths["profile"].resolve()
-    elif profile_path is None:
-        raise SystemExit(
-            "No formatting source selected. Pass --template, --preset or --profile explicitly."
-        )
 
     try:
         with word_application(allow_office_com=args.allow_office_com) as app:
@@ -1311,9 +1303,9 @@ def build_parser() -> argparse.ArgumentParser:
     extract_parser.add_argument(
         "--preset",
         type=preset_arg,
-        default=DEFAULT_PRESET,
+        default=None,
         help=(
-            "Built-in style preset to use when --template is omitted; no preset is selected by default. "
+            f"Built-in style preset; defaults to {DEFAULT_PRESET} when no formatting source is supplied. "
             f"Canonical presets: {', '.join(PRESET_PATHS)}. "
             "Legacy English aliases are still accepted."
         ),
@@ -1337,9 +1329,9 @@ def build_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument(
         "--preset",
         type=preset_arg,
-        default=DEFAULT_PRESET,
+        default=None,
         help=(
-            "Built-in style preset to use when --template is omitted; no preset is selected by default. "
+            f"Built-in style preset; defaults to {DEFAULT_PRESET} when no formatting source is supplied. "
             f"Canonical presets: {', '.join(PRESET_PATHS)}. "
             "Legacy English aliases are still accepted."
         ),

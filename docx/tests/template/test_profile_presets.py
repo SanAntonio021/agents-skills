@@ -115,13 +115,38 @@ class ProfilePresetTests(unittest.TestCase):
                 target.Close.assert_called_once_with(False)
 
     def test_installer_default_is_independent_of_export_default(self):
-        self.assertIsNone(formatter.DEFAULT_PRESET)
+        self.assertEqual(formatter.DEFAULT_PRESET, "tongyong-moren")
         self.assertEqual(installer.build_parser().parse_args([]).template,
                          formatter.PRESET_PATHS["qiye-shenbao"]["template"])
         self.assertEqual(installer.build_parser().parse_args(["--template", "custom.docx"]).template,
                          Path("custom.docx"))
-        with self.assertRaisesRegex(SystemExit, "No formatting source selected"):
-            formatter.resolve_template_path(None, None)
+        with patch.object(Path, "exists", return_value=True):
+            self.assertEqual(formatter.resolve_template_path(None, None),
+                             formatter.MASTER_TEMPLATE_PATH.resolve())
+            self.assertEqual(formatter.resolve_template_path(Path("custom.docx"), None),
+                             Path("custom.docx").resolve())
+
+    def test_automatic_default_materializes_general_profile(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "input.docx"
+            input_path.touch()
+            args = formatter.build_parser().parse_args([
+                "apply", "--input", str(input_path), "--allow-template-style-import",
+            ])
+            paths = dict(formatter.PRESET_PATHS[formatter.DEFAULT_PRESET])
+            paths["template"] = Path(directory) / "absent-template.docx"
+            target = MagicMock()
+            with patch.dict(formatter.PRESET_PATHS, {formatter.DEFAULT_PRESET: paths}), \
+                 patch.object(formatter, "word_application") as word, \
+                 patch.object(formatter, "open_document", return_value=target), \
+                 patch.object(formatter, "materialize_template_from_profile",
+                              side_effect=RuntimeError("materialization reached")) as materialize:
+                with self.assertRaisesRegex(RuntimeError, "materialization reached"):
+                    formatter.apply_command(args)
+                materialize.assert_called_once_with(
+                    word.return_value.__enter__.return_value,
+                    formatter.load_profile(paths["profile"]), "tongyong-moren",
+                )
 
     def test_powershell_preset_resolver_matches_python(self):
         shell = shutil.which("pwsh") or shutil.which("powershell")

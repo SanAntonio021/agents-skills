@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def shared_modules():
-    root = Path(__file__).resolve().parents[3] / 'zotero-library' / 'scripts'
+    root = Path(__file__).resolve().parents[3] / 'zotero-workspace-library' / 'scripts'
     if not (root / 'zotero_library' / 'operations.py').is_file():
         from .cli import OperationError
         raise OperationError('dependency_missing', 'dependency_missing_zotero_library')

@@ -4,7 +4,7 @@
     {
       "id": "shared-bridge-incident-recovery",
       "prompt": "上一位助手说 prefs.js 没有 debugBridge 配置，token 找不到，让我重启 Zotero 或先 complete 再用 Connector。已有核实的本地正式 PDF，授权归档。请接续。",
-      "expected_output": "通过 zotero-library 的公共 archive 接口处理；由共享连接实现读取凭据并核实能力，不猜偏好名、读取历史认证脚本或展示 token。只读状态可用于解释缺口，正常写入无需模型另记前置检查。结果未知保持原操作编号，不换 Connector。",
+      "expected_output": "通过 zotero-workspace-library 的公共 archive 接口处理；由共享连接实现读取凭据并核实能力，不猜偏好名、读取历史认证脚本或展示 token。只读状态可用于解释缺口，正常写入无需模型另记前置检查。结果未知保持原操作编号，不换 Connector。",
       "files": [],
       "expectations": ["实际调用公共接口", "不把 complete 当作入库补救", "归档回读后报告实际结果"]
     },

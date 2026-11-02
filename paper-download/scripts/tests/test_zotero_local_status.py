@@ -4,7 +4,9 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import sys
+import subprocess
 import tempfile
 import threading
 import unittest
@@ -349,6 +351,25 @@ class ZoteroStatusTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertNotIn("fixture-secret", output.getvalue())
         self.assertEqual(json.loads(output.getvalue())["error"], "status_check_failed")
+
+    def test_missing_workspace_skill_reports_dependency_error(self):
+        # Run the compatibility entry from an isolated paper-download copy so
+        # its sibling shared skill is genuinely absent.
+        isolated = self.root / "paper-download" / "scripts"
+        isolated.mkdir(parents=True)
+        script = isolated / "zotero_local_status.py"
+        shutil.copy2(Path(__file__).resolve().parents[1] / "zotero_local_status.py", script)
+        result = subprocess.run(
+            [sys.executable, str(script), "status", "--json"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            json.loads(result.stdout),
+            {"error": "dependency_missing_zotero_library", "read_only_ready": False},
+        )
 
 
 if __name__ == "__main__":

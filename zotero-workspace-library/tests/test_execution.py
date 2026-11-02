@@ -120,6 +120,52 @@ class NativeExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(LibraryError, 'operation_request_conflict'):
             executor.run(request)
 
+    def installed_command(self, skill, *arguments):
+        environment = {**os.environ, 'ZOTERO_PROFILE': str(self.f.profile),
+            'ZOTERO_LOCAL_BASE_URL': self.f.base,
+            'ZOTERO_LIBRARY_STATE_DIR': str(self.f.store.root)}
+        result = subprocess.run([sys.executable, str(skill / 'scripts/zotero_library.py'),
+            *arguments], env=environment, capture_output=True, text=True, timeout=30)
+        self.assertIn(result.returncode, (0, 2), result.stderr + result.stdout)
+        return json.loads(result.stdout)
+
+    def legacy_install(self):
+        # The execution package is unchanged by this migration. Run that package
+        # in a fresh interpreter from the old layout, then physically relocate it.
+        skill = self.f.root / 'legacy-skill'
+        shutil.copytree(Path(__file__).resolve().parents[1] / 'scripts', skill / 'scripts',
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        request = self.f.root / 'request.json'
+        request.write_text(json.dumps(self.f.request()), encoding='utf-8')
+        return skill, request
+
+    def test_completed_receipt_survives_skill_relocation(self):
+        skill, request = self.legacy_install()
+        legacy = self.installed_command(skill, 'archive', '--request', str(request))
+        self.assertEqual(legacy['state'], 'completed', legacy)
+        relocated = self.f.root / 'zotero-workspace-library'
+        skill.rename(relocated)
+        result = self.installed_command(relocated, 'archive', '--request', str(request))
+        self.assertEqual(result['operation_id'], legacy['operation_id'])
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
+
+    def test_unknown_receipt_survives_skill_relocation_without_replay(self):
+        skill, request = self.legacy_install()
+        legacy = self.installed_command(skill, 'archive', '--request', str(request))
+        self.assertEqual(legacy['state'], 'completed', legacy)
+        receipt = self.f.store.read(legacy['operation_id'])
+        receipt['state'] = 'unknown'
+        self.f.store.save(receipt)
+        self.f.control(clearMarker=True)
+        relocated = self.f.root / 'zotero-workspace-library'
+        skill.rename(relocated)
+        result = self.installed_command(relocated, 'operation', 'resume', '--id', legacy['operation_id'])
+        self.assertEqual(result['operation_id'], legacy['operation_id'])
+        self.assertEqual(result['state'], 'unknown', result)
+        self.assertEqual(len(self.f.store.read(legacy['operation_id'])['attempts']), 1)
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
+
     def test_four_business_chains_and_reading_protection(self):
         executor = self.f.executor()
         # Search saves metadata; classification adds only the chosen workspace relationship.

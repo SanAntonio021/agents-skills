@@ -1,6 +1,6 @@
 # Zotero 操作历史与迁移前实现说明
 
-以下保留原有独立验证和当时的接口示例，仅供追溯。当前执行统一使用 [zotero-library](../../zotero-library/SKILL.md)，不要把历史示例重新生成临时调用。
+以下保留原有独立验证和当时的接口示例，仅供追溯。当前执行统一使用 [zotero-workspace-library](../../zotero-workspace-library/SKILL.md)，不要把历史示例重新生成临时调用。
 
 # Zotero 入库与附件复用
 

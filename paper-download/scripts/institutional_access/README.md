@@ -4,7 +4,7 @@ This optional module supports IEEE Xplore and Optica Publishing Group article
 pages on Windows. `web-access` is the only browser execution layer; this module
 handles publication identification, PDF identity/version validation and the
 compatible `acquire`, `status`, `resume` and `complete` CLI workflow. `finalize`
-archives through the sibling `zotero-library` and closes the task only after
+archives through the sibling `zotero-workspace-library` and closes the task only after
 library readback passes.
 
 The module does not capture, return, log or store school passwords, browser
@@ -27,7 +27,7 @@ Run through the PowerShell wrapper:
 `run.ps1` requires Python 3.10 or newer, creates a private Python environment under
 `%LOCALAPPDATA%\PaperDownload\venv` and installs the pinned `pypdf` when needed.
 The sibling `web-access` skill and Node.js 22 or newer are required for downloading.
-Install the sibling `zotero-library` before using `finalize`; a missing shared
+Install the sibling `zotero-workspace-library` before using `finalize`; a missing shared
 dependency is reported without restoring a separate implementation.
 
 ## Archive and closure recovery
@@ -38,7 +38,7 @@ PDF version and workspace collection first; the CLI also checks the session DOI,
 output path and recorded file hash. An active task without a successful download
 receipt must use `resume` first; renaming an unrelated local PDF does not complete
 the download. Use CLI `status` for sanitized session state, never read the
-credential session file. See the [shared contract](../../../zotero-library/references/contract.md).
+credential session file. See the [shared contract](../../../zotero-workspace-library/references/contract.md).
 
 Both `finalize` and the local-PDF business entry point
 [`../zotero_archive.py`](../zotero_archive.py) use the shared identity resolver.

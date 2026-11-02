@@ -5,12 +5,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
-SHARED = Path(__file__).resolve().parents[4] / 'zotero-library'
+SHARED = Path(__file__).resolve().parents[4] / 'zotero-workspace-library'
 sys.path.insert(0, str(SHARED / 'tests'))
 from test_execution import Fixture
 from institutional_access.browser import BrowserError
@@ -67,6 +69,84 @@ class FinalizeTests(unittest.TestCase):
 
     def imports(self):
         return sum(x['event'] == 'import' for x in self.f.control()['events'])
+
+    def isolated_scripts(self):
+        scripts = self.root / 'installation/paper-download/scripts'
+        shutil.copytree(Path(__file__).resolve().parents[2], scripts,
+                        ignore=shutil.ignore_patterns('__pycache__', 'tests'))
+        return scripts
+
+    def test_finalization_receipts_survive_shared_skill_relocation(self):
+        scripts = self.isolated_scripts()
+        legacy = scripts.parents[1] / 'legacy-skill/scripts'
+        shutil.copytree(SHARED / 'scripts', legacy,
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        module = scripts / 'institutional_access/finalize.py'
+        current_source = module.read_text('utf-8')
+        module.write_text(current_source.replace("'zotero-workspace-library'", "'legacy-skill'"),
+                          encoding='utf-8')
+        runner = '''import argparse, json, sys
+from unittest.mock import patch
+from institutional_access.finalize import finalize, shared_modules
+from institutional_access.browser import BrowserError
+class Closure:
+    state = 'active'
+    def task(self): return {'state': self.state}
+    def complete(self):
+        if sys.argv[2] == 'fail': raise BrowserError('NETWORK', 'isolated closure failure')
+        self.state = 'completed'
+with patch('institutional_access.cli.browser_for_session', return_value=Closure()):
+    try:
+        if sys.argv[2] == 'fail':
+            result = finalize(argparse.Namespace(**json.loads(sys.argv[1])))
+        else:
+            shared_modules()
+            with patch('zotero_library.operations.Executor.run', side_effect=AssertionError('archive replay')):
+                result = finalize(argparse.Namespace(**json.loads(sys.argv[1])))
+        print(json.dumps(result))
+    except BrowserError:
+        print(json.dumps({'stage': 'closure_failed'}))
+'''
+        environment = {**os.environ, 'PYTHONPATH': str(scripts),
+            'ZOTERO_PROFILE': str(self.f.profile), 'ZOTERO_LOCAL_BASE_URL': self.f.base,
+            'ZOTERO_LIBRARY_STATE_DIR': str(self.f.store.root)}
+        def run(mode):
+            child = subprocess.run([sys.executable, '-c', runner, json.dumps(vars(self.args)), mode],
+                env=environment, cwd=self.root, capture_output=True, text=True, timeout=30)
+            self.assertEqual(child.returncode, 0, child.stderr)
+            return json.loads(child.stdout)
+        self.assertEqual(run('fail')['stage'], 'closure_failed')
+        original = json.loads(self.record_path.read_text())
+        self.assertEqual(original['stage'], 'archive_completed_closure_pending')
+        legacy.parent.rename(scripts.parents[1] / 'zotero-workspace-library')
+        module.write_text(current_source, encoding='utf-8')
+        result = run('resume')
+        self.assertEqual(result['stage'], 'completed')
+        self.assertEqual(result['archive']['operation_id'], original['archive']['operation_id'])
+        self.assertEqual(result['request_hash'], original['request_hash'])
+        # A second fresh interpreter consumes the completed receipt as well.
+        self.assertEqual(run('resume')['stage'], 'completed')
+        self.assertEqual(self.imports(), 1)
+        self.assertIsNone(self.sessions.read('fixture'))
+
+    def test_missing_shared_skill_has_explicit_dependency_error(self):
+        scripts = self.isolated_scripts()
+        environment = {**os.environ, 'PYTHONPATH': str(scripts)}
+        runner = '''import json
+from institutional_access.finalize import shared_modules
+from institutional_access.cli import OperationError
+try:
+    shared_modules()
+except OperationError as error:
+    print(json.dumps({'stage': error.stage, 'error': error.reason}))
+'''
+        child = subprocess.run([sys.executable, '-c', runner], env=environment, cwd=self.root,
+                               capture_output=True, text=True, timeout=30)
+        self.assertEqual(child.returncode, 0, child.stderr)
+        self.assertEqual(json.loads(child.stdout),
+            {'stage': 'dependency_missing', 'error': 'dependency_missing_zotero_library'})
+        self.assertFalse(self.record_path.exists())
+        self.assertEqual(self.f.control()['events'], [])
 
     def test_close_retry_skips_archive_and_preserves_nonsecret_receipt(self):
         bad = ClosureClient(fail=True)

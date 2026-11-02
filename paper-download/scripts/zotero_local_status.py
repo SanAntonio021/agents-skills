@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Compatibility status entry; install zotero-library alongside paper-download."""
+"""Compatibility status entry; install zotero-workspace-library alongside paper-download."""
 import json
 import sys
 from pathlib import Path
 
-shared = Path(__file__).resolve().parents[2] / 'zotero-library' / 'scripts'
+shared = Path(__file__).resolve().parents[2] / 'zotero-workspace-library' / 'scripts'
 if not (shared / 'zotero_library' / 'connection.py').is_file():
     if __name__ == '__main__':
         print(json.dumps({'error': 'dependency_missing_zotero_library', 'read_only_ready': False}))

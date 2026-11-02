@@ -2,7 +2,7 @@
 
 ## 安装与连接
 
-五个技能作为同一发布集合，先安装 `zotero-library`，再更新四个消费者。安装 PDF 依赖：`python -m pip install -r <zotero-library>/requirements.txt`。使用与下载 CLI 相同 Python 环境时已有 `pypdf==6.21.2` 可复用。只读状态和查询不依赖 PDF 解析器。
+四个技能作为同一发布集合，先安装 `zotero-workspace-library`，再更新其余三个业务技能。安装 PDF 依赖：`python -m pip install -r <zotero-workspace-library>/requirements.txt`。使用与下载 CLI 相同 Python 环境时已有 `pypdf==6.21.2` 可复用。只读状态和查询不依赖 PDF 解析器。
 
 连接实现从 `profiles.ini` 定位唯一 Profile，只读取必要偏好；端口按显式参数、环境 `ZOTERO_LOCAL_BASE_URL`、Profile、默认候选顺序选取一个地址。只允许 HTTP 回环地址，无代理、无重定向、无端口扫描。通过 Local API 身份与 schema 核实后才向该地址发送内存中的桥接凭据。错误只返回固定代码，不回显服务器错误或认证头。
 

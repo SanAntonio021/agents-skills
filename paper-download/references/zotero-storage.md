@@ -1,6 +1,6 @@
 # Zotero 操作兼容入口
 
-Zotero 的连接、查询、写入、保护和回读已统一迁入 [zotero-library](../../zotero-library/SKILL.md)，具体字段见 [公共接口契约](../../zotero-library/references/contract.md)。此文件保留旧引用；公共实现只维护一份。
+Zotero 的连接、查询、写入、保护和回读已统一迁入 [zotero-workspace-library](../../zotero-workspace-library/SKILL.md)，具体字段见 [公共接口契约](../../zotero-workspace-library/references/contract.md)。此文件保留旧引用；公共实现只维护一份。
 
 ## 连接与接口选择
 
@@ -8,7 +8,7 @@ Zotero 的连接、查询、写入、保护和回读已统一迁入 [zotero-libr
 
 ## 自动抓取与原操作检查
 
-由 `archive/prune` 内部执行，参见 [公共执行层的失败与恢复](../../zotero-library/SKILL.md#失败与恢复)。不要自行读 token、暂停设置或切换接口重放。
+由 `archive/prune` 内部执行，参见 [公共执行层的失败与恢复](../../zotero-workspace-library/SKILL.md#失败与恢复)。不要自行读 token、暂停设置或切换接口重放。
 
 ## 已有条目补 PDF
 

@@ -166,7 +166,7 @@
     const sources=functions.map(f=>f.toString()).join('\n');let hash=2166136261;
     for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
     const saveSignature=(hash>>>0).toString(16);
-    if(!['8a287314','45ddc75e'].includes(saveSignature))return{available:false,reason:'UNVERIFIED_NATIVE_SAVE_INTERFACE',signature:saveSignature};
+    if(!['8a287314','45ddc75e','f0f97b1a'].includes(saveSignature))return{available:false,reason:'UNVERIFIED_NATIVE_SAVE_INTERFACE',signature:saveSignature};
     const applied=io.docState?.appliedVersion;
     if(typeof io.inited!=='boolean'||!Array.isArray(io.pendingActions)||!Array.isArray(ch.localActions)
       ||typeof ch.localProcessing!=='boolean'||typeof ch.localOffline!=='boolean'
@@ -196,7 +196,7 @@
   if(op.kind!=='enter'&&!readiness.entered)fail('EDITOR_NOT_ENTERED');
   const saveBefore=nativeSave();
   if(!saveBefore.available)fail(saveBefore.reason);
-  if(signature==='73a62bde'&&saveBefore.signature!=='45ddc75e')fail('EDITOR_SAVE_BUILD_MISMATCH');
+  if(signature==='73a62bde'&&!['45ddc75e','f0f97b1a'].includes(saveBefore.signature))fail('EDITOR_SAVE_BUILD_MISMATCH');
   if(!nativeSaveReady(saveBefore))fail('UNSAVED_NATIVE_IO_STATE');
   if (a.docState.seq !== a.docState.savedSeq) fail('UNSAVED_PAGE_STATE');
   if (request.expected && stable(snapshot()) !== stable(request.expected)) fail('STALE_PAGE_SNAPSHOT');

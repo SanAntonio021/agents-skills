@@ -2094,7 +2094,7 @@ class Runner:
             if fence is None and receipt.get('reason') == 'NATIVE_SAVE_INTERFACE_UNAVAILABLE':
                 return False
             raise VerificationError('Native save interface is unavailable or unverified')
-        if receipt.get('signature') not in ('8a287314', '45ddc75e'):
+        if receipt.get('signature') not in ('8a287314', '45ddc75e', 'f0f97b1a'):
             raise VerificationError('Native save interface is unavailable or unverified')
         for key in ('applied_version', 'pending', 'ordered_pending', 'http_pending'):
             if type(receipt.get(key)) is not int or receipt[key] < 0:

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 // Explicitly bypass only the production build pin in this synthetic fixture.
 const buildGuard="if (!['15acf339','73a62bde'].includes(signature))";
-const saveGuard="if(!['8a287314','45ddc75e'].includes(saveSignature))";
+const saveGuard="if(!['8a287314','45ddc75e','f0f97b1a'].includes(saveSignature))";
 assert.ok(production.includes(buildGuard));assert.ok(production.includes(saveGuard));
 const source=production.replace(buildGuard,'if (false)').replace(saveGuard,'if(false)');
 let contentCalls=0,selected=[];

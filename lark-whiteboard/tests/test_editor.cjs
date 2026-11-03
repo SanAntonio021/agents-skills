@@ -77,3 +77,13 @@ assert.deepEqual(JSON.parse(JSON.stringify(arrangementInspection.object_bounds.r
 assert.equal(arrangementInspection.arrangement_bounds.unavailable,null);
 assert.equal(writes,0);
 console.log('PASS: inspection reads native arrangement bounds separately and never edits content');
+
+// Match Python projection() ordering even when object prefixes have different lengths.
+const mixedIds=['o1:29','o18:1','o1:3','c1:2','c1:10','o18:2','o1:30'];
+for(const id of mixedIds)app.nodeManager.nodeMap.set(id,{id,type:13,
+  page:{info:{baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11}}}});
+const orderedIds=Array.from(adapter(req).nodes,n=>n.id).filter(id=>mixedIds.includes(id));
+assert.deepEqual(orderedIds,['c1:10','c1:2','o18:1','o18:2','o1:29','o1:3','o1:30']);
+assert.equal(writes,0);
+for(const id of mixedIds)app.nodeManager.nodeMap.delete(id);
+console.log('PASS: mixed object IDs use the same character ordering as Python projection');

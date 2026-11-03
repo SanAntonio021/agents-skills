@@ -87,7 +87,7 @@
       v.caption_size_mode=captions.length ? captions[0].textStyle?.sizeMode ?? null : null;
     }
     return v;
-  }).sort((x,y) => x.id.localeCompare(y.id, 'en'));
+  }).sort((x,y) => x.id < y.id ? -1 : x.id > y.id ? 1 : 0);
   const sources = ['Select','Move','TextFontSize','Delete','Group','UnGroup','LineArrow','LineType','LineTextAdd','Theme','Duplicate','Align','Order']
     .map(k => a.commandManager.handlers.get(k)?.execute?.toString() || '').join('\n')
     + a.actionManager.execAction.toString();

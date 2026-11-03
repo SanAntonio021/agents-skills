@@ -6,7 +6,7 @@
 
 CLI 导出与写入规则于 2026-11-02 依据官方 [导出说明](https://open.feishu.cn/.well-known/skills/lark-whiteboard/references/lark-whiteboard-export.md)、[更新说明](https://open.feishu.cn/.well-known/skills/lark-whiteboard/references/lark-whiteboard-update.md) 及本机 `lark-cli 1.0.98` 帮助核对，调用约定见 [CLI 导出与写入边界](operations.md#cli-导出与写入边界)。官方的导出、修改、重导入路线使用追加或整板覆盖；本技能保留按对象局部编辑入口。SVG 重导入会丢失原节点 ID、连线绑定、锁定、评论及容器语义，不能用作保留这些属性的编辑方式。CLI 导入说明更新不表示网页内部命令、文字或保存接口已兼容，仍须按下面的指纹检查与隔离验证执行。
 
-2026-10-01 开发环境 CLI 为 1.0.97，浏览器 Proxy 为 protocol v2。当前页面内部命令签名 `15acf339`（2026-10-26 加入 Align/Order 后）是指定命令函数源码的
+2026-10-01 浏览器 Proxy 为 protocol v2。2026-10-26 页面内部命令签名 `15acf339`（加入 Align/Order 后）是指定命令函数源码的
 FNV-1a 兼容性指纹，不是安全校验或飞书官方版本号。只读 inspect 可显示实际签名，写入只接受已验证签名。
 网页更新导致不一致时重新检查并在隔离画板验证，不能为通过检查直接把当前值加入允许列表。
 

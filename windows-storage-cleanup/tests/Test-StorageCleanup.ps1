@@ -548,12 +548,39 @@ Test 'Long directory path and long member path recycle with exact restore path a
     $payloadFile=Join-Path $pair[0].payload $relative
     Assert ((Get-FileHash -LiteralPath $payloadFile -Algorithm SHA256).Hash -eq $hash) 'Recycled long-directory content hash changed.'
 }
+Test 'D-drive directory with a deep long member recycles with its original path and contents' {
+    if (-not $externalSandbox) { throw 'SKIP: pass -CrossVolumeRoot on another drive to exercise the D-drive stress case.' }
+    $caseRoot=Join-Path $externalSandbox 'large-long-directory'
+    $source=Join-Path $caseRoot 'source';$kept=Join-Path $caseRoot 'kept'
+    $control=Join-Path $sandbox 'large-long-directory-control'
+    foreach($path in @($source,$kept,$control)){ $null=[IO.Directory]::CreateDirectory($path) }
+    $f=@{root=$caseRoot;source=$source;kept=$kept;control=$control;manifest=(Join-Path $control 'manifest.json');state=(Join-Path $sandbox 'large-long-directory-state')}
+    $deep=$source
+    foreach($n in 1..5){$deep=Join-Path $deep (('deep'+('x'*40))+$n)}
+    $null=[IO.Directory]::CreateDirectory($deep)
+    $longFile=Join-Path $deep 'member-0001.dat';WriteSample $longFile 'D-drive deep path content'
+    Assert ($longFile.Length -ge 248) 'Stress fixture did not exceed the long-path threshold.'
+    $hash=(Get-FileHash -LiteralPath $longFile -Algorithm SHA256).Hash;$item=Item $source 'recycle'
+    SaveManifest $f @($item);$check=Run $f Check;Assert ($check.items[0].status -eq 'ready') 'Check rejected the large long-path directory.'
+    $null=Run $f Execute;$null=Run $f Verify
+    Assert (-not(Test-Path -LiteralPath $source)) 'Long-member source remains after recycle.'
+    $owned=Get-SCTestRecyclePairs @($source,$kept);$pair=@($owned.pairs|Where-Object {$_.original -eq $source})
+    Assert ($pair.Count -eq 1) 'Exact D-drive restore entry was not found.'
+    $payloadFile=Join-Path $pair[0].payload ([IO.Path]::GetRelativePath($source,$longFile))
+    Assert ((Get-FileHash -LiteralPath $payloadFile -Algorithm SHA256).Hash -eq $hash) 'Recycled D-drive deep member content hash changed.'
+}
 Test 'Recycle callback rejects a permanent-delete choice and incomplete callbacks' {
     $guard=[StorageCleanupNative+RecycleGuard]::new()
     Assert ($guard.PreDeleteItem(0,$null) -lt 0) 'Permanent-delete choice was accepted.'
     $blocked=$false;try{$guard.Validate()}catch{$blocked=$true};Assert $blocked 'Rejected choice validated.'
     $guard=[StorageCleanupNative+RecycleGuard]::new()
     $blocked=$false;try{$guard.Validate()}catch{$blocked=$true};Assert $blocked 'Missing callbacks validated.'
+}
+Test 'Recycle callback failure retains its HRESULT' {
+    $guard=[StorageCleanupNative+RecycleGuard]::new()
+    $hr=[Runtime.InteropServices.Marshal]::GetHRForException([UnauthorizedAccessException]::new())
+    $null=$guard.PostDeleteItem(0x80,$null,$hr,$null)
+    Assert ($guard.Failure -match '0x80070005') 'Recycle callback HRESULT was not retained.'
 }
 Test 'Recycle verification failure stops the batch and reconciles on Resume' {
     $f=Fixture 'stop-after-recycle';$p=Join-Path $f.source 'a';$q=Join-Path $f.source 'b';WriteSample $p;WriteSample $q

@@ -11,7 +11,19 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 public static class StorageCleanupNative {
- [ComImport,Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface IShellItem { void BindToHandler(); void GetParent(); void GetDisplayName(); void GetAttributes(); void Compare(); }
+ [ComImport,Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface IShellItem { [PreserveSig] int BindToHandler(IntPtr binding,ref Guid handler,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out ITransferSource transfer); void GetParent(); [PreserveSig] int GetDisplayName(uint sigdnName,out IntPtr displayName); void GetAttributes(); void Compare(); }
+ [ComImport,Guid("00adb003-bde9-45c6-8e29-d09f9353e108"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface ITransferSource {
+  void Advise(IntPtr sink,out uint cookie); void Unadvise(uint cookie); void SetProperties(IntPtr properties);
+  void OpenItem(IShellItem item,uint flags,ref Guid iid,out IntPtr result);
+  void MoveItem(IShellItem item,IShellItem destination,[MarshalAs(UnmanagedType.LPWStr)]string name,uint flags,[MarshalAs(UnmanagedType.Interface)]out IShellItem result);
+  [PreserveSig] int RecycleItem(IShellItem item,IShellItem recycleFolder,uint flags,[MarshalAs(UnmanagedType.Interface)]out IShellItem recycledItem);
+ }
+ [ComImport,Guid("000214E6-0000-0000-C000-000000000046"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IShellFolder {
+  [PreserveSig] int ParseDisplayName(IntPtr hwnd,IntPtr binding,[MarshalAs(UnmanagedType.LPWStr)]string name,out uint eaten,out IntPtr childPidl,IntPtr attributes);
+  void EnumObjects(IntPtr hwnd,uint flags,out IntPtr enumerator);
+  [PreserveSig] int BindToObject(IntPtr childPidl,IntPtr binding,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellFolder folder);
+  void BindToStorage(); void CompareIDs(); void CreateViewObject(); void GetAttributesOf(); void GetUIObjectOf(); void GetDisplayNameOf(); void SetNameOf();
+ }
  [ComImport,Guid("04b0f1a7-9490-44bc-96e1-4296a31252e2"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] public interface IFileOperationProgressSink {
   [PreserveSig] int StartOperations(); [PreserveSig] int FinishOperations(int result);
   [PreserveSig] int PreRenameItem(uint flags,IShellItem item,[MarshalAs(UnmanagedType.LPWStr)]string name);
@@ -27,11 +39,15 @@ public static class StorageCleanupNative {
   [PreserveSig] int UpdateProgress(uint total,uint completed); [PreserveSig] int ResetTimer(); [PreserveSig] int PauseTimer(); [PreserveSig] int ResumeTimer();
  }
  [ComVisible(true),ClassInterface(ClassInterfaceType.None)] public sealed class RecycleGuard : IFileOperationProgressSink {
-  const int Abort=unchecked((int)0x80004004); public int BeforeCount,AfterCount; public string Failure;
-  int Reject(string message){Failure=message;return Abort;}
-  public int StartOperations(){return 0;} public int FinishOperations(int result){return result<0?Reject("Shell operation failed"):0;}
-  public int PreDeleteItem(uint flags,IShellItem item){if((flags&0x80)==0)return Reject("Shell did not select recycle; permanent deletion refused");BeforeCount++;return 0;}
-  public int PostDeleteItem(uint flags,IShellItem item,int result,IShellItem created){if(result<0||created==null)return Reject("Shell did not return a recycled item");AfterCount++;return 0;}
+  const int Abort=unchecked((int)0x80004004); public int BeforeCount,AfterCount; public string Failure; string ExpectedRoot; bool ExpectedRootIsDirectory;
+  public RecycleGuard(){}
+  public RecycleGuard(string expectedRoot,bool expectedRootIsDirectory){ExpectedRoot=NormalizePath(expectedRoot);ExpectedRootIsDirectory=expectedRootIsDirectory;}
+  static string NormalizePath(string path){if(path==null)return null;if(path.StartsWith("\\\\?\\",StringComparison.Ordinal))path=path.Substring(4);return path.TrimEnd('\\');}
+  static string GetPath(IShellItem item){if(item==null)return null;IntPtr displayName=IntPtr.Zero;try{if(item.GetDisplayName(0x80058000,out displayName)<0||displayName==IntPtr.Zero)return null;return NormalizePath(Marshal.PtrToStringUni(displayName));}catch{return null;}finally{if(displayName!=IntPtr.Zero)Marshal.FreeCoTaskMem(displayName);}}
+  int Reject(string message){if(Failure==null)Failure=message;return Abort;}
+  public int StartOperations(){return 0;} public int FinishOperations(int result){return result<0?Reject(String.Format("Shell operation failed (HRESULT 0x{0:X8})",result)):0;}
+  public int PreDeleteItem(uint flags,IShellItem item){if((flags&0x80)==0){string itemPath=GetPath(item);string scope="unavailable";if(itemPath!=null&&ExpectedRoot!=null){if(itemPath.Equals(ExpectedRoot,StringComparison.OrdinalIgnoreCase))scope="approved root";else if(ExpectedRootIsDirectory&&itemPath.StartsWith(ExpectedRoot+"\\",StringComparison.OrdinalIgnoreCase))scope="directory member";else scope="outside approved root";}return Reject(String.Format("Shell did not select recycle (flags 0x{0:X}, scope {1}); permanent deletion refused",flags,scope));}BeforeCount++;return 0;}
+  public int PostDeleteItem(uint flags,IShellItem item,int result,IShellItem created){if(result<0)return Reject(String.Format("Shell delete callback failed (HRESULT 0x{0:X8}, flags 0x{1:X})",result,flags));if(created==null){string itemPath=GetPath(item);if(!ExpectedRootIsDirectory||ExpectedRoot==null||itemPath==null||(!itemPath.Equals(ExpectedRoot,StringComparison.OrdinalIgnoreCase)&&!itemPath.StartsWith(ExpectedRoot+"\\",StringComparison.OrdinalIgnoreCase)))return Reject("Shell did not return a recycled item for the approved root");}AfterCount++;return 0;}
   public int PreRenameItem(uint f,IShellItem i,string n){return Reject("Unexpected rename");} public int PostRenameItem(uint f,IShellItem i,string n,int r,IShellItem c){return 0;}
   public int PreMoveItem(uint f,IShellItem i,IShellItem d,string n){return Reject("Unexpected move");} public int PostMoveItem(uint f,IShellItem i,IShellItem d,string n,int r,IShellItem c){return 0;}
   public int PreCopyItem(uint f,IShellItem i,IShellItem d,string n){return Reject("Unexpected copy");} public int PostCopyItem(uint f,IShellItem i,IShellItem d,string n,int r,IShellItem c){return 0;}
@@ -43,16 +59,77 @@ public static class StorageCleanupNative {
  void Advise(IntPtr sink,out uint cookie); void Unadvise(uint cookie); void SetOperationFlags(uint flags); void SetProgressMessage([MarshalAs(UnmanagedType.LPWStr)]string msg);void SetProgressDialog(IntPtr p);void SetProperties(IntPtr p);void SetOwnerWindow(uint hwnd);void ApplyPropertiesToItem(IShellItem i);void ApplyPropertiesToItems(IntPtr p);void RenameItem(IShellItem i,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void RenameItems(IntPtr p,[MarshalAs(UnmanagedType.LPWStr)]string n);void MoveItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void MoveItems(IntPtr p,IShellItem d);void CopyItem(IShellItem i,IShellItem d,[MarshalAs(UnmanagedType.LPWStr)]string n,IntPtr s);void CopyItems(IntPtr p,IShellItem d);void DeleteItem(IShellItem i,[MarshalAs(UnmanagedType.Interface)]IFileOperationProgressSink s);void DeleteItems(IntPtr p);void NewItem(IShellItem d,uint a,[MarshalAs(UnmanagedType.LPWStr)]string n,[MarshalAs(UnmanagedType.LPWStr)]string t,IntPtr s);void PerformOperations();void GetAnyOperationsAborted([MarshalAs(UnmanagedType.Bool)]out bool aborted);
  }
  [DllImport("shell32.dll",CharSet=CharSet.Unicode,PreserveSig=false)] static extern void SHCreateItemFromParsingName(string path,IntPtr binding,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellItem item);
- public static void Recycle(string path) {
+ [DllImport("shell32.dll")] static extern int SHGetDesktopFolder([MarshalAs(UnmanagedType.Interface)]out IShellFolder folder);
+ [DllImport("shell32.dll")] static extern int SHCreateItemFromIDList(IntPtr pidl,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellItem item);
+ [DllImport("shell32.dll")] static extern IntPtr ILCombine(IntPtr first,IntPtr second);
+ [DllImport("shell32.dll")] static extern void ILFree(IntPtr pidl);
+ [DllImport("shell32.dll")] static extern int SHGetKnownFolderItem(ref Guid folderId,uint flags,IntPtr token,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellItem item);
+ static void CheckShellResult(int result,string stage){if(result<0)Marshal.ThrowExceptionForHR(result);}
+ static string NormalizeShellPath(string path){if(path==null)return null;if(path.StartsWith("\\\\?\\",StringComparison.Ordinal))path=path.Substring(4);return path.TrimEnd('\\');}
+ static IShellItem CreateItemFromPathSegments(string path){
+  IShellFolder desktop=null,folder=null,childFolder=null;IShellItem item=null;
+  IntPtr rootPidl=IntPtr.Zero,fullPidl=IntPtr.Zero,childPidl=IntPtr.Zero,combinedPidl=IntPtr.Zero,displayName=IntPtr.Zero;
+  try{
+   CheckShellResult(SHGetDesktopFolder(out desktop),"get desktop folder");
+   string drive=System.IO.Path.GetPathRoot(path);
+   if(string.IsNullOrEmpty(drive)||drive.Length!=3)throw new InvalidOperationException("Segment parsing requires a local drive path");
+   CheckShellResult(desktop.ParseDisplayName(IntPtr.Zero,IntPtr.Zero,drive,out uint eaten,out rootPidl,IntPtr.Zero),"parse drive root");
+   fullPidl=rootPidl;
+   Guid folderIid=new Guid("000214E6-0000-0000-C000-000000000046");
+   CheckShellResult(desktop.BindToObject(rootPidl,IntPtr.Zero,ref folderIid,out folder),"bind drive root");
+   string[] segments=path.Substring(drive.Length).Split(new[]{'\\'},StringSplitOptions.RemoveEmptyEntries);
+   for(int index=0;index<segments.Length;index++){
+    CheckShellResult(folder.ParseDisplayName(IntPtr.Zero,IntPtr.Zero,segments[index],out eaten,out childPidl,IntPtr.Zero),"parse path segment");
+    combinedPidl=ILCombine(fullPidl,childPidl);
+    if(combinedPidl==IntPtr.Zero)throw new InvalidOperationException("Shell could not combine path segments");
+    if(index<segments.Length-1){
+     CheckShellResult(folder.BindToObject(childPidl,IntPtr.Zero,ref folderIid,out childFolder),"bind path segment");
+     Marshal.ReleaseComObject(folder);folder=childFolder;childFolder=null;
+    }
+    ILFree(childPidl);childPidl=IntPtr.Zero;
+    if(fullPidl!=rootPidl)ILFree(fullPidl);
+    fullPidl=combinedPidl;combinedPidl=IntPtr.Zero;
+   }
+   Guid itemIid=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");
+   CheckShellResult(SHCreateItemFromIDList(fullPidl,ref itemIid,out item),"create item from path segments");
+   CheckShellResult(item.GetDisplayName(0x80058000,out displayName),"read parsed item path");
+   string parsed=NormalizeShellPath(Marshal.PtrToStringUni(displayName));
+   string expected=NormalizeShellPath(path);
+    if(!string.Equals(parsed,expected,StringComparison.OrdinalIgnoreCase)){Marshal.ReleaseComObject(item);item=null;return null;}
+   return item;
+  }catch{if(item!=null)Marshal.ReleaseComObject(item);throw;}
+  finally{
+   if(displayName!=IntPtr.Zero)Marshal.FreeCoTaskMem(displayName);
+   if(childFolder!=null)Marshal.ReleaseComObject(childFolder);if(folder!=null)Marshal.ReleaseComObject(folder);if(desktop!=null)Marshal.ReleaseComObject(desktop);
+   if(childPidl!=IntPtr.Zero)ILFree(childPidl);if(combinedPidl!=IntPtr.Zero)ILFree(combinedPidl);
+   if(fullPidl!=IntPtr.Zero&&fullPidl!=rootPidl)ILFree(fullPidl);if(rootPidl!=IntPtr.Zero)ILFree(rootPidl);
+  }
+ }
+ public static void Recycle(string path,bool isDirectory,bool hasLongMember) {
   if(path.Length>=32767)throw new InvalidOperationException("Path exceeds the Windows extended-length limit");
-  string shellPath=path;
-  Exception error=null;var thread=new System.Threading.Thread(()=>{object obj=null;IShellItem item=null;try {
+  bool useSegments=hasLongMember||path.Length>=248;
+  Exception error=null;var thread=new System.Threading.Thread(()=>{object obj=null;IShellItem item=null,recycleFolder=null,recycledItem=null;ITransferSource transfer=null;RecycleGuard guard=null;IntPtr recycledPath=IntPtr.Zero;try {
+   if(useSegments)item=CreateItemFromPathSegments(path);
+   if(item!=null){
+    var transferHandler=new Guid("D5E346A1-F753-4932-B403-4574800E2498");var transferIid=new Guid("00ADB003-BDE9-45C6-8E29-D09F9353E108");
+    CheckShellResult(item.BindToHandler(IntPtr.Zero,ref transferHandler,ref transferIid,out transfer),"bind Shell transfer source");
+    var binFolderId=new Guid("B7534046-3ECB-4C18-BE4E-64CD4CB7D6AC");var itemIid=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");
+    CheckShellResult(SHGetKnownFolderItem(ref binFolderId,0,IntPtr.Zero,ref itemIid,out recycleFolder),"get Recycle Bin folder");
+    int result=transfer.RecycleItem(item,recycleFolder,0x80,out recycledItem);
+    if(result<0)throw new InvalidOperationException(String.Format("Shell RecycleItem failed (HRESULT 0x{0:X8})",result));
+    if(recycledItem==null)throw new InvalidOperationException("Shell RecycleItem returned no recycled item");
+    CheckShellResult(recycledItem.GetDisplayName(0x80058000,out recycledPath),"read recycled item path");
+    string actual=NormalizeShellPath(Marshal.PtrToStringUni(recycledPath));
+    string binRoot=NormalizeShellPath(System.IO.Path.Combine(System.IO.Path.GetPathRoot(path),"$Recycle.Bin",System.Security.Principal.WindowsIdentity.GetCurrent().User.Value));
+    if(actual==null||!actual.StartsWith(binRoot+"\\",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Shell RecycleItem returned an item outside the current user's Recycle Bin");
+    GC.KeepAlive(transfer);GC.KeepAlive(recycleFolder);GC.KeepAlive(recycledItem);return;
+   }
    obj=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("3ad05575-8857-4850-9277-11b85bdb8e09")));var op=(IFileOperation)obj;
    op.SetOperationFlags(0x00080000|0x00100000|0x00000400|0x00000010|0x00000004|0x00000040|0x00002000);
-   var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(shellPath,IntPtr.Zero,ref id,out item);
-   var guard=new RecycleGuard();op.DeleteItem(item,guard);op.PerformOperations();bool aborted;op.GetAnyOperationsAborted(out aborted);
-   if(aborted)throw new InvalidOperationException("Recycle operation aborted");guard.Validate();GC.KeepAlive(guard);
-  }catch(Exception e){error=e;}finally{if(item!=null)Marshal.FinalReleaseComObject(item);if(obj!=null)Marshal.FinalReleaseComObject(obj);}});
+   var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(path,IntPtr.Zero,ref id,out item);
+   guard=new RecycleGuard(path,isDirectory);op.DeleteItem(item,guard);op.PerformOperations();bool aborted;op.GetAnyOperationsAborted(out aborted);
+   if(aborted){if(guard.Failure!=null)throw new InvalidOperationException(guard.Failure);throw new InvalidOperationException(String.Format("Recycle operation aborted without a callback failure (before={0}, after={1})",guard.BeforeCount,guard.AfterCount));}guard.Validate();GC.KeepAlive(guard);
+  }catch(Exception e){error=guard!=null&&guard.Failure!=null?new InvalidOperationException(guard.Failure,e):e;}finally{if(recycledPath!=IntPtr.Zero)Marshal.FreeCoTaskMem(recycledPath);if(recycledItem!=null)Marshal.FinalReleaseComObject(recycledItem);if(recycleFolder!=null)Marshal.FinalReleaseComObject(recycleFolder);if(transfer!=null)Marshal.FinalReleaseComObject(transfer);if(item!=null)Marshal.FinalReleaseComObject(item);if(obj!=null)Marshal.FinalReleaseComObject(obj);}});
   thread.SetApartmentState(System.Threading.ApartmentState.STA);thread.Start();thread.Join();if(error!=null)throw new InvalidOperationException("Recycle failed: "+error.Message,error);
  }
  [StructLayout(LayoutKind.Sequential)] public struct Info { public uint Attr; public System.Runtime.InteropServices.ComTypes.FILETIME Creation,Access,Write; public uint Volume,High,Low,Links,IndexHigh,IndexLow; }
@@ -449,7 +526,11 @@ function Assert-SCPair($Item,$Pair){
     if($m.original -ne $Item.source -or $m.metadataHash -ne $Pair.metadataHash){throw 'Recycle metadata changed'}
 }
 function Invoke-SCRecycle($Item){
-    [StorageCleanupNative]::Recycle($Item.source)
+    $hasLongMember=$Item.source.Length -ge 248
+    if($Item.kind -eq 'directory'){
+        foreach($member in $Item.members){if(($Item.source.Length+1+$member.relativePath.Length) -ge 248){$hasLongMember=$true;break}}
+    }
+    [StorageCleanupNative]::Recycle($Item.source,($Item.kind -eq 'directory'),$hasLongMember)
 }
 function Assert-SCRecyclePaths($Item){
     if($Item.source.Length -ge 32767){throw 'Path exceeds the Windows extended-length limit'}

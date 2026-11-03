@@ -22,7 +22,7 @@ description: >
 
 ## 选择执行路径
 
-- **查看或导出**：用 `lark-cli whiteboard +export`，支持 raw、preview、svg、source；先查该命令帮助确认参数。
+- **查看或导出**：用 `lark-cli whiteboard +export`，支持 raw、preview、svg、source；先查该命令帮助确认参数。文件输出、追加与覆盖、幂等规则见 [CLI 导出与写入边界](references/operations.md#cli-导出与写入边界)。
 - **新建系统框图**：由 `lark-doc` 创建空画板并取得文档 token、board token 和 block ID；用 `native_nodes.py` 编译图内容清单，经 CLI RAW 写入，再回读和查看预览。
 - **编辑已有图**：先导出最新 raw，按 ID 和当前内容定位对象，通过本技能 runner 调用页面原生编辑器。局部编辑用于改字、尺寸、样式、图层、绑定线及分组等需要编辑器语义的操作。
 - **明确请求非原生格式**：使用 CLI 对应输入格式；导入结果的文字和连线绑定能力有限。已有非空画板默认追加；整板替换必须在用户明确授权覆盖范围后另行处理，不能充当局部编辑失败的后备方案。

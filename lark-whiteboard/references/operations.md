@@ -12,6 +12,14 @@ lark-cli whiteboard +export --whiteboard-token <board> --output-type raw --outpu
 lark-cli whiteboard +export --whiteboard-token <board> --output-type preview --output preview.jpg --as user
 ```
 
+### CLI 导出与写入边界
+
+RAW 需要作为后续输入时，使用 `--output <file>` 保存。直接输出到终端的 JSON 带有 `{ok, identity, data}` 包装，不能直接作为 `+update --source` 的内容。预览文件扩展名由接口实际返回的 `Content-Type` 决定，后续查看以返回的实际路径为准。
+
+两个命令的 `--overwrite` 含义不同：`+export --overwrite` 只覆盖已有本地导出文件；`+update --overwrite` 会先删除画板全部现有内容再写入，需要用户明确授权整板覆盖。`+update` 省略该参数时是追加，不是按已有对象 ID 更新；局部编辑仍使用下方原生编辑入口。
+
+每次 CLI `+update` 写入在首次提交前生成并保存一个至少 10 字符的 `--idempotent-token`。结果不明时先回读核实，不自动重试；确认需要重试同一次逻辑写入时复用原 token，不能重新生成。幂等 token 不替代写后回读和预览验收。
+
 新画板由 `lark-doc` 插入 `<whiteboard type="blank"></whiteboard>`，从返回结果取得文档 URL/token、画板 token 和 block ID。一张语义完整的系统图使用一个独立画板。
 
 ### 图内容清单
@@ -63,7 +71,7 @@ python <skill>/scripts/native_nodes.py --input diagram.json --output native.json
 
 ```text
 python <skill>/scripts/native_nodes.py --input diagram.json --output native.json
-lark-cli whiteboard +update --whiteboard-token <board> --input_format raw --source @native.json --as user
+lark-cli whiteboard +update --whiteboard-token <board> --input_format raw --source @native.json --idempotent-token <10+字符唯一串> --as user
 ```
 
 写入成功后导出 RAW 和预览：
@@ -182,7 +190,7 @@ runner 点击页面真实存在的该目录链接，再滚动到准确画板块�
 - 新增连线可以引用已有模块；`connect` 会先追加一条游离线，再由原生编辑器绑定两端。`reconnect` 只改指定端点，未指定端和已有锚点保持。
 - 换标签用 `caption` 改写原连线的标签，不删除旧线、不新建独立文本框，因此中间态不会断链。
 - 删除前必须先读取对象关系和 `delete_ids`；绑定线会随模块级联删除。如果计划只是更换标签，不把旧线放入删除集合。
-- 当前 CLI 没有直接改已有节点 `z_index` 的接口，页面编辑器也已验证的命令集不含“置顶/置底”。图层问题按实际原生编辑器能力处理并复核，不能通过整板覆盖或重放已确认结果来规避。
+- 当前 CLI 没有直接改已有节点 `z_index` 的接口；原生编辑入口已支持 `bring_to_front` / `send_to_back`（置顶/置底）和 `bring_forward` / `send_backward`（上移/下移一层）。先核对当前接口兼容性，再按对象 ID 操作和回读层序；不能通过整板覆盖或重放已确认结果来规避接口失败。
 - 数据层绑定正确不代表画面能看到连线。外框不透明填充、标签位置和遮挡必须用实际预览确认；必要时调整填充、尺寸、位置或已支持的结构属性，再重新回读和看图。
 - 每次局部编辑完成后核对节点 ID、两端绑定、锚点和 `z_index`，再实际打开最新预览。不能把 inspect 的成功、RAW 的绑定 ID 或 `visual_status:needs_review` 单独当作完成。
 

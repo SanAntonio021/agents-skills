@@ -10,13 +10,14 @@ from . import connection
 from .errors import LibraryError, NativeRejected
 from .request import KEY, digest, require
 from .identity import normalize_doi, normalize_text, match_identity, related
+from .local_api import LocalAPI
 
 
 DEFAULT_POLICY = Path(__file__).resolve().parents[2] / 'references' / 'automatic_fetch_policy.json'
 
 
 class Client:
-    def __init__(self, profile=None, base_url=None, timeout=3, policy=None):
+    def __init__(self, profile=None, base_url=None, timeout=3, policy=None, vault=None):
         self.status = connection.status_payload(profile, base_url, timeout)
         if not self.status['read_only_ready']:
             raise LibraryError(self.status.get('error') or 'local_api_not_ready')
@@ -29,8 +30,14 @@ class Client:
         # are inferred for them.
         self.policy = policy or (str(DEFAULT_POLICY) if DEFAULT_POLICY.is_file() else None)
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), connection.NoRedirect())
+        self.api = LocalAPI(self, vault)
 
     def read(self, path, params=None):
+        if self.api.server_id:
+            try:
+                return json.loads(self.api.exchange(path, params))
+            except (ValueError, TypeError):
+                raise LibraryError('invalid_local_api_response') from None
         if params:
             path += '?' + urllib.parse.urlencode(params)
         result = connection.request(self.opener, self.base, '/api/' + path, self.timeout)
@@ -136,7 +143,12 @@ class Client:
         if not isinstance(token, str) or not token.isascii() or not token or any(ord(c) < 33 or ord(c) == 127 for c in token):
             raise LibraryError('bridge_credential_missing_or_invalid')
         program = Path(__file__).with_name('native.js').read_text('utf-8')
-        program = 'try {\n' + program.replace('__ZOTERO_LIBRARY_INPUT__', json.dumps(data, ensure_ascii=True))
+        program = program.replace('__ZOTERO_LIBRARY_API_PROGRAM__',
+            Path(__file__).with_name('archive_api.js').read_text('utf-8'))
+        # Debug Bridge logs only this label when present; otherwise it logs the
+        # complete program, including ephemeral Local API authorization data.
+        program = '// debug bridge: zotero-library fixed operation\ntry {\n' + program.replace(
+            '__ZOTERO_LIBRARY_INPUT__', json.dumps(data, ensure_ascii=True))
         program += '\n} catch(e) { return {nativeError:e.publicCode || "native_capability_unavailable"}; }'
         request = urllib.request.Request(self.base + '/debug-bridge/execute',
             data=program.encode('utf-8'), headers={'Content-Type': 'text/plain',
@@ -166,11 +178,14 @@ class Client:
         except (ValueError, TypeError):
             raise LibraryError('invalid_bridge_response') from None
 
-    def prepare(self, request):
+    def prepare(self, request, backend='native'):
         caps = self.native({'action': 'capabilities'})
         for key in ('nativeWrite', 'preferences', 'fileHash'):
             require(caps.get(key) is True, 'capability_missing_' + key)
-        if request.get('pdf'):
+        if backend == 'local_api':
+            self.api.bind()
+            require(caps.get('localAPIWrite') is True, 'capability_missing_local_api_writes')
+        elif request.get('pdf'):
             require(caps.get('importFile') is True, 'capability_missing_import_from_file')
         require(not caps.get('legacyActive'), 'legacy_batch_active')
         reviewed = [{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1', 'preference_keys': []}]

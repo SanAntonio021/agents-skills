@@ -180,8 +180,7 @@ class NativeExecutionTests(unittest.TestCase):
         before = [x for x in state['items'] if x['data']['itemType'] == 'note']
         download = self.f.request(); download['parent_key'] = parent
         result = executor.run(download); self.assertEqual(result['state'], 'completed', result)
-        attachment_id = int(result['native']['attachment']['key'][1:])
-        self.f.control(seed=[{'itemType': 'annotation', 'parentID': attachment_id, 'note': 'Keep annotation'}])
+        self.f.control(seed=[{'itemType': 'annotation', 'parentKey': result['native']['attachment']['key'], 'note': 'Keep annotation'}])
         linked = copy.deepcopy(classify); linked['collections'] = [{'path': ['Other workspace', '论文']}]
         result = executor.run(linked); self.assertEqual(result['state'], 'completed', result)
         state = self.f.control()
@@ -195,9 +194,13 @@ class NativeExecutionTests(unittest.TestCase):
         manual['metadata'] = {'itemType': 'document'}; manual['collections'] = [{'path': ['Workspace', '器件手册']}]
         result = executor.run(manual); self.assertEqual(result['state'], 'completed', result)
 
-    def test_missing_import_capability_is_explicit(self):
+    def test_official_archive_does_not_require_native_import(self):
         self.f.control(config={'noImport': True})
-        with self.assertRaisesRegex(LibraryError, 'capability_missing_import_from_file'):
+        self.assertEqual(self.f.executor().run(self.f.request())['state'], 'completed')
+
+    def test_missing_official_write_capability_is_explicit(self):
+        self.f.control(config={'noLocalAPI': True})
+        with self.assertRaisesRegex(LibraryError, 'capability_missing_local_api_writes'):
             self.f.executor().run(self.f.request())
         self.assertEqual(self.f.control()['items'], [])
 
@@ -394,10 +397,9 @@ class NativeExecutionTests(unittest.TestCase):
         executor = self.f.executor(); request = self.f.request()
         result = executor.run(request)
         parent = result['native']['parentKey']
-        parent_id = int(parent[1:])
         state = self.f.control(seed=[
-            {'itemType': 'attachment', 'parentID': parent_id, 'contentType': 'application/pdf', 'file': str(annotated)},
-            {'itemType': 'attachment', 'parentID': parent_id, 'contentType': 'application/pdf', 'file': str(self.f.pdf)}])
+            {'itemType': 'attachment', 'parentKey': parent, 'contentType': 'application/pdf', 'file': str(annotated)},
+            {'itemType': 'attachment', 'parentKey': parent, 'contentType': 'application/pdf', 'file': str(self.f.pdf)}])
         candidates = [i['key'] for i in state['items'] if i['data']['itemType'] == 'attachment'][-2:]
         self.f.control(seed=[{'itemType': 'note', 'note': '<p>Reading link zotero://open-pdf/library/items/' + candidates[1] + '</p>'}])
         def spec(k, p): return {'key': k, 'sha256': inspect_pdf(p)['sha256'], 'version': 'official', 'evidence': ['Version verified']}
@@ -413,7 +415,7 @@ class NativeExecutionTests(unittest.TestCase):
     def test_superseded_version_requires_business_evidence(self):
         executor = self.f.executor(); request = self.f.request(); result = executor.run(request)
         parent = result['native']['parentKey']
-        state = self.f.control(seed=[{'itemType': 'attachment', 'parentID': int(parent[1:]),
+        state = self.f.control(seed=[{'itemType': 'attachment', 'parentKey': parent,
             'contentType': 'application/pdf', 'file': str(self.f.pdf)}])
         candidate_key = state['items'][-1]['key']
         def spec(k, version): return {'key': k, 'sha256': inspect_pdf(self.f.pdf)['sha256'],

@@ -16,6 +16,8 @@ async function capabilities() {
         nativeWrite: typeof Zotero.Item === "function" && typeof Zotero.Collection === "function"
             && typeof Zotero.Items.trash === "function" && typeof Zotero.DB.executeTransaction === "function",
         importFile: typeof Zotero.Attachments.importFromFile === "function",
+        localAPIWrite: typeof Zotero.Server?.LocalAPI?.getServerID === "function"
+            && (typeof fetch === "function" || typeof ChromeUtils.importGlobalProperties === "function"),
         preferences: ["get", "set", "registerObserver", "unregisterObserver"].every(k =>
             typeof Zotero.Prefs[k] === "function"),
         fileHash: !!Components.classes["@mozilla.org/security/hash;1"],
@@ -69,22 +71,6 @@ if (q.action === "operation") {
     return {processIdentity: processIdentity(), job: job ? copy(job) : null,
         active: store?.active || null, legacyActive: Zotero.__paperDownloadBatches?.active || null};
 }
-needed(q.action === "start", "invalid_native_action");
-needed(q.processIdentity === processIdentity(), "process_identity_changed");
-const store = Zotero.__zoteroLibraryBatches ||= {active: null, jobs: Object.create(null)};
-if (store.jobs[q.attemptId]) {
-    needed(store.jobs[q.attemptId].requestHash === q.requestHash, "operation_request_conflict");
-    return copy(store.jobs[q.attemptId]);
-}
-// Legacy scripts must not be run concurrently with this executor.
-needed(!Zotero.__paperDownloadBatches?.active, "legacy_batch_active");
-needed(!store.active, "another_batch_active");
-const job = store.jobs[q.attemptId] = {operationId: q.operationId, attemptId: q.attemptId,
-    requestHash: q.requestHash, processIdentity: q.processIdentity, status: "running",
-    startedAt: Date.now(), savedKeys: [], collections: [], skipped: [], trashed: [],
-    preferenceRecovery: [], error: null, verified: false, contentWritesStarted: false};
-store.active = q.attemptId;
-
 const norm = s => String(s || "").normalize("NFKC").replace(/\s+/g," ").trim().toLowerCase();
 const doi = s => String(s || "").trim().replace(/^doi:\s*/i, "")
     .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "").trim().toLowerCase();
@@ -154,6 +140,7 @@ async function protect(parent) {
         const snap = {key: item.key, data: JSON.stringify(item.toJSON())};
         if (item.isAttachment()) {
             const path = await item.getFilePathAsync();
+            if (!path && q.backend === 'local_api' && q.resumeAPI && item.key === q.apiKeys.attachment) continue;
             needed(path || item.attachmentLinkMode === Zotero.Attachments.LINK_MODE_LINKED_URL,
                 "existing_attachment_state_unknown");
             if (path) snap.hash = fileHash(path);
@@ -188,6 +175,27 @@ async function confirmProtected(parent, baseline, trashed=[]) {
     }
 }
 
+if (q.action === 'snapshot') {
+    const lib = await library(), parent = await findParent(lib);
+    return {parentKey: parent?.key || null, snapshot: await protect(parent)};
+}
+needed(q.action === 'start', 'invalid_native_action');
+needed(q.processIdentity === processIdentity(), 'process_identity_changed');
+const store = Zotero.__zoteroLibraryBatches ||= {active:null,jobs:Object.create(null)};
+if (store.jobs[q.attemptId]) {
+    needed(store.jobs[q.attemptId].requestHash === q.requestHash, 'operation_request_conflict');
+    return copy(store.jobs[q.attemptId]);
+}
+needed(!Zotero.__paperDownloadBatches?.active, 'legacy_batch_active');
+needed(!store.active, 'another_batch_active');
+const job = store.jobs[q.attemptId] = {operationId:q.operationId,attemptId:q.attemptId,
+    requestHash:q.requestHash,processIdentity:q.processIdentity,status:'running',
+    startedAt:Date.now(),savedKeys:[],collections:[],skipped:[],trashed:[],
+    preferenceRecovery:[],error:null,verified:false,contentWritesStarted:false};
+store.active = q.attemptId;
+
+__ZOTERO_LIBRARY_API_PROGRAM__
+
 async function run() {
     const prefs = [];
     let parent = null, lib = null;
@@ -204,6 +212,10 @@ async function run() {
         lib = await library();
         needed(lib.editable && (!q.request.pdf || lib.filesEditable), "library_not_editable");
         parent = await findParent(lib);
+        if (q.protectionBaseline?.snapshot) {
+            needed(parent?.key === q.protectionBaseline.parentKey, 'protected_parent_changed');
+            await confirmProtected(parent, q.protectionBaseline.snapshot);
+        }
         const baseline = await protect(parent);
         // Recognized preference keys are handled below; the add-on inventory is not a write gate.
         for (const key of q.preferenceKeys) {
@@ -219,7 +231,14 @@ async function run() {
             }
         }
         await beforeWrite();
-        if (q.kind === "archive") {
+        if (q.kind === 'archive' && q.backend === 'local_api') {
+            // The closure observes the parent as it is created by the API worker.
+            const check = beforeWrite;
+            parent = await archiveAPI(lib, parent, async () => {
+                if (!parent && job.parentKey) parent = await itemAt(lib.libraryID,job.parentKey);
+                await check();
+            }, baseline);
+        } else if (q.kind === "archive") {
             if (!parent) {
                 await beforeWrite();
                 job.contentWritesStarted = true;
@@ -345,6 +364,14 @@ async function run() {
         job.verified = true; terminal = "completed";
     } catch (e) { job.error = e.publicCode || "native_operation_failed"; }
     finally {
+        if (job.apiOutcomeUnknown) {
+            // The HTTP handler may still be writing. Retain ownership, observers and
+            // paused preferences for the lifetime of this process. Never replay here.
+            job.preferenceRecovery = prefs.map(p => ({key:p.key,recovery:'held_for_unknown_request'}));
+            job.status = 'unknown';
+            delete q.apiAuthorization;
+            return;
+        }
         for (const p of prefs.reverse()) {
             let recovery = "not_needed";
             try {
@@ -361,8 +388,9 @@ async function run() {
             try { Zotero.Prefs.unregisterObserver(p.observer); } catch (e) { recovery = "pending"; }
             job.preferenceRecovery.push({key: p.key, recovery});
         }
-        job.status = terminal; job.finishedAt = Date.now();
-        if (store.active === q.attemptId) store.active = null;
+        job.status = job.apiOutcomeUnknown ? 'unknown' : terminal; job.finishedAt = Date.now();
+        delete q.apiAuthorization;
+        if (!job.apiOutcomeUnknown && store.active === q.attemptId) store.active = null;
     }
 }
 // Own the slot before the first await; client timeouts never terminate this task or restore settings.

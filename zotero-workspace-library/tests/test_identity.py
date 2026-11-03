@@ -90,8 +90,8 @@ class IdentityTests(unittest.TestCase):
         key = self.seed({'title': 'Verified article', 'DOI': '10.1234/fixture'})
         request = self.f.request(); request['parent_key'] = key
         executor = self.f.executor(); prepare = executor.client.prepare
-        def changed(value):
-            caps = prepare(value)
+        def changed(value, backend='native'):
+            caps = prepare(value, backend)
             self.f.control(update={'key': key, 'fields': {'DOI': '10.1234/changed'}})
             return caps
         executor.client.prepare = changed

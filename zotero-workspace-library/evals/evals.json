@@ -2,6 +2,18 @@
   "skill_name": "zotero-workspace-library",
   "evals": [
     {
+      "id": "local-api-archive-recovery",
+      "prompt": "把已核实的论文和PDF归档到指定工作区，保留本地源文件。第一次上传返回结果未知，后续同一操作又发现目标数据库已切换。",
+      "expected_output": "新归档使用官方Local API，Debug Bridge仅负责保护与协调；持久化阶段和固定key，未知结果查原编号，数据库切换停止。授权只由内部读取，日志及回执不含凭据，不改Connector重放。",
+      "files": []
+    },
+    {
+      "id": "export-cite-reading",
+      "prompt": "将指定Zotero论文合并到已有references.bib，并在Markdown和LaTeX给定锚点插入引用；随后重复执行。读取该文PDF第1到3页，查出笔记批注中包含phase的记录及页码。",
+      "expected_output": "使用export/cite/read/search公共命令；引用键取实际导出结果，保留已有内容，同键差异报告冲突，重复不追加。阅读结果保留所属论文、附件、页码及OCR和截断状态。",
+      "files": []
+    },
+    {
       "id": "single-paper-direction",
       "prompt": "工作区内有一个稳定研究方向，已经有多篇候选论文。接下来继续补论文资料时，应该放在哪里？",
       "expected_output": "多篇论文统一归入该工作区的“论文”集合，不按文章或检索任务拆集合；项目 README 在集合存在且链接形式经核实后提供入口。",

@@ -41,7 +41,9 @@ metadata:
 
 ## Zotero 执行
 
-库内检索用 `zotero-workspace-library` 的 `find/get/collections`，允许归档时提交 `archive --request` 保存元数据及集合关系；缺全文继续交下载技能。写入命令内置连接、自动抓取、原操作核实及回读，不临时编写原生代码。未知结果沿用同一 operation 编号查询续做；请求格式见 [公共契约](../zotero-workspace-library/references/contract.md)。
+库内条目检索用 `zotero-workspace-library` 的 `find/get/collections`；笔记和批注用 `search --scope notes/annotations`，PDF 分页用 `read`，保留所属论文、附件、页码及 OCR 状态。需要实际 BibTeX 时用 `export`，向指定文稿插入引用用 `cite --request`，引用键取实际导出结果，保留已有 `.bib`。这些命令不代替本技能的出版事实核验。
+
+允许归档时提交 `archive --request`，经官方 Local API 保存元数据及集合关系；缺全文继续交下载技能。写入命令内置连接、自动抓取、原操作核实及回读，不临时编写原生代码。未知结果沿用同一 operation 编号查询续做；请求格式见 [公共契约](../zotero-workspace-library/references/contract.md)。
 
 ## 联网规则
 

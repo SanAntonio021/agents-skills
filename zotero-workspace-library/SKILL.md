@@ -1,6 +1,6 @@
 ---
 name: zotero-workspace-library
-description: 统一 Zotero 工作区分类、参考资料归属、跨工作区关联和后台执行。Use when deciding where an external reference belongs in Zotero, querying entries or collections, archiving verified metadata or PDFs, protecting reading content, pruning verified redundant attachments, or resuming an operation with an unknown result. Business skills provide identity, version, purpose, and archive authorization; this skill owns connection, deduplication, writes, collection relations, readback, and recovery.
+description: 统一 Zotero 分类、归档、引用导出、PDF 分页阅读与笔记批注检索。Use when organizing workspace references, archiving verified metadata or PDFs, exporting BibTeX, inserting Markdown or LaTeX citations, reading PDF pages, searching notes or annotations, protecting reading content, pruning redundant attachments, or resuming unknown operations. Business skills provide identity, version, purpose and archive authorization.
 ---
 
 # Zotero 工作区资料库
@@ -55,13 +55,17 @@ python $zl find --query '完整题名或作者'
 python $zl find --request '<核实后的归档请求.json>'
 python $zl get --key ABCD1234
 python $zl collections
+python $zl export --keys ABCD1234 --output '<绝对路径>/references.bib'
+python $zl cite --request '<明确文件和插入位置的引用请求.json>'
+python $zl read --key ABCD1234 --pages '1-3,6'
+python $zl search --query '检索词' --scope annotations
 python $zl archive --request '<归档请求.json>'
 python $zl prune --request '<核实后的清理请求.json>'
 python $zl operation status --id '<原操作UUID>'
 python $zl operation resume --id '<原操作UUID>'
 ```
 
-`status` 沿用原状态字段与退出码，0 只表示可读。`--capabilities` 增补原生能力、进程身份和活动插件信息；插件名单只用于识别已知偏好，不作为写入门槛。写入无需另跑状态命令。读取默认个人库，群组用 `--group <群组ID>`；请求中的群组 ID 不是原生 libraryID。
+`status` 沿用原状态字段与退出码，0 只表示可读。`--capabilities` 增补官方写入支持、授权存在状态、原生辅助能力、进程身份和活动插件信息，不弹出授权窗口；插件名单只用于识别已知偏好，不作为写入门槛。写入无需另跑状态命令。读取默认个人库，群组用 `--group <群组ID>`；请求中的群组 ID 不是原生 libraryID。
 
 任务提供了连接参数时，全程保留该目标，包括下载 `finalize` 和 operation 查询。可用同一进程环境 `ZOTERO_PROFILE`、`ZOTERO_LOCAL_BASE_URL`、`ZOTERO_LIBRARY_STATE_DIR` 绑定 Profile、地址和回执目录；显式命令参数优先。配置无效就停止，不探测默认文库。
 
@@ -73,7 +77,19 @@ python $zl operation resume --id '<原操作UUID>'
 
 集合只增加。`collections` 可指定已核实 key，或需要建立的实际路径；不按搜索批次新建集合。同库复用条目和文件，跨库不自动复制。已有可读目标版本但字节不同时，由业务层核实版本等价后以 `reuse_pdf` 指定附件；不能仅凭版本名或标题判定等价。
 
-每个写入命令内部完成：连接检查、原操作核实、查重、已知偏好的临时处理、保存、回读验收和设置恢复核实。未知插件或插件版本变化不会阻止归档；执行层不会猜测未知插件的偏好名。原生任务在 Zotero 进程内串行，识别旧 `__paperDownloadBatches` 标记；迁移期间不能同时运行旧脚本。Local API 用于库内读取，Debug Bridge 用于固定原生操作。
+每个写入命令内部完成：连接检查、原操作核实、查重、已知偏好的临时处理、保存、回读验收和设置恢复核实。未知插件或插件版本变化不会阻止归档；执行层不会猜测未知插件的偏好名。任务在 Zotero 进程内串行，识别旧 `__paperDownloadBatches` 标记；迁移期间不能同时运行旧脚本。
+
+新归档的条目、集合、关联及 PDF 复制导入通过官方 Local API 写入。首次写入由 Zotero 弹窗授权；长期授权只存 Windows 凭据管理器，一次授权仅用于一次写请求，多步归档可能需要多次授权。`status --capabilities` 只读检查写入能力和授权存在状态，不触发授权弹窗。Debug Bridge 继续负责保护设置、批次协调、状态回读及回收站。固定目标数据库身份，数据库变化时停止原操作；认证失败不换接口。旧回执没有 `backend` 时沿用原生执行方式核实和续做，操作编号、环境变量与回执目录不变。
+
+## 引用、阅读与检索
+
+`export` 默认输出实际 BibTeX；指定 `--output` 时只合并缺失条目，保留已有 `.bib` 内容。引用键取自逐条导出，不自行推测。相同键对应不同内容时返回 `conflict` 和差异，不覆盖。
+
+`cite --request` 明确论文 key、Markdown／LaTeX、文稿路径、唯一锚点、前后位置及 `.bib` 路径；格式见[接口契约](references/contract.md#引用与导出)。只在指定位置插入，重复执行不重复追加。接受 UTF-8 文本，保留已有 BOM 与换行；目标变化时停止覆盖。如果 `.bib` 已写好而文稿插入受阻，修正冲突后重复同一请求即可。
+
+`read` 从库内 PDF 读取物理页码及 PDF 页标签，默认前十页；超过一份 PDF 时必须用 `--attachment` 选定。返回截断、未读页数和 OCR 状态；扫描页明确标记 `needs_ocr`，不能把没有文字层当作没有内容。
+
+`search --scope all/notes/annotations` 搜索笔记正文、批注文字、评论与标签，返回所属论文、附件、物理页码及页标签；无页码的笔记保持未知。`--scope fulltext` 复用 Zotero 已有索引检索，不承诺覆盖未索引或扫描页，不建立独立索引服务。三个上游的参考范围与许可见[功能来源](references/feature-sources.md)。
 
 ## 失败与恢复
 

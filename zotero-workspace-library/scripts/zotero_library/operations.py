@@ -127,7 +127,7 @@ class Executor:
         receipt['native'] = job
         receipt['state'] = job['status'] if job['status'] != 'completed' else 'unknown'
         if job['status'] != 'completed':
-            if any(p['recovery'] not in ('restored', 'not_needed') for p in job.get('preferenceRecovery', [])):
+            if job['status'] != 'unknown' and any(p['recovery'] not in ('restored', 'not_needed') for p in job.get('preferenceRecovery', [])):
                 receipt['state'] = 'recovery_required'
             self.store.save(receipt)
             return receipt
@@ -162,6 +162,8 @@ class Executor:
 
     def _inspect(self, receipt):
         require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
+        if receipt.get('backend') == 'local_api':
+            self.client.api.bind(receipt['database_id'])
         if not receipt['attempts']:
             return receipt
         attempt = receipt['attempts'][-1]
@@ -205,6 +207,8 @@ class Executor:
                 require(receipt['request_hash'] == request_hash and receipt['kind'] == kind,
                         'operation_request_conflict')
                 require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
+                if receipt.get('backend') == 'local_api':
+                    self.client.api.bind(receipt['database_id'])
                 if receipt['state'] == 'completed':
                     # Revalidate persisted results; completed import never creates a second item.
                     try:
@@ -223,12 +227,37 @@ class Executor:
                 receipt = {'schema': 1, 'operation_id': operation_id, 'request_hash': request_hash,
                     'input_request': copy.deepcopy(request), 'request': request, 'kind': kind, 'connection': self.client.binding,
                     'state': 'prepared', 'attempts': []}
+                if kind == 'archive':
+                    receipt.update(backend='local_api', database_id=self.client.api.bind(),
+                                   api_keys=api_keys(operation_id, request))
                 self.store.save(receipt)
-            caps = self.client.prepare(request)
+            backend = receipt.get('backend', 'native')
+            caps = self.client.prepare(request, backend)
             if request.get('pdf') and receipt['request'].get('pdf', {}).get('sha256'):
                 request['pdf']['sha256'] = receipt['request']['pdf']['sha256']
             files = self._prepare_files(request, kind)
             receipt['request'] = request
+            api_input = {}
+            if backend == 'local_api':
+                if 'protection_baseline' not in receipt:
+                    try:
+                        receipt['protection_baseline'] = self.client.native({'action': 'snapshot',
+                            'request': request, 'backend': backend, 'apiKeys': receipt['api_keys'],
+                            'resumeAPI': bool(receipt['attempts']), 'candidateKeys': caps['candidateKeys']})
+                    except NativeRejected as error:
+                        receipt['state'] = 'failed'
+                        receipt['native'] = {'status': 'failed', 'error': error.code,
+                                             'contentWritesStarted': False}
+                        self.store.save(receipt)
+                        return receipt
+                    self.store.save(receipt)
+                previous = receipt.get('native', {})
+                authorization = self.client.api.credentials(
+                    renew=previous.get('error') == 'local_api_authorization_required')
+                api_input = {'backend': backend, 'databaseId': receipt['database_id'],
+                    'apiBase': self.client.base, 'apiAuthorization': authorization,
+                    'apiKeys': receipt['api_keys'], 'resumeAPI': bool(receipt['attempts']),
+                    'protectionBaseline': receipt['protection_baseline']}
             attempt_id = str(uuid.uuid5(uuid.UUID(operation_id), str(len(receipt['attempts']))))
             attempt = {'id': attempt_id, 'processIdentity': caps['processIdentity'],
                        'preferenceKeys': caps['preferenceKeys']}
@@ -241,7 +270,7 @@ class Executor:
                     'operationId': operation_id, 'attemptId': attempt_id, 'requestHash': request_hash,
                     'processIdentity': caps['processIdentity'],
                     'candidateKeys': caps['candidateKeys'],
-                    'preferenceKeys': caps['preferenceKeys'], 'files': files})
+                    'preferenceKeys': caps['preferenceKeys'], 'files': files, **api_input})
                 receipt = self._verify(receipt, job)
                 deadline = time.monotonic() + min(wait, 30)
                 while receipt['state'] == 'running' and time.monotonic() < deadline:
@@ -267,4 +296,19 @@ class Executor:
 
 def summary(receipt):
     return {key: receipt[key] for key in ('operation_id', 'kind', 'state', 'error', 'native',
-        'readback_verified', 'pdf_verification') if key in receipt}
+        'backend', 'readback_verified', 'pdf_verification') if key in receipt}
+
+
+def api_keys(operation_id, request):
+    """Durable create keys. Installation paths never enter operation identity."""
+    alphabet = '23456789ABCDEFGHIJKLMNPQRSTUVWXYZ'
+    def make(role):
+        value = digest({'operation': operation_id, 'role': role})
+        return ''.join(alphabet[int(value[i:i+2], 16) % len(alphabet)] for i in range(0, 16, 2))
+    paths = []
+    for target in request['collections']:
+        for length in range(1, len(target.get('path', [])) + 1):
+            path = target['path'][:length]
+            if not any(row['path'] == path for row in paths):
+                paths.append({'path': path, 'key': make(['collection', path])})
+    return {'parent': make('parent'), 'attachment': make('attachment'), 'collections': paths}

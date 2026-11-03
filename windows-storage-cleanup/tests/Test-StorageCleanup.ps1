@@ -512,20 +512,41 @@ Test 'Junction ancestor is rejected without touching target content' {
     $alias=Join-Path $junction 'a';SaveManifest $f @((Item $alias));Attempt $f
     Assert ((Test-Path -LiteralPath $alias) -and [IO.File]::ReadAllText($p) -eq 'protected synthetic target') 'Junction target was changed.'
 }
-Test 'Unicode long path is preserved without a recycle intent' {
+Test 'Long Unicode file path recycles with its exact restore path and content' {
     $f=Fixture 'long';$p=$f.source;foreach($n in 1..5){$p=Join-Path $p (('中文资料'+('x'*35))+$n)};$p=Join-Path $p '视频.mp4';WriteSample $p
-    SaveManifest $f @((Item $p));$r=Invoke-StorageCleanup -Mode Check -ManifestPath $f.manifest
-    Assert ($r.exitCode -eq 2) 'Check accepted an unsafe Shell path.'
-    Attempt $f;Assert (Test-Path -LiteralPath $p) 'Long path was removed.'
-    Assert (@(Records $f|Where-Object type -eq recycle_intent).Count -eq 0) 'Long path reached the Shell boundary.'
+    $item=Item $p 'recycle';$expectedHash=$item.sha256;SaveManifest $f @($item)
+    $check=Run $f Check;Assert ($check.items[0].status -eq 'ready') 'Check rejected a supported long path.'
+    $null=Run $f Execute;$null=Run $f Verify
+    Assert (-not(Test-Path -LiteralPath $p)) 'Long-path source remains after recycle.'
+    $owned=Get-SCTestRecyclePairs @($f.root);$pair=@($owned.pairs|Where-Object {$_.original -eq $p})
+    Assert ($pair.Count -eq 1) 'Exact long-path restore entry was not found.'
+    Assert ((Get-FileHash -LiteralPath $pair[0].payload -Algorithm SHA256).Hash -eq $expectedHash) 'Recycled long-path content hash changed.'
 }
-Test 'Short directory with a long member is preserved' {
+Test 'Short directory with a long member path recycles with exact contents' {
     $f=Fixture 'long-member';$dir=Join-Path $f.source 'tree';$p=$dir
     foreach($n in 1..5){$p=Join-Path $p (('member'+('x'*35))+$n)};$p=Join-Path $p 'original.txt';WriteSample $p 'long member content'
-    $hash=(Get-FileHash -LiteralPath $p).Hash
-    SaveManifest $f @((Item $dir 'recycle'));Attempt $f
-    Assert ((Test-Path -LiteralPath $dir) -and (Get-FileHash -LiteralPath $p).Hash -eq $hash) 'Long member was changed.'
-    Assert (@(Records $f|Where-Object type -eq recycle_intent).Count -eq 0) 'Long member reached the Shell boundary.'
+    $item=Item $dir 'recycle';$relative=[IO.Path]::GetRelativePath($dir,$p);$hash=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash
+    SaveManifest $f @($item);$check=Run $f Check;Assert ($check.items[0].status -eq 'ready') 'Check rejected a directory with a long member.'
+    $null=Run $f Execute;$null=Run $f Verify
+    Assert (-not(Test-Path -LiteralPath $dir)) 'Long-member directory remains after recycle.'
+    $owned=Get-SCTestRecyclePairs @($f.root);$pair=@($owned.pairs|Where-Object {$_.original -eq $dir})
+    Assert ($pair.Count -eq 1) 'Exact directory restore entry was not found.'
+    $payloadFile=Join-Path $pair[0].payload $relative
+    Assert ((Get-FileHash -LiteralPath $payloadFile -Algorithm SHA256).Hash -eq $hash) 'Recycled long member content hash changed.'
+}
+Test 'Long directory path and long member path recycle with exact restore path and content' {
+    $f=Fixture 'long-directory';$dir=$f.source
+    foreach($n in 1..5){$dir=Join-Path $dir (('恢复目录'+('x'*35))+$n)}
+    $p=Join-Path $dir (Join-Path (('成员目录'+('y'*30))+'1') 'original.txt');WriteSample $p 'long directory and member content'
+    Assert ($dir.Length -ge 248 -and $p.Length -ge 248) 'Fixture did not exceed the path threshold.'
+    $item=Item $dir 'recycle';$relative=[IO.Path]::GetRelativePath($dir,$p);$hash=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash
+    SaveManifest $f @($item);$check=Run $f Check;Assert ($check.items[0].status -eq 'ready') 'Check rejected a long directory and member.'
+    $null=Run $f Execute;$null=Run $f Verify
+    Assert (-not(Test-Path -LiteralPath $dir)) 'Long directory source remains after recycle.'
+    $owned=Get-SCTestRecyclePairs @($f.root);$pair=@($owned.pairs|Where-Object {$_.original -eq $dir})
+    Assert ($pair.Count -eq 1) 'Exact long-directory restore entry was not found.'
+    $payloadFile=Join-Path $pair[0].payload $relative
+    Assert ((Get-FileHash -LiteralPath $payloadFile -Algorithm SHA256).Hash -eq $hash) 'Recycled long-directory content hash changed.'
 }
 Test 'Recycle callback rejects a permanent-delete choice and incomplete callbacks' {
     $guard=[StorageCleanupNative+RecycleGuard]::new()

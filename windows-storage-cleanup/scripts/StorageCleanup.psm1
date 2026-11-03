@@ -44,11 +44,12 @@ public static class StorageCleanupNative {
  }
  [DllImport("shell32.dll",CharSet=CharSet.Unicode,PreserveSig=false)] static extern void SHCreateItemFromParsingName(string path,IntPtr binding,ref Guid iid,[MarshalAs(UnmanagedType.Interface)]out IShellItem item);
  public static void Recycle(string path) {
-  if(path.Length>=248)throw new InvalidOperationException("Long Shell path preserved");
+  if(path.Length>=32767)throw new InvalidOperationException("Path exceeds the Windows extended-length limit");
+  string shellPath=path;
   Exception error=null;var thread=new System.Threading.Thread(()=>{object obj=null;IShellItem item=null;try {
    obj=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("3ad05575-8857-4850-9277-11b85bdb8e09")));var op=(IFileOperation)obj;
    op.SetOperationFlags(0x00080000|0x00100000|0x00000400|0x00000010|0x00000004|0x00000040|0x00002000);
-   var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(path,IntPtr.Zero,ref id,out item);
+   var id=new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");SHCreateItemFromParsingName(shellPath,IntPtr.Zero,ref id,out item);
    var guard=new RecycleGuard();op.DeleteItem(item,guard);op.PerformOperations();bool aborted;op.GetAnyOperationsAborted(out aborted);
    if(aborted)throw new InvalidOperationException("Recycle operation aborted");guard.Validate();GC.KeepAlive(guard);
   }catch(Exception e){error=e;}finally{if(item!=null)Marshal.FinalReleaseComObject(item);if(obj!=null)Marshal.FinalReleaseComObject(obj);}});
@@ -451,9 +452,9 @@ function Invoke-SCRecycle($Item){
     [StorageCleanupNative]::Recycle($Item.source)
 }
 function Assert-SCRecyclePaths($Item){
-    if($Item.source.Length -ge 248){throw 'Long Shell path preserved; recycle not attempted'}
+    if($Item.source.Length -ge 32767){throw 'Path exceeds the Windows extended-length limit'}
     foreach($entry in @(Get-SCExpected $Item $Item.source)){
-        if($entry.path.Length -ge 248){throw 'Long Shell member path preserved; recycle not attempted'}
+        if($entry.path.Length -ge 32767){throw 'Member path exceeds the Windows extended-length limit'}
     }
 }
 function Get-SCSpace($Roots){$r=@{};foreach($root in $Roots){$drive=[IO.Path]::GetPathRoot($root);if(!$r.ContainsKey($drive)){$r[$drive]=[IO.DriveInfo]::new($drive).AvailableFreeSpace}};$r}

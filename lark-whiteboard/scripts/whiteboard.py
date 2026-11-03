@@ -2094,7 +2094,7 @@ class Runner:
             if fence is None and receipt.get('reason') == 'NATIVE_SAVE_INTERFACE_UNAVAILABLE':
                 return False
             raise VerificationError('Native save interface is unavailable or unverified')
-        if receipt.get('signature') != '8a287314':
+        if receipt.get('signature') not in ('8a287314', '45ddc75e'):
             raise VerificationError('Native save interface is unavailable or unverified')
         for key in ('applied_version', 'pending', 'ordered_pending', 'http_pending'):
             if type(receipt.get(key)) is not int or receipt[key] < 0:
@@ -2286,7 +2286,7 @@ class Runner:
             self.write('reopen-endpoints-mismatch.json', state)
             raise VerificationError('Fresh-page native line endpoints differ from the saved state')
         self.verify_native_bindings(state, binding_ids or set())
-        self.editor({'kind':'enter'})
+        self.enter_editor(state)
         return state
 
     @staticmethod
@@ -2495,6 +2495,38 @@ class Runner:
         with self.time_budget(min(self.timeout, 20)):
             return self._hydrate(raw, minimum_applied_version)
 
+    def load_editor(self, raw, enter=False):
+        """Loading and actual native entry share one bounded phase."""
+        with self.time_budget(min(self.timeout, 20)):
+            state = self.hydrate(raw)
+            if enter:
+                self.enter_editor(state)
+            return state
+
+    def enter_editor(self, state=None):
+        """Call the entry once, then observe the actual fullscreen state."""
+        with self.time_budget(min(self.timeout, 20)):
+            invoked = False
+            while True:
+                if state is None:
+                    state = self.editor({'kind':'inspect'})
+                    self.require_time()
+                if state.get('can_edit') is not True:
+                    reason = 'denied' if state.get('can_edit') is False else 'unavailable'
+                    raise VerificationError('Editor edit permission is ' + reason)
+                if state.get('resources_loaded') is True:
+                    if state.get('entered') is True:
+                        return state
+                    if not invoked:
+                        state = self.editor({'kind':'enter'})
+                        invoked = True
+                        self.require_time()
+                        continue
+                elif state.get('resources_loaded') is not False:
+                    raise VerificationError('Editor resource-loading evidence is unavailable')
+                time.sleep(self.transport_timeout(0.25))
+                state = None
+
     def _hydrate(self, raw, minimum_applied_version):
         if any(len(n.get('connector', {}).get('captions', {}).get('data', [])) > 1 for n in raw['nodes']):
             raise VerificationError('Native editor exposes only the first imported caption; use raw read-only inspection to preserve additional text')
@@ -2600,10 +2632,7 @@ class Runner:
         self.report['initial_raw'] = name
         self.phase = 'initial_load'
         self.open_page()
-        self.hydrate(raw)
-        if self.request.get('operations') or self.request.get('capture_preview'):
-            self.editor({'kind': 'enter'})
-            self.hydrate(raw)
+        self.load_editor(raw, enter=bool(self.request.get('operations') or self.request.get('capture_preview')))
         previous_delete = None
         operations = [None, *self.request.get('operations', [])]
         for index, op in enumerate(operations):
@@ -2854,8 +2883,7 @@ class Runner:
         # Reload only this owned page so a cached pre-append board cannot write.
         self.complete_page(False, 'connection_append_reload')
         self.open_page()
-        self.hydrate(latest)
-        self.editor({'kind':'enter'})
+        self.load_editor(latest, enter=True)
         loaded = self.hydrate(latest)
         self.uncertain = True
         record['save_status'] = 'unknown'
@@ -2976,7 +3004,7 @@ class Runner:
             self.report['status'] = 'verified'
             if self.request.get('capture_preview'):
                 try:
-                    self.editor({'kind':'enter'})
+                    self.enter_editor(fresh)
                     self.observe_saved()
                 except Exception as error:
                     self.report.update(visual_status='unavailable', visual_error=type(error).__name__,

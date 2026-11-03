@@ -107,6 +107,7 @@ class ExecutionContract(unittest.TestCase):
         def state():
             nodes = projection(raw)
             return dict(nodes=nodes, seq=0, savedSeq=0,
+                        can_edit=True, resources_loaded=True, entered=True,
                         native_save=native_save.saved(8 + runner.append_calls),
                         render_alpha={n['id']: dict(border=1, text=1) for n in nodes},
                         line_endpoints={n['id']: dict(start=dict(x=n['x'], y=n['y']),

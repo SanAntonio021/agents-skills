@@ -25,6 +25,19 @@ def fence(ack=True):
 
 
 class NativeSave(unittest.TestCase):
+    def test_verified_save_builds_require_matching_fence_and_drained_queue(self):
+        for signature in ('8a287314', '45ddc75e'):
+            with self.subTest(signature=signature):
+                state = dict(native_save=saved(9, signature=signature))
+                barrier = dict(fence(), signature=signature)
+                self.assertTrue(Runner.native_save_ready(state, barrier))
+                state['native_save']['ordered_pending'] = 1
+                self.assertFalse(Runner.native_save_ready(state, barrier))
+                state['native_save']['ordered_pending'] = 0
+                barrier['signature'] = '45ddc75e' if signature == '8a287314' else '8a287314'
+                with self.assertRaisesRegex(VerificationError, 'fence is invalid'):
+                    Runner.native_save_ready(state, barrier)
+
     def waiting_runner(self, clock, receipt):
         runner = Runner.__new__(Runner)
         runner.timeout = 5

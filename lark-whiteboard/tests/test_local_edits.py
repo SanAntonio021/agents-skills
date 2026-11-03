@@ -605,7 +605,8 @@ class LocalEdits(unittest.TestCase):
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
                 runner.timeout = 45
                 calls, writes = [], []
-                state = {'nodes': copy.deepcopy(expected), 'seq': 2, 'savedSeq': 2}
+                state = {'nodes': copy.deepcopy(expected), 'seq': 2, 'savedSeq': 2,
+                         'can_edit':True, 'resources_loaded':True, 'entered':False}
                 line({'nodes': state['nodes']})['points'][0]['x'] += drift
                 runner.report = {}
                 runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
@@ -617,7 +618,7 @@ class LocalEdits(unittest.TestCase):
                     self.assertIs(saved, raw)
                     return state
                 runner.hydrate = hydrate
-                runner.editor = lambda op: calls.append(op)
+                runner.editor = lambda op: calls.append(op) or dict(state, entered=True)
                 runner.write = lambda name, value: writes.append((name, value))
                 if drift:
                     with self.assertRaisesRegex(VerificationError, 'Fresh-page native readback'):
@@ -738,13 +739,14 @@ class LocalEdits(unittest.TestCase):
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
                 runner.timeout = 45
                 calls, writes = [], []
-                state = {'nodes': expected, 'line_endpoints': copy.deepcopy(endpoints)}
+                state = {'nodes': expected, 'line_endpoints': copy.deepcopy(endpoints),
+                         'can_edit':True, 'resources_loaded':True, 'entered':False}
                 state['line_endpoints']['line']['end']['x'] += drift
                 runner.report = {}
                 runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
                 runner.open_page = lambda: None
                 runner.hydrate = lambda saved: state
-                runner.editor = lambda op: calls.append(op)
+                runner.editor = lambda op: calls.append(op) or dict(state, entered=True)
                 runner.write = lambda name, value: writes.append((name, value))
                 if drift:
                     with self.assertRaisesRegex(VerificationError, 'native line endpoints'):
@@ -765,7 +767,8 @@ class LocalEdits(unittest.TestCase):
                 runner.token, runner.task, runner.tab = 'old-token', 'old-task', 'old-tab'
                 runner.timeout = 45
                 calls, writes = [], []
-                state = {'nodes': copy.deepcopy(expected), 'render_alpha': copy.deepcopy(expected_alpha)}
+                state = {'nodes': copy.deepcopy(expected), 'render_alpha': copy.deepcopy(expected_alpha),
+                         'can_edit':True, 'resources_loaded':True, 'entered':False}
                 state['render_alpha']['line']['text'] = restored_alpha
                 runner.report = {}
                 runner.call = lambda path, data: calls.append((path, data)) or {'taskId':runner.task,'state':'completed','keep':data['keep'],'closed':1,'released':0}
@@ -773,7 +776,7 @@ class LocalEdits(unittest.TestCase):
                     runner.token, runner.task, runner.tab = 'new-token', 'new-task', 'new-tab'
                 runner.open_page = open_page
                 runner.hydrate = lambda saved: state
-                runner.editor = lambda op: calls.append(op)
+                runner.editor = lambda op: calls.append(op) or dict(state, entered=True)
                 runner.write = lambda name, value: writes.append((name, value))
                 if restored_alpha == 1:
                     self.assertIs(runner.reopen_verified(raw, expected, expected_alpha), state)
@@ -809,6 +812,7 @@ class DeleteUndoRunnerTests(unittest.TestCase):
                     node['points'] = [{'x': node['x'] + 20, 'y': node['y'] + 10},
                                       {'x': node['x'] + 80, 'y': node['y'] - 10}]
             return {'nodes': nodes, 'seq': 2, 'savedSeq': 2,
+                    'can_edit':True, 'resources_loaded':True, 'entered':True,
                     'render_alpha': {n['id']: {'border': 1, 'text': 1} for n in nodes},
                     'line_endpoints': {n['id']: {'start': {'x': n['x'], 'y': n['y']},
                                                'end': {'x': n['x'] + n['width'], 'y': n['y']}}

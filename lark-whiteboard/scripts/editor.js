@@ -166,7 +166,7 @@
     const sources=functions.map(f=>f.toString()).join('\n');let hash=2166136261;
     for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
     const saveSignature=(hash>>>0).toString(16);
-    if(saveSignature!=='8a287314')return{available:false,reason:'UNVERIFIED_NATIVE_SAVE_INTERFACE',signature:saveSignature};
+    if(!['8a287314','45ddc75e'].includes(saveSignature))return{available:false,reason:'UNVERIFIED_NATIVE_SAVE_INTERFACE',signature:saveSignature};
     const applied=io.docState?.appliedVersion;
     if(typeof io.inited!=='boolean'||!Array.isArray(io.pendingActions)||!Array.isArray(ch.localActions)
       ||typeof ch.localProcessing!=='boolean'||typeof ch.localOffline!=='boolean'
@@ -178,14 +178,25 @@
   };
   const nativeSaveReady=s=>s.available&&s.initialized&&!s.pending&&!s.ordered_pending&&!s.processing&&!s.offline
     &&s.save_state==='saved'&&!s.http_pending;
+  const entryState=()=>({can_edit:typeof a.docState.permission?.canEdit==='boolean'?a.docState.permission.canEdit:null,
+    resources_loaded:typeof a.isResourceLoaded==='boolean'?a.isResourceLoaded:null,
+    entered:typeof element.closest==='function'&&!!element.closest('.whiteboard-view-container.is-fullscreen')});
   const result = () => ({nodes:snapshot(), render_alpha:renderAlpha(), line_endpoints:lineEndpoints(), curve_handles:curveHandles(),
-    object_bounds:objectBounds(),arrangement_bounds:arrangementBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature,native_save:nativeSave()});
+    object_bounds:objectBounds(),arrangement_bounds:arrangementBounds(),world_geometry:worldGeometry(),binding_geometry:bindingGeometry(),label_geometry:labelGeometry(),viewport:viewport(), seq:a.docState.seq, savedSeq:a.docState.savedSeq, signature, text_signature:textSignature,native_save:nativeSave(),...entryState()});
   const op = request.operation || {kind:'inspect'};
   if (op.kind === 'inspect') return result();
   // Current signature must be recorded by a live compatibility test, never accepted dynamically.
-  if (!['15acf339'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
+  if (!['15acf339','73a62bde'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
+  // Each newer build exposes only the operations exercised in its live trial.
+  if(signature==='73a62bde'&&!['enter','observe','canvas_preview','text','caption','caption_position',
+    'move','resize','bring_to_front','reconnect','connect'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
+  const readiness=entryState();
+  if(readiness.can_edit!==true)fail(readiness.can_edit===false?'EDITOR_PERMISSION_DENIED':'EDITOR_PERMISSION_UNAVAILABLE');
+  if(readiness.resources_loaded!==true)fail('EDITOR_RESOURCES_NOT_LOADED');
+  if(op.kind!=='enter'&&!readiness.entered)fail('EDITOR_NOT_ENTERED');
   const saveBefore=nativeSave();
   if(!saveBefore.available)fail(saveBefore.reason);
+  if(signature==='73a62bde'&&saveBefore.signature!=='45ddc75e')fail('EDITOR_SAVE_BUILD_MISMATCH');
   if(!nativeSaveReady(saveBefore))fail('UNSAVED_NATIVE_IO_STATE');
   if (a.docState.seq !== a.docState.savedSeq) fail('UNSAVED_PAGE_STATE');
   if (request.expected && stable(snapshot()) !== stable(request.expected)) fail('STALE_PAGE_SNAPSHOT');
@@ -196,8 +207,9 @@
     return {data_url:canvas.toDataURL('image/png'),viewport:viewport()};
   }
   if (op.kind === 'enter') {
+    if(readiness.entered)return{...readiness,entry_invoked:false,content_write_started:false};
     if (typeof entry !== 'function') fail('EDITOR_ENTRY_UNAVAILABLE');
-    entry(); return {entered:true};
+    entry(); return {...entryState(),entry_invoked:true,content_write_started:false};
   }
   if (op.kind === 'observe') {
     if (!Array.isArray(request.expected)) fail('EXPECTED_SNAPSHOT_REQUIRED');
@@ -208,7 +220,7 @@
       a.viewportManager?.zoom,a.viewportManager?.zoomWorker?.beforeZoom,a.renderManager?.contentDirectDraw,a.auxiliaryManager?.redraw];
     const sources=functions.map(f=>typeof f==='function'?f.toString():'').join('\n');
     let hash=2166136261;for(let j=0;j<sources.length;j++){hash^=sources.charCodeAt(j);hash=Math.imul(hash,16777619);}
-    if((hash>>>0).toString(16)!=='ff0c9e81')fail('UNVERIFIED_VIEW_RESIZE_INTERFACE');
+    if(!['ff0c9e81','4987781c'].includes((hash>>>0).toString(16)))fail('UNVERIFIED_VIEW_RESIZE_INTERFACE');
     const nodes=stable(snapshot()),alpha=stable(renderAlpha()),ends=stable(lineEndpoints()),seq=a.docState.seq,
       saved=a.docState.savedSeq,undo=stable(a.undoRedoManager.undoStack),redo=stable(a.undoRedoManager.redoStack);
     p.onResize();
@@ -358,7 +370,7 @@
   switch (op.kind) {
     case 'text': {
       const n=textNode(op.id);text(op.text);
-      if(!['7e805832','d309a450'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      if(!['7e805832','d309a450','28714419'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
       selected([n.id]);a.api.selectNodeText(n);
       if(a.inputManager.textInfo?.node?.id!==n.id||a.inputManager.inputStatus!=='focusing')fail('TEXT_INPUT_TARGET_MISMATCH');
       contentWriteStarted=true;a.inputManager.processInput(op.text);a.inputManager.blur();break;
@@ -392,7 +404,7 @@
     case 'caption': {
       const n=line(op.id);text(op.text);
       const captions=a.api.graphicNodeToPageNode(n).info.connectorV2.captions?.data || [];
-      if(!['7e805832','d309a450'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
+      if(!['7e805832','d309a450','28714419'].includes(textSignature))fail('UNVERIFIED_TEXT_EDITOR_BUILD:'+textSignature);
       if(captions.length>1)fail('MULTIPLE_CAPTIONS_NOT_EDITABLE');
       if(!captions.length && !op.text)break;
       selected([op.id]);

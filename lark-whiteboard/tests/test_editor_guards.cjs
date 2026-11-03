@@ -2,24 +2,43 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 // Explicitly bypass only the production build pin in this synthetic fixture.
-const source=production.replace("if (!['15acf339'].includes(signature))",'if (false)')
-  .replace("if(saveSignature!=='8a287314')",'if(false)');
+const buildGuard="if (!['15acf339','73a62bde'].includes(signature))";
+const saveGuard="if(!['8a287314','45ddc75e'].includes(saveSignature))";
+assert.ok(production.includes(buildGuard));assert.ok(production.includes(saveGuard));
+const source=production.replace(buildGuard,'if (false)').replace(saveGuard,'if(false)');
 let contentCalls=0,selected=[];
 const shape=(id,locked=false)=>({id,type:13,page:{info:{locked,baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}});
 const a=shape('a'),b=shape('b',true),group={id:'g',children:[a,b],page:{info:{baseV2:{x:0,y:0,width:200,height:60}}}};
 a.parent=group;b.parent=group;
 const line={id:'c',type:15,attachProps:{start:{id:'b',position:{x:1,y:.5}},end:{id:'a',position:{x:0,y:.5}}},lineProps:{points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,page:{info:{baseV2:{x:100,y:30,width:100,height:0},connectorV2:{shape:0}}}};
-const app={docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0},
+const app={docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0,permission:{canEdit:true}},isResourceLoaded:true,
   nodeManager:{nodeMap:new Map([a,b,group,line].map(n=>[n.id,n]))},api:{graphicNodeToPageNode:n=>n.page,getSelectNodes:()=>selected},
   commandManager:{handlers:new Map(['Select','Move','TextFontSize'].map(k=>[k,{execute(){}}])),execute(name,args){if(name==='Select'){selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}contentCalls++;throw new Error('CONTENT_CALL_FAILED');}},
   actionManager:{execAction(){}},undoRedoManager:{undoStack:[]}};
 app.actionManager.ioManager={inited:true,pendingActions:[],docState:{appliedVersion:2},sendAction(){},sendPendingActions(){},
   channelManager:{orderChannel:{localActions:[],localProcessing:false,localOffline:false,getBaseSeq(){},addLocalAction(){},flushLocalActions(){}}}};
 app.plugins=[{saveState:'saved',httpSavingSet:new Set(),hasUncommitData(){},updateSaveState(){}}];
-const element={__reactFiberTest:{memoizedProps:{app},return:null}};
+let entered=true,entryCalls=0;
+const element={closest:()=>entered?{}:null,__reactFiberTest:{memoizedProps:{app,onDoubleClick:()=>entryCalls++},return:null}};
 const ctx={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},document:{querySelectorAll:()=>[element]}};
 const adapter=vm.runInNewContext('('+source+')',ctx),req={document_url:'https://test.feishu.cn/docx/DocTest',docx_token:'DocTest',whiteboard_token:'BoardTest'};
 const run=op=>adapter({...req,expected:adapter({...req,operation:{kind:'inspect'}}).nodes,operation:op});
+for(const [key,value,pattern] of [['canEdit',false,/EDITOR_PERMISSION_DENIED/],['canEdit',undefined,/EDITOR_PERMISSION_UNAVAILABLE/],
+                                ['isResourceLoaded',false,/EDITOR_RESOURCES_NOT_LOADED/],['isResourceLoaded',undefined,/EDITOR_RESOURCES_NOT_LOADED/]]){
+  const target=key==='canEdit'?app.docState.permission:app,original=target[key];target[key]=value;
+  assert.equal(adapter({...req,operation:{kind:'inspect'}}).nodes.length,4);
+  const blocked=run({kind:'move',ids:['a'],dx:1,dy:0});
+  assert.match(blocked.adapter_error,pattern);assert.equal(blocked.content_write_started,false);
+  target[key]=original;
+}
+entered=false;
+const notEntered=run({kind:'move',ids:['a'],dx:1,dy:0});
+assert.match(notEntered.adapter_error,/EDITOR_NOT_ENTERED/);assert.equal(notEntered.content_write_started,false);
+const noOpEntry=run({kind:'enter'});
+assert.equal(noOpEntry.entered,false);assert.equal(noOpEntry.entry_invoked,true);assert.equal(entryCalls,1);
+entered=true;
+assert.equal(run({kind:'enter'}).entry_invoked,false);assert.equal(entryCalls,1);assert.equal(contentCalls,0);
+console.log('PASS: permission, resources and actual entry block content; no-op entry stays observable');
 a.getLineAttachPoint=()=>({x:200,y:30});b.getLineAttachPoint=()=>({x:200,y:30});
 let geometry=adapter({...req,operation:{kind:'inspect'}}).binding_geometry.find(v=>v.id==='c');
 assert.equal(geometry.valid,false);assert.equal(geometry.start.actual.x,100);assert.equal(geometry.start.expected.x,200);
@@ -202,7 +221,7 @@ const arrangeShape=(id,x,y,width,height,angle=0)=>({
 const arrangeA=arrangeShape('a',0,80,100,60),arrangeB=arrangeShape('b',150,30,40,100,90),
   arrangeC=arrangeShape('c',300,120,60,80,-30);
 const arrangeApp={
-  docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0},
+  docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0,permission:{canEdit:true}},isResourceLoaded:true,
   nodeManager:{nodeMap:new Map([arrangeA,arrangeB,arrangeC].map(n=>[n.id,n]))},
   api:{graphicNodeToPageNode:n=>n.page,getSelectNodes:()=>arrangementSelected},
   commandManager:{handlers:new Map([['Select',{execute(){}}],['Align',{
@@ -218,7 +237,7 @@ const arrangeApp={
   undoRedoManager:{undoStack:[]},plugins:[{saveState:'saved',httpSavingSet:new Set(),hasUncommitData(){},updateSaveState(){}}],
   interactCtx:{}
 };
-const arrangeElement={__reactFiberTest:{memoizedProps:{app:arrangeApp},return:null}};
+const arrangeElement={closest:()=>({}),__reactFiberTest:{memoizedProps:{app:arrangeApp},return:null}};
 const arrangeContext={URL,Map,Set,location:{origin:'https://test.feishu.cn',pathname:'/docx/DocTest'},
   document:{querySelectorAll:()=>[arrangeElement]}};
 const arrangeAdapter=vm.runInNewContext('('+source+')',arrangeContext);

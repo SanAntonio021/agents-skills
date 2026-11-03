@@ -14,8 +14,6 @@ from .reading import read_pdf, search
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] == 'status' and '--capabilities' not in argv:
-        return connection.main(argv)
     parser = argparse.ArgumentParser(description='Shared Zotero commands (JSON output)')
     sub = parser.add_subparsers(dest='command', required=True)
     for name in ('status', 'find', 'get', 'collections', 'archive', 'prune', 'operation',
@@ -57,25 +55,13 @@ def main(argv=None):
     if getattr(args, 'group', None) is not None and args.group <= 0:
         parser.error('group must be positive')
     try:
+        if args.command == 'status':
+            result = connection.status_payload(args.profile, args.base_url, args.timeout)
+            print(json.dumps(result, ensure_ascii=True, indent=2))
+            return 0 if result['read_only_ready'] else 1
         client = Client(args.profile, args.base_url, args.timeout, args.policy)
         library = {'type': 'group', 'id': args.group} if getattr(args, 'group', None) else {'type': 'user'}
-        if args.command == 'status':
-            result = dict(client.status)
-            try:
-                client.api.bind()
-                result['local_api_write_supported'] = True
-                result['local_api_authorization_present'] = client.api.authorization_present()
-            except LibraryError as error:
-                result['local_api_write_supported'] = False
-                result['local_api_write_error'] = error.code
-            try:
-                result['write_capabilities'] = client.native({'action': 'capabilities'})
-                client.prepare({}, backend='local_api')
-                result['automatic_fetch_protection_ready'] = True
-            except LibraryError as error:
-                result['automatic_fetch_protection_ready'] = False
-                result['write_error'] = error.code
-        elif args.command == 'find':
+        if args.command == 'find':
             result = client.resolve(read_request(args.request)) if args.request else client.find(library, args.query, args.doi)
         elif args.command == 'get':
             result = client.get(library, args.key)
@@ -108,10 +94,14 @@ def main(argv=None):
             return 0
         return 0 if result.get('state') in ('completed', 'exported', 'cited', 'read') else 2
     except LibraryError as error:
-        print(json.dumps({'error': error.code}))
+        result = {**connection.empty_status(), 'error': error.code} if args.command == 'status' else {'error': error.code}
+        print(json.dumps(result))
         return 1
     except Exception:
-        print(json.dumps({'error': 'library_command_failed'}))
+        if args.command == 'status':
+            print(json.dumps({**connection.empty_status(), 'error': 'status_check_failed'}))
+        else:
+            print(json.dumps({'error': 'library_command_failed'}))
         return 1
 
 

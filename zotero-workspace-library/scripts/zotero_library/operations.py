@@ -1,16 +1,18 @@
-"""Durable non-credential receipts with operation locking and no unknown-result replay."""
+"""Durable API stages, fixed create keys and one local lock per database."""
 import contextlib
 import copy
 import json
 import os
-import time
+import subprocess
 import uuid
 from pathlib import Path
 
-from .errors import LibraryError, NativeRejected
+from .errors import LibraryError
 from .files import inspect_pdf
 from .request import digest, require, validate
 from .identity import match_identity
+from .objects import Objects
+from .reading import file_path
 
 
 class Store:
@@ -28,9 +30,8 @@ class Store:
         return self.root / (operation_id + '.json')
 
     def read(self, operation_id):
-        path = self.path(operation_id)
         try:
-            value = json.loads(path.read_text('utf-8'))
+            value = json.loads(self.path(operation_id).read_text('utf-8'))
             require(value.get('operation_id') == operation_id, 'receipt_corrupt')
             return value
         except FileNotFoundError:
@@ -39,38 +40,112 @@ class Store:
             raise LibraryError('receipt_unreadable') from None
 
     def save(self, receipt):
-        path = self.path(receipt['operation_id'])
-        temporary = path.with_suffix('.' + str(uuid.uuid4()) + '.tmp')
-        try:
-            with temporary.open('x', encoding='utf-8') as stream:
-                json.dump(receipt, stream, ensure_ascii=True, indent=2)
-                stream.flush(); os.fsync(stream.fileno())
-            os.replace(temporary, path)
-        finally:
-            temporary.unlink(missing_ok=True)
+        atomic_json(self.path(receipt['operation_id']), receipt)
 
-    @contextlib.contextmanager
     def lock(self, operation_id):
-        path = self.path(operation_id).with_suffix('.lock')
-        with path.open('a+b') as stream:
-            stream.seek(0); stream.write(b'0'); stream.flush(); stream.seek(0)
+        return file_lock(self.path(operation_id).with_suffix('.lock'), 'operation_busy')
+
+
+def atomic_json(path, value):
+    temporary = path.with_suffix('.' + str(uuid.uuid4()) + '.tmp')
+    try:
+        with temporary.open('x', encoding='utf-8') as stream:
+            json.dump(value, stream, ensure_ascii=True, indent=2)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+@contextlib.contextmanager
+def file_lock(path, code):
+    with path.open('a+b') as stream:
+        stream.seek(0)
+        stream.write(b'0')
+        stream.flush()
+        stream.seek(0)
+        try:
+            if os.name == 'nt':
+                import msvcrt
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            raise LibraryError(code) from None
+        try:
+            yield
+        finally:
+            stream.seek(0)
+            if os.name == 'nt':
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(stream, fcntl.LOCK_UN)
+
+
+class Coordination:
+    def __init__(self, database_id):
+        # Receipt location, installation path and CLI flags cannot change this lock.
+        self.root = Path(os.environ.get('LOCALAPPDATA', Path.home() / '.local/share')) / 'ZoteroLibrary/databases'
+        self.root.mkdir(parents=True, exist_ok=True)
+        stem = digest({'database': database_id})
+        self.lock_path = self.root / (stem + '.lock')
+        self.pending_path = self.root / (stem + '.json')
+
+    def lock(self):
+        return file_lock(self.lock_path, 'database_operation_busy')
+
+    def reserve(self, receipt, store):
+        if self.pending_path.exists():
             try:
-                if os.name == 'nt':
-                    import msvcrt
-                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except OSError:
-                raise LibraryError('operation_busy') from None
-            try:
-                yield
-            finally:
-                stream.seek(0)
-                if os.name == 'nt':
-                    msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    fcntl.flock(stream, fcntl.LOCK_UN)
+                pending = json.loads(self.pending_path.read_text('utf-8'))
+                previous = Store(Path(pending['receipt']).parent).read(pending['operation_id'])
+            except (OSError, ValueError, KeyError, LibraryError):
+                raise LibraryError('database_pending_receipt_unreadable') from None
+            if previous and previous.get('state') == 'completed' and previous.get('readback_verified'):
+                self.pending_path.unlink()
+            else:
+                require(pending['operation_id'] == receipt['operation_id'] and
+                        pending['request_hash'] == receipt['request_hash'], 'database_operation_pending')
+                require(Path(pending['receipt']).resolve() == store.path(receipt['operation_id']).resolve(),
+                        'operation_pending_in_other_state_directory')
+        atomic_json(self.pending_path, {
+            'operation_id': receipt['operation_id'], 'request_hash': receipt['request_hash'],
+            'receipt': str(store.path(receipt['operation_id']).resolve()),
+            'database_id': receipt['database_id'], 'api_keys': receipt.get('api_keys')})
+
+    def finish(self, receipt, store):
+        if not self.pending_path.exists():
+            return
+        pending = json.loads(self.pending_path.read_text('utf-8'))
+        if (pending.get('operation_id') == receipt['operation_id'] and
+                pending.get('request_hash') == receipt['request_hash'] and
+                pending.get('receipt') == str(store.path(receipt['operation_id']).resolve())):
+            self.pending_path.unlink()
+
+
+def legacy_process_ended(attempts):
+    identity = next((x.get('processIdentity') for x in reversed(attempts) if x.get('processIdentity')), None)
+    if not identity:
+        return False
+    try:
+        pid, created = identity.split(':')
+        require(pid.isdigit() and created.isdigit(), 'legacy_process_identity_unknown')
+        if os.name != 'nt':
+            os.kill(int(pid), 0)
+            return False
+        command = ("$p=Get-CimInstance Win32_Process -Filter 'ProcessId=" + pid +
+                   "' -ErrorAction Stop; if($p){[DateTimeOffset]$p.CreationDate | "
+                   "ForEach-Object {$_.ToUnixTimeMilliseconds()}}")
+        result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', command],
+            capture_output=True, text=True, timeout=5, check=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        return not result.stdout.strip() or result.stdout.strip() != created
+    except ProcessLookupError:
+        return True
+    except (OSError, ValueError, subprocess.SubprocessError, LibraryError):
+        return False
 
 
 class Executor:
@@ -79,7 +154,6 @@ class Executor:
         self.store = store or Store()
 
     def identify(self, request, kind='archive'):
-        """Stable identity of the input, before deriving file metadata."""
         request_hash = digest({'kind': kind, 'request': validate(request, kind)})
         operation_id = request.get('operation_id') or str(uuid.uuid5(uuid.NAMESPACE_URL,
             self.client.binding_hash() + ':' + request_hash))
@@ -94,198 +168,150 @@ class Executor:
             require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
         return receipt
 
-    def _prepare_files(self, request, kind):
-        files = {}
-        if kind == 'archive' and 'pdf' in request:
-            result = inspect_pdf(request['pdf']['path'], request['pdf'].get('sha256'))
-            request['pdf']['sha256'] = result['sha256']
-        if 'reuse_pdf' in request:
-            expected = request['reuse_pdf']
-            entries = self.client.inspect(request, [expected['key']])
-            require(len(entries) == 1, 'reuse_pdf_state_unknown')
-            files[expected['key']] = inspect_pdf(entries[0]['path'], expected['sha256'])
-        if kind == 'prune':
-            entries = self.client.inspect(request, [request['keep']['key']])
-            require(len(entries) == 1, 'keep_state_unknown')
-            inspect_pdf(entries[0]['path'], request['keep']['sha256'])
-            # Unknown candidates are preserved by the native executor, never inferred safe.
-            for candidate in request['candidates']:
-                try:
-                    entries = self.client.inspect(request, [candidate['key']])
-                    if len(entries) == 1:
-                        files[candidate['key']] = inspect_pdf(entries[0]['path'], candidate['sha256'])
-                except LibraryError:
-                    continue
-        return files
-
-    def _verify(self, receipt, job):
+    def verify_legacy(self, receipt):
+        job = receipt.get('native', {})
+        require(job.get('verified') and job.get('preserved'), 'legacy_result_unverified')
+        require(job.get('requestHash') == receipt['request_hash'], 'legacy_receipt_conflict')
         request = receipt['request']
-        receipt['readback_verified'] = False
-        receipt.pop('pdf_verification', None)
-        receipt.pop('error', None)
-        require(job.get('requestHash') == receipt['request_hash'], 'native_receipt_conflict')
-        receipt['native'] = job
-        receipt['state'] = job['status'] if job['status'] != 'completed' else 'unknown'
-        if job['status'] != 'completed':
-            if job['status'] != 'unknown' and any(p['recovery'] not in ('restored', 'not_needed') for p in job.get('preferenceRecovery', [])):
-                receipt['state'] = 'recovery_required'
-            self.store.save(receipt)
-            return receipt
-        require(job.get('verified') is True and job.get('preserved') is True, 'native_readback_incomplete')
-        parent = self.client.get(request['library'], job['parentKey'], trashed=receipt['kind'] == 'prune')
-        data = parent['data']
-        require(match_identity(data, request['identity']) is None, 'identity_readback_failed')
-        require(set(job.get('collections', [])) <= set(data.get('collections', [])), 'collection_readback_failed')
-        if receipt['kind'] == 'archive' and (request.get('pdf') or request.get('reuse_pdf')):
-            attachment = job.get('attachment')
-            require(isinstance(attachment, dict), 'attachment_readback_failed')
-            child = next((x for x in parent['children'] if x['key'] == attachment['key']), None)
-            require(child and child['data'].get('parentItem') == job['parentKey']
-                    and child['data'].get('contentType') == 'application/pdf'
-                    and not child['data'].get('deleted'), 'attachment_readback_failed')
-            expected = request.get('pdf') or request['reuse_pdf']
-            fresh = self.client.inspect(request, [attachment['key']])
-            require(len(fresh) == 1 and fresh[0]['sha256'] == expected['sha256'], 'attachment_hash_readback_failed')
-            receipt['pdf_verification'] = inspect_pdf(fresh[0]['path'], expected['sha256'])
+        parent = self.client.get(request['library'], job['parentKey'], trashed=True)
+        require(match_identity(parent['data'], request['identity']) is None, 'identity_readback_failed')
+        require(set(job.get('collections', [])) <= set(parent['data'].get('collections', [])),
+                'collection_readback_failed')
+        pdf = request.get('pdf') or request.get('reuse_pdf')
+        if receipt['kind'] == 'archive' and pdf:
+            key = job.get('attachment', {}).get('key')
+            child = self.client.get(request['library'], key, children=False)
+            require(child['data'].get('parentItem') == parent['key'] and not child['data'].get('deleted'),
+                    'attachment_readback_failed')
+            receipt['pdf_verification'] = inspect_pdf(file_path(self.client, request['library'], key), pdf['sha256'])
         if receipt['kind'] == 'prune':
             for key in job.get('trashed', []):
-                item = self.client.get(request['library'], key, children=False)
-                require(item['data'].get('deleted') in (1, True), 'trash_readback_failed')
-            kept = self.client.inspect(request, [request['keep']['key']])
-            require(len(kept) == 1 and not kept[0]['deleted'], 'keep_readback_failed')
-            inspect_pdf(kept[0]['path'], request['keep']['sha256'])
-        recovery = job.get('preferenceRecovery', [])
-        receipt['state'] = 'completed' if all(p['recovery'] in ('restored', 'not_needed') for p in recovery) else 'recovery_required'
-        receipt['readback_verified'] = True
+                require(self.client.get(request['library'], key, children=False)['data'].get('deleted'),
+                        'trash_readback_failed')
+            keep = self.client.get(request['library'], request['keep']['key'], children=False)
+            require(not keep['data'].get('deleted'), 'keep_readback_failed')
+            inspect_pdf(file_path(self.client, request['library'], keep['key']), request['keep']['sha256'])
+        receipt.update(state='completed', readback_verified=True)
+        receipt.pop('error', None)
+        receipt['legacy_preferences_not_modified'] = True
+        return receipt
+
+    def reconcile(self, receipt):
+        require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
+        self.client.api.bind(receipt.get('database_id'))
+        try:
+            if receipt.get('executor_version') != 2:
+                self.verify_legacy(receipt)
+            else:
+                Objects(self.client, receipt, lambda: self.store.save(receipt)).execute(create=False)
+            receipt.update(state='completed', readback_verified=True)
+            receipt.pop('in_flight', None)
+            receipt.pop('error', None)
+            self.verify_pdf(receipt)
+        except LibraryError as error:
+            if receipt.get('state') != 'prepared':
+                receipt['state'] = 'unknown'
+            receipt['readback_verified'] = False
+            receipt['error'] = error.code
         self.store.save(receipt)
         return receipt
 
-    def _inspect(self, receipt):
-        require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
-        if receipt.get('backend') == 'local_api':
-            self.client.api.bind(receipt['database_id'])
-        if not receipt['attempts']:
-            return receipt
-        attempt = receipt['attempts'][-1]
-        if attempt.get('rejected'):
-            return receipt
-        info = self.client.native({'action': 'operation', 'attemptId': attempt['id']})
-        if info.get('job') is not None:
-            try:
-                return self._verify(receipt, info['job'])
-            except LibraryError as error:
-                receipt['state'] = 'unknown'
-                receipt['error'] = error.code
-                self.store.save(receipt)
-                return receipt
-        if info['processIdentity'] == attempt['processIdentity']:
-            receipt['state'] = 'unknown'
-            receipt['error'] = 'original_process_still_alive_operation_unknown'
-        else:
-            # Old process has ended. Never restore preferences from a stale snapshot.
-            receipt['state'] = 'recovery_required' if attempt['preferenceKeys'] else 'interrupted'
-            receipt['error'] = 'original_process_ended_reconcile_persisted_state'
-            # Persisted results must be queried before any continuation.
-            receipt['persisted_candidates'] = [x['key'] for x in self.client.candidates(
-                receipt['request']['library'], receipt['request']['identity'])]
-        self.store.save(receipt)
-        return receipt
+    def verify_pdf(self, receipt):
+        if receipt['kind'] == 'archive' and (receipt['request'].get('pdf') or receipt['request'].get('reuse_pdf')):
+            expected = receipt['request'].get('pdf') or receipt['request']['reuse_pdf']
+            key = receipt['native']['attachment']['key']
+            receipt['pdf_verification'] = inspect_pdf(
+                file_path(self.client, receipt['request']['library'], key), expected['sha256'])
 
     def status(self, operation_id):
         with self.store.lock(operation_id):
             receipt = self.store.read(operation_id)
             require(receipt is not None, 'operation_not_found')
-            return self._inspect(receipt)
+            with Coordination(self.client.api.server_id).lock():
+                return self.reconcile(receipt)
 
     def run(self, request, kind='archive', resume=False, wait=10):
         request = validate(request, kind)
-        # Hash the original normalized request, before deriving a source-file hash.
         operation_id, request_hash = self.identify(request, kind)
-        with self.store.lock(operation_id):
+        with self.store.lock(operation_id), Coordination(self.client.api.server_id).lock():
             receipt = self.store.read(operation_id)
             if receipt:
                 require(receipt['request_hash'] == request_hash and receipt['kind'] == kind,
                         'operation_request_conflict')
                 require(receipt['connection'] == self.client.binding, 'operation_connection_mismatch')
-                if receipt.get('backend') == 'local_api':
-                    self.client.api.bind(receipt['database_id'])
-                if receipt['state'] == 'completed':
-                    # Revalidate persisted results; completed import never creates a second item.
-                    try:
-                        return self._verify(receipt, receipt['native'])
-                    except LibraryError as error:
-                        receipt['state'] = 'unknown'
-                        receipt['error'] = error.code
+                self.client.api.bind(receipt.get('database_id'))
+                if receipt['state'] == 'completed' or receipt.get('in_flight'):
+                    receipt = self.reconcile(receipt)
+                    if receipt['state'] == 'completed':
+                        Coordination(self.client.api.server_id).finish(receipt, self.store)
+                        return receipt
+                if receipt.get('executor_version') != 2:
+                    attempts = receipt.get('attempts', [])
+                    if attempts and not all(x.get('rejected') for x in attempts):
+                        receipt = self.reconcile(receipt)
+                        if receipt['state'] == 'completed':
+                            return receipt
+                        if not legacy_process_ended(attempts):
+                            receipt.update(state='unknown', error='legacy_original_process_unresolved')
+                            self.store.save(receipt)
+                            return receipt
+                        # Persisted fixed keys are required to resume an old dispatched import.
+                        if not receipt.get('api_keys') or not receipt.get('database_id'):
+                            receipt.update(state='unknown', error='legacy_fixed_keys_unavailable')
+                            self.store.save(receipt)
+                            return receipt
+                    # Old numeric collection IDs cannot verify preservation over this API.
+                    baseline = receipt.get('protection_baseline', {}).get('snapshot')
+                    if baseline and any(not isinstance(x, str) for x in baseline.get('collections', [])):
+                        receipt.update(state='unknown', error='legacy_collection_baseline_unverifiable')
                         self.store.save(receipt)
                         return receipt
-                receipt = self._inspect(receipt)
-                if receipt['state'] in {'completed', 'running', 'unknown', 'recovery_required'}:
-                    return receipt
-                if not resume and receipt['state'] != 'prepared':
+                    receipt['legacy_migrated'] = True
+                    receipt['executor_version'] = 2
+                    receipt.setdefault('api_keys', api_keys(operation_id, receipt['request']))
+                    receipt.setdefault('database_id', self.client.api.server_id)
+                if receipt['state'] != 'prepared' and not resume:
                     return receipt
             else:
-                receipt = {'schema': 1, 'operation_id': operation_id, 'request_hash': request_hash,
-                    'input_request': copy.deepcopy(request), 'request': request, 'kind': kind, 'connection': self.client.binding,
-                    'state': 'prepared', 'attempts': []}
-                if kind == 'archive':
-                    receipt.update(backend='local_api', database_id=self.client.api.bind(),
-                                   api_keys=api_keys(operation_id, request))
+                receipt = {'schema': 1, 'executor_version': 2, 'operation_id': operation_id,
+                    'request_hash': request_hash, 'input_request': copy.deepcopy(request),
+                    'request': request, 'kind': kind, 'connection': self.client.binding,
+                    'database_id': self.client.api.server_id, 'backend': 'local_api',
+                    'api_keys': api_keys(operation_id, request), 'state': 'prepared', 'attempts': []}
                 self.store.save(receipt)
-            backend = receipt.get('backend', 'native')
-            caps = self.client.prepare(request, backend)
-            if request.get('pdf') and receipt['request'].get('pdf', {}).get('sha256'):
-                request['pdf']['sha256'] = receipt['request']['pdf']['sha256']
-            files = self._prepare_files(request, kind)
-            receipt['request'] = request
-            api_input = {}
-            if backend == 'local_api':
-                if 'protection_baseline' not in receipt:
-                    try:
-                        receipt['protection_baseline'] = self.client.native({'action': 'snapshot',
-                            'request': request, 'backend': backend, 'apiKeys': receipt['api_keys'],
-                            'resumeAPI': bool(receipt['attempts']), 'candidateKeys': caps['candidateKeys']})
-                    except NativeRejected as error:
-                        receipt['state'] = 'failed'
-                        receipt['native'] = {'status': 'failed', 'error': error.code,
-                                             'contentWritesStarted': False}
-                        self.store.save(receipt)
-                        return receipt
-                    self.store.save(receipt)
-                previous = receipt.get('native', {})
-                authorization = self.client.api.credentials(
-                    renew=previous.get('error') == 'local_api_authorization_required')
-                api_input = {'backend': backend, 'databaseId': receipt['database_id'],
-                    'apiBase': self.client.base, 'apiAuthorization': authorization,
-                    'apiKeys': receipt['api_keys'], 'resumeAPI': bool(receipt['attempts']),
-                    'protectionBaseline': receipt['protection_baseline']}
-            attempt_id = str(uuid.uuid5(uuid.UUID(operation_id), str(len(receipt['attempts']))))
-            attempt = {'id': attempt_id, 'processIdentity': caps['processIdentity'],
-                       'preferenceKeys': caps['preferenceKeys']}
-            receipt['attempts'].append(attempt)
-            receipt['state'] = 'dispatched'
-            receipt.pop('error', None)
-            self.store.save(receipt)  # Durable BEFORE the first native write.
+            coordinate = Coordination(receipt['database_id'])
             try:
-                job = self.client.native({'action': 'start', 'kind': kind, 'request': request,
-                    'operationId': operation_id, 'attemptId': attempt_id, 'requestHash': request_hash,
-                    'processIdentity': caps['processIdentity'],
-                    'candidateKeys': caps['candidateKeys'],
-                    'preferenceKeys': caps['preferenceKeys'], 'files': files, **api_input})
-                receipt = self._verify(receipt, job)
-                deadline = time.monotonic() + min(wait, 30)
-                while receipt['state'] == 'running' and time.monotonic() < deadline:
-                    time.sleep(.1)
-                    receipt = self._inspect(receipt)
-            except NativeRejected as error:
-                attempt['rejected'] = True
-                receipt['state'] = 'failed'
-                receipt['error'] = error.code
+                self.client.prepare(receipt['request'])
+                pdf = receipt['request'].get('pdf')
+                if pdf:
+                    pdf['sha256'] = inspect_pdf(pdf['path'], pdf.get('sha256'))['sha256']
                 self.store.save(receipt)
+                coordinate.reserve(receipt, self.store)
+                receipt['state'] = 'dispatched'
+                receipt['attempts'].append({'id': str(uuid.uuid5(uuid.UUID(operation_id),
+                                           str(len(receipt['attempts'])))), 'executor_version': 2})
+                receipt.pop('error', None)
+                self.store.save(receipt)
+                Objects(self.client, receipt, lambda: self.store.save(receipt)).execute()
+                self.verify_pdf(receipt)
+                receipt.update(state='completed', readback_verified=True)
+                receipt.pop('in_flight', None)
+                self.store.save(receipt)
+                coordinate.finish(receipt, self.store)
             except LibraryError as error:
-                # Even authentication/error responses do not authorize a different interface replay.
-                receipt['state'] = 'unknown'
-                receipt['error'] = error.code
+                unknown = error.code in {'local_api_result_unknown', 'invalid_local_api_response',
+                    'database_identity_changed', 'trash_restore_unknown', 'prune_concurrent_change'} or bool(receipt.get('in_flight'))
+                # A definite rejection has no in-flight server write to reconcile.
+                if error.code in {'local_api_authorization_required', 'local_api_authorization_denied',
+                    'local_api_version_conflict', 'local_api_conflict', 'local_api_request_rejected',
+                    'local_api_batch_rejected', 'local_api_authorization_rate_limited'}:
+                    receipt.pop('in_flight', None)
+                    unknown = False
+                receipt.update(state='unknown' if unknown else 'failed', error=error.code, readback_verified=False)
+                receipt.setdefault('native', {}).update(status=receipt['state'], error=error.code)
                 self.store.save(receipt)
+                if not unknown:
+                    coordinate.finish(receipt, self.store)
             return receipt
 
     def resume(self, operation_id, wait=10):
@@ -296,7 +322,7 @@ class Executor:
 
 def summary(receipt):
     return {key: receipt[key] for key in ('operation_id', 'kind', 'state', 'error', 'native',
-        'backend', 'readback_verified', 'pdf_verification') if key in receipt}
+        'backend', 'executor_version', 'api_stages', 'readback_verified', 'pdf_verification') if key in receipt}
 
 
 def api_keys(operation_id, request):
@@ -306,7 +332,7 @@ def api_keys(operation_id, request):
         value = digest({'operation': operation_id, 'role': role})
         return ''.join(alphabet[int(value[i:i+2], 16) % len(alphabet)] for i in range(0, 16, 2))
     paths = []
-    for target in request['collections']:
+    for target in request.get('collections', []):
         for length in range(1, len(target.get('path', [])) + 1):
             path = target['path'][:length]
             if not any(row['path'] == path for row in paths):

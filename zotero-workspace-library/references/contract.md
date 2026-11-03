@@ -29,21 +29,21 @@ LaTeX 使用正文位置或以 `%` 开头的完整注释锚点配合 `placement=
 
 ## 官方写入与旧操作兼容
 
-新 `archive` 回执包含 `backend=local_api`、`database_id`、预分配对象 key 和阅读内容保护快照。`native.apiStages` 记录已派发与已确认阶段，不含授权值或上传地址。第一次内容写入前回执已持久化；阶段由进程内任务查询同步，进程结束后靠固定 key 与实际库内结果核实缺项。旧回执缺少 backend 时使用原执行方式；操作编号算法、连接绑定与状态目录不变。
+唯一连接路线是固定 CLI → Python `zotero_library` → Zotero 官方 Local API。新回执含 `executor_version=2`、`backend=local_api`、`database_id`、固定 `api_keys`、`api_stages` 和阅读内容快照。第一次网络写入前保存意图，确认后记录阶段完成；上传 key、上传地址和授权值只留内存。
 
-通过 `/api/local/authorize` 请求 Zotero 授权；长期授权存 Windows 凭据管理器，回执仅记非凭据状态。一次授权被消费后，下次写之前另行申请；401、403 或结果未知不透明重放。数据库身份必须始终一致。Debug Bridge 负责保护与批次，实际普通保存通过官方 API，原生回收站保留。
+授权使用 `/api/local/authorize`，长期凭据存 Windows 凭据管理器。一次授权被消费后，下次写入另行申请。401 清除该客户端凭据但不自动重放；403、结果未知或数据库切换同样停止当前步骤。凭据目标仍由连接绑定与数据库身份计算。
 
-上传采用 imported_file 占位、上传授权、原始字节、登记四步；SHA-256 核对源与入库文件，协议 MD5 用于上传核验。部分失败结束后，原编号只补缺失步骤；未知 HTTP 结果继续占有进程内批次并暂停已知自动抓取设置，不允许新写。进程结束后先核实持久化对象及原阅读内容；存在设置恢复未知项时保留 `recovery_required`，不套用旧进程偏好快照。
+PDF 采用 imported_file 占位、上传准备、原始字节、登记四步；协议 MD5 与文件 SHA-256 分别核实。未知结果先查固定对象与文件，已完成步骤不再执行；缺项仅在固定 key、版本条件及文件状态能保证安全时补做。旧完成回执只读回验；未派发操作迁移；旧未知操作核实原进程身份及库内结果，不能恢复旧桥执行器。
 
 ## 安装与连接
 
-四个技能作为同一发布集合，先安装 `zotero-workspace-library`，再更新其余三个业务技能。安装 PDF 依赖：`python -m pip install -r <zotero-workspace-library>/requirements.txt`。使用与下载 CLI 相同 Python 环境时已有 `pypdf==6.21.2` 可复用。只读状态和查询不依赖 PDF 解析器。
+先安装 `zotero-workspace-library`，再更新三个业务技能。Python 3.10+，PDF 检查依赖 `requirements.txt`；只读状态与元数据查询不依赖 PDF 解析器。
 
-连接实现从 `profiles.ini` 定位唯一 Profile，只读取必要偏好；端口按显式参数、环境 `ZOTERO_LOCAL_BASE_URL`、Profile、默认候选顺序选取一个地址。只允许 HTTP 回环地址，无代理、无重定向、无端口扫描。通过 Local API 身份与 schema 核实后才向该地址发送内存中的桥接凭据。错误只返回固定代码，不回显服务器错误或认证头。
+Profile 从 `profiles.ini` 选择唯一候选，只读取 API 启用与端口配置。端口优先级：显式参数、`ZOTERO_LOCAL_BASE_URL`、Profile 端口、默认候选。只使用一个 HTTP 回环地址，无代理、无重定向、无端口扫描。根响应和 schema 核实身份；每次响应检查稳定数据库标识。错误仅返回固定代码。
 
-所有命令可附 `--profile`、`--base-url`、`--timeout`（0 到 10 秒，不含 0）；扩展命令还可附 `--state-dir`、`--policy`。旧状态兼容入口保留原参数。操作目录默认 `%LOCALAPPDATA%/ZoteroLibrary/operations`，本地回执包含请求、身份依据和结果，不上传仓库。`--timeout` 限制客户端的单次连接及查询等待；首次授权请求另等 Zotero 弹窗，最长 120 秒。派发后客户端轮询任务默认最多 10 秒，内部调用上限 30 秒；Zotero 进程内的写入及授权等待独立继续，客户端超时不取消任务。后续按原编号查询，不能据客户端超时重发。
+所有命令接受 `--profile`、`--base-url`、`--timeout`、`--state-dir`、`--policy`；`--policy` 仅保留兼容，不读策略。`--timeout` 为单次请求等待（0 到 10 秒，不含 0）；授权弹窗请求最多 120 秒。超时不证明服务器操作结束，须查询原编号。默认回执目录为 `%LOCALAPPDATA%/ZoteroLibrary/operations`。同库公共锁与未决记录位于固定的本机数据库协调目录，不随 `--state-dir` 变化。
 
-可用 `ZOTERO_PROFILE`、`ZOTERO_LOCAL_BASE_URL`、`ZOTERO_LIBRARY_STATE_DIR` 为同一任务绑定连接与回执位置，`finalize` 同样继承；命令显式参数优先。已设置但无效的 Profile 或地址不回退默认目标。隔离执行必须同时绑定 Profile 和地址，不能混用真实 Profile 与模拟端点。
+`ZOTERO_PROFILE`、`ZOTERO_LOCAL_BASE_URL`、`ZOTERO_LIBRARY_STATE_DIR` 也绑定下载 `finalize`，显式参数优先；无效配置不回退。隔离执行同时绑定 Profile 和地址。`status` 不弹窗，分别报告 `read_only_ready/local_api_write_supported/local_api_authorization_present`；旧桥字段为 null、不再适用。
 
 ## archive 请求
 
@@ -85,7 +85,7 @@ DOI 去首尾空白、`doi:` 与 `http(s)://(dx.)doi.org/` 前缀并转小写，
 
 下载业务通过 [zotero_archive.py](../../paper-download/scripts/zotero_archive.py) 或机构 `finalize` 提交，支持 `--parent-key-source user|assistant` 和 `--required-version`。默认保护用户指定目标；只有助手交接错误、请求 PDF 身份与同库正确父项均确认且唯一时才自动纠正，返回原 key、新 key 和依据。版本要求不匹配或 PDF 身份无法确认时保留文件并返回待核状态。文本匹配是辅助检查，不能代替业务对作者、版次、出版标记和可靠来源的核实；复用已有附件同样须由业务核实内容。
 
-纠正前查原请求回执，未知或进行中的原操作不能换 key 或编号重放。只有明确终止、设置恢复完成且确认尚未开始内容写入，才允许以新请求编号继续；旧回执不删除。默认编号取自规范化的原请求，补算文件哈希不会改变编号；同一编号不同输入拒绝。
+纠正前查原请求回执，未知或进行中的原操作不能换 key 或编号重放。只有明确终止且确认尚未开始内容写入，才允许以新请求编号继续；旧回执不删除。默认编号取自规范化的原请求，补算文件哈希不会改变编号；同一编号不同输入拒绝。
 
 ## prune 请求
 
@@ -93,32 +93,14 @@ DOI 去首尾空白、`doi:` 与 `http(s)://(dx.)doi.org/` 前缀并转小写，
 
 ## 回执与续做
 
-写入返回 `operation_id/kind/state/native/readback_verified` 等字段，退出码 0 表示回读及设置恢复通过，2 表示待续或失败终态，1 表示请求、连接或依赖错误。`native.trashed` 与 `native.skipped` 分开，成功归档不等于去重全部完成。
+返回 `operation_id/kind/state/native/readback_verified` 等兼容字段；`native` 只是历史结果字段名。退出码 0 表示回读通过，2 表示待续或失败终态，1 表示请求、连接或依赖错误。`native.trashed/skipped` 分开，归档完成不等于候选全部清理。
 
-同一操作锁防止客户端并发，Zotero 内存批次锁负责跨操作串行。相同编号与不同请求哈希拒绝。第一次网络写入前落盘，未知结果不重发。`operation status` 只查原任务与持久化结果；`resume` 在已确认终态后使用新内部 attempt 编号，重新查重补缺，保留同一公共 operation 编号。完成操作再次调用会核实原结果，不重新导入。
+同操作锁与公共数据库锁协调本机写入；未决操作保留原回执路径，换目录不能绕过。同编号不同请求哈希拒绝。`operation status` 只读核实持久结果；`resume` 在核实后补缺，保留公共编号和对象 key。完成操作再次调用会回读，不重新导入。安装位置不参与身份计算。
 
-若原进程已结束且曾暂停偏好，回执为 `recovery_required`：设置恢复依据已丢失，不能覆盖用户现值。人工核实设置与已有结果后另立业务请求；不要删回执制造重试。活动原进程中丢失标记同样不自动重发。
+## 清理与并发边界
 
-## 已知插件偏好处理
-
-随附策略记录已知插件版本及需要临时关闭的自动抓取偏好。例如：
-
-```json
-{
-  "schema": 1,
-  "addons": [{
-    "id": "reviewed-addon@example.invalid",
-    "version": "1.2.3",
-    "preference_keys": ["extensions.zotero.reviewed.automatic_pdf_download"],
-    "evidence": "Reviewed this installed version: this boolean gates all automatic new-item fetches"
-  }]
-}
-```
-
-策略接受完整全局偏好名；拒绝 token、auth、password 等字段。执行时读取实际布尔值，监听同步偏好通知，仅恢复仍归本次所有的临时设置；外部变化停止后续写入并保留当前值。
-
-未提供 `--policy` 时，执行层使用技能随附的 `references/automatic_fetch_policy.json`；显式指定时使用该策略。只有插件 ID 和版本都匹配时才应用对应偏好键。未知插件、插件新增或版本变化不会阻止写入，也不会推断或读取未知偏好；这些插件不受此项临时偏好控制。执行层仍检查目标条目、文件、集合、批次所有权和回读结果。
+普通归档保留外部新增附件，不改插件设置。`prune` 检查原阅读内容与文件，只对核实候选以库版本及对象版本条件更新 `deleted=true`。不执行永久删除。回收后再次检查，确认属于本操作的回收遇到并发变化时按对象版本恢复；恢复无法确认则 `unknown`。多次读取与更新无法合为一个官方事务，不承诺跨客户端原子性。
 
 ## 实现依据与限制
 
-原生 API 根据 Zotero 官方源码的 `server_localAPI.js`、`data/item.js`、`prefs.js` 和 `plugins.js` 核对：Local API 个人库路径使用 `users/0`，群组转换使用真实 library 对象；偏好观察器接收完整全局键时使用 `global=true`。文件哈希使用原生 SHA-256 文件流，PDF 嵌入批注由 Python 解析。真实插件可能移动文件或改变条目时，回读不一致会报告失败，不伪装成功或覆盖原内容。
+对照 Zotero 官方 Local API 文档、写请求文档与 `server_localAPI.js`、`data/item.js` 实现。个人库使用 `users/0`；PDF 哈希和嵌入批注由 Python 检查。外部客户端和插件仍可能并发修改；回读不一致报告未完成，不覆盖原内容或伪装成功。

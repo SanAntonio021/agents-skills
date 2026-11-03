@@ -38,21 +38,19 @@ class LocalFeatures(unittest.TestCase):
         return result
 
     def test_official_transport_and_durable_stages(self):
-        # Debug Bridge 3 on real Zotero exposes fetch directly, without this importer.
-        self.f.control(config={'noGlobalImport': True})
         result = self.archive()
         state = self.f.control()
         imports = [e for e in state['events'] if e['event'] == 'import']
         self.assertEqual(imports[0]['transport'], 'local_api')
         self.assertTrue(any(e['event'] == 'api_write' and e['resource'] == 'collections' for e in state['events']))
         self.assertEqual(result['backend'], 'local_api')
-        self.assertIn('register_upload', [stage['stage'] for stage in result['native']['apiStages']])
+        self.assertTrue(any(stage['name'].startswith('upload_register:') for stage in result['api_stages']))
         self.assertTrue(self.f.pdf.is_file())
 
     def test_denied_authorization_does_not_write_or_switch_interfaces(self):
         self.f.control(config={'authorizationStatus': 403})
-        with self.assertRaisesRegex(LibraryError, 'local_api_authorization_denied'):
-            self.f.executor().run(self.f.request())
+        result=self.f.executor().run(self.f.request())
+        self.assertEqual(result['error'], 'local_api_authorization_denied')
         state = self.f.control()
         self.assertEqual(state['items'], [])
         self.assertEqual([e['event'] for e in state['events']], ['authorize'])
@@ -74,23 +72,18 @@ class LocalFeatures(unittest.TestCase):
         self.assertTrue(client.api.authorization_present())
         self.assertEqual(sum(e['event'] == 'authorize' for e in self.f.control()['events']), 1)
 
-    def test_bridge_uses_fixed_log_label_and_bound_reads_reject_database_switch(self):
-        client = self.f.client()
-        open_request = client.opener.open
-        checked = []
-        def open_checked(request, **kwargs):
-            if request.full_url.endswith('/debug-bridge/execute'):
-                first_line = request.data.splitlines()[0]
-                self.assertEqual(first_line, b'// debug bridge: zotero-library fixed operation')
-                checked.append(True)
-            return open_request(request, **kwargs)
-        with patch.object(client.opener, 'open', side_effect=open_checked):
-            result = Executor(client, self.f.store).run(self.f.request())
-        self.assertEqual(result['state'], 'completed')
-        self.assertTrue(checked)
-        self.f.control(config={'databaseId': 'switched-database'})
-        with self.assertRaisesRegex(LibraryError, 'database_identity_changed'):
-            client.get({'type': 'user'}, result['native']['parentKey'])
+    def test_all_requests_are_official_and_bound_reads_reject_database_switch(self):
+        client=self.f.client()
+        original=client.opener.open
+        def check(request, **kwargs):
+            self.assertIn('/api/', request.full_url)
+            return original(request, **kwargs)
+        with patch.object(client.opener, 'open', side_effect=check):
+            result=Executor(client,self.f.store).run(self.f.request())
+        self.assertEqual(result['state'],'completed',result)
+        self.f.control(config={'databaseId':'switched-database'})
+        with self.assertRaisesRegex(LibraryError,'database_identity_changed'):
+            client.get({'type':'user'},result['native']['parentKey'])
 
     def test_revoked_authorization_needs_explicit_same_operation_resume(self):
         client = self.f.client(); client.api.vault = vault = MemoryVault()
@@ -110,25 +103,21 @@ class LocalFeatures(unittest.TestCase):
             self.f.executor().resume(result['operation_id'])
         self.assertEqual(before, self.f.control()['events'])
 
-    def test_unknown_upload_retains_batch_and_paused_preferences(self):
-        addon = {'id': 'fixture@invalid', 'version': '1'}
-        self.f.control(addons=[addon], config={'uploadDisconnect': True})
-        policy = self.f.root / 'policy.json'
-        policy.write_text(json.dumps({'schema': 1, 'addons': [{**addon,
-            'preference_keys': ['extensions.fixture.auto'], 'evidence': 'Isolated handler'}]}))
-        executor = self.f.executor(policy=str(policy)); result = executor.run(self.f.request())
-        self.assertEqual(result['state'], 'unknown', result)
-        state = self.f.control()
-        self.assertFalse(state['prefs']['extensions.fixture.auto'])
-        self.assertTrue(state['jobs']['active'])
-        before = len(state['events'])
-        self.assertEqual(executor.resume(result['operation_id'])['state'], 'unknown')
-        self.assertEqual(len(self.f.control()['events']), before)
+    def test_unknown_upload_resumes_same_placeholder_without_preferences(self):
+        self.f.control(config={'uploadDisconnect':True})
+        executor=self.f.executor(policy=str(self.f.root/'missing-policy.json'))
+        result=executor.run(self.f.request())
+        self.assertEqual(result['state'],'unknown',result)
+        result=executor.resume(result['operation_id'])
+        self.assertEqual(result['state'],'completed',result)
+        state=self.f.control()
+        self.assertFalse(any(x['event'] in ('pref','forbidden_interface') for x in state['events']))
+        self.assertEqual(sum(x['data']['itemType']=='attachment' for x in state['items']),1)
 
     def test_partial_upload_restart_reuses_placeholder_and_original_snapshot(self):
         self.f.control(config={'failImport': 1})
         executor = self.f.executor(); result = executor.run(self.f.request())
-        self.assertEqual(result['state'], 'failed')
+        self.assertEqual(result['state'], 'unknown')
         self.f.control(restart=True)
         result = executor.resume(result['operation_id'])
         self.assertEqual(result['state'], 'completed', result)
@@ -156,7 +145,7 @@ class LocalFeatures(unittest.TestCase):
         self.assertEqual(result['state'], 'completed', result)
         self.assertNotIn('backend', result)
         events = self.f.control()['events']
-        self.assertFalse(any(e['event'] == 'api_write' for e in events))
+        self.assertTrue(any(e['event'] == 'api_write' for e in events))
         self.assertEqual(result['operation_id'], operation_id)
 
     def test_export_and_cite_preserve_bib_and_repeat_without_duplicates(self):

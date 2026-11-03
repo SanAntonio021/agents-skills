@@ -1,4 +1,4 @@
-"""HTTP and fixed-native-program integration against an isolated native API model."""
+"""Official Local API integration without a bridge."""
 import copy
 import hashlib
 import json
@@ -29,7 +29,6 @@ class Fixture:
         self.profile = self.root / 'profile'
         self.profile.mkdir()
         (self.profile / 'prefs.js').write_text(
-            'user_pref("extensions.zotero.debug-bridge.token", "synthetic-fixture-credential");\n'
             'user_pref("extensions.zotero.httpServer.localAPI.enabled", true);', encoding='utf-8')
         node = os.environ.get('ZOTERO_TEST_NODE') or shutil.which('node')
         if not node:
@@ -162,8 +161,8 @@ class NativeExecutionTests(unittest.TestCase):
         skill.rename(relocated)
         result = self.installed_command(relocated, 'operation', 'resume', '--id', legacy['operation_id'])
         self.assertEqual(result['operation_id'], legacy['operation_id'])
-        self.assertEqual(result['state'], 'unknown', result)
-        self.assertEqual(len(self.f.store.read(legacy['operation_id'])['attempts']), 1)
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
         self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
 
     def test_four_business_chains_and_reading_protection(self):
@@ -199,9 +198,9 @@ class NativeExecutionTests(unittest.TestCase):
         self.assertEqual(self.f.executor().run(self.f.request())['state'], 'completed')
 
     def test_missing_official_write_capability_is_explicit(self):
-        self.f.control(config={'noLocalAPI': True})
-        with self.assertRaisesRegex(LibraryError, 'capability_missing_local_api_writes'):
-            self.f.executor().run(self.f.request())
+        self.f.control(config={'zoteroVersion': '9.0.1'})
+        result = self.f.executor().run(self.f.request())
+        self.assertEqual(result['error'], 'capability_missing_local_api_writes')
         self.assertEqual(self.f.control()['items'], [])
 
     def test_completed_operation_cannot_be_reused_on_another_connection(self):
@@ -216,31 +215,8 @@ class NativeExecutionTests(unittest.TestCase):
                 executor.run(request)
         self.assertEqual(self.f.control(), before)
 
-    def test_authentication_redaction_and_no_connector_fallback(self):
-        self.f.control(config={'auth': 401})
-        client = self.f.client()
-        self.assertEqual(client.status['debug_bridge_error'], 'bridge_authentication_failed')
-        with self.assertRaisesRegex(LibraryError, 'bridge_authentication_failed'):
-            Executor(client, self.f.store).run(self.f.request())
-        self.assertNotIn('synthetic-fixture-credential', json.dumps(client.status))
-        self.assertEqual(self.f.control()['events'], [])
 
-    def test_concurrent_batch_refused_and_resume_after_original_finishes(self):
-        self.f.control(config={'delay': 170})
-        executor = self.f.executor()
-        first = executor.run(self.f.request(), wait=0); self.assertEqual(first['state'], 'running')
-        second = executor.run(self.f.request('Second article', '10.1234/second'), wait=0)
-        self.assertEqual(second['state'], 'failed', second)
-        self.assertEqual(second['error'], 'another_batch_active')
-        time.sleep(1)
-        self.assertEqual(executor.status(first['operation_id'])['state'], 'completed')
-        self.assertEqual(executor.resume(second['operation_id'])['state'], 'completed')
 
-    def test_legacy_batch_refused_before_any_write(self):
-        self.f.control(legacy='old-batch')
-        with self.assertRaisesRegex(LibraryError, 'legacy_batch_active'):
-            self.f.executor().run(self.f.request())
-        self.assertEqual(self.f.control()['items'], [])
 
     def test_http_timeout_queries_same_native_job(self):
         self.f.control(config={'replyDelay': 500})
@@ -255,47 +231,13 @@ class NativeExecutionTests(unittest.TestCase):
     def test_partial_failure_resume_only_missing_pdf(self):
         self.f.control(config={'failImport': 1})
         executor = self.f.executor()
-        result = executor.run(self.f.request()); self.assertEqual(result['state'], 'failed', result)
+        result = executor.run(self.f.request()); self.assertEqual(result['state'], 'unknown', result)
         result = executor.resume(result['operation_id']); self.assertEqual(result['state'], 'completed', result)
         state = self.f.control()
         self.assertEqual(sum(x['data']['itemType'] == 'journalArticle' for x in state['items']), 1)
         self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 1)
 
-    def test_external_preference_change_preserved(self):
-        addon = {'id': 'fixture@invalid', 'version': '1'}
-        self.f.control(addons=[addon], config={'external': True})
-        policy = self.f.root / 'policy.json'
-        policy.write_text(json.dumps({'schema': 1, 'addons': [{**addon,
-            'preference_keys': ['extensions.fixture.auto'], 'evidence': 'Reviewed isolated fixture automatic handler'}]}))
-        result = self.f.executor(policy=str(policy)).run(self.f.request())
-        self.assertEqual(result['state'], 'recovery_required', result)
-        self.assertEqual(result['native']['error'], 'automatic_preference_changed')
-        state = self.f.control()
-        self.assertTrue(state['prefs']['extensions.fixture.auto'])
-        self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 0)
-        self.assertEqual(result['native']['preferenceRecovery'][0]['recovery'], 'preserved_external_change')
 
-    def test_current_audited_addons_allow_write_without_separate_policy(self):
-        # These exact versions were reviewed in the shipped maintenance policy.
-        addons = [
-            {'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1'},
-            {'id': 'better-bibtex@iris-advies.com', 'version': '9.0.74'},
-            {'id': 'jasminum@linxzh.com', 'version': '1.1.43'},
-            {'id': 'register02@cn.nutstore.net', 'version': '2.1.2'},
-            {'id': 'tara@linxzh.com', 'version': '1.0.11'},
-            {'id': 'zoplicate@chenglongma.com', 'version': '5.1.1'},
-            {'id': 'zotero-format-metadata@northword.cn', 'version': '4.0.4'},
-            {'id': 'zoteroAddons@ytshen.com', 'version': '11.0.1'},
-            {'id': 'zoterocitation@polygon.org', 'version': '0.5.11'},
-            {'id': 'zoteroif@qnscholar', 'version': '7.1.3.1'},
-        ]
-        self.f.control(addons=addons)
-        executor = self.f.executor()
-        result = executor.run(self.f.request())
-        self.assertEqual(result['state'], 'completed', result)
-        state = self.f.control()
-        self.assertEqual(sum(x['event'] == 'import' for x in state['events']), 1)
-        self.assertFalse(any(x['event'] == 'pref' for x in state['events']))
 
     def test_unknown_addon_does_not_block_write(self):
         self.f.control(addons=[{'id': 'unknown@invalid', 'version': '99'}])
@@ -303,43 +245,8 @@ class NativeExecutionTests(unittest.TestCase):
         self.assertEqual(result['state'], 'completed', result)
         self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
 
-    def test_addon_version_change_during_write_does_not_block(self):
-        self.f.control(addons=[{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1'}],
-                       config={'addonsOnStart': [{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.2'}]})
-        result = self.f.executor().run(self.f.request())
-        self.assertEqual(result['state'], 'completed', result)
-        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
 
-    def test_owned_preferences_restore_after_success_and_import_failure(self):
-        addon = {'id': 'fixture@invalid', 'version': '1'}
-        self.f.control(addons=[addon])
-        policy = self.f.root / 'policy.json'
-        policy.write_text(json.dumps({'schema': 1, 'addons': [{**addon,
-            'preference_keys': ['extensions.fixture.auto'], 'evidence': 'Reviewed fixture automatic handler'}]}))
-        executor = self.f.executor(policy=str(policy))
-        self.f.control(config={'failImport': 1})
-        result = executor.run(self.f.request())
-        self.assertEqual(result['state'], 'failed', result)
-        self.assertTrue(self.f.control()['prefs']['extensions.fixture.auto'])
-        result = executor.resume(result['operation_id'])
-        self.assertEqual(result['state'], 'completed', result)
-        state = self.f.control()
-        self.assertTrue(state['prefs']['extensions.fixture.auto'])
-        self.assertEqual([e['value'] for e in state['events'] if e['event'] == 'pref'],
-                         [False, True, False, True])
-        self.assertEqual(result['native']['preferenceRecovery'][0]['recovery'], 'restored')
-        # A process exit loses setting ownership; no stale snapshot may be restored or replayed.
-        result['state'] = 'unknown'; self.f.store.save(result); self.f.control(restart=True)
-        result = executor.resume(result['operation_id'])
-        self.assertEqual(result['state'], 'recovery_required', result)
-        self.assertEqual(sum(e['event'] == 'import' for e in self.f.control()['events']), 1)
 
-    def test_missing_marker_same_process_remains_unknown(self):
-        executor = self.f.executor(); result = executor.run(self.f.request())
-        # Simulate loss of a nonterminal marker; do not invent a fresh operation.
-        result['state'] = 'unknown'; self.f.store.save(result); self.f.control(clearMarker=True)
-        result = executor.resume(result['operation_id']); self.assertEqual(result['state'], 'unknown')
-        self.assertEqual(len(result['attempts']), 1)
 
     def test_process_restart_reconciles_and_deduplicates(self):
         executor = self.f.executor(); result = executor.run(self.f.request())
@@ -351,8 +258,8 @@ class NativeExecutionTests(unittest.TestCase):
         executor = self.f.executor(); original = executor.client.get
         with patch.object(executor.client, 'get', side_effect=LibraryError('local_api_read_failed')):
             result = executor.run(self.f.request())
-        self.assertEqual(result['state'], 'unknown')
-        self.assertEqual(self.f.store.read(result['operation_id'])['state'], 'unknown')
+        self.assertEqual(result['state'], 'failed')
+        self.assertEqual(self.f.store.read(result['operation_id'])['state'], 'failed')
         result = executor.resume(result['operation_id'])
         self.assertEqual(result['state'], 'completed')
         self.assertNotIn('error', result)
@@ -369,7 +276,7 @@ class NativeExecutionTests(unittest.TestCase):
             {'itemType': 'attachment', 'parentID': 1, 'contentType': 'application/pdf', 'file': str(self.f.pdf)},
             {'itemType': 'attachment', 'parentID': 1, 'contentType': 'application/pdf', 'file': str(self.f.pdf)}])
         attachments = [x for x in state['items'] if x['data']['itemType'] == 'attachment']
-        self.f.control(seed=[{'itemType': 'annotation', 'parentID': int(attachments[2]['key'][1:]), 'note': 'Protected annotation'}])
+        self.f.control(seed=[{'itemType': 'annotation', 'parentKey': attachments[2]['key'], 'note': 'Protected annotation'}])
         def spec(k): return {'key': k, 'sha256': inspect_pdf(self.f.pdf)['sha256'], 'version': 'official', 'evidence': ['Same version verified']}
         prune = {k: request[k] for k in ('schema', 'library', 'identity')}
         prune.update(parent_key=result['native']['parentKey'], keep=spec(attachments[0]['key']),
@@ -381,10 +288,9 @@ class NativeExecutionTests(unittest.TestCase):
 
     def test_changed_source_cannot_change_original_operation(self):
         executor = self.f.executor(); self.f.control(config={'failImport': 1})
-        result = executor.run(self.f.request()); self.assertEqual(result['state'], 'failed')
+        result = executor.run(self.f.request()); self.assertEqual(result['state'], 'unknown')
         self.f.pdf.write_bytes(self.f.pdf.read_bytes() + b'\nchanged')
-        with self.assertRaisesRegex(LibraryError, 'pdf_hash_mismatch'):
-            executor.resume(result['operation_id'])
+        self.assertEqual(executor.resume(result['operation_id'])['error'], 'pdf_hash_mismatch')
 
     def test_prune_preserves_embedded_annotations_and_linked_independent_notes(self):
         from pypdf.generic import ArrayObject, DictionaryObject, NameObject
@@ -410,7 +316,7 @@ class NativeExecutionTests(unittest.TestCase):
         self.assertEqual(result['state'], 'completed', result)
         self.assertEqual(result['native']['trashed'], [])
         self.assertEqual({x['reason'] for x in result['native']['skipped']},
-                         {'candidate_pdf_inspection_unknown', 'candidate_has_linked_notes'})
+                         {'candidate_has_embedded_annotations', 'candidate_has_linked_notes'})
 
     def test_superseded_version_requires_business_evidence(self):
         executor = self.f.executor(); request = self.f.request(); result = executor.run(request)

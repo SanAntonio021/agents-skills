@@ -1,52 +1,67 @@
-"""One verified connection for diagnostics, Local API reads and fixed native operations."""
-import json
+"""Verified official Local API connection shared by all commands."""
 import re
-import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 
 from . import connection
-from .errors import LibraryError, NativeRejected
+from .errors import LibraryError
 from .request import KEY, digest, require
 from .identity import normalize_doi, normalize_text, match_identity, related
 from .local_api import LocalAPI
 
 
-DEFAULT_POLICY = Path(__file__).resolve().parents[2] / 'references' / 'automatic_fetch_policy.json'
-
-
 class Client:
     def __init__(self, profile=None, base_url=None, timeout=3, policy=None, vault=None):
-        self.status = connection.status_payload(profile, base_url, timeout)
-        if not self.status['read_only_ready']:
-            raise LibraryError(self.status.get('error') or 'local_api_not_ready')
-        self.base = self.status['base_url']
-        self.profile = self.status['profile']
+        self.status = connection.empty_status()
+        try:
+            profile_path, ini = connection.resolve_profile(profile)
+            preferences = connection.read_preferences(profile_path)
+            self.base, source = connection.select_base_url(base_url, preferences)
+        except connection.CheckError as error:
+            raise LibraryError(str(error)) from None
+        self.profile = str(profile_path) if profile_path else None
         self.binding = {'base_url': self.base, 'profile': self.profile}
         self.timeout = timeout
-        # The policy only identifies known automatic-fetch preferences to pause.
-        # Unlisted add-ons or versions never block a write; no preference names
-        # are inferred for them.
-        self.policy = policy or (str(DEFAULT_POLICY) if DEFAULT_POLICY.is_file() else None)
-        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), connection.NoRedirect())
+        # --policy remains accepted for old callers; no plugin policy is read.
+        self.opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}), connection.NoRedirect())
         self.api = LocalAPI(self, vault)
+        self.status.update(profile=self.profile,
+            profile_error=None if profile_path else 'profile_not_found',
+            prefs_file=str(profile_path / 'prefs.js') if profile_path else None,
+            profiles_ini=str(ini) if ini else None, base_url=self.base, base_url_source=source,
+            local_api_enabled_pref=preferences.get(connection.API_PREF))
+        require(preferences.get(connection.API_PREF) is not False, 'local_api_disabled')
+        self.api.bind()
+        headers = self.api.last_headers
+        version = next((v for k, v in headers.items() if k.lower() == 'x-zotero-version'), '')
+        api_version = next((v for k, v in headers.items() if k.lower() == 'zotero-api-version'), '')
+        self.status.update(api_running=True, api_status=200,
+            api_version=api_version, zotero_version=version)
+        require(api_version == '3' and connection.VERSION.fullmatch(version),
+                'local_api_identity_unverified')
+        self.status['api_verified'] = True
+        schema = self.read('schema')
+        self.status.update(schema_running=True, schema_status=200)
+        require(isinstance(schema, dict) and isinstance(schema.get('itemTypes'), (list, dict))
+                and type(schema.get('version')) is int, 'local_api_schema_unverified')
+        self.status.update(api_running=True, api_status=200, api_verified=True,
+            api_version=api_version, zotero_version=version, schema_running=True,
+            schema_status=200, schema_version=schema['version'], schema_verified=True,
+            entry_verified=True, read_only_ready=True,
+            local_api_write_supported=self.api.write_supported)
+
+    def diagnostics(self):
+        result = dict(self.status)
+        result['process'] = connection.process_status()
+        try:
+            result['local_api_authorization_present'] = self.api.authorization_present()
+        except LibraryError as error:
+            result['local_api_authorization_error'] = error.code
+        return result
 
     def read(self, path, params=None):
-        if self.api.server_id:
-            try:
-                return json.loads(self.api.exchange(path, params))
-            except (ValueError, TypeError):
-                raise LibraryError('invalid_local_api_response') from None
-        if params:
-            path += '?' + urllib.parse.urlencode(params)
-        result = connection.request(self.opener, self.base, '/api/' + path, self.timeout)
-        if not connection.successful(result):
-            raise LibraryError('local_api_not_found' if result.get('status') == 404 else 'local_api_read_failed')
-        try:
-            return json.loads(result['body'])
-        except (ValueError, TypeError):
-            raise LibraryError('invalid_local_api_response') from None
+        return self.api.json(path, params=params)
 
     @staticmethod
     def prefix(library):
@@ -134,89 +149,24 @@ class Client:
     def collections(self, library):
         return self.list_all(self.prefix(library) + '/collections')
 
-    def native(self, data):
-        # No native input is accepted from a caller: this program and all actions are private.
-        if not self.status['debug_bridge_available']:
-            raise LibraryError(self.status.get('debug_bridge_error') or 'debug_bridge_unavailable')
-        preferences = connection.read_preferences(Path(self.profile) if self.profile else None)
-        token = preferences.get(connection.TOKEN_PREF)
-        if not isinstance(token, str) or not token.isascii() or not token or any(ord(c) < 33 or ord(c) == 127 for c in token):
-            raise LibraryError('bridge_credential_missing_or_invalid')
-        program = Path(__file__).with_name('native.js').read_text('utf-8')
-        program = program.replace('__ZOTERO_LIBRARY_API_PROGRAM__',
-            Path(__file__).with_name('archive_api.js').read_text('utf-8'))
-        # Debug Bridge logs only this label when present; otherwise it logs the
-        # complete program, including ephemeral Local API authorization data.
-        program = '// debug bridge: zotero-library fixed operation\ntry {\n' + program.replace(
-            '__ZOTERO_LIBRARY_INPUT__', json.dumps(data, ensure_ascii=True))
-        program += '\n} catch(e) { return {nativeError:e.publicCode || "native_capability_unavailable"}; }'
-        request = urllib.request.Request(self.base + '/debug-bridge/execute',
-            data=program.encode('utf-8'), headers={'Content-Type': 'text/plain',
-            'Authorization': 'Bearer ' + token})
-        try:
-            with self.opener.open(request, timeout=self.timeout) as response:
-                raw = response.read(4 * 1024 * 1024 + 1)
-                require(response.status == 201 and len(raw) <= 4 * 1024 * 1024, 'invalid_bridge_response')
-                result = json.loads(raw)
-                if isinstance(result, dict) and 'result' in result:
-                    result = result['result']
-                if isinstance(result, str):
-                    result = json.loads(result)
-                require(isinstance(result, dict), 'invalid_bridge_response')
-                if 'nativeError' in result:
-                    code = result['nativeError']
-                    require(isinstance(code, str) and re.fullmatch('[a-z_]{1,80}', code), 'native_operation_failed')
-                    raise NativeRejected(code)
-                return result
-        except urllib.error.HTTPError as error:
-            code = error.code
-            error.close()
-            raise LibraryError({401: 'bridge_authentication_failed', 403: 'bridge_access_denied',
-                                404: 'bridge_not_available'}.get(code, 'bridge_http_error')) from None
-        except (OSError, urllib.error.URLError):
-            raise LibraryError('bridge_result_unknown') from None
-        except (ValueError, TypeError):
-            raise LibraryError('invalid_bridge_response') from None
-
-    def prepare(self, request, backend='native'):
-        caps = self.native({'action': 'capabilities'})
-        for key in ('nativeWrite', 'preferences', 'fileHash'):
-            require(caps.get(key) is True, 'capability_missing_' + key)
-        if backend == 'local_api':
-            self.api.bind()
-            require(caps.get('localAPIWrite') is True, 'capability_missing_local_api_writes')
-        elif request.get('pdf'):
-            require(caps.get('importFile') is True, 'capability_missing_import_from_file')
-        require(not caps.get('legacyActive'), 'legacy_batch_active')
-        reviewed = [{'id': 'debug-bridge@iris-advies.com', 'version': '3.0.1', 'preference_keys': []}]
-        if self.policy:
-            try:
-                policy = json.loads(Path(self.policy).read_text('utf-8-sig'))
-                require(set(policy) == {'schema', 'addons'} and policy['schema'] == 1)
-                for entry in policy['addons']:
-                    require(set(entry) == {'id', 'version', 'preference_keys', 'evidence'})
-                    require(isinstance(entry['evidence'], str) and bool(entry['evidence']))
-                    require(isinstance(entry['preference_keys'], list))
-                    for key in entry['preference_keys']:
-                        require(isinstance(key, str) and re.fullmatch(r'extensions\.[a-zA-Z0-9_.-]{1,180}', key)
-                                and not re.search('token|secret|password|auth', key, re.I))
-                reviewed.extend(policy['addons'])
-            except (OSError, ValueError, TypeError, KeyError):
-                raise LibraryError('invalid_automatic_fetch_policy') from None
-        keys = []
-        for addon in caps.get('addons', []):
-            entry = next((x for x in reviewed if (x['id'], x['version']) == (addon['id'], addon['version'])), None)
-            if entry is not None:
-                keys.extend(entry['preference_keys'])
-        caps['preferenceKeys'] = sorted(set(keys))
-        # Include title/author candidates even when the DOI lookup is empty.
+    def prepare(self, request, backend='local_api'):
+        self.api.bind()
+        require(self.api.write_supported, 'capability_missing_local_api_writes')
         identity = request.get('identity', {})
-        caps['candidateKeys'] = [x['key'] for x in self.candidates(request['library'], identity)] \
-            if identity and not request.get('parent_key') else []
-        return caps
+        return {'candidateKeys': [x['key'] for x in self.candidates(request['library'], identity)]
+                if identity and not request.get('parent_key') else []}
 
     def inspect(self, request, keys):
-        return self.native({'action': 'inspect', 'request': {'library': request['library']}, 'keys': keys})['files']
+        from .files import file_hash
+        from .reading import file_path
+        out = []
+        for key in keys:
+            item = self.get(request['library'], key, children=False)
+            require(item['data'].get('itemType') == 'attachment', 'not_attachment')
+            path = file_path(self, request['library'], key)
+            out.append({'key': key, 'path': str(path), 'sha256': file_hash(path),
+                        'deleted': bool(item['data'].get('deleted'))})
+        return out
 
     def binding_hash(self):
         return digest(self.binding)

@@ -1,4 +1,4 @@
-"""Download finalization boundaries against the actual shared native program."""
+"""Download finalization boundaries against the shared official API execution layer."""
 import argparse
 import copy
 import hashlib
@@ -193,7 +193,7 @@ except OperationError as error:
         with patch('institutional_access.cli.browser_for_session', side_effect=AssertionError('premature closure')):
             result = finalize(self.args)
         self.assertEqual(result['stage'], 'archive_pending')
-        self.assertEqual(result['archive']['state'], 'failed')
+        self.assertEqual(result['archive']['state'], 'unknown')
         self.assertEqual(self.f.executor().resume(result['archive']['operation_id'])['state'], 'completed')
         with patch('institutional_access.cli.browser_for_session', return_value=ClosureClient()):
             self.assertEqual(finalize(self.args)['stage'], 'completed')

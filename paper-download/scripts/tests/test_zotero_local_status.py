@@ -31,6 +31,7 @@ def fixture(mode="ok"):
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Zotero-Server-ID", "status-fixture")
             for key, value in (headers or {}).items():
                 self.send_header(key, value)
             self.end_headers()
@@ -43,35 +44,21 @@ def fixture(mode="ok"):
             if mode == "redirect":
                 return self.respond(302, "", {"Location": "/should-not-be-followed"})
             if self.path == "/api/":
-                headers = {"X-Zotero-Version": "10.0.6", "Zotero-API-Version": "3"}
+                headers = {"X-Zotero-Version": "10.0.6", "Zotero-API-Version": "3", "Zotero-Server-ID": "status-fixture"}
                 return self.respond(200, "Nothing to see here", headers)
             if self.path == "/api/schema":
                 value = "not-json" if mode == "invalid-schema" else {"version": 44, "itemTypes": []}
                 if mode == "wrong-schema":
                     value = {"version": 44, "itemTypes": "not-a-list"}
                 return self.respond(200, value)
-            if self.path == "/connector/ping":
-                if mode == "no-connector":
-                    return self.respond(404, "Missing connector")
-                return self.respond(200, "<html>Zotero is running</html>")
+            if self.path.startswith(("/connector/", "/debug-bridge/")):
+                return self.respond(500, "Forbidden interface")
             return self.respond(404, "Unrecognized route")
 
         def do_POST(self):
             body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode()
             requests.append(("POST", self.path, dict(self.headers), body))
-            if self.path != "/debug-bridge/execute":
-                return self.respond(405, "Writes forbidden")
-            if mode in {"no-bridge", "bad-auth", "bridge-error"}:
-                code = {"no-bridge": 404, "bad-auth": 401, "bridge-error": 500}[mode]
-                return self.respond(code, self.headers.get("Authorization", ""))
-            value = {"version": "10.0.6", "libraryID": 1, "importFromFileAvailable": True}
-            if mode == "version-mismatch":
-                value["version"] = "9.0.6"
-            if mode == "no-import":
-                value["importFromFileAvailable"] = False
-            if mode == "wrapped-bridge":
-                value = {"result": json.dumps(value)}
-            return self.respond(201, value)
+            return self.respond(500, "Forbidden interface")
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -82,6 +69,8 @@ def fixture(mode="ok"):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+        assert not any(path.startswith(("/connector/", "/debug-bridge/"))
+                       for _, path, _, _ in requests), 'Forbidden interface requested'
 
 
 class ZoteroStatusTests(unittest.TestCase):
@@ -102,7 +91,7 @@ class ZoteroStatusTests(unittest.TestCase):
         profile.mkdir(exist_ok=True)
         values = {status.API_PREF: enabled}
         if token is not None:
-            values[status.TOKEN_PREF] = token
+            values["extensions.zotero.debug-bridge.token"] = token
         if port is not None:
             values[status.PORT_PREF] = port
         text = "\n".join(f'user_pref({json.dumps(key)}, {json.dumps(value)});'
@@ -162,7 +151,7 @@ class ZoteroStatusTests(unittest.TestCase):
         self.profile("second")
         self.ini({"Profile0": {"Path": "first"}, "Profile1": {"Path": "second"}})
         with mock.patch.object(status, "profile_roots", return_value=[self.root]), \
-                mock.patch.object(status, "request") as request:
+                mock.patch("urllib.request.OpenerDirector.open") as request:
             result = status.status_payload()
         self.assertEqual(result["profile_error"], "profile_ambiguous")
         request.assert_not_called()
@@ -177,32 +166,29 @@ class ZoteroStatusTests(unittest.TestCase):
                 status.resolve_profile(None)
 
     def test_missing_profile_can_still_confirm_reads_without_bridge(self):
-        with mock.patch.object(status, "profile_roots", return_value=[]), \
-                fixture() as (base, requests):
+        with mock.patch.object(status, 'profile_roots', return_value=[]), fixture() as (base, requests):
             result = status.status_payload(base_url=base, timeout=1)
-        self.assertTrue(result["read_only_ready"])
-        self.assertEqual(result["profile_error"], "profile_not_found")
-        self.assertEqual(result["debug_bridge_error"], "bridge_credential_missing")
-        self.assertEqual(len(requests), 3)
+        self.assertTrue(result['read_only_ready'])
+        self.assertEqual(result['profile_error'], 'profile_not_found')
+        self.assertIsNone(result['debug_bridge_error'])
+        self.assertEqual(len(requests), 2)
 
     def test_invalid_explicit_profile_does_not_use_default(self):
-        with mock.patch.object(status, "request") as request:
+        with mock.patch("urllib.request.OpenerDirector.open") as request:
             result = status.status_payload(str(self.root / "missing"))
         self.assertEqual(result["error"], "explicit_profile_unreadable")
         request.assert_not_called()
 
     def test_complete_probe_is_fixed_and_read_only(self):
         result, requests = self.probe()
-        self.assertTrue(result["entry_verified"])
-        self.assertTrue(result["debug_bridge_available"])
-        self.assertEqual(result["native_library_id"], 1)
-        self.assertTrue(result["import_from_file_available"])
-        self.assertEqual([(r[0], r[1]) for r in requests], [
-            ("GET", "/api/"), ("GET", "/api/schema"), ("GET", "/connector/ping"),
-            ("POST", "/debug-bridge/execute")])
-        self.assertEqual(requests[-1][2]["Content-Type"], "text/plain")
-        self.assertEqual(requests[-1][3], status.BRIDGE_QUERY)
-        self.assertNotIn("fixture-secret", json.dumps(result))
+        self.assertTrue(result['entry_verified'])
+        self.assertTrue(result['local_api_write_supported'])
+        self.assertFalse(result['local_api_authorization_present'])
+        self.assertIsNone(result['debug_bridge_available'])
+        self.assertIsNone(result['bridge_credential_present'])
+        self.assertEqual(result['debug_bridge_applicability'], 'not_applicable')
+        self.assertEqual([(r[0], r[1]) for r in requests], [('GET', '/api/'), ('GET', '/api/schema')])
+        self.assertNotIn('fixture-secret', json.dumps(result))
 
     def test_custom_profile_port_is_used_without_override(self):
         with fixture() as (base, requests):
@@ -213,67 +199,40 @@ class ZoteroStatusTests(unittest.TestCase):
         self.assertTrue(result["entry_verified"])
 
     def test_other_service_http_200_is_not_zotero(self):
-        result, requests = self.probe("unrelated")
-        self.assertTrue(result["api_running"])
-        self.assertFalse(result["api_verified"])
-        self.assertFalse(result["read_only_ready"])
-        self.assertEqual(len(requests), 3)
+        result, requests = self.probe('unrelated')
+        self.assertTrue(result['api_running'])
+        self.assertFalse(result['api_verified'])
+        self.assertFalse(result['read_only_ready'])
+        self.assertEqual(len(requests), 1)
 
     def test_invalid_schema_blocks_credentials(self):
-        for mode in ("invalid-schema", "wrong-schema"):
-            with self.subTest(mode=mode):
-                result, requests = self.probe(mode)
-                self.assertTrue(result["api_verified"])
-                self.assertFalse(result["schema_verified"])
-                self.assertEqual(len(requests), 3)
+        for mode in ('invalid-schema', 'wrong-schema'):
+            result, requests = self.probe(mode)
+            self.assertTrue(result['api_verified'])
+            self.assertFalse(result['schema_verified'])
+            self.assertFalse(result['read_only_ready'])
+            self.assertEqual(len(requests), 2)
 
-    def test_connector_failure_preserves_read_only_and_bridge(self):
-        result, requests = self.probe("no-connector")
-        self.assertTrue(result["read_only_ready"])
-        self.assertFalse(result["entry_verified"])
-        self.assertFalse(result["connector_verified"])
-        self.assertTrue(result["debug_bridge_available"])
 
-    def test_missing_or_unauthorized_bridge_preserves_reads(self):
-        for mode, error in (("no-bridge", "bridge_not_available"),
-                            ("bad-auth", "bridge_authentication_failed"),
-                            ("bridge-error", "http_error")):
-            with self.subTest(mode=mode):
-                result, _ = self.probe(mode)
-                self.assertTrue(result["read_only_ready"])
-                self.assertFalse(result["debug_bridge_available"])
-                self.assertEqual(result["debug_bridge_error"], error)
-                self.assertNotIn("fixture-secret", json.dumps(result))
 
     def test_absent_or_malformed_credential_not_sent(self):
-        for token in (None, "", "bad\nheader", "non-ascii-\u00e9"):
-            with self.subTest(token=token):
-                result, requests = self.probe(token=token)
-                self.assertTrue(result["read_only_ready"])
-                self.assertFalse(result["debug_bridge_available"])
-                self.assertEqual(len(requests), 3)
+        for token in (None, '', 'bad\nheader', 'non-ascii-é'):
+            result, requests = self.probe(token=token)
+            self.assertTrue(result['read_only_ready'])
+            self.assertIsNone(result['debug_bridge_available'])
+            self.assertEqual(len(requests), 2)
 
     def test_disabled_api_pref_does_not_change_or_send_credentials(self):
         profile = self.profile(enabled=False)
-        before = (profile / "prefs.js").read_bytes()
+        before = (profile / 'prefs.js').read_bytes()
         with fixture() as (base, requests):
             result = status.status_payload(str(profile), base, timeout=1)
-        self.assertEqual(result["error"], "local_api_disabled")
-        self.assertFalse(result["read_only_ready"])
-        self.assertEqual(len(requests), 3)
-        self.assertEqual((profile / "prefs.js").read_bytes(), before)
+        self.assertEqual(result['error'], 'local_api_disabled')
+        self.assertFalse(result['read_only_ready'])
+        self.assertEqual(requests, [])
+        self.assertEqual((profile / 'prefs.js').read_bytes(), before)
 
-    def test_wrapped_bridge_and_missing_import_function(self):
-        result, _ = self.probe("wrapped-bridge")
-        self.assertTrue(result["debug_bridge_available"])
-        result, _ = self.probe("no-import")
-        self.assertTrue(result["debug_bridge_available"])
-        self.assertFalse(result["import_from_file_available"])
 
-    def test_mismatched_bridge_version_is_rejected(self):
-        result, _ = self.probe("version-mismatch")
-        self.assertFalse(result["debug_bridge_available"])
-        self.assertEqual(result["debug_bridge_error"], "bridge_version_mismatch")
 
     def test_proxy_environment_is_ignored(self):
         with mock.patch.dict(os.environ, {"HTTP_PROXY": "http://127.0.0.1:1",
@@ -283,11 +242,10 @@ class ZoteroStatusTests(unittest.TestCase):
         self.assertTrue(result["entry_verified"])
 
     def test_redirects_are_not_followed(self):
-        result, requests = self.probe("redirect")
-        self.assertFalse(result["read_only_ready"])
-        self.assertEqual(result["api_error"], "redirect_blocked")
-        self.assertEqual(len(requests), 3)
-        self.assertNotIn("/should-not-be-followed", [r[1] for r in requests])
+        result, requests = self.probe('redirect')
+        self.assertFalse(result['read_only_ready'])
+        self.assertEqual(result['api_error'], 'redirect_blocked')
+        self.assertEqual(len(requests), 1)
 
     def test_non_loopback_and_credential_urls_rejected(self):
         for value in ("https://127.0.0.1:23119", "http://example.com", "http://192.168.0.1",
@@ -300,21 +258,21 @@ class ZoteroStatusTests(unittest.TestCase):
 
     def test_failure_uses_only_selected_origin_without_retry(self):
         profile = self.profile(port=54321)
-        with mock.patch.object(status, "request", return_value={
-                "status": None, "error": "connection_failed"}) as request:
-            result = status.status_payload(str(profile), "http://127.0.0.1:12345")
-        self.assertEqual(request.call_count, 3)
-        self.assertEqual({call.args[1] for call in request.call_args_list}, {"http://127.0.0.1:12345"})
-        self.assertFalse(result["read_only_ready"])
+        with fixture('unrelated') as (base, requests):
+            result = status.status_payload(str(profile), base)
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(result['base_url'], base)
+        self.assertFalse(result['read_only_ready'])
 
     def test_json_cli_redacts_http_error_and_returns_read_capability(self):
         profile = self.profile()
         output = io.StringIO()
-        with fixture("bad-auth") as (base, _), contextlib.redirect_stdout(output):
-            code = status.main(["status", "--json", "--profile", str(profile), "--base-url", base])
+        with fixture() as (base, requests), contextlib.redirect_stdout(output):
+            code = status.main(['status', '--json', '--profile', str(profile), '--base-url', base])
         self.assertEqual(code, 0)
-        self.assertNotIn("fixture-secret", output.getvalue())
-        self.assertEqual(json.loads(output.getvalue())["debug_bridge_status"], 401)
+        self.assertNotIn('fixture-secret', output.getvalue())
+        self.assertIsNone(json.loads(output.getvalue())['debug_bridge_status'])
+        self.assertEqual(len(requests), 2)
 
     def test_process_inspection_is_read_only_and_hidden(self):
         self.process.stop()
@@ -335,13 +293,13 @@ class ZoteroStatusTests(unittest.TestCase):
 
     def test_unresponsive_api_keeps_actual_process_state(self):
         profile = self.profile()
-        for state in ("running", "not_running", "unknown"):
-            self.process_mock.return_value = {"state": state, "pids": [], "executable_paths": []}
-            with self.subTest(state=state), mock.patch.object(status, "request", return_value={
-                    "status": None, "error": "connection_failed"}):
+        from zotero_library.errors import LibraryError
+        for state in ('running', 'not_running', 'unknown'):
+            self.process_mock.return_value = {'state': state, 'pids': [], 'executable_paths': []}
+            with mock.patch('zotero_library.local_api.LocalAPI.bind', side_effect=LibraryError('local_api_result_unknown')):
                 result = status.status_payload(str(profile))
-                self.assertFalse(result["read_only_ready"])
-                self.assertEqual(result["process"]["state"], state)
+            self.assertFalse(result['read_only_ready'])
+            self.assertEqual(result['process']['state'], state)
 
     def test_unexpected_exception_cannot_print_secrets(self):
         output = io.StringIO()

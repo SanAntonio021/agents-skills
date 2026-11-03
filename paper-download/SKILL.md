@@ -1,7 +1,7 @@
 ---
 name: paper-download
 license: MIT
-description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目、附件和任务本地资料，只补请求的缺项；入库前控制非请求的自动抓取，超时先核实原操作。Use when 用户给出题名、DOI、论文 URL、作者主页、论文列表、本地 PDF 或 paper-search 结果，要求下载、保存到 Zotero、整理已有论文或继续机构授权下载。研究问题检索与引用元数据核验用 paper-search；原文技术核对用 paper-review。联网由 web-access 路由；Windows 版机构模块通过 web-access HTTP Broker 复用当前 Edge 会话，负责出版物核验，不自行执行浏览器登录或验证码。
+description: 获取、复用或导入论文 PDF 到 Zotero，先查已有条目、附件和任务本地资料，只补请求的缺项；归档保留已有阅读内容与外部新增附件，超时先核实原操作。Use when 用户给出题名、DOI、论文 URL、作者主页、论文列表、本地 PDF 或 paper-search 结果，要求下载、保存到 Zotero、整理已有论文或继续机构授权下载。研究问题检索与引用元数据核验用 paper-search；原文技术核对用 paper-review。联网由 web-access 路由；Windows 版机构模块通过 web-access HTTP Broker 复用当前 Edge 会话，负责出版物核验，不自行执行浏览器登录或验证码。
 ---
 
 # 论文 PDF 获取与入库

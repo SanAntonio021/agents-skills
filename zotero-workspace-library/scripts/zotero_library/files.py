@@ -5,6 +5,17 @@ from pathlib import Path
 from .errors import LibraryError
 
 
+def file_hash(path):
+    value = hashlib.sha256()
+    try:
+        with Path(path).open('rb') as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                value.update(chunk)
+    except OSError:
+        raise LibraryError('attachment_file_unavailable') from None
+    return value.hexdigest()
+
+
 def inspect_pdf(path, expected=None):
     try:
         from pypdf import PdfReader

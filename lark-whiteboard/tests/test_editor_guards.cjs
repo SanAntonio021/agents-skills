@@ -10,7 +10,7 @@ let contentCalls=0,selected=[];
 const shape=(id,locked=false)=>({id,type:13,page:{info:{locked,baseV2:{x:0,y:0,width:100,height:60},compositeShape:{shapeType:11},textV2:{text:id,fontSize:18}}}});
 const a=shape('a'),b=shape('b',true),group={id:'g',children:[a,b],page:{info:{baseV2:{x:0,y:0,width:200,height:60}}}};
 a.parent=group;b.parent=group;
-const line={id:'c',type:15,attachProps:{start:{id:'b',position:{x:1,y:.5}},end:{id:'a',position:{x:0,y:.5}}},lineProps:{points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,page:{info:{baseV2:{x:100,y:30,width:100,height:0},connectorV2:{shape:0}}}};
+const line={id:'c',type:15,attachProps:{start:{id:'b',position:{x:1,y:.5}},end:{id:'a',position:{x:0,y:.5}}},lineProps:{lineType:0,points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,page:{info:{baseV2:{x:100,y:30,width:100,height:0},connectorV2:{shape:0}}}};
 const app={docState:{whiteboardToken:'BoardTest',docxToken:'DocTest',seq:0,savedSeq:0,permission:{canEdit:true}},isResourceLoaded:true,
   nodeManager:{nodeMap:new Map([a,b,group,line].map(n=>[n.id,n]))},api:{graphicNodeToPageNode:n=>n.page,getSelectNodes:()=>selected},
   commandManager:{handlers:new Map(['Select','Move','TextFontSize'].map(k=>[k,{execute(){}}])),execute(name,args){if(name==='Select'){selected=args.nodeIds.map(id=>app.nodeManager.nodeMap.get(id));return;}contentCalls++;throw new Error('CONTENT_CALL_FAILED');}},
@@ -113,7 +113,7 @@ app.commandManager.execute=(name,args)=>{
   guardContentCalls++;throw new Error('GUARD_CONTENT_BOUNDARY');
 };
 const boundLine=(id,start,end)=>({id,type:15,attachProps:{start:{id:start.id,position:{x:1,y:.5}},end:{id:end.id,position:{x:0,y:.5}}},
-  lineProps:{points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,
+  lineProps:{lineType:0,points:[{x:100,y:30},{x:200,y:30}]},toGlobalPoint:p=>p,
   page:{info:{baseV2:{x:100,y:30,width:100,height:0},connectorV2:{shape:0,
     startObject:{objectId:start.id,snapTo:2,position:{x:1,y:.5}},endObject:{objectId:end.id,snapTo:4,position:{x:0,y:.5}}}}}});
 const guardLeft=shape('guard-left'),guardRight=shape('guard-right'),guardLine=boundLine('guard-line',guardLeft,guardRight);

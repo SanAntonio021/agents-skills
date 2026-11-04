@@ -120,7 +120,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | path | id, points；画布绝对坐标的中间点数组。折线为拐点，曲线须两端已绑定且恰好两个控制点；直线无拐点，正交线各段须水平或垂直 |
 | curve_point | id, point 为画布 `{x,y}`；mode 可选 segment / turning，index 为从 0 开始的手柄下标。segment 拖动曲线段中点新增经过点，turning 移动已有经过点；默认有经过点则移动，否则新增，index 默认为 0 |
 | style | id, style；border_color / fill_color / text_color 为 #RRGGBB，border_style 为 solid / dash / dot，border_width 为 extra_narrow / narrow / medium / bold；只更改提供的字段 |
-| anchors | id 为已有连接线；start/end 可分别指定 `{snap_to:"bottom",position:{x:0.5,y:1}}`，仅改变锚点，保持两端绑定 ID |
+| anchors | id 为双端绑定的直线；start/end 可分别指定 `{snap_to:"bottom",position:{x:0.5,y:1}}`。锚点与对应端点几何在同一事务更新；未指定端点及绑定 ID 保持不变。折线、曲线和已有端点几何不匹配的线写前拒绝 |
 | reconnect | id 为连线，start_id / end_id 可单独或同时指定；已有绑定保留原端锚点，首次绑定采用起点右侧中点、终点左侧中点 |
 | connect | start_id/end_id 为两端形状；template_id 可选。省略时使用默认实线箭头，新 ID 由保存回读取得 |
 | group | ids；返回新增 group ID，再据其发起后续操作 |

@@ -189,7 +189,7 @@
   if (!['15acf339','73a62bde'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
   // Each newer build exposes only the operations exercised in its live trial.
   if(signature==='73a62bde'&&!['enter','observe','canvas_preview','text','caption','caption_position',
-    'move','resize','bring_to_front','reconnect','connect'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
+    'move','resize','bring_to_front','reconnect','connect','anchors'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
   const readiness=entryState();
   if(readiness.can_edit!==true)fail(readiness.can_edit===false?'EDITOR_PERMISSION_DENIED':'EDITOR_PERMISSION_UNAVAILABLE');
   if(readiness.resources_loaded!==true)fail('EDITOR_RESOURCES_NOT_LOADED');
@@ -355,6 +355,22 @@
     const p=n.lineProps.clone(),q=n.toLocalPoint(shape(e.id).getLineAttachPoint(e.position));
     p.points[0]={...p.points[0],x:q.x,y:q.y};update(n.id,[p]);
   };
+  const setAnchorEndpointGeometry = (n,attachments,path,changedSides) => {
+    if(!Array.isArray(path.points)||path.points.length<2||typeof n.toLocalPoint!=='function')fail('BOUND_ENDPOINT_GEOMETRY_UNAVAILABLE');
+    for(const side of ['start','end']){
+      const e=attachments[side],target=shape(e.id),index=side==='start'?0:path.points.length-1;
+      if(!e.position||typeof target.getLineAttachPoint!=='function')fail('BINDING_TARGET_UNAVAILABLE:'+side);
+      const expected=target.getLineAttachPoint(e.position),actual=n.toGlobalPoint(path.points[index]);
+      if(![expected?.x,expected?.y,actual?.x,actual?.y].every(Number.isFinite))fail('BINDING_GEOMETRY_UNAVAILABLE:'+side);
+      if(!changedSides.has(side)){
+        if(Math.hypot(actual.x-expected.x,actual.y-expected.y)>0.02)fail('BOUND_ENDPOINT_GEOMETRY_MISMATCH:'+side);
+        continue;
+      }
+      const local=n.toLocalPoint(expected);
+      if(![local?.x,local?.y].every(Number.isFinite))fail('BINDING_LOCAL_GEOMETRY_UNAVAILABLE:'+side);
+      path.points[index]={...path.points[index],x:local.x,y:local.y};
+    }
+  };
   const verifiedBindings=[];
   const verifiedCurvePoints=[];
   const verifyBoundGeometry = n => {
@@ -504,6 +520,7 @@
     }
     case 'anchors': {
       const n=line(op.id);
+      if(n.lineProps?.lineType!==0||n.lineProps?.points?.length!==2)fail('ANCHOR_GEOMETRY_REQUIRES_STRAIGHT_LINE');
       if(['start','end'].some(side=>!n.attachProps?.[side]?.id))fail('BOUND_ENDPOINTS_REQUIRED_FOR_ANCHOR_REFRESH');
       const endpointIds=[...new Set(['start','end'].map(side=>n.attachProps?.[side]?.id).filter(Boolean))];
       if(!endpointIds.length)fail('BOUND_ENDPOINT_REQUIRED');
@@ -511,18 +528,18 @@
       for(const id of endpointIds){const target=shape(id);assertUnlocked(target);if(target.parent?.id&&a.nodeManager.nodeMap.has(target.parent.id))fail('GROUPED_ANCHOR_REFRESH_NOT_VERIFIED');}
       assertAffectedBindingsUnlocked(endpointIds);
       for(const side of ['start','end'])if(op[side]&&!n.attachProps?.[side]?.id)fail('BOUND_ENDPOINT_REQUIRED:'+side);
-      const t=actionTypes(), p=n.attachProps.clone(),preserved=preserveOtherPaths([n.id]);
       if(!op.start&&!op.end)fail('ANCHOR_REQUIRED');
+      const p=n.attachProps.clone(),path=n.lineProps.clone(),changedSides=new Set();
       for(const side of ['start','end'])if(op[side]){
         const e=op[side], s=['','top','right','bottom','left'].indexOf(e.snap_to), pos=e.position;
         if(s<1||!pos||![pos.x,pos.y].every(v=>Number.isFinite(v)&&v>=0&&v<=1))fail('INVALID_ANCHOR');
         if((s===1&&pos.y!==0)||(s===2&&pos.x!==1)||(s===3&&pos.y!==1)||(s===4&&pos.x!==0))fail('ANCHOR_NOT_ON_EDGE');
-        p[side].snapTo=s;p[side].position={x:pos.x,y:pos.y};
+        p[side].snapTo=s;p[side].position={x:pos.x,y:pos.y};changedSides.add(side);
       }
-      transaction(t,update=>update(n.id,[p]));selected(endpointIds);
-      // A zero move can leave cached line geometry unchanged. Native paired moves
-      // refresh bindings while returning both modules to their original positions.
-      cmd('Move',{dx:1,dy:0});cmd('Move',{dx:-1,dy:0});restoreOtherPaths(t,preserved);verifyBoundGeometry(n);break;
+      setAnchorEndpointGeometry(n,p,path,changedSides);
+      if(stable(p)===stable(n.attachProps.clone())&&stable(path)===stable(n.lineProps.clone()))break;
+      const t=actionTypes();
+      transaction(t,update=>update(n.id,[p,path]));verifyBoundGeometry(n);break;
     }
     case 'reconnect': {
       const n=line(op.id),sides=['start','end'].filter(s=>op[s+'_id']!==undefined),old={};if(!sides.length)fail('RECONNECT_TARGET_REQUIRED');
@@ -611,7 +628,7 @@
   const count=depth()-depthBefore;
   // Resize/reconnect also issue a zero move to update bound geometry: two native transactions.
   const orderKinds=['bring_to_front','send_to_back','bring_forward','send_backward'];
-  const max=(['connect','anchors'].includes(op.kind)?4:op.kind==='reconnect'?3
+  const max=(op.kind==='anchors'?1:op.kind==='connect'?4:op.kind==='reconnect'?3
     :orderKinds.includes(op.kind)?3
     :['move','resize','caption','caption_format','style'].includes(op.kind)?2:1)+(refreshedGroups.length?1:0);
   if(op.kind!=='undo' && (count<0||count>max))fail('UNEXPECTED_TRANSACTION_COUNT');

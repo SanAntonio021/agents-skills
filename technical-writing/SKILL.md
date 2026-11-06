@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: 中文技术方案、会前技术交流稿、系统说明、测试方案、测试记录和结果分析的写作、重构与审校，也负责独立的实验设计、比较方法、结果解释及工程指标可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、会议要讨论什么、接口和参数是什么、测试如何开展、比较是否公平、结果能支持什么结论，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、test_result_analysis 四种模式。
+description: 中文技术方案、会前技术交流稿、系统说明、专利技术交底书、测试方案、测试记录和结果分析的写作、重构与审校，也负责独立的实验设计、比较方法、结果解释及工程指标可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、专利构思如何交底、会议要讨论什么、接口和参数是什么、测试如何开展、比较是否公平、结果能支持什么结论，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、patent_disclosure、test_result_analysis 五种模式。
 ---
 
 # 技术文档写作
@@ -10,7 +10,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 从 [writing-router](../writing-router/SKILL.md) 接收：
 
 - `document_type=technical`
-- `mode=technical_scheme|technical_exchange|system_description|test_result_analysis`
+- `mode=technical_scheme|technical_exchange|system_description|patent_disclosure|test_result_analysis`
 - `edit_scope`、`language`、`loaded_refs`
 
 仅判断技术指标是否可行时，按需读取[指标可行性判断](references/metric-feasibility.md)。独立讨论实验设计、比较方法或结果解释时，按需读取[工程科研检查](references/engineering-validation.md)，直接回答当前问题，不触发写稿、建账本、改项目或连接仪器。论文中的方法与结论审查交给 `paper-review`，复用同一份专业参考。
@@ -76,6 +76,10 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 
 同一对象固定名称。若“平台、设备、模块、链路”代表不同层级，首次出现时说明关系；若只是同义轮换，统一术语。
 
+## `patent_disclosure`
+
+面向专利代理说明构思、技术关系和可实施方案时，读取[专利技术交底书](references/patent-disclosure.md)。先明确拟保护对象和本篇边界，再区分技术问题、技术特征、技术方案与有益效果，按已确认内容组织核心方案、扩展方案和实施例。仅讨论构思时直接讨论；正文确认与写回沿用共同协作流程，不另设确认关口。
+
 ## `test_result_analysis`
 
 按“测试对象—配置与条件—方法—观测结果—解释—限制”组织。结果与解释分开：
@@ -108,6 +112,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 - 采用 `technical_exchange` 时，是否把计算、回读或实测任务误写成会上可确认的问题；
 - 采用 `technical_exchange` 时，是否遗漏真实方案分支，或把已经确定的约束重复写成讨论项；
 - 采用 `technical_exchange` 时，责任、测试和方案说明是否分散重复，导致读者需要跨节拼接同一件事。
+- 采用 `patent_disclosure` 时，是否混淆目的与技术特征、扩展超出已有技术支持、固化了非必要实施细节，或将未核实的专利性与效果写成已确认结论。
 
 状态升级、公式漂移、跨节参数矛盾、虚构测试数据直接判 `fail`。
 
@@ -124,4 +129,5 @@ description: 中文技术方案、会前技术交流稿、系统说明、测试�
 - 结果与解释分开，状态与证据一致；
 - 没有为完整感补造模块、步骤或结论；
 - 采用 `technical_exchange` 时，讨论项能在会上形成明确选择，另行工作均有具体动作和结果；
+- 采用 `patent_disclosure` 时，拟保护对象、必要技术关系和实施方式清楚，扩展方案有技术支持，附图与正文对应，待核实事项未冒充结论；
 - `loaded_refs` 与实际读取一致。

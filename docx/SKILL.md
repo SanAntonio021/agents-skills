@@ -68,6 +68,7 @@ do not reload the entire workflow for each accepted paragraph.
 `tongyong-moren`，无需另行询问；有明确格式要求或指定其他模板时按要求处理，同任务后续沿用。
 已有 Word 的文字回填沿用最新原件的样式与结构，不重新选模板；用户要求调整格式时只修改相应范围。
 模板只控制排版，不擅自增加版本、日期或说明文字。
+按指定模板回填确认正文时，读取[模板回填与原稿对照](references/layout-profiles.md#模板回填与原稿对照)，按栏目锚点映射内容，复用现有校验器区分继承问题和新增问题。
 
 Check the OOXML/package, styles, affected content and unchanged source. Read
 [Numbering and cross-references](references/numbering-references.md) for the common finalizer:

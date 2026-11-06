@@ -1,6 +1,6 @@
 ---
 name: writing-router
-description: 统一写作协作流程，并处理普通中文编辑。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、测试与结果分析、调研报告、会议纪要、中文或英文论文，先确定主稿、修改范围和协作方式，再结合对应专业技能完成正文、检查与写回；也直接处理界面文案、普通中文去 AI 味、删废话和无法直接归类的中文材料。投稿事务、论文停稿审查、文献检索和单纯文件排版由对应专门技能处理。
+description: 统一写作协作流程，并处理普通中文编辑。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、专利技术交底书、测试与结果分析、调研报告、会议纪要、中文或英文论文，先确定主稿、修改范围和协作方式，再结合对应专业技能完成正文、检查与写回；也直接处理界面文案、普通中文去 AI 味、删废话和无法直接归类的中文材料。投稿事务、论文停稿审查、文献检索和单纯文件排版由对应专门技能处理。
 ---
 
 # 通用写作流程与编辑
@@ -53,7 +53,7 @@ description: 统一写作协作流程，并处理普通中文编辑。Use when �
 | `document_type` | `mode` | 主技能 |
 |---|---|---|
 | `project` | `proposal`、`expert_reply`、`final_audit` | [project-writing](../project-writing/SKILL.md) |
-| `technical` | `technical_scheme`、`technical_exchange`、`system_description`、`test_result_analysis` | [technical-writing](../technical-writing/SKILL.md) |
+| `technical` | `technical_scheme`、`technical_exchange`、`system_description`、`patent_disclosure`、`test_result_analysis` | [technical-writing](../technical-writing/SKILL.md) |
 | `research_report` | `evidence_report`、`decision_report`、`final_audit` | [research-report](../research-report/SKILL.md) |
 | `meeting_notes` | `discussion`、`action`、`mixed` | [meeting-notes](../meeting-notes/SKILL.md) |
 | `paper` | `zh_paper`、`en_paper`、`final_audit` | [ieee-manuscript-edit](../ieee-manuscript-edit/SKILL.md) |
@@ -66,6 +66,8 @@ description: 统一写作协作流程，并处理普通中文编辑。Use when �
 3. 仍无法区分且会改变产物时，只问一个最关键的问题；不影响实质结果时按最窄范围继续。
 
 会前方案讨论稿、技术交流材料或待讨论问题清单，目标是区分已有条件、会上决定和另行工作时，使用 `document_type=technical`、`mode=technical_exchange`。会议已经结束，任务是整理实际发言、结论和行动项时，使用 `meeting_notes`。
+
+专利构思讨论、技术交底书起草或审校使用 `document_type=technical`、`mode=patent_disclosure`。仅讨论时沿用当前范围，不自动建稿；专利检索、权利要求及保护范围分析不因进入交底书模式而自动开展。
 
 按表应用对应文体技能的专业要求，共同协作与质量规则持续适用；普通中文直接在本技能完成，不另找写作入口。
 

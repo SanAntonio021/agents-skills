@@ -2082,6 +2082,35 @@ class Runner:
             raise VerificationError('Editor rejected operation or returned an invalid response')
         return value
 
+    def ensure_document_edit_mode(self):
+        """Switch the containing Docx from read mode before native board entry.
+
+        The embedded whiteboard can report ``can_edit=false`` while the
+        containing document is still in its read-mode view.  Only click the
+        uniquely visible, exact document mode control; an absent or ambiguous
+        control is left for the native entry/permission checks to report.
+        """
+        expression = r'''(()=>{
+          const visible = element => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length)
+              && rect.width > 0 && rect.height > 0
+              && style.display !== 'none' && style.visibility !== 'hidden';
+          };
+          const controls = [...document.querySelectorAll('button[data-selector="docs-mode-switch"]')]
+            .filter(visible);
+          if (controls.length !== 1) {
+            return {clicked:false, reason:controls.length ? 'DOCUMENT_MODE_CONTROL_AMBIGUOUS' : 'DOCUMENT_MODE_CONTROL_UNAVAILABLE', count:controls.length};
+          }
+          const control = controls[0];
+          const text = (control.innerText || '').trim();
+          if (text !== '编辑') return {clicked:false, reason:'DOCUMENT_MODE_NOT_READ_MODE', text};
+          control.click();
+          return {clicked:true, text};
+        })()'''
+        return self.call('/v2/tabs/' + self.tab + '/eval', {'expression': expression})
+
     @staticmethod
     def native_save_ready(state, fence=None, minimum_applied_version=None):
         """The legacy page sequence can remain zero while an IO action is queued."""
@@ -2504,10 +2533,13 @@ class Runner:
             return state
 
     def enter_editor(self, state=None):
-        """Call the entry once, then observe the actual fullscreen state."""
+        """Enable document editing, call native entry once, then observe state."""
         with self.time_budget(min(self.timeout, 20)):
             invoked = False
             render_requested = False
+            mode_checked = False
+            mode_clicked = False
+            mode_waits = 0
             while True:
                 self.require_time()
                 if state is None:
@@ -2531,6 +2563,19 @@ class Runner:
                         reason = 'denied' if state.get('can_edit') is False else 'unavailable'
                         raise VerificationError('Editor edit permission is ' + reason)
                     return state
+                if state.get('can_edit') is not True and not mode_checked:
+                    mode_checked = True
+                    mode = self.ensure_document_edit_mode()
+                    value = mode.get('value') if isinstance(mode, dict) else None
+                    if isinstance(value, dict) and value.get('clicked') is True:
+                        mode_clicked = True
+                        state = None
+                        continue
+                if mode_clicked and state.get('can_edit') is not True and not invoked and mode_waits < 8:
+                    mode_waits += 1
+                    time.sleep(self.transport_timeout(0.25))
+                    state = None
+                    continue
                 if not invoked:
                     state = self.editor({'kind':'enter'})
                     invoked = True

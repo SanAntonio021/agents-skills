@@ -16,6 +16,7 @@ class EditorEntry(unittest.TestCase):
         runner.calls = []
         runner.captures = []
         runner.screenshot = lambda timeout: runner.captures.append(timeout)
+        runner.ensure_document_edit_mode = lambda: {'value': {'clicked': False, 'reason': 'TEST_NO_DOCUMENT_MODE'}}
         def editor(op):
             runner.calls.append(op['kind'])
             return {**dict(can_edit=True, resources_loaded=True, entered=False), **observe(op, clock)}
@@ -78,6 +79,20 @@ class EditorEntry(unittest.TestCase):
                 'entered':op['kind']=='enter'})
             self.assertTrue(runner.enter_editor()['can_edit'])
             self.assertEqual(runner.calls, ['inspect', 'enter'])
+
+    def test_read_mode_is_switched_before_native_entry(self):
+        clock = Clock()
+        switched = []
+        def observe(op, _clock):
+            if switched:
+                return {'can_edit': True, 'entered': op['kind'] == 'enter'}
+            return {'can_edit': False, 'entered': False}
+        runner = self.runner(clock, observe)
+        runner.ensure_document_edit_mode = lambda: switched.append(True) or {'value': {'clicked': True}}
+        state = runner.enter_editor()
+        self.assertTrue(state['entered'])
+        self.assertEqual(switched, [True])
+        self.assertEqual(runner.calls, ['inspect', 'inspect', 'enter'])
 
     def test_permission_is_required_after_actual_entry(self):
         for value in (False, None):

@@ -307,8 +307,12 @@ python scripts/run_weekly_skill_review.py record-decision --finding-id <finding-
 
 真实漏用先只进入离线面板和报告，不在首次出现时主动询问。同一技能在相邻两个完整周都出现真实漏用时，
 才进入一次人工复核；技能正文、规则正文、接管摘要和内部上下文不生成候选。不同技能分别计数，证据不完整
-或不是相邻周时不提醒。已逐项核实为误报的 `suspected_missed_use`，即使处于 `deferred` 或 `queued`，也可用当前
+或不是相邻周时不提醒。已逐项核实为误报的 `suspected_missed_use`，即使处于 `deferred`、`queued` 或 `awaiting_decision`，也可用当前
 evidence/proposal fingerprint、`--classification auto --facts-outcome close` 和具体核查证据直接关闭，
-不占用新增待审额度。此例外仅接受扫描原样生成的触发边界提示、`needs_facts=true` 且没有修订方案；
+不占用新增待审额度。此例外仅接受扫描原样生成且没有修订方案的触发边界提示；`needs_facts=false` 本身不阻止事实核查。
 保留原提示、事实记录和历史，不产生修改批准或执行批次。具体修订方案、批准/拒绝请求及其他带方案事项
 仍走原队列；不能借关闭误报绕过审批。重复扫描复用同证据关闭结论，证据变化后重新复核。
+
+旧版本曾把事实关闭误记为 `revision_staged` 时，可提供 `--misrouted-facts-receipt <原始JSON回执>`。
+接口必须核对原回执、当前 finding、证据及方案指纹、原核查理由和自动拼接的待修订内容完全一致，
+且没有批准或执行批次；仅纠正该误路由并保留历史。任何真实方案修改或不匹配证据均拒绝恢复。

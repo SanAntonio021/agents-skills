@@ -341,6 +341,7 @@ python scripts/run_weekly_skill_review.py approve-batch --selections <JSON> --js
 
 融合周检区分扫描建议与事实复核后的明确提案，同证据重扫保留已绑定提案，真实指纹变化仍使批准和批次失效。
 离线面板分开显示触发统计、上游、目录完整性和独立发布回执；总 `complete` 不表示发布成功。
+历史失败项可按周检说明核验当前已发布结果并归入历史，保留原失败及其证据，不改写为当时成功。
 `prepare-execution --finding-id` 可重复精确选择已批准独立项，保留无关未决问题；默认队列门槛不变。
 字段及可选外部阻断报告入口见 [周检说明](references/weekly-review.md#分项完整性与发布回执)。
 

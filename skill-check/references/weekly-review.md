@@ -200,6 +200,20 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 
 内部 fingerprint 用于发现变化。变化后重新核实当前内容、工具来源和授权范围；若实质动作未变，可依据原准确授权重建批次，不向用户要求粘贴哈希。
 
+历史批次因后续发布取代而无法补齐原提交的运行证据时，可通过 `reconcile-execution` 提交
+`kind: current_state` 证据：精确覆盖原授权批次的技能，逐项绑定当前已推送且未被后续内容取代的提交、
+同步与同参数复查回执、原状态文件的完整扫描及具体语义核对。接口现场独立读取 Git blob 和三个
+运行目录的完整文件哈希，不把来源清单复制为运行证据。缺原提交 SHA 的项只接受已由扫描独立解决的
+finding。验证后追加 `superseded_current_verified`、将旧工作流归入历史；保留原 execution 和全部旧回执，
+明确 `original_history_proven=false`。面板显示当前验收通过，不能据此声称原失败操作曾经成功。
+
+证据包用 `scan_evidence` 绑定原始扫描返回、`scan_report_evidence` 绑定该次报告，须与状态内完整
+run 的时间、范围和报告引用一致。`semantic_review_evidence` 按技能列出结论和源码路径的
+`contains` / `absent` 字符串数组。每项 `releases` 保存准确提交、技能、`sync_evidence` 和
+`verify_evidence`；桌面 contract 16 没有旧版 metadata 字段时，还须提供 `metadata_evidence`
+官方技能查询及逐技能 `source_receipts`，核对实际来源、启用状态和外部发布清单。无效 metadata
+不能用这条兼容路径跳过。取消、拒绝或缺少匹配逐项批准的批次不能用于核账。
+
 ## 本地维护范围、定向发现与能力复核
 
 公开根默认沿用 `--skills-root`，私有根默认读取 `--agents-root/private-skills`（存在才启用），也可用

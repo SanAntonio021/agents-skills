@@ -472,6 +472,17 @@ def publication_status(state: dict[str, Any], report_paths: Iterable[Path] = ())
         verified = (outcome == "success" and execution.get("sync_status") == "verified"
                     and bool(SHA40_PATTERN.fullmatch(str(execution.get("remote_sha") or ""))))
         status = "verified" if verified else outcome if outcome in {"failed", "blocked"} else "unknown"
+        current = next((row for row in reversed(finding.get("successor_reconciliations", []))
+                        if row.get("kind") == "current_state"
+                        and row.get("status") == "superseded_current_verified"
+                        and row.get("original_execution_fingerprint") == fingerprint(execution)), None)
+        if current:
+            items.append({"finding_id": finding["id"], "status": "verified", "known": True,
+                          "source": "current_state_reconciliation",
+                          "recorded_at": current["recorded_at"], "original_execution_status": status,
+                          "original_history_proven": False,
+                          "reasons": ["Current release and four layers independently verified; original execution retained as history."]})
+            continue
         items.append({"finding_id": finding["id"], "status": status,
                       "known": status != "unknown", "source": "execution",
                       "recorded_at": execution.get("recorded_at"),

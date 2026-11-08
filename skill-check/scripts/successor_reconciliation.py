@@ -107,10 +107,19 @@ def record(args, api):
                 raise ValueError('finding identity mismatch')
             batch = api.find_batch(state, proposal.get('batch_id'))
             item = api.batch_item(batch, args.finding_id) if batch else None
-            if not item or not batch.get('decided_at'):
+            decision = finding.get('decision') or {}
+            if (not item or not batch.get('decided_at') or not batch.get('execution_root')
+                    or batch.get('status') not in {'executing', 'completed', 'partial_blocked', 'stale'}
+                    or batch.get('decision') not in {None, 'approve', 'approved'}
+                    or decision.get('value') != 'approved'
+                    or any(decision.get(k) != item.get(k) for k in ('evidence_fingerprint', 'proposal_fingerprint'))
+                    or item.get('execution') != finding['execution']):
                 raise ValueError('authorized frozen item unavailable')
             if sorted(item.get('skills', [])) != sorted(proposal.get('skills', [])):
                 raise ValueError('frozen Skill scope mismatch')
+            if proposal.get('kind') == 'current_state':
+                from current_state_reconciliation import record_current
+                return record_current(args, api, state, finding, proposal, item)
             for key in ('sync', 'verify', 'scan'):
                 ref = proposal.get(key + '_evidence', {})
                 proposal[key] = load_evidence(ref.get('path', ''), ref.get('sha256'), args.reports_root)

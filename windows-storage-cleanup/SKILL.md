@@ -6,7 +6,8 @@ description: >
   Use whenever the user says a Windows drive is full, asks what can be deleted, wants C/D drive cleanup,
   mentions WizTree or large files, asks whether local/cloud duplicates are safe to remove, or needs pagefile
   space advice. Also use for adding an SSD, migrating a Windows data drive, swapping drive letters,
-  or expanding C after migration. Trigger even when the user only asks to review or assess feasibility.
+  or expanding C after migration, and for cleaning task-generated temporary or test artifacts.
+  Trigger even when the user only asks to review or assess feasibility.
 ---
 
 # Windows 存储空间清理
@@ -19,7 +20,9 @@ description: >
 
 先读取当前任务、文件和相关应用状态，复用已确定的目标盘、保护范围和清单。“清理某盘”先形成候选，不等于批准删除一切；准确授权覆盖同批处理及必要验证，仅新增范围、改变处理方式或无法自行查明的实质问题需要用户决定。
 
-只读扫描只读取容量、目录大小、文件元数据和已有材料；不调用应用 `cleanup prepare`、`purge`、`vacuum` 或 `history-prune`，不移动文件、卸载软件或修改设置。明确要求应用历史审查时，按下方专项入口处理。技能自身的隔离测试不属于用户清理范围，测试结束必须自动清场；成功和失败都清理本轮 sandbox 及可精确配对的测试回收条，失败先输出摘要。
+只读扫描只读取容量、目录大小、文件元数据和已有材料；不调用应用 `cleanup prepare`、`purge`、`vacuum` 或 `history-prune`，不移动文件、卸载软件或修改设置。明确要求应用历史审查时，按下方专项入口处理。
+
+任务自产临时样本的清场按 [临时测试清场](references/execution-tool.md#temporary-test-cleanup) 执行；先保存必要证据，再自动处理本轮准确范围，测试失败也要清场。已有测试程序使用自身清场入口，额外样本复用通用执行工具，不临时拼接递归强删命令。清场被拒绝或文件变化时保留现场并报告，不能把测试通过写成清场成功。
 
 ## 工作流程
 

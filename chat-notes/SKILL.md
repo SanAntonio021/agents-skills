@@ -35,7 +35,7 @@ description: 仅在用户显式调用 `$chat-notes` 或明确要求按本技能�
 
 **怎么做**
 
-Markdown 的结构、引用和历史处理按[维护规范](references/markdown-maintenance.md)执行。事实保护、重复判断、修改强度和停笔条件按 [common-quality.md](../writing-router/references/common-quality.md) 执行。
+Markdown 正文按[正文写法](../writing-router/references/markdown-writing.md)组织；跨文档职责、引用和历史处理按[文档组织](../writing-router/references/markdown-document-organization.md)执行。事实保护、重复判断、修改强度和停笔条件按 [common-quality.md](../writing-router/references/common-quality.md) 执行。
 
 先判断需要哪种处理：
 

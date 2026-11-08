@@ -8,13 +8,13 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 本技能负责把一个或多个项目目录整理成可以继续使用的工作区。完成标准是有效内容完整、新位置的说明和引用可用、已处理的旧目录退役，恢复材料集中保存。
 
-涉及 Markdown 入口、专题说明或引用整合时，按 `chat-notes` 技能中的 `references/markdown-maintenance.md` 判断职责、历史归位、重复处理和引用验收；目录迁移、Git 恢复和退役仍按本技能的专门规则执行。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`。
+涉及 Markdown 入口、专题说明或引用整合时，按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md) 判断职责、历史归位、重复处理和引用验收；Markdown 正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理。目录迁移、Git 恢复和退役仍按本技能的专门规则执行。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`。
 
 ## 适用场景
 
 本技能处理新建普通项目、长期资料主档、多个目录或仓库之间的同一项目整合，以及独立项目分组。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`；普通单文件操作、整盘清理和释放磁盘空间使用对应技能。
 
-新建项目时，按用户指定位置、项目已有结构、专业技能约定的顺序确定正式位置。正式内容与过程文件是两种性质，不强制建立两套目录，也不预建无内容的分类。README、项目规范、AGENTS 和 Markdown 文档的写法按 `markdown-maintenance` 处理。
+新建项目时，按用户指定位置、项目已有结构、专业技能约定的顺序确定正式位置。正式内容与过程文件是两种性质，不强制建立两套目录，也不预建无内容的分类。README、项目规范、AGENTS 和 Markdown 文档的正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理；涉及多份文档的职责和引用时，同时按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)处理。
 
 `merge` 用于同一逻辑项目或一个来源与已有目标整合，未解决的异内容保留为 `hold_conflict`。`group` 用于多个独立但同类项目，各自进入共同父目录下独立的 `target_name`；不能仅凭目录名相似自动合并。
 
@@ -40,7 +40,7 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 目录映射：`merge` 默认把来源相对路径直接映射到目标，显式 `mapping_rules` 可按前缀替换。`group` 固定映射为 `<target_root>/<target_name>/<relative_path>`，保持项目内部结构，不接受 `mapping_rules`，也不自动平铺项目内容。已存在目标参与盘点；先展示可读目录树，复用已经明确的目录决定，`mapping_rules` 和整合清单随计划锁定。
 
-内容合并：按 `chat-notes` 技能中的 `references/markdown-maintenance.md` 合并仍有用的说明、记录和引用，更新新入口、路径和用法；历史记录保留当时事实。检查 Markdown 链接与图片、代码和配置路径、论文及其他工程资源引用，按明确映射修改，优先使用可用的相对路径；外部 URL、Zotero 标识和历史叙述不作机械替换。内容相同但用途不同的文件分别保存，用途不明的二进制原样保留。
+内容合并：按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)合并仍有用的说明、记录和引用，更新新入口、路径和用法；历史记录保留当时事实。检查 Markdown 链接与图片、代码和配置路径、论文及其他工程资源引用，按明确映射修改，优先使用可用的相对路径；外部 URL、Zotero 标识和历史叙述不作机械替换。内容相同但用途不同的文件分别保存，用途不明的二进制原样保留。
 
 版本与清单：`version_policy=integrate` 保存全部有效内容，不默认建立旧版本副本。每份改写输入记录原哈希、恢复位置和内容去向。
 

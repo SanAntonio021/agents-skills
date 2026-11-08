@@ -9,7 +9,7 @@ description: 统一写作协作流程，并处理普通中文编辑。Use when �
 
 统一管理如何协作、确认和交付；专业技能负责具体文体的结构、论证、证据和检查要求。进入专业技能后，共同流程继续有效；普通中文编辑由本技能直接完成。已有决定与准确授权继续沿用。
 
-涉及 Markdown 的结构重写、整合、入口维护或跨文档引用时，按 [Markdown 文档维护规范](../../docs/markdown-maintenance.md) 判断文档职责、历史归位、重复处理和通用验收；句子质量和具体文体要求仍按本技能及下游专业技能执行。
+Markdown 正文写作或实质修改时，按 [Markdown 正文写法](references/markdown-writing.md)组织标题、段落和并列内容。整合入口、专题记录、历史或跨文档引用时，再按 [Markdown 文档组织](references/markdown-document-organization.md)确定职责、归属和验收；句子质量和具体文体要求仍按本技能及下游专业技能执行。
 
 ## 工作流程
 

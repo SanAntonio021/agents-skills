@@ -232,6 +232,71 @@ def test_legacy_false_positive_closes_preserving_history(tmp_path, status, templ
         k:v for k,v in state["findings"].items() if k != finding["id"]}
 
 
+def test_legacy_false_positive_ignores_old_completed_batch_for_new_evidence(tmp_path):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    finding.update(needs_facts=False, status="deferred")
+    subject = finding["subject"]
+    finding["proposal"] = REVIEW.proposal(
+        "复核真实漏用",
+        f"{subject} 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+        [subject], skills=[subject],
+    )
+    finding["proposal_fingerprint"] = REVIEW.fingerprint(finding["proposal"])
+    state["batches"].append({
+        "id": "old-batch",
+        "status": "success",
+        "items": [{
+            "finding_id": finding["id"],
+            "evidence_fingerprint": "old-evidence",
+            "proposal_fingerprint": "old-proposal",
+            "source_fingerprint": "old-source",
+            "status": "success",
+        }],
+    })
+    finding["history"] = [{
+        "event": "old_scan",
+        "previous": {
+            "evidence_fingerprint": "old-evidence",
+            "proposal_fingerprint": "old-proposal",
+            "source_fingerprint": "old-source",
+            "status": "completed",
+            "execution": {"outcome": "success"},
+        },
+    }]
+    REVIEW.save_state(path, state)
+
+    payload, code = REVIEW.record_decision_command(
+        command(path, finding, "--facts-outcome", "close")
+    )
+
+    assert code == 0 and payload["next_status"] == "closed"
+
+
+def test_legacy_false_positive_rejects_matching_completed_batch(tmp_path):
+    path, state, finding = setup_trigger_hint(tmp_path)
+    finding.update(needs_facts=False, status="deferred")
+    state["batches"].append({
+        "id": "current-batch",
+        "status": "success",
+        "items": [{
+            "finding_id": finding["id"],
+            "evidence_fingerprint": finding["evidence_fingerprint"],
+            "proposal_fingerprint": finding["proposal_fingerprint"],
+            "source_fingerprint": finding["source_fingerprint"],
+            "status": "success",
+        }],
+    })
+    REVIEW.save_state(path, state)
+
+    before = path.read_bytes()
+    payload, code = REVIEW.record_decision_command(
+        command(path, finding, "--facts-outcome", "close")
+    )
+
+    assert code == 2 and payload["status"] == "invalid_state"
+    assert path.read_bytes() == before
+
+
 @pytest.mark.parametrize("case", [
     "wait", "propose", "approve", "reject", "answer_approve", "answer_reject", "empty_answer",
     "revised", "changed_summary", "changed_target", "extra_proposal_key", "no_proposal",

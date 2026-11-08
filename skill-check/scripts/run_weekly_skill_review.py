@@ -3322,7 +3322,41 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 )
             )
             # Legacy scan hints used needs_facts=False. Only untouched hints
-            # without a user review or any execution-batch reference may close.
+            # without a user review or a matching current-evidence batch may
+            # close. Historical batches for an older evidence/proposal/source
+            # triple do not block factual resolution of a new observation.
+            current_fingerprints = {
+                "evidence_fingerprint": finding.get("evidence_fingerprint"),
+                "proposal_fingerprint": finding.get("proposal_fingerprint"),
+                "source_fingerprint": finding.get("source_fingerprint"),
+            }
+
+            def matches_current_fingerprints(snapshot: dict[str, Any]) -> bool:
+                return all(
+                    snapshot.get(key) == value
+                    for key, value in current_fingerprints.items()
+                )
+
+            def history_snapshot_blocks(snapshot: dict[str, Any]) -> bool:
+                has_blocking_record = (
+                    snapshot.get("status") in {"approved", "execution_pending", "completed"}
+                    or (snapshot.get("decision") or {}).get("value") == "approved"
+                    or any(snapshot.get(key) is not None for key in (
+                        "reviewed_proposal", "approval", "execution", "batch_id",
+                        "pending_revision", "requested_adjustment",
+                    ))
+                )
+                if not has_blocking_record:
+                    return False
+                if matches_current_fingerprints(snapshot):
+                    return True
+                # Fingerprint-less legacy records cannot be safely attributed to
+                # an older observation. Keep the historical guard conservative.
+                keys = ("evidence_fingerprint", "proposal_fingerprint", "source_fingerprint")
+                if not all(key in snapshot for key in keys):
+                    return True
+                return False
+
             legacy_close_trigger_hint = (
                 close_trigger_hint
                 and finding.get("needs_facts") is False
@@ -3331,14 +3365,8 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 and all(
                     isinstance(entry, dict)
                     and isinstance(entry.get("previous", {}), dict)
-                    and all(
-                        snapshot.get("status") not in {"approved", "execution_pending", "completed"}
-                        and isinstance(snapshot.get("decision") or {}, dict)
-                        and (snapshot.get("decision") or {}).get("value") != "approved"
-                        and not any(snapshot.get(key) is not None for key in (
-                            "reviewed_proposal", "approval", "execution", "batch_id",
-                            "pending_revision", "requested_adjustment",
-                        ))
+                    and not any(
+                        history_snapshot_blocks(snapshot)
                         for snapshot in (entry, entry.get("previous", {}))
                     )
                     for entry in finding.get("history", [])
@@ -3350,7 +3378,22 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                 ))
                 and not any(
                     item.get("finding_id") == finding["id"]
-                    for batch in state["batches"] for item in batch["items"]
+                    and (
+                        matches_current_fingerprints(item)
+                        or (
+                            (
+                                batch.get("status") in {"approved", "execution_pending", "completed", "success"}
+                                or item.get("status") in {"approved", "execution_pending", "completed", "success"}
+                            )
+                            and not all(key in item for key in (
+                                "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint"
+                            ))
+                        )
+                    )
+                    for batch in state["batches"]
+                    if isinstance(batch, dict)
+                    for item in (batch.get("items") or [])
+                    if isinstance(item, dict)
                 )
             )
             if resolve_queued_facts and not (

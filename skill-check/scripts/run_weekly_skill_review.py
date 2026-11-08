@@ -3036,6 +3036,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="auto",
     )
     record.add_argument("--facts-outcome", choices=("close", "propose", "wait"))
+    record.add_argument("--misrouted-facts-receipt", type=Path,
+                        help="Original revision_staged receipt for correcting an unchanged scan hint misrouted by an older version")
     record.add_argument("--revised-proposal-json")
 
     batch_approve = subparsers.add_parser(
@@ -3321,6 +3323,46 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                         ))
                 )
             )
+            # Recovery is opt-in and bound to the original failed fact-closure
+            # receipt. Never discard a material revision or an approval.
+            correcting_facts_route = False
+            receipt_path = args.misrouted_facts_receipt
+            if receipt_path is not None:
+                try:
+                    rows = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+                    expected_revision = copy.deepcopy(finding.get("proposal") or {})
+                    adjustment = finding.get("requested_adjustment")
+                    expected_revision["summary"] = compact_text(
+                        f"{expected_revision.get('summary', finding.get('title', ''))}；按用户意见调整：{adjustment}",
+                        1000,
+                    )
+                    correcting_facts_route = (
+                        close_trigger_hint and status == "revising"
+                        and bool(adjustment)
+                        and finding.get("pending_revision") == expected_revision
+                        and isinstance(rows, list)
+                        and any(
+                            isinstance(row, dict)
+                            and row.get("finding_id") == finding["id"]
+                            and row.get("evidence") == finding.get("evidence_fingerprint")
+                            and row.get("reason") == adjustment
+                            and row.get("exit_code") == 0
+                            and isinstance(row.get("receipt"), dict)
+                            and row["receipt"].get("status") == "revision_staged"
+                            and row["receipt"].get("invalidated_batches") == []
+                            and row["receipt"].get("next_question", {}).get("finding_id") == finding["id"]
+                            and row["receipt"].get("next_question", {}).get("expected_proposal_fingerprint") == finding.get("proposal_fingerprint")
+                            and row["receipt"].get("next_question", {}).get("expected_evidence_fingerprint") == finding.get("evidence_fingerprint")
+                            and row["receipt"].get("next_question", {}).get("proposal") == expected_revision
+                            for row in rows
+                        )
+                    )
+                except (OSError, ValueError, TypeError):
+                    correcting_facts_route = False
+                if not correcting_facts_route:
+                    return {"status": "invalid_state", "error": "receipt does not prove an unchanged misrouted fact closure"}, 2
+            if close_trigger_hint and (status == "awaiting_decision" or correcting_facts_route):
+                resolve_queued_facts = True
             # Legacy scan hints used needs_facts=False. Only untouched hints
             # without a user review or a matching current-evidence batch may
             # close. Historical batches for an older evidence/proposal/source
@@ -3371,10 +3413,14 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     )
                     for entry in finding.get("history", [])
                 )
-                and status in {"deferred", "queued", "waiting_evidence"}
+                and (status in {"deferred", "queued", "waiting_evidence", "awaiting_decision"}
+                     or correcting_facts_route)
                 and not any(finding.get(key) is not None for key in (
                     "reviewed_proposal", "decision", "approval", "batch_id",
-                    "pending_revision", "requested_adjustment", "execution",
+                    "execution",
+                ))
+                and (correcting_facts_route or not any(
+                    finding.get(key) is not None for key in ("pending_revision", "requested_adjustment")
                 ))
                 and not any(
                     item.get("finding_id") == finding["id"]
@@ -3410,7 +3456,22 @@ def record_decision_command(args: argparse.Namespace) -> tuple[dict[str, Any], i
                     "error": "direct fact resolution requires a facts-only finding or closing an unchanged scan-generated trigger hint",
                 }, 2
 
+            if args.facts_outcome is not None and status != "facts" and not resolve_queued_facts:
+                return {"status": "invalid_state", "error": "fact outcome cannot be routed to a proposal decision"}, 2
+
             if status == "facts" or resolve_queued_facts:
+                if correcting_facts_route:
+                    finding.setdefault("history", []).append({
+                        "event": "misrouted_fact_closure_corrected",
+                        "recorded_at": timestamp,
+                        "receipt_path": str(receipt_path.resolve()),
+                        "previous": {key: copy.deepcopy(finding.get(key)) for key in (
+                            "status", "pending_revision", "requested_adjustment",
+                            "evidence_fingerprint", "proposal_fingerprint", "source_fingerprint",
+                        )},
+                    })
+                    finding.pop("pending_revision", None)
+                    finding.pop("requested_adjustment", None)
                 answer_summary = compact_text(args.reason or args.answer)
                 if args.facts_outcome is None and classification in {"approve", "reject"}:
                     if classification == "approve" and finding.get("proposal_fingerprint") is None:

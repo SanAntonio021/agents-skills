@@ -676,6 +676,76 @@ class WeeklySkillReviewTests(unittest.TestCase):
         self.assertEqual(REVIEW.classify_answer("没看懂"), "explain")
         self.assertEqual(REVIEW.classify_answer("可以，但只改触发边界"), "adjust")
 
+    def test_scan_hint_fact_closure_and_receipt_bound_recovery(self) -> None:
+        for mode in ("awaiting", "recover", "material_revision", "bad_receipt", "approved"):
+            with self.subTest(mode=mode):
+                item = self.observation("alpha")
+                item["kind"] = "suspected_missed_use"
+                item["proposal"] = REVIEW.proposal(
+                    "复核真实漏用",
+                    "alpha 在相邻两个完整周均出现真实漏用；先核对是否为触发描述或执行遗漏，再形成修改建议。",
+                    ["alpha"], skills=["alpha"],
+                )
+                item["proposal_fingerprint"] = REVIEW.fingerprint(item["proposal"])
+                self.seed([item])
+                question, _ = self.invoke("next-question")
+                extra = []
+                if mode != "awaiting":
+                    result, code = self.invoke(
+                        "record-decision", "--finding-id", item["id"],
+                        "--expected-evidence-fingerprint", item["evidence_fingerprint"],
+                        "--expected-proposal-fingerprint", item["proposal_fingerprint"],
+                        "--classification", "adjust", "--answer", "已核实为规则引用",
+                    )
+                    self.assertEqual(code, 0)
+                    receipt = self.root / "misroute.json"
+                    rows = [{"finding_id": item["id"], "evidence": item["evidence_fingerprint"],
+                             "reason": "已核实为规则引用", "exit_code": 0, "receipt": result}]
+                    if mode == "bad_receipt":
+                        rows[0]["evidence"] = "stale"
+                    receipt.write_text(json.dumps(rows), encoding="utf-8")
+                    extra = ["--misrouted-facts-receipt", str(receipt)]
+                    if mode in {"material_revision", "approved"}:
+                        state = self.load()
+                        finding = state["findings"][item["id"]]
+                        if mode == "material_revision":
+                            finding["pending_revision"]["targets"] = ["beta"]
+                        else:
+                            finding["approval"] = {"value": "approved"}
+                        self.save(state)
+                before = self.state_path.read_bytes()
+                result, code = self.invoke(
+                    "record-decision", "--finding-id", item["id"],
+                    "--expected-evidence-fingerprint", item["evidence_fingerprint"],
+                    "--expected-proposal-fingerprint", item["proposal_fingerprint"],
+                    "--classification", "auto", "--facts-outcome", "close",
+                    "--answer", "已核实为规则引用", *extra,
+                )
+                if mode in {"awaiting", "recover"}:
+                    self.assertEqual(code, 0, result)
+                    finding = self.load()["findings"][item["id"]]
+                    self.assertEqual(finding["status"], "closed")
+                    self.assertNotIn("pending_revision", finding)
+                    if mode == "recover":
+                        self.assertEqual(finding["history"][-1]["event"], "misrouted_fact_closure_corrected")
+                else:
+                    self.assertEqual(code, 2, result)
+                    self.assertEqual(before, self.state_path.read_bytes())
+
+    def test_fact_outcome_never_becomes_proposal_adjustment(self) -> None:
+        item = self.observation("alpha")
+        self.seed([item])
+        question, _ = self.invoke("next-question")
+        before = self.state_path.read_bytes()
+        result, code = self.invoke(
+            "record-decision", "--finding-id", item["id"],
+            "--expected-evidence-fingerprint", item["evidence_fingerprint"],
+            "--expected-proposal-fingerprint", item["proposal_fingerprint"],
+            "--answer", "事实关闭", "--facts-outcome", "close",
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(before, self.state_path.read_bytes())
+
     def test_closed_hygiene_fact_is_reused_only_for_the_same_paths(self) -> None:
         paths = ["过程文件/a", "过程文件/b"]
         observation = REVIEW.make_observation(

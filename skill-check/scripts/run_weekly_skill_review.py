@@ -3086,6 +3086,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="not_run",
     )
     execution.add_argument("--synced-skill", action="append", default=[])
+    reconcile = subparsers.add_parser('reconcile-execution', help='Append verified successor evidence; preserve original history.')
+    add_state_arguments(reconcile)
+    reconcile.add_argument('--finding-id', required=True)
+    reconcile.add_argument('--skills-root', type=Path, required=True)
+    reconcile.add_argument('--reports-root', type=Path, required=True)
+    reconcile.add_argument('--evidence', type=Path, required=True)
+    reconcile.add_argument('--expected-evidence-sha256', required=True)
     return normalize_cli_fingerprints(parser.parse_args(argv))
 
 
@@ -4396,6 +4403,7 @@ def render_plain(payload: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import successor_reconciliation
     args = parse_args(argv)
     handlers = {
         "scan": scan_command,
@@ -4404,6 +4412,7 @@ def main(argv: list[str] | None = None) -> int:
         "approve-batch": record_batch_decisions,
         "prepare-execution": prepare_execution_command,
         "record-execution": record_execution_command,
+        "reconcile-execution": lambda args: successor_reconciliation.record(args, sys.modules[__name__]),
     }
     payload, exit_code = handlers[args.command](args)
     if args.json:

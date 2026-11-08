@@ -160,3 +160,29 @@ def test_benign_source_observation_retires_prior_review_required(tmp_path):
     assert finding["status"] == "archived"
     assert finding["archive_reason"]
     assert any(row.get("event") == "archived" for row in finding["history"])
+
+
+def test_partial_report_retires_old_source_diagnostic_when_subject_has_new_observation(tmp_path):
+    old = REVIEW.make_observation(
+        kind="upstream_diagnostic", source="upstream", subject="beta:source",
+        purpose="repair-mirror_blocked", severity="critical", title="old",
+        evidence={"status": "mirror_blocked", "error": "timeout"},
+        evidence_summary="old mirror timeout",
+        suggested_proposal=REVIEW.proposal("repair", "repair mirror", ["agent-rules"], skills=["agent-rules"]),
+        report_refs=["upstream-old.json"], skills_root=tmp_path,
+    )
+    new = REVIEW.make_observation(
+        kind="upstream_review_required", source="upstream", subject="beta:source",
+        purpose="prepare-isolated-candidate", severity="medium", title="new",
+        evidence={"status": "review_required", "changed": ["docs/schema.md"]},
+        evidence_summary="new source change",
+        suggested_proposal=REVIEW.proposal("prepare", "prepare candidate", ["beta"], skills=["beta"]),
+        report_refs=["upstream-new.json"], skills_root=tmp_path,
+    )
+    state = REVIEW.new_state()
+    REVIEW.merge_observations(state, [old], "2026-09-01")
+    state["findings"][old["id"]]["status"] = "awaiting_decision"
+    REVIEW.merge_observations(state, [new], "2026-09-08", authoritative_sources=set())
+    finding = state["findings"][old["id"]]
+    assert finding["status"] == "archived"
+    assert "superseded" in finding["archive_reason"]

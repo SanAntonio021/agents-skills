@@ -2428,6 +2428,38 @@ def merge_observations(
     for finding_id, finding in findings.items():
         if finding_id in seen_ids:
             continue
+        # A partial upstream report may still contain a fresh, source-level
+        # observation for one subject while other mirrors are unavailable. In
+        # that case retire an older pending diagnostic for the same source
+        # object; keeping it at the head of the queue would ask the user to
+        # repair an already recovered mirror. Unseen subjects remain pending
+        # because the incomplete component is not authoritative for them.
+        if (
+            finding.get("source") == "upstream"
+            and finding.get("status") in {
+                "awaiting_decision", "deferred", "queued", "facts",
+                "revising", "waiting_evidence", "observed",
+            }
+            and not finding.get("execution")
+            and not finding.get("decision")
+            and any(
+                observation.get("source") == "upstream"
+                and observation.get("subject") == finding.get("subject")
+                and observation.get("kind") in {
+                    "upstream_review_required",
+                    "upstream_candidate",
+                    "upstream_source_benign",
+                }
+                and observation.get("kind") != finding.get("kind")
+                for observation in observations
+            )
+        ):
+            archive_finding(
+                finding,
+                date,
+                "superseded by a newer observation for the same upstream source object",
+            )
+            continue
         if finding.get("source") not in authoritative_sources:
             continue
         if finding.get("status") in {"execution_failed", "retry_pending", "completed"}:

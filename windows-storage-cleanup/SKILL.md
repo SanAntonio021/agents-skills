@@ -5,12 +5,15 @@ description: >
   active-process protection, duplicate and backup verification, Recycle Bin staging, and post-cleanup checks.
   Use whenever the user says a Windows drive is full, asks what can be deleted, wants C/D drive cleanup,
   mentions WizTree or large files, asks whether local/cloud duplicates are safe to remove, or needs pagefile
-  space advice. Trigger even when the user only asks to review candidates before deleting anything.
+  space advice. Also use for adding an SSD, migrating a Windows data drive, swapping drive letters,
+  or expanding C after migration. Trigger even when the user only asks to review or assess feasibility.
 ---
 
 # Windows 存储空间清理
 
 默认先充分扫描和核验，再汇总一份清单、一次批量确认，按准确授权连续完成清理并核对实际释放量。内部扫描与执行可以分批，不把内部批次变成多轮用户确认。下列流程按任务使用；执行专项操作前读取对应参考章节，不为普通占用查询加载全部资料。
+
+加装 SSD、迁移数据盘、换盘符或迁移后扩容 C 盘时，先读 [SSD 数据盘迁移](references/ssd-migration.md)，按检查、复制、补拷、切换和重启验收推进。普通清理继续使用下方流程；文件清理执行器不用于分区迁移。
 
 ## 范围与授权
 

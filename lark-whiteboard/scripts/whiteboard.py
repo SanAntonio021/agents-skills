@@ -2500,30 +2500,42 @@ class Runner:
         with self.time_budget(min(self.timeout, 20)):
             state = self.hydrate(raw)
             if enter:
-                self.enter_editor(state)
+                state = self.enter_editor(state)
             return state
 
     def enter_editor(self, state=None):
         """Call the entry once, then observe the actual fullscreen state."""
         with self.time_budget(min(self.timeout, 20)):
             invoked = False
+            render_requested = False
             while True:
+                self.require_time()
                 if state is None:
                     state = self.editor({'kind':'inspect'})
                     self.require_time()
-                if state.get('can_edit') is not True:
-                    reason = 'denied' if state.get('can_edit') is False else 'unavailable'
-                    raise VerificationError('Editor edit permission is ' + reason)
-                if state.get('resources_loaded') is True:
-                    if state.get('entered') is True:
-                        return state
-                    if not invoked:
-                        state = self.editor({'kind':'enter'})
-                        invoked = True
+                if state.get('resources_loaded') is False:
+                    if not render_requested:
+                        # A background tab can pause its first frame until capture.
+                        render_requested = True
+                        self.screenshot(timeout=self.transport_timeout(5))
                         self.require_time()
+                        state = None
                         continue
-                elif state.get('resources_loaded') is not False:
+                    time.sleep(self.transport_timeout(0.25))
+                    state = None
+                    continue
+                if state.get('resources_loaded') is not True:
                     raise VerificationError('Editor resource-loading evidence is unavailable')
+                if state.get('entered') is True:
+                    if state.get('can_edit') is not True:
+                        reason = 'denied' if state.get('can_edit') is False else 'unavailable'
+                        raise VerificationError('Editor edit permission is ' + reason)
+                    return state
+                if not invoked:
+                    state = self.editor({'kind':'enter'})
+                    invoked = True
+                    self.require_time()
+                    continue
                 time.sleep(self.transport_timeout(0.25))
                 state = None
 

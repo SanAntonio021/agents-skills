@@ -191,7 +191,9 @@
   if(signature==='73a62bde'&&!['enter','observe','canvas_preview','text','caption','caption_position',
     'move','resize','bring_to_front','reconnect','connect','anchors'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
   const readiness=entryState();
-  if(readiness.can_edit!==true)fail(readiness.can_edit===false?'EDITOR_PERMISSION_DENIED':'EDITOR_PERMISSION_UNAVAILABLE');
+  // Embedded preview uses BLOCK mode; final permission is available after entry.
+  if((op.kind!=='enter'||readiness.entered)&&readiness.can_edit!==true)
+    fail(readiness.can_edit===false?'EDITOR_PERMISSION_DENIED':'EDITOR_PERMISSION_UNAVAILABLE');
   if(readiness.resources_loaded!==true)fail('EDITOR_RESOURCES_NOT_LOADED');
   if(op.kind!=='enter'&&!readiness.entered)fail('EDITOR_NOT_ENTERED');
   const saveBefore=nativeSave();

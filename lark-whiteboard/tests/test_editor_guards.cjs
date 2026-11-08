@@ -36,8 +36,15 @@ const notEntered=run({kind:'move',ids:['a'],dx:1,dy:0});
 assert.match(notEntered.adapter_error,/EDITOR_NOT_ENTERED/);assert.equal(notEntered.content_write_started,false);
 const noOpEntry=run({kind:'enter'});
 assert.equal(noOpEntry.entered,false);assert.equal(noOpEntry.entry_invoked,true);assert.equal(entryCalls,1);
+for(const value of [false,undefined]){
+  app.docState.permission.canEdit=value;
+  const previewEntry=run({kind:'enter'});
+  assert.equal(previewEntry.entry_invoked,true);assert.equal(previewEntry.content_write_started,false);
+  assert.match(run({kind:'move',ids:['a'],dx:1,dy:0}).adapter_error,/EDITOR_PERMISSION_/);
+}
+app.docState.permission.canEdit=true;
 entered=true;
-assert.equal(run({kind:'enter'}).entry_invoked,false);assert.equal(entryCalls,1);assert.equal(contentCalls,0);
+assert.equal(run({kind:'enter'}).entry_invoked,false);assert.equal(entryCalls,3);assert.equal(contentCalls,0);
 console.log('PASS: permission, resources and actual entry block content; no-op entry stays observable');
 a.getLineAttachPoint=()=>({x:200,y:30});b.getLineAttachPoint=()=>({x:200,y:30});
 let geometry=adapter({...req,operation:{kind:'inspect'}}).binding_geometry.find(v=>v.id==='c');

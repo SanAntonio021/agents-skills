@@ -14,6 +14,8 @@ class EditorEntry(unittest.TestCase):
         runner = Runner.__new__(Runner)
         runner.timeout = 3
         runner.calls = []
+        runner.captures = []
+        runner.screenshot = lambda timeout: runner.captures.append(timeout)
         def editor(op):
             runner.calls.append(op['kind'])
             return {**dict(can_edit=True, resources_loaded=True, entered=False), **observe(op, clock)}
@@ -46,13 +48,87 @@ class EditorEntry(unittest.TestCase):
         self.assertEqual(clock.now, 1)
         self.assertEqual(runner.calls[-1], 'enter')
 
-    def test_denied_or_missing_permission_never_invokes_entry(self):
+    def test_loading_false_permission_waits_until_resources_are_loaded(self):
+        clock = Clock()
+        def observe(op,c):
+            if c.now < 1:
+                return {'can_edit':False, 'resources_loaded':False}
+            return {'can_edit':True, 'resources_loaded':True, 'entered':op['kind']=='enter'}
+        runner = self.runner(clock, observe)
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            state = runner.enter_editor()
+        self.assertTrue(state['entered'])
+        self.assertEqual(clock.now, 1)
+        self.assertEqual(runner.calls.count('enter'), 1)
+
+    def test_loading_false_permission_times_out_without_entry(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'can_edit':False, 'resources_loaded':False})
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            with self.assertRaises(DeadlineExceeded):
+                runner.enter_editor()
+        self.assertEqual(runner.calls.count('enter'), 0)
+        self.assertEqual(clock.now, 3)
+
+    def test_preview_permission_does_not_block_entry(self):
         for value in (False, None):
             clock = Clock()
-            runner = self.runner(clock, lambda op,c: {'can_edit':value})
+            runner = self.runner(clock, lambda op,c: {
+                'can_edit':True if op['kind']=='enter' else value,
+                'entered':op['kind']=='enter'})
+            self.assertTrue(runner.enter_editor()['can_edit'])
+            self.assertEqual(runner.calls, ['inspect', 'enter'])
+
+    def test_permission_is_required_after_actual_entry(self):
+        for value in (False, None):
+            clock = Clock()
+            runner = self.runner(clock, lambda op,c: {
+                'can_edit':value, 'entered':op['kind']=='enter'})
+            with self.assertRaisesRegex(VerificationError, 'permission'):
+                runner.enter_editor()
+            self.assertEqual(runner.calls, ['inspect', 'enter'])
+
+    def test_already_entered_denied_or_missing_permission_never_reenters(self):
+        for value in (False, None):
+            clock = Clock()
+            runner = self.runner(clock, lambda op,c: {'can_edit':value, 'entered':True})
             with self.assertRaisesRegex(VerificationError, 'permission'):
                 runner.enter_editor()
             self.assertEqual(runner.calls, ['inspect'])
+
+    def test_one_background_capture_resumes_first_frame(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {
+            'resources_loaded':bool(runner.captures), 'entered':op['kind']=='enter'})
+        self.assertTrue(runner.enter_editor()['entered'])
+        self.assertEqual(len(runner.captures), 1)
+        self.assertEqual(runner.calls, ['inspect', 'inspect', 'enter'])
+
+    def test_capture_is_not_repeated_when_loading_stays_pending(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'resources_loaded':False})
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            with self.assertRaises(DeadlineExceeded):
+                runner.enter_editor()
+        self.assertEqual(len(runner.captures), 1)
+        self.assertNotIn('enter', runner.calls)
+
+    def test_late_capture_receipt_is_rejected(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'resources_loaded':False})
+        runner.screenshot = lambda timeout: clock.sleep(3)
+        with patch('whiteboard.time.monotonic', clock.monotonic):
+            with self.assertRaises(DeadlineExceeded):
+                runner.enter_editor()
+        self.assertEqual(runner.calls, ['inspect'])
+
+    def test_load_returns_final_entry_state(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'entered':True})
+        runner.hydrate = lambda raw: dict(can_edit=False, resources_loaded=True, entered=False)
+        state = runner.load_editor({'nodes':[]}, enter=True)
+        self.assertTrue(state['entered'])
+        self.assertTrue(state['can_edit'])
 
     def test_already_entered_does_not_invoke_entry(self):
         clock = Clock()

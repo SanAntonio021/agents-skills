@@ -394,6 +394,35 @@ class WordIdentityTests(OfficeNativeGateTests):
         self.assertEqual(result["ownership"]["owned_pids"], [4242])
         self.assertEqual(word.quit_calls, 1)
 
+    def test_ignored_background_and_security_settings_block_open(self):
+        class IgnoringWord(FakeWordApplication):
+            def __setattr__(self, name, value):
+                if name == self.__dict__.get("ignored"):
+                    if self.__dict__.get("mode") == "ignore":
+                        return
+                    if self.__dict__.get("mode") == "write_error":
+                        raise RuntimeError("setting failed")
+                super().__setattr__(name, value)
+
+            def __getattribute__(self, name):
+                state = object.__getattribute__(self, "__dict__")
+                if name == state.get("ignored") and state.get("mode") == "read_error":
+                    raise RuntimeError("reading failed")
+                return super().__getattribute__(name)
+
+        for name, initial in (("Visible", True), ("DisplayAlerts", 1),
+                              ("ScreenUpdating", True), ("AutomationSecurity", 1)):
+            for mode in ("ignore", "write_error", "read_error"):
+                with self.subTest(name=name, mode=mode):
+                    word = IgnoringWord()
+                    setattr(word, name, initial)
+                    word.ignored = name
+                    word.mode = mode
+                    result, _, _, _ = self.run_docx_gate([[], [], [4242], []], application=word)
+                    self.assertNotEqual(result["status"], "PASS")
+                    self.assertEqual(word.Documents.open_calls, [])
+                    self.assertEqual(word.quit_calls, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

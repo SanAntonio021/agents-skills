@@ -548,6 +548,8 @@ def evaluate_copy(
         report.update(ok=True, status="PASS", phase="complete")
     except EvaluationFailure as exc:
         report.update(status=exc.status, error=str(exc))
+    except gate.ConfigurationFailure as exc:
+        report.update(status="SECURITY_OPTIONS_FAILED", error=str(exc))
     except gate.OwnershipFailure as exc:
         report.update(status="UNSAFE_PROCESS", error=str(exc))
     except (gate.ActivationFailure, ModuleNotFoundError) as exc:

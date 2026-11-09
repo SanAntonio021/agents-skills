@@ -105,6 +105,10 @@ class OwnershipFailure(RuntimeError):
         self.details = details or {}
 
 
+class ConfigurationFailure(OwnershipFailure):
+    """A required isolated Office setting could not be confirmed."""
+
+
 class StageFailure(GateFailure):
     """A document open or native export failed."""
 
@@ -518,6 +522,16 @@ def _set_optional(application: Any, name: str, value: Any) -> None:
         pass
 
 
+def _set_and_verify(application: Any, name: str, value: Any) -> None:
+    try:
+        _set_required(application, name, value)
+        actual = getattr(application, name)
+    except Exception as exc:
+        raise ConfigurationFailure(f"unable to set or read back Office property {name}") from exc
+    if actual != value:
+        raise ConfigurationFailure(f"isolated Office property {name} did not retain the required value")
+
+
 @dataclass
 class OwnedApplication:
     application: Any
@@ -672,10 +686,15 @@ def owned_application(
             )
         owner.exclusive_at_start = True
 
-        _set_required(application, "Visible", False)
-        _set_optional(application, "DisplayAlerts", 0)
-        _set_optional(application, "ScreenUpdating", False)
-        if spec["progid"] in {"Excel.Application", "Word.Application"}:
+        if spec["progid"] == "Word.Application":
+            for name, value in (("Visible", False), ("DisplayAlerts", 0),
+                                ("ScreenUpdating", False), ("AutomationSecurity", 3)):
+                _set_and_verify(application, name, value)
+        else:
+            _set_required(application, "Visible", False)
+            _set_optional(application, "DisplayAlerts", 0)
+            _set_optional(application, "ScreenUpdating", False)
+        if spec["progid"] == "Excel.Application":
             _set_optional(application, "AutomationSecurity", 3)
         if spec["progid"] == "Excel.Application":
             _set_optional(application, "AskToUpdateLinks", False)

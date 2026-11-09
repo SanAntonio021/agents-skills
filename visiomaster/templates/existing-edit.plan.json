@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "input_sha256": "REPLACE_WITH_SHA256_FROM_INSPECT",
+  "backend": "com",
+  "operations": [
+    {"op": "text", "page_id": 0, "shape_id": 1, "expect_text": "处理模块", "text": "处理单元"},
+    {"op": "move", "page_id": 0, "shape_id": 1, "dx": 0.2, "ordinary_links": [{"shape_id": 3, "endpoints": ["begin"], "label_ids": [4]}]},
+    {"op": "line", "page_id": 0, "shape_id": 3, "begin": [3.2, 2.5], "end_arrow": 4},
+    {"op": "move", "page_id": 0, "shape_id": 4, "dx": 0.1, "ordinary_links": []}
+  ]
+}

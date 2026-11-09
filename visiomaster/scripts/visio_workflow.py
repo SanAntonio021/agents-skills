@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM = ROOT / "vendor" / "upstream"
+sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(UPSTREAM / "scripts"))
 import scene_to_visio as engine
 from scene_validate import validate_scene
@@ -138,6 +139,8 @@ def font_size_noop_fallback(before, after, gate_failures, before_png, after_png)
 
 
 def check_scene(path):
+    from visio_edit import check_scene_guard
+    check_scene_guard(path)
     scene = read_json(path)
     errors, warnings = validate_scene(scene)
     for warning in warnings:

@@ -2156,7 +2156,7 @@ class Runner:
                 raise VerificationError('Document mode control click was not confirmed')
             mode['value']['click_method'] = 'background_click_at'
 
-            menu_deadline = time.monotonic() + min(4.0, self.transport_timeout(4.0))
+            menu_deadline = time.monotonic() + min(20.0, self.transport_timeout(20.0))
             menu_render_requested = False
             menu_expression = r'''(()=>{
               const visible = element => {
@@ -2221,7 +2221,7 @@ class Runner:
                     # Dropdown positioning can wait for a background frame too.
                     menu_render_requested = True
                     try:
-                        self.screenshot(timeout=min(remaining, self.transport_timeout(2.0)))
+                        self.screenshot(timeout=min(remaining, self.transport_timeout(10.0)))
                         self.require_time()
                     except Exception as error:
                         error.mode_stage = 'render_document_edit_menu'

@@ -236,12 +236,12 @@ class EditorEntry(unittest.TestCase):
             {'value': 'complete'},
             {'value': {'clicked': True, 'text': '编辑', 'x': 120, 'y': 24}},
             {'clicked': True},
-            *([{'value': {'options': []}}] * 24),
+            *([{'value': {'options': []}}] * 110),
         ])
         with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
             with self.assertRaisesRegex(VerificationError, 'did not appear'):
                 runner.ensure_document_edit_mode()
-        self.assertEqual(clock.now, 4)
+        self.assertAlmostEqual(clock.now, 20)
         self.assertEqual(sum(path.endswith('/click-at') for path, _ in runner.calls), 1)
 
     def test_page_load_timeout_stops_before_mode_click(self):
@@ -275,7 +275,7 @@ class EditorEntry(unittest.TestCase):
             {'value':'complete'},
             {'value':{'clicked':True,'text':'编辑','x':120,'y':24}},
             {'clicked':True},
-            *([{'value':{'options':[],'offscreen_matches':1}}] * 24),
+            *([{'value':{'options':[],'offscreen_matches':1}}] * 110),
         ])
         captures = []
         runner.screenshot = lambda timeout: captures.append(timeout)
@@ -283,7 +283,7 @@ class EditorEntry(unittest.TestCase):
             with self.assertRaisesRegex(VerificationError, 'outside the page viewport'):
                 runner.ensure_document_edit_mode()
         self.assertEqual(len(captures), 1)
-        self.assertEqual(clock.now, 4)
+        self.assertAlmostEqual(clock.now, 20)
         self.assertEqual(sum(path.endswith('/click-at') for path, _ in runner.calls), 1)
 
     def test_late_menu_frame_cannot_select_a_now_visible_option(self):
@@ -295,11 +295,32 @@ class EditorEntry(unittest.TestCase):
             {'value':{'options':[],'offscreen_matches':1}},
             {'value':{'options':[{'x':130,'y':70}]}},
         ])
-        runner.screenshot = lambda timeout: clock.sleep(4)
+        runner.screenshot = lambda timeout: clock.sleep(20)
         with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
             with self.assertRaisesRegex(VerificationError, 'did not appear'):
                 runner.ensure_document_edit_mode()
         self.assertEqual(sum(path.endswith('/click-at') for path, _ in runner.calls), 1)
+
+    def test_slow_background_frame_and_menu_can_complete(self):
+        clock = Clock()
+        runner = self.mode_runner([
+            {'value':'complete'},
+            {'value':{'clicked':True,'text':'编辑','x':120,'y':24}},
+            {'clicked':True},
+            {'value':{'options':[],'offscreen_matches':1}},
+            {'value':{'options':[{'x':130,'y':70}]}},
+            {'clicked':True},
+        ])
+        captures = []
+        def screenshot(timeout):
+            captures.append(timeout)
+            clock.sleep(6)
+        runner.screenshot = screenshot
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            result = runner.ensure_document_edit_mode()
+        self.assertEqual(captures, [10.0])
+        self.assertTrue(result['value']['menu_option_selected'])
+        self.assertEqual(clock.now, 6)
 
     def test_mode_transport_error_records_failing_stage(self):
         runner = self.mode_runner([])

@@ -415,23 +415,11 @@ def default_dispatch_ex(progid: str) -> Any:
     return DispatchEx(progid)
 
 
-def default_dispatch_word_executable(executable: Path) -> Any:
-    """Start Word directly when the Word.Application COM class is WPS-owned."""
-    import subprocess as _subprocess
-    import time as _time
+def default_dispatch_verified_word(progid: str) -> Any:
+    """Use the shared verified Microsoft Word registration and CLSID."""
+    from reference_word import native_dispatch
 
-    _subprocess.Popen([str(executable), "/x"], close_fds=True)
-    deadline = _time.monotonic() + PID_OBSERVATION_TIMEOUT_SECONDS
-    last_error: BaseException | None = None
-    while _time.monotonic() < deadline:
-        try:
-            return default_dispatch_ex("Word.Application")
-        except Exception as exc:  # pragma: no cover - depends on installed Office
-            last_error = exc
-            _time.sleep(PROCESS_POLL_SECONDS)
-    raise ActivationFailure(
-        f"Microsoft Word executable started but COM activation did not become available: {_exception_text(last_error) if last_error else 'timeout'}"
-    )
+    return native_dispatch(progid)
 
 
 def default_com_runtime() -> Any:
@@ -441,6 +429,8 @@ def default_com_runtime() -> Any:
 
 
 def _is_app_unavailable(exc: BaseException) -> bool:
+    if getattr(exc, "status", None) == "APP_UNAVAILABLE":
+        return True
     hresult = getattr(exc, "hresult", None)
     if hresult in APP_UNAVAILABLE_HRESULTS:
         return True
@@ -527,7 +517,10 @@ def owned_application(
     """Create one isolated COM instance and retain PID ownership evidence."""
 
     runtime = com_runtime or default_com_runtime()
-    dispatch = dispatch_ex or default_dispatch_ex
+    dispatch = dispatch_ex or (
+        default_dispatch_verified_word if spec["progid"] == "Word.Application"
+        else default_dispatch_ex
+    )
     metadata = ownership_metadata if ownership_metadata is not None else {}
     metadata.update(
         {
@@ -575,24 +568,19 @@ def owned_application(
             metadata["activation_identity"] = identity
             if spec["progid"] == "Word.Application" and not _is_microsoft_word_identity(identity):
                 metadata["activation_identity"]["status"] = "NON_MICROSOFT_PROVIDER"
-                # The COM object may refer to a user's existing WPS server.
-                # Do not call Quit until a WPS PID is proven task-owned; release
-                # the Python reference by replacing it with the Word fallback.
-                executable = _installed_word_executable()
-                if executable is None:
-                    raise ActivationFailure(
-                        "Word.Application resolved to a non-Microsoft provider and WINWORD.EXE was not found"
-                    )
-                metadata["fallback_executable"] = str(executable)
-                fallback = dispatch_word_executable or default_dispatch_word_executable
-                application = fallback(executable)
-                fallback_identity = _application_identity(application)
-                metadata["fallback_identity"] = fallback_identity
-                if not _is_microsoft_word_identity(fallback_identity):
-                    raise ActivationFailure(
-                        "direct WINWORD.EXE fallback did not produce a Microsoft Word application"
-                    )
+                raise ActivationFailure("Word activation returned a non-Microsoft provider; activation refused")
         except Exception as exc:
+            observed, probe_error = _safe_process_ids(spec["process"], process_ids=process_ids)
+            metadata["activation_failure_observation"] = {
+                "status": "UNOBSERVED" if observed is None else "OBSERVED",
+                "observed_pids": observed or [],
+                "new_pids": sorted(set(observed or []) - set(before_pids)),
+                "error": probe_error,
+            }
+            metadata["cleanup"] = {
+                "status": "NOT_ATTEMPTED",
+                "reason": "activation failed; process ownership cannot be proven",
+            }
             raise ActivationFailure(_exception_text(exc)) from exc
         metadata["activation_succeeded"] = True
         owner = OwnedApplication(application, spec["collection"], metadata=metadata)

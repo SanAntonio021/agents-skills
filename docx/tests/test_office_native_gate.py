@@ -183,25 +183,61 @@ class OfficeNativeGateTests(unittest.TestCase):
         self.assertEqual(ownership["owned_pids"], [4242])
         self.assertEqual(ownership["cleanup"]["status"], "CLEAN")
 
-    def test_wps_com_provider_falls_back_to_winword_executable(self) -> None:
+    def test_non_microsoft_provider_is_refused_without_fallback_or_quit(self) -> None:
         wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")
-        word = FakeEngineApplication(r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE")
+        def forbidden_fallback(_path):
+            self.fail("executable fallback must not run")
         result, returned, _runtime, _timeline = self.run_docx_gate(
-            [[], [], [4242], []], application=wps,
-            dispatch_word_executable=lambda _path: word,
+            [[], [], []], application=wps, dispatch_word_executable=forbidden_fallback,
         )
-        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["status"], "UNVERIFIED")
         self.assertEqual(result["ownership"]["activation_identity"]["status"], "NON_MICROSOFT_PROVIDER")
-        self.assertEqual(result["ownership"]["fallback_identity"]["path"], word.Path)
         self.assertIs(returned, wps)
         self.assertEqual(wps.quit_calls, 0)
+        self.assertEqual(wps.Documents.open_calls, [])
+        self.assertEqual(result["ownership"]["cleanup"]["status"], "NOT_ATTEMPTED")
 
-    def test_wps_provider_without_word_executable_is_unverified(self) -> None:
-        wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")
-        with patch.object(native_gate, "_installed_word_executable", return_value=None):
-            result, _returned, _runtime, _timeline = self.run_docx_gate([[], []], application=wps)
+    def test_activation_failure_records_new_process_without_closing_it(self) -> None:
+        runtime = FakeComRuntime()
+        timeline = ProcessTimeline([[], [], [4242]])
+        def failed_dispatch(_progid):
+            raise RuntimeError("activation failed")
+        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)):
+            result = native_gate.check_file(
+                self.source, "docx", allow_office_com=True, process_ids=timeline,
+                dispatch_ex=failed_dispatch, com_runtime=runtime,
+            )
         self.assertEqual(result["status"], "UNVERIFIED")
-        self.assertIn("WINWORD.EXE was not found", result["error"])
+        self.assertEqual(result["ownership"]["activation_failure_observation"]["new_pids"], [4242])
+        self.assertEqual(result["ownership"]["cleanup"]["status"], "NOT_ATTEMPTED")
+        self.assertEqual(runtime.initialize_calls, runtime.uninitialize_calls)
+
+    def test_default_word_dispatch_uses_verified_interface(self) -> None:
+        import reference_word
+        word = FakeWordApplication()
+        runtime = FakeComRuntime()
+        timeline = ProcessTimeline([[], [], [4242], []])
+        with patch.object(reference_word, "native_dispatch", return_value=word) as dispatch, \
+             patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)):
+            result = native_gate.check_file(
+                self.source, "docx", allow_office_com=True, process_ids=timeline,
+                com_runtime=runtime, pid_observation_timeout_seconds=0, process_exit_timeout_seconds=0,
+            )
+        dispatch.assert_called_once_with("Word.Application")
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(word.quit_calls, 1)
+
+    def test_quit_failure_is_reported_and_never_passes(self) -> None:
+        word = FakeWordApplication()
+        def fail_quit():
+            word.quit_calls += 1
+            raise RuntimeError("quit failed")
+        word.Quit = fail_quit
+        result, _, _, _ = self.run_docx_gate([[], [], [4242], [4242]], application=word)
+        self.assertEqual(result["status"], "UNVERIFIED")
+        self.assertEqual(result["phase"], "cleanup")
+        self.assertEqual(result["ownership"]["cleanup"]["status"], "QUIT_FAILED")
+        self.assertEqual(word.quit_calls, 1)
 
     def test_existing_word_pid_stops_before_dispatch(self) -> None:
         word = FakeWordApplication()

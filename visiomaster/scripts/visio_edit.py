@@ -408,6 +408,39 @@ def changed_fields(before, after):
     return result
 
 
+def snapshot_differences(expected, actual, limit=50):
+    """Return a bounded, path-oriented explanation of a failed save round trip."""
+    differences = []
+    scan_limit = limit + 1
+
+    def compare(left, right, path):
+        if len(differences) >= scan_limit:
+            return
+        if isinstance(left, dict) and isinstance(right, dict):
+            for name in sorted(left.keys() | right.keys()):
+                child = f'{path}.{name}' if path else str(name)
+                if name not in left:
+                    differences.append({'path': child, 'expected': '<missing>', 'actual': right[name]})
+                elif name not in right:
+                    differences.append({'path': child, 'expected': left[name], 'actual': '<missing>'})
+                else:
+                    compare(left[name], right[name], child)
+                if len(differences) >= scan_limit:
+                    return
+        elif isinstance(left, list) and isinstance(right, list):
+            for index, (left_item, right_item) in enumerate(zip(left, right)):
+                compare(left_item, right_item, f'{path}[{index}]')
+                if len(differences) >= scan_limit:
+                    return
+            if len(left) != len(right) and len(differences) < scan_limit:
+                differences.append({'path': path, 'expected_length': len(left), 'actual_length': len(right)})
+        elif left != right:
+            differences.append({'path': path, 'expected': left, 'actual': right})
+
+    compare(expected, actual, '')
+    return {'items': differences[:limit], 'truncated': len(differences) > limit}
+
+
 def check_preserved(before, after, allowed, additions, deletions, connection_ids):
     if before['pages'] != after['pages']:
         raise ValueError('Unexpected page changes')
@@ -849,7 +882,12 @@ def apply(source, plan_path, output, scene=None):
                 doc = app.Documents.OpenEx(str(output), OPEN_HIDDEN + 2)
                 actual = snapshot(doc)
                 if actual != expected:
-                    raise ValueError('Saved document differs from the verified in-memory result')
+                    report['roundtrip_mismatch'] = {
+                        'differences': snapshot_differences(expected, actual),
+                    }
+                    first = report['roundtrip_mismatch']['differences']['items'][:5]
+                    raise ValueError('Saved document differs from the verified in-memory result; '
+                                     f'first differing fields: {first}')
                 after_pngs = export(doc, output.with_suffix(''))
                 report['pixels'] = pixel_changes(before_pngs, after_pngs)
                 report.update(before=baseline, after=actual, changes=changes, operations=log,

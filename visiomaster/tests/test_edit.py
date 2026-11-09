@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -38,6 +39,16 @@ def test_scene_lock(tmp_path):
     edit.write(edit.scene_guard_path(scene), [{'scene_sha256': edit.digest(scene)}])
     with pytest.raises(ValueError, match='superseded'):
         edit.check_scene_guard(scene)
+
+
+def test_snapshot_differences_reports_paths_and_bounds_output():
+    expected = {'shapes': {'0:7': {'geometry': [[{'value': 1}, {'value': 2}]]}}}
+    actual = {'shapes': {'0:7': {'geometry': [[{'value': 1}, {'value': 3}]]}}}
+    assert edit.snapshot_differences(expected, actual) == {
+        'items': [{'path': 'shapes.0:7.geometry[0][1].value', 'expected': 2, 'actual': 3}],
+        'truncated': False,
+    }
+    assert edit.snapshot_differences(list(range(4)), list(range(4, 8)), limit=2)['truncated']
 
 
 @pytest.fixture(scope='module')
@@ -147,13 +158,34 @@ def test_library_sequential_text(native):
 
 
 def test_ordinary_path_and_label(native):
-    _, _, ids = native
+    folder, _, ids = native
     p, line, label = ids['page'], ids['ordinary'], ids['label']
-    run(native, 'ordinary', [
+    output, report = run(native, 'ordinary', [
         {'op': 'line', 'page_id': p, 'shape_id': line, 'points': [[1, 2], [2, 2], [2, 1], [4, 1]],
          'end_arrow': 4, 'line_pattern': 2},
         {'op': 'move', 'page_id': p, 'shape_id': label, 'dx': 1, 'dy': -1, 'ordinary_links': []},
     ])
+    ident = edit.key(p, line)
+    saved_line = report['after']['shapes'][ident]
+    cells = saved_line['cells']
+    angle = cells['Angle']
+    points = []
+    for row in saved_line['geometry'][0][1:]:
+        local_x = row['cells'][0]['value'] - cells['LocPinX']
+        local_y = row['cells'][1]['value'] - cells['LocPinY']
+        points.append([
+            cells['PinX'] + local_x * math.cos(angle) - local_y * math.sin(angle),
+            cells['PinY'] + local_x * math.sin(angle) + local_y * math.cos(angle),
+        ])
+    expected_points = [[1, 2], [2, 2], [2, 1], [4, 1]]
+    assert len(points) == len(expected_points)
+    for actual, expected in zip(points, expected_points):
+        assert actual == pytest.approx(expected, abs=1e-6)
+    with edit.visio() as app:
+        doc = app.Documents.OpenEx(str(output), edit.OPEN_HIDDEN + 2)
+        reopened = edit.snapshot(doc)
+        assert reopened['shapes'][ident] == saved_line
+        doc = None
 
 
 def test_add_copy_delete_group_and_multi_page(native):

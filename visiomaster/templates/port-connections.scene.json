@@ -1,0 +1,27 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "title": "Synthetic Port Connections",
+    "authoring_source": "synthetic_template",
+    "caption": "Port connection example; caption belongs in the document.",
+    "pending_questions": [],
+    "style_profile": "paper_white",
+    "notes": ["Synthetic example only.", "Arrow direction means signal flow."]
+  },
+  "page": {"width": 13.333, "height": 5.2, "units": "in", "origin": "top-left", "background": "#FFFFFF"},
+  "nodes": [
+    {"id": "source_a", "type": "process_box", "x": 0.5, "y": 0.8, "w": 2.15, "h": 0.9, "text": "设备 A\n接口 A", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "source_b", "type": "process_box", "x": 0.5, "y": 3.4, "w": 2.15, "h": 0.9, "text": "设备 B\n接口 B", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "module", "type": "process_box", "x": 5.25, "y": 1.95, "w": 2.6, "h": 1.2, "text": "功能模块\n接口 A / 接口 B", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "target", "type": "process_box", "x": 10.5, "y": 1.95, "w": 2.25, "h": 1.2, "text": "目标链路", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "label_a", "type": "text_block", "x": 3.0, "y": 1.55, "w": 1.7, "h": 0.45, "text": "物理端口 A", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "none", "line": "none"}},
+    {"id": "label_b", "type": "text_block", "x": 3.0, "y": 4.45, "w": 1.7, "h": 0.45, "text": "物理端口 B", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "none", "line": "none"}},
+    {"id": "label_output", "type": "text_block", "x": 8.55, "y": 2.0, "w": 1.65, "h": 0.45, "text": "输出端口 C", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "none", "line": "none"}}
+  ],
+  "edges": [
+    {"id": "port_a_to_module", "type": "arrow_connector", "from": "source_a:right@0.50", "to": "module:left@0.28", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "solid", "end_arrow": "triangle"}},
+    {"id": "port_b_to_module", "type": "dashed_feedback_path", "from": "source_b:right@0.50", "points": [[3.45, 3.85], [3.45, 2.814]], "to": "module:left@0.72", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "dash", "end_arrow": "triangle"}},
+    {"id": "module_to_target", "type": "arrow_connector", "from": "module:right@0.50", "to": "target:left@0.50", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "solid", "end_arrow": "triangle"}}
+  ],
+  "assets": []
+}

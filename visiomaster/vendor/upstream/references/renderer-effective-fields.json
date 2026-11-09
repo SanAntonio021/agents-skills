@@ -1,0 +1,478 @@
+{
+  "version": "0.1",
+  "_defaults": {
+    "page_effective_fields": [
+      "width",
+      "height",
+      "units",
+      "origin",
+      "target_width_in",
+      "target_height_in"
+    ],
+    "page_weak_fields": [
+      "background"
+    ],
+    "common_node_effective_fields": [
+      "type",
+      "x",
+      "y",
+      "w",
+      "h",
+      "text",
+      "title",
+      "subtitle",
+      "symbol",
+      "source_bbox_px",
+      "source_bbox",
+      "primitive_family",
+      "motif_binding",
+      "visual_facts",
+      "source_visual_facts",
+      "must_match_facts",
+      "fidelity_obligations",
+      "subshape_role",
+      "layer",
+      "z",
+      "orientation",
+      "container_id",
+      "align_to_container",
+      "align_group",
+      "align_axis",
+      "ports",
+      "port_positions",
+      "points",
+      "blocks",
+      "labels",
+      "runs",
+      "font_size_pt",
+      "text_fit",
+      "text_align",
+      "min_font_size_pt",
+      "rotated_text_box",
+      "text_box",
+      "symbol_box_w_in",
+      "symbol_box_h_in",
+      "body_width_in",
+      "body_width_px",
+      "head_width_in",
+      "head_width_px",
+      "head_length_in",
+      "head_length_px",
+      "curve_mode",
+      "start_angle_deg",
+      "sweep_angle_deg"
+    ],
+    "common_node_weak_fields": [
+      "fill",
+      "line",
+      "text_color",
+      "line_weight_pt",
+      "line_dash",
+      "shadow",
+      "gradient",
+      "style.fill",
+      "style.line",
+      "style.text_color",
+      "style.line_weight_pt",
+      "style.line_dash",
+      "style.shadow",
+      "style.gradient"
+    ],
+    "common_edge_effective_fields": [
+      "from",
+      "to",
+      "edge_role",
+      "arrow_plan_id",
+      "source_arrow_id",
+      "semantic_intent",
+      "arrow_template",
+      "arrowhead_policy",
+      "expected_shape",
+      "curve_type",
+      "arc_template",
+      "bezier_template",
+      "curve_template",
+      "arc_lift_in",
+      "source_tangent_in",
+      "start_tangent_in",
+      "target_tangent_in",
+      "end_tangent_in",
+      "branch_spread_in",
+      "fanout_spread_in",
+      "standardize_bezier_arc",
+      "region",
+      "source_region",
+      "region_regression_group",
+      "source_bbox_px",
+      "confidence",
+      "layer",
+      "z",
+      "label_layer",
+      "label_z",
+      "route_shape",
+      "from_point",
+      "to_point",
+      "points",
+      "route",
+      "route_name",
+      "force_axis",
+      "orthogonalize_points",
+      "corner_radius_in",
+      "corner_radius_px",
+      "corner_samples",
+      "samples_per_corner",
+      "allow_diagonal",
+      "source_port",
+      "target_port",
+      "begin_arrow",
+      "end_arrow",
+      "arrow_size",
+      "allow_free_endpoint",
+      "freeform_endpoint",
+      "allow_smooth_curve",
+      "allow_node_crossing",
+      "allow_short_arrow",
+      "text",
+      "label"
+    ],
+    "common_edge_weak_fields": [
+      "line",
+      "line_weight_pt",
+      "line_dash",
+      "style.line",
+      "style.line_weight_pt",
+      "style.line_dash"
+    ]
+  },
+  "components": {
+    "tensor_stack": {
+      "effective_fields": [
+        "layers",
+        "depth_x_in",
+        "depth_y_in",
+        "layer_dx_in",
+        "layer_dy_in",
+        "stack_render_mode",
+        "render_mode",
+        "perspective_mode",
+        "skew_x_in",
+        "skew_y_in",
+        "slice_gap_in",
+        "front_face_ratio"
+      ],
+      "weak_fields": [
+        "top_fill",
+        "side_fill",
+        "top_shadow"
+      ]
+    },
+    "layer_sequence": {
+      "effective_fields": [
+        "orientation",
+        "blocks",
+        "labels",
+        "title_h_in",
+        "title_area_ratio",
+        "block_gap_in",
+        "padding_in",
+        "padding_left_in",
+        "padding_right_in",
+        "padding_top_in",
+        "padding_bottom_in",
+        "content_padding_left_in",
+        "content_padding_right_in",
+        "content_padding_top_in",
+        "content_padding_bottom_in",
+        "density_mode",
+        "block_style_mode",
+        "block_fills",
+        "ignore_block_fills",
+        "preserve_block_fills",
+        "block_rounding_in",
+        "block_shadow"
+      ],
+      "weak_fields": [
+        "title_fill",
+        "shadow_blur"
+      ]
+    },
+    "concat_operator": {
+      "effective_fields": [
+        "orientation",
+        "concat_size_tier",
+        "glyph_mode",
+        "tick_in",
+        "gap_ratio",
+        "bracket_w_in"
+      ],
+      "weak_fields": [
+        "glyph_fill"
+      ]
+    },
+    "bracket": {
+      "effective_fields": [
+        "shape",
+        "orientation",
+        "curve_mode",
+        "bezier_samples",
+        "terminal_indent_ratio",
+        "outer_bulge_ratio",
+        "waist_indent_ratio",
+        "neck_ratio",
+        "lobe_ratio",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "line",
+        "line_weight_pt",
+        "line_dash"
+      ]
+    },
+    "dimension_brace": {
+      "effective_fields": [
+        "shape",
+        "orientation",
+        "curve_mode",
+        "bezier_samples",
+        "terminal_indent_ratio",
+        "outer_bulge_ratio",
+        "waist_indent_ratio",
+        "neck_ratio",
+        "lobe_ratio",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "line",
+        "line_weight_pt",
+        "line_dash"
+      ]
+    },
+    "math_text": {
+      "effective_fields": [
+        "math_render_mode",
+        "auto_compact_math",
+        "runs",
+        "fragment_gap_em",
+        "font_size_pt",
+        "source_font_family"
+      ],
+      "weak_fields": [
+        "text_color"
+      ]
+    },
+    "math_formula_group": {
+      "effective_fields": [
+        "left_text",
+        "operator",
+        "right_text",
+        "numerator",
+        "denominator",
+        "fraction",
+        "left_w_in",
+        "operator_w_in",
+        "right_w_in",
+        "fraction_w_in",
+        "fraction_width_policy",
+        "fraction_padding_in",
+        "fraction_min_w_in",
+        "fraction_font_size_pt",
+        "fraction_text_mode",
+        "baseline_y_ratio",
+        "fraction_bar_weight_pt",
+        "gap_in",
+        "padding_x_in",
+        "numerator_gap_in",
+        "denominator_gap_in",
+        "font_size_pt",
+        "source_font_family"
+      ],
+      "weak_fields": [
+        "text_color",
+        "fraction_bar_color"
+      ]
+    },
+    "caption_block": {
+      "effective_fields": [
+        "runs",
+        "strict_mode",
+        "text_align",
+        "line_gap_em",
+        "font_size_pt"
+      ],
+      "weak_fields": [
+        "text_color"
+      ]
+    },
+    "annotation_block": {
+      "effective_fields": [
+        "runs",
+        "font_size_pt",
+        "text_role",
+        "semantic_role",
+        "line_gap_em"
+      ],
+      "weak_fields": [
+        "text_color"
+      ]
+    },
+    "operator_node": {
+      "effective_fields": [
+        "symbol",
+        "font_size_pt",
+        "symbol_box_w_in",
+        "symbol_box_h_in"
+      ],
+      "weak_fields": [
+        "fill",
+        "line"
+      ]
+    },
+    "probability_bar_list": {
+      "effective_fields": [
+        "items",
+        "bars",
+        "row_gap_in",
+        "bar_h_in",
+        "bar_max_fraction",
+        "bar_value_anchor",
+        "label_w_in",
+        "left_axis_in",
+        "right_padding_in"
+      ],
+      "weak_fields": [
+        "bar_fill",
+        "panel_shadow"
+      ]
+    },
+    "boundary_arrow": {
+      "effective_fields": [
+        "orientation",
+        "side",
+        "port_length_in",
+        "arrow_size"
+      ],
+      "weak_fields": [
+        "line",
+        "line_weight_pt"
+      ]
+    },
+    "group_container": {
+      "effective_fields": [
+        "source_bbox_px",
+        "source_aspect_ratio"
+      ],
+      "weak_fields": [
+        "rounding_in",
+        "shadow"
+      ]
+    },
+    "audit_region": {
+      "effective_fields": [
+        "source_bbox_px",
+        "source_aspect_ratio"
+      ],
+      "weak_fields": []
+    },
+    "cell_strip": {
+      "effective_fields": [
+        "cell_count",
+        "count",
+        "cells_count",
+        "rows",
+        "cols",
+        "columns",
+        "cells",
+        "labels",
+        "cell_gap_in",
+        "gap_in",
+        "cell_rounding_in",
+        "continuous",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "cell_fill",
+        "cell_line",
+        "cell_line_weight_pt"
+      ]
+    },
+    "micro_grid": {
+      "effective_fields": [
+        "rows",
+        "cols",
+        "columns",
+        "cells",
+        "cell_gap_in",
+        "cell_rounding_in",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "cell_fill",
+        "cell_line",
+        "cell_line_weight_pt"
+      ]
+    },
+    "polyline_wave": {
+      "effective_fields": [
+        "points",
+        "samples",
+        "baseline_ratio",
+        "amplitude_in",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "line",
+        "line_weight_pt"
+      ]
+    },
+    "symbol_group": {
+      "effective_fields": [
+        "symbol_kind",
+        "subshapes",
+        "parts",
+        "primitives",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "fill",
+        "line",
+        "line_weight_pt"
+      ]
+    },
+    "primitive_group": {
+      "effective_fields": [
+        "shape",
+        "subshapes",
+        "parts",
+        "primitives",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "fill",
+        "line",
+        "line_weight_pt"
+      ]
+    },
+    "shape_cluster": {
+      "effective_fields": [
+        "shape",
+        "subshapes",
+        "parts",
+        "primitives",
+        "source_visual_facts",
+        "must_match_facts"
+      ],
+      "weak_fields": [
+        "fill",
+        "line",
+        "line_weight_pt"
+      ]
+    }
+  }
+}

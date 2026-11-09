@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "title": "Synthetic System Architecture",
+    "authoring_source": "synthetic_template",
+    "caption": "System architecture example; caption belongs in the document.",
+    "pending_questions": [],
+    "style_profile": "paper_white",
+    "notes": ["Synthetic example only.", "Display labels are not patent facts."]
+  },
+  "page": {"width": 13.333, "height": 4.5, "units": "in", "origin": "top-left", "background": "#FFFFFF"},
+  "nodes": [
+    {"id": "signal_source", "type": "process_box", "x": 0.6, "y": 1.75, "w": 2.0, "h": 1.0, "text": "信号源", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "processor", "type": "process_box", "x": 3.45, "y": 1.75, "w": 2.2, "h": 1.0, "text": "处理模块", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "combiner", "type": "process_box", "x": 6.6, "y": 1.75, "w": 2.0, "h": 1.0, "text": "合路模块", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}},
+    {"id": "output", "type": "process_box", "x": 9.8, "y": 1.75, "w": 2.5, "h": 1.0, "text": "输出接口", "style": {"font_family": "SimSun", "font_family_candidates": ["SimSun", "Microsoft YaHei"], "font_role": "cjk_serif", "font_size_pt": 18, "text_fit": "none", "text_color": "#000000", "fill": "#FFFFFF", "line": "#000000", "line_weight_pt": 1.25}}
+  ],
+  "edges": [
+    {"id": "source_to_processor", "type": "arrow_connector", "from": "signal_source:right@0.50", "to": "processor:left@0.50", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "solid", "end_arrow": "triangle"}},
+    {"id": "processor_to_combiner", "type": "arrow_connector", "from": "processor:right@0.50", "to": "combiner:left@0.50", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "solid", "end_arrow": "triangle"}},
+    {"id": "combiner_to_output", "type": "arrow_connector", "from": "combiner:right@0.50", "to": "output:left@0.50", "style": {"line": "#000000", "line_weight_pt": 1.25, "line_dash": "solid", "end_arrow": "triangle"}}
+  ],
+  "assets": []
+}

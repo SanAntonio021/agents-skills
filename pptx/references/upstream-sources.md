@@ -3,8 +3,8 @@
 
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-31`
-- 最近来源登记审核：`2026-11-01`
-- 说明：PPT Master 以已接受上游 6.7.2 为基线，通过受审计的 CC Switch Fork 分发，Fork 包含有限的入口和已确认任务交接适配；本地 pptx 负责一次选路、外部 pin、确定性文件操作和最终验收，官方 Presentations 由当前插件登记定位并按需读取原包。本登记的 accepted_commit 是上游采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。上游升级只处理正式 tag，本地适配使用递增 ccswitch 发行号；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
+- 最近来源登记审核：`2026-11-09`
+- 说明：PPT Master 以已接受上游 6.9.0 为基线，通过受审计的 CC Switch Fork 分发，Fork 包含有限的入口和已确认任务交接适配；本地 pptx 负责一次选路、外部 pin、确定性文件操作和最终验收，官方 Presentations 由当前插件登记定位并按需读取原包。本登记的 accepted_commit 是上游采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。上游升级只处理正式 tag，本地适配使用递增 ccswitch 发行号；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -15,8 +15,8 @@
 - 当前上游路径：`skills/ppt-master`
 - 接受时上游路径：`skills/ppt-master`
 - 技能入口：`skills/ppt-master/SKILL.md`
-- 已接受提交：`5e8856be0da8e6bc85c4aa28acc614478f7b7137`
-- 实际接受时间：`2026-11-01T05:20:36.241844+00:00`
+- 已接受提交：`ce92fb43e4ade9c701f4c869e286f13fce743c72`
+- 实际接受时间：`2026-11-09T02:08:34.136492+00:00`
 - 基线类型：`exact`
 - 更新策略：`review`
 - 许可证：`MIT`
@@ -26,6 +26,7 @@
 
 - 2026-08-31 核对当前 CC Switch 安装版 4.8.0 的官方仓库元数据、入口路由和完整性门，并经用户明确批准采用官方基座加本地接入层。
 - 2026-10-24 复核官方 v6.7.2 正式 tag b113d23720260c411ee47b2b05a73615f954deeb；Fork v6.7.2-ccswitch.1 28450e6e465a93709d7b09635d4397ade351d713 已在 2026-10-18 完成 214 项隔离测试和双端运行时验收，pin 对齐后 verify_ppt_master_pin 通过。
+- 2026-11-09 接受官方 v6.9.0 正式 tag ce92fb43e4ade9c701f4c869e286f13fce743c72（MIT）；Fork v6.9.0-ccswitch.1 a62fd17609872bceaded1081b0281e182f2445e3 的精确提交归档与两次独立构建一致，隔离回归及选定原生 PowerPoint 打开/导出通过。CC Switch 安装 operation 20261108T190724-db5cea11c83c 与独立同参数 VerifyOnly 均 runtime_active，CC、Claude、Codex 及双端实体文件一致。输入覆盖保护、DOCX 不成对括号链接及 Windows 网图路径已实测；未测试 OCR provider、付费模型、Realtime 旁白/GIF 和浏览器 UI。
 - 本地证据文件：`pptx/SKILL.md`
 - 本地证据文件：`pptx/references/ppt-master-integration.md`
 

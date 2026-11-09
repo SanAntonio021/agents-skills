@@ -139,11 +139,15 @@ switch silently. An upstream review mirror is source-review evidence only, never
 Never modify `.cc-switch`, `.codex`, or `.claude` runtime copies directly. Fork publication, local
 pin publication, CC Switch installation, and per-client runtime activation are separate gates.
 
-The accepted stable distribution is `v6.8.0-ccswitch.1`
-(`4f2d414063010dad6358756b85888f9b090ada84`). The 6.8.0 adaptation preserves
-the accepted Fork handoff and provider defaults while incorporating reviewed formula,
-chart, import/export, animation, content-survival, and image-request fixes.
-The exact-commit archive, two independent builds, offline regressions, selected native
-PowerPoint formula/chart cases, CC Switch installation, and both client runtime layers
-passed verification. The pin now accepts only this verified stable distribution;
-earlier distribution and recovery receipts remain in the maintenance history.
+The accepted stable distribution is `v6.9.0-ccswitch.1`
+(`a62fd17609872bceaded1081b0281e182f2445e3`), based on official `v6.9.0`
+(`ce92fb43e4ade9c701f4c869e286f13fce743c72`). The adaptation preserves the accepted
+Fork handoff and provider defaults. Verified changes include rejecting output paths that
+overwrite input files or hard-link aliases, retaining DOCX links with unpaired parentheses,
+and correcting Windows web-image paths.
+The exact-commit archive, two independent builds, relevant offline regressions, selected native
+PowerPoint open/export cases, CC Switch installation, and both physical client runtime layers
+passed verification, including a separate check with the same publication parameters.
+OCR providers, paid models, Realtime narration/GIF, and browser UI were not exercised.
+The pin accepts only this verified stable distribution; earlier distribution and recovery
+receipts remain in the maintenance history.

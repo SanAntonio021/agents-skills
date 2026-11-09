@@ -41,6 +41,54 @@ class EditorEntry(unittest.TestCase):
         self.assertEqual(runner.calls.count('enter'), 1)
         self.assertEqual(clock.now, 3)
 
+    def test_configured_timeout_can_exceed_legacy_twenty_second_cap(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'entered':c.now >= 25})
+        runner.timeout = 30
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            state = runner.enter_editor()
+        self.assertTrue(state['entered'])
+        self.assertGreaterEqual(clock.now, 25)
+        self.assertEqual(runner.calls.count('enter'), 1)
+
+    def test_load_and_hydrate_share_the_configured_timeout(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'entered':op['kind']=='enter'})
+        runner.timeout = 30
+        def hydrate(_raw):
+            clock.sleep(25)
+            return {'can_edit':True, 'resources_loaded':True, 'entered':False}
+        runner.hydrate = hydrate
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            state = runner.load_editor({'nodes':[]}, enter=True)
+        self.assertTrue(state['entered'])
+        self.assertGreaterEqual(clock.now, 25)
+
+    def test_menu_click_timeout_performs_read_only_state_check(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'can_edit':False, 'entered':False})
+        def switch_mode():
+            error = TimeoutError('menu click response timed out')
+            error.mode_stage = 'select_document_edit_menu'
+            raise error
+        runner.ensure_document_edit_mode = switch_mode
+        with patch('whiteboard.time.monotonic', clock.monotonic):
+            with self.assertRaises(TimeoutError):
+                runner.enter_editor()
+        self.assertEqual(runner.calls, ['inspect', 'inspect'])
+        self.assertEqual([item['stage'] for item in runner.report['editor_entry']],
+                         ['native_state', 'document_mode_switch_error', 'post_mode_timeout_state'])
+        self.assertNotIn('enter', runner.calls)
+
+    def test_entry_diagnostics_include_elapsed_time(self):
+        clock = Clock()
+        runner = self.runner(clock, lambda op,c: {'entered':op['kind']=='enter'})
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            runner.enter_editor()
+        records = runner.report['editor_entry']
+        self.assertTrue(all('elapsed_ms' in item for item in records))
+        self.assertTrue(all('since_previous_ms' in item for item in records[1:]))
+
     def test_resources_are_observed_before_entry(self):
         clock = Clock()
         runner = self.runner(clock, lambda op,c: {'resources_loaded':c.now >= 1, 'entered':op['kind']=='enter'})
@@ -95,10 +143,13 @@ class EditorEntry(unittest.TestCase):
         self.assertEqual(switched, [True])
         self.assertEqual(runner.calls, ['inspect', 'inspect', 'enter'])
         trace = runner.report['editor_entry']
-        self.assertIn({'stage':'document_mode_switch', 'clicked':True,
-                       'menu_option_selected':True}, trace)
-        self.assertIn({'stage':'native_entry_result', 'can_edit':True,
-                       'resources_loaded':True, 'entered':True}, trace)
+        self.assertTrue(any(item.get('stage') == 'document_mode_switch'
+                            and item.get('clicked') is True
+                            and item.get('menu_option_selected') is True for item in trace))
+        self.assertTrue(any(item.get('stage') == 'native_entry_result'
+                            and item.get('can_edit') is True
+                            and item.get('resources_loaded') is True
+                            and item.get('entered') is True for item in trace))
 
     def test_mode_probe_and_permission_denial_are_reported(self):
         clock = Clock()
@@ -117,10 +168,14 @@ class EditorEntry(unittest.TestCase):
                 runner.enter_editor()
 
         trace = runner.report['editor_entry']
-        self.assertIn({'stage':'document_mode_switch', 'clicked':False,
-                       'reason':'DOCUMENT_MODE_CONTROL_UNAVAILABLE', 'count':0}, trace)
-        self.assertIn({'stage':'native_entry_result', 'can_edit':False,
-                       'resources_loaded':True, 'entered':True}, trace)
+        self.assertTrue(any(item.get('stage') == 'document_mode_switch'
+                            and item.get('clicked') is False
+                            and item.get('reason') == 'DOCUMENT_MODE_CONTROL_UNAVAILABLE'
+                            and item.get('count') == 0 for item in trace))
+        self.assertTrue(any(item.get('stage') == 'native_entry_result'
+                            and item.get('can_edit') is False
+                            and item.get('resources_loaded') is True
+                            and item.get('entered') is True for item in trace))
         self.assertEqual(runner.calls.count('enter'), 1)
         self.assertGreaterEqual(clock.now, 2)
 

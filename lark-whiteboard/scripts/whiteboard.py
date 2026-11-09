@@ -2156,7 +2156,8 @@ class Runner:
                 raise VerificationError('Document mode control click was not confirmed')
             mode['value']['click_method'] = 'background_click_at'
 
-            menu_deadline = time.monotonic() + min(20.0, self.transport_timeout(20.0))
+            menu_deadline = (self.deadline if hasattr(self, 'deadline')
+                             else time.monotonic() + min(20.0, getattr(self, 'timeout', 20.0)))
             menu_render_requested = False
             menu_expression = r'''(()=>{
               const visible = element => {
@@ -2641,12 +2642,12 @@ class Runner:
         page.update(open_status='ready', document_url=self.page_document_url)
 
     def hydrate(self, raw, minimum_applied_version=None):
-        with self.time_budget(min(self.timeout, 20)):
+        with self.time_budget(self.timeout):
             return self._hydrate(raw, minimum_applied_version)
 
     def load_editor(self, raw, enter=False):
-        """Loading and actual native entry share one bounded phase."""
-        with self.time_budget(min(self.timeout, 20)):
+        """Loading and actual native entry share the configured bounded phase."""
+        with self.time_budget(self.timeout):
             state = self.hydrate(raw)
             if enter:
                 state = self.enter_editor(state)
@@ -2656,7 +2657,15 @@ class Runner:
         report = getattr(self, 'report', None)
         if not isinstance(report, dict):
             self.report = report = {}
+        now = time.monotonic()
         record = {'stage':stage}
+        started = getattr(self, 'entry_started_at', None)
+        previous = getattr(self, 'entry_previous_at', None)
+        if started is not None:
+            record['elapsed_ms'] = max(0, round((now - started) * 1000))
+            if previous is not None:
+                record['since_previous_ms'] = max(0, round((now - previous) * 1000))
+            self.entry_previous_at = now
         if isinstance(state, dict):
             for key in ('can_edit', 'resources_loaded', 'entered', 'entry_invoked'):
                 if key in state:
@@ -2683,7 +2692,9 @@ class Runner:
 
     def enter_editor(self, state=None):
         """Enable document editing, call native entry once, then observe state."""
-        with self.time_budget(min(self.timeout, 20)):
+        with self.time_budget(self.timeout):
+            self.entry_started_at = time.monotonic()
+            self.entry_previous_at = self.entry_started_at
             invoked = False
             render_requested = False
             mode_checked = False
@@ -2725,6 +2736,16 @@ class Runner:
                         mode = self.ensure_document_edit_mode()
                     except Exception as error:
                         self.record_entry_diagnostic('document_mode_switch_error', detail=error)
+                        if getattr(error, 'mode_stage', None) == 'select_document_edit_menu':
+                            try:
+                                self.require_time()
+                                observed = self.editor({'kind':'inspect'})
+                                self.require_time()
+                                self.record_entry_diagnostic('post_mode_timeout_state', observed)
+                            except Exception as observation_error:
+                                self.record_entry_diagnostic(
+                                    'post_mode_timeout_state_unavailable',
+                                    detail=observation_error)
                         raise
                     value = mode.get('value') if isinstance(mode, dict) else None
                     self.record_entry_diagnostic('document_mode_switch', detail=value)

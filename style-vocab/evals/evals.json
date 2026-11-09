@@ -15,14 +15,14 @@
     },
     {
       "id": 3,
-      "prompt": "按英文论文词表检查：The platform leverages a balanced portfolio strategy. The paper leverages a 115 GHz carrier.",
-      "expected_output": "加载英文/通用.md 和英文/论文.md；报告两处 leverage 命中及同一例外说明，由模型判断金融语境保留、论文普通动词改为 uses 或 applies，不做自动替换。",
+      "prompt": "按英文论文词表检查：The DSP compensates I/Q imbalance. The antenna compensates atmospheric attenuation.",
+      "expected_output": "加载英文/通用.md 和英文/论文.md；报告两处 compensate 词形命中并结合例外判断，保留标准 DSP 术语 I/Q imbalance compensation 的用法，第二句按泛指缓解损伤的个人偏好建议使用 mitigates，不做自动替换。",
       "files": []
     },
     {
       "id": 4,
-      "prompt": "检查这个 LaTeX 片段：\\cite{delve2024_thz} shows prior work. We delve into the measured EVM trend in Section~\\ref{sec:evm}.",
-      "expected_output": "跳过 citation key 和 LaTeX 命令参数，只报告正文 delve，给出 examine 或 analyze 及例外说明。",
+      "prompt": "检查这个英文论文 LaTeX 片段：\\cite{compensate2024_thz} shows prior work. We compensate atmospheric attenuation in Section~\\ref{sec:compensate}.",
+      "expected_output": "跳过 citation key 和 LaTeX 命令参数，只报告正文 compensate，给出 mitigate 及例外说明。",
       "files": []
     },
     {
@@ -63,8 +63,8 @@
     },
     {
       "id": 10,
-      "prompt": "继续刚才的收录任务：以后中文正式文稿不用‘赋能’，改成‘用于’，原文引用保留。通用表好像已经有这条了，你核对后处理。",
-      "expected_output": "实际读取当前表并核对相同规则及例外，已有完全相同条目直接复用，不追加副本、不重复确认或生成待确认记录；其他表即使存在相同条目，也保留原状，未明确要求清理时不顺带删除。",
+      "prompt": "隔离测试词表的中文通用表已含“赋能 | 用于 | 原文引用”。这是当前稿的一句：“该平台赋能通信测试。”继续刚才的收录任务：以后中文正式文稿不用“赋能”，改成“用于”，原文引用保留。你核对后处理。",
+      "expected_output": "实际读取提供的隔离词表并核对相同规则及例外，已有完全相同条目直接复用，不追加副本、不重复确认或生成待确认记录；其他表即使存在相同条目，也保留原状，未明确要求清理时不顺带删除。",
       "files": []
     },
     {
@@ -75,14 +75,26 @@
     },
     {
       "id": 12,
-      "prompt": "只检查这份中文技术稿，不改稿也不维护词表：‘透镜将光束聚焦于探测面。该项目聚焦测试平台建设。’表中聚焦有光学例外。",
-      "expected_output": "实际结合光学例外判断，保留第一处专业用法，指出第二处可改为具体任务表述；只返回检查意见，文稿、正式表和维护记录均不写入。",
+      "prompt": "只检查这份中文技术稿，不改稿也不维护词表：“仪器面板上的告警名称为‘过载’。输入功率过高会使接收前端过载。”请按实际语境判断。",
+      "expected_output": "结合固定名称及引用例外保留第一处，第二处建议按实际状态写成增益压缩或饱和，不猜测实际状态，不把压缩与饱和视为同义词；只返回检查意见，文稿、正式表和维护记录均不写入。",
       "files": []
     },
     {
       "id": 13,
       "prompt": "仅在当前项目，把‘杂散分量’统一叫 spur，请收录项目术语；全局表仍然是 spurious component。",
       "expected_output": "查重后更新项目术语.md，保留全局表；后续本项目按项目术语优先，不把项目限定术语扩展为全局规则。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "本次中文调研报告写着：“对接收支路进行全景式梳理。”我发现这里的“全景式梳理”不清楚，以后中文调研报告里统一写“系统梳理”，请收录；引用原文除外。",
+      "expected_output": "从提供的实际稿件定位问题，按明确长期授权在适用词表收录一条范围和例外清楚的规则，不扩展其他候选。",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "我想盘点个人文风词库，看看还有哪些值得补充的条目；当前没有具体稿件，也没有新发现的用词问题。",
+      "expected_output": "检查已有候选后说明目前没有来自实际写作的新问题可供收录；不按通用 AI 用词清单猜测候选，不修改正式词表或维护记录。",
       "files": []
     }
   ]

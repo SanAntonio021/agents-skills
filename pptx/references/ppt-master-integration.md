@@ -8,6 +8,15 @@ handoff: loose icon assets are stored in deterministic local shards, and icon ac
 Its handoff reuses upstream chat/delegation behavior; it does not replace the author's quality gates. The local `pptx` skill
 owns routing, the external pin, deterministic file operations, and final acceptance.
 
+For the reviewed 6.9 workflow, native round-trip export and source conversion must refuse outputs
+that resolve to the original input or its backing source, including hard-link aliases. Save edits
+to a separate output and keep the original source fingerprint. Image reconstruction may use the
+optional OCR and registered-layer tools, but installed-provider checks and actual page inspection
+still apply. Realtime narration and animated image generation require an explicitly selected
+provider and its credentials; their presence in the package does not establish live-service
+acceptance or authorize a paid request. The accepted installed version always comes from the
+external pin below.
+
 This reference governs the PPT Master route only. Do not copy the upstream workflow into `pptx`,
 edit an installed runtime directory, or execute a source-review mirror as a skill. Official
 Presentations is a separate supported route selected by the shared workflow, not a silent fallback

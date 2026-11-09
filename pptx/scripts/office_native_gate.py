@@ -290,8 +290,15 @@ def _completed_process_self_exited(owner: OwnedApplication, error: BaseException
         return False
     current: BaseException | None = error
     disconnected = False
+    disconnect_hresult = None
     while current is not None:
-        disconnected |= getattr(current, "hresult", None) == -2147417848
+        hresult = getattr(current, "hresult", None)
+        # PowerPoint may report either a disconnected object or an unavailable
+        # RPC server after closing the last presentation and exiting normally.
+        # Neither error is sufficient without the bound process checks below.
+        if hresult in (-2147417848, -2147023174):
+            disconnected = True
+            disconnect_hresult = hresult
         current = current.__cause__
     if not disconnected:
         return False
@@ -302,6 +309,8 @@ def _completed_process_self_exited(owner: OwnedApplication, error: BaseException
     if exit_code != 0:
         return False
     owner.metadata["cleanup"] = "self_exited"
+    owner.metadata["cleanup_exit_code"] = exit_code
+    owner.metadata["cleanup_hresult"] = disconnect_hresult
     owner.created_by_task = False
     return True
 

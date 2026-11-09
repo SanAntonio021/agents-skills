@@ -15,8 +15,9 @@ class DisconnectedError(RuntimeError):
     hresult = -2147417848
 
 
-def disconnected_failure() -> Exception:
+def disconnected_failure(hresult=-2147417848) -> Exception:
     underlying = DisconnectedError("RPC_E_DISCONNECTED")
+    underlying.hresult = hresult
     wrapped = RuntimeError("intermediate COM wrapper")
     wrapped.__cause__ = underlying
     failure = gate.OwnershipFailure("collection unavailable")
@@ -82,6 +83,32 @@ class DirectPowerPointTests(unittest.TestCase):
         self.assertNotEqual(owner.metadata.get("cleanup"), "self_exited")
         self.assertTrue(owner.created_by_task)
         self.assertEqual(app.quit_calls, 0)
+
+    def test_rpc_unavailable_requires_completed_owned_clean_exit(self):
+        cases = (
+            ({}, None, True),
+            ({"completed": False}, None, False),
+            ({"identity": False}, None, False),
+            ({"process": False}, None, False),
+            ({"exit_code": 1}, None, False),
+            ({}, subprocess.TimeoutExpired("POWERPNT.EXE", 3), False),
+            ({}, OSError("process handle unavailable"), False),
+        )
+        for kwargs, wait_error, accepted in cases:
+            with self.subTest(kwargs=kwargs, wait_error=wait_error):
+                owner, child, app = self.owner(**kwargs)
+                child.wait.side_effect = wait_error
+                with patch.object(gate, "_collection_count", side_effect=disconnected_failure(-2147023174)):
+                    if accepted:
+                        gate.quit_owned_application(owner)
+                        self.assertEqual(owner.metadata["cleanup_exit_code"], 0)
+                        self.assertEqual(owner.metadata["cleanup_hresult"], -2147023174)
+                        self.assertFalse(owner.created_by_task)
+                    else:
+                        with self.assertRaises(gate.OwnershipFailure):
+                            gate.quit_owned_application(owner)
+                        self.assertNotEqual(owner.metadata.get("cleanup"), "self_exited")
+                self.assertEqual(app.quit_calls, 0)
 
     def test_abnormal_exit_after_disconnect_is_not_success(self):
         for code in (1, -1, 3221225477):

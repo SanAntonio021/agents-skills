@@ -30,7 +30,7 @@ python <skill-dir>/scripts/visio_workflow.py check <figure_v01.scene.json>
 python <skill-dir>/scripts/visio_workflow.py render <figure_v01.scene.json> --output-dir <project-process-dir> --report <project-process-dir>/figure_v01.render.json
 ```
 
-场景名去掉 `.scene.json` 即输出名，默认同时导出 `.vsdx`、PNG、SVG。已有输出拒绝覆盖，换下一个版本名。`metadata.pending_questions` 非空时只允许带 `--draft` 渲染，并在交付说明中明确未决项。细节、故障和图像复刻路线见 [操作说明](references/local-workflow.md)。
+场景名去掉 `.scene.json` 即输出名，默认同时导出 `.vsdx`、PNG、SVG。新建图自动按 `--dpi 300 --padding-px 2` 实测校准外围白边；极限紧凑用 `--padding-px 1`，不缩放原生对象和字体。已有输出拒绝覆盖，换下一个版本名。`metadata.pending_questions` 非空时只允许带 `--draft` 渲染，并在交付说明中明确未决项。细节、故障和图像复刻路线见 [操作说明](references/local-workflow.md)。
 
 ## 每轮修改和验收
 

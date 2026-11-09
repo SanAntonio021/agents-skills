@@ -16,6 +16,7 @@ sys.path.insert(0, str(UPSTREAM / "scripts"))
 import scene_to_visio as engine
 from scene_validate import validate_scene
 from font_utils import font_resolution_for_style, has_cjk_text
+from visio_export import export_compact
 
 VIS_SECTION_CHARACTER = 3
 VIS_CHARACTER_FONT = 0
@@ -250,6 +251,7 @@ def render(args):
     app = doc = stencil = page = shape = candidate = None
     masters = {}
     created = []
+    backgrounds = []
     report = {"status": "failed", "draft": bool(args.draft), "scene": str(scene_path),
               "scene_sha256": sha256(scene_path), "upstream_commit":
               "0d8ccf2c015dc99935a71d2618fe0399e00a0d10", "shapes": []}
@@ -281,6 +283,11 @@ def render(args):
                 shape = engine.draw_node(page, height, item, assets, cmap, profile, masters)
                 _, style, _ = engine.node_style(item, cmap, profile)
                 fix_cjk_font(shape, style, str(item.get("text", "")))
+                if (item.get("type") in {"page_background", "export_background"}
+                        and not item.get("text")
+                        and str(style.get("fill", "")).upper() in {"#FFFFFF", "WHITE"}
+                        and style.get("line") == "none"):
+                    backgrounds.append(shape)
             elif entry["kind"] == "edge":
                 shape = engine.draw_edge(page, height, item, nodes, cmap, profile)[0]
             else:
@@ -322,9 +329,11 @@ def render(args):
                         )
             else:
                 report["shapes"].append(record)
+        report["export_padding"] = export_compact(
+            doc, page, outputs, backgrounds=backgrounds,
+            dpi=getattr(args, "dpi", 300), padding_px=getattr(args, "padding_px", 2),
+        )
         doc.SaveAs(str(outputs["vsdx"]))
-        for ext in ("svg", "png"):
-            page.Export(str(outputs[ext]))
         if any(not p.is_file() or p.stat().st_size == 0 for p in outputs.values()):
             raise RuntimeError("One or more Visio exports are missing or empty")
         from PIL import Image
@@ -353,6 +362,7 @@ def render(args):
                 cleanup_errors.append(f"stencil close: {exc}")
         masters.clear()
         created.clear()
+        backgrounds.clear()
         candidate = shape = page = doc = stencil = None
         if app is not None:
             try:
@@ -420,6 +430,9 @@ def main():
     draw.add_argument("--basename")
     draw.add_argument("--report")
     draw.add_argument("--draft", action="store_true")
+    draw.add_argument("--dpi", type=int, default=300, help="Target PNG resolution, 72–1200 dpi")
+    draw.add_argument("--padding-px", type=int, choices=(1, 2), default=2,
+                      help="Measured white border on all four sides at the target DPI")
     diff = commands.add_parser("compare")
     for name in ("before-scene", "after-scene", "before-png", "after-png"):
         diff.add_argument("--" + name, required=True)

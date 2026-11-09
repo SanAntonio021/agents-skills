@@ -105,6 +105,80 @@ custom_wrappers = ["local-skill"]
 
 
 class MirrorManagerTests(unittest.TestCase):
+    def test_stable_tags_use_semantic_order_and_peeled_commit(self) -> None:
+        refs = mirror_manager.stable_tag_refs("\n".join([
+            f"{'a' * 40} refs/tags/v0.9.0",
+            f"{'b' * 40} refs/tags/v0.10.0",
+            f"{'c' * 40} refs/tags/v0.10.0^{{}}",
+            f"{'d' * 40} refs/tags/v2.0.0-rc.1",
+            f"{'d' * 40} refs/tags/v3.0.0+build",
+            f"{'d' * 40} refs/tags/v01.0.0",
+            "invalid refs/tags/v9.0.0",
+        ]))
+        self.assertEqual(refs, {"v0.9.0": "a" * 40, "v0.10.0": "c" * 40})
+        self.assertEqual(mirror_manager.latest_stable_tag(refs), "v0.10.0")
+        self.assertIsNone(mirror_manager.latest_stable_tag({}))
+
+    def test_stable_policy_preserves_origin_dirty_and_tag_guards(self) -> None:
+        from dataclasses import replace
+        mirror = replace(make_mirror(), tracking="stable_tags")
+        local = {**healthy_local_state(mirror, "a" * 40),
+                 "local_branch": "HEAD", "local_stable_tag": "v1.0.0"}
+        remote = {"remote_reachable": True, "remote_head": "a" * 40,
+                  "stable_tags": {"v1.0.0": "a" * 40}}
+        self.assertEqual(mirror_manager.summarize_status(local, remote, mirror), "up_to_date")
+        for changed, status in [
+            ({"local_dirty": True}, "dirty_mirror"),
+            ({"local_origin": "https://example.test/wrong.git"}, "origin_mismatch"),
+            ({"local_branch": "main"}, "stable_tag_mismatch"),
+            ({"local_stable_tag": None}, "stable_tag_mismatch"),
+            ({"local_stable_tag": "v9.0.0"}, "stable_tag_mismatch"),
+            ({"git_dir_matches_registry": False}, "git_dir_mismatch"),
+        ]:
+            self.assertEqual(mirror_manager.summarize_status({**local, **changed}, remote, mirror), status)
+        with patch.object(mirror_manager, "run_remote_git", return_value={"exit_code": 0, "output": ""}):
+            self.assertFalse(mirror_manager.get_remote_head(mirror)["remote_reachable"])
+
+    def test_stable_sync_ignores_main_and_prereleases_then_follows_new_tag(self) -> None:
+        from dataclasses import replace
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, remote = create_local_remote_fixture(root)
+            initial = run_real_git(source, "rev-parse", "HEAD")
+            run_real_git(source, "tag", "v1.0.0")
+            run_real_git(source, "push", "origin", "--tags")
+            mirror = replace(make_mirror(), repo_url=remote.as_posix(), tracking="stable_tags",
+                             local_path=root / "mirror", git_dir_path=root / "metadata.git")
+            self.assertEqual(mirror_manager.sync_one(mirror)["status"], "initialized")
+            entry = source / "skills/upstream-skill/SKILL.md"
+            entry.write_text("# v2\n", encoding="utf-8")
+            run_real_git(source, "add", "skills/upstream-skill/SKILL.md")
+            run_real_git(source, "commit", "-m", "development")
+            current = run_real_git(source, "rev-parse", "HEAD")
+            run_real_git(source, "tag", "v1.1.0-rc.1")
+            run_real_git(source, "push", "origin", "main", "--tags")
+            checked = mirror_manager.sync_one(mirror)
+            self.assertEqual(checked["status"], "already_up_to_date", checked)
+            self.assertEqual(checked["after_head"], initial)
+            run_real_git(source, "tag", "-a", "v1.1.0", "-m", "stable")
+            run_real_git(source, "push", "origin", "--tags")
+            checked = mirror_manager.sync_one(mirror)
+            self.assertEqual(checked["status"], "synced", checked)
+            self.assertEqual(checked["after_head"], current)
+            self.assertEqual(checked["remote_tag"], "v1.1.0")
+            self.assertEqual(checked["local_branch"], "HEAD")
+            self.assertEqual(checked["changed_tracked_skills"], ["upstream-skill"])
+            local_entry = mirror.local_path / "skills/upstream-skill/SKILL.md"
+            local_entry.write_text("user edit\n", encoding="utf-8")
+            self.assertEqual(mirror_manager.sync_one(mirror)["status"], "dirty_mirror")
+            self.assertEqual(local_entry.read_text(encoding="utf-8"), "user edit\n")
+            run_real_git(mirror.local_path, "restore", "skills/upstream-skill/SKILL.md")
+            run_real_git(source, "tag", "v2.0.0", initial)
+            run_real_git(source, "push", "origin", "--tags")
+            blocked = mirror_manager.sync_one(mirror)
+            self.assertEqual(blocked["status"], "sync_failed", blocked)
+            self.assertEqual(run_real_git(mirror.local_path, "rev-parse", "HEAD"), current)
+
     def test_windows_proxy_uses_https_mapping_without_mutating_parent(self) -> None:
         original = {"PATH": "unchanged"}
         with (patch.object(mirror_manager.sys, "platform", "win32"),

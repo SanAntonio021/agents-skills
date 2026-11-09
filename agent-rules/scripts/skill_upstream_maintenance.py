@@ -46,6 +46,7 @@ DIAGNOSTIC_STATUSES = frozenset(
         "tracked_diff_failed",
         "dirty_mirror",
         "branch_mismatch",
+        "stable_tag_mismatch",
         "origin_mismatch",
         "baseline_unavailable",
         "non_fast_forward",
@@ -113,6 +114,7 @@ class MirrorRecord:
     local_path: Path
     exposure_policy: str
     git_dir_path: Path | None = None
+    tracking: str = "branch"
 
 
 def parse_args() -> argparse.Namespace:
@@ -204,6 +206,7 @@ def parse_args() -> argparse.Namespace:
     record.add_argument("--accepted-baseline", required=True)
     record.add_argument("--disposition", required=True, choices=sorted(ALLOWED_DISPOSITIONS))
     record.add_argument("--confirm-reviewed", action="store_true")
+    record.add_argument("--release-tag", help="Exact stable tag reviewed, when tracking stable_tags.")
     record.add_argument("--json", action="store_true")
     return parser.parse_args()
 
@@ -301,6 +304,7 @@ def load_mirrors(path: Path) -> dict[str, MirrorRecord]:
             local_path=item.local_path,
             exposure_policy=item.exposure_policy,
             git_dir_path=item.git_dir_path,
+            tracking=item.tracking,
         )
         if record.id in result:
             raise ValueError(f"{path}: duplicate mirror id {record.id}")
@@ -1082,6 +1086,7 @@ def inspect_mirror(mirror: MirrorRecord) -> dict[str, Any]:
         "local_path": str(mirror.local_path),
         "expected_git_dir_path": str(mirror.git_dir_path) if mirror.git_dir_path else None,
         "expected_branch": mirror.branch,
+        "tracking": mirror.tracking,
         "expected_origin": mirror.repo_url,
     }
     if not mirror.local_path.is_dir():
@@ -1146,11 +1151,20 @@ def inspect_mirror(mirror: MirrorRecord) -> dict[str, Any]:
     }
     if dirty.stdout.strip():
         return {"status": "dirty_mirror", "head": head, "mirror_details": details}
-    if branch.stdout.strip() != mirror.branch:
+    release_tag = None
+    if mirror.tracking == "stable_tags":
+        tags = git(mirror.local_path, ["show-ref", "--tags", "--dereference"])
+        manager = load_mirror_manager()
+        refs = manager.stable_tag_refs(tags.stdout) if tags.returncode == 0 else {}
+        release_tag = manager.latest_stable_tag({tag: sha for tag, sha in refs.items() if sha == head})
+        details["release_tag"] = release_tag
+        if branch.stdout.strip() or not release_tag:
+            return {"status": "stable_tag_mismatch", "head": head, "mirror_details": details}
+    elif branch.stdout.strip() != mirror.branch:
         return {"status": "branch_mismatch", "head": head, "mirror_details": details}
     if normalize_repo_url(origin.stdout.strip()) != normalize_repo_url(mirror.repo_url):
         return {"status": "origin_mismatch", "head": head, "mirror_details": details}
-    return {"status": "healthy", "head": head, "mirror_details": details}
+    return {"status": "healthy", "head": head, "release_tag": release_tag, "mirror_details": details}
 
 
 def refresh_mirrors(mirrors_registry: Path) -> dict[str, Any]:
@@ -1299,6 +1313,8 @@ def review_source_contexts(context: dict[str, Any]) -> list[dict[str, Any]]:
             "upstream_path",
             "path_migration_commit",
             "current_upstream_commit",
+            "tracking",
+            "current_release_tag",
             "source_identity",
         )
         if key in context
@@ -1419,6 +1435,11 @@ def validate_review_source_contexts_current(
             raise ValueError(f"Mirror for {current_source_id} is not healthy: {health['status']}")
         if health["head"] != str(source_context.get("current_upstream_commit", "")).lower():
             raise ValueError(f"Upstream HEAD changed for {current_source_id}.")
+        if (
+            source_context.get("tracking", "branch") != mirror.tracking
+            or source_context.get("current_release_tag") != health.get("release_tag")
+        ):
+            raise ValueError(f"Upstream release identity changed for {current_source_id}.")
         diff_status = source_diff(mirror.local_path, current_source, health["head"])
         if diff_status["status"] != "review_required":
             raise ValueError(
@@ -1540,6 +1561,7 @@ def diagnose_report_row(
             "blocked_missing_git_dir",
             "git_dir_mismatch",
             "tracked_diff_failed",
+            "stable_tag_mismatch",
         }:
             effective_status = mirror_status
         elif details.get("git_dir_matches_registry") is False:
@@ -1640,6 +1662,16 @@ def diagnose_report_row(
         ]
         approval_required = True
         approval_reason = "读取和新建隔离镜像不需批准；清理现有修改或切换登记路径前需要用户批准。"
+    elif effective_status == "stable_tag_mismatch":
+        problem = "稳定版镜像没有停在来源仓库可验证的正式语义版本标签上。"
+        impact = "本轮不能确认正式发行身份，不能据此推进接受基线或形成升级结论。"
+        repair_plan = [
+            "只读核对 origin、工作树、官方稳定标签及其 peeled commit。",
+            "保留现场，在隔离目录确认稳定版本和历史连续性，不用开发分支替代正式版。",
+            "取得准确授权后修复镜像；不强制移动标签、不丢弃本地修改。",
+        ]
+        approval_required = True
+        approval_reason = "改变不明镜像或来源身份需要准确授权。"
     elif effective_status == "branch_mismatch":
         problem = f"镜像当前分支 `{actual_branch}` 与登记分支 `{mirror.branch}` 不一致。"
         impact = "当前 HEAD 可能不是登记来源的预期历史，继续比较会把错误分支变化当成上游更新。"
@@ -1899,6 +1931,7 @@ def build_report(
             mirror = mirrors[source.mirror_id]
             source_state = state["sources"].setdefault(source.id, {})
             refresh_result = mirror_results.get(source.mirror_id) if mirror_results else None
+            release_tag = None
             try:
                 validation_errors = (preflight_validation or {}).get("source_errors", {}).get(source.id, [])
                 if validation_errors:
@@ -1922,6 +1955,7 @@ def build_report(
                 else:
                     health = inspect_mirror(mirror)
                     head = health["head"]
+                    release_tag = health.get("release_tag")
                     if health["status"] != "healthy":
                         row = {
                             "skill": skill.name,
@@ -1961,6 +1995,7 @@ def build_report(
                     elif (
                         source_state.get("last_reviewed_commit") == head
                         and source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
+                        and source_state.get("last_reviewed_release_tag") == release_tag
                     ):
                         row = {"skill": skill.name, "source": source.id, "status": "already_reviewed", "current_commit": head, "changed": []}
                     else:
@@ -1968,6 +2003,7 @@ def build_report(
                         reviewed_commit = source_state.get("last_reviewed_commit")
                         if (
                             source_state.get("reviewed_against_accepted_commit") == source.accepted_commit
+                            and source_state.get("last_reviewed_release_tag") == release_tag
                             and isinstance(reviewed_commit, str)
                             and SHA_PATTERN.fullmatch(reviewed_commit)
                             and git(mirror.local_path, ["merge-base", "--is-ancestor", reviewed_commit, head]).returncode == 0
@@ -1977,6 +2013,7 @@ def build_report(
                         row = {"skill": skill.name, "source": source.id, "current_commit": head, **diff}
                         if diff["status"] == "no_relevant_change":
                             source_state["last_reviewed_commit"] = head
+                            source_state["last_reviewed_release_tag"] = release_tag
                             source_state["reviewed_against_accepted_commit"] = source.accepted_commit
                             source_state["last_disposition"] = "no-impact"
                             source_state["last_reviewed_at"] = now
@@ -1984,6 +2021,7 @@ def build_report(
                                 {
                                     "source": source.id,
                                     "commit": head,
+                                    "release_tag": release_tag,
                                     "accepted_baseline": source.accepted_commit,
                                     "disposition": "no-impact",
                                     "reviewed_at": now,
@@ -1996,6 +2034,9 @@ def build_report(
                        "error": f"{type(exc).__name__}: {exc}"}
             if row["status"] in DIAGNOSTIC_STATUSES:
                 row.update(diagnose_report_row(row, source, mirror))
+            row["tracking"] = mirror.tracking
+            if mirror.tracking == "stable_tags" and row["status"] not in CHECK_ERROR_STATUSES:
+                row["current_release_tag"] = release_tag
             observed_commit = row.get("current_commit")
             if isinstance(observed_commit, str) and SHA_PATTERN.fullmatch(observed_commit.lower()):
                 source_state["last_seen_commit"] = observed_commit.lower()
@@ -2473,6 +2514,8 @@ def prepare_review(
                     "upstream_path": source.upstream_path,
                     "path_migration_commit": source.path_migration_commit,
                     "current_upstream_commit": head,
+                    "tracking": mirror.tracking,
+                    "current_release_tag": inspect_mirror(mirror).get("release_tag"),
                     "source_identity": source_identity_payload(source),
                 }
             )
@@ -2487,6 +2530,8 @@ def prepare_review(
         "upstream_path": primary_source.upstream_path,
         "path_migration_commit": primary_source.path_migration_commit,
         "current_upstream_commit": primary_head,
+        "tracking": prepared_sources[0][1].tracking,
+        "current_release_tag": inspect_mirror(prepared_sources[0][1]).get("release_tag"),
         "source_identity": source_identity_payload(primary_source),
         "additional_sources": additional_contexts,
         "additional_review_evidence": additional_evidence,
@@ -3245,6 +3290,7 @@ def record_review(
     accepted_baseline: str,
     disposition: str,
     confirmed: bool,
+    release_tag: str | None = None,
 ) -> dict[str, Any]:
     if not confirmed:
         raise ValueError("Refusing to record review without --confirm-reviewed")
@@ -3254,6 +3300,8 @@ def record_review(
         raise ValueError("Invalid commit")
     if not SHA_PATTERN.fullmatch(accepted_baseline.lower()):
         raise ValueError("Invalid accepted baseline")
+    if release_tag is not None and not re.fullmatch(r"v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", release_tag):
+        raise ValueError("Invalid stable release tag")
     state = read_state(path)
     now = datetime.now(timezone.utc).isoformat()
     entry = state["sources"].setdefault(source, {})
@@ -3261,6 +3309,7 @@ def record_review(
         {
             "last_seen_commit": commit.lower(),
             "last_reviewed_commit": commit.lower(),
+            "last_reviewed_release_tag": release_tag,
             "reviewed_against_accepted_commit": accepted_baseline.lower(),
             "last_disposition": disposition,
             "last_reviewed_at": now,
@@ -3270,6 +3319,7 @@ def record_review(
         {
             "source": source,
             "commit": commit.lower(),
+            "release_tag": release_tag,
             "accepted_baseline": accepted_baseline.lower(),
             "disposition": disposition,
             "reviewed_at": now,
@@ -3329,6 +3379,7 @@ def main() -> int:
                 args.accepted_baseline,
                 args.disposition,
                 args.confirm_reviewed,
+                args.release_tag,
             )
             emit(payload, args.json)
             return 0

@@ -159,6 +159,56 @@ class SkillUpstreamMaintenanceTests(unittest.TestCase):
     def load(self):
         return MODULE.load_sources(self.registry), MODULE.load_mirrors(self.mirrors)
 
+    def stable_mirror(self):
+        text = self.mirrors.read_text(encoding="utf-8").replace(
+            'branch = "main"', 'branch = "main"\ntracking = "stable_tags"')
+        self.mirrors.write_text(text, encoding="utf-8")
+        return self.load()
+
+    def test_stable_health_requires_detached_tag_and_preserves_dirty_guard(self) -> None:
+        skills, mirrors = self.stable_mirror()
+        mirror = mirrors["example"]
+        self.assertEqual(MODULE.inspect_mirror(mirror)["status"], "stable_tag_mismatch")
+        run_git(self.mirror, "tag", "v1.0.0")
+        run_git(self.mirror, "checkout", "--detach", "v1.0.0")
+        health = MODULE.inspect_mirror(mirror)
+        self.assertEqual(health["status"], "healthy")
+        self.assertEqual(health["release_tag"], "v1.0.0")
+        (self.mirror / "README.md").write_text("user edit\n", encoding="utf-8")
+        self.assertEqual(MODULE.inspect_mirror(mirror)["status"], "dirty_mirror")
+
+    def test_new_stable_tag_reassesses_development_review_and_locks_candidate(self) -> None:
+        skills, mirrors = self.stable_mirror()
+        entry = self.mirror / "skills/source-skill/SKILL.md"
+        entry.write_text("# New behavior\n", encoding="utf-8")
+        current = commit_all(self.mirror, "development change")
+        state_path = self.root / "reports/state.json"
+        MODULE.record_review(state_path, "example-source", current, self.baseline, "rejected", True)
+        run_git(self.mirror, "tag", "v1.1.0")
+        run_git(self.mirror, "checkout", "--detach", "v1.1.0")
+        def report():
+            return MODULE.build_report(skills, mirrors, self.root / "reports", "2026-11-09",
+                                       state_path, skills_root=self.skills)["sources"][0]
+        self.assertEqual(report()["status"], "review_required")
+        MODULE.record_review(state_path, "example-source", current, self.baseline,
+                             "rejected", True, release_tag="v1.1.0")
+        self.assertEqual(report()["status"], "already_reviewed")
+        context = {
+            "source": "example-source", "accepted_commit": self.baseline,
+            "current_upstream_commit": current,
+            "source_identity": MODULE.source_identity_payload(skills[0].sources[0]),
+            "tracking": "stable_tags", "current_release_tag": "v1.1.0",
+        }
+        MODULE.validate_review_source_contexts_current(skills[0], mirrors, context)
+        run_git(self.mirror, "tag", "v1.2.0")
+        self.assertEqual(report()["status"], "review_required")
+        with self.assertRaisesRegex(ValueError, "release identity changed"):
+            MODULE.validate_review_source_contexts_current(skills[0], mirrors, context)
+        history = MODULE.read_state(state_path)["history"]
+        self.assertEqual(len(history), 2)
+        self.assertIsNone(history[0]["release_tag"])
+        self.assertEqual(history[1]["release_tag"], "v1.1.0")
+
     def test_localized_non_git_provenance_keeps_identity_without_git_source(self) -> None:
         text = self.registry.read_text(encoding="utf-8").replace('name = "beta"\nstatus = "none"', 'name = "beta"\nstatus = "localized"')
         self.registry.write_text(text, encoding="utf-8")

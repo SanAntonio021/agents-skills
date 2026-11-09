@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -34,6 +35,7 @@ class MirrorConfig:
     exposure_policy: str
     tracked_upstream_skills: tuple[str, ...]
     custom_wrappers: tuple[str, ...]
+    tracking: str = "branch"
 
 
 class TrackedChangeError(RuntimeError):
@@ -354,6 +356,9 @@ def require_fields(raw: dict[str, Any], path: Path) -> MirrorConfig:
 
     if raw["exposure_policy"] != "zero":
         raise ValueError(f"{path}: mirror {raw['id']} must use exposure_policy='zero'")
+    tracking = raw.get("tracking", "branch")
+    if tracking not in {"branch", "stable_tags"}:
+        raise ValueError(f"{path}: unsupported mirror tracking: {tracking!r}")
 
     return MirrorConfig(
         id=str(raw["id"]),
@@ -364,6 +369,7 @@ def require_fields(raw: dict[str, Any], path: Path) -> MirrorConfig:
         exposure_policy=str(raw["exposure_policy"]),
         tracked_upstream_skills=tuple(str(item) for item in raw["tracked_upstream_skills"]),
         custom_wrappers=tuple(str(item) for item in raw["custom_wrappers"]),
+        tracking=tracking,
     )
 
 
@@ -497,7 +503,43 @@ def get_local_repo_state(
         state["local_origin"] = origin["output"].splitlines()[0].strip()
     if head["exit_code"] != 0 and not state["local_error"]:
         state["local_error"] = head["output"]
+    if mirror.tracking == "stable_tags":
+        tags = run_local_git(
+            mirror, ["show-ref", "--tags", "--dereference"],
+            timeout_seconds=remaining_timeout(deadline),
+        )
+        matching = stable_tag_refs(tags["output"]) if tags["exit_code"] == 0 else {}
+        state["local_stable_tag"] = latest_stable_tag(
+            {tag: sha for tag, sha in matching.items() if sha == state["local_head"]}
+        )
     return state
+
+
+def stable_tag_refs(output: str) -> dict[str, str]:
+    """Read lightweight/annotated refs without treating prereleases as stable."""
+    refs: dict[str, str] = {}
+    peeled: dict[str, str] = {}
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) != 2 or not re.fullmatch(r"[0-9a-fA-F]{40}", fields[0]):
+            continue
+        sha, ref = fields
+        if not ref.startswith("refs/tags/"):
+            continue
+        tag = ref.removeprefix("refs/tags/")
+        target = peeled if tag.endswith("^{}") else refs
+        tag = tag.removesuffix("^{}")
+        if re.fullmatch(r"v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag):
+            target[tag] = sha.lower()
+    refs.update(peeled)
+    return refs
+
+
+def latest_stable_tag(refs: dict[str, str]) -> str | None:
+    return max(
+        refs, key=lambda tag: (*map(int, tag.removeprefix("v").split(".")), tag),
+        default=None,
+    )
 
 
 def get_remote_head(
@@ -505,7 +547,8 @@ def get_remote_head(
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
     remote = run_remote_git(
-        ["ls-remote", mirror.repo_url, f"refs/heads/{mirror.branch}"],
+        ["ls-remote", mirror.repo_url,
+         "refs/tags/*" if mirror.tracking == "stable_tags" else f"refs/heads/{mirror.branch}"],
         timeout_seconds=timeout_seconds,
         repo_url=mirror.repo_url,
     )
@@ -516,6 +559,14 @@ def get_remote_head(
             "remote_error": remote["output"] or "Failed to query remote HEAD.",
         }
 
+    if mirror.tracking == "stable_tags":
+        refs = stable_tag_refs(remote["output"])
+        tag = latest_stable_tag(refs)
+        return {
+            "remote_reachable": bool(tag), "remote_head": refs.get(tag),
+            "remote_tag": tag, "stable_tags": refs,
+            "remote_error": None if tag else "No stable semantic version tag found.",
+        }
     first_line = remote["output"].splitlines()[0].strip() if remote["output"] else ""
     remote_head = first_line.split()[0] if first_line else None
     return {
@@ -538,7 +589,14 @@ def summarize_status(local: dict[str, Any], remote: dict[str, Any], mirror: Mirr
         return "dirty_mirror"
     if normalize_repo_url(local.get("local_origin")) != normalize_repo_url(mirror.repo_url):
         return "origin_mismatch"
-    if local["local_branch"] != mirror.branch:
+    if mirror.tracking == "stable_tags":
+        if local["local_branch"] != "HEAD" or not local.get("local_stable_tag"):
+            return "stable_tag_mismatch"
+        if remote["remote_reachable"] and remote.get("stable_tags", {}).get(
+            local["local_stable_tag"]
+        ) != local["local_head"]:
+            return "stable_tag_mismatch"
+    elif local["local_branch"] != mirror.branch:
         return "branch_mismatch"
     if not remote["remote_reachable"]:
         return "remote_check_failed"
@@ -566,6 +624,7 @@ def check_one(
         "id": mirror.id,
         "repo_url": mirror.repo_url,
         "branch": mirror.branch,
+        "tracking": mirror.tracking,
         "local_path": mirror.local_path.as_posix(),
         "git_dir_path": mirror.git_dir_path.as_posix() if mirror.git_dir_path else None,
         "exposure_policy": mirror.exposure_policy,
@@ -655,10 +714,84 @@ def sync_failure(
     }
 
 
+def sync_stable_tag(
+    mirror: MirrorConfig, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout_seconds
+    before = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
+    remote = get_remote_head(mirror, timeout_seconds=remaining_timeout(deadline))
+    status = summarize_status(before, remote, mirror)
+    if status not in {"needs_init", "up_to_date", "update_available"}:
+        return sync_failure(mirror, before, remote.get("remote_error") or status, status=status)
+    tag, head = remote["remote_tag"], remote["remote_head"]
+    if not before["local_exists"]:
+        mirror.local_path.parent.mkdir(parents=True, exist_ok=True)
+        mirror.git_dir_path.parent.mkdir(parents=True, exist_ok=True)
+        cloned = run_git_with_remote_fallback(
+            ["git", "clone", "--branch", tag, "--single-branch", "--separate-git-dir",
+             str(mirror.git_dir_path), mirror.repo_url, str(mirror.local_path)],
+            timeout_seconds=remaining_timeout(deadline), allow_retries=False,
+            repo_url=mirror.repo_url,
+        )
+        if cloned["exit_code"] != 0:
+            return sync_failure(mirror, before, cloned["output"], git_result=cloned)
+    else:
+        fetched = run_local_git(
+            mirror, ["fetch", "--no-tags", "origin", f"refs/tags/{tag}:refs/tags/{tag}"],
+            allow_remote_fallback=True, timeout_seconds=remaining_timeout(deadline),
+        )
+        if fetched["exit_code"] != 0:
+            return sync_failure(mirror, before, fetched["output"], git_result=fetched)
+    resolved = run_local_git(
+        mirror, ["rev-parse", f"refs/tags/{tag}^{{commit}}"],
+        timeout_seconds=remaining_timeout(deadline),
+    )
+    if resolved["exit_code"] != 0 or resolved["output"].strip() != head:
+        return sync_failure(mirror, before, "Stable tag changed during fetch; refusing checkout.")
+    if before["local_head"] and before["local_head"] != head:
+        ancestor = run_local_git(
+            mirror, ["merge-base", "--is-ancestor", before["local_head"], head],
+            timeout_seconds=remaining_timeout(deadline),
+        )
+        if ancestor["exit_code"] != 0:
+            return sync_failure(mirror, before, "Stable tag is not a fast-forward; refusing checkout.")
+    checkout = run_local_git(
+        mirror, ["checkout", "--detach", f"refs/tags/{tag}"],
+        timeout_seconds=remaining_timeout(deadline),
+    )
+    if checkout["exit_code"] != 0:
+        return sync_failure(mirror, before, checkout["output"], git_result=checkout)
+    after = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
+    if summarize_status(after, remote, mirror) != "up_to_date":
+        return sync_failure(mirror, after, "Post-sync stable tag health check failed.")
+    try:
+        changed, note = summarize_tracked_changes(
+            mirror, before["local_head"], head, timeout_seconds=remaining_timeout(deadline),
+        )
+    except TrackedChangeError as exc:
+        return sync_failure(mirror, after, str(exc), status="tracked_diff_failed", git_result=exc.result)
+    return {
+        "id": mirror.id, "repo_url": mirror.repo_url, "branch": mirror.branch,
+        "tracking": mirror.tracking, "local_path": mirror.local_path.as_posix(),
+        "git_dir_path": mirror.git_dir_path.as_posix() if mirror.git_dir_path else None,
+        "exposure_policy": mirror.exposure_policy,
+        "tracked_upstream_skills": list(mirror.tracked_upstream_skills),
+        "custom_wrappers": list(mirror.custom_wrappers),
+        **after, **remote,
+        "status": ("initialized" if not before["local_exists"] else
+                   "already_up_to_date" if before["local_head"] == head else "synced"),
+        "before_head": before["local_head"], "after_head": head,
+        "changed_tracked_skills": changed, "tracked_change_note": note,
+        "sync_recommended": False,
+    }
+
+
 def sync_one(
     mirror: MirrorConfig,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
+    if mirror.tracking == "stable_tags":
+        return sync_stable_tag(mirror, timeout_seconds)
     deadline = time.monotonic() + timeout_seconds
     before = get_local_repo_state(mirror, timeout_seconds=remaining_timeout(deadline))
     before_head = before["local_head"]

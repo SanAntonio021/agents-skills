@@ -253,6 +253,54 @@ class EditorEntry(unittest.TestCase):
         self.assertEqual(clock.now, 5)
         self.assertTrue(all(path.endswith('/eval') for path, _ in runner.calls))
 
+    def test_offscreen_menu_gets_one_background_frame_before_selection(self):
+        runner = self.mode_runner([
+            {'value':'complete'},
+            {'value':{'clicked':True,'text':'编辑','x':120,'y':24}},
+            {'clicked':True},
+            {'value':{'options':[],'offscreen_matches':1}},
+            {'value':{'options':[{'text':'编辑 可编辑文档','x':130,'y':70}]}},
+            {'clicked':True},
+        ])
+        captures = []
+        runner.screenshot = lambda timeout: captures.append(timeout)
+        result = runner.ensure_document_edit_mode()
+        self.assertEqual(len(captures), 1)
+        self.assertTrue(result['value']['menu_render_capture'])
+        self.assertTrue(result['value']['menu_option_selected'])
+
+    def test_offscreen_menu_does_not_recapture_or_extend_deadline(self):
+        clock = Clock()
+        runner = self.mode_runner([
+            {'value':'complete'},
+            {'value':{'clicked':True,'text':'编辑','x':120,'y':24}},
+            {'clicked':True},
+            *([{'value':{'options':[],'offscreen_matches':1}}] * 24),
+        ])
+        captures = []
+        runner.screenshot = lambda timeout: captures.append(timeout)
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            with self.assertRaisesRegex(VerificationError, 'outside the page viewport'):
+                runner.ensure_document_edit_mode()
+        self.assertEqual(len(captures), 1)
+        self.assertEqual(clock.now, 4)
+        self.assertEqual(sum(path.endswith('/click-at') for path, _ in runner.calls), 1)
+
+    def test_late_menu_frame_cannot_select_a_now_visible_option(self):
+        clock = Clock()
+        runner = self.mode_runner([
+            {'value':'complete'},
+            {'value':{'clicked':True,'text':'编辑','x':120,'y':24}},
+            {'clicked':True},
+            {'value':{'options':[],'offscreen_matches':1}},
+            {'value':{'options':[{'x':130,'y':70}]}},
+        ])
+        runner.screenshot = lambda timeout: clock.sleep(4)
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            with self.assertRaisesRegex(VerificationError, 'did not appear'):
+                runner.ensure_document_edit_mode()
+        self.assertEqual(sum(path.endswith('/click-at') for path, _ in runner.calls), 1)
+
     def test_mode_transport_error_records_failing_stage(self):
         runner = self.mode_runner([])
         def fail(path, data=None):

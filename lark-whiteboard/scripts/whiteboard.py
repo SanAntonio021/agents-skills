@@ -2157,6 +2157,7 @@ class Runner:
             mode['value']['click_method'] = 'background_click_at'
 
             menu_deadline = time.monotonic() + min(4.0, self.transport_timeout(4.0))
+            menu_render_requested = False
             menu_expression = r'''(()=>{
               const visible = element => {
                 const rect = element.getBoundingClientRect();
@@ -2180,6 +2181,17 @@ class Runner:
                                    {'expression': menu_expression})
                 menu_value = menu.get('value') if isinstance(menu, dict) else None
                 options = menu_value.get('options') if isinstance(menu_value, dict) else None
+                self.require_time()
+                remaining = menu_deadline - time.monotonic()
+                if remaining <= 0:
+                    offscreen = menu_value.get('offscreen_matches', 0) if isinstance(menu_value, dict) else 0
+                    if offscreen:
+                        error = VerificationError('Document edit menu option exists but is outside the page viewport')
+                        error.mode_stage = 'read_document_edit_menu'
+                        error.mode_coordinates = {'offscreen_matches':offscreen,
+                                                  'viewport':menu_value.get('viewport', {})}
+                        raise error
+                    raise VerificationError('Document edit menu option did not appear after opening the mode menu')
                 if isinstance(options, list) and len(options) == 1:
                     option = options[0]
                     mx, my = option.get('x'), option.get('y')
@@ -2204,16 +2216,18 @@ class Runner:
                     break
                 if isinstance(options, list) and len(options) > 1:
                     raise VerificationError('Document edit menu option is ambiguous')
-                remaining = menu_deadline - time.monotonic()
-                if remaining <= 0:
-                    offscreen = menu_value.get('offscreen_matches', 0) if isinstance(menu_value, dict) else 0
-                    if offscreen:
-                        error = VerificationError('Document edit menu option exists but is outside the page viewport')
-                        error.mode_stage = 'read_document_edit_menu'
-                        error.mode_coordinates = {'offscreen_matches':offscreen,
-                                                  'viewport':menu_value.get('viewport', {})}
-                        raise error
-                    raise VerificationError('Document edit menu option did not appear after opening the mode menu')
+                offscreen = menu_value.get('offscreen_matches', 0) if isinstance(menu_value, dict) else 0
+                if offscreen and not menu_render_requested:
+                    # Dropdown positioning can wait for a background frame too.
+                    menu_render_requested = True
+                    try:
+                        self.screenshot(timeout=min(remaining, self.transport_timeout(2.0)))
+                        self.require_time()
+                    except Exception as error:
+                        error.mode_stage = 'render_document_edit_menu'
+                        raise
+                    mode['value']['menu_render_capture'] = True
+                    continue
                 time.sleep(min(0.2, remaining))
         return mode
 
@@ -2649,7 +2663,7 @@ class Runner:
                     record[key] = state[key]
         if isinstance(detail, dict):
             for key in ('clicked', 'reason', 'count', 'text', 'menu_option_selected',
-                        'menu_option', 'click_method', 'menu_click_method'):
+                        'menu_option', 'click_method', 'menu_click_method', 'menu_render_capture'):
                 if key in detail:
                     record[key] = detail[key]
         if record.get('stage') in ('document_mode_switch_error', 'native_entry_error'):

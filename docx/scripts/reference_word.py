@@ -48,6 +48,12 @@ class _NativeWordApplication:
     def __getattr__(self, name: str) -> Any:
         return getattr(self._application, name)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in {"_application", "_codex_expected_provider_path"}:
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._application, name, value)
+
 
 def _registered_word_server(progid: str) -> Path:
     """Read the effective COM registration without modifying registry or apps."""

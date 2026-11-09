@@ -134,7 +134,8 @@ class OfficeNativeGateTests(unittest.TestCase):
         word = application or FakeWordApplication()
         runtime = FakeComRuntime()
         timeline = ProcessTimeline(pid_responses)
-        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)):
+        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)), \
+             patch.object(native_gate, "_verify_word_ownership", return_value={"status": "VERIFIED"}):
             result = native_gate.check_file(
                 self.source,
                 "docx",
@@ -218,6 +219,7 @@ class OfficeNativeGateTests(unittest.TestCase):
         runtime = FakeComRuntime()
         timeline = ProcessTimeline([[], [], [4242], []])
         with patch.object(reference_word, "native_dispatch", return_value=word) as dispatch, \
+             patch.object(native_gate, "_verify_word_ownership", return_value={"status": "VERIFIED"}), \
              patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)):
             result = native_gate.check_file(
                 self.source, "docx", allow_office_com=True, process_ids=timeline,
@@ -329,6 +331,68 @@ class OfficeNativeGateTests(unittest.TestCase):
                 self.assertEqual(result["status"], "UNVERIFIED")
                 self.assertEqual(result["phase"], "page_count_evidence")
                 self.assertEqual(word.quit_calls, 1)
+
+
+class WordIdentityTests(OfficeNativeGateTests):
+    def _case(self, *, observed=None, window_pid=4242, app_path=None, expected_path=None,
+              process_path=None, path_error=None, hwnd=10):
+        executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"
+        word = FakeWordApplication()
+        word.Path = str(app_path if app_path is not None else executable.parent)
+        word._codex_expected_provider_path = expected_path if expected_path is not None else executable
+        word.Hwnd = hwnd
+        observation = {"owned_pids": [4242] if observed is None else observed}
+        with patch.object(native_gate, "_window_process_id", return_value=window_pid), \
+             patch.object(native_gate, "_safe_process_executable_path", return_value=(process_path if process_path is not None else executable, path_error)):
+            return native_gate._verify_word_ownership(word, {"path": word.Path}, observation)
+
+    def test_identity_matches_directory_and_one_window_pid(self):
+        result = self._case()
+        self.assertEqual(result["status"], "VERIFIED")
+        self.assertEqual(result["pid"], 4242)
+
+    def test_identity_refuses_mismatch_or_missing_evidence(self):
+        for changes in (
+            {"observed": [4242, 4243]}, {"observed": []}, {"window_pid": 999},
+            {"app_path": self.root / "other"}, {"process_path": self.root / "other" / "WINWORD.EXE"},
+            {"expected_path": self.root / "other" / "WINWORD.EXE"}, {"path_error": "access denied"},
+            {"expected_path": self.root / "wps.exe"},
+        ):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                self._case(**changes)
+
+    def test_unverified_identity_never_opens_or_quits(self):
+        word = FakeWordApplication()
+        runtime = FakeComRuntime()
+        timeline = ProcessTimeline([[], [], [4242]])
+        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)), \
+             patch.object(native_gate, "_verify_word_ownership", side_effect=ValueError("PID mismatch")):
+            result = native_gate.check_file(self.source, "docx", allow_office_com=True,
+                dispatch_ex=lambda _: word, com_runtime=runtime, process_ids=timeline,
+                pid_observation_timeout_seconds=0, process_exit_timeout_seconds=0)
+        self.assertEqual(result["status"], "UNVERIFIED")
+        self.assertEqual(result["ownership"]["word_identity_and_ownership"]["status"], "UNVERIFIED")
+        self.assertEqual(result["ownership"]["candidate_pids"], [4242])
+        self.assertEqual(result["ownership"]["owned_pids"], [])
+        self.assertEqual(word.Documents.open_calls, [])
+        self.assertEqual(word.quit_calls, 0)
+
+    def test_gate_accepts_only_matching_window_and_paths(self):
+        word = FakeWordApplication()
+        executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"
+        word.Path = str(executable.parent)
+        word._codex_expected_provider_path = executable
+        word.Hwnd = 10
+        timeline = ProcessTimeline([[], [], [4242], []])
+        with patch.object(native_gate.tempfile, "gettempdir", return_value=str(self.root)), \
+             patch.object(native_gate, "_window_process_id", return_value=4242), \
+             patch.object(native_gate, "_safe_process_executable_path", return_value=(executable, None)):
+            result = native_gate.check_file(self.source, "docx", allow_office_com=True,
+                dispatch_ex=lambda _: word, com_runtime=FakeComRuntime(), process_ids=timeline,
+                pid_observation_timeout_seconds=0, process_exit_timeout_seconds=0)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["ownership"]["owned_pids"], [4242])
+        self.assertEqual(word.quit_calls, 1)
 
 
 if __name__ == "__main__":

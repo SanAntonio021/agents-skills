@@ -278,6 +278,52 @@ def _is_microsoft_word_identity(identity: dict[str, Any]) -> bool:
     return path.endswith("\\winword.exe") or "\\microsoft office\\" in path
 
 
+def _window_process_id(hwnd: int) -> int:
+    """Resolve the COM application's window to its owning process, read-only."""
+    if os.name != "nt" or hwnd <= 0:
+        raise ValueError("Word application window handle is unavailable")
+    user32 = ctypes.windll.user32
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    pid = wintypes.DWORD()
+    if not user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid)) or not pid.value:
+        raise ValueError("Word application window process cannot be determined")
+    return int(pid.value)
+
+
+def _verify_word_ownership(application: Any, identity: dict[str, Any], observation: dict[str, Any]) -> dict[str, Any]:
+    """Require registration, COM path and the window's one new PID to agree."""
+    pids = observation.get("owned_pids", [])
+    if len(pids) != 1:
+        raise ValueError("expected exactly one new Word process")
+    expected = getattr(application, "_codex_expected_provider_path", None)
+    if not expected:
+        raise ValueError("verified Word registration path is unavailable")
+    expected_path = Path(expected).resolve()
+    if expected_path.name.casefold() != "winword.exe":
+        raise ValueError("registered executable is not WINWORD.EXE")
+    application_path = identity.get("path")
+    if not application_path:
+        raise ValueError("Word application path is unavailable")
+    application_path = Path(application_path)
+    if application_path.name.casefold() != "winword.exe":
+        application_path = application_path / "WINWORD.EXE"
+    application_path = application_path.resolve()
+    hwnd = int(getattr(application, "Hwnd"))
+    window_pid = _window_process_id(hwnd)
+    if window_pid != pids[0]:
+        raise ValueError("Word application window PID does not match the new process")
+    process_path, error = _safe_process_executable_path(window_pid)
+    if error or process_path is None:
+        raise ValueError(error or "Word process executable path is unavailable")
+    normalize = lambda value: os.path.normcase(str(value))
+    if normalize(expected_path) != normalize(application_path) or normalize(expected_path) != normalize(process_path.resolve()):
+        raise ValueError("registered, application and process executable paths do not match")
+    return {"status": "VERIFIED", "window_handle": hwnd, "pid": window_pid,
+            "registered_path": str(expected_path), "application_path": str(application_path),
+            "process_path": str(process_path)}
+
+
 def _safe_process_ids(
     image_name: str,
     *,
@@ -591,7 +637,9 @@ def owned_application(
             timeout_seconds=pid_observation_timeout_seconds,
         )
         metadata["pid_observation"] = observation
-        metadata["owned_pids"] = observation.get("owned_pids", [])
+        candidates = observation.get("owned_pids", [])
+        metadata["candidate_pids"] = candidates
+        metadata["owned_pids"] = [] if spec["progid"] == "Word.Application" else candidates
         if observation["status"] != "OBSERVED":
             metadata["cleanup"] = {
                 "status": "NOT_ATTEMPTED",
@@ -602,6 +650,14 @@ def owned_application(
                 "DispatchEx returned an Office object but task-owned process PID was not observed",
                 details={"ownership": metadata},
             )
+        if spec["progid"] == "Word.Application":
+            try:
+                metadata["word_identity_and_ownership"] = _verify_word_ownership(application, identity, observation)
+                metadata["owned_pids"] = candidates
+            except Exception as exc:
+                metadata["word_identity_and_ownership"] = {"status": "UNVERIFIED", "error": _exception_text(exc)}
+                metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "Word identity or ownership cannot be proven", "pid_exit": None}
+                raise OwnershipFailure("Word identity or process ownership cannot be proven; document open and quit refused", details={"ownership": metadata}) from exc
         initial_count = _collection_count(application, spec["collection"])
         if initial_count != 0:
             metadata["cleanup"] = {

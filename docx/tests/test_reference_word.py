@@ -202,6 +202,22 @@ class FakeComRuntime:
         self.uninitialize_calls += 1
 
 
+def test_native_word_wrapper_forwards_configuration_to_com_application():
+    from types import SimpleNamespace
+    application = SimpleNamespace(Visible=True, AutomationSecurity=1)
+    wrapper = word_eval._NativeWordApplication(application, Path("WINWORD.EXE"))
+    wrapper.Visible = False
+    wrapper.AutomationSecurity = 3
+    assert application.Visible is False
+    assert application.AutomationSecurity == 3
+
+
+@pytest.fixture(autouse=True)
+def fake_word_ownership_evidence(monkeypatch):
+    # These field-evaluation tests use in-memory fake applications only.
+    monkeypatch.setattr(word_eval.gate, "_verify_word_ownership", lambda *_: {"status": "VERIFIED"})
+
+
 class ProcessTimeline:
     def __init__(self, responses):
         self.responses = list(responses)

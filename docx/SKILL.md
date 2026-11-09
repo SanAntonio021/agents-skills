@@ -110,8 +110,10 @@ existing guard proves isolation. It refuses existing `WINWORD.EXE`, uses `Dispat
 copy, checks the source hash, and quits only its own empty instance. Keep all these protections.
 The native gate must also record the actual application identity (`Path`, version, process image and
 owned PID). `Word.Application` alone is not proof of Microsoft Word: WPS may register the same COM
-class and may report a Word-like caption. If the COM object resolves outside Microsoft Office, the
-gate locates the installed `WINWORD.EXE` and starts a task-owned instance directly. WPS processes are
+class and may report a Word-like caption. The gate verifies the Microsoft Word registration, then
+matches the application's path and window PID to the unique new Word process and its executable path.
+If identity or ownership cannot be proven, it stops without opening a document or quitting the instance.
+WPS processes are
 observed as environment evidence and are never closed by the gate. A result is reported as Word
 native only when the owned executable path is Microsoft Word; WPS or LibreOffice results are
 compatibility/layout evidence and cannot satisfy a Word-native field-refresh requirement.

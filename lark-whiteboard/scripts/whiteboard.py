@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import struct
 import time
+import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 import uuid
@@ -2086,17 +2087,47 @@ class Runner:
         """Switch the containing Docx from read mode before native board entry.
 
         The embedded whiteboard can report ``can_edit=false`` while the
-        containing document is still in its read-mode view.  Only click the
-        uniquely visible, exact document mode control; an absent or ambiguous
-        control is left for the native entry/permission checks to report.
+        containing document is still in its read-mode view. The document
+        header can contain a hidden duplicate mode button, so click only the
+        uniquely visible control, then select its exact edit-mode menu item.
         """
+        def staged_call(stage, path, data, coordinates=None):
+            try:
+                return self.call(path, data)
+            except Exception as error:
+                error.mode_stage = stage
+                if isinstance(coordinates, dict):
+                    error.mode_coordinates = coordinates
+                if isinstance(error, urllib.error.HTTPError):
+                    try:
+                        body = json.loads(error.read(2048).decode('utf-8', errors='replace'))
+                        detail = body.get('error', body) if isinstance(body, dict) else {}
+                        code = detail.get('code') if isinstance(detail, dict) else None
+                        if isinstance(code, str) and re.fullmatch(r'[A-Z0-9_]{2,64}', code):
+                            error.proxy_error_code = code
+                    except Exception:
+                        pass
+                raise
+
+        ready_deadline = time.monotonic() + min(5.0, self.transport_timeout(5.0))
+        while True:
+            self.require_time()
+            ready = staged_call('document_ready_state', '/v2/tabs/' + self.tab + '/eval',
+                                {'expression':'document.readyState'}).get('value')
+            if ready == 'complete':
+                break
+            remaining = ready_deadline - time.monotonic()
+            if remaining <= 0:
+                raise VerificationError('Document page did not finish loading before edit-mode selection')
+            time.sleep(min(0.2, remaining))
+
         expression = r'''(()=>{
           const visible = element => {
             const rect = element.getBoundingClientRect();
             const style = getComputedStyle(element);
-            return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length)
-              && rect.width > 0 && rect.height > 0
-              && style.display !== 'none' && style.visibility !== 'hidden';
+            return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0
+              && rect.left < innerWidth && rect.top < innerHeight
+              && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0;
           };
           const controls = [...document.querySelectorAll('button[data-selector="docs-mode-switch"]')]
             .filter(visible);
@@ -2106,10 +2137,85 @@ class Runner:
           const control = controls[0];
           const text = (control.innerText || '').trim();
           if (text !== '编辑') return {clicked:false, reason:'DOCUMENT_MODE_NOT_READ_MODE', text};
-          control.click();
-          return {clicked:true, text};
+          const rect = control.getBoundingClientRect();
+          return {clicked:true, text, x:rect.left + rect.width/2, y:rect.top + rect.height/2,
+            viewport:{width:window.innerWidth,height:window.innerHeight}};
         })()'''
-        return self.call('/v2/tabs/' + self.tab + '/eval', {'expression': expression})
+        mode = staged_call('read_document_mode_control', '/v2/tabs/' + self.tab + '/eval',
+                           {'expression': expression})
+        value = mode.get('value') if isinstance(mode, dict) else None
+        if isinstance(value, dict) and value.get('clicked') is True:
+            x, y = value.get('x'), value.get('y')
+            if not all(finite_number(v) for v in (x, y)):
+                raise VerificationError('Document mode control returned invalid coordinates')
+            click_bounds = value.get('viewport') if isinstance(value.get('viewport'), dict) else {}
+            click_coordinates = {'x':x,'y':y,'viewport':click_bounds}
+            clicked = staged_call('click_document_mode_control', '/v2/tabs/' + self.tab + '/click-at',
+                                  {'x': x, 'y': y}, click_coordinates)
+            if not isinstance(clicked, dict) or clicked.get('clicked') is not True:
+                raise VerificationError('Document mode control click was not confirmed')
+            mode['value']['click_method'] = 'background_click_at'
+
+            menu_deadline = time.monotonic() + min(4.0, self.transport_timeout(4.0))
+            menu_expression = r'''(()=>{
+              const visible = element => {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0
+                  && rect.left < innerWidth && rect.top < innerHeight
+                  && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0;
+              };
+              const matches = [...document.querySelectorAll('[role="menuitem"]')]
+                .filter(element => (element.innerText || '').trim().replace(/\s+/g, ' ') === '编辑 可编辑文档')
+              const options = matches.filter(visible);
+              return {viewport:{width:window.innerWidth,height:window.innerHeight},
+                offscreen_matches:matches.length-options.length, options:options.map(element => {
+                  const rect = element.getBoundingClientRect();
+                  return {text:'编辑 可编辑文档',x:rect.left + rect.width/2,y:rect.top + rect.height/2};
+                })};
+            })()'''
+            while True:
+                self.require_time()
+                menu = staged_call('read_document_edit_menu', '/v2/tabs/' + self.tab + '/eval',
+                                   {'expression': menu_expression})
+                menu_value = menu.get('value') if isinstance(menu, dict) else None
+                options = menu_value.get('options') if isinstance(menu_value, dict) else None
+                if isinstance(options, list) and len(options) == 1:
+                    option = options[0]
+                    mx, my = option.get('x'), option.get('y')
+                    if not all(finite_number(v) for v in (mx, my)):
+                        raise VerificationError('Document edit menu returned invalid coordinates')
+                    viewport = menu_value.get('viewport') if isinstance(menu_value, dict) else None
+                    if (isinstance(viewport, dict) and all(finite_number(viewport.get(k)) for k in ('width','height'))
+                            and not (0 <= mx < viewport['width'] and 0 <= my < viewport['height'])):
+                        error = VerificationError('Document edit menu item remains outside the page viewport')
+                        error.mode_stage = 'select_document_edit_menu'
+                        error.mode_coordinates = {'x':mx,'y':my,'viewport':viewport}
+                        raise error
+                    menu_coordinates = {'x':mx,'y':my,'viewport':viewport or {}}
+                    selected = staged_call('select_document_edit_menu',
+                                            '/v2/tabs/' + self.tab + '/click-at', {'x': mx, 'y': my},
+                                            menu_coordinates)
+                    if not isinstance(selected, dict) or selected.get('clicked') is not True:
+                        raise VerificationError('Document edit menu selection was not confirmed')
+                    mode['value'].update(menu_option_selected=True,
+                                         menu_option='编辑 可编辑文档',
+                                         menu_click_method='background_click_at')
+                    break
+                if isinstance(options, list) and len(options) > 1:
+                    raise VerificationError('Document edit menu option is ambiguous')
+                remaining = menu_deadline - time.monotonic()
+                if remaining <= 0:
+                    offscreen = menu_value.get('offscreen_matches', 0) if isinstance(menu_value, dict) else 0
+                    if offscreen:
+                        error = VerificationError('Document edit menu option exists but is outside the page viewport')
+                        error.mode_stage = 'read_document_edit_menu'
+                        error.mode_coordinates = {'offscreen_matches':offscreen,
+                                                  'viewport':menu_value.get('viewport', {})}
+                        raise error
+                    raise VerificationError('Document edit menu option did not appear after opening the mode menu')
+                time.sleep(min(0.2, remaining))
+        return mode
 
     @staticmethod
     def native_save_ready(state, fence=None, minimum_applied_version=None):
@@ -2532,6 +2638,35 @@ class Runner:
                 state = self.enter_editor(state)
             return state
 
+    def record_entry_diagnostic(self, stage, state=None, detail=None):
+        report = getattr(self, 'report', None)
+        if not isinstance(report, dict):
+            self.report = report = {}
+        record = {'stage':stage}
+        if isinstance(state, dict):
+            for key in ('can_edit', 'resources_loaded', 'entered', 'entry_invoked'):
+                if key in state:
+                    record[key] = state[key]
+        if isinstance(detail, dict):
+            for key in ('clicked', 'reason', 'count', 'text', 'menu_option_selected',
+                        'menu_option', 'click_method', 'menu_click_method'):
+                if key in detail:
+                    record[key] = detail[key]
+        if record.get('stage') in ('document_mode_switch_error', 'native_entry_error'):
+            if isinstance(detail, BaseException):
+                record['error_type'] = type(detail).__name__
+                record['error'] = str(detail)[:240]
+                mode_stage = getattr(detail, 'mode_stage', None)
+                if isinstance(mode_stage, str):
+                    record['mode_stage'] = mode_stage
+                proxy_code = getattr(detail, 'proxy_error_code', None)
+                if isinstance(proxy_code, str):
+                    record['proxy_error_code'] = proxy_code
+                coordinates = getattr(detail, 'mode_coordinates', None)
+                if isinstance(coordinates, dict):
+                    record['mode_coordinates'] = coordinates
+        report.setdefault('editor_entry', []).append(record)
+
     def enter_editor(self, state=None):
         """Enable document editing, call native entry once, then observe state."""
         with self.time_budget(min(self.timeout, 20)):
@@ -2540,11 +2675,13 @@ class Runner:
             mode_checked = False
             mode_clicked = False
             mode_waits = 0
+            entry_waits = 0
             while True:
                 self.require_time()
                 if state is None:
                     state = self.editor({'kind':'inspect'})
                     self.require_time()
+                self.record_entry_diagnostic('native_state', state)
                 if state.get('resources_loaded') is False:
                     if not render_requested:
                         # A background tab can pause its first frame until capture.
@@ -2560,14 +2697,26 @@ class Runner:
                     raise VerificationError('Editor resource-loading evidence is unavailable')
                 if state.get('entered') is True:
                     if state.get('can_edit') is not True:
+                        if state.get('can_edit') is False and entry_waits < 8:
+                            entry_waits += 1
+                            time.sleep(self.transport_timeout(0.25))
+                            state = None
+                            continue
                         reason = 'denied' if state.get('can_edit') is False else 'unavailable'
                         raise VerificationError('Editor edit permission is ' + reason)
                     return state
                 if state.get('can_edit') is not True and not mode_checked:
                     mode_checked = True
-                    mode = self.ensure_document_edit_mode()
+                    try:
+                        mode = self.ensure_document_edit_mode()
+                    except Exception as error:
+                        self.record_entry_diagnostic('document_mode_switch_error', detail=error)
+                        raise
                     value = mode.get('value') if isinstance(mode, dict) else None
+                    self.record_entry_diagnostic('document_mode_switch', detail=value)
                     if isinstance(value, dict) and value.get('clicked') is True:
+                        if value.get('menu_option_selected') is not True:
+                            raise VerificationError('Document edit mode menu selection was not confirmed')
                         mode_clicked = True
                         state = None
                         continue
@@ -2577,7 +2726,12 @@ class Runner:
                     state = None
                     continue
                 if not invoked:
-                    state = self.editor({'kind':'enter'})
+                    try:
+                        state = self.editor({'kind':'enter'})
+                    except Exception as error:
+                        self.record_entry_diagnostic('native_entry_error', detail=error)
+                        raise
+                    self.record_entry_diagnostic('native_entry_result', state)
                     invoked = True
                     self.require_time()
                     continue

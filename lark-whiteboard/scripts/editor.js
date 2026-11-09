@@ -14,17 +14,44 @@
       || !['feishu.cn','larksuite.com'].some(host=>wanted.hostname===host||wanted.hostname.endsWith('.'+host))
       || !/^[A-Za-z0-9]+$/.test(request.whiteboard_token)) fail('INVALID_TARGET');
   const matches = [];
+  const identityEvidence = {
+    canvas_containers: 0,
+    react_fibers: 0,
+    doc_states: 0,
+    document_matches: 0,
+    board_matches: 0,
+    exact_matches: 0,
+    entry_handlers: 0
+  };
   for (const element of document.querySelectorAll('.whiteboard-canvas-container')) {
-    let fiber = element[Object.keys(element).find(k => /^__react(InternalInstance|Fiber)/.test(k))];
-    let app, entry;
+    identityEvidence.canvas_containers++;
+    const fiberKey = Object.keys(element).find(k => /^__react(InternalInstance|Fiber)/.test(k));
+    if (fiberKey) identityEvidence.react_fibers++;
+    let fiber = fiberKey && element[fiberKey];
+    let app, entry, documentMatch = false, boardMatch = false, exactMatch = false;
     for (let i = 0; fiber && i < 8; i++, fiber = fiber.return) {
       const p = fiber.memoizedProps || {};
-      if (p.app?.docState?.whiteboardToken === request.whiteboard_token) app = p.app;
+      const state = p.app?.docState;
+      if (state) {
+        identityEvidence.doc_states++;
+        if (state.docxToken === doc) documentMatch = true;
+        if (state.whiteboardToken === request.whiteboard_token) {
+          boardMatch = true;
+          if (state.docxToken === doc) {
+            exactMatch = true;
+            app = p.app;
+          }
+        }
+      }
       if (typeof p.onDoubleClick === 'function') entry = p.onDoubleClick;
     }
-    if (app?.docState.docxToken === doc) matches.push({app, entry, element});
+    if (documentMatch) identityEvidence.document_matches++;
+    if (boardMatch) identityEvidence.board_matches++;
+    if (exactMatch) identityEvidence.exact_matches++;
+    if (entry) identityEvidence.entry_handlers++;
+    if (app) matches.push({app, entry, element});
   }
-  if (matches.length !== 1) fail('BOARD_IDENTITY_NOT_UNIQUE_OR_NOT_LOADED');
+  if (matches.length !== 1) fail('BOARD_IDENTITY_NOT_UNIQUE_OR_NOT_LOADED:' + JSON.stringify(identityEvidence));
   const {app: a, entry, element} = matches[0];
   if (!(a.nodeManager?.nodeMap instanceof Map) || typeof a.api?.graphicNodeToPageNode !== 'function') fail('EDITOR_INTERFACE_MISMATCH');
   const cmd = (name, args = {}) => {

@@ -105,6 +105,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 
 `operations: []` 用于只读检查。每次运行创建独立后台标签，任务凭据只在内存中，正常完成后关闭自有标签。
 请求明确指定文档和画板，不支持模糊搜索目标或自动迁移独立文本框。`document_url` 支持同源的 `/docx/` 与 `/wiki/`；可选 `docx_token` 用于追加已知文档身份约束，不能替代 CLI fetch 核验。runner 每次打开或重开页面都读取请求和实际路由，核对两者对应同一 Docx、唯一目标画板及准确 `block_id`；结果的 `document_routes` 保留这些核验。
+编辑入口失败时，结果中的 `editor_entry` 按顺序记录文档模式控件识别、菜单选择和原生编辑器权限状态，便于区分入口未切换与实际权限拒绝。
 
 | kind | 参数 |
 |---|---|

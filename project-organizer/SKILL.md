@@ -1,6 +1,6 @@
 ---
 name: project-organizer
-description: 新建普通项目目录并建立 README、项目规范、AGENTS，或建立长期资料主档并补齐项目级 README 入口；按用途组织正式内容和临时过程文件。项目自产资料留在项目，正式外部参考资料按 Zotero 工作区规则归档，并检查项目与飞书记录的引用关系。也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
+description: 新建普通项目目录并建立 README、项目规范、AGENTS，或建立长期资料主档并补齐项目级 README 入口；按共同内容分类规则组织正式内容和临时过程文件，检查本地项目、飞书实验主稿与 Zotero 资料的入口关系。也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
 compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports local drive-letter paths only.
 ---
 
@@ -8,7 +8,7 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 本技能负责把一个或多个项目目录整理成可以继续使用的工作区。完成标准是有效内容完整、新位置的说明和引用可用、已处理的旧目录退役，恢复材料集中保存。
 
-涉及 Markdown 入口、专题说明或引用整合时，按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md) 判断职责、历史归位、重复处理和引用验收；Markdown 正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理。目录迁移、Git 恢复和退役仍按本技能的专门规则执行。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`。
+确定材料保存位置，或整合 Markdown 入口、专题说明及引用时，读取 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)，按其统一分类确定主记录，并判断职责、历史归位、重复处理和引用验收；本技能不另设保存分类表。Markdown 正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理。目录迁移、Git 恢复和退役仍按本技能的专门规则执行。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`。
 
 ## 适用场景
 
@@ -32,7 +32,7 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 项目规范：新建普通项目默认创建根目录 `项目规范.md`、`AGENTS.md` 和 `README.md`。`项目规范.md` 承载项目特有约束、分工、禁止事项和执行方式，是唯一规范正文；README 在开头设置“使用前阅读”入口并链接它，AGENTS 只保留读取入口、适用范围和少量不可省略的执行约束。代码仓库、跨平台工具链或用户明确要求使用 ASCII 文件名时，以 `PROJECT_RULES.md` 替代 `项目规范.md`，但同一项目只保留一个正文文件。已有项目只有 AGENTS 时不自动拆分；项目被重新整理、规则更新或用户明确要求时，才按本段迁移，原有独有规则先完整归位，再精简 AGENTS。
 
-外部参考资料：用于项目研究、设计或选型的正式论文、标准、厂家资料及无存储限制的供应商技术资料归 Zotero。分类和跨项目关联按 [`zotero-workspace-library`](../zotero-workspace-library/SKILL.md)；项目 README 在集合建立后记录可验证的集合入口或层级名称。项目自产代码、数据、仿真、实验记录和报告留项目；外部参考 PDF 不在项目长期另存第二份。既有 `器件资料/` 和历史本地 PDF 原样保留，本技能不因新规则批量迁移或删除。报价、邮件和采购记录按项目现有业务记录规则保存，不作为参考资料归档。
+材料归属：按上述共同分类区分本地主记录、飞书实验主稿与外部参考资料，README 链接各自主记录。Zotero 分类和跨项目关联按 [`zotero-workspace-library`](../zotero-workspace-library/SKILL.md)，集合建立后记录可验证的入口或层级名称。既有 `器件资料/` 和历史本地 PDF 原样保留，本技能不因新规则批量迁移或删除。报价、邮件和采购记录按项目现有业务记录规则保存，不作为参考资料归档。
 
 项目器件资料入口：项目有自产器件资料或需与外部手册不同的项目文件时，沿用现有目录结构；不为满足 Zotero 归档而新建空的 `器件资料/`，也不把外部手册长期复制到该目录。目录设计可参考 [material-layout.md](references/material-layout.md)。
 

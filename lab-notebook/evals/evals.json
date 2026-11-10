@@ -1,0 +1,68 @@
+{
+  "skill_name": "lab-notebook",
+  "fixture_policy": "synthetic-only",
+  "run_policy": "使用独立上下文和隔离目录。首例分别从 lab-notebook、writing-router、technical-writing 入口运行；其余按 entrypoint 运行。逐轮只发送当前 prompt 与必要材料，expectations 和后续消息留在控制端。在线文档复用 writing-router/tests/fake_document_store.py，只记录真实操作，不代模型决定确认或保存位置。不得读写真实项目、个人样稿、仪器或云文档；检查实际读取回执、文件变化与文档事件，不以最终自述代替验收。",
+  "evals": [
+    {
+      "id": "plan-confirmation-and-writeback",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "setup": "在线主稿已有操作者备注：本次只比较传感器读数，不进行绝对温度校准。",
+      "turns": [
+        {
+          "prompt": "我们要制定温度传感器现场测试方案，比较室温与加热后的读数。传感器和记录电脑已有，程序已能按1秒间隔保存时间戳与温度CSV；测试时长和重复次数尚未决定。先讨论实验目的和已有条件，当前主稿为给定的隔离在线文档。",
+          "expectations": ["实际进入实验技能并读取共同协作、质量和保存分类参考", "展示短段落，未确认时不写正文", "不补造测试时长和重复次数"]
+        },
+        {
+          "setup": "操作者另加备注：加热装置型号尚未确定。",
+          "prompt": "本轮展示的段落都可以，原样写入。继续下一问题。",
+          "expectations": ["只保存已展示且获确认的正文并读回", "两条操作者备注保持原样", "继续一个未决问题", "不另建本地竞争主稿"]
+        }
+      ]
+    },
+    {
+      "id": "research-planning-local",
+      "entrypoint": "writing-router/SKILL.md",
+      "files": [],
+      "prompt": "本次只维护论文甲的研究规划。以下正文已经确认，请原样保存并更新现有README入口：研究目标：比较方法A与方法B的稳定性。研究取舍：暂不采用复杂模型。本次不制定现场步骤。",
+      "expectations": ["研究规划只维护在该论文本地主稿", "不创建飞书实验正文", "README只提供入口或必要摘要", "正文保持原样"]
+    },
+    {
+      "id": "mixed-content-single-masters",
+      "entrypoint": "project-organizer/SKILL.md",
+      "files": [],
+      "prompt": "不搬迁目录，只将以下已确认正文原样保存到合适的主记录并更新现有README入口。研究规划：比较方法A与方法B，先验证重复测量的稳定性。现场步骤：每种温度状态采集30秒，重复3次，由程序保存CSV。研究规划和实验方案目前均无正文，隔离在线文档可用。",
+      "expectations": ["研究规划进入论文本地主稿", "现场步骤进入在线实验主稿", "README链接两份各有职责的主记录", "不复制完整正文到第二个位置", "不因保存记录启动目录迁移"]
+    },
+    {
+      "id": "explicit-local-experimental-plan",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "prompt": "本次实验方案明确只保存在给定的本地experiment.md，不使用在线主稿。已确认正文是：每种状态采集30秒，重复3次，由程序保存CSV。请原样写入，保留原有操作者备注。",
+      "expectations": ["按用户指定写入本地主稿并读回", "保留原有备注", "不创建在线或第二份本地主稿"]
+    },
+    {
+      "id": "standalone-technical-question",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "prompt": "单独问一个原理问题：采样间隔是1秒，是否就能证明传感器的响应时间小于1秒？",
+      "expectations": ["直接解释采样间隔与响应时间的区别", "不自动生成或保存实验方案", "不连接仪器"]
+    },
+    {
+      "id": "execution-log-direct",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "setup": "主稿已有目的与条件；提供合成room.csv，含时间0、1、2秒及温度24.0、24.1、24.0摄氏度。",
+      "prompt": "刚完成一次室温采集，请补入当前主稿：程序按1秒间隔保存了3个温度读数，原始文件为给定room.csv；加热状态尚未采集。今天先停在这里。",
+      "expectations": ["直接回填实际运行事实并读回，不增加逐段确认", "保留原稿和原始数据", "不补造加热结果或差值结论", "停止在本次指定位置"]
+    },
+    {
+      "id": "online-write-unavailable",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "setup": "控制端将隔离在线文档设为unavailable。",
+      "prompt": "请补充保存这句已确认的记录：本轮尚未确定加热方式。",
+      "expectations": ["在线写入失败后不宣称保存成功", "保留已确认文字及待回填位置", "原稿不变，不反复追加或另建竞争主稿"]
+    }
+  ]
+}

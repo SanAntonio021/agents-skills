@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: 中文技术方案、会前技术交流稿、系统说明、专利技术交底书、测试方案、测试记录和结果分析的写作、重构与审校，也负责独立的实验设计、比较方法、结果解释及工程指标可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、专利构思如何交底、会议要讨论什么、接口和参数是什么、测试如何开展、比较是否公平、结果能支持什么结论，或要求技术文档删套话、保护公式与状态；支持 technical_scheme、technical_exchange、system_description、patent_disclosure、test_result_analysis 五种模式。
+description: 中文技术方案、会前技术交流稿、系统说明、专利技术交底书和结果分析的写作、重构与审校，也负责独立的实验设计、比较方法、结果解释及工程指标可行性判断。Use when 用户要说明系统怎么构成、方案怎么实现、指标能否做到、专利构思如何交底、会议要讨论什么、接口和参数是什么、比较是否公平、结果能支持什么结论，或要求技术文档删套话、保护公式与状态；可执行实验方案与现场记录转入 lab-notebook。支持 technical_scheme、technical_exchange、system_description、patent_disclosure、test_result_analysis 五种模式。
 ---
 
 # 技术文档写作
@@ -12,6 +12,8 @@ description: 中文技术方案、会前技术交流稿、系统说明、专利�
 - `document_type=technical`
 - `mode=technical_scheme|technical_exchange|system_description|patent_disclosure|test_result_analysis`
 - `edit_scope`、`language`、`loaded_refs`
+
+制定、修改或续写可执行实验方案，以及组织现场操作单或回填实验记录时，直接读取 [lab-notebook](../lab-notebook/SKILL.md#开始与写入)，由其作为本轮主技能。保留当前范围、已确认内容和授权，不重复进入本技能的通用方案结构。独立技术问答仍按下一段直接回答。
 
 仅判断技术指标是否可行时，按需读取[指标可行性判断](references/metric-feasibility.md)。独立讨论实验设计、比较方法或结果解释时，按需读取[工程科研检查](references/engineering-validation.md)，直接回答当前问题，不触发写稿、建账本、改项目或连接仪器。论文中的方法与结论审查交给 `paper-review`，复用同一份专业参考。
 
@@ -49,16 +51,6 @@ description: 中文技术方案、会前技术交流稿、系统说明、专利�
 - 实施条件、验证方法和限制。
 
 方案比较要写相同条件下的差异和取舍。没有证据时不把候选方案写成“最优”，也不把计划写成已落地。
-
-### 实验操作单
-
-测试方案用于现场照着执行时，沿用 `technical_scheme`，按实际操作顺序写，不套用结果分析报告的结构。续写或改排已有操作单时，按 [lab-notebook 的步骤依赖检查](../lab-notebook/SKILL.md#逐步准备实验)确定插入位置；不得因为本轮讨论最后提到某一步，就把它追加到文末。
-
-- 每步写清接什么、设什么、测什么，以及何时进入下一步；结果、图片和数据目录紧接对应步骤，选做扫描和异常排查放在主流程之后。
-- 保留参数、单位、公式、器件限制和安全条件，在对应步骤写成可执行要求，例如“换线前关闭输出”；其他澄清与限制按[共同质量规则的读者需要判断](../writing-router/references/common-quality.md#中文正文展示前检查)取舍。
-- 程序能保存的数据不设计成人工待填项；人工只确认实际接线、手动旋钮等现场信息。程序保存、对话读取并回填文档等职责集中说明一次，按已确认能力表述，不将计划中的自动化写成已有功能。
-- 尚无结果的位置只留标签与空白，不加“待填写”“待运行后回填”等提示；配置摘要若仅用于追溯，留在运行记录，不作为开工前的填表任务。
-- 审稿检查步骤能否正确执行、结果能否准确判断；保留为此必需的原理、公式和参数说明。
 
 ## `technical_exchange`
 
@@ -108,7 +100,6 @@ description: 中文技术方案、会前技术交流稿、系统说明、专利�
 - 测试条件能否支撑结论；
 - 计划、设计、实现、测试、实测和计算状态是否被升级；
 - 同一结果是否在多个章节换说法重复。
-- 实验操作单是否能按顺序执行并判断转入下一步，是否混入重复纠偏、无动作的免责说明或本可自动记录的人工填表任务。
 - 采用 `technical_exchange` 时，是否把计算、回读或实测任务误写成会上可确认的问题；
 - 采用 `technical_exchange` 时，是否遗漏真实方案分支，或把已经确定的约束重复写成讨论项；
 - 采用 `technical_exchange` 时，责任、测试和方案说明是否分散重复，导致读者需要跨节拼接同一件事。
@@ -118,7 +109,7 @@ description: 中文技术方案、会前技术交流稿、系统说明、专利�
 
 ## 文件边界
 
-正文按当前协作方式写回主稿，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。需要 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 使用本轮按协作方式处理并审校的正文，再交给 `docx`；导出阶段不重新改写内容。
+确定正文主稿位置时，读取 [内容分类与主记录](../writing-router/references/markdown-document-organization.md#内容分类与主记录)，按当前协作方式写回，飞书主稿交给对应平台技能局部更新。实际写入本地 `.md` 或 `.tex` 前执行 [文稿版本保护](../writing-router/references/document-version-protection.md)。需要 Word 时，先按 [Markdown 到 DOCX 交接契约](../writing-router/references/markdown-docx-contract.md) 使用本轮按协作方式处理并审校的正文，再交给 `docx`；导出阶段不重新改写内容。
 
 Markdown 正文按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)组织；需要整合入口、专题记录或跨文档引用时，按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)处理职责、历史和引用。技术对象、参数、状态、公式和证据仍以本技能的专业要求为准。
 

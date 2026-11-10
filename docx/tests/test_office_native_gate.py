@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import unittest
@@ -109,6 +110,11 @@ class OfficeNativeGateTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
+    @unittest.skipUnless(os.name == "nt", "Windows process path integration")
+    def test_process_path_reads_the_actual_current_process(self) -> None:
+        self.assertEqual(Path(native_gate._process_path(os.getpid())).resolve(), Path(sys.executable).resolve())
+        self.assertIsNone(native_gate._process_path(-1))
+
     def test_safe_process_executable_path_returns_path_and_reports_missing(self) -> None:
         executable = self.root / "WINWORD.EXE"
         executable.write_bytes(b"word")
@@ -130,6 +136,7 @@ class OfficeNativeGateTests(unittest.TestCase):
         require_render: bool = False,
         rasterizer=None,
         dispatch_word_executable=None,
+        prepare_owned_application=None,
     ) -> tuple[dict[str, object], FakeWordApplication, FakeComRuntime, ProcessTimeline]:
         word = application or FakeWordApplication()
         runtime = FakeComRuntime()
@@ -146,6 +153,7 @@ class OfficeNativeGateTests(unittest.TestCase):
                 com_runtime=runtime,
                 rasterizer=rasterizer,
                 dispatch_word_executable=dispatch_word_executable,
+                prepare_owned_application=prepare_owned_application,
                 pid_observation_timeout_seconds=0,
                 process_exit_timeout_seconds=0,
             )
@@ -183,6 +191,28 @@ class OfficeNativeGateTests(unittest.TestCase):
         ownership = result["ownership"]
         self.assertEqual(ownership["owned_pids"], [4242])
         self.assertEqual(ownership["cleanup"]["status"], "CLEAN")
+
+    def test_bootstrap_is_prepared_only_after_verified_ownership(self) -> None:
+        word = FakeWordApplication()
+        word.Documents.Count = 1
+        prepared = []
+        def prepare(app):
+            prepared.append(app)
+            app.Documents.Count = 0
+        result, _, _, _ = self.run_docx_gate(
+            [[], [], [4242], []], application=word, prepare_owned_application=prepare,
+        )
+        self.assertEqual(result['status'], 'PASS')
+        self.assertEqual(prepared, [word])
+        self.assertEqual(result['ownership']['instance_preparation']['status'], 'PASS')
+
+        wps = FakeEngineApplication(r'D:\kingsoft\WPS Office\office6')
+        result, _, _, _ = self.run_docx_gate(
+            [[], [], []], application=wps, prepare_owned_application=prepare,
+        )
+        self.assertFalse(result['ok'])
+        self.assertEqual(prepared, [word])
+        self.assertEqual(wps.Documents.open_calls, [])
 
     def test_non_microsoft_provider_is_refused_without_fallback_or_quit(self) -> None:
         wps = FakeEngineApplication(r"D:\ProgramData\kingsoft\WPS Office\office6")

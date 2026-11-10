@@ -186,14 +186,22 @@ def _process_path(pid: int) -> str | None:
     """Return a process executable path without terminating or attaching to it."""
     if os.name != "nt":
         return None
+    if not isinstance(pid, int) or pid <= 0:
+        return None
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    script = "(Get-Process -Id $args[0] -ErrorAction Stop).Path"
+    # -Command joins trailing arguments into PowerShell source; they do not
+    # populate $args. Embed only the validated integer and emit UTF-8 paths.
+    script = (
+        "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; "
+        f"(Get-Process -Id {pid} -ErrorAction Stop).Path"
+    )
     try:
         completed = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script, str(pid)],
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
             capture_output=True, check=False, creationflags=creation_flags,
+            timeout=10,
         )
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
         return None
     if completed.returncode != 0:
         return None
@@ -568,6 +576,7 @@ def owned_application(
     *,
     dispatch_ex: Callable[[str], Any] | None = None,
     dispatch_word_executable: Callable[[Path], Any] | None = None,
+    prepare_owned_application: Callable[[Any], None] | None = None,
     com_runtime: Any | None = None,
     process_ids: Callable[[str], list[int]] | None = None,
     pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
@@ -672,6 +681,12 @@ def owned_application(
                 metadata["word_identity_and_ownership"] = {"status": "UNVERIFIED", "error": _exception_text(exc)}
                 metadata["cleanup"] = {"status": "NOT_ATTEMPTED", "reason": "Word identity or ownership cannot be proven", "pid_exit": None}
                 raise OwnershipFailure("Word identity or process ownership cannot be proven; document open and quit refused", details={"ownership": metadata}) from exc
+        # A direct native-model connector may need a generated blank document
+        # to obtain Word.Window.Hwnd. Close only that bootstrap after all
+        # identity/PID checks, then require the usual empty-instance proof.
+        if prepare_owned_application is not None:
+            prepare_owned_application(application)
+            metadata["instance_preparation"] = {"status": "PASS"}
         initial_count = _collection_count(application, spec["collection"])
         if initial_count != 0:
             metadata["cleanup"] = {
@@ -1273,6 +1288,7 @@ def check_file(
     process_ids: Callable[[str], list[int]] | None = None,
     dispatch_ex: Callable[[str], Any] | None = None,
     dispatch_word_executable: Callable[[Path], Any] | None = None,
+    prepare_owned_application: Callable[[Any], None] | None = None,
     com_runtime: Any | None = None,
     rasterizer: Callable[[Path, Path, int], dict[str, Any]] | None = None,
     pid_observation_timeout_seconds: float = PID_OBSERVATION_TIMEOUT_SECONDS,
@@ -1362,6 +1378,7 @@ def check_file(
             spec,
             dispatch_ex=dispatch_ex,
             dispatch_word_executable=dispatch_word_executable,
+            prepare_owned_application=prepare_owned_application,
             com_runtime=com_runtime,
             process_ids=process_ids,
             pid_observation_timeout_seconds=pid_observation_timeout_seconds,

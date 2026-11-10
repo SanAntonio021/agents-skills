@@ -471,7 +471,7 @@ def _evaluate(application: Any, isolated: Path, expected: list[dict], stories: l
 
 def evaluate_copy(
     source: Path, output: Path, expected: list[dict], stories: list[dict], *,
-    allow_office_com: bool = False, dispatch_ex=None, com_runtime=None,
+    allow_office_com: bool = False, dispatch_ex=None, prepare_owned_application=None, com_runtime=None,
     process_ids=None,
     pid_observation_timeout_seconds: float = gate.PID_OBSERVATION_TIMEOUT_SECONDS,
     process_exit_timeout_seconds: float = gate.PROCESS_EXIT_TIMEOUT_SECONDS,
@@ -513,6 +513,7 @@ def evaluate_copy(
         with gate.owned_application(
             gate.FORMAT_SPECS["docx"],
             dispatch_ex=native_dispatch if dispatch_ex is None else dispatch_ex,
+            prepare_owned_application=prepare_owned_application,
             com_runtime=com_runtime, process_ids=process_ids,
             pid_observation_timeout_seconds=pid_observation_timeout_seconds,
             process_exit_timeout_seconds=process_exit_timeout_seconds,

@@ -114,6 +114,17 @@ WPS processes are
 observed as environment evidence and are never closed by the gate. A result is reported as Word
 native only when the owned executable path is Microsoft Word; WPS or LibreOffice results are
 compatibility/layout evidence and cannot satisfy a Word-native field-refresh requirement.
+If the normal COM entry returns WPS or times out, the explicit background fallback is
+`python scripts/word_nativeom.py input.docx --allow-office-com --report check.json`
+(add `--require-render` when layout verification is needed). Its worker and Word run on a
+private, non-input Windows desktop; it never switches the user's desktop. It connects through
+the documented `_WwG` document-window native model and retains the
+same executable/PID/source/cleanup checks. For field evaluation, pass one
+`word_nativeom.NativeWordConnector` as `dispatch_ex` and its `prepare` method as
+`prepare_owned_application` to `reference_word.evaluate_copy`, inside a Python worker launched
+with `word_nativeom.run_on_private_desktop`. The connector refuses the input desktop. The generated blank bootstrap
+is closed only after identity and ownership pass. This fallback does not prove that the
+system-wide `Word.Application` registration problem has been eliminated.
 When rendering, Word, PDF and PNG page counts must match. Missing PID, exit or cleanup evidence is `UNVERIFIED`.
 Never attach to or end a user's instance. The common reference finalizer has a narrowly scoped
 writable temporary-copy exception described in [Office security](references/office-security-boundary.md).

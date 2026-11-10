@@ -52,7 +52,7 @@ class Objects:
         key = self.result.get('parentKey') or self.receipt['api_keys']['parent']
         item = self.lookup(key)
         if item:
-            require(match_identity(item['data'], self.request['identity']) is None, 'identity_conflict')
+            require(self.client.identity_reason(self.request, item) is None, 'identity_conflict')
             return item
         resolved = self.client.resolve(self.request)
         if resolved.get('distinct_candidates'):
@@ -192,7 +192,7 @@ class Objects:
         self.save()
         target_keys = self.collection_keys(create)
         current = self.lookup(parent['key'])
-        require(match_identity(current['data'], self.request['identity']) is None, 'identity_conflict')
+        require(self.client.identity_reason(self.request, current) is None, 'identity_conflict')
         union = sorted(set(target_keys) | set(current['data'].get('collections', [])))
         if set(union) != set(current['data'].get('collections', [])):
             require(create, 'collection_readback_failed')
@@ -203,7 +203,7 @@ class Objects:
         self.save()
         self.result['attachment'] = self.attachment(parent, create)
         fresh = self.client.get(self.library, parent['key'], trashed=True)
-        require(match_identity(fresh['data'], self.request['identity']) is None, 'identity_readback_failed')
+        require(self.client.identity_reason(self.request, fresh) is None, 'identity_readback_failed')
         require(set(target_keys) <= set(fresh['data'].get('collections', [])), 'collection_readback_failed')
         external = confirm(self.client, self.library, parent['key'], baseline.get('snapshot'))
         if baseline.get('snapshot') is None:

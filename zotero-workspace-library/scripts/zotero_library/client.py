@@ -6,7 +6,7 @@ from pathlib import Path
 from . import connection
 from .errors import LibraryError
 from .request import KEY, digest, require
-from .identity import normalize_doi, normalize_text, match_identity, related
+from .identity import normalize_doi, normalize_text, match_identity, related, creators, year
 from .local_api import LocalAPI
 
 
@@ -113,7 +113,7 @@ class Client:
                 if error.code != 'local_api_not_found':
                     raise
                 return {'state': 'review_required', 'reason': 'parent_not_found', 'candidates': []}
-            reason = match_identity(item['data'], identity)
+            reason = self.identity_reason(request, item)
             return {'state': 'review_required' if reason else 'matched', 'reason': reason,
                     'parent_key': item['key'], 'candidates': [self.identity_summary(item, reason)]}
         items = self.candidates(request['library'], identity)
@@ -148,6 +148,29 @@ class Client:
                     not same_doi and not same_url, 'distinct_candidate_identity_conflict')
             distinct.append(item['key'])
         return distinct
+
+    def identity_reason(self, request, item):
+        """Verify an existing PDF when legacy parent metadata lacks identity fields."""
+        fields, identity = item['data'], request['identity']
+        reason = match_identity(fields, identity)
+        proof = request.get('parent_pdf_evidence')
+        if proof is None:
+            return reason
+        # Missing one field must not hide a genuine conflict in another field.
+        if identity.get('creators') and fields.get('creators') and creators(identity['creators']) != creators(fields['creators']):
+            return 'creators_conflict'
+        if identity.get('date') and fields.get('date') and year(identity['date']) != year(fields['date']):
+            return 'date_conflict'
+        require(request.get('parent_key') == item['key'], 'parent_pdf_parent_mismatch')
+        child = self.get(request['library'], proof['key'], children=False)
+        data = child['data']
+        require(data.get('itemType') == 'attachment' and
+                data.get('parentItem') == item['key'] and not data.get('deleted') and
+                data.get('contentType') == 'application/pdf', 'parent_pdf_parent_mismatch')
+        from .files import inspect_pdf
+        from .reading import file_path
+        inspect_pdf(file_path(self, request['library'], child['key']), proof['sha256'])
+        return None if reason == 'identity_evidence_insufficient' else reason
 
     @staticmethod
     def identity_summary(item, reason):

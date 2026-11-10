@@ -77,6 +77,22 @@ Profile 从 `profiles.ini` 选择唯一候选，只读取 API 启用与端口配
 
 ## 身份定位与交接
 
+历史父条目缺作者、日期、URL 时，读取其原 PDF 并核实题名、型号与版本后，可在 archive 请求中用已有附件作为独立证据：
+
+```json
+{
+  "parent_key": "ABCD1234",
+  "identity": {"title": "Exact existing title", "evidence": ["Existing PDF and supplied manual first pages checked; exact model and document identity match."]},
+  "parent_pdf_evidence": {
+    "key": "EFGH5678",
+    "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "evidence": ["Existing PDF cover identifies the manufacturer and exact model; metadata fields are absent."]
+  }
+}
+```
+
+这是完整请求中的字段片段；仍需 `schema`、`library` 等字段。只能绑定显式父 key，且题名仍须一致。执行层重读原附件，验证 PDF 类型、未删除状态、所属父条目、SHA-256 与可读性，只补足缺少的独立证据；真实的题名、DOI、作者和年份冲突仍拒绝。不会自动补写厂家或发布日期。已有参数不同的 PDF 保留，新附件在同一父条目下另存并回读，不覆盖原文件或批注。
+
 `find --request <请求.json>` 按相同契约只读返回 `matched/not_found/review_required`，提供候选及冲突原因。显式 key 只核实该条目，不静默换目标；未提供 key 时结合 DOI、完整题名及作者查找候选。DOI 空结果后仍查询题名与作者，不能只凭第一次空结果新建。
 
 DOI 去首尾空白、`doi:` 与 `http(s)://(dx.)doi.org/` 前缀并转小写，保留 DOI 本体字符。完整题名按 NFKC、空白和大小写规范化后相等；请求指定作者或日期时还必须分别匹配规范姓名、角色与顺序及年份。DOI 相同但题名、作者或年份冲突仍拒绝。任一方缺 DOI 时，完整题名外须有相同官方 URL 或相同作者与年份；双方都有不同 DOI 时不能靠其他字段绕过。

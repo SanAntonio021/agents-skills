@@ -124,6 +124,93 @@ class IdentityTests(unittest.TestCase):
         for field in ('items', 'collections', 'events'):
             self.assertEqual(before[field], self.f.control()[field])
 
+    def legacy_manual_request(self):
+        from zotero_library.files import inspect_pdf
+        self.f.article_pdf('ACME A100 manual; input limit 15 dBm', doi='')
+        parent = self.f.control(seed=[{'itemType': 'report',
+            'fields': {'title': 'ACME A100 manual'}}])['items'][-1]
+        child = self.f.control(seed=[{'itemType': 'attachment', 'parentKey': parent['key'],
+            'contentType': 'application/pdf', 'file': str(self.f.pdf)}])['items'][-1]
+        proof = {'key': child['key'], 'sha256': inspect_pdf(self.f.pdf)['sha256'],
+                 'evidence': ['Existing PDF cover checked; exact ACME A100 identity, parent metadata incomplete.']}
+        self.f.article_pdf('ACME A100 manual; input limit 20 dBm', doi='')
+        request = self.f.request('ACME A100 manual')
+        del request['identity']['doi']
+        request.update(parent_key=parent['key'], parent_pdf_evidence=proof,
+                       metadata={'itemType': 'document'})
+        return request, parent, child
+
+    def test_existing_manual_pdf_supplies_missing_metadata_without_overwriting_old_version(self):
+        request, parent, child = self.legacy_manual_request()
+        before = self.f.client().get(request['library'], parent['key'])
+        executor = self.f.executor()
+        result = executor.run(request)
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertEqual(result['native']['parentKey'], parent['key'])
+        current = self.f.client().get(request['library'], parent['key'])
+        for field in ('title', 'DOI', 'url', 'creators', 'date', 'itemType'):
+            self.assertEqual(current['data'].get(field), before['data'].get(field))
+        self.assertEqual(next(x for x in current['children'] if x['key'] == child['key']), before['children'][0])
+        self.assertEqual(len(current['children']), 2)
+        self.assertEqual(len([x for x in self.f.control()['items'] if x['data']['itemType'] == 'report']), 1)
+        self.assertEqual(executor.run(request)['state'], 'completed')
+        self.assertEqual(executor.status(result['operation_id'])['state'], 'completed')
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
+
+    def test_parent_pdf_proof_cannot_overrule_real_title_doi_author_or_date_conflicts(self):
+        for conflict in ('title', 'doi', 'author', 'date', 'missing_date_and_wrong_author'):
+            with self.subTest(conflict=conflict):
+                request, parent, child = self.legacy_manual_request()
+                if conflict == 'title':
+                    request['identity']['title'] = 'Another exact model'
+                elif conflict == 'doi':
+                    self.f.control(update={'key': parent['key'], 'fields': {'DOI': '10.1234/stored'}})
+                    request['identity']['doi'] = '10.1234/requested'
+                elif conflict in ('author', 'missing_date_and_wrong_author'):
+                    self.f.control(update={'key': parent['key'], 'fields': {'creators': [{'creatorType': 'author', 'name': 'Vendor A'}]}})
+                    request['identity']['creators'] = [{'creatorType': 'author', 'name': 'Vendor B'}]
+                    if conflict == 'missing_date_and_wrong_author':
+                        request['identity']['date'] = '2022'
+                else:
+                    self.f.control(update={'key': parent['key'], 'fields': {'date': '2020'}})
+                    request['identity']['date'] = '2022'
+                before = self.f.control()
+                result = self.f.executor().run(request)
+                self.assertEqual(result['state'], 'failed', result)
+                for field in ('items', 'collections', 'events'):
+                    self.assertEqual(before[field], self.f.control()[field])
+
+    def test_parent_pdf_proof_rejects_wrong_hash_and_wrong_parent_attachment(self):
+        request, parent, child = self.legacy_manual_request()
+        request['parent_pdf_evidence']['sha256'] = '0' * 64
+        before = self.f.control()
+        self.assertEqual(self.f.executor().run(request)['state'], 'failed')
+        for field in ('items', 'collections', 'events'):
+            self.assertEqual(before[field], self.f.control()[field])
+        request, parent, child = self.legacy_manual_request()
+        other = self.f.control(seed=[{'itemType': 'report', 'fields': {'title': 'Other'}}])['items'][-1]
+        self.f.control(update={'key': child['key'], 'fields': {'parentItem': other['key']}})
+        before = self.f.control()
+        result = self.f.executor().run(request)
+        self.assertEqual(result['state'], 'failed')
+        self.assertEqual(result['error'], 'parent_pdf_parent_mismatch')
+        for field in ('items', 'collections', 'events'):
+            self.assertEqual(before[field], self.f.control()[field])
+
+    def test_parent_pdf_proof_requires_explicit_parent_hash_and_evidence(self):
+        from copy import deepcopy
+        from zotero_library.request import validate
+        from zotero_library.errors import LibraryError
+        request, parent, child = self.legacy_manual_request()
+        for field in ('key', 'sha256', 'evidence'):
+            bad = deepcopy(request); del bad['parent_pdf_evidence'][field]
+            with self.assertRaises(LibraryError):
+                validate(bad)
+        for field in ('parent_key', 'parent_pdf_evidence'):
+            bad = deepcopy(request); del bad[field]
+            with self.assertRaises(LibraryError):
+                validate(bad)
+
     def test_doi_forms_are_equal_in_validation_query_native_and_readback(self):
         from zotero_library.request import validate
         key = self.seed({'title': 'Verified article', 'DOI': ' DOI: HTTP://DX.DOI.ORG/10.1234/Fixture '})

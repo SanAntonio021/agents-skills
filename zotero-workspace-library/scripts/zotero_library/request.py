@@ -64,7 +64,8 @@ def attachment(value, candidate=False):
 def validate(value, kind='archive'):
     value = json.loads(json.dumps(value, allow_nan=False))
     common = {'schema', 'operation_id', 'library', 'identity', 'parent_key'}
-    allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf', 'distinct_candidates'} if kind == 'archive'
+    allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf', 'distinct_candidates',
+                         'parent_pdf_evidence'} if kind == 'archive'
                         else {'keep', 'candidates'})
     obj(value, allowed, {'schema', 'library', 'identity'})
     require(value['schema'] == 1)
@@ -100,10 +101,18 @@ def validate(value, kind='archive'):
             require(bool(creator.get('name') or creator.get('lastName')))
             for text in creator.values():
                 string(text, 512)
-    require(identity.get('doi') or identity.get('url') or
-            (identity.get('date') and identity.get('creators')), 'identity_evidence_insufficient')
     if 'parent_key' in value:
         key(value['parent_key'])
+    proof = value.get('parent_pdf_evidence')
+    if proof is not None:
+        require(kind == 'archive' and 'parent_key' in value, 'parent_pdf_requires_explicit_parent')
+        obj(proof, {'key', 'sha256', 'evidence'}, {'key', 'sha256', 'evidence'})
+        key(proof['key'])
+        require(isinstance(proof['sha256'], str) and SHA.fullmatch(proof['sha256']))
+        evidence(proof['evidence'])
+    require(identity.get('doi') or identity.get('url') or
+            (identity.get('date') and identity.get('creators')) or proof,
+            'identity_evidence_insufficient')
     if kind == 'archive':
         reviewed = value.get('distinct_candidates', [])
         require(isinstance(reviewed, list) and len(reviewed) <= 30)

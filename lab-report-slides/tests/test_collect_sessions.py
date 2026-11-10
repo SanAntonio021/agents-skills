@@ -3,6 +3,8 @@ import os
 import sys
 import tempfile
 import unittest
+from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,6 +14,59 @@ import collect_sessions  # noqa: E402
 
 
 class CollectSessionsTests(unittest.TestCase):
+    def test_explicit_report_interval_preserves_timezone_and_rejects_bad_bounds(self):
+        args = Namespace(mode="today", date=None, since="2026-11-06T18:00:00+08:00",
+                         until="2026-11-10T10:00:00+08:00")
+        start, end, target, mode = collect_sessions.collection_window(args)
+        self.assertEqual((start.isoformat(), end.isoformat(), target, mode),
+                         (args.since, args.until, "2026-11-10", "interval"))
+        for changes in ({"until": args.since}, {"until": "invalid"},
+                        {"since": None}, {"date": "2026-11-10"}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                collect_sessions.collection_window(Namespace(**(vars(args) | changes)))
+
+    def test_report_interval_defaults_to_collection_time(self):
+        before = datetime.now(collect_sessions.LOCAL_TZ)
+        _, end, _, mode = collect_sessions.collection_window(
+            Namespace(mode="today", date=None, since="2026-11-01T00:00:00+08:00"))
+        self.assertLessEqual(before, end)
+        self.assertLessEqual(end, datetime.now(collect_sessions.LOCAL_TZ))
+        self.assertEqual(mode, "interval")
+
+    def test_date_only_report_boundary_starts_at_local_midnight(self):
+        args = Namespace(mode="today", date=None, since="2026-11-09", until="2026-11-10")
+        start, end, _, _ = collect_sessions.collection_window(args)
+        self.assertEqual(start.isoformat(), "2026-11-09T00:00:00+08:00")
+        self.assertEqual(end.isoformat(), "2026-11-10T00:00:00+08:00")
+
+    def test_report_interval_collects_gap_days_and_filters_both_endpoints(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            codex, claude = base / "codex", base / "claude"
+            path = codex / "sessions" / "2026" / "11" / "06" / "rollout-gap.jsonl"
+            path.parent.mkdir(parents=True)
+            lines = [{"type": "session_meta", "payload": {"id": "gap", "cwd": str(base)}}]
+            for stamp, message in [
+                ("2026-11-06T17:59:59+08:00", "旧汇报已有结果"),
+                ("2026-11-06T18:00:00+08:00", "截止边界后的实验"),
+                ("2026-11-07T12:00:00+08:00", "间隔日形成测量结论"),
+                ("2026-11-09T12:00:00+08:00", "昨日完成实施方案"),
+                ("2026-11-10T09:59:59+08:00", "本次截止前完成测试"),
+                ("2026-11-10T10:00:00+08:00", "本次截止之后的工作"),
+            ]:
+                lines.append({"type": "event_msg", "timestamp": stamp,
+                              "payload": {"type": "agent_message", "message": message}})
+            path.write_text("\n".join(json.dumps(x) for x in lines), encoding="utf-8")
+            args = Namespace(mode="today", date=None, since="2026-11-06T18:00:00+08:00",
+                             until="2026-11-10T10:00:00+08:00", codex_root=str(codex),
+                             claude_root=str(claude), scan_fallback=False)
+            result = collect_sessions.collect(args)
+            self.assertEqual(result["mode"], "interval")
+            self.assertEqual(result["window"], {"start": args.since, "end": args.until})
+            messages = {x["text"] for s in result["sessions"] for x in s["events"]}
+            self.assertEqual(messages, {"截止边界后的实验", "间隔日形成测量结论",
+                                        "昨日完成实施方案", "本次截止前完成测试"})
+
     def test_resumed_old_codex_sessions_use_index_or_mtime_then_event_window(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)

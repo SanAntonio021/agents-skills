@@ -128,6 +128,34 @@ def local_window(mode: str, requested_date: str | None) -> tuple[datetime, datet
     return start, end, target.isoformat()
 
 
+def collection_window(args: argparse.Namespace) -> tuple[datetime, datetime, str, str]:
+    """Use an explicit report-to-report interval without changing calendar modes."""
+    since, until = getattr(args, "since", None), getattr(args, "until", None)
+    if since is None:
+        if until is not None:
+            raise ValueError("--until requires --since")
+        start, end, target = local_window(args.mode, args.date)
+        return start, end, target, args.mode
+    if getattr(args, "date", None):
+        raise ValueError("Choose --since/--until or --date, not both")
+    def bound(value: str) -> datetime | None:
+        try:
+            parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=LOCAL_TZ)
+            return parsed.astimezone(LOCAL_TZ)
+        except (ValueError, TypeError):
+            return None
+
+    start = bound(since)
+    end = bound(until) if until is not None else datetime.now(LOCAL_TZ)
+    if start is None or end is None:
+        raise ValueError("--since and --until must be ISO dates or timestamps")
+    if end <= start:
+        raise ValueError("--until must be later than --since")
+    return start, end, end.date().isoformat(), "interval"
+
+
 def redact(text: str) -> str:
     result = text.replace("\x00", "").replace("\r\n", "\n").strip()
     for pattern, replacement in REDACTIONS:
@@ -551,7 +579,7 @@ def codex_session_files(root: Path, start: datetime, end: datetime, include_arch
 
 
 def collect(args: argparse.Namespace) -> dict[str, Any]:
-    start, end, target_date = local_window(args.mode, args.date)
+    start, end, target_date, mode = collection_window(args)
     codex_root = Path(args.codex_root).expanduser()
     claude_root = Path(args.claude_root).expanduser()
     sessions: OrderedDict[str, dict[str, Any]] = OrderedDict()
@@ -590,7 +618,7 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "timezone": "Asia/Shanghai",
-        "mode": args.mode,
+        "mode": mode,
         "target_date": target_date,
         "window": {"start": start.isoformat(), "end": end.isoformat()},
         "sessions": records,
@@ -609,6 +637,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("today", "week"), default="today")
     parser.add_argument("--date", help="Target local date in YYYY-MM-DD; defaults to today")
+    parser.add_argument("--since", help="Inclusive report cutoff (ISO date/timestamp); overrides calendar mode")
+    parser.add_argument("--until", help="Exclusive end of --since interval; defaults to collection time")
     parser.add_argument("--codex-root", default=str(Path.home() / ".codex"))
     parser.add_argument("--claude-root", default=str(Path.home() / ".claude"))
     parser.add_argument("--scan-fallback", action=argparse.BooleanOptionalAction, default=True)
@@ -620,7 +650,10 @@ def main() -> None:
     parser.add_argument("--context-image", action="append", default=[], help="Explicit platform/context image; remains an unverified candidate")
     parser.add_argument("--out", required=True, help="Output JSON path")
     args = parser.parse_args()
-    result = collect(args)
+    try:
+        result = collect(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

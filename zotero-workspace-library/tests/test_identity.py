@@ -11,6 +11,119 @@ class IdentityTests(unittest.TestCase):
         state = self.f.control(seed=[{'itemType': 'journalArticle', 'fields': fields, **extra}])
         return state['items'][-1]['key']
 
+    def manual_request(self, old_title='ACME-A100 bare-die datasheet'):
+        authors = [{'creatorType': 'author', 'name': 'Example Devices'}]
+        state = self.f.control(seed=[{'itemType': 'document', 'creators': authors,
+            'fields': {'title': old_title, 'date': '2022-10-25'}}])
+        old = state['items'][-1]
+        request = self.f.request('ACME-M100 amplifier module manual')
+        del request['identity']['doi']
+        request['identity'].update(creators=authors, date='2022-02-24')
+        request['metadata'] = {'itemType': 'document'}
+        request['collections'] = [{'path': ['Workspace', '器件手册']}]
+        review = {'key': old['key'], 'version': old['version'], 'title': old_title,
+                  'evidence': ['Both PDF first pages checked: A100 bare die and M100 module are distinct products.']}
+        return request, old, review
+
+    def test_different_manual_same_manufacturer_year_needs_documented_review(self):
+        request, old, review = self.manual_request()
+        client = self.f.client()
+        found = client.resolve(request)
+        self.assertEqual(found['state'], 'review_required')
+        self.assertEqual(found['candidates'][0]['version'], old['version'])
+        self.assertEqual(found['candidates'][0]['key'], old['key'])
+        request['distinct_candidates'] = [review]
+        self.assertEqual(client.resolve(request)['state'], 'not_found')
+        before = client.get(request['library'], old['key'])
+        result = self.f.executor().run(request)
+        self.assertEqual(result['state'], 'completed', result)
+        self.assertNotEqual(result['native']['parentKey'], old['key'])
+        self.assertEqual(result['native']['distinctCandidates'], [old['key']])
+        self.assertEqual(client.get(request['library'], old['key']), before)
+        repeated = self.f.executor().run(request)
+        self.assertEqual(repeated['native']['parentKey'], result['native']['parentKey'])
+        self.assertEqual(sum(x['event'] == 'import' for x in self.f.control()['events']), 1)
+        resolved = client.resolve(request)
+        self.assertEqual(resolved['state'], 'matched')
+        self.assertEqual(resolved['parent_key'], result['native']['parentKey'])
+
+    def test_distinct_review_cannot_exclude_same_doi_or_same_title(self):
+        for same in ('doi', 'title', 'url'):
+            with self.subTest(same=same):
+                request, old, review = self.manual_request()
+                fields = ({'DOI': '10.1234/same'} if same == 'doi' else
+                          {'title': request['identity']['title']} if same == 'title' else
+                          {'url': 'https://publisher.invalid/same'})
+                if same == 'doi':
+                    request['identity']['doi'] = fields['DOI']
+                if same == 'url':
+                    request['identity']['url'] = fields['url']
+                self.f.control(update={'key': old['key'], 'fields': fields})
+                current = self.f.client().get(request['library'], old['key'], children=False)
+                review.update(version=current['version'], title=current['data']['title'])
+                request['distinct_candidates'] = [review]
+                before = self.f.control()
+                result = self.f.executor().run(request)
+                self.assertEqual(result['state'], 'failed', result)
+                self.assertEqual(result['error'], 'distinct_candidate_identity_conflict')
+                for field in ('items', 'collections', 'events'):
+                    self.assertEqual(before[field], self.f.control()[field])
+
+    def test_distinct_review_rejects_changed_candidate_before_content_write(self):
+        request, old, review = self.manual_request()
+        request['distinct_candidates'] = [review]
+        self.f.control(update={'key': old['key'], 'fields': {'date': '2023-01-01'}})
+        before = self.f.control()
+        result = self.f.executor().run(request)
+        self.assertEqual(result['state'], 'failed', result)
+        self.assertEqual(result['error'], 'distinct_candidate_changed_requires_review')
+        for field in ('items', 'collections', 'events'):
+            self.assertEqual(before[field], self.f.control()[field])
+
+    def test_reviewing_one_manual_does_not_hide_other_unresolved_candidates(self):
+        request, old, review = self.manual_request()
+        self.f.control(seed=[{'itemType': 'document', 'creators': request['identity']['creators'],
+            'fields': {'title': 'Unverified related manual', 'date': '2022'}}])
+        request['distinct_candidates'] = [review]
+        before = self.f.control()
+        result = self.f.executor().run(request)
+        self.assertEqual(result['state'], 'failed', result)
+        self.assertEqual(result['error'], 'identity_candidates_require_review')
+        for field in ('items', 'collections', 'events'):
+            self.assertEqual(before[field], self.f.control()[field])
+
+    def test_distinct_reviews_require_evidence_pinned_version_and_unique_keys(self):
+        from copy import deepcopy
+        from zotero_library.request import validate
+        from zotero_library.errors import LibraryError
+        request, old, review = self.manual_request()
+        bad_reviews = [[{**review, 'evidence': []}], [{**review, 'version': True}],
+                       [{**review, 'key': '*'}], [review, review]]
+        for reviews in bad_reviews:
+            with self.subTest(reviews=reviews):
+                bad = deepcopy(request); bad['distinct_candidates'] = reviews
+                with self.assertRaises(LibraryError):
+                    validate(bad)
+        request.update(parent_key=old['key'], distinct_candidates=[review])
+        with self.assertRaisesRegex(LibraryError, 'distinct_review_with_explicit_parent'):
+            validate(request)
+
+    def test_status_does_not_turn_known_prewrite_rejection_into_unknown(self):
+        request, old, review = self.manual_request()
+        executor = self.f.executor()
+        result = executor.run(request)
+        self.assertEqual(result['state'], 'failed')
+        before = self.f.control()
+        checked = executor.status(result['operation_id'])
+        self.assertEqual(checked['state'], 'failed', checked)
+        self.assertEqual(checked['error'], 'identity_candidates_require_review')
+        self.assertFalse(checked['native']['contentWritesStarted'])
+        # Also repair a legacy status check that mislabeled this definite failure.
+        checked['state'] = 'unknown'; self.f.store.save(checked)
+        self.assertEqual(executor.status(result['operation_id'])['state'], 'failed')
+        for field in ('items', 'collections', 'events'):
+            self.assertEqual(before[field], self.f.control()[field])
+
     def test_doi_forms_are_equal_in_validation_query_native_and_readback(self):
         from zotero_library.request import validate
         key = self.seed({'title': 'Verified article', 'DOI': ' DOI: HTTP://DX.DOI.ORG/10.1234/Fixture '})

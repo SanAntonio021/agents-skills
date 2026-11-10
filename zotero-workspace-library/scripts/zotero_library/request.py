@@ -64,7 +64,7 @@ def attachment(value, candidate=False):
 def validate(value, kind='archive'):
     value = json.loads(json.dumps(value, allow_nan=False))
     common = {'schema', 'operation_id', 'library', 'identity', 'parent_key'}
-    allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf'} if kind == 'archive'
+    allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf', 'distinct_candidates'} if kind == 'archive'
                         else {'keep', 'candidates'})
     obj(value, allowed, {'schema', 'library', 'identity'})
     require(value['schema'] == 1)
@@ -105,6 +105,19 @@ def validate(value, kind='archive'):
     if 'parent_key' in value:
         key(value['parent_key'])
     if kind == 'archive':
+        reviewed = value.get('distinct_candidates', [])
+        require(isinstance(reviewed, list) and len(reviewed) <= 30)
+        require(not reviewed or 'parent_key' not in value, 'distinct_review_with_explicit_parent')
+        seen = set()
+        for candidate in reviewed:
+            obj(candidate, {'key', 'version', 'title', 'evidence'},
+                {'key', 'version', 'title', 'evidence'})
+            key(candidate['key'])
+            require(candidate['key'] not in seen, 'duplicate_distinct_review')
+            seen.add(candidate['key'])
+            require(type(candidate['version']) is int and candidate['version'] >= 0)
+            string(candidate['title'])
+            evidence(candidate['evidence'])
         meta = value.get('metadata', {})
         obj(meta, FIELDS | {'itemType'})
         for field, text in meta.items():

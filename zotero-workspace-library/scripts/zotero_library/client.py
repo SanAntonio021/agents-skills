@@ -117,19 +117,42 @@ class Client:
             return {'state': 'review_required' if reason else 'matched', 'reason': reason,
                     'parent_key': item['key'], 'candidates': [self.identity_summary(item, reason)]}
         items = self.candidates(request['library'], identity)
+        distinct = self.reviewed_distinct(request, items)
+        items = [item for item in items if item['key'] not in distinct]
+        audit = {'distinct_candidates': distinct} if distinct else {}
         candidates = [self.identity_summary(item, match_identity(item['data'], identity)) for item in items]
         matches = [item for item in candidates if item['reason'] is None]
         if not candidates:
-            return {'state': 'not_found', 'candidates': []}
+            return {'state': 'not_found', 'candidates': [], **audit}
         if len(matches) == 1 and len(candidates) == 1:
-            return {'state': 'matched', 'parent_key': matches[0]['key'], 'candidates': candidates}
+            return {'state': 'matched', 'parent_key': matches[0]['key'], 'candidates': candidates, **audit}
         return {'state': 'review_required', 'reason': 'duplicate_parents_require_review' if len(matches) > 1
-                else 'identity_candidates_require_review', 'candidates': candidates}
+                else 'identity_candidates_require_review', 'candidates': candidates, **audit}
+
+    def reviewed_distinct(self, request, items):
+        """Accept documented identity distinctions, pinned to each current item version."""
+        identity, distinct = request['identity'], []
+        candidates = {item['key'] for item in items}
+        for reviewed in request.get('distinct_candidates', []):
+            item = self.get(request['library'], reviewed['key'], children=False)
+            data = item['data']
+            require(item['version'] == reviewed['version'] and
+                    normalize_text(data.get('title')) == normalize_text(reviewed['title']),
+                    'distinct_candidate_changed_requires_review')
+            require(item['key'] in candidates, 'distinct_candidate_not_in_lookup')
+            same_doi = bool(identity.get('doi') and
+                            normalize_doi(data.get('DOI')) == identity['doi'])
+            same_url = bool(identity.get('url') and
+                            str(data.get('url', '')).strip() == identity['url'].strip())
+            require(match_identity(data, identity) == 'title_conflict' and
+                    not same_doi and not same_url, 'distinct_candidate_identity_conflict')
+            distinct.append(item['key'])
+        return distinct
 
     @staticmethod
     def identity_summary(item, reason):
         data = item['data']
-        return {'key': item['key'], 'title': data.get('title'), 'doi': data.get('DOI'),
+        return {'key': item['key'], 'version': item['version'], 'title': data.get('title'), 'doi': data.get('DOI'),
                 'date': data.get('date'), 'creators': data.get('creators', []), 'reason': reason}
 
     def get(self, library, key, children=True, trashed=False):

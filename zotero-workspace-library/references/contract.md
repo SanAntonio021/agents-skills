@@ -83,6 +83,23 @@ DOI 去首尾空白、`doi:` 与 `http(s)://(dx.)doi.org/` 前缀并转小写，
 
 唯一匹配且无未决冲突才可复用，无候选才可新建；多个匹配或尚未排除的冲突候选均停止该写入。实际内容写入前重新核对父项身份及 key，随后回读沿用相同规则。错误请求不修改库内条目、附件或集合；操作与失败回执可保留。
 
+同厂家、同年份只用于找候选，不能据此认定两份型号手册相同。业务层读取双方原件、确认是不同资料后，可在 archive 请求中加入下列字段；`find --request` 的候选摘要提供准确的 `version`。助手自行完成核验，不把可从原件确定的问题交回用户。
+
+```json
+{
+  "distinct_candidates": [{
+    "key": "ABCD1234",
+    "version": 42,
+    "title": "Manufacturer A100 bare-die datasheet",
+    "evidence": ["Both PDF first pages checked: existing A100 bare die and requested M100 module have distinct model numbers and interfaces."]
+  }]
+}
+```
+
+这不是通用忽略开关。每项必须有具体依据和固定版本，且必须仍是本次查询中的候选；执行层重读确认题名及版本未变，只能排除题名不同且没有相同 DOI 或 URL 的候选。候选已变化返回 `distinct_candidate_changed_requires_review`，相同身份返回 `distinct_candidate_identity_conflict`。同 key 重复、空依据及与显式 `parent_key` 混用会在写入前拒绝。未列入的候选照常核查，原条目及其附件不修改。请求及回执的 `native.distinctCandidates` 保留排除依据与对象关系。
+
+先查原失败操作；确认未开始内容写入后，带核验结论生成新请求，保留旧操作编号及失败回执。同编号不同请求仍拒绝；写入结果未知或已开始写入时先按原操作续查，不通过新请求绕过。
+
 下载业务通过 [zotero_archive.py](../../paper-download/scripts/zotero_archive.py) 或机构 `finalize` 提交，支持 `--parent-key-source user|assistant` 和 `--required-version`。默认保护用户指定目标；只有助手交接错误、请求 PDF 身份与同库正确父项均确认且唯一时才自动纠正，返回原 key、新 key 和依据。版本要求不匹配或 PDF 身份无法确认时保留文件并返回待核状态。文本匹配是辅助检查，不能代替业务对作者、版次、出版标记和可靠来源的核实；复用已有附件同样须由业务核实内容。
 
 纠正前查原请求回执，未知或进行中的原操作不能换 key 或编号重放。只有明确终止且确认尚未开始内容写入，才允许以新请求编号继续；旧回执不删除。默认编号取自规范化的原请求，补算文件哈希不会改变编号；同一编号不同输入拒绝。

@@ -209,7 +209,12 @@ class Executor:
             receipt.pop('error', None)
             self.verify_pdf(receipt)
         except LibraryError as error:
-            if receipt.get('state') != 'prepared':
+            no_writes = (receipt.get('executor_version') == 2 and
+                         receipt.get('native', {}).get('contentWritesStarted') is False and
+                         not receipt.get('api_stages') and not receipt.get('in_flight'))
+            if no_writes:
+                receipt['state'] = 'failed'
+            elif receipt.get('state') != 'prepared':
                 receipt['state'] = 'unknown'
             receipt['readback_verified'] = False
             receipt['error'] = error.code

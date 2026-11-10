@@ -55,6 +55,8 @@ class Objects:
             require(match_identity(item['data'], self.request['identity']) is None, 'identity_conflict')
             return item
         resolved = self.client.resolve(self.request)
+        if resolved.get('distinct_candidates'):
+            self.result['distinctCandidates'] = resolved['distinct_candidates']
         require(resolved['state'] != 'review_required', resolved.get('reason') or 'identity_conflict')
         return self.lookup(resolved['parent_key']) if resolved['state'] == 'matched' else None
 

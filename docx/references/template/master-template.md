@@ -4,7 +4,7 @@
 - Human-readable report: `references/template/master-default-template-profile.md`
 - Builder: `scripts/template/build_master_template.py`
 
-This is the automatic general-report template under the canonical name `tongyong-moren`. Export commands use it when no template, preset or profile is specified. Explicit formatting sources take precedence. If you need a concrete `.docx` template locally, under the existing task authorization and proven Office isolation, regenerate it with `python scripts/template/build_master_template.py --allow-office-com`. The script refuses to run while `WINWORD.EXE` already exists.
+This general-report preset uses the canonical name `tongyong-moren`. It is a recommendation candidate, not permission to start export. Before using it, follow [format explanation and confirmation](../layout-profiles.md#导出前的格式说明与确认); reuse the confirmed settings within the task. Explicit formatting sources take precedence. If you need a concrete `.docx` template locally, under the existing task authorization and proven Office isolation, regenerate it with `python scripts/template/build_master_template.py --allow-office-com`. The script refuses to run while `WINWORD.EXE` already exists.
 
 Design sources:
 

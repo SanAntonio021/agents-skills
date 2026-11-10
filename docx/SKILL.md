@@ -58,19 +58,14 @@ handling and do not add approval steps. Formatting-only work stays in Word witho
 For file execution, read [Markdown to Word handoff](../writing-router/references/markdown-docx-contract.md).
 Use the current source, specified template and requested output. Do not rewrite reviewed prose or
 repeat a general writing pass. Existing `loaded_refs` records describe only references actually read.
-用户要求导出即复用本轮授权；格式阶段不自行改写正文。
+整稿导出以本轮正文和具体格式已确认作为前提；复用已有准确授权，格式阶段不自行改写正文。
 Reuse rules, templates and scripts already read in this task when they have no relevant changes;
 do not reload the entire workflow for each accepted paragraph.
 
 ### Word/DOCX 导出前的格式确认
 
-新建 Word 或用户明确要求整稿更换模板时，先核对已指定或确认的模板。未指定时自动采用通用默认模板
-`tongyong-moren`，无需另行询问；有明确格式要求或指定其他模板时按要求处理，同任务后续沿用。
-已有 Word 的文字回填沿用最新原件的样式与结构，不重新选模板；用户要求调整格式时只修改相应范围。
-模板只控制排版，不擅自增加版本、日期或说明文字。
-按指定模板回填确认正文时，读取[模板回填与原稿对照](references/layout-profiles.md#模板回填与原稿对照)，按栏目锚点映射内容，复用现有校验器区分继承问题和新增问题。
-
-已有 Word 的长篇扩写或方案扩充，先按 [writing-router 的长篇技术方案固定工作流](../writing-router/references/collaborative-writing.md#长篇技术方案的固定工作流)确认 Markdown 主稿、最新 Word 基线和图件版本，再进入局部回填；单纯格式调整直接在 Word 中处理，不为修一个局部格式问题重建整稿。
+首次从 Markdown 导出整稿或更换模板前，按[导出前的格式说明与确认](references/layout-profiles.md#导出前的格式说明与确认)核对正文确认状态，读取候选模板，并在一个回答中说明实际字体、字号、段落、页面、图题和图片等设置，集中核实不确定项，用户确认后再导出。不能把模板名称已选定视为具体格式已确认，也不能静默采用默认模板；同任务已确认且未变的格式直接沿用。
+已有 Word 的局部文字回填沿用最新原件的样式与结构，不重新选模板；用户要求调整格式时只修改相应范围。模板只控制排版，不擅自增加版本、日期或说明文字。按指定模板回填确认正文时，读取[模板回填与原稿对照](references/layout-profiles.md#模板回填与原稿对照)，按栏目锚点映射内容，区分继承问题和新增问题。
 
 Check the OOXML/package, styles, affected content and unchanged source. Read
 [Numbering and cross-references](references/numbering-references.md) for the common finalizer:
@@ -233,9 +228,10 @@ python scripts/template/word_template_formatter.py apply `
   --allow-template-style-import `
   --allow-office-com
 
-# Convert Markdown using the automatic tongyong-moren preset.
+# Convert Markdown using the previously confirmed tongyong-moren preset.
 powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_word.ps1 `
   C:\path\draft.md `
+  -Preset tongyong-moren `
   -AllowOfficeCom
 
 # Use Normal.dotm only when the user explicitly requests their Word defaults.

@@ -167,6 +167,17 @@
       "id": "standard-and-unknown",
       "prompt": "请直接精修这段已确认的设备运行简报，只输出正文及必须核实的一项。合成材料：温度控制器采用 PID 控制，型号为 TC-8，测点代码为 T1、T2；试验记录另写 XQ 模式，没有定义。原稿：温控器用 PID，TC-8 的 T1、T2 数据已保存。XQ 稳定性待查。",
       "expected_output": "按读者需要保留或说明PID，TC-8及T1/T2标识不变；不为XQ猜全称，只指出其定义缺失，不把待查写成已验证。"
+    },
+    {
+      "id": "one-markdown-main-across-approved-batches",
+      "prompt": "隔离材料 main.md 是当前主稿。我已确认第二节的新文字，请写入对应位置；下一轮第三节也会在同一篇中修改。只处理 Markdown，尚未确认 Word 的具体格式。",
+      "expected_output": "在已读取并核对的 main.md 原位写入本批已确认正文并回读，保留其他内容；后续批次仍使用同一路径，不生成 main_v02.md 或逐节独立稿，不提前生成 Word。",
+      "files": [],
+      "expectations": [
+        "实际修改同一主稿路径。",
+        "保留未改内容及人工修改，不逐批另存正式Markdown。",
+        "内容与具体格式未全部确认前不导出Word。"
+      ]
     }
   ],
   "general_edit_trigger_cases": [

@@ -13,7 +13,7 @@ description: 维护全局规范和系统提示词，并执行自建技能的定�
 
 - **全局规则与提示词**：在这里判断规则应放在哪一层，去重、精简并维护共通内容与平台差异。网页端无工具提示词也由这里承接。
 - **具体技能创建、修改与验证**：交给 [skill-creator](../skill-creator/SKILL.md)。
-- **技能发布**：修改技能默认包含同次任务的提交推送、后台更新和生效核验，用户明确限制时除外。读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，统一使用同目录 `Invoke-LabSkillSync.ps1`，按本机已选后端执行。官方桌面按技能发布所需能力验收放行，不要求供应商等其他业务全部通过；所需能力和当前状态以工具说明为准。后台失败不回退旧 CLI、不改用界面操作、不手工改运行目录。
+- **技能发布**：先按 [skill-creator](../skill-creator/SKILL.md)区分升级意向与具体修改授权；经授权的技能修改默认包含同次任务的提交推送、后台更新和生效核验，用户明确限制时除外。读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，统一使用同目录 `Invoke-LabSkillSync.ps1`，按本机已选后端执行。官方桌面按技能发布所需能力验收放行，不要求供应商等其他业务全部通过；所需能力和当前状态以工具说明为准。后台失败不回退旧 CLI、不改用界面操作、不手工改运行目录。
 - **相关任务转交**：目录、来源、生效诊断及上游发现交给 [skill-check](../skill-check/SKILL.md)；对话经验整理交给 [chat-notes](../chat-notes/SKILL.md)；供应商与请求链路分别交给 `codex-relay-chain`、`claude-relay-chain`。
 
 只加载当前步骤需要的技能和参考，不按上述列表逐一加载。

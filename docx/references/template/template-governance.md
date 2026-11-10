@@ -4,7 +4,7 @@ Use this note when deciding whether a newly provided Word sample should become a
 
 ## Promotion rules
 
-- When no template is confirmed, recommend one from the template catalog based on purpose and audience, explain briefly, and wait for the user's format requirements or confirmation before export. Reuse a confirmed choice within the task.
+- Before export, follow [format explanation and confirmation](../layout-profiles.md#导出前的格式说明与确认). Recommend a candidate based on purpose and audience when none is specified, explain its actual formatting in one response, resolve uncertain settings, and obtain confirmation. A template name alone is insufficient; reuse unchanged, already confirmed settings within the task.
 - Keep `tongyong-moren` available as the general-report preset.
 - Add a source document as a separate preset when it has a recognizable house style but is not suitable as the universal default.
 - Rebuild `tongyong-moren` only when the new evidence improves the long-term common format, not just one document family.

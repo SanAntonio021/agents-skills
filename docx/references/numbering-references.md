@@ -16,6 +16,11 @@ publication to installed skills. Missing commands leave finalization unfinished,
 - Cover body paragraphs and tables, headers/footers, footnotes/endnotes and text boxes. Do not
   evaluate external links or unrelated fields.
 
+Classic MathType numbering has nested `SEQ MTEqn` fields inside `MACROBUTTON MTPlaceRef` and is not
+supported by the common native refresh helper below. Use the [MathType background workflow](mathtype-background.md)
+for its construction and specialized checks. Preserve this structure rather than flattening it to
+make the common helper pass; unsupported native refresh remains explicitly unverified.
+
 ## Common CLI
 
 Paths below are relative to the `docx` skill. Every output is a new path; preserve sources, prior

@@ -359,6 +359,15 @@ python scripts/office/validate.py out.docx --original doc.docx   # XSD checks; -
 
 Word splits text across many `<w:r>` runs (revision ids, spell-check markers), so a phrase you can see in the document often doesn't exist as a contiguous string in the XML. `merge_runs.py` merges adjacent identically-formatted runs in `word/document.xml` without changing content or rendering; it also accepts a `.docx` directly (`python scripts/merge_runs.py doc.docx -o merged.docx`).
 
+### MathType equations and numbering
+
+When the user requests MathType conversion, MathType typography, or equation numbering matching a
+MathType template, read [MathType background workflow](references/mathtype-background.md). It covers
+classic editable OLE objects, background SDK conversion, template preferences, preview dimensions,
+MathType numbering fields and saved-object verification. A Word add-in alone does not establish a
+usable background API. Use this route for MathType output; OMML and formula images are different
+formats. Respect a background-only request throughout, including when native Word refresh is unavailable.
+
 ### Word-native equations (OMML)
 
 When LaTeX or plain-text formulas in a DOCX must become editable Word equations, or existing Word

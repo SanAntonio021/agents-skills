@@ -114,6 +114,11 @@ WPS processes are
 observed as environment evidence and are never closed by the gate. A result is reported as Word
 native only when the owned executable path is Microsoft Word; WPS or LibreOffice results are
 compatibility/layout evidence and cannot satisfy a Word-native field-refresh requirement.
+When the registration appears correct but activation launches WPS, uses a different command line,
+or still times out after registration repair, follow
+[Activation and registry-view mismatch](references/office-security-boundary.md#activation-and-registry-view-mismatch).
+This conditional diagnostic compares the client's view with the actual Windows user configuration;
+an in-client readback alone does not establish a system repair or a need to reboot.
 If the normal COM entry returns WPS or times out, the explicit background fallback is
 `python scripts/word_nativeom.py input.docx --allow-office-com --report check.json`
 (add `--require-render` when layout verification is needed). Its worker and Word run on a

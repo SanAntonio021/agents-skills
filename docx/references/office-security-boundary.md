@@ -9,6 +9,48 @@
 - Keep gate temporary files under `%TEMP%/codex-docx-gates` or `%TEMP%/office-mcp-trials`. Reject symbolic links and path traversal in gate-managed temporary workspaces.
 - Protect source Markdown, templates and existing deliverables. Clean up only owned files and the current task's empty instance, proving exit before temporary-workspace cleanup.
 
+## Activation and registry-view mismatch
+
+Use this branch when the registered Word path and actual activation disagree, or activation still
+fails after a registration repair. It is not a prerequisite for ordinary document work. Packaged
+clients can present a virtualized registry view; check for a view difference rather than assuming
+that every timeout is a WPS takeover or stale COM cache.
+
+1. **Capture the mismatch read-only.** Record the caller's user identity, registry bitness, effective
+   Word CLSID, `LocalServer32` values (including the default command and `ServerExecutable`), and
+   any observed new process image/command line. For the same CLSID, distinguish the user override
+   in `HKCU\Software\Classes`, the machine entry in `HKLM\Software\Classes`, and merged `HKCR`.
+   A correct executable value, application caption or Word-like version alone is insufficient.
+2. **Compare the real Windows user context.** Read the same keys and relevant 64/32-bit views through
+   a verified system-side route under the same user. A temporary, demand-start-only Task Scheduler
+   worker is one option: use least privilege for reads, run only the targeted registry snapshot,
+   launch no Office application, and remove only that task after completion. Verify the worker's
+   identity and script/version receipt so its result cannot be confused with an earlier run.
+   A normal or elevated child of the client can inherit its registry view; administrator status or
+   a missing package-identity result does not prove an independent view. If the system-side read is
+   unavailable, retain that boundary and continue safe document work rather than claiming a cause.
+3. **Locate the effective conflict.** Compare the two snapshots before repeating repair commands.
+   A hidden user-level WPS override can combine its launch command with a machine-level Word
+   executable. Different results establish a view mismatch; diagnose the particular active entry
+   from the evidence. Do not unload/reset client hives or require a reboot on that evidence alone.
+4. **Repair only within the existing authorization.** Document-edit permission alone does not grant
+   system-configuration changes. When those changes are authorized, back up the actual affected
+   entries and file-association choices, use the installed vendor's supported configuration route
+   where available, and apply the change in the context where the conflict was observed. Preserve
+   WPS, user windows and unrelated settings when that is the requested scope. Read back the real
+   effective configuration and association choices; success inside the client alone is insufficient.
+5. **Verify the standard entry in both contexts.** After repair, test ordinary `Word.Application`
+   activation from a fresh client in the real Windows user context and from the task's client.
+   Keep the existing ownership/isolation checks and background-only constraint: use a private
+   non-input desktop, no user documents, only an empty owned instance or disposable bootstrap,
+   and normal exit. Verify the actual Word executable, COM path, new PID, launch command and exit;
+   retain current-desktop observations. A direct native-model fallback can complete document QA
+   but does not prove standard activation is repaired. Report an unavailable or failed context as
+   unverified; a 32-bit registry read does not establish a successful 32-bit activation test.
+
+Keep targeted snapshots, repair backups and verification receipts in the task's existing process
+directory. Do not copy client hives or unrelated registry contents into project or public skill files.
+
 ## Writable field-refresh copy
 
 The [common reference finalizer](numbering-references.md) may evaluate and save fields only in its

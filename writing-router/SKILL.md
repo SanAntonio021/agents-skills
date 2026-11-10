@@ -67,6 +67,8 @@ Markdown 正文写作或实质修改时，按 [Markdown 正文写法](references
 
 会前方案讨论稿、技术交流材料或待讨论问题清单，目标是区分已有条件、会上决定和另行工作时，使用 `document_type=technical`、`mode=technical_exchange`。会议已经结束，任务是整理实际发言、结论和行动项时，使用 `meeting_notes`。
 
+讨论、制定或续写实验方案时，使用 `document_type=technical`、`mode=technical_scheme`，并加载 [lab-notebook](../lab-notebook/SKILL.md#讨论实验方案)，沿用其飞书主稿及逐项讨论、确认后及时写入的流程。
+
 专利构思讨论、技术交底书起草或审校使用 `document_type=technical`、`mode=patent_disclosure`。仅讨论时沿用当前范围，不自动建稿；专利检索、权利要求及保护范围分析不因进入交底书模式而自动开展。
 
 按表应用对应文体技能的专业要求，共同协作与质量规则持续适用；普通中文直接在本技能完成，不另找写作入口。

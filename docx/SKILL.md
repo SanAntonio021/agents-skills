@@ -70,6 +70,8 @@ do not reload the entire workflow for each accepted paragraph.
 模板只控制排版，不擅自增加版本、日期或说明文字。
 按指定模板回填确认正文时，读取[模板回填与原稿对照](references/layout-profiles.md#模板回填与原稿对照)，按栏目锚点映射内容，复用现有校验器区分继承问题和新增问题。
 
+已有 Word 的长篇扩写或方案扩充，先按 [writing-router 的长篇技术方案固定工作流](../writing-router/references/collaborative-writing.md#长篇技术方案的固定工作流)确认 Markdown 主稿、最新 Word 基线和图件版本，再进入局部回填；单纯格式调整直接在 Word 中处理，不为修一个局部格式问题重建整稿。
+
 Check the OOXML/package, styles, affected content and unchanged source. Read
 [Numbering and cross-references](references/numbering-references.md) for the common finalizer:
 whole generation establishes `SEQ`/`REF` for intended numbered figures, tables and equations;

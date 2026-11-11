@@ -86,11 +86,23 @@ machine or user per-page signature is required.
 When rendering is required and Word is the target, prefer the guarded Word gate:
 
 ```powershell
-python <skill-root>\scripts\document_versions.py run-check input.docx `
-  --record input.docx.check.json --kind word-native -- `
-  python <skill-root>\scripts\office_native_gate.py check input.docx `
-  --format docx --json --allow-office-com --require-render
+$previousPythonIoEncoding = $env:PYTHONIOENCODING
+try {
+  $env:PYTHONIOENCODING = 'utf-8'
+  python <skill-root>\scripts\document_versions.py run-check input.docx `
+    --record input.docx.check.json --kind word-native -- `
+    python <skill-root>\scripts\office_native_gate.py check input.docx `
+    --format docx --json --allow-office-com --require-render
+} finally {
+  if ($null -eq $previousPythonIoEncoding) {
+    Remove-Item Env:PYTHONIOENCODING -ErrorAction SilentlyContinue
+  } else {
+    $env:PYTHONIOENCODING = $previousPythonIoEncoding
+  }
+}
 ```
+
+On Windows PowerShell, keep `PYTHONIOENCODING` set to `utf-8` for this invocation and restore its previous value afterward. Under a legacy console encoding, Chinese paths or Word metadata in the checker's JSON can otherwise raise `UnicodeEncodeError` while writing stdout; `run-check` may then report an invalid check result even when the isolated Word operation completed successfully.
 
 Use [document version checks](references/document-version-checks.md) before resuming a Word delivery
 or reusing a previous check. The export wrapper records the actual source, template/profile, images

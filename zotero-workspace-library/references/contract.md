@@ -73,6 +73,25 @@ Profile 从 `profiles.ini` 选择唯一候选，只读取 API 启用与端口配
 
 `collections` 默认为空；每项是 `{"key":"ABCD1234"}` 或 `{"path":["工作区","器件手册"]}`。路径中每级重名会报告歧义，不任选一个。
 
+## 既有集合移动或改名
+
+`collection plan/update --request` 管理一个已存在的集合。请求必须固定用户库或群组库、集合 key，以及执行前读到的版本、名称和父集合；`false` 表示顶层。`name` 和 `parentCollection` 是可选目标字段，至少提供一项。计划命令只读，检查目标父集合存在、没有同级重名和循环引用；执行命令使用 Zotero 集合更新接口提交并按 key 回读。
+
+```json
+{
+  "schema": 1,
+  "library": {"type": "user"},
+  "key": "ABCD1234",
+  "expected_version": 42,
+  "expected_name": "Old collection name",
+  "expected_parent": false,
+  "name": "论文",
+  "parentCollection": "EFGH5678"
+}
+```
+
+更新只改这一个集合的名称和/或父集合；不修改其中的条目关联、附件、笔记、标签或子集合。执行前若集合版本、名称或父集合与请求不符，返回 `collection_state_changed_requires_review`；遇到同级重名或循环引用则拒绝写入。相同目标再次执行为幂等无操作。先运行 `collection plan` 检查回执，再使用相同请求运行 `collection update`。
+
 `pdf.sha256` 可选，执行层计算并核对；路径必须绝对路径。PDF 版本保留 `official/accepted_manuscript/preprint/temporary_preprint/unresolved`。版本证据不明时仍可如实保存 `unresolved`，不能据此宣布正式版完成。已有等价版本使用 `reuse_pdf` 替代 `pdf`，字段为 `key/sha256/version/evidence`。不传两者是仅元数据或分类归档，仍执行保护流程。
 
 ## 身份定位与交接

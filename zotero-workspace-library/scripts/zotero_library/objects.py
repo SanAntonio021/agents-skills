@@ -11,6 +11,64 @@ from .reading import file_path
 from .request import require
 
 
+def validate_collection_target(rows, key, name, parent):
+    by_key = {row['key']: row for row in rows}
+    require(key in by_key, 'collection_not_found')
+    if parent is not False:
+        require(parent in by_key, 'collection_parent_not_found')
+        seen = set()
+        cursor = parent
+        while cursor is not False:
+            require(cursor != key, 'collection_cycle')
+            require(cursor not in seen, 'collection_hierarchy_invalid')
+            seen.add(cursor)
+            row = by_key.get(cursor)
+            require(row is not None, 'collection_parent_not_found')
+            cursor = row['data'].get('parentCollection') or False
+    for row in rows:
+        if row['key'] == key:
+            continue
+        if row['data'].get('name') == name and (row['data'].get('parentCollection') or False) == parent:
+            raise LibraryError('collection_name_conflict')
+    return by_key[key]
+
+
+def inspect_collection_update(client, request):
+    library = request['library']
+    rows = client.collections(library)
+    by_key = {row['key']: row for row in rows}
+    current = by_key.get(request['key'])
+    require(current is not None, 'collection_not_found')
+    data = current['data']
+    current_parent = data.get('parentCollection') or False
+    target_name = request.get('name', data.get('name'))
+    target_parent = request.get('parentCollection', current_parent)
+    validate_collection_target(rows, current['key'], target_name, target_parent)
+    already_current = data.get('name') == target_name and current_parent == target_parent
+    if not already_current:
+        require(current['version'] == request['expected_version'] and
+                data.get('name') == request['expected_name'] and
+                current_parent == request['expected_parent'],
+                'collection_state_changed_requires_review')
+    return {'current': current, 'name': target_name, 'parent': target_parent,
+            'already_current': already_current}
+
+
+def plan_collection_update(client, request):
+    plan = inspect_collection_update(client, request)
+    current = plan['current']
+    return {
+        'state': 'already_current' if plan['already_current'] else 'ready',
+        'write_required': not plan['already_current'],
+        'collection': {
+            'key': current['key'],
+            'before': {'version': current['version'], 'name': current['data'].get('name'),
+                       'parentCollection': current['data'].get('parentCollection') or False},
+            'after': {'name': plan['name'], 'parentCollection': plan['parent']},
+        },
+    }
+
+
 class Objects:
     def __init__(self, client, receipt, save):
         self.client, self.receipt, self.save = client, receipt, save
@@ -311,5 +369,46 @@ class Objects:
         self.receipt['prune_actions'].pop(key, None)
         self.save()
 
+    def update_collection(self, create):
+        plan = inspect_collection_update(self.client, self.request)
+        current = plan['current']
+        before = {'version': current['version'], 'name': current['data'].get('name'),
+                  'parentCollection': current['data'].get('parentCollection') or False}
+        if not plan['already_current']:
+            require(create, 'collection_update_not_confirmed')
+            library_version = next((value for key, value in self.client.api.last_headers.items()
+                                    if key.lower() == 'last-modified-version'), None)
+            require(library_version is not None and str(library_version).isdigit(),
+                    'library_version_unavailable')
+            body = copy.deepcopy(current['data'])
+            body.update(key=current['key'], version=current['version'], name=plan['name'],
+                        parentCollection=plan['parent'])
+            self.mutate('collection_update:' + current['key'], self.prefix + '/collections',
+                        body=[body], headers={'If-Unmodified-Since-Version': str(library_version)})
+            self.receipt['in_flight'] = 'collection_readback:' + current['key']
+            self.save()
+            updated = self.client.collection(self.library, current['key'])
+            require(updated['data'].get('name') == plan['name'] and
+                    (updated['data'].get('parentCollection') or False) == plan['parent'] and
+                    updated['version'] > current['version'], 'collection_update_readback_failed')
+            rows = self.client.collections(self.library)
+            validate_collection_target(rows, current['key'], plan['name'], plan['parent'])
+            after = {'version': updated['version'], 'name': updated['data'].get('name'),
+                     'parentCollection': updated['data'].get('parentCollection') or False}
+            self.receipt.pop('in_flight', None)
+            self.save()
+            changed = True
+        else:
+            after = before
+            changed = False
+        self.result['collectionUpdate'] = {'key': current['key'], 'before': before,
+                                           'after': after, 'changed': changed}
+        self.result.update(verified=True, status='completed', error=None)
+        return self.result
+
     def execute(self, create=True):
-        return self.archive(create) if self.receipt['kind'] == 'archive' else self.prune(create)
+        if self.receipt['kind'] == 'archive':
+            return self.archive(create)
+        if self.receipt['kind'] == 'prune':
+            return self.prune(create)
+        return self.update_collection(create)

@@ -195,6 +195,12 @@ class Client:
     def collections(self, library):
         return self.list_all(self.prefix(library) + '/collections')
 
+    def collection(self, library, key):
+        require(isinstance(key, str) and KEY.fullmatch(key), 'invalid_collection_key')
+        item = self.read(self.prefix(library) + '/collections/' + key)
+        require(isinstance(item, dict) and item.get('key') == key, 'invalid_local_api_response')
+        return item
+
     def prepare(self, request, backend='local_api'):
         self.api.bind()
         require(self.api.write_supported, 'capability_missing_local_api_writes')

@@ -23,6 +23,10 @@ function control(body){
   if(body.update){
     const row=items.get(body.update.key);save({...row.data,...body.update.fields});
   }
+  if(body.updateCollection){
+    const row=collections.get(body.updateCollection.key);
+    save({...row.data,...body.updateCollection.fields},collections);
+  }
   for(const row of body.seed||[]){
     const data={key:row.key||key(),itemType:row.itemType,creators:row.creators||[],tags:row.tags||[],
       collections:row.collections||[],...row.fields};
@@ -138,7 +142,13 @@ const server=http.createServer(async(req,res)=>{
       }
       return send(405,{});
     }
-    if(resource==='collections')return send(200,[...collections.values()].map(publicItem));
+    if(resource==='collections'){
+      if(k){
+        if(config.collectionReadbackFailure){config.collectionReadbackFailure=false;return send(500,{});}
+        const collection=collections.get(k);return collection?send(200,publicItem(collection)):send(404,{});
+      }
+      return send(200,[...collections.values()].map(publicItem));
+    }
     if(resource==='items'){
       let rows=[...items.values()];
       if(k==='top')rows=rows.filter(i=>!i.data.parentItem&&!i.data.deleted&&!['note','annotation','attachment'].includes(i.data.itemType));

@@ -61,8 +61,45 @@ def attachment(value, candidate=False):
         require(value.get('disposition', 'duplicate') in ('duplicate', 'superseded'))
 
 
+def validate_collection(value):
+    allowed = {'schema', 'operation_id', 'library', 'key', 'expected_version',
+               'expected_name', 'expected_parent', 'name', 'parentCollection'}
+    required = {'schema', 'library', 'key', 'expected_version', 'expected_name', 'expected_parent'}
+    obj(value, allowed, required)
+    require(value['schema'] == 1)
+    if 'operation_id' in value:
+        try:
+            require(str(uuid.UUID(value['operation_id'])) == value['operation_id'], 'invalid_operation_id')
+        except (ValueError, TypeError, AttributeError):
+            raise LibraryError('invalid_operation_id') from None
+    lib = value['library']
+    obj(lib, {'type', 'id'}, {'type'})
+    require(isinstance(lib['type'], str) and lib['type'] in {'user', 'group'})
+    if lib['type'] == 'group':
+        require(type(lib.get('id')) is int and lib['id'] > 0)
+    else:
+        require('id' not in lib)
+    key(value['key'])
+    require(type(value['expected_version']) is int and value['expected_version'] >= 0)
+    string(value['expected_name'], 255)
+    for field in ('expected_parent', 'parentCollection'):
+        if field not in value:
+            continue
+        parent = value[field]
+        if parent is False:
+            continue
+        key(parent)
+    if 'name' in value:
+        string(value['name'], 255)
+        require(bool(value['name'].strip()), 'invalid_collection_name')
+    require('name' in value or 'parentCollection' in value, 'collection_update_has_no_changes')
+    return value
+
+
 def validate(value, kind='archive'):
     value = json.loads(json.dumps(value, allow_nan=False))
+    if kind == 'collection':
+        return validate_collection(value)
     common = {'schema', 'operation_id', 'library', 'identity', 'parent_key'}
     allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf', 'distinct_candidates',
                          'parent_pdf_evidence'} if kind == 'archive'

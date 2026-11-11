@@ -8,6 +8,7 @@ from .client import Client
 from .errors import LibraryError
 from .operations import Executor, Store, summary
 from .request import read_request
+from .objects import plan_collection_update
 from .citations import export_bib, cite
 from .reading import read_pdf, search
 
@@ -16,7 +17,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description='Shared Zotero commands (JSON output)')
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('status', 'find', 'get', 'collections', 'archive', 'prune', 'operation',
+    for name in ('status', 'find', 'get', 'collections', 'archive', 'prune', 'collection', 'operation',
                  'export', 'cite', 'read', 'search'):
         p = sub.add_parser(name)
         for option in ('profile', 'base-url', 'policy', 'state-dir'):
@@ -34,6 +35,9 @@ def main(argv=None):
         if name in ('get', 'read'):
             p.add_argument('--key', required=True)
         if name in ('archive', 'prune', 'cite'):
+            p.add_argument('--request', required=True)
+        if name == 'collection':
+            p.add_argument('action', choices=('plan', 'update'))
             p.add_argument('--request', required=True)
         if name == 'export':
             p.add_argument('--keys', nargs='+', required=True)
@@ -59,6 +63,16 @@ def main(argv=None):
             result = connection.status_payload(args.profile, args.base_url, args.timeout)
             print(json.dumps(result, ensure_ascii=True, indent=2))
             return 0 if result['read_only_ready'] else 1
+        if args.command == 'collection':
+            request = read_request(args.request, 'collection')
+            client = Client(args.profile, args.base_url, args.timeout, args.policy)
+            if args.action == 'plan':
+                result = plan_collection_update(client, request)
+                print(json.dumps(result, ensure_ascii=True, indent=2))
+                return 0
+            result = summary(Executor(client, Store(args.state_dir)).run(request, 'collection'))
+            print(json.dumps(result, ensure_ascii=True, indent=2))
+            return 0 if result.get('state') == 'completed' else 2
         client = Client(args.profile, args.base_url, args.timeout, args.policy)
         library = {'type': 'group', 'id': args.group} if getattr(args, 'group', None) else {'type': 'user'}
         if args.command == 'find':

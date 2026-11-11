@@ -364,6 +364,45 @@ class OfficeNativeGateTests(unittest.TestCase):
 
 
 class WordIdentityTests(OfficeNativeGateTests):
+    def test_real_word_interface_uses_and_closes_bootstrap_window(self):
+        executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"
+        word = FakeWordApplication()
+        word.Path = str(executable.parent)
+        word._codex_expected_provider_path = executable
+        bootstrap = FakeDocument(word.Documents)
+        bootstrap.Windows = type("Windows", (), {"Item": lambda self, index: type("Window", (), {"Hwnd": 10})()})()
+        word.Documents.Add = lambda **kwargs: bootstrap
+        with patch.object(native_gate, "_window_process_id", return_value=4242), \
+             patch.object(native_gate, "_safe_process_executable_path", return_value=(executable, None)):
+            result = native_gate._verify_word_ownership(word, {"path": word.Path}, {"owned_pids": [4242]})
+        self.assertEqual(result["pid"], 4242)
+        self.assertEqual(bootstrap.close_calls, [(False,)])
+
+    def test_bootstrap_is_closed_when_window_pid_does_not_match(self):
+        executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"
+        word = FakeWordApplication()
+        word.Path = str(executable.parent)
+        word._codex_expected_provider_path = executable
+        bootstrap = FakeDocument(word.Documents)
+        bootstrap.Windows = type("Windows", (), {"Item": lambda self, index: type("Window", (), {"Hwnd": 10})()})()
+        word.Documents.Add = lambda **kwargs: bootstrap
+        with patch.object(native_gate, "_window_process_id", return_value=999), \
+             patch.object(native_gate, "_safe_process_executable_path", return_value=(executable, None)):
+            with self.assertRaises(ValueError):
+                native_gate._verify_word_ownership(word, {"path": word.Path}, {"owned_pids": [4242]})
+        self.assertEqual(bootstrap.close_calls, [(False,)])
+        self.assertEqual(word.quit_calls, 0)
+
+    def test_bootstrap_refuses_nonempty_document_collection(self):
+        executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"
+        word = FakeWordApplication()
+        word.Path = str(executable.parent)
+        word._codex_expected_provider_path = executable
+        word.Documents.Count = 1
+        with self.assertRaisesRegex(ValueError, "already contains documents"):
+            native_gate._verify_word_ownership(word, {"path": word.Path}, {"owned_pids": [4242]})
+        self.assertEqual(word.quit_calls, 0)
+
     def _case(self, *, observed=None, window_pid=4242, app_path=None, expected_path=None,
               process_path=None, path_error=None, hwnd=10):
         executable = self.root / "Microsoft Office" / "Office16" / "WINWORD.EXE"

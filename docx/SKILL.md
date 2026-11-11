@@ -109,7 +109,10 @@ The native gate must also record the actual application identity (`Path`, versio
 owned PID). `Word.Application` alone is not proof of Microsoft Word: WPS may register the same COM
 class and may report a Word-like caption. The gate verifies the Microsoft Word registration, then
 matches the application's path and window PID to the unique new Word process and its executable path.
-If identity or ownership cannot be proven, it stops without opening a document or quitting the instance.
+For a COM-created instance without a window, it briefly creates and closes an invisible blank document
+to obtain Word.Window.Hwnd; it refuses this bootstrap when the document collection is not empty.
+If identity or ownership cannot be proven, it stops without opening the user's document or quitting the instance;
+report any process whose ownership or exit remains unconfirmed.
 WPS processes are
 observed as environment evidence and are never closed by the gate. A result is reported as Word
 native only when the owned executable path is Microsoft Word; WPS or LibreOffice results are

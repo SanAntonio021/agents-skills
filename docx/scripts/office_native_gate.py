@@ -321,8 +321,21 @@ def _verify_word_ownership(application: Any, identity: dict[str, Any], observati
     if application_path.name.casefold() != "winword.exe":
         application_path = application_path / "WINWORD.EXE"
     application_path = application_path.resolve()
-    hwnd = int(getattr(application, "Hwnd"))
-    window_pid = _window_process_id(hwnd)
+    # Word exposes Hwnd on Window, not on Application.  A COM-created Word
+    # instance has no document window until a temporary document is added.
+    bootstrap = None
+    try:
+        try:
+            hwnd = int(getattr(application, "Hwnd"))
+        except AttributeError:
+            if _collection_count(application, "Documents") != 0:
+                raise ValueError("Word already contains documents; bootstrap refused")
+            bootstrap = application.Documents.Add(Visible=False)
+            hwnd = int(bootstrap.Windows.Item(1).Hwnd)
+        window_pid = _window_process_id(hwnd)
+    finally:
+        if bootstrap is not None:
+            bootstrap.Close(False)
     if window_pid != pids[0]:
         raise ValueError("Word application window PID does not match the new process")
     process_path, error = _safe_process_executable_path(window_pid)

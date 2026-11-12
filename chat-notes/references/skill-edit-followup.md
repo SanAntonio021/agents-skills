@@ -1,6 +1,6 @@
 # 技能发布操作
 
-授权与收尾触发见 [SKILL.md 第 5 项](../SKILL.md#5-提交发布与运行时同步)。日常技能修改已包含发布，不必等待收尾；权威步骤与完成标准统一见 `agent-rules` 的[技能定向发布](../../agent-rules/references/skill-upstream-maintenance.md#技能定向发布)，本文件只补充入口定位与接续方法。
+授权与收尾触发见 [SKILL.md 第 5 项](../SKILL.md#5-提交发布与运行时同步)。日常技能修改已包含发布，不必等待收尾；权威步骤与完成标准统一见 `agent-rules` 的[技能定向发布](../../agent-rules/references/skill-publication.md#技能定向发布)，本文件只补充入口定位与接续方法。
 
 1. 确认实际源码仓库及本次改动范围，只提交和推送本次内容。
 2. 定位维护目录中的 `automation/ccswitch-skill-sync/README.md`，读取后统一使用同目录 `Invoke-LabSkillSync.ps1`。相关执行文件来源不明或正在变化时，先核实现役版本；按本机已选后端和所需能力验收执行，后台失败不回退旧 CLI 或改用界面操作。

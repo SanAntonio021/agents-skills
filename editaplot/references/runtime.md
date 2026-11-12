@@ -124,7 +124,7 @@ project-local managed environment under the configured runtime. The launcher its
 Python; the agent follows the explicit-consent process above if Python is absent. Environment repair
 never installs or modifies Origin. Users do not need to launch Origin before requesting a figure.
 
-Do not run upstream `setup` against `C:\Users\SanAn\.cc-switch\skills`, `.codex\skills`, or
+Do not run upstream `setup` against `C:\Users\SanAn\.agents\skills`, `.cc-switch\skills`, `.codex\skills`, or
 `.claude\skills`; doing so would bypass CC Switch ownership and create update drift. Upstream changes
 are reviewed in the comparison-only mirror, then exported from the accepted commit into the local
 versioned snapshot and distributed through the tracked pointer. Do not package `.editaplot-venv`

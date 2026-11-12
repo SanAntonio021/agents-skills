@@ -119,6 +119,19 @@ def test_weekly_defaults_and_explicit_override_reach_only_hygiene(tmp_path, monk
                 assert "--dependency-root" not in command
 
 
+def test_weekly_default_reads_unified_storage_before_the_config_root(tmp_path, monkeypatch):
+    monkeypatch.setattr(REVIEW.Path, "home", lambda: tmp_path)
+    expected = []
+    for root in (tmp_path / ".agents/skills", tmp_path / ".cc-switch/skills"):
+        root.mkdir(parents=True)
+        expected.append(str(root.resolve()))
+        calls = capture_audits(tmp_path, monkeypatch)
+        hygiene = [command for name, command in calls.items() if name.startswith("hygiene")]
+        assert hygiene
+        for command in hygiene:
+            assert [command[i + 1] for i, arg in enumerate(command) if arg == "--dependency-root"] == expected
+
+
 def test_weekly_absent_default_and_reuse_do_not_resolve(tmp_path, monkeypatch):
     monkeypatch.setattr(REVIEW.Path, "home", lambda: tmp_path)
     calls = capture_audits(tmp_path, monkeypatch)

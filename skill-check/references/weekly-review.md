@@ -26,9 +26,9 @@ python scripts/run_weekly_skill_review.py next-question --json
 `record-decision`、`prepare-execution` 同时传入正式 `--skills-root`，后者还需相同
 `--reports-root`，避免把运行副本位置当成源码基线或另建状态。
 
-周检的目录审计默认只读当前用户已有的 `~/.cc-switch/skills`，用于确认源码根之外已安装的
-兄弟依赖。其他分发位置通过 `scan --dependency-root <installed-skills-root>` 指定，可重复；
-显式参数替换默认目录，并同时转发给公开与私有目录审计。使用 `--no-installed-dependencies`
+周检的目录审计默认只读当前用户已有的 `~/.agents/skills` 和 `~/.cc-switch/skills`（按此顺序，
+不存在的跳过），用于确认源码根之外已安装的兄弟依赖。其他分发位置通过
+`scan --dependency-root <installed-skills-root>` 指定，可重复；显式参数替换默认目录，并同时转发给公开与私有目录审计。使用 `--no-installed-dependencies`
 可做纯源码检查。独立运行 `audit_skill_tree.py scan` 时没有默认依赖目录，需显式传同名参数。
 
 ```powershell

@@ -1159,11 +1159,15 @@ def run_audits(
             for name, path in paths.items()
         }, paths
 
-    # The distribution root is read-only evidence of separately installed siblings.
+    # The distribution roots are read-only evidence of separately installed siblings:
+    # CC Switch's unified storage first, then its own config root.
     # Explicit roots replace this default; an empty tuple disables fallback.
     if dependency_roots is None:
-        installed = Path.home() / ".cc-switch" / "skills"
-        dependency_roots = (installed,) if installed.is_dir() else ()
+        home = Path.home()
+        dependency_roots = tuple(
+            root for root in (home / ".agents" / "skills", home / ".cc-switch" / "skills")
+            if root.is_dir()
+        )
     dependency_options = [arg for root in dependency_roots
                           for arg in ("--dependency-root", str(root.resolve()))]
     python = sys.executable
@@ -3029,7 +3033,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scan.add_argument("--private-registry", type=Path, help="Defaults to agents-root/upstream/private-skill-sources.toml.")
     dependency_group = scan.add_mutually_exclusive_group()
     dependency_group.add_argument("--dependency-root", type=Path, action="append", default=[],
-                                  help="Read-only installed sibling root; repeatable, replaces the default existing ~/.cc-switch/skills.")
+                                  help="Read-only installed sibling root; repeatable, replaces the default "
+                                       "existing ~/.agents/skills and ~/.cc-switch/skills.")
     dependency_group.add_argument("--no-installed-dependencies", action="store_true",
                                   help="Audit source links without installed sibling fallback.")
     scan.add_argument("--discovery-input", type=Path, help="Optional offline research triggers/results JSON; see weekly-review.md.")

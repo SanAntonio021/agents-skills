@@ -4,7 +4,7 @@
 - 状态：`localized`
 - 首次统一调查：`2026-11-12`
 - 最近来源登记审核：`2026-11-12`
-- 说明：来源：飞书官方 well-known 技能包；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 555b233c0d4e8722f201597b013790c21336f905 为原样导入；接受基线为 2026-10-18 官方完整 27 文件包，清单及 SHA-256 见 reports/skill-upstream/2026-10-18/feishu/accepted-installed-manifests.json 中 lark-base，2026-11-08 官方索引核对未变。本地补充为 references/lark-base-role-config.md 的“套餐不含行列权限时”一节。官方包及许可沿官方来源，不在此虚构 Git 来源或新的许可结论；后续官方更新按整体差异单独审核并合并本地补充，不覆盖运行时、不自动接受更新。
+- 说明：来源：飞书官方 well-known 技能包 1.2.23；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 555b233c0d4e8722f201597b013790c21336f905 为原样导入；接受基线为 2026-10-18 官方完整 27 文件包，清单及 SHA-256 见 reports/skill-upstream/2026-10-18/feishu/accepted-installed-manifests.json 中 lark-base，2026-11-08 官方索引核对未变。2026-11-12 另核对该 27 个文件与 larksuite/cli 官方仓库提交 ac22a60a23d66c37d43a7ec6d9e99b99a4320356 的 skills/lark-base 逐字节一致，并保留该仓库的 MIT LICENSE；本项仍按非 Git 官方包登记，不填写 Git source。本地补充两项：references/lark-base-role-config.md 的“套餐不含行列权限时”一节；references/lark-base-app.md 的“修改已有 App 页面”一段及 evals/evals.json 的空标签回归用例。后续官方更新按整体差异单独审核并合并本地补充，不覆盖运行时、不自动接受更新。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。

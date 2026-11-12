@@ -68,6 +68,7 @@ metadata:
 - 目标 IEEE 模板：[官方模板缓存](references/ieee-official-template-cache.md)。
 - 术语长期维护：[写作记忆结构](references/writing-memory-schema.md)。
 - 分节重写：[分节审查](references/section-by-section-review.md)。
+- 审稿回复（Response Letter）正文的起草、重排和审校：[审稿回复写作规范](references/response-letter.md)。
 
 目标期刊或会议未知时，只能称“通用科学与工程论文精修”。具体模板符合性必须依据用户给出的模板、官方作者指南或技能内对应官方模板。
 

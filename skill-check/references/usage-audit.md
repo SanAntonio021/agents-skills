@@ -11,7 +11,7 @@
 它不是实时监控器，也不证明 Codex 的全部隐式路由是否发生。扫描结果只能描述当前可访问的历史范围；历史被
 删除、轮转、未落盘或来自其他客户端时，`历史内未见使用` 不能外推成“从未使用”。
 
-周检使用固定左闭右开窗口：前一周六 14:00（含）到本周六 14:00（不含），时区为
+周检使用固定左闭右开窗口：前一周六 10:00（含）到本周六 10:00（不含），时区为
 `Asia/Shanghai`。计数单位固定为用户请求；去重键为 `(host, request_id, skill)`，因此同一请求内
 重复点名、重复调用或同时存在多种证据都只计一次。
 
@@ -38,8 +38,8 @@
 python scripts/audit_skill_usage.py `
   --reports-root D:\AuditReports `
   --date 2026-08-15 `
-  --window-start 2026-08-08T14:00:00+08:00 `
-  --window-end 2026-08-15T14:00:00+08:00 `
+  --window-start 2026-08-08T10:00:00+08:00 `
+  --window-end 2026-08-15T10:00:00+08:00 `
   --timezone Asia/Shanghai `
   --skills-root D:\BaiduSyncdisk\.agents\skills `
   --codex-sessions-root C:\Users\SanAn\.codex\sessions `

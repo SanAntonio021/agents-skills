@@ -202,13 +202,13 @@ def test_legacy_reopened_queue_with_new_facts_keeps_them_for_review():
 
 
 def test_default_usage_window_is_fixed_to_saturday_during_weekday_continuations():
-    expected = ('2026-10-03T14:00:00+08:00', '2026-10-10T14:00:00+08:00')
+    expected = ('2026-10-03T10:00:00+08:00', '2026-10-10T10:00:00+08:00')
     for date in ('2026-10-10', '2026-10-11', '2026-10-12', '2026-10-16'):
         assert REVIEW.usage_window_for_date(date) == expected
     assert REVIEW.usage_window_for_date('2026-10-17') == (
-        '2026-10-10T14:00:00+08:00', '2026-10-17T14:00:00+08:00')
+        '2026-10-10T10:00:00+08:00', '2026-10-17T10:00:00+08:00')
     assert REVIEW.usage_window_for_date('2026-01-01') == (
-        '2025-12-20T14:00:00+08:00', '2025-12-27T14:00:00+08:00')
+        '2025-12-20T10:00:00+08:00', '2025-12-27T10:00:00+08:00')
 
 
 def test_explicit_usage_window_end_keeps_requested_boundary():

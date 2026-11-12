@@ -36,7 +36,8 @@ USAGE_AUDIT_VERSION = "skill-usage-audit-v6"
 SUPPORTED_USAGE_AUDIT_VERSIONS = {"skill-usage-audit-v5", USAGE_AUDIT_VERSION}
 USAGE_SEMANTICS_VERSION = 6
 DEFAULT_USAGE_TIMEZONE = "Asia/Shanghai"
-DEFAULT_USAGE_BOUNDARY_HOUR = 14
+# Keep equal to the hour the weekly automation runs, so its window has fully elapsed.
+DEFAULT_USAGE_BOUNDARY_HOUR = 10
 UNSEEN_STREAK_THRESHOLD = 4
 ROUTINE_QUEUE_LIMIT = 3
 MAX_DECISION_SUMMARY = 600
@@ -3045,7 +3046,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--usage-window-end",
         help=(
             "Exclusive ISO-8601 end of the seven-day usage window. "
-            "Defaults to the latest Saturday on/before --date at 14:00 in --usage-timezone."
+            "Defaults to the latest Saturday on/before --date at "
+            f"{DEFAULT_USAGE_BOUNDARY_HOUR:02d}:00 in --usage-timezone."
         ),
     )
     scan.add_argument(

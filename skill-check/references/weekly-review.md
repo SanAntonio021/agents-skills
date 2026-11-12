@@ -57,7 +57,7 @@ python scripts/run_weekly_skill_review.py scan `
 `$skill-name`、`/skill-name` 或 Skill 链接文本。技能调用或读取证据无法关联到用户请求时也会让本周
 证据不完整，避免把不可去重的事件冒充请求次数。
 
-每次 `scan` 固定审计上海时区前一周六 14:00（含）到本周六 14:00（不含）的七天窗口。使用计数
+每次 `scan` 固定审计上海时区前一周六 10:00（含）到本周六 10:00（不含）的七天窗口。使用计数
 按 `(host, request_id, skill)` 去重，Codex 与 Claude 分列并提供合计。稳定离线页面写入
 `<reports-root>/usage/dashboard/index.html`，每周聚合快照写入
 `<reports-root>/usage/dashboard/data/<date>.json`；页面内嵌最近 12 周快照，不启动服务、不访问网络，

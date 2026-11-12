@@ -2127,8 +2127,15 @@ class Runner:
                         pass
                 raise
 
-        ready_deadline = time.monotonic() + min(5.0, self.transport_timeout(5.0))
+        # A long document in a background tab can need far more than five
+        # seconds; inside the shared loading budget wait until that deadline.
+        shared_deadline = getattr(self, 'deadline', None)
+        ready_deadline = (shared_deadline if shared_deadline is not None
+                          else time.monotonic() + min(5.0, self.transport_timeout(5.0)))
+        ready_started = time.monotonic()
         while True:
+            if ready_deadline - time.monotonic() <= 0:
+                raise VerificationError('Document page did not finish loading before edit-mode selection')
             self.require_time()
             ready = staged_call('document_ready_state', '/v2/tabs/' + self.tab + '/eval',
                                 {'expression':'document.readyState'}).get('value')
@@ -2159,9 +2166,12 @@ class Runner:
           return {clicked:true, text, x:rect.left + rect.width/2, y:rect.top + rect.height/2,
             viewport:{width:window.innerWidth,height:window.innerHeight}};
         })()'''
+        ready_wait_ms = max(0, round((time.monotonic() - ready_started) * 1000))
         mode = staged_call('read_document_mode_control', '/v2/tabs/' + self.tab + '/eval',
                            {'expression': expression})
         value = mode.get('value') if isinstance(mode, dict) else None
+        if isinstance(value, dict):
+            value['ready_wait_ms'] = ready_wait_ms
         if isinstance(value, dict) and value.get('clicked') is True:
             x, y = value.get('x'), value.get('y')
             if not all(finite_number(v) for v in (x, y)):
@@ -2630,6 +2640,41 @@ class Runner:
         self.report.setdefault('document_routes', []).append(dict(document_url=url, **identity))
         return identity
 
+    def wait_for_selector(self, base, selector, stage, page=None):
+        """Wait for one page element in bounded slices of the shared loading deadline.
+
+        The proxy answers 408 WAIT_TIMEOUT when a slice ends without a match.
+        Only that answer is retried, and only while the caller's absolute
+        deadline has time left; without such a deadline the single 15-second
+        wait is kept. Other proxy or transport errors propagate unchanged.
+        """
+        attempts = 0
+        while True:
+            remaining = self.require_time()
+            slice_ms = 15000 if remaining is None else max(250, min(15000, int(remaining * 1000)))
+            attempts += 1
+            try:
+                result = self.call(base + '/wait', {'selector': selector, 'timeoutMs': slice_ms})
+            except urllib.error.HTTPError as error:
+                code = None
+                if error.code == 408:
+                    try:
+                        body = json.loads(error.read(2048).decode('utf-8', errors='replace'))
+                        detail = body.get('error', body) if isinstance(body, dict) else {}
+                        code = detail.get('code') if isinstance(detail, dict) else None
+                    except Exception:
+                        code = None
+                if code != 'WAIT_TIMEOUT' or remaining is None:
+                    raise
+                deadline = getattr(self, 'deadline', None)
+                if deadline is None or deadline - time.monotonic() <= 0:
+                    raise VerificationError(
+                        'Document page element did not appear before the loading deadline: ' + stage) from error
+                continue
+            if attempts > 1 and isinstance(page, dict):
+                page.setdefault('load_wait_attempts', {})[stage] = attempts
+            return result
+
     def _open_page(self):
         self.document_identity = self.verify_document(self.request['document_url'])
         session = self.call('/v2/tasks', {}, auth=False)
@@ -2643,15 +2688,15 @@ class Runner:
         if self.request.get('section_id'):
             # Click only an actual document-outline link observed in this page.
             selector = 'a[href="#' + self.request['section_id'] + '"]'
-            self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
+            self.wait_for_selector(base, selector, 'outline_link', page)
             self.call(base + '/click', {'selector': selector})
         selector = '.whiteboard-canvas-container'
         if self.request.get('block_id'):
             block = '[data-record-id="' + self.request['block_id'] + '"]'
-            self.call(base + '/wait', {'selector': block, 'timeoutMs': 15000})
+            self.wait_for_selector(base, block, 'board_block', page)
             self.call(base + '/eval', {'expression': 'document.querySelector(' + json.dumps(block) + ').scrollIntoView({block:"center"})'})
             selector = block + ' .whiteboard-canvas-container'
-        self.call(base + '/wait', {'selector': selector, 'timeoutMs': 15000})
+        self.wait_for_selector(base, selector, 'board_canvas', page)
         route = self.call(base + '/eval', {'expression': '({origin:location.origin,href:location.href})'}).get('value')
         if not isinstance(route, dict) or route.get('origin') != urlparse(self.request['document_url']).scheme + '://' + urlparse(self.request['document_url']).netloc:
             raise VerificationError('Document navigation changed the requested origin')
@@ -2690,7 +2735,8 @@ class Runner:
                     record[key] = state[key]
         if isinstance(detail, dict):
             for key in ('clicked', 'reason', 'count', 'text', 'menu_option_selected',
-                        'menu_option', 'click_method', 'menu_click_method', 'menu_render_capture'):
+                        'menu_option', 'click_method', 'menu_click_method', 'menu_render_capture',
+                        'ready_wait_ms'):
                 if key in detail:
                     record[key] = detail[key]
         if record.get('stage') in ('document_mode_switch_error', 'native_entry_error'):

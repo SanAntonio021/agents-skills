@@ -10,7 +10,7 @@ description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工�
 实际写入本地 `.md` 或 `.tex` 前，读取并执行 [../writing-router/references/document-version-protection.md](../writing-router/references/document-version-protection.md)，核对当前文件、项目目录和已有改动。已有 Git 按项目约定使用；Git 不适用时通过新副本或已有备份继续，不默认提交或增加 baseline、WIP 确认。只读排错和方案说明保持只读。
 
 如果输入是已经投稿、已经打包或明确冻结的稿件，先读取并执行
-[references/journal-template-migration.md](references/journal-template-migration.md)。保留原始提交版本，在独立目标工程中适配模板、制作图件版本并实施已授权的文字修改；新发现的科学内容疑问单独讨论。
+[references/journal-template-migration.md](references/journal-template-migration.md)。已提交或冻结的那一份保持不动，在工作工程中适配模板、制作图件版本并实施已授权的文字修改；新发现的科学内容疑问单独讨论。
 
 ## 定位
 

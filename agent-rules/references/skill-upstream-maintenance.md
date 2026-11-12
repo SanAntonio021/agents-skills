@@ -292,7 +292,7 @@ python scripts/check_feishu_official_skills.py `
 - **范围**：来源锁登记为官方来源且已安装的包，与安装实体及各运行副本比对；登记为 `localized` 的包与接受基线比对。同名但没有官方来源的自建技能列入 `excluded_self_built`，未安装的官方包只列入 `not_installed_candidates`。
 - **产物**：只写入 `--out`，包括 `index.json`、`official/` 官方快照、`diffs/` 差异和 `comparison.json`；标准输出是一份摘要 JSON。同一目录已有快照时须加 `--overwrite`。
 - **退出码**：`0` 查完且无差异，`10` 查完且有差异，`20` 没查完。`20` 时按 `errors` 和 `download_errors` 处理后重跑，不能当作无更新；常见原因是下载失败、`localized` 缺基线，或来源锁仍记官方来源、源码已自有但未登记 `localized`。
-- **不稳定响应**：内容不同的文件会重复下载。多次响应不一致且其中一次与本地一致时列入 `unstable_matching_target`，不计为差异；其余仍计为差异，由执行者阅读 `diffs/` 判断。
+- **不稳定响应**：内容不同的文件会重复下载。多次响应不一致且其中一次与本地一致时列入 `unstable_matching_target`，不计为差异，首次响应与本地的差异仍写入 `diffs/` 供逐项确认；其余仍计为差异，由执行者阅读 `diffs/` 判断。
 - **边界**：脚本不安装、不修改源码、运行副本、来源锁和基线，也不判断差异是否改变行为。
 
 ## 入口搬迁伴随正文变化

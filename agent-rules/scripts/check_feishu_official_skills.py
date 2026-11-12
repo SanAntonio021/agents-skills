@@ -414,8 +414,8 @@ def _run(cfg: Config, fetch: Fetch, checked_at: str) -> dict[str, Any]:
         }
         if refetch_errors:
             record["refetch_errors"] = refetch_errors
-        if record["matches_target"]:
-            return record
+        # The diff is written even when a later response matched the target, so that an
+        # unstable response can be confirmed from the report without ad-hoc comparison.
         before = target_bytes(name, rel)
         after = (cfg.out / "official" / name / rel).read_bytes()
         if before is None:

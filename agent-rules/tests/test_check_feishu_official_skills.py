@@ -213,6 +213,12 @@ class CheckFeishuOfficialSkillsTests(unittest.TestCase):
         row = report["skills"][0]
         self.assertTrue(row["unstable_matching_target"][0]["unstable_response"])
         self.assertEqual(len(row["unstable_matching_target"][0]["variants"]), 2)
+        self.assertEqual(row["changed"], [])
+        # The differing response is still diffed so it can be confirmed item by item.
+        self.assertEqual(row["unstable_matching_target"][0]["diff"], "diffs/lark-apps/assets/index.html.diff")
+        diff = (self.fx.out / "diffs" / "lark-apps" / "assets" / "index.html.diff").read_text(encoding="utf-8")
+        self.assertIn("-idc=hl", diff)
+        self.assertIn("+idc=lf", diff)
 
     def test_unstable_response_never_matching_target_is_a_change(self) -> None:
         self.fx.official("lark-apps", {"SKILL.md": "s\n", "assets/index.html": "placeholder\n"})

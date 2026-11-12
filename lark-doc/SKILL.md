@@ -43,6 +43,8 @@ metadata:
 
 执行 Shortcut 时，不预读 [`lark-shared`](../lark-shared/SKILL.md) 或预跑 `auth status --verify`；仅遇到未认证、token / 身份或 scope 错误时读取该 Skill，修复后重试。认证、身份或 scope 管理请求则直接使用该 Skill。
 
+Windows 上从 Python 等脚本以子进程调用时，`lark-cli` 是 npm 的 `.cmd` 包装，不经 shell 直接执行会报找不到文件。改为调用 `node <npm root -g>/@larksuite/cli/scripts/run.js`，参数按列表原样传入，避免含引号和 XML 的内容再经 `cmd` 解析。
+
 ## 不在本 Skill 范围
 
 - **Drive 文件级操作**：找文档、导入导出、云空间文件上传 / 下载 / 权限管理 → [`lark-drive`](../lark-drive/SKILL.md)。复制文档、创建副本或另存为副本时，按其指引使用 `lark-cli drive files copy`；不要用 `docs +fetch` + `docs +create` 重建正文。

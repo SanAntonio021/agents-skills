@@ -482,6 +482,11 @@ def validate_style(style):
             raise VerificationError('Unsupported border width')
 
 
+# Largest bounding-box drift accepted for a connector bound to a module whose
+# text was edited; float32 spacing near canvas coordinate 1000 is about 6e-5.
+TEXT_CONNECTOR_ROUNDOFF = 1e-4
+
+
 def finite_number(value, positive=False):
     return (isinstance(value, (int, float)) and not isinstance(value, bool)
             and math.isfinite(value) and (not positive or value > 0))
@@ -1459,6 +1464,19 @@ def check_raw_preservation(before, after, op, *, group_evidence=None, arrangemen
             exceptions.append({'id': ident, 'normalization': 'grouped_text_curve_zero_height_roundoff',
                                'raw_height': right['height']})
         connected = any((c.get(side + '_object') or c.get(side, {}).get('attached_object', {})).get('id') in ids for side in ('start', 'end'))
+        geometry = ('x', 'y', 'width')
+        if (kind == 'text' and connected and ident not in ids and c
+                and not left.get('parent_id') and not right.get('parent_id')
+                and left.get('height') == right.get('height')
+                and all(finite_number(left.get(k)) and finite_number(right.get(k))
+                        and abs(left[k] - right[k]) <= TEXT_CONNECTOR_ROUNDOFF for k in geometry)
+                and any(left[k] != right[k] for k in geometry)):
+            # Re-saving a module's text re-serializes its bound root connectors
+            # as float32; only sub-1e-4 drift of x/y/width is accepted, height
+            # must stay identical.
+            paths += [(k,) for k in geometry]
+            exceptions.append({'id': ident, 'normalization': 'text_bound_connector_float32_roundoff',
+                               'maximum_difference': max(abs(left[k] - right[k]) for k in geometry)})
         if ident in ids and kind == 'move':
             paths += [('x',), ('y',)]
         elif ident in ids and kind == 'resize':

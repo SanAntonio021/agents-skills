@@ -170,7 +170,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 `#RRGGBB` 按不透明主题色编码，独立 Opacity 属性不变。每步还核对原生渲染 alpha；颜色和新增线必须重开核对，并检查实际图像。RGB 字符串相同但对象透明不算完成。
 曲线形状微调用 `curve_point`，既可处理绑定曲线，也可处理游离曲线。只读 inspect 的 `curve_handles` 按连线 ID 返回 `segment` 和 `turning` 的实际画布坐标；先据此选择手柄，再指定目标经过点，例如 `{"kind":"curve_point","id":"<curve-id>","point":{"x":410,"y":110}}`。再次调用默认移动已有的第一个经过点；需新增第二个点时明确指定 segment 和对应 index，不能把两个 Bezier 控制点当成经过点。
 CLI raw 导出曲线经过点但省略 Bezier 控制向量；曲线控制点变化先由独立新页见证完整点列及首末点，确认保存后再关闭原写入页并执行普通重开验收。直接给游离四点曲线改两个控制向量会丢失 edited 状态，而人工拖动会写入可保存的经过点。`path` 保留原有两端绑定限制，游离曲线用 `curve_point`；一层组合内仍按成员 ID 调用并保护父组和其他成员。
-长文档的目标画板未加载时，请求可提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）；
+目标画板不是文档首屏第一个画板时，请求必须提供 `section_id`（已有目录标题块 ID）和 `block_id`（画板文档块 ID）。缺少时 runner 只等待页面上第一个画板容器，长文档中目标画板未懒加载，初始加载会以 `WAIT_TIMEOUT` 失败；在画板前插入较多正文后原本可用的请求也会出现此情况。
 runner 点击页面真实存在的该目录链接，再滚动到准确画板块。二者不代替 `whiteboard_token`，进入后仍核对画板和文档身份。
 目录链接或目标块不存在时停止，不跳到相似章节、不改整板覆盖。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect high-signal Codex and Claude Code session material for lab reports.
+"""Collect high-signal Codex, Claude Code and Cursor session material for lab reports.
 
 The collector deliberately emits structured evidence rather than attempting to
 write the report itself. The calling skill can then summarize the evidence
@@ -68,8 +68,28 @@ REDACTIONS = [
     (re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"), "[REDACTED_API_KEY]"),
     (re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"), "[REDACTED_TOKEN]"),
     (re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._-]{20,}"), "Bearer [REDACTED_TOKEN]"),
-    (re.compile(r"(?i)(password|passwd|api[_-]?key|secret)\s*[:=]\s*[^\s,;]+"), r"\1=[REDACTED]"),
 ]
+# Labelled secrets, including Chinese labels and full-width colons such as "密码：...".
+LABELLED_SECRET_RE = re.compile(
+    r"(?i)(password|passwd|api[_-]?key|secret|密码|口令|密钥)\s*[:：=]\s*([^\s,;，；。、]+)"
+)
+# Values seen behind a label during this run. The same value is often repeated
+# without its label (tables, echoes), so those mentions are scrubbed as well.
+SECRET_VALUES: set[str] = set()
+CURSOR_TIMESTAMP_RE = re.compile(
+    r"<timestamp>\s*(?:[A-Za-z]+,\s*)?([A-Za-z]{3,9})\s+(\d{1,2}),\s*(\d{4}),\s*(\d{1,2}):(\d{2})\s*([AP]M)\s*"
+    r"\(UTC(?:([+-]\d{1,2})(?::(\d{2}))?)?\)\s*</timestamp>"
+)
+CURSOR_QUERY_RE = re.compile(r"<user_query>(.*?)</user_query>", re.DOTALL)
+CURSOR_BLOCK_RE = re.compile(
+    r"<(user_info|agent_transcripts|rules|available_subagent_types|available_subagent_models|agent_skills|"
+    r"dynamic_tool_catalog|manually_attached_skills|system_reminder|system_notification|attached_files|timestamp)"
+    r"\b[^>]*>.*?</\1>",
+    re.DOTALL,
+)
+MONTHS = {name: number for number, name in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
+CURSOR_WORKSPACES: dict[str, str | None] = {}
 RESULT_WORDS = re.compile(
     r"完成|结果|测试|实验|曲线|频谱|功率|噪声|BER|EVM|运行|输出|修复|定位|验证|失败|成功|下一步|保存|生成|导出",
     re.IGNORECASE,
@@ -156,10 +176,30 @@ def collection_window(args: argparse.Namespace) -> tuple[datetime, datetime, str
     return start, end, end.date().isoformat(), "interval"
 
 
+def remember_secret(match: re.Match[str]) -> str:
+    value = match.group(2).strip("`'\"*|()（）[]<>")
+    mixed = len(value) >= 6 and re.search(r"\d", value) and re.search(r"[A-Za-z]", value)
+    if "[REDACTED" not in value and (len(value) >= 8 or mixed):
+        SECRET_VALUES.add(value)
+    return f"{match.group(1)}=[REDACTED]"
+
+
+def scrub_secret_values(records: Iterable[dict[str, Any]]) -> None:
+    """Remove bare repeats of values that appeared behind a secret label in this run."""
+    if not SECRET_VALUES:
+        return
+    pattern = re.compile("|".join(re.escape(value) for value in sorted(SECRET_VALUES, key=len, reverse=True)))
+    for record in records:
+        for event in record["events"]:
+            event["text"] = pattern.sub("[REDACTED]", event["text"])
+        record["artifact_candidates"] = [path for path in record["artifact_candidates"] if not pattern.search(path)]
+
+
 def redact(text: str) -> str:
     result = text.replace("\x00", "").replace("\r\n", "\n").strip()
     for pattern, replacement in REDACTIONS:
         result = pattern.sub(replacement, result)
+    result = LABELLED_SECRET_RE.sub(remember_secret, result)
     if len(result) > 4000:
         result = result[:4000].rstrip() + " [...]"
     return result
@@ -367,6 +407,145 @@ def parse_claude_file(
                     text = text_from_content(message)
                 if text:
                     add_event(record, timestamp, role, text)
+    except OSError:
+        return
+
+
+def cursor_timestamp(text: str) -> datetime | None:
+    """Cursor stamps each user message, e.g. 'Thursday, Nov 12, 2026, 5:57 AM (UTC-7)'."""
+    match = CURSOR_TIMESTAMP_RE.search(text)
+    if not match:
+        return None
+    month, day, year, hour, minute, half, offset_hours, offset_minutes = match.groups()
+    month_number = MONTHS.get(month[:3].lower())
+    if month_number is None:
+        return None
+    offset = timedelta(hours=abs(int(offset_hours or 0)), minutes=int(offset_minutes or 0))
+    if (offset_hours or "").startswith("-"):
+        offset = -offset
+    try:
+        return datetime(int(year), month_number, int(day), int(hour) % 12 + (12 if half == "PM" else 0),
+                        int(minute), tzinfo=timezone(offset)).astimezone(LOCAL_TZ)
+    except ValueError:
+        return None
+
+
+def cursor_user_text(text: str) -> str:
+    queries = [item.strip() for item in CURSOR_QUERY_RE.findall(text)]
+    if queries:
+        return "\n\n".join(item for item in queries if item)
+    return CURSOR_BLOCK_RE.sub("", text).strip()
+
+
+def cursor_slug(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+", "-", name).strip("-")
+
+
+def cursor_workspace(folder: str) -> str | None:
+    """Best-effort reverse of Cursor's project folder name.
+
+    Cursor replaces every run of characters outside [A-Za-z0-9] with '-', so
+    different folders can share one name. Only a unique match is returned.
+    """
+    if folder in CURSOR_WORKSPACES:
+        return CURSOR_WORKSPACES[folder]
+    head, _, rest = folder.partition("-")
+    drive = Path(f"{head.upper()}:\\") if os.name == "nt" and len(head) == 1 and head.isalpha() else None
+    root, remaining = (drive, rest) if drive is not None and drive.is_dir() else (Path(os.sep), folder)
+    matches: list[Path] = []
+
+    def descend(current: Path, left: str, depth: int) -> None:
+        if len(matches) > 1 or depth > 16:
+            return
+        if not left:
+            matches.append(current)
+            return
+        try:
+            children = [entry for entry in os.scandir(current) if entry.is_dir(follow_symlinks=False)]
+        except OSError:
+            return
+        for entry in children:
+            part = cursor_slug(entry.name)
+            if part and (left == part or left.startswith(part + "-")):
+                descend(Path(entry.path), left[len(part) + 1:], depth + 1)
+
+    if remaining:
+        descend(root, remaining, 0)
+    CURSOR_WORKSPACES[folder] = str(matches[0]) if len(matches) == 1 else None
+    return CURSOR_WORKSPACES[folder]
+
+
+def cursor_session_files(root: Path, start: datetime, end: datetime) -> list[tuple[Path, str | None]]:
+    """Return (transcript, parent id). A subagent copy is used only without a top-level transcript."""
+    projects = root / "projects"
+    if not projects.exists():
+        return []
+    chosen: dict[str, Path] = {}
+    parents: dict[str, str] = {}
+    for path in sorted(projects.glob("*/agent-transcripts/*/subagents/*.jsonl")):
+        parents[path.stem] = path.parent.parent.name
+        chosen[path.stem] = path
+    for path in sorted(projects.glob("*/agent-transcripts/*/*.jsonl")):
+        chosen[path.stem] = path
+    recent = set(recent_files(chosen.values(), start, end))
+    return [(path, parents.get(session_id)) for session_id, path in sorted(chosen.items()) if path in recent]
+
+
+def parse_cursor_file(
+    path: Path,
+    start: datetime,
+    end: datetime,
+    sessions: OrderedDict[str, dict[str, Any]],
+    parent_id: str | None = None,
+) -> None:
+    """Keep each turn's request and final answer; progress notes between tool calls are skipped."""
+    record = sessions.setdefault(path.stem, session_record(path.stem, "cursor", path))
+    if parent_id:
+        record["parent_id"], record["is_subagent"] = parent_id, True
+    folder = next((parent.parent.name for parent in path.parents if parent.name == "agent-transcripts"), "")
+    record["cwd"] = cursor_workspace(folder) if folder else None
+    record["project"] = project_name(record["cwd"]) if record["cwd"] else (folder or "unknown-project")
+    try:
+        fallback = datetime.fromtimestamp(path.stat().st_mtime, LOCAL_TZ)
+    except OSError:
+        return
+    turn_time: datetime | None = None
+    clock: datetime | None = None
+    answer = ""
+
+    def emit(role: str, text: str) -> None:
+        nonlocal clock
+        stamp = turn_time or fallback
+        if not text or not (start <= stamp < end):
+            return
+        # Stamps have minute precision; keep file order when turns share a minute.
+        clock = stamp if clock is None or stamp > clock else clock + timedelta(seconds=1)
+        add_event(record, clock, role, text)
+
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                role, message = item.get("role"), item.get("message")
+                if role not in {"user", "assistant"} or not isinstance(message, dict):
+                    emit("assistant", answer)
+                    answer = ""
+                    continue
+                text = text_from_content(message.get("content"))
+                if role == "user":
+                    emit("assistant", answer)
+                    answer = ""
+                    turn_time = cursor_timestamp(text) or turn_time
+                    emit("user", cursor_user_text(text))
+                elif text.strip():
+                    answer = text
+                if ARTIFACT_HINT_RE.search(line) and start <= (turn_time or fallback) < end:
+                    record["artifact_candidates"].extend(
+                        clean_artifact_paths(cursor_user_text(text) if role == "user" else message))
+        emit("assistant", answer)
     except OSError:
         return
 
@@ -583,6 +762,7 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
     codex_root = Path(args.codex_root).expanduser()
     claude_root = Path(args.claude_root).expanduser()
     sessions: OrderedDict[str, dict[str, Any]] = OrderedDict()
+    SECRET_VALUES.clear()
     codex_files = codex_session_files(codex_root, start, end, getattr(args, "include_archived", True))
     for path in codex_files:
         parse_codex_file(path, start, end, sessions)
@@ -590,6 +770,12 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
     claude_files = recent_files(projects.rglob("*.jsonl"), start, end) if projects.exists() else []
     for path in claude_files:
         parse_claude_file(path, start, end, sessions)
+    # Callers that do not name a Cursor root keep the Codex/Claude-only behaviour.
+    cursor_root = getattr(args, "cursor_root", None)
+    if cursor_root:
+        for path, parent_id in cursor_session_files(Path(cursor_root).expanduser(), start, end):
+            parse_cursor_file(path, start, end, sessions, parent_id)
+    scrub_secret_values(sessions.values())
 
     known = dict(sessions)
     records: list[dict[str, Any]] = []
@@ -641,6 +827,8 @@ def main() -> None:
     parser.add_argument("--until", help="Exclusive end of --since interval; defaults to collection time")
     parser.add_argument("--codex-root", default=str(Path.home() / ".codex"))
     parser.add_argument("--claude-root", default=str(Path.home() / ".claude"))
+    parser.add_argument("--cursor-root", default=str(Path.home() / ".cursor"),
+                        help="Cursor data directory (projects/*/agent-transcripts); pass an empty value to skip Cursor")
     parser.add_argument("--scan-fallback", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--include-archived", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--scan-seconds", type=float, default=5.0)

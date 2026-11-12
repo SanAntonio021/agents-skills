@@ -365,6 +365,108 @@ class CollectSessionsTests(unittest.TestCase):
             self.assertIn(str(result_image.resolve()), paths)
             self.assertNotIn(str(runtime_asset.resolve()), paths)
 
+    def test_cursor_transcripts_keep_requests_and_final_answers_in_turn_order(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            workspace = base / "work 目录"
+            workspace.mkdir()
+            folder = collect_sessions.cursor_slug(str(workspace.resolve()))
+            session = base / "cursor" / "projects" / folder / "agent-transcripts" / "main-1"
+            (session / "subagents").mkdir(parents=True)
+
+            def user(text):
+                return {"role": "user", "message": {"content": [{"type": "text", "text": text}]}}
+
+            def assistant(text, tool=False):
+                content = [{"type": "text", "text": text}]
+                if tool:
+                    content.append({"type": "tool_use", "name": "Shell", "input": {"command": "dir"}})
+                return {"role": "assistant", "message": {"content": content}}
+
+            stamp = "<timestamp>Thursday, Nov 12, 2026, 5:57 AM (UTC-7)</timestamp>\n"
+            lines = [
+                user("<user_info>\nWorkspace Path: hidden\n</user_info>\n" + stamp
+                     + "<user_query>\n帮我做今天的汇报\n</user_query>"),
+                assistant("正在读取项目记录", tool=True),
+                assistant("完成总览草稿"),
+                {"type": "turn_ended", "status": "success"},
+                user(stamp + "<user_query>\n继续做展开页\n</user_query>"),
+                assistant("已生成汇报文件"),
+                {"type": "turn_ended", "status": "success"},
+                user("<timestamp>Friday, Nov 13, 2026, 9:00 AM (UTC-7)</timestamp>\n"
+                     "<user_query>\n窗口之后的请求\n</user_query>"),
+                assistant("窗口之后的回答"),
+            ]
+            main_path = session / "main-1.jsonl"
+            main_path.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in lines), encoding="utf-8")
+            sub_path = session / "subagents" / "sub-1.jsonl"
+            sub_path.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in (
+                user("核对图片来源"), assistant("图片来源已核对"))), encoding="utf-8")
+            inside = datetime.fromisoformat("2026-11-12T21:30:00+08:00").timestamp()
+            for path in (main_path, sub_path):
+                os.utime(path, (inside, inside))
+
+            args = Namespace(mode="today", date=None, since="2026-11-12T20:00:00+08:00",
+                             until="2026-11-12T23:00:00+08:00", codex_root=str(base / "codex"),
+                             claude_root=str(base / "claude"), cursor_root=str(base / "cursor"),
+                             scan_fallback=False)
+            records = {record["id"]: record for record in collect_sessions.collect(args)["sessions"]}
+
+            main = records["main-1"]
+            self.assertEqual([(event["role"], event["text"]) for event in main["events"]],
+                             [("user", "帮我做今天的汇报"), ("assistant", "完成总览草稿"),
+                              ("user", "继续做展开页"), ("assistant", "已生成汇报文件")])
+            self.assertEqual(main["events"][0]["timestamp"], "2026-11-12T20:57:00+08:00")
+            self.assertEqual(main["platform"], "cursor")
+            self.assertEqual(Path(main["cwd"]).resolve(), workspace.resolve())
+            self.assertEqual(main["project"], workspace.name)
+            sub = records["sub-1"]
+            self.assertEqual((sub["parent_id"], sub["root_id"], sub["is_subagent"]), ("main-1", "main-1", True))
+            self.assertEqual([event["text"] for event in sub["events"]], ["核对图片来源", "图片来源已核对"])
+
+    def test_cursor_folder_name_shared_by_two_workspaces_stays_unresolved(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp).resolve()
+            (base / "link").mkdir()
+            (base / "link 多流").mkdir()
+            folder = collect_sessions.cursor_slug(str(base / "link"))
+            self.assertIsNone(collect_sessions.cursor_workspace(folder))
+
+    def test_callers_without_cursor_root_keep_codex_and_claude_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            args = Namespace(mode="today", date="2026-11-12", codex_root=str(base / "codex"),
+                             claude_root=str(base / "claude"), scan_fallback=False)
+            with patch.object(collect_sessions, "cursor_session_files") as finder:
+                collect_sessions.collect(args)
+            finder.assert_not_called()
+
+    def test_chinese_labelled_secrets_and_their_bare_repeats_are_redacted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            path = base / "codex" / "sessions" / "2026" / "11" / "12" / "rollout-secret.jsonl"
+            path.parent.mkdir(parents=True)
+            secret = "Lab2026demo"
+            lines = [
+                {"type": "session_meta", "payload": {"id": "secret", "cwd": str(base)}},
+                {"type": "event_msg", "timestamp": "2026-11-12T03:31:00Z",
+                 "payload": {"type": "user_message",
+                             "message": f"公用账号：lab-demo\n登录密码：{secret}\n帮我找个地方记录"}},
+                {"type": "event_msg", "timestamp": "2026-11-12T03:32:00Z",
+                 "payload": {"type": "agent_message",
+                             "message": f"已记录结果。\n| 账号 | 登录信息 |\n| lab-demo | {secret} |"}},
+            ]
+            path.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in lines), encoding="utf-8")
+            args = Namespace(mode="today", date="2026-11-12", codex_root=str(base / "codex"),
+                             claude_root=str(base / "claude"), scan_fallback=False)
+            texts = [event["text"] for event in collect_sessions.collect(args)["sessions"][0]["events"]]
+
+            self.assertEqual(len(texts), 2)
+            self.assertFalse(any(secret in text for text in texts))
+            self.assertIn("公用账号：lab-demo", texts[0])
+            self.assertIn("密码=[REDACTED]", texts[0])
+            self.assertIn("lab-demo | [REDACTED]", texts[1])
+
 
 if __name__ == "__main__":
     unittest.main()

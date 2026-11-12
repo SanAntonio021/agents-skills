@@ -24,6 +24,7 @@ metadata:
 - **从零创作 — [`创建工作流`](references/lark-doc-create-workflow.md)**：先完整执行创建工作流，**简单任务不是跳过的理由**；
 - **导入 / 空文档 — [`+create`](references/lark-doc-create.md)**：仅创建空文档或原样导入用户提供的完整内容时，跳过创建工作流。
 - **编辑 / block 直达链接 — [`+update`](references/lark-doc-update.md)**：语义改写、润色、重组、补写或排版均按 update 参考完成。
+- **重排已有内容 — [`重排参考`](references/lark-doc-restructure.md)**：把已有段落或列表改成表格、调整块顺序，而文档里已有图片、附件、画板或填过的表格时，在 update 参考之外再读此参考。
 
 ### 辅助能力
 

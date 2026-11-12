@@ -75,7 +75,7 @@ lark-cli docs +script --command init-draft --presentation-decision '<上方完�
 
 读取 [`lark-doc-xml.md`](lark-doc-xml.md)，并结合 Presentation Decision 和 Philosophy 生成完整 XML。使用扩展标签时按需读取 [`拓展标签`](lark-doc-xml-extended-blocks.md)。
 
-1. 公开网络图片使用 `<img href="URL"/>`；已有本地图片使用 `<img path="@./downloads/image.png"/>`；画板使用 `<whiteboard type="svg" path="@./<work_dir>/diagram.svg"/>` 并遵循[`画板工作流`](lark-doc-whiteboard.md)；HTML 使用 `<html5-block path="@./<work_dir>/widget.html"/>` 并遵循[`拓展标签`](lark-doc-xml-extended-blocks.md)。
+1. 公开网络图片使用 `<img href="URL"/>`；已有本地图片使用 `<img path="@./downloads/image.png"/>`；画板使用 `<whiteboard type="blank"></whiteboard>` 空白占位，文档创建后按[`画板交接`](lark-doc-whiteboard.md)交给 `lark-whiteboard` 绘制，本技能不生成 SVG、Mermaid 或 PlantUML；HTML 使用 `<html5-block path="@./<work_dir>/widget.html"/>` 并遵循[`拓展标签`](lark-doc-xml-extended-blocks.md)。
 2. 直接在 `<data.cwd>/<draft_path>` 创建并写入完整 release candidate。新建资源建议放 `<data.cwd>/<work_dir>`，已有资源可原地复用；CWD 内优先用相对路径，其他位置用允许访问的绝对路径。XML 内相对资源先查 CWD，仅文件不存在时回退到 XML 所在目录。
 3. 首次写入后，发现 XML 语法问题时只修复最小范围，不无故重写正确内容。
 

@@ -45,7 +45,7 @@ Claude Desktop Cowork / 内置 Code -> Desktop 3P profile -> 直连供应商或 
 3. 本地备份和受支持的非计费只读检查无需另问。配置修改、provider 切换、重启或收费验证按当前准确授权执行，缺少授权时只暂停该动作。
 4. 实质目标、范围或风险改变时重新判断授权；同范围重试和工具实现调整不自动要求再次确认。
 5. 不输出 API key、OAuth token、gateway token、完整认证 JSON、带凭据的命令行或完整响应正文。
-6. 不直接修改 `%USERPROFILE%\.cc-switch\skills`、`.claude\skills` 或 `.codex\skills` 中的运行时副本。
+6. 不直接修改 `%USERPROFILE%\.agents\skills`、`.cc-switch\skills`、`.claude\skills` 或 `.codex\skills` 中的运行时副本。
 
 ## 先区分四个对象
 

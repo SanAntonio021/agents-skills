@@ -3,7 +3,7 @@
 实验、仪器测试、参数扫描、科研仿真及其离线分析。
 
 - 主入口：根目录 Run_Test.m 或 run_test.py，示例只做无硬件检查；具体实验流程按源码职责存放，由程序化入口或后续工作台选项调用，不为每个流程新建根目录入口。
-- 六个目录：code 代码、config 配置、simulation 仿真、measurement 实测、analysis 数据分析、checks 程序自检。
+- 六个目录：code 代码、config 配置、simulation 仿真、measurement 实测、analysis 数据分析、checks 程序自检（批次可清理，结论记入 lab.md）。
 - 自动创建 `分类/YYYYMMDD_HHMMSS_实验名称/`，同秒重名追加序号，不覆盖。
 - 图片、overview.png 和逐次 summary.csv 留在运行目录；完整数据、配置、日志、重绘输入放单层 data/。
 - summary 第一行名称、第二行单位（无单位留空），第三行起逐次记录；表头写清设备或位置、具体量与设定／实测来源。设定值保留实际精度，测量值按分辨率或实验需要显示，BER 默认三位有效数字科学计数；计算读取 data/observations.csv。

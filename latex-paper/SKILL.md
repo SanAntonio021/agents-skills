@@ -32,15 +32,17 @@ description: 把已有 Markdown 或 Word 论文稿转成可投稿的 LaTeX 工�
 
 ### 2. 搭工程骨架
 
-文件归属与收尾遵循已加载的共享全局规则。在论文正式位置新建独立 LaTeX 工程，不要混在 md 草稿目录里；链接的图件及其他构建依赖须来自正式位置，不能依赖将清理的过程目录：
+文件归属与收尾遵循已加载的共享全局规则。在论文目录下新建独立 LaTeX 工程，默认 `paper_<简称>/latex/`，项目已有工程位置时沿用；tex 文件不与 md 草稿平铺在同一层。图件及其他构建依赖取自正式位置，不能依赖将清理的过程目录：
 
 ```
-paper-tex/
-├── main.tex          # 主文件，从模板样例改
-├── refs.bib
-├── figures/          # 复制或链接 paper-figure-review 的成品图
-├── IEEEtran.cls      # 模板文件随工程走，保证可移植（Overleaf 直接可用）
-└── IEEEtran.bst
+paper_<简称>/
+├── figures/              # 图源和成品图，各提交版本共用
+└── latex/
+    ├── main.tex          # 主文件，从模板样例改
+    ├── refs.bib
+    ├── figures/          # 编译用副本，从上一级 figures/ 复制，使工程可单独打包上传
+    ├── IEEEtran.cls      # 模板文件随工程走，保证可移植（Overleaf 直接可用）
+    └── IEEEtran.bst
 ```
 
 sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单文件，减少交叉引用维护成本。

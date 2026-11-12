@@ -30,6 +30,6 @@ $agentText=[IO.File]::ReadAllText($agentTemplate,$utf8).Replace('{{PROJECT_NAME}
 [IO.File]::WriteAllText((Join-Path $target 'AGENTS.md'),$agentText,$utf8)
 $readme=Join-Path $target 'README.md'
 $readmeText=[IO.File]::ReadAllText($readme,$utf8).Replace('详细适配、数据接口、设备参考和来源清单见所属技能的 references','适配与设备历史来源由原技能维护；本副本的运行入口和依赖均在当前项目内')
-$readmeText+="`n环境：MATLAB R2023b；生成和接收需 Communications Toolbox、Signal Processing Toolbox，其他专项按实际依赖配置。`n当前进展：已复制工程，尚未执行本副本的软件验证；在此记录验证结果与未完成事项。`n正式代码、配置、实验数据、重绘输入及必要日志按用途保留；临时草稿与预览集中在过程文件/任务主题/。显式收尾时先归位成果、更新引用并验证，再清空本任务目录。交付前检查 Template 入口及声明依赖不指向待清理目录，并执行所需离线验证。`n"
+$readmeText+="`n环境：MATLAB R2023b；生成和接收需 Communications Toolbox、Signal Processing Toolbox，其他专项按实际依赖配置。`n当前进展：已复制工程，尚未执行本副本的软件验证；在此记录验证结果与未完成事项。`n正式代码、配置、实验数据、重绘输入及必要日志按用途保留；临时草稿与预览集中在过程文件/任务主题/。采用的成果产生时就放入正式位置，显式收尾时整目录清理过程文件。交付前检查 Template 入口及声明依赖不指向待清理目录，并执行所需离线验证。`n"
 [IO.File]::WriteAllText($readme,$readmeText,$utf8)
 Write-Output "Template copied to $target. Start with Template_Demo; no hardware was accessed."

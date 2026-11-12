@@ -360,7 +360,9 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    a full-deck visual pass, and all currently required static/native/compatibility gates pass may visual inspection be limited
    to the declared changed pages. Any undeclared page, relationship, shared-resource, global-part, page
    count, or parent-evidence difference returns `FULL_VISUAL_QA_REQUIRED` and requires every page to be
-   inspected. A partial or unverified native Office gate never becomes a complete release claim.
+   inspected. When the parent bundle has already been cleaned up, pass the delivered formal PPTX as the
+   parent without a parent manifest; the result is then `FULL_VISUAL_QA_REQUIRED` and every page is inspected.
+   A partial or unverified native Office gate never becomes a complete release claim.
 
 4. **Inspect and finalize.** Agent visual inspection is the default completion check. Only for an
    explicitly requested user sign-off, record their actual verdict against the PPTX and PNG bytes:
@@ -378,9 +380,9 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
 
 5. **Deliver automatically to the designated formal location.** After the required gates pass, copy the selected
    PPTX (and PDF only when requested) to non-existing, clearly versioned filenames. Recheck
-   hashes and opening from those paths, then link them. Keep temporary bundle materials in the task process directory until explicit cleanup.
-   Before cleanup, place any necessary editable source and dependencies in their formal location,
-   update references and verify the deck; do not retain the whole bundle solely for possible future use. Take the
+   hashes and opening from those paths, then link them. Place any necessary editable source and dependencies in their formal location at delivery,
+   update references and verify the deck. The release bundle stays in the task process directory and may be
+   removed as a whole on explicit cleanup; do not retain it solely for possible future use. Take the
    after snapshot before this intended publication; do not classify the new deliverables as unrelated changes.
 
 When filling in a template:

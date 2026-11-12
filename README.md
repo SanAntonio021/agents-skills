@@ -31,5 +31,5 @@
 - 部分 Word 格式化技能只保留样式配置文件，原始示例 `.docx` 文件不会放进公开仓库。
 - 本地已结束的测试工作区归入 `过程文件/`；正式技能仍保留在仓库根目录。原始报告保持不变，历史路径可查工作区清理映射。
 - `lark-base` 本地接管飞书官方 Base 技能完整包（与 `larksuite/cli` 仓库内容一致），保留 MIT 许可和官方内容，并补充套餐不含行列权限时的角色配置说明、已有 BaseApp 页面改造检查；后续官方更新先比较整体差异再合并，不直接覆盖本地版本。
-- `lark-doc` 与 `lark-whiteboard` 采用分工维护：`lark-doc` 本地接管 2026-10-18 官方完整包，只负责文档位置、空白画板块、文档/画板 token 与 block ID；`lark-whiteboard` 是单个画板内图示能力的唯一 owner，负责图型判断、图内容清单、原生对象创建与局部编辑、回读和看图。系统架构、信号链、接线和模块拓扑使用可编辑原生对象；Mermaid、PlantUML、SVG 仅在用户确认后作为非原生路径使用。官方 `lark-doc` 更新先比较整体差异再合并，不直接覆盖本地版本。
+- `lark-doc` 与 `lark-whiteboard` 采用分工维护：`lark-doc` 本地接管官方完整包（当前合并到 2026-11-12 的官方版本），只负责文档位置、空白画板块、文档/画板 token 与 block ID；`lark-whiteboard` 是单个画板内图示能力的唯一 owner，负责图型判断、图内容清单、原生对象创建与局部编辑、回读和看图。系统架构、信号链、接线和模块拓扑使用可编辑原生对象；Mermaid、PlantUML、SVG 仅在用户确认后作为非原生路径使用。官方 `lark-doc` 更新先比较整体差异再合并，不直接覆盖本地版本。
 - 技能发布由 [agent-rules](agent-rules/SKILL.md) 统一执行；运行时生效、管理界面显示与云端分发分别核验，具体流程集中维护在[发布章节](agent-rules/references/skill-upstream-maintenance.md#技能定向发布)。

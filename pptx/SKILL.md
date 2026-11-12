@@ -84,9 +84,6 @@ Do not transfer Word's default-paste settings to PowerPoint or claim that `Ctrl+
 to always keep text only. Paste Options are context-dependent; when a plain-text choice is absent,
 use the native Paste Special or Quick Access Toolbar routes in the reference.
 
-A `.pptx` is a ZIP archive of XML files. For local file operations, choose the approach below
-according to the task.
-
 ## OfficeCLI route
 
 For ordinary `.pptx`/`.potx` inspection, text extraction, element queries, validation, and small
@@ -117,26 +114,6 @@ The bridge never quits or terminates Office.
 
 ## Acceptance layers
 
-### Safe text replacement in an existing PPTX
-
-For python-pptx edits, reuse `scripts/safe_text_replace.py` instead of copying paragraph/run
-property nodes with ad hoc XML insertion. Its API and style policy are documented in the module.
-Replace existing properties rather than appending a second `a:pPr` or `a:rPr`. For a local edit
-that must retain mixed styles, edit the intended existing run's text instead of rebuilding the
-whole paragraph. Do not silently flatten mixed formatting or automatically repair malformed input.
-Save to a new path and validate the final saved package after every modification pass.
-
-Import `replace_text` from that module and call `replace_text(shape_or_text_frame, text)`.
-The function changes only the target in memory; it does not save files. Whole-text replacement
-uses each corresponding paragraph's first-run style (new paragraphs reuse the last original
-paragraph), replacing mixed runs and fields intentionally. Use it only when this style policy
-matches the edit; for mixed-style local changes, retain the existing runs. Malformed duplicate
-format nodes raise `UnsafeTextStructureError` without changing the target.
-
-The PPTX validator checks duplicate DrawingML text-format properties separately from XSD and
-original-template comparisons. A duplicate-format failure must identify the part and node and
-must block delivery even when `--original` is supplied or compatibility rendering succeeds.
-
 Keep these records separate:
 
 - `STATIC_PASS`: `validate.py`, OOXML/package checks, typography and source-hash checks.
@@ -160,6 +137,8 @@ OfficeCLI `validate` passing proves only `STATIC_PASS`; it does **not** prove th
 open the file. A failed OfficeCLI native probe is reported as
 `officecli_native_diagnostic_failed` with the original stderr and exit code, never as
 `APP_UNAVAILABLE`.
+
+当前用户请求已覆盖本次 PowerPoint 原生检查、且现有守护程序能证明隔离时，可传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。按本技能的原生 gate 要求核对进程归属和源文件，只清理本任务的空实例。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。
 
 For native evidence, run the gate explicitly for the current task:
 
@@ -223,6 +202,11 @@ must be an existing QA/evidence directory; the preflight refuses `.codex`, `.cc-
 and bundled runtime paths. The selected interpreter is the only interpreter allowed for the two
 static validators, and its path plus the three dependency results belong in the `STATIC_PASS`
 record.
+
+## Local file operations
+
+A `.pptx` is a ZIP archive of XML files. For local file operations, choose the approach below
+according to the task.
 
 Keep the existing OOXML/pptxgenjs paths for template-sensitive work, unsupported PowerPoint
 features, and any operation where preserving package parts is the acceptance criterion. OfficeCLI
@@ -312,6 +296,39 @@ python scripts/office/validate.py out.pptx --original deck.pptx
 - Legacy `.ppt` must be converted first: `python scripts/office/soffice.py --headless --convert-to pptx file.ppt`. `.potx` templates unpack and pack identically — keep the `.potx` extension on the output.
 - To reuse a template icon or image, duplicate a slide or layout that already contains it.
 
+When filling in a template:
+
+- If you script an XML transform, parse with `defusedxml.minidom` — round-tripping OOXML through `xml.etree.ElementTree` rewrites namespace prefixes and corrupts the deck.
+- **Template slots ≠ source items.** If the template shows 4 team members and you have 3, delete the 4th member's entire group (image + text boxes), not just its text — then check for orphaned visuals in QA.
+- One `<a:p>` per list item — never concatenate items into a single paragraph. Copy the sibling `<a:pPr>` to preserve spacing, and put `b="1"` on the `<a:rPr>` of titles, section headers, and inline labels (`Status:`, `Owner:`).
+- Let bullets inherit from the layout; only add `<a:buChar>`, `<a:buAutoNum>` (numbered), or `<a:buNone>` to override — never a literal `•` in the text.
+- Text with leading or trailing spaces needs `xml:space="preserve"` on its `<a:t>`.
+
+When copying slides between decks:
+
+- Audit both files first: `python scripts/slide_size_audit.py source.pptx --json` and the same command for the target. When reusing a real template, run `python scripts/slide_size_audit.py target.pptx --reference source.pptx`; the physical EMU width and height must match exactly.
+- If the target is not that exact size, set PowerPoint's **Design → Slide Size → Widescreen (16:9)** before copying. The label `16:9` alone is insufficient because `10" × 5.625"` and `13.333" × 7.5"` have the same ratio but different coordinates. Re-run the audit after changing the target and choose **Ensure Fit** when PowerPoint asks how to scale existing content.
+
+### Safe text replacement in an existing PPTX
+
+For python-pptx edits, reuse `scripts/safe_text_replace.py` instead of copying paragraph/run
+property nodes with ad hoc XML insertion. Its API and style policy are documented in the module.
+Replace existing properties rather than appending a second `a:pPr` or `a:rPr`. For a local edit
+that must retain mixed styles, edit the intended existing run's text instead of rebuilding the
+whole paragraph. Do not silently flatten mixed formatting or automatically repair malformed input.
+Save to a new path and validate the final saved package after every modification pass.
+
+Import `replace_text` from that module and call `replace_text(shape_or_text_frame, text)`.
+The function changes only the target in memory; it does not save files. Whole-text replacement
+uses each corresponding paragraph's first-run style (new paragraphs reuse the last original
+paragraph), replacing mixed runs and fields intentionally. Use it only when this style policy
+matches the edit; for mixed-style local changes, retain the existing runs. Malformed duplicate
+format nodes raise `UnsafeTextStructureError` without changing the target.
+
+The PPTX validator checks duplicate DrawingML text-format properties separately from XSD and
+original-template comparisons. A duplicate-format failure must identify the part and node and
+must block delivery even when `--original` is supplied or compatibility rendering succeeds.
+
 ## Formal release and revision workflow
 
 Use this workflow only when the task explicitly calls the output a formal deliverable, final candidate,
@@ -384,19 +401,6 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    update references and verify the deck. The release bundle stays in the task process directory and may be
    removed as a whole on explicit cleanup; do not retain it solely for possible future use. Take the
    after snapshot before this intended publication; do not classify the new deliverables as unrelated changes.
-
-When filling in a template:
-
-- If you script an XML transform, parse with `defusedxml.minidom` — round-tripping OOXML through `xml.etree.ElementTree` rewrites namespace prefixes and corrupts the deck.
-- **Template slots ≠ source items.** If the template shows 4 team members and you have 3, delete the 4th member's entire group (image + text boxes), not just its text — then check for orphaned visuals in QA.
-- One `<a:p>` per list item — never concatenate items into a single paragraph. Copy the sibling `<a:pPr>` to preserve spacing, and put `b="1"` on the `<a:rPr>` of titles, section headers, and inline labels (`Status:`, `Owner:`).
-- Let bullets inherit from the layout; only add `<a:buChar>`, `<a:buAutoNum>` (numbered), or `<a:buNone>` to override — never a literal `•` in the text.
-- Text with leading or trailing spaces needs `xml:space="preserve"` on its `<a:t>`.
-
-When copying slides between decks:
-
-- Audit both files first: `python scripts/slide_size_audit.py source.pptx --json` and the same command for the target. When reusing a real template, run `python scripts/slide_size_audit.py target.pptx --reference source.pptx`; the physical EMU width and height must match exactly.
-- If the target is not that exact size, set PowerPoint's **Design → Slide Size → Widescreen (16:9)** before copying. The label `16:9` alone is insufficient because `10" × 5.625"` and `13.333" × 7.5"` have the same ratio but different coordinates. Re-run the audit after changing the target and choose **Ensure Fit** when PowerPoint asks how to scale existing content.
 
 ## Design Ideas
 
@@ -639,6 +643,3 @@ and `require('pptxgenjs')` fails); `markitdown[pptx]`, `Pillow`, `defusedxml`, `
 the protected gate's dependencies. LibreOffice is conditional for `thumbnail.py`, legacy conversion,
 and requested compatibility rendering through `scripts/office/soffice.py`; Poppler is needed when
 rasterizing PDFs with `pdftoppm`. Do not probe or install LibreOffice for an ordinary native-only check.
-
-
-当前用户请求已覆盖本次 PowerPoint 原生检查、且现有守护程序能证明隔离时，可传入 `--allow-office-com` 并检查实际输出，不另设用户逐页签字。按本技能的原生 gate 要求核对进程归属和源文件，只清理本任务的空实例。工具身份校验失败时停用该工具，选择可信且可满足目标的现有文件级或渲染路径；如实说明未验证项。

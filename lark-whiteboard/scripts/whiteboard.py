@@ -32,6 +32,31 @@ class DeadlineExceeded(VerificationError):
     pass
 
 
+def read_proxy_error_code(error):
+    """Return the browser proxy's error code of an HTTPError and keep it on the error.
+
+    The proxy answers {"error": "CODE", "code": "CODE", "message": ...}; a
+    nested {"error": {"code": "CODE"}} body is accepted as well. The body
+    can be read only once, so the parsed code is cached on the exception.
+    """
+    cached = getattr(error, 'proxy_error_code', None)
+    if isinstance(cached, str):
+        return cached
+    try:
+        body = json.loads(error.read(2048).decode('utf-8', errors='replace'))
+    except Exception:
+        return None
+    if not isinstance(body, dict):
+        return None
+    for candidate in (body.get('code'), body.get('error')):
+        if isinstance(candidate, dict):
+            candidate = candidate.get('code')
+        if isinstance(candidate, str) and re.fullmatch(r'[A-Z0-9_]{2,64}', candidate):
+            error.proxy_error_code = candidate
+            return candidate
+    return None
+
+
 def png_has_board_ink(data, rect, scale=1, min_ink=24):
     """Reject a white transition frame; image review is still required.
 
@@ -1904,8 +1929,15 @@ class Runner:
         if auth:
             headers['Authorization'] = 'Bearer ' + self.token
         req = urllib.request.Request(self.proxy + path, headers=headers, data=None if data is None else json.dumps(data).encode())
-        with urllib.request.urlopen(req, timeout=self.transport_timeout(45)) as r:
-            payload = self.read_response(r)
+        try:
+            with urllib.request.urlopen(req, timeout=self.transport_timeout(45)) as r:
+                payload = self.read_response(r)
+        except urllib.error.HTTPError as error:
+            # Keep the proxy's own status and error code for the report; the
+            # endpoint name carries no task, tab or document identity.
+            error.proxy_endpoint = path.rsplit('/', 1)[-1]
+            read_proxy_error_code(error)
+            raise
         self.require_time()
         value = json.loads(payload)
         self.require_time()
@@ -2117,14 +2149,7 @@ class Runner:
                 if isinstance(coordinates, dict):
                     error.mode_coordinates = coordinates
                 if isinstance(error, urllib.error.HTTPError):
-                    try:
-                        body = json.loads(error.read(2048).decode('utf-8', errors='replace'))
-                        detail = body.get('error', body) if isinstance(body, dict) else {}
-                        code = detail.get('code') if isinstance(detail, dict) else None
-                        if isinstance(code, str) and re.fullmatch(r'[A-Z0-9_]{2,64}', code):
-                            error.proxy_error_code = code
-                    except Exception:
-                        pass
+                    read_proxy_error_code(error)
                 raise
 
         # A long document in a background tab can need far more than five
@@ -2656,15 +2681,8 @@ class Runner:
             try:
                 result = self.call(base + '/wait', {'selector': selector, 'timeoutMs': slice_ms})
             except urllib.error.HTTPError as error:
-                code = None
-                if error.code == 408:
-                    try:
-                        body = json.loads(error.read(2048).decode('utf-8', errors='replace'))
-                        detail = body.get('error', body) if isinstance(body, dict) else {}
-                        code = detail.get('code') if isinstance(detail, dict) else None
-                    except Exception:
-                        code = None
-                if code != 'WAIT_TIMEOUT' or remaining is None:
+                code = read_proxy_error_code(error)
+                if error.code != 408 or code != 'WAIT_TIMEOUT' or remaining is None:
                     raise
                 deadline = getattr(self, 'deadline', None)
                 if deadline is None or deadline - time.monotonic() <= 0:
@@ -3365,6 +3383,12 @@ def main():
             runner.run()
     except Exception as e:
         details = dict(status='unverified', error=type(e).__name__, reason=str(e) if isinstance(e, (VerificationError, ValueError)) else 'Transport or runtime failure; no automatic write retry')
+        if isinstance(e, urllib.error.HTTPError):
+            details['http_status'] = e.code
+            for key in ('proxy_error_code', 'proxy_endpoint'):
+                value = getattr(e, key, None)
+                if isinstance(value, str):
+                    details[key] = value
         if runner is not None:
             runner.report.update(details)
             if not runner.report.get('failure_phase'):

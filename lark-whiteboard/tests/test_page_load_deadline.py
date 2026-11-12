@@ -11,8 +11,10 @@ from whiteboard import Runner, VerificationError
 from test_lifecycle import Clock
 
 
-def proxy_error(status, code):
-    body = ('{"error":{"code":"%s","message":"test"}}' % code).encode()
+def proxy_error(status, code, nested=False):
+    """HTTPError with the browser proxy's body: {"error": CODE, "code": CODE, "message": ...}."""
+    body = ('{"error":{"code":"%s","message":"test"}}' if nested else '{"error":"%s","code":"%s","message":"test"}')
+    body = (body % ((code,) if nested else (code, code))).encode()
     return urllib.error.HTTPError('http://127.0.0.1/wait', status, 'error', {}, io.BytesIO(body))
 
 
@@ -92,6 +94,41 @@ class PageLoadDeadline(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError):
                 runner._open_page()
         self.assertEqual([data['timeoutMs'] for data in self.waits(runner)], [15000])
+
+    def test_proxy_http_error_keeps_status_code_and_endpoint_only(self):
+        runner = Runner.__new__(Runner)
+        runner.proxy, runner.token = 'http://127.0.0.1:3456', 'private'
+        with patch('whiteboard.urllib.request.urlopen', side_effect=proxy_error(409, 'TARGET_BUSY')):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                runner.call('/v2/tabs/tab-identity/click', {'selector': 'a'})
+        error = caught.exception
+        self.assertEqual((error.code, error.proxy_error_code, error.proxy_endpoint), (409, 'TARGET_BUSY', 'click'))
+
+    def test_proxy_error_code_is_read_from_flat_and_nested_bodies(self):
+        from whiteboard import read_proxy_error_code
+        for nested in (False, True):
+            error = proxy_error(408, 'WAIT_TIMEOUT', nested=nested)
+            with self.subTest(nested=nested):
+                self.assertEqual(read_proxy_error_code(error), 'WAIT_TIMEOUT')
+                self.assertEqual(read_proxy_error_code(error), 'WAIT_TIMEOUT')    # body already consumed
+        plain = urllib.error.HTTPError('http://127.0.0.1/wait', 502, 'error', {}, io.BytesIO(b'<html>bad gateway</html>'))
+        self.assertIsNone(read_proxy_error_code(plain))
+
+    def test_nested_wait_timeout_body_is_retried_too(self):
+        clock = Clock()
+        runner = self.open_runner(clock, slow_waits=2)
+        original = runner.call
+
+        def call(path, data=None, auth=True):
+            try:
+                return original(path, data, auth)
+            except urllib.error.HTTPError:
+                raise proxy_error(408, 'WAIT_TIMEOUT', nested=True)
+
+        runner.call = call
+        with patch('whiteboard.time.monotonic', clock.monotonic), patch('whiteboard.time.sleep', clock.sleep):
+            runner.open_page()
+        self.assertEqual(runner.report['pages'][0]['load_wait_attempts'], {'outline_link': 3})
 
     def mode_runner(self, responses, deadline):
         runner = Runner.__new__(Runner)

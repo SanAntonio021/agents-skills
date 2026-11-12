@@ -45,6 +45,8 @@ metadata:
 
 Windows 上从 Python 等脚本以子进程调用时，`lark-cli` 是 npm 的 `.cmd` 包装，不经 shell 直接执行会报找不到文件。改为调用 `node <npm root -g>/@larksuite/cli/scripts/run.js`，参数按列表原样传入，避免含引号和 XML 的内容再经 `cmd` 解析。
 
+Windows PowerShell 5.1 的管道默认按 ASCII 编码：经 stdin 传入（`--content -`、`--presentation-decision -`）的中文会变成问号，命令和草稿检查仍显示成功。含中文的内容不经管道传入：正文写成 UTF-8 文件后用 `@./相对路径`，决策按创建工作流内联；确需管道时先执行 `$OutputEncoding = [Text.UTF8Encoding]::new($false)`。内联 JSON 的值含双引号时参数会被拆散并报错，此时把决策写成 UTF-8 文件，用 `@./相对路径` 传入。
+
 ## 不在本 Skill 范围
 
 - **Drive 文件级操作**：找文档、导入导出、云空间文件上传 / 下载 / 权限管理 → [`lark-drive`](../lark-drive/SKILL.md)。复制文档、创建副本或另存为副本时，按其指引使用 `lark-cli drive files copy`；不要用 `docs +fetch` + `docs +create` 重建正文。

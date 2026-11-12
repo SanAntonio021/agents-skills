@@ -1,19 +1,19 @@
 ---
 name: agent-rules
-description: 维护全局规范和系统提示词，并执行自建技能的定向发布与生效核验。用户要求精简 AGENTS.md、CLAUDE.md、GEMINI.md，处理规则归属、重复、冲突和同步关系，或发布技能时使用。具体技能创建、修改和验证由 skill-creator 承接，目录及生效诊断由 skill-check 承接；普通业务请求不进入维护流程。
+description: 维护全局规范和系统提示词，并执行自建技能的定向发布与生效核验。用户要求精简 AGENTS.md、CLAUDE.md 等主规则文件，处理规则归属、重复、冲突和同步关系，或发布技能时使用。具体技能创建、修改和验证由 skill-creator 承接，目录及生效诊断由 skill-check 承接；普通业务请求不进入维护流程。
 ---
 
 # 全局规范维护与技能发布
 
 维护范围与授权沿用全局规范。先区分唯一源码、受管理入口与当前运行副本，再读取本次维护需要的操作说明。
 
-任何技能发布动手前，先读[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)；未读不得开始修改源码、提交或推送。
+任何技能发布动手前，先读[技能定向发布](references/skill-publication.md#技能定向发布)；未读不得开始修改源码、提交或推送。
 
 ## 按任务选择
 
 - **全局规则与提示词**：在这里判断规则应放在哪一层，去重、精简并维护共通内容与平台差异。网页端无工具提示词也由这里承接。
 - **具体技能创建、修改与验证**：交给 [skill-creator](../skill-creator/SKILL.md)。
-- **技能发布**：先按 [skill-creator](../skill-creator/SKILL.md)区分升级意向与具体修改授权；经授权的技能修改默认包含同次任务的提交推送、后台更新和生效核验，用户明确限制时除外。读取[技能定向发布](references/skill-upstream-maintenance.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，统一使用同目录 `Invoke-LabSkillSync.ps1`，按本机已选后端执行。官方桌面按技能发布所需能力验收放行，不要求供应商等其他业务全部通过；所需能力和当前状态以工具说明为准。后台失败不回退旧 CLI、不改用界面操作、不手工改运行目录。
+- **技能发布**：先按 [skill-creator](../skill-creator/SKILL.md)区分升级意向与具体修改授权；经授权的技能修改默认包含同次任务的提交推送、后台更新和生效核验，用户明确限制时除外。读取[技能定向发布](references/skill-publication.md#技能定向发布)，按用户指定位置、项目说明或已核实的维护目录定位 `automation/ccswitch-skill-sync/README.md`，统一使用同目录 `Invoke-LabSkillSync.ps1`，按本机已选后端执行。官方桌面按技能发布所需能力验收放行，不要求供应商等其他业务全部通过；所需能力和当前状态以工具说明为准。后台失败不回退旧 CLI、不改用界面操作、不手工改运行目录。
 - **相关任务转交**：目录、来源、生效诊断及上游发现交给 [skill-check](../skill-check/SKILL.md)；对话经验整理交给 [chat-notes](../chat-notes/SKILL.md)；供应商与请求链路分别交给 `codex-relay-chain`、`claude-relay-chain`。
 
 只加载当前步骤需要的技能和参考，不按上述列表逐一加载。
@@ -31,5 +31,6 @@ description: 维护全局规范和系统提示词，并执行自建技能的定�
 - 当前工具下的文本修改，或源文件与当前文件不同步：[文件修改与同步判断](references/file-editing-best-practices.md)。
 - 技能查找、源目录与运行副本：[技能查找顺序](references/skill-discovery-protocol.md)。
 - 网页端无工具环境：[提示词写法](references/web-system-prompt-guidelines.md)；涉及媒体能力时再读 [媒体处理](references/media-processing-limitations.md)。
+- 技能发布的步骤、核验和失败处理：[技能发布](references/skill-publication.md)。
 - 上游发现、来源登记、候选审核及周检：[上游维护](references/skill-upstream-maintenance.md)。已有镜像和来源脚本入口保留在该参考中，不为普通修改运行它们。
-- 维护 CC Switch 共用后台组件的定位或引用时：[后台组件边界](references/skill-upstream-maintenance.md#cc-switch-后台组件)。不涉及该组件就不检查其环境。
+- 维护 CC Switch 共用后台组件的定位或引用时：[后台组件边界](references/skill-publication.md#cc-switch-后台组件)。不涉及该组件就不检查其环境。

@@ -7,26 +7,9 @@
 ## 默认怎么改
 
 1. 先定位目标文件和实际内容。
-2. 手工文本修改默认使用 `apply_patch`。
-3. 重命名、移动、批量检查、格式化、验证这类动作使用 `shell_command`。
+2. 手工文本修改使用当前客户端自带的文件编辑工具，例如 Codex 的 `apply_patch`、Claude Code 的 `Edit` 和 `Write`。
+3. 重命名、移动、批量检查、格式化、验证这类动作使用当前客户端的命令执行工具，在 Windows 上运行 PowerShell 命令；检查文件常用 `Get-ChildItem`、`Select-String`、`Get-Content -Raw`、`Test-Path`。
 4. 修改后立刻复读或校验，确认结果与预期一致。
-
-## 当前环境优先用什么
-
-当前这套环境里，优先使用：
-
-- `apply_patch` 做手工编辑
-- `shell_command` 跑 PowerShell 命令
-- `Get-ChildItem`、`Select-String`、`Get-Content -Raw`、`Test-Path` 做检查
-
-不要继续依赖这类旧语境写法：
-
-- `replace_file_content`
-- `multi_replace_file_content`
-- `view_file`
-- `grep_search`
-
-这些不再是当前维护基线。
 
 ## Windows 和 PowerShell 注意事项
 

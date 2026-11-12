@@ -50,9 +50,9 @@
 
 表示当前客户端可能正在读什么，但不一定是你应该长期手改的地方：
 
-- `C:\Users\SanAn\.cc-switch\skills\`
-- `%USERPROFILE%\.claude\skills\`
-- `%USERPROFILE%\.codex\skills\`
+- `%USERPROFILE%\.agents\skills\`：运行副本实体，由 CC Switch 发布和管理
+- `%USERPROFILE%\.claude\skills\`、`%USERPROFILE%\.codex\skills\`：客户端入口，多数条目是指向上述实体的链接
+- `%USERPROFILE%\.cc-switch\skills\`：目前只有飞书官方技能的副本，自建技能不在这里
 
 ### 旧目录
 

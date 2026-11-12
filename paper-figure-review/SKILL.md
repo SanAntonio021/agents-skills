@@ -90,7 +90,7 @@ description: 审查、规范化和重画 IEEE 论文图件，包括数据图、�
 | 普通数值坐标图，包括连续量、采集序号和离散工作点 | `major_xy` | 横纵轴主网格 |
 | 类别图、热图、图像或网格会增加干扰的面板 | `none` | 无笛卡尔网格 |
 
-主网格统一为 `#B8B8B8`、`0.35 pt`、长虚线 `(5, 3)`、`alpha=0.52`。次网格不进入新单栏图的默认路由；对数轴只画 decade 主网格，次网格和次刻度默认关闭。旧图必须复现双层网格时才显式使用 `legacy_major_minor_xy`，并在 plot profile 中记录理由。
+主网格统一为 `#B8B8B8`、`0.35 pt`、长虚线 `(5, 3)`、`alpha=0.52`。次网格不进入新单栏图的默认路由；对数轴只画 decade 主网格，次网格和次刻度默认关闭。旧图必须复现双层网格时才显式使用 `legacy_major_minor_xy`，并在 plot profile 中记录理由。用新数据重画 2026-08-13 网格基线之前已发表的图（实线主网格、点线次网格、`#8A8A8A` 门限线）时使用 `legacy_pre_template`，门限线颜色取 `LEGACY_PRE_TEMPLATE_THRESHOLD_COLOR`，使新图与原图外观一致。`apply_ieee_grid()` 保留调用方已设的次刻度定位器，只对尚未设置的轴开启次刻度。
 
 更细的检查项按本次范围选用 `references/ieee-figure-review-checklist.md`；复用已读内容，不因检查表加载或重复阅读扩大范围。
 

@@ -36,6 +36,7 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 from matplotlib import transforms as mtransforms
+from matplotlib import ticker as mticker
 
 
 IEEE_SINGLE_COLUMN_IN = 3.5
@@ -57,7 +58,25 @@ IEEE_MINOR_GRID = {
     "linestyle": (0.0, (1.0, 1.65)),
 }
 IEEE_DEFAULT_GRID_MODE = "major_xy"
-IEEE_GRID_MODES = ("major_xy", "none", "legacy_major_minor_xy")
+# Grid of figures produced before the 2026-08-13 IEEE grid baseline (solid
+# major grid, dotted minor grid). ``legacy_pre_template`` reproduces it exactly
+# so that a published figure can be redrawn with new data without changing its
+# appearance.  The minor dash pattern is the unscaled matplotlib pattern; at a
+# 0.30 pt line width it is written to PDF as [0.6 0.66].
+LEGACY_PRE_TEMPLATE_MAJOR_GRID = {
+    "color": "#B8B8B8",
+    "linewidth": 0.35,
+    "alpha": 0.60,
+    "linestyle": "-",
+}
+LEGACY_PRE_TEMPLATE_MINOR_GRID = {
+    "color": "#D6D6D6",
+    "linewidth": 0.30,
+    "alpha": 0.55,
+    "linestyle": (0.0, (2.0, 2.2)),
+}
+LEGACY_PRE_TEMPLATE_THRESHOLD_COLOR = "#8A8A8A"
+IEEE_GRID_MODES = ("major_xy", "none", "legacy_major_minor_xy", "legacy_pre_template")
 SUPPORTED_MATPLOTLIB_MIN = (3, 5)
 SUPPORTED_MATPLOTLIB_MAX = (4, 0)
 
@@ -598,12 +617,12 @@ def apply_compact_single_column_axes(ax) -> None:
 
 def apply_ieee_grid(
     ax,
-    major_color: str = IEEE_MAJOR_GRID["color"],
-    minor_color: str = IEEE_MINOR_GRID["color"],
-    major_width: float = IEEE_MAJOR_GRID["linewidth"],
-    minor_width: float = IEEE_MINOR_GRID["linewidth"],
-    major_alpha: float = IEEE_MAJOR_GRID["alpha"],
-    minor_alpha: float = IEEE_MINOR_GRID["alpha"],
+    major_color: str | None = None,
+    minor_color: str | None = None,
+    major_width: float | None = None,
+    minor_width: float | None = None,
+    major_alpha: float | None = None,
+    minor_alpha: float | None = None,
     grid_mode: str = IEEE_DEFAULT_GRID_MODE,
 ) -> None:
     """Apply a complete Cartesian grid or no grid at all.
@@ -612,34 +631,56 @@ def apply_ieee_grid(
     axes. Categorical/image-like panels use ``none`` when a Cartesian grid
     would add clutter. Minor grids are intentionally absent from every default
     route. ``legacy_major_minor_xy`` exists only for reproducibility of old
-    plots.
+    plots; ``legacy_pre_template`` reproduces the exact grid of figures made
+    before the 2026-08-13 baseline (solid major, dotted minor).
+
+    Minor tick locators already set by the caller (for example
+    ``MultipleLocator``) are kept; minor ticks are only switched on for axes
+    that still have no minor locator.  Omitted style arguments use the profile
+    of the selected ``grid_mode``.
     """
 
     grid_mode = _normalize_grid_mode(grid_mode)
+    major_profile, minor_profile = _grid_profiles(grid_mode)
+    major_color = major_profile["color"] if major_color is None else major_color
+    minor_color = minor_profile["color"] if minor_color is None else minor_color
+    major_width = major_profile["linewidth"] if major_width is None else major_width
+    minor_width = minor_profile["linewidth"] if minor_width is None else minor_width
+    major_alpha = major_profile["alpha"] if major_alpha is None else major_alpha
+    minor_alpha = minor_profile["alpha"] if minor_alpha is None else minor_alpha
     ax.set_axisbelow(True)
-    ax.minorticks_on()
+    if grid_mode != "legacy_pre_template":
+        for axis in (ax.xaxis, ax.yaxis):
+            if isinstance(axis.get_minor_locator(), mticker.NullLocator):
+                axis.minorticks_on()
     ax.grid(False, which="both", axis="both")
-    if grid_mode in {"major_xy", "legacy_major_minor_xy"}:
+    if grid_mode in {"major_xy", "legacy_major_minor_xy", "legacy_pre_template"}:
         ax.grid(
             True,
             which="major",
             axis="both",
             color=major_color,
             linewidth=major_width,
-            linestyle=IEEE_MAJOR_GRID["linestyle"],
+            linestyle=major_profile["linestyle"],
             alpha=major_alpha,
         )
-    if grid_mode == "legacy_major_minor_xy":
+    if grid_mode in {"legacy_major_minor_xy", "legacy_pre_template"}:
         ax.grid(
             True,
             which="minor",
             axis="both",
             color=minor_color,
             linewidth=minor_width,
-            linestyle=IEEE_MINOR_GRID["linestyle"],
+            linestyle=minor_profile["linestyle"],
             alpha=minor_alpha,
         )
     setattr(ax, "_ieee_grid_mode", grid_mode)
+
+
+def _grid_profiles(grid_mode: str) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    if grid_mode == "legacy_pre_template":
+        return LEGACY_PRE_TEMPLATE_MAJOR_GRID, LEGACY_PRE_TEMPLATE_MINOR_GRID
+    return IEEE_MAJOR_GRID, IEEE_MINOR_GRID
 
 
 def apply_compact_grid(ax) -> None:
@@ -1537,11 +1578,17 @@ def _visible_gridlines(ax, which: str) -> list[Line2D]:
 
 def _gridline_style_matches(line: Line2D, expected: Mapping[str, Any]) -> bool:
     dash_pattern = getattr(line, "_unscaled_dash_pattern", (None, None))[1]
-    expected_dash = expected["linestyle"][1]
-    return (
+    expected_style = expected["linestyle"]
+    expected_dash = () if isinstance(expected_style, str) else expected_style[1]
+    base_ok = (
         to_hex(line.get_color()).upper() == str(expected["color"]).upper()
         and math.isclose(float(line.get_linewidth()), float(expected["linewidth"]), abs_tol=0.01)
         and math.isclose(float(line.get_alpha()), float(expected["alpha"]), abs_tol=0.01)
+    )
+    if not expected_dash:
+        return base_ok and not dash_pattern
+    return (
+        base_ok
         and dash_pattern is not None
         and len(dash_pattern) == len(expected_dash)
         and all(
@@ -1552,20 +1599,13 @@ def _gridline_style_matches(line: Line2D, expected: Mapping[str, Any]) -> bool:
 
 
 def _check_grid_profile(ax, index: int, errors: list[str], grid_mode: str) -> None:
-    expectations = {
-        "x": (
-            grid_mode in {"major_xy", "legacy_major_minor_xy"},
-            grid_mode == "legacy_major_minor_xy",
-        ),
-        "y": (
-            grid_mode in {"major_xy", "legacy_major_minor_xy"},
-            grid_mode == "legacy_major_minor_xy",
-        ),
-    }
+    major_visible = grid_mode in {"major_xy", "legacy_major_minor_xy", "legacy_pre_template"}
+    minor_visible = grid_mode in {"legacy_major_minor_xy", "legacy_pre_template"}
+    major_profile, minor_profile = _grid_profiles(grid_mode)
     for axis_name, axis in (("x", ax.xaxis), ("y", ax.yaxis)):
         for which, expected_visible, style_profile in (
-            ("major", expectations[axis_name][0], IEEE_MAJOR_GRID),
-            ("minor", expectations[axis_name][1], IEEE_MINOR_GRID),
+            ("major", major_visible, major_profile),
+            ("minor", minor_visible, minor_profile),
         ):
             lines = _visible_axis_gridlines(axis, which)
             if expected_visible and not lines:

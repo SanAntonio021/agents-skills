@@ -226,6 +226,52 @@ def test_grid_modes_are_semantic_and_minor_grid_is_opt_in_only():
         style.repair_single_column_figure(legacy_fig, [legacy_ax], grid_mode="major_y")
 
 
+@pytest.mark.parametrize("grid_mode", ["major_xy", "legacy_major_minor_xy", "legacy_pre_template", "none"])
+def test_apply_ieee_grid_keeps_caller_minor_locators(grid_mode):
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
+    ax.plot([24.0, 33.0], [6.5, 15.2])
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(2.0))
+    ax.xaxis.set_minor_locator(mticker.MultipleLocator(1.0))
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(1.0))
+    ax.yaxis.set_minor_locator(mticker.MultipleLocator(0.5))
+    style.apply_ieee_grid(ax, grid_mode=grid_mode)
+    for axis, step in ((ax.xaxis, 1.0), (ax.yaxis, 0.5)):
+        locator = axis.get_minor_locator()
+        assert isinstance(locator, mticker.MultipleLocator)
+        ticks = locator.tick_values(0.0, 4.0)
+        assert ticks[1] - ticks[0] == pytest.approx(step)
+
+
+def test_apply_ieee_grid_still_enables_minor_ticks_when_unset():
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
+    ax.plot([0.0, 1.0], [0.0, 1.0])
+    assert isinstance(ax.xaxis.get_minor_locator(), mticker.NullLocator)
+    style.apply_ieee_grid(ax, grid_mode="major_xy")
+    assert not isinstance(ax.xaxis.get_minor_locator(), mticker.NullLocator)
+    assert not isinstance(ax.yaxis.get_minor_locator(), mticker.NullLocator)
+
+
+def test_legacy_pre_template_reproduces_pre_baseline_grid_exactly():
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
+    ax.plot([24.0, 33.0], [6.5, 15.2])
+    ax.xaxis.set_minor_locator(mticker.MultipleLocator(1.0))
+    ax.yaxis.set_minor_locator(mticker.MultipleLocator(0.5))
+    style.apply_ieee_grid(ax, grid_mode="legacy_pre_template")
+    fig.canvas.draw()
+    major = style._visible_axis_gridlines(ax.yaxis, "major")
+    minor = style._visible_axis_gridlines(ax.yaxis, "minor")
+    assert major and minor
+    assert all(style._gridline_style_matches(line, style.LEGACY_PRE_TEMPLATE_MAJOR_GRID) for line in major)
+    assert all(style._gridline_style_matches(line, style.LEGACY_PRE_TEMPLATE_MINOR_GRID) for line in minor)
+    assert major[0].get_linestyle() == "-"
+    assert minor[0]._unscaled_dash_pattern[1] == (2.0, 2.2)
+    assert minor[0].get_linewidth() * 2.0 == pytest.approx(0.6)
+    errors: list[str] = []
+    style._check_grid_profile(ax, 0, errors, "legacy_pre_template")
+    assert errors == []
+    assert style.LEGACY_PRE_TEMPLATE_THRESHOLD_COLOR == "#8A8A8A"
+
+
 def test_stacked_grid_mode_sequence_must_match_axes():
     resolution = style.use_ieee_single_column_style()
     fig, axes = plt.subplots(2, 1, figsize=(3.5, 3.6))

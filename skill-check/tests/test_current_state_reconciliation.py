@@ -196,3 +196,62 @@ def test_official_desktop_requires_bound_current_metadata(case, invalid):
             current.validate_current(args, finding, proposal, item, roots, args.test_state)
     else:
         current.validate_current(args, finding, proposal, item, roots, args.test_state)
+
+
+def use_home(case, monkeypatch, storage):
+    """Rebuild the runtime under a fixture home so validate_current resolves its own roots."""
+    args, _, _, _, roots = case
+    home = args.reports_root / 'home'
+    monkeypatch.setattr(current.Path, 'home', lambda: home)
+    for name in ('CC_SWITCH_CONFIG_DIR', 'CLAUDE_CONFIG_DIR', 'CODEX_HOME'):
+        monkeypatch.delenv(name, raising=False)
+    blob = (roots['claude'] / 'demo/SKILL.md').read_bytes()
+    for directory in ('.claude/skills', '.codex/skills', storage):
+        (home / directory / 'demo').mkdir(parents=True)
+        (home / directory / 'demo/SKILL.md').write_bytes(blob)
+    return home
+
+
+def name_paths(args, proposal, paths):
+    release = proposal['releases'][0]
+    for key in ['sync', 'verify']:
+        receipt = json.loads(Path(release[key + '_evidence']['path']).read_text())
+        receipt['resolved_paths'] = paths
+        release[key + '_evidence'] = save(args.reports_root, key + '-paths.json', receipt)
+
+
+@pytest.mark.parametrize('key', ['cc_switch_skills_root', 'cc_switch_root'])
+def test_cc_switch_layer_is_measured_at_the_storage_root_the_receipt_names(case, monkeypatch, key):
+    args, finding, proposal, item, _ = case
+    home = use_home(case, monkeypatch, '.agents/skills')
+    leftover = home / '.cc-switch/skills/demo'
+    leftover.mkdir(parents=True)
+    (leftover / 'SKILL.md').write_text('stale copy left by a storage migration\n', encoding='utf-8')
+    name_paths(args, proposal, {'source_root': str(args.skills_root), key: str(home / '.agents' / 'skills')})
+    _, manifests = current.validate_current(args, finding, proposal, item, state=args.test_state)
+    assert manifests['demo']['cc_switch'] == manifests['demo']['source']
+    name_paths(args, proposal, {key: str(leftover.parent)})
+    with pytest.raises(ValueError, match='runtime manifest mismatch: demo/cc_switch'):
+        current.validate_current(args, finding, proposal, item, state=args.test_state)
+
+
+@pytest.mark.parametrize('named', ['exact copy elsewhere', 'relative', 7])
+def test_receipt_cannot_point_the_cc_switch_layer_outside_known_storage(case, monkeypatch, named):
+    args, finding, proposal, item, roots = case
+    use_home(case, monkeypatch, '.agents/skills')
+    if named == 'exact copy elsewhere':
+        named = str(roots['cc_switch'])
+    elif named == 'relative':
+        named = '.agents/skills'
+    name_paths(args, proposal, {'cc_switch_skills_root': named})
+    with pytest.raises(ValueError, match='unknown CC Switch storage root'):
+        current.validate_current(args, finding, proposal, item, state=args.test_state)
+
+
+def test_receipt_without_a_storage_root_keeps_the_config_root_default(case, monkeypatch):
+    args, finding, proposal, item, _ = case
+    home = use_home(case, monkeypatch, '.cc-switch/skills')
+    assert not (home / '.agents').exists()
+    current.validate_current(args, finding, proposal, item, state=args.test_state)
+    name_paths(args, proposal, {'source_root': str(args.skills_root)})
+    current.validate_current(args, finding, proposal, item, state=args.test_state)

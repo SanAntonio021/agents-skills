@@ -205,9 +205,11 @@ helper 身份同时覆盖入口 `Invoke-CcSwitchSkillSync.ps1` 和实际实现�
 历史批次因后续发布取代而无法补齐原提交的运行证据时，可通过 `reconcile-execution` 提交
 `kind: current_state` 证据：精确覆盖原授权批次的技能，逐项绑定当前已推送且未被后续内容取代的提交、
 同步与同参数复查回执、原状态文件的完整扫描及具体语义核对。接口现场独立读取 Git blob 和三个
-运行目录的完整文件哈希，不把来源清单复制为运行证据。缺原提交 SHA 的项只接受已由扫描独立解决的
-finding。验证后追加 `superseded_current_verified`、将旧工作流归入历史；保留原 execution 和全部旧回执，
-明确 `original_history_proven=false`。面板显示当前验收通过，不能据此声称原失败操作曾经成功。
+运行目录的完整文件哈希，不把来源清单复制为运行证据。CC Switch 一层读回执 `resolved_paths`
+写明的技能存储根，只接受 `~/.cc-switch/skills` 和 `~/.agents/skills`；回执没有写明时用前者。
+缺原提交 SHA 的项只接受已由扫描独立解决的 finding。验证后追加 `superseded_current_verified`、
+将旧工作流归入历史；保留原 execution 和全部旧回执，明确 `original_history_proven=false`。
+面板显示当前验收通过，不能据此声称原失败操作曾经成功。
 
 证据包用 `scan_evidence` 绑定原始扫描返回、`scan_report_evidence` 绑定该次报告，须与状态内完整
 run 的时间、范围和报告引用一致。`semantic_review_evidence` 按技能列出结论和源码路径的

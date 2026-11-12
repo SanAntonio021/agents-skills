@@ -35,13 +35,41 @@ def runtime_manifest(root, skill):
     return files
 
 
+def storage_roots():
+    """Both places CC Switch keeps managed Skills: its config root, then the unified root."""
+    home = Path.home()
+    return (Path(os.environ.get('CC_SWITCH_CONFIG_DIR') or home / '.cc-switch') / 'skills',
+            home / '.agents' / 'skills')
+
+
 def default_runtime_roots():
     home = Path.home()
     return {
-        'cc_switch': Path(os.environ.get('CC_SWITCH_CONFIG_DIR') or home / '.cc-switch') / 'skills',
+        'cc_switch': storage_roots()[0],
         'claude': Path(os.environ.get('CLAUDE_CONFIG_DIR') or home / '.claude') / 'skills',
         'codex': Path(os.environ.get('CODEX_HOME') or home / '.codex') / 'skills',
     }
+
+
+def receipt_storage_root(receipt):
+    """Return the known storage root a publish receipt names; None when it names none.
+
+    A receipt is evidence under review, so it may only choose between the two known
+    locations; anything else would let it redirect the independent measurement.
+    """
+    paths = receipt.get('resolved_paths')
+    if not isinstance(paths, dict):
+        return None
+    # The official-desktop backend writes the first key, the legacy helper the second.
+    named = paths.get('cc_switch_skills_root', paths.get('cc_switch_root'))
+    if named is None:
+        return None
+    if isinstance(named, str) and os.path.isabs(named):
+        target = os.path.normcase(os.path.abspath(named))
+        for root in storage_roots():
+            if target == os.path.normcase(os.path.abspath(root)):
+                return root
+    raise ValueError('current receipt names an unknown CC Switch storage root')
 
 
 def validate_scan(args, original, proposal, state):
@@ -163,6 +191,11 @@ def validate_current(args, finding, proposal, item, runtime_roots=None, state=No
                       'allow_historical_commit', 'allow_historical_subset', 'backend', 'resolved_paths'):
             if receipts[0].get(field) != receipts[1].get(field):
                 raise ValueError('sync and verify parameters differ: ' + field)
+        release_roots = roots
+        if not runtime_roots:
+            named = receipt_storage_root(receipts[0])
+            if named is not None:
+                release_roots = {**roots, 'cc_switch': named}
         for skill in targets:
             if skill not in skills or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', skill):
                 raise ValueError('invalid current Skill scope')
@@ -175,7 +208,7 @@ def validate_current(args, finding, proposal, item, runtime_roots=None, state=No
             if 'SKILL.md' not in manifest:
                 raise ValueError('current source entry unavailable')
             layers = {'source': manifest}
-            for layer, root in roots.items():
+            for layer, root in release_roots.items():
                 layers[layer] = runtime_manifest(root, skill)
                 if layers[layer] != manifest:
                     raise ValueError('current runtime manifest mismatch: ' + skill + '/' + layer)

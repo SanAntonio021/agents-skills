@@ -487,6 +487,23 @@
 1. `perm` 为 `read_only` 时，`record_rule.record_operations` **只能为空**
 2. 同步表（`is_sync = true`）**严禁**新增和删除记录
 
+### 套餐不含行列权限时（本地补充）
+
+有些租户套餐不含“行列权限”增值功能，高级权限界面会把相关选项标为“增值功能”。在这种套餐下给表设 `perm = edit`，只能整表放开。2026-11-12 实测 `+role-update` 的返回：
+
+| 配置 | 结果 |
+|---|---|
+| `record_operations` 去掉 `add` 或 `delete`（如设为 `[]`） | 报 `row quota limit` |
+| `view_rule.allow_edit = false` | 报 `view row quota limit` |
+| `record_operations: ["add","delete"]`、`allow_edit: true`、`all_visible: true`、`field_perm_mode: "all_edit"` | 成功 |
+
+界面上同样标为增值功能、但未经接口实测的还有：可阅读范围选“与成员本人相关的记录”或“满足特定条件的记录”（对应 `edit_filter_rule_group`、`read_filter_rule_group`），以及“指定视图”（`visibility.all_visible = false`）。
+
+遇到上述报错时：
+- 不要自行放宽成整表可增删、可改视图后重试。
+- 向用户说明套餐只允许“整表可编辑（含增删记录、改视图）”或“整表只读”，由用户选择后再写入。
+- 写入后用 `+role-get` 回读。
+
 ---
 
 ### field_perms 构造 SOP

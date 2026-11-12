@@ -3,8 +3,8 @@
 
 - 状态：`localized`
 - 首次统一调查：`2026-09-30`
-- 最近来源登记审核：`2026-10-26`
-- 说明：来源：飞书官方 well-known 技能包；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 3ee8dbb0fd25a9bb42d33426a821ad8ac4215cda；接受基线为 2026-10-18 官方完整 44 文件包，接受基线清单与官方原文见 upstream/official-baselines/lark-doc/（取自 reports/skill-upstream/2026-10-18/feishu 的接受清单与同日官方快照）。官方包及许可沿原接管证据，不在此虚构 Git 来源或新的许可结论；后续按整体差异单独审核，不覆盖运行时、不自动接受更新。文档负责位置、空白画板块、token 与 block ID，图示创建编辑交 lark-whiteboard。
+- 最近来源登记审核：`2026-11-12`
+- 说明：来源：飞书官方 well-known 技能包；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 3ee8dbb0fd25a9bb42d33426a821ad8ac4215cda，当时基线为 2026-10-18 官方完整 44 文件包。2026-11-12 经用户确认合并官方更新：创建流程取消体裁选择步骤（8 步改为 7 步），删除 references/genres 下 28 个文件，更新 lark-doc-create-workflow.md 与 lark-doc-script.md，本地补充保持不变。当前接受基线为 2026-11-12 下载的官方完整 16 文件包（官方索引 SHA-256 733daaa50d71b7af53a07aa7ac3b0320f141b0c3fad9674d37bcd7f3164452e9），清单与官方原文见 upstream/official-baselines/lark-doc/。官方包及许可沿原接管证据，不在此虚构 Git 来源或新的许可结论；后续按整体差异单独审核，不覆盖运行时、不自动接受更新。文档负责位置、空白画板块、token 与 block ID，图示创建编辑交 lark-whiteboard。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。

@@ -5,7 +5,7 @@ description: >
   experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
   生成组会 PPT, or turning recent research work into an advisor report.
   Daily reports cover work since the previous delivered report, including gap days.
-  The first overview explains the concrete reason, progress and outcome of each item;
+  Draft each overview item around its main progress or result, with essential context;
   reuse existing figures and document screenshots instead of drawing replacement diagrams.
   For daily reports, inventory the period and verify first-page facts against local records,
   then show a first-page draft plus reportable work not placed on it, ask once for unrecorded
@@ -23,7 +23,7 @@ compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, r
 
 # 科研日报与组会汇报
 
-面向导师讲清本期科研推进，按内容价值确定详略。
+面向导师讲清本期科研推进，按内容价值确定详略。首次起草前按[主张与入页信息](references/chinese-style.md#起草前确定主张与入页信息)确定证据能支持的主张和必要条件，只生成选定内容；核查过程及重复的未做事项说明默认不入页，表达检查只纠正漏网偏差。
 
 ## 按阶段读取
 

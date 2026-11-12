@@ -134,6 +134,12 @@ CC Switch 3.18 的结构、限制和地址规则见 [references/cc-switch-deskto
 | 直连模式选择 OpenAI/Gemini 上游失败 | `claudeDesktopMode`、`apiFormat` | provider 能被导入不证明直连模式支持 |
 | 修改 profile 后仍用旧值 | managed policy 优先级、完整退出重开 | 文件时间变化不证明应用已重载 |
 
+#### Claude Code 调用共享 HTTP MCP 返回 401
+
+当 Claude Code 调用本机或内网 HTTP MCP 返回 `401`，而同一 bridge 的服务端健康、Codex 可用时，检查 Claude 客户端实际发出的认证头，不要仅凭 CC Switch 中的共享记录推断两端渲染相同。若 Claude 侧配置只有共享记录中的 `env_http_headers` 且实际请求未带认证头，将其视为客户端配置映射问题；按已安装 Claude CLI 版本确认可用的配置格式。支持 `headersHelper` 的版本可在 Claude 客户端自己的 user-scoped MCP 配置中引用本机 helper：helper 从访问控制受限的 token 文件读取凭据，并只向标准输出返回所需 header JSON。配置中只保存 helper 路径，不保存 token；不要把 token 写入命令行、日志或共享 CC Switch MCP 记录。该修复属于 Claude 客户端侧，不要为了修复 Claude 而把 `headers.X-Bridge-Token` 加回共享记录，以免改变 Codex 的渲染结果。
+
+按当前授权和配置归属通过受支持入口修改；修改后分别核对 helper 对 token 文件的访问限制、Claude MCP 配置引用、`claude mcp list/get` 的连接状态，并执行一次实际 Claude Code → MCP → Codex 工具调用。`Connected` 只证明 MCP 健康检查通过，不能替代实际工具调用验收；若只完成连接检查，明确标为端到端未验证。token 值、个人绝对路径和认证配置正文不得写入技能、回执或交付说明。
+
 #### 模型发现专项检查
 
 出现以下任一现象时必须执行本节：普通聊天或 Cowork 能回复，但内置 Code 没有模型；配置页显示 `Invalid: Model list`；模型选择器为空；1M context 选项消失。

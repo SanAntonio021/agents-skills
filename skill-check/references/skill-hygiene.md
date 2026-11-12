@@ -21,29 +21,16 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 ## 要分清的六层
 
-在这台机器上，排查 skill 问题时默认分清六层：
+目录层级见入口 [SKILL.md](../SKILL.md) 的“先分清六层目录”，这里不再重复。技能出现在运行副本实体目录，不代表 Claude、Codex 两侧都已启用。
 
-1. `D:\BaiduSyncdisk\.agents\skills`
-   自建技能源码仓库。真正应该修改和提交的地方，但不是当前已加载列表。
-2. `C:\Users\SanAn\.agents\skills`
-   Lark 技能实体层；新版 Codex CLI 还会直接读取这一层。
-3. `C:\Users\SanAn\.cc-switch\skills`
-   CC Switch 的分发层。这里更新不代表 Claude、Codex 两侧都已启用。
-4. `C:\Users\SanAn\.claude\skills`
-   Claude 运行时入口，多数自建技能链接到 CC Switch 分发层。
-5. `C:\Users\SanAn\.codex\skills`
-   Codex 运行时入口；还要区分 `.system` 内置技能。
-6. `C:\Users\SanAn\.codex\plugins\cache`
-   Codex 插件自带技能层，可能与用户技能出现同名入口。
-
-`C:\Users\SanAn\.cc-switch\cc-switch.db` 是记录层，不单独算技能目录，但必须核对
-`directory`、仓库分支和各运行时的启用状态。
+`C:\Users\SanAn\.cc-switch\cc-switch.db` 是记录层，不单独算技能目录。legacy 后端下核对
+`directory`、仓库分支和各运行时的启用状态；官方桌面后端下不读取它。
 
 ## 什么算当前已加载
 
 - 查 Claude 时，以 `C:\Users\SanAn\.claude\skills` 的实际入口为准。
-- 查 Codex 时，同时看 `C:\Users\SanAn\.codex\skills`、`.system`、插件缓存和直读的 Lark 实体层。
-- 源码目录和 cc-switch 分发目录只是证据，不能直接拿来报“当前已加载”或“当前冲突”。
+- 查 Codex 时，同时看 `C:\Users\SanAn\.codex\skills`、`.system`、插件缓存和直读的运行副本实体目录（`C:\Users\SanAn\.agents\skills`）。
+- 源码目录和 `C:\Users\SanAn\.cc-switch\skills` 只是证据，不能直接拿来报“当前已加载”或“当前冲突”。
 - cc-switch 面板显示名不等于磁盘目录名；已分发但单侧未启用时，另一侧运行时可能没有入口。
 
 ## 插件启停的控制归属
@@ -103,6 +90,8 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 ### 2. CC Switch 记录与启用
 
+本节适用于 legacy 后端。官方桌面后端发布的技能来源登记为 `local:<技能名>`，仓库字段为空，不按本节字段核对，也不读取数据库；来源与启用状态以发布回执为准。
+
 - 用只读方式打开 `cc-switch.db`，先运行 `PRAGMA integrity_check`。
 - 核对目标仓库在 `skill_repos` 中只有一条有效记录，`branch` 与远端目标分支一致且 `enabled = 1`。
 - 有仓库级阻断线索、或现有定向 helper 为完整验收检查仓库一致性时，只读核对同仓库关联记录的 `repo_branch` 和 `readme_url`。历史上兄弟技能旧分支曾导致错误压缩包请求；按当前日志核实，保持精确更新集合。
@@ -114,9 +103,9 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 ### 3. 比较全部已提交文件
 
 逐个读取 `git ls-tree -r --name-only HEAD -- <skill-name>` 的结果，并把提交 blob 与三个
-分发/运行时根目录下的对应文件比较：
+存储/运行时根目录下的对应文件比较：
 
-- `C:\Users\SanAn\.cc-switch\skills`
+- `C:\Users\SanAn\.agents\skills`（CC Switch 技能存储根，以回执的 `resolved_paths.cc_switch_skills_root` 为准）
 - `C:\Users\SanAn\.claude\skills`
 - `C:\Users\SanAn\.codex\skills`
 
@@ -195,13 +184,13 @@ claude -p --no-session-persistence --permission-mode plan --no-chrome
 
 ### 8. 后台恢复与验收
 
-后台入口、备份、重试与恢复以 [agent-rules 的定向发布流程](../../agent-rules/references/skill-upstream-maintenance.md) 为准。保持同一提交、精确 Skill 集合和本机文件声明；失败时先保留 JSON 回执和阶段信息，再只读核验实际状态，不为追求成功而扩大更新范围。
+后台入口、备份、重试与恢复以 [agent-rules 的定向发布流程](../../agent-rules/references/skill-publication.md#技能定向发布) 为准。保持同一提交、精确 Skill 集合和本机文件声明；失败时先保留 JSON 回执和阶段信息，再只读核验实际状态，不为追求成功而扩大更新范围。
 
 如果回执是 `Installed SSOT has local edits; refusing update`，按上述发布流程处理基线滞后；不要通过手工编辑安装目录、数据库或绕过 helper 来消除报错。
 
 临时故障恢复后，原授权覆盖受支持流程的重试，不另设批准关口。先核对当前源码及运行副本，已对齐目标只核验；部分成功仍保留原完整验收集合，由 helper 跳过对齐目标。源码新修改、来源登记错误和文件冲突先查明并处理，保护用户新内容；同错反复出现先诊断，有恢复依据再继续。新尝试另存回执，回执丢失不能代替实际状态检查。
 
-按该流程执行的后台更新与随后 `-VerifyOnly` 均须退出 `0`、返回 `runtime_active`，且 `cc_switch_metadata.valid = true`、问题为空，目标文件集合、哈希、来源和启用状态一致。缺少核验时报告具体未完成部分，不把单步成功当作完整生效。
+按该流程执行的后台更新与随后 `-VerifyOnly` 均须退出 `0`、返回 `runtime_active`，`errors` 为空且每个目标技能 `verified` 为真，目标文件集合、哈希、来源和启用状态一致。回执字段随后端不同：legacy 后端（契约 15）另须 `cc_switch_metadata.valid = true`、问题为空；官方桌面后端（契约 16）该字段为空，不作要求。缺少核验时报告具体未完成部分，不把单步成功当作完整生效。
 
 只要求核验，或用户已明确自行完成恢复时，固定参数直接运行 `-VerifyOnly`，不额外执行更新写入。有效核验通过后结束，有失败、变化或未解决问题再复查。核验只能确认当前状态，不能推断具体哪次历史操作使其生效。
 

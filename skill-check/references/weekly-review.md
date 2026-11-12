@@ -139,10 +139,12 @@ python scripts/run_weekly_skill_review.py prepare-execution `
 3. 每个成功目的只精确暂存对应路径，禁止 `git add .` 和 `git add -A`，保留两个仓库现有无关改动；
 4. 独立目的独立提交、推送，不把拒绝项或失败项带入提交；
 5. Skill 推送后取得最终 40 位远端 SHA，只对实际修改且仍存在的精确 Skill 集合运行
-   `Invoke-CcSwitchSkillSync.ps1`，随后用完全相同的 SHA 和 Skill 集合运行 `-VerifyOnly`；两次都必须
-   是退出码 `0`、`runtime_active`，`cc_switch_metadata.valid` 为 `true` 且没有元数据问题；数据库完整性、
-   仓库分支、技能目录、仓库归属、`repo_branch`、`readme_url` 和双端启用状态均一致，同时源码、
-   CC Switch、Claude、Codex 四层文件集合和 SHA-256 一致；
+   `Invoke-LabSkillSync.ps1`（它按本机后端转调 `Invoke-CcSwitchSkillSync.ps1`），随后用完全相同的 SHA 和 Skill 集合运行 `-VerifyOnly`；两次都必须
+   是退出码 `0`、`runtime_active`，`errors` 为空且每个目标技能 `verified` 为真，源码与 CC Switch 技能
+   存储根、Claude、Codex 已启用副本的文件集合和 SHA-256 一致。回执字段随后端不同：legacy 后端
+   （契约 15）另须 `cc_switch_metadata.valid` 为 `true` 且没有元数据问题，数据库完整性、仓库分支、
+   技能目录、仓库归属、`repo_branch`、`readme_url` 和双端启用状态均一致；官方桌面后端（契约 16）
+   该字段为空，不作要求，也不读取数据库；
 6. 只有满足上一步才可用 `record-execution` 记录 `success`，并提供远端 SHA、`sync_status=verified`
    和完全相同的 `--synced-skill` 集合。
 

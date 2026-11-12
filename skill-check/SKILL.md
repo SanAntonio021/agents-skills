@@ -47,16 +47,16 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 - `*-workspace`、`rescued-skill-materials` 这类目录只当作工作材料或历史材料，不算当前技能。
 - 目录名必须和 `SKILL.md` 里的 `name:` 一致。
 
-## 先分清六层目录（2026-07-11 审计实测）
+## 先分清六层目录（目录结构 2026-11-12 核对）
 
 在这台机器上，排查技能问题时先分清这六层：
 
-1. 自建源码：`D:\BaiduSyncdisk\.agents\skills`（独立 git 仓库 agents-skills，真正该改的地方）
-2. lark 实体层：`C:\Users\SanAn\.agents\skills`（lark-cli 从飞书 well-known 源安装，`.skill-lock.json` 记账；新版 codex-cli 直接读取这一层）
-3. cc-switch 分发：`C:\Users\SanAn\.cc-switch\skills`（自建技能的同步产物 + 第三方技能的安装体）
-4. Claude 运行时：`C:\Users\SanAn\.claude\skills`（symlink→cc-switch，lark 技能是 junction→实体层）
-5. Codex 运行时：`C:\Users\SanAn\.codex\skills`（symlink→cc-switch）＋ `.system\` 内置技能（skill-creator/skill-installer 等，带 `.codex-system-skills.marker`，与 cc-switch 版可能重名双入口）
-6. Codex plugins bundled 技能层：`C:\Users\SanAn\.codex\plugins\cache\...`（插件自带技能，如 bundled pdf）
+1. 自建源码：`D:\BaiduSyncdisk\.agents\skills`（独立 git 仓库 agents-skills，真正该改的地方）；仅供本人使用的技能源码在 `D:\BaiduSyncdisk\.agents\private-skills`
+2. 运行副本实体：`C:\Users\SanAn\.agents\skills`（CC Switch 的技能存储根，自建技能的发布产物和飞书技能都在这里；飞书官方技能由 lark-cli 从飞书 well-known 源安装，`C:\Users\SanAn\.agents\.skill-lock.json` 记账；新版 codex-cli 直接读取这一层；本技能的脚本和旧记录仍称它“lark 实体层”，根名 `lark-entity`）
+3. `C:\Users\SanAn\.cc-switch\skills`：目前只有飞书官方技能的副本，自建技能不在这里，不能据此判断是否已发布
+4. Claude 运行时：`C:\Users\SanAn\.claude\skills`（多数条目是指向第 2 层的链接；`ppt-master` 是实体目录，`synced\` 是 Claude 桌面端同步下来的技能）
+5. Codex 运行时：`C:\Users\SanAn\.codex\skills`（多数条目是指向第 2 层的链接；`ppt-master` 是实体目录）＋ `.system\` 内置技能（skill-creator/skill-installer 等，带 `.codex-system-skills.marker`，与自建版可能重名双入口）
+6. Codex plugins bundled 技能层：`C:\Users\SanAn\.codex\plugins\cache\...`（插件自带技能，如 bundled pdf，可能与用户技能出现同名入口）
 
 用户问“现在到底加载了什么”时，看对应工具的运行时层：Claude 看第 4 层，Codex 看第 5＋6 层再叠加第 2 层（直读）；不要把源文件目录当成当前已加载列表。
 
@@ -78,7 +78,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
    - 单个已安装技能的文件仍在，但来源或启用元数据陈旧时，只读定位具体字段及本机私有文件，再按已有准确授权使用受支持后台接口。更新不一定能修复元数据；接口缺少能力或无法保护私有文件时保留该项，不转入界面重装或数据库兜底。
    - 目标技能已经指向当前分支，但日志仍请求同仓库旧分支压缩包时，只读检查该仓库相关已安装技能的 `repo_branch` 和 `readme_url`。完整列出实际阻断条目；修复沿用已明确范围，新增范围才需要用户决定。
    - 如果技能条目显示“已安装”但启动/同步时报 `Skill 不存在于 SSOT`，还要核对 SSOT 下 `<directory>\SKILL.md` 是否真实存在；这通常是数据库残留记录，不要直接改 Codex 运行时目录。
-   - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、cc-switch 分发目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
+   - 查“源码已经改了 / Claude 改完了 / 为什么运行时还是旧行为”时，同时比较源码、运行副本实体目录、Claude 运行时和 Codex 运行时的已提交 Git blob 或关键行。目录内容一致但行为仍可疑时，再用全新只读会话验证。
    - 查“远端已推送，但 CC Switch 检查更新没有提示”时，先看提交是否只改了 `references/`、`scripts/` 或 `evals/` 等子文件。会改变运行行为的子文件必须在 `SKILL.md` 有对应语义入口；纯 eval 或不影响运行行为的说明不制造无意义入口。实证和诊断顺序见 [references/skill-hygiene.md](references/skill-hygiene.md)。
    - 查“CC Switch 同步后现在是否完整生效”时，按 [references/skill-hygiene.md](references/skill-hygiene.md) 的“源码到双端运行时验收”逐层检查；不能只看面板、软链接或单个 `SKILL.md`。
    - 查“以后该改哪一份”时，最后再回到源文件目录。
@@ -166,7 +166,7 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 - `职责相近但不该直接合并`
   指描述和正文相似，但职责没有完全重合，不能直接当重复。
 - `源码和运行时目录没有同步`
-  指已提交源码已经更新，但 cc-switch 分发目录、Claude 运行时或 Codex 运行时仍是旧版本。结论写明哪一层落后；只读任务给定向同步建议，已有修复授权则按 `agent-rules` 后台发布和验证，不手工修改运行副本。
+  指已提交源码已经更新，但运行副本实体目录、Claude 运行时或 Codex 运行时仍是旧版本。结论写明哪一层落后；只读任务给定向同步建议，已有修复授权则按 `agent-rules` 后台发布和验证，不手工修改运行副本。
 - `链接或路径失效`
   指绝对路径、相对链接、Related Skills 链接或工作流引用失效。
 - `空技能或坏技能`
@@ -178,16 +178,17 @@ python scripts/audit_skill_usage.py --reports-root <reports-root> --date <YYYY-M
 [references/skill-hygiene.md](references/skill-hygiene.md)，依次核对：
 
 1. 源码提交与远端目标分支一致；
-2. cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 及目标技能的来源、目录和 Claude/Codex 启用状态一致；有仓库级阻断线索或现有 helper 要求时，只读核对关联条目，不扩大更新集合；
-3. 技能仓库提交中的全部目标文件与 cc-switch、Claude、Codex 三个运行时副本一致；
+2. legacy 后端：cc-switch 数据库完整，目标仓库的 `branch`/`enabled` 及目标技能的来源、目录和 Claude/Codex 启用状态一致；有仓库级阻断线索或现有 helper 要求时，只读核对关联条目，不扩大更新集合。官方桌面后端不读取数据库，来源与启用状态以发布回执为准；
+3. 技能仓库提交中的全部目标文件与 CC Switch 技能存储根（回执的 `resolved_paths.cc_switch_skills_root`，本机为 `C:\Users\SanAn\.agents\skills`）、Claude、Codex 的已启用副本一致；
 4. 结构校验按目标运行时分开判断：Agent Skills / OpenAI 通用格式与 Claude Code 扩展分别验收；
    严格通用校验器拒绝已确认的 Claude 扩展时，不能把整个 Skill 直接判为无效，也不能把 Claude
    扩展的效果外推给 Codex；相关确定性测试通过；
 5. 用合成数据在 Codex、Claude 全新只读会话分别验证路由和关键安全边界。
 6. 定向同步返回退出码 `0` 和 `runtime_active` 后，再以完全相同的 `ExpectedRemoteCommit` 与
-   `Skills` 运行一次 `-VerifyOnly`；两次结果都必须显示 `cc_switch_metadata.valid == true` 且没有
-   元数据问题，第二次也返回退出码 `0`、`runtime_active`，四层文件集合和 SHA-256 仍一致，才写
-   “运行时已生效”。
+   `Skills` 运行一次 `-VerifyOnly`；两次都返回退出码 `0`、`runtime_active`，`errors` 为空且每个目标
+   技能 `verified` 为真，才写“运行时已生效”。回执字段随后端不同：legacy 后端（契约 15）另须
+   `cc_switch_metadata.valid == true` 且没有元数据问题；官方桌面后端（契约 16）该字段为空，不作要求。
+   完整步骤以 `agent-rules` 的[技能定向发布](../agent-rules/references/skill-publication.md#技能定向发布)为准。
 
 用户只要求核验、或已明确自行完成恢复时，固定提交、目标集合和本机文件声明，使用后台 `-VerifyOnly`；不为了获得更新回执再执行写入。通过只证明当前状态与目标提交一致，不反推是哪次历史操作使其生效。检查失败或实际状态发生变化后再针对性复核。
 

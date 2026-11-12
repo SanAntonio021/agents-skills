@@ -53,7 +53,7 @@ D:\BaiduSyncdisk\.agents\skills\<skill-name>\SKILL.md
 
 1. 自建源码：`D:\BaiduSyncdisk\.agents\skills`（独立 git 仓库 agents-skills，真正该改的地方）；仅供本人使用的技能源码在 `D:\BaiduSyncdisk\.agents\private-skills`
 2. 运行副本实体：`C:\Users\SanAn\.agents\skills`（CC Switch 的技能存储根，自建技能的发布产物和飞书技能都在这里；飞书官方技能由 lark-cli 从飞书 well-known 源安装，`C:\Users\SanAn\.agents\.skill-lock.json` 记账；新版 codex-cli 直接读取这一层；本技能的脚本和旧记录仍称它“lark 实体层”，根名 `lark-entity`）
-3. `C:\Users\SanAn\.cc-switch\skills`：目前只有飞书官方技能的副本，自建技能不在这里，不能据此判断是否已发布
+3. `C:\Users\SanAn\.cc-switch\skills`：CC Switch 在 2026-11-12 把技能存储迁到第 2 层后留下的旧目录，只剩 23 个 `lark-*` 技能的旧副本，不再更新；自建技能不在这里，不能据此判断是否已发布
 4. Claude 运行时：`C:\Users\SanAn\.claude\skills`（多数条目是指向第 2 层的链接；`ppt-master` 是实体目录，`synced\` 是 Claude 桌面端同步下来的技能）
 5. Codex 运行时：`C:\Users\SanAn\.codex\skills`（多数条目是指向第 2 层的链接；`ppt-master` 是实体目录）＋ `.system\` 内置技能（skill-creator/skill-installer 等，带 `.codex-system-skills.marker`，与自建版可能重名双入口）
 6. Codex plugins bundled 技能层：`C:\Users\SanAn\.codex\plugins\cache\...`（插件自带技能，如 bundled pdf，可能与用户技能出现同名入口）

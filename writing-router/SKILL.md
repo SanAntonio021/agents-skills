@@ -1,6 +1,6 @@
 ---
 name: writing-router
-description: 统一写作协作流程，并处理普通中文编辑。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、专利技术交底书、测试与结果分析、调研报告、会议纪要、中文或英文论文，先确定主稿、修改范围和协作方式，再结合对应专业技能完成正文、检查与写回；也直接处理界面文案、普通中文去 AI 味、删废话和无法直接归类的中文材料。投稿事务、论文停稿审查、文献检索和单纯文件排版由对应专门技能处理。
+description: 统一写作协作流程，并处理普通中文编辑。Use when 用户要撰写、重写、润色或审查项目书、技术方案、会前技术交流稿、系统说明、专利技术交底书、测试与结果分析、调研报告、会议纪要、中文或英文论文，先确定主稿、修改范围和协作方式，再结合对应专业技能完成正文、检查与写回；也直接处理界面文案、普通中文去 AI 味、删废话和无法直接归类的中文材料。投稿事务、停稿审查、文献检索和单纯文件排版由对应专门技能处理。
 ---
 
 # 通用写作流程与编辑
@@ -105,8 +105,9 @@ Markdown 正文写作或实质修改时，按 [Markdown 正文写法](references
 ## 相邻任务边界
 
 - 工程判断：申报指标由 `project-writing` 处理；技术方案、独立指标、实验设计和结果解释由 `technical-writing` 处理，按需共用[指标可行性判断](../technical-writing/references/metric-feasibility.md)。仅问判断时直接回答，不自动写报告或改项目。
-- 调研与资料：报告由 `research-report` 连续完成调研和写作；仅检索、下载论文用 `paper-search`、`paper-download`，持续产品库用 `product-research-workbook`，Zotero 笔记读写用现有插件。调用资料工具不自动扩大为报告任务。
+- 调研与资料：报告由 `research-report` 连续完成调研和写作；仅检索、下载论文用 `paper-search`、`paper-download`，持续产品库用 `product-research-workbook`，查 Zotero 笔记和批注用 `zotero-workspace-library`，写入 Zotero 笔记目前没有技能支持，给出可粘贴的文字由用户保存。调用资料工具不自动扩大为报告任务。
 - 论文审查：技术内容、论证、结论、原文及笔记准确性核对和明确要求的模拟审稿由 `paper-review` 处理，局部疑问只检查相关内容；文字与语言审校由 `ieee-manuscript-edit` 处理。
+- 停稿审查：用户要“还要不要改”“按严重程度审”这类结论时，不分文体都用 `paper-review` 的停稿审查；要终稿审校或交付前检查时，用对应文体技能自己的审校。
 - 投稿与制作：投稿合规和事务由 `journal-submission` 处理；按实际产物使用 `docx`、`pdf`、`latex-paper`、`paper-figure-review` 或 `pptx` 的现有流程。准备投稿不自动触发全文审稿，排版不自动授权改写；同时要求内容与格式检查时复用当前稿件和已有检查，仅在范围不明且明显影响工作量时询问。
 
 需要判断完整学术流程时，按需读取 [学术流程地图](references/academic-workflow-map.md)，不要因此加载所有下游技能。

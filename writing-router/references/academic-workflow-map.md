@@ -13,7 +13,7 @@
 | 问题澄清 | 不知道从哪写、方向还乱、帮我想清楚 | 按当前任务澄清关键问题；显式调用 `ask-first` 时用它，为报告调研时由 `research-report` 连续处理 |
 | 调研到报告 | 为报告找材料、做比较、补来源并形成 Word 或 PPT | `research-report`；论文检索用 `paper-search`，文件制作按格式转 `docx` 或 `pptx` |
 | 文献下载 | 下载论文、补 PDF、复用 Zotero 条目及任务分类 | `paper-download`；明确本地交付或只读要求仍优先 |
-| 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，Zotero 使用现有插件，局部核对用 `paper-review` |
+| 论文阅读与笔记 | 按请求整理已有全文；Zotero 笔记读写；技术疑问和笔记准确性核对 | 普通阅读直接处理，查 Zotero 笔记和批注用 `zotero-workspace-library`，写笔记目前没有技能支持，局部核对用 `paper-review` |
 | 指标论证 | 这个指标能否做到、需要什么条件、申报中怎么写 | 申报用 `project-writing`，技术方案或独立工程指标用 `technical-writing`，按需共用指标参考资料 |
 | 工程申报正文 | 工程本子、建设内容、产业化、卡点 | `project-writing` |
 | SCI/IEEE 草稿精修 | 中文改英文、图注、引用、单位、结论强度、润色 SCI 论文 | `ieee-manuscript-edit` |

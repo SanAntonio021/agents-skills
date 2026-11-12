@@ -1,6 +1,6 @@
 ---
 name: visiomaster
-description: 在 Windows 上将已确认的文字讨论或参考图片绘制为可编辑 Visio 流程图、系统架构图和端口连接图，并打开已有 .vsdx 按页面和 Shape ID 局部修改原生模块、文字、分组及连线，保留其他对象。用户要求画 Visio、生成 .vsdx、修改旧 Visio 图或多轮修订时使用。场景起图以 .scene.json 迭代，旧图以当前 .vsdx 迭代；普通栅格科研配图交 research-schematic-imagegen，论文投稿图审查交 paper-figure-review。
+description: 在 Windows 上将已确认的文字讨论或参考图片绘制为可编辑 Visio 流程图、系统架构图和端口连接图，并打开已有 .vsdx 按页面和 Shape ID 局部修改原生模块、文字、分组及连线，保留其他对象。用户要求画 Visio、生成 .vsdx、修改旧 Visio 图或多轮修订时使用。场景起图以 .scene.json 迭代，旧图以当前 .vsdx 迭代；不要求 Visio 的系统框图和科研配图交 research-schematic-imagegen，飞书文档或画板里的图交 lark-whiteboard，论文投稿图审查交 paper-figure-review。
 ---
 
 # Visio 制图与多轮修改

@@ -60,7 +60,7 @@ sections/ 拆分只在稿子超长或多人协作时用；单人单稿默认单�
 ### 4. 参考文献
 
 - 将稿件引用和已核实的文献条目接入 `refs.bib`；缺失或可疑的元数据、DOI 及版本核实交给 `paper-search`，复用其结果。
-- 保留已有 BibTeX key，新增条目沿用工程约定；无约定时使用 `firstauthor-year-keyword`。引用样式遵循目标模板，IEEEtran 工程使用 `IEEEtran.bst`。
+- 保留已有 BibTeX key。从 Zotero 导出的新增条目用 `zotero-workspace-library` 导出的键，不改写；不经 Zotero、手工新增的条目沿用工程约定，无约定时使用 `firstauthor-year-keyword`。引用样式遵循目标模板，IEEEtran 工程使用 `IEEEtran.bst`。
 - 检查正文引用与条目对应、样式及编译结果；需要取得原文时由 `paper-search` 协调 `paper-download`。
 
 ### 5. 内容同步与排版保留

@@ -1,7 +1,7 @@
 ---
 name: paper-review
 description: >-
-  核对论文原文中的具体技术疑问及笔记表述，也负责全文技术内容、论证、结果与结论的一致性审查、A/B/C 停稿审查、明确要求的模拟审稿，以及受邀审稿人的外部同行评审。用户问“这段总结准确吗”“这个指标对应哪里”“图表或公式是什么意思”时，按 source_check 只核对相关内容；普通论文总结和 Zotero 笔记读写由现有 Zotero 插件承接。全文审查、按严重程度审稿、预判审稿意见或填写 EDAS/审稿表进入对应模式。投稿格式和材料合规检查转 journal-submission；准备投稿或最终 Submit 不自动触发全文审稿，终稿文字审校用 ieee-manuscript-edit。
+  核对论文原文中的具体技术疑问及笔记表述，也负责全文技术内容、论证、结果与结论的一致性审查、A/B/C 停稿审查（项目书、技术方案等其他成稿要判断还要不要改时同样适用）、明确要求的模拟审稿，以及受邀审稿人的外部同行评审。用户问“这段总结准确吗”“这个指标对应哪里”“图表或公式是什么意思”时，按 source_check 只核对相关内容；普通论文总结沿用 Zotero 里的阅读工作流，查 Zotero 笔记和批注用 zotero-workspace-library，写入 Zotero 笔记目前没有技能支持。全文审查、按严重程度审稿、预判审稿意见或填写 EDAS/审稿表进入对应模式。投稿格式和材料合规检查转 journal-submission；准备投稿或最终 Submit 不自动触发全文审稿，终稿文字审校用 ieee-manuscript-edit。
 ---
 
 # 论文审查
@@ -20,9 +20,9 @@ description: >-
 
 1. 先读取请求和已有材料，确定是论文局部疑问还是完整文稿审查。
 2. 判断用户角色和模式，不能把真实外部审稿当成普通原文核对或作者侧模拟审稿：
-   - 原文核对（`source_check`）：用户要解释或核实论文中的技术关系、图表、公式、数值，或校正已有阅读笔记时，读取 [references/source-check.md](references/source-check.md)。直接回答相关问题；跳过第 3-6 步、A/B/C 输出和投稿审查门。需要 Zotero 读写时使用现有 Zotero 插件。
-   - 日常审查（默认）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。
-   - 模拟审稿：用户明确要求预判审稿意见、模拟审稿人或相应完整把关时，走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。仅要求投稿格式或材料检查时转 `journal-submission`；普通全文内容审查使用日常审查，不自动增加模拟审稿。
+   - 原文核对（`source_check`）：用户要解释或核实论文中的技术关系、图表、公式、数值，或校正已有阅读笔记时，读取 [references/source-check.md](references/source-check.md)。直接回答相关问题；跳过第 3-6 步、A/B/C 输出和投稿审查门。需要查 Zotero 笔记、批注或读库内 PDF 时用 `zotero-workspace-library`；写入 Zotero 笔记目前没有技能支持，给出可粘贴的文字，由用户在 Zotero 里保存。
+   - 停稿审查（默认的全文审查）：读取 [references/stopline-checklist.md](references/stopline-checklist.md) 作为统一审查口径，走下面第 3-6 步。项目书、技术方案等其他成稿要判断还要不要继续改时也用这一模式。
+   - 模拟审稿：用户明确要求预判审稿意见、模拟审稿人或相应完整把关时，走 [references/submission-gauntlet.md](references/submission-gauntlet.md)（先 9 维预检后模拟审稿），目标刊口径参考 `journal-submission` 的期刊画像及当前官方说明。仅要求投稿格式或材料检查时转 `journal-submission`；普通全文内容审查使用停稿审查，不自动增加模拟审稿。
    - 外部同行评审：用户是受邀审稿人，要评价他人投稿、填写 EDAS/评审表或生成作者可见与 TPC 意见时，读取 [references/external-peer-review.md](references/external-peer-review.md)，按会务表单和评分说明完成真实审稿草稿。
 3. 先按独立根因聚类，再做 `A/B/C` 分类，避免同一问题重复记多次。
 4. 优先识别 `A 类`，不要把单纯措辞偏好包装成严重问题，也不要把同一根因拆成多个新 `A`。

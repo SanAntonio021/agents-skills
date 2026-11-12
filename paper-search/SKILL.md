@@ -21,7 +21,7 @@ metadata:
 - 生成正式参考文献、核验 DOI/出版元数据或修正引用事实：按下方“正式引用核验”处理相关条目及字段，不把具体疑点扩成全清单重查。
 - 仅修 BibTeX 语法、样式、引用键与正文对应或编译报错：`latex-paper`；题名、作者、年份或 DOI 有事实疑点时，本技能只核相关条目。
 - 已有题名、DOI、论文页或清单，要下载 PDF：`paper-download`。
-- 已有 PDF、正文或可读全文，要总结：按请求直接整理；Zotero 笔记用现有插件，技术内容核对用 `paper-review`。
+- 已有 PDF、正文或可读全文，要总结：按请求直接整理；查 Zotero 笔记和批注用 `zotero-workspace-library`，写入 Zotero 笔记目前没有技能支持，给出可粘贴的文字由用户保存；技术内容核对用 `paper-review`。
 - 审查现有论文、模拟审稿或填写审稿意见：`paper-review`。
 - 已完成取证，要写行业、技术、政策或市场调研报告：`research-report`。
 - 普通参数对比、多渠道报价或采购比较表：`xlsx`；明确建立、持续维护产品库或沿用、审计产品库契约：`product-research-workbook`。

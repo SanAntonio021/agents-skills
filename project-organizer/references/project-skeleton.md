@@ -8,7 +8,7 @@
 
 ```text
 <项目>/
-├── README.md  AGENTS.md  项目规范.md
+├── README.md  AGENTS.md  项目规范.md               入口文档；实验项目不建 项目规范.md，规则在 AGENTS
 ├── lab.md                                          实验项目的人工记录，按实验规范建立
 ├── code/  config/                                  代码与配置
 ├── simulation/  measurement/  analysis/  checks/   运行批次：<类别>/YYYYMMDD_HHMMSS_<名称>/

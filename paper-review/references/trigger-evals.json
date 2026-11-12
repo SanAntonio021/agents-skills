@@ -5,15 +5,15 @@
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
     "expected_behavior": "source_check: inspect relevant text and figure, distinguish stages, answer with location; no note write, ABC or submission gate",
-    "reason": "具体原文核对只处理当前疑问，Zotero 插件按需读取笔记。"
+    "reason": "具体原文核对只处理当前疑问，需要读笔记时用 zotero-workspace-library 的检索。"
   },
   {
     "id": "source-check-authorized-note-correction",
     "query": "刚才已经核实这段把单通道速率写成了总速率。请直接修正 Zotero 当前笔记，保留我刚加的其他内容，不用整篇重跑。",
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
-    "expected_behavior": "source_check with Zotero plugin: read latest note, apply only authorized correction, verify saved content; no repeat approval or paid rerun",
-    "reason": "已授权的局部修订由原文核对支持，笔记操作交给 Zotero。"
+    "expected_behavior": "source_check: read latest note via zotero-workspace-library search, give paste-ready correction and its location, state that saving is left to the user; no repeat approval or paid rerun",
+    "reason": "已授权的局部修订由原文核对支持；写入 Zotero 笔记目前没有技能支持，给出替换句由用户保存。"
   },
   {
     "id": "routine-zotero-summary-not-review",
@@ -86,7 +86,7 @@
     "should_trigger": true,
     "expected_primary_skill": "paper-review",
     "expected_behavior": "run-submission-gauntlet-precheck-then-simulated-referees",
-    "reason": "投稿前把关请求：先跑 9 维预检再跑多视角模拟审稿，属于 submission-gauntlet 模式而非日常停稿审查。"
+    "reason": "投稿前把关请求：先跑 9 维预检再跑多视角模拟审稿，属于 submission-gauntlet 模式而非停稿审查。"
   },
   {
     "id": "should-trigger-pre-submission-review-gate",

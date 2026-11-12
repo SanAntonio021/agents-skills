@@ -790,7 +790,7 @@ class LocalEdits(unittest.TestCase):
 
 
 class DeleteUndoRunnerTests(unittest.TestCase):
-    def make_runner(self, operations, curve='line', fail_operation=None):
+    def make_runner(self, operations, curve='line', fail_operation=None, compact=False):
         runner = Runner.__new__(Runner)
         runner.request = {'operations': operations}
         runner.timeout = 1
@@ -842,6 +842,10 @@ class DeleteUndoRunnerTests(unittest.TestCase):
             if kind == 'delete':
                 history = (copy.deepcopy(current), runner.task, {'task_id': runner.task})
                 current['nodes'] = [n for n in current['nodes'] if n['id'] not in op['delete_ids']]
+                if compact:
+                    # The live editor re-ranks the surviving root objects at once.
+                    for rank, survivor in enumerate(sorted(current['nodes'], key=lambda n: n['z_index'])):
+                        survivor['z_index'] = rank
             elif kind == 'undo':
                 if history is None or op.get('undo_receipt') != history[2] or runner.task != history[1]:
                     raise VerificationError('Undo receipt no longer belongs to the current editor')
@@ -893,6 +897,56 @@ class DeleteUndoRunnerTests(unittest.TestCase):
                 self.assertEqual(runner.report['status'], 'verified')
                 self.assertEqual(len(runner.report['steps']), 2)
                 self.assertFalse(runner.uncertain)
+
+    def test_delete_below_other_objects_accepts_native_layer_compaction(self):
+        delete = {'kind': 'delete', 'ids': ['a'], 'delete_ids': ['a', 'line', 'other-line']}
+        for operations in ([delete], [delete, {'kind': 'undo'}]):
+            with self.subTest(operations=operations):
+                runner = self.make_runner(operations, curve=None, compact=True)
+                runner.run()
+                self.assertEqual(runner.report['status'], 'verified')
+                step = runner.report['steps'][0]
+                self.assertEqual((step['save_status'], step['verification_status']), ('confirmed', 'passed'))
+                self.assertEqual(step['raw_exceptions'], [{'id': 'b', 'normalization': 'delete_sibling_layer_compaction',
+                                                           'before_z_index': 2, 'after_z_index': 0}])
+                self.assertFalse(runner.uncertain)
+
+    def test_delete_tells_the_page_adapter_when_an_undo_follows(self):
+        delete = {'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']}
+        for operations, flag in (([delete, {'kind': 'undo'}], True), ([delete], None),
+                                 ([delete, {'kind': 'text', 'id': 'b', 'text': 'changed'}], None)):
+            with self.subTest(operations=operations):
+                runner = self.make_runner(copy.deepcopy(operations), curve=None)
+                original, seen = runner.editor, []
+                def editor(op, expected=None):
+                    if op['kind'] == 'delete':
+                        seen.append(op.get('undo_follows'))
+                    return original(op, expected)
+                runner.editor = editor
+                runner.run()
+                self.assertEqual(seen, [flag])
+                self.assertEqual(runner.report['steps'][0]['operation'], delete)
+
+    def test_adapter_refusal_of_a_delete_before_undo_leaves_the_board_unwritten(self):
+        operations = [{'kind': 'delete', 'ids': ['a'], 'delete_ids': ['a', 'line', 'other-line']}, {'kind': 'undo'}]
+        runner = self.make_runner(operations, curve=None)
+        original = runner.editor
+        def editor(op, expected=None):
+            if op['kind'] == 'delete':
+                self.assertIs(op.get('undo_follows'), True)
+                error = VerificationError('Editor: UNDO_NOT_VERIFIED_FOR_BUILD:multi_object_delete')
+                error.content_write_started = False
+                raise error
+            return original(op, expected)
+        runner.editor = editor
+        with self.assertRaisesRegex(VerificationError, 'UNDO_NOT_VERIFIED_FOR_BUILD'):
+            runner.run()
+        self.assertEqual(len(runner.report['steps']), 1)
+        step = runner.report['steps'][0]
+        self.assertEqual((step['save_status'], step['execution_status'], step['failure_phase']),
+                         ('not_written', 'rejected_before_content_call', 'execute'))
+        self.assertFalse(runner.uncertain)
+        self.assertFalse(any(e[0] == 'editor' and e[2] in ('delete', 'undo') for e in runner.events))
 
     def test_curve_reload_remains_for_delete_without_undo_and_other_edits(self):
         for op in ({'kind': 'delete', 'ids': ['other-line'], 'delete_ids': ['other-line']},

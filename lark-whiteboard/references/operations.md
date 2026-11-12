@@ -132,7 +132,7 @@ python <skill>/scripts/whiteboard.py --request request.json --output-dir <new-ev
 | bring_to_front / send_to_back | ids；置顶或置底，可指定多个对象 |
 | bring_forward / send_backward | ids；上移一层或下移一层，可指定多个对象 |
 | delete | ids 为选择对象；delete_ids 为预期消失的全部 ID，包含子对象及关联线 |
-| undo | 仅放在同一次请求中的 delete 后一步；撤销该删除 |
+| undo | 仅放在同一次请求中的 delete 后一步；撤销该删除。编辑器版本 `73a62bde` 下仅当该删除恰好移除一个形状或一条连线时可用；移除多个对象（含级联绑定线）或独立文本的删除后紧接撤销，在选择和写入前拒绝 |
 
 对齐按原生 `getBounds()` 外框执行，高度不同的模块用垂直居中才会让中线对齐；顶对齐只对齐上边缘。等距按整个选择范围与原生实际顺序计算间距。
 层序命令按服务端规则重排 `z_index`；未请求对象之间的相对层序保持不变，几何、文字、样式和绑定都不改。

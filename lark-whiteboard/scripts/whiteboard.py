@@ -416,9 +416,39 @@ def differences(before, after):
     return dict(added=sorted(b.keys()-a.keys()), removed=sorted(a.keys()-b.keys()), changed=sorted(k for k in a.keys() & b.keys() if not equivalent(a[k], b[k])))
 
 
+def deletion_layer_projection(before, after, op):
+    """Show a deletion result with its surviving siblings on their previous layers.
+
+    The page projection carries native layer indices. Deleting an object makes
+    the editor re-rank that object's surviving siblings to dense indices in
+    unchanged order, the same compaction the saved raw shows. Only that exact
+    re-ranking is neutralized; any other layer change stays visible to the
+    scope comparison.
+    """
+    if op['kind'] != 'delete':
+        return after
+    a, b = ({n['id']: n for n in nodes} for nodes in (before, after))
+    previous = {}
+    for parent in {a[i].get('parent_id', '') for i in a.keys() - b.keys()}:
+        siblings = [i for i in a if a[i].get('parent_id', '') == parent]
+        survivors = [i for i in siblings if i in b]
+        if not any(a[i].get('z_index') != b[i].get('z_index') for i in survivors):
+            continue
+        if any(type(a[i].get('z_index')) is not int or a[i]['z_index'] < 0 for i in siblings):
+            raise VerificationError('Deletion layer normalization requires integer sibling indices')
+        if len({a[i]['z_index'] for i in siblings}) != len(siblings):
+            raise VerificationError('Deletion layer normalization requires unique sibling indices')
+        ordered = sorted(survivors, key=lambda i: a[i]['z_index'])
+        if any(type(b[i].get('z_index')) is not int or b[i]['z_index'] != rank for rank, i in enumerate(ordered)):
+            raise VerificationError('Deletion changed surviving sibling stacking order')
+        previous.update((i, a[i]['z_index']) for i in survivors)
+    return [dict(n, z_index=previous[n['id']]) if n['id'] in previous else n for n in after]
+
+
 def check_scope(before, after, op, *, from_raw=False, group_evidence=None, arrangement_evidence=None):
     if len({n['id'] for n in before}) != len(before) or len({n['id'] for n in after}) != len(after):
         raise VerificationError('Local edit requires unique object IDs')
+    after = deletion_layer_projection(before, after, op)
     delta = differences(before, after)
     ids = set(op.get('ids', [])) | ({op['id']} if 'id' in op else set())
     lookup = {n['id']: n for n in before}
@@ -2996,6 +3026,10 @@ class Runner:
                         raise VerificationError('Undo is only allowed immediately after this session\'s delete')
                     actual['undo_count'] = previous_delete['transaction_count']
                     actual['undo_receipt'] = previous_delete['undo_receipt']
+                if (op['kind'] == 'delete' and index + 1 < len(operations)
+                        and operations[index + 1].get('kind') == 'undo'):
+                    # The page adapter refuses a deletion whose immediate undo is unverified on its build.
+                    actual['undo_follows'] = True
                 phase = 'execute'
                 if op['kind'] == 'connect' and not op.get('template_id'):
                     result = self.create_connection(actual, state, raw, name)

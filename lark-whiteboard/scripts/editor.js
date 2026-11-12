@@ -216,7 +216,7 @@
   if (!['15acf339','73a62bde'].includes(signature)) fail('UNVERIFIED_EDITOR_BUILD:' + signature);
   // Each newer build exposes only the operations exercised in its live trial.
   if(signature==='73a62bde'&&!['enter','observe','canvas_preview','text','caption','caption_position',
-    'move','resize','bring_to_front','reconnect','connect','anchors'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
+    'move','resize','bring_to_front','reconnect','connect','anchors','delete','undo'].includes(op.kind))fail('OPERATION_NOT_VERIFIED_FOR_BUILD:'+op.kind);
   const readiness=entryState();
   // Embedded preview uses BLOCK mode; final permission is available after entry.
   if((op.kind!=='enter'||readiness.entered)&&readiness.can_edit!==true)
@@ -639,6 +639,12 @@
       for (const n of before) if(n.kind==='connector'&&(removed.has(n.start_id)||removed.has(n.end_id)))removed.add(n.id);
       if(stable([...removed].sort())!==stable([...(op.delete_ids||[])].sort()))fail('DELETE_SCOPE_MISMATCH');
       for(const id of removed){const parent=node(id).parent;if(parent?.id&&a.nodeManager.nodeMap.has(parent.id)&&!removed.has(parent.id))fail('GROUP_MEMBER_DELETE_NOT_VERIFIED');}
+      if(signature==='73a62bde'&&op.undo_follows===true){
+        // Live undo on this build re-ordered a shape's cascaded lines and added an empty style to a restored text; only one shape or one line restored exactly.
+        if(removed.size!==1)fail('UNDO_NOT_VERIFIED_FOR_BUILD:multi_object_delete');
+        const kind=before.find(n=>n.id===ids[0]).kind;
+        if(kind!=='shape'&&kind!=='connector')fail('UNDO_NOT_VERIFIED_FOR_BUILD:'+kind+'_delete');
+      }
       selected(ids);cmd('Delete');break;
     }
     case 'undo':

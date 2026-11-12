@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const production=fs.readFileSync(path.join(__dirname,'../scripts/editor.js'),'utf8');
 assert.match(production,/OPERATION_NOT_VERIFIED_FOR_BUILD/);
-assert.match(production,/'connect','anchors'\]\.includes\(op\.kind\)/);
+assert.match(production,/'connect','anchors','delete','undo'\]\.includes\(op\.kind\)/);
 const buildGuard="if (!['15acf339','73a62bde'].includes(signature))";
 const saveGuard="if(!['8a287314','45ddc75e','f0f97b1a'].includes(saveSignature))";
 assert.ok(production.includes(buildGuard));assert.ok(production.includes(saveGuard));

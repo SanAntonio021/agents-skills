@@ -62,6 +62,34 @@ class Boundaries(unittest.TestCase):
             check_scope(nodes, [nodes[1]], dict(kind='delete', ids=['a'], delete_ids=['a']))
         check_scope(nodes, [nodes[1]], dict(kind='delete', ids=['a'], delete_ids=['a', 'line']))
 
+    def test_delete_accepts_only_dense_layer_compaction_in_page_projection(self):
+        nodes = [dict(id='a', z_index=0), dict(id='b', z_index=1), dict(id='c', z_index=2),
+                 dict(id='line', start_id='b', end_id='c', z_index=3), dict(id='d', z_index=4)]
+        op = dict(kind='delete', ids=['b'], delete_ids=['b', 'line'])
+        def survivors(**layers):
+            return [dict(n, z_index=layers.get(n['id'], n['z_index'])) for n in nodes if n['id'] not in op['delete_ids']]
+        # The editor re-ranks the surviving siblings to dense indices in unchanged order.
+        self.assertEqual(check_scope(nodes, survivors(c=1, d=2), op), dict(added=[], removed=['b', 'line'], changed=[]))
+        check_scope(nodes, survivors(), op)
+        for layers in (dict(c=2, d=1), dict(c=1, d=3), dict(a=1, c=0, d=2), dict(c=1), dict(c=1, d=2.0), dict(c=1, d=True)):
+            with self.subTest(layers=layers), self.assertRaises(VerificationError):
+                check_scope(nodes, survivors(**layers), op)
+        # Compaction does not hide another change on the same object.
+        moved = survivors(c=1, d=2)
+        moved[-1]['x'] = 5
+        with self.assertRaisesRegex(VerificationError, 'unrelated object'):
+            check_scope(nodes, moved, op)
+        # A child of a surviving group is not a sibling of the deleted root object.
+        grouped = nodes + [dict(id='g', z_index=5, children=['m']), dict(id='m', parent_id='g', z_index=0)]
+        kept = survivors(c=1, d=2) + [dict(id='g', z_index=3, children=['m']), dict(id='m', parent_id='g', z_index=0)]
+        check_scope(grouped, kept, op)
+        kept[-1]['z_index'] = 1
+        with self.assertRaisesRegex(VerificationError, 'unrelated object'):
+            check_scope(grouped, kept, op)
+        # Other edits still may not change any layer index.
+        with self.assertRaisesRegex(VerificationError, 'unrelated object'):
+            check_scope(nodes, [dict(n, z_index=9) if n['id'] == 'd' else n for n in nodes], dict(kind='move', ids=['a']))
+
     def test_unrelated_mutation_stops(self):
         with self.assertRaises(VerificationError):
             check_scope([dict(id='a', x=0), dict(id='b', x=0)], [dict(id='a', x=1), dict(id='b', x=2)], dict(kind='move', ids=['a']))

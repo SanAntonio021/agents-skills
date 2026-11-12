@@ -163,12 +163,24 @@ class Preview(unittest.TestCase):
             self.assertFalse((runner.output/'preview.png').exists())
 
     def test_white_transition_timeout_is_unavailable_not_visual_pass(self):
-        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,46]):
             runner, _ = self.runner(directory)
             runner.screenshot = lambda **kwargs: png()
             runner.capture_preview()
             self.assertEqual(runner.report['visual_status'],'unavailable')
             self.assertFalse((runner.output/'preview.png').exists())
+
+    def test_preview_can_finish_after_20_seconds_within_45_second_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runner, _ = self.runner(directory)
+            now, sleeps = [0.0], [0]
+            def advance(seconds):
+                sleeps[0] += 1
+                now[0] += 21 if sleeps[0] == 1 else seconds
+            with patch('whiteboard.time.monotonic',side_effect=lambda: now[0]), patch('whiteboard.time.sleep',side_effect=advance):
+                runner.capture_preview()
+            self.assertEqual(runner.report['visual_status'],'needs_review')
+            self.assertTrue((runner.output/'preview.png').is_file())
 
     def test_offscreen_edited_label_is_not_a_reviewable_preview(self):
         with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'):
@@ -193,7 +205,7 @@ class Preview(unittest.TestCase):
             self.assertEqual(runner.report['visual_status'],'unavailable')
 
     def test_visible_ui_or_other_objects_cannot_replace_target_label_pixels(self):
-        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
+        with tempfile.TemporaryDirectory() as directory, patch('whiteboard.time.sleep'), patch('whiteboard.time.monotonic',side_effect=[0,0,0,46]):
             runner, state = self.runner(directory)
             state['nodes'] = [dict(id='line',kind='connector',caption_texts=['caption'])]
             state['label_geometry'] = {'line':dict(available=True,screen_rect=dict(x=4,y=4,width=4,height=4))}
@@ -353,7 +365,7 @@ class Preview(unittest.TestCase):
             self.assertEqual(feedback['viewport']['device_pixel_ratio'],1.01)
 
     def test_native_canvas_changed_viewport_is_not_cropped_with_old_geometry(self):
-        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'),patch('whiteboard.time.monotonic',side_effect=[0,0,0,21]):
+        with tempfile.TemporaryDirectory() as directory,patch('whiteboard.time.sleep'),patch('whiteboard.time.monotonic',side_effect=[0,0,0,46]):
             runner,state = self.runner(directory)
             runner.screenshot = lambda **kwargs: (_ for _ in ()).throw(OSError('Screenshot transport'))
             def editor(op,expected=None):

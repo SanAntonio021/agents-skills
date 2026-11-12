@@ -1909,7 +1909,7 @@ class Runner:
 
     def capture_preview(self):
         try:
-            with self.time_budget(min(self.timeout, 20)):
+            with self.time_budget(min(self.timeout, 45)):
                 return self._capture_preview()
         except DeadlineExceeded:
             self.report.update(visual_status='unavailable', visual_reason='Preview exceeded its observation deadline')

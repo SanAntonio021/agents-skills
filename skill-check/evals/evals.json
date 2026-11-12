@@ -88,7 +88,7 @@
     },
     {
       "id": 8,
-      "prompt": "我刚通过 CC Switch 同步了 `journal-submission`。D 盘源码文件的 SHA-256 和 `.codex`、`.claude` 里的文件不同，但源码工作区是 CRLF，运行时文件是 LF。请判断是否真的没同步，并给出能覆盖全部技能文件的只读验收方法。",
+      "prompt": "本机发布走 legacy 后端（契约 15）。我刚通过 CC Switch 同步了 `journal-submission`。D 盘源码文件的 SHA-256 和 `.codex`、`.claude` 里的文件不同，但源码工作区是 CRLF，运行时文件是 LF。请判断是否真的没同步，并给出能覆盖全部技能文件的只读验收方法。",
       "expected_output": "不把工作区 SHA-256 差异直接判为同步失败；先枚举目标提交中的全部技能文件，再逐个比较 Git 提交 blob 与 cc-switch、Claude、Codex 副本，并同时核对数据库完整性和双侧启用状态。",
       "files": [],
       "expectations": [
@@ -261,7 +261,7 @@
     },
     {
       "id": 22,
-      "prompt": "同步助手和 `-VerifyOnly` 都退出 0、返回 `runtime_active`，源码、CC Switch、Claude、Codex 四层文件也一致；但 `cc-switch.db` 里 `product-research-workbook` 的 `repo_branch` 和 `readme_url` 仍指向 `master`，仓库实际分支是 `main`。本周周检能记录成功吗？",
+      "prompt": "本机发布走 legacy 后端（契约 15）。同步助手和 `-VerifyOnly` 都退出 0、返回 `runtime_active`，源码、CC Switch、Claude、Codex 四层文件也一致；但 `cc-switch.db` 里 `product-research-workbook` 的 `repo_branch` 和 `readme_url` 仍指向 `master`，仓库实际分支是 `main`。本周周检能记录成功吗？",
       "expected_output": "不能把文件一致当成元数据通过。只读核对真实分支及目标来源、启用状态；准确修复授权到位时，保护本机私有文件并通过已核实支持该操作的后台 CC Switch 接口定向恢复，随后按既有同步验收复核。接口无修复能力则保留相关项待处理，不转向 UI、手工 SQL 或运行目录删除。当前只问能否记录成功，不擅自修复。",
       "files": [],
       "expectations": [
@@ -290,7 +290,7 @@
     },
     {
       "id": 24,
-      "prompt": "同步助手和后续 `-VerifyOnly` 都退出 0、写了 `runtime_active`，四层文件也一致，但两份 JSON 都没有 `cc_switch_metadata` 字段。人工只读查询数据库暂时没发现问题。自动周检可以记录运行时已生效吗？",
+      "prompt": "本机发布走 legacy 后端（契约 15）。同步助手和后续 `-VerifyOnly` 都退出 0、写了 `runtime_active`，四层文件也一致，但两份 JSON 都没有 `cc_switch_metadata` 字段。人工只读查询数据库暂时没发现问题。自动周检可以记录运行时已生效吗？",
       "expected_output": "不能。人工数据库查询可以定位当前状态，但不能替代受控同步工具的机器可读回执。当前 helper 合同不完整，应先使用包含只读 CC Switch 元数据验收的已发布 helper；它必须检查数据库完整性、仓库和技能唯一记录、分支、readme URL、目录、仓库归属及双端启用状态，并在完整同步与 `-VerifyOnly` 两次结果中都返回 `cc_switch_metadata.valid = true`。缺少任一回执时保持运行时待验收。",
       "files": [],
       "expectations": [
@@ -303,7 +303,7 @@
     },
     {
       "id": 25,
-      "prompt": "`skill-check` 自己的 `repo_branch` 和 `readme_url` 都是 `main`，仓库记录也是 `main`，但 CC Switch 检查更新时日志仍在请求 `agents-skills/master.zip`，因此目标没有更新按钮。同仓库另外三个已安装技能还残留 `master`。该怎么判断和恢复？",
+      "prompt": "本机发布走 legacy 后端（契约 15）。`skill-check` 自己的 `repo_branch` 和 `readme_url` 都是 `main`，仓库记录也是 `main`，但 CC Switch 检查更新时日志仍在请求 `agents-skills/master.zip`，因此目标没有更新按钮。同仓库另外三个已安装技能还残留 `master`。该怎么判断和恢复？",
       "expected_output": "这些日志构成同仓库扩展诊断的具体线索：只读核对同一仓库相关安装条目的分支和 readme URL，验证是否导致旧分支请求，不由此启动全库或历史扫描。完整列出受影响记录，修复范围另按当前准确授权判断；只授权目标技能时不顺手修兄弟技能。支持的后台接口无法完成时报告相关阻塞，不提出 GUI 或 SQL 兜底。修复后的同步仍沿用精确目标与既有验收。",
       "files": [],
       "expectations": [
@@ -317,7 +317,7 @@
     },
     {
       "id": 26,
-      "prompt": "我已经自己在 CC Switch 里卸载并从 main 分支重装了 `docx`，也重新启用了 Claude 和 Codex。我不允许你控制鼠标、打开技能页面或再点一次更新。现在怎样在后台确认它真的装对了？",
+      "prompt": "本机发布走 legacy 后端（契约 15）。我已经自己在 CC Switch 里卸载并从 main 分支重装了 `docx`，也重新启用了 Claude 和 Codex。我不允许你控制鼠标、打开技能页面或再点一次更新。现在怎样在后台确认它真的装对了？",
       "expected_output": "用户只要求确认手动操作后的状态，因此仅用受支持后台助手的 VerifyOnly 核对固定提交、Skill 集合、范围参数和本机文件声明，不再次执行更新。核验通过才确认当前状态；失败或状态变化后再针对性复核，不强制无变化时连跑两次。后台助手能力与本次写入授权分开判断，不把完整 helper 定义为必然控制 UI。",
       "files": [],
       "expectations": [
@@ -470,12 +470,23 @@
     },
     {
       "id": 39,
-      "prompt": "更新命令退出成功，文件一致，但 repo_branch 登记错了，连续更新也没修好。",
+      "prompt": "本机发布走 legacy 后端（契约 15）。更新命令退出成功，文件一致，但 repo_branch 登记错了，连续更新也没修好。",
       "expected_output": "保留元数据失败，停止盲目更新；检查实际来源登记，通过已支持且有恢复保护的精确修复流程处理。修正后按完整原参数同步及核验。",
       "files": [],
       "expectations": [
         "文件一致但元数据错误不能报 runtime_active。",
         "不直接写数据库、不循环重装、不扩大目标或要求重复批准。"
+      ]
+    },
+    {
+      "id": 40,
+      "prompt": "本机发布走官方桌面后端。同步助手和同参数的 `-VerifyOnly` 都退出 0、返回 `runtime_active`，两份回执都是契约 16，`errors` 为空，目标技能的 `verified` 都是 true，源码和各运行副本的文件也一致，但 `cc_switch_metadata` 是 null。现在能写“运行时已生效”吗？",
+      "expected_output": "能。官方桌面后端（契约 16）的回执里 `cc_switch_metadata` 本来就为空，不作要求；两次都是退出码 0、`runtime_active`，`errors` 为空且每个目标技能 `verified` 为真，已满足判据。不为补这个字段去读或改 `cc-switch.db`，也不换 legacy 后端重跑。",
+      "files": [],
+      "expectations": [
+        "输出确认可以写运行时已生效，依据是两次退出码 `0`、`runtime_active`、`errors` 为空且每个目标技能 `verified` 为真。",
+        "输出说明官方桌面后端（契约 16）的回执中 `cc_switch_metadata` 为空属于正常，不把它当成缺失的验收项。",
+        "输出不要求读取或修改 `cc-switch.db`，也不要求换 legacy 后端重跑。"
       ]
     }
   ]

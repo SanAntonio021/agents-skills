@@ -1,6 +1,6 @@
 # 科研日报与组会 PPT
 
-从会话、项目记录和真实图件整理导师日报或组会汇报，交付可编辑 PPTX。支持 Windows + Codex；采集器也支持 Claude Code 会话，macOS/Linux 完整流程尚未验证。
+从会话、项目记录和真实图件整理导师日报或组会汇报，交付可编辑 PPTX。支持 Windows + Codex；采集器也支持 Claude Code 和 Cursor 会话，macOS/Linux 完整流程尚未验证。
 
 ## 开始使用
 

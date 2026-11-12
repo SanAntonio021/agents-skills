@@ -31,7 +31,10 @@ python scripts/collect_sessions.py --mode week --out "<project-root>/过程文�
 默认读取：
 
 - Codex：`%USERPROFILE%/.codex/sessions/**/rollout-*.jsonl`，以及 `session_index.jsonl` 在时间窗口内更新的归档条目。按 session ID 匹配归档文件，不对整个归档目录执行 stat。仅用户要求排除归档时用 `--no-include-archived`。
-- Claude Code：`%USERPROFILE%/.claude/projects/**/*.jsonl`。自定义位置用 `--codex-root`、`--claude-root`，不扫描其他账号。
+- Claude Code：`%USERPROFILE%/.claude/projects/**/*.jsonl`。
+- Cursor：`%USERPROFILE%/.cursor/projects/*/agent-transcripts/**/*.jsonl`，每轮保留用户请求和最终回答。项目目录按对话所在的文件夹名还原；找不到唯一对应的目录时不猜测，`project` 保留文件夹名，这类对话不会被 `--project-root` 选中。
+
+自定义位置用 `--codex-root`、`--claude-root`、`--cursor-root`，不扫描其他账号；不需要 Cursor 时写 `--cursor-root=`。
 
 事件时间转换为 `Asia/Shanghai`，跨日会话按实际事件纳入。按 `root_id` 归并，子智能体记录作为辅助证据，不列成独立工作。
 

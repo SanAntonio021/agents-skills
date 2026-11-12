@@ -18,7 +18,7 @@ description: >
   Preserve research substance, essential evidence and user edits. Deliver editable text and
   independent images after content review and actual PPTX rendering. Do not use for turning
   a single paper PDF or DOI into a literature presentation.
-compatibility: Windows with local Codex or Claude Code sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support the unchanged group-meeting render path and explicit PDF/HTML exports. Node.js/sharp is optional for SVG input.
+compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support the unchanged group-meeting render path and explicit PDF/HTML exports. Node.js/sharp is optional for SVG input.
 ---
 
 # 科研日报与组会汇报

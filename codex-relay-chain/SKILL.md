@@ -91,7 +91,7 @@ Clash/系统代理由 `clash-verge-chain-proxy` 处理，规则与技能维护�
 - 不打印 OAuth token、完整 `auth.json` 或带 token 的命令行。
 - 不把真实 key 写进 skill、README、提交信息或日志摘要。
 - 不把某一家中转站硬编码成唯一方案。
-- 不直接改 `%USERPROFILE%\.cc-switch\skills` 或 `%USERPROFILE%\.codex\skills` 里的 skill 运行时副本。
+- 不直接改 `%USERPROFILE%\.agents\skills`、`%USERPROFILE%\.cc-switch\skills` 或 `%USERPROFILE%\.codex\skills` 里的 skill 运行时副本。
 - `ccswitch-owned` 下不由技能、脚本或 watcher 直接写 CC Switch 数据库、`config.toml`、`auth.json`、
   provider 或 Common Config；provider 与共同基线通过 CC Switch 变更，Desktop 新任务默认值和任务级
   设置只通过 Codex Desktop 自身交互维护。

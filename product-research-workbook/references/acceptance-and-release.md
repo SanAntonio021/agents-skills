@@ -20,6 +20,6 @@
 
 ## 技能源码发布
 
-技能源码只在 `D:\BaiduSyncdisk\.agents\skills` 修改。测试和评审通过后，精确暂存本任务路径，保留其他用户改动，提交并推送。取得远端 40 位 SHA 后，调用 `Invoke-CcSwitchSkillSync.ps1` 仅同步这次实际改变的技能。
+技能源码只在 `D:\BaiduSyncdisk\.agents\skills` 修改。测试和评审通过后，精确暂存本任务路径，保留其他用户改动，提交并推送。取得远端 40 位 SHA 后，调用 `Invoke-LabSkillSync.ps1` 仅同步这次实际改变的技能。
 
-只有远端源码、`.cc-switch\skills`、`.claude\skills`、`.codex\skills` 的目标文件集合和 SHA-256 全部一致，才能称为运行时生效。新增 Skill 首次安装或四层验收不一致时，停止并报告“源码已推送，但运行时未生效”；不手工复制、不改数据库、不点击全部更新。
+只有用相同参数追加 `-VerifyOnly` 的核验通过（退出码 0、状态 `runtime_active`，远端源码与 Claude、Codex 已启用副本的目标文件集合和 SHA-256 一致），才能称为运行时生效。新增 Skill 首次安装或核验不一致时，停止并报告“源码已推送，但运行时未生效”；不手工复制、不改数据库、不点击全部更新。

@@ -19,7 +19,7 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 ## 开始前
 
-1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态原位续用，不批量迁移、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；新状态和必要回执默认放 `<project-root>/投稿/<任务名>/`，用户指定位置和项目已有正式结构优先；临时截图和调试材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
+1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态原位续用，不批量迁移、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；新状态默认放论文目录根 `<project-root>/paper_<简称>/submission-state.json`；提交件在论文目录根准备，提交当天建立 `paper_<简称>/<序号>_<期刊>_<提交日期>/`，连同必要回执移入；项目尚无论文目录时用 `<project-root>/投稿/<任务名>/`。状态中的路径一律相对项目根目录。用户指定位置和项目已有正式结构优先；临时截图和调试材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
 2. 确认目标期刊、文章类型、当前生命周期阶段和平台。信息不足时只问最阻塞的一项。
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。

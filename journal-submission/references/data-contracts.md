@@ -33,7 +33,7 @@
 
 ## 项目状态 1.1
 
-新任务默认路径：`<project-root>/投稿/<任务名>/submission-state.json`；用户指定位置和项目已有正式结构优先。已有旧路径 `outputs/submission/submission-state.json` 或过程目录中的状态原位续用，不批量迁移、不双写。显式清理该任务时，先将持续状态及必要证据归位、更新路径并运行校验，再清除临时材料。数据版本和 CLI 参数不变。下列 evidence 路径仍相对项目根目录，指向实际正式证据；临时诊断材料使用本任务过程目录，清理前提取必要事实并修正引用。
+新任务默认路径：论文目录根 `<project-root>/paper_<简称>/submission-state.json`；提交件在论文目录根准备，提交当天建立 `paper_<简称>/<序号>_<期刊>_<提交日期>/`，连同必要回执移入；项目尚无论文目录时用 `<project-root>/投稿/<任务名>/submission-state.json`。状态文件放在论文目录后，其中的路径仍相对项目根目录。用户指定位置和项目已有正式结构优先。已有旧路径 `outputs/submission/submission-state.json` 或过程目录中的状态原位续用，不批量迁移、不双写。显式清理该任务时，先将持续状态及必要证据归位、更新路径并运行校验，再清除临时材料。数据版本和 CLI 参数不变。下列 evidence 路径仍相对项目根目录，指向实际正式证据；临时诊断材料使用本任务过程目录，清理前提取必要事实并修正引用。
 
 最小结构：
 
@@ -89,7 +89,7 @@
   "evidence": [
     {
       "type": "paper_review_report",
-      "path": "投稿/任务名/pre-submission-review.md",
+      "path": "paper_简称/1_期刊_提交日期/pre-submission-review.md",
       "summary": "Nine-dimension precheck passed; no open blockers."
     }
   ]
@@ -127,7 +127,7 @@
   "required": true,
   "status": "viewed",
   "viewed_at": "2026-07-26T15:45:00+08:00",
-  "evidence": [{"path": "投稿/任务名/final-review-proof.pdf"}]
+  "evidence": [{"path": "paper_简称/1_期刊_提交日期/final-review-proof.pdf"}]
 }
 ```
 

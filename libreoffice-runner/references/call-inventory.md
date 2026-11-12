@@ -18,6 +18,8 @@
 | Codex bundled cache | `%USERPROFILE%/.codex/plugins/cache/openai-primary-runtime/documents/**/render_docx.py` | policy-bypass | bundled cache 不改；Windows 工作流改用 runner 转 PDF 后再执行非 LibreOffice 步骤。 |
 | Codex bundled cache | `presentations/**/render_presentation.mjs`、模板检查脚本和 documents 文档 | documentation-only | 无可迁移的 Windows direct launch，或只检测/说明 LibreOffice。 |
 
+2026-11-12 补注：运行副本实体现位于 `%USERPROFILE%/.agents/skills`，`.claude/skills` 和 `.codex/skills` 是指向它的链接，`.cc-switch/skills` 只剩飞书技能。上表的 cc-switch 分发、Claude 运行时、Codex 运行时和 Lark 实体层四行是 2026-07-26 的情况；运行副本仍不直接修改。
+
 结论：本地 `xlsx` 包装器仍按原迁移项管理；命令急救卡示例已退役。当前 `docx`、`pptx` 的 Windows
 转换路径已经通过薄适配器调用 runner。继续保持 runner 独立，不把进程、队列或 profile 管理复制进
 文件类型 skill；不改运行时缓存、第三方安装体或上游镜像。

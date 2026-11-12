@@ -4,7 +4,7 @@
 - 状态：`localized`
 - 首次统一调查：`2026-09-30`
 - 最近来源登记审核：`2026-10-26`
-- 说明：来源：飞书官方 well-known 技能包；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 3ee8dbb0fd25a9bb42d33426a821ad8ac4215cda；接受基线为 2026-10-18 官方完整 44 文件包，清单及 SHA-256 见 reports/skill-upstream/2026-10-18/feishu/accepted-installed-manifests.json 中 lark-doc。官方包及许可沿原接管证据，不在此虚构 Git 来源或新的许可结论；后续按整体差异单独审核，不覆盖运行时、不自动接受更新。文档负责位置、空白画板块、token 与 block ID，图示创建编辑交 lark-whiteboard。
+- 说明：来源：飞书官方 well-known 技能包；索引 https://open.feishu.cn/.well-known/skills/index.json。本地接管提交 3ee8dbb0fd25a9bb42d33426a821ad8ac4215cda；接受基线为 2026-10-18 官方完整 44 文件包，接受基线清单与官方原文见 upstream/official-baselines/lark-doc/（取自 reports/skill-upstream/2026-10-18/feishu 的接受清单与同日官方快照）。官方包及许可沿原接管证据，不在此虚构 Git 来源或新的许可结论；后续按整体差异单独审核，不覆盖运行时、不自动接受更新。文档负责位置、空白画板块、token 与 block ID，图示创建编辑交 lark-whiteboard。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。

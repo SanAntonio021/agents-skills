@@ -276,7 +276,24 @@ python <script> record-review --state <reports-root>/state.json `
 
 `status = "localized"` 表示已有来源证据的非 Git 官方包已本地接管。来源索引、实际接受快照和维护边界必须保留在 `notes`；该项不填写虚构 Git source。官方完整包的逐文件检查单独记录，不能把 registry 校验通过解释为官方检查已完成。`confirmed` 和 `none` 的含义及 Git 来源校验保持原样。
 
-本地接管只排除官方覆盖安装和自动更新，不排除更新检测。每周检查仍按官方索引下载这些技能的完整包，与 `notes` 所指的接受快照逐文件比对，不与含本地补充的安装实体比对。官方新增、删除或改动文件时记为待合并更新并提醒用户；确认后在自有源码中按整体差异合并、保留本地补充并发布，再更新 `notes` 中的接受快照。下载或读取失败记为未查成，不视为无更新。没有官方来源的自建技能（`none`）不做这项检查。
+本地接管只排除官方覆盖安装和自动更新，不排除更新检测。每周检查仍按官方索引下载这些技能的完整包，与接受基线逐文件比对，不与含本地补充的安装实体比对。官方新增、删除或改动文件时记为待合并更新并提醒用户；确认后在自有源码中按整体差异合并、保留本地补充并发布，再更新接受基线。下载或读取失败记为未查成，不视为无更新。没有官方来源的自建技能（`none`）不做这项检查。
+
+接受基线放在维护目录的 `upstream/official-baselines/<skill>/`：`baseline.json` 记录官方索引地址、接受时间和逐文件 SHA-256，`files/` 保存当时接受的官方原文，用于生成差异。比对以 `baseline.json` 的哈希为准。合并并发布一次官方更新后，用新接受的官方快照整体替换该目录并更新 `notes`；合并前不改基线。
+
+### 飞书官方包只读检查
+
+飞书官方 well-known 技能包的逐文件检查统一使用 `scripts/check_feishu_official_skills.py`，不为每次检查另写脚本：
+
+```powershell
+python scripts/check_feishu_official_skills.py `
+  --agents-root <维护目录> --out <reports-root>/<YYYY-MM-DD>/feishu
+```
+
+- **范围**：来源锁登记为官方来源且已安装的包，与安装实体及各运行副本比对；登记为 `localized` 的包与接受基线比对。同名但没有官方来源的自建技能列入 `excluded_self_built`，未安装的官方包只列入 `not_installed_candidates`。
+- **产物**：只写入 `--out`，包括 `index.json`、`official/` 官方快照、`diffs/` 差异和 `comparison.json`；标准输出是一份摘要 JSON。同一目录已有快照时须加 `--overwrite`。
+- **退出码**：`0` 查完且无差异，`10` 查完且有差异，`20` 没查完。`20` 时按 `errors` 和 `download_errors` 处理后重跑，不能当作无更新；常见原因是下载失败、`localized` 缺基线，或来源锁仍记官方来源、源码已自有但未登记 `localized`。
+- **不稳定响应**：内容不同的文件会重复下载。多次响应不一致且其中一次与本地一致时列入 `unstable_matching_target`，不计为差异；其余仍计为差异，由执行者阅读 `diffs/` 判断。
+- **边界**：脚本不安装、不修改源码、运行副本、来源锁和基线，也不判断差异是否改变行为。
 
 ## 入口搬迁伴随正文变化
 

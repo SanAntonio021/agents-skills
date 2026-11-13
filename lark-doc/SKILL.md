@@ -24,7 +24,7 @@ metadata:
 - **从零创作 — [`创建工作流`](references/lark-doc-create-workflow.md)**：先完整执行创建工作流，**简单任务不是跳过的理由**；
 - **导入 / 空文档 — [`+create`](references/lark-doc-create.md)**：仅创建空文档或原样导入用户提供的完整内容时，跳过创建工作流。
 - **编辑 / block 直达链接 — [`+update`](references/lark-doc-update.md)**：语义改写、润色、重组、补写或排版均按 update 参考完成。
-- **重排已有内容 — [`重排参考`](references/lark-doc-restructure.md)**：把已有段落或列表改成表格、调整块顺序，而文档里已有图片、附件、画板或填过的表格时，在 update 参考之外再读此参考。重排时带评论或文内链接的块不替换、不删除。
+- **重排已有内容 — [`重排参考`](references/lark-doc-restructure.md)**：段落、列表与表格互换，或调整图文块顺序时，在 update 参考之外再读此参考。保留图片、附件、画板、实验数据和现场备注；纯操作步骤表在内容完整转移并回读核对后可单独删除。重排时带评论或文内链接的块不替换、不删除。具体正文版式由任务所属技能决定，实验步骤按 `lab-notebook`。
 
 ### 辅助能力
 

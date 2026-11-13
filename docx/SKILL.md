@@ -380,13 +380,15 @@ Use guarded Word COM to confirm `NameLocal` only when the user has approved COM 
 
 Legacy `.doc` files must be converted first: `python scripts/office/soffice.py --headless --convert-to docx file.doc`.
 
-```bash
-unzip -q doc.docx -d unpacked/
-find unpacked -type l -delete   # strip symlink entries — docx from external parties is untrusted
-python scripts/merge_runs.py unpacked/   # coalesce fragmented runs so text is findable
-# edit unpacked/word/document.xml in place — do NOT reformat or pretty-print
-(cd unpacked && rm -f ../out.docx && zip -Xr ../out.docx .)
-python scripts/office/validate.py out.docx --original doc.docx   # XSD checks; --auto-repair fixes common issues
+```powershell
+# Unpack, stripping symlink entries — docx from external parties is untrusted
+$skillRoot = "<skill-root>"
+$site = "$skillRoot\scripts"
+python -c "import zipfile,pathlib,sys; sys.path.insert(0,r'$site'); from office.helpers import safe_extract; safe_extract(zipfile.ZipFile('doc.docx'),pathlib.Path('unpacked'))"
+python $skillRoot\scripts\merge_runs.py unpacked\   # coalesce fragmented runs so text is findable
+# edit unpacked\word\document.xml in place — do NOT reformat or pretty-print
+python -c "import pathlib,sys; sys.path.insert(0,r'$site'); from office.helpers import rezip; rezip(pathlib.Path('unpacked'),pathlib.Path('out.docx'))"
+python $skillRoot\scripts\office\validate.py out.docx --original doc.docx   # XSD checks; --auto-repair fixes common issues
 # redlining? add --author "<the name you redlined under>" to check every edit is tracked
 ```
 

@@ -202,10 +202,10 @@ tool; use a trustworthy available file library or existing tool instead of block
 For ordinary paragraph updates, complete the paragraph and reference finalization checks below. When rendering
 is required by the content and layout rules above, render and inspect the affected scope:
 
-```bash
+```powershell
 python scripts/office/soffice.py --headless --convert-to pdf output.docx
 pdftoppm -r 150 -png -aa yes -aaVector yes output.pdf page
-ls page-*.png   # inspect affected pages; all pages for a new full document
+Get-ChildItem page-*.png   # inspect affected pages; all pages for a new full document
 ```
 
 On Windows, `scripts/office/soffice.py` is a thin compatibility adapter. It accepts the limited
@@ -332,9 +332,9 @@ style definition and authorize that exact style ID in the audit.
 Retain the original and capture its hash before editing. The fast paragraph tool includes the strict
 style audit; other editing paths run it after the edit:
 
-```bash
-python scripts/style_guard.py audit \
-  --baseline before.docx \
+```powershell
+python scripts/style_guard.py audit `
+  --baseline before.docx `
   --candidate after.docx
 ```
 
@@ -342,10 +342,10 @@ The command exits nonzero for new or removed styles, unauthorized style-definiti
 paragraph style swaps, direct-formatting drift, newly orphaned styles, or new missing style
 references. An explicitly approved formatting change remains style-driven:
 
-```bash
-python scripts/style_guard.py audit \
-  --baseline before.docx \
-  --candidate after.docx \
+```powershell
+python scripts/style_guard.py audit `
+  --baseline before.docx `
+  --candidate after.docx `
   --allow-style-change ExistingBodyStyleId
 ```
 
@@ -431,7 +431,7 @@ An empty bullet in either view is an artifact of that view, not a defect in the 
 
 Comments require six cross-linked files. Use the helper — directory mode when you'll also be editing `document.xml` (saves an unzip/rezip cycle), `.docx`-direct mode otherwise:
 
-```bash
+```powershell
 # Against an already-unpacked directory (preferred when also placing markers)
 python scripts/comment.py unpacked/ "Fees & expenses cap is too low"
 python scripts/comment.py unpacked/ "Agreed" --parent 0

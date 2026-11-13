@@ -117,7 +117,7 @@ After cleanup:
 - Compare package entry sets and hashes against the source. Explain every changed part.
 - Run the DOCX validator against the source:
 
-```bash
+```powershell
 python scripts/office/validate.py output.docx --original source.docx
 ```
 

@@ -248,6 +248,7 @@ BaseApp、Workspace、Page 或组件任务开始前完整读取 [应用模式与
 - BaseApp（应用模式）中的 Page 和组件使用 `app_token` / `page_id` / `block_id`，表、字段和记录仍使用组件所引用 Base 的 `base_token`；不要混用 token 或把 BaseApp 当作 Base 的别名。
 - 复用现有 BaseApp block 的 `data_config` 只能作为结构模板，首次 Create/Update 前仍要逐项对齐用户显式要求；用户要求排序时必须显式写 `group_by[].sort.order` 或顶层 `sort.order`，不能用旧配置省略的方向或当前 `get-data` 结果顺序代替。
 - 应用页面的 block 与仪表盘 block 是同一套底层实体，但 ID 体系不通用；按当前模块 reference 选择命令和配置协议。
+- BaseApp 文档的协作者权限独立于 Base 角色；成员在 App 里增改数据缺权限时，按 [应用模式与 Workspace](references/lark-base-app.md) 的“成员在 App 里增改数据的权限”处理。
 
 ## Workflow Block
 

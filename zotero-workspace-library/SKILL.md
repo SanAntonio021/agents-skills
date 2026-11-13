@@ -62,6 +62,7 @@ python $zl search --query '检索词' --scope annotations
 python $zl archive --request '<归档请求.json>'
 python $zl collection plan --request '<集合整理请求.json>'
 python $zl collection update --request '<集合整理请求.json>'
+python $zl membership --request '<条目集合归属请求.json>'
 python $zl tags --request '<追加标签请求.json>'
 python $zl prune --request '<核实后的清理请求.json>'
 python $zl operation status --id '<原操作UUID>'
@@ -82,7 +83,7 @@ python $zl operation resume --id '<原操作UUID>'
 
 历史条目缺作者、日期或 URL，但已有可读 PDF 时，先读取原件核对完整题名、型号和版本。确认身份后，可用显式 `parent_key` 加 `parent_pdf_evidence` 提供原附件 key、SHA-256 和具体原文依据；执行层核对附件归属、内容哈希及可读性，以补足独立身份证据，不编造缺失元数据，也不绕过实际题名、DOI、作者或年份冲突。新文件与原附件参数不同时保留双方，不能按同版覆盖。
 
-归档操作只新增集合或集合关联；既有集合的移动、改名须使用单独的 `collection plan/update` 命令，并提供已核实的集合 key、当前版本、名称和父集合。`plan` 只读检查目标层级、同级重名和循环引用；`update` 按 Zotero 对象版本提交并回读确认。它只改集合名称或父集合，不增删集合内条目、附件或子集合。`collections` 可指定已核实 key，或需要建立的实际路径；不按搜索批次新建集合。同库复用条目和文件，跨库不自动复制。已有可读目标版本但字节不同时，由业务层核实版本等价后以 `reuse_pdf` 指定附件；不能仅凭版本名或标题判定等价。
+归档操作只新增集合或集合关联；既有条目的集合归属调整使用 `membership`，请求须提供条目版本、完整旧集合 key 清单、工作区根集合和目标集合。执行器只移除该根集合子树内的旧关联，保留其他工作区关联，按 Zotero 版本条件提交并回读；版本或集合清单变化时停止。既有集合的移动、改名仍使用单独的 `collection plan/update` 命令，并提供已核实的集合 key、当前版本、名称和父集合。`plan` 只读检查目标层级、同级重名和循环引用；`update` 按 Zotero 对象版本提交并回读确认。它只改集合名称或父集合，不增删集合内条目、附件或子集合。`collections` 可指定已核实 key，或需要建立的实际路径；不按搜索批次新建集合。同库复用条目和文件，跨库不自动复制。已有可读目标版本但字节不同时，由业务层核实版本等价后以 `reuse_pdf` 指定附件；不能仅凭版本名或标题判定等价。
 
 `tags` 按条目 key 和读取到的版本追加明确指定的标签，保留原标签、附件和阅读内容，并回读核验；版本变化时重新核对后提交新请求。标签用途由业务层判断，暂未引用不等于没有价值。
 
@@ -116,7 +117,7 @@ python $zl operation resume --id '<原操作UUID>'
 
 ## 执行交接
 
-本技能决定分类并执行归档。使用 `collections` 查询实际集合，使用 `collection plan` 预览、`collection update` 移动或改名既有集合；按回执原样提供当前 key、版本、名称和父集合，计划核对无误后再执行写入。新增文献仍用 `archive --request` 创建或复用父条目、补附件和增加集合关系；已有条目传 `parent_key`，不复制条目或 PDF。业务技能提供身份、版本、用途和授权，写后按 key 回读。
+本技能决定分类并执行归档。使用 `collections` 查询实际集合；既有条目集合归属用 `membership` 并提供版本、完整旧关联、工作区根和目标集合，既有集合移动或改名用 `collection plan/update`；按回执原样提供当前 key、版本、名称和父集合，计划核对无误后再执行写入。新增文献仍用 `archive --request` 创建或复用父条目、补附件和增加集合关系；已有条目传 `parent_key`，不复制条目或 PDF。业务技能提供身份、版本、用途和授权，写后按 key 回读。
 
 Zotero 暂不可用时继续独立的研究工作，并说明尚未完成的归档项；不以项目内长期 PDF 副本替代 Zotero，也不声称已完成归档。
 

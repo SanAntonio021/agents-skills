@@ -434,6 +434,53 @@ class Objects:
                            preserved=True, status='completed', error=None)
         return self.result
 
+    def update_membership(self, create):
+        key = self.request['key']
+        item = self.client.get(self.library, key, children=False)
+        require(not item['data'].get('deleted') and not item['data'].get('parentItem'),
+                'membership_target_not_live_parent')
+        rows = self.client.collections(self.library)
+        by_key = {row['key']: row for row in rows}
+        root, target = self.request['workspace_root'], self.request['target_collection']
+        require(root in by_key and target in by_key, 'membership_collection_not_found')
+
+        def inside(collection_key):
+            seen, cursor = set(), collection_key
+            while cursor:
+                require(cursor not in seen and cursor in by_key, 'collection_hierarchy_invalid')
+                seen.add(cursor)
+                if cursor == root:
+                    return True
+                cursor = by_key[cursor]['data'].get('parentCollection') or False
+            return False
+
+        require(inside(target), 'membership_target_outside_workspace')
+        current = sorted(set(item['data'].get('collections', [])))
+        expected = sorted(self.request['expected_collections'])
+        target_set = sorted({x for x in expected if not inside(x)} | {target})
+        already_applied = current == target_set and item['version'] >= self.request['expected_version']
+        require(already_applied or
+                (current == expected and item['version'] == self.request['expected_version']),
+                'membership_state_changed_requires_review')
+        if current != target_set:
+            require(create, 'membership_update_not_confirmed')
+            library_version = next((value for header, value in self.client.api.last_headers.items()
+                                    if header.lower() == 'last-modified-version'), None)
+            require(library_version is not None and str(library_version).isdigit(),
+                    'library_version_unavailable')
+            body = copy.deepcopy(item['data'])
+            body.update({'key': key, 'version': item['version'], 'collections': target_set})
+            self.mutate('membership_update:' + key, self.prefix + '/items',
+                        body=[body], headers={'If-Unmodified-Since-Version': str(library_version)})
+        after = self.client.get(self.library, key, children=False)
+        require(sorted(set(after['data'].get('collections', []))) == target_set and
+                after['version'] >= item['version'], 'membership_readback_failed')
+        self.result['membershipUpdate'] = {'key': key, 'before': current, 'after': target_set,
+            'preservedOutsideWorkspace': sorted(x for x in target_set if not inside(x)),
+            'workspaceRoot': root, 'targetCollection': target}
+        self.result.update(verified=True, status='completed', error=None)
+        return self.result
+
     def execute(self, create=True):
         if self.receipt['kind'] == 'archive':
             return self.archive(create)
@@ -441,4 +488,6 @@ class Objects:
             return self.prune(create)
         if self.receipt['kind'] == 'tags':
             return self.add_tags(create)
+        if self.receipt['kind'] == 'membership':
+            return self.update_membership(create)
         return self.update_collection(create)

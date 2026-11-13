@@ -96,10 +96,37 @@ def validate_collection(value):
     return value
 
 
+def validate_membership(value):
+    obj(value, {'schema', 'operation_id', 'library', 'key', 'expected_version',
+                'expected_collections', 'workspace_root', 'target_collection'},
+        {'schema', 'library', 'key', 'expected_version', 'expected_collections',
+         'workspace_root', 'target_collection'})
+    require(value['schema'] == 1)
+    if 'operation_id' in value:
+        try:
+            require(str(uuid.UUID(value['operation_id'])) == value['operation_id'], 'invalid_operation_id')
+        except (ValueError, TypeError, AttributeError):
+            raise LibraryError('invalid_operation_id') from None
+    lib = value['library']
+    obj(lib, {'type', 'id'}, {'type'})
+    require((lib['type'] == 'user' and 'id' not in lib) or
+            (lib['type'] == 'group' and type(lib.get('id')) is int and lib['id'] > 0), 'invalid_library')
+    for field in ('key', 'workspace_root', 'target_collection'):
+        key(value[field])
+    require(type(value['expected_version']) is int and value['expected_version'] >= 0)
+    require(isinstance(value['expected_collections'], list) and
+            all(isinstance(x, str) and KEY.fullmatch(x) for x in value['expected_collections']) and
+            len(value['expected_collections']) == len(set(value['expected_collections'])),
+            'invalid_expected_collections')
+    return value
+
+
 def validate(value, kind='archive'):
     value = json.loads(json.dumps(value, allow_nan=False))
     if kind == 'collection':
         return validate_collection(value)
+    if kind == 'membership':
+        return validate_membership(value)
     if kind == 'tags':
         obj(value, {'schema', 'operation_id', 'library', 'key', 'expected_version', 'tags'},
             {'schema', 'library', 'key', 'expected_version', 'tags'})

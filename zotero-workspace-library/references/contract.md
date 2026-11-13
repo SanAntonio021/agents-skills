@@ -92,6 +92,23 @@ Profile 从 `profiles.ini` 选择唯一候选，只读取 API 启用与端口配
 
 更新只改这一个集合的名称和/或父集合；不修改其中的条目关联、附件、笔记、标签或子集合。执行前若集合版本、名称或父集合与请求不符，返回 `collection_state_changed_requires_review`；遇到同级重名或循环引用则拒绝写入。相同目标再次执行为幂等无操作。先运行 `collection plan` 检查回执，再使用相同请求运行 `collection update`。
 
+## 调整条目集合归属
+
+`membership --request` 将一个既有父条目的集合关联调整到指定工作区内的目标集合。请求必须钉住条目 key/version、完整旧集合 key 清单、工作区根集合和目标集合；目标必须位于根集合树内。执行器只替换该工作区树下的关联，保留所有其他工作区关联，并以库版本条件提交后按条目 key 回读。版本或旧集合清单变化时停止；相同请求在目标已落库时可安全回读完成。
+
+```json
+{
+  "schema": 1,
+  "library": {"type": "user"},
+  "key": "ABCD1234",
+  "expected_version": 42,
+  "expected_collections": ["EFGH5678", "IJKL9012"],
+  "workspace_root": "EFGH5678",
+  "target_collection": "IJKL9012"
+}
+```
+
+`expected_collections` 必须是去重后的完整旧关联；目标 key 和根 key 必须来自本库当前集合清单。此命令不改条目元数据、附件、笔记或标签。
 ## 追加条目标签
 
 `tags --request` 为指定的现存父条目追加标签，保留原有标签、集合、附件和阅读内容。先只读获取条目的 key 和 version，写入请求示例：

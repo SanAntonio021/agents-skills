@@ -78,15 +78,15 @@ python <pptx-skill-root>\scripts\office_native_gate.py check <candidate.pptx> `
 
 页面输出目录须为本任务新建目录。若 PowerPoint 已在运行或 gate 返回未验证，保留候选稿，不重试或接管用户窗口。
 
-普通渲染命令（包括组会）保持原兼容渲染行为。日报必须增加 `--daily-report`，跳过 LibreOffice、PDF 和兼容 PNG；只有用户明确要求 PDF 时再增加 `--pdf-render`：
+不加参数时渲染器仍生成兼容 PDF 和逐页 PNG。日报必须增加 `--daily-report`，跳过 LibreOffice、PDF 和兼容 PNG；只有用户明确要求 PDF 时再增加 `--pdf-render`：
 
 ```text
 python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.json" --output-dir "<project-root>/过程文件/<任务>" --base-name <YYYYMMDD> --daily-report
 ```
 
-组会继续使用原命令，不加 `--daily-report`，按原流程生成兼容 PDF 和逐页 PNG。
+组会不加 `--daily-report`，改加 `--no-pdf-render`，同样只生成 PPTX 和 manifest；随后按上面的方式调用一次原生 gate 导出全部页面 PNG（PowerPoint 已在运行时同样不重试、不接管），用这些页面完成下文的完整验收。用户要求 PDF 时，组会命令改用 `--pdf-render`；原生检查无法进行时，用同一 deck 改加 `--pdf-render` 重新生成一次（自动取新名称，不覆盖前一份），交付这一份并附带它的兼容渲染。兼容渲染与 PowerPoint 的换行不同，不用来判断版式。
 
-日报下，`--pdf-render` 调用 `libreoffice-runner` 并生成 PDF/逐页 PNG；`--html-preview` 生成用于预览的 PNG 和自包含 HTML，默认不保留 PDF。二者不属于日报验收门槛。组会未使用 `--daily-report` 时保留原兼容渲染行为。原生模板适配样例测试 `--template-test` 保持兼容渲染验收，不改其模板适配流程。
+`--pdf-render` 调用 `libreoffice-runner` 并生成 PDF/逐页 PNG；`--html-preview` 生成用于预览的 PNG 和自包含 HTML，默认不保留 PDF。二者不属于日报或组会的验收门槛。原生模板适配样例测试 `--template-test` 保持兼容渲染验收，不改其模板适配流程。
 
 非默认环境传 `--config <配置绝对路径>`；路径发现、优先级、持久配置及 runner 临时目录/共享锁约束统一见 [安装与配置](installation.md#安装命令与配置参考)。环境异常时读取该节，不自行绕过 runner。
 
@@ -96,14 +96,14 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 
 只有用户明确要求纯文字汇报时，才设置 `allow_text_only=true`；含真实图件的汇报允许最后一页为纯文字下一步。缺图和空材料会报错，不生成占位成品。
 
-日报使用 `--daily-report` 时生成：
+日报使用 `--daily-report`、组会使用 `--no-pdf-render` 时生成：
 
 - `<name>.pptx`：文字为原生文本框，曲线图和照片为独立图片，可分别移动、缩放、替换。图片内部的数据和文字仍是像素，不宣称可编辑图表数据。
-- `<name>.manifest.json`：版本 3，保留输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明，记录运行配置以及已运行的检查阶段。日报 `--daily-report` 成功状态为 `native_pending`；普通渲染（包括组会）生成兼容 PDF/PNG 后为 `rendered_visual_pending`。两种状态都不代表 PowerPoint 已完成原生检查。
+- `<name>.manifest.json`：版本 3，保留输出路径、图片来源与哈希、幻灯片数量及可编辑对象说明，记录运行配置以及已运行的检查阶段。只生成 PPTX 时成功状态为 `native_pending`；生成兼容 PDF/PNG 后为 `rendered_visual_pending`。两种状态都不代表 PowerPoint 已完成原生检查。
 
-组会和未指定 `--daily-report` 的普通渲染，还会沿用既有流程生成 `<name>.pdf` 与 `<name>_01.png` 等兼容渲染页。
+不加 `--daily-report` 或 `--no-pdf-render` 的普通渲染，还会生成 `<name>.pdf` 与 `<name>_01.png` 等兼容渲染页。
 
-日报默认关闭兼容 PDF/PNG；组会继续默认生成这些内部检查文件。`--pdf-render` 可为日报显式开启兼容渲染并生成 `<name>.pdf` 和 `<name>_01.png` 等页面；`--html-preview` 额外生成自包含 `<name>.html`，不另做版式。manifest 记录实际设置，仅在启用时写入对应输出路径及阶段。HTML 失败可用 `--no-html-preview` 恢复；PDF/PNG 兼容渲染失败可用 `--no-pdf-render` 恢复为只生成 PPTX 的路径。
+`--pdf-render` 可显式开启兼容渲染并生成 `<name>.pdf` 和 `<name>_01.png` 等页面；`--html-preview` 额外生成自包含 `<name>.html`，不另做版式。manifest 记录实际设置，仅在启用时写入对应输出路径及阶段。HTML 失败可用 `--no-html-preview` 恢复；PDF/PNG 兼容渲染失败可用 `--no-pdf-render` 恢复为只生成 PPTX 的路径。
 
 每次执行使用独立输出名称，清单通过同目录临时文件刷新后原子替换。可选渲染失败返回非零状态，保留已生成 PPTX、阶段错误和 runner 诊断；说明 PPTX 已生成但所请求的渲染未完成。清单写入失败时报告该问题，保留旧清单；首次没有有效清单则不能声称可按清单恢复，诊断失败不遮蔽原始错误。
 
@@ -125,11 +125,11 @@ python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.
 
 1. 确认所请求的 PPTX、manifest 及 PDF/PNG/HTML 输出存在且非空。显式生成 HTML 时另行检查其图片和自包含性；HTML 检查不作为 PPTX 交付门槛，用户要求的 HTML 若失败则单独报告。
 2. 确认 PPTX 是有效的 ZIP/Office 包，并且幻灯片数量符合预期。
-3. 确认 PNG 宽度为 1600 像素，高度随实际页面比例计算（默认 16:9 为 900）；每张引用图片均正常显示，缺图必须补齐或调整页面内容后再交付。
-4. 对需要完整视觉验收的流程逐页查看实际 PPTX 渲染，核对所选模板与页面样式、标题层级、正文及图注可读性，图件与文字对应，无遮挡、错误裁切、溢出或缺图占位符；图例和关键数据可读。总览各项须有清楚的段落留白，短句加粗而解释常规，重点检查相邻项及长项换行后的区分。核对页码、编号、引用及页数符合当前稿和本次要求。日报仅执行本节上文规定的页面快速扫查范围。
+3. 每张引用图片在页面图中均正常显示，缺图必须补齐或调整页面内容后再交付。生成了兼容渲染时，另确认其 PNG 宽度为 1600 像素，高度随实际页面比例计算（默认 16:9 为 900）。
+4. 对需要完整视觉验收的流程逐页查看 PowerPoint 原生导出的页面，核对所选模板与页面样式、标题层级、正文及图注可读性，图件与文字对应，无遮挡、错误裁切、溢出或缺图占位符；图例和关键数据可读。总览各项须有清楚的段落留白，短句加粗而解释常规，重点检查相邻项及长项换行后的区分。核对页码、编号、引用及页数符合当前稿和本次要求。日报仅执行本节上文规定的页面快速扫查范围。
 5. 报告准确的输出路径和所有 `未验证` 项。
 6. 用 `python-pptx` 读取文件，检查各页有非空原生文本框、预期数量的独立图片且图片不是整页截图。结合实际渲染确认对象与内容一致；安装了 `pptx` 技能时可复用它的检查工具。
 
-原生 PowerPoint 验证是日报的默认检查项，组会也沿用现有要求。有已安装的 `pptx` 守护程序或其他受控验证工具时，在隔离副本上验证，保留实际打开与导出结果；不能接管或关闭用户实例。没有工具或应用被占用时，日报在轻量结构检查通过后可交付候选并标明“PowerPoint 原生打开与导出未验证”，不把 LibreOffice 渲染冒充原生验证。
+原生 PowerPoint 验证是日报和组会的默认检查项，版式以原生导出为准。有已安装的 `pptx` 守护程序或其他受控验证工具时，在隔离副本上验证，保留实际打开与导出结果；不能接管或关闭用户实例。没有工具或应用被占用时，日报在轻量结构检查通过后可交付候选并标明“PowerPoint 原生打开与导出未验证”；组会可补兼容渲染，只用来确认没有缺图、错图，交付时同样标明该项未验证，换行、溢出等版式问题不据此下结论，也不把 LibreOffice 渲染冒充原生验证。
 
 修改已有 PPT 时先保留原文件，沿用用户指定的制作工具；使用 `python-pptx` 或 XML 编辑时检查有效 OOXML、重复格式节点及可编辑对象，并重新渲染。已安装 `pptx` 技能时可复用安全替换和结构检查工具；没有相应检查能力时明确报告未验证项，已知结构错误必须修复后再交付。

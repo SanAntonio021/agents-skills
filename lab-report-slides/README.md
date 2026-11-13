@@ -34,6 +34,6 @@
 | 版式、生成接口、文件检查与失败恢复 | [制作与验证](references/rendering.md) |
 | 软件安装、路径配置与测试 | [安装与配置](references/installation.md) |
 
-日报只生成 PPTX 和 manifest，不调用 LibreOffice 或生成 PDF；随后通过 PowerPoint 原生打开并一次导出全部页面 PNG。文字是原生文本框，图件可独立移动和替换，图内数据仍是像素。组会保留原兼容渲染流程；PDF 交付仍仅按用户要求，HTML 仅显式请求时生成。
+日报只生成 PPTX 和 manifest，不调用 LibreOffice 或生成 PDF；随后通过 PowerPoint 原生打开并一次导出全部页面 PNG。文字是原生文本框，图件可独立移动和替换，图内数据仍是像素。组会同样只生成 PPTX，完整验收看 PowerPoint 原生导出的页面；PDF 交付仍仅按用户要求，HTML 仅显式请求时生成。
 
 采集脚本不联网，但模型如何处理材料取决于所用服务和账号；本地采集不代表模型完全离线。原始会话、来源清单和私人图件不提交公开仓库，自动凭据遮盖不能替代人工检查。

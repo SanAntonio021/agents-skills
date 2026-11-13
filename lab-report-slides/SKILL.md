@@ -17,7 +17,7 @@ description: >
   Preserve research substance, essential evidence and user edits. Deliver editable text and
   independent images after content review and actual PPTX rendering. Do not use for turning
   a single paper PDF or DOI into a literature presentation.
-compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support the unchanged group-meeting render path and explicit PDF/HTML exports. Node.js/sharp is optional for SVG input.
+compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report and group-meeting checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support explicit PDF/HTML exports and a temporary fallback view when the native check is unavailable. Node.js/sharp is optional for SVG input.
 ---
 
 # 科研日报与组会汇报
@@ -84,7 +84,7 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 **日报**只做轻量文件检查（PPTX 包可读、页数与预期相符、输出非空），随后对隔离副本运行一次 PowerPoint 原生打开并导出全部页面 PNG；快速扫查全部页面，只检查内容遗漏、错图、不可读文字、裁切和严重遮挡，不作审美评判。默认不调用 LibreOffice、不生成 PDF 或 LibreOffice 页面图、不重复完整 OOXML/字体审计或成稿语义审校。出现异常、复杂模板或结构改动时，才升级静态检查。原生检查受阻时不操作用户 PowerPoint；完成轻量检查后可交付候选稿，并明确标记“PowerPoint 原生打开与导出未验证”。修复后只复查受影响项目。
 
-**组会汇报**仍按[内容验收](references/chinese-style.md#内容验收)及[文件验收](references/rendering.md#验证)完成既有验收流程。两类结果分别记录；已知错误修复后交付，未验证项如实说明。
+**组会汇报**仍按[内容验收](references/chinese-style.md#内容验收)及[文件验收](references/rendering.md#验证)完成既有验收流程，版式以 PowerPoint 原生导出的页面为准，LibreOffice 渲染不用来判断版式。两类结果分别记录；已知错误修复后交付，未验证项如实说明。
 
 按制作参考在约定目录交付 PPTX；默认不额外交付 PDF/HTML。只有用户明确要求 PDF 时才生成 PDF；不主动清理过程文件。项目记录沿用共享规范，不追加制作流水。
 

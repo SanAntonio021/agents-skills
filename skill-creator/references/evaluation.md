@@ -35,7 +35,7 @@
 
 ## 展示与后续
 
-默认在对话中分点展示改动、关键样例与限制。需要逐件比较大量成果或用户指定时，使用原有查看器，勿另写一套：
+改动、关键样例与限制默认不贴进回复，用户追问时再分点展示。需要逐件比较大量成果或用户指定时，使用原有查看器，勿另写一套：
 
 ```text
 python <skill-root>/eval-viewer/generate_review.py <iteration-dir> --skill-name <name> --benchmark <benchmark.json> --static <review.html>

@@ -6,7 +6,11 @@
       "prompt": "上一位助手说 prefs.js 没有 debugBridge 配置，token 找不到，让我重启 Zotero 或先 complete 再用 Connector。已有核实的本地正式 PDF，授权归档。请接续。",
       "expected_output": "通过 zotero-workspace-library 的公共 archive 接口处理；由共享连接实现读取凭据并核实能力，不猜偏好名、读取历史认证脚本或展示 token。只读状态可用于解释缺口，正常写入无需模型另记前置检查。结果未知保持原操作编号，不换 Connector。",
       "files": [],
-      "expectations": ["实际调用公共接口", "不把 complete 当作入库补救", "归档回读后报告实际结果"]
+      "expectations": [
+        "实际调用公共接口",
+        "不把 complete 当作入库补救",
+        "归档回读后报告实际结果"
+      ]
     },
     {
       "id": "finalize-after-real-download",
@@ -405,6 +409,19 @@
         "站点、控制与订阅原因分开",
         "不无限重试、改端点或换浏览器绕过",
         "现有 CLI 状态继续兼容并附失败分类"
+      ]
+    },
+    {
+      "id": "publisher-js-wait-continuation",
+      "prompt": "请加载 paper-download，在隔离模拟环境中续做一篇 Optica 论文下载：下载返回 580 字节 HTML，含 Please wait 和 checkjs.cfm；现有 Edge 任务页仍在加载，随后一次工具调用超时，但任务下载目录出现 .crdownload。公开作者副本也有线索。请执行可执行的后续步骤，记录结果；不得访问真实站点或真实 Zotero。",
+      "expected_output": "通过 web-access 在同一任务观察并接续验证，超时后先查原页面和下载；文件完成后核验身份再模拟归档。真实阻塞才转其他来源，不把验证 HTML 或超时误判为无订阅。",
+      "files": [],
+      "expectations": [
+        "先读取 web-access，论文下载不另走 HTTP 脚本",
+        "验证 HTML 不作为最终失败或成功 PDF",
+        "等待与超时恢复复用原 task 并查看下载状态",
+        "不重复点击下载或重建任务、不无限延长时限",
+        "实际结果与模拟证据分开，不声称真实出版社验收"
       ]
     }
   ]

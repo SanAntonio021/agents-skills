@@ -1,6 +1,6 @@
 # 论文全文入口与出版社下载参考
 
-更新时间：2026-10-27。本文件集中维护检索渠道、机构访问与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
+更新时间：2026-11-13。本文件集中维护检索渠道、机构访问与站点经验；目标版本、文件核验和完成条件以 [paper-download](../SKILL.md) 为准，通用联网与授权规则以 [web-access](../../web-access/SKILL.md) 为准。历史站点经验不代表本轮访问成功。
 
 ## 全文入口发现
 
@@ -20,7 +20,7 @@
 
 具体分流：
 
-1. **出版社或机构入口**：确认文章页、DOI、卷期页码和访问状态；尝试公开 direct PDF、浏览器保存和已授权机构下载。若失败，保留错误类型和页面证据。
+1. **出版社或机构入口**：先加载 `web-access`，由其处理文章页、公开 direct PDF、浏览器保存和已授权机构下载；确认 DOI、卷期页码和访问状态，不自行另建 HTTP 下载路径。返回验证 HTML 时先按下文接续浏览器验证；该入口确有阻塞后，保留错误类型和脱敏页面证据，再继续其他来源。
 2. **聚合定位入口**：用准确 DOI、完整题名和作者查 Google Scholar“所有版本”、OpenAlex locations、Unpaywall、CORE、BASE 或领域仓储索引；聚合结果只用于找实际托管页面，不把摘要页或聚合 HTML 当 PDF。
 3. **作者或机构公开副本**：查作者主页、研究组主页、机构仓储、学科仓储和作者公开平台。对可读且身份匹配的 PDF，记录实际版本：出版社排版稿按 `official` 仅在排版和出版标记已核实；接收稿用 `accepted_manuscript`；预印本用 `preprint`；版本身份不能确定用 `unresolved`。作者公开副本可先归档供阅读，但正式版仍标记待补。
 
@@ -70,7 +70,14 @@ Windows 机构模块支持 IEEE Xplore 和 Optica Publishing Group，通过 `scr
 | `finalize` | 使用已核实请求归档，回读通过后关闭本任务；入库成功而收尾失败时只重试收尾。 |
 | `complete` | 保留独立收尾和已授权取消分支，只关闭本任务 tab/popup；不停止 Broker、Edge 或其他任务。 |
 
-下载只通过 `POST /v2/tabs/{targetId}/download`，body 含 `url`、`timeoutMs`、`maxBytes`；同源按 scheme/host/port 判断，额外 PDF 主机须已确认，跳转及 wrapper 内层 URL 受同样约束。完整二进制、长度与 SHA-256 复核后才做 DOI/题名/版本检查；HTML 包装和截断数据不得保存为成功 PDF，不再在本模块重写 CDP/fetch/Base64 下载。
+机构模块下载只通过 `POST /v2/tabs/{targetId}/download`，body 含 `url`、`timeoutMs`、`maxBytes`；同源按 scheme/host/port 判断，额外 PDF 主机须已确认，跳转及 wrapper 内层 URL 受同样约束。完整二进制、长度与 SHA-256 复核后才做 DOI/题名/版本检查；HTML 包装和截断数据不得保存为成功 PDF，不再在本模块重写 CDP/fetch/Base64 下载。
+
+### 验证页和下载超时的接续
+
+- `Please wait`、JavaScript 跳转或 `checkjs.cfm` 表示当前拿到的是验证页面；不证明机构无权限，也不证明传输超时。通过 `web-access` 在同一任务页执行正常页面加载、等待和允许的验证动作，回读实际 URL、页面状态及 PDF 入口后，再从已验证页面继续下载。不要手工重放验证端点、导出 Cookie 或循环请求相同 HTML。
+- 后台标签可以执行 JavaScript；直接 HTTP 请求不会自动完成页面交互。已知出版社依赖会话、验证或动态入口时直接走浏览器，不先试抓；公开静态 PDF 由 `web-access` 路由，不强制打开浏览器。
+- 单次工具超时不等于下载失败。先查看原 task、页面和文件状态；`.crdownload` 未转正时按 `web-access` 的有界等待规则接续，避免重复点击或重建任务。记录工具超时、验证未完成、传输超时和截断等实际原因，不靠盲目增加超时或无限重试。
+- 工具或验证能力不足、站点明确拒绝、需要用户接管时保留现场并按 `web-access` 处理；其他公开来源继续查找。取得文件后仍须检查 `%PDF-`、完整性、可读正文、身份和版本，页面权限信号不能替代文件核验。
 
 handoff 期间不得读取、截图或修改页面；未知登录提交不重复，先查原任务，不能换幂等键或另建任务猜测结果。401/403/429/418、访问检查或挑战按站点层有界处理，与 CDP 控制故障和机构订阅不足分开；文件层保留 `not_pdf`、`incomplete`、`identity_mismatch`、`too_large`、`download_timeout`。本页是流程与历史经验，不是当前真实验收或发布通过记录。
 

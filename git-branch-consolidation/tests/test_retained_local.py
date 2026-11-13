@@ -114,6 +114,21 @@ class RetainedLocalTests(TemporaryGitCase):
         result, report = self.check(repo, primary, records)
         self.assertEqual(result.returncode, 1)
 
+    def test_empty_directories_in_newly_ignored_material_root_pass(self):
+        repo, primary, mirror = self.prepare()
+        write(repo / "data/measurement.csv", "measurement\n")
+        (repo / "data/empty/nested").mkdir(parents=True)
+        self.capture_materials(repo, primary, mirror)
+        records = [self.record(repo, primary, repo, paths=["data/measurement.csv"])]
+        write(repo / ".git/info/exclude", "data/\n")
+        result, report = self.check(repo, primary, records)
+        self.assertEqual(result.returncode, 0, report)
+        write(repo / "data/empty/nested/late.py", "missing_source = True\n")
+        result, report = self.check(repo, primary, records)
+        self.assertEqual(result.returncode, 1)
+        policy = next(item for item in report["checks"] if item["name"] == "working-tree-clean")
+        self.assertIn("data/empty/nested/late.py", policy["detail"]["unclassifiedIgnored"])
+
     def test_root_materials_cannot_move_or_exist_only_in_backup(self):
         repo, primary, mirror = self.prepare()
         write(repo / "data.csv", "measurement\n")

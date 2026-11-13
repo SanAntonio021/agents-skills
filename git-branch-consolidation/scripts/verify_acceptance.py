@@ -23,6 +23,9 @@ BUNDLE_NAME = "repository-recovery.bundle"
 
 
 def run(args, check=True):
+    if os.name == "nt" and str(args[0]) == "git":
+        # Backup refs pinned under refs/backup/... can exceed MAX_PATH.
+        args = [args[0], "-c", "core.longpaths=true", *args[1:]]
     process = subprocess.run(
         [str(value) for value in args],
         stdout=subprocess.PIPE,
@@ -394,11 +397,17 @@ def working_tree_policy(repo: Path, snapshot: Path, protected: dict, expected: s
             if root not in known and not any(path.startswith(root + "/") for path in known | set(exempt)):
                 ignored_unclassified.append(root)
                 continue
-            for item in manifest_for_roots(repo, [root], exclude_roots=exempt):
+            items = manifest_for_roots(repo, [root], exclude_roots=exempt)
+            # Directories whose subtree holds no file or link carry no data.
+            holding = {parent for item in items if item["kind"] != "directory"
+                       for parent in (item["path"].rsplit("/", depth)[0] for depth in range(1, item["path"].count("/") + 1))}
+            for item in items:
                 path = item["path"]
                 if path in known or under(path, retention["rootPaths"]):
                     continue
                 if item["kind"] == "directory" and any(other.startswith(path + "/") for other in known | set(exempt)):
+                    continue
+                if item["kind"] == "directory" and path not in holding:
                     continue
                 ignored_unclassified.append(path)
     cached = git(repo, "diff", "--cached", "--quiet", "--no-ext-diff", "--no-textconv", check=False)
@@ -464,7 +473,8 @@ def integration_checks(repo: Path, snapshot: Path, protected: dict, expected: st
             return
         # --check writes neither index nor working tree; use stdin, not a temp
         # patch inside the repository. Caller checks candidate HEAD and clean index.
-        result = subprocess.run(["git", "--no-optional-locks", "-C", str(repo), "apply", "--reverse", "--check", "--binary", "-"],
+        longpaths = ["-c", "core.longpaths=true"] if os.name == "nt" else []
+        result = subprocess.run(["git", *longpaths, "--no-optional-locks", "-C", str(repo), "apply", "--reverse", "--check", "--binary", "-"],
                                 input=patch, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         digest = hashlib.sha256(patch).hexdigest()
         detail = {"method": "reverse-patch", "source": digest} if result.returncode == 0 else comparison(source, digest)

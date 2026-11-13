@@ -16,8 +16,8 @@ def test_office_security_boundary_is_canonical_and_runtime_paths_are_not_named()
     for fragment in (
         "unique `UserInstallation`",
         "Direct launch of `soffice`",
-        "standing task authorization",
-        "UNSAFE_OFFICE_PROCESS",
+        "Document-edit permission alone does not grant",
+        "Do not connect to, close, save, or alter any existing Office instance",
         "%TEMP%/codex-docx-gates",
         "Reject symbolic links",
     ):

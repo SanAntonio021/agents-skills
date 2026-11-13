@@ -244,9 +244,9 @@ class ParagraphQualityTests(unittest.TestCase):
             "不能隐去影响它的未验证状态", "不把摘要取舍当成删除正文事实的许可",
             "直接交付本轮正文后结束",
             "删去该推断即可，不补一段声明来替它收尾",
-            "材料本身明确的风险、否定和适用范围仍须保留",
-            "首次定义、变量含义和推理必需的前提", "实际回应的观点",
-            "真实反例、比较、风险和适用条件不能按句式删除", "新的章节功能",
+            "安全条件、适用范围和证据限制用具体事实表达",
+            "首次定义、变量含义和推理必需的前提",
+            "真实反例和比较不按句式删除", "新的章节功能",
             "不顺手修改已确认的旧段", "术语重复不等于论点重复",
             "已经清楚自然的文字保持原样", "用户修改或要求重写后，再检查本批",
             "不要求新建临时文件、运行扫描脚本", "只报告问题",
@@ -326,8 +326,8 @@ class ParagraphQualityTests(unittest.TestCase):
         self.assertIn('核对发言人与任务归属，不只沿用上一轮纪要', meeting)
         self.assertIn('只交付本轮所要的部分，不重发或改动已确认部分', meeting)
         router = read_text(ROUTER / 'SKILL.md')
-        self.assertIn('实际读取路由表选定的主技能及本轮所需参考', router)
-        self.assertIn('路由表不能代替文体规则', router)
+        self.assertIn('实际读取文体对应表选定的主技能及本轮所需参考', router)
+        self.assertIn('对应表不能代替专业规则', router)
         self.assertIn('先在原文中定位要概括的结论句', report)
         self.assertIn('不把单项满足改写成综合推荐', report)
         self.assertIn('用户只要摘要时只交付摘要', report)
@@ -353,8 +353,7 @@ class ParagraphQualityTests(unittest.TestCase):
         paper = read_text(SKILLS_ROOT / 'ieee-manuscript-edit/SKILL.md')
         report = read_text(SKILLS_ROOT / 'research-report/SKILL.md')
         vocab = read_text(SKILLS_ROOT / VOCAB)
-        self.assertIn('交付本轮请求的正文或审查意见', router)
-        self.assertIn('默认不附检查记录和改写理由', router)
+        self.assertIn('默认只交付正文或审查意见，不附检查记录和改写理由', router)
         self.assertIn('完整正式稿才运行词表审计', paper)
         self.assertIn('局部文本：只给修改稿', paper)
         self.assertIn('不为这些操作启动完整报告审计', report)

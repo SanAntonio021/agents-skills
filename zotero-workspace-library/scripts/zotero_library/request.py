@@ -100,6 +100,28 @@ def validate(value, kind='archive'):
     value = json.loads(json.dumps(value, allow_nan=False))
     if kind == 'collection':
         return validate_collection(value)
+    if kind == 'tags':
+        obj(value, {'schema', 'operation_id', 'library', 'key', 'expected_version', 'tags'},
+            {'schema', 'library', 'key', 'expected_version', 'tags'})
+        require(value['schema'] == 1)
+        if 'operation_id' in value:
+            try:
+                require(str(uuid.UUID(value['operation_id'])) == value['operation_id'], 'invalid_operation_id')
+            except (ValueError, TypeError, AttributeError):
+                raise LibraryError('invalid_operation_id') from None
+        lib = value['library']
+        obj(lib, {'type', 'id'}, {'type'})
+        require(lib['type'] in {'user', 'group'})
+        require((lib['type'] == 'user' and 'id' not in lib) or
+                (lib['type'] == 'group' and type(lib.get('id')) is int and lib['id'] > 0))
+        key(value['key'])
+        require(type(value['expected_version']) is int and value['expected_version'] >= 0)
+        require(isinstance(value['tags'], list) and 0 < len(value['tags']) <= 30)
+        for tag in value['tags']:
+            string(tag, 255)
+            require(tag == tag.strip(), 'invalid_tag')
+        require(len(set(value['tags'])) == len(value['tags']), 'duplicate_tag')
+        return value
     common = {'schema', 'operation_id', 'library', 'identity', 'parent_key'}
     allowed = common | ({'metadata', 'collections', 'pdf', 'reuse_pdf', 'distinct_candidates',
                          'parent_pdf_evidence'} if kind == 'archive'

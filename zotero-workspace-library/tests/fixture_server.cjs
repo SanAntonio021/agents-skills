@@ -138,7 +138,9 @@ const server=http.createServer(async(req,res)=>{
       if(req.method==='PATCH'){
         const item=map.get(k);if(!item)return send(404,{});
         if(String(item.version)!==req.headers['if-unmodified-since-version'])return send(412,{});
-        save({...item.data,...JSON.parse(body)},map);return send(204,null);
+        save({...item.data,...JSON.parse(body)},map);
+        if(config.patchDisconnect){config.patchDisconnect=false;return res.destroy();}
+        return send(204,null);
       }
       return send(405,{});
     }

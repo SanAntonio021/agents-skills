@@ -406,9 +406,39 @@ class Objects:
         self.result.update(verified=True, status='completed', error=None)
         return self.result
 
+    def add_tags(self, create):
+        key = self.request['key']
+        current = self.client.get(self.library, key, trashed=True)
+        require(not current['data'].get('deleted') and not current['data'].get('parentItem'),
+                'tag_target_not_live_parent')
+        if 'protection_baseline' not in self.receipt:
+            require(create, 'tag_baseline_missing')
+            require(current['version'] == self.request['expected_version'], 'tag_state_changed_requires_review')
+            baseline = snapshot(self.client, self.library, current)
+            old = baseline['parent'].get('tags', [])
+            present = {x['tag'] for x in old}
+            target = copy.deepcopy(old) + [{'tag': x} for x in self.request['tags'] if x not in present]
+            self.receipt['protection_baseline'] = {'parentKey': key, 'snapshot': baseline, 'target_tags': target}
+            self.save()
+        guard = self.receipt['protection_baseline']
+        baseline, target = guard['snapshot'], guard['target_tags']
+        current = self.client.get(self.library, key, trashed=True)
+        if current['data'].get('tags', []) != target:
+            require(create, 'tag_update_not_confirmed')
+            confirm(self.client, self.library, key, baseline)
+            require(current['version'] == self.request['expected_version'], 'tag_state_changed_requires_review')
+            self.mutate('tags:' + key, self.prefix + '/items/' + key, method='PATCH',
+                        body={'tags': target}, headers={'If-Unmodified-Since-Version': str(current['version'])})
+        confirm(self.client, self.library, key, baseline, expected_tags=target)
+        self.result.update(parentKey=key, addedTags=self.request['tags'], verified=True,
+                           preserved=True, status='completed', error=None)
+        return self.result
+
     def execute(self, create=True):
         if self.receipt['kind'] == 'archive':
             return self.archive(create)
         if self.receipt['kind'] == 'prune':
             return self.prune(create)
+        if self.receipt['kind'] == 'tags':
+            return self.add_tags(create)
         return self.update_collection(create)

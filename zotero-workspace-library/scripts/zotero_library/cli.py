@@ -17,7 +17,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description='Shared Zotero commands (JSON output)')
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('status', 'find', 'get', 'collections', 'archive', 'prune', 'collection', 'operation',
+    for name in ('status', 'find', 'get', 'collections', 'archive', 'prune', 'collection', 'tags', 'operation',
                  'export', 'cite', 'read', 'search'):
         p = sub.add_parser(name)
         for option in ('profile', 'base-url', 'policy', 'state-dir'):
@@ -34,7 +34,7 @@ def main(argv=None):
             p.add_argument('--request')
         if name in ('get', 'read'):
             p.add_argument('--key', required=True)
-        if name in ('archive', 'prune', 'cite'):
+        if name in ('archive', 'prune', 'cite', 'tags'):
             p.add_argument('--request', required=True)
         if name == 'collection':
             p.add_argument('action', choices=('plan', 'update'))

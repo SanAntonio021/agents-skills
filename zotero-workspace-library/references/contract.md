@@ -92,6 +92,22 @@ Profile 从 `profiles.ini` 选择唯一候选，只读取 API 启用与端口配
 
 更新只改这一个集合的名称和/或父集合；不修改其中的条目关联、附件、笔记、标签或子集合。执行前若集合版本、名称或父集合与请求不符，返回 `collection_state_changed_requires_review`；遇到同级重名或循环引用则拒绝写入。相同目标再次执行为幂等无操作。先运行 `collection plan` 检查回执，再使用相同请求运行 `collection update`。
 
+## 追加条目标签
+
+`tags --request` 为指定的现存父条目追加标签，保留原有标签、集合、附件和阅读内容。先只读获取条目的 key 和 version，写入请求示例：
+
+```json
+{
+  "schema": 1,
+  "library": {"type": "user"},
+  "key": "ABCD1234",
+  "expected_version": 42,
+  "tags": ["项目：本文已引用"]
+}
+```
+
+标签已存在时不重复添加；对象版本不符时停止并返回 `tag_state_changed_requires_review`。写入前保存保护快照并采用版本条件更新，写后回读核对。结果未知时使用原操作编号查询或恢复，不新建请求绕过。外部并发更改导致回读不一致时保留真实状态并报告未完成；多次读取和写入不构成跨客户端原子事务。
+
 `pdf.sha256` 可选，执行层计算并核对；路径必须绝对路径。PDF 版本保留 `official/accepted_manuscript/preprint/temporary_preprint/unresolved`。版本证据不明时仍可如实保存 `unresolved`，不能据此宣布正式版完成。已有等价版本使用 `reuse_pdf` 替代 `pdf`，字段为 `key/sha256/version/evidence`。不传两者是仅元数据或分类归档，仍执行保护流程。
 
 ## 身份定位与交接

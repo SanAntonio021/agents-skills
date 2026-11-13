@@ -41,13 +41,15 @@ def snapshot(client, library, parent, placeholder=None):
             'children': rows}
 
 
-def confirm(client, library, parent_key, baseline, trashed=()):
+def confirm(client, library, parent_key, baseline, trashed=(), expected_tags=None):
     if not baseline:
         return []
     current = client.get(library, parent_key, trashed=True)
     old_parent = baseline['parent']
     if isinstance(old_parent, str):
         old_parent = json.loads(old_parent)
+    if expected_tags is not None:
+        old_parent = dict(old_parent, tags=expected_tags)
     require(stable(current['data'], parent=True) == stable(old_parent, parent=True),
             'protected_parent_changed')
     # Old native snapshots used collection IDs. The old parent JSON, when

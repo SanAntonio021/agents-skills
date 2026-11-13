@@ -232,7 +232,9 @@ when the user explicitly requests a whole-document template replacement. Read
 governance are documented in [Template presets](references/template/template-presets.md) and
 [Template governance](references/template/template-governance.md).
 
-Use `tongyong-moren` automatically when no formatting source is specified. Otherwise use the selected template:
+When no formatting source is specified, recommend a preset by purpose and audience (`tongyong-moren` is the
+general-report candidate), explain its actual formatting and export only after the user confirms, as required in
+"Word/DOCX 导出前的格式确认" above; do not adopt it silently. Otherwise use the selected template:
 one of the ten bundled profiles, a supplied template/reference `.docx`,
 or the user's `Normal.dotm` when explicitly requested. The complete names and uses are in
 [Template presets](references/template/template-presets.md); legacy aliases remain accepted.

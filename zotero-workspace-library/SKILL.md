@@ -95,7 +95,7 @@ python $zl operation resume --id '<原操作UUID>'
 
 `read` 从库内 PDF 读取物理页码及 PDF 页标签，默认前十页；超过一份 PDF 时必须用 `--attachment` 选定。返回截断、未读页数和 OCR 状态；扫描页明确标记 `needs_ocr`，不能把没有文字层当作没有内容。
 
-`search --scope all/notes/annotations` 搜索笔记正文、批注文字、评论与标签，返回所属论文、附件、物理页码及页标签；无页码的笔记保持未知。`--scope fulltext` 复用 Zotero 已有索引检索，不承诺覆盖未索引或扫描页，不建立独立索引服务。三个上游的参考范围与许可见[功能来源](references/feature-sources.md)。
+`search --scope all/notes/annotations` 搜索笔记正文、批注文字、评论与标签，返回所属论文、附件、物理页码及页标签；无页码的笔记保持未知。`--scope fulltext` 复用 Zotero 已有索引检索，不承诺覆盖未索引或扫描页，不建立独立索引服务。检索必须给检索词，没有列出某篇论文全部笔记和批注的命令。本技能不提供写入或修改笔记的命令：需要保存笔记时给出可粘贴的文字，由用户在 Zotero 里保存。三个上游的参考范围与许可见[功能来源](references/feature-sources.md)。
 
 ## 失败与恢复
 

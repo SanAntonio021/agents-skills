@@ -19,9 +19,9 @@
     "id": "routine-zotero-summary-not-review",
     "query": "把 Zotero 里这篇论文按现有提示词解读，保存成它的子笔记。",
     "should_trigger": false,
-    "expected_primary_skill": "zotero",
+    "expected_primary_skill": "zotero-workspace-library",
     "expected_not_primary_skill": "paper-review",
-    "expected_behavior": "use existing Zotero workflow; no full review, local summary template or publication gate",
+    "expected_behavior": "no review; no skill writes Zotero notes, so give pasteable text for the user to save in Zotero; no full review, local summary template or publication gate",
     "reason": "普通解读不等于核对具体技术疑问或审稿。"
   },
   {

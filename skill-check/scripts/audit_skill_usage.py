@@ -10,7 +10,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
@@ -1755,6 +1755,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
     summary = {
         "version": AUDIT_VERSION,
         "date": args.date,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "window": window.as_dict(),
         "configuration": {
             "skill_roots": [

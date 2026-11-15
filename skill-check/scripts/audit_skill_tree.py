@@ -6,6 +6,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from itertools import combinations
 from pathlib import Path
 from typing import Any
@@ -782,6 +783,7 @@ def scan(root: Path, reports_root: Path, date: str,
     summary = {
         "version": "flat-skill-tree-v1",
         "date": date,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "root": str(root),
         "reports_root": str(reports_root),
         "dependency_roots": [str(path.resolve()) for path in dependency_roots],

@@ -1314,6 +1314,8 @@ def scan_claude_history(
             users: dict[str, MessageRecord] = {}
             users_in_window: set[str] = set()
             tools_found: list[tuple[str, str, str, str, dict[str, Any], str, str]] = []
+            expanded_commands: list[tuple[str, str, str, str, str, str]] = []
+            command_prompts: dict[str, tuple[str, str, str]] = {}
             bridge_session_ids: set[str] = set()
             file_session_ids: set[str] = set()
             for line_number, row in iter_json_lines(path, root, warnings):
@@ -1331,6 +1333,29 @@ def scan_claude_history(
 
                 if row_type == "user":
                     text_value = claude_text_content(row.get("message"))
+                    prompt_id = str(row.get("promptId") or "")
+                    command_match = re.fullmatch(
+                        r"\s*<command-message>([\w.-]+)</command-message>\s*<command-name>/([\w.-]+)</command-name>\s*",
+                        text_value,
+                    )
+                    if command_match and row_id and prompt_id and command_match.group(1) == command_match.group(2):
+                        command_prompts[row_id] = (session_id, prompt_id, command_match.group(1))
+                    parts = row.get("message", {}).get("content") if isinstance(row.get("message"), dict) else None
+                    text_parts = [part.get("text", "") for part in parts if isinstance(part, dict) and part.get("type") == "text"] if isinstance(parts, list) else []
+                    base_parts = [part for part in text_parts if isinstance(part, str) and part.startswith("Base directory for this skill:")]
+                    preceding_command = command_prompts.get(parent_id)
+                    if base_parts and preceding_command and preceding_command[:2] == (session_id, prompt_id):
+                        base_match = re.match(r"Base directory for this skill:\s*([^\r\n]+)", base_parts[0])
+                        if base_match:
+                            base_name = base_match.group(1).strip().rstrip("/\\").replace("\\", "/").rsplit("/", 1)[-1]
+                            if normalize_name(base_name) == normalize_name(preceding_command[2]):
+                                expanded_commands.append((parent_id, session_id, prompt_id, base_name, timestamp, source))
+                                # Preserve any real text that accompanies the injected skill body.
+                                remaining = [part for part in text_parts if part not in base_parts and part.strip()
+                                             and not re.fullmatch(r"\s*<ide_opened_file>.*?</ide_opened_file>\s*", part, re.DOTALL)]
+                                if not remaining:
+                                    continue
+                                text_value = "\n".join(remaining)
                     if text_value.strip() and not claude_user_record_is_internal(row, text_value):
                         user_key = row_id or f"line-{line_number}"
                         users[user_key] = MessageRecord(
@@ -1381,6 +1406,22 @@ def scan_claude_history(
                 continue
 
             eligible_user_ids = set(users)
+            for parent_id, session_id, prompt_id, base_name, timestamp, source in expanded_commands:
+                command = command_prompts.get(parent_id)
+                if not command or command[:2] != (session_id, prompt_id) or normalize_name(command[2]) != normalize_name(base_name):
+                    continue
+                if session_id in bridge_session_ids or parent_id not in users or not timestamp_in_window(
+                    timestamp, window, warnings, source, target="Claude expanded skill"
+                ):
+                    continue
+                matched_keys = aliases.get(normalize_name(command[2]), set())
+                users[parent_id].used_skills.update(matched_keys)
+                for skill_key in sorted(matched_keys):
+                    message = MessageRecord(host="claude", session_id=session_id, timestamp=timestamp,
+                                            text=command[2], source=source, message_id=parent_id, request_id=parent_id)
+                    usage[skill_key].append(build_usage_event(host="claude", kind="expanded_slash_command",
+                                              skill=inventory[skill_key], message=message,
+                                              detail_text=command[2], args=args))
             for tool_id, parent_id, session_id, timestamp, source, args_text, raw_skill in tools_found:
                 if session_id in bridge_session_ids or (session_id, tool_id) in seen_tool_ids:
                     continue

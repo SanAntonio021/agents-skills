@@ -437,6 +437,47 @@ class AuditSkillUsageTests(unittest.TestCase):
         summary = self.run_audit()
         self.assertEqual(summary["usage_evidence"].get("alpha-skill", []), [])
 
+    def test_claude_expanded_slash_command_requires_matching_request_and_path(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        def user(uid, parent, prompt, text):
+            return {"type": "user", "uuid": uid, "parentUuid": parent, "promptId": prompt,
+                    "sessionId": "slash-test", "timestamp": "2026-01-02T00:00:00Z", "message": {"content": text}}
+        def expansion(uid, parent, prompt, directory):
+            return user(uid, parent, prompt, [{"type": "text", "text": "<ide_opened_file>foo</ide_opened_file>"},
+                         {"type": "text", "text": "Base directory for this skill: C:\\skills\\" + directory + "\n\n# skill"}])
+        command = "<command-message>beta-skill</command-message>\n<command-name>/beta-skill</command-name>"
+        self.write_jsonl(self.claude / "sample.jsonl", [
+            user("u1", None, "p1", command), expansion("e1", "u1", "p1", "beta-skill"),
+            expansion("e1-copy", "u1", "p1", "beta-skill"),
+            user("u2", "e1", "p2", command), expansion("e2", "u2", "wrong-prompt", "beta-skill"),
+            user("u3", "e2", "p3", command), expansion("e3", "u3", "p3", "alpha-skill"),
+            user("u4", "e3", "p4", "The beta-skill is mentioned but was not loaded."),
+        ])
+        summary = self.run_audit()
+        evidence = summary["usage_evidence"]["beta-skill"]
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0]["kind"], "expanded_slash_command")
+        self.assertNotIn("alpha-skill", summary["usage_evidence"])
+        self.assertFalse(any(item["source"]["line"] == 1 and item["skill"] == "beta-skill"
+                             for item in summary["classifications"]["疑似漏用"]))
+
+    def test_claude_expanded_skill_preserves_surrounding_user_text(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        rows = [
+            {"type": "user", "uuid": "u1", "promptId": "p1", "sessionId": "mixed", "timestamp": "2026-01-02T00:00:00Z",
+             "message": {"content": "<command-message>beta-skill</command-message><command-name>/beta-skill</command-name>"}},
+            {"type": "user", "uuid": "u2", "parentUuid": "u1", "promptId": "p1", "sessionId": "mixed", "timestamp": "2026-01-02T00:00:01Z",
+             "message": {"content": [{"type": "text", "text": "Base directory for this skill: C:\\skills\\beta-skill\n# body"},
+                                      {"type": "text", "text": "请执行 alpha-skill 专用校验。"}]}},
+        ]
+        self.write_jsonl(self.claude / "sample.jsonl", rows)
+        summary = self.run_audit()
+        self.assertEqual(len(summary["usage_evidence"]["beta-skill"]), 1)
+        self.assertTrue(any(item["skill"] == "alpha-skill" and item["source"]["line"] == 2
+                            for item in summary["classifications"]["疑似漏用"]))
+
     def test_claude_deduplicates_repeated_skill_tools_by_ancestor_user(self) -> None:
         self.write_jsonl(self.codex / "sample.jsonl", [])
         self.write_jsonl(

@@ -1,7 +1,6 @@
 ---
 name: ask-first
 description: 用户显式调用后，先读背景，主动检查提出的问题是否对应真正目标，通过一次一问厘清关键依据、假设和取舍。适用于需求、设计、方案讨论和苏格拉底式问诊，不要求用户先表达困惑。
-disable-model-invocation: true
 ---
 
 # 先问

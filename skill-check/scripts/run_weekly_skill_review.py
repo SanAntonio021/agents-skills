@@ -3143,6 +3143,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     reconcile.add_argument('--reports-root', type=Path, required=True)
     reconcile.add_argument('--evidence', type=Path, required=True)
     reconcile.add_argument('--expected-evidence-sha256', required=True)
+    mirror = subparsers.add_parser('resolve-mirror-diagnostic', help='Resolve a verified mirror-only repair without a publication claim.')
+    add_state_arguments(mirror)
+    mirror.add_argument('--agents-root', type=Path, required=True)
+    mirror.add_argument('--reports-root', type=Path, required=True)
+    mirror.add_argument('--batch-id', required=True)
+    mirror.add_argument('--finding-id', required=True)
+    mirror.add_argument('--expected-batch-fingerprint', required=True)
+    mirror.add_argument('--expected-proposal-fingerprint', required=True)
+    mirror.add_argument('--evidence', type=Path, required=True)
+    mirror.add_argument('--expected-evidence-sha256', required=True)
     return normalize_cli_fingerprints(parser.parse_args(argv))
 
 
@@ -4157,8 +4167,8 @@ def batch_item(batch: dict[str, Any], finding_id: str) -> dict[str, Any] | None:
 
 def refresh_batch_status(batch: dict[str, Any]) -> None:
     statuses = {item.get("status") for item in batch.get("items", [])}
-    if statuses and statuses <= {"success", "blocked_drift"}:
-        batch["status"] = "completed" if statuses == {"success"} else "partial_blocked"
+    if statuses and statuses <= {"success", "resolved_no_publication", "blocked_drift"}:
+        batch["status"] = "partial_blocked" if "blocked_drift" in statuses else "completed"
     elif "failed" in statuses or "blocked_dependency" in statuses:
         batch["status"] = "partial_failed"
     elif statuses <= {"success"}:
@@ -4454,6 +4464,7 @@ def render_plain(payload: dict[str, Any]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     import successor_reconciliation
+    import mirror_resolution
     args = parse_args(argv)
     handlers = {
         "scan": scan_command,
@@ -4463,6 +4474,7 @@ def main(argv: list[str] | None = None) -> int:
         "prepare-execution": prepare_execution_command,
         "record-execution": record_execution_command,
         "reconcile-execution": lambda args: successor_reconciliation.record(args, sys.modules[__name__]),
+        "resolve-mirror-diagnostic": lambda args: mirror_resolution.record(args, sys.modules[__name__]),
     }
     payload, exit_code = handlers[args.command](args)
     if args.json:

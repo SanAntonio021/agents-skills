@@ -335,3 +335,7 @@ evidence/proposal fingerprint、`--classification auto --facts-outcome close` �
 旧版本曾把事实关闭误记为 `revision_staged` 时，可提供 `--misrouted-facts-receipt <原始JSON回执>`。
 接口必须核对原回执、当前 finding、证据及方案指纹、原核查理由和自动拼接的待修订内容完全一致，
 且没有批准或执行批次；仅纠正该误路由并保留历史。任何真实方案修改或不匹配证据均拒绝恢复。
+
+### 仅镜像修复的事实结案
+
+对于原批准明确限定不修改技能正文及接受基线的 `repair-mirror_blocked`，镜像恢复后可用 `resolve-mirror-diagnostic` 核对原批次和方案指纹、批准后的最新完整扫描、上游报告、登记信息、稳定标签和干净的实际镜像。证据文件及其引用报告须提供 SHA-256。该命令只记录 `resolved_no_publication`，保留批准和历史，不生成发布或运行时验收回执；存在其他批次项或依赖项时拒绝并另行核查。

@@ -31,7 +31,7 @@ description: 操作和排查高速链路台架的 AWG、示波器与 DUT，负�
 5. 如果某个前处理项无法稳定读回，只能降级成 best-effort，并说明它不应作为最终性能基线。
 6. 目标是看原始质量对比时，优先做 `AWG OFF/ON` 配对，而不是只看 `MER`。
 7. 目标只是快速确认链路通不通时，优先单次 `SMOKE`，不默认多轮重试。
-8. 按 [执行清单](references/bench-checklist.md) 确认新采集，分开检查帧、配平/确认与正式次数。保存实际采集、必要配置和读回状态，检查本轮相关的功率、底噪与解调指标，保留失败及有效的差结果。指标选取见 [台架结果与台账核对](references/report-and-ledger-checklist.md)。
+8. 按 [执行清单](references/bench-checklist.md) 确认新采集，分开检查帧、配平/确认与正式次数。按 [数据保留原则](../standardize-test-project/references/standard.md#6-保留策略与验收)决定是否保存原始采集；需要保存时一并保留必要配置和读回状态。检查本轮相关的功率、底噪与解调指标，如实记录失败及有效的差结果。指标选取见 [台架结果与台账核对](references/report-and-ledger-checklist.md)。
 9. 结束时默认关闭本任务负责的 `AWG`，除非用户明确要求保持输出开启；独立 RX 会话不操作其他任务的 TX 输出。按项目已有保护和设置恢复策略完成异常收尾。
 
 ## 判断规则

@@ -11,7 +11,8 @@ description: >
   work and draft edits, revise and confirm the overview, then confirm only the items to expand,
   and then confirm source materials and any proposed
   cropped, redrawn or generated visuals before producing the deck;
-  for group meetings, discuss and confirm each section before making the full deck.
+  for group meetings and long reports, confirm template examples, narrative dependencies and
+  page outlines before discussing pages and dispatching confirmed work to one production chat.
   Neither mode requires per-slide approval by default. Give each detail page one core point;
   keep routine editing, execution and validation details in project records.
   Preserve research substance, essential evidence and user edits. Deliver editable text and
@@ -66,11 +67,18 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 ## 2. 组会流程
 
-周报取截至请求日期的最近七个日历日。组会范围不明确时先问范围；选定后逐部分讨论和确认。
+周报取截至请求日期的最近七个日历日。组会范围不明确时先核对上次汇报和项目记录，再确认无法查明的范围。
 
-组会汇报（含周组会）先确定各部分及顺序，再逐部分讨论研究问题、主要内容、结果或判断、证据图和必要展开程度。每部分正文都写明所属项目，即使标题已经标注；按“项目名、直接前因、本次具体动作、结果或当前状态”讲清进展。前因只采用材料中已有的具体问题、需求或前序发现；缺少且影响听众理解时只追问一个问题，不从常识补造。相关的连续动作合并表述，删去抽象套话和解释性操作过程。各部分全部确认后，自行安排分页并生成整套，不再增加总览、提纲或逐页的重复审批。
+组会和长篇汇报按以下顺序推进；简单日报继续使用上面的轻量流程，用户指定时才采用本流程。
 
-已确认的部分同样持续有效，局部更正和已有授权的处理与日报相同。
+1. **确认模板实样。** 按 [模板确认](../pptx/references/presentation-workflow.md#模板实样确认)主动展示参考 PPT 的代表页，确认模仿对象和实际样式，再讨论页面内容。用户已指定文件时直接读取展示，不重复问选哪份；同任务已确认的样式持续有效。
+2. **讨论整体逻辑。** 先确定各项目要让听众知道的结果及其意义，再确定各部分顺序；不能只列工作目录。缺少会改变理解的依据时才提问，不补造前因。
+3. **确定逐页提纲。** 每页用一句话写清核心结论、证据图或结果，以及依赖前面哪项结果。不能说明作用或内容重复的页合并、删除，不预设页数。区分选择前的需求依据和选择后的完整核算；不把某次工程页序当成通用顺序。
+4. **逐页讨论与制作。** 默认采用一个讨论对话和一个制作对话；新建对话须取得宿主要求的明确授权，已有对话复用。按 [共同协作流程](../pptx/references/presentation-workflow.md#内容讨论与制作执行)派发已确认内容，讨论可继续，不必等整套内容确认后才制作。不重问已确认事项，不把尚在讨论的内容交付执行。
+
+每次调整结论或页序，讨论方检查整段的前后依赖，而不只移动当前页；制作方不能为排版方便改变已定逻辑。项目归属在标题或正文清楚表达一次即可，不强制重复。具体工作、结果及必要条件按中文表达参考入页；已有原图、原表和完整 GUI 优先，局部放大只作必要补充。已确认内容持续有效，用户明确要求整套直接制作或简化讨论时遵从其授权。
+
+双稿、用户修改合并和交付节点统一按 [双稿交接与版本](../pptx/references/presentation-workflow.md#双稿交接与版本)执行；只在交付节点留版本，不因逐页制作累积正式版本。
 
 ## 3. 核实素材并制作
 

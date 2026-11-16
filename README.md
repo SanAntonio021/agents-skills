@@ -33,3 +33,9 @@
 - `lark-base` 本地接管飞书官方 Base 技能完整包（与 `larksuite/cli` 仓库内容一致），保留 MIT 许可和官方内容，并补充套餐不含行列权限时的角色配置说明、已有 BaseApp 页面改造检查；后续官方更新先比较整体差异再合并，不直接覆盖本地版本。
 - `lark-doc` 与 `lark-whiteboard` 采用分工维护：`lark-doc` 本地接管官方完整包（当前合并到 2026-11-12 的官方版本），只负责文档位置、空白画板块、文档/画板 token 与 block ID；`lark-whiteboard` 是单个画板内图示能力的唯一 owner，负责图型判断、图内容清单、原生对象创建与局部编辑、回读和看图。系统架构、信号链、接线和模块拓扑使用可编辑原生对象；Mermaid、PlantUML、SVG 仅在用户确认后作为非原生路径使用。官方 `lark-doc` 更新先比较整体差异再合并，不直接覆盖本地版本。
 - 技能发布由 [agent-rules](agent-rules/SKILL.md) 统一执行；运行时生效、管理界面显示与云端分发分别核验，具体流程集中维护在[发布说明](agent-rules/references/skill-publication.md#技能定向发布)。
+
+## 组会与长篇汇报流程
+
+组会流程由 [lab-report-slides](lab-report-slides/SKILL.md) 维护，模板实样确认、双对话分工和双稿交接由 [pptx 协作流程](pptx/references/presentation-workflow.md) 维护。简单日报继续原轻量流程。
+
+2026-11-16 验收：源码提交 `dd4cccbd` 已发布，CC Switch、Claude、Codex 副本及同参数只读复核通过。独立文本行为试跑覆盖模板先行、用户修改与删页保留、占用时暂停替换及日报分流；实际 PPT 对象合并、文件锁和原生渲染未在该试跑中验证，也未开发自动合并工具。

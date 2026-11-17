@@ -1,7 +1,9 @@
 ---
 name: vivado-synth
-description: 编写、检查或重构面向 AMD Vivado 的可综合 Verilog/SystemVerilog RTL，按需使用 RAM、DSP、FSM 等编码模板并配合 vivado-sim 验证。Use this skill when the user needs help with Vivado synthesis strategy selection, synthesis attribute configuration, synth_design option tuning, resource inference control (RAM/DSP/SRL/BRAM), hierarchy optimization (flatten_hierarchy, KEEP_HIERARCHY), OOC (out-of-context) synthesis, incremental synthesis, RTL linting, Block-Level synthesis (BLOCK_SYNTH), or any synthesis optimization decision. Trigger when the user mentions synthesis strategies, synthesis directives, synthesis attributes, resource mapping control, FSM encoding, retiming, or asks how to optimize synthesis results for area/timing/power. This skill provides decision-making knowledge — for TCL command execution, use vivado-tcl skill.
+description: 负责 AMD Vivado 综合策略、资源推断与 RAM/DSP/FSM 编码模板；通用 RTL 逻辑与接口设计由 fpga-rtl 负责。Use this skill when the user needs help with Vivado synthesis strategy selection, synthesis attribute configuration, synth_design option tuning, resource inference control (RAM/DSP/SRL/BRAM), hierarchy optimization (flatten_hierarchy, KEEP_HIERARCHY), OOC (out-of-context) synthesis, incremental synthesis, RTL linting, Block-Level synthesis (BLOCK_SYNTH), or any synthesis optimization decision. Trigger when the user mentions synthesis strategies, synthesis directives, synthesis attributes, resource mapping control, FSM encoding, retiming, or asks how to optimize synthesis results for area/timing/power. This skill provides decision-making knowledge — for TCL command execution, use vivado-tcl skill.
 ---
+
+通用 RTL 编写、接口设计与功能自检使用 [fpga-rtl](../fpga-rtl/SKILL.md)；本技能保留资源推断模板、综合属性与策略。明确的综合任务可直接使用本技能，无需回调总入口。
 
 ## 本地使用约定
 

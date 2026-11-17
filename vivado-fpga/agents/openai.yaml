@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vivado FPGA"
+  short_description: "统一路由 RTL、仿真、约束与 Vivado 工具流程"
+  default_prompt: "Use $vivado-fpga to select the relevant FPGA skills and complete the requested task within its scope."

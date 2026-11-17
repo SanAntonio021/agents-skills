@@ -1,0 +1,4 @@
+interface:
+  display_name: "FPGA RTL"
+  short_description: "设计与验证 RTL 接口、流数据通路和跨域逻辑"
+  default_prompt: "Use $fpga-rtl to design or review the RTL and its functional verification within the requested scope."

@@ -48,7 +48,7 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 旧 `preserve_all`、`approved_selection` 保持原义，后者只决定日常版本；其他唯一内容仍按已确认归档方案保留或保持 `hold`。盘点输出 `target-tree.md`、`target-tree.csv`、`target-tree.sha256` 和 `layout-violations.csv`；配置和清单字段见[配置与清单](references/config-and-manifests.md)。
 
-文件迁移：原样文件同盘使用“记录、移动、复验”；跨盘使用目标目录内临时文件、复验、原子改名。每个稳定文件保留 SHA256，部署前后核对大小、修改时间和已有目标状态；复制需求预留 20% 余量，空间不足时不执行。
+文件迁移：原样文件同盘使用“记录、移动、复验”；跨盘使用目标目录内临时文件、复验、原子改名。每个稳定文件保留 SHA256，部署前后核对大小、修改时间和已有目标状态；复制需求预留 20% 余量，空间不足时不执行。同卷完整工程且目标不存在时，完成清单、恢复和占用检查后使用 `[IO.Directory]::Move` 整目录改名；不要用 `Move-Item` 递归搬目录，失败后也不降级为逐项搬运。具体条件及失败核对见 [Windows 安全规则](references/windows-safety.md#同卷整目录移动)。
 
 部署前核对输入、准备文件、检查材料和目标没有未记录变化，不按修改时间选版本；中断后核实实际文件再续做。缓存和临时文件按显式规则分类，删除进入独立退役清单；云端占位、未支持的重解析点、加密或稀疏文件、多硬链接和无法安全处理的特殊流进入 `hold`。Windows 路径、回收站和云端规则见[Windows 安全规则](references/windows-safety.md)。
 

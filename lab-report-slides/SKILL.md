@@ -2,22 +2,17 @@
 name: lab-report-slides
 description: >
   Generate Chinese advisor daily/weekly research PPTs from recent sessions, project records,
-  experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
-  生成组会 PPT, or turning recent research work into an advisor report.
-  Daily reports cover work since the previous delivered report, including gap days.
-  Reuse existing figures and document screenshots instead of drawing replacement diagrams.
-  For daily reports, inventory the period and verify first-page facts against local records,
-  then show a first-page draft plus reportable work not placed on it, ask once for unrecorded
-  work and draft edits, revise and confirm the overview, then confirm only the items to expand,
-  and then confirm source materials and any proposed
-  cropped, redrawn or generated visuals, then discuss and confirm next-step work before producing the deck;
-  for group meetings and long reports, confirm template examples, narrative dependencies and
-  page outlines before discussing pages and dispatching confirmed work to one production chat.
-  Neither mode requires per-slide approval by default. Give each detail page one core point;
-  keep routine editing, execution and validation details in project records.
-  Preserve research substance, essential evidence and user edits. Deliver editable text and
-  independent images after content review and actual PPTX rendering. Do not use for turning
-  a single paper PDF or DOI into a literature presentation.
+  experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报, 生成组会 PPT, or turning recent
+  research work into an advisor report. Daily reports cover work since the previous delivered
+  report, including gap days, and reuse existing figures and screenshots instead of redrawing;
+  inventory the period, verify first-page facts against local records, show a draft first page
+  plus reportable work not placed on it, then confirm the overview, the items to expand, the
+  source materials and the next-step work. Group meetings and long reports confirm template
+  examples, narrative dependencies and page outlines, then dispatch confirmed work to one
+  production chat. Neither mode requires per-slide approval. Preserve research
+  substance, evidence and user edits; deliver editable text and independent images after content
+  review and real PPTX rendering. Do not use for turning a single paper PDF or DOI into a
+  literature presentation.
 compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report and group-meeting checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support explicit PDF/HTML exports and a temporary fallback view when the native check is unavailable. Node.js/sharp is optional for SVG input.
 ---
 

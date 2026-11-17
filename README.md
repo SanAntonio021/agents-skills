@@ -36,6 +36,8 @@
 
 ## 组会与长篇汇报流程
 
-组会流程由 [lab-report-slides](lab-report-slides/SKILL.md) 维护，模板实样确认、双对话分工和双稿交接由 [pptx 协作流程](pptx/references/presentation-workflow.md) 维护。简单日报继续原轻量流程。
+组会流程由 [lab-report-slides](lab-report-slides/SKILL.md) 维护，模板实样确认、双对话分工和双稿交接由 [pptx 协作流程](pptx/references/presentation-workflow.md) 维护。简单日报继续轻量制作与验收。
+
+2026-11-17：日报在素材确认后增加“讨论并确认下一步工作”，再进入制作；组会末页同样先讨论。已确认安排直接沿用，未确认建议不写入PPT。两次独立文本行为试跑分别验证主动讨论和复用已有确认，均通过；本次仅修改流程文字，未重跑PPT渲染。
 
 2026-11-16 验收：源码提交 `dd4cccbd` 已发布，CC Switch、Claude、Codex 副本及同参数只读复核通过。独立文本行为试跑覆盖模板先行、用户修改与删页保留、占用时暂停替换及日报分流；实际 PPT 对象合并、文件锁和原生渲染未在该试跑中验证，也未开发自动合并工具。

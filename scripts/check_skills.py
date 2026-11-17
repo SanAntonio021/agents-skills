@@ -77,25 +77,45 @@ def check_frontmatter(root, d):
     return errors, warnings
 
 
-def check_files(root):
+def strip_code(text):
+    """去掉围栏代码块与行内代码，避免把语法示例当成真链接。"""
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    text = re.sub(r"~~~.*?~~~", "", text, flags=re.S)
+    return re.sub(r"`[^`\n]*`", "", text)
+
+
+def check_files(root, skills):
     errors, warnings = [], []
+    tops = {d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d))}
     for base, subdirs, names in os.walk(root):
         subdirs[:] = [s for s in subdirs if s != ".git"]
         for n in names:
             path = os.path.join(base, n)
             rel = os.path.relpath(path, root)
+            top = rel.split(os.sep)[0]
+            # 只有真正的技能目录（含 SKILL.md）和仓库根文件参与内容检查
+            if os.sep in rel and top not in skills:
+                continue
             size = os.path.getsize(path)
             if size > BIG_FILE:
                 warnings.append(f"{rel}: {size // 1024} KB，可考虑 LFS 或 releases")
             if os.path.splitext(n)[1] not in TEXT_EXT or size > 2 * 1024 * 1024:
                 continue
             body = open(path, encoding="utf-8", errors="replace").read()
-            if n.endswith(".md"):
-                for target in MD_LINK.findall(body):
+            # evals/ 下是评测用的合成样例，链接可以故意指向不存在的路径
+            if n.endswith(".md") and "/evals/" not in "/" + rel:
+                for target in MD_LINK.findall(strip_code(body)):
                     target = target.split("#")[0].strip()
-                    if target and not target.startswith(("http://", "https://", "mailto:", "#")):
-                        if not os.path.exists(os.path.normpath(os.path.join(base, target))):
-                            errors.append(f"{rel}: 链接指向不存在的路径 {target}")
+                    if not target or target.startswith(("http://", "https://", "mailto:", "#")):
+                        continue
+                    resolved = os.path.normpath(os.path.join(base, target))
+                    if os.path.exists(resolved):
+                        continue
+                    outside = os.path.relpath(resolved, root).split(os.sep)[0]
+                    if outside not in tops and outside != "..":
+                        warnings.append(f"{rel}: 引用了仓库中不存在的目录 {target}（疑似上游兄弟技能未接入）")
+                    else:
+                        errors.append(f"{rel}: 链接指向不存在的路径 {target}")
             for i, line in enumerate(body.splitlines(), 1):
                 if PRIVATE_PATH.search(line) and not re.search(r"[A-Za-z]:\\path\\", line):
                     warnings.append(f"{rel}:{i}: 写死了本机私有路径 {line.strip()[:80]}")
@@ -117,7 +137,7 @@ def main():
         e, w = check_frontmatter(root, d)
         errors += e
         warnings += w
-    e, w = check_files(root)
+    e, w = check_files(root, set(skills))
     errors += e
     warnings += w
     for label, items in (("错误", errors), ("提示", warnings)):

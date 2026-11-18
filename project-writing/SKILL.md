@@ -33,7 +33,7 @@ description: 中文工程项目书、申请书正文、专家答复和终稿审�
 
 工程表述应明确“任务—能力—适配对象—真实约束”。“卡点”写当前能力缺口及其后果；“研发需求”写要形成的能力和验收条件，不提前宣称已经突破。
 
-写子课题的工程卡点、研发需求、对标和考核指标时，按需读取[工程课题申报写作协议](references/proposal-defense-protocol.md)。按老师批注逐条补写或填写表格化申报材料时，按需读取[工程申报修订经验](references/proposal-revision-lessons.md)。
+写子课题的工程卡点、研发需求、对标和考核指标时，按需读取[工程课题申报写作协议](references/proposal-defense-protocol.md)。按老师批注逐条补写、填写表格化申报材料，或撰写大赛、奖项等多栏目限字数申报表时，按需读取[工程申报修订经验](references/proposal-revision-lessons.md)；回填 Word 表格单元格交给 `docx` 的单元格工具。
 
 ## `expert_reply`
 

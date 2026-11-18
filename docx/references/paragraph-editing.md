@@ -78,9 +78,9 @@ Do not combine multiple edits that compete for the same paragraph or insertion l
 
 ## Scope and evidence
 
-Table paragraphs and targets containing formulas, fields, hyperlinks, revisions or mixed character
-formatting need the existing specialized workflow. Do not strip these structures or flatten their
-text to force them through this tool. Unsupported cases return a clear failure for routing.
+Table paragraphs use the cell tool below. Targets containing formulas, fields, hyperlinks, revisions
+or mixed character formatting need the existing specialized workflow. Do not strip these structures
+or flatten their text to force them through either tool. Unsupported cases return a clear failure for routing.
 
 The output must be a new path. The entire batch is preflighted and checked before publication; a
 failed match or conflict does not produce a partial deliverable. The source is preserved, style
@@ -99,6 +99,41 @@ Report content/style, reference structure, native refresh and unchecked layout s
 unavailable native refresh leaves the candidate unfinished, not a final passed deliverable. Avoid
 project-specific scripts, snapshots or PDF/PNG for these small edits; the two required records are
 not an extra report collection. Update a current-version pointer only when the project already needs one.
+
+## Table cells
+
+Application forms keep each section as a table row: a label cell and a body cell. Backfill such
+cells with `scripts/edit_cells.py`, not with ad hoc scripts:
+
+```powershell
+python scripts/edit_cells.py inspect form.docx --label "项目简介"
+python scripts/edit_cells.py apply form.docx edits.json updated.docx
+python scripts/edit_cells.py check form.docx edits.json updated.docx
+```
+
+`inspect` lists labelled rows with their body paragraphs, run counts, formatting uniformity and
+character counts (punctuation included, paragraph breaks excluded), which also serves section
+length limits. Labels match after removing whitespace; a repeated label needs `"occurrence"`. The
+body is the last cell unless `"column"` is given.
+
+```json
+[
+  {"op": "replace_cell", "label": "项目简介", "paragraphs": ["第一段", "第二段"]},
+  {"op": "replace_text", "label": "用户体验提升", "old": "，可删去的短语", "new": ""}
+]
+```
+
+`replace_cell` replaces every body paragraph with the approved paragraphs and copies paragraph and
+character formatting from the first uniformly formatted paragraph in that cell (or `"format_from"`,
+a paragraph index in the cell). Paragraphs that a user split into several runs, for example a
+hand-typed number before the text, remain valid templates when their runs share one format.
+`replace_text` changes one phrase in place; it must occur exactly once in the cell and inside a
+single run, so the user's numbering runs and indents are kept. Text spanning runs, fields, drawings,
+revisions and annotated ranges are refused. Output, record and source protection, unchanged-part
+checks and the `layout: "not_checked"` result follow the paragraph tool above.
+
+When the user has edited or renamed the Word file, inspect that current file first and write to a
+new path, then copy over only after confirming the source hash has not changed.
 
 Initial full-document creation, template or layout changes (including figure/table layout), and
 explicit layout-check requests use the rendering path in `SKILL.md`. Check the affected pages and

@@ -174,6 +174,7 @@ tool; use a trustworthy available file library or existing tool instead of block
 |---|---|
 | **Create** a new document | Write a `docx` (npm) script — see gotchas below |
 | **Edit** ordinary paragraphs | Use `scripts/edit_paragraphs.py` (`inspect`, `finalize`); `apply`/`check` are strict lower-level stages; no render by default |
+| **Edit** labelled form/table cells | Use `scripts/edit_cells.py` (`inspect`, `apply`, `check`) to replace a section cell's paragraphs or one phrase; see [Paragraph editing](references/paragraph-editing.md#table-cells) |
 | **Edit** complex existing content | Freeze style identities and use the existing specialized OOXML tool |
 | **Repair** parallel or renamed styles | Audit and explicitly remap with `scripts/style_guard.py` |
 | **Apply** a template to a new or whole document | Use `scripts/template/word_template_formatter.py` with both safety gates |

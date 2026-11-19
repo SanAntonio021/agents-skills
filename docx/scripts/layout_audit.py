@@ -223,16 +223,67 @@ class Inventory:
                 'style': self.style_id(p), 'text': text(p)[:180]}
 
 
-def audit(path, rules):
+def table_sections(doc):
+    # A section ends at its paragraph sectPr (or the final body sectPr).
+    pending, result = [], []
+    caption = ''
+    for node in doc.find(Q('body')):
+        section = None
+        if node.tag == Q('p'):
+            label = text(node).strip()
+            if re.match(r'^(?:表|Table)\s*\d+', label, re.I):
+                caption = label
+            section = node.find('w:pPr/w:sectPr', NS)
+        elif node.tag == Q('tbl'):
+            headers = tuple(''.join(text(cell).split()) for cell in node.findall('w:tr[1]/w:tc', NS))
+            pending.append((caption, headers))
+        elif node.tag == Q('sectPr'):
+            section = node
+        if section is not None:
+            size = section.find(Q('pgSz'))
+            orientation = None if size is None else size.get(Q('orient'))
+            if size is not None and orientation is None:
+                orientation = 'landscape' if int(size.get(Q('w'), 0)) > int(size.get(Q('h'), 0)) else 'portrait'
+            result.extend((label, headers, orientation) for label, headers in pending)
+            pending.clear()
+    return result
+
+
+def compare_landscape_tables(original, output, findings):
+    candidates = table_sections(output)
+    total = 0
+    for label, headers, direction in table_sections(original):
+        if direction != 'landscape':
+            continue
+        total += 1
+        # A revision may add columns or tables. Match by caption and retained
+        # headers, never by the physical table index. Ties require review.
+        ranked = []
+        for other_label, other_headers, other_direction in candidates:
+            common = len(set(headers).intersection(other_headers) - {''})
+            if headers and common and (headers == other_headers or common >= max(1, (len(set(headers)) + 1) // 2)):
+                ranked.append(((headers == other_headers, common, bool(label) and label == other_label), other_direction))
+        best = max((score for score, _ in ranked), default=None)
+        matches = [direction for score, direction in ranked if score == best]
+        if matches != ['landscape']:
+            findings.append({'rule': 'landscape_tables', 'table': label, 'headers': list(headers),
+                             'expected': 'landscape', 'actual': matches[0] if len(matches) == 1 else None,
+                             'problem': 'orientation_changed' if len(matches) == 1 else 'table_match_unresolved'})
+    return {'rule': 'landscape_tables', 'baseline_landscape_tables': total}
+
+
+def audit(path, rules, baseline=None):
     before = digest(path)
     inv = Inventory(path)
     if set(rules) - {'schema', 'description', 'paragraph_rules', 'a4', 'table_grid', 'numbering_groups'}:
         raise ValueError('Unknown top-level rule key')
     if rules.get('schema') != 1:
         raise ValueError('Rules require schema=1')
-    if not any(rules.get(k) for k in ('paragraph_rules', 'a4', 'table_grid', 'numbering_groups')):
+    if baseline is None and not any(rules.get(k) for k in ('paragraph_rules', 'a4', 'table_grid', 'numbering_groups')):
         raise ValueError('No active checks declared')
     findings, checks, selected = [], [], set()
+    if baseline is not None:
+        checks.append(compare_landscape_tables(Inventory(baseline).doc, inv.doc, findings))
     for rule in rules.get('paragraph_rules', []):
         if set(rule) - {'name', 'select', 'expect', 'min', 'max'}:
             raise ValueError('Unknown paragraph rule key')
@@ -330,14 +381,21 @@ def audit(path, rules):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('input', type=Path)
-    parser.add_argument('--rules', type=Path, required=True)
+    parser.add_argument('--rules', type=Path)
+    parser.add_argument('--baseline', type=Path, help='Check landscape tables against the original document')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
-    if args.report and args.report.resolve() in (args.input.resolve(), args.rules.resolve()):
+    if not (args.rules or args.baseline):
+        parser.error('Supply --rules or --baseline')
+    if args.report and args.report.resolve() in {p.resolve() for p in (args.input, args.rules, args.baseline) if p}:
         parser.error('Report must not overwrite input or rules')
     try:
-        report = audit(args.input, json.loads(args.rules.read_text(encoding='utf-8')))
-        report['rules_sha256'] = digest(args.rules)
+        rules = json.loads(args.rules.read_text(encoding='utf-8')) if args.rules else {'schema': 1}
+        report = audit(args.input, rules, args.baseline)
+        if args.rules:
+            report['rules_sha256'] = digest(args.rules)
+        if args.baseline:
+            report['baseline_sha256'] = digest(args.baseline)
         if args.report:
             if args.report.exists():
                 raise ValueError('Report already exists; select a new path')

@@ -8,7 +8,7 @@ description: "Use this skill whenever the user wants to create, read, edit, repa
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 Use `$docx` as the sole explicit Word skill entrypoint.
 
-同类文档需要反复制作、保留底稿或建立可复用模板时，采用[格式规则与模板复用](references/layout-profiles.md)：复用完整布局骨架，并按该系列规则运行只读 `scripts/layout_audit.py`。保留不同用途段落的行距，静态结果与原生分页验收分别报告。
+同类文档需要反复制作、保留底稿或建立可复用模板时，采用[格式规则与模板复用](references/layout-profiles.md)：复用完整布局骨架，并按该系列规则运行只读 `scripts/layout_audit.py`。保留不同用途段落的行距，静态结果与原生分页验收分别报告。要求沿用底稿排版时，运行 `python -B scripts/layout_audit.py 导出稿.docx --baseline 底稿.docx`，逐表核对原横向表格的页面方向。匹配不唯一或方向改变时，定位表题和表头并在 Word 检查后交付。
 
 ## 文件存放与交付
 

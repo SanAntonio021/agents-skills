@@ -125,7 +125,8 @@ body is the last cell unless `"column"` is given.
 
 `replace_cell` replaces every body paragraph with the approved paragraphs and copies paragraph and
 character formatting from the first uniformly formatted paragraph in that cell (or `"format_from"`,
-a paragraph index in the cell). Paragraphs that a user split into several runs, for example a
+a paragraph index in the cell). A blank form cell with one empty paragraph is filled with that
+paragraph's own mark formatting. Paragraphs that a user split into several runs, for example a
 hand-typed number before the text, remain valid templates when their runs share one format.
 `replace_text` changes one phrase in place; it must occur exactly once in the cell and inside a
 single run, so the user's numbering runs and indents are kept. Text spanning runs, fields, drawings,

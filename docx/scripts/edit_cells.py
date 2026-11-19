@@ -100,6 +100,11 @@ def body_paragraph(text: str, template: etree._Element) -> etree._Element:
     run = etree.SubElement(paragraph, W + "r")
     if runs and runs[0].find(W + "rPr") is not None:
         run.append(copy.deepcopy(runs[0].find(W + "rPr")))
+    elif not runs and template.find(W + "pPr/" + W + "rPr") is not None:
+        # An empty form cell: new text takes the paragraph mark's character format, as Word does.
+        run_props = copy.deepcopy(template.find(W + "pPr/" + W + "rPr"))
+        run_props.tag = W + "rPr"
+        run.append(run_props)
     node = etree.SubElement(run, W + "t")
     node.set(XML_SPACE, "preserve")
     node.text = text
@@ -117,6 +122,9 @@ def choose_template(cell: etree._Element, format_from: object) -> etree._Element
         if plain_paragraph_reason(paragraph) is None and runs and \
                 len({run_signature(run) for run in runs}) == 1:
             return paragraph
+    if len(candidates) == 1 and not candidates[0].findall(W + "r") and \
+            plain_paragraph_reason(candidates[0]) is None:
+        return candidates[0]
     raise ValueError("No uniformly formatted plain paragraph in the cell; supply format_from")
 
 

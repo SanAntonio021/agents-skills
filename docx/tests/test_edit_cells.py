@@ -8,6 +8,8 @@ import zipfile
 from pathlib import Path
 
 from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Pt
 from lxml import etree
 
@@ -99,6 +101,23 @@ class CellEditTests(unittest.TestCase):
                               "paragraphs": ["1.First", "2.Second"]}])
         self.assertTrue(result["ok"], result)
         self.assertEqual([p.text for p in self.cell_paragraphs(1)], ["1.First", "2.Second"])
+
+    def test_empty_cell_takes_paragraph_mark_format(self) -> None:
+        table = self.document.tables[0]
+        row = table.add_row()
+        row.cells[0].text = "项目名称"
+        mark = row.cells[1].paragraphs[0]._p.get_or_add_pPr()
+        run_props = OxmlElement("w:rPr")
+        size = OxmlElement("w:sz")
+        size.set(qn("w:val"), "30")
+        run_props.append(size)
+        mark.append(run_props)
+        self.save_source()
+        result = self.apply([{"op": "replace_cell", "label": "项目名称", "paragraphs": ["新题目"]}])
+        self.assertTrue(result["ok"], result)
+        paragraph = Document(self.output).tables[0].rows[-1].cells[1].paragraphs[0]
+        self.assertEqual(paragraph.text, "新题目")
+        self.assertEqual(paragraph.runs[0].font.size, Pt(15))
 
     def test_text_spanning_runs_is_rejected(self) -> None:
         self.assert_rejected([{"op": "replace_text", "label": "技术先进性", "old": "1.Fast", "new": "1.Quick"}])

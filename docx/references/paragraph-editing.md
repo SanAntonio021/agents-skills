@@ -106,9 +106,9 @@ Application forms keep each section as a table row: a label cell and a body cell
 cells with `scripts/edit_cells.py`, not with ad hoc scripts:
 
 ```powershell
-python scripts/edit_cells.py inspect form.docx --label "项目简介"
-python scripts/edit_cells.py apply form.docx edits.json updated.docx
-python scripts/edit_cells.py check form.docx edits.json updated.docx
+python -B scripts/edit_cells.py inspect form.docx --label "项目简介"
+python -B scripts/edit_cells.py apply form.docx edits.json updated.docx
+python -B scripts/edit_cells.py check form.docx edits.json updated.docx
 ```
 
 `inspect` lists labelled rows with their body paragraphs, run counts, formatting uniformity and

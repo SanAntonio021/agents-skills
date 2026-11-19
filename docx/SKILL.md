@@ -180,7 +180,9 @@ tool; use a trustworthy available file library or existing tool instead of block
 | **Apply** a template to a new or whole document | Use `scripts/template/word_template_formatter.py` with both safety gates |
 | **Read** content | `pandoc -t markdown file.docx` |
 
-> Script paths below are relative to this skill's directory.
+> Script paths below are relative to this skill's directory. Run these Python scripts with
+> `python -B` (or `PYTHONDONTWRITEBYTECODE=1`): from an installed skill copy, a plain run writes
+> `__pycache__` into that copy and the next publication check then reports it as modified.
 
 ## Creating with docx-js — gotchas
 

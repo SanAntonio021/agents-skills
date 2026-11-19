@@ -132,6 +132,23 @@ JavaScript dialog 的处理按上文执行；接口要求确认参数时依据�
 
 文件上传属于外部写操作，调用前按 [技能入口](../SKILL.md) 核对准确授权、目标和文件；已有授权且范围一致时继续，缺少授权或实际范围变化时才询问。
 
+## 后台标签页的弹层与菜单
+
+任务页在后台时 `document.visibilityState` 为 `hidden`：`requestAnimationFrame` 基本暂停（2026-11-19 实测 3 秒内 0 次），`setTimeout` 被限流到约每秒一次。单帧回调偶尔会在两次调用之间推进，但需要连续多帧定位或播放展开动画的下拉菜单、弹层和子菜单会卡住：元素已在 DOM 中，坐标却在屏幕外（如 -9999），悬停不展开子菜单，`elementFromPoint` 命中下层面板，`/click-at` 落空，截图也可能停在旧画面。遇到这些现象先用 `/eval` 读 `document.visibilityState` 和目标弹层坐标确认原因，不要当作站点故障、权限问题或坐标算错。
+
+处理按以下顺序，不为此激活标签页或抢焦点：
+
+1. 在本 task 自有页面内用 `/eval` 装一次补丁，把 `requestAnimationFrame` 换成基于 `setTimeout` 的实现；导航或刷新后重装。装好后先关闭再重新打开弹层，再读坐标操作。补丁只改当前页面的脚本环境。
+
+   ```js
+   (()=>{if(window.__rafPatched)return 'already';window.__rafPatched=true;let id=0;const m=new Map();
+   window.requestAnimationFrame=cb=>{const i=++id;m.set(i,setTimeout(()=>{m.delete(i);cb(performance.now())},16));return i};
+   window.cancelAnimationFrame=i=>{clearTimeout(m.get(i));m.delete(i)};return 'patched'})()
+   ```
+
+2. 仍不响应时，对目标选项依次派发 `pointerover`、`mouseover`、`pointerdown`、`mousedown`、`pointerup`、`mouseup`、`click`；确认是 React 组件时，可调用元素上的事件处理函数（React 16 的属性键以 `__reactEventHandlers$` 开头，较新版本为 `__reactProps$`），例如对子菜单标题调用 `onMouseEnter`、对选项调用 `onClick`。
+3. 每步操作后回读页面或业务结果确认生效，不以调用返回为准。一次 `/eval` 只做一步并尽快返回，需要等待的事件放进 `setTimeout` 异步派发，避免整段等待触发 504 `UNKNOWN_RESULT`；结果未知的写操作先回读，不直接重放。
+
 ## 本地历史与站点参考
 
 用户要找本人访问过的页面或公网不可检索的内部入口时，按目标关键词查询本地书签或历史；不为普通联网查询扫描无关浏览记录。

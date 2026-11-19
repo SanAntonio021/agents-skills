@@ -98,7 +98,7 @@ HTTP `/json/version` 或 `/json` 返回 404 只表示 HTTP 发现接口不可用
 - [CDP 文档入口](references/cdp-api.md)：按任务选择生命周期、协议、交互或内容提取参考。
 - [浏览器生命周期](references/cdp-lifecycle.md)：启动、恢复、并发、登录接管和收尾。
 - [CDP 协议](references/cdp-protocol.md)：健康、task/tab、错误码和隔离边界。
-- [页面交互](references/cdp-interaction.md)：导航、snapshot/action、wait/dialog、兜底 API 和本地历史。
+- [页面交互](references/cdp-interaction.md)：导航、snapshot/action、wait/dialog、兜底 API、[后台标签页弹层与菜单](references/cdp-interaction.md#后台标签页的弹层与菜单)和本地历史。
 - [内容提取](references/cdp-content.md)：服务器字节、截图、图片和 iframe。
 - [旧 Proxy 迁移](references/migration-dual-proxy.2.md)：发现旧协议或确需迁移时读取。
 - [本地设计来源](references/browser-source-survey.md)与[上游来源登记](references/upstream-sources.md)：仅在维护或比较来源时读取。

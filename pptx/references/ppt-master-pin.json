@@ -2,26 +2,6 @@
   "accepted_distributions": [
     {
       "codeload": {
-        "members": 1340,
-        "sha256": "64f71ae99e5420c6109ea036ec8e63c0aad56809f17d58b34d1b9605aba6c581",
-        "size": 52857374
-      },
-      "distribution_manifest": {
-        "bytes": 45942978,
-        "files": 1074,
-        "sha256": "d00816c3721410c690e29b24e6452887ebaaf2458fd2eef37684bcd69ae5db3f"
-      },
-      "fork_commit": "a62fd17609872bceaded1081b0281e182f2445e3",
-      "release_tag": "v6.9.0-ccswitch.1",
-      "role": "stable",
-      "upstream": {
-        "commit": "ce92fb43e4ade9c701f4c869e286f13fce743c72",
-        "repository": "https://github.com/hugohe3/ppt-master",
-        "version": "6.9.0"
-      }
-    },
-    {
-      "codeload": {
         "members": 1351,
         "sha256": "094be28f50af290f3d4172bb7fd1c1ed0bcfa589b3dd5f132649f431bfae3586",
         "size": 53350490
@@ -33,7 +13,7 @@
       },
       "fork_commit": "602af8bc3474fdfa9802699adb3aaccd6f9864f5",
       "release_tag": "v6.10.0-ccswitch.1",
-      "role": "candidate",
+      "role": "stable",
       "upstream": {
         "commit": "d8f704bc8c1552d53a8769b55d1eecd22c782042",
         "repository": "https://github.com/hugohe3/ppt-master",
@@ -51,5 +31,5 @@
     "branch": "main",
     "repository": "https://github.com/SanAntonio021/ppt-master"
   },
-  "state": "transition"
+  "state": "stable"
 }

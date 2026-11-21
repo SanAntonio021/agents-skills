@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-31`
 - 最近来源登记审核：`2026-11-09`
-- 说明：PPT Master 以已接受上游 6.9.0 为基线，通过受审计的 CC Switch Fork 分发，Fork 包含有限的入口和已确认任务交接适配；本地 pptx 负责一次选路、外部 pin、确定性文件操作和最终验收，官方 Presentations 由当前插件登记定位并按需读取原包。本登记的 accepted_commit 是上游采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。上游升级只处理正式 tag，本地适配使用递增 ccswitch 发行号；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
+- 说明：PPT Master 以已接受上游 6.10.0 为基线，通过受审计的 CC Switch Fork 分发，Fork 包含有限的入口和已确认任务交接适配；本地 pptx 负责一次选路、外部 pin、确定性文件操作和最终验收，官方 Presentations 由当前插件登记定位并按需读取原包。本登记的 accepted_commit 是上游采纳基线；实际安装发行身份以 references/ppt-master-pin.json 为准，不能互相替代。上游升级只处理正式 tag，本地适配使用递增 ccswitch 发行号；先构建隔离候选和 transition pin，双端验收完成后再收敛为 stable-only。失败升级用新的快进回滚提交和递增 tag，不 force-push。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。
@@ -15,7 +15,7 @@
 - 当前上游路径：`skills/ppt-master`
 - 接受时上游路径：`skills/ppt-master`
 - 技能入口：`skills/ppt-master/SKILL.md`
-- 已接受提交：`ce92fb43e4ade9c701f4c869e286f13fce743c72`
+- 已接受提交：`d8f704bc8c1552d53a8769b55d1eecd22c782042`
 - 实际接受时间：`2026-11-09T02:08:34.136492+00:00`
 - 基线类型：`exact`
 - 更新策略：`review`
@@ -58,3 +58,4 @@
 - `LICENSE`
 
 发现更新后只生成隔离候选和测试报告；用户逐项批准前，不修改本地技能源码。
+- 2026-11-21 接受 6.10.0。个人模板由两端共用。PowerPoint 已验证多段列表和空图表版式。

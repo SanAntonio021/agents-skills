@@ -139,15 +139,4 @@ switch silently. An upstream review mirror is source-review evidence only, never
 Never modify `.cc-switch`, `.codex`, or `.claude` runtime copies directly. Fork publication, local
 pin publication, CC Switch installation, and per-client runtime activation are separate gates.
 
-The accepted stable distribution is `v6.9.0-ccswitch.1`
-(`a62fd17609872bceaded1081b0281e182f2445e3`), based on official `v6.9.0`
-(`ce92fb43e4ade9c701f4c869e286f13fce743c72`). The adaptation preserves the accepted
-Fork handoff and provider defaults. Verified changes include rejecting output paths that
-overwrite input files or hard-link aliases, retaining DOCX links with unpaired parentheses,
-and correcting Windows web-image paths.
-The exact-commit archive, two independent builds, relevant offline regressions, selected native
-PowerPoint open/export cases, CC Switch installation, and both physical client runtime layers
-passed verification, including a separate check with the same publication parameters.
-OCR providers, paid models, Realtime narration/GIF, and browser UI were not exercised.
-The pin accepts only this verified stable distribution; earlier distribution and recovery
-receipts remain in the maintenance history.
+The accepted stable distribution is `v6.10.0-ccswitch.1` at `602af8bc3474fdfa9802699adb3aaccd6f9864f5`, built from official `v6.10.0` at `d8f704bc8c1552d53a8769b55d1eecd22c782042`. Claude and Codex share personal templates under `~/.ppt-master/templates/local/`. Both installed entries exported the nine-layout defense template. In PowerPoint the four original paragraphs kept their three indentation levels in one text box, their rendered body region matched the source, and a new slide using the chart layout accepted an editable chart.

@@ -2590,6 +2590,47 @@ def build_scan_report(
     }
 
 
+def scan_usage_window(args, state, reports_root):
+    """Pin a run's interval before collecting logs, even if collection later fails."""
+    if args.usage_window_end:
+        return usage_window_for_date(args.date, timezone_name=args.usage_timezone,
+                                     explicit_end=args.usage_window_end)
+    run_dir = reports_root / args.date
+    pin = run_dir / "usage-window.json"
+    zone = ZoneInfo(args.usage_timezone)
+
+    def boundaries(window):
+        start, end = (datetime.fromisoformat(window[key]) for key in ("start", "end"))
+        if not start.tzinfo or not end.tzinfo or start >= end:
+            raise StateError("Invalid saved usage window")
+        return start.astimezone(zone).isoformat(), end.astimezone(zone).isoformat()
+
+    if pin.exists():
+        return boundaries(json.loads(pin.read_text(encoding="utf-8")))
+    now = datetime.now(zone)
+    start, end = (now - timedelta(days=7)).isoformat(), now.isoformat()
+    for run in sorted(state["runs"], key=lambda item: item["date"], reverse=True):
+        day = run["date"]
+        if day > args.date:
+            continue
+        window = run.get("successful_usage_window")
+        if not window and (run.get("complete") or day == args.date):
+            manifest = reports_root / "usage" / "manifests" / day / "summary.json"
+            if manifest.exists():
+                window = json.loads(manifest.read_text(encoding="utf-8")).get("window")
+        if window and window.get("start") and window.get("end"):
+            old_start, old_end = boundaries(window)
+            if day == args.date:
+                start, end = old_start, old_end
+            else:
+                start = old_end
+            break
+    if not args.reuse_reports:
+        boundaries({"start": start, "end": end})
+        atomic_write_json(pin, {"start": start, "end": end})
+    return start, end
+
+
 @with_scan_tree_cache
 def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     agents_root = args.agents_root.resolve()
@@ -2599,11 +2640,12 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     private_root = (args.private_skills_root or agents_root / "private-skills").resolve()
     if not args.private_skills_root and not private_root.is_dir():
         private_root = None
-    usage_window_start, usage_window_end = usage_window_for_date(
-        args.date,
-        timezone_name=args.usage_timezone,
-        explicit_end=args.usage_window_end,
-    )
+    try:
+        with StateLock(state_path, args.lock_timeout):
+            history, _ = load_state(state_path)
+            usage_window_start, usage_window_end = scan_usage_window(args, history, reports_root)
+    except (StateError, LockConflict, OSError, ValueError) as exc:
+        return fatal_payload(type(exc).__name__, str(exc), state_path), 3
     command_results, summary_paths = run_audits(
         agents_root=agents_root,
         skills_root=skills_root,
@@ -2786,6 +2828,8 @@ def scan_command(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                     name: result.get("exit_code") for name, result in command_results.items()
                 },
             }
+            if complete and summaries["usage"].get("window"):
+                run_record["successful_usage_window"] = summaries["usage"]["window"]
             existing_run = next(
                 (item for item in state["runs"] if item.get("date") == args.date), None
             )
@@ -3046,8 +3090,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--usage-window-end",
         help=(
             "Exclusive ISO-8601 end of the seven-day usage window. "
-            "Defaults to the latest Saturday on/before --date at "
-            f"{DEFAULT_USAGE_BOUNDARY_HOUR:02d}:00 in --usage-timezone."
+            "Without an override, continue from the last successful cutoff to collection time."
         ),
     )
     scan.add_argument(

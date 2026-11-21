@@ -227,3 +227,26 @@ def test_weekday_scan_of_same_fixed_window_does_not_increment_zero_streak():
     second, reason = REVIEW.update_unseen_streaks(state, usage, complete=True, scope_value='same', date='2026-10-12')
     assert first == second == {'alpha': 1}
     assert reason is None
+
+
+def test_scan_window_continues_from_success_and_freezes_failed_attempt(tmp_path):
+    from types import SimpleNamespace
+    from datetime import datetime
+    import json
+
+    args = SimpleNamespace(date='2026-02-15', usage_timezone='Asia/Taipei',
+                           reuse_reports=False, usage_window_end=None)
+    previous = {'start': '2026-02-01T08:30:00+08:00', 'end': '2026-02-08T09:23:14+08:00'}
+    manifest = tmp_path / 'usage/manifests/2026-02-08/summary.json'
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({'window': previous}), encoding='utf-8')
+    state = {'runs': [{'date': '2026-02-08', 'complete': True},
+                      {'date': '2026-02-12', 'complete': False}]}
+    start, end = REVIEW.scan_usage_window(args, state, tmp_path)
+    assert start == previous['end']
+    assert abs((datetime.now().astimezone() - datetime.fromisoformat(end)).total_seconds()) < 10
+    assert REVIEW.scan_usage_window(args, state, tmp_path) == (start, end)
+    state['runs'].append({'date': args.date, 'complete': True,
+                          'successful_usage_window': {'start': start, 'end': end}})
+    args.date = '2026-02-22'
+    assert REVIEW.scan_usage_window(args, state, tmp_path)[0] == end

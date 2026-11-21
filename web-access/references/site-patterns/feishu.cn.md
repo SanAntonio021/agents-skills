@@ -1,7 +1,7 @@
 ---
 domain: feishu.cn
 aliases: [飞书, Feishu, Lark, larksuite.com, BaseApp, 多维表格应用]
-updated: 2026-11-18
+updated: 2026-11-21
 ---
 
 ## 平台特征
@@ -55,6 +55,7 @@ updated: 2026-11-18
 
 - 表格、看板、甘特等视图组件（`+app-block-list` 中 `type: view`）的名称、`visible_fields`、`filter`、`sort_by`、`group_by` 可以用 `+app-block-update --no-validate` 修改；不加该参数时本地校验不认这些字段。服务端会连同组件已有条件一起校验：已有条件含“访问者本人”（`{"$slot":"current_user"}`）时，即使本次不传 `filter`，整次更新也会被拒，这类组件只能在编辑器里改（2026-11-18）。
 - CLI 不能新建视图组件（`--type` 不接受 `view`），也不能改变组件所在的标签；这两步要在编辑器里做，字段、筛选和排序再交给 CLI 设置。
+- **接口更新会清空“父记录字段”**：表格组件的树状显示靠配置面板里的“父记录字段”，`+app-block-get` 读不到这项，`+app-block-update` 提交后它会被清空，表格退回平铺（2026-11-21 复现）。对树状表格用过接口后，必须进编辑器 `⋮`→“配置”把“父记录字段”设回原字段，再在浏览模式确认能展开。
 
 ## 已知陷阱
 

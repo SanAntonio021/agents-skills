@@ -138,7 +138,7 @@ JavaScript dialog 的处理按上文执行；接口要求确认参数时依据�
 
 处理按以下顺序，不为此激活标签页或抢焦点：
 
-1. 在本 task 自有页面内用 `/eval` 装一次补丁，把 `requestAnimationFrame` 换成基于 `setTimeout` 的实现；导航或刷新后重装。装好后先关闭再重新打开弹层，再读坐标操作。补丁只改当前页面的脚本环境。
+1. 在本 task 自有页面内用 `/eval` 装一次补丁，把 `requestAnimationFrame` 换成基于 `setTimeout` 的实现；导航或刷新后重装。装好后先关闭再重新打开弹层，再读坐标操作。补丁只改当前页面的脚本环境。页面首次渲染完成后再装：后台的 `setTimeout` 同样被限流，过早装会让首屏渲染更慢。首屏迟迟不出现时，调用一次 `/screenshot` 能带动页面渲染一帧，之后再读 DOM（2026-11-21 实测：截图前读不到组件，截图后立即可读）。
 
    ```js
    (()=>{if(window.__rafPatched)return 'already';window.__rafPatched=true;let id=0;const m=new Map();

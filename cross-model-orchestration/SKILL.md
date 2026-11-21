@@ -4,7 +4,7 @@ description: >
   Codex 与 Claude 的正式计划互审、用户明确要求的对端审查或执行，以及跨模型科研循环。
   科研循环仅在用户明确要求其他模型参与多轮科研监督、仿真或实验流水线、论文流水线、逐里程碑互审时启用。
   文件与消息材料统一通过 claude-codex-bridge v3；消息单轮交流，文件审查可直接修改，作者修改后只追加一次终审。
-  每次独立模型调用前确认思考强度；同一 series 的终审沿用首审模型和强度。
+  每次调用前主动报出拟用模型和思考强度，供用户确认；同一 series 的终审沿用首审模型和强度。
   普通分析、单次或批量仿真、论文润色、计划执行、测试、提交和交付不自动触发；单次互审不扩展成科研循环。
 compatibility: >
   Requires the CC Switch-registered claude-codex-bridge MCP on the current host. Protocol v3 is the
@@ -37,8 +37,7 @@ allowed-tools:
 | Codex | `codex` | `claude` | `claude-opus-5-5` | `high` |
 | Claude | `claude` | `codex` | `gpt-5.6-sol` | `xhigh` |
 
-每次独立模型调用都必须在提交前确定 `model` 和 `reasoningEffort`。用户在当前请求中明确指定时直接采用；
-未指定时先询问思考强度，向用户提供目标侧默认值作为首选，用户选择“默认”也按该值提交。执行、首轮审查、
+每次调用本技能时，先在同一句话中主动报出拟用的具体模型和思考强度。用户只指定一项时，保留该项并补报另一项的默认值，请用户确认这组设置后再提交。用户已明确指定两项或已确认刚刚报出的组合时，复述后直接执行。执行、首轮审查、
 作者复查和终审都要记录实际请求模型、请求强度和运行时回执。`balanced`、`high_volume` 等 profile 的既有
 低成本路由保持不变，不因质量默认变化而提升档位。
 

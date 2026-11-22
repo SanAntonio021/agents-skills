@@ -35,7 +35,7 @@ CDP 恢复按固定顺序执行：重新读取 `DevToolsActivePort`；校验其�
 
 Proxy 或 Edge 重启会清空 task、token、归属、session 和 ref；浏览器 tab 不会因 Proxy 重启而自动关闭，遗留页面降为用户 tab，不能由新 task 重新接管。CDP 恢复仍失败时，只有在可用且获准的情况下才切 Browser Use 扩展；最后才使用 Computer Use，并在完成后恢复原窗口。
 
-发现旧 Proxy、协议或 Broker 版本不一致时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口、模式和 PID；只停止可证实属于本技能且无活动任务的 Proxy。不得结束用户 Edge 进程来修复 Proxy 版本。
+发现旧 Proxy、协议或 Broker 版本不一致时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口、模式和 PID；只停止可证实属于本技能且无活动任务的 Proxy。`existing` 模式下，`check-deps` 会自动替换 Broker 版本过旧、命令行可核实为本技能 `cdp-proxy.mjs`、且没有 task 和自有 tab 的 Proxy；仍有任务时继续复用旧版并在诊断里说明。不得结束用户 Edge 进程来修复 Proxy 版本。
 
 ## 并行 task 与收尾
 
@@ -49,9 +49,22 @@ handoff 状态先按用户接管流程恢复，不能用 complete 绕开屏障�
 
 复用浏览器已有会话，先判断目标内容是否已可读取。确需登录时核对站点和预期账号，浏览器已自动填充或显示匹配保存账号时可选用并提交。提交前核对常规登录的必选阅读/同意复选框：未选中则在宿主允许的已有授权内勾选，已选中则保持，回读选中状态后提交并验证目标页面。非必选的订阅、记住新凭据、额外权限及新增法律承诺按各自授权处理。
 
-机构下载按 [paper-download 的公开机构访问模块](../../paper-download/references/publisher-download-playbook.md#公开机构访问模块) 执行；该模块只在唯一可核验的 HTTPS 自动填充登录表单内提交一次，不向模型返回字段值。原生凭据选择器不在 DOM 中且无法自动填充时，交给用户完成；模型和通用网页脚本不读取密码框值、密码管理器内容或导出凭据。
+机构下载按 [paper-download 的公开机构访问模块](../../paper-download/references/publisher-download-playbook.md#公开机构访问模块) 执行；登录由 Broker `/access` 完成，不向模型返回字段值。浏览器原生账号下拉框不在 DOM 中、CDP 也碰不到，这时由下面的本机凭据助手接手，不改用 Computer Use；模型和通用网页脚本不读取密码框值、密码管理器内容或导出凭据。
 
-任何自动登录路径在提交前都核对 HTTPS origin、路径、字段归属、同源表单目标与唯一可见登录控件；未知执行结果先查原任务状态，不清提交标记、不盲重填或重复提交。需要用户录入、系统解锁、MFA、扫码、短信/动态口令、账号歧义或变化的 SSO 发布范围时才交接；邮箱验证码在已有且获授权的邮箱页面或邮件连接器可访问时由 web-access 读取并提交一次。
+任何自动登录路径在提交前都核对 HTTPS origin、路径、字段归属、同源表单目标与唯一可见登录控件；未知执行结果先查原任务状态，不清提交标记、不盲重填或重复提交。需要系统解锁、MFA、扫码、短信/动态口令、账号歧义或变化的 SSO 发布范围时才交接；邮箱验证码在已有且获授权的邮箱页面或邮件连接器可访问时由 web-access 读取并提交一次。
+
+### 本机凭据助手
+
+同一站点在 Edge 里保存了多个账号时，Edge 只弹原生下拉框、不自动填密码，`/access` 返回 `autofillStatus:"password_not_filled"`。这时 Broker 改用用户自己录入的本机凭据，全程在本任务后台标签里完成，不激活窗口、不抢焦点。浏览器已自动填充时仍优先用浏览器的，凭据助手只作后备。
+
+- **存放**：Windows 凭据管理器的普通凭据，只存本机当前用户、不漫游；键是登录页 origin 加账号（目标名 `web-access/login|<origin>|<account>`）。不读取、不导出 Edge 的密码库、Profile 或 Cookie。
+- **首次录入**：用户在自己的 PowerShell 窗口运行 `powershell -NoProfile -ExecutionPolicy Bypass -File "<web-access技能目录>\scripts\login-credential.ps1" -Action Add -Origin https://<登录页主机> -Account <账号>`，在弹出的系统凭据窗口里输入密码。origin 以登录页地址栏为准，只写 `https://主机[:端口]`。`-Action Check` 只报告是否已录入，`List` 只显示打码账号，`Remove` 删除，`SelfTest` 用临时合成条目验证存取。模型不代用户录入，不调用 `BrokerRead`（Broker 内部读取通道）。
+- **填写条件**：页面 origin 必须与 Broker 从标签读到的 HTTPS origin 一致；唯一可见的密码框和账号框在同一个表单里；表单的提交目标是同源 HTTPS，且只有一个可用的登录按钮。原生提交按钮须是同源 POST。没有原生提交按钮、由页面脚本提交（如 `<a href="javascript:…">登录</a>`）时，只认唯一的“登录/Sign in”按钮，并在提交窗口内打开网络防护：同源请求放行；跨源请求只放行不带密码的 GET/HEAD；任何 URL 里带密码的请求一律拦截。防护在首个顶层导航或 5 秒后结束，不影响之后的 SSO 跳转。
+- **一次提交**：密码由 Broker 作为函数参数传给页面，写入后提交一次；同一 task、标签和登录路径不重放。同一 origin 存了多个账号时，调用方须在请求里给 `account`，否则返回 `account_ambiguous`。
+- **可选项不动**：“7天免登录”“记住我”这类可选复选框不属于常规登录必需项，默认不勾选；必选的同意项未勾选时返回 `consent_required`。
+- **对外结果**：只返回 `loginMethod`、`credentialStatus`、`submitMode`、`networkGuard` 等脱敏状态，不返回密码或账号。`not_configured` 等状态表示需要用户先录入，不等于学校无权限；提交后仍须回读目标页面。
+
+页面上的“验证码登录”“短信登录”“扫码登录”是切换到其他登录方式的入口，不算当前表单的验证要求。只有激活的表单出现可见验证码输入框，或页面明确要求“请输入……验证码”时，才按验证码或强认证处理。
 
 页面上的普通图形验证码和交互验证可在当前 task 内尝试一次并回读；拒绝后不反复尝试、不切换工具绕过反爬限制。邮箱验证码只有在已授权的邮箱页面或邮件连接器可用时才由 web-access 自动读取最新匹配邮件并提交一次；短信/动态口令、刷脸、系统安全弹窗、账号歧义或邮箱不可访问时保留当前 task 并交接。完成后恢复原 task 并重新取得页面状态。
 

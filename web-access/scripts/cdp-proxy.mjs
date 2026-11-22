@@ -3,7 +3,8 @@
 
 import crypto from 'node:crypto';
 import { startPageDownload, downloadUrlAllowed } from './download-page.mjs';
-import { loginAutofillExpression, accessProbe } from './browser-access.mjs';
+import { loginAutofillExpression, loginFormProgram, accessProbe } from './browser-access.mjs';
+import { readLoginCredential, credentialStoreInfo } from './login-credentials.mjs';
 import { createPageFrames, FrameError } from './page-frames.mjs';
 import http from 'node:http';
 import os from 'node:os';
@@ -11,6 +12,9 @@ import { URL } from 'node:url';
 import { selectBrowser, findFallbackPort } from './browser-discovery.mjs';
 import { getProxyPort, readConfig, RuntimeConfigError } from './runtime-config.mjs';
 import { BROKER_VERSION } from './broker-version.mjs';
+// Integration tests simulate a Broker left over from an older release.
+const REPORTED_BROKER_VERSION = process.env.WEB_ACCESS_TEST_MODE === '1' && process.env.WEB_ACCESS_TEST_REPORTED_BROKER_VERSION
+  ? process.env.WEB_ACCESS_TEST_REPORTED_BROKER_VERSION : BROKER_VERSION;
 
 const PROTOCOL_VERSION = 2;
 const BROWSER_OVERRIDE = parseBrowserArg();
@@ -56,6 +60,7 @@ const DOWNLOAD_MAX_BYTES_HARD = 200_000_000;
 const DOWNLOAD_CHUNK_CHARS = 262_144;
 const DOWNLOAD_MAX_WRAPPER_DEPTH = 2;
 const DOWNLOAD_ALLOWED_HOSTS_LIMIT = 10;
+const LOGIN_GUARD_WINDOW_MS = Math.min(15_000, parsePositiveInt(process.env.WEB_ACCESS_LOGIN_GUARD_MS, 5_000));
 const LEGACY_PATHS = new Set([
   '/targets', '/new', '/close', '/navigate', '/back', '/eval', '/click',
   '/clickAt', '/setFiles', '/scroll', '/screenshot', '/info',
@@ -98,6 +103,7 @@ const initializedSessions = new Set();
 const guardedSessions = new Set();
 const downloadPolicies = new Map();
 const loginAttempts = new Map();
+const loginGuards = new Map();
 let controlProbe = { passed: null, checkedAt: null };
 const tasks = new Map();
 const tokenTasks = new Map();
@@ -256,6 +262,7 @@ function clearLogicalOwnership() {
   guardedSessions.clear();
   downloadPolicies.clear();
   loginAttempts.clear();
+  loginGuards.clear();
   controlProbe = { passed: null, checkedAt: null };
 }
 
@@ -419,9 +426,15 @@ function handleCdpMessage(message) {
     invalidateTarget(targetId, 'document_updated');
   } else if (method === 'Fetch.requestPaused') {
     const policy = downloadPolicies.get(sessionId);
-    const permitted = policy && downloadUrlAllowed(params.request?.url, policy) &&
-      !isProtectedDownloadUrl(params.request?.url);
-    if (policy && !permitted) policy.blocked = true;
+    const guard = policy ? null : loginGuards.get(sessionId);
+    let permitted;
+    if (guard) {
+      permitted = !isProtectedDownloadUrl(params.request?.url) && loginRequestPermitted(guard, params, targetId);
+    } else {
+      permitted = policy && downloadUrlAllowed(params.request?.url, policy) &&
+        !isProtectedDownloadUrl(params.request?.url);
+      if (policy && !permitted) policy.blocked = true;
+    }
     void sendCDP(permitted ? 'Fetch.continueRequest' : 'Fetch.failRequest', {
       requestId: params.requestId, ...(permitted ? {} : { errorReason: 'BlockedByClient' }),
     }, sessionId).catch(() => {});
@@ -909,10 +922,16 @@ function validateHostAndOrigin(req) {
 function capabilities() {
   return {
     protocolVersion: PROTOCOL_VERSION,
-    brokerVersion: BROKER_VERSION,
+    brokerVersion: REPORTED_BROKER_VERSION,
     profileMode: PROFILE_MODE,
     taskIsolation: true,
-    access: { endpoint: 'POST /v2/tabs/{targetId}/access', savedLoginSubmission: true, exportsCredentials: false },
+    access: {
+      endpoint: 'POST /v2/tabs/{targetId}/access',
+      savedLoginSubmission: true,
+      exportsCredentials: false,
+      scriptSubmittedForms: 'network-guarded',
+      credentialHelper: { ...credentialStoreInfo(), fallbackAfterBrowserAutofill: true, returnsSecrets: false },
+    },
     userTabsVisible: false,
     maxActiveTasks: TASK_LIMIT,
     snapshot: { source: 'cdp-ax', modes: ['interactive', 'all'], defaultDepth: 12, defaultMaxNodes: 300, hardMaxNodes: 1000 },
@@ -1603,20 +1622,150 @@ async function downloadViaPage(task, targetId, body) {
 
 }
 
+// Login network guard: while a login is being submitted, every request of the
+// task page is paused. Same-origin requests continue. Cross-origin requests may
+// continue only as GET/HEAD without the secret in the URL; any URL carrying the
+// secret is blocked. The guard ends at the first top-level navigation or after
+// LOGIN_GUARD_WINDOW_MS, so later SSO redirects (e.g. SAML POST) are untouched.
+function secretVariants(secret) {
+  if (typeof secret !== 'string' || !secret) return [];
+  const encoded = encodeURIComponent(secret);
+  return [...new Set([secret, encoded, encoded.replace(/%20/g, '+'), Buffer.from(secret, 'utf8').toString('base64')])];
+}
+
+function loginRequestPermitted(guard, params, targetId) {
+  const request = params.request || {};
+  const rawUrl = String(request.url || '');
+  let url;
+  try { url = new URL(rawUrl); } catch { guard.blocked++; return false; }
+  const topLevelDocument = params.resourceType === 'Document' && (!params.frameId || params.frameId === targetId);
+  if (guard.secrets.some(value => rawUrl.includes(value))) {
+    guard.blocked++; guard.credentialBlocked = true; return false;
+  }
+  const method = String(request.method || 'GET').toUpperCase();
+  let permitted = url.origin === guard.origin;
+  if (!permitted && ['GET', 'HEAD'].includes(method)) {
+    permitted = !guard.secrets.some(value => String(request.postData || '').includes(value));
+  }
+  if (!permitted) {
+    guard.blocked++;
+    if (topLevelDocument || guard.secrets.some(value => String(request.postData || '').includes(value))) guard.credentialBlocked = true;
+    return false;
+  }
+  if (topLevelDocument) guard.navigated = true;
+  return true;
+}
+
+async function restoreFetchGuard(sessionId) {
+  await sendCDP('Fetch.enable', { patterns: chromePort ? [
+    { urlPattern: `http://127.0.0.1:${chromePort}/*`, requestStage: 'Request' },
+    { urlPattern: `http://localhost:${chromePort}/*`, requestStage: 'Request' },
+  ] : [] }, sessionId).catch(() => {});
+}
+
+async function guardedLoginSubmit(sessionId, origin, secret, submit) {
+  const guard = { origin, secrets: secretVariants(secret), navigated: false, blocked: 0, credentialBlocked: false };
+  loginGuards.set(sessionId, guard);
+  try {
+    try {
+      await sendCDP('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] }, sessionId);
+    } catch {
+      return { result: { status: 'network_guard_unavailable' }, guard };
+    }
+    const result = await submit();
+    if (result?.status === 'submitted') {
+      const deadline = Date.now() + LOGIN_GUARD_WINDOW_MS;
+      while (!guard.navigated && !guard.credentialBlocked && Date.now() < deadline) await delay(50);
+    }
+    return { result, guard };
+  } finally {
+    guard.secrets = [];
+    await restoreFetchGuard(sessionId);
+    loginGuards.delete(sessionId);
+  }
+}
+
+// The secret is passed as a call argument, not embedded in script source.
+async function callLoginProgram(sessionId, options) {
+  const root = await sendCDP('Runtime.evaluate', { expression: 'globalThis', returnByValue: false }, sessionId);
+  const objectId = root?.result?.objectId;
+  if (!objectId) return { status: 'unavailable' };
+  try {
+    const called = await sendCDP('Runtime.callFunctionOn', {
+      objectId, functionDeclaration: loginFormProgram.toString(),
+      arguments: [{ value: options }], returnByValue: true, awaitPromise: true,
+    }, sessionId);
+    if (called.exceptionDetails) return { status: 'script_error' };
+    const value = called.result?.value;
+    return value && typeof value === 'object' ? value : { status: 'unavailable' };
+  } finally {
+    await sendCDP('Runtime.releaseObject', { objectId }, sessionId).catch(() => {});
+  }
+}
+
+function loginOutcome(probe, submitted, guard, extra, statusKey) {
+  let status = submitted?.status || 'submit_unknown';
+  if (status === 'submitted' && guard?.credentialBlocked) status = 'blocked_by_network_guard';
+  const output = { ...probe, ...extra, [statusKey]: status,
+    state: status === 'submitted' ? 'login_submitted' : probe.state };
+  if (submitted?.submitMode) output.submitMode = submitted.submitMode;
+  if (guard) output.networkGuard = { navigated: guard.navigated, blockedRequests: guard.blocked,
+    credentialRequestBlocked: guard.credentialBlocked };
+  return output;
+}
+
 async function handleBrowserAccess(task, targetId, body) {
   const sessionId = await ensureSession(targetId);
   const { value: probe } = await fallbackEval(sessionId, `(${accessProbe.toString()})()`);
   if (!probe || typeof probe !== 'object') throw new ApiError(502, 'action_timeout', 'Access probe did not return a state.');
   if (probe.handoffRequired || !body.allowAutofill || probe.state !== 'auth_required') return probe;
-  const { value: form } = await fallbackEval(sessionId, loginAutofillExpression(false));
-  if (form?.status !== 'ready') return { ...probe, autofillStatus: form?.status || 'unavailable' };
-  const attemptKey = `${task.id}:${targetId}:${form.host}:${form.path}`;
-  if (loginAttempts.has(attemptKey)) return { ...probe, autofillStatus: 'already_attempted' };
-  // Record before the mutation. An ambiguous timeout must never replay a login.
+  if (downloadPolicies.has(sessionId) || loginGuards.has(sessionId)) return { ...probe, autofillStatus: 'busy' };
+  const { value: form } = await fallbackEval(sessionId, loginAutofillExpression(false, { allowScriptSubmit: true }));
+  if (form?.status === 'ready') {
+    // 1. The browser already autofilled a saved account: submit it as-is.
+    const attemptKey = `${task.id}:${targetId}:${form.host}:${form.path}`;
+    if (loginAttempts.has(attemptKey)) return { ...probe, autofillStatus: 'already_attempted' };
+    // Record before the mutation. An ambiguous timeout must never replay a login.
+    loginAttempts.set(attemptKey, Date.now());
+    const { result, guard } = await guardedLoginSubmit(sessionId, form.origin, null, async () =>
+      (await fallbackEval(sessionId, loginAutofillExpression(true, { allowScriptSubmit: true }))).value);
+    return loginOutcome(probe, result, guard, { loginMethod: 'browser_autofill' }, 'autofillStatus');
+  }
+  const autofillStatus = form?.status || 'unavailable';
+  if (!['identity_not_filled', 'password_not_filled'].includes(autofillStatus) || body.allowCredentialHelper === false) {
+    return { ...probe, autofillStatus };
+  }
+  // 2. Fallback: the browser offers a native account picker (several saved
+  //    accounts) or nothing. Use the user's OS credential store entry for this
+  //    exact HTTPS origin, written and submitted by the Broker in this tab.
+  const base = { ...probe, autofillStatus, loginMethod: 'credential_helper' };
+  let origin = null;
+  try {
+    const url = new URL((await targetInfo(targetId))?.url || '');
+    if (url.protocol === 'https:') origin = url.origin;
+  } catch {}
+  if (!origin) return { ...base, credentialStatus: 'origin_unverified' };
+  const check = await callLoginProgram(sessionId, { mode: 'credential', submit: false, expectedOrigin: origin, allowScriptSubmit: true });
+  if (check.status !== 'ready') return { ...base, credentialStatus: check.status };
+  const attemptKey = `${task.id}:${targetId}:${check.host}:${check.path}`;
+  if (loginAttempts.has(attemptKey)) return { ...base, credentialStatus: 'already_attempted' };
+  const account = typeof body.account === 'string' && body.account.trim() ? body.account.trim().slice(0, 256) : null;
+  let credential;
+  try { credential = await readLoginCredential(origin, account); }
+  catch { credential = { status: 'store_unavailable' }; }
+  if (credential?.status !== 'ok' || typeof credential.secret !== 'string' || !credential.secret) {
+    return { ...base, credentialStatus: credential?.status === 'ok' ? 'not_configured' : (credential?.status || 'store_unavailable') };
+  }
   loginAttempts.set(attemptKey, Date.now());
-  const { value: submitted } = await fallbackEval(sessionId, loginAutofillExpression(true));
-  return { ...probe, state: submitted?.status === 'submitted' ? 'login_submitted' : probe.state,
-    autofillStatus: submitted?.status || 'submit_unknown' };
+  try {
+    const { result, guard } = await guardedLoginSubmit(sessionId, origin, credential.secret, () =>
+      callLoginProgram(sessionId, { mode: 'credential', submit: true, expectedOrigin: origin, allowScriptSubmit: true,
+        account: credential.account, secret: credential.secret }));
+    return loginOutcome(probe, result, guard, base, 'credentialStatus');
+  } finally {
+    credential.secret = null;
+    credential = null;
+  }
 }
 
 async function fallbackEval(sessionId, expression) {
@@ -1639,7 +1788,7 @@ async function handleRoute(req, parsed, rawBody) {
       profileMode: PROFILE_MODE,
       managedProfile: PROFILE_MODE === 'managed',
       managedInstanceId: MANAGED_INSTANCE_ID,
-      brokerVersion: BROKER_VERSION,
+      brokerVersion: REPORTED_BROKER_VERSION,
       sessions: sessions.size,
       managedTabs: tabOwners.size,
       activeTasks: activeTaskCount(),
@@ -2095,7 +2244,7 @@ function existingProxyMatchesBrowser(health) {
 function existingProxyIsCompatible(health, capabilities, expectedCdpPort) {
   return isWebAccessProxy(health)
     && health.protocolVersion === PROTOCOL_VERSION
-    && health.brokerVersion === BROKER_VERSION
+    && health.brokerVersion === REPORTED_BROKER_VERSION
     && health.profileMode === PROFILE_MODE
     && health.proxyPort === PORT
     && health.connected === true
@@ -2104,7 +2253,7 @@ function existingProxyIsCompatible(health, capabilities, expectedCdpPort) {
     && health.pid > 0
     && existingProxyMatchesBrowser(health)
     && capabilities?.protocolVersion === PROTOCOL_VERSION
-    && capabilities?.brokerVersion === BROKER_VERSION
+    && capabilities?.brokerVersion === REPORTED_BROKER_VERSION
     && capabilities?.profileMode === PROFILE_MODE
     && capabilities?.taskIsolation === true
     && capabilities?.userTabsVisible === false

@@ -102,6 +102,10 @@ environment/capability gap, not a subscription denial or permission to recreate
 login logic in Python.
 
 The Broker owns routine saved-account autofill and authorized login submission.
+When the browser only offers its native account picker, the Broker falls back to
+the user's own OS credential store entry (web-access `login-credential.ps1`);
+`credentialStatus: not_configured` means the user must enrol once, not that the
+institution lacks a subscription.
 `web-access` handles graphical/slider challenges through page actions and email
 codes through an authorized mail tool; availability and success must be checked,
 not promised. `interactionRequired` does not by itself require user handoff.

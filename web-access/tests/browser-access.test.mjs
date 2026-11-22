@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 import { EventEmitter, once } from 'node:events';
 import { readFile } from 'node:fs/promises';
-import { accessProbe, loginAutofillExpression } from '../scripts/browser-access.mjs';
+import { accessProbe, loginAutofillExpression, loginFormProgram } from '../scripts/browser-access.mjs';
 import * as downloads from '../scripts/download-page.mjs';
 import * as frames from '../scripts/page-frames.mjs';
 import * as version from '../scripts/broker-version.mjs';
@@ -17,7 +17,8 @@ import * as version from '../scripts/broker-version.mjs';
 // profile, credential store, mailbox or external network endpoint is accessed.
 // The in-memory module footer exposes existing symbols; it does not repair routes.
 const scriptUrl = new URL('../scripts/cdp-proxy.mjs', import.meta.url);
-const protectedUrls = [scriptUrl, new URL('../scripts/browser-access.mjs', import.meta.url)];
+const protectedUrls = [scriptUrl, new URL('../scripts/browser-access.mjs', import.meta.url),
+  new URL('../scripts/login-credentials.mjs', import.meta.url)];
 const originals = await Promise.all(protectedUrls.map(url => readFile(url)));
 const fingerprint = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const records = [];
@@ -44,13 +45,21 @@ function fixture(options = {}) {
   const actions = [];
   let sensitiveReads = 0;
   const elements = [];
+  // Values written by the credential helper. Kept out of `actions`/records so a
+  // leak into any public log or return value is detectable via CANARIES.
+  const written = new Map();
+  const pendingRequests = [];
   const location = new URL(options.url ||
     'https://service.example.test/login?session=synthetic_query_canary#synthetic_fragment_canary');
   function element(tagName, attrs = {}, flags = {}) {
     const e = { tagName: tagName.toUpperCase(), type: attrs.type ||
       (tagName === 'button' ? 'submit' : 'text'), name: attrs.name || '', id: attrs.id || '',
       autocomplete: attrs.autocomplete || '', disabled: !!flags.disabled,
-      checked: !!flags.checked, form: null, ...flags,
+      checked: !!flags.checked, form: null, ...flags, innerText: flags.text,
+      click() {
+        actions.push({ action: 'click', tag: tagName });
+        if (typeof flags.onClick === 'function') flags.onClick();
+      },
       getClientRects: () => flags.hidden ? [] : [{}],
       getAttribute: key => {
         if (key === 'value') { sensitiveReads++; throw new Error('Forbidden value read'); }
@@ -75,7 +84,11 @@ function fixture(options = {}) {
     };
     Object.defineProperty(e, 'value', {
       get() { sensitiveReads++; throw new Error('Forbidden credential/verification value read'); },
-      set() { sensitiveReads++; throw new Error('Forbidden credential/verification value write'); },
+      set(value) {
+        if (!options.allowCredentialWrite) { sensitiveReads++; throw new Error('Forbidden credential/verification value write'); }
+        written.set(e.name || e.type, String(value));
+        actions.push({ action: 'setValue', field: e.type === 'password' ? 'password' : 'identity' });
+      },
     });
     elements.push(e);
     return e;
@@ -95,6 +108,8 @@ function fixture(options = {}) {
         actions.push({ action: 'requestSubmit', method: method.toUpperCase(),
           sameOrigin: destination.origin === location.origin, https: destination.protocol === 'https:', target });
         if (options.preventSubmit || options.invalidRequired) return;
+        pendingRequests.push({ url: destination.href, method: method.toUpperCase(), resourceType: 'Document',
+          postData: `password=${encodeURIComponent(written.get('password') || '')}` });
         if (options.afterSubmitText) document.body.innerText = options.afterSubmitText;
       },
     };
@@ -104,14 +119,28 @@ function fixture(options = {}) {
     if (options.identities === 2) attach(element('input', { type: 'text', name: 'username2' }, { autofilled: true }));
     attach(element('input', { type: 'password', name: 'password', autocomplete: 'current-password' },
       { autofilled: options.passwordFilled !== false }));
+    if (options.rememberMe) attach(element('input', { type: 'checkbox', name: 'rememberMe' }, { checked: false }));
     if (options.consent !== undefined) attach(element('input', { type: 'checkbox', required: '' }, { checked: options.consent }));
     if (options.radioGroup) {
       attach(element('input', { type: 'radio', name: 'consent', required: '' }, { checked: true }));
       attach(element('input', { type: 'radio', name: 'consent', required: '' }, { checked: false }));
     }
     if (options.invalidRequired) attach(element('input', { type: 'text', name: 'department', required: '' }));
-    const submitAttrs = { type: 'submit', ...(options.submitter || {}) };
-    attach(element('button', submitAttrs));
+    if (options.scriptSubmit) {
+      // Script-owned login: an <a> that the page's JS turns into a submission.
+      attach(element('a', { href: 'javascript:void(0)', id: 'login_submit' }, { text: options.scriptLabel || '登录',
+        onClick() {
+          const secret = written.get('password') || '';
+          for (const request of options.scriptRequests || [{ url: '/session', method: 'POST', resourceType: 'Document' }]) {
+            const url = new URL(request.url.replace('{secret}', encodeURIComponent(secret)), location).href;
+            pendingRequests.push({ ...request, url,
+              postData: request.method === 'GET' ? undefined : `pwd=${encodeURIComponent(secret)}` });
+          }
+        } }));
+    } else {
+      const submitAttrs = { type: 'submit', ...(options.submitter || {}) };
+      attach(element('button', submitAttrs));
+    }
     if (options.submits === 2) attach(element('button', { type: 'submit' }));
     forms.push(form);
   }
@@ -119,8 +148,9 @@ function fixture(options = {}) {
     addLoginForm();
     if (options.forms === 2) addLoginForm(1);
   }
-  for (const attrs of options.extraInputs || []) element('input', attrs);
-  if (options.captchaIframe) element('iframe', { src: 'https://www.google.com/recaptcha/api2/anchor' });
+  for (const { hidden, ...attrs } of options.extraInputs || []) element('input', attrs, { hidden: !!hidden });
+  for (const item of options.extraElements || []) element(item.tag, item.attrs || {}, { text: item.text, hidden: !!item.hidden });
+  if (options.captchaIframe) element('iframe', { src: options.captchaIframeSrc || 'https://www.google.com/recaptcha/api2/anchor' });
   const document = {
     title: options.title || (options.login === false ? 'Example service' : 'Login'),
     body: { innerText: options.text ?? (options.login === false ? 'Content available' : 'Sign in') },
@@ -128,13 +158,33 @@ function fixture(options = {}) {
     querySelector: selector => elements.find(e => e.matches(selector)) || null,
   };
   const context = vm.createContext({ document, location, URL });
-  return { context, document, actions, forms,
+  return { context, document, actions, forms, location, written, pendingRequests,
     get sensitiveReads() { return sensitiveReads; },
     evaluate(expression) { return plain(vm.runInContext(expression, context, { timeout: 1000 })); },
+    call(functionDeclaration, args) {
+      const fn = vm.runInContext(`(${functionDeclaration})`, context, { timeout: 1000 });
+      return plain(fn(...args));
+    },
   };
 }
 function probe(f) { return redacted(f.evaluate(`(${accessProbe.toString()})()`)); }
-function autofill(f, submit) { return redacted(f.evaluate(loginAutofillExpression(submit))); }
+function autofill(f, submit, options) { return redacted(f.evaluate(loginAutofillExpression(submit, options))); }
+function credentialProgram(f, options) {
+  return redacted(f.call(loginFormProgram.toString(), [{ mode: 'credential', allowScriptSubmit: true,
+    expectedOrigin: f.location.origin, ...options }]));
+}
+// Synthetic OS credential store double. Real Windows Credential Manager access
+// is exercised only by login-credential.ps1 -Action SelfTest.
+const credentialStore = { entries: new Map(), calls: [] };
+async function readLoginCredentialStub(origin, account) {
+  credentialStore.calls.push({ origin, account: account || null });
+  const list = credentialStore.entries.get(origin) || [];
+  const chosen = account ? list.find(item => item.account === account) : (list.length === 1 ? list[0] : null);
+  if (account && !chosen) return { status: 'account_not_configured' };
+  if (!list.length) return { status: 'not_configured' };
+  if (!chosen) return { status: 'account_ambiguous' };
+  return { status: 'ok', account: chosen.account, secret: chosen.secret };
+}
 
 async function productionProxy() {
   assert.equal(typeof vm.SourceTextModule, 'function', 'Run Node with --experimental-vm-modules');
@@ -146,6 +196,8 @@ async function productionProxy() {
   const sessions = new Map();
   const commands = [];
   const proxyLogs = [];
+  const fetchDecisions = [];
+  const pausedRequests = [];
   let sequence = 0;
   let server;
   let context;
@@ -179,10 +231,31 @@ async function productionProxy() {
             case 'Runtime.evaluate': {
               const page = pages.get(sessions.get(message.sessionId));
               assert.ok(page, 'Evaluation must target an owned synthetic fixture');
+              if (p.returnByValue === false && p.expression === 'globalThis') {
+                result = { result: { type: 'object', objectId: 'fixture_global' } }; break;
+              }
               try { result = { result: { type: 'object', value: page.evaluate(p.expression) } }; }
               catch (error) { result = { exceptionDetails: { text: error.message } }; }
               break;
             }
+            case 'Runtime.callFunctionOn': {
+              const page = pages.get(sessions.get(message.sessionId));
+              assert.ok(page, 'Call must target an owned synthetic fixture');
+              assert.equal(p.objectId, 'fixture_global');
+              assert.equal(p.functionDeclaration, loginFormProgram.toString(),
+                'Only the reviewed login program may receive a credential argument');
+              try { result = { result: { type: 'object', value: page.call(p.functionDeclaration, p.arguments.map(a => a.value)) } }; }
+              catch (error) { result = { exceptionDetails: { text: 'synthetic exception' } }; }
+              break;
+            }
+            case 'Target.getTargetInfo': {
+              const page = pages.get(p.targetId);
+              result = { targetInfo: { targetId: p.targetId, type: 'page', url: page?.location?.href || 'about:blank' } }; break;
+            }
+            case 'Fetch.continueRequest': case 'Fetch.failRequest':
+              fetchDecisions.push({ requestId: p.requestId, decision: message.method === 'Fetch.continueRequest' ? 'continue' : 'fail' });
+              break;
+            case 'Runtime.releaseObject': break;
             case 'Target.closeTarget': pages.delete(p.targetId); result = { success: true }; break;
             case 'Target.detachFromTarget': sessions.delete(p.sessionId); break;
             case 'Page.navigate': result = { frameId: 'fixture_frame' }; break;
@@ -191,6 +264,17 @@ async function productionProxy() {
             default: throw new Error(`Unimplemented isolated CDP command: ${message.method}`);
           }
           this.emit('message', JSON.stringify({ id: message.id, result }));
+          // Requests a synthetic page started during this command reach the
+          // Broker as Fetch.requestPaused events, as Chromium would send them.
+          const page = message.sessionId ? pages.get(sessions.get(message.sessionId)) : null;
+          for (const request of page?.pendingRequests?.splice(0) || []) {
+            const requestId = `fixture_request_${++sequence}`;
+            pausedRequests.push({ requestId, method: request.method, resourceType: request.resourceType,
+              sameOrigin: new URL(request.url).origin === page.location.origin });
+            this.emit('message', JSON.stringify({ method: 'Fetch.requestPaused', sessionId: message.sessionId,
+              params: { requestId, frameId: sessions.get(message.sessionId), resourceType: request.resourceType,
+                request: { url: request.url, method: request.method, ...(request.postData ? { postData: request.postData } : {}) } } }));
+          }
         } catch (error) { this.emit('message', JSON.stringify({ id: message.id, error: { message: error.message } })); }
       });
     }
@@ -201,13 +285,15 @@ async function productionProxy() {
   context = vm.createContext({ console: { log: text => proxyLogs.push(String(text)),
     error: text => proxyLogs.push(String(text)) }, Buffer, URL, WebSocket: MockWebSocket,
     setTimeout, clearTimeout, setInterval, clearInterval, AbortController,
-    process: { argv: ['node', scriptUrl.pathname, '--browser', 'edge'], env: {},
+    process: { argv: ['node', scriptUrl.pathname, '--browser', 'edge'], env: { WEB_ACCESS_LOGIN_GUARD_MS: '300' },
       on() {}, exit(code) { throw new Error(`Unexpected production exit ${code}`); } },
   });
   const boundaryModules = new Map([
     ['node:crypto', { default: crypto }], ['node:http', { default: fakeHttp }],
     ['node:os', { default: os }], ['node:url', { URL }],
-    ['./browser-access.mjs', { accessProbe, loginAutofillExpression }],
+    ['./browser-access.mjs', { accessProbe, loginAutofillExpression, loginFormProgram }],
+    ['./login-credentials.mjs', { readLoginCredential: readLoginCredentialStub,
+      credentialStoreInfo: () => ({ store: 'synthetic-double', key: 'origin+account' }) }],
     ['./download-page.mjs', downloads], ['./page-frames.mjs', frames], ['./broker-version.mjs', version],
     ['./runtime-config.mjs', { getProxyPort: () => port, readConfig: () => ({ WEB_ACCESS_BROWSER: 'edge' }),
       RuntimeConfigError: class RuntimeConfigError extends Error {} }],
@@ -244,9 +330,9 @@ async function productionProxy() {
     pages.set(opened.body.targetId, f);
     return { taskId: created.body.taskId, token, targetId: opened.body.targetId, fixture: f };
   }
-  return { post, ownedPage, commands, proxyLogs,
-    access: (owner, allowAutofill = true) => module.namespace.handleBrowserAccess(
-      { id: owner.taskId }, owner.targetId, { allowAutofill }),
+  return { post, ownedPage, commands, proxyLogs, fetchDecisions, pausedRequests,
+    access: (owner, allowAutofill = true, extra = {}) => module.namespace.handleBrowserAccess(
+      { id: owner.taskId }, owner.targetId, { allowAutofill, ...extra }),
     async release(owner) {
       const result = await post(`/v2/tasks/${owner.taskId}/complete`, { keep: false }, owner.token);
       assert.equal(result.status, 200, 'Owned fixture cleanup failed: ' + JSON.stringify(result.body));
@@ -425,6 +511,207 @@ test('classification regression: optional passkey link on ordinary autofilled lo
   const f = fixture({ text: 'Sign in with password. Alternatively use a passkey.' });
   const result = probe(f); record('password login with optional passkey', 'actual-accessProbe', result, f);
   assert.equal(result.state, 'auth_required', 'Optional alternative must not be classified as active strong auth');
+});
+
+// --- Active-form classification: switch entries are not requirements ---------
+const uestcLikeText = '统一身份认证\n账号登录\n验证码登录\n扫码登录\n请输入学号/工号\n7天免登录\n忘记密码\n登录\n微信扫码';
+const activeFormCases = [
+  ['verification-code login tab beside active account form', {
+    text: uestcLikeText,
+    extraElements: [{ tag: 'a', attrs: { role: 'tab' }, text: '验证码登录' }, { tag: 'li', text: '扫码登录' }],
+    extraInputs: [{ type: 'text', name: 'captcha', placeholder: '请输入验证码', hidden: true },
+      { type: 'text', name: 'dynamicCode', placeholder: '请输入短信验证码', hidden: true }] }, 'auth_required', 'login'],
+  ['inline SMS-code tab label on one line', { text: '账号登录  短信验证码登录  扫码登录\n登录',
+    extraElements: [{ tag: 'span', text: '短信验证码登录' }] }, 'auth_required', 'login'],
+  ['English one-time-code sign-in link', { text: 'Sign in\nSign in with a one-time code\nForgot password?' }, 'auth_required', 'login'],
+  ['help text mentioning SMS login is not an instruction', { text: '账号登录\n忘记密码？也可使用短信验证码找回' }, 'auth_required', 'login'],
+  ['invisible reCAPTCHA badge does not block', { captchaIframe: true,
+    captchaIframeSrc: 'https://www.google.com/recaptcha/api2/anchor?k=x&size=invisible' }, 'auth_required', 'login'],
+  ['visible captcha input in the active form', { text: uestcLikeText + '\n请输入验证码',
+    extraInputs: [{ type: 'text', name: 'captcha', placeholder: '验证码' }] }, 'verification_required', 'visual_verification'],
+  ['visible code input in the active form', { text: '登录\n验证码',
+    extraInputs: [{ type: 'text', name: 'code', placeholder: '请输入验证码' }] }, 'verification_required', 'verification_method_unresolved'],
+  ['explicit SMS instruction on a password page', { text: '登录\n请输入短信验证码' }, 'user_handoff_required', 'strong_authentication'],
+  ['active SMS form without password', { login: false, text: '账号登录\n短信验证码登录\n请输入手机号',
+    extraInputs: [{ type: 'tel', name: 'mobile' }, { type: 'text', name: 'smsCode', placeholder: '短信验证码' }] },
+    'user_handoff_required', 'strong_authentication'],
+];
+for (const [name, options, state, reason] of activeFormCases) {
+  test(`accessProbe active form: ${name}`, () => {
+    const f = fixture({ identityFilled: true, passwordFilled: false, ...options });
+    const result = probe(f);
+    record(name, 'actual-accessProbe', result, f);
+    assert.equal(result.state, state); assert.equal(result.reason, reason);
+    assert.equal(f.actions.length, 0); assert.equal(f.sensitiveReads, 0);
+  });
+}
+
+// --- Script-submitted forms and the credential program ----------------------
+test('script-submitted login needs explicit opt-in and is clicked, not requestSubmit', () => {
+  const f = fixture({ scriptSubmit: true });
+  assert.equal(autofill(f, false).status, 'ambiguous_submit', 'Without the Broker guard no script click is allowed');
+  const ready = autofill(f, false, { allowScriptSubmit: true });
+  assert.equal(ready.status, 'ready'); assert.equal(ready.submitMode, 'script');
+  const result = autofill(f, true, { allowScriptSubmit: true });
+  record('script submit autofill', 'actual-loginAutofillExpression', result, f);
+  assert.equal(result.status, 'submitted');
+  assert.deepEqual(f.actions, [{ action: 'click', tag: 'a' }]);
+});
+test('script-submitted GET form is rejected for browser autofill', () => {
+  const f = fixture({ scriptSubmit: true, method: 'get' });
+  assert.equal(autofill(f, true, { allowScriptSubmit: true }).status, 'insecure_form');
+  assert.equal(f.actions.length, 0);
+});
+test('script button with cross-origin href is rejected', () => {
+  const f = fixture({ scriptSubmit: true });
+  f.forms[0].querySelectorAll('a')[0].getAttribute = key => key === 'href' ? 'https://other.example.test/login' : null;
+  assert.equal(autofill(f, true, { allowScriptSubmit: true }).status, 'insecure_form');
+});
+test('credential program writes only into the verified form and never reads values', () => {
+  const f = fixture({ allowCredentialWrite: true, identityFilled: true, passwordFilled: false, rememberMe: true });
+  const check = credentialProgram(f, { submit: false });
+  assert.equal(check.status, 'ready');
+  assert.equal(f.actions.length, 0, 'Readiness check must not write');
+  const result = credentialProgram(f, { submit: true, account: 'synthetic_identity_canary', secret: 'synthetic_password_canary' });
+  record('credential program submit', 'actual-loginFormProgram', result, f);
+  assert.equal(result.status, 'submitted');
+  assert.equal(f.written.get('password'), 'synthetic_password_canary');
+  assert.equal(f.written.get('account0'), 'synthetic_identity_canary');
+  assert.equal(f.sensitiveReads, 0);
+  const remember = f.forms[0].querySelectorAll('input[type="checkbox"]')[0];
+  assert.equal(remember.checked, false, 'Optional remember-me / 7-day boxes stay unchecked');
+});
+test('credential program refuses an unexpected origin, HTTP and missing secret', () => {
+  const f = fixture({ allowCredentialWrite: true });
+  assert.equal(credentialProgram(f, { submit: true, expectedOrigin: 'https://other.example.test',
+    secret: 'synthetic_password_canary' }).status, 'origin_mismatch');
+  assert.equal(credentialProgram(f, { submit: true }).status, 'credential_missing');
+  const plainHttp = fixture({ allowCredentialWrite: true, url: 'http://service.example.test/login' });
+  assert.equal(credentialProgram(plainHttp, { submit: true, secret: 'synthetic_password_canary' }).status, 'not_https');
+  assert.equal(f.written.size + plainHttp.written.size, 0);
+});
+
+// --- Broker handler: Edge autofill first, OS credential helper as fallback ---
+const ORIGIN = 'https://service.example.test';
+test('production handler: credential helper fallback and network guard', async t => {
+  const proxy = await productionProxy();
+  const withStore = async (entries, fn) => {
+    credentialStore.entries = new Map(entries); credentialStore.calls = [];
+    try { await fn(); } finally { credentialStore.entries = new Map(); }
+  };
+  try {
+    await t.test('Edge account picker (password not filled) uses the stored credential in the background tab', async () => {
+      await withStore([[ORIGIN, [{ account: 'synthetic_identity_canary', secret: 'synthetic_password_canary' }]]], async () => {
+        const f = fixture({ allowCredentialWrite: true, identityFilled: true, passwordFilled: false, text: uestcLikeText,
+          extraElements: [{ tag: 'a', attrs: { role: 'tab' }, text: '验证码登录' }], rememberMe: true });
+        const owner = await proxy.ownedPage(f);
+        try {
+          const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true }, owner.token);
+          record('credential helper via HTTP', 'actual-production-HTTP-router', result, f);
+          assert.equal(result.status, 200);
+          assert.equal(result.body.state, 'login_submitted');
+          assert.equal(result.body.loginMethod, 'credential_helper');
+          assert.equal(result.body.autofillStatus, 'password_not_filled');
+          assert.equal(result.body.credentialStatus, 'submitted');
+          assert.equal(result.body.networkGuard.navigated, true);
+          assert.equal(f.written.get('password'), 'synthetic_password_canary');
+          assert.deepEqual(credentialStore.calls, [{ origin: ORIGIN, account: null }]);
+          assert.equal(proxy.commands.includes('Target.activateTarget'), false, 'Must not activate the tab or steal focus');
+          const repeat = redacted(plain(await proxy.access(owner)));
+          assert.equal(repeat.credentialStatus, 'already_attempted');
+          assert.equal(f.actions.filter(a => a.action === 'requestSubmit').length, 1, 'Never replays a login');
+        } finally { await proxy.release(owner); }
+      });
+    });
+    await t.test('browser autofill keeps priority; the store is not consulted', async () => {
+      await withStore([[ORIGIN, [{ account: 'synthetic_identity_canary', secret: 'synthetic_password_canary' }]]], async () => {
+        const f = fixture(); const owner = await proxy.ownedPage(f);
+        try {
+          const result = redacted(plain(await proxy.access(owner)));
+          assert.equal(result.loginMethod, 'browser_autofill'); assert.equal(result.state, 'login_submitted');
+          assert.equal(credentialStore.calls.length, 0);
+        } finally { await proxy.release(owner); }
+      });
+    });
+    for (const [name, entries, extra, status] of [
+      ['not configured', [], {}, 'not_configured'],
+      ['several accounts, none chosen', [[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' },
+        { account: 'a2', secret: 'synthetic_password_canary' }]]], {}, 'account_ambiguous'],
+      ['chosen account not stored', [[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' }]]], { account: 'a3' }, 'account_not_configured'],
+    ]) {
+      await t.test(`no submit when ${name}`, async () => {
+        await withStore(entries, async () => {
+          const f = fixture({ allowCredentialWrite: true, passwordFilled: false }); const owner = await proxy.ownedPage(f);
+          try {
+            const result = redacted(plain(await proxy.access(owner, true, extra)));
+            record(name, 'actual-original-handler-not-HTTP', result, f);
+            assert.equal(result.state, 'auth_required'); assert.equal(result.credentialStatus, status);
+            assert.equal(f.actions.length, 0); assert.equal(f.written.size, 0);
+          } finally { await proxy.release(owner); }
+        });
+      });
+    }
+    await t.test('allowCredentialHelper:false never reads the store', async () => {
+      await withStore([[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' }]]], async () => {
+        const f = fixture({ allowCredentialWrite: true, passwordFilled: false }); const owner = await proxy.ownedPage(f);
+        try {
+          const result = redacted(plain(await proxy.access(owner, true, { allowCredentialHelper: false })));
+          assert.equal(result.autofillStatus, 'password_not_filled'); assert.equal(credentialStore.calls.length, 0);
+          assert.equal(f.actions.length, 0);
+        } finally { await proxy.release(owner); }
+      });
+    });
+    await t.test('verification tab on the page does not stop the account login', async () => {
+      await withStore([[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' }]]], async () => {
+        const f = fixture({ allowCredentialWrite: true, passwordFilled: false, scriptSubmit: true, text: uestcLikeText,
+          extraElements: [{ tag: 'a', attrs: { role: 'tab' }, text: '验证码登录' }],
+          extraInputs: [{ type: 'text', name: 'captcha', placeholder: '请输入验证码', hidden: true }] });
+        const owner = await proxy.ownedPage(f);
+        try {
+          const result = redacted(plain(await proxy.access(owner)));
+          record('UESTC-like script login', 'actual-original-handler-not-HTTP', result, f);
+          assert.equal(result.state, 'login_submitted'); assert.equal(result.submitMode, 'script');
+          assert.equal(result.networkGuard.navigated, true);
+        } finally { await proxy.release(owner); }
+      });
+    });
+    for (const [name, requests] of [
+      ['cross-origin POST carrying the secret', [{ url: 'https://other.example.test/collect', method: 'POST', resourceType: 'XHR' }]],
+      ['same-origin GET with the secret in the URL', [{ url: '/session?pwd={secret}', method: 'GET', resourceType: 'Document' }]],
+      ['cross-origin top-level POST navigation', [{ url: 'https://other.example.test/session', method: 'POST', resourceType: 'Document' }]],
+    ]) {
+      await t.test(`network guard blocks ${name}`, async () => {
+        await withStore([[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' }]]], async () => {
+          const f = fixture({ allowCredentialWrite: true, passwordFilled: false, scriptSubmit: true, scriptRequests: requests });
+          const owner = await proxy.ownedPage(f);
+          const decisionsBefore = proxy.fetchDecisions.length;
+          try {
+            const result = redacted(plain(await proxy.access(owner)));
+            record(name, 'actual-original-handler-not-HTTP', result, f);
+            assert.equal(result.credentialStatus, 'blocked_by_network_guard');
+            assert.notEqual(result.state, 'login_submitted');
+            assert.equal(result.networkGuard.credentialRequestBlocked, true);
+            assert.deepEqual(proxy.fetchDecisions.slice(decisionsBefore).map(d => d.decision), ['fail']);
+          } finally { await proxy.release(owner); }
+        });
+      });
+    }
+    await t.test('cross-origin GET assets are allowed; guard ends at the same-origin navigation', async () => {
+      await withStore([[ORIGIN, [{ account: 'a1', secret: 'synthetic_password_canary' }]]], async () => {
+        const f = fixture({ allowCredentialWrite: true, passwordFilled: false, scriptSubmit: true, scriptRequests: [
+          { url: 'https://cdn.example.test/app.js', method: 'GET', resourceType: 'Script' },
+          { url: '/session', method: 'POST', resourceType: 'Document' }] });
+        const owner = await proxy.ownedPage(f);
+        const decisionsBefore = proxy.fetchDecisions.length;
+        try {
+          const result = redacted(plain(await proxy.access(owner)));
+          assert.equal(result.state, 'login_submitted'); assert.equal(result.networkGuard.blockedRequests, 0);
+          assert.deepEqual(proxy.fetchDecisions.slice(decisionsBefore).map(d => d.decision), ['continue', 'continue']);
+        } finally { await proxy.release(owner); }
+      });
+    });
+    assert.equal(CANARIES.some(value => proxy.proxyLogs.join('\n').includes(value)), false);
+  } finally { await proxy.close(); }
 });
 
 test.after(async () => {

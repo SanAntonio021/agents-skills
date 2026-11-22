@@ -24,6 +24,15 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 
 `--status-only` 不创建或迁移 `config.env`。`--no-probe` 只用于隔离测试。
 
+需要后台登录、而 Edge 对该站点保存了多个账号时，先由用户本人录入一次本机凭据（密码在系统凭据窗口里输入，不进命令行）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/login-credential.ps1 -Action Add -Origin https://<登录页主机> -Account <账号>
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/login-credential.ps1 -Action Check -Origin https://<登录页主机>
+```
+
+条件与返回状态见[本机凭据助手](references/cdp-lifecycle.md#本机凭据助手)。
+
 ## 当前 Edge
 
 | 项目 | 默认值 |
@@ -33,7 +42,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 | Broker Proxy | `127.0.0.1:3456` |
 
 - 任务在后台新建标签页，不切换或修改无关页面；可信目标页恢复并核实后，可按获准接口关闭唯一确定的旧目标页。CDP Proxy 只关闭当前 task 自有页面；其他 task/用户标签仅能由宿主提供的获准精确句柄接口关闭，不用原始 CDP 绕过。
-- 复用当前 Edge 内的已有登录态；不复制或导出浏览器 Profile、密码库、Cookie 或认证令牌。
+- 复用当前 Edge 内的已有登录态；不复制或导出浏览器 Profile、密码库、Cookie 或认证令牌。本机凭据只存在 Windows 凭据管理器，Broker 读出后只写入核实过的 HTTPS 同源登录表单，对外只返回脱敏状态。
 - `managed` 保留为显式隔离模式，不作为默认或自动回退。
 - 任务结束调用 `complete keep:false`，只关闭本 task 的 tab/popup；不停止 Broker、不关闭 Edge 或其他任务页面。
 - CDP 恢复先重读 `DevToolsActivePort`、核验监听进程并尝试 WebSocket。`/json/version` 的 HTTP 404 不等于 CDP 失败。
@@ -44,6 +53,7 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 - 多对话 task/token/tab 隔离，共享当前 Edge 与长期 Proxy。
 - AX snapshot/ref、结构化 click/fill/type/press/check/select/hover、wait 和 dialog。
 - 用户登录/接管、表单写入保护、敏感操作授权和完整结果回读。
+- 后台登录：Edge 已自动填充时直接提交；同站点存了多个账号、Edge 只弹原生下拉框时，改用 Windows 凭据管理器里用户录入的本机凭据，在任务后台标签写入并提交，不用 Computer Use。“验证码登录”等切换入口不当作验证要求。
 - 书签/历史定位、服务器文件字节取回、图片像素导出、截图和 iframe 内容/交互。
 - 本地站点经验与旧 Proxy 迁移说明。
 

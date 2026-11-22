@@ -4,7 +4,7 @@
 - 状态：`confirmed`
 - 首次统一调查：`2026-08-06`
 - 最近来源登记审核：`2026-10-18`
-- 说明：以上游 v2.6.0 为来源基线的本地派生版；吸收联网策略、跨站 iframe/CDP、tab 管理与站点经验；当前本地 existing-edge.3 按已实施的有意变更复用正在运行的 Edge，动态发现 CDP 端口，后台独立 task/tab；managed 仅为显式隔离选项。登录分层处理、完整 PDF 下载和跨 iframe 交互是本地扩展，不改变上游接受基线。
+- 说明：以上游 v2.6.0 为来源基线的本地派生版；吸收联网策略、跨站 iframe/CDP、tab 管理与站点经验；当前本地 existing-edge.4 按已实施的有意变更复用正在运行的 Edge，动态发现 CDP 端口，后台独立 task/tab；managed 仅为显式隔离选项。登录分层处理、完整 PDF 下载和跨 iframe 交互是本地扩展，不改变上游接受基线。
 
 这里只记录外部上游 `skill`；论文、普通文档和模板不属于本机制。
 每周检查的最近观测与审核时间记录在 `reports/skill-upstream/state.json`。

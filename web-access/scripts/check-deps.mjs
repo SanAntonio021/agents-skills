@@ -992,7 +992,35 @@ async function ensureManagedBroker(opts) {
   }
 }
 
-async function ensureProxy(browserId, proxyPort, { statusOnly = false } = {}) {
+function proxyCommandMatchesExisting(commandLine) {
+  const normalized = String(commandLine || '').replaceAll('/', '\\').toLowerCase();
+  return /\\web-access\\scripts\\cdp-proxy\.mjs/.test(normalized) &&
+    normalized.includes('--browser edge') &&
+    !normalized.includes('--broker-profile-mode managed');
+}
+
+async function stopIdleOutdatedExistingProxy(health) {
+  if (health?.profileMode !== 'existing' || health?.brokerVersion === BROKER_VERSION) return false;
+  if (Number(health.activeTasks || 0) !== 0 || Number(health.managedTabs || 0) !== 0) return false;
+  const pid = Number(health?.pid);
+  if (!Number.isInteger(pid) || pid < 1 || pid === process.pid) return false;
+  if (!proxyCommandMatchesExisting(getProcessCommandLine(pid))) return false;
+  const proxyPort = Number(health.proxyPort);
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    return false;
+  }
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    const healthNow = await httpGetJson(`http://127.0.0.1:${proxyPort}/health`, 500);
+    if (!healthNow || healthNow.pid !== pid) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+async function ensureProxy(browserId, proxyPort, { statusOnly = false, versionRestartAttempted = false } = {}) {
   const browser = typeof browserId === 'string'
     ? knownBrowsers().find((item) => item.id === browserId) || { id: browserId, label: browserId }
     : browserId;
@@ -1120,6 +1148,21 @@ async function ensureProxy(browserId, proxyPort, { statusOnly = false } = {}) {
         identityIssue: portIssue,
         existing: true,
       });
+    }
+    // An idle existing-mode Broker left over from an older skill release keeps
+    // serving old code. Replace it only when it is verifiably this skill's
+    // Proxy and has no tasks or tabs; otherwise keep reusing it.
+    if (
+      !statusOnly &&
+      !versionRestartAttempted &&
+      initialHealth.profileMode === 'existing' &&
+      initialHealth.brokerVersion !== BROKER_VERSION
+    ) {
+      if (await stopIdleOutdatedExistingProxy(initialHealth)) {
+        diagnostic(`proxy[${browserId}]: 已停止空闲的旧版 Broker (${initialHealth.brokerVersion} → ${BROKER_VERSION})，重新启动`);
+        return ensureProxy(browser, proxyPort, { statusOnly, versionRestartAttempted: true });
+      }
+      diagnostic(`proxy[${browserId}]: Broker 版本 ${initialHealth.brokerVersion} 与源码 ${BROKER_VERSION} 不一致；仍有任务或无法核实归属，继续复用`);
     }
     if (initialHealth.connected) {
       return completeCapabilityHandshake({

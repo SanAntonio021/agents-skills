@@ -155,10 +155,14 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 新增访问契约，仍须 Bearer task token、JSON body 和幂等键：
 
 ```json
-{"allowAutofill":true}
+{"allowAutofill":true, "allowCredentialHelper":true, "account":"<可选，本机凭据中的账号>"}
 ```
 
-返回脱敏的 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，可附 `reason`、`autofillStatus`；不返回密码、Cookie、认证头或验证码值。`allowAutofill:false` 仅观察，`true` 允许 Broker 在目标账号/HTTPS 同源表单明确、浏览器已自动填充时尝试一次常规登录提交；未知提交结果不能重放。`ready` 只表示访问探针未发现阻碍，`login_submitted` 只表示已尝试提交，均不证明机构订阅或 PDF 已取得。
+返回脱敏的 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，可附 `reason`、`autofillStatus`、`loginMethod`、`credentialStatus`、`submitMode`、`networkGuard`；不返回密码、账号、Cookie、认证头或验证码值。`allowAutofill:false` 仅观察。`true` 时 Broker 先走浏览器自动填充：账号和密码框都已自动填充时提交一次（`loginMethod:"browser_autofill"`）。浏览器只给原生账号下拉框或没有填入（`autofillStatus` 为 `identity_not_filled`、`password_not_filled`）时，除非 `allowCredentialHelper:false`，Broker 改用本机凭据助手（`loginMethod:"credential_helper"`），细节见[登录与用户接管](cdp-lifecycle.md#本机凭据助手)。同一 task、tab、host 和路径只尝试一次，未知提交结果不能重放。`ready` 只表示访问探针未发现阻碍，`login_submitted` 只表示已尝试提交，均不证明机构订阅或 PDF 已取得。
+
+`credentialStatus` 取值：`submitted`；`not_configured`、`account_not_configured`、`account_ambiguous`（需用户录入或在请求里给 `account`）；`store_unavailable`、`origin_unverified`、`origin_mismatch`；表单不合格时沿用 `insecure_form`、`ambiguous_form`、`ambiguous_identity`、`ambiguous_submit`、`consent_required`；`blocked_by_network_guard`（提交时出现跨源写请求或带密码的 URL，已拦截，状态不变）；`already_attempted`。`networkGuard` 给出 `navigated`、`blockedRequests`、`credentialRequestBlocked`。
+
+`state` 的判定只看当前可见、激活的表单：“验证码登录”“短信登录”“扫码登录”“Sign in with a one-time code”这类切换入口、标签和链接文字先剔除，隐藏面板里的输入框不计；激活的密码表单旁出现可见验证码输入框或“请输入……验证码”这类明确提示，才返回 `verification_required` 或 `user_handoff_required`。
 
 - 常规登录自动填充与提交归 Broker；业务客户端只消费状态，不另写登录脚本。
 - `interactionRequired:true` 不等于人工接管：图形/滑块验证由 `web-access` 页面动作、邮箱验证码由获授权邮件工具按实际能力处理，不承诺全部自动成功。

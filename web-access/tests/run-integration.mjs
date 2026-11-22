@@ -1794,6 +1794,41 @@ try {
     }
   });
 
+  await runTest('check-deps-replaces-idle-outdated-existing-broker-only', async () => {
+    const mock = await startMockCdpServer('edge');
+    const outdated = { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: 'existing-edge.0-outdated' };
+    const busy = await startIsolatedProxy(mock, outdated);
+    let idle = null;
+    try {
+      const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _busyOverride, ...busyEnv } = busy.env;
+      const task = await createTask(busy.base);
+      const busyBefore = await getHealth(busy.port);
+      const busyCheck = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], busyEnv);
+      assert.equal(await waitForExit(busyCheck, 30000), 0, `${busyCheck.stdoutText}\n${busyCheck.stderrText}`);
+      const busyAfter = await getHealth(busy.port);
+      assert.equal(busyAfter.pid, busyBefore.pid, 'A Broker with active tasks must be kept');
+      assert.equal(busyAfter.brokerVersion, 'existing-edge.0-outdated');
+      await postJson(busy.base, `/v2/tasks/${task.taskId}/complete`, { keep: false }, { token: task.taskToken });
+
+      idle = await startIsolatedProxy(mock, outdated);
+      const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _idleOverride, ...idleEnv } = idle.env;
+      const idleBefore = await getHealth(idle.port);
+      const idleCheck = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], idleEnv);
+      assert.equal(await waitForExit(idleCheck, 30000), 0, `${idleCheck.stdoutText}\n${idleCheck.stderrText}`);
+      const report = JSON.parse(idleCheck.stdoutText);
+      assert.equal(report.ok, true);
+      const idleAfter = await getHealth(idle.port);
+      assert.notEqual(idleAfter.pid, idleBefore.pid, 'An idle outdated Broker is replaced');
+      assert.notEqual(idleAfter.brokerVersion, 'existing-edge.0-outdated');
+      assert.equal(idleAfter.profileMode, 'existing');
+      return { busyBrokerKept: true, idleBrokerReplaced: true, newBrokerVersion: idleAfter.brokerVersion };
+    } finally {
+      await stopIsolatedProxy(busy);
+      if (idle) await stopIsolatedProxy(idle);
+      await mock.close();
+    }
+  });
+
   await runTest('failed-auto-recovery-does-not-loop', async () => {
     const mock = await startMockCdpServer('edge');
     const instance = await startIsolatedProxy(mock);

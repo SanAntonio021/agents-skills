@@ -48,7 +48,7 @@ Windows 机构模块支持 IEEE Xplore 和 Optica Publishing Group，通过 `scr
 文章页 -> acquire -> 当前 Edge 内新建后台任务页
     -> Broker /access 返回脱敏访问状态
     -> 已有登录可用：寻找官方 PDF
-    -> 常规登录：Broker 复用保存账号并提交，随后回读
+    -> 常规登录：Broker 复用浏览器自动填充，或用本机凭据助手后台提交，随后回读
     -> 图形/滑块/邮箱验证：web-access 页面动作/获授权邮件工具
     -> 真正短信/动态口令/刷脸/系统验证：handoff，完成后 resume
     -> Broker /download 返回完整二进制、最终 URL、长度、SHA-256

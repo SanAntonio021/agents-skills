@@ -40,6 +40,7 @@ updated: 2026-11-21
 
 - 选中标签组件，`⋮`→“配置”，右侧“标签页”面板的“标签”列表下有“添加标签”按钮，新标签默认名为“标签 N”。改名时用原生 `value` setter 写入该输入框，依次派发 `input`、`change` 后再 `blur`，然后回读标签栏文字（2026-11-18）。
 - 新标签是空的，提示“拖拽组件至标签页”，放组件见上节。
+- 调整标签顺序：在同一面板拖标签项左侧的 `.tabs-widget-edit-panel-item-handle`。对抓手派发 `pointerdown`+`mousedown`，再分几次 `/eval` 对 `elementFromPoint` 命中的元素和 `document` 派发 `pointermove`+`mousemove`，最后派发 `pointerup`+`mouseup`；标签内容随标签一起移动。项右侧的“更多”菜单只有“移入组件”“删除”，没有上移下移（2026-11-22，1 次成功）。
 
 ### 配置面板
 
@@ -49,11 +50,16 @@ updated: 2026-11-21
 - 筛选条件里的数字值要用 `/action` 的 `press` 逐键输入；`execCommand('insertText')` 只改输入框显示，条件不生效。人员字段按“访问者本人”筛选时，分三次调用完成：添加条件选字段、把运算符改为“包含”、再选“访问者本人”。
 - 表格工具栏的“筛选”是浏览者自己的临时筛选，不保存到组件；组件条件在 `⋮`→“配置”→“数据可见范围”的“可见记录”里。条件编辑器关闭（点配置面板空白处）后才保存，`+app-block-get` 读回可能晚几秒（2026-11-18）。
 - 条件编辑器在后台标签页里：字段下拉项 `.bitable-dropdown-select__item` 用 `/click-at` 点不中（命中下层面板），对该项依次派发 pointer/mouse 事件序列后生效；运算符下拉项 `.ud__select__list__item` 调用其 React `onClick` 生效。每次选完先读回条件行文字再继续（2026-11-18）。
-- “可见字段”面板只能拖动调整顺序。2026-11-18 对 `.bitable-field-panel-list-item-container` 发合成 `mousedown`/`mousemove`/`mouseup` 未改变顺序；关闭再打开字段的显示开关也不会把它移到末尾。能用 CLI 时改用 CLI，见下节。
+- “可见字段”面板只能拖动调整顺序，关闭再打开字段的显示开关不会改变位置；能用 CLI 时改用 CLI，见下节。必须在面板里拖时：
+  - 对字段项的 `.drag-icon-container` 派发 `mousedown`，之后的 `mousemove`、`mouseup` 都发给 `document`，每个事件单独一次 `/eval`。只发给字段项本身不会开始拖动（2026-11-18 失败的原因）。
+  - 列表只露出几行时，拖动中逐步设置 `.bitable-field-panel-list` 的 `scrollTop` 并派发 `scroll`，再把鼠标移到目标位置。
+  - 主字段那一行锁定，不在排序区内。松手点落在主字段行上时拖动结束但顺序不变，要落在主字段下面第一项的上半部分。
+  - 面板关闭后才保存，用 `+app-block-get` 读回 `visible_fields` 确认（2026-11-22，第二次成功）。
 
 ### 与 lark-cli 配合
 
 - 表格、看板、甘特等视图组件（`+app-block-list` 中 `type: view`）的名称、`visible_fields`、`filter`、`sort_by`、`group_by` 可以用 `+app-block-update --no-validate` 修改；不加该参数时本地校验不认这些字段。服务端会连同组件已有条件一起校验：已有条件含“访问者本人”（`{"$slot":"current_user"}`）时，即使本次不传 `filter`，整次更新也会被拒，这类组件只能在编辑器里改（2026-11-18）。
+- 条件写法：复选框用 `{"operator":"is","value":false}`（或 `true`）；单选可直接写选项名，服务端会存成选项 ID。`isNot` 某选项时，该字段为空的记录也算满足条件（2026-11-22 读回条数核实）。
 - CLI 不能新建视图组件（`--type` 不接受 `view`），也不能改变组件所在的标签；这两步要在编辑器里做，字段、筛选和排序再交给 CLI 设置。
 - **接口更新会清空“父记录字段”**：表格组件的树状显示靠配置面板里的“父记录字段”，`+app-block-get` 读不到这项，`+app-block-update` 提交后它会被清空，表格退回平铺（2026-11-21 复现）。对树状表格用过接口后，必须进编辑器 `⋮`→“配置”把“父记录字段”设回原字段，再在浏览模式确认能展开。
 

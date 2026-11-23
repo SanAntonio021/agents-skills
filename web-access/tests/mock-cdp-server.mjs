@@ -309,6 +309,28 @@ export async function startMockCdpServer(browserId, options = {}) {
     const source = params.functionDeclaration || '';
     const args = (params.arguments || []).map((arg) => arg.value);
 
+    if (source.includes('web-access-overlay')) {
+      // element.overlay = { extension, closeControl, escapeCloses } describes a
+      // synthetic overlay covering the element.
+      const overlay = element.overlay;
+      if (!element.obscured) return { result: { type: 'object', value: { obscured: false } } };
+      if (!overlay) return { result: { type: 'object', value: { obscured: true, overlay: false } } };
+      const info = { obscured: true, overlay: true, extension: Boolean(overlay.extension), tag: 'div' };
+      const mode = args[0];
+      if (mode === 'close' && overlay.extension) {
+        if (!overlay.closeControl) return { result: { type: 'object', value: { ...info, action: null } } };
+        element.obscured = false; element.overlay = null;
+        document.overlayActions = [...(document.overlayActions || []), 'close_control'];
+        return { result: { type: 'object', value: { ...info, action: 'close_control' } } };
+      }
+      if (mode === 'hide' && overlay.extension) {
+        element.obscured = false; element.overlay = null;
+        document.overlayActions = [...(document.overlayActions || []), 'hidden_in_this_tab'];
+        return { result: { type: 'object', value: { ...info, action: 'hidden_in_this_tab' } } };
+      }
+      return { result: { type: 'object', value: info } };
+    }
+
     if (source.includes('getBoundingClientRect') || source.includes('isConnected')) {
       return {
         result: {
@@ -537,6 +559,12 @@ export async function startMockCdpServer(browserId, options = {}) {
         const document = targetDocument(sessionId);
         const element = document?.elements.get(document.focusedBackendNodeId);
         if (document && params.type === 'rawKeyDown' && params.code === 'KeyA' && params.modifiers) document.selectAll = true;
+        if (document && params.type === 'rawKeyDown' && params.key === 'Escape') {
+          // Synthetic extension overlays that close on Escape.
+          for (const candidate of document.elements.values()) {
+            if (candidate.overlay?.escapeCloses) { candidate.obscured = false; candidate.overlay = null; }
+          }
+        }
         if (element && params.type === 'keyDown' && params.text) element.value = `${element.value || ''}${params.text}`;
         return {};
       }

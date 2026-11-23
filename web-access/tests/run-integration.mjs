@@ -1150,6 +1150,31 @@ try {
     await assertBlocked({ visible: false });
     await assertBlocked({ enabled: false });
     await assertBlocked({ obscured: true });
+    // A site overlay (not an extension) is never dismissed automatically.
+    {
+      const snapshot = await getSnapshot(edgeBase, task, tab.targetId);
+      const ref = findNode(snapshot, 'button', 'Submit').ref;
+      edgeMock.setElementState(tab.targetId, 102, { obscured: true, overlay: { extension: false, closeControl: true } });
+      const result = await doAction(edgeBase, task, tab.targetId, { action: 'click', ref });
+      assertError(result, 409, 'STALE_REF');
+      assert.equal(result.body.details?.reason, 'obscured', JSON.stringify(result.body));
+      assert.equal(result.body.details?.obscuredBy?.extension, false);
+      edgeMock.setElementState(tab.targetId, 102, { obscured: false, overlay: null });
+    }
+    // Extension popups: close control, then Escape, then hide in this tab only.
+    for (const [overlay, expected] of [
+      [{ extension: true, closeControl: true }, 'close_control'],
+      [{ extension: true, closeControl: false, escapeCloses: true }, 'escape'],
+      [{ extension: true, closeControl: false, escapeCloses: false }, 'hidden_in_this_tab'],
+    ]) {
+      const snapshot = await getSnapshot(edgeBase, task, tab.targetId);
+      const ref = findNode(snapshot, 'button', 'Submit').ref;
+      edgeMock.setElementState(tab.targetId, 102, { obscured: true, overlay });
+      const result = await doAction(edgeBase, task, tab.targetId, { action: 'click', ref });
+      assert.equal(result.status, 200, JSON.stringify(result.body));
+      assert.equal(result.body.overlayHandled, expected);
+      edgeMock.setElementState(tab.targetId, 102, { obscured: false, overlay: null });
+    }
 
     const reactSnapshot = await getSnapshot(edgeBase, task, tab.targetId);
     const input = findNode(reactSnapshot, 'textbox', 'Name');

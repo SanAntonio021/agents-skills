@@ -50,6 +50,9 @@ class _FakeClient:
         self.page_reads += 1
         if self._state.get("challenge"):
             return {"state": "challenge", "failureCode": "challenge", "handoffRequired": False, "interactionRequired": True}
+        if self._state.get("personal_attribute_consent"):
+            return {"state": "attribute_consent_required", "failureCode": "attribute_consent_required",
+                    "handoffRequired": True, "reason": "personal_attributes", "blockedCategories": ["email"]}
         if self._state.get("strong_auth"):
             return {"state": "user_handoff_required", "failureCode": "user_handoff_required", "handoffRequired": True}
         return {"state": "auth_required", "failureCode": "auth_required", "handoffRequired": False, "interactionRequired": True}
@@ -268,6 +271,19 @@ class CliStateTests(unittest.TestCase):
             self.assertTrue(result["user_action_required"])
             self.assertEqual(client.handoff_calls, ["target"])
             self.assertEqual(result["failure_code"], "user_handoff_required")
+
+    def test_personal_attribute_consent_is_handed_to_the_user(self):
+        with tempfile.TemporaryDirectory() as root:
+            store = FileSessionStore(Path(root))
+            session = self.session()
+            client = _FakeClient(url="https://idp.example.edu/idp/profile/SAML2/Redirect/SSO",
+                                 state={"personal_attribute_consent": True})
+            result = continue_browser_access(store, session, client, allow_autofill=True)
+            self.assertTrue(result["user_action_required"])
+            self.assertEqual(client.handoff_calls, ["target"])
+            self.assertEqual(result["failure_code"], "attribute_consent_required")
+            self.assertIn("提供所列信息", json.dumps(result, ensure_ascii=False))
+            self.assertNotIn("短信", json.dumps(result, ensure_ascii=False))
 
     def test_routine_login_stays_active_for_web_access(self):
         with tempfile.TemporaryDirectory() as root:

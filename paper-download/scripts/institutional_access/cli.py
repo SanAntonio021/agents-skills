@@ -298,9 +298,15 @@ def continue_browser_access(store: Any, session: dict[str, Any], client: Browser
     session["userHandoffRequired"] = bool(access.get("handoffRequired"))
     session["failure_code"] = access.get("failureCode")
     if access.get("handoffRequired"):
+        if access.get("state") == "attribute_consent_required":
+            # Personal attributes, an unlisted service or an unparsable list:
+            # releasing them is the user's own decision.
+            instruction = "学校身份平台要求向该服务提供所列信息，需要你在当前页面确认是否同意，随后继续原任务。"
+        else:
+            instruction = "请完成当前页面的短信、动态口令、刷脸或系统身份验证，随后继续原任务。"
         return set_handoff(store, session, client, stage="user_login_required",
                            reason=str(access.get("reason") or "strong authentication required"),
-                           instruction="请完成当前页面的短信、动态口令、刷脸或系统身份验证，随后继续原任务。")
+                           instruction=instruction)
     return save_stage(store, session,
                       "publisher_verification" if access.get("state") in {"verification_required", "challenge"} else "user_login_required",
                       reason=str(access.get("reason") or access.get("state") or "browser interaction required"),

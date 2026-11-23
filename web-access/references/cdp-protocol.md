@@ -155,8 +155,10 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 新增访问契约，仍须 Bearer task token、JSON body 和幂等键：
 
 ```json
-{"allowAutofill":true, "allowCredentialHelper":true, "account":"<可选，本机凭据中的账号>"}
+{"allowAutofill":true, "allowCredentialHelper":true, "account":"<可选，本机凭据中的账号>", "maxSteps":4, "allowAttributeConsent":true}
 ```
+
+`maxSteps`（1–6，默认 1）让 Broker 在一次请求里连续处理属性释放同意页和登录页，每步之后等页面跳转再重新判断，结果附 `steps`。同意页返回 `attribute_consent_submitted`（附 `consent.serviceProvider`、`attributeCategories`、`rememberMode`）或 `attribute_consent_required`（附 `reason`、`blockedCategories`）；`allowAttributeConsent:false` 时只观察。条件见[机构联合登录](federated-login.md)。
 
 返回脱敏的 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，可附 `reason`、`autofillStatus`、`loginMethod`、`credentialStatus`、`submitMode`、`networkGuard`；不返回密码、账号、Cookie、认证头或验证码值。`allowAutofill:false` 仅观察。`true` 时 Broker 先走浏览器自动填充：账号和密码框都已自动填充时提交一次（`loginMethod:"browser_autofill"`）。浏览器只给原生账号下拉框或没有填入（`autofillStatus` 为 `identity_not_filled`、`password_not_filled`）时，除非 `allowCredentialHelper:false`，Broker 改用本机凭据助手（`loginMethod:"credential_helper"`），细节见[登录与用户接管](cdp-lifecycle.md#本机凭据助手)。同一 task、tab、host 和路径只尝试一次，未知提交结果不能重放。`ready` 只表示访问探针未发现阻碍，`login_submitted` 只表示已尝试提交，均不证明机构订阅或 PDF 已取得。
 
@@ -195,7 +197,7 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 | 400 | `INVALID_COORDINATES` / `COORDINATE_OUT_OF_VIEWPORT` | 检查主页面视口坐标；拒绝时没有发出点击 |
 | 408 | `WAIT_TIMEOUT` | 重新判断条件或流程 |
 | 409 | `TARGET_BUSY` | 等当前 target 操作结束 |
-| 409 | `STALE_REF` | 重新 snapshot |
+| 409 | `STALE_REF` | 重新 snapshot；`details.reason:"obscured"` 表示目标被覆盖层挡住，`details.obscuredBy.extension` 说明是否为扩展弹窗 |
 | 409 | `TASK_IN_HANDOFF` | 等用户完成并 resume |
 | 409 | `TASK_TRANSITIONING` | 等当前 handoff/complete/expiry 屏障结束 |
 | 409 | `INVALID_TASK_STATE` | 按状态机恢复；handoff 先 resume |
@@ -210,7 +212,7 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 业务失败另附分类，不覆盖上述协议状态或既有 CLI 状态：
 
 - 控制层：`cdp_unreachable`、`tab_create_failed`、`action_timeout`、`browser_restart_required`。
-- 站点层：`auth_required`、`verification_required`、`access_denied`、`challenge`、`user_handoff_required`。
+- 站点层：`auth_required`、`verification_required`、`access_denied`、`challenge`、`user_handoff_required`、`attribute_consent_required`。
 - 文件层：`not_pdf`、`incomplete`、`identity_mismatch`、`too_large`、`download_timeout`。
 
 401/403/429/418、访问检查页和挑战不做无界重试；仅在控制证据失败时恢复控制层，仍受阻则保留站点原因。不能把它们直接写成学校无订阅，也不能把控制恢复当作下载成功。

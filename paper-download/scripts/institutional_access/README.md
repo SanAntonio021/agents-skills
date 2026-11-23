@@ -105,7 +105,12 @@ The Broker owns routine saved-account autofill and authorized login submission.
 When the browser only offers its native account picker, the Broker falls back to
 the user's own OS credential store entry (web-access `login-credential.ps1`);
 `credentialStatus: not_configured` means the user must enrol once, not that the
-institution lacks a subscription.
+institution lacks a subscription. The client sends `maxSteps: 4`, so the Broker
+walks SAML/Shibboleth attribute-release consent and the password page in one
+call. Consent for affiliation, organisation or pseudonymous identifiers to a
+listed publisher is given in the background; `attribute_consent_required`
+(personal attributes, unlisted service, unparsable list) becomes a handoff
+with a consent-specific instruction.
 `web-access` handles graphical/slider challenges through page actions and email
 codes through an authorized mail tool; availability and success must be checked,
 not promised. `interactionRequired` does not by itself require user handoff.

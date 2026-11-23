@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { startPageDownload, downloadUrlAllowed } from './download-page.mjs';
 import { loginAutofillExpression, loginFormProgram, accessProbe } from './browser-access.mjs';
 import { readLoginCredential, credentialStoreInfo } from './login-credentials.mjs';
+import { loadFederatedProviders, hostMatches, classifyReleaseAttributes, consentPageProgram } from './federated-access.mjs';
 import { createPageFrames, FrameError } from './page-frames.mjs';
 import http from 'node:http';
 import os from 'node:os';
@@ -61,6 +62,8 @@ const DOWNLOAD_CHUNK_CHARS = 262_144;
 const DOWNLOAD_MAX_WRAPPER_DEPTH = 2;
 const DOWNLOAD_ALLOWED_HOSTS_LIMIT = 10;
 const LOGIN_GUARD_WINDOW_MS = Math.min(15_000, parsePositiveInt(process.env.WEB_ACCESS_LOGIN_GUARD_MS, 5_000));
+const ACCESS_SETTLE_MS = Math.min(20_000, parsePositiveInt(process.env.WEB_ACCESS_ACCESS_SETTLE_MS, 10_000));
+const OVERLAY_SETTLE_MS = Math.min(2_000, parsePositiveInt(process.env.WEB_ACCESS_OVERLAY_SETTLE_MS, 300));
 const LEGACY_PATHS = new Set([
   '/targets', '/new', '/close', '/navigate', '/back', '/eval', '/click',
   '/clickAt', '/setFiles', '/scroll', '/screenshot', '/info',
@@ -392,6 +395,7 @@ function handleCdpMessage(message) {
     const entry = owner;
     if (entry.url !== undefined && entry.url !== info.url) invalidateTarget(info.targetId, 'navigation');
     entry.url = info.url;
+    recordTabHost(entry, info.url);
     entry.title = info.title;
     return;
   }
@@ -560,6 +564,18 @@ function requireActive(task) {
   if (task.state !== 'active') throw new ApiError(409, 'INVALID_TASK_STATE', `Task is ${task.state}.`);
 }
 
+function recordTabHost(entry, rawUrl) {
+  let host;
+  try {
+    const url = new URL(rawUrl);
+    if (!['https:', 'http:'].includes(url.protocol)) return;
+    host = url.hostname.toLowerCase();
+  } catch { return; }
+  if (!Array.isArray(entry.hosts)) entry.hosts = [];
+  if (entry.hosts.at(-1) !== host) entry.hosts.push(host);
+  if (entry.hosts.length > 30) entry.hosts.splice(0, entry.hosts.length - 30);
+}
+
 function ownTab(task, targetId, kind, openerId = null, info = {}) {
   const entry = {
     taskId: task.id,
@@ -571,7 +587,11 @@ function ownTab(task, targetId, kind, openerId = null, info = {}) {
     generation: 0,
     title: info.title || '',
     url: info.url || 'about:blank',
+    // Hosts this tab has visited, oldest first. Used to verify that a SAML
+    // consent page was reached from a listed service provider.
+    hosts: [...(openerId ? tabOwners.get(openerId)?.hosts || [] : [])],
   };
+  recordTabHost(entry, entry.url);
   tabOwners.set(targetId, entry);
   task.tabs.add(targetId);
   lifecycle.set(targetId, { domcontentloaded: false, load: false });
@@ -931,7 +951,10 @@ function capabilities() {
       exportsCredentials: false,
       scriptSubmittedForms: 'network-guarded',
       credentialHelper: { ...credentialStoreInfo(), fallbackAfterBrowserAutofill: true, returnsSecrets: false },
+      federatedConsent: { maxSteps: 6, autoCategories: ['affiliation', 'organization', 'pseudonymous_id'],
+        remember: 'this-service-only', returnsAttributeValues: false },
     },
+    extensionOverlays: 'dismissed-once-per-action',
     userTabsVisible: false,
     maxActiveTasks: TASK_LIMIT,
     snapshot: { source: 'cdp-ax', modes: ['interactive', 'all'], defaultDepth: 12, defaultMaxNodes: 300, hardMaxNodes: 1000 },
@@ -1119,7 +1142,29 @@ async function resolveRef(task, targetId, ref, { required = true } = {}) {
     invalidateTarget(targetId);
     throw new ApiError(409, 'STALE_REF', 'Referenced node cannot be resolved. Take a new snapshot.');
   }
-  const preflight = await callOnObject(sessionId, objectId, `function () {
+  let preflight = await callOnObject(sessionId, objectId, PREFLIGHT_FUNCTION);
+  let overlayHandled = null;
+  let obscuredBy = null;
+  if (!preflight?.ok && preflight?.visible && !preflight?.disabled && preflight?.unobscured === false) {
+    // A browser-extension popup over the target: dismiss it once, in this
+    // background tab only, then re-check the same element.
+    const cleared = await clearExtensionOverlay(sessionId, objectId);
+    obscuredBy = cleared.info || null;
+    if (cleared.action) {
+      overlayHandled = cleared.action;
+      preflight = await callOnObject(sessionId, objectId, PREFLIGHT_FUNCTION);
+    }
+  }
+  if (!preflight?.ok) {
+    try { await sendCDP('Runtime.releaseObject', { objectId }, sessionId); } catch {}
+    invalidateTarget(targetId);
+    const details = preflight ? { ...preflight, ...(preflight.unobscured === false ? { reason: 'obscured', obscuredBy } : {}) } : undefined;
+    throw new ApiError(409, 'STALE_REF', 'Referenced element is detached, hidden, disabled, or obscured.', details);
+  }
+  return { sessionId, objectId, preflight, overlayHandled };
+}
+
+const PREFLIGHT_FUNCTION = `function () {
     const el = this;
     if (!(el instanceof Element) || !el.isConnected) return { ok: false, reason: 'detached' };
     const style = getComputedStyle(el);
@@ -1131,13 +1176,83 @@ async function resolveRef(task, targetId, ref, { required = true } = {}) {
     const hit = document.elementFromPoint(x, y);
     const unobscured = Boolean(hit && (hit === el || el.contains(hit)));
     return { ok: visible && !disabled && unobscured, visible, disabled, unobscured, x, y, tag: el.tagName, type: el.type || '', contentEditable: el.isContentEditable };
-  }`);
-  if (!preflight?.ok) {
-    try { await sendCDP('Runtime.releaseObject', { objectId }, sessionId); } catch {}
-    invalidateTarget(targetId);
-    throw new ApiError(409, 'STALE_REF', 'Referenced element is detached, hidden, disabled, or obscured.', preflight || undefined);
+  }`;
+
+// Called on the obscured target element. Finds the top-level element covering
+// it; only overlays recognisably injected by a browser extension are touched.
+const OVERLAY_FUNCTION = `function (mode) { /*web-access-overlay*/
+    const el = this;
+    const rect = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    if (!hit || hit === el || el.contains(hit)) return { obscured: false };
+    const parentOf = node => node.parentElement || (node.getRootNode && node.getRootNode() !== document ? node.getRootNode().host : null);
+    let overlay = null;
+    for (let node = hit; node && node !== document.body && node !== document.documentElement; node = parentOf(node)) {
+      if (node.contains(el)) break;
+      overlay = node;
+    }
+    if (!overlay) return { obscured: true, overlay: false };
+    const extensionUrl = /(?:chrome|moz|ms-browser|edge)-extension:\\/\\//i;
+    const knownExtension = /easyscholar|grammarly|immersive-translate|monica|sider-|zotero-|scholarcy|youdao|baidu-translate/i;
+    const ident = [overlay.tagName, overlay.id, overlay.getAttribute('class')].join(' ');
+    const roots = [overlay];
+    let extension = knownExtension.test(ident);
+    const nodes = [];
+    for (let i = 0; i < roots.length && nodes.length < 800; i++) {
+      const root = roots[i];
+      const list = root.querySelectorAll ? [root, ...root.querySelectorAll('*')] : [];
+      for (const node of list) {
+        nodes.push(node);
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        if (!extension && node.getAttribute) {
+          for (const key of ['src', 'href', 'style', 'data-src']) {
+            if (extensionUrl.test(node.getAttribute(key) || '')) { extension = true; break; }
+          }
+        }
+      }
+    }
+    const info = { obscured: true, overlay: true, extension, tag: String(overlay.tagName || '').toLowerCase() };
+    if (mode === 'inspect' || !extension) return info;
+    if (mode === 'close') {
+      const closeLabel = /^(?:×|✕|✖|x|close|关闭|关闭窗口|dismiss|收起|隐藏)$/i;
+      const control = nodes.find(node => {
+        if (!node.getClientRects || !node.getClientRects().length) return false;
+        const text = String(node.getAttribute('aria-label') || node.getAttribute('title') || node.textContent || '').trim();
+        const marker = String(node.getAttribute('class') || '') + ' ' + String(node.id || '');
+        return closeLabel.test(text) || (/(?:^|[\\s_-])close(?:$|[\\s_-]|btn|-icon)/i.test(marker) && text.length <= 3);
+      });
+      if (!control) return { ...info, action: null };
+      if (typeof control.click === 'function') control.click();
+      else control.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      return { ...info, action: 'close_control' };
+    }
+    if (mode === 'hide') {
+      overlay.style.setProperty('visibility', 'hidden', 'important');
+      overlay.style.setProperty('pointer-events', 'none', 'important');
+      overlay.setAttribute('data-web-access-overlay-hidden', '1');
+      return { ...info, action: 'hidden_in_this_tab' };
+    }
+    return info;
+  }`;
+
+async function clearExtensionOverlay(sessionId, objectId) {
+  const inspect = () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['inspect']).catch(() => null);
+  const first = await inspect();
+  if (!first?.obscured || !first.overlay || !first.extension) return { action: null, info: first?.obscured ? first : null };
+  const attempts = [
+    ['close_control', () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['close'])],
+    ['escape', () => dispatchPress(sessionId, 'Escape')],
+    ['hidden_in_this_tab', () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['hide'])],
+  ];
+  for (const [action, run] of attempts) {
+    let ran;
+    try { ran = await run(); } catch { continue; }
+    if (action !== 'escape' && !ran?.action) continue;
+    await delay(OVERLAY_SETTLE_MS);
+    const now = await inspect();
+    if (now && !now.obscured) return { action, info: first };
   }
-  return { sessionId, objectId, preflight };
+  return { action: null, info: first };
 }
 
 async function callOnObject(sessionId, objectId, functionDeclaration, args = []) {
@@ -1238,12 +1353,19 @@ async function dispatchPress(sessionId, input) {
 }
 
 async function performAction(task, targetId, body) {
+  const note = {};
+  const result = await performActionCore(task, targetId, body, note);
+  return note.overlayHandled ? { ...result, overlayHandled: note.overlayHandled } : result;
+}
+
+async function performActionCore(task, targetId, body, note) {
   const action = body.action;
   if (!['click', 'fill', 'type', 'press', 'check', 'uncheck', 'select', 'hover'].includes(action)) {
     throw new ApiError(400, 'INVALID_ACTION', 'Unsupported action.');
   }
   let resolved = null;
   if (action !== 'press' || body.ref) resolved = await resolveRef(task, targetId, body.ref);
+  if (resolved?.overlayHandled) note.overlayHandled = resolved.overlayHandled;
   const sessionId = resolved?.sessionId || await ensureSession(targetId);
   try {
     if (action === 'click') {
@@ -1714,8 +1836,102 @@ function loginOutcome(probe, submitted, guard, extra, statusKey) {
   return output;
 }
 
+const PERSONAL_ATTRIBUTE_CATEGORIES = new Set(['name', 'email', 'person_id', 'phone']);
+const PROGRESS_STATES = new Set(['login_submitted', 'attribute_consent_submitted']);
+
+// SAML/Shibboleth attribute-release consent. Authorised by the user as a
+// routine login step only for non-personal attributes released to a listed
+// service provider that this tab actually came from.
+async function handleConsentStep(task, targetId, sessionId, consent, providers, spNames, body) {
+  const stop = (reason, extra = {}) => ({ state: 'attribute_consent_required', failureCode: 'attribute_consent_required',
+    interactionRequired: true, handoffRequired: reason !== 'observe_only', reason, ...extra });
+  if (consent.status !== 'ready') return stop(consent.status || 'attributes_unparsed');
+  let pageOrigin = null;
+  try {
+    const url = new URL((await targetInfo(targetId))?.url || '');
+    if (url.protocol === 'https:') pageOrigin = url.origin;
+  } catch {}
+  if (!pageOrigin || pageOrigin !== consent.origin) return stop('idp_unverified');
+  const owner = tabOwners.get(targetId);
+  const host = String(consent.host || '').toLowerCase();
+  const earlierHosts = (owner?.hosts || []).filter((value) => value !== host);
+  const serviceProviders = providers.serviceProviders.filter((entry) => consent.spMatches?.includes(entry.id) &&
+    earlierHosts.some((value) => hostMatches(value, entry.hosts)));
+  if (serviceProviders.length !== 1 || hostMatches(host, serviceProviders[0].hosts)) return stop('sp_unverified');
+  const knownIdp = providers.identityProviders.some((entry) => hostMatches(host, entry.hosts));
+  if (consent.kind === 'generic' && !knownIdp) return stop('idp_unverified');
+  const classification = classifyReleaseAttributes(consent.attributes, providers.autoConsentCategories);
+  const details = { serviceProvider: serviceProviders[0].id, attributeCategories: classification.categories };
+  if (!classification.autoConsent) {
+    const personal = classification.blocked.some((category) => PERSONAL_ATTRIBUTE_CATEGORIES.has(category));
+    return stop(personal ? 'personal_attributes' : 'attributes_not_allowed', { ...details, blockedCategories: classification.blocked });
+  }
+  if (!body.allowAutofill || body.allowAttributeConsent === false) return stop('observe_only', { ...details, consentEligible: true });
+  const attemptKey = `${task.id}:${targetId}:consent:${host}:${consent.path}`;
+  if (loginAttempts.has(attemptKey)) return stop('already_attempted', details);
+  loginAttempts.set(attemptKey, Date.now());
+  const { value: submitted } = await fallbackEval(sessionId,
+    `(${consentPageProgram.toString()})(${JSON.stringify({ submit: true, spNames })})`);
+  if (submitted?.status !== 'submitted') return stop(submitted?.status || 'submit_unknown', details);
+  return { state: 'attribute_consent_submitted', failureCode: null, interactionRequired: false, handoffRequired: false,
+    reason: 'attribute_release', consent: { ...details, rememberMode: submitted.rememberMode } };
+}
+
+// Wait for the page to move on after a login or consent submission, including
+// SAML auto-POST pages that hand the response on to the service provider.
+async function settleAfterStep(targetId, sessionId, beforeUrl) {
+  const deadline = Date.now() + ACCESS_SETTLE_MS;
+  let changedAt = null;
+  while (Date.now() < deadline) {
+    const owner = tabOwners.get(targetId);
+    if (!owner) return;
+    if (owner.url !== beforeUrl && changedAt === null) changedAt = Date.now();
+    const state = lifecycleState(targetId);
+    if (changedAt !== null && (state.load || (state.domcontentloaded && Date.now() - changedAt > 1000))) {
+      let relaying = false;
+      try {
+        ({ value: relaying } = await fallbackEval(sessionId,
+          '!!document.querySelector(\'form input[name="SAMLResponse"],form input[name="SAMLRequest"]\')'));
+      } catch {}
+      if (!relaying) return;
+      beforeUrl = owner.url; changedAt = null;
+    }
+    await delay(100);
+  }
+}
+
 async function handleBrowserAccess(task, targetId, body) {
+  const maxSteps = boundedInteger(body.maxSteps, 1, 1, 6, 'maxSteps');
   const sessionId = await ensureSession(targetId);
+  const steps = [];
+  let result;
+  for (let step = 0; step < maxSteps; step++) {
+    const beforeUrl = tabOwners.get(targetId)?.url;
+    result = await accessStep(task, targetId, sessionId, body);
+    steps.push({ state: result.state, ...(result.loginMethod ? { loginMethod: result.loginMethod } : {}),
+      ...(result.reason ? { reason: result.reason } : {}) });
+    if (!PROGRESS_STATES.has(result.state)) break;
+    if (maxSteps === 1) break;
+    await settleAfterStep(targetId, sessionId, beforeUrl);
+    if (step === maxSteps - 1) {
+      // Out of steps: report where the chain stands without acting again.
+      result = { ...(await accessStep(task, targetId, sessionId, { ...body, allowAutofill: false })), lastAction: result.state };
+      steps.push({ state: result.state, observedOnly: true });
+    }
+  }
+  return maxSteps > 1 ? { ...result, steps } : result;
+}
+
+async function accessStep(task, targetId, sessionId, body) {
+  const owner = tabOwners.get(targetId);
+  if (owner) {
+    try { const info = await targetInfo(targetId); if (info?.url) recordTabHost(owner, info.url); } catch {}
+  }
+  const providers = loadFederatedProviders();
+  const spNames = Object.fromEntries(providers.serviceProviders.map((entry) => [entry.id, entry.names]));
+  const { value: consent } = await fallbackEval(sessionId,
+    `(${consentPageProgram.toString()})(${JSON.stringify({ submit: false, spNames })})`);
+  if (consent?.consent) return handleConsentStep(task, targetId, sessionId, consent, providers, spNames, body);
   const { value: probe } = await fallbackEval(sessionId, `(${accessProbe.toString()})()`);
   if (!probe || typeof probe !== 'object') throw new ApiError(502, 'action_timeout', 'Access probe did not return a state.');
   if (probe.handoffRequired || !body.allowAutofill || probe.state !== 'auth_required') return probe;

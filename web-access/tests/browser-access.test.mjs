@@ -10,12 +10,15 @@ import { accessProbe, loginAutofillExpression, loginFormProgram } from '../scrip
 import * as downloads from '../scripts/download-page.mjs';
 import * as frames from '../scripts/page-frames.mjs';
 import * as version from '../scripts/broker-version.mjs';
+import * as federated from '../scripts/federated-access.mjs';
 
 // Run: node --experimental-vm-modules --test --test-concurrency=1 tests/browser-access.test.mjs
 // Real production functions and the complete production HTTP router execute.
 // OS/runtime configuration, browser discovery, CDP transport and DOM are doubles. No browser process,
 // profile, credential store, mailbox or external network endpoint is accessed.
 // The in-memory module footer exposes existing symbols; it does not repair routes.
+// Keeps the federated provider loader away from any real local override file.
+process.env.WEB_ACCESS_TEST_MODE = '1';
 const scriptUrl = new URL('../scripts/cdp-proxy.mjs', import.meta.url);
 const protectedUrls = [scriptUrl, new URL('../scripts/browser-access.mjs', import.meta.url),
   new URL('../scripts/login-credentials.mjs', import.meta.url)];
@@ -62,7 +65,8 @@ function fixture(options = {}) {
       },
       getClientRects: () => flags.hidden ? [] : [{}],
       getAttribute: key => {
-        if (key === 'value') { sensitiveReads++; throw new Error('Forbidden value read'); }
+        // Only explicitly public value attributes (e.g. consent radio values) are readable.
+        if (key === 'value' && !Object.hasOwn(attrs, 'value')) { sensitiveReads++; throw new Error('Forbidden value read'); }
         return Object.hasOwn(attrs, key) ? String(attrs[key]) : null;
       },
       matches(selector) {
@@ -111,6 +115,7 @@ function fixture(options = {}) {
         pendingRequests.push({ url: destination.href, method: method.toUpperCase(), resourceType: 'Document',
           postData: `password=${encodeURIComponent(written.get('password') || '')}` });
         if (options.afterSubmitText) document.body.innerText = options.afterSubmitText;
+        if (typeof options.onSubmitted === 'function') options.onSubmitted();
       },
     };
     function attach(e) { e.form = form; controls.push(e); return e; }
@@ -136,6 +141,7 @@ function fixture(options = {}) {
             pendingRequests.push({ ...request, url,
               postData: request.method === 'GET' ? undefined : `pwd=${encodeURIComponent(secret)}` });
           }
+          if (typeof options.onSubmitted === 'function') options.onSubmitted();
         } }));
     } else {
       const submitAttrs = { type: 'submit', ...(options.submitter || {}) };
@@ -147,6 +153,39 @@ function fixture(options = {}) {
   if (options.login !== false) {
     addLoginForm();
     if (options.forms === 2) addLoginForm(1);
+  }
+  if (options.consent) {
+    // Shibboleth-style attribute-release form (structure only; values are
+    // synthetic and must never reach a public result).
+    const c = options.consent;
+    const controls = [];
+    const consentForm = element('form', { action: c.action || '/idp/profile/SAML2/Redirect/SSO?execution=e1s2' }, {
+      method: c.method || 'post', target: '',
+      querySelectorAll: selector => controls.filter(node => node.matches(selector)),
+      requestSubmit(control) {
+        actions.push({ action: 'consentSubmit', accept: control.getAttribute('name') || control.innerText || 'accept',
+          remember: controls.filter(node => node.type === 'radio' && node.checked).map(node => node.getAttribute('value')) });
+        pendingRequests.push({ url: new URL(c.action || '/idp/profile/SAML2/Redirect/SSO?execution=e1s2', location).href,
+          method: 'POST', resourceType: 'Document' });
+        if (typeof options.onSubmitted === 'function') options.onSubmitted();
+      } });
+    const add = node => { controls.push(node); return node; };
+    for (const item of c.attributes || []) {
+      const cell = { innerText: item.label || '' };
+      const valueCell = { innerText: item.value || 'synthetic value' };
+      const row = add(element('tr', {}, { text: `${item.label || ''} ${item.value || 'synthetic value'}`,
+        querySelectorAll: selector => selector === 'td' ? [cell, valueCell] : [],
+        querySelector: () => cell }));
+      if (item.id !== undefined && c.consentIds !== false) {
+        add(element('input', { type: 'hidden', name: '_shib_idp_consentIds' }, { hidden: true, consentId: item.id, closest: () => row }));
+      }
+    }
+    for (const option of c.options || []) {
+      add(element('input', { type: c.optionType || 'radio', name: c.optionName || '_shib_idp_consentOptions', value: option.value },
+        { checked: !!option.checked, labels: [{ innerText: option.label }] }));
+    }
+    add(element('input', { type: 'submit', name: '_eventId_AttributeReleaseRejected' }, { defaultValue: c.rejectLabel || 'Reject' }));
+    if (c.accept !== false) add(element('input', { type: 'submit', name: c.acceptName || '_eventId_proceed' }, { defaultValue: c.acceptLabel || 'Accept' }));
   }
   for (const { hidden, ...attrs } of options.extraInputs || []) element('input', attrs, { hidden: !!hidden });
   for (const item of options.extraElements || []) element(item.tag, item.attrs || {}, { text: item.text, hidden: !!item.hidden });
@@ -201,10 +240,13 @@ async function productionProxy() {
   let sequence = 0;
   let server;
   let context;
+  let socketRef = null;
+  const emitEvent = message => socketRef?.emit('message', JSON.stringify(message));
   class MockWebSocket extends EventEmitter {
     static OPEN = 1;
     constructor(url) {
       super();
+      socketRef = this;
       assert.equal(url, 'ws://127.0.0.1:9/devtools/browser/isolated-no-network');
       this.readyState = 1;
       queueMicrotask(() => this.emit('open'));
@@ -275,6 +317,14 @@ async function productionProxy() {
               params: { requestId, frameId: sessions.get(message.sessionId), resourceType: request.resourceType,
                 request: { url: request.url, method: request.method, ...(request.postData ? { postData: request.postData } : {}) } } }));
           }
+          // A page chain advanced: report the navigation like Chromium does.
+          if (page?.pendingNavigation) {
+            const url = page.pendingNavigation; page.pendingNavigation = null;
+            const targetId = sessions.get(message.sessionId);
+            this.emit('message', JSON.stringify({ method: 'Target.targetInfoChanged', params: { targetInfo: { targetId, type: 'page', url, title: '' } } }));
+            this.emit('message', JSON.stringify({ method: 'Page.frameNavigated', sessionId: message.sessionId, params: { frame: { id: targetId, url } } }));
+            this.emit('message', JSON.stringify({ method: 'Page.loadEventFired', sessionId: message.sessionId, params: {} }));
+          }
         } catch (error) { this.emit('message', JSON.stringify({ id: message.id, error: { message: error.message } })); }
       });
     }
@@ -285,13 +335,15 @@ async function productionProxy() {
   context = vm.createContext({ console: { log: text => proxyLogs.push(String(text)),
     error: text => proxyLogs.push(String(text)) }, Buffer, URL, WebSocket: MockWebSocket,
     setTimeout, clearTimeout, setInterval, clearInterval, AbortController,
-    process: { argv: ['node', scriptUrl.pathname, '--browser', 'edge'], env: { WEB_ACCESS_LOGIN_GUARD_MS: '300' },
+    process: { argv: ['node', scriptUrl.pathname, '--browser', 'edge'],
+      env: { WEB_ACCESS_LOGIN_GUARD_MS: '300', WEB_ACCESS_ACCESS_SETTLE_MS: '600', WEB_ACCESS_TEST_MODE: '1' },
       on() {}, exit(code) { throw new Error(`Unexpected production exit ${code}`); } },
   });
   const boundaryModules = new Map([
     ['node:crypto', { default: crypto }], ['node:http', { default: fakeHttp }],
     ['node:os', { default: os }], ['node:url', { URL }],
     ['./browser-access.mjs', { accessProbe, loginAutofillExpression, loginFormProgram }],
+    ['./federated-access.mjs', federated],
     ['./login-credentials.mjs', { readLoginCredential: readLoginCredentialStub,
       credentialStoreInfo: () => ({ store: 'synthetic-double', key: 'origin+account' }) }],
     ['./download-page.mjs', downloads], ['./page-frames.mjs', frames], ['./broker-version.mjs', version],
@@ -331,6 +383,9 @@ async function productionProxy() {
     return { taskId: created.body.taskId, token, targetId: opened.body.targetId, fixture: f };
   }
   return { post, ownedPage, commands, proxyLogs, fetchDecisions, pausedRequests,
+    // Record that this tab visited `url` before the page under test.
+    visit: (owner, url) => emitEvent({ method: 'Target.targetInfoChanged',
+      params: { targetInfo: { targetId: owner.targetId, type: 'page', url, title: '' } } }),
     access: (owner, allowAutofill = true, extra = {}) => module.namespace.handleBrowserAccess(
       { id: owner.taskId }, owner.targetId, { allowAutofill, ...extra }),
     async release(owner) {
@@ -710,6 +765,178 @@ test('production handler: credential helper fallback and network guard', async t
         } finally { await proxy.release(owner); }
       });
     });
+    assert.equal(CANARIES.some(value => proxy.proxyLogs.join('\n').includes(value)), false);
+  } finally { await proxy.close(); }
+});
+
+// --- SAML / Shibboleth attribute-release consent and the full login chain ----
+const SP_URL = 'https://ieeexplore.ieee.org/Xplore/home.jsp';
+const IDP_URL = 'https://idp-lib.uestc.edu.cn/idp/profile/SAML2/Redirect/SSO?execution=e1s2';
+const CAS_URL = 'https://idas.uestc.edu.cn/authserver/login?service=https%3A%2F%2Fidp-lib.uestc.edu.cn%2Fidp';
+const SHIB_OPTIONS = [
+  { value: '_shib_idp_doNotRememberConsent', label: 'Ask me again at next login', checked: true },
+  { value: '_shib_idp_rememberConsent', label: 'Ask me again if information to be provided to this service changes' },
+  { value: '_shib_idp_globalConsent', label: 'Do not ask me again' },
+];
+function consentFixture({ attributes, spName = 'IEEE Xplore', url = IDP_URL, extra = {}, consent = {} } = {}) {
+  return fixture({ login: false, url, title: 'Information Release',
+    text: `You are about to access the service: ${spName}\nInformation to be Provided to Service`,
+    consent: { attributes: attributes || [
+      { id: 'eduPersonScopedAffiliation', label: '身份类别', value: 'member@uestc.edu.cn' },
+      { id: 'o', label: '所属机构', value: '电子科技大学' }], options: SHIB_OPTIONS, ...consent }, ...extra });
+}
+function pageChain() {
+  const pages = [];
+  const c = { pages, index: 0, pendingNavigation: null,
+    get current() { return pages[c.index]; },
+    get location() { return c.current.location; },
+    get pendingRequests() { return pages.flatMap(page => page.pendingRequests.splice(0)); },
+    get actions() { return pages.flatMap(page => page.actions); },
+    get sensitiveReads() { return pages.reduce((n, page) => n + page.sensitiveReads, 0); },
+    evaluate: expression => c.current.evaluate(expression),
+    call: (fn, args) => c.current.call(fn, args),
+    advance() { if (c.index < pages.length - 1) { c.index++; c.pendingNavigation = c.current.location.href; } },
+  };
+  return c;
+}
+
+test('consent classification: only non-personal categories are auto-releasable', () => {
+  const policy = ['affiliation', 'organization', 'pseudonymous_id'];
+  assert.equal(federated.classifyReleaseAttributes([{ label: '身份类别' }, { label: '所属机构' }], policy).autoConsent, true);
+  assert.equal(federated.classifyReleaseAttributes([{ id: 'eduPersonTargetedID' }, { id: 'schacHomeOrganization' }], policy).autoConsent, true);
+  for (const [attribute, category] of [[{ id: 'mail' }, 'email'], [{ label: '姓名' }, 'name'], [{ id: 'uid', label: '学号' }, 'person_id'],
+    [{ id: 'mobile' }, 'phone'], [{ id: 'eduPersonPrincipalName' }, 'person_id'], [{ id: 'o', label: '姓名' }, 'name'],
+    [{ id: 'customThing', label: '所属机构' }, 'unknown'], [{ id: 'eduPersonEntitlement' }, 'entitlement']]) {
+    const result = federated.classifyReleaseAttributes([{ id: 'eduPersonScopedAffiliation' }, attribute], policy);
+    assert.equal(result.autoConsent, false, JSON.stringify(attribute));
+    assert.ok(result.blocked.includes(category), `${JSON.stringify(attribute)} -> ${JSON.stringify(result)}`);
+  }
+  const providers = federated.loadFederatedProviders({ localFile: null });
+  assert.deepEqual(providers.autoConsentCategories, policy);
+  for (const id of ['ieee', 'elsevier', 'springer-nature', 'wiley', 'acm', 'iop', 'optica'])
+    assert.ok(providers.serviceProviders.some(entry => entry.id === id), id);
+});
+
+test('production handler: attribute-release consent and the SP -> IdP -> CAS -> SP chain', async t => {
+  const proxy = await productionProxy();
+  const consentOwner = async (f, history = [SP_URL]) => {
+    const owner = await proxy.ownedPage(f);
+    for (const url of history) proxy.visit(owner, url);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    return owner;
+  };
+  try {
+    await t.test('institutional attributes for IEEE: accept and remember for this service only', async () => {
+      const f = consentFixture(); const owner = await consentOwner(f);
+      try {
+        const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true }, owner.token);
+        record('consent auto accept', 'actual-production-HTTP-router', result, f);
+        assert.equal(result.status, 200);
+        assert.equal(result.body.state, 'attribute_consent_submitted');
+        assert.deepEqual(result.body.consent, { serviceProvider: 'ieee', attributeCategories: ['affiliation', 'organization'], rememberMode: 'service' });
+        const submit = f.actions.find(a => a.action === 'consentSubmit');
+        assert.equal(submit.accept, '_eventId_proceed');
+        assert.ok(submit.remember.includes('_shib_idp_rememberConsent'));
+        assert.ok(!submit.remember.includes('_shib_idp_globalConsent'), 'Never choose global consent');
+        assert.ok(!JSON.stringify(result.body).includes('member@uestc.edu.cn'), 'Attribute values never leave the page');
+        assert.equal(f.sensitiveReads, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('label-only rows (身份类别 / 所属机构) are also accepted', async () => {
+      const f = consentFixture({ consent: { consentIds: false } }); const owner = await consentOwner(f);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.state, 'attribute_consent_submitted');
+      } finally { await proxy.release(owner); }
+    });
+    for (const [name, attributes, category] of [
+      ['email requested', [{ id: 'eduPersonScopedAffiliation', label: '身份类别' }, { id: 'mail', label: '邮箱', value: 'synthetic_mail_canary' }], 'email'],
+      ['name requested', [{ label: '身份类别' }, { label: '姓名', value: 'synthetic_identity_canary' }], 'name'],
+      ['student number requested', [{ id: 'uid', label: '学号', value: 'synthetic_identity_canary' }], 'person_id'],
+    ]) {
+      await t.test(`stops and hands over when ${name}`, async () => {
+        const f = consentFixture({ attributes }); const owner = await consentOwner(f);
+        try {
+          const result = redacted(plain(await proxy.access(owner)));
+          record(name, 'actual-original-handler-not-HTTP', result, f);
+          assert.equal(result.state, 'attribute_consent_required');
+          assert.equal(result.failureCode, 'attribute_consent_required');
+          assert.equal(result.reason, 'personal_attributes');
+          assert.equal(result.handoffRequired, true);
+          assert.ok(result.blockedCategories.includes(category));
+          assert.equal(f.actions.length, 0);
+        } finally { await proxy.release(owner); }
+      });
+    }
+    await t.test('stops when the SP is not on the list', async () => {
+      const f = consentFixture({ spName: 'Example Vendor Portal' }); const owner = await consentOwner(f, ['https://vendor.example.test/']);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'sp_unverified'); assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('stops when the SP name matches but the tab never came from that SP', async () => {
+      const f = consentFixture(); const owner = await consentOwner(f, ['https://vendor.example.test/']);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'sp_unverified'); assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('stops when the attribute list cannot be parsed', async () => {
+      const f = consentFixture({ attributes: [{ id: undefined, label: '' }], consent: { consentIds: false } });
+      const owner = await consentOwner(f);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'attributes_unparsed'); assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('only a global "never ask" option: accept without remembering', async () => {
+      const f = consentFixture({ consent: { options: [{ value: '_shib_idp_globalConsent', label: 'Do not ask me again' }] } });
+      const owner = await consentOwner(f);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.state, 'attribute_consent_submitted');
+        assert.equal(result.consent.rememberMode, 'global_only_skipped');
+        assert.deepEqual(f.actions.find(a => a.action === 'consentSubmit').remember, []);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('allowAutofill:false only observes an eligible consent page', async () => {
+      const f = consentFixture(); const owner = await consentOwner(f);
+      try {
+        const result = redacted(plain(await proxy.access(owner, false)));
+        assert.equal(result.reason, 'observe_only'); assert.equal(result.handoffRequired, false);
+        assert.equal(result.consentEligible, true); assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    for (const order of ['consent-then-password', 'password-then-consent']) {
+      await t.test(`maxSteps chain ${order} reaches the SP`, async () => {
+        credentialStore.entries = new Map([['https://idas.uestc.edu.cn', [{ account: 'a1', secret: 'synthetic_password_canary' }]]]);
+        credentialStore.calls = [];
+        const c = pageChain();
+        const advance = () => c.advance();
+        const consentPage = consentFixture({ extra: { onSubmitted: advance } });
+        const passwordPage = fixture({ url: CAS_URL, allowCredentialWrite: true, passwordFilled: false, scriptSubmit: true,
+          text: uestcLikeText, extraElements: [{ tag: 'a', attrs: { role: 'tab' }, text: '验证码登录' }], onSubmitted: advance,
+          scriptRequests: [{ url: '/authserver/login', method: 'POST', resourceType: 'Document' }] });
+        const spPage = fixture({ login: false, url: 'https://ieeexplore.ieee.org/document/123', text: 'Access provided by: UESTC' });
+        c.pages.push(...(order === 'consent-then-password' ? [consentPage, passwordPage] : [passwordPage, consentPage]), spPage);
+        const owner = await consentOwner(c);
+        try {
+          const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true, maxSteps: 4 }, owner.token);
+          record(`chain ${order}`, 'actual-production-HTTP-router', result, c);
+          assert.equal(result.status, 200, JSON.stringify(result.body));
+          assert.equal(result.body.state, 'ready', JSON.stringify(result.body));
+          const states = result.body.steps.map(step => step.state);
+          assert.deepEqual(states, order === 'consent-then-password'
+            ? ['attribute_consent_submitted', 'login_submitted', 'ready']
+            : ['login_submitted', 'attribute_consent_submitted', 'ready']);
+          assert.equal(c.index, 2, 'The chain ended on the service provider page');
+          assert.equal(passwordPage.written.get('password'), 'synthetic_password_canary');
+          assert.deepEqual(credentialStore.calls, [{ origin: 'https://idas.uestc.edu.cn', account: null }]);
+          assert.equal(proxy.commands.includes('Target.activateTarget'), false);
+        } finally { await proxy.release(owner); credentialStore.entries = new Map(); }
+      });
+    }
     assert.equal(CANARIES.some(value => proxy.proxyLogs.join('\n').includes(value)), false);
   } finally { await proxy.close(); }
 });

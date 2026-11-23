@@ -52,6 +52,8 @@ AX tree 最多缓存 60 秒，但每次 snapshot 请求都会签发新的 genera
 
 ref 在 Proxy 内绑定 `taskId + targetId + generation + backendDOMNodeId`，只对最近 snapshot 有效。动作前重新解析节点并检查 attached、visible、enabled 和未遮挡。失败返回 `409 STALE_REF`，随后必须重新 snapshot。
 
+目标只是被浏览器扩展注入的弹窗挡住时（如 easyScholar），Broker 在同一次动作里处理一次：依次点弹窗自己的关闭按钮、发送 Esc、仍挡住时只在本任务标签里把该弹窗设为隐藏且不响应点击，然后对同一元素重新检查；成功时结果带 `overlayHandled`。判断扩展弹窗靠其中的扩展资源地址（`chrome-extension://` 等）或已知扩展标识；不禁用扩展、不改浏览器或扩展设置。网站自己的弹层不自动关闭，返回 `STALE_REF`（`details.reason:"obscured"`），由调用方重新 snapshot 后按页面内容决定。
+
 首版不支持跨域 OOPIF ref。
 
 ## 结构化 action

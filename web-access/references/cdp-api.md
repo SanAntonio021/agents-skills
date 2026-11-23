@@ -10,6 +10,7 @@
 | `/health`、`/capabilities`、task/tab 端点、错误码和隔离边界 | [协议参考](cdp-protocol.md) |
 | 页面导航、AX snapshot/ref、结构化 action、wait/dialog、兜底 API、后台标签页弹层与菜单、本地历史 | [交互参考](cdp-interaction.md) |
 | PDF/二进制取回、图片像素、截图、iframe 正文 | [内容提取参考](cdp-content.md) |
+| 出版商机构登录（SAML/CARSI 属性释放同意页、`maxSteps` 链路） | [机构联合登录](federated-login.md) |
 | 从旧 Proxy 迁移 | [旧版本迁移](migration-dual-proxy.2.md) |
 | 站点经验 | `site-patterns/{domain}.md` |
 

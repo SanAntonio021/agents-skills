@@ -374,7 +374,10 @@ class BrowserClient:
         )
 
     def access(self, target_id: str, *, allow_autofill: bool = True) -> dict[str, Any]:
-        return self._request("POST", f"/v2/tabs/{target_id}/access", {"allowAutofill": allow_autofill})
+        # maxSteps lets the Broker walk the whole institutional chain
+        # (SP -> discovery -> IdP consent -> password page -> SP) in one call.
+        body = {"allowAutofill": allow_autofill, "maxSteps": 4 if allow_autofill else 1}
+        return self._request("POST", f"/v2/tabs/{target_id}/access", body, timeout=120)
 
     def download(
         self,

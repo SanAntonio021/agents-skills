@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { getProxyPort, readConfig, runtimeEnvironment } from './runtime-config.mjs';
+import { inspectCanonicalConfig, readConfig, runtimeEnvironment } from './runtime-config.mjs';
 
 export { getProxyPort, readConfig } from './runtime-config.mjs';
 
@@ -85,10 +85,11 @@ async function detectAll() {
 //   ambiguous = 没设偏好 + 至少一个浏览器开了 toggle，需问用户
 //   mismatch  = override/配偏好设了但未检测到对应 toggle，硬错
 //   empty     = 0 浏览器开 toggle 且未设偏好/override
-export async function selectBrowser(override = null) {
+export async function selectBrowser(override = null, { readOnly = false } = {}) {
   runtimeEnvironment();
   const detected = await detectAll();
-  const configured = readConfig().WEB_ACCESS_BROWSER || null;
+  const config = readOnly ? inspectCanonicalConfig().config : readConfig();
+  const configured = config.WEB_ACCESS_BROWSER || null;
 
   // 1. 命令行 override（最高优先，单次有效）
   if (override) {

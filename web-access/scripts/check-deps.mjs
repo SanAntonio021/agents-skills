@@ -1281,7 +1281,7 @@ function printAvailableHint(detected) {
 }
 
 async function resolveAndReport(override, opts = {}) {
-  const result = await selectBrowser(override);
+  const result = await selectBrowser(override, { readOnly: opts.statusOnly });
 
   switch (result.kind) {
     case 'ok': {

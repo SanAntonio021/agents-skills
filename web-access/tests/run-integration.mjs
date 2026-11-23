@@ -1826,6 +1826,7 @@ try {
     const oldVersion = 'existing-edge.0-outdated';
     const instance = await startIsolatedProxy(mock, { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: oldVersion });
     try {
+      await waitUntil(async () => (await getHealth(instance.port))?.cdp?.lastHandshakeAt, 'isolated proxy CDP handshake');
       const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _override, ...env } = instance.env;
       const before = await getHealth(instance.port);
       const connections = mock.totalConnections;
@@ -1857,10 +1858,46 @@ try {
     }
   });
 
+  await runTest('status-only-preserves-missing-and-legacy-config', async () => {
+    const mock = await startMockCdpServer('edge');
+    const instance = await startIsolatedProxy(mock);
+    try {
+      await waitUntil(async () => (await getHealth(instance.port))?.cdp?.lastHandshakeAt, 'isolated proxy CDP handshake');
+      const configPath = path.join(instance.env.LOCALAPPDATA, 'web-access', 'config.env');
+      const legacy = Buffer.from(fs.readFileSync(configPath, 'utf8').replace(/^WEB_ACCESS_BROWSER_MODE=.*\r?\n?/m, ''));
+      assert.doesNotMatch(legacy.toString('utf8'), /^WEB_ACCESS_BROWSER_MODE=/m);
+      const before = await getHealth(instance.port);
+      const connections = mock.totalConnections;
+      const check = async () => {
+        const child = spawnNode([checkDepsScript, '--status-only', '--no-probe', '--json'], instance.env);
+        assert.equal(await waitForExit(child, 30000), 0, `${child.stdoutText}\n${child.stderrText}`);
+        const report = JSON.parse(child.stdoutText);
+        assert.equal(report.ready, true);
+        assert.equal(report.reused, true);
+        assert.equal(report.controlProbe.skipped, true);
+      };
+      fs.unlinkSync(configPath);
+      await check();
+      assert.equal(fs.existsSync(configPath), false, 'Status check must not create a config');
+      fs.writeFileSync(configPath, legacy);
+      await check();
+      assert.deepEqual(fs.readFileSync(configPath), legacy, 'Status check must not migrate the config');
+      const after = await getHealth(instance.port);
+      assert.equal(after.pid, before.pid);
+      assert.equal(after.cdp.lastHandshakeAt, before.cdp.lastHandshakeAt);
+      assert.equal(mock.totalConnections, connections);
+      return { missingConfigPreserved: true, legacyConfigPreserved: true, additionalBrowserConnections: 0 };
+    } finally {
+      await stopIsolatedProxy(instance);
+      await mock.close();
+    }
+  });
+
   await runTest('failed-auto-recovery-does-not-loop', async () => {
     const mock = await startMockCdpServer('edge');
     const instance = await startIsolatedProxy(mock);
     try {
+      await waitUntil(async () => (await getHealth(instance.port))?.cdp?.lastHandshakeAt, 'isolated proxy CDP handshake');
       await mock.close();
       await delay(1500);
       const first = instance.child.stderrText.split('Browser reconnect failed:').length - 1;

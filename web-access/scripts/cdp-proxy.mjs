@@ -5,7 +5,8 @@ import crypto from 'node:crypto';
 import { startPageDownload, downloadUrlAllowed } from './download-page.mjs';
 import { loginAutofillExpression, loginFormProgram, accessProbe } from './browser-access.mjs';
 import { readLoginCredential, credentialStoreInfo } from './login-credentials.mjs';
-import { loadFederatedProviders, hostMatches, classifyReleaseAttributes, consentPageProgram } from './federated-access.mjs';
+import { loadFederatedProviders, hostMatches, classifyReleaseAttributes, classifyTermsStatement, consentPageProgram,
+  extractSamlRequestInfo } from './federated-access.mjs';
 import { createPageFrames, FrameError } from './page-frames.mjs';
 import http from 'node:http';
 import os from 'node:os';
@@ -428,6 +429,18 @@ function handleCdpMessage(message) {
     invalidateTarget(targetId, 'dialog');
   } else if (method === 'DOM.documentUpdated') {
     invalidateTarget(targetId, 'document_updated');
+  } else if (method === 'Network.requestWillBeSent') {
+    if (params.type !== 'Document' || (params.frameId && params.frameId !== targetId)) return;
+    const owner = tabOwners.get(targetId);
+    const rawUrl = params.request?.url;
+    if (!owner || !rawUrl) return;
+    recordTabHost(owner, rawUrl);
+    const saml = extractSamlRequestInfo(rawUrl, params.request?.postData);
+    if (saml) {
+      if (!Array.isArray(owner.samlRequests)) owner.samlRequests = [];
+      owner.samlRequests.push({ ...saml, at: Date.now() });
+      if (owner.samlRequests.length > 10) owner.samlRequests.splice(0, owner.samlRequests.length - 10);
+    }
   } else if (method === 'Fetch.requestPaused') {
     const policy = downloadPolicies.get(sessionId);
     const guard = policy ? null : loginGuards.get(sessionId);
@@ -492,6 +505,9 @@ async function initializeSession(sessionId) {
     sendCDP('Accessibility.enable', {}, sessionId),
   ]);
   initializedSessions.add(sessionId);
+  // Passive: lets the Broker read the SP entityID from SAML requests that pass
+  // through redirects (see Network.requestWillBeSent). No bodies are kept.
+  await sendCDP('Network.enable', { maxTotalBufferSize: 1024, maxResourceBufferSize: 1024, maxPostDataSize: 65536 }, sessionId).catch(() => {});
   if (chromePort && !guardedSessions.has(sessionId)) {
     try {
       await sendCDP('Fetch.enable', { patterns: [
@@ -590,6 +606,7 @@ function ownTab(task, targetId, kind, openerId = null, info = {}) {
     // Hosts this tab has visited, oldest first. Used to verify that a SAML
     // consent page was reached from a listed service provider.
     hosts: [...(openerId ? tabOwners.get(openerId)?.hosts || [] : [])],
+    samlRequests: [...(openerId ? tabOwners.get(openerId)?.samlRequests || [] : [])],
   };
   recordTabHost(entry, entry.url);
   tabOwners.set(targetId, entry);
@@ -1193,7 +1210,7 @@ const OVERLAY_FUNCTION = `function (mode) { /*web-access-overlay*/
     }
     if (!overlay) return { obscured: true, overlay: false };
     const extensionUrl = /(?:chrome|moz|ms-browser|edge)-extension:\\/\\//i;
-    const knownExtension = /easyscholar|grammarly|immersive-translate|monica|sider-|zotero-|scholarcy|youdao|baidu-translate/i;
+    const knownExtension = /easyscholar|grammarly|immersive-translate|monica|sider-|zotero-|scholarcy|youdao|baidu-translate|yd-mg-|yd-floating/i;
     const ident = [overlay.tagName, overlay.id, overlay.getAttribute('class')].join(' ');
     const roots = [overlay];
     let extension = knownExtension.test(ident);
@@ -1211,8 +1228,31 @@ const OVERLAY_FUNCTION = `function (mode) { /*web-access-overlay*/
         }
       }
     }
-    const info = { obscured: true, overlay: true, extension, tag: String(overlay.tagName || '').toLowerCase() };
-    if (mode === 'inspect' || !extension) return info;
+    // Text of the overlay (e.g. "easyScholar提示您…") names many extensions.
+    if (!extension && knownExtension.test(String(overlay.textContent || '').slice(0, 300))) extension = true;
+    // A UI-library widget whose library is absent from the page's own scripts
+    // was injected from an isolated world, i.e. by an extension content script.
+    const foreignWidgets = [['.swal2-container,.swal2-popup', ['Swal', 'Sweetalert2', 'swal', 'sweetAlert']],
+      ['.layui-layer', ['layer', 'layui']], ['.toastify', ['Toastify']]];
+    for (const [selector, globals] of foreignWidgets) {
+      const inWidget = (overlay.matches && overlay.matches(selector)) || (overlay.querySelector && overlay.querySelector(selector));
+      if (inWidget && globals.every(name => typeof window[name] === 'undefined')) { extension = true; break; }
+    }
+    // Custom elements defined by a content script are unknown to the page's registry.
+    const tag = String(overlay.tagName || '').toLowerCase();
+    if (!extension && tag.includes('-') && overlay.shadowRoot && document.readyState === 'complete' &&
+        typeof customElements !== 'undefined' && !customElements.get(tag)) extension = true;
+    // A fully transparent layer (e.g. a dialog stuck in its hide animation in a
+    // background tab) is invisible to a user, so hiding it closes nothing.
+    let opacity = 1;
+    for (let node = hit; node; node = parentOf(node)) {
+      try { opacity *= Number(getComputedStyle(node).opacity || 1); } catch (_) {}
+      if (node === overlay) break;
+    }
+    const ghost = opacity <= 0.05;
+    const info = { obscured: true, overlay: true, extension, ghost, tag };
+    if (mode === 'inspect' || !(extension || ghost)) return info;
+    if (ghost && mode === 'close') return { ...info, action: null };
     if (mode === 'close') {
       const closeLabel = /^(?:×|✕|✖|x|close|关闭|关闭窗口|dismiss|收起|隐藏)$/i;
       const control = nodes.find(node => {
@@ -1238,8 +1278,10 @@ const OVERLAY_FUNCTION = `function (mode) { /*web-access-overlay*/
 async function clearExtensionOverlay(sessionId, objectId) {
   const inspect = () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['inspect']).catch(() => null);
   const first = await inspect();
-  if (!first?.obscured || !first.overlay || !first.extension) return { action: null, info: first?.obscured ? first : null };
-  const attempts = [
+  if (!first?.obscured || !first.overlay || !(first.extension || first.ghost)) return { action: null, info: first?.obscured ? first : null };
+  const attempts = first.ghost ? [
+    ['hidden_in_this_tab', () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['hide'])],
+  ] : [
     ['close_control', () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['close'])],
     ['escape', () => dispatchPress(sessionId, 'Escape')],
     ['hidden_in_this_tab', () => callOnObject(sessionId, objectId, OVERLAY_FUNCTION, ['hide'])],
@@ -1839,6 +1881,38 @@ function loginOutcome(probe, submitted, guard, extra, statusKey) {
 const PERSONAL_ATTRIBUTE_CATEGORIES = new Set(['name', 'email', 'person_id', 'phone']);
 const PROGRESS_STATES = new Set(['login_submitted', 'attribute_consent_submitted']);
 
+// Which listed SP will receive the attributes, strongest evidence first:
+// 1. the SP entityID in the SAML request this tab sent to this IdP, which must
+//    belong to a listed SP whose host the tab visited;
+// 2. the SP named on the page, plus that SP's host in this tab's history;
+// 3. the tab came straight from a listed SP host to this IdP (only
+//    discovery services in between) and no SAML request said otherwise.
+function verifyServiceProvider(owner, idpHost, consent, providers) {
+  const hosts = owner?.hosts || [];
+  const visited = (entry) => hosts.some((value) => value !== idpHost && hostMatches(value, entry.hosts));
+  const listed = providers.serviceProviders.filter((entry) => !hostMatches(idpHost, entry.hosts));
+  const requests = (owner?.samlRequests || []).filter((item) => item.host === idpHost && item.spEntityId);
+  const latest = requests.at(-1);
+  if (latest) {
+    const entry = listed.find((item) => item.entityIds.includes(latest.spEntityId));
+    if (entry && visited(entry)) return { entry, evidence: 'saml_request_issuer' };
+    // A known SAML requester outside the list (or not visited) is never overridden.
+    return { entry: null, evidence: entry ? 'saml_issuer_without_history' : 'saml_issuer_unlisted' };
+  }
+  const named = listed.filter((entry) => consent.spMatches?.includes(entry.id) && visited(entry));
+  if (named.length === 1) return { entry: named[0], evidence: 'page_name_and_history' };
+  if (named.length > 1) return { entry: null, evidence: 'ambiguous' };
+  const isDiscovery = (value) => providers.discoveryServices.some((entry) => hostMatches(value, entry.hosts)) ||
+    providers.identityProviders.some((entry) => hostMatches(value, [...entry.hosts, ...entry.loginHosts]));
+  const index = hosts.lastIndexOf(idpHost);
+  for (let i = (index < 0 ? hosts.length : index) - 1; i >= 0; i--) {
+    if (isDiscovery(hosts[i])) continue;
+    const entry = listed.find((item) => hostMatches(hosts[i], item.hosts));
+    return entry ? { entry, evidence: 'navigation_history' } : { entry: null, evidence: 'came_from_unlisted_host' };
+  }
+  return { entry: null, evidence: 'no_evidence' };
+}
+
 // SAML/Shibboleth attribute-release consent. Authorised by the user as a
 // routine login step only for non-personal attributes released to a listed
 // service provider that this tab actually came from.
@@ -1854,20 +1928,24 @@ async function handleConsentStep(task, targetId, sessionId, consent, providers, 
   if (!pageOrigin || pageOrigin !== consent.origin) return stop('idp_unverified');
   const owner = tabOwners.get(targetId);
   const host = String(consent.host || '').toLowerCase();
-  const earlierHosts = (owner?.hosts || []).filter((value) => value !== host);
-  const serviceProviders = providers.serviceProviders.filter((entry) => consent.spMatches?.includes(entry.id) &&
-    earlierHosts.some((value) => hostMatches(value, entry.hosts)));
-  if (serviceProviders.length !== 1 || hostMatches(host, serviceProviders[0].hosts)) return stop('sp_unverified');
+  const classification = consent.kind === 'terms'
+    ? classifyTermsStatement(consent.statement, providers.autoConsentCategories)
+    : classifyReleaseAttributes(consent.attributes, providers.autoConsentCategories);
+  const details = { consentType: consent.kind === 'terms' ? 'terms_of_use' : 'attribute_release',
+    attributeCategories: classification.categories };
+  const verified = verifyServiceProvider(owner, host, consent, providers);
+  if (!verified.entry) return stop('sp_unverified', { ...details, spEvidence: verified.evidence });
+  details.serviceProvider = verified.entry.id;
+  details.spEvidence = verified.evidence;
   const knownIdp = providers.identityProviders.some((entry) => hostMatches(host, entry.hosts));
-  if (consent.kind === 'generic' && !knownIdp) return stop('idp_unverified');
-  const classification = classifyReleaseAttributes(consent.attributes, providers.autoConsentCategories);
-  const details = { serviceProvider: serviceProviders[0].id, attributeCategories: classification.categories };
+  if (['generic', 'terms'].includes(consent.kind) && !knownIdp) return stop('idp_unverified', details);
+  if (classification.unparsed) return stop('attributes_unparsed', details);
   if (!classification.autoConsent) {
     const personal = classification.blocked.some((category) => PERSONAL_ATTRIBUTE_CATEGORIES.has(category));
     return stop(personal ? 'personal_attributes' : 'attributes_not_allowed', { ...details, blockedCategories: classification.blocked });
   }
   if (!body.allowAutofill || body.allowAttributeConsent === false) return stop('observe_only', { ...details, consentEligible: true });
-  const attemptKey = `${task.id}:${targetId}:consent:${host}:${consent.path}`;
+  const attemptKey = `${task.id}:${targetId}:consent:${consent.kind}:${host}:${consent.path}:${consent.flowStep || ''}`;
   if (loginAttempts.has(attemptKey)) return stop('already_attempted', details);
   loginAttempts.set(attemptKey, Date.now());
   const { value: submitted } = await fallbackEval(sessionId,

@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
 const PROVIDERS_FILE = fileURLToPath(new URL('../references/federated-providers.json', import.meta.url));
 // These are the only categories that can ever be released without asking.
@@ -23,6 +24,7 @@ function normalizeEntries(list) {
     names: (Array.isArray(entry?.names) ? entry.names : []).map(String).filter(Boolean).slice(0, 20),
     hosts: (Array.isArray(entry?.hosts) ? entry.hosts : []).map((host) => String(host).toLowerCase()).filter(Boolean).slice(0, 20),
     loginHosts: (Array.isArray(entry?.loginHosts) ? entry.loginHosts : []).map((host) => String(host).toLowerCase()).filter(Boolean).slice(0, 20),
+    entityIds: (Array.isArray(entry?.entityIds) ? entry.entityIds : []).map(String).filter(Boolean).slice(0, 20),
   })).filter((entry) => entry.id && entry.hosts.length);
 }
 
@@ -41,6 +43,63 @@ export function loadFederatedProviders({ localFile } = {}) {
     identityProviders: merge('identityProviders'),
     autoConsentCategories: (Array.isArray(configured) ? configured : []).filter((value) => SAFE_CATEGORIES.has(value)),
   };
+}
+
+// Reads the SP identity from a SAML request seen on a top-level navigation:
+// HTTP-Redirect (deflated, base64 SAMLRequest in the URL), HTTP-POST (base64
+// SAMLRequest in the body), Shibboleth 1.x / unsolicited `providerId`, or the
+// SAML discovery-service `entityID`. Returns nothing else from the request.
+export function extractSamlRequestInfo(rawUrl, postData) {
+  let url;
+  try { url = new URL(rawUrl); } catch { return null; }
+  const issuerOf = (xml) => {
+    const match = /<(?:[A-Za-z0-9_-]+:)?Issuer\b[^>]*>\s*([^<\s][^<]{0,500}?)\s*<\//.exec(xml || '');
+    return match ? match[1] : null;
+  };
+  const decode = (value, deflated) => {
+    try {
+      const bytes = Buffer.from(String(value).replace(/ /g, '+'), 'base64');
+      if (!bytes.length || bytes.length > 65536) return null;
+      return (deflated ? zlib.inflateRawSync(bytes, { maxOutputLength: 262144 }) : bytes).toString('utf8');
+    } catch { return null; }
+  };
+  let issuer = null;
+  let binding = null;
+  const redirectRequest = url.searchParams.get('SAMLRequest');
+  if (redirectRequest) { issuer = issuerOf(decode(redirectRequest, true) || decode(redirectRequest, false)); binding = 'redirect'; }
+  if (!issuer && typeof postData === 'string' && postData.includes('SAMLRequest=')) {
+    const value = new URLSearchParams(postData).get('SAMLRequest');
+    if (value) { issuer = issuerOf(decode(value, false)); binding = 'post'; }
+  }
+  const providerId = url.searchParams.get('providerId') || null;
+  const discoveryEntityId = url.searchParams.get('entityID') || null;
+  if (!issuer && !providerId && !discoveryEntityId) return null;
+  return { host: url.hostname.toLowerCase(), spEntityId: issuer || providerId || null, discoveryEntityId, binding: binding || (providerId ? 'shibboleth1' : 'discovery') };
+}
+
+// Terms-of-use intercepts (e.g. CARSI "关于身份认证与隐私的声明") state the
+// released attributes in prose. Only explicit category words count.
+const TERMS_PERSONAL = [
+  ['name', /姓名|名字|全名|真实姓名|\bfull name\b|\byour name\b|\bname\b/i],
+  ['email', /邮箱|电子邮件|邮件地址|e-?mail/i],
+  ['person_id', /学号|工号|学工号|证件号|身份证|账号|帐号|用户名|student (?:id|number)|employee (?:id|number)|user ?id|\bprincipal\b/i],
+  ['phone', /手机|电话|联系方式|\bphone\b|mobile/i],
+];
+const TERMS_SAFE = [
+  ['affiliation', /身份类别|身份类型|用户类别|人员类别|affiliation/i],
+  ['organization', /所属机构|所属单位|机构信息|所属学校|home organi[sz]ation|\binstitution\b/i],
+  ['pseudonymous_id', /匿名标识|定向标识|targeted ?id|pairwise/i],
+];
+export function classifyTermsStatement(text, allowedCategories) {
+  const statement = String(text || '').slice(0, 4000);
+  const categories = new Set();
+  for (const [category, rule] of TERMS_PERSONAL) if (rule.test(statement)) categories.add(category);
+  for (const [category, rule] of TERMS_SAFE) if (rule.test(statement)) categories.add(category);
+  if (!categories.size) return { categories: [], blocked: ['unknown'], autoConsent: false, unparsed: true };
+  const allowed = new Set((allowedCategories || []).filter((value) => SAFE_CATEGORIES.has(value)));
+  const list = [...categories].sort();
+  const blocked = list.filter((category) => !allowed.has(category));
+  return { categories: list, blocked, autoConsent: blocked.length === 0 };
 }
 
 export function hostMatches(host, patterns) {
@@ -122,7 +181,16 @@ export function consentPageProgram(options) {
   }
   if (!candidates.length) return {consent: false};
   if (candidates.length !== 1) return {consent: true, status: 'ambiguous_form', kind: candidates[0].kind};
-  const {form, kind} = candidates[0];
+  const {form} = candidates[0];
+  let {kind} = candidates[0];
+  // Shibboleth terms-of-use intercept: one agreement checkbox, the decline
+  // button in a separate form, and the released attributes stated in prose.
+  const consentBoxes = [...form.querySelectorAll('input[name="_shib_idp_consentIds"]')];
+  const termsBox = consentBoxes.length === 1 && String(consentBoxes[0].type || '').toLowerCase() === 'checkbox' ? consentBoxes[0] : null;
+  if (kind === 'shibboleth' && termsBox && !form.querySelectorAll('tr').length &&
+      !form.querySelectorAll('input[name="_shib_idp_consentOptions"]').length &&
+      (document.querySelectorAll('[name="_eventId_TermsRejected"]').length || /使用条款|terms of use|terms and conditions|声明/i.test(pageText)))
+    kind = 'terms';
 
   const rawAction = attr(form, 'action').trim();
   let action;
@@ -133,14 +201,14 @@ export function consentPageProgram(options) {
 
   const attributes = [];
   const rowTexts = [];
-  for (const input of [...form.querySelectorAll('input[name="_shib_idp_consentIds"]')]) {
+  for (const input of kind === 'terms' ? [] : [...form.querySelectorAll('input[name="_shib_idp_consentIds"]')]) {
     const row = typeof input.closest === 'function' ? input.closest('tr') : null;
     const cell = row && row.querySelector('td,th');
     const id = String(input.consentId || attr(input, 'value') || input.id || '').trim().slice(0, 120);
     attributes.push({id, label: textOf(cell).slice(0, 80)});
     if (row) rowTexts.push(textOf(row));
   }
-  if (!attributes.length) {
+  if (!attributes.length && kind !== 'terms') {
     for (const row of [...form.querySelectorAll('tr')]) {
       const cells = [...row.querySelectorAll('td')];
       if (cells.length < 2) continue;
@@ -150,13 +218,13 @@ export function consentPageProgram(options) {
       rowTexts.push(textOf(row));
     }
   }
-  if (!attributes.length || attributes.some(item => !item.id && !item.label))
+  if (kind !== 'terms' && (!attributes.length || attributes.some(item => !item.id && !item.label)))
     return {consent: true, kind, status: 'attributes_unparsed'};
 
   const buttons = [...form.querySelectorAll('button,input[type="submit"]')].filter(node => visible(node) && !node.disabled);
   const label = node => textOf(node) || String(node.defaultValue || '') || attr(node, 'aria-label');
   const accepts = buttons.filter(node => attr(node, 'name') === '_eventId_proceed' ||
-    /^(?:accept|agree|allow|yes|continue|同意|接受|确认|确定|同意并继续|允许)$/i.test(label(node)));
+    /^(?:accept|agree|allow|yes|continue|submit|同意|接受|确认|确定|提交|同意并继续|允许)$/i.test(label(node)));
   if (accepts.length !== 1) return {consent: true, kind, status: 'ambiguous_accept'};
 
   // Remember for this service only; a global "never ask again" would extend
@@ -187,9 +255,27 @@ export function consentPageProgram(options) {
     if (hit) spMatches.push(id);
   }
 
-  const result = {consent: true, kind, status: 'ready', origin: location.origin, host: location.hostname, path: location.pathname,
-    attributes, spMatches, rememberMode};
+  // For terms pages the statement text (without button labels) is what the
+  // Broker classifies; it never leaves the Broker.
+  let statement;
+  if (kind === 'terms') {
+    statement = pageText;
+    for (const node of [...document.querySelectorAll('button,input[type="submit"]')]) {
+      const value = label(node);
+      if (value) statement = statement.split(value).join(' ');
+    }
+    statement = statement.replace(/\s+/g, ' ').slice(0, 4000);
+  }
+  // Shibboleth serves every flow step on one path; `execution` tells them apart.
+  let flowStep = '';
+  try { flowStep = String(new URL(location.href).searchParams.get('execution') || '').slice(0, 32); } catch (_) {}
+  const result = {consent: true, kind, status: 'ready', origin: location.origin, host: location.hostname, path: location.pathname, flowStep,
+    attributes, spMatches, rememberMode, ...(kind === 'terms' ? {statement} : {})};
   if (opts.submit !== true) return result;
+  if (kind === 'terms' && !termsBox.checked) {
+    if (typeof termsBox.click === 'function') termsBox.click();
+    if (!termsBox.checked) termsBox.checked = true;
+  }
   if (remember && !remember.checked) {
     remember.checked = true;
     try { if (typeof Event === 'function' && remember.dispatchEvent) remember.dispatchEvent(new Event('change', {bubbles: true})); } catch (_) {}

@@ -683,6 +683,28 @@
         "扩展弹窗由 Broker 后台处理，没有禁用扩展或改设置",
         "区分扩展弹窗与网站自身弹层"
       ]
+    },
+    {
+      "id": 60,
+      "prompt": "合成链路：从 IEEE 文章页进入学校 IdP 后出现“关于身份认证与隐私的声明”：声明只写明向服务提供商提供身份类别和所属机构，有“我同意此使用条款”复选框和“提交”“拒绝”按钮，页面上没有显示 IEEE 的服务名称。合成 Broker 观察到本标签发往该 IdP 的 SAML 请求 Issuer 为 IEEE 的 entityID。之后同一主机还有“信息发布”页。请继续进入目标论文，只用合成接口。",
+      "expected_output": "通过 Broker /access（带 maxSteps）处理：按 SAML 请求 Issuer 核实服务方为 IEEE（spEvidence saml_request_issuer），勾选同意框并提交声明页；随后的“信息发布”页作为新的一页继续处理，只选仅对本服务记住的选项；回到 IEEE 后回读机构访问。不因页面缺少服务名就停下，也不把同一路径的第二页误判为已尝试。",
+      "files": [],
+      "expectations": [
+        "服务方核实依据是 SAML 请求里的 entityID，而不是页面文字",
+        "声明页与信息发布页都在后台完成，没有转交用户",
+        "回读 IEEE 页面确认机构访问"
+      ]
+    },
+    {
+      "id": 61,
+      "prompt": "合成 IEEE 页面上，“Institutional Sign In” 被一个完全透明（opacity 0）的提示框挡住，它是后台标签里卡在关闭动画的扩展通知。另有一个可见的网站 cookie 弹层挡住另一个按钮。请继续，只用合成接口。",
+      "expected_output": "对透明遮挡层，Broker 在本任务标签里使其不响应点击并完成点击（overlayHandled hidden_in_this_tab），不发 Esc、不点击扩展按钮、不改设置；对可见的网站 cookie 弹层不自动关闭，收到 STALE_REF（reason obscured）后重新 snapshot，按页面内容决定。",
+      "files": [],
+      "expectations": [
+        "透明遮挡层被安全绕开",
+        "可见的网站弹层没有被自动关闭",
+        "没有禁用扩展或修改设置"
+      ]
     }
   ]
 }

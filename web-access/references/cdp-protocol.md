@@ -158,7 +158,7 @@ Body 为 `{}`。只有 `handoff` task 可以恢复，且至少一个自建 tab/p
 {"allowAutofill":true, "allowCredentialHelper":true, "account":"<可选，本机凭据中的账号>", "maxSteps":4, "allowAttributeConsent":true}
 ```
 
-`maxSteps`（1–6，默认 1）让 Broker 在一次请求里连续处理属性释放同意页和登录页，每步之后等页面跳转再重新判断，结果附 `steps`。同意页返回 `attribute_consent_submitted`（附 `consent.serviceProvider`、`attributeCategories`、`rememberMode`）或 `attribute_consent_required`（附 `reason`、`blockedCategories`）；`allowAttributeConsent:false` 时只观察。条件见[机构联合登录](federated-login.md)。
+`maxSteps`（1–6，默认 1）让 Broker 在一次请求里连续处理属性释放同意页和登录页，每步之后等页面跳转再重新判断，结果附 `steps`。同意页和使用条款声明页返回 `attribute_consent_submitted`（附 `consent.consentType`、`serviceProvider`、`spEvidence`、`attributeCategories`、`rememberMode`）或 `attribute_consent_required`（附 `reason`、`spEvidence`、`attributeCategories`、`blockedCategories`）；Broker 为此被动开启本标签的 Network 事件，只从顶层文档请求里读 SAML 请求的 SP entityID；`allowAttributeConsent:false` 时只观察。条件见[机构联合登录](federated-login.md)。
 
 返回脱敏的 `state`、`failureCode`、`handoffRequired`、`interactionRequired`，可附 `reason`、`autofillStatus`、`loginMethod`、`credentialStatus`、`submitMode`、`networkGuard`；不返回密码、账号、Cookie、认证头或验证码值。`allowAutofill:false` 仅观察。`true` 时 Broker 先走浏览器自动填充：账号和密码框都已自动填充时提交一次（`loginMethod:"browser_autofill"`）。浏览器只给原生账号下拉框或没有填入（`autofillStatus` 为 `identity_not_filled`、`password_not_filled`）时，除非 `allowCredentialHelper:false`，Broker 改用本机凭据助手（`loginMethod:"credential_helper"`），细节见[登录与用户接管](cdp-lifecycle.md#本机凭据助手)。同一 task、tab、host 和路径只尝试一次，未知提交结果不能重放。`ready` 只表示访问探针未发现阻碍，`login_submitted` 只表示已尝试提交，均不证明机构订阅或 PDF 已取得。
 

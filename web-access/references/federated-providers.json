@@ -1,13 +1,14 @@
 {
   "version": 1,
+  "entityIdsVerified": "2026-11-23 via InCommon MDQ (mdq.incommon.org): ieee, elsevier, springer-nature, acm. Entries without entityIds rely on navigation history only.",
   "description": "Service providers, discovery services and identity providers that the web-access Broker trusts for automatic SAML/Shibboleth attribute-release consent. See federated-login.md. Add local entries in %LOCALAPPDATA%\\web-access\\federated-providers.local.json with the same shape.",
   "autoConsentCategories": ["affiliation", "organization", "pseudonymous_id"],
   "serviceProviders": [
-    { "id": "ieee", "names": ["IEEE Xplore", "IEEE"], "hosts": ["ieeexplore.ieee.org", "ieee.org"] },
-    { "id": "elsevier", "names": ["ScienceDirect", "Elsevier", "Scopus", "Engineering Village"], "hosts": ["sciencedirect.com", "elsevier.com", "scopus.com", "engineeringvillage.com"] },
-    { "id": "springer-nature", "names": ["SpringerLink", "Springer Nature", "Springer", "Nature"], "hosts": ["link.springer.com", "springer.com", "springernature.com", "nature.com"] },
+    { "id": "ieee", "names": ["IEEE Xplore", "IEEE"], "hosts": ["ieeexplore.ieee.org", "ieee.org"], "entityIds": ["https://ieeexplore.ieee.org/shibboleth-sp"] },
+    { "id": "elsevier", "names": ["ScienceDirect", "Elsevier", "Scopus", "Engineering Village"], "hosts": ["sciencedirect.com", "elsevier.com", "scopus.com", "engineeringvillage.com"], "entityIds": ["https://sdauth.sciencedirect.com/"] },
+    { "id": "springer-nature", "names": ["SpringerLink", "Springer Nature", "Springer", "Nature"], "hosts": ["link.springer.com", "springer.com", "springernature.com", "nature.com"], "entityIds": ["https://fsso.springer.com"] },
     { "id": "wiley", "names": ["Wiley Online Library", "Wiley"], "hosts": ["onlinelibrary.wiley.com", "wiley.com"] },
-    { "id": "acm", "names": ["ACM Digital Library", "ACM"], "hosts": ["dl.acm.org", "acm.org"] },
+    { "id": "acm", "names": ["ACM Digital Library", "ACM"], "hosts": ["dl.acm.org", "acm.org"], "entityIds": ["https://dl.acm.org/shibboleth"] },
     { "id": "iop", "names": ["IOPscience", "IOP Publishing", "IOP"], "hosts": ["iopscience.iop.org", "iop.org"] },
     { "id": "optica", "names": ["Optica Publishing Group", "Optica", "OSA Publishing"], "hosts": ["opg.optica.org", "optica.org", "osapublishing.org"] },
     { "id": "taylor-francis", "names": ["Taylor & Francis Online", "Taylor & Francis", "Taylor and Francis"], "hosts": ["tandfonline.com"] },
@@ -20,7 +21,8 @@
     { "id": "cnki", "names": ["中国知网", "CNKI"], "hosts": ["cnki.net"] }
   ],
   "discoveryServices": [
-    { "id": "carsi", "names": ["CARSI"], "hosts": ["ds.carsi.edu.cn", "carsi.edu.cn"] }
+    { "id": "carsi", "names": ["CARSI"], "hosts": ["ds.carsi.edu.cn", "carsi.edu.cn"] },
+    { "id": "seamlessaccess", "names": ["SeamlessAccess"], "hosts": ["service.seamlessaccess.org", "seamlessaccess.org"] }
   ],
   "identityProviders": [
     { "id": "uestc", "names": ["电子科技大学", "University of Electronic Science and Technology of China"], "hosts": ["idp-lib.uestc.edu.cn"], "loginHosts": ["idas.uestc.edu.cn"] }

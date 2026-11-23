@@ -54,8 +54,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/login-credential.ps1
 - AX snapshot/ref、结构化 click/fill/type/press/check/select/hover、wait 和 dialog。
 - 用户登录/接管、表单写入保护、敏感操作授权和完整结果回读。
 - 后台登录：Edge 已自动填充时直接提交；同站点存了多个账号、Edge 只弹原生下拉框时，改用 Windows 凭据管理器里用户录入的本机凭据，在任务后台标签写入并提交，不用 Computer Use。“验证码登录”等切换入口不当作验证要求。
-- 机构联合登录：SAML/Shibboleth/CARSI 属性释放同意页只请求身份类别、所属机构或匿名标识，且服务方在[名单](references/federated-providers.json)里时，后台自动同意并只记住本服务；请求个人属性时停下交给用户。`/access` 带 `maxSteps` 一次走完同意页和密码页，见[机构联合登录](references/federated-login.md)。
-- 浏览器扩展弹窗挡住页面元素时，在本任务标签里关闭或隐藏后重试一次，不禁用扩展。
+- 机构联合登录：SAML/Shibboleth/CARSI 属性释放同意页或使用条款声明页只涉及身份类别、所属机构或匿名标识，且服务方在[名单](references/federated-providers.json)里时，后台自动同意并只记住本服务；服务方按 SAML 请求里的 entityID 等证据核实，请求个人属性时停下交给用户。`/access` 带 `maxSteps` 一次走完声明页、同意页和密码页；2026-11-23 已在 IEEE → 电子科技大学的真实链路上走通，见[机构联合登录](references/federated-login.md)。
+- 浏览器扩展弹窗或完全透明的遮挡层挡住页面元素时，在本任务标签里关闭或隐藏后重试一次，不禁用扩展。
 - 书签/历史定位、服务器文件字节取回、图片像素导出、截图和 iframe 内容/交互。
 - 本地站点经验与旧 Proxy 迁移说明。
 

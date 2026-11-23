@@ -1166,6 +1166,8 @@ try {
       [{ extension: true, closeControl: true }, 'close_control'],
       [{ extension: true, closeControl: false, escapeCloses: true }, 'escape'],
       [{ extension: true, closeControl: false, escapeCloses: false }, 'hidden_in_this_tab'],
+      // A transparent layer stuck in a hide animation (e.g. easyScholar's SweetAlert2 toast in a background tab).
+      [{ extension: false, ghost: true, closeControl: true }, 'hidden_in_this_tab'],
     ]) {
       const snapshot = await getSnapshot(edgeBase, task, tab.targetId);
       const ref = findNode(snapshot, 'button', 'Submit').ref;

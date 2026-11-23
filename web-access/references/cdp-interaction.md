@@ -52,7 +52,11 @@ AX tree 最多缓存 60 秒，但每次 snapshot 请求都会签发新的 genera
 
 ref 在 Proxy 内绑定 `taskId + targetId + generation + backendDOMNodeId`，只对最近 snapshot 有效。动作前重新解析节点并检查 attached、visible、enabled 和未遮挡。失败返回 `409 STALE_REF`，随后必须重新 snapshot。
 
-目标只是被浏览器扩展注入的弹窗挡住时（如 easyScholar），Broker 在同一次动作里处理一次：依次点弹窗自己的关闭按钮、发送 Esc、仍挡住时只在本任务标签里把该弹窗设为隐藏且不响应点击，然后对同一元素重新检查；成功时结果带 `overlayHandled`。判断扩展弹窗靠其中的扩展资源地址（`chrome-extension://` 等）或已知扩展标识；不禁用扩展、不改浏览器或扩展设置。网站自己的弹层不自动关闭，返回 `STALE_REF`（`details.reason:"obscured"`），由调用方重新 snapshot 后按页面内容决定。
+目标只是被浏览器扩展注入的弹窗挡住时（如 easyScholar），Broker 在同一次动作里处理一次：依次点弹窗自己的关闭按钮、发送 Esc、仍挡住时只在本任务标签里把该弹窗设为隐藏且不响应点击，然后对同一元素重新检查；成功时结果带 `overlayHandled`。判断扩展弹窗靠以下任一特征：其中的扩展资源地址（`chrome-extension://` 等）；标识或开头文字里的已知扩展名（如 easyScholar、有道 `yd-*`）；页面自身没有加载、却出现在 DOM 里的 UI 库弹窗（如 SweetAlert2 的 `.swal2-container`，而页面主环境没有 `Swal`）；页面自己未注册的带 shadow root 的自定义元素。不禁用扩展、不改浏览器或扩展设置，也不点“一日内不再弹出”这类会改扩展设置的按钮。
+
+完全透明的遮挡层（各层不透明度相乘 ≤ 0.05）用户看不见，直接在本任务标签里设为不响应点击后复核，不发 Esc、不点按钮。2026-11-23 实测 easyScholar 的提示就是这种情况：SweetAlert2 提示框在后台标签里卡在关闭动画（`swal2-hide`、不透明度 0），仍挡住 IEEE 的 “Institutional Sign In”。网站自己的、看得见的弹层不自动关闭，返回 `STALE_REF`（`details.reason:"obscured"`，`details.obscuredBy` 带 `extension`、`ghost`），由调用方重新 snapshot 后按页面内容决定。
+
+后台标签里的弹窗和模态框常放在较深的 DOM 层级，默认 `depth` 的 snapshot 可能看不到，如 IEEE 的机构登录面板；找不到预期控件时用 `depth=40` 重新 snapshot，必要时先截图带动页面渲染一帧。
 
 首版不支持跨域 OOPIF ref。
 

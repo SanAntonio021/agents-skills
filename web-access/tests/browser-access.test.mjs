@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import os from 'node:os';
+import zlib from 'node:zlib';
 import { EventEmitter, once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { accessProbe, loginAutofillExpression, loginFormProgram } from '../scripts/browser-access.mjs';
@@ -164,12 +165,22 @@ function fixture(options = {}) {
       querySelectorAll: selector => controls.filter(node => node.matches(selector)),
       requestSubmit(control) {
         actions.push({ action: 'consentSubmit', accept: control.getAttribute('name') || control.innerText || 'accept',
-          remember: controls.filter(node => node.type === 'radio' && node.checked).map(node => node.getAttribute('value')) });
+          remember: controls.filter(node => node.type === 'radio' && node.checked).map(node => node.getAttribute('value')),
+          agreed: controls.filter(node => node.type === 'checkbox').every(node => node.checked) });
         pendingRequests.push({ url: new URL(c.action || '/idp/profile/SAML2/Redirect/SSO?execution=e1s2', location).href,
           method: 'POST', resourceType: 'Document' });
         if (typeof options.onSubmitted === 'function') options.onSubmitted();
       } });
     const add = node => { controls.push(node); return node; };
+    if (c.terms) {
+      // Shibboleth terms-of-use intercept as served by CARSI IdPs.
+      add(element('input', { type: 'hidden', name: 'csrf_token' }, { hidden: true }));
+      add(element('input', { type: 'checkbox', name: '_shib_idp_consentIds', id: 'accept' }, { consentId: 'carsi-terms', checked: false }));
+      add(element('button', { type: 'submit', name: '_eventId_proceed' }, { text: '提交' }));
+      const reject = element('button', { type: 'submit', name: '_eventId_TermsRejected' }, { text: '拒绝' });
+      element('form', { action: c.action || '/idp/profile/SAML2/Redirect/SSO?execution=e1s1' },
+        { method: 'post', target: '', querySelectorAll: selector => [reject].filter(node => node.matches(selector)) });
+    }
     for (const item of c.attributes || []) {
       const cell = { innerText: item.label || '' };
       const valueCell = { innerText: item.value || 'synthetic value' };
@@ -184,8 +195,10 @@ function fixture(options = {}) {
       add(element('input', { type: c.optionType || 'radio', name: c.optionName || '_shib_idp_consentOptions', value: option.value },
         { checked: !!option.checked, labels: [{ innerText: option.label }] }));
     }
-    add(element('input', { type: 'submit', name: '_eventId_AttributeReleaseRejected' }, { defaultValue: c.rejectLabel || 'Reject' }));
-    if (c.accept !== false) add(element('input', { type: 'submit', name: c.acceptName || '_eventId_proceed' }, { defaultValue: c.acceptLabel || 'Accept' }));
+    if (!c.terms) {
+      add(element('input', { type: 'submit', name: '_eventId_AttributeReleaseRejected' }, { defaultValue: c.rejectLabel || 'Reject' }));
+      if (c.accept !== false) add(element('input', { type: 'submit', name: c.acceptName || '_eventId_proceed' }, { defaultValue: c.acceptLabel || 'Accept' }));
+    }
   }
   for (const { hidden, ...attrs } of options.extraInputs || []) element('input', attrs, { hidden: !!hidden });
   for (const item of options.extraElements || []) element(item.tag, item.attrs || {}, { text: item.text, hidden: !!item.hidden });
@@ -302,7 +315,7 @@ async function productionProxy() {
             case 'Target.detachFromTarget': sessions.delete(p.sessionId); break;
             case 'Page.navigate': result = { frameId: 'fixture_frame' }; break;
             case 'Target.setDiscoverTargets': case 'Page.enable': case 'Runtime.enable':
-            case 'DOM.enable': case 'Accessibility.enable': case 'Fetch.enable': break;
+            case 'DOM.enable': case 'Accessibility.enable': case 'Fetch.enable': case 'Network.enable': break;
             default: throw new Error(`Unimplemented isolated CDP command: ${message.method}`);
           }
           this.emit('message', JSON.stringify({ id: message.id, result }));
@@ -386,6 +399,12 @@ async function productionProxy() {
     // Record that this tab visited `url` before the page under test.
     visit: (owner, url) => emitEvent({ method: 'Target.targetInfoChanged',
       params: { targetInfo: { targetId: owner.targetId, type: 'page', url, title: '' } } }),
+    // A top-level document request (e.g. a redirect hop carrying SAMLRequest).
+    documentRequest: (owner, url, postData) => {
+      const sessionId = [...sessions.entries()].find(([, targetId]) => targetId === owner.targetId)?.[0];
+      emitEvent({ method: 'Network.requestWillBeSent', sessionId, params: { type: 'Document', frameId: owner.targetId,
+        request: { url, method: postData ? 'POST' : 'GET', ...(postData ? { postData } : {}) } } });
+    },
     access: (owner, allowAutofill = true, extra = {}) => module.namespace.handleBrowserAccess(
       { id: owner.taskId }, owner.targetId, { allowAutofill, ...extra }),
     async release(owner) {
@@ -833,7 +852,8 @@ test('production handler: attribute-release consent and the SP -> IdP -> CAS -> 
         record('consent auto accept', 'actual-production-HTTP-router', result, f);
         assert.equal(result.status, 200);
         assert.equal(result.body.state, 'attribute_consent_submitted');
-        assert.deepEqual(result.body.consent, { serviceProvider: 'ieee', attributeCategories: ['affiliation', 'organization'], rememberMode: 'service' });
+        assert.deepEqual(result.body.consent, { consentType: 'attribute_release', serviceProvider: 'ieee',
+          spEvidence: 'page_name_and_history', attributeCategories: ['affiliation', 'organization'], rememberMode: 'service' });
         const submit = f.actions.find(a => a.action === 'consentSubmit');
         assert.equal(submit.accept, '_eventId_proceed');
         assert.ok(submit.remember.includes('_shib_idp_rememberConsent'));
@@ -937,6 +957,139 @@ test('production handler: attribute-release consent and the SP -> IdP -> CAS -> 
         } finally { await proxy.release(owner); credentialStore.entries = new Map(); }
       });
     }
+    assert.equal(CANARIES.some(value => proxy.proxyLogs.join('\n').includes(value)), false);
+  } finally { await proxy.close(); }
+});
+
+// --- CARSI terms-of-use statement and SP evidence from SAML requests ----------
+const CARSI_STATEMENT = '关于身份认证与隐私的声明 根据《CARSI资源共享服务属性要求》，如要继续使用CARSI服务，请勾选"同意此使用条款"并提交，' +
+  '即表示您同意将您的个人身份类别信息（"学生"/"教职工"）及所属机构信息（"电子科技大学"）提供给服务提供商（SP）。 Agreement 我同意此使用条款 电子科技大学（UESTC)';
+function samlRedirectUrl(issuer, idp = 'https://idp-lib.uestc.edu.cn') {
+  const xml = `<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="_x" Version="2.0">` +
+    `<saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">${issuer}</saml:Issuer></samlp:AuthnRequest>`;
+  const encoded = zlib.deflateRawSync(Buffer.from(xml)).toString('base64');
+  return `${idp}/idp/profile/SAML2/Redirect/SSO?SAMLRequest=${encodeURIComponent(encoded)}&RelayState=ss%3Amem%3Asynthetic`;
+}
+function termsFixture({ statement = CARSI_STATEMENT, extra = {} } = {}) {
+  return fixture({ login: false, url: 'https://idp-lib.uestc.edu.cn/idp/profile/SAML2/Redirect/SSO?execution=e1s1',
+    title: '关于身份认证与隐私的声明', text: `${statement}\n提交\n拒绝`, consent: { terms: true }, ...extra });
+}
+
+test('SAML request decoding: redirect, POST and providerId bindings', () => {
+  const redirect = federated.extractSamlRequestInfo(samlRedirectUrl('https://ieeexplore.ieee.org/shibboleth-sp'));
+  assert.deepEqual({ host: redirect.host, sp: redirect.spEntityId, binding: redirect.binding },
+    { host: 'idp-lib.uestc.edu.cn', sp: 'https://ieeexplore.ieee.org/shibboleth-sp', binding: 'redirect' });
+  const xml = '<samlp:AuthnRequest><saml:Issuer>https://sdauth.sciencedirect.com/</saml:Issuer></samlp:AuthnRequest>';
+  const post = federated.extractSamlRequestInfo('https://idp.example.edu/idp/profile/SAML2/POST/SSO',
+    `SAMLRequest=${encodeURIComponent(Buffer.from(xml).toString('base64'))}&RelayState=x`);
+  assert.equal(post.spEntityId, 'https://sdauth.sciencedirect.com/'); assert.equal(post.binding, 'post');
+  const shib1 = federated.extractSamlRequestInfo('https://idp.example.edu/idp/profile/Shibboleth/SSO?providerId=https%3A%2F%2Fdl.acm.org%2Fshibboleth&shire=x');
+  assert.equal(shib1.spEntityId, 'https://dl.acm.org/shibboleth');
+  assert.equal(federated.extractSamlRequestInfo('https://ieeexplore.ieee.org/document/1'), null);
+  assert.equal(federated.extractSamlRequestInfo('https://idp.example.edu/sso?SAMLRequest=%%%'), null);
+});
+
+test('terms statement classification', () => {
+  const policy = ['affiliation', 'organization', 'pseudonymous_id'];
+  assert.deepEqual(federated.classifyTermsStatement(CARSI_STATEMENT, policy), { categories: ['affiliation', 'organization'], blocked: [], autoConsent: true });
+  assert.equal(federated.classifyTermsStatement(CARSI_STATEMENT.replace('及所属机构信息', '、姓名、邮箱及所属机构信息'), policy).autoConsent, false);
+  assert.equal(federated.classifyTermsStatement('请阅读并同意使用条款', policy).unparsed, true);
+});
+
+test('production handler: CARSI terms-of-use page and SP evidence', async t => {
+  const proxy = await productionProxy();
+  const open = async (f, { history = [SP_URL], saml = null } = {}) => {
+    const owner = await proxy.ownedPage(f);
+    for (const url of history) proxy.visit(owner, url);
+    if (saml) proxy.documentRequest(owner, samlRedirectUrl(saml));
+    proxy.visit(owner, f.location.href);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    return owner;
+  };
+  try {
+    await t.test('SAML Issuer = IEEE: agree to the terms in the background', async () => {
+      const f = termsFixture(); const owner = await open(f, { saml: 'https://ieeexplore.ieee.org/shibboleth-sp' });
+      try {
+        const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true }, owner.token);
+        record('terms via SAML issuer', 'actual-production-HTTP-router', result, f);
+        assert.equal(result.body.state, 'attribute_consent_submitted', JSON.stringify(result.body));
+        assert.deepEqual(result.body.consent, { consentType: 'terms_of_use', attributeCategories: ['affiliation', 'organization'],
+          serviceProvider: 'ieee', spEvidence: 'saml_request_issuer', rememberMode: 'not_offered' });
+        const submit = f.actions.find(a => a.action === 'consentSubmit');
+        assert.equal(submit.accept, '_eventId_proceed'); assert.equal(submit.agreed, true);
+        assert.ok(!JSON.stringify(result.body).includes('SAMLRequest'));
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('no SAML request seen: came straight from IEEE -> navigation history', async () => {
+      const f = termsFixture(); const owner = await open(f);
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.state, 'attribute_consent_submitted');
+        assert.equal(result.consent.spEvidence, 'navigation_history');
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('SAML Issuer outside the list stops even after visiting IEEE', async () => {
+      const f = termsFixture(); const owner = await open(f, { saml: 'https://sp.vendor.example.test/shibboleth' });
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'sp_unverified'); assert.equal(result.spEvidence, 'saml_issuer_unlisted');
+        assert.deepEqual(result.attributeCategories, ['affiliation', 'organization'], 'Stops still report the categories');
+        assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('came from an unlisted host: stop', async () => {
+      const f = termsFixture(); const owner = await open(f, { history: ['https://vendor.example.test/'] });
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'sp_unverified'); assert.equal(result.spEvidence, 'came_from_unlisted_host');
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('statement that names e-mail stops for the user', async () => {
+      const f = termsFixture({ statement: CARSI_STATEMENT.replace('及所属机构信息', '、电子邮箱及所属机构信息') });
+      const owner = await open(f, { saml: 'https://ieeexplore.ieee.org/shibboleth-sp' });
+      try {
+        const result = redacted(plain(await proxy.access(owner)));
+        assert.equal(result.reason, 'personal_attributes'); assert.ok(result.blockedCategories.includes('email'));
+        assert.equal(f.actions.length, 0);
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('real UESTC sequence: terms (e1s1) then release (e1s2) on the same path -> IEEE', async () => {
+      const c = pageChain();
+      const advance = () => c.advance();
+      c.pages.push(termsFixture({ extra: { onSubmitted: advance } }),
+        consentFixture({ attributes: [{ id: 'eduPersonScopedAffiliation', label: 'Scoped affiliation', value: 'synthetic_mail_canary' }],
+          spName: 'IEEE XploreDigital Library of The Institute of Electrical And Electronics Engineers, Incorporated',
+          url: 'https://idp-lib.uestc.edu.cn/idp/profile/SAML2/Redirect/SSO?execution=e1s2', extra: { onSubmitted: advance } }),
+        fixture({ login: false, url: 'https://ieeexplore.ieee.org/document/123', text: 'Access provided by: University of Electronic Science and Tech of China' }));
+      const owner = await open(c, { saml: 'https://ieeexplore.ieee.org/shibboleth-sp' });
+      try {
+        const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true, maxSteps: 4 }, owner.token);
+        record('UESTC terms then release', 'actual-production-HTTP-router', result, c);
+        assert.deepEqual(result.body.steps.map(step => step.state), ['attribute_consent_submitted', 'attribute_consent_submitted', 'ready'],
+          JSON.stringify(result.body));
+        assert.equal(c.index, 2);
+        const release = c.pages[1].actions.find(a => a.action === 'consentSubmit');
+        assert.ok(release.remember.includes('_shib_idp_rememberConsent'));
+        assert.ok(!release.remember.includes('_shib_idp_globalConsent'));
+      } finally { await proxy.release(owner); }
+    });
+    await t.test('real UESTC order: terms -> idas password page -> IEEE', async () => {
+      credentialStore.entries = new Map([['https://idas.uestc.edu.cn', [{ account: 'a1', secret: 'synthetic_password_canary' }]]]);
+      credentialStore.calls = [];
+      const c = pageChain();
+      const advance = () => c.advance();
+      c.pages.push(termsFixture({ extra: { onSubmitted: advance } }),
+        fixture({ url: CAS_URL, allowCredentialWrite: true, passwordFilled: false, scriptSubmit: true, text: uestcLikeText,
+          onSubmitted: advance, scriptRequests: [{ url: '/authserver/login', method: 'POST', resourceType: 'Document' }] }),
+        fixture({ login: false, url: 'https://ieeexplore.ieee.org/document/123', text: 'Access provided by: University of Electronic Science & Technology of China' }));
+      const owner = await open(c, { saml: 'https://ieeexplore.ieee.org/shibboleth-sp' });
+      try {
+        const result = await proxy.post(`/v2/tabs/${owner.targetId}/access`, { allowAutofill: true, maxSteps: 4 }, owner.token);
+        record('UESTC terms chain', 'actual-production-HTTP-router', result, c);
+        assert.deepEqual(result.body.steps.map(step => step.state), ['attribute_consent_submitted', 'login_submitted', 'ready']);
+        assert.equal(result.body.state, 'ready');
+      } finally { await proxy.release(owner); credentialStore.entries = new Map(); }
+    });
     assert.equal(CANARIES.some(value => proxy.proxyLogs.join('\n').includes(value)), false);
   } finally { await proxy.close(); }
 });

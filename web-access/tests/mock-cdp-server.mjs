@@ -315,7 +315,7 @@ export async function startMockCdpServer(browserId, options = {}) {
       const overlay = element.overlay;
       if (!element.obscured) return { result: { type: 'object', value: { obscured: false } } };
       if (!overlay) return { result: { type: 'object', value: { obscured: true, overlay: false } } };
-      const info = { obscured: true, overlay: true, extension: Boolean(overlay.extension), tag: 'div' };
+      const info = { obscured: true, overlay: true, extension: Boolean(overlay.extension), ghost: Boolean(overlay.ghost), tag: 'div' };
       const mode = args[0];
       if (mode === 'close' && overlay.extension) {
         if (!overlay.closeControl) return { result: { type: 'object', value: { ...info, action: null } } };
@@ -323,7 +323,7 @@ export async function startMockCdpServer(browserId, options = {}) {
         document.overlayActions = [...(document.overlayActions || []), 'close_control'];
         return { result: { type: 'object', value: { ...info, action: 'close_control' } } };
       }
-      if (mode === 'hide' && overlay.extension) {
+      if (mode === 'hide' && (overlay.extension || overlay.ghost)) {
         element.obscured = false; element.overlay = null;
         document.overlayActions = [...(document.overlayActions || []), 'hidden_in_this_tab'];
         return { result: { type: 'object', value: { ...info, action: 'hidden_in_this_tab' } } };

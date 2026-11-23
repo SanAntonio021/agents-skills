@@ -34,6 +34,12 @@
 - `lark-doc` 与 `lark-whiteboard` 采用分工维护：`lark-doc` 本地接管官方完整包（当前合并到 2026-11-12 的官方版本），只负责文档位置、空白画板块、文档/画板 token 与 block ID；`lark-whiteboard` 是单个画板内图示能力的唯一 owner，负责图型判断、图内容清单、原生对象创建与局部编辑、回读和看图。系统架构、信号链、接线和模块拓扑使用可编辑原生对象；Mermaid、PlantUML、SVG 仅在用户确认后作为非原生路径使用。官方 `lark-doc` 更新先比较整体差异再合并，不直接覆盖本地版本。
 - 技能发布由 [agent-rules](agent-rules/SKILL.md) 统一执行；运行时生效、管理界面显示与云端分发分别核验，具体流程集中维护在[发布说明](agent-rules/references/skill-publication.md#技能定向发布)。
 
+## Edge 浏览器连接
+
+2026-11-22，`web-access` 排查确认 Edge 反复弹出「允许控制」时仍是同一浏览器进程，Broker 重启后建立了新的调试连接。`b99bf6f` 修复版本差异触发的空闲 Broker 替换，健康且协议兼容的连接继续复用。`db195be` 修复只读前检会创建或迁移配置的问题。
+
+当次发布已通过 CC Switch 在维护电脑安装 `existing-edge.7`。发布前后，在用的 `existing-edge.6` Broker 进程和握手时间一致。52 项模拟集成测试及 126 项单元测试通过，覆盖忙碌和空闲 Broker 的连接复用，以及缺失配置和旧配置的只读检查。真实 Edge 仅核验了连接连续性。新 Broker 代码在下次启动时加载，重新建立浏览器连接时 Edge 仍可能要求授权。排错和验收方法见 [浏览器生命周期](web-access/references/cdp-lifecycle.md#维护和版本切换)。
+
 ## 组会与长篇汇报流程
 
 组会流程由 [lab-report-slides](lab-report-slides/SKILL.md) 维护，模板实样确认、双对话分工和双稿交接由 [pptx 协作流程](pptx/references/presentation-workflow.md) 维护。简单日报继续轻量制作与验收。

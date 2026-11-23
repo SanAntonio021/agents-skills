@@ -19,10 +19,10 @@ node scripts/check-deps.mjs --browser edge --mode existing --json
 正常结果需要 `ready:true`，并且本轮控制探针通过。只查看状态、不启动或修复：
 
 ```powershell
-  node scripts/check-deps.mjs --browser edge --mode existing --status-only --json
+node scripts/check-deps.mjs --browser edge --mode existing --status-only --no-probe --json
 ```
 
-`--status-only` 不创建或迁移 `config.env`。`--no-probe` 只用于隔离测试。
+该命令跳过后台标签控制探针，适合发布后的只读核验。`brokerVersion` 是当前前检脚本对应的版本，`runningBrokerVersion` 是运行版本。日常前检复用符合协议的在用连接。维护测试和版本切换见[生命周期参考](references/cdp-lifecycle.md#维护和版本切换)。
 
 需要后台登录、而 Edge 对该站点保存了多个账号时，先由用户本人录入一次本机凭据（密码在系统凭据窗口里输入，不进命令行）：
 

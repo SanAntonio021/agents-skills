@@ -8,7 +8,7 @@ description: >
 metadata:
   author: 一泽Eze
   version: "2.6.0"
-  local_revision: "existing-edge.6"
+  local_revision: "existing-edge.7"
   github: https://github.com/eze-is/web-access
 ---
 
@@ -31,6 +31,8 @@ metadata:
 - **核对获取结果**：搜索结果用于找来源；阅读与核实任务以实际取得的原文为准，不把摘要、登录页或页面标题当成完整正文。围绕问题读取必要内容，核对最终页面和来源；未取得的部分如实说明。
 - **本地页面线索**：用户要找本人访问过的页面或内部系统时，可按相关关键词检索书签/历史，调用见[页面交互参考](references/cdp-interaction.md#本地历史与站点参考)。普通公开检索不扫描本地历史。
 
+维护技能时用隔离测试环境验证。发布只更新安装文件，保留正在运行的 `existing` Broker 及其调试连接。普通前检复用协议兼容的在用 Broker。用户明确要求立刻启用新 Broker 时，核对任务与连接状态，安排一次切换。详见[生命周期参考](references/cdp-lifecycle.md#维护和版本切换)。
+
 普通搜索、静态读取及不依赖浏览器状态的 API / CLI 联网，不运行 `check-deps.mjs`，不启动或连接浏览器。需要登录态或页面交互且目标完整网址已知时，优先按上文通过 Broker 打开自有标签；不要为了确认用户当前页面地址而停住或要求用户先聚焦窗口。
 选择本技能的 CDP Proxy 后先读[浏览器参考入口](references/cdp-api.md)，再按任务读取[生命周期](references/cdp-lifecycle.md)、[协议](references/cdp-protocol.md)或[页面交互](references/cdp-interaction.md)。选择宿主提供的浏览器工具时遵从该工具的文档、页面归属和交接接口，不混用另一套 task/token。
 结构化操作遵循“页面状态 -> 受限动作 -> 执行校验 -> 回读”；[规划器契约](references/cdp-interaction.md#页面观察与导航)集中规定动作范围、敏感操作排除与失败回退。专用决策模型仅预留为默认关闭的可选实现，不改变现有通用路径。
@@ -52,7 +54,7 @@ Windows 默认连接当前运行的 Microsoft Edge（`existing`）：
 node "<web-access技能目录>/scripts/check-deps.mjs" --browser edge --mode existing --json
 ```
 
-`--status-only` 只诊断，不创建或迁移 `config.env`，也不启动或修复 Broker；`--no-probe` 仅用于隔离测试。正常任务只有在返回 `ready:true`、`controlProbe.passed:true` 后才能继续。读取 `browser.cdpPort`、`proxy.url`、`cdp` 和 `controlProbe` 确认实际实例及控制能力。
+`--status-only` 只诊断，不创建或迁移 `config.env`，也不启动或修复 Broker；维护时将 `--status-only` 与 `--no-probe` 合用，只读查看在用连接，跳过会创建后台标签的控制探针。正常任务只有在返回 `ready:true`、`controlProbe.passed:true` 后才能继续。读取 `browser.cdpPort`、`proxy.url`、`cdp` 和 `controlProbe` 确认实际实例及控制能力。
 
 HTTP `/json/version` 或 `/json` 返回 404 只表示 HTTP 发现接口不可用，不代表 CDP 失效。只有 WebSocket 握手失败或后台创建/控制任务 tab 失败，才按 CDP 故障恢复。不得复制或导出浏览器 Profile、Cookie、密码库或认证令牌。
 

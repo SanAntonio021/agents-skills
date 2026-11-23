@@ -556,6 +556,7 @@ function makeResult({
     proxy: proxyDetails(proxyPort, health),
     cdp: cdpDetails(health),
     capabilities,
+    runningBrokerVersion: typeof health?.brokerVersion === 'string' ? health.brokerVersion : null,
     exitCode,
     ...extra,
   };
@@ -992,35 +993,7 @@ async function ensureManagedBroker(opts) {
   }
 }
 
-function proxyCommandMatchesExisting(commandLine) {
-  const normalized = String(commandLine || '').replaceAll('/', '\\').toLowerCase();
-  return /\\web-access\\scripts\\cdp-proxy\.mjs/.test(normalized) &&
-    normalized.includes('--browser edge') &&
-    !normalized.includes('--broker-profile-mode managed');
-}
-
-async function stopIdleOutdatedExistingProxy(health) {
-  if (health?.profileMode !== 'existing' || health?.brokerVersion === BROKER_VERSION) return false;
-  if (Number(health.activeTasks || 0) !== 0 || Number(health.managedTabs || 0) !== 0) return false;
-  const pid = Number(health?.pid);
-  if (!Number.isInteger(pid) || pid < 1 || pid === process.pid) return false;
-  if (!proxyCommandMatchesExisting(getProcessCommandLine(pid))) return false;
-  const proxyPort = Number(health.proxyPort);
-  try {
-    process.kill(pid, 'SIGTERM');
-  } catch {
-    return false;
-  }
-  const deadline = Date.now() + 8000;
-  while (Date.now() < deadline) {
-    const healthNow = await httpGetJson(`http://127.0.0.1:${proxyPort}/health`, 500);
-    if (!healthNow || healthNow.pid !== pid) return true;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  return false;
-}
-
-async function ensureProxy(browserId, proxyPort, { statusOnly = false, versionRestartAttempted = false } = {}) {
+async function ensureProxy(browserId, proxyPort, { statusOnly = false } = {}) {
   const browser = typeof browserId === 'string'
     ? knownBrowsers().find((item) => item.id === browserId) || { id: browserId, label: browserId }
     : browserId;
@@ -1149,22 +1122,11 @@ async function ensureProxy(browserId, proxyPort, { statusOnly = false, versionRe
         existing: true,
       });
     }
-    // An idle existing-mode Broker left over from an older skill release keeps
-    // serving old code. Replace it only when it is verifiably this skill's
-    // Proxy and has no tasks or tabs; otherwise keep reusing it.
-    if (
-      !statusOnly &&
-      !versionRestartAttempted &&
-      initialHealth.profileMode === 'existing' &&
-      initialHealth.brokerVersion !== BROKER_VERSION
-    ) {
-      if (await stopIdleOutdatedExistingProxy(initialHealth)) {
-        diagnostic(`proxy[${browserId}]: 已停止空闲的旧版 Broker (${initialHealth.brokerVersion} → ${BROKER_VERSION})，重新启动`);
-        return ensureProxy(browser, proxyPort, { statusOnly, versionRestartAttempted: true });
-      }
-      diagnostic(`proxy[${browserId}]: Broker 版本 ${initialHealth.brokerVersion} 与源码 ${BROKER_VERSION} 不一致；仍有任务或无法核实归属，继续复用`);
-    }
     if (initialHealth.connected) {
+      // Reuse the approved CDP connection across skill releases. Replacing it prompts in Edge.
+      if (initialHealth.brokerVersion && initialHealth.brokerVersion !== BROKER_VERSION) {
+        diagnostic(`proxy[${browserId}]: 复用当前 Broker ${initialHealth.brokerVersion} 及其连接；已安装 ${BROKER_VERSION} 在下次启动 Broker 时加载。`);
+      }
       return completeCapabilityHandshake({
         browser,
         proxyPort,
@@ -1439,6 +1401,7 @@ function jsonSummary(opts, results, node, statusOverride = null) {
     mode: opts?.all ? 'all' : 'single',
     browserMode: opts?.mode || null,
     brokerVersion: BROKER_VERSION,
+    runningBrokerVersion: results.length === 1 ? results[0].runningBrokerVersion ?? null : null,
     protocolVersion: EXPECTED_PROTOCOL_VERSION,
     expectedProtocolVersion: EXPECTED_PROTOCOL_VERSION,
     ready: ok && results.every((result) => result.ready),

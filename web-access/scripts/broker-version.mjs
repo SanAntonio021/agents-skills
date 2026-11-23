@@ -1,1 +1,1 @@
-export const BROKER_VERSION = 'existing-edge.6';
+export const BROKER_VERSION = 'existing-edge.7';

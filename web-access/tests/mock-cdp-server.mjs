@@ -265,6 +265,9 @@ export async function startMockCdpServer(browserId, options = {}) {
       return true;
     }
     if (expression.includes('never-appears')) return false;
+    if (expression === '({readyState:document.readyState,href:location.href,title:document.title})') {
+      return { readyState: 'complete', href: target?.url || 'about:blank', title: document?.title || 'Mock Page' };
+    }
     if (expression.includes('document.readyState') && expression.includes('===')) {
       if (expression.includes('interactive')) return true;
       return expression.includes('complete');

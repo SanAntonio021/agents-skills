@@ -1821,37 +1821,38 @@ try {
     }
   });
 
-  await runTest('check-deps-replaces-idle-outdated-existing-broker-only', async () => {
+  await runTest('check-deps-reuses-existing-broker-across-skill-versions', async () => {
     const mock = await startMockCdpServer('edge');
-    const outdated = { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: 'existing-edge.0-outdated' };
-    const busy = await startIsolatedProxy(mock, outdated);
-    let idle = null;
+    const oldVersion = 'existing-edge.0-outdated';
+    const instance = await startIsolatedProxy(mock, { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: oldVersion });
     try {
-      const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _busyOverride, ...busyEnv } = busy.env;
-      const task = await createTask(busy.base);
-      const busyBefore = await getHealth(busy.port);
-      const busyCheck = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], busyEnv);
-      assert.equal(await waitForExit(busyCheck, 30000), 0, `${busyCheck.stdoutText}\n${busyCheck.stderrText}`);
-      const busyAfter = await getHealth(busy.port);
-      assert.equal(busyAfter.pid, busyBefore.pid, 'A Broker with active tasks must be kept');
-      assert.equal(busyAfter.brokerVersion, 'existing-edge.0-outdated');
-      await postJson(busy.base, `/v2/tasks/${task.taskId}/complete`, { keep: false }, { token: task.taskToken });
-
-      idle = await startIsolatedProxy(mock, outdated);
-      const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _idleOverride, ...idleEnv } = idle.env;
-      const idleBefore = await getHealth(idle.port);
-      const idleCheck = spawnNode([checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--no-probe', '--json'], idleEnv);
-      assert.equal(await waitForExit(idleCheck, 30000), 0, `${idleCheck.stdoutText}\n${idleCheck.stderrText}`);
-      const report = JSON.parse(idleCheck.stdoutText);
-      assert.equal(report.ok, true);
-      const idleAfter = await getHealth(idle.port);
-      assert.notEqual(idleAfter.pid, idleBefore.pid, 'An idle outdated Broker is replaced');
-      assert.notEqual(idleAfter.brokerVersion, 'existing-edge.0-outdated');
-      assert.equal(idleAfter.profileMode, 'existing');
-      return { busyBrokerKept: true, idleBrokerReplaced: true, newBrokerVersion: idleAfter.brokerVersion };
+      const { WEB_ACCESS_TEST_REPORTED_BROKER_VERSION: _override, ...env } = instance.env;
+      const before = await getHealth(instance.port);
+      const connections = mock.totalConnections;
+      const args = [checkDepsScript, '--browser', 'edge', '--mode', 'existing', '--json'];
+      const task = await createTask(instance.base);
+      const check = async (extra = []) => {
+        const child = spawnNode([...args, ...extra], env);
+        assert.equal(await waitForExit(child, 30000), 0, `${child.stdoutText}\n${child.stderrText}`);
+        const report = JSON.parse(child.stdoutText);
+        assert.equal(report.ready, true);
+        assert.equal(report.reused, true);
+        assert.equal(report.runningBrokerVersion, oldVersion);
+        assert.notEqual(report.brokerVersion, report.runningBrokerVersion);
+        const after = await getHealth(instance.port);
+        assert.equal(after.pid, before.pid);
+        assert.equal(after.cdp.lastHandshakeAt, before.cdp.lastHandshakeAt);
+        assert.equal(mock.totalConnections, connections, 'The approved browser connection must be reused');
+        return report;
+      };
+      assert.equal((await check()).controlProbe.passed, true);
+      await postJson(instance.base, `/v2/tasks/${task.taskId}/complete`, { keep: false }, { token: task.taskToken });
+      assert.equal((await getHealth(instance.port)).activeTasks, 0);
+      assert.equal((await check()).controlProbe.passed, true);
+      assert.equal((await check(['--status-only', '--no-probe'])).controlProbe.skipped, true);
+      return { busyBrokerReused: true, idleBrokerReused: true, additionalBrowserConnections: 0 };
     } finally {
-      await stopIsolatedProxy(busy);
-      if (idle) await stopIsolatedProxy(idle);
+      await stopIsolatedProxy(instance);
       await mock.close();
     }
   });

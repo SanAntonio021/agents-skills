@@ -44,7 +44,7 @@
 
 ### `GET /capabilities`
 
-返回协议版本、snapshot/action/wait、`download`、`access`、iframe 能力、任务上限、Broker 版本、Profile 模式和明确不支持项。iframe 能力包含 `/frames`、只读 `/frame-text`、带可选 `frameId` 的 `/eval`、坐标 `/click-at` 及最大嵌套层数。调用方必须确认 `protocolVersion === 2`、`brokerVersion` 与所用源码相符、浏览器身份为请求目标且 `profileMode` 与请求模式一致，默认是 `existing`。新增接口须先核对能力声明；接口缺失属于环境/版本缺口，不回退到业务技能的第二套实现。
+返回协议版本、snapshot/action/wait、`download`、`access`、iframe 能力、任务上限、Broker 版本、Profile 模式和明确不支持项。iframe 能力包含 `/frames`、只读 `/frame-text`、带可选 `frameId` 的 `/eval`、坐标 `/click-at` 及最大嵌套层数。调用方必须确认 `protocolVersion === 2`、浏览器身份为请求目标且 `profileMode` 与请求模式一致，默认是 `existing`。`brokerVersion` 表示运行中的 Broker 版本。版本与安装文件不同时，`existing` 模式按运行版本实际声明的能力工作。`managed` 模式仍要求使用该模式预期的 Broker 版本。新增接口须先核对能力声明。接口缺失时报告环境或版本缺口。
 
 ## Task
 

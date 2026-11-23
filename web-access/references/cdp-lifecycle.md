@@ -11,8 +11,8 @@ CDP 路径需要 Node.js 22+。Windows 默认 `existing`，连接当前运行且
 ```bash
 # 默认：连接当前 Edge 并检查后台控制能力
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --json
-# 只诊断，不创建或迁移配置，也不启动或修复
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --status-only --json
+# 只读查看状态，跳过创建后台标签的控制探针
+node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode existing --status-only --no-probe --json
 # 仅在明确需要隔离时选择受管 Profile
 node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs" --browser edge --mode managed --json
 ```
@@ -35,7 +35,11 @@ CDP 恢复按固定顺序执行：重新读取 `DevToolsActivePort`；校验其�
 
 Proxy 或 Edge 重启会清空 task、token、归属、session 和 ref；浏览器 tab 不会因 Proxy 重启而自动关闭，遗留页面降为用户 tab，不能由新 task 重新接管。CDP 恢复仍失败时，只有在可用且获准的情况下才切 Browser Use 扩展；最后才使用 Computer Use，并在完成后恢复原窗口。
 
-发现旧 Proxy、协议或 Broker 版本不一致时，按 [迁移指南](migration-dual-proxy.2.md#旧-proxy-处理) 核对浏览器、端口、模式和 PID；只停止可证实属于本技能且无活动任务的 Proxy。`existing` 模式下，`check-deps` 会自动替换 Broker 版本过旧、命令行可核实为本技能 `cdp-proxy.mjs`、且没有 task 和自有 tab 的 Proxy；仍有任务时继续复用旧版并在诊断里说明。不得结束用户 Edge 进程来修复 Proxy 版本。
+## 维护和版本切换
+
+常规前检复用浏览器身份、端口和协议能力均通过检查的 `existing` Broker，空闲时也保留连接。`check-deps` 的 `brokerVersion` 是当前前检脚本对应的版本，`runningBrokerVersion` 是健康接口返回的运行版本。两者不同时，以运行版本实际声明的能力为准。任务需要的能力缺失时，报告版本差异及缺少的能力。
+
+修改和回归测试使用 `tests/run-integration.mjs` 的隔离进程与模拟 CDP。发布更新安装文件。验收用 `--status-only --no-probe` 和 `/health` 读回在用 Broker 的 PID 与 `lastHandshakeAt`，确认连接继续复用。新版本在 Broker 下次启动时加载。用户明确要求立即切换时，核对 PID、Broker 归属和任务状态，待活动任务与 Broker 自有标签全部清理后，切换一次到正式安装副本。Edge 可能要求授权这条新连接。旧协议按[迁移指南](migration-dual-proxy.2.md#旧-proxy-处理)处理。
 
 ## 并行 task 与收尾
 

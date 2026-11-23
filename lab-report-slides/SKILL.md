@@ -2,16 +2,15 @@
 name: lab-report-slides
 description: >
   Generate Chinese advisor daily/weekly research PPTs from recent sessions, project records,
-  experiments and real figures. Use for 生成今日汇报, 生成每日汇报, 生成本周组会汇报,
-  生成组会 PPT, or turning recent research work into an advisor report.
+  experiments and real figures. Use for 帮我做今天的每日汇报 PPT, 生成今日汇报,
+  生成每日汇报, 生成本周组会汇报, 生成组会 PPT, or turning recent research work into an advisor report.
   Daily reports cover work since the previous delivered report, including gap days.
   Reuse existing figures and document screenshots instead of drawing replacement diagrams.
   For daily reports, inventory the period and verify first-page facts against local records,
   then show a first-page draft plus reportable work not placed on it, ask once for unrecorded
-  work and draft edits, revise and confirm the overview, then confirm only the items to expand,
-  and then confirm source materials and any proposed
-  cropped, redrawn or generated visuals, then discuss and confirm next-step work before producing the deck;
-  for group meetings and long reports, confirm template examples, narrative dependencies and
+  work and draft edits, and end the first round there awaiting the user. Confirm the overview,
+  items to expand, source materials and any proposed derivatives, then next-step work before producing the deck.
+  For group meetings and long reports, confirm template examples, narrative dependencies and
   page outlines before discussing pages and dispatching confirmed work to one production chat.
   Neither mode requires per-slide approval by default. Give each detail page one core point;
   keep routine editing, execution and validation details in project records.
@@ -24,6 +23,8 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 # 科研日报与组会汇报
 
 面向导师讲清本期科研推进，按内容价值确定详略。日报第一页按[第一页怎么写](references/chinese-style.md#第一页怎么写)起草。展开页和组会页面首次起草前按[主张与入页信息](references/chinese-style.md#起草前确定主张与入页信息)确定证据能支持的主张和必要条件，只生成选定内容；核查过程及重复的未做事项说明默认不入页，表达检查只纠正漏网偏差。
+
+**日报首轮停在第 4 步。** 收到「帮我做今天的每日汇报 PPT」这类首轮请求，先盘点并核实首页事项，展示首页完整草稿和未入首页的候选，问还有哪些工作要补充或删改，到这里结束本轮并等用户回复。续做从当前待确认项开始，依次确认总览、展开事项、素材与生成方式、下一步工作，再进入正式制作。
 
 ## 按阶段读取
 

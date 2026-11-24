@@ -8,6 +8,8 @@ description: "Use this skill whenever the user wants to create, read, edit, repa
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 Use `$docx` as the sole explicit Word skill entrypoint.
 
+**展示模板格式**：用户问“给我看看模板是什么格式”时，最终答复按模板实际用途逐条展示：总标题单列，每个章、节等标题层级单列，页面、正文、图片、图题、表题、表格和公式也各列一项。简短答复可以缩短每项文字，但不能合并行。已有分行的模板格式表时直接沿用它的行名。
+
 新项目编写年度进展报告时，先查项目指定的格式；没有指定时，按用途在[共用 Word 模板目录](references/template/template-presets.md)查找年度进展模板。模板随技能提供，可从任意工作区调用，无需用户提供名称、路径或往年稿。个人述职、企业财务年报等按各自用途查找。仅讨论文稿时可以参考模板，导出时沿用下方的 Word 流程。
 
 同类文档需要反复制作、保留底稿或建立可复用模板时，采用[格式规则与模板复用](references/layout-profiles.md)：复用完整布局骨架，并按该系列规则运行只读 `scripts/layout_audit.py`。保留不同用途段落的行距，静态结果与原生分页验收分别报告。要求沿用底稿排版时，运行 `python -B scripts/layout_audit.py 导出稿.docx --baseline 底稿.docx`，逐表核对原横向表格的页面方向。匹配不唯一或方向改变时，定位表题和表头并在 Word 检查后交付。

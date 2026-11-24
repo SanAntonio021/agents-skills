@@ -27,6 +27,8 @@
 - `<colgroup><col /></colgroup>` 紧跟 `<table>` 定义列宽；`width` 表示列宽，可选 `span` 表示连续作用的列数。
 - `<th>` / `<td>` 支持 `background-color`、`vertical-align`、`colspan`、`rowspan`；`vertical-align`：`top | middle | bottom`；`background-color` 支持基础色相、`light-{色相}`、`medium-gray`，表头优先使用 `light-gray` 或 `medium-gray`，彩色单元格仅用于表达状态或分类。被合并的单元格不再写入。
 
+统一多张同类表格的版式时，先试排一张同时含短数值和长说明的代表表。短数值居中，长说明左对齐，同类列保持一致；用单元格内段落的 `align` 设置水平对齐。先预览试排表在飞书页面上的对齐和换行效果，再将确认的版式应用到其余同类表格。写后回读核对内容；无法预览时，说明页面显示效果尚未核验。
+
 ## 扩展标签
 
 - `<cite type="user" user-id="ou_xxx"/>`：@人，会渲染为用户头像；必须显式传入用户 `open_id`，不得用纯文本名字冒充 @人。

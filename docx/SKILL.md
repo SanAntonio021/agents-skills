@@ -1,12 +1,14 @@
 ---
 name: docx
-description: "Use this skill whenever the user wants to create, read, edit, repair, or format Microsoft Word documents or templates (.docx, .dotx, .dotm). Triggers include Word documents, reports, memos, letters, tracked changes, comments, equations, captions, style inheritance, Normal.dotm, reusing a reference document's Chinese styles, applying a Word template or preset, and exporting Markdown or text into a polished Word deliverable. For existing-document content edits, preserve the document's original style identities; use the template workflow only for new documents or an explicitly requested whole-document template replacement. Do NOT use for PDFs, spreadsheets, Google Docs, or coding tasks unrelated to Word deliverables."
+description: "Use this skill whenever the user wants to create, read, edit, repair, or format Microsoft Word documents or templates (.docx, .dotx, .dotm). Triggers include project annual progress reports (项目年度报告、课题年度进展), Word documents, reports, memos, letters, tracked changes, comments, equations, captions, style inheritance, Normal.dotm, reusing a reference document's Chinese styles, applying a Word template or preset, and exporting Markdown or text into a polished Word deliverable. For existing-document content edits, preserve the document's original style identities; use the template workflow only for new documents or an explicitly requested whole-document template replacement. Do NOT use for PDFs, spreadsheets, Google Docs, or coding tasks unrelated to Word deliverables."
 ---
 
 # DOCX creation, editing, and analysis
 
 A `.docx` is a ZIP archive of XML files. Choose your approach by task:
 Use `$docx` as the sole explicit Word skill entrypoint.
+
+新项目编写年度进展报告时，先查项目指定的格式；没有指定时，按用途在[共用 Word 模板目录](references/template/template-presets.md)查找年度进展模板。模板随技能提供，可从任意工作区调用，无需用户提供名称、路径或往年稿。个人述职、企业财务年报等按各自用途查找。仅讨论文稿时可以参考模板，导出时沿用下方的 Word 流程。
 
 同类文档需要反复制作、保留底稿或建立可复用模板时，采用[格式规则与模板复用](references/layout-profiles.md)：复用完整布局骨架，并按该系列规则运行只读 `scripts/layout_audit.py`。保留不同用途段落的行距，静态结果与原生分页验收分别报告。要求沿用底稿排版时，运行 `python -B scripts/layout_audit.py 导出稿.docx --baseline 底稿.docx`，逐表核对原横向表格的页面方向。匹配不唯一或方向改变时，定位表题和表头并在 Word 检查后交付。
 
@@ -238,7 +240,7 @@ governance are documented in [Template presets](references/template/template-pre
 When no formatting source is specified, recommend a preset by purpose and audience (`tongyong-moren` is the
 general-report candidate), explain its actual formatting and export only after the user confirms, as required in
 "Word/DOCX 导出前的格式确认" above; do not adopt it silently. Otherwise use the selected template:
-one of the ten bundled profiles, a supplied template/reference `.docx`,
+a native template from the catalog, one of the bundled style profiles, a supplied template/reference `.docx`,
 or the user's `Normal.dotm` when explicitly requested. The complete names and uses are in
 [Template presets](references/template/template-presets.md); legacy aliases remain accepted.
 Bundled templates store reusable styles and page settings; original sample documents are omitted.

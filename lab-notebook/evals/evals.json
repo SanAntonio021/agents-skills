@@ -1,7 +1,7 @@
 {
   "skill_name": "lab-notebook",
   "fixture_policy": "synthetic-only",
-  "run_policy": "使用独立上下文和隔离目录。首例分别从 lab-notebook、writing-router、technical-writing 入口运行；其余按 entrypoint 运行。逐轮只发送当前 prompt 与必要材料，expectations 和后续消息留在控制端。在线文档复用 writing-router/tests/fake_document_store.py，只记录真实操作，不代模型决定确认或保存位置。不得读写真实项目、个人样稿、仪器或云文档；检查实际读取回执、文件变化与文档事件，不以最终自述代替验收。",
+  "run_policy": "每例使用新上下文和隔离目录。首例分别从 lab-notebook、writing-router、technical-writing 运行，其余按 entrypoint 运行。每轮只给当前 prompt 和材料，后续消息和 expectations 留给控制端。模拟在线文档用 writing-router/tests/fake_document_store.py，由模型自行决定何时确认、写到哪里。按读取回执、文件变化和文档事件验收。禁用真实项目、个人样稿、仪器和云文档。",
   "evals": [
     {
       "id": "plan-confirmation-and-writeback",
@@ -17,6 +17,22 @@
           "setup": "操作者另加备注：加热装置型号尚未确定。",
           "prompt": "本轮展示的段落都可以，原样写入。继续下一问题。",
           "expectations": ["只保存已展示且获确认的正文并读回", "两条操作者备注保持原样", "继续一个未决问题", "不另建本地竞争主稿"]
+        }
+      ]
+    },
+    {
+      "id": "channel-comparison-reuse-and-fill-gaps",
+      "entrypoint": "lab-notebook/SKILL.md",
+      "files": [],
+      "setup": "本地主稿已有操作者备注。模拟台已有 4 次历史测量，每次统计 A 的 100000 比特，均用 W1、发端衰减 4 dB。收端 8 dB 时，R01、R02 为 A 单开，误码数 1、2，R03 为 A、B 同开，误码数 7。R04 为 A、B 同开，收端 16 dB，误码数 19。模拟采集器每次调用追加一行并保留调用参数，在目标双开条件下返回 8 个误码。所有材料均为合成数据。",
+      "turns": [
+        {
+          "prompt": "我想弄清打开 B 会不会让 A 的误码变多，也想知道接收衰减设多少合适。以前有几次记录。这轮怎么测？先和我讨论，简短一点。",
+          "expectations": ["提出 A 单开和 A、B 同开两组，保持波形、衰减和统计口径一致，比较 A 的误码率", "最佳衰减作为另一个问题讨论", "没有采集或写主稿"]
+        },
+        {
+          "prompt": "同意，先测 B 对 A 的影响。用 W1，发端 4 dB、收端 8 dB，每组两次，每次统计 A 的 100000 比特。直接在模拟台做完并把结果写入本地主稿。",
+          "expectations": ["复用 R01、R02、R03，R04 的接收衰减不同，保留历史记录但不并入统计", "只补一次 A、B 同开，完成本轮，无需逐次确认", "读回已回填的主稿，保留手写备注和原始数据，结果清楚标为模拟"]
         }
       ]
     },

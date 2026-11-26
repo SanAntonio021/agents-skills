@@ -30,6 +30,15 @@
 
 Times New Roman 可用时，普通文字和 mathtext 的正体、斜体、粗体都绑定到 Times New Roman，并关闭 mathtext 静默回退。不能只依赖 `Text.get_fontfamily()`：正式导出还要扫描 PDF 的嵌入字体名和 SVG 的实际 `font-family`；发现 DejaVu、Computer Modern 或其它未批准字体时阻止 formal。
 
+### 中文标注与斜体变量
+
+中文图仍调用 `use_ieee_single_column_style()`，再在项目脚本里补两项设置：
+
+- **中英文混排**：先用 `font_manager.fontManager.addfont()` 登记宋体文件（Windows 为 `%WINDIR%\Fonts\simsun.ttc`），再把 `font.family` 和中文文字对象的字体都设为 `["Times New Roman", "SimSun"]`。英文、数字和单位用 Times New Roman，它缺字的汉字和全角括号逐字改用宋体。只用 `FontProperties(fname=<宋体文件>)` 时，同一标签里的数字和单位也会显示成宋体。
+- **斜体变量**：本样式把 `mathtext.default` 设为 `regular`，`$B$` 会显示为正体。需要斜体的物理量写成 `$\mathit{B}$`；单位、缩写和中文名称保持正体。
+
+`export_ieee_single_column(mode="formal")` 会把 PDF/SVG 里的宋体判为未批准字体并拒绝导出。中文图由项目脚本直接导出，在导出记录里写明字体组合，并在最终尺寸预览中逐项核对汉字、数字、单位和斜体变量的字形。
+
 ## 网格模式
 
 新图必须在完整笛卡尔主网格和无网格之间显式选择。只画横向或只画纵向主网格会让坐标参考系看起来不完整，因此不进入新图规范：

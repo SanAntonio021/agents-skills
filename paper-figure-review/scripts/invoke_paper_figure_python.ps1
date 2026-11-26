@@ -77,15 +77,17 @@ try {
         throw "Figure script was not found: $ScriptPath"
     }
 
+    # Windows PowerShell 5.1 drops embedded double quotes when passing arguments
+    # to native programs, so the probe code must use single quotes only.
     $versionProbe = @'
 import importlib.metadata as metadata
 import matplotlib
 import scienceplots
 import sys
 
-print("python=" + ".".join(str(part) for part in sys.version_info[:3]))
-print("matplotlib=" + matplotlib.__version__)
-print("scienceplots=" + metadata.version("SciencePlots"))
+print('python=' + '.'.join(str(part) for part in sys.version_info[:3]))
+print('matplotlib=' + matplotlib.__version__)
+print('scienceplots=' + metadata.version('SciencePlots'))
 '@
     $probeOutput = @(& $python -c $versionProbe 2>&1)
     $probeExitCode = $LASTEXITCODE

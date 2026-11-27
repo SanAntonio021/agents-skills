@@ -46,6 +46,7 @@ PUT /open-apis/base/v3/bases/:base_token/tables/:table_id/fields/:field_id
 - `link` 更新限制：
   - 不能把非 `link` 字段改成 `link`，也不能把 `link` 改成非 `link`。
   - 现有 `link` 字段的 `bidirectional` 不能改。
+  - 只给 `link` 字段补说明时，用本命令按 `+field-get` 读到的原配置整体提交并加 `description`：去掉只读的 `id`、`bidirectional_link_field_id`，双向关联另带 `bidirectional_link_field_name` 为对侧字段原名。改用 v1 字段接口（`PUT /open-apis/bitable/v1/apps/<base>/tables/<table>/fields/<field>`）带原 `property` 提交会报 `LinkFieldPropertyError`（1254089）。提交后读回本字段、对侧字段和关联值，确认只有说明变化。
 - 更新 `auto_number.style.rules` 会按新规则更新已有记录的编号；规则结构见 [Field Schema](lark-base-field-schema.md)。
 
 **推荐更新示例**

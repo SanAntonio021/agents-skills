@@ -217,6 +217,7 @@ lark-cli base +app-page-delete --app-token <app_token> --page-id <page_id> --yes
 | 修改已有组件的 `type/sub_type` | `type/sub_type` 创建后不可修改 | 先读取当前 Block；无论是否已为目标类型，最终答复都要说明此约束。已匹配时说明无需写入；不匹配时说明只能在 UI 处理；不得调用或承诺用 `+app-block-update` 修改类型 |
 | 修改已存在 App 的主题 | `--theme-style` 只在 `+app-create` 时生效 | 直接告知不支持；如确有必要，说明只能新建 App 时指定主题 |
 | 读取或修改 `type=unsupported` 的组件 | 列表仅用于识别该组件存在，详情读取、计算数据读取和修改均不支持 | 直接告知不支持；不要调用 `+app-block-get`、`+app-block-get-data` 或 `+app-block-update`，这些请求会报错 |
+| 在页面里放表单 / 新建记录时强制必填 | 页面组件里没有表单组件；表格组件的“添加记录”不能设必填 | 在数据表上建原生表单（`+form-create`，`+form-questions-update` 设 `required`，再按 SKILL.md 开分享并限定范围），页面上在编辑器加“按钮”组件，执行操作选“打开链接”指向表单分享链接；读回为 `type: button`、`data_config.action` 为 `{"type":"url","url":...}`。告知用户：页面上各表格的“添加记录”仍可绕过必填 |
 
 `+dashboard-*` 命令只作用于 Base 内的仪表盘，`dashboard_id` 是 `blk` 开头、组件 ID 是 `cht` 开头；AppMode 的 `pge` 页面和 `wgt` 组件不属于它们的作用域。缺少能力时不要用这些命令试探，包括 `--help` 和 `--dry-run`：一次调用就是一次错误的能力归属判断。
 

@@ -238,6 +238,40 @@ class RenderDeckTests(unittest.TestCase):
             self.assertEqual(result["status"], "native_pending")
             self.assertFalse((root / "out" / "daily.pdf").exists())
 
+    def test_editable_result_tables_keep_sources_in_manifest_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            image = root / "original-plot.png"
+            Image.new("RGB", (400, 300), "white").save(image)
+            source = str(root / "measurement.csv")
+            table = {"type": "table", "headers": ["相对电平（dB）", "解帧数", "BER", "通道"],
+                     "rows": [[-3, "5/5", "2.1e-4", "A"], [0, "5/5", 0, "B"]], "source": source}
+            deck = root / "deck.json"
+            deck.write_text(json.dumps({"date": "2026-01-01", "slides": [
+                {"title": "链路测试", "type": "result", "blocks": [table]},
+                {"title": "电平扫描", "type": "result", "source": "internal-record",
+                 "blocks": [{"type": "text", "text": "检查发射电平变化对解调的影响。"},
+                            {"type": "image", "path": str(image)}, table]},
+            ]}), encoding="utf-8")
+            result = render_deck.render(deck, root / "out", "daily", daily_report=True)
+            presentation = Presentation(result["files"]["pptx"])
+            for slide in presentation.slides:
+                tables = [shape.table for shape in slide.shapes if shape.has_table]
+                self.assertEqual(len(tables), 1)
+                self.assertEqual(tables[0].cell(0, 2).text, "BER")
+                self.assertEqual(tables[0].cell(1, 2).text, "2.1e-4")
+                self.assertEqual(tables[0].cell(2, 2).text, "0")
+                self.assertEqual(slide.notes_slide.notes_text_frame.text, "2026-01-01")
+            self.assertEqual(result["assets"][0]["path"], str(image))
+            self.assertEqual(result["sources"], [{"slide": 1, "source": source},
+                                                {"slide": 2, "source": "internal-record"},
+                                                {"slide": 2, "source": source}])
+
+    def test_rejects_table_rows_with_mismatched_columns(self):
+        deck = {"slides": [{"blocks": [{"type": "table", "headers": ["A", "B"], "rows": [[1]]}]}]}
+        with self.assertRaisesRegex(ValueError, "one cell per header"):
+            render_deck.validate_deck(deck, Path.cwd())
+
     def test_group_generation_keeps_compatibility_render_by_default(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

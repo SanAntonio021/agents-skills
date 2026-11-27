@@ -9,13 +9,13 @@ description: >
   For daily reports, inventory the period and verify first-page facts against local records,
   then show a first-page draft plus reportable work not placed on it, ask once for unrecorded
   work and draft edits, and end the first round there awaiting the user. Confirm the overview,
-  items to expand, source materials and any proposed derivatives, then next-step work before producing the deck.
+  proposed detail pages together with their evidence and any planned derivatives, then next-step work before producing the deck.
   For group meetings and long reports, confirm template examples, narrative dependencies and
   page outlines before discussing pages and dispatching confirmed work to one production chat.
   Neither mode requires per-slide approval by default. Give each detail page one core point;
   keep routine editing, execution and validation details in project records.
-  Preserve research substance, essential evidence and user edits. Deliver editable text and
-  independent images after content review and actual PPTX rendering. Do not use for turning
+  Preserve research substance, essential evidence and user edits. Deliver editable text,
+  native data tables and independent images after content review and actual PPTX rendering. Do not use for turning
   a single paper PDF or DOI into a literature presentation.
 compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 3.10+, requirements.txt and PowerPoint for native daily-report and group-meeting checks. LibreOffice, Poppler and the sibling libreoffice-runner skill support explicit PDF/HTML exports and a temporary fallback view when the native check is unavailable. Node.js/sharp is optional for SVG input.
 ---
@@ -24,7 +24,7 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 面向导师讲清本期科研推进，按内容价值确定详略。日报第一页按[第一页怎么写](references/chinese-style.md#第一页怎么写)起草。展开页和组会页面首次起草前按[主张与入页信息](references/chinese-style.md#起草前确定主张与入页信息)确定证据能支持的主张和必要条件，只生成选定内容；核查过程及重复的未做事项说明默认不入页，表达检查只纠正漏网偏差。
 
-**日报首轮停在第 4 步。** 收到「帮我做今天的每日汇报 PPT」这类首轮请求，先盘点并核实首页事项，展示首页完整草稿和未入首页的候选，问还有哪些工作要补充或删改，到这里结束本轮并等用户回复。续做从当前待确认项开始，依次确认总览、展开事项、素材与生成方式、下一步工作，再进入正式制作。
+**日报首轮停在第 4 步。** 收到「帮我做今天的每日汇报 PPT」这类首轮请求，先盘点并核实首页事项，展示首页完整草稿和未入首页的候选，问还有哪些工作要补充或删改，到这里结束本轮并等用户回复。续做从当前待确认项开始，依次确认总览、展开事项与拟用素材、下一步工作，再进入正式制作。
 
 ## 按阶段读取
 
@@ -44,7 +44,7 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 ## 1. 日报流程
 
-日报按下面九步依次做，不跳步、不换序。第一页就是首页“今日工作总览”。第一页、拟展开事项、素材与生成方式、下一步工作是四道独立确认，任何“直接生成”请求都不替代尚未完成的确认；不要求逐页审批。
+日报依次确认首页总览、展开事项与拟用素材、下一步工作。展开事项和素材同轮确认；本期已明确的决定可以直接沿用。
 
 1. **确定统计范围。** 默认累计**上一次已交付汇报的统计截止点至本次统计截止点**之间的工作，覆盖中间没有做汇报的日期，不默认只取当天。先读取上一份汇报、已有统计范围和未汇报事项，按[本期起止与去重](references/materials.md#本期起止与去重)确定边界。用户指定了范围、项目或日期时，以用户指定的为准。
 2. **盘点全部候选。** 按[采集本期记录](references/materials.md#采集本期记录)检查本期会话、相关本地项目记录及相关飞书文档/任务的本期文字或更新信息，建立候选账目，并保存本次摘要和检查过的来源范围。飞书此时只读文字和更新状态，不查图片、附件或完整数据。不能因为采集摘要短、已有一项显眼工作、候选多或第一页空间有限而停止搜集。
@@ -56,12 +56,11 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
    最后只问一次，并以这个问题结束本轮：**“还有记录里没提到、但这次需要汇报的工作吗？比如帮老师做的事。也可以直接对上面的第一页草稿和候选取舍提出增删改意见。”** 有某项查不到项目或原因时，把那一个具体问题并入这次提问。用户在当前对话已经主动补充过时不再问遗漏，但仍展示草稿和完整候选取舍，请其增删改。
 5. **第一道确认：第一页。** 用户的回答是本期工作的来源和修改依据。口头补充的工作可以直接采用；放入第一页前核对它涉及的本地状态和产物，不要求另外提供文件证明。只对新加入或修改的内容重新核实，并更新受影响项。草稿只要有变化，就重新展示完整第一页并等待明确接受；草稿没有变化，用户明确接受或表示没有补充并要求继续时，视为第一页已确认。确认前不展示拟展开事项。
-6. **第二道确认：拟展开事项。** 第一页确认后，展示“拟展开事项”清单，只列需要展开的事项，不列第一页简述项。第二道确认完成前，不查图、不打开附件、不制作。
-7. **第三道确认：素材与生成方式。** 拟展开事项确认后，补齐第一页核实未覆盖的事实，按[复用与核对素材](references/materials.md#复用与核对素材)只收集、核实这些事项的素材，再按[素材确认](references/materials.md#素材确认日报第三道确认)逐项展示原始素材、拟用方式和派生内容提案。原始图片、文档页或数据预览直接显示在对话里，不能只给文件路径。确认前不生成最终图表、示意图或 PPTX。
-8. **第四道确认：讨论下一步工作。** 素材确认后、正式制作前，结合本期结果、尚待解决的问题和已有安排，提出少量近期行动建议，说明每项准备做什么、要解决什么问题；区分已确定安排和助手建议。与用户讨论做哪些、先做什么及需要增删的内容，商定后展示拟放入末页的完整文案并取得确认，不把素材确认当作下一步确认。已有本期明确确认的完整下一步文案直接沿用，只讨论缺失或变动部分；用户明确不安排下一步或不保留末页时遵从，不编造任务。讨论期间可继续已授权的素材核对；未经确认的建议不写入PPT。
-9. **制作与验收。** 按[核实素材并制作](#3-核实素材并制作)和[验收与交付](#4-验收与交付)完成。
+6. **第二道确认：展开事项与拟用素材。** 第一页确认后，只为值得展开的候选补齐事实并查图表。按[展开与素材确认](references/materials.md#展开与素材确认)把拟展开事项、现有图或数据表、拟用方式及必要加工提案一起展示。让用户一次决定展开哪些页、用哪些材料；已明确只简述的事项无需查图。确认前可制作素材预览，正式配图、数据表和 PPTX 在确认后制作。
+7. **第三道确认：讨论下一步工作。** 素材确认后、正式制作前，结合本期结果、尚待解决的问题和已有安排，提出少量近期行动建议，说明每项准备做什么、要解决什么问题；区分已确定安排和助手建议。与用户讨论做哪些、先做什么及需要增删的内容，商定后展示拟放入末页的完整文案并取得确认，不把素材确认当作下一步确认。已有本期明确确认的完整下一步文案直接沿用，只讨论缺失或变动部分；用户明确不安排下一步或不保留末页时遵从，不编造任务。讨论期间可继续已授权的素材核对；未经确认的建议不写入PPT。
+8. **制作与验收。** 按[核实素材并制作](#3-核实素材并制作)和[验收与交付](#4-验收与交付)完成。
 
-**已完成的确认持续有效。** 已经在本期对话完成的口头补充问题、总览确认、展开清单确认、素材确认和下一步工作确认持续有效；局部更正只更新受影响项，不重启整套讨论。用户明确要求逐页讨论或提前制作已确认部分时，沿用相应授权；尚未确认的日报阶段不得跳过。
+**已完成的确认持续有效。** 已经在本期对话完成的口头补充问题、总览确认、展开与素材决定和下一步工作确认持续有效；局部更正只更新受影响项，不重启整套讨论。用户明确要求逐页讨论或提前制作已确认部分时，沿用相应授权；尚未确认的日报阶段不得跳过。
 
 **跨日累计稿。** 用户要求在昨天稿上追加今天内容时，按跨日累计稿处理：今日总览替换旧总览，同一项目的各天进展按主题合并，统计日期在过程记录说明，首页日期按用户要求显示；旧展开页保留，与今日同主题页面相邻排列，页标题保留原始日期。合并后的完整首页须经总览确认。
 
@@ -84,7 +83,7 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 ## 3. 核实素材并制作
 
-日报四道确认完成后，只对确认纳入的内容按[内部逐页素材核对](references/materials.md#排版前逐页素材核对)和获批方式准备图件；展开页优先直接使用核实过的原图、原表和现有文档页，不默认新绘系统框图、流程图或概念图。已有图件能表达本页内容时，不因统一风格或可编辑性而重画；确实缺少不可替代的材料时先说明缺口，新绘仅按用户明确要求或同意执行。未获批的裁切、数据重绘、概括示意图或新绘内容不得生成或进入 PPTX。口头补充可作为事实来源，仅在关键事实不清且影响页面含义时追问。完成一次排版前表达检查后制作，不在成稿后重复完整语义审校。组会继续按既有逐页素材核对及表达流程。
+日报三道确认完成后，只对确认纳入的内容按[内部逐页素材核对](references/materials.md#排版前逐页素材核对)和获批方式准备图件；展开页优先直接使用核实过的原图、原表和现有文档页，不默认新绘系统框图、流程图或概念图。已有图件能表达本页内容时，不因统一风格或可编辑性而重画；确实缺少不可替代的材料时先说明缺口，新绘仅按用户明确要求或同意执行。未获批的裁切、数据重绘、概括示意图或新绘内容不得生成或进入 PPTX。口头补充可作为事实来源，仅在关键事实不清且影响页面含义时追问。完成一次排版前表达检查后制作，不在成稿后重复完整语义审校。组会继续按既有逐页素材核对及表达流程。
 
 沿用已有工程、用户模板及项目约定；模板未选时询问一次内置或本地模板，等待期间继续核实素材。未回答不视为选择，有效模板适配可复用。
 

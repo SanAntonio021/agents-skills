@@ -118,7 +118,7 @@ def slide_text_rows(content):
     rows, prefixes = [], []
     overview = content.get("type") == "overview"
     for block in content["blocks"]:
-        if block["type"] == "image":
+        if block["type"] in {"image", "table"}:
             continue
         for text, bold in text_rows(block):
             rows.append((text, bold))
@@ -237,11 +237,70 @@ def add_image(slide, block, data, x, y, width, height, caption_size=18, caption_
                  caption_size, INK, font=font, centered=True)
 
 
+def validate_table(block):
+    headers, rows = block.get("headers"), block.get("rows")
+    if (not isinstance(headers, list) or not headers
+            or any(not isinstance(header, str) or not header.strip() for header in headers)):
+        raise ValueError("A table requires nonempty text headers")
+    if (not isinstance(rows, list) or not rows
+            or any(not isinstance(row, list) or len(row) != len(headers) for row in rows)):
+        raise ValueError("A table requires nonempty rows with one cell per header")
+    for row in [headers, *rows]:
+        for value in row:
+            text = str(value)
+            if (type(value) not in (str, int, float)
+                    or (isinstance(value, float) and not math.isfinite(value))
+                    or (text and text.splitlines() != [text])):
+                raise ValueError("Table cells require single-line text or finite numbers")
+
+
+def add_table(slide, block, area, font, size=16):
+    rows = [block["headers"], *block["rows"]]
+    x, y, width, height = area
+    column_width = min(2.75, width / len(rows[0]))
+    table_width = column_width * len(rows[0])
+    row_height = min(0.72, height / len(rows))
+    padding_x, padding_y = 0.08, 0.04
+    for values in rows:
+        for value in values:
+            if text_size([(str(value), False)], column_width - 2 * padding_x,
+                         row_height - 2 * padding_y, size) != size:
+                raise ValueError("Table text does not fit; shorten cells or split the table")
+    table_height = row_height * len(rows)
+    table = slide.shapes.add_table(len(rows), len(rows[0]), Inches(x + (width - table_width) / 2),
+                                   Inches(y + (height - table_height) / 2),
+                                   Inches(table_width), Inches(table_height)).table
+    for row_index, values in enumerate(rows):
+        header = row_index == 0
+        for column_index, value in enumerate(values):
+            cell = table.cell(row_index, column_index)
+            cell.margin_left = cell.margin_right = Inches(padding_x)
+            cell.margin_top = cell.margin_bottom = Inches(padding_y)
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor.from_string(BLUE if header else
+                                                            ("F1F5F9" if row_index % 2 else "FFFFFF"))
+            cell.text_frame.word_wrap = True
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.alignment = PP_ALIGN.LEFT if column_index == 0 else PP_ALIGN.CENTER
+            paragraph.space_before = paragraph.space_after = Pt(0)
+            paragraph.line_spacing = 1.1
+            run = paragraph.add_run()
+            run.text = str(value)
+            run.font.name = font
+            run.font.size = Pt(size)
+            run.font.bold = header
+            run.font.color.rgb = RGBColor.from_string("FFFFFF" if header else INK)
+            east_asian = OxmlElement("a:ea")
+            east_asian.set("typeface", font)
+            run._r.get_or_add_rPr().append(east_asian)
+
+
 def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]]:
     if not isinstance(deck.get("slides"), list) or not deck["slides"]:
         raise ValueError("No report material; provide actual findings and visual assets before rendering")
     slides = []
-    total_images = 0
+    total_visuals = 0
     for index, raw in enumerate(deck["slides"]):
         slide = dict(raw)
         project_title(slide)
@@ -272,10 +331,10 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
         blocks = [dict(block) for block in slide.get("blocks", [])]
         if not blocks and slide.get("body"):
             blocks = [{"type": "text", "text": slide["body"]}]
-        pictures = 0
+        pictures = tables = 0
         for block in blocks:
             kind = block.get("type") or block.get("kind") or "text"
-            if kind not in {"image", "text", "metric", "callout"}:
+            if kind not in {"image", "table", "text", "metric", "callout"}:
                 raise ValueError(f"Unsupported slide block: {kind}")
             block["type"] = kind
             if kind == "image":
@@ -287,15 +346,22 @@ def validate_deck(deck: dict[str, Any], source_dir: Path) -> list[dict[str, Any]
                     raise ValueError(f"Missing research image: {path}")
                 block["path"] = str(path)
                 pictures += 1
+            elif kind == "table":
+                if deck.get("template_spec"):
+                    raise ValueError("Table blocks require the built-in layout")
+                validate_table(block)
+                tables += 1
+        if tables > 1:
+            raise ValueError("Use one result table per slide; split additional tables across slides")
         if pictures > 6:
             raise ValueError("Use at most six images in a template layout; place additional figures on another slide")
-        if slide.get("type") in {"result", "setup", "comparison"} and not pictures:
-            raise ValueError(f"This experimental slide needs its actual image: {slide.get('title', '')}")
+        if slide.get("type") in {"result", "setup", "comparison"} and not (pictures or tables):
+            raise ValueError(f"This experimental slide needs its actual image or data table: {slide.get('title', '')}")
         slide["blocks"] = blocks
         slides.append(slide)
-        total_images += pictures
-    if total_images == 0 and deck.get("allow_text_only") is not True:
-        raise ValueError("No experimental plots or photos selected; locate assets before making a text-only deck")
+        total_visuals += pictures + tables
+    if total_visuals == 0 and deck.get("allow_text_only") is not True:
+        raise ValueError("No experimental plots, photos or data tables selected; locate assets before making a text-only deck")
     return slides
 
 
@@ -374,11 +440,16 @@ def make_pptx(deck, slides, output_path, *, template_test=False):
             strip.line.fill.background()
             add_text(slide, [(subtitle, True)], *spec["box"], fonts.get("summary", spec["font_size"]), spec["color"], fit=True, font=font, centered=True)
         pictures = [block for block in content["blocks"] if block["type"] == "image"]
+        table = next((block for block in content["blocks"] if block["type"] == "table"), None)
         rows, prefixes = slide_text_rows(content)
         image_area = list(layout["content"]["box"])
         if rows:
             body_area = list(image_area)
-            if pictures:
+            if table:
+                body_area[3] = min(1.05, image_area[3] / 4)
+                image_area[1] += body_area[3] + 0.15
+                image_area[3] -= body_area[3] + 0.15
+            elif pictures:
                 fraction = float(content.get("body_fraction", 0.27))
                 if not 0.1 <= fraction <= 0.6:
                     raise ValueError("body_fraction must be between 0.1 and 0.6")
@@ -392,11 +463,16 @@ def make_pptx(deck, slides, output_path, *, template_test=False):
                 raise ValueError("Overview text does not fit; shorten explanations or enlarge the body area")
             add_text(slide, rows, *body_area, size, font=font, fit=True,
                      paragraph_spacing=spacing, bold_prefixes=prefixes if overview else None)
+        if table:
+            table_area = list(image_area)
+            if pictures:
+                image_area[2] *= 0.55
+                table_area[0] += image_area[2] + 0.2
+                table_area[2] -= image_area[2] + 0.2
+            add_table(slide, table, table_area, font, fonts.get("table", 16))
         boxes = image_boxes(len(pictures), image_area, content.get("layout"))
         slide.notes_slide.notes_text_frame.text = "\n".join(filter(None, [
-            str(deck.get("footer") or deck.get("date") or ""), str(content.get("status") or ""),
-            str(content.get("source") or ""),
-            *[str(block.get("source") or block["path"]) for block in pictures]]))
+            str(deck.get("footer") or deck.get("date") or ""), str(content.get("status") or "")]))
         for block, box in zip(pictures, boxes):
             path = Path(block["path"])
             source_hash = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -700,6 +776,12 @@ def render_outputs(deck, slides, deck_path, output_dir, requested_stem, stem, *,
                              [str(s.get("title", "")) for s in slides], config,
                              pdf_render=pdf_render, html_preview=html_preview)
     manifest.update(source_deck=str(deck_path), template_test=template_test)
+    manifest["sources"] = [
+        {"slide": index, "source": str(item["source"])}
+        for index, slide in enumerate(slides, 1)
+        for item in [slide, *(block for block in slide.get("blocks", []) if block.get("type") == "table")]
+        if item.get("source")
+    ]
     # Read template metadata inside generation so failures still get a stage receipt.
     def generate():
         manifest["template"] = _template_record(deck)
@@ -745,7 +827,7 @@ def resume_render(manifest_path, output_dir=None, requested_stem=None, *, config
     manifest = _new_manifest(attempt, stem, stem, count, previous["slide_titles"], config,
                              pdf_render=pdf_render, html_preview=html_preview)
     manifest["files"]["pptx"] = str(pptx)
-    for key in ("source_deck", "template", "template_test", "assets"):
+    for key in ("source_deck", "template", "template_test", "assets", "sources"):
         if key in previous:
             manifest[key] = previous[key]
     manifest["resumed_from"] = str(manifest_path)

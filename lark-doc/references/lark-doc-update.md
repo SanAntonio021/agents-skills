@@ -75,7 +75,8 @@ lark-cli docs +update --doc "xx" --command block_delete --start-block-id blkFirs
 
 ## 通用安全规则
 
-- 每次写操作后都按 block ID 已变化处理。新插入或复制的内容一定使用新 ID；替换、删除和覆盖会使旧 ID 失效；移动会改变章节与 range 语义。
+- 每次写操作后都按 block ID 已变化处理。新插入或复制的内容一定使用新 ID；替换、删除和覆盖会使旧 ID 失效；移动会改变章节与 range 语义。替换标题后，被替换标题的 id 会变。`new_blocks` 只列出本次新增的块；里面没有该标题时，重新 fetch 再取 id，不用替换前记下的标题 id。
+- 连续 `block_replace` 标题时，服务端可能返回 `Document operation failed: Document engine internal error`（错误码 5000000）。这次写入不要当成已经改完。隔几秒用原命令原样重试，不要改内容、换 block 或改走别的指令。重试仍失败就重新 fetch，按当前正文决定下一次写入。
 - 同一 block 有多处修改时，应合并为一次 `block_replace`，避免连续使用旧 ID。
 - 他人可能同时编辑同一文档时（版本号在两次读取之间跳变，或已知有其他对话在改）：每次写前重新 fetch，按内容而非先前记下的 ID 定位目标 block，并核对它的当前文字仍与修改计划一致；不一致就基于新内容重新诊断，不强行写入。只替换本次要改的 block，不为改一句整节重写。回读时核对本次写入的内容在位、目标 block 外的结构未被本次操作改动；他人新增、删除或改写的内容不回退，也不当作本次写入失败。
 

@@ -23,7 +23,7 @@ metadata:
 - **读取 / 摘要 — [`+fetch`](references/lark-doc-fetch.md)**：先读参考再获取文档。
 - **从零创作 — [`创建工作流`](references/lark-doc-create-workflow.md)**：先完整执行创建工作流，**简单任务不是跳过的理由**；
 - **导入 / 空文档 — [`+create`](references/lark-doc-create.md)**：仅创建空文档或原样导入用户提供的完整内容时，跳过创建工作流。
-- **编辑 / block 直达链接 — [`+update`](references/lark-doc-update.md)**：语义改写、润色、重组、补写或排版均按 update 参考完成。
+- **编辑 / block 直达链接 — [`+update`](references/lark-doc-update.md)**：语义改写、润色、重组、补写或排版均按 update 参考完成。替换标题后旧 block id 失效，下一步重新 fetch，或只用本次返回里确实是该标题的新 id。连续替换若返回 Document engine internal error（5000000），隔几秒重试同一条命令，不要改内容再发。
 - **重排已有内容 — [`重排参考`](references/lark-doc-restructure.md)**：段落、列表与表格互换，或调整图文块顺序时，在 update 参考之外再读此参考。保留图片、附件、画板、实验数据和现场备注；纯操作步骤表在内容完整转移并回读核对后可单独删除。重排时带评论或文内链接的块不替换、不删除。具体正文版式由任务所属技能决定，实验步骤按 `lab-notebook`。
 
 ### 辅助能力
@@ -47,6 +47,8 @@ metadata:
 Windows 上从 Python 等脚本以子进程调用时，`lark-cli` 是 npm 的 `.cmd` 包装，不经 shell 直接执行会报找不到文件。改为调用 `node <npm root -g>/@larksuite/cli/scripts/run.js`，参数按列表原样传入，避免含引号和 XML 的内容再经 `cmd` 解析。
 
 Windows PowerShell 5.1 的管道默认按 ASCII 编码：经 stdin 传入（`--content -`、`--presentation-decision -`）的中文会变成问号，命令和草稿检查仍显示成功。含中文的内容不经管道传入：正文写成 UTF-8 文件后用 `@./相对路径`，决策按创建工作流内联；确需管道时先执行 `$OutputEncoding = [Text.UTF8Encoding]::new($false)`。内联 JSON 的值含双引号时参数会被拆散并报错，此时把决策写成 UTF-8 文件，用 `@./相对路径` 传入。
+
+PowerShell 5.1 用 `>` 或 `Out-File` 保存标准输出时写成 UTF-16，文件以 `FF FE` 开头，按 UTF-8 解析 JSON 会失败。保存 `docs +fetch` 等输出时，用上面的 `node .../run.js` 或 `lark-cli.cmd` 作子进程，`subprocess.run(..., capture_output=True)` 取 `stdout` 再按字节写入，不用 PowerShell 重定向。
 
 ## 不在本 Skill 范围
 

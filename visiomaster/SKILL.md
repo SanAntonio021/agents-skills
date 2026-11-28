@@ -23,11 +23,11 @@ description: 在 Windows 上将已确认的文字讨论或参考图片绘制为�
 
 导出留白按最终 PNG 的像素计算：以包含全部框线、箭头和文字笔画的可见内容边界为准，默认四边各加 **2 px 白边**；需要极限紧凑时可减至 **1 px**，并逐边检查没有裁切。不要默认按页面百分比留白，也不为增加白边缩小图和字体。Visio 和 SVG 按目标导出尺寸换算等效边距；测量、换算和自动裁切处理见[导出最小留白](references/local-workflow.md#导出最小留白)。
 
-使用当前环境的 Python 和本地 Microsoft Visio。缺依赖时才安装 `requirements.txt`；不修改系统 PATH，不从可变上游镜像运行。先检查，随后在项目过程目录渲染候选，默认后台独立 Visio 实例，不接管用户窗口：
+使用当前环境的 Python 和本地 Microsoft Visio。缺依赖时才安装 `requirements.txt`；不修改系统 PATH，不从可变上游镜像运行。先检查，随后在系统临时目录（`<task-temp>`）渲染候选，默认后台独立 Visio 实例，不接管用户窗口：
 
 ```powershell
 python <skill-dir>/scripts/visio_workflow.py check <figure_v01.scene.json>
-python <skill-dir>/scripts/visio_workflow.py render <figure_v01.scene.json> --output-dir <project-process-dir> --report <project-process-dir>/figure_v01.render.json
+python <skill-dir>/scripts/visio_workflow.py render <figure_v01.scene.json> --output-dir <task-temp> --report <task-temp>/figure_v01.render.json
 ```
 
 场景名去掉 `.scene.json` 即输出名，默认同时导出 `.vsdx`、PNG、SVG。新建图自动按 `--dpi 300 --padding-px 2` 实测校准外围白边；极限紧凑用 `--padding-px 1`，不缩放原生对象和字体。已有输出拒绝覆盖，换下一个版本名。`metadata.pending_questions` 非空时只允许带 `--draft` 渲染，并在交付说明中明确未决项。细节、故障和图像复刻路线见 [操作说明](references/local-workflow.md)。
@@ -39,8 +39,8 @@ python <skill-dir>/scripts/visio_workflow.py render <figure_v01.scene.json> --ou
 先检查并定位页面和对象，再生成与输入摘要绑定的顺序修改清单。文字搜索只辅助定位；重名、错误 ID 或输入变化时停止，不凭近似文字或距离猜对象及技术关系。默认保留旧图字体、字号和版式，仅调整本轮指定属性。操作格式、坐标、关联线和合成样例见 [旧图编辑](references/existing-visio.md)。
 
 ```powershell
-python <skill-dir>/scripts/visio_edit.py inspect <figure_v01.vsdx> --output <process-dir>/figure_v01.inspect.json
-python <skill-dir>/scripts/visio_edit.py apply <figure_v01.vsdx> --plan <process-dir>/round_v02.plan.json --output <process-dir>/figure_v02.vsdx
+python <skill-dir>/scripts/visio_edit.py inspect <figure_v01.vsdx> --output <task-temp>/figure_v01.inspect.json
+python <skill-dir>/scripts/visio_edit.py apply <figure_v01.vsdx> --plan <task-temp>/round_v02.plan.json --output <task-temp>/figure_v02.vsdx
 ```
 
 可改文字、字体字号、位置尺寸，可复制、新增和删除基本形状，调整连线端点、箭头、虚实线及普通折线路径。单一格式整段改字可选 `vsdx` 后端，其余由独立隐藏 Visio 实例处理。原生粘连连接由 Visio 联动并回读；普通线段必须明确列出线 ID、端点和标签，并在清单中执行相应调整。删除模块前明确处理关联线；不留下悬空关系。复杂分组或曲线未通过保真检查时报告具体对象，不自动重建。
@@ -52,7 +52,7 @@ python <skill-dir>/scripts/visio_edit.py apply <figure_v01.vsdx> --plan <process
 先把反馈映射到对象 ID，明确需要联动的框体、标签和走线，只修改这些对象。字号放大可能需要同步调整框体和路径，列入本轮对象集合；不顺带改变技术关系。另存下一版场景后重新渲染。再检查实际场景差异和像素变化：
 
 ```powershell
-python <skill-dir>/scripts/visio_workflow.py compare --before-scene <figure_v01.scene.json> --after-scene <figure_v02.scene.json> --before-png <figure_v01.png> --after-png <figure_v02.png> --allow-id <changed-node> --allow-id <linked-edge> --report <process-dir>/round_v02.json
+python <skill-dir>/scripts/visio_workflow.py compare --before-scene <figure_v01.scene.json> --after-scene <figure_v02.scene.json> --before-png <figure_v01.png> --after-png <figure_v02.png> --allow-id <changed-node> --allow-id <linked-edge> --report <task-temp>/round_v02.json
 ```
 
 `--allow-id` 可重复，页面确需调整时加 `--allow-page`。仅改 metadata、无有效渲染变化、像素无变化或改到范围外时检查失败，不能报告修改成功。
@@ -61,6 +61,6 @@ python <skill-dir>/scripts/visio_workflow.py compare --before-scene <figure_v01.
 
 ## 交付与职责
 
-确认后将同版本 `.vsdx`、PNG 及适用的 `.scene.json` 保存到项目正式位置；SVG 按用户需要交付。候选、检查记录和预览留在 `过程文件/任务主题/`，验收结论写入项目 README 或项目已有记录。只在图件正式获确认、且本轮获授权更新文档时，通过现有文档制作链更新 Markdown/Word 图及图源引用；核对嵌入图片和引用版本一致，不把候选稿自动升级为正文插图。
+确认后将同版本 `.vsdx`、PNG 及适用的 `.scene.json` 直接保存到项目正式位置（保存目录不明时先主动询问用户）；SVG 按用户需要交付。验收结论写入项目 README 或项目已有记录，系统临时目录中的候选、检查报告和预览在交付核验完成后当场删除，不在项目内建 `过程文件/`。只在图件正式获确认、且本轮获授权更新文档时，通过现有文档制作链更新 Markdown/Word 图及图源引用；核对嵌入图片和引用版本一致，不把候选稿自动升级为正文插图。
 
 专利内容、真实图件、私有讨论、项目绝对路径和检查日志留在本机项目。公开技能只包含通用流程和合成例子。说明本轮实际改了哪些对象、看图结果及未解决事项；脚本的 `rendered_pending_visual_review` 只表示导出成功。

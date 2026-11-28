@@ -25,8 +25,8 @@
   ],
   "target_root": "D:\\Projects\\example-project",
   "recovery_root": "D:\\Projects\\example-project\\恢复资料",
-  "audit_root": "D:\\Projects\\example-project\\过程文件\\本次整理",
-  "integration_manifest": "D:\\Projects\\example-project\\过程文件\\本次整理\\integration.json",
+  "audit_root": "C:\\Users\\Example\\AppData\\Local\\Temp\\project-organizer\\example-merge",
+  "integration_manifest": "C:\\Users\\Example\\AppData\\Local\\Temp\\project-organizer\\example-merge\\integration.json",
   "canonical_source_id": "active",
   "mapping_rules": [],
   "layout_decisions": {
@@ -43,8 +43,7 @@
       "measurement",
       "analysis",
       "checks",
-      "恢复资料/整合原件",
-      "过程文件"
+      "恢复资料/整合原件"
     ],
     "independent_subprojects": [],
     "version_policy": "integrate",

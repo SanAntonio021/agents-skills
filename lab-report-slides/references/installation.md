@@ -85,8 +85,8 @@ $env:LAB_REPORT_PDFTOPPM = '<Poppler程序目录>\pdftoppm.exe'
   "lo_runner": "<实际技能目录>/libreoffice-runner/scripts/libreoffice_run.py",
   "soffice": "<实际LibreOffice目录>/program/soffice.com",
   "pdftoppm": "<实际Poppler目录>/pdftoppm.exe",
-  "work_root": "过程文件/日报运行/work",
-  "diagnostics_root": "过程文件/日报运行/diagnostics"
+  "work_root": "C:/Users/<User>/AppData/Local/Temp/lo-work",
+  "diagnostics_root": "C:/Users/<User>/AppData/Local/Temp/lo-diag"
 }
 ```
 
@@ -94,14 +94,14 @@ $env:LAB_REPORT_PDFTOPPM = '<Poppler程序目录>\pdftoppm.exe'
 
 ```powershell
 python scripts/check_dependencies.py --config '<项目配置绝对路径>'
-python scripts/render_deck.py --deck '<deck JSON绝对路径>' --output-dir '<过程目录绝对路径>' --base-name '<新文件名>' --config '<项目配置绝对路径>'
+python scripts/render_deck.py --deck '<deck JSON绝对路径>' --output-dir '<系统临时目录或正式输出目录绝对路径>' --base-name '<新文件名>' --config '<项目配置绝对路径>'
 ```
 
 未传 `--config` 时，依赖检查仅查看当前目录，生成入口仅查看 deck JSON 同目录，不搜索父目录。使用安装回退配置后，后续始终显式传入其绝对路径。检查结果分别列出实际 Python、有效程序路径、来源、当前进程值、项目文件值和用户级持久值；用户级读取被拒绝时标为不可读取，不将其解释为已保存或不存在。所有 JSON 输出采用 UTF-8，不修改系统代码页。
 
-受限 Windows 环境可通过上述工作目录保存临时文件、独立用户配置与诊断；runner 也提供 `--work-root`、`--diagnostics-root`。共享并发锁保持统一位置，所有项目共用两个容量槽位；锁访问被拒绝时 LibreOffice 不启动，应在获准访问该锁的环境中重试，不能为每个项目另建锁以绕开限制。
+受限 Windows 环境可通过上述本机临时工作目录保存临时文件、独立用户配置与诊断；runner 也提供 `--work-root`、`--diagnostics-root`。共享并发锁保持统一位置，所有项目共用两个容量槽位；锁访问被拒绝时 LibreOffice 不启动，应在获准访问该锁的环境中重试，不能为每个项目另建锁以绕开限制。
 
-未配置 `work_root` 时保留系统临时目录默认值。LibreOffice 在深目录中可能因内部缓存路径过长而崩溃；runner 对工作根绝对路径进行长度预检，超过 63 个 UTF-16 单元时返回 `work_root_too_long`。此时由智能体在项目允许范围内选更浅的过程目录，写入本机项目配置后重试；不移动共享锁、不修改原稿。诊断目录不受这项 LibreOffice 工作根限制。
+未配置 `work_root` 时保留系统临时目录默认值。LibreOffice 在深目录中可能因内部缓存路径过长而崩溃；runner 对工作根绝对路径进行长度预检，超过 63 个 UTF-16 单元时返回 `work_root_too_long`。此时由智能体选本机更浅的临时目录（不在项目内建立 `过程文件/`），写入本机配置后重试；不移动共享锁、不修改原稿。诊断目录不受这项 LibreOffice 工作根限制。
 
 PNG/JPG 不需要 Node.js。只有输入 SVG 时才额外需要 Node.js 和 sharp；也可先从原绘图工具导出 PNG。已安装 sharp 但无法解析模块时，可用 `SHARP_MODULE` 指定其实际模块目录。
 

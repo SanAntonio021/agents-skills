@@ -21,19 +21,19 @@
 
 ## 文件存放
 
-正式目录按以下顺序确定：用户本轮指定 → 当前项目已确认的交付目录 → 本机默认汇报目录 → 当前项目目录。本机默认位置从实际用户主目录下 `.agent-rules/local.md` 的相关段落读取；私人路径只记在本机或项目约定，不写入公开技能。定位及目标目录约定的读取见[主流程](../SKILL.md#0-定位正式交付目录)。
+正式目录按以下顺序确定：用户本轮指定 → 当前项目已确认的交付目录 → 本机默认汇报目录 → 当前项目目录（若当前工作区明显不属于汇报目标，如在 `.agents` 中启动且无默认配置，写入前必须先主动询问用户保存目录）。本机默认位置从实际用户主目录下 `.agent-rules/local.md` 的相关段落读取；私人路径只记在本机或项目约定，不写入公开技能。定位及目标目录约定的读取见[主流程](../SKILL.md#0-定位正式交付目录)。
 
-采集摘要、deck JSON、可选 PDF/页面 PNG、HTML 和 manifest 放在 `过程文件/<任务>/`，续做及跨技能复用，原始资料保持原位。文件归属和清理按共享规范及项目约定，普通任务结束不主动清理。
+采集摘要 `brief.json`、临时 `deck.json`、检查用页面 PNG 等中间产物放入系统临时目录（`<task-temp>`），不在项目内建立 `过程文件/`，原始资料保持原位；正式 PPTX（及需保留接续边界时的轻量记录）直接落入正式目录，本轮验收完成后当场删除系统临时目录。
 
-组会与长篇汇报的工作稿、查看稿和基准交接使用 [双稿交接与版本](../../pptx/references/presentation-workflow.md#双稿交接与版本)，不套用下文每次生成递增正式版本的规则；生成器自动产生的临时文件留在过程目录，核验后更新工作稿，不改生成器接口。仅在交付节点留档。以下无覆盖归档规则适用于其他任务及正式留档。
+组会与长篇汇报的工作稿、查看稿和基准交接使用 [双稿交接与版本](../../pptx/references/presentation-workflow.md#双稿交接与版本)，不套用下文每次生成递增正式版本的规则；生成器自动产生的临时文件放在系统临时目录，核验后更新工作稿并清理临时目录，不改生成器接口。仅在交付节点留档。以下无覆盖归档规则适用于其他任务及正式留档。
 
-临时聊天的 `outputs` 可作为生成或展示位置；已有正式目录时，验收后须将 PPTX 无覆盖复制到正式目录。复核正式文件非空，大小及 SHA-256 与候选文件一致，并在现有过程 manifest 中记录正式路径及摘要；候选已在正式位置时就地核对。同名文件使用下文版本规则，不覆盖用户文件。最终回复说明正式位置。
+在系统临时目录先生成候选以执行隔离检查时，验收通过后立即将 PPTX 无覆盖发布到正式目录，复核正式文件非空、大小及 SHA-256 与候选一致，随即清理临时目录。同名文件使用下文版本规则，不覆盖用户文件。最终回复说明正式位置。
 
-目标目录不可访问或复制、核对失败时，保留已生成的候选文件，明确说明归档未完成及候选位置，不把临时位置当作正式归档结果。PDF 仅按用户明确要求生成或交付；HTML 仅显式请求时生成且须自包含。
+目标目录不可访问或复制、核对失败时，保留临时目录中的候选文件并明确说明归档未完成及候选位置，不把临时位置当作正式归档结果。PDF 仅按用户明确要求生成或交付；HTML 仅显式请求时生成且须自包含。
 
 ## Deck JSON 与渲染
 
-提纲按当前目标确定后，在任务过程目录写入一个小型 deck JSON 文件。渲染器要求以下结构：
+提纲按当前目标确定后，在系统临时目录（或用户指定保留编辑源的正式工程目录）写入一个小型 deck JSON 文件。渲染器要求以下结构：
 
 ```json
 {
@@ -83,15 +83,15 @@
 ```powershell
 python <pptx-skill-root>\scripts\office_native_gate.py check <candidate.pptx> `
   --format pptx --json --allow-office-com --require-render `
-  --render-output-dir <task-process-dir>\native-pages
+  --render-output-dir <task-temp>\native-pages
 ```
 
-页面输出目录须为本任务新建目录。若 PowerPoint 已在运行或 gate 返回未验证，保留候选稿，不重试或接管用户窗口。
+页面输出目录须为系统临时目录下的本任务新建子目录，查看完毕并交付正式 PPTX 后删除。若 PowerPoint 已在运行或 gate 返回未验证，保留候选稿，不重试或接管用户窗口。
 
 不加参数时渲染器仍生成兼容 PDF 和逐页 PNG。日报必须增加 `--daily-report`，跳过 LibreOffice、PDF 和兼容 PNG；只有用户明确要求 PDF 时再增加 `--pdf-render`：
 
 ```text
-python scripts/render_deck.py --deck "<project-root>/过程文件/<任务>/deck.json" --output-dir "<project-root>/过程文件/<任务>" --base-name <YYYYMMDD> --daily-report
+python scripts/render_deck.py --deck "<task-temp>/deck.json" --output-dir "<task-temp>" --base-name <YYYYMMDD> --daily-report
 ```
 
 组会不加 `--daily-report`，改加 `--no-pdf-render`，同样只生成 PPTX 和 manifest；随后按上面的方式调用一次原生 gate 导出全部页面 PNG（PowerPoint 已在运行时同样不重试、不接管），用这些页面完成下文的完整验收。用户要求 PDF 时，组会命令改用 `--pdf-render`；原生检查无法进行时，用同一 deck 改加 `--pdf-render` 重新生成一次（自动取新名称，不覆盖前一份），交付这一份并附带它的兼容渲染。兼容渲染与 PowerPoint 的换行不同，不用来判断版式。

@@ -20,13 +20,13 @@
       "outputs": [
         {
           "relative_path": "README.md",
-          "prepared_path": "D:\\Projects\\example-project\\过程文件\\本次整理\\prepared\\README.md",
+          "prepared_path": "C:\\Users\\Example\\AppData\\Local\\Temp\\project-organizer\\example-merge\\prepared\\README.md",
           "sha256": "<整合后 README 的实际 SHA256>",
           "expected_target_sha256": "absent"
         }
       ],
       "coverage": {
-        "path": "D:\\Projects\\example-project\\过程文件\\本次整理\\coverage.md",
+        "path": "C:\\Users\\Example\\AppData\\Local\\Temp\\project-organizer\\example-merge\\coverage.md",
         "sha256": "<逐项覆盖报告的实际 SHA256>",
         "inputs": [
           {

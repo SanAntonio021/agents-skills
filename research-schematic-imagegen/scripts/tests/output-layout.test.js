@@ -7,9 +7,10 @@ import test from "node:test";
 
 const shared = new URL("../shared.js", import.meta.url).href;
 
-test("default prompt and image writes stay inside one Chinese process directory", async () => {
+test("default prompt and image writes go to system temporary directory without polluting cwd", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "图件目录-"));
-  const env = { ...process.env };
+  const fakeTmp = path.join(root, "sys-tmp");
+  const env = { ...process.env, TEMP: fakeTmp, TMP: fakeTmp, TMPDIR: fakeTmp };
   delete env.RESEARCH_IMAGE_OUTPUT_ROOT;
   try {
     execFileSync(process.execPath, ["--input-type=module", "-e", `
@@ -17,8 +18,8 @@ test("default prompt and image writes stay inside one Chinese process directory"
       await savePrompt("技术合同", null, "sample");
       await saveImage(buildDefaultImagePath("generate", "sample"), Buffer.from("offline fixture"));
     `], { cwd: root, env });
-    assert.deepEqual(await readdir(root), ["过程文件"]);
-    assert.deepEqual((await readdir(path.join(root, "过程文件", "科研示意图"))).sort(), ["prompt", "working"]);
+    assert.deepEqual(await readdir(root), ["sys-tmp"]);
+    assert.deepEqual((await readdir(path.join(fakeTmp, "research-schematic-imagegen"))).sort(), ["prompt", "working"]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -26,7 +27,7 @@ test("default prompt and image writes stay inside one Chinese process directory"
 
 test("explicit shared task directory is reused across separate generation sessions", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "跨技能图件-"));
-  const taskRoot = path.join(root, "过程文件", "系统图_20260908_02");
+  const taskRoot = path.join(root, "系统图_20260908_02");
   try {
     for (const hint of ["first", "continued"]) {
       execFileSync(process.execPath, ["--input-type=module", "-e", `
@@ -35,7 +36,7 @@ test("explicit shared task directory is reused across separate generation sessio
       `], { cwd: root, env: { ...process.env, RESEARCH_IMAGE_OUTPUT_ROOT: taskRoot } });
     }
     assert.equal((await readdir(path.join(taskRoot, "prompt"))).length, 2);
-    assert.deepEqual(await readdir(path.join(root, "过程文件")), ["系统图_20260908_02"]);
+    assert.deepEqual(await readdir(root), ["系统图_20260908_02"]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

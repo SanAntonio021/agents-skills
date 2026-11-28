@@ -7,7 +7,7 @@ When searchable output or reliable full-document text is needed, resolve `script
 ```powershell
 & $ocrWrapper `
     -InputPdf 'C:\path\document.pdf' `
-    -OutputDirectory 'C:\项目\过程文件\文档识别' `
+    -OutputDirectory "$env:TEMP\pdf-ocr-task" `
     -Languages 'chi_sim' `
     -Mode auto
 ```
@@ -27,14 +27,14 @@ Automatic routing uses page text quality and image coverage:
 
 Use `-Deskew` only when the user requests it or a rendered page shows clear skew. Deskew changes page pixels and requires stronger visual comparison. Override `-Mode` only when the automatic decision is known to be wrong and record why.
 
-The wrapper never overwrites the input or an existing output. It stages work in a unique directory and publishes only after SHA-256, page count, dimensions, rotation, PyMuPDF rendering, Poppler rendering, `pdfinfo`, and strict pypdf checks pass. Always pass `-OutputDirectory` inside the task process directory. Successful process outputs are:
+The wrapper never overwrites the input or an existing output. It stages work in a unique directory and publishes only after SHA-256, page count, dimensions, rotation, PyMuPDF rendering, Poppler rendering, `pdfinfo`, and strict pypdf checks pass. Always pass `-OutputDirectory` inside a task-specific subdirectory under the system temporary directory (never create `过程文件/` inside a project). Successful staged outputs are:
 
 - `<name>_ocr.pdf`
 - `<name>_ocr.txt`, extracted from the completed PDF with `pdftotext -layout`; OCRmyPDF sidecar text is not the full document
 - `<name>_ocr.log`
 - `<name>_ocr.status.json`
 
-After validation, automatically copy the requested PDF and/or full text to versioned project-root filenames and verify their hashes; logs, status records and render diagnostics stay in the process directory. On failure, no successful output names are created. Diagnostics remain in the reported `.pdf-ocr-run-*` directory on both success and failure, until explicit ChatNote cleanup.
+After validation, if the user requested a file deliverable, copy the requested PDF and/or full text to the confirmed formal destination (proactively ask where to save if the target directory is unclear) with versioned filenames and verify their hashes, then delete the temporary task directory. On failure, retain diagnostics in the temporary `.pdf-ocr-run-*` directory only while troubleshooting and clean up afterward.
 
 For visual reading or review of tables, formulas, stamps, handwriting, and complex layouts, render representative pages even after OCR. OCR preserves the page image in the PDF but plain text does not preserve table structure or formula semantics. Use Poppler or PyMuPDF:
 
@@ -42,8 +42,7 @@ For visual reading or review of tables, formulas, stamps, handwriting, and compl
 import fitz, os, tempfile
 
 doc = fitz.open('scanned.pdf')
-out_dir = os.path.join(task_process_dir, 'pdf-pages')  # task_process_dir is the resolved task directory
-os.makedirs(out_dir, exist_ok=True)
+out_dir = tempfile.mkdtemp(prefix='pdf-pages-')
 
 page_indices = [0]  # zero-based; select pages relevant to the question, expand when needed
 for i in page_indices:
@@ -56,6 +55,6 @@ Current machine paths, pinned versions, installer hash, and language-model hashe
 
 ## 读取与参数边界
 
-普通查询先使用现有文字层或相关原页图像；需要 OCR 才进入识别。位置未知时可扩大范围直至全文，辅助识别结果留在过程目录，不自动交付新 PDF。包装器处理整份输入，不提供页码或页码范围参数；如需先抽取页面，使用现有 PDF 工具生成过程副本并保留原页对应关系。
+普通查询先使用现有文字层或相关原页图像；需要 OCR 才进入识别。位置未知时可扩大范围直至全文，辅助识别结果放在系统临时目录并在回答完成后删除，不自动交付新 PDF。包装器处理整份输入，不提供页码或页码范围参数；如需先抽取页面，在系统临时目录生成抽取副本并保留原页对应关系，用完即删。
 
 包装器现有参数为 `InputPdf`、`Languages`、`Mode`、`OutputDirectory`、`Deskew`、`Jobs`、`TimeoutSeconds`。本说明不改变接口和程序的完整验证链。

@@ -16,10 +16,9 @@ Use `$docx` as the sole explicit Word skill entrypoint.
 
 ## 文件存放与交付
 
-- 文件归属、正式位置和清理时机遵循已加载的共享全局规则。候选、临时脚本、预览和临时核验记录放在本任务过程目录；必要编辑源和资源依赖作为正式内容保留。
-- 沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。生成并通过必要检查后，由智能体在最终回复前自动交付正式成果到约定的正式位置，复核交付文件的哈希、可打开性及必要依赖，并给出正式路径链接。需要用户挑选时，选定后再交付；不另设确认环节。
-- 使用工具的显式输出参数或将工作目录设到任务过程目录，保留工具所需内部结构；正文命令中的相对输出路径均以该目录为基准，技能脚本及输入路径使用绝对路径。不修改上游插件缓存。可编辑源、正式工程及原始数据保留其用途，不一律当作临时文件。
-- 普通任务结束后保留过程材料，用户显式触发 ChatNote（`chat-notes`）或明确要求清理后才进入可恢复清理；不自动清空过程目录。工具用于进程隔离、安全回滚的内部暂存清理不等于任务清场，仍遵守原有保护门。
+- 文件归属、正式位置、未知目录主动询问和临时文件即用即删统一遵循共享全局规则；项目内不建立 `过程文件/`。
+- 沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。必要编辑源和资源依赖从创建起保留在正式位置；导出候选、预览和临时核验记录统一放在系统临时目录（`<task-temp>`），检查通过并交付到正式位置、核对哈希与可打开性后当场删除系统临时目录。需要用户挑选时，选定归位后立即删除临时目录。
+- 使用工具的显式输出参数或将工作目录设到系统临时目录，技能脚本及输入路径使用绝对路径；不修改上游插件缓存。
 
 ## OfficeCLI route
 
@@ -281,7 +280,7 @@ powershell -ExecutionPolicy Bypass -File scripts/template/export_markdown_to_wor
   -AllowOfficeCom
 ```
 
-Always pass `-OutputPath` and `-CheckRecordPath` inside `项目/过程文件/任务主题/` to the export wrapper; its intermediate DOCX and adjacent records therefore stay together. After checks pass, copy the selected DOCX to the designated formal location and verify the delivered bytes. Retain any necessary check facts in the existing project record before explicit cleanup; preserve the original check record during the task as evidence for the identical source hash; perform any new path-bound check against the delivered path and write its record back into the process directory. Do not rewrite old evidence to pretend it checked another path.
+Always pass `-OutputPath` and `-CheckRecordPath` inside a task-specific subdirectory under the system temporary directory (`<task-temp>`) to the export wrapper; its intermediate DOCX and adjacent check records stay isolated from the project tree. After checks pass, copy the selected DOCX to the designated formal location and verify the delivered bytes, record any necessary check conclusion in the project's existing formal record, and delete the temporary task directory. Perform any new path-bound check against the delivered path with its temporary check output also placed in `<task-temp>` and cleaned after verification; do not rewrite old evidence to pretend it checked another path.
 
 The export wrapper creates `<output>.check.json`, or uses an explicit `-CheckRecordPath`. This is
 the corresponding document's check record, not an approval workflow. The approved export integration

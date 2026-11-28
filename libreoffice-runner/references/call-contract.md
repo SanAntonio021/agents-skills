@@ -32,8 +32,8 @@ from libreoffice_runner import RunRequest, convert, run
 report = run(RunRequest("pdf", Path("input.docx"), Path("output.pdf")))
 result = convert("recalc", Path("input.xlsx"), Path("output.xlsx"), timeout=120)
 report = run(RunRequest("pdf", Path("input.pptx"), Path("output.pdf"),
-                        work_root=Path("过程文件/汇报/runner-work"),
-                        diagnostics_root=Path("过程文件/汇报/runner-diagnostics")))
+                        work_root=Path(r"C:\Users\Example\AppData\Local\Temp\lo-work"),
+                        diagnostics_root=Path(r"C:\Users\Example\AppData\Local\Temp\lo-diag")))
 ```
 
 `convert()` 是本地 `xlsx` skill 的兼容接口。它成功时返回 JSON 字典；失败时继续抛出
@@ -77,8 +77,7 @@ report = run(RunRequest("pdf", Path("input.pptx"), Path("output.pdf"),
 设到任务的 `temp` 子目录。共享槽位仍在统一 LOCALAPPDATA 状态目录，不受工作根影响。
 共享锁访问被拒绝时返回 `capacity_acquire_failed`，不启动进程；不能通过切换项目锁绕过。
 工作根绝对路径不得超过 63 个 UTF-16 单元：任务 UUID 目录之外还为 LibreOffice 缓存预留 150
-单元，避免已实测出现的 MAX_PATH 崩溃。超出返回 `work_root_too_long`，应显式配置更浅的项目
-过程目录（默认 TEMP 太深时同样适用）；不自动迁移到配置外目录。这是兼容性预检，不能替代实际渲染。
+单元，避免已实测出现的 MAX_PATH 崩溃。超出返回 `work_root_too_long`，应显式配置更浅的本机临时目录（不在项目内建 `过程文件/`）；不自动迁移到配置外目录。这是兼容性预检，不能替代实际渲染。
 
 ## 进程和输出安全
 

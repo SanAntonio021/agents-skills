@@ -1,6 +1,6 @@
 ---
 name: project-organizer
-description: 新建普通项目目录并建立 README、项目规范、AGENTS，或建立长期资料主档并补齐项目级 README 入口；按共同内容分类规则组织正式内容和临时过程文件，检查本地项目、飞书实验主稿与 Zotero 资料的入口关系。也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
+description: 新建普通项目目录并建立 README、项目规范、AGENTS，或建立长期资料主档并补齐项目级 README 入口；按共同内容分类规则组织项目正式内容，检查本地项目、飞书实验主稿与 Zotero 资料的入口关系。也把散落在多个本机目录的同一项目整合到统一目录，合并有效内容、更新 Markdown 与真实引用、验证新入口并清理已处理的旧目录；也支持独立项目分组。先盘点当前文件，按明确范围执行；普通单文件操作、单仓库分支整理和整盘清理使用对应能力。
 compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports local drive-letter paths only.
 ---
 
@@ -14,7 +14,7 @@ compatibility: Windows PowerShell 5.1+, Git for Windows; execution supports loca
 
 本技能处理新建普通项目、长期资料主档、多个目录或仓库之间的同一项目整合，以及独立项目分组。单个仓库内的分支、worktree 和 stash 收口使用 `git-branch-consolidation`；普通单文件操作、整盘清理和释放磁盘空间使用对应技能。
 
-新建项目时，按用户指定位置、项目已有结构、专业技能约定的顺序确定正式位置。正式内容与过程文件是两种性质，不强制建立两套目录，也不预建无内容的分类。根目录分组与命名前缀、中英文目录名、层级深度、论文目录和子项目划分按[项目骨架](references/project-skeleton.md)；已有项目只在整理或归位时适用，不为统一而批量改名。README、项目规范、AGENTS 和 Markdown 文档的正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理；涉及多份文档的职责和引用时，同时按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)处理。
+新建项目时，按用户指定位置、项目已有结构、专业技能约定的顺序确定正式位置。正式内容从创建起直接落入对应正式位置，不在项目内建立 `过程文件/`，也不预建无内容的分类。根目录分组与命名前缀、中英文目录名、层级深度、论文目录和子项目划分按[项目骨架](references/project-skeleton.md)；已有项目只在整理或归位时适用，不为统一而批量改名。README、项目规范、AGENTS 和 Markdown 文档的正文写法按 [Markdown 正文写法](../writing-router/references/markdown-writing.md)处理；涉及多份文档的职责和引用时，同时按 [Markdown 文档组织](../writing-router/references/markdown-document-organization.md)处理。
 
 `merge` 用于同一逻辑项目或一个来源与已有目标整合，未解决的异内容保留为 `hold_conflict`。`group` 用于多个独立但同类项目，各自进入共同父目录下独立的 `target_name`；不能仅凭目录名相似自动合并。
 

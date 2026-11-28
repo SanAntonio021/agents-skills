@@ -1,11 +1,11 @@
 # 调用方法
 
-所有命令路径以实际安装的技能目录为准。请求、raw 快照、结果留在当前任务过程目录；不要存入公开技能源码。
+所有命令路径以实际安装的技能目录为准。请求、raw 快照、临时结果放在系统临时目录并在回读验收后删除，不在项目内建 `过程文件/`，也不要存入公开技能源码。
 需要 Python 3、已认证的 `lark-cli`，浏览器编辑还需要 `web-access` 前检返回的 protocol v2 Proxy。
 
 ## 读取与创建
 
-先运行 `lark-cli whiteboard +export --help` 和 `lark-cli whiteboard +update --help` 核对当前 CLI。CLI 输入和输出路径受当前 cwd、账户临时目录或账户 `files` 目录限制；任务证据保存到当前任务过程目录时，必要时先写到允许目录再移动到过程目录。
+先运行 `lark-cli whiteboard +export --help` 和 `lark-cli whiteboard +update --help` 核对当前 CLI。CLI 输入和输出路径受当前 cwd、账户临时目录或账户 `files` 目录限制；优先直接使用临时目录，任务验收完成后删除临时导出。
 
 ```text
 lark-cli whiteboard +export --whiteboard-token <board> --output-type raw --output before.json --as user
@@ -24,7 +24,7 @@ RAW 需要作为后续输入时，使用 `--output <file>` 保存。直接输出
 
 ### 图内容清单
 
-写入前先建立图内容清单。它是普通的 JSON，不是另一种画板格式；保存模块、文字、端口、连线、标签和分组，既是写入输入，也是回读验收依据。放在当前任务过程目录。
+写入前先建立图内容清单。它是普通的 JSON，不是另一种画板格式；保存模块、文字、端口、连线、标签和分组，既是写入输入，也是回读验收依据。临时放在系统临时目录，回读验收完成后删除（用户要求保留本地源时放入项目正式位置）。
 
 ```json
 {

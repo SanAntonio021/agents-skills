@@ -303,7 +303,7 @@ python scripts/run_weekly_skill_review.py approve-batch --selections <JSON> --js
 
 ## 输出
 
-目录审计程序固定输出到 `<reports-root>`；局部诊断不强制生成全库报告。新增过程材料沿用共享规则的 `过程文件/任务主题/`，已有周检输出位置保持兼容：
+目录审计程序固定输出到 `<reports-root>`；局部诊断不强制生成全库报告。一次性辅助脚本和临时 JSON 放在系统临时目录并在用完后删除，不在仓库内新建 `过程文件/`；已有周检输出位置保持兼容：
 
 - `manifests/<date>/summary.json`
 - `weekly/<date>.md`

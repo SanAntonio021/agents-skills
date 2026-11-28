@@ -12,8 +12,8 @@
 | `max_discovery_depth` | 默认 4 |
 | `sources` | 已确认来源，字段为 `id`、`path`、`role`；归组模式还需 `target_name` |
 | `target_root` | 唯一目标或共同父目录 |
-| `audit_root` | 本轮过程根目录；`1.1` 可为目标内的 `过程文件/整理主题/`，不得等于目标、成为目标祖先或进入来源。`1.0` 保持与目标不重叠 |
-| `recovery_root` | 可选正式恢复根目录，默认 `<target_root>/恢复资料`，按需创建；不得与过程目录、来源、保护路径或活动 Git 存储重叠，不得等于或包含目标 |
+| `audit_root` | 本轮临时审计根目录，默认采用系统临时目录（如 `C:\Users\<User>\AppData\Local\Temp\project-organizer\<整理主题>`），不得等于目标、成为目标祖先或进入来源（`1.1` 仅保留脚本对历史目标内子树的兼容，新任务不在目标内建 `过程文件/`） |
+| `recovery_root` | 可选正式恢复根目录，默认 `<target_root>/恢复资料`，按需创建；不得与 `audit_root`、来源、保护路径或活动 Git 存储重叠，不得等于或包含目标 |
 | `integration_manifest` | `1.1/merge` 可选，指向 `audit_root` 内的整合 JSON；未使用时为空或省略 |
 | `canonical_source_id` | 合并模式必填；新仓库可使用空值并令 `active_repo_policy` 为 `new` |
 | `mapping_rules` | `merge` 中按顺序应用的 `source_id`、`from_prefix`、`to_prefix`；只表达已批准目录设计，默认空；`group` 禁止使用 |
@@ -24,7 +24,7 @@
 | `protected_paths` | 任何阶段都不得修改的绝对路径 |
 | `exclude_rules` | 显式目录名、扩展名和相对路径前缀 |
 
-来源 ID 和 `target_name` 只允许 ASCII 字母、数字、点、下划线和连字符。来源不得互相嵌套，来源与目标不得嵌套。`OutputDir` 位于本轮 `audit_root` 内。内部过程目录及祖先经过路径检查，只排除精确本轮子树，不排除整个 `过程文件/`。
+来源 ID 和 `target_name` 只允许 ASCII 字母、数字、点、下划线和连字符。来源不得互相嵌套，来源与目标不得嵌套。`OutputDir` 位于本轮 `audit_root` 内。若兼容处理历史目标内子树，只排除精确本轮子树，不排除其他残留目录。
 
 新生成 Git 恢复文件位于 `<recovery_root>/<run-id>/`，`run-id` 是规范化 `OutputDir` 的稳定哈希，避免不同整理任务复用来源 ID 时冲突。子树内保留 `git_archives.json`、bundle、恢复支持文件与 `recovery.sha256`，可独立核对；过程中的 `git_archives.json` 是运行接口副本。扫描只排除通过内容校验的本轮恢复子树，不排除整个 `recovery_root`。文件篡改、未登记文件及不安全路径阻止验收。未使用 Git 时不创建恢复目录。旧 `1.0/1.1` 配置可省略新字段，已有过程包读取路径保持不变。
 
@@ -74,7 +74,7 @@
     "status": "passed",
     "checked_at": "<实际 ISO8601 时间>",
     "outputs": [{"relative_path": "README.md", "sha256": "<最终实际 SHA256>"}],
-    "report_path": "<本轮过程目录内的实际非空检查报告绝对路径>",
+    "report_path": "<本轮 audit_root 内的实际非空检查报告绝对路径>",
     "report_sha256": "<报告实际 SHA256>"
   }]
 }

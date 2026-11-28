@@ -19,14 +19,14 @@ description: 处理期刊选择、改投建议、投稿格式与材料合规检�
 
 ## 开始前
 
-1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态原位续用，不批量迁移、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；新状态默认放论文目录根 `<project-root>/paper_<简称>/submission-state.json`；提交件在论文目录根准备，提交当天建立 `paper_<简称>/<序号>_<期刊>_<提交日期>/`，连同必要回执移入；项目尚无论文目录时用 `<project-root>/投稿/<任务名>/`。状态中的路径一律相对项目根目录。用户指定位置和项目已有正式结构优先；临时截图和调试材料放 `<project-root>/过程文件/<投稿任务>/`，续做及跨技能共用。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
+1. 读取项目规则、稿件现状及该投稿任务已有状态；兼容读取原 `<project-root>/outputs/submission/`，已有状态原位续用，不批量迁移、不另建双份。持续投稿操作需要新建状态时，按 [references/data-contracts.md](references/data-contracts.md) 建立 `1.1` 记录；新状态默认放论文目录根 `<project-root>/paper_<简称>/submission-state.json`；提交件在论文目录根准备，提交当天建立 `paper_<简称>/<序号>_<期刊>_<提交日期>/`，连同必要回执移入；项目尚无论文目录时用 `<project-root>/投稿/<任务名>/`（项目归属不明时先主动询问用户）。状态中的路径一律相对项目根目录。用户指定位置和项目已有正式结构优先；临时截图和调试材料放系统临时目录并在本轮核验后删除，不在项目内建 `过程文件/`。只读格式或材料检查不新建、更新投稿记录。已有 `submission-state.json` 时先读；旧 `1.0` 可兼容读取，下次已授权的正常更新时再写入 `1.1`，不为升级增加写入。
 2. 确认目标期刊、文章类型、当前生命周期阶段和平台。信息不足时只问最阻塞的一项。
 3. 联网或操作页面前加载 `web-access`。只使用浏览器现有会话或密码管理器；不读取、回显或保存密码、cookie、token。验证码和双重验证由用户完成。
 4. 读取 [references/evidence-and-safety.md](references/evidence-and-safety.md) 和 [references/official-source-index.md](references/official-source-index.md)。再按平台、出版商和期刊读取对应参考文件。
 5. 当前平台为 Optica Prism 时，读取 [references/platforms/prism-optica.md](references/platforms/prism-optica.md)；账户资料页、稿件字段和最终提交页分别以当前页面为准。
 6. IEEE 请求读取 [references/publishers/ieee.md](references/publishers/ieee.md)；目标为 T-MTT 时再读 [references/journals/tmtt.md](references/journals/tmtt.md)。
 
-投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后按已加载的共享全局规则自动无覆盖交付到正式位置，沿用项目命名、同名递增版本，并复核文件及依赖可用；状态中的路径指向实际交付文件。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；普通任务结束保留过程材料；持续状态、提交件和回执不放入过程目录，旧任务留在过程目录的状态在清理前归位、更新记录路径并校验。
+投稿稿件、回复信和用户要求的其他正式文件，完成必要检查后按已加载的共享全局规则直接无覆盖交付到正式位置，沿用项目命名、同名递增版本，并复核文件及依赖可用；状态中的路径指向实际交付文件。LaTeX 工程、原始稿件和文献库保持原有位置。不额外生成根目录索引或归档副本；持续状态、提交件和回执直接存放在正式位置（历史项目旧过程目录若残留状态，在清理前归位、更新记录路径并校验）。
 
 ## 参考文件路由
 

@@ -10,10 +10,9 @@ description: "Use this skill any time a .pptx or .potx file is involved in any w
 
 ## 文件存放与交付
 
-- 文件归属、正式位置和清理时机遵循已加载的共享全局规则。候选、临时脚本、预览和临时核验记录放在本任务过程目录；必要编辑源和资源依赖作为正式内容保留。
-- 组会与长篇汇报按 [双稿交接与版本](references/presentation-workflow.md#双稿交接与版本)维护工作稿、查看稿及过程基准；更新前检查用户修改，文件占用时不覆盖、不关闭用户窗口。仅交付和保留用户修改节点递增正式版本，不能每页另存。其他任务沿用项目命名习惯；没有约定时用 `内容主题_v01.扩展名`，同名递增版本。生成并通过必要检查后，由智能体在最终回复前自动交付正式成果到约定的正式位置，复核交付文件的哈希、可打开性及必要依赖，并给出正式路径链接。需要用户挑选时，选定后再交付；不另设确认环节。
-- 使用工具的显式输出参数或将工作目录设到任务过程目录，保留工具所需内部结构；正文命令中的相对输出路径均以该目录为基准，技能脚本及输入路径使用绝对路径。不修改上游插件缓存。可编辑源、正式工程及原始数据保留其用途，不一律当作临时文件。
-- 普通任务结束后保留过程材料，用户显式触发 ChatNote（`chat-notes`）或明确要求清理后才进入可恢复清理；不自动清空过程目录。工具用于进程隔离、安全回滚的内部暂存清理不等于任务清场，仍遵守原有保护门。
+- 文件归属、正式位置、未知目录主动询问和临时文件即用即删统一遵循共享全局规则；项目内不建立 `过程文件/`。
+- 组会与长篇汇报按 [双稿交接与版本](references/presentation-workflow.md#双稿交接与版本)维护工作稿与查看稿；更新前检查用户修改，文件占用时不覆盖、不关闭用户窗口，仅在交付和保留用户修改节点递增正式版本。其他任务沿用项目命名习惯（无约定时用 `内容主题_v01.扩展名`，同名递增）。候选、临时脚本、预览图片和临时核验记录统一放在系统临时目录（`<task-temp>`），正式成果落位复核后当场删除系统临时目录（需用户挑选时在选定归位后删除）。
+- 使用工具的显式输出参数或将工作目录设到系统临时目录，技能脚本及输入路径使用绝对路径；不修改上游插件缓存。必要可编辑源、正式工程及原始数据直接保留在正式位置。
 
 ## Choose one authoring route
 
@@ -334,16 +333,16 @@ must block delivery even when `--original` is supplied or compatibility renderin
 Use this workflow only when the task explicitly calls the output a formal deliverable, final candidate,
 or release. Temporary drafts may continue to use ordinary new-output filenames.
 
-1. **Start a formal release inside the task process directory.** Before generating the PPTX, run:
+1. **Start a formal release inside a task-specific system temporary directory.** Before generating the PPTX, run:
 
    ```powershell
-   python scripts/release_bundle.py init --output-root <project>/过程文件/<task-topic> --topic <topic> `
+   python scripts/release_bundle.py init --output-root <task-temp> --topic <topic> `
      --pptx-name final.pptx --pdf-name final.pdf --png-dir png --evidence-dir evidence
    ```
 
    The command creates `<topic>_YYYYMMDD_vNN` and refuses to reuse an existing directory. Keep the
-   manifest, working PPTX/PDF, PNGs, and QA evidence inside that process directory. The release
-   bundle is internal working structure, not an extra project-root deliverable folder. Do not append `fixed`, `final2`,
+   manifest, working PPTX/PDF, PNGs, and QA evidence inside that temporary directory, and clean it up once the verified deliverable is copied to its formal destination (and key acceptance conclusions are noted in the project record if applicable). The release
+   bundle is internal working structure, never a project-root folder or `过程文件/`. Do not append `fixed`, `final2`,
    or similar parallel names after rendering has started. Only when the user explicitly requests a personal visual sign-off, append
    `--require-design-acceptance`. Otherwise inspect rendered pages yourself and deliver the checked result.
    New bundles do not require LibreOffice by default. Add `--require-lo-render` when compatibility
@@ -353,13 +352,13 @@ or release. Temporary drafts may continue to use ordinary new-output filenames.
    history to remove a gate.
 
 2. **Snapshot the external output root consistently.** After the fresh bundle exists, create a before
-   snapshot using the same canonical root and exclusion for the after snapshot:
+   snapshot using the same canonical root and exclusion (if any legacy `过程文件` exists) for the after snapshot:
 
    ```powershell
    python scripts/release_bundle.py snapshot --root <project> `
-     --exclude <project>/过程文件 --output <release-dir>/evidence/integrity-before.json
+     --output <release-dir>/evidence/integrity-before.json
    python scripts/release_bundle.py snapshot --root <project> `
-     --exclude <project>/过程文件 --output <release-dir>/evidence/integrity-after.json
+     --output <release-dir>/evidence/integrity-after.json
    python scripts/release_bundle.py compare-snapshots `
      <release-dir>/evidence/integrity-before.json <release-dir>/evidence/integrity-after.json
    ```

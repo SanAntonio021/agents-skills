@@ -126,7 +126,7 @@ python <skill-root>\scripts\verify_xlsx.py <task-temp>\candidate-final.xlsx --ba
 
 ## 7. PDF 与视觉复核
 
-文字、行列或其他呈现变化时检查受影响区域和周边；未影响呈现的数据处理不强制渲染。明确需要打印或 PDF 时，使用下面的导出及逐页流程；不要因采用高保真路线就默认追加 PDF。需要使用 PDF 作为局部版面检查工具时，生成的辅助文件留在过程目录，不成为额外交付物。
+文字、行列或其他呈现变化时检查受影响区域和周边；未影响呈现的数据处理不强制渲染。明确需要打印或 PDF 时，使用下面的导出及逐页流程；不要因采用高保真路线就默认追加 PDF。需要使用 PDF 作为局部版面检查工具时，生成的辅助文件放在系统临时目录（`<task-temp>`），检查后随临时目录删除，不成为额外交付物。
 
 ```powershell
 python <skill-root>\scripts\libreoffice_headless.py pdf <task-temp>\candidate-final.xlsx <task-temp>\candidate-final.pdf
@@ -162,7 +162,7 @@ python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <
 python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <formal-destination.xlsx> --replace-existing-if-sha256 <recorded-sha256>
 ```
 
-已交付、用户已查看或归属不明的目标改用递增版本。候选、重算副本、PDF、渲染图和核验 JSON 不在 commentary 中链接；发布失败时保留候选和原目标。
+已交付、用户已查看或归属不明的目标改用递增版本。候选、重算副本、PDF、渲染图和核验 JSON 不在 commentary 中链接；发布失败时保留候选和原目标供排障。
 
 ## 9. 最终报告
 
@@ -172,6 +172,6 @@ python <skill-root>\scripts\publish_output.py <task-temp>\candidate-final.xlsx <
 2. 实际修改范围，一两句；
 3. 仍需人工确认的事实，以及没做或没通过的检查；未要求的检查不冒充通过。
 
-公式数、缓存数、错误数，关键合计、数量、唯一性、空白字段，包级未改对象，区域检查或 PDF 页数与逐页结论，记入过程目录的核验记录，不贴进回复；用户在请求里点名要的数字照常给出，其余追问哪部分再给哪部分。
+验收结论按需记入项目既有正式记录，公式数、缓存数、错误数等明细不贴进回复；用户在请求里点名要的数字照常给出，其余追问哪部分再给哪部分。
 
-正式文件自动发布到约定的正式位置并验证后，保留过程材料，等待用户显式触发 ChatNote 清理。第一次在最终回复链接正式路径后，该文件成为已交付、受保护文件。
+正式文件自动发布到约定的正式位置并验证后，当场删除本轮系统临时目录中的中间材料。第一次在最终回复链接正式路径后，该文件成为已交付、受保护文件。

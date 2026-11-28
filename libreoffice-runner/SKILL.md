@@ -42,8 +42,8 @@ python .\scripts\libreoffice_run.py accept-changes <source.docx> <output.docx>
 --soffice <absolute path>
 --json-out <report.json>
 --keep-diagnostics-on-error
---work-root <project process directory>
---diagnostics-root <project diagnostics directory>
+--work-root <short local temp directory>
+--diagnostics-root <local temp diagnostics directory>
 ```
 
 输出路径已存在时 runner 会失败，不会覆盖。CLI 的 stdout 始终是一行 UTF-8 JSON（含行末换行，
@@ -63,8 +63,7 @@ python .\scripts\libreoffice_run.py accept-changes <source.docx> <output.docx>
   两者不移动共享锁。共享锁被拒绝时不启动 LibreOffice，报告原因并在获准访问的环境中重试，
   不能为各项目建立独立容量锁。清理指定工作目录用 `cleanup --work-root <同一路径>`，仍检查归属及重解析点。
 - LibreOffice 缓存会追加很深的目录和长文件名。工作根绝对路径上限为 63 个 UTF-16 单元，
-  超出返回 `work_root_too_long`，不启动进程。选择项目过程目录中较浅的位置作为工作根；
-  不能静默改到配置外的位置。输入、最终输出及诊断目录不受这项工作根长度上限限制。
+  超出返回 `work_root_too_long`，不启动进程。默认使用系统临时目录；若默认 `TEMP` 路径超限，显式改用本机更短的临时目录（如 `<TEMP>\lo`），不在项目网盘内创建 `过程文件/`。输入、最终输出及诊断目录不受这项工作根长度上限限制。
 - `accept-changes` 使用安装的 LibreOffice Python/UNO 公共接口，不使用第三方宏或脚本。
 
 ## 失败处理

@@ -95,7 +95,7 @@ compatibility: Windows with local Codex, Claude Code or Cursor sessions; Python 
 
 **组会汇报**仍按[内容验收](references/chinese-style.md#内容验收)及[文件验收](references/rendering.md#验证)完成既有验收流程，版式以 PowerPoint 原生导出的页面为准，LibreOffice 渲染不用来判断版式。两类结果分别记录；已知错误修复后交付，未验证项如实说明。
 
-按制作参考在约定目录交付 PPTX；默认不额外交付 PDF/HTML。只有用户明确要求 PDF 时才生成 PDF；不主动清理过程文件。项目记录沿用共享规范，不追加制作流水。
+按制作参考在约定正式目录直接交付 PPTX（交付目录无法确定时先主动询问用户）；默认不额外交付 PDF/HTML。只有用户明确要求 PDF 时才生成 PDF；系统临时目录中的中间文件在本轮核验完成后当场删除，不在项目内建 `过程文件/`。项目记录沿用共享规范，不追加制作流水。
 
 ## 后续修改
 

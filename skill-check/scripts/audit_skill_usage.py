@@ -1254,6 +1254,15 @@ def claude_user_record_is_internal(row: dict[str, Any], text: str) -> bool:
     return normalized.startswith("Base directory for this skill:")
 
 
+def claude_host_generated_prompt(row: dict[str, Any]) -> bool:
+    origin = row.get("origin")
+    return (
+        row.get("isCompactSummary") is True
+        or (isinstance(origin, dict) and origin.get("kind") == "task-notification")
+        or (row.get("isSidechain") is True and bool(row.get("agentId")))
+    )
+
+
 def claude_text_content(message: Any) -> str:
     if not isinstance(message, dict):
         return ""
@@ -1312,7 +1321,7 @@ def scan_claude_history(
             scanned_files += 1
             nodes: dict[str, tuple[str, str]] = {}
             users: dict[str, MessageRecord] = {}
-            users_in_window: set[str] = set()
+            candidate_users_in_window: set[str] = set()
             tools_found: list[tuple[str, str, str, str, dict[str, Any], str, str]] = []
             expanded_commands: list[tuple[str, str, str, str, str, str]] = []
             command_prompts: dict[str, tuple[str, str, str]] = {}
@@ -1367,10 +1376,12 @@ def scan_claude_history(
                             message_id=user_key,
                             request_id=user_key,
                         )
-                        if timestamp_in_window(
+                        # Keep the transcript node for attributing real Skill calls. Only
+                        # user-authored prompts can provide evidence of a missed call.
+                        if not claude_host_generated_prompt(row) and timestamp_in_window(
                             timestamp, window, warnings, source, target="Claude user record"
                         ):
-                            users_in_window.add(user_key)
+                            candidate_users_in_window.add(user_key)
                     continue
 
                 if row_type != "assistant" or not isinstance(row.get("message"), dict):
@@ -1464,7 +1475,7 @@ def scan_claude_history(
 
             for user_id, message in sorted(users.items(), key=lambda item: item[1].timestamp):
                 if (
-                    user_id not in users_in_window
+                    user_id not in candidate_users_in_window
                     or message.session_id in bridge_session_ids
                     or (message.session_id, user_id) in seen_user_ids
                 ):

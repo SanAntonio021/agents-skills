@@ -478,6 +478,36 @@ class AuditSkillUsageTests(unittest.TestCase):
         self.assertTrue(any(item["skill"] == "alpha-skill" and item["source"]["line"] == 2
                             for item in summary["classifications"]["疑似漏用"]))
 
+    def test_claude_only_user_prompts_raise_missed_use_candidates(self) -> None:
+        self.write_jsonl(self.codex / "sample.jsonl", [])
+        self.write_jsonl(self.telemetry / "sample.jsonl", [])
+        common = {"timestamp": "2026-01-02T01:00:00Z", "sessionId": "session"}
+        generated = (
+            {"isCompactSummary": True},
+            {"origin": {"kind": "task-notification"}},
+            {"isSidechain": True, "agentId": "worker"},
+        )
+        genuine = (
+            "Could alpha-skill read a summary?",
+            "What does <task-notification> mean in alpha-skill?",
+            "This session is being continued. How does alpha-skill work?",
+        )
+        for metadata in generated:
+            with self.subTest(metadata=metadata):
+                prompt = dict(common, type="user", uuid="injected", message={"content": "Use alpha-skill"}, **metadata)
+                call = dict(common, type="assistant", uuid="reply", parentUuid="injected", message={
+                    "content": [{"type": "tool_use", "name": "Skill", "id": "call", "input": {"skill": "beta-skill"}}]
+                })
+                self.write_jsonl(self.claude / "sample.jsonl", [prompt, call])
+                summary = self.run_audit()
+                self.assertEqual(summary["classifications"]["疑似漏用"], [])
+                self.assertEqual(len(summary["usage_evidence"]["beta-skill"]), 1)
+        for text in genuine:
+            with self.subTest(text=text):
+                self.write_jsonl(self.claude / "sample.jsonl", [dict(common, type="user", uuid="human", message={"content": text})])
+                candidates = self.run_audit()["classifications"]["疑似漏用"]
+                self.assertEqual([item["skill"] for item in candidates], ["alpha-skill"])
+
     def test_claude_deduplicates_repeated_skill_tools_by_ancestor_user(self) -> None:
         self.write_jsonl(self.codex / "sample.jsonl", [])
         self.write_jsonl(
